@@ -64,9 +64,15 @@ Columns:
 - `adp_location_code` (comma-separated for multi-mapped rows like `Room 9` ←
   `Room 9 - 60 Park Pl`)
 - `smartrecruiters_location_id`
-- `schoolmint_grow_location_id`
-- `zendesk_organization_id` (verify Zendesk inbound field at engineer-side;
-  rename column if different)
+- `schoolmint_grow_location_id` — stable SchoolMint Grow `school_id`, joined to
+  `int_schoolmint_grow__observations` via
+  `o.teaching_assignment_school = master.schoolmint_grow_location_id`.
+- `zendesk_location_code` — slug-style code matching
+  `int_zendesk__tickets__custom_fields_pivot.location` (e.g. `room9`, `nca`,
+  `bold`). 45 distinct slugs in production. **Multi-valued** (comma-separated)
+  for canonical rows that absorb multiple Zendesk slugs (e.g.
+  `lanning_square_middle,lanning_square_middle_school` → "KIPP Lanning Square
+  Middle"). Unnested at staging like `adp_location_code`.
 
 Engineer waits on Ops confirmation that sheet is populated and
 `--target staging` external-table refresh is complete before starting Phase 2.
@@ -166,9 +172,9 @@ with
             postal_code,
             smartrecruiters_location_id,
             schoolmint_grow_location_id,
-            zendesk_organization_id,
+            adp_location_code,
+            zendesk_location_code,
             region as business_unit,
-            adp_location_code as adp_location_code_csv,
             case
                 dagster_code_location
                 when 'kippnewark'
@@ -182,22 +188,32 @@ with
             end as region,
         from
             {{ source("google_sheets", "src_google_sheets__people__locations") }}
-    ),
-
-    unnested as (
-        select
-            s.* except (adp_location_code_csv),
-
-            ifnull(
-                trim(adp_code), s.adp_location_code_csv
-            ) as adp_location_code,
-        from src as s
-        left join unnest(split(s.adp_location_code_csv, ',')) as adp_code
     )
 
 select *
-from unnested
+from src
 ```
+
+The staging model stays at canonical grain (38 rows). Multi-valued fields
+(`adp_location_code`, `zendesk_location_code`) remain comma-separated; each
+downstream consumer unnests its own field via a CTE at the consumer:
+
+```sql
+-- Pattern in source-system intermediates that need to resolve location_key.
+-- The CTE unnests the master into one row per (location_name × code).
+adp_location_xref as (
+    select
+        loc.location_name,
+        trim(adp_code) as adp_location_code,
+    from {{ ref("stg_google_sheets__people__locations") }} as loc,
+    unnest(split(loc.adp_location_code, ',')) as adp_code
+    where loc.adp_location_code is not null
+)
+```
+
+Then the final `SELECT` LEFT-JOINs `adp_location_xref` on the upstream code
+column. Same pattern applies to `zendesk_location_code` in the Zendesk
+intermediate.
 
 - [ ] **Step 2: Write the properties YAML**
 
@@ -209,24 +225,20 @@ models:
   - name: stg_google_sheets__people__locations
     description: |
       Canonical-grain people/location master. One row per (canonical
-      location_name × adp_location_code) — multi-valued ADP codes are
-      unnested so each ADP location string maps to exactly one canonical
-      row. The Pathways/Whittier mart-scope filter applies in `dim_locations`,
-      not here; staging carries all 38 canonical rows.
-    data_tests:
-      - dbt_utils.unique_combination_of_columns:
-          arguments:
-            combination_of_columns:
-              - location_name
-              - adp_location_code
-          config:
-            severity: error
+      location_name). Multi-valued source-system fields (adp_location_code,
+      zendesk_location_code) stay comma-separated at this layer; downstream
+      consumers unnest them at the join site. The Pathways/Whittier
+      mart-scope filter applies in `dim_locations`, not here; staging
+      carries all 38 canonical rows.
     columns:
       - name: location_name
         data_type: string
         description: Canonical location name. Single canonical spelling.
         data_tests:
           - not_null:
+              config:
+                severity: error
+          - unique:
               config:
                 severity: error
       - name: abbreviation
@@ -293,21 +305,26 @@ models:
       - name: adp_location_code
         data_type: string
         description: |
-          ADP work-location code. Multi-valued in the sheet
-          (comma-separated); unnested at staging so each ADP code
-          maps to exactly one canonical row.
+          ADP work-location code(s). Multi-valued comma-separated for
+          canonical rows that absorb multiple ADP location strings (e.g.
+          `Room 9 - 60 Park Pl,Room 9 - other`). Downstream unnests via
+          `unnest(split(adp_location_code, ','))` at the join site.
       - name: smartrecruiters_location_id
         data_type: string
         description: SmartRecruiters location ID. Inbound FK input.
       - name: schoolmint_grow_location_id
         data_type: string
-        description: SchoolMint Grow location ID. Inbound FK input.
-      - name: zendesk_organization_id
+        description: |
+          SchoolMint Grow `school_id`. Joins to
+          `int_schoolmint_grow__observations` via
+          `o.teaching_assignment_school = master.schoolmint_grow_location_id`.
+      - name: zendesk_location_code
         data_type: string
         description: |
-          Zendesk organization ID (or whichever ticket-side field carries
-          the location join key — confirm during implementation).
-          Inbound FK input.
+          Zendesk slug-style location code(s) matching
+          `int_zendesk__tickets__custom_fields_pivot.location` (e.g.
+          `room9`, `nca`, `bold`). Multi-valued comma-separated. Downstream
+          unnests via `unnest(split(zendesk_location_code, ','))`.
 ```
 
 - [ ] **Step 3: Delete the old `stg_people__locations` files**
@@ -464,18 +481,85 @@ git commit -m "feat(dbt): add address columns to dim_locations; move mart-scope 
 - Modify: `src/dbt/kipptaf/models/marts/dimensions/dim_regions.sql`
 - Modify: `src/dbt/kipptaf/models/marts/dimensions/properties/dim_regions.yml`
 
-- [ ] **Step 1: Read current `dim_regions.sql` and properties**
+The current `dim_regions.sql` is a hardcoded `UNION ALL` of 4 rows
+(Newark/Camden/Miami/Paterson). Need to: (a) add a 5th row for the TAF network
+entity; (b) add `business_unit_code` to each row. Mapping confirmed against
+`dim_work_assignment_organizational_units` production data:
 
-The current model derives 5 region rows. We need to surface `business_unit_code`
-(one of `KCNA`, `KIPP_MIAMI`, `KIPP_TAF`, `KPAT`, `TEAM`) — exact source is
-whichever upstream model produces these rows. Inspect to determine.
+| `region`  | `legal_entity`                    | `business_unit_code` |
+| --------- | --------------------------------- | -------------------- |
+| Newark    | TEAM Academy Charter School       | TEAM                 |
+| Camden    | KIPP Cooper Norcross Academy      | KCNA                 |
+| Miami     | KIPP Miami                        | KIPP_MIAMI           |
+| Paterson  | KIPP Paterson                     | KPAT                 |
+| TAF (new) | KIPP TEAM and Family Schools Inc. | KIPP_TAF             |
 
-- [ ] **Step 2: Add `business_unit_code` column to `dim_regions.sql`**
+- [ ] **Step 1: Rewrite `dim_regions.sql`**
 
-If the upstream already carries `business_unit_code` (likely via the People
-canonical chain or `int_people__staff_roster`-related models), select it.
-Otherwise add a hardcoded `case` mapping from existing region identity to the
-canonical code. Coordinate with reviewers if uncertainty.
+```sql
+with
+    /* All regions use America/New_York (Eastern) as reporting convention — */
+    /* Miami observes ET in practice and FL permanent-EST has not taken effect */
+    regions as (
+        select
+            'Newark' as region,
+            'NJ' as state,
+            'America/New_York' as timezone,
+            'TEAM Academy Charter School' as legal_entity,
+            'TEAM' as business_unit_code,
+        union all
+        select
+            'Camden' as region,
+            'NJ' as state,
+            'America/New_York' as timezone,
+            'KIPP Cooper Norcross Academy' as legal_entity,
+            'KCNA' as business_unit_code,
+        union all
+        select
+            'Miami' as region,
+            'FL' as state,
+            'America/New_York' as timezone,
+            'KIPP Miami' as legal_entity,
+            'KIPP_MIAMI' as business_unit_code,
+        union all
+        select
+            'Paterson' as region,
+            'NJ' as state,
+            'America/New_York' as timezone,
+            'KIPP Paterson' as legal_entity,
+            'KPAT' as business_unit_code,
+        union all
+        select
+            'TAF' as region,
+            'NJ' as state,
+            'America/New_York' as timezone,
+            'KIPP TEAM and Family Schools Inc.' as legal_entity,
+            'KIPP_TAF' as business_unit_code,
+    )
+
+select
+    {{ dbt_utils.generate_surrogate_key(["region"]) }} as region_key,
+
+    region as `name`,
+    state,
+    timezone,
+    legal_entity,
+    business_unit_code,
+from regions
+```
+
+- [ ] **Step 2: Verify TAF region addition does not break existing `region_key`
+      consumers**
+
+The new `region_key` for TAF (`MD5('TAF')`) is structurally additive; existing 4
+regions keep identical `region_key` hashes. Grep usage:
+
+```bash
+grep -rln "region_key" src/dbt/kipptaf/models --include="*.sql" | grep -v target
+```
+
+Verify each consumer tolerates a new TAF row (typically yes — they LEFT JOIN or
+filter by region name).
 
 - [ ] **Step 3: Add `business_unit_code` column to
       `properties/dim_regions.yml`**
@@ -1046,12 +1130,28 @@ Identify the final `SELECT` and the row-grain key column (`item_id`).
 
 - [ ] **Step 2: Add `location_key` resolution**
 
-In the model's final `SELECT`, add:
+`adp_location_code` on the master is multi-valued (comma-separated). Add a CTE
+that unnests the master into one row per (`location_name` × ADP code), then LEFT
+JOIN it from the work-assignment rows.
+
+CTE (place near top of the model alongside other CTEs):
 
 ```sql
-left join {{ ref("stg_google_sheets__people__locations") }} as loc
-    on wa.home_work_location__name_code__code_value
-       = loc.adp_location_code
+adp_location_xref as (
+    select
+        loc.location_name,
+        trim(adp_code) as adp_location_code,
+    from {{ ref("stg_google_sheets__people__locations") }} as loc,
+    unnest(split(loc.adp_location_code, ',')) as adp_code
+    where loc.adp_location_code is not null
+)
+```
+
+Final `SELECT`'s join section:
+
+```sql
+left join adp_location_xref as loc
+    on wa.home_work_location__name_code__code_value = loc.adp_location_code
 ```
 
 Then in the `SELECT` list:
@@ -1148,22 +1248,43 @@ git commit -m "feat(dbt): attach location_key to int_deanslist__incidents via ca
 - Modify:
   `src/dbt/kipptaf/models/zendesk/intermediate/properties/int_zendesk__tickets__custom_fields_pivot.yml`
 
-- [ ] **Step 1: Identify the Zendesk inbound location field**
+The Zendesk inbound location field is **`location`** on the existing pivot (slug
+values: `room9`, `nca`, `bold`, etc.). `zendesk_location_code` on the master is
+multi-valued; build a CTE that unnests, then LEFT JOIN.
 
-Read the model's existing custom-fields columns to identify which carries the
-canonical location identifier (likely an organization-id-like field or a custom
-field exposing `zendesk_organization_id`). Confirm with Ops/spec authors that
-the field on the master (`zendesk_organization_id`) matches what tickets carry.
+- [ ] **Step 1: Add the unnest CTE**
+
+Add to the model's WITH clause:
+
+```sql
+zendesk_location_xref as (
+    select
+        loc.location_name,
+        trim(z_code) as zendesk_location_code,
+    from {{ ref("stg_google_sheets__people__locations") }} as loc,
+    unnest(split(loc.zendesk_location_code, ',')) as z_code
+    where loc.zendesk_location_code is not null
+)
+```
 
 - [ ] **Step 2: Add the join and `location_key` projection**
 
+In the model's final SELECT (or the appropriate downstream CTE), add:
+
 ```sql
-left join {{ ref("stg_google_sheets__people__locations") }} as loc
-    on cf.<zendesk_inbound_field> = loc.zendesk_organization_id
+left join zendesk_location_xref as loc
+    on cf.location = loc.zendesk_location_code
 ```
 
-Then add the `location_key` projection with the nullable surrogate-key wrap
-pattern.
+In the SELECT list:
+
+```sql
+if(
+    loc.location_name is not null,
+    {{ dbt_utils.generate_surrogate_key(["loc.location_name"]) }},
+    cast(null as string)
+) as location_key,
+```
 
 - [ ] **Step 3: Update properties YAML**
 
@@ -1190,20 +1311,43 @@ git commit -m "feat(dbt): attach location_key to int_zendesk__tickets__custom_fi
 - Modify:
   `src/dbt/kipptaf/models/google/appsheet/intermediate/properties/int_seat_tracker__snapshot.yml`
 
-- [ ] **Step 1: Add `location_key` resolution**
-
 The model's `adp_location` column holds typed strings (e.g.
-`Room 9 - 60 Park Pl`). The new master's `adp_location_code` (post-unnest) is
-one row per ADP code. Join on `adp_location = adp_location_code`:
+`Room 9 - 60 Park Pl`). Same multi-valued unnest pattern as ADP work
+assignments.
+
+- [ ] **Step 1: Add the unnest CTE**
+
+Add to the model's WITH clause:
 
 ```sql
-left join {{ ref("stg_google_sheets__people__locations") }} as loc
+adp_location_xref as (
+    select
+        loc.location_name,
+        trim(adp_code) as adp_location_code,
+    from {{ ref("stg_google_sheets__people__locations") }} as loc,
+    unnest(split(loc.adp_location_code, ',')) as adp_code
+    where loc.adp_location_code is not null
+)
+```
+
+- [ ] **Step 2: Add the join and `location_key` projection**
+
+In the final SELECT:
+
+```sql
+left join adp_location_xref as loc
     on s.adp_location = loc.adp_location_code
 ```
 
-Then add the nullable surrogate-key projection.
+```sql
+if(
+    loc.location_name is not null,
+    {{ dbt_utils.generate_surrogate_key(["loc.location_name"]) }},
+    cast(null as string)
+) as location_key,
+```
 
-- [ ] **Step 2: Update properties YAML**
+- [ ] **Step 3: Update properties YAML**
 
 - [ ] **Step 3: Build**
 
@@ -1228,30 +1372,39 @@ git commit -m "feat(dbt): attach location_key to int_seat_tracker__snapshot"
 - Modify:
   `src/dbt/kipptaf/models/schoolmint/grow/intermediate/properties/int_schoolmint_grow__observations.yml`
 
-- [ ] **Step 1: Identify SchoolMint Grow location field**
+SchoolMint Grow uses stable `school_id` (joined from
+`stg_schoolmint_grow__schools` to observations via
+`o.teaching_assignment_school = s.school_id`). The master's
+`schoolmint_grow_location_id` is single-valued (not multi). Direct join.
 
-Read the model — find which column carries the SchoolMint Grow location
-identifier (likely `school_id` or similar). Confirm with the master's
-`schoolmint_grow_location_id` column.
+- [ ] **Step 1: Add the join and `location_key` projection**
 
-- [ ] **Step 2: Add the join and `location_key` projection**
+In the model's existing FROM/JOIN section, add:
 
 ```sql
 left join {{ ref("stg_google_sheets__people__locations") }} as loc
-    on o.<schoolmint_grow_location_field> = loc.schoolmint_grow_location_id
+    on o.teaching_assignment_school = loc.schoolmint_grow_location_id
 ```
 
-Plus the nullable surrogate-key wrap.
+In the SELECT list:
 
-- [ ] **Step 3: Update properties YAML**
+```sql
+if(
+    loc.location_name is not null,
+    {{ dbt_utils.generate_surrogate_key(["loc.location_name"]) }},
+    cast(null as string)
+) as location_key,
+```
 
-- [ ] **Step 4: Build**
+- [ ] **Step 2: Update properties YAML**
+
+- [ ] **Step 3: Build**
 
 ```bash
 uv run dbt build --project-dir src/dbt/kipptaf --target staging --select int_schoolmint_grow__observations
 ```
 
-- [ ] **Step 5: Commit**
+- [ ] **Step 4: Commit**
 
 ```bash
 git add -u src/dbt/kipptaf/models/schoolmint/grow/intermediate/int_schoolmint_grow__observations.sql \
@@ -1309,16 +1462,32 @@ needed for other columns.
 
 - [ ] **Step 5: `fct_job_candidate_applications` — direct master join**
 
-Add (or update) a join to `stg_google_sheets__people__locations` on whatever
-SmartRecruiters location-id column is on the model:
+The current model derives `shared_with_location_key` from
+`MD5(school_shared_with)` — a string that doesn't match
+`dim_locations.location_key`. Replace with a join to the canonical master on
+`smartrecruiters_location_id`:
 
 ```sql
+from {{ ref("stg_smartrecruiters__applications") }} as app
 left join {{ ref("stg_google_sheets__people__locations") }} as loc
-    on app.<smartrecruiters_location_id_field> = loc.smartrecruiters_location_id
+    on app.school_shared_with = loc.smartrecruiters_location_id
 ```
 
-Replace `shared_with_location_key` with the nullable surrogate-key wrap pattern
-producing the FK.
+Then in the SELECT list, replace the existing `shared_with_location_key`
+projection (lines 13-17) with:
+
+```sql
+if(
+    loc.location_name is not null,
+    {{ dbt_utils.generate_surrogate_key(["loc.location_name"]) }},
+    cast(null as string)
+) as shared_with_location_key,
+```
+
+If the master's `smartrecruiters_location_id` column ends up not matching
+`school_shared_with` values directly (e.g., one is the location ID and the other
+is a name slug), confirm with Ops which value goes on the master sheet and
+adjust either the master column or this join accordingly.
 
 - [ ] **Step 6: Update each mart's properties YAML**
 
