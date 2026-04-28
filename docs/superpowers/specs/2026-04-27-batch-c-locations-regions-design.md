@@ -32,8 +32,10 @@ existing 38 canonical locations — not adding canonical rows.
 | `dim_course_sections`            | PowerSchool sentinel               |           8 | 1 (`schoolid=999999`) | NULL FK on sentinel         |
 
 PowerSchool `schoolid=999999` is the "Graduated/Exited" sentinel — semantically
-not a physical location. Both PowerSchool consumers wrap `location_key`
-generation with `if(schoolid=999999, NULL, ...)` rather than expanding the dim.
+not a physical location. The canonical master has no row with
+`powerschool_school_id=999999`, so the LEFT JOIN from `stg_powerschool__schools`
+to the master produces `NULL location_key` for sentinel rows naturally — no
+magic-number check needed.
 
 ## Architecture
 
@@ -322,8 +324,12 @@ Per `src/dbt/CLAUDE.md` enumerated surrogate-key change rules:
 - `dim_work_assignment_locations.location_key`: **structural add** (rule 5). New
   FK column on a model that didn't carry one. No hash on the model's PK changes.
 - `dim_student_enrollments.location_key`, `dim_course_sections.location_key`:
-  **null handling change** (rule 4). Previously unwrapped, now wrapped in
-  `if(schoolid=999999, NULL, ...)`. Hash values on non-sentinel rows unchanged.
+  **null handling change** (rule 4). Previously the surrogate hash was generated
+  from the joined `stg_people__locations.location_name` (returning the
+  placeholder hash for sentinel rows). After the refactor, `location_key` flows
+  through `stg_powerschool__schools` LEFT-joined to the canonical master,
+  returning real `NULL` for the `999999` sentinel. Hash values on non-sentinel
+  rows unchanged.
 - `dim_regions.business_unit_code`: not a surrogate key — natural attribute.
 - All other six child models updating `location_key` resolution: **values
   unify** (rule 1) where the resolution path changes from a now-missing upstream
