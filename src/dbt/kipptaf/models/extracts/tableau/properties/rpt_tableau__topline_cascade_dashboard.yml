@@ -41,6 +41,16 @@ models:
         data_type: string
       - name: goal
         data_type: numeric
+      - name: goal_numeric
+        data_type: numeric
+        description:
+          NULL values for all goals not numeric in data type - for Tableau
+          formatting
+      - name: goal_integer
+        data_type: int64
+        description:
+          NULL values for all goals not integer in data type - for Tableau
+          formatting
       - name: metric_aggregate_value
         data_type: float64
       - name: metric_aggregate_value_numeric
