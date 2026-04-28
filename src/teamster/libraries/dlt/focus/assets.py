@@ -23,7 +23,7 @@ class FocusDagsterDltTranslator(DagsterDltTranslator):
                     self.code_location,
                     "dlt",
                     "focus",
-                    data.resource.explicit_args["table_names"][0],
+                    data.resource.explicit_args["table"],
                 ]
             ),
             deps=[],
