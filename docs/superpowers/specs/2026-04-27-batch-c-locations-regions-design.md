@@ -216,41 +216,52 @@ collapse). Recorded in PR description.
 **`dim_work_assignment_organizational_units`**: `business_unit_code` becomes an
 FK to `dim_regions.business_unit_code`. Add relationships test.
 
-### Source-system intermediate changes
+### Source-system enrichment (no new intermediates)
 
-`location_key` resolution moves from the mart layer into per-source-system
-**kipptaf intermediates**. Marts then read an already-resolved `location_key`
-from their parent intermediate — no direct `ref()` to
-`stg_google_sheets__people__locations` from any mart. This keeps mart models
-focused on dimensional shape, colocates source-specific scrubbing (sentinel-NULL
-handling, multi-valued unnest) with the source data, and lets future facts
-derived from the same source inherit `location_key` for free.
+`location_key` resolution attaches to each source system's existing natural
+pivot point — the model that already serves as the join target for downstream
+consumers — rather than creating new intermediates. This stays consistent with
+the long-term direction of deconstructing wide denormalized marts into thin
+star-schema facts that traverse FK chains for dimensional context.
 
-| Source                      | Intermediate                                | Action | Resolution input                                            |
-| --------------------------- | ------------------------------------------- | ------ | ----------------------------------------------------------- |
-| Zendesk                     | `int_zendesk__tickets__custom_fields_pivot` | Extend | `zendesk_<inbound>` column on master                        |
-| PowerSchool enrollments     | `int_powerschool__student_enrollments`      | New    | `powerschool_school_id`; sentinel-NULL on `schoolid=999999` |
-| PowerSchool course sections | `int_powerschool__course_sections`          | New    | `powerschool_school_id`; sentinel-NULL on `schoolid=999999` |
-| Seat Tracker (ADP location) | `int_seat_tracker__snapshot`                | Extend | `adp_location_code` (multi-valued unnest)                   |
-| SmartRecruiters             | `int_smartrecruiters__applications`         | New    | `smartrecruiters_location_id`                               |
-| SchoolMint Grow             | `int_schoolmint_grow__observations`         | Extend | `schoolmint_grow_location_id`                               |
+| Source             | Pivot point (existing model)                | Resolution input                          |
+| ------------------ | ------------------------------------------- | ----------------------------------------- |
+| PowerSchool        | `stg_powerschool__schools`                  | `powerschool_school_id`                   |
+| Zendesk            | `int_zendesk__tickets__custom_fields_pivot` | `zendesk_<inbound>` on master             |
+| Seat Tracker (ADP) | `int_seat_tracker__snapshot`                | `adp_location_code` (multi-valued unnest) |
+| SchoolMint Grow    | `int_schoolmint_grow__observations`         | `schoolmint_grow_location_id`             |
+| SmartRecruiters    | _no upstream pivot — resolve at mart_       | `smartrecruiters_location_id`             |
 
-Each intermediate carries `location_key` as a column. Where the source row has
-no resolvable location (PowerSchool sentinel, unmapped upstream code),
-`location_key` is `NULL` and the relationship test on the consuming mart passes
-against the nullable FK pattern.
+Each pivot model gains a `location_key` column resolved by joining the canonical
+master (`stg_google_sheets__people__locations`) on the source-specific
+identifier. Where the source row has no resolvable location (PowerSchool
+`schoolid=999999` "Graduated Students", unmapped upstream code), the LEFT JOIN
+naturally produces `NULL location_key` — no magic-number check needed. The
+relationship test on the consuming mart passes against the nullable FK pattern.
+
+PowerSchool gets enrichment at the kipptaf-level staging layer
+(`stg_powerschool__schools`) because the existing model is already the natural
+join target for downstream marts (`dim_student_enrollments`,
+`dim_course_sections`, and any future PS-derived fact). Mixing a
+Google-Sheets-sourced column into a staging model is unusual but consistent with
+kipptaf-staging's role as the project-level source-cleanup boundary.
+
+SmartRecruiters has a single consumer (`fct_job_candidate_applications`), no
+upstream intermediate, and no upstream "locations" table — creating an
+intermediate for one mart is over-engineering, so the mart joins the canonical
+master directly.
 
 ### Mart child changes (consumes resolved `location_key`)
 
-The six child models from #3720 stop joining the canonical master directly. Each
-selects `location_key` from its parent intermediate:
+The six child models from #3720 stop joining the canonical master directly
+(except SmartRecruiters). Each picks up `location_key` via its existing join to
+the source pivot point:
 
 - `fct_support_tickets` ← `int_zendesk__tickets__custom_fields_pivot`
-- `dim_student_enrollments` ← `int_powerschool__student_enrollments`
-- `dim_course_sections` ← `int_powerschool__course_sections`
+- `dim_student_enrollments`, `dim_course_sections` ← `stg_powerschool__schools`
 - `dim_staffing_positions` ← `int_seat_tracker__snapshot`
-- `fct_job_candidate_applications` ← `int_smartrecruiters__applications`
 - `fct_staff_observations` ← `int_schoolmint_grow__observations`
+- `fct_job_candidate_applications` — direct join to canonical master
 
 ## PR sequencing
 
@@ -273,18 +284,17 @@ Single PR, seven staged commits in dependency order:
 5. **Alias sheet trim** (Ops, off-PR). Ops removes duplicated canonical-attr
    columns from `src_google_sheets__people__location_crosswalk`. Coordinated
    with the source YAML update for the trimmed schema.
-6. **Source-system intermediate updates**. Three new intermediates
-   (`int_powerschool__student_enrollments`, `int_powerschool__course_sections`,
-   `int_smartrecruiters__applications`) and three extensions
-   (`int_zendesk__tickets__custom_fields_pivot`, `int_seat_tracker__snapshot`,
-   `int_schoolmint_grow__observations`) — each attaches `location_key` from the
-   canonical master with source-appropriate handling (sentinel-NULL on
-   PowerSchool, multi-valued unnest on Seat Tracker).
+6. **Source-system enrichment**. Extend four existing pivot models —
+   `stg_powerschool__schools`, `int_zendesk__tickets__custom_fields_pivot`,
+   `int_seat_tracker__snapshot`, `int_schoolmint_grow__observations` — to attach
+   `location_key` from the canonical master. The PowerSchool `schoolid=999999`
+   "Graduated Students" sentinel resolves to `NULL` via the LEFT JOIN (no row on
+   master); Seat Tracker uses multi-valued unnest on `adp_location_code`.
 7. **Mart child fixes**. Six child mart models swap their `location_key` source
-   to the parent intermediate. `business_unit_code` on `dim_regions`;
-   `business_unit_code` FK from `dim_work_assignment_organizational_units`;
-   `location_key` FK + R9 + `attribute_hash` reduction on
-   `dim_work_assignment_locations`.
+   to the source-system pivot point (or join the canonical master directly for
+   SmartRecruiters). `business_unit_code` on `dim_regions`; `business_unit_code`
+   FK from `dim_work_assignment_organizational_units`; `location_key` FK + R9 +
+   `attribute_hash` reduction on `dim_work_assignment_locations`.
 
 ## Testing
 
