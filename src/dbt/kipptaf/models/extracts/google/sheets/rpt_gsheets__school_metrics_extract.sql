@@ -605,9 +605,7 @@ with
             academic_year_int = {{ var("current_academic_year") }}
             and passed_or_not_passed_numeric = 1.0
             and date_trunc(completion_date, week(monday)) >= date_add(
-                date_trunc(
-                    current_date('{{ var("local_timezone") }}'), week(monday)
-                ),
+                date_trunc(current_date('{{ var("local_timezone") }}'), week(monday)),
                 interval -9 week
             )
     ),
