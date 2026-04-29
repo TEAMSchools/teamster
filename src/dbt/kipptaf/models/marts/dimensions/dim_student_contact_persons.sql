@@ -127,14 +127,14 @@ select
 from contacts_deduped as c
 left join
     phone as ph
-    on c._dbt_source_relation = ph._dbt_source_relation
-    and c.personid = ph.personid
+    on c.personid = ph.personid
+    and {{ union_dataset_join_clause(left_alias="c", right_alias="ph") }}
 left join
     email as em
-    on c._dbt_source_relation = em._dbt_source_relation
-    and c.personid = em.personid
+    on c.personid = em.personid
+    and {{ union_dataset_join_clause(left_alias="c", right_alias="em") }}
 left join
     address as ad
-    on c._dbt_source_relation = ad._dbt_source_relation
-    and c.personid = ad.personid
+    on c.personid = ad.personid
+    and {{ union_dataset_join_clause(left_alias="c", right_alias="ad") }}
 where c.person_type != 'self'
