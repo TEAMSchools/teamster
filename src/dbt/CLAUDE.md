@@ -60,6 +60,11 @@ deployments.
 When a PR adds or modifies an external source, flag that the developer must
 stage it with `--target staging` before the dbt Cloud CI job will pass.
 
+`stage_external_sources --args "select: ..."` takes a
+`<source_name>.<table_name>` selector — not project-qualified. The
+project-prefix form (e.g. `kipptaf.google_sheets.<table>`) silently matches zero
+sources.
+
 ## Source Schema Resolution
 
 dbt source YAML `schema:` fields render with `SchemaYamlContext`, which only
@@ -98,6 +103,18 @@ manifest". The prod manifest is refreshed by `.git/hooks/post-merge` on every
 dev parent dim produces false-positive `relationships` orphans. Before trusting
 a dev relationships warning on a FK, include the parent in `--select` or
 `dbt clone --select <parent_dim>` from prod.
+
+## Column-rename refactors strand dependent prod views
+
+When a staging column is dropped or renamed and a downstream view's SQL is
+updated in the same commit, Dagster's auto-materialize may select only the
+staging asset for the deploy run, leaving dependent prod views with their old
+stored definition. BigQuery validates view SQL at read time, so every
+`relationships` / `unique` test on the staging model fails with
+`Name <col> not found inside <alias>; failed to parse view ...`. Confirm the
+stored SQL is stale via `INFORMATION_SCHEMA.VIEWS.view_definition`, then
+rematerialize each dependent view through Dagster `launch_run` — not a code
+change.
 
 ## Source File Conventions
 

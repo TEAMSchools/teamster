@@ -166,6 +166,10 @@ When verifying failures, fetch the most recent run per job (`list_runs` with
 `job_name=..., limit=1`, no status filter) — bulk cross-referencing capped
 result sets misses retries and recoveries.
 
+Asset keys do NOT include dbt subdirectory layers (`staging/`, `intermediate/`)
+— `kipptaf/people/int_people__location_crosswalk`, not
+`kipptaf/people/intermediate/int_people__location_crosswalk`.
+
 ### GKE MCP
 
 Authenticates as impersonated service account
