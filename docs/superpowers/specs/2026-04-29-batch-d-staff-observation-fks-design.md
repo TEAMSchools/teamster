@@ -2,7 +2,13 @@
 
 Closes [#3641](https://github.com/TEAMSchools/teamster/issues/3641),
 [#3680](https://github.com/TEAMSchools/teamster/issues/3680),
+[#3712](https://github.com/TEAMSchools/teamster/issues/3712),
 [#3722](https://github.com/TEAMSchools/teamster/issues/3722).
+
+#3712 is incidentally resolved: the staging filter removal in #3722 restores the
+missing rubrics, and the relationships test on
+`fct_staff_observations.staff_observation_rubric_key` is promoted to
+`severity: error` once orphans clear.
 
 ## Problem
 

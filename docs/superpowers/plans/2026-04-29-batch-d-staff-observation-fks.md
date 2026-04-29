@@ -7,8 +7,11 @@
 
 **Goal:** Eliminate ~273K orphan FKs on staff observation rubric/measurement
 dims, add the missing observation-type FK to
-`dim_staff_observation_expectations`, and centralize the duplicated SchoolMint
-Grow observation-type lookup into a single intermediate.
+`dim_staff_observation_expectations`, centralize the duplicated SchoolMint Grow
+observation-type lookup into a single intermediate, and promote the rubric-key
+relationships test to error severity now that orphans resolve.
+
+**Closes:** #3641, #3680, #3712, #3722.
 
 **Architecture:** Two-front fix. (1) Remove `_dagster_partition_key = 'f'`
 filters from two Grow staging models so archived rubrics/measurements appear in
@@ -899,6 +902,8 @@ values unchanged."
 **Files:**
 
 - Modify: `src/dbt/kipptaf/models/marts/facts/fct_staff_observations.sql`
+- Modify:
+  `src/dbt/kipptaf/models/marts/facts/properties/fct_staff_observations.yml`
 
 - [ ] **Step 6.1: Replace the SQL with the simplified version.**
 
@@ -1040,17 +1045,65 @@ uv run dbt build \
 Expected: model builds; relationships test on
 `staff_observation_rubric_measurement_key` shows **zero orphans** (was 249,465).
 
-- [ ] **Step 6.6: Commit.**
+- [ ] **Step 6.6: Promote the rubric_key relationships test to error severity
+      and remove the stale TODO.**
+
+Open `src/dbt/kipptaf/models/marts/facts/properties/fct_staff_observations.yml`.
+Locate the `staff_observation_rubric_key` column block (around line 59). Replace
+the `data_tests:` block:
+
+```yaml
+data_tests:
+  # TODO: #3712 — dim source is measurement-grain, excludes rubrics
+  # without nested measurements. Promote to error once resolved.
+  - relationships:
+      arguments:
+        to: ref('dim_staff_observation_rubrics')
+        field: staff_observation_rubric_key
+```
+
+with:
+
+```yaml
+data_tests:
+  - relationships:
+      arguments:
+        to: ref('dim_staff_observation_rubrics')
+        field: staff_observation_rubric_key
+      config:
+        severity: error
+```
+
+The orphan rows are gone (Task 1 resolved them). Promoting to `error` locks the
+invariant into CI.
+
+- [ ] **Step 6.7: Re-run the rubric_key test to confirm error-level pass.**
 
 ```bash
-git add src/dbt/kipptaf/models/marts/facts/fct_staff_observations.sql
-git commit -m "refactor(dbt): consume pre-hashed FK keys in fct_staff_observations (#3680)
+uv run dbt test \
+    --project-dir=src/dbt/kipptaf/ \
+    --target=dev \
+    --select fct_staff_observations
+```
+
+Expected: all relationships tests pass, including the now-`error`-severity one
+on `staff_observation_rubric_key`.
+
+- [ ] **Step 6.8: Commit.**
+
+```bash
+git add src/dbt/kipptaf/models/marts/facts/fct_staff_observations.sql \
+        src/dbt/kipptaf/models/marts/facts/properties/fct_staff_observations.yml
+git commit -m "refactor(dbt): consume pre-hashed FK keys in fct_staff_observations (#3680, #3712)
 
 Drops the inline observation_types CTE, the term LEFT JOIN, the
 location_crosswalk join, the if() null-wrappers on three FK columns,
 and the dead-code row_number dedup. Pulls staff_observation_type_key,
 staff_observation_rubric_key, and term_key from upstream intermediates
-where they're pre-hashed once. Hash values unchanged across all FKs."
+where they're pre-hashed once. Promotes the
+staff_observation_rubric_key relationships test to severity: error
+now that orphans are resolved (closes #3712). Hash values unchanged
+across all FKs."
 ```
 
 ---
@@ -1386,9 +1439,10 @@ Use `mcp__github__create_pull_request` with title and body:
 - **Title:**
   `fix(dbt): batch D — staff observation FK fixes & lookup centralization`
 - **Body:** populate from `.github/pull_request_template.md`. Reference closes
-  #3641, #3680, #3722; link the spec; summarize the orphan-FK fix metrics (273K
-  → 0); note hash discipline (no values changed); flag the convention deviation
-  on the two staging models.
+  #3641, #3680, #3712, #3722; link the spec; summarize the orphan-FK fix metrics
+  (273K → 0); note that the rubric-key relationships test is promoted to
+  `severity: error`; note hash discipline (no values changed); flag the
+  convention deviation on the two staging models.
 
 - [ ] **Step 8.6: Verify dbt Cloud CI clean.**
 
