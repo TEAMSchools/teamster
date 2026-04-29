@@ -1,9 +1,4 @@
 with
-    locations as (
-        select powerschool_school_id, location_name,
-        from {{ ref("stg_people__locations") }}
-    ),
-
     -- trunk-ignore(sqlfluff/ST03): referenced by string in dbt_utils.deduplicate
     goals_with_school as (
         select
@@ -20,6 +15,7 @@ with
             g.assessment_band_goal,
 
             s.school_level,
+            s.location_key,
 
             initcap(regexp_extract(s._dbt_source_relation, r'kipp(\w+)_')) as region,
         from {{ ref("stg_google_sheets__assessments__academic_goals") }} as g
@@ -54,7 +50,7 @@ select
         )
     }} as assessment_goal_key,
 
-    {{ dbt_utils.generate_surrogate_key(["loc.location_name"]) }} as location_key,
+    d.location_key,
 
     d.academic_year,
     d.state_assessment_code,
@@ -67,4 +63,3 @@ select
     d.grade_band_goal,
     d.assessment_band_goal,
 from deduplicated as d
-left join locations as loc on d.school_id = loc.powerschool_school_id

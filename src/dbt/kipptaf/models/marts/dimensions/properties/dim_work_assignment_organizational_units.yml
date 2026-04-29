@@ -48,8 +48,19 @@ models:
       - name: business_unit_code
         data_type: string
         description: >-
-          Code value for the Business Unit organizational unit, from
-          nameCode.codeValue where typeCode = 'Business Unit'.
+          ADP business-unit code (KCNA, KIPP_MIAMI, KIPP_TAF, KPAT, TEAM). FK to
+          dim_regions.business_unit_code.
+        constraints:
+          - type: foreign_key
+            to: ref('dim_regions')
+            to_columns: [business_unit_code]
+            warn_unsupported: false
+        data_tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('dim_regions')
+                field: business_unit_code
 
       - name: business_unit_name
         data_type: string

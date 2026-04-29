@@ -56,10 +56,11 @@ select
 
     i.create_ts_academic_year as academic_year,
 
+    i.location_key,
+
     i.category,
     i.category_tier,
     i.infraction as infraction_description,
-    i.location,
     i.context,
     i.status,
     i.referral_tier as referral_category,

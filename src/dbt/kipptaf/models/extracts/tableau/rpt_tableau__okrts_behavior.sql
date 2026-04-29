@@ -58,13 +58,13 @@ with
             end as category_type,
         from {{ ref("stg_deanslist__behavior") }} as b
         inner join
-            {{ ref("stg_google_sheets__people__location_crosswalk") }} as lc
-            on b.school_name = lc.name
+            {{ ref("int_people__location_crosswalk") }} as lc
+            on b.school_name = lc.location_name
         inner join
             {{ ref("int_powerschool__calendar_week") }} as w
             on b.behavior_date between w.week_start_monday and w.week_end_sunday
             and {{ union_dataset_join_clause(left_alias="w", right_alias="b") }}
-            and lc.powerschool_school_id = w.schoolid
+            and lc.location_powerschool_school_id = w.schoolid
         where
             b.behavior_category in (
                 'Accountability (Empowerment)',
