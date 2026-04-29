@@ -252,3 +252,7 @@ Full settings list: `run_monitoring`, `run_retries`, `concurrency`,
 `sso_default_role`, `default_sensor_timeout`, `default_schedule_timeout`,
 `non_isolated_runs`, `auto_materialize`, `branch_deployments`. The
 sensor/schedule timeouts (default 300s) ARE configurable.
+
+`run_monitoring.start_timeout_seconds` only fires for runs in `STARTING` /
+`NOT_STARTED` status — does NOT catch dispatch-to-pod-confirmed stalls (run is
+already `STARTED` at LAUNCH_RUN dispatch, before pod confirmation).

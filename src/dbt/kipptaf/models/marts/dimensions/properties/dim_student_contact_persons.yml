@@ -10,15 +10,21 @@ models:
     columns:
       - name: student_contact_person_key
         data_type: string
-        description: >-
-          Surrogate key derived from _dbt_source_relation and the PowerSchool
-          personid. Primary key for this dimension.
+        description:
+          Surrogate key for the contact person. Primary key for this dimension.
         constraints:
           - type: primary_key
             warn_unsupported: false
         data_tests:
           - unique
           - not_null
+
+        config:
+          meta:
+            source_system: PowerSchool
+            source_model: int_powerschool__contacts
+            source_column: personid
+            column_role: primary_key
 
       - name: full_name
         data_type: string
