@@ -2,20 +2,33 @@ models:
   - name: int_performance_management__observations
     config:
       materialized: table
-    # TODO: add unique test
-    # data_tests:
-    #   - dbt_utils.unique_combination_of_columns:
-    #       arguments:
-    #         combination_of_columns:
-    #           - ...
-    #       config: {}
     columns:
       - name: observation_id
         data_type: string
+        data_tests:
+          - unique
+          - not_null
       - name: rubric_id
         data_type: string
       - name: rubric_name
         data_type: string
+      - name: staff_observation_type_key
+        data_type: string
+        description: >-
+          Pre-hashed FK to dim_staff_observation_types, passed through from
+          int_schoolmint_grow__observations.
+      - name: staff_observation_rubric_key
+        data_type: string
+        description: >-
+          Pre-hashed FK to dim_staff_observation_rubrics, passed through from
+          int_schoolmint_grow__observations.
+      - name: term_key
+        data_type: string
+        description: >-
+          Pre-hashed FK to dim_terms. Generated with generate_surrogate_key on
+          (term type, code, name, start_date, region, school_id). NULL when
+          t.code is NULL (unmatched LEFT JOIN to reporting terms); wrapped in an
+          if() per the nullable-surrogate-key convention.
       - name: observation_score
         data_type: float64
       - name: glows
