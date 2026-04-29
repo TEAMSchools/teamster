@@ -1,6 +1,6 @@
 with
     google_forms_surveys as (
-        -- TODO: upstream at response grain, no definition model (#3635)
+        -- DISTINCT projects from response grain to survey grain.
         select distinct
             form_id as survey_id, info_title as survey_name, 'Google Forms' as platform,
         from {{ ref("int_google_forms__form_responses") }}
@@ -8,7 +8,7 @@ with
     ),
 
     alchemer_surveys as (
-        -- TODO: upstream at response grain, no definition model (#3635)
+        -- DISTINCT projects from response grain to survey grain.
         select distinct
             safe_cast(survey_id as string) as survey_id,
             survey_title as survey_name,
