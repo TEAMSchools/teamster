@@ -47,8 +47,8 @@ change: pre-count, post-count, expected delta, observed delta, status.
 
 `assessments/intermediate/`:
 
-- `int_assessments__illuminate_catalog.sql` — definition × administration grain
-  from `int_assessments__response_rollup`
+- `int_assessments__illuminate_catalog.sql` — from
+  `int_assessments__response_rollup`
 - `int_assessments__pearson_catalog.sql` — from `int_pearson__all_assessments`
 - `int_assessments__fldoe_catalog.sql` — from `int_fldoe__all_assessments`
 - `int_assessments__college_assessment_catalog.sql` — from
@@ -57,8 +57,18 @@ change: pre-count, post-count, expected delta, observed delta, status.
 - `int_assessments__ap_assessments_catalog.sql` — from
   `int_assessments__ap_assessments`; carries `test_type`
 
-All five at the same composite grain (the `dim_assessments` PK composition; see
-below). Each has a `unique_combination_of_columns` test on that grain.
+All five at administration grain — one row per scheduled occurrence with both
+definition columns (`title`, `subject_area`, `scope`, `module_code`,
+`grade_level`, `source`) and administration columns (`administered_date`,
+`academic_year`, `region`, plus source-specific extras). Each has a
+`unique_combination_of_columns` test on the `dim_assessment_administrations` PK
+composition.
+
+`dim_assessment_administrations` selects directly from these catalogs (1:1 row
+mapping). `dim_assessments` collapses them to definition grain via
+`dbt_utils.deduplicate` partitioned by the `assessment_key` composition —
+explicit dedup is allowed by project conventions; the `DISTINCT` workaround
+#3646 calls out is what's eliminated.
 
 `surveys/intermediate/`:
 
