@@ -1,6 +1,6 @@
 with
     google_forms_questions as (
-        -- TODO: upstream at response grain, no definition model (#3635)
+        -- DISTINCT projects from response grain to question grain.
         select distinct
             fr.item_abbreviation as question_shortname,
             fr.item_title as question_text,
