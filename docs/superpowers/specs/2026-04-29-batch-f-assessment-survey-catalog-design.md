@@ -9,7 +9,7 @@ scaffold enhancements, and bridge restructuring.
 
 | Issue                                                                           | Title                                                                              | Resolution in this PR                                                                                                      |
 | ------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------- |
-| [#3646](https://github.com/TEAMSchools/teamster/issues/3646)                    | definition-grain catalog intermediates for `dim_assessments` and `dim_surveys`     | catalog ints + admin-grain `dim_assessments`                                                                               |
+| [#3646](https://github.com/TEAMSchools/teamster/issues/3646)                    | definition-grain catalog intermediates for `dim_assessments` and `dim_surveys`     | catalog ints + new `dim_assessment_administrations` (parallels `dim_survey_administrations`)                               |
 | [#3628](https://github.com/TEAMSchools/teamster/issues/3628)                    | dedup `int_assessments__response_rollup` and `int_assessments__college_assessment` | dedup at originating layer; remove `dbt_utils.deduplicate()` workarounds in facts                                          |
 | [#3629](https://github.com/TEAMSchools/teamster/issues/3629)                    | dedup `int_surveys__survey_responses`                                              | dedup at originating layer; remove fact workaround                                                                         |
 | [#3766](https://github.com/TEAMSchools/teamster/issues/3766)                    | `fct_survey_responses` FK gaps (39K + 415K)                                        | verify gaps close after #3646 + #3629; root-cause residual if any                                                          |
@@ -88,32 +88,41 @@ below). Each has a `unique_combination_of_columns` test on that grain.
 
 - `int_surveys__survey_responses.sql` — dedup at originating layer (#3629)
 
-### `dim_assessments` grain change
+### `dim_assessments` + new `dim_assessment_administrations`
 
-`dim_assessments` becomes definition × scheduled-administration grain.
-`assessment_key` composition expands:
+`dim_assessments` stays definition-grain. A new `dim_assessment_administrations`
+carries the per-scheduled-occurrence attributes, parallel to the existing
+`dim_survey_administrations`. Source-system multi-administration patterns are
+heterogeneous (Illuminate: per-region per-AY; state: per-AY per-window; College
+Board: per-sitting; AP: per-AY) — splitting keeps each dim grain-clean rather
+than forcing a heterogeneous PK composition onto `dim_assessments`.
 
 ```text
-old: hash('illuminate', title, subject_area, scope, module_code, grade_level)
-new: hash(source, title, subject_area, scope, module_code, grade_level, administered_date)
+dim_assessments  (definition grain)
+  PK: assessment_key = hash(source, type, title, subject_area, scope,
+                            module_code, grade_level)
+  attrs: source, type, title, academic_subject, category, module_code,
+         module_type, grade_level_tested, is_internal_assessment, scope,
+         combined_academic_subject, aligned_academic_subject, credit_category
+  (no administered_date, no academic_year, no administration_round, no test_type)
+
+dim_assessment_administrations  (per scheduled occurrence)
+  PK: assessment_administration_key = hash(assessment_key, administered_date,
+                                           academic_year, administration_round,
+                                           region)
+  FKs: assessment_key, administered_date_key
+  attrs: academic_year, administration_round, season, administration_window,
+         test_type, region
 ```
 
-Where `source` is the catalog-int identifier (`'illuminate'`, `'state_nj'`,
-`'state_fl'`, `'college'`, `'ap'`).
-
-`dim_assessments` columns post-refactor (final SELECT):
-
-- `assessment_key`
-- `source`, `type`, `title`, `academic_subject`, `category`, `module_code`,
-  `module_type`, `grade_level_tested`, `is_internal_assessment`, `scope`,
-  `combined_academic_subject`, `aligned_academic_subject`, `credit_category`
-- `academic_year`, `administered_date` — administration-grain attributes
-- `administration_round`, `test_type` — formerly on
-  `fct_assessment_scores_student_scoped`; now definition-grain
+Where `source` in `assessment_key` is the catalog-int identifier
+(`'illuminate'`, `'state_nj'`, `'state_fl'`, `'college'`, `'ap'`).
 
 Layer responsibility rule (load-bearing): **anything originating from
-`int_assessments__assessments` terminates at `dim_assessments`**. Downstream
-facts and bridges carry only measures and FKs.
+`int_assessments__assessments` terminates at `dim_assessments` or
+`dim_assessment_administrations`** — definition attributes on the former,
+scheduled-occurrence attributes on the latter. Downstream facts and bridges
+carry only measures and FKs.
 
 ### Bridge split — replaces `dim_student_assessment_expectations`
 
@@ -129,24 +138,29 @@ Naming mirrors the assessment fact pair
 
 ```text
 marts/bridges/bridge_assessment_expectations_enrollment_scoped.sql
-  PK: assessment_expectation_key = hash(student_section_enrollment_key, assessment_key)
-  FKs: assessment_key, student_section_enrollment_key
+  PK: assessment_expectation_key = hash(student_section_enrollment_key,
+                                         assessment_administration_key)
+  FKs: assessment_administration_key, student_section_enrollment_key
   source: scaffold rows where is_internal_assessment AND NOT is_replacement
   no other columns
 
 marts/bridges/bridge_assessment_expectations_student_scoped.sql
-  PK: assessment_expectation_key = hash(student_key, assessment_key)
-  FKs: assessment_key, student_key, term_key
+  PK: assessment_expectation_key = hash(student_key, assessment_administration_key)
+  FKs: assessment_administration_key, student_key, term_key
   source: scaffold rows where NOT is_internal_assessment OR is_replacement
   no other columns
 ```
 
 R9 cleanup applied:
 
-- `academic_year` dropped (reachable via `assessment_key` after admin-grain
-  refactor; also via `term_key` on student-scoped)
-- `administered_date` dropped (now embedded in `assessment_key`)
-- `is_internal_assessment` dropped (encoded by which bridge holds the row)
+- `academic_year` dropped (reachable via
+  `assessment_administration_key → dim_assessment_administrations.academic_year`;
+  also via `term_key` on student-scoped)
+- `administered_date` dropped (reachable via
+  `assessment_administration_key → dim_assessment_administrations.administered_date_key → dim_dates`)
+- `is_internal_assessment` dropped (reachable via
+  `assessment_administration_key → assessment_key → dim_assessments.is_internal_assessment`;
+  also encoded by which bridge holds the row)
 
 The old `dim_student_assessment_expectations.sql` and its YAML are deleted.
 `cube.yml` exposure updated to `ref()` both new bridges.
@@ -155,21 +169,29 @@ The old `dim_student_assessment_expectations.sql` and its YAML are deleted.
 
 `fct_assessment_scores_enrollment_scoped` final SELECT:
 
-- Keep: `assessment_score_key`, `assessment_key`, `student_key`,
+- Keep: `assessment_score_key`, `assessment_administration_key`, `student_key`,
   `test_date_key`, `scale_score`, `percent_correct`, `proficiency_level`,
   `is_mastery`
-- Drop: `academic_year`, `provider`
+- Drop: `assessment_key` (replaced by `assessment_administration_key`),
+  `academic_year`, `provider`
 
 `fct_assessment_scores_student_scoped` final SELECT:
 
-- Keep: `assessment_score_key`, `assessment_key`, `student_key`,
+- Keep: `assessment_score_key`, `assessment_administration_key`, `student_key`,
   `test_date_key`, `scale_score`, `rank`, `max_scale_score`, `superscore`,
   `running_max_scale_score`, `proficiency_level`
-- Drop: `academic_year`, `provider`, `type`, `administration_round`, `test_type`
+- Drop: `assessment_key`, `academic_year`, `provider`, `type`,
+  `administration_round`, `test_type`
 
-`administration_round` and `test_type` move upstream to
-`int_assessments__college_assessment_catalog` and
-`int_assessments__ap_assessments_catalog`, surfaced on `dim_assessments`.
+`administration_round`, `season`, `administration_window`, `test_type` move
+upstream to the catalog ints and surface on `dim_assessment_administrations`.
+
+`test_date_key` (on the fact) and `administered_date_key` (on
+`dim_assessment_administrations`) are role-disambiguated date FKs per the marts
+CLAUDE.md `created_date_key`/`solved_date_key` convention. They reach different
+`dim_dates` rows for internal assessments (`test_date` is when the student took
+it; `administered_date` is when the assessment was scheduled). Not a diamond —
+two distinct roles.
 
 Both facts also lose their `dbt_utils.deduplicate()` workaround — the dedup now
 lives at the originating int layer (#3628).
@@ -190,7 +212,8 @@ lives at the originating int layer (#3628).
 The star schema spec entry for `dim_assessment_comparisons` is updated to remove
 the `assessment_key` FK requirement. Comparisons live at region × test ×
 academic_year grain (no `grade_level`); they cannot FK to `dim_assessments` at
-the admin grain.
+the definition grain or to `dim_assessment_administrations` at the
+per-occurrence grain.
 
 ## Build phasing
 
@@ -207,8 +230,9 @@ Each phase ends at a green-tests checkpoint before the next begins.
 3. **Scaffold enhancements** — populate `region`; thread `cc_dcid` +
    `_dbt_source_relation`. Audit scaffold consumers.
 4. **Mart cutover**
-   - 4a. `dim_assessments` switches to admin-grain catalog union; gains
-     `administered_date`, `academic_year`, `administration_round`, `test_type`
+   - 4a. `dim_assessments` switches to definition-grain catalog union; new
+     `dim_assessment_administrations` materializes from the same catalogs at
+     per-occurrence grain
    - 4b. `dim_surveys`, `dim_survey_questions`, `bridge_survey_questions` switch
      to catalogs
    - 4c. New `bridge_assessment_expectations_enrollment_scoped` +
@@ -230,13 +254,15 @@ Out-of-band prerequisite: Ops corrects the Paterson RT sheet cell (#3737);
 Per `kipptaf/marts/CLAUDE.md` discipline, the following hash changes are
 recorded in the column-naming audit's "Enumerated surrogate-key changes" table:
 
-| Key                                                                           | Reason                                                                                                          | Old composition                                                        | New composition                                                                     |
-| ----------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------- | ----------------------------------------------------------------------------------- |
-| `dim_assessments.assessment_key`                                              | composition change (#3)                                                                                         | `('illuminate', title, subject_area, scope, module_code, grade_level)` | `(source, title, subject_area, scope, module_code, grade_level, administered_date)` |
-| `bridge_assessment_expectations_enrollment_scoped.assessment_expectation_key` | structural add (#5) — replaces deleted `dim_student_assessment_expectations.student_assessment_expectation_key` | `(student_number, assessment_id, administered_at)`                     | `(student_section_enrollment_key, assessment_key)`                                  |
-| `bridge_assessment_expectations_student_scoped.assessment_expectation_key`    | structural add (#5) — replaces deleted `dim_student_assessment_expectations.student_assessment_expectation_key` | `(student_number, assessment_id, administered_at)`                     | `(student_key, assessment_key)`                                                     |
+| Key                                                                           | Reason                                                                                                          | Old composition                                                        | New composition                                                                    |
+| ----------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------- | ---------------------------------------------------------------------------------- |
+| `dim_assessments.assessment_key`                                              | composition change (#3)                                                                                         | `('illuminate', title, subject_area, scope, module_code, grade_level)` | `(source, title, subject_area, scope, module_code, grade_level)`                   |
+| `dim_assessment_administrations.assessment_administration_key`                | structural add (#5) — new dim                                                                                   | n/a                                                                    | `(assessment_key, administered_date, academic_year, administration_round, region)` |
+| `bridge_assessment_expectations_enrollment_scoped.assessment_expectation_key` | structural add (#5) — replaces deleted `dim_student_assessment_expectations.student_assessment_expectation_key` | `(student_number, assessment_id, administered_at)`                     | `(student_section_enrollment_key, assessment_administration_key)`                  |
+| `bridge_assessment_expectations_student_scoped.assessment_expectation_key`    | structural add (#5) — replaces deleted `dim_student_assessment_expectations.student_assessment_expectation_key` | `(student_number, assessment_id, administered_at)`                     | `(student_key, assessment_administration_key)`                                     |
 
-All FKs that derive from `assessment_key` cascade in lockstep — covered by the
+`assessment_key` consumers (facts, bridges) migrate to
+`assessment_administration_key` — the FK rename cascades in lockstep with the
 catalog cutover in phase 4a.
 
 ## Testing
@@ -281,8 +307,11 @@ change in the PR description.
 **Diamond-walk audit (manual, recorded in PR):**
 
 For every modified mart, enumerate the FKs it carries and verify no two FKs lead
-to the same ancestor dim through different chains. The two new bridges are
-diamond-clean by construction (no overlapping ancestor paths).
+to the same ancestor dim through different chains. The two new bridges and
+`dim_assessment_administrations` are diamond-clean by construction. The two
+facts have role-disambiguated date FKs (`test_date_key` direct +
+`administered_date_key` via `dim_assessment_administrations`); not a diamond per
+the role-playing convention since the two FKs reach different `dim_dates` rows.
 
 Generalizing diamond detection (a custom macro that walks `manifest.json`
 constraints) is out of scope; tracked as a follow-up issue.
@@ -312,6 +341,7 @@ New:
 - `src/dbt/kipptaf/models/surveys/intermediate/int_surveys__alchemer_question_catalog.{sql,yml}`
 - `src/dbt/kipptaf/models/marts/bridges/bridge_assessment_expectations_enrollment_scoped.{sql,yml}`
 - `src/dbt/kipptaf/models/marts/bridges/bridge_assessment_expectations_student_scoped.{sql,yml}`
+- `src/dbt/kipptaf/models/marts/dimensions/dim_assessment_administrations.{sql,yml}`
 
 Modified:
 
@@ -330,7 +360,7 @@ Modified:
 - `src/dbt/kipptaf/models/exposures/cube.yml`
 - existing star-schema spec doc (remove
   `dim_assessment_comparisons → dim_assessments` FK)
-- column-naming audit spec doc (add 3 hash-change entries)
+- column-naming audit spec doc (add 4 hash-change entries)
 
 Deleted:
 
