@@ -1,6 +1,6 @@
 with
     google_forms_pairs as (
-        -- TODO: upstream at response grain, no survey-question-pair definition model
+        -- DISTINCT projects from response grain to (survey, question) pair grain.
         select distinct
             fr.form_id as survey_id,
             fr.item_abbreviation as question_shortname,
