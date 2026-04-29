@@ -30,6 +30,7 @@ with
                 regexp_extract(location_dagster_code_location, r'kipp(\w+)')
             ) as region,
         from {{ ref("int_people__location_crosswalk") }}
+        where location_powerschool_school_id != 0
     ),
 
     -- trunk-ignore(sqlfluff/ST03)
