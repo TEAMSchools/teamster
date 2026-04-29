@@ -6,6 +6,16 @@ models:
       (deviates from the project-wide `_dagster_partition_key = 'f'` convention)
       so that downstream observation facts can resolve historical rubric
       references. Filter on `archived_at` if non-archived rows are needed.
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns:
+              - rubric_id
+              - measurement_group_id
+              - measurement_id
+          config:
+            severity: error
+            where: measurement_id is not null
     columns:
       - name: rubric_id
         data_type: string

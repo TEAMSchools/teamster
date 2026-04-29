@@ -59,14 +59,17 @@ models:
       - name: staff_observation_rubric_key
         data_type: string
         description: >-
-          Foreign key to dim_staff_observation_rubrics. Surrogate key derived
-          from rubric_id. Null when the observation has no rubric attached.
+          Foreign key to dim_staff_observation_rubrics. Surrogate key pre-hashed
+          from rubric_id in int_schoolmint_grow__observations. Non-nullable —
+          rubric_id is structurally non-null for all published observations and
+          enforced by a not_null test on the upstream intermediate.
         constraints:
           - type: foreign_key
             to: ref('dim_staff_observation_rubrics')
             to_columns: [staff_observation_rubric_key]
             warn_unsupported: false
         data_tests:
+          - not_null
           - relationships:
               arguments:
                 to: ref('dim_staff_observation_rubrics')
