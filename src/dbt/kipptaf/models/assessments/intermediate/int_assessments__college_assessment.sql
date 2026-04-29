@@ -239,64 +239,79 @@ with
             and s.scope = g.scope
             and s.test_date = g.test_date
             and g.previous_total_score_change is not null
+    ),
+
+    -- trunk-ignore(sqlfluff/ST03): referenced by string in dbt_utils.deduplicate
+    enriched as (
+        select
+            student_number,
+            administration_round,
+            academic_year,
+            test_date,
+            scope,
+            subject_area,
+            course_discipline,
+            score_type,
+            scale_score,
+            rn_highest,
+            salesforce_id,
+            is_overall_score,
+            is_subject_score,
+            running_max_scale_score,
+            surrogate_key,
+            n_overall_scores,
+            n_subject_scores,
+            strategy_case,
+            max_scale_score,
+            previous_total_score_change,
+            superscore,
+            avg_running_max_superscore,
+            sum_running_max_superscore,
+
+            'Official' as test_type,
+
+            format_date('%B', test_date) as test_month,
+
+            if(
+                subject_area in ('Composite', 'Combined'), 'Total', subject_area
+            ) as aligned_subject_area,
+
+            case
+                when
+                    score_type in (
+                        'act_reading',
+                        'sat_ebrw',
+                        'psat10_ebrw',
+                        'psatnmsqt_ebrw',
+                        'psat89_ebrw'
+                    )
+                then 'EBRW/Reading'
+                when subject_area in ('Composite', 'Combined')
+                then 'Total'
+                else subject_area
+            end as aligned_subject,
+
+            round(
+                case
+                    when scope = 'ACT'
+                    then avg_running_max_superscore
+                    when scope = 'SAT'
+                    then sum_running_max_superscore
+                end,
+                0
+            ) as runnning_superscore,
+
+        from score_calcs
     )
 
-select
-    student_number,
-    administration_round,
-    academic_year,
-    test_date,
-    scope,
-    subject_area,
-    course_discipline,
-    score_type,
-    scale_score,
-    rn_highest,
-    salesforce_id,
-    is_overall_score,
-    is_subject_score,
-    running_max_scale_score,
-    surrogate_key,
-    n_overall_scores,
-    n_subject_scores,
-    strategy_case,
-    max_scale_score,
-    previous_total_score_change,
-    superscore,
-    avg_running_max_superscore,
-    sum_running_max_superscore,
-
-    'Official' as test_type,
-
-    format_date('%B', test_date) as test_month,
-
-    if(
-        subject_area in ('Composite', 'Combined'), 'Total', subject_area
-    ) as aligned_subject_area,
-
-    case
-        when
-            score_type in (
-                'act_reading',
-                'sat_ebrw',
-                'psat10_ebrw',
-                'psatnmsqt_ebrw',
-                'psat89_ebrw'
+select *,
+from
+    (
+        {{
+            dbt_utils.deduplicate(
+                relation="enriched",
+                partition_by="student_number, score_type, test_date, rn_highest",
+                order_by="scale_score desc, superscore desc",
             )
-        then 'EBRW/Reading'
-        when subject_area in ('Composite', 'Combined')
-        then 'Total'
-        else subject_area
-    end as aligned_subject,
-
-    round(
-        case
-            when scope = 'ACT'
-            then avg_running_max_superscore
-            when scope = 'SAT'
-            then sum_running_max_superscore
-        end,
-        0
-    ) as runnning_superscore,
-
-from score_calcs
+        }}
+    )

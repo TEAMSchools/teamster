@@ -1,5 +1,13 @@
 models:
   - name: int_assessments__college_assessment
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns:
+              - student_number
+              - score_type
+              - test_date
+              - rn_highest
     columns:
       - name: student_number
         data_type: int64
