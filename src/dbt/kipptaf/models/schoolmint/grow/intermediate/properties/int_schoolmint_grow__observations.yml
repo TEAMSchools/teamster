@@ -5,6 +5,10 @@ models:
       teacher staff IDs, observation-type metadata, and pre-hashed foreign-key
       surrogates for staff_observation_type_key and
       staff_observation_rubric_key. One row per Grow observation_id.
+      Per-measurement score detail (one row per observation_id + measurement_id)
+      is exposed downstream via fct_staff_observation_scores — Grow's score rows
+      carry no rubric strand context, so score grain is `(observation_id,
+      measurement_id)` and can't be split per strand.
     columns:
       - name: observation_id
         data_type: string

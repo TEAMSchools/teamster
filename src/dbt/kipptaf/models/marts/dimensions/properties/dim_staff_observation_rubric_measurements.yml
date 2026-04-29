@@ -2,16 +2,26 @@ models:
   - name: dim_staff_observation_rubric_measurements
     description: >-
       Measurement item dimension for staff observation rubrics. One row per
-      measurement item per rubric. Contains the measurement name, strand
-      (measurement group) hierarchy, and weighting. Foreign keys to
-      dim_staff_observation_rubrics via staff_observation_rubric_key.
+      (rubric_id, measurement_id) pair. Strand metadata (`strand_name`,
+      `strand_weight`, `strand_description`, `is_excluded`) reflects the
+      canonical strand for that measurement when SchoolMint Grow's data model
+      permits the same measurement to appear under multiple strands of a rubric
+      (rare — observed in one archived rubric). The canonical strand is the
+      non-excluded one (`is_excluded=false`); ties broken alphabetically by
+      measurement_group_id. Foreign key to dim_staff_observation_rubrics via
+      staff_observation_rubric_key.
     columns:
       - name: staff_observation_rubric_measurement_key
         data_type: string
         description: >-
           Surrogate primary key derived from rubric_id and measurement_id.
-          Generated with generate_surrogate_key(["mgm.rubric_id",
-          "mgm.measurement_id"]).
+          Generated with generate_surrogate_key(["rubric_id",
+          "measurement_id"]). Matches the
+          fct_staff_observation_scores.staff_observation_rubric_measurement_key
+          composition — score grain is per-(observation, measurement), with no
+          per-strand split, because SchoolMint Grow's score rows do not carry
+          the rubric's measurement_group_id (the per-score measurementGroup
+          field is an instance UUID, not a strand reference).
         constraints:
           - type: primary_key
             warn_unsupported: false
@@ -61,22 +71,26 @@ models:
       - name: strand_name
         data_type: string
         description: >-
-          Name of the measurement group (strand) this measurement belongs to.
+          Name of the canonical measurement group (strand) this measurement
+          belongs to. When a rubric reuses the same measurement under multiple
+          strands, this column reflects the non-excluded strand.
 
       - name: strand_weight
         data_type: int64
         description: >-
-          Weight of the strand in overall rubric score calculation.
+          Weight of the strand in overall rubric score calculation. Reflects the
+          canonical strand when a measurement is reused.
 
       - name: strand_description
         data_type: string
         description: >-
-          Description of the measurement group (strand).
+          Description of the canonical measurement group (strand).
 
       - name: weight
         data_type: float64
         description: >-
-          Weight of this measurement within its strand for score calculation.
+          Weight of this measurement within its strand. Reflects the canonical
+          strand when a measurement is reused.
 
       - name: is_private_measurement
         data_type: boolean
@@ -93,4 +107,15 @@ models:
       - name: is_excluded
         data_type: boolean
         description: >-
-          TRUE if this measurement is excluded from scoring calculations.
+          SchoolMint Grow's `exclude` flag on the rubric's measurement entry.
+          Despite the name, this does NOT exclude the measurement from Grow's
+          overall observation score: empirical analysis shows `obs.score` is the
+          arithmetic mean of all `valueScore` values in `observationScores`,
+          including those from is_excluded=true measurements. The flag appears
+          to mark items that are not auto-prompted for numeric scoring (e.g.,
+          free-text reflection prompts on O3 forms, coaching reflection items),
+          but observers may still enter scores and Grow includes them in the
+          average. Filtering on this column for downstream rollups will diverge
+          from Grow's UI. When a measurement is reused under multiple strands of
+          a rubric, this column reflects the canonical (non-excluded) strand —
+          see model description.
