@@ -2,7 +2,7 @@ select
     {{ dbt_utils.generate_surrogate_key(["`Name`"]) }} as location_key,
 
     `Name` as location_name,
-    `Region` as business_unit,
+    `Region` as location_region,
     `PowerSchool_School_ID` as powerschool_school_id,
     `Reporting_School_ID` as reporting_school_id,
     `Grade_Band` as grade_band,
@@ -18,18 +18,6 @@ select
     `Address` as address,
     `City` as city,
     `Postal_Code` as postal_code,
-
-    case
-        `Dagster_Code_Location`
-        when 'kippnewark'
-        then 'Newark'
-        when 'kippcamden'
-        then 'Camden'
-        when 'kippmiami'
-        then 'Miami'
-        when 'kipppaterson'
-        then 'Paterson'
-    end as region,
 
     case
         `Dagster_Code_Location`

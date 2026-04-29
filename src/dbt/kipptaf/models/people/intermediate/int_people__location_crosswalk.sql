@@ -5,7 +5,7 @@ select
     pl.location_name as location_clean_name,
     pl.abbreviation as location_abbreviation,
     pl.grade_band as location_grade_band,
-    pl.region as location_region,
+    pl.location_region,
     pl.powerschool_school_id as location_powerschool_school_id,
     pl.deanslist_school_id as location_deanslist_school_id,
     pl.reporting_school_id as location_reporting_school_id,

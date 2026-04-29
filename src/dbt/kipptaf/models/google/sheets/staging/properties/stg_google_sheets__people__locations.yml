@@ -32,19 +32,12 @@ models:
           - not_null:
               config:
                 severity: error
-      - name: region
-        data_type: string
-        description: |
-          Canonical region name derived from dagster_code_location. One of
-          Newark, Camden, Miami, Paterson; null for any other code location
-          value (e.g., network-level entries).
-      - name: business_unit
+      - name: location_region
         data_type: string
         description: |
           Legal-entity name the location rolls up to (source column: Region).
           Matches dim_regions.legal_entity (e.g., "TEAM Academy Charter School",
-          "KIPP Cooper Norcross Academy"). The sheet's Region column captures
-          legal entities, not canonical region names.
+          "KIPP Cooper Norcross Academy").
       - name: business_unit_code
         data_type: string
         description: |
