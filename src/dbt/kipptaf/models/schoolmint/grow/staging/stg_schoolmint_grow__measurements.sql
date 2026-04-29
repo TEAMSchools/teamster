@@ -11,4 +11,3 @@ select
     cast(lastmodified as timestamp) as last_modified,
     cast(archivedat as timestamp) as archived_at,
 from {{ source("schoolmint_grow", "src_schoolmint_grow__measurements") }}
-where _dagster_partition_key = 'f'

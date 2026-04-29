@@ -3,6 +3,8 @@ select
     o.observation_id,
     o.rubric_id,
     o.rubric_name,
+    o.staff_observation_type_key,
+    o.staff_observation_rubric_key,
     o.score as observation_score,
     o.glows,
     o.grows,
@@ -21,6 +23,23 @@ select
 
     t.code as term_code,
     t.name as term_name,
+
+    if(
+        t.code is not null,
+        {{
+            dbt_utils.generate_surrogate_key(
+                [
+                    "t.type",
+                    "t.code",
+                    "t.name",
+                    "t.start_date",
+                    "t.region",
+                    "t.school_id",
+                ]
+            )
+        }},
+        cast(null as string)
+    ) as term_key,
 
     case
         when o.score >= 3.495
@@ -60,6 +79,8 @@ select
     o.observation_id,
     o.rubric_id,
     o.rubric_name,
+    o.staff_observation_type_key,
+    o.staff_observation_rubric_key,
     o.score as observation_score,
     o.glows,
     o.grows,
@@ -79,6 +100,23 @@ select
 
     t.code as term_code,
     t.name as term_name,
+
+    if(
+        t.code is not null,
+        {{
+            dbt_utils.generate_surrogate_key(
+                [
+                    "t.type",
+                    "t.code",
+                    "t.name",
+                    "t.start_date",
+                    "t.region",
+                    "t.school_id",
+                ]
+            )
+        }},
+        cast(null as string)
+    ) as term_key,
 
     null as overall_tier,
     null as eval_date,
