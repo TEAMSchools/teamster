@@ -1,0 +1,38 @@
+models:
+  - name: int_schoolmint_grow__observation_types
+    description: >-
+      Observation type lookup. One row per non-archived SchoolMint Grow generic
+      tag where tag_type = 'observationtypes'. Single source of truth for the
+      abbreviation → tag_id → staff_observation_type_key mapping consumed by
+      dim_staff_observation_types, int_schoolmint_grow__observations, and
+      dim_staff_observation_expectations.
+    columns:
+      - name: staff_observation_type_key
+        data_type: string
+        description: >-
+          Surrogate key derived from tag_id. Generated with
+          generate_surrogate_key(["tag_id"]).
+        data_tests:
+          - unique
+          - not_null
+      - name: tag_id
+        data_type: string
+        description: >-
+          SchoolMint Grow generic tag identifier for the observation type.
+        data_tests:
+          - unique
+          - not_null
+      - name: abbreviation
+        data_type: string
+        description: >-
+          Short code for the observation type (e.g. WT, O3, PMS, PMC, TR). Joins
+          to reporting term `type` codes 1:1.
+        data_tests:
+          - unique
+          - not_null
+      - name: name
+        quote: true
+        data_type: string
+        description: >-
+          Full display name of the observation type (e.g. Walkthrough,
+          One-on-One, PM Semester).
