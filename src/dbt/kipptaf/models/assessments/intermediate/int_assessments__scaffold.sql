@@ -57,6 +57,9 @@ with
             ce.cc_dateenrolled,
             ce.cc_dateleft,
             ce.discipline,
+            ce.cc_dcid,
+
+            ce._dbt_source_relation as cc_source_relation,
         from assessment_region_scaffold as a
         inner join
             {{ ref("int_illuminate__student_session_aff") }} as ssa
@@ -99,6 +102,9 @@ with
             ce.cc_dateenrolled,
             ce.cc_dateleft,
             ce.discipline,
+            ce.cc_dcid,
+
+            ce._dbt_source_relation as cc_source_relation,
         from assessment_region_scaffold as a
         inner join
             {{ ref("int_assessments__course_enrollments") }} as ce
@@ -141,6 +147,8 @@ select
     ia.module_type,
     ia.module_code,
     ia.discipline,
+    ia.cc_dcid,
+    ia.cc_source_relation,
 
     sa.student_assessment_id,
     sa.date_taken,
@@ -179,6 +187,9 @@ select
     a.module_code,
 
     null as discipline,
+
+    cast(null as int64) as cc_dcid,
+    cast(null as string) as cc_source_relation,
 
     sa.student_assessment_id,
     sa.date_taken,
@@ -229,6 +240,9 @@ select
     a.module_code,
 
     null as discipline,
+
+    cast(null as int64) as cc_dcid,
+    cast(null as string) as cc_source_relation,
 
     sa.student_assessment_id,
     sa.date_taken,
