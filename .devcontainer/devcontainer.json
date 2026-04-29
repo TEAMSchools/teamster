@@ -1,5 +1,7 @@
 {
-  "image": "mcr.microsoft.com/devcontainers/python:3.13",
+  "dockerComposeFile": "docker-compose.yml",
+  "service": "devcontainer",
+  "workspaceFolder": "/workspaces/teamster",
   "features": {
     "ghcr.io/devcontainers/features/common-utils:latest": {},
     "ghcr.io/devcontainers/features/github-cli:latest": {},
@@ -7,14 +9,6 @@
     "ghcr.io/jajera/features/gcloud-cli:latest": {},
     "ghcr.io/devcontainers/features/node:1": {}
   },
-  "mounts": [
-    "type=tmpfs,destination=/etc/secret-volume,tmpfs-mode=0777,tmpfs-size=10485760"
-  ],
-  "runArgs": [
-    "--cap-drop=NET_RAW",
-    "--cap-drop=SYS_PTRACE",
-    "--cap-drop=NET_ADMIN"
-  ],
   "postCreateCommand": "bash .devcontainer/scripts/postCreate.sh",
   "postStartCommand": "bash .devcontainer/scripts/postStart.sh",
   "containerEnv": {
@@ -35,6 +29,13 @@
         "ms-python.python",
         "redhat.vscode-yaml"
       ]
+    }
+  },
+  "forwardPorts": [8088],
+  "portsAttributes": {
+    "8088": {
+      "label": "Superset",
+      "onAutoForward": "notify"
     }
   }
 }
