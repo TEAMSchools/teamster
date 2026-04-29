@@ -107,15 +107,8 @@ models:
       - name: is_excluded
         data_type: boolean
         description: >-
-          SchoolMint Grow's `exclude` flag on the rubric's measurement entry.
-          Despite the name, this does NOT exclude the measurement from Grow's
-          overall observation score: empirical analysis shows `obs.score` is the
-          arithmetic mean of all `valueScore` values in `observationScores`,
-          including those from is_excluded=true measurements. The flag appears
-          to mark items that are not auto-prompted for numeric scoring (e.g.,
-          free-text reflection prompts on O3 forms, coaching reflection items),
-          but observers may still enter scores and Grow includes them in the
-          average. Filtering on this column for downstream rollups will diverge
-          from Grow's UI. When a measurement is reused under multiple strands of
-          a rubric, this column reflects the canonical (non-excluded) strand —
-          see model description.
+          Reflects the canonical strand's exclude flag when a measurement is
+          reused under multiple strands of a rubric (see model description for
+          the dedup rule). Does NOT filter from Grow's overall observation score
+          — see source-system semantics on
+          `stg_schoolmint_grow__rubrics__measurement_groups__measurements.exclude_measurement`.

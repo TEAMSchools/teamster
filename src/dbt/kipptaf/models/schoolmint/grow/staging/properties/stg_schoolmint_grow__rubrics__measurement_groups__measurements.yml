@@ -60,7 +60,9 @@ models:
           the rubric.
       - name: measurement_group_key
         data_type: string
-        description: Surrogate key for the measurement group within the rubric.
+        description: >-
+          Stable string key for the measurement group within Grow's rubric
+          editor.
       - name: measurement_group_description
         data_type: string
         description: Description of the measurement group (strand).
@@ -72,8 +74,7 @@ models:
       - name: measurement_key
         data_type: string
         description: >-
-          Surrogate key for the measurement within its measurement group on this
-          rubric.
+          Stable string key for the measurement within Grow's rubric editor.
       - name: measurement_weight
         data_type: float64
         description: >-

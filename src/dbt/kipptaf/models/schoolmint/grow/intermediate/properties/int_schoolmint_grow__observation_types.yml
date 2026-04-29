@@ -11,9 +11,10 @@ models:
         data_type: string
         description: >-
           Surrogate key derived from tag_id. Generated with
-          generate_surrogate_key(["tag_id"]).
+          generate_surrogate_key(["tag_id"]). Uniqueness is enforced via the
+          unique test on tag_id below — the hash is a deterministic function of
+          tag_id.
         data_tests:
-          - unique
           - not_null
       - name: tag_id
         data_type: string

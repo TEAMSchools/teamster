@@ -9,6 +9,14 @@ models:
       2023 walkthroughs (filtered by academic_year, is_published, and
       rubric_name LIKE 'Walkthrough%' OR 'Strong Start%'). Pre-2024
       non-walkthrough data lives in a separate snapshot. Materialized as table.
+
+
+      **No defensive dedup.** The terms LEFT JOIN could in principle fan out if
+      `stg_google_sheets__reporting__terms` ever gains overlapping date windows
+      for the same `(type, region)`. A prior `row_number ... where rn = 1` guard
+      in `fct_staff_observations` was removed (verified zero fan-out across
+      46,686 production rows); the unique test on `observation_id` here will
+      fail loudly on any future fan-out instead of silently picking a row.
     config:
       materialized: table
     columns:

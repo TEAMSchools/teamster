@@ -61,8 +61,11 @@ models:
           Foreign key to dim_staff_observation_types. Surrogate key resolved via
           int_schoolmint_grow__observation_types by joining the term type code
           (PMS, PMC, TR, WT, O3) to the SchoolMint Grow observation-type tag
-          abbreviation. Non-nullable because the scaffold filters term types to
-          the five observation types, all of which match a Grow tag 1:1.
+          abbreviation. Expected non-null because the five term-type
+          abbreviations are currently 1:1 with non-archived Grow observation
+          tags; the not_null test below fails loudly if that invariant ever
+          breaks (e.g., if Grow archives one of the matching tags or renames an
+          abbreviation without a coordinated update).
         constraints:
           - type: foreign_key
             to: ref('dim_staff_observation_types')
