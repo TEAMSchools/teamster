@@ -82,6 +82,23 @@ rendering. The CI job and the parse job in its `deferring_environment_id` must
 share `target_name`, or every source with the target-conditional schema pattern
 hash-mismatches and fans out to rebuild the whole graph.
 
+## Dev `--defer` for unstaged externals
+
+Dev builds depending on GCS externals (`stg_google_sheets__*` etc.) fail with
+"table not found" when those externals aren't staged for the current user. Add
+`--defer --state=src/dbt/<project>/target/prod/`. **`--state` path is relative
+to `--project-dir`** — repo-root form silently fails with "Could not find
+manifest". The prod manifest is refreshed by `.git/hooks/post-merge` on every
+`git pull`; if stale, regenerate with
+`uv run dbt parse --target prod --project-dir <project> --target-path target/prod`.
+
+## Stale dev tables shadow `--defer`
+
+`--defer` uses any existing dev table before falling through to prod, so a stale
+dev parent dim produces false-positive `relationships` orphans. Before trusting
+a dev relationships warning on a FK, include the parent in `--select` or
+`dbt clone --select <parent_dim>` from prod.
+
 ## Source File Conventions
 
 - **`sources-bigquery.yml`** — BQ-native sources (Airbyte, Fivetran, frozen

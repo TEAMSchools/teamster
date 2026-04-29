@@ -114,6 +114,13 @@ Canonical-grain consumers (1 row per logical school) should use
 schools (e.g., `KIPP Miami - North Campus` rolls up five `Location_Name`
 children).
 
+**`_dagster_partition_key` in SchoolMint Grow staging** is the Grow `archived`
+flag (`'f'` = not archived, `'t'` = archived). Most Grow staging models filter
+to `'f'`; `stg_schoolmint_grow__rubrics__measurement_groups__measurements` and
+`stg_schoolmint_grow__measurements` intentionally do not, so observation FKs to
+archived rubrics/measurements still resolve. Don't re-add the filter to those
+two models without understanding the FK-coverage tradeoff.
+
 ## Cross-Project Refs
 
 Sources models from: `powerschool`, `deanslist`, `edplan`, `iready`, `overgrad`,

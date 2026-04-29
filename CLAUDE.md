@@ -61,6 +61,11 @@ this step.**
   hook, `git add -A` can stage unrelated files. Subagents must name specific
   files in `git add` — never `-u`, `-A`, or `.`.
 
+- **Dispatching subagents**: Subagents do not auto-invoke skills. In the
+  dispatch prompt, name the exact `Skill` tool calls the subagent must run
+  before starting work (e.g. `Skill` with
+  skill=`dbt:using-dbt-for-analytics-engineering` for a dbt review).
+
 - **Git resuming**: Before resuming work on an existing branch, merge `main`:
   `git fetch origin main && git merge origin/main`.
 
