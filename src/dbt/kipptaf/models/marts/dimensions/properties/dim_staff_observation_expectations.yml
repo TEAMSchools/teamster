@@ -5,7 +5,8 @@ models:
       type term. Built by crossing active teaching staff from roster history
       with PM/walkthrough/O3 term windows from the reporting terms sheet.
       Enables tracking whether each teacher received their expected observations
-      in each period. Foreign keys to dim_staff and dim_terms.
+      in each period. Foreign keys to dim_staff, dim_terms, and
+      dim_staff_observation_types.
     columns:
       - name: staff_observation_expectation_key
         data_type: string
@@ -49,11 +50,31 @@ models:
             warn_unsupported: false
         data_tests:
           - not_null
-
           - relationships:
               arguments:
                 to: ref('dim_terms')
                 field: term_key
+
+      - name: staff_observation_type_key
+        data_type: string
+        description: >-
+          Foreign key to dim_staff_observation_types. Surrogate key resolved via
+          int_schoolmint_grow__observation_types by joining the term type code
+          (PMS, PMC, TR, WT, O3) to the SchoolMint Grow observation-type tag
+          abbreviation. Non-nullable because the scaffold filters term types to
+          the five observation types, all of which match a Grow tag 1:1.
+        constraints:
+          - type: foreign_key
+            to: ref('dim_staff_observation_types')
+            to_columns: [staff_observation_type_key]
+            warn_unsupported: false
+        data_tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('dim_staff_observation_types')
+                field: staff_observation_type_key
+
       - name: academic_year
         data_type: int64
         description: >-

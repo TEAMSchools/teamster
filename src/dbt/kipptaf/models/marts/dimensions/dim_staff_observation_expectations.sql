@@ -15,6 +15,8 @@ with
 
             srh.job_title,
 
+            ot.staff_observation_type_key,
+
             row_number() over (
                 partition by
                     srh.employee_number,
@@ -37,6 +39,9 @@ with
                 between srh.work_assignment_actual_start_date and srh.effective_date_end
             )
             and t.type in ('PMS', 'PMC', 'TR', 'WT', 'O3')
+        left join
+            {{ ref("int_schoolmint_grow__observation_types") }} as ot
+            on t.type = ot.abbreviation
         where
             srh.primary_indicator
             and srh.assignment_status = 'Active'
@@ -72,6 +77,8 @@ select
             ]
         )
     }} as term_key,
+
+    staff_observation_type_key,
 
     academic_year,
     is_current,
