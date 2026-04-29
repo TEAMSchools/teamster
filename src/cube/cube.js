@@ -21,16 +21,24 @@ function nextMidnightEastern() {
 }
 
 // resolveGroupsSync: synchronous group lookup for queryRewrite.
-// contextToGroups is async and runs after queryRewrite in Cube's pipeline, so
-// groups cannot be read from securityContext.groups here. In local dev,
-// CUBE_GROUP_MAP is read directly. In production, the auth service must include
-// groups in the JWT so securityContext.groups is populated.
+// contextToGroups is async; in some Cube pipeline configurations it runs before
+// queryRewrite (Cube Cloud) and in others after (local dev server). We check
+// three sources in priority order:
+//   1. securityContext.groups — JWT claims or Cube-injected from contextToGroups
+//   2. groupCache — populated by contextToGroups when it runs before queryRewrite
+//   3. CUBE_GROUP_MAP — local dev only, synchronous bypass of the Directory API
 function resolveGroupsSync(securityContext) {
   const groups = securityContext?.groups;
   if (Array.isArray(groups) && groups.length > 0) return groups;
 
+  const email = securityContext?.email;
+
+  if (email) {
+    const cached = groupCache.get(email);
+    if (cached && cached.expiresAt > Date.now()) return cached.groups;
+  }
+
   if (process.env.NODE_ENV !== "production" && process.env.CUBE_GROUP_MAP) {
-    const email = securityContext?.email;
     if (!email) return [];
     try {
       const map = JSON.parse(process.env.CUBE_GROUP_MAP);
