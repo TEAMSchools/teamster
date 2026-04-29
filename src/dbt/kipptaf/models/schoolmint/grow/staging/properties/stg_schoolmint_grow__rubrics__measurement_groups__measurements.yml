@@ -1,5 +1,11 @@
 models:
   - name: stg_schoolmint_grow__rubrics__measurement_groups__measurements
+    description: >-
+      Flattened view of SchoolMint Grow rubrics with their nested measurement
+      groups and measurements. Includes both archived and non-archived rubrics
+      (deviates from the project-wide `_dagster_partition_key = 'f'` convention)
+      so that downstream observation facts can resolve historical rubric
+      references. Filter on `archived_at` if non-archived rows are needed.
     columns:
       - name: rubric_id
         data_type: string

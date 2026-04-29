@@ -1,5 +1,11 @@
 models:
   - name: stg_schoolmint_grow__measurements
+    description: >-
+      SchoolMint Grow measurement metadata. Includes both archived and
+      non-archived measurements (deviates from the project-wide
+      `_dagster_partition_key = 'f'` convention) so that downstream observation
+      score facts can resolve historical measurement references. Filter on
+      `archived_at` if non-archived rows are needed.
     columns:
       - name: measurement_id
         data_type: string
