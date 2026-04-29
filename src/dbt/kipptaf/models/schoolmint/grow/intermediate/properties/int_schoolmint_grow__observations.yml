@@ -1,9 +1,41 @@
 models:
   - name: int_schoolmint_grow__observations
+    description: >-
+      SchoolMint Grow observations enriched with school location, observer and
+      teacher staff IDs, observation-type metadata, and pre-hashed foreign-key
+      surrogates for staff_observation_type_key and
+      staff_observation_rubric_key. One row per Grow observation_id.
     columns:
+      - name: observation_id
+        data_type: string
+        description: SchoolMint Grow observation identifier.
+        data_tests:
+          - unique
+          - not_null
+      - name: rubric_id
+        data_type: string
+        description: >-
+          SchoolMint Grow rubric identifier. Structurally non-null for all
+          published, non-archived observations.
+        data_tests:
+          - not_null
+      - name: staff_observation_rubric_key
+        data_type: string
+        description: >-
+          Pre-hashed surrogate key derived from rubric_id. Generated with
+          generate_surrogate_key(["rubric_id"]). Consumed by
+          fct_staff_observations as its rubric FK.
+        data_tests:
+          - not_null
+      - name: staff_observation_type_key
+        data_type: string
+        description: >-
+          Pre-hashed surrogate key for the observation type. NULL when the
+          observation's tag_id does not resolve to a non-archived
+          observationtypes tag.
       - name: location_key
         data_type: string
-        description: >
+        description: >-
           MD5 surrogate key for the canonical school location. Null when
           s.school_id does not match any grow_location_id in
           stg_google_sheets__people__locations.
@@ -12,10 +44,6 @@ models:
               arguments:
                 to: ref("dim_locations")
                 field: location_key
-      - name: observation_id
-        data_type: string
-      - name: rubric_id
-        data_type: string
       - name: rubric_name
         data_type: string
       - name: score
