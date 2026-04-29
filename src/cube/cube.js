@@ -67,6 +67,14 @@ module.exports = {
   }),
 
   contextToGroups: async ({ securityContext }) => {
+    // Pass-through for JWT-embedded groups. Used in Cube Cloud playground
+    // testing before the Directory API is configured. Remove once Directory
+    // API is live and JWTs no longer carry group claims.
+    const jwtGroups = securityContext?.groups;
+    if (Array.isArray(jwtGroups) && jwtGroups.length > 0) {
+      return jwtGroups.filter((g) => g.startsWith("cube-"));
+    }
+
     const email = securityContext?.email;
     if (!email) return [];
 
