@@ -57,6 +57,7 @@ CATEGORY_RULES: list[tuple[str, list[str]]] = [
     ),
     ("K8s API failure", ["DagsterK8sUnrecoverableAPIError"]),
     ("Backoff limit", ["BackoffLimitExceeded"]),
+    ("Step preempt-hang", ["Exiting to prevent re-running"]),
     (
         "Network/SSH",
         [
@@ -221,6 +222,7 @@ ENGINE_KEYWORDS = (
     "Evicted",
     "interrupt",
     "Deleting Kubernetes job",
+    "Exiting to prevent re-running",
 )
 
 
@@ -490,13 +492,27 @@ query Ticks($selector: InstigationSelector!, $afterTs: Float, $statuses: [Instig
   instigationStateOrError(instigationSelector: $selector) {
     ... on InstigationState {
       ticks(afterTimestamp: $afterTs, statuses: $statuses, limit: 100) {
-        id timestamp status error { message }
+        id timestamp status error { message errorChain { error { message } } }
       }
     }
     ... on PythonError { message }
   }
 }
 """
+
+
+def _first_chain_message(err: dict) -> str:
+    """Return the first errorChain entry's message — the actual root cause.
+
+    The top-level `error.message` on a sensor/schedule tick is a generic
+    `SensorExecutionError` / `ScheduleExecutionError` boundary message. The
+    underlying cause (e.g. `oracledb DPY-4024 call timeout`) lives in
+    `error.errorChain[0].error.message`.
+    """
+    chain = err.get("errorChain") or []
+    if not chain:
+        return ""
+    return (chain[0].get("error") or {}).get("message") or ""
 
 
 async def _ticks(
@@ -548,6 +564,7 @@ async def step_03_sensor_ticks(
                     "tickId": t.get("id"),
                     "timestamp": t.get("timestamp"),
                     "error": ((t.get("error") or {}).get("message") or "")[:300],
+                    "errorChainTop": _first_chain_message(t.get("error") or {})[:300],
                 }
                 for t in ticks
             ],
@@ -613,6 +630,7 @@ async def step_06_schedule_ticks(
                 "tickId": t.get("id"),
                 "timestamp": t.get("timestamp"),
                 "error": ((t.get("error") or {}).get("message") or "")[:300],
+                "errorChainTop": _first_chain_message(t.get("error") or {})[:300],
             }
             for t in ticks
         ]

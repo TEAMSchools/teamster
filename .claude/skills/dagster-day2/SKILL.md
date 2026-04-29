@@ -50,9 +50,9 @@ depends on a failed step.
 
 Run classification (`step_01_failed_runs.failures[].category`) is one of:
 `Preemption/Interrupt`, `Node OOM/eviction`, `Scheduling failure`,
-`K8s API failure`, `Backoff limit`, `Network/SSH`, `Connection failure`,
-`Code error`, `Infra timeout`, `Unclassified`. Phase 2 may reclassify based on
-cross-signal context — see the reclassify table below.
+`K8s API failure`, `Backoff limit`, `Step preempt-hang`, `Network/SSH`,
+`Connection failure`, `Code error`, `Infra timeout`, `Unclassified`. Phase 2 may
+reclassify based on cross-signal context — see the reclassify table below.
 
 ## Phase 2: Correlate and report
 
@@ -68,11 +68,12 @@ produces wrong findings.
 
 **Reclassify** runs using cross-signal context:
 
-| From                              | To                | Trigger signal                                                                                                 |
-| --------------------------------- | ----------------- | -------------------------------------------------------------------------------------------------------------- |
-| Unclassified / Connection failure | Agent API timeout | Agent `errors` array contains `ReadTimeout` + `*.agent.dagster.cloud` in same window (not visible in GKE logs) |
-| Code error                        | K8s API timeout   | Error class is actually `DagsterK8sUnrecoverableAPIError` — stack-trace match alone is insufficient            |
-| Unclassified                      | Node OOM/eviction | GKE pod event `OOMKilling` or `Evicted` for run's pod — then run step 13 drill-down                            |
+| From                              | To                | Trigger signal                                                                                                                                                                                                                                                                                                                                                                                                        |
+| --------------------------------- | ----------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Unclassified / Connection failure | Agent API timeout | Agent `errors` array contains `ReadTimeout` + `*.agent.dagster.cloud` in same window (not visible in GKE logs)                                                                                                                                                                                                                                                                                                        |
+| Code error                        | K8s API timeout   | Error class is actually `DagsterK8sUnrecoverableAPIError` — stack-trace match alone is insufficient                                                                                                                                                                                                                                                                                                                   |
+| Unclassified                      | Node OOM/eviction | GKE pod event `OOMKilling` or `Evicted` for run's pod — then run step 13 drill-down                                                                                                                                                                                                                                                                                                                                   |
+| Infra timeout                     | Step preempt-hang | `runFailureMessage: Exceeded maximum runtime` AND `engineEventMatch` contains `Exiting to prevent re-running`. Step pod was preempted, replacement bailed via `verify_step` exit-0, K8s Job marked `Complete` so `check_step_health` stays healthy and run hangs until `max_runtime`. Self-heals via `dagster/will_retry`. Upstream: dagster-io/dagster#33728. Do not chase as control-plane / PowerSchool / network. |
 
 **Tick failure analysis**: For any location with >5 gRPC UNAVAILABLE tick
 failures, run this procedure before attributing a root cause:

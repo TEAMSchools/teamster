@@ -144,6 +144,11 @@ Use BigQuery MCP for ad-hoc queries against known production tables. Use dbt
 MCP's `show` only when `ref()` / `source()` resolution is needed — it adds
 compilation overhead.
 
+For run-internal timelines (steps, engine events, failures), use
+`mcp__dagster__get_run_logs` — its events are canonical and structured. Note the
+unit mismatch: GraphQL `creationTime/startTime/endTime` are float seconds;
+`get_run_logs` event `timestamp` is a millisecond string.
+
 Default to GitHub MCP (`mcp__github__*`) for all GitHub operations. Only fall
 back to `gh` CLI via Bash when no MCP equivalent exists (e.g. `gh pr checks`,
 `gh run view`, `gh repo edit`). Verify by checking the available
