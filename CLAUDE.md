@@ -25,9 +25,11 @@ this step.**
 
 - **Before writing any spec or plan**: STOP and explicitly ask the user whether
   to open a GitHub issue first. Required for specs/plans; not required for quick
-  fixes. Do not write anything until the user answers. If opening:
-  `gh issue create`; label with conventional commit type, related source
-  systems, and `dagster`/`dbt` when applicable.
+  fixes. Do not write anything until the user answers. If opening: use
+  `mcp__github__issue_write` (see §MCP tool selection — GitHub MCP is the
+  default for GitHub operations, `gh` CLI is the fallback); label with
+  conventional commit type, related source systems, and `dagster`/`dbt` when
+  applicable.
 
 - **Before creating a branch**: ask the user — worktree or branch switch? Do not
   choose for them.
@@ -58,6 +60,11 @@ this step.**
 - **Git staging**: Prefer `git add -u` — naming protected paths triggers the
   hook, `git add -A` can stage unrelated files. Subagents must name specific
   files in `git add` — never `-u`, `-A`, or `.`.
+
+- **Dispatching subagents**: Subagents do not auto-invoke skills. In the
+  dispatch prompt, name the exact `Skill` tool calls the subagent must run
+  before starting work (e.g. `Skill` with
+  skill=`dbt:using-dbt-for-analytics-engineering` for a dbt review).
 
 - **Git resuming**: Before resuming work on an existing branch, merge `main`:
   `git fetch origin main && git merge origin/main`.
@@ -127,15 +134,21 @@ via `op read`, execs). Do not revert to `op run` in `.mcp.json` —
 `OP_SERVICE_ACCOUNT_TOKEN` is scrubbed post-boot by `postStart.sh`, so `op run`
 silently breaks after the first Codespace restart.
 
+- **MCP outages**: If an MCP tool returns "server disconnected" or clearly
+  impaired responses, surface to the user before working around with raw `gh` /
+  BigQuery calls.
+
 ### MCP tool selection
 
 Use BigQuery MCP for ad-hoc queries against known production tables. Use dbt
 MCP's `show` only when `ref()` / `source()` resolution is needed — it adds
 compilation overhead.
 
-Use GitHub MCP (`mcp__github__*`) as the primary tool for all GitHub operations.
-Fall back to `gh` CLI via Bash only when no MCP equivalent exists (e.g.
-`gh pr checks`, `gh run view`).
+Default to GitHub MCP (`mcp__github__*`) for all GitHub operations. Only fall
+back to `gh` CLI via Bash when no MCP equivalent exists (e.g. `gh pr checks`,
+`gh run view`, `gh repo edit`). Verify by checking the available
+`mcp__github__*` tool list before reaching for `gh` — don't fall back from
+habit.
 
 `mcp__github__issue_write` `labels` parameter expects a comma-separated string
 (`"dbt,feat"`), not a JSON array. Either pass the string or omit and follow up
@@ -152,6 +165,10 @@ No output on success — verify via `gh api graphql` querying the item's
 When verifying failures, fetch the most recent run per job (`list_runs` with
 `job_name=..., limit=1`, no status filter) — bulk cross-referencing capped
 result sets misses retries and recoveries.
+
+Asset keys do NOT include dbt subdirectory layers (`staging/`, `intermediate/`)
+— `kipptaf/people/int_people__location_crosswalk`, not
+`kipptaf/people/intermediate/int_people__location_crosswalk`.
 
 ### GKE MCP
 

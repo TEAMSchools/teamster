@@ -40,16 +40,18 @@ models:
         data_type: string
         description: >-
           Foreign key to dim_locations for the location this application is
-          shared with. Surrogate key derived from school_shared_with. Nullable
-          when the application has no shared location.
+          shared with. Resolved by joining `int_people__location_crosswalk` on
+          `school_shared_with = name` (SmartRecruiters exposes a typed location
+          string, not a stable ID, so resolution goes through the alias
+          crosswalk; text variants like `KIPP High School` → `KIPP Cooper
+          Norcross High` are alias rows on the crosswalk). Nullable when the
+          application has no shared location.
         constraints:
           - type: foreign_key
             to: ref('dim_locations')
             to_columns: [location_key]
             warn_unsupported: false
         data_tests:
-          # TODO: #3672 — ~20% rows fail FK; promote to error
-          # once upstream crosswalk covers `KIPP High School` and siblings.
           - relationships:
               arguments:
                 to: ref('dim_locations')

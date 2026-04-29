@@ -1,6 +1,17 @@
 models:
   - name: int_adp_workforce_now__workers__work_assignments
     columns:
+      - name: location_key
+        data_type: string
+        description: >
+          MD5 surrogate key for the canonical school location. Null when
+          home_work_location__name_code__code_value does not match any
+          adp_location_code in stg_google_sheets__people__locations.
+        data_tests:
+          - relationships:
+              arguments:
+                to: ref("dim_locations")
+                field: location_key
       - name: home_work_location__name_code__name
         data_type: string
         data_tests:

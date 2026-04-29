@@ -9,6 +9,7 @@ scripts: `bash scripts/<name>.sh`.
 | --------------------------------------------- | ------------------------------------------------------------------------------------------- |
 | `dagster-dev.py`                              | Start Dagster webserver for selected code locations                                         |
 | `dagster-mcp-launch.sh`                       | MCP launcher: exchange OP token for scoped Dagster Cloud API token, exec `dagster_plus_mcp` |
+| `day2_collect.py`                             | Day-2 ops data collector — Dagster GraphQL + GCP REST/gcloud → `.claude/scratch/day2.json`  |
 | `dbt-mcp-launch.sh`                           | MCP launcher: exchange OP token for dbt Cloud service token, exec `dbt-mcp`                 |
 | `avro-schema-update.py`                       | Rewrite Avro data in GCS with updated schema                                                |
 | `dbt-bq-audit.py`                             | Audit BigQuery objects against dbt manifest                                                 |

@@ -26,11 +26,7 @@ select
         cast(null as string)
     ) as original_assignee_staff_key,
 
-    if(
-        cf.location is not null,
-        {{ dbt_utils.generate_surrogate_key(["cf.location"]) }},
-        cast(null as string)
-    ) as location_key,
+    cf.location_key,
 
     cast(t.created_at as date) as created_date_key,
 

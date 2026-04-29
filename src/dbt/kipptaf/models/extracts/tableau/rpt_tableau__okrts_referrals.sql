@@ -43,7 +43,7 @@ with
         select
             ra.student_id as student_number,
 
-            lc.powerschool_school_id as schoolid,
+            lc.location_powerschool_school_id as schoolid,
 
             s.academic_year,
 
@@ -52,12 +52,16 @@ with
             count(*) as att_discrepancy_count,
         from {{ ref("stg_deanslist__reconcile_attendance") }} as ra
         inner join
-            {{ ref("stg_google_sheets__people__location_crosswalk") }} as lc
-            on ra.school_name = lc.name
+            {{ ref("int_people__location_crosswalk") }} as lc
+            on ra.school_name = lc.location_name
         left join
             ssds_period as s
             on ra.attendance_date between s.period_start_date and s.period_end_date
-        group by ra.student_id, lc.powerschool_school_id, s.academic_year, s.ssds_period
+        group by
+            ra.student_id,
+            lc.location_powerschool_school_id,
+            s.academic_year,
+            s.ssds_period
     ),
 
     suspension_reconciliation_rollup as (
@@ -66,16 +70,17 @@ with
             rs.dl_incident_id as incident_id,
             rs.dl_penalty_id as penalty_id,
 
-            lc.powerschool_school_id as schoolid,
+            lc.location_powerschool_school_id as schoolid,
 
             row_number() over (
-                partition by rs.student_id, rs.dl_incident_id, lc.powerschool_school_id
+                partition by
+                    rs.student_id, rs.dl_incident_id, lc.location_powerschool_school_id
                 order by rs.consequence desc
             ) as rn_incident,
         from {{ ref("stg_deanslist__reconcile_suspensions") }} as rs
         inner join
-            {{ ref("stg_google_sheets__people__location_crosswalk") }} as lc
-            on rs.school_name = lc.name
+            {{ ref("int_people__location_crosswalk") }} as lc
+            on rs.school_name = lc.location_name
     ),
 
     attachments as (

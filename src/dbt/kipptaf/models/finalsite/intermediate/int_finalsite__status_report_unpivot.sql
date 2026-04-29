@@ -79,8 +79,8 @@ select
 
     'KTAF' as org,
 
-    coalesce(x.powerschool_school_id, 0) as schoolid,
-    coalesce(x.abbreviation, 'No School Assigned') as school,
+    coalesce(x.location_powerschool_school_id, 0) as schoolid,
+    coalesce(x.location_abbreviation, 'No School Assigned') as school,
 
     case
         u.fs_status_field
@@ -136,5 +136,5 @@ select
 
 from unpivot_data as u
 left join
-    {{ ref("stg_google_sheets__people__location_crosswalk") }} as x
-    on u.assigned_school = x.name
+    {{ ref("int_people__location_crosswalk") }} as x
+    on u.assigned_school = x.location_name

@@ -60,6 +60,11 @@ deployments.
 When a PR adds or modifies an external source, flag that the developer must
 stage it with `--target staging` before the dbt Cloud CI job will pass.
 
+`stage_external_sources --args "select: ..."` takes a
+`<source_name>.<table_name>` selector — not project-qualified. The
+project-prefix form (e.g. `kipptaf.google_sheets.<table>`) silently matches zero
+sources.
+
 ## Source Schema Resolution
 
 dbt source YAML `schema:` fields render with `SchemaYamlContext`, which only
@@ -81,6 +86,35 @@ Two inline patterns (see spec for details):
 rendering. The CI job and the parse job in its `deferring_environment_id` must
 share `target_name`, or every source with the target-conditional schema pattern
 hash-mismatches and fans out to rebuild the whole graph.
+
+## Dev `--defer` for unstaged externals
+
+Dev builds depending on GCS externals (`stg_google_sheets__*` etc.) fail with
+"table not found" when those externals aren't staged for the current user. Add
+`--defer --state=src/dbt/<project>/target/prod/`. **`--state` path is relative
+to `--project-dir`** — repo-root form silently fails with "Could not find
+manifest". The prod manifest is refreshed by `.git/hooks/post-merge` on every
+`git pull`; if stale, regenerate with
+`uv run dbt parse --target prod --project-dir <project> --target-path target/prod`.
+
+## Stale dev tables shadow `--defer`
+
+`--defer` uses any existing dev table before falling through to prod, so a stale
+dev parent dim produces false-positive `relationships` orphans. Before trusting
+a dev relationships warning on a FK, include the parent in `--select` or
+`dbt clone --select <parent_dim>` from prod.
+
+## Column-rename refactors strand dependent prod views
+
+When a staging column is dropped or renamed and a downstream view's SQL is
+updated in the same commit, Dagster's auto-materialize may select only the
+staging asset for the deploy run, leaving dependent prod views with their old
+stored definition. BigQuery validates view SQL at read time, so every
+`relationships` / `unique` test on the staging model fails with
+`Name <col> not found inside <alias>; failed to parse view ...`. Confirm the
+stored SQL is stale via `INFORMATION_SCHEMA.VIEWS.view_definition`, then
+rematerialize each dependent view through Dagster `launch_run` — not a code
+change.
 
 ## Source File Conventions
 
@@ -109,6 +143,30 @@ subdirectories, not at the top-level `models/` directory.
 - **Source-system projects** (amplify, deanslist, edplan, etc.): use
   `{{ project_name }}`.
 - **kipp\* projects** (kipptaf, kippnewark, etc.): hardcode the project name.
+
+### Google Sheets external sources
+
+Declare `columns:` at the source level (parallel to `external:`, not nested
+inside it — nested `columns:` silently no-ops back to autodetect). Autodetect
+drops columns where every row is NULL and type-infers from data values, so
+text-formatted `00000` in Sheets becomes INT64.
+
+```yaml
+- name: src_<...>
+  external:
+    options: { ... }
+  columns:
+    - name: <Header_Name>
+      data_type: STRING
+```
+
+### Rebuild staging after sheet edits before testing
+
+After Ops edits a Google Sheet source or after running
+`stage_external_sources --target staging`, rebuild downstream `stg_*` tables
+(default materialization is `table`) before trusting test results:
+`dbt build --select <staging_model>+1 --exclude resource_type:test`. A "drift"
+against stale staging is a false positive.
 
 ## Shipped Profiles (`src/dbt/*/profiles.yml`)
 
@@ -227,6 +285,13 @@ if(
 
 Without this, relationship tests check the placeholder hash against the parent
 dimension and fail.
+
+### Don't inline CASE expressions in generate_surrogate_key
+
+`dbt_utils.generate_surrogate_key(["case <col> when ... end"])` compiles via
+Jinja's implicit-string-concat across adjacent list elements — unreviewable, and
+a comma inserted between fragments silently changes the SQL. Derive the computed
+value as a named column in an upstream CTE, then hash that column.
 
 ### SQL conventions
 

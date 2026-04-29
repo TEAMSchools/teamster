@@ -300,7 +300,7 @@ workspace:
   # The max code servers defaults to 25, and only applies to servers with TTL.
   serverTTL:
     branchDeployments:
-      ttlSeconds: 900
+      ttlSeconds: 3600
 
   onlyAllowUserDefinedK8sConfigFields:
     containerConfig:
