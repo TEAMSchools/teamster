@@ -640,24 +640,24 @@ with
 
     iready_homeroom_week as (
         select
-            region,
-            school,
-            team,
-            week_start_monday,
+            ie.region,
+            ie.school,
+            ie.team,
+            ie.week_start_monday,
 
             tm.teacher_name,
             tm.manager,
             tm.manager_job_title,
 
-            avg(if(ela_passed_lessons >= 2, 1.0, 0.0)) as ela_metric_value,
-            avg(if(math_passed_lessons >= 2, 1.0, 0.0)) as math_metric_value,
-        from iready_enrolled
-        left join team_manager as tm on school = tm.school and team = tm.team
+            avg(if(ie.ela_passed_lessons >= 2, 1.0, 0.0)) as ela_metric_value,
+            avg(if(ie.math_passed_lessons >= 2, 1.0, 0.0)) as math_metric_value,
+        from iready_enrolled as ie
+        left join team_manager as tm on ie.school = tm.school and ie.team = tm.team
         group by
-            region,
-            school,
-            team,
-            week_start_monday,
+            ie.region,
+            ie.school,
+            ie.team,
+            ie.week_start_monday,
             tm.teacher_name,
             tm.manager,
             tm.manager_job_title
