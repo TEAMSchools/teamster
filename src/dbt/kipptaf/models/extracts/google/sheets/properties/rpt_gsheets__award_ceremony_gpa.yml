@@ -1,29 +1,48 @@
 models:
   - name: rpt_gsheets__award_ceremony_gpa
+    description: >
+      Per-student subject GPA extract for award ceremony use, scoped to active
+      HS students (grades 9–12) in the current academic year. Reports both
+      stored (Y1) and live (Q4) GPA points pivoted by credit type.
     data_tests:
       - dbt_utils.unique_combination_of_columns:
           arguments:
             combination_of_columns:
               - school
+              - grade_level
               - student_number
     columns:
       - name: school
         data_type: string
+        description: School abbreviation from PowerSchool.
+      - name: grade_level
+        data_type: int64
+        description: Student's current grade level (9–12).
       - name: student_number
         data_type: int64
+        description: Student's PowerSchool student number.
       - name: student_name
         data_type: string
+        description: Student's full name in last, first format.
       - name: english
         data_type: float64
+        description: Weighted GPA for English (ENG) credit type.
       - name: math
         data_type: float64
+        description: Weighted GPA for Math (MATH) credit type.
       - name: science
         data_type: float64
+        description: Weighted GPA for Science (SCI) credit type.
       - name: social_studies
         data_type: float64
+        description: Weighted GPA for Social Studies (SOC) credit type.
       - name: world_language
         data_type: float64
+        description: Weighted GPA for World Language (WLANG) credit type.
       - name: vpa
         data_type: float64
+        description:
+          Weighted GPA for Visual & Performing Arts (ART) credit type.
       - name: physed
         data_type: float64
+        description: Weighted GPA for Physical Education (PHYSED) credit type.
