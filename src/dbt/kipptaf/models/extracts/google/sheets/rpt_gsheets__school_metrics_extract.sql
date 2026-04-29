@@ -194,7 +194,7 @@ with
         where
             academic_year = {{ var("current_academic_year") }}
             and response_type = 'overall'
-            and module_type in ('QA', 'MQQ', 'CRQ', 'TP')
+            and module_type in ('QA', 'MQQ', 'CRQ', 'TP', 'ET')
             and is_mastery is not null
             and discipline in ('ELA', 'Math')
             and date_trunc(administered_at, week(monday)) >= date_add(
