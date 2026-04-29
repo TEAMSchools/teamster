@@ -17,6 +17,18 @@ directly to BigQuery using `dlt`'s `sql_database` source with PyArrow backend.
 - Factory:
   `build_illuminate_dlt_assets(sql_database_credentials, code_location, schema, table_name)`
 
+### `focus/`
+
+Loads tables from the **Focus SIS** (student information system) PostgreSQL
+database directly to BigQuery using `dlt`'s `sql_database` source with PyArrow
+backend.
+
+- Asset keys: `[code_location, "dlt", "focus", table_name]`
+- Uses `reflection_level="full_with_precision"` — no custom type or nullability
+  adapters
+- Factory:
+  `build_focus_dlt_assets(sql_database_credentials, code_location, table_name)`
+
 ### `salesforce/`
 
 Loads Salesforce objects to BigQuery. Pipeline and helpers are adapted from the
