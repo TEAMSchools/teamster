@@ -1,0 +1,25 @@
+cubes:
+  - name: dim_school_calendars
+    sql_table: kipptaf_marts.dim_school_calendars
+
+    dimensions:
+      - name: school_calendar_key
+        sql: CONCAT(CAST(date_key AS STRING), '|', location_key)
+        type: string
+        primary_key: true
+
+      - name: date_key
+        sql: date_key
+        type: string
+
+      - name: location_key
+        sql: location_key
+        type: string
+
+      - name: is_in_session
+        sql: is_in_session
+        type: boolean
+
+      - name: is_membership_day
+        sql: is_membership_day
+        type: boolean

@@ -1,0 +1,42 @@
+cubes:
+  - name: dim_locations
+    sql_table: kipptaf_marts.dim_locations
+
+    joins:
+      - name: dim_regions
+        sql: "{dim_regions.region_key} = {CUBE}.region_key"
+        relationship: many_to_one
+
+    dimensions:
+      - name: location_key
+        sql: location_key
+        type: string
+        primary_key: true
+
+      - name: region_key
+        sql: region_key
+        type: string
+
+      - name: location_name
+        sql: "dim_locations.`name`"
+        type: string
+
+      - name: abbreviation
+        sql: abbreviation
+        type: string
+
+      - name: grade_band
+        sql: grade_band
+        type: string
+
+      - name: campus
+        sql: campus
+        type: string
+
+      - name: is_campus
+        sql: is_campus
+        type: boolean
+
+      - name: city
+        sql: city
+        type: string

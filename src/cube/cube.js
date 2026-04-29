@@ -20,12 +20,31 @@ function nextMidnightEastern() {
   return now.getTime() + (24 * 60 * 60 * 1000 - msElapsedToday);
 }
 
-// STUDENT_CUBES: cubes that require cube-access-student-data.
-// TODO: populate full list during YAML implementation (follow-up to PR #3715).
-const STUDENT_CUBES = [
-  "fct_student_attendance_daily",
-  "fct_student_attendance_interventions",
-];
+// resolveGroupsSync: synchronous group lookup for queryRewrite.
+// contextToGroups is async and runs after queryRewrite in Cube's pipeline, so
+// groups cannot be read from securityContext.groups here. In local dev,
+// CUBE_GROUP_MAP is read directly. In production, the auth service must include
+// groups in the JWT so securityContext.groups is populated.
+function resolveGroupsSync(securityContext) {
+  const groups = securityContext?.groups;
+  if (Array.isArray(groups) && groups.length > 0) return groups;
+
+  if (process.env.NODE_ENV !== "production" && process.env.CUBE_GROUP_MAP) {
+    const email = securityContext?.email;
+    if (!email) return [];
+    try {
+      const map = JSON.parse(process.env.CUBE_GROUP_MAP);
+      return (map[email] ?? []).filter((g) => g.startsWith("cube-"));
+    } catch {
+      return [];
+    }
+  }
+
+  return [];
+}
+
+// STUDENT_CUBES: view prefixes that require cube-access-student-data.
+const STUDENT_CUBES = ["attendance_detail", "attendance_summary"];
 
 const STAFF_CUBES = [
   "dim_staff",
@@ -102,10 +121,9 @@ module.exports = {
   },
 
   queryRewrite: (query, { securityContext }) => {
-    const groups = securityContext?.groups ?? [];
+    const groups = resolveGroupsSync(securityContext);
 
-    // Users without cube-access-student-data see no student cubes.
-    // STUDENT_CUBES list is a placeholder — full list added during YAML implementation.
+    // Users without cube-access-student-data see no student data views.
     if (!groups.includes("cube-access-student-data")) {
       query = {
         ...query,

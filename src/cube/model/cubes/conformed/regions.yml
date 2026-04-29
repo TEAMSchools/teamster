@@ -1,0 +1,21 @@
+cubes:
+  - name: dim_regions
+    sql_table: kipptaf_marts.dim_regions
+
+    dimensions:
+      - name: region_key
+        sql: region_key
+        type: string
+        primary_key: true
+
+      - name: region_name
+        sql: "dim_regions.`name`"
+        type: string
+
+      - name: state
+        sql: state
+        type: string
+
+      - name: timezone
+        sql: timezone
+        type: string
