@@ -67,12 +67,12 @@ models:
             to_columns: [staff_observation_rubric_key]
             warn_unsupported: false
         data_tests:
-          # TODO: #3712 — dim source is measurement-grain, excludes rubrics
-          # without nested measurements. Promote to error once resolved.
           - relationships:
               arguments:
                 to: ref('dim_staff_observation_rubrics')
                 field: staff_observation_rubric_key
+              config:
+                severity: error
 
       - name: observer_staff_key
         data_type: string
