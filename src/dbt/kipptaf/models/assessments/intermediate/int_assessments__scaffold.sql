@@ -23,6 +23,15 @@ with
         where a.is_internal_assessment
     ),
 
+    school_to_region as (
+        select distinct
+            location_powerschool_school_id as powerschool_school_id,
+            initcap(
+                regexp_extract(location_dagster_code_location, r'kipp(\w+)')
+            ) as region,
+        from {{ ref("int_people__location_crosswalk") }}
+    ),
+
     -- trunk-ignore(sqlfluff/ST03)
     internal_assessments as (
         /* K-8 */
@@ -160,7 +169,8 @@ select
 
     ssa.site_id as powerschool_school_id,
 
-    null as region,
+    str.region,
+
     null as grade_level_id,
 
     a.scope,
@@ -186,6 +196,7 @@ inner join
     and a.academic_year = ssa.academic_year
     and a.illuminate_grade_level_id != ssa.grade_level_id
     and ssa.rn_student_session_desc = 1
+left join school_to_region as str on ssa.site_id = str.powerschool_school_id
 where
     a.is_internal_assessment
     and a.subject_area in ('Text Study', 'Mathematics', 'Social Studies', 'Science')
@@ -208,7 +219,8 @@ select
 
     ssa.site_id as powerschool_school_id,
 
-    null as region,
+    str.region,
+
     null as grade_level_id,
 
     a.scope,
@@ -233,4 +245,5 @@ inner join
     on a.academic_year = ssa.academic_year
     and sa.student_id = ssa.student_id
     and ssa.rn_student_session_desc = 1
+left join school_to_region as str on ssa.site_id = str.powerschool_school_id
 where not a.is_internal_assessment
