@@ -9,7 +9,7 @@ scaffold enhancements, and bridge restructuring.
 
 | Issue                                                                           | Title                                                                              | Resolution in this PR                                                                                                      |
 | ------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------- |
-| [#3646](https://github.com/TEAMSchools/teamster/issues/3646)                    | definition-grain catalog intermediates for `dim_assessments` and `dim_surveys`     | catalog ints + new `dim_assessment_administrations` (parallels `dim_survey_administrations`)                               |
+| [#3646](https://github.com/TEAMSchools/teamster/issues/3646)                    | definition-grain catalog intermediates for `dim_assessments` and `dim_surveys`     | dim-only projection — no new ints; new `dim_assessment_administrations` parallels `dim_survey_administrations`             |
 | [#3628](https://github.com/TEAMSchools/teamster/issues/3628)                    | dedup `int_assessments__response_rollup` and `int_assessments__college_assessment` | dedup at originating layer; remove `dbt_utils.deduplicate()` workarounds in facts                                          |
 | [#3629](https://github.com/TEAMSchools/teamster/issues/3629)                    | dedup `int_surveys__survey_responses`                                              | dedup at originating layer; remove fact workaround                                                                         |
 | [#3766](https://github.com/TEAMSchools/teamster/issues/3766)                    | `fct_survey_responses` FK gaps (39K + 415K)                                        | verify gaps close after #3646 + #3629; root-cause residual if any                                                          |
@@ -26,17 +26,16 @@ column or model) or come with verification that all downstream consumers produce
 identical output. Any non-additive change requires a documented downstream
 audit.
 
-| Change                                                                      | Layer          | Additive?                      | Audit                                                                       |
-| --------------------------------------------------------------------------- | -------------- | ------------------------------ | --------------------------------------------------------------------------- |
-| 7 new catalog ints                                                          | new int models | yes                            | none                                                                        |
-| dedup `int_assessments__response_rollup`                                    | int            | no — row count drops           | clone prod consumer baseline; row-count + checksum diff per direct consumer |
-| dedup `int_assessments__college_assessment`                                 | int            | no                             | same                                                                        |
-| dedup `int_surveys__survey_responses`                                       | int            | no                             | same                                                                        |
-| populate `region` in scaffold                                               | int            | no — NULL → value on 1.6M rows | enumerate scaffold consumers; verify none use `region IS NULL` as a flag    |
-| add `cc_dcid` + `_dbt_source_relation` to scaffold + course_enrollments int | int            | yes                            | confirm no `dbt_utils.star()` consumer breaks on column add                 |
-| Paterson sheet cell                                                         | source data    | n/a                            | n/a                                                                         |
-| spec doc edits                                                              | doc            | n/a                            | n/a                                                                         |
-| catalog cutover (mart side)                                                 | mart           | by definition the mart change  | covered by mart contract + downstream exposure tests                        |
+| Change                                                                      | Layer       | Additive?                      | Audit                                                                       |
+| --------------------------------------------------------------------------- | ----------- | ------------------------------ | --------------------------------------------------------------------------- |
+| dedup `int_assessments__response_rollup`                                    | int         | no — row count drops           | clone prod consumer baseline; row-count + checksum diff per direct consumer |
+| dedup `int_assessments__college_assessment`                                 | int         | no                             | same                                                                        |
+| dedup `int_surveys__survey_responses`                                       | int         | no                             | same                                                                        |
+| populate `region` in scaffold                                               | int         | no — NULL → value on 1.6M rows | enumerate scaffold consumers; verify none use `region IS NULL` as a flag    |
+| add `cc_dcid` + `_dbt_source_relation` to scaffold + course_enrollments int | int         | yes                            | confirm no `dbt_utils.star()` consumer breaks on column add                 |
+| Paterson sheet cell                                                         | source data | n/a                            | n/a                                                                         |
+| spec doc edits                                                              | doc         | n/a                            | n/a                                                                         |
+| dim/bridge cutover (mart side)                                              | mart        | by definition the mart change  | covered by mart contract + downstream exposure tests                        |
 
 Audit results are recorded in the PR description as a table per non-additive
 change: pre-count, post-count, expected delta, observed delta, status.
@@ -45,37 +44,12 @@ change: pre-count, post-count, expected delta, observed delta, status.
 
 ### New intermediates
 
-`assessments/intermediate/`:
-
-- `int_assessments__illuminate_catalog.sql` — from
-  `int_assessments__response_rollup`
-- `int_assessments__pearson_catalog.sql` — from `int_pearson__all_assessments`
-- `int_assessments__fldoe_catalog.sql` — from `int_fldoe__all_assessments`
-- `int_assessments__college_assessment_catalog.sql` — from
-  `int_assessments__college_assessment`; carries `administration_round`,
-  `test_type`
-- `int_assessments__ap_assessments_catalog.sql` — from
-  `int_assessments__ap_assessments`; carries `test_type`
-
-All five at administration grain — one row per scheduled occurrence with both
-definition columns (`title`, `subject_area`, `scope`, `module_code`,
-`grade_level`, `source`) and administration columns (`administered_date`,
-`academic_year`, `region`, plus source-specific extras). Each has a
-`unique_combination_of_columns` test on the `dim_assessment_administrations` PK
-composition.
-
-`dim_assessment_administrations` selects directly from these catalogs (1:1 row
-mapping). `dim_assessments` collapses them to definition grain via
-`dbt_utils.deduplicate` partitioned by the `assessment_key` composition —
-explicit dedup is allowed by project conventions; the `DISTINCT` workaround
-#3646 calls out is what's eliminated.
-
-`surveys/intermediate/`:
-
-- `int_surveys__alchemer_survey_catalog.sql` — survey-grain (one row per survey
-  definition)
-- `int_surveys__alchemer_question_catalog.sql` — question-grain (one row per
-  question on a survey)
+None. The definition-grain and administration-grain projection logic lives
+directly in the dim files (see below). Adding per-source projection ints would
+create single-use boilerplate — bridges and facts that need surrogate keys
+reproduce the hash composition themselves, the per-source projection has no
+encapsulation value (one-line `SELECT DISTINCT` per source), and the dim's PK
+uniqueness test already covers the same ground.
 
 ### Modified intermediates
 
@@ -125,8 +99,18 @@ dim_assessment_administrations  (per scheduled occurrence)
          test_type, region
 ```
 
-Where `source` in `assessment_key` is the catalog-int identifier
+Where `source` in `assessment_key` is a hard-coded identifier per source CTE
 (`'illuminate'`, `'state_nj'`, `'state_fl'`, `'college'`, `'ap'`).
+
+`dim_assessments` is structured as one CTE per source, each doing
+`SELECT DISTINCT <definition columns> FROM <existing source int>` with a comment
+marking the projection. The 5 CTEs union into a single `unioned` CTE; the final
+SELECT generates `assessment_key` and emits the column list above.
+`dim_assessment_administrations` is the same shape but selects administration
+columns. `DISTINCT` here is a projection from a higher-grain source to a
+lower-grain dim — not a workaround for upstream dedup gaps, which is what the
+project's no-DISTINCT rule targets. A comment on each `SELECT DISTINCT` makes
+the distinction explicit.
 
 Layer responsibility rule (load-bearing): **anything originating from
 `int_assessments__assessments` terminates at `dim_assessments` or
@@ -193,8 +177,10 @@ The old `dim_student_assessment_expectations.sql` and its YAML are deleted.
 - Drop: `assessment_key`, `academic_year`, `provider`, `type`,
   `administration_round`, `test_type`
 
-`administration_round`, `season`, `administration_window`, `test_type` move
-upstream to the catalog ints and surface on `dim_assessment_administrations`.
+`administration_round`, `season`, `administration_window`, `test_type` move from
+the facts up to `dim_assessment_administrations` — selected as
+administration-grain attributes in the dim's per-source `SELECT DISTINCT`
+projections.
 
 `test_date_key` (on the fact) and `administered_date_key` (on
 `dim_assessment_administrations`) are role-disambiguated date FKs per the marts
@@ -208,12 +194,18 @@ lives at the originating int layer (#3628).
 
 ### Survey-side mart cleanup
 
-- `dim_surveys.sql` — pass-through select from
-  `int_surveys__alchemer_survey_catalog`; no `DISTINCT`
-- `dim_survey_questions.sql` — pass-through select from
-  `int_surveys__alchemer_question_catalog`; no `DISTINCT`
-- `bridge_survey_questions.sql` — built directly from question catalog (which
-  carries the survey FK)
+Same dim-only projection pattern: `dim_surveys` and `dim_survey_questions`
+select directly from `int_surveys__survey_responses` with a documented
+`SELECT DISTINCT` projecting to survey grain and question grain respectively.
+`bridge_survey_questions` builds the (survey, question) composite from the same
+source. No new survey ints.
+
+- `dim_surveys.sql` — `SELECT DISTINCT <survey-grain cols>` projection from
+  `int_surveys__survey_responses`
+- `dim_survey_questions.sql` — `SELECT DISTINCT <question-grain cols>`
+  projection from `int_surveys__survey_responses`
+- `bridge_survey_questions.sql` — `SELECT DISTINCT <survey_key, question_key>`
+  from `int_surveys__survey_responses`
 - `fct_survey_responses.sql` — drops `dbt_utils.deduplicate()` workaround
   (#3629)
 
@@ -229,30 +221,27 @@ per-occurrence grain.
 
 Each phase ends at a green-tests checkpoint before the next begins.
 
-1. **Catalog intermediates (additive only)** — add 5 assessment + 2 survey
-   catalog ints. Build, test, parse. No existing model touched. Marts produce
-   identical output. New ints pass uniqueness on definition-administration
-   grain.
-2. **Source dedup (non-additive; per-change audit)** — spike each
+1. **Source dedup (non-additive; per-change audit)** — spike each
    (response_rollup, college_assessment, survey_responses); apply dedup at
    originating layer; run the downstream audit. Mart workarounds NOT yet
    removed.
-3. **Scaffold enhancements** — populate `region`; thread `cc_dcid` +
+2. **Scaffold enhancements** — populate `region`; thread `cc_dcid` +
    `_dbt_source_relation`. Audit scaffold consumers.
-4. **Mart cutover**
-   - 4a. `dim_assessments` switches to definition-grain catalog union; new
-     `dim_assessment_administrations` materializes from the same catalogs at
-     per-occurrence grain
-   - 4b. `dim_surveys`, `dim_survey_questions`, `bridge_survey_questions` switch
-     to catalogs
-   - 4c. New `bridge_assessment_expectations_enrollment_scoped` +
+3. **Mart cutover**
+   - 3a. `dim_assessments` rewritten as 5-source union with definition-grain
+     `SELECT DISTINCT` projections; new `dim_assessment_administrations`
+     rewritten as 5-source union with administration-grain projections
+   - 3b. `dim_surveys`, `dim_survey_questions`, `bridge_survey_questions`
+     rewritten as projections from `int_surveys__survey_responses`
+   - 3c. New `bridge_assessment_expectations_enrollment_scoped` +
      `bridge_assessment_expectations_student_scoped`; delete old
      `dim_student_assessment_expectations`; update `cube.yml`
-   - 4d. `fct_assessment_scores_*` and `fct_survey_responses` drop dedup
-     workarounds and R9-violating columns
-   - 4e. Spec doc edit removes the
+   - 3d. `fct_assessment_scores_*` and `fct_survey_responses` drop dedup
+     workarounds and R9-violating columns; switch fact FKs from `assessment_key`
+     to `assessment_administration_key`
+   - 3e. Spec doc edit removes the
      `dim_assessment_comparisons → dim_assessments` FK
-   - 4f. Verify #3766 relationships tests return 0 rows (39K + 415K orphans). If
+   - 3f. Verify #3766 relationships tests return 0 rows (39K + 415K orphans). If
      `survey_submission_key` gap remains, root-cause inside this phase as a
      sub-investigation.
 
@@ -273,7 +262,7 @@ recorded in the column-naming audit's "Enumerated surrogate-key changes" table:
 
 `assessment_key` consumers (facts, bridges) migrate to
 `assessment_administration_key` — the FK rename cascades in lockstep with the
-catalog cutover in phase 4a.
+dim/bridge cutover in phase 3a.
 
 ## Testing
 
@@ -281,8 +270,11 @@ Three layers:
 
 **Per-model uniqueness + contract:**
 
-- Each new catalog int gets `dbt_utils.unique_combination_of_columns` on the
-  definition-administration composite.
+- `dim_assessments` keeps its existing `unique` + `not_null` on
+  `assessment_key`. `dim_assessment_administrations` adds the same on
+  `assessment_administration_key`. Both PK uniqueness tests catch any
+  source-side duplicate that survives the per-source `SELECT DISTINCT`
+  projection.
 - Both new bridges get `unique` + `not_null` on PK and `relationships` tests on
   every FK.
 - Marts inherit `contract: enforced: true` from `dbt_project.yml`.
@@ -290,7 +282,7 @@ Three layers:
 **Relationships tests for #3766 close signal:**
 
 - Existing `fct_survey_responses → dim_survey_questions` (39K) and
-  `→ fct_survey_submissions` (415K) tests stay; phase 4 success is both at 0.
+  `→ fct_survey_submissions` (415K) tests stay; phase 3 success is both at 0.
 - `bridge_assessment_expectations_enrollment_scoped.student_section_enrollment_key → dim_student_section_enrollments`
   test added (severity `error` since the bridge only holds rows where the FK is
   non-null by construction).
@@ -342,13 +334,6 @@ constraints) is out of scope; tracked as a follow-up issue.
 
 New:
 
-- `src/dbt/kipptaf/models/assessments/intermediate/int_assessments__illuminate_catalog.{sql,yml}`
-- `src/dbt/kipptaf/models/assessments/intermediate/int_assessments__pearson_catalog.{sql,yml}`
-- `src/dbt/kipptaf/models/assessments/intermediate/int_assessments__fldoe_catalog.{sql,yml}`
-- `src/dbt/kipptaf/models/assessments/intermediate/int_assessments__college_assessment_catalog.{sql,yml}`
-- `src/dbt/kipptaf/models/assessments/intermediate/int_assessments__ap_assessments_catalog.{sql,yml}`
-- `src/dbt/kipptaf/models/surveys/intermediate/int_surveys__alchemer_survey_catalog.{sql,yml}`
-- `src/dbt/kipptaf/models/surveys/intermediate/int_surveys__alchemer_question_catalog.{sql,yml}`
 - `src/dbt/kipptaf/models/marts/bridges/bridge_assessment_expectations_enrollment_scoped.{sql,yml}`
 - `src/dbt/kipptaf/models/marts/bridges/bridge_assessment_expectations_student_scoped.{sql,yml}`
 - `src/dbt/kipptaf/models/marts/dimensions/dim_assessment_administrations.{sql,yml}`
