@@ -13,6 +13,9 @@ models:
           and effective_date. Generated with
           generate_surrogate_key(["employee_number", "membership_code",
           "effective_date"]).
+        constraints:
+          - type: primary_key
+            warn_unsupported: false
         data_tests:
           - unique
           - not_null
@@ -22,16 +25,17 @@ models:
         description: >-
           Foreign key to dim_staff. Surrogate key derived from employee_number.
           Generated with generate_surrogate_key(["employee_number"]).
+        constraints:
+          - type: foreign_key
+            to: ref('dim_staff')
+            to_columns: [staff_key]
+            warn_unsupported: false
         data_tests:
           - not_null
           - relationships:
               arguments:
                 to: ref('dim_staff')
                 field: staff_key
-
-      - name: employee_number
-        data_type: int64
-        description: KIPP-assigned unique identifier for the staff member.
 
       - name: membership_code
         data_type: string
@@ -58,13 +62,13 @@ models:
           category (e.g., Program - Leader Development, Program - Teacher
           Development).
 
-      - name: effective_date
+      - name: effective_start_date
         data_type: date
         description: >-
           Date key (role-playing to dim_dates) for the start of the membership
           enrollment period.
 
-      - name: expiration_date
+      - name: effective_end_date
         data_type: date
         description: >-
           Date key (role-playing to dim_dates) for the end of the membership

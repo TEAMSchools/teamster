@@ -1,29 +1,52 @@
 with
+    /* Per-employee assignment-status timeline. Sourced from
+       dim_work_assignment_status (status SCD), filtered to primary,
+       non-Intern assignments via inner joins to
+       dim_work_assignment_primary and dim_work_assignment_jobs.
+       dim_staff_work_assignments resolves item_id -> staff_key, and
+       dim_staff resolves staff_key -> employee_number via staff_unique_id.
+
+       Limitation: pre-2021 NJ Dayforce-era staff are not covered. The
+       retired int_people__staff_roster_history chain unioned Dayforce
+       records; the work-assignment dim family is ADP-only. Restoring
+       Dayforce coverage requires unioning into the upstream dims —
+       tracked at #3744. */
     teammate_history as (
-        -- TODO: roster history has multiple assignments per employee
-        select distinct
-            effective_date_start,
-            effective_date_end,
-            assignment_status_effective_date,
-            employee_number,
-            assignment_status,
-            assignment_status_reason,
+        select
+            wast.effective_start_date as effective_date_start,
+            wast.effective_end_date as effective_date_end,
+            wast.effective_start_date as assignment_status_effective_date,
+            ds.staff_unique_id as employee_number,
+            wast.status_code,
+            wast.reason_name,
 
             {{
                 date_to_fiscal_year(
-                    date_field="effective_date_start",
+                    date_field="wast.effective_start_date",
                     start_month=7,
                     year_source="start",
                 )
             }} as academic_year,
-        from {{ ref("int_people__staff_roster_history") }}
-        where
-            (job_title != 'Intern' or assignment_status_reason != 'Internship Ended')
-            and primary_indicator
+        from {{ ref("dim_work_assignment_status") }} as wast
+        inner join
+            {{ ref("dim_work_assignment_primary") }} as wap
+            on wast.work_assignment_key = wap.work_assignment_key
+            and wast.effective_start_date <= wap.effective_end_date
+            and wast.effective_end_date >= wap.effective_start_date
+            and wap.is_primary_position
+        inner join
+            {{ ref("dim_work_assignment_jobs") }} as waj
+            on wast.work_assignment_key = waj.work_assignment_key
+            and wast.effective_start_date <= waj.effective_end_date
+            and wast.effective_end_date >= waj.effective_start_date
+            and waj.position_title != 'Intern'
+        inner join
+            {{ ref("dim_staff_work_assignments") }} as swa
+            on wast.work_assignment_key = swa.work_assignment_key
+        inner join {{ ref("dim_staff") }} as ds on swa.staff_key = ds.staff_key
     ),
 
     academic_years as (
-        -- TODO: roster history has multiple assignments per employee
         select distinct employee_number, academic_year, from teammate_history
     ),
 
@@ -41,21 +64,20 @@ with
             teammate_history as th
             on th.effective_date_start <= date(ay.academic_year + 1, 4, 30)
             and th.effective_date_end >= date(ay.academic_year, 9, 1)
-        where th.assignment_status not in ('Pre-Start', 'Terminated', 'Deceased')
+        where th.status_code != 'T'
         group by ay.academic_year, th.employee_number
     ),
 
     /* Foundation Attrition: any staff not in terminated or deceased status  */
     /* on 9/1 of the following academic year  */
     foundation_returner_cohort as (
-        -- TODO: roster history has multiple assignments per employee
         select distinct ay.academic_year, th.employee_number,
         from academic_years as ay
         inner join
             teammate_history as th
             on date(ay.academic_year + 1, 9, 1)
             between th.effective_date_start and th.effective_date_end
-        where th.assignment_status not in ('Pre-Start', 'Terminated', 'Deceased')
+        where th.status_code != 'T'
     ),
 
     /* Foundation Attrition: first termination record within the window  */
@@ -64,7 +86,7 @@ with
             ay.academic_year,
 
             th.employee_number,
-            th.assignment_status_reason as termination_reason,
+            th.reason_name as termination_reason,
             th.assignment_status_effective_date as termination_effective_date,
 
             row_number() over (
@@ -76,7 +98,7 @@ with
             teammate_history as th
             on th.assignment_status_effective_date
             between date(ay.academic_year, 9, 1) and date(ay.academic_year + 1, 4, 30)
-        where th.assignment_status in ('Terminated', 'Deceased')
+        where th.status_code = 'T'
     ),
 
     /* New Jersey Compliance Attrition: latest record for staff  */
@@ -93,21 +115,20 @@ with
             teammate_history as th
             on th.effective_date_start <= date(ay.academic_year + 1, 6, 30)
             and th.effective_date_end >= date(ay.academic_year, 7, 1)
-        where th.assignment_status not in ('Pre-Start', 'Terminated', 'Deceased')
+        where th.status_code != 'T'
         group by ay.academic_year, th.employee_number
     ),
 
     /* New Jersey Compliance Attrition: any staff not in  */
     /* terminated or deceased status on 7/1 of the following academic year  */
     nj_returner_cohort as (
-        -- TODO: roster history has multiple assignments per employee
         select distinct ay.academic_year, th.employee_number,
         from academic_years as ay
         inner join
             teammate_history as th
             on date(ay.academic_year + 1, 7, 1)
             between th.effective_date_start and th.effective_date_end
-        where th.assignment_status not in ('Pre-Start', 'Terminated', 'Deceased')
+        where th.status_code != 'T'
     ),
 
     /* NJ Compliance: first termination record within the window  */
@@ -116,7 +137,7 @@ with
             ay.academic_year,
 
             th.employee_number,
-            th.assignment_status_reason as termination_reason,
+            th.reason_name as termination_reason,
             th.assignment_status_effective_date as termination_effective_date,
 
             row_number() over (
@@ -128,7 +149,7 @@ with
             teammate_history as th
             on th.assignment_status_effective_date
             between date(ay.academic_year, 7, 1) and date(ay.academic_year + 1, 6, 30)
-        where th.assignment_status in ('Terminated', 'Deceased')
+        where th.status_code = 'T'
     ),
 
     /* Recruitment Attrition: latest record for staff not in an  */
@@ -145,21 +166,20 @@ with
             teammate_history as th
             on th.effective_date_start <= date(ay.academic_year + 1, 8, 31)
             and th.effective_date_end >= date(ay.academic_year, 9, 1)
-        where th.assignment_status not in ('Pre-Start', 'Terminated', 'Deceased')
+        where th.status_code != 'T'
         group by ay.academic_year, th.employee_number
     ),
 
     /* Recruitment Attrition: any staff not in terminated or deceased  */
     /* status on 9/1 of the following academic year  */
     recruitment_returner_cohort as (
-        -- TODO: roster history has multiple assignments per employee
         select distinct ay.academic_year, th.employee_number,
         from academic_years as ay
         inner join
             teammate_history as th
             on date(ay.academic_year + 1, 9, 1)
             between th.effective_date_start and th.effective_date_end
-        where th.assignment_status not in ('Pre-Start', 'Terminated', 'Deceased')
+        where th.status_code != 'T'
     ),
 
     /* Recruitment: first termination record within the window  */
@@ -168,7 +188,7 @@ with
             ay.academic_year,
 
             th.employee_number,
-            th.assignment_status_reason as termination_reason,
+            th.reason_name as termination_reason,
             th.assignment_status_effective_date as termination_effective_date,
 
             row_number() over (
@@ -180,7 +200,7 @@ with
             teammate_history as th
             on th.assignment_status_effective_date
             between date(ay.academic_year, 9, 1) and date(ay.academic_year + 1, 8, 31)
-        where th.assignment_status in ('Terminated', 'Deceased')
+        where th.status_code = 'T'
     ),
 
     /* left joins to compare prior year to following year rosters  */
@@ -314,8 +334,8 @@ select
     ss.staff_status_key,
 
     a.academic_year,
-    a.attrition_type,
-    a.attrition_cutoff_date,
+    a.attrition_type as `type`,
+    a.attrition_cutoff_date as cutoff_date,
     a.is_attrition,
     a.termination_reason,
     a.termination_effective_date,
@@ -323,5 +343,5 @@ from attrition as a
 left join
     {{ ref("dim_staff_status") }} as ss
     on {{ dbt_utils.generate_surrogate_key(["a.employee_number"]) }} = ss.staff_key
-    and a.outcome_determination_date >= ss.effective_date_start
-    and a.outcome_determination_date <= ss.effective_date_end
+    and a.outcome_determination_date >= ss.effective_start_date
+    and a.outcome_determination_date <= ss.effective_end_date

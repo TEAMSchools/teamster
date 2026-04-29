@@ -2,9 +2,11 @@ models:
   - name: dim_work_assignment_locations
     description: >-
       Work assignment location dimension with derived Type 2 SCD tracking. One
-      row per assignment x location change point. Detects changes to
-      homeWorkLocation name code and address fields via daily payload-hash
-      comparison. FK to dim_staff_work_assignments via work_assignment_key.
+      row per assignment x location change point. Detects changes to the
+      canonical location_key only — address mutations on the same canonical
+      location no longer cut redundant SCD2 boundaries. FK to
+      dim_staff_work_assignments via work_assignment_key; FK to dim_locations
+      via location_key.
     columns:
       - name: work_assignment_location_key
         data_type: string
@@ -12,6 +14,9 @@ models:
           Surrogate primary key derived from item_id and effective_date_start.
           Generated with generate_surrogate_key(["item_id",
           "effective_date_start"]).
+        constraints:
+          - type: primary_key
+            warn_unsupported: false
         data_tests:
           - unique
           - not_null
@@ -21,6 +26,11 @@ models:
         description: >-
           Foreign key to dim_staff_work_assignments. Surrogate key derived from
           item_id. Generated with generate_surrogate_key(["item_id"]).
+        constraints:
+          - type: foreign_key
+            to: ref('dim_staff_work_assignments')
+            to_columns: [work_assignment_key]
+            warn_unsupported: false
         data_tests:
           - not_null
           - relationships:
@@ -28,75 +38,41 @@ models:
                 to: ref('dim_staff_work_assignments')
                 field: work_assignment_key
 
-      - name: location_code
+      - name: location_key
         data_type: string
         description: >-
-          ADP home work location name code value, from
-          homeWorkLocation.nameCode.codeValue.
+          Canonical location FK. Resolved upstream in
+          int_adp_workforce_now__workers__work_assignments via the canonical
+          master on adp_location_code. NULL when the ADP location has no
+          canonical mapping.
+        constraints:
+          - type: foreign_key
+            to: ref('dim_locations')
+            to_columns: [location_key]
+            warn_unsupported: false
+        data_tests:
+          # TODO: #3686 — adp_location vs dim_locations.location_name coverage
+          # gap (same class as #3672). Promote to error once crosswalk is clean.
+          - relationships:
+              arguments:
+                to: ref('dim_locations')
+                field: location_key
 
-      - name: location_name
-        data_type: string
-        description: >-
-          Display name for the home work location, coalesced from longName and
-          shortName of homeWorkLocation.nameCode.
-
-      - name: address_line_one
-        data_type: string
-        description: >-
-          First line of the work location street address, from
-          homeWorkLocation.address.lineOne.
-
-      - name: address_line_two
-        data_type: string
-        description: >-
-          Second line of the work location street address, from
-          homeWorkLocation.address.lineTwo.
-
-      - name: address_line_three
-        data_type: string
-        description: >-
-          Third line of the work location street address, from
-          homeWorkLocation.address.lineThree.
-
-      - name: city_name
-        data_type: string
-        description: >-
-          City name of the work location address, from
-          homeWorkLocation.address.cityName.
-
-      - name: postal_code
-        data_type: string
-        description: >-
-          Postal code of the work location address, from
-          homeWorkLocation.address.postalCode.
-
-      - name: country_code
-        data_type: string
-        description: >-
-          Country code of the work location address, from
-          homeWorkLocation.address.countryCode.
-
-      - name: state_code
-        data_type: string
-        description: >-
-          State or province code of the work location address, from
-          homeWorkLocation.address.countrySubdivisionLevel1.codeValue.
-
-      - name: effective_date_start
+      - name: effective_start_date
         data_type: date
         description: >-
           Date this location version was first observed, derived from the daily
-          partition date where the location attribute hash changed.
+          partition date where the location_key changed.
 
-      - name: effective_date_end
+      - name: effective_end_date
         data_type: date
         description: >-
           Last date this location version was effective. Computed as one day
-          before the next version's effective_date_start, or 9999-12-31 for the
+          before the next version's effective_start_date, or 9999-12-31 for the
           current version.
 
-      - name: is_current_record
+      - name: is_current
         data_type: boolean
         description: >-
           TRUE if this is the most recent location version for the work
-          assignment (effective_date_end = 9999-12-31).
+          assignment (effective_end_date = 9999-12-31).

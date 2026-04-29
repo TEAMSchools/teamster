@@ -43,3 +43,4 @@ models:
         data_type: numeric
       - name: grouped_status_timeframe
         data_type: string
+        description: Categorical mapping of goal_type.

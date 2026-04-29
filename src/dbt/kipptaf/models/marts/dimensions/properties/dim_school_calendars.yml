@@ -5,6 +5,10 @@ models:
       each date is an in-session day and a membership day. Conformed dimension
       used by attendance (session validity) and assessments (school-day counts
       for progress monitoring goals). FK to dim_dates and dim_locations.
+    constraints:
+      - type: primary_key
+        columns: [date_key, location_key]
+        warn_unsupported: false
     data_tests:
       - dbt_utils.unique_combination_of_columns:
           arguments:
@@ -16,17 +20,41 @@ models:
       - name: date_key
         data_type: date
         description: >-
-          Calendar date. FK to dim_dates.
+          Each day of the school year including holidays and weekends, such as
+          the school day. Indexed.
+        constraints:
+          - type: foreign_key
+            to: ref('dim_dates')
+            to_columns: [date_key]
+            warn_unsupported: false
         data_tests:
           - not_null
 
+          - relationships:
+              arguments:
+                to: ref('dim_dates')
+                field: date_key
+        config:
+          meta:
+            source_system: PowerSchool
+            source_model: stg_powerschool__calendar_day
+            source_column: date_value
       - name: location_key
         data_type: string
         description: >-
           Surrogate key for the school. FK to dim_locations.
+        constraints:
+          - type: foreign_key
+            to: ref('dim_locations')
+            to_columns: [location_key]
+            warn_unsupported: false
         data_tests:
           - not_null
 
+          - relationships:
+              arguments:
+                to: ref('dim_locations')
+                field: location_key
       - name: is_in_session
         data_type: boolean
         description: >-

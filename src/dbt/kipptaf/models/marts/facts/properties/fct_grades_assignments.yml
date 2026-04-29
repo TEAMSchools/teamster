@@ -14,6 +14,9 @@ models:
         description: >-
           Surrogate key derived from assignmentsectionid, _dbt_source_relation,
           and students_dcid. Primary key for this fact.
+        constraints:
+          - type: primary_key
+            warn_unsupported: false
         data_tests:
           - unique
           - not_null
@@ -23,17 +26,35 @@ models:
         description: >-
           FK to dim_student_section_enrollments. Surrogate key derived from
           cc_dcid and _dbt_source_relation.
+        constraints:
+          - type: foreign_key
+            to: ref('dim_student_section_enrollments')
+            to_columns: [student_section_enrollment_key]
+            warn_unsupported: false
         data_tests:
           - not_null
 
+          - relationships:
+              arguments:
+                to: ref('dim_student_section_enrollments')
+                field: student_section_enrollment_key
       - name: student_enrollment_key
         data_type: string
         description: >-
           FK to dim_student_enrollments. Surrogate key derived from
           student_number, _dbt_source_relation, academic_year, and entrydate.
+        constraints:
+          - type: foreign_key
+            to: ref('dim_student_enrollments')
+            to_columns: [student_enrollment_key]
+            warn_unsupported: false
         data_tests:
           - not_null
 
+          - relationships:
+              arguments:
+                to: ref('dim_student_enrollments')
+                field: student_enrollment_key
       - name: term_key
         data_type: string
         description: >-
@@ -41,22 +62,44 @@ models:
           start_date, region, and school_id. Null when due_date does not fall
           within any reporting term for the school and region.
 
+        constraints:
+          - type: foreign_key
+            to: ref('dim_terms')
+            to_columns: [term_key]
+            warn_unsupported: false
+        data_tests:
+          - relationships:
+              arguments:
+                to: ref('dim_terms')
+                field: term_key
       - name: due_date_key
         data_type: date
         description: >-
-          Assignment due date. FK to dim_dates (role-playing as due date).
+          The date the assignment is due. Defaults to Default is the system date
+          + 1 day. Indexed.
 
-      - name: student_number
-        data_type: int64
-        description: >-
-          PowerSchool student number. Degenerate dimension for filtering.
-
+        config:
+          meta:
+            source_system: PowerSchool
+            source_model: stg_powerschool__assignmentsection
+            source_column: duedate
+        constraints:
+          - type: foreign_key
+            to: ref('dim_dates')
+            to_columns: [date_key]
+            warn_unsupported: false
+        data_tests:
+          - relationships:
+              arguments:
+                to: ref('dim_dates')
+                field: date_key
       - name: academic_year
         data_type: int64
         description: >-
           KIPP academic year (July start) in which this assignment falls.
 
-      - name: assignment_name
+      - name: name
+        quote: true
         data_type: string
         description: >-
           Name of the assignment as entered in the PowerSchool gradebook.
@@ -75,8 +118,13 @@ models:
       - name: score_type
         data_type: string
         description: >-
-          How the assignment is scored in PowerSchool (POINTS or PERCENT).
+          Indicates if this score is a letter grade or percent.
 
+        config:
+          meta:
+            source_system: PowerSchool
+            source_model: stg_powerschool__assignmentsection
+            source_column: scoretype
       - name: score
         data_type: float64
         description: >-
@@ -84,11 +132,18 @@ models:
           for PERCENT type this is the numeric value of actualscoreentered. Null
           when the student has no score recorded.
 
-      - name: points_possible
+      - name: max_points
         data_type: float64
         description: >-
-          Total point value possible for the assignment.
+          Maximum points possible for the assignment. Ed-Fi gradebookEntry
+          max_points. If the entry points are 25 and the weight is 4, then the
+          total point value is 100.
 
+        config:
+          meta:
+            source_system: PowerSchool
+            source_model: stg_powerschool__assignmentsection
+            source_column: totalpointvalue
       - name: score_percent
         data_type: float64
         description: >-

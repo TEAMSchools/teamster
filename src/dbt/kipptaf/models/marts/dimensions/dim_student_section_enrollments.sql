@@ -32,23 +32,26 @@ select
         )
     }} as course_section_key,
 
-    {{
-        dbt_utils.generate_surrogate_key(
-            [
-                "rt.type",
-                "rt.code",
-                "rt.name",
-                "rt.start_date",
-                "rt.region",
-                "rt.school_id",
-            ]
-        )
-    }} as term_key,
+    if(
+        rt.code is not null,
+        {{
+            dbt_utils.generate_surrogate_key(
+                [
+                    "rt.type",
+                    "rt.code",
+                    "rt.name",
+                    "rt.start_date",
+                    "rt.region",
+                    "rt.school_id",
+                ]
+            )
+        }},
+        cast(null as string)
+    ) as term_key,
 
-    cc.students_student_number as student_number,
     cc.cc_academic_year as academic_year,
-    cc.cc_dateenrolled as date_enrolled,
-    cc.cc_dateleft as date_left,
+    cc.cc_dateenrolled as entry_date,
+    cc.cc_dateleft as exit_date,
     cc.is_dropped_section,
     cc.is_dropped_course,
 
@@ -66,6 +69,7 @@ left join
     on cc.cc_abs_termid = rt.powerschool_term_id
     and cc.sections_schoolid = rt.school_id
     and cc.region = rt.region
+    and rt.`type` = 'RT'
 
 -- TODO: overlapping enrollment records at same school cause join
 -- fan-out; qualify picks latest entrydate (#3633)

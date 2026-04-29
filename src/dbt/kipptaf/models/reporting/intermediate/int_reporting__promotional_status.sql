@@ -9,19 +9,14 @@ with
 
             round(avg(mem.attendancevalue), 2) as ada_term_running,
 
-            coalesce(sum(abs(mem.attendancevalue - 1)), 0) as n_absences_y1_running,
+            coalesce(sum(mem.is_absent), 0) as n_absences_y1_running,
+
+            coalesce(sum(mem.is_absent_non_susp), 0)
+            + floor(sum(mem.is_tardy) / 3) as n_absences_y1_running_non_susp,
 
             coalesce(
-                sum(
-                    if(
-                        ac.att_code not in ('ISS', 'OSS', 'OS', 'OSSP', 'SHI'),
-                        abs(mem.attendancevalue - 1),
-                        null
-                    )
-                ),
-                0
-            )
-            + floor(sum(is_tardy) / 3) as n_absences_y1_running_non_susp,
+                sum(mem.is_absent_non_susp), 0
+            ) as n_absences_y1_running_non_susp_no_tardy,
 
             case
                 regexp_extract(mem._dbt_source_relation, r'(kipp\w+)_')
@@ -49,19 +44,6 @@ with
             /* join to all terms after calendardate */
             and mem.calendardate <= rt.end_date
             and rt.type = 'RT'
-        left join
-            {{ ref("stg_powerschool__attendance") }} as att
-            on mem.studentid = att.studentid
-            and mem.calendardate = att.att_date
-            and mem.schoolid = att.schoolid
-            and att.att_mode_code = 'ATT_ModeDaily'
-            and {{ union_dataset_join_clause(left_alias="mem", right_alias="att") }}
-        left join
-            {{ ref("stg_powerschool__attendance_code") }} as ac
-            on att.attendance_codeid = ac.id
-            and att.yearid = ac.yearid
-            and att.schoolid = ac.schoolid
-            and {{ union_dataset_join_clause(left_alias="att", right_alias="ac") }}
         where
             mem.membershipvalue = 1
             and mem.calendardate <= current_date('{{ var("local_timezone") }}')
@@ -243,6 +225,7 @@ with
             att.ada_term_running,
             att.n_absences_y1_running,
             att.n_absences_y1_running_non_susp,
+            att.n_absences_y1_running_non_susp_no_tardy,
 
             ir.iready_reading_recent,
             ir.iready_math_recent,
@@ -335,17 +318,32 @@ with
                 /* Miami Gr5-8*/
                 when
                     co.region = 'Miami'
-                    and co.grade_level in (1, 2, 4)
+                    and co.grade_level between 5 and 8
                     and (att.ada_term_running < 0.85 or att.n_absences_y1_running >= 27)
                 then 'Off-Track'
-                /* HS */
+                /* HS Camden */
                 when
                     co.grade_level >= 9
+                    and co.region = 'Camden'
                     and att.n_absences_y1_running_non_susp >= att.hs_at_risk_absences
                 then 'Off-Track'
                 when
                     co.grade_level >= 9
+                    and co.region = 'Camden'
                     and att.n_absences_y1_running_non_susp >= att.hs_off_track_absences
+                then 'Off-Track'
+                /* HS Newark */
+                when
+                    co.grade_level >= 9
+                    and co.region = 'Newark'
+                    and att.n_absences_y1_running_non_susp_no_tardy
+                    >= att.hs_at_risk_absences
+                then 'Off-Track'
+                when
+                    co.grade_level >= 9
+                    and co.region = 'Newark'
+                    and att.n_absences_y1_running_non_susp_no_tardy
+                    >= att.hs_off_track_absences
                 then 'Off-Track'
                 else 'On-Track'
             end as attendance_status,
@@ -375,7 +373,7 @@ with
                     and att.ada_term_running < 0.87
                 then 'Off-Track'
                 when
-                    co.region = 'Newark'
+                    co.region = 'Camden'
                     and co.grade_level between 1 and 2
                     and att.ada_term_running < 0.86
                 then 'Off-Track'
@@ -405,17 +403,32 @@ with
                 /* Miami Gr5-8*/
                 when
                     co.region = 'Miami'
-                    and co.grade_level in (1, 2, 4)
+                    and co.grade_level between 5 and 8
                     and (att.ada_term_running < 0.85 or att.n_absences_y1_running >= 27)
                 then 'Off-Track'
-                /* HS */
+                /* HS Camden */
                 when
                     co.grade_level >= 9
+                    and co.region = 'Camden'
                     and att.n_absences_y1_running_non_susp >= att.hs_at_risk_absences
                 then 'Off-Track (Already reached threshold)'
                 when
                     co.grade_level >= 9
+                    and co.region = 'Camden'
                     and att.n_absences_y1_running_non_susp >= att.hs_off_track_absences
+                then 'Off-Track (Approaching threshold)'
+                /* HS Newark */
+                when
+                    co.grade_level >= 9
+                    and co.region = 'Newark'
+                    and att.n_absences_y1_running_non_susp_no_tardy
+                    >= att.hs_at_risk_absences
+                then 'Off-Track (Already reached threshold)'
+                when
+                    co.grade_level >= 9
+                    and co.region = 'Newark'
+                    and att.n_absences_y1_running_non_susp_no_tardy
+                    >= att.hs_off_track_absences
                 then 'Off-Track (Approaching threshold)'
                 else 'On-Track'
             end as attendance_status_hs_detail,
@@ -537,6 +550,7 @@ select
     ada_term_running,
     n_absences_y1_running,
     n_absences_y1_running_non_susp,
+    n_absences_y1_running_non_susp_no_tardy,
     iready_reading_recent,
     iready_math_recent,
     n_failing,

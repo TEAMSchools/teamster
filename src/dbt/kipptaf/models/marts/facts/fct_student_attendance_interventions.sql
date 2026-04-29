@@ -1,14 +1,20 @@
 with
     locations as (
-        -- TODO: int_people__location_crosswalk has duplicate rows (#3633)
-        select distinct
-            location_powerschool_school_id,
-            location_dagster_code_location,
-            location_clean_name,
-        from {{ ref("int_people__location_crosswalk") }}
-        where
-            not location_is_pathways
-            and location_clean_name <> 'KIPP Whittier Elementary'
+        select powerschool_school_id, dagster_code_location, location_name,
+        from {{ ref("stg_google_sheets__people__locations") }}
+    ),
+
+    comm_log as (
+        {{
+            dbt_utils.deduplicate(
+                relation=ref("int_deanslist__comm_log"),
+                partition_by=(
+                    "student_school_id, academic_year, reason,"
+                    " _dbt_source_relation"
+                ),
+                order_by="call_date desc",
+            )
+        }}
     )
 
 select
@@ -36,30 +42,33 @@ select
     {{
         dbt_utils.generate_surrogate_key(
             [
-                "regexp_extract(ai._dbt_source_relation, r'(kipp\\w+)_')",
+                "initcap(regexp_extract(ai._dbt_source_relation, r'kipp(\\w+)_'))",
                 "ai.commlog_reason",
             ]
         )
     }} as intervention_type_key,
 
+    if(
+        c.record_id is not null,
+        {{
+            dbt_utils.generate_surrogate_key(
+                ["c.record_id", "c._dbt_source_relation"]
+            )
+        }},
+        cast(null as string)
+    ) as family_communication_key,
+
     ai.commlog_date as date_key,
 
-    ai.student_number,
     ai.academic_year,
-    ai.commlog_reason,
     ai.absence_threshold,
     ai.days_absent_unexcused,
 
-    ai.commlog_notes,
-    ai.commlog_topic,
-    ai.commlog_date,
-    ai.commlog_status,
-    ai.commlog_type,
-    ai.commlog_staff_name,
+    case
+        ai.intervention_status when 'Complete' then true when 'Missing' then false
+    end as has_communication_log,
 
-    ai.intervention_status,
-    ai.intervention_status_required_int,
-    ai.is_ca_exception,
+    ai.is_ca_exception as is_chronic_absence_exception,
 from {{ ref("int_students__attendance_interventions") }} as ai
 inner join
     {{ ref("base_powerschool__student_enrollments") }} as enr
@@ -69,5 +78,11 @@ inner join
     and enr.rn_year = 1
 left join
     locations as loc
-    on ai.schoolid = loc.location_powerschool_school_id
-    and {{ extract_code_location("ai") }} = loc.location_dagster_code_location
+    on ai.schoolid = loc.powerschool_school_id
+    and {{ extract_code_location("ai") }} = loc.dagster_code_location
+left join
+    comm_log as c
+    on ai.student_number = c.student_school_id
+    and ai.academic_year = c.academic_year
+    and ai.commlog_reason = c.reason
+    and {{ union_dataset_join_clause(left_alias="ai", right_alias="c") }}

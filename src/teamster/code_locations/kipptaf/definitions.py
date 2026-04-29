@@ -11,7 +11,6 @@ from teamster.code_locations.kipptaf import (
     DBT_PROJECT,
     adp,
     airbyte,
-    asset_checks,
     collegeboard,
     couchdrop,
     coupa,
@@ -19,6 +18,7 @@ from teamster.code_locations.kipptaf import (
     deanslist,
     dlt,
     extracts,
+    freshness,
     google,
     knowbe4,
     ldap,
@@ -32,6 +32,7 @@ from teamster.code_locations.kipptaf import (
     tableau,
     zendesk,
 )
+from teamster.core.freshness import apply_freshness_policies
 from teamster.core.resources import (
     BIGQUERY_RESOURCE,
     DLT_RESOURCE,
@@ -50,33 +51,35 @@ from teamster.core.resources import (
 
 defs = Definitions(
     executor=k8s_job_executor,
-    assets=[
-        *dbt.asset_specs,
-        *google.asset_specs,
-        *airbyte.asset_specs,
-        *load_assets_from_modules(
-            modules=[
-                dbt,
-                dlt,
-                google,
-                adp,
-                collegeboard,
-                coupa,
-                deanslist,
-                extracts,
-                knowbe4,
-                ldap,
-                level_data,
-                nsc,
-                overgrad,
-                performance_management,
-                powerschool,
-                smartrecruiters,
-                tableau,
-            ]
-        ),
-    ],
-    asset_checks=asset_checks.freshness_checks,
+    assets=apply_freshness_policies(
+        [
+            *dbt.asset_specs,
+            *google.asset_specs,
+            *airbyte.asset_specs,
+            *load_assets_from_modules(
+                modules=[
+                    dbt,
+                    dlt,
+                    google,
+                    adp,
+                    collegeboard,
+                    coupa,
+                    deanslist,
+                    extracts,
+                    knowbe4,
+                    ldap,
+                    level_data,
+                    nsc,
+                    overgrad,
+                    performance_management,
+                    powerschool,
+                    smartrecruiters,
+                    tableau,
+                ]
+            ),
+        ],
+        policies=freshness.policies,
+    ),
     schedules=[
         *dlt.schedules,
         *google.schedules,

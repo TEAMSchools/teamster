@@ -12,6 +12,9 @@ models:
         description: >-
           Surrogate key derived from survey_id and term composite fields.
           Primary key for this dimension.
+        constraints:
+          - type: primary_key
+            warn_unsupported: false
         data_tests:
           - unique
           - not_null
@@ -20,49 +23,47 @@ models:
         data_type: string
         description: >-
           FK to dim_surveys. Surrogate key derived from survey_id.
+        constraints:
+          - type: foreign_key
+            to: ref('dim_surveys')
+            to_columns: [survey_key]
+            warn_unsupported: false
         data_tests:
           - not_null
 
+          - relationships:
+              arguments:
+                to: ref('dim_surveys')
+                field: survey_key
       - name: term_key
         data_type: string
         description: >-
           FK to dim_terms. Surrogate key derived from term composite fields
           (type, code, name, start_date, region, school_id).
+        constraints:
+          - type: foreign_key
+            to: ref('dim_terms')
+            to_columns: [term_key]
+            warn_unsupported: false
         data_tests:
           - not_null
 
-      - name: survey_id
-        data_type: string
-        description: >-
-          Source system identifier for the survey instrument.
-
-      - name: survey_name
-        data_type: string
-        description: >-
-          Display name of the survey instrument for this administration.
-
-      - name: term_code
-        data_type: string
-        description: >-
-          Short code for the administration period (e.g., SCD, MGR1, SUP1).
-
-      - name: term_name
-        data_type: string
-        description: >-
-          Display name for the administration period from reporting terms.
-
+          - relationships:
+              arguments:
+                to: ref('dim_terms')
+                field: term_key
       - name: academic_year
         data_type: int64
         description: >-
           Academic year this administration falls within.
 
-      - name: administration_status
+      - name: response_deadline_date
+        data_type: date
+        description: >-
+          Last date responses are accepted, derived from the term end date.
+
+      - name: status
         data_type: string
         description: >-
           Current status of the administration window: open (currently accepting
           responses), closed (past deadline), or upcoming (not yet started).
-
-      - name: response_deadline
-        data_type: date
-        description: >-
-          Last date responses are accepted, derived from the term end date.

@@ -15,6 +15,9 @@ models:
         description: >-
           Surrogate primary key derived from ticket id. Generated with
           generate_surrogate_key(["t.id"]).
+        constraints:
+          - type: primary_key
+            warn_unsupported: false
         data_tests:
           - unique
           - not_null
@@ -24,9 +27,18 @@ models:
         description: >-
           Foreign key to dim_staff for the ticket submitter. Surrogate key
           derived from submitter employee_number.
+        constraints:
+          - type: foreign_key
+            to: ref('dim_staff')
+            to_columns: [staff_key]
+            warn_unsupported: false
         data_tests:
           - not_null
 
+          - relationships:
+              arguments:
+                to: ref('dim_staff')
+                field: staff_key
       - name: assignee_staff_key
         data_type: string
         description: >-
@@ -34,6 +46,16 @@ models:
           key derived from assignee employee_number. Nullable — unassigned
           tickets have no assignee.
 
+        constraints:
+          - type: foreign_key
+            to: ref('dim_staff')
+            to_columns: [staff_key]
+            warn_unsupported: false
+        data_tests:
+          - relationships:
+              arguments:
+                to: ref('dim_staff')
+                field: staff_key
       - name: original_assignee_staff_key
         data_type: string
         description: >-
@@ -41,20 +63,50 @@ models:
           Surrogate key derived from original assignee employee_number. Nullable
           — not all tickets have a creation-time assignee.
 
+        constraints:
+          - type: foreign_key
+            to: ref('dim_staff')
+            to_columns: [staff_key]
+            warn_unsupported: false
+        data_tests:
+          - relationships:
+              arguments:
+                to: ref('dim_staff')
+                field: staff_key
       - name: location_key
         data_type: string
         description: >-
           Foreign key to dim_locations. Surrogate key derived from the Location
-          custom field value on the ticket.
-
+          custom field value on the ticket. Currently fails 100% relationships
+          against dim_locations pending Zendesk-slug → canonical-location
+          crosswalk (#3709).
+        constraints:
+          - type: foreign_key
+            to: ref('dim_locations')
+            to_columns: [location_key]
+            warn_unsupported: false
+        data_tests:
+          - relationships:
+              arguments:
+                to: ref('dim_locations')
+                field: location_key
       - name: created_date_key
         data_type: date
         description: >-
           Foreign key to dim_dates for the date the ticket was created. Matches
           dim_dates.date_key.
+        constraints:
+          - type: foreign_key
+            to: ref('dim_dates')
+            to_columns: [date_key]
+            warn_unsupported: false
         data_tests:
           - not_null
 
+          - relationships:
+              arguments:
+                to: ref('dim_dates')
+                field: date_key
       - name: solved_date_key
         data_type: date
         description: >-
@@ -62,21 +114,22 @@ models:
           dim_dates.date_key. Nullable — open or pending tickets have no solved
           date.
 
-      - name: ticket_id
-        data_type: int64
-        description: >-
-          Zendesk numeric ticket identifier.
+        constraints:
+          - type: foreign_key
+            to: ref('dim_dates')
+            to_columns: [date_key]
+            warn_unsupported: false
         data_tests:
-          - unique
-          - not_null
-
-      - name: ticket_status
+          - relationships:
+              arguments:
+                to: ref('dim_dates')
+                field: date_key
+      - name: status
         data_type: string
         description: >-
-          Current Zendesk ticket status (new, open, pending, hold, solved,
-          closed). Deleted tickets are excluded.
+          Zendesk ticket workflow status (closed, open, new, pending, solved).
 
-      - name: ticket_subject
+      - name: subject
         data_type: string
         description: Subject line of the ticket as entered by the submitter.
 
@@ -89,13 +142,9 @@ models:
       - name: tech_tier
         data_type: string
         description: >-
-          Technology tier classification from the Zendesk custom Tech Tier
-          field, indicating complexity or routing level.
-
-      - name: ticket_location
-        data_type: string
-        description: >-
-          Location value from the Zendesk custom Location field on the ticket.
+          Support escalation tier for the ticket, from the Zendesk custom Tech
+          Tier field. Values: `tier_1` (frontline helpdesk), `tier_2`
+          (specialist), `tier_3` (engineer / vendor escalation). Ordinal.
 
       - name: reply_count
         data_type: int64
@@ -108,43 +157,39 @@ models:
           Total time to full resolution in business-hours minutes
           (full_resolution_time_in_minutes.business from ticket_metrics).
 
-      - name: reply_time_in_minutes_business
+      - name: business_minutes_to_first_reply
         data_type: int64
         description: >-
           Time to first reply in business-hours minutes
           (reply_time_in_minutes.business from ticket_metrics).
 
-      - name: assignee_stations
+      - name: agent_reassignment_count
         data_type: int64
         description:
           Number of times the ticket was assigned to a different agent.
 
-      - name: group_stations
+      - name: group_reassignment_count
         data_type: int64
         description:
           Number of times the ticket was assigned to a different group.
 
-      - name: created_date
-        data_type: date
-        description: Calendar date the ticket was created.
-
-      - name: created_at
+      - name: created_timestamp
         data_type: timestamp
         description: Timestamp when the ticket was created in Zendesk.
 
-      - name: initially_assigned_at
+      - name: initially_assigned_timestamp
         data_type: timestamp
         description: Timestamp when the ticket was first assigned to an agent.
 
-      - name: assignee_updated_at
+      - name: assignee_updated_timestamp
         data_type: timestamp
         description: Timestamp when the ticket assignee was last updated.
 
-      - name: solved_at
+      - name: solved_timestamp
         data_type: timestamp
         description:
           Timestamp when the ticket was solved. Null for unsolved tickets.
 
-      - name: ticket_url
+      - name: url
         data_type: string
         description: Direct URL to the ticket in the Zendesk agent interface.

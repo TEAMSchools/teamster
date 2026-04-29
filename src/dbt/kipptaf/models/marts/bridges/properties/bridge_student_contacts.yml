@@ -8,42 +8,64 @@ models:
       keys to dim_students via student_key and to dim_student_contact_persons
       via student_contact_person_key.
 
+    constraints:
+      - type: primary_key
+        columns: [student_key, student_contact_person_key]
+        warn_unsupported: false
     columns:
       - name: student_key
         data_type: string
         description: >-
           Surrogate key for the student. Foreign key to dim_students. Derived
           from student_number via generate_surrogate_key.
+        constraints:
+          - type: foreign_key
+            to: ref('dim_students')
+            to_columns: [student_key]
+            warn_unsupported: false
         data_tests:
           - not_null
 
+          - relationships:
+              arguments:
+                to: ref('dim_students')
+                field: student_key
       - name: student_contact_person_key
         data_type: string
         description: >-
           Surrogate key for the contact person. Foreign key to
           dim_student_contact_persons. Derived from _dbt_source_relation and
           powerschool_person_id.
+        constraints:
+          - type: foreign_key
+            to: ref('dim_student_contact_persons')
+            to_columns: [student_contact_person_key]
+            warn_unsupported: false
         data_tests:
           - not_null
 
-      - name: student_number
-        data_type: int64
-        description: >-
-          PowerSchool student_number. Natural key for the student side of the
-          relationship.
-
+          - relationships:
+              arguments:
+                to: ref('dim_student_contact_persons')
+                field: student_contact_person_key
       - name: relationship_type
         data_type: string
         description: >-
           Relationship between the contact person and the student (e.g., Mother,
           Father, Grandparent) as coded in PowerSchool.
 
-      - name: contact_priority
+      - name: priority
         data_type: int64
         description: >-
-          Contact priority order for this student-contact pair. Lower numbers
-          indicate higher priority contacts.
+          Indicates the preferred order in which the student's contacts will be
+          selected.Valid values: 1-n. Defaults to 1. Indexed with Student DCID.
+          Required.
 
+        config:
+          meta:
+            source_system: PowerSchool
+            source_model: stg_powerschool__studentcontactassoc
+            source_column: contactpriorityorder
       - name: is_emergency
         data_type: boolean
         description: >-
@@ -60,10 +82,10 @@ models:
         description: >-
           TRUE if this contact has custodial rights for this student.
 
-      - name: lives_with
+      - name: is_household_member
         data_type: boolean
         description: >-
-          TRUE if the student lives with this contact person.
+          TRUE if the student lives with this contact person (household member).
 
     data_tests:
       - dbt_utils.unique_combination_of_columns:

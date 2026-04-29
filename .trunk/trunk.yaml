@@ -16,10 +16,10 @@ lint:
     - isort@8.0.1
     - markdownlint@0.48.0
     - osv-scanner@2.3.5
-    - oxipng@10.1.0
-    - prettier@3.8.2
-    - pyright@1.1.408
-    - ruff@0.15.10
+    - oxipng@10.1.1
+    - prettier@3.8.3
+    - pyright@1.1.409
+    - ruff@0.15.11
     - shellcheck@0.11.0
     - shfmt@3.6.0
     - sqlfluff@4.1.0
@@ -64,6 +64,10 @@ lint:
         - shfmt
         - svgo
         - taplo
+    - paths:
+        - src/cube/package-lock.json
+      linters:
+        - osv-scanner
     - paths:
         - .k8s/**/values.yaml
       linters:

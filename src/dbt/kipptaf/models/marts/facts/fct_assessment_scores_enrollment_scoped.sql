@@ -205,20 +205,12 @@ select
 
     ia.test_date as test_date_key,
 
-    ia.student_number,
     ia.academic_year,
-    ia.title as assessment_title,
-    ia.scope,
-    ia.subject_area,
-    ia.module_code,
-    ia.region,
-    ia.test_date,
     ia.scale_score,
     ia.percent_correct,
     ia.proficiency_level,
-    ia.growth_percentile,
     ia.is_mastery,
-    ia.score_source,
+    ia.score_source as provider,
 from internal_assessments as ia
 
 union all
@@ -260,20 +252,12 @@ select
 
     su.test_date as test_date_key,
 
-    su.student_number,
     su.academic_year,
-    su.title as assessment_title,
-    su.discipline as scope,
-    su.subject_area,
-    su.module_code,
-    su.season as region,
-    su.test_date,
     su.scale_score,
     su.percent_correct,
     su.performance_band as proficiency_level,
-    su.growth_percentile,
 
     su.is_proficient as is_mastery,
 
-    su.score_source,
+    su.score_source as provider,
 from state_union as su

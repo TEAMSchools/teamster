@@ -82,6 +82,17 @@
       "problemMatcher": []
     },
     {
+      "label": "Cube: Dev Server",
+      "type": "shell",
+      "command": "[ -d src/cube/node_modules ] || npm --prefix src/cube install && npm --prefix src/cube run dev",
+      "presentation": {
+        "reveal": "always",
+        "panel": "dedicated",
+        "focus": true
+      },
+      "problemMatcher": []
+    },
+    {
       "label": "dbt: Generate Prod Manifests",
       "type": "shell",
       "command": "bash .vscode/scripts/post-merge.sh",

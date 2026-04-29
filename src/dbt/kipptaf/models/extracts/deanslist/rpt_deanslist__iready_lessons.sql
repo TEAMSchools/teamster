@@ -23,11 +23,10 @@ inner join
     and ir.subject = iy.subject
     and iy.date_range = 'Year-to-Date'
 inner join
-    {{ ref("stg_google_sheets__people__location_crosswalk") }} as cw
-    on ir.school = cw.name
+    {{ ref("int_people__location_crosswalk") }} as cw on ir.school = cw.location_name
 inner join
     {{ ref("stg_deanslist__terms") }} as dt
-    on cw.deanslist_school_id = dt.school_id
+    on cw.location_deanslist_school_id = dt.school_id
     and ir.academic_year_int = dt.academic_year
     and ir.date_range_end between dt.start_date_date and dt.end_date_date
     and dt.term_type = 'Weeks'

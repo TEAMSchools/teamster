@@ -6,34 +6,45 @@ models:
       where the term's date range overlaps with the section's term dates. FK to
       dim_course_sections via course_section_key and to dim_terms via term_key.
 
+    constraints:
+      - type: primary_key
+        columns: [course_section_key, term_key]
+        warn_unsupported: false
     columns:
       - name: course_section_key
         data_type: string
         description: >-
           Surrogate key derived from sections_dcid and _dbt_source_relation. FK
           to dim_course_sections.
+        constraints:
+          - type: foreign_key
+            to: ref('dim_course_sections')
+            to_columns: [course_section_key]
+            warn_unsupported: false
         data_tests:
           - not_null
 
+          - relationships:
+              arguments:
+                to: ref('dim_course_sections')
+                field: course_section_key
       - name: term_key
         data_type: string
         description: >-
           Surrogate key derived from type, code, name, start_date, region, and
           school_id of the matching reporting term. FK to dim_terms.
+        constraints:
+          - type: foreign_key
+            to: ref('dim_terms')
+            to_columns: [term_key]
+            warn_unsupported: false
         data_tests:
           - not_null
 
-      - name: sections_dcid
-        data_type: int64
-        description: >-
-          PowerSchool sections DCID. Natural key for the section.
-
-      - name: term_code
-        data_type: string
-        description: >-
-          Reporting term code (e.g., Q1, Q2) from the Google Sheets reporting
-          terms reference table.
-
+          - relationships:
+              arguments:
+                to: ref('dim_terms')
+                field: term_key
       - name: academic_year
         data_type: int64
         description: >-
