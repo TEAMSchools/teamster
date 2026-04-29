@@ -588,6 +588,94 @@ with
                 interval -9 week
             )
         group by e.region, e.school, e.grade_level, g.week_start_monday
+    ),
+
+    /* ============================================================
+     * i-READY — % students with 2+ passed lessons (weekly, ELA and Math)
+     * ============================================================ */
+    iready_lessons as (
+        select
+            student_id,
+            academic_year_int,
+            `subject`,
+
+            date_trunc(completion_date, week(monday)) as week_start_monday,
+        from {{ ref("int_iready__instruction_by_lesson_union") }}
+        where
+            academic_year_int = {{ var("current_academic_year") }}
+            and passed_or_not_passed_numeric = 1.0
+            and date_trunc(completion_date, week(monday)) >= date_add(
+                date_trunc(
+                    current_date('{{ var("local_timezone") }}'), week(monday)
+                ),
+                interval -9 week
+            )
+    ),
+
+    iready_by_student_week as (
+        select
+            student_id,
+            week_start_monday,
+
+            countif(`subject` = 'Reading') as ela_passed_lessons,
+            countif(`subject` = 'Math') as math_passed_lessons,
+        from iready_lessons
+        group by student_id, week_start_monday
+    ),
+
+    iready_enrolled as (
+        select
+            ew.region,
+            ew.school,
+            ew.grade_level,
+            ew.team,
+            ew.week_start_monday,
+
+            coalesce(ir.ela_passed_lessons, 0) as ela_passed_lessons,
+            coalesce(ir.math_passed_lessons, 0) as math_passed_lessons,
+        from enrollments_weeks as ew
+        left join
+            iready_by_student_week as ir
+            on ew.student_number = ir.student_id
+            and ew.week_start_monday = ir.week_start_monday
+    ),
+
+    iready_homeroom_week as (
+        select
+            region,
+            school,
+            team,
+            week_start_monday,
+
+            tm.teacher_name,
+            tm.manager,
+            tm.manager_job_title,
+
+            avg(if(ela_passed_lessons >= 2, 1.0, 0.0)) as ela_metric_value,
+            avg(if(math_passed_lessons >= 2, 1.0, 0.0)) as math_metric_value,
+        from iready_enrolled
+        left join team_manager as tm on school = tm.school and team = tm.team
+        group by
+            region,
+            school,
+            team,
+            week_start_monday,
+            tm.teacher_name,
+            tm.manager,
+            tm.manager_job_title
+    ),
+
+    iready_gradelevel_week as (
+        select
+            region,
+            school,
+            grade_level,
+            week_start_monday,
+
+            avg(if(ela_passed_lessons >= 2, 1.0, 0.0)) as ela_metric_value,
+            avg(if(math_passed_lessons >= 2, 1.0, 0.0)) as math_metric_value,
+        from iready_enrolled
+        group by region, school, grade_level, week_start_monday
     )
 
 /* ============================================================
@@ -970,3 +1058,83 @@ select
     cast(null as string) as manager_job_title,
     metric_value as value,
 from gpa_gradelevel_week
+
+union all
+
+/* 20. % Students with 2+ passed i-Ready ELA lessons by homeroom + week */
+select
+    'i-Ready' as domain,
+    'ELA' as discipline,
+    cast(null as string) as course_name,
+    cast(null as string) as module_code,
+    '% Students Passing 2+ Lessons' as metric,
+    concat('week of ', format_date('%Y-%m-%d', week_start_monday)) as time_scale,
+    region,
+    school,
+    'Homeroom' as grain_type,
+    team as grain,
+    teacher_name,
+    manager,
+    manager_job_title,
+    ela_metric_value as value,
+from iready_homeroom_week
+
+union all
+
+/* 21. % Students with 2+ passed i-Ready ELA lessons by grade level + week */
+select
+    'i-Ready' as domain,
+    'ELA' as discipline,
+    cast(null as string) as course_name,
+    cast(null as string) as module_code,
+    '% Students Passing 2+ Lessons' as metric,
+    concat('week of ', format_date('%Y-%m-%d', week_start_monday)) as time_scale,
+    region,
+    school,
+    'Grade Level' as grain_type,
+    cast(grade_level as string) as grain,
+    cast(null as string) as teacher_name,
+    cast(null as string) as manager,
+    cast(null as string) as manager_job_title,
+    ela_metric_value as value,
+from iready_gradelevel_week
+
+union all
+
+/* 22. % Students with 2+ passed i-Ready Math lessons by homeroom + week */
+select
+    'i-Ready' as domain,
+    'Math' as discipline,
+    cast(null as string) as course_name,
+    cast(null as string) as module_code,
+    '% Students Passing 2+ Lessons' as metric,
+    concat('week of ', format_date('%Y-%m-%d', week_start_monday)) as time_scale,
+    region,
+    school,
+    'Homeroom' as grain_type,
+    team as grain,
+    teacher_name,
+    manager,
+    manager_job_title,
+    math_metric_value as value,
+from iready_homeroom_week
+
+union all
+
+/* 23. % Students with 2+ passed i-Ready Math lessons by grade level + week */
+select
+    'i-Ready' as domain,
+    'Math' as discipline,
+    cast(null as string) as course_name,
+    cast(null as string) as module_code,
+    '% Students Passing 2+ Lessons' as metric,
+    concat('week of ', format_date('%Y-%m-%d', week_start_monday)) as time_scale,
+    region,
+    school,
+    'Grade Level' as grain_type,
+    cast(grade_level as string) as grain,
+    cast(null as string) as teacher_name,
+    cast(null as string) as manager,
+    cast(null as string) as manager_job_title,
+    math_metric_value as value,
+from iready_gradelevel_week
