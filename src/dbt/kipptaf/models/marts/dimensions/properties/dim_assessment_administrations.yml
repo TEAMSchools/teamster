@@ -1,0 +1,96 @@
+models:
+  - name: dim_assessment_administrations
+    description: >-
+      Per-scheduled-occurrence dimension paralleling dim_survey_administrations.
+      One row per (assessment_definition x administered_date x academic_year x
+      administration_round x region x season x administration_window). Covers
+      internal Illuminate assessments, NJ and FL state assessments, and
+      college-entrance assessments (SAT, ACT, AP).
+    columns:
+      - name: assessment_administration_key
+        data_type: string
+        description: >-
+          Surrogate key derived from the assessment definition components plus
+          administered_date, academic_year, administration_round, region,
+          season, and administration_window. Primary key.
+        constraints:
+          - type: primary_key
+            warn_unsupported: false
+        data_tests:
+          - unique
+          - not_null
+
+      - name: assessment_key
+        data_type: string
+        description: >-
+          FK to dim_assessments. Same hash composition as
+          dim_assessments.assessment_key -- joining on this column lifts
+          assessment-definition attributes.
+        constraints:
+          - type: foreign_key
+            to: ref('dim_assessments')
+            to_columns: [assessment_key]
+            warn_unsupported: false
+        data_tests:
+          - relationships:
+              arguments:
+                to: ref('dim_assessments')
+                field: assessment_key
+
+      - name: administered_date_key
+        data_type: date
+        description: >-
+          FK to dim_dates. Date the assessment administration occurred. Null for
+          sources that don't capture an exact date (state, AP) -- the
+          administration is identified by academic_year + season +
+          administration_window instead.
+        constraints:
+          - type: foreign_key
+            to: ref('dim_dates')
+            to_columns: [date_key]
+            warn_unsupported: false
+        data_tests:
+          - relationships:
+              arguments:
+                to: ref('dim_dates')
+                field: date_key
+              # Three upstream rows carry sentinel dates (1900-01-01,
+              # 1982-02-27) outside dim_dates' 2000-01-01 floor.
+              config:
+                where: administered_date_key >= '2000-01-01'
+
+      - name: academic_year
+        data_type: int64
+        description: >-
+          Academic year of the administration.
+
+      - name: region
+        data_type: string
+        description: >-
+          KIPP region the administration is scoped to (Newark, Camden, Miami,
+          Paterson). Null for college-entrance assessments which are region-
+          agnostic.
+
+      - name: administration_round
+        data_type: string
+        description: >-
+          College Board administration round (Sept, Oct, Nov, Dec, Mar, May,
+          June). Populated for college-entrance assessments only.
+
+      - name: season
+        data_type: string
+        description: >-
+          State assessment season (e.g., Fall, Winter, Spring). Populated for
+          state assessments only.
+
+      - name: administration_window
+        data_type: string
+        description: >-
+          State assessment administration window. Populated for state
+          assessments only; mirrors season for NJ but distinct for FL.
+
+      - name: test_type
+        data_type: string
+        description: >-
+          'Official' for AP and college assessments; null for internal and
+          state.
