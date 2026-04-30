@@ -1,5 +1,6 @@
 cubes:
   - name: dim_terms
+    public: false
     sql_table: kipptaf_marts.dim_terms
 
     dimensions:
@@ -13,7 +14,7 @@ cubes:
         type: string
 
       - name: term_type
-        sql: "dim_terms.`type`"
+        sql: "{CUBE}.`type`"
         type: string
 
       - name: term_code

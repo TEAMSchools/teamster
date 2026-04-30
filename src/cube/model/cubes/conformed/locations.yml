@@ -1,5 +1,6 @@
 cubes:
   - name: dim_locations
+    public: false
     sql_table: kipptaf_marts.dim_locations
 
     joins:
@@ -18,7 +19,7 @@ cubes:
         type: string
 
       - name: location_name
-        sql: "dim_locations.`name`"
+        sql: "{CUBE}.`name`"
         type: string
 
       - name: abbreviation

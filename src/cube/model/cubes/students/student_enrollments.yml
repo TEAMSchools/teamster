@@ -1,5 +1,6 @@
 cubes:
   - name: dim_student_enrollments
+    public: false
     sql_table: kipptaf_marts.dim_student_enrollments
 
     joins:

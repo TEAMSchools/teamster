@@ -1,5 +1,6 @@
 cubes:
   - name: dim_regions
+    public: false
     sql_table: kipptaf_marts.dim_regions
 
     dimensions:
@@ -9,7 +10,7 @@ cubes:
         primary_key: true
 
       - name: region_name
-        sql: "dim_regions.`name`"
+        sql: "{CUBE}.`name`"
         type: string
 
       - name: state
