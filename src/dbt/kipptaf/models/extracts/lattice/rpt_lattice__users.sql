@@ -6,6 +6,9 @@ with
             assignment_status in ('Active', 'Leave')
             and (
                 home_business_unit_name = 'KIPP TEAM and Family Schools Inc.'
+                -- trunk-ignore(sqlfluff/ST09): placeholder — verify name once
+                -- Paterson ADP ingestion is live
+                or home_business_unit_name = 'KIPP Paterson'
                 or (
                     home_business_unit_name in (
                         'KIPP Miami',
