@@ -1,11 +1,5 @@
 models:
   - name: int_assessments__college_assessment
-    description: >-
-      Unioned college-entrance assessment scores (ACT, SAT, PSAT) from
-      Salesforce standardized-test records and CollegeBoard PSAT unpivots. Adds
-      running-max scale scores, overall vs subject-score flags, and a surrogate
-      key on (student_number, score_type, test_date) for downstream fact
-      loading.
     columns:
       - name: student_number
         data_type: int64
@@ -29,6 +23,8 @@ models:
         data_type: int64
       - name: salesforce_id
         data_type: string
+      - name: row_count_by_test_date
+        data_type: int64
       - name: aligned_subject_area
         data_type: string
         description: Conditional on subject_area.

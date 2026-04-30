@@ -219,61 +219,56 @@ with
             false as is_multipart_assessment,
         from scaffold_responses
         where not is_internal_assessment
-    ),
-
-    enriched as (
-        select
-            ru.illuminate_student_id,
-            ru.powerschool_student_number,
-            ru.academic_year,
-            ru.scope,
-            ru.subject_area,
-            ru.discipline,
-            ru.module_type,
-            ru.module_code,
-            ru.region,
-            ru.powerschool_school_id,
-            ru.is_internal_assessment,
-            ru.is_replacement,
-            ru.response_type,
-            ru.response_type_id,
-            ru.response_type_code,
-            ru.response_type_description,
-            ru.response_type_root_description,
-            ru.date_taken,
-            ru.points,
-            ru.percent_correct,
-            ru.title,
-            ru.assessment_id,
-            ru.administered_at,
-            ru.performance_band_set_id,
-            ru.n_assessments,
-            ru.is_multipart_assessment,
-            ru.assessment_ids,
-
-            pbl.label as performance_band_label,
-            pbl.label_number as performance_band_label_number,
-            pbl.is_mastery,
-
-            rta.name as term_administered,
-
-            rtt.name as term_taken,
-        from response_union as ru
-        left join
-            {{ ref("int_illuminate__performance_band_sets") }} as pbl
-            on ru.performance_band_set_id = pbl.performance_band_set_id
-            and ru.percent_correct between pbl.minimum_value and pbl.maximum_value
-        left join
-            {{ ref("stg_google_sheets__reporting__terms") }} as rta
-            on ru.administered_at between rta.start_date and rta.end_date
-            and ru.powerschool_school_id = rta.school_id
-            and rta.type = 'RT'
-        left join
-            {{ ref("stg_google_sheets__reporting__terms") }} as rtt
-            on ru.date_taken between rtt.start_date and rtt.end_date
-            and ru.powerschool_school_id = rtt.school_id
-            and rtt.type = 'RT'
     )
 
-select *,
-from enriched
+select
+    ru.illuminate_student_id,
+    ru.powerschool_student_number,
+    ru.academic_year,
+    ru.scope,
+    ru.subject_area,
+    ru.discipline,
+    ru.module_type,
+    ru.module_code,
+    ru.region,
+    ru.powerschool_school_id,
+    ru.is_internal_assessment,
+    ru.is_replacement,
+    ru.response_type,
+    ru.response_type_id,
+    ru.response_type_code,
+    ru.response_type_description,
+    ru.response_type_root_description,
+    ru.date_taken,
+    ru.points,
+    ru.percent_correct,
+    ru.title,
+    ru.assessment_id,
+    ru.administered_at,
+    ru.performance_band_set_id,
+    ru.n_assessments,
+    ru.is_multipart_assessment,
+    ru.assessment_ids,
+
+    pbl.label as performance_band_label,
+    pbl.label_number as performance_band_label_number,
+    pbl.is_mastery,
+
+    rta.name as term_administered,
+
+    rtt.name as term_taken,
+from response_union as ru
+left join
+    {{ ref("int_illuminate__performance_band_sets") }} as pbl
+    on ru.performance_band_set_id = pbl.performance_band_set_id
+    and ru.percent_correct between pbl.minimum_value and pbl.maximum_value
+left join
+    {{ ref("stg_google_sheets__reporting__terms") }} as rta
+    on ru.administered_at between rta.start_date and rta.end_date
+    and ru.powerschool_school_id = rta.school_id
+    and rta.type = 'RT'
+left join
+    {{ ref("stg_google_sheets__reporting__terms") }} as rtt
+    on ru.date_taken between rtt.start_date and rtt.end_date
+    and ru.powerschool_school_id = rtt.school_id
+    and rtt.type = 'RT'
