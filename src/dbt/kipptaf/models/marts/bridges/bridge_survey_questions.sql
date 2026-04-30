@@ -18,12 +18,47 @@ with
         where qc.question_code like 'School_Survey_%'
     ),
 
+    alchemer_pairs as (
+        -- DISTINCT projects from response grain to (survey, question) pair grain.
+        -- Covers Alchemer + Google Forms staff/student survey questions feeding
+        -- fct_survey_responses.general_responses.
+        select distinct
+            sr.survey_id, sr.question_shortname, cast(null as bool) as is_required,
+        from {{ ref("int_surveys__survey_responses") }} as sr
+        where sr.survey_id is not null and sr.question_shortname is not null
+    ),
+
+    manager_pairs as (
+        -- DISTINCT projects from response grain to (survey, question) pair grain.
+        select distinct
+            ms.survey_id, ms.question_shortname, cast(null as bool) as is_required,
+        from {{ ref("int_surveys__manager_survey_details") }} as ms
+        where ms.survey_id is not null and ms.question_shortname is not null
+    ),
+
+    -- trunk-ignore(sqlfluff/ST03): referenced by string in dbt_utils.deduplicate
     all_pairs as (
         select *,
         from google_forms_pairs
         union all
         select *,
         from scd_powerschool_pairs
+        union all
+        select *,
+        from alchemer_pairs
+        union all
+        select *,
+        from manager_pairs
+    ),
+
+    deduped as (
+        {{
+            dbt_utils.deduplicate(
+                relation="all_pairs",
+                partition_by="survey_id, question_shortname",
+                order_by="is_required desc nulls last",
+            )
+        }}
     )
 
 select
@@ -37,4 +72,4 @@ select
 
     question_shortname as shortname,
     is_required,
-from all_pairs
+from deduped

@@ -18,6 +18,28 @@ with
         where qc.question_code like 'School_Survey_%'
     ),
 
+    alchemer_questions as (
+        -- DISTINCT projects from response grain to question grain.
+        -- Sources Alchemer + Google Forms staff/student survey questions that
+        -- feed fct_survey_responses.general_responses.
+        select distinct
+            sr.question_shortname,
+            sr.question_title as question_text,
+            cast(null as string) as question_type,
+        from {{ ref("int_surveys__survey_responses") }} as sr
+        where sr.question_shortname is not null
+    ),
+
+    manager_questions as (
+        -- DISTINCT projects from response grain to question grain.
+        select distinct
+            ms.question_shortname,
+            ms.question_title as question_text,
+            cast(null as string) as question_type,
+        from {{ ref("int_surveys__manager_survey_details") }} as ms
+        where ms.question_shortname is not null
+    ),
+
     -- trunk-ignore(sqlfluff/ST03): referenced by string in dbt_utils.deduplicate
     all_questions as (
         select *,
@@ -25,6 +47,12 @@ with
         union all
         select *,
         from scd_questions
+        union all
+        select *,
+        from alchemer_questions
+        union all
+        select *,
+        from manager_questions
     ),
 
     deduped as (
