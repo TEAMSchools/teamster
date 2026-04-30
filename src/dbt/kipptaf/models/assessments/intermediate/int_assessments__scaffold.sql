@@ -23,16 +23,18 @@ with
         where a.is_internal_assessment
     ),
 
-    -- DISTINCT projects from location-name grain (one row per campus alias)
-    -- to school grain (one row per powerschool_school_id, region) — multiple
-    -- campuses can share a powerschool_school_id but always share the same
-    -- city. Sources from stg_google_sheets__people__locations per
-    -- kipptaf/CLAUDE.md, not int_people__location_crosswalk (which is at the
-    -- aliased-name grain).
+    -- One row per (powerschool_school_id, region). Sources from
+    -- stg_google_sheets__people__locations per kipptaf/CLAUDE.md, not
+    -- int_people__location_crosswalk (which is at aliased-name grain).
+    -- The (is_campus / is_pathways / Whittier) filter mirrors the canonical
+    -- mart-scope filter pattern tracked in #3751 / #3754.
     school_to_region as (
-        select distinct powerschool_school_id, city as region,
+        select powerschool_school_id, city as region,
         from {{ ref("stg_google_sheets__people__locations") }}
-        where powerschool_school_id != 0
+        where
+            not is_campus
+            and not is_pathways
+            and location_name != 'KIPP Whittier Elementary'
     ),
 
     -- trunk-ignore(sqlfluff/ST03)
