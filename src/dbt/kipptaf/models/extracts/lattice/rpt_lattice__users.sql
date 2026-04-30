@@ -8,15 +8,21 @@ with
                 home_business_unit_name = 'KIPP TEAM and Family Schools Inc.'
                 or home_business_unit_name = 'KIPP Paterson'
                 or (
-                    home_business_unit_name in (
-                        'KIPP Miami',
-                        'TEAM Academy Charter School',
-                        'KIPP Cooper Norcross Academy'
-                    )
+                    home_business_unit_name = 'KIPP Miami'
                     and (
                         contains_substr(job_title, 'Director')
                         or contains_substr(job_title, 'Head')
                         or contains_substr(job_title, 'Leader')
+                    )
+                )
+                or (
+                    home_business_unit_name
+                    in ('TEAM Academy Charter School', 'KIPP Cooper Norcross Academy')
+                    and job_title in (
+                        'Director School Operations',
+                        'Director Campus Operations',
+                        'Managing Director of School Operations',
+                        'Managing Director of Operations'
                     )
                 )
             )
