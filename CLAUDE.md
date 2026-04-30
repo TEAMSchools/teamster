@@ -23,6 +23,10 @@ this step.**
 
 ## Working Conventions
 
+- **PII in PR comments**: never name student numbers, employee numbers, or email
+  addresses in PR comments / review replies. Use redacted labels ("Student A",
+  "Staff B"). The same rule applies to commit messages and issue bodies.
+
 - **Before writing any spec or plan**: STOP and explicitly ask the user whether
   to open a GitHub issue first. Required for specs/plans; not required for quick
   fixes. Do not write anything until the user answers. If opening: use
@@ -218,6 +222,10 @@ renames.
 Chained joins through PR-branch marts (mart-view → mart-view → upstream-view)
 hit BigQuery's 16-view nesting limit. Query materialized prod tables instead, or
 split the query.
+
+For NULL-safe distinct counts on composite keys, use
+`count(distinct format("%T|%T", a, b))` — `concat()` returns NULL when any arg
+is NULL and silently miscounts violations.
 
 ### dbt MCP
 
