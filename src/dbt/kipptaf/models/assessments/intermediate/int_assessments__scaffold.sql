@@ -23,12 +23,14 @@ with
         where a.is_internal_assessment
     ),
 
-    -- Sources from stg_google_sheets__people__locations (canonical-school
-    -- grain, one row per powerschool_school_id) per kipptaf/CLAUDE.md, not
-    -- int_people__location_crosswalk (alias grain, one row per
-    -- location_name alternate spelling).
+    -- DISTINCT projects from location-name grain (one row per campus alias)
+    -- to school grain (one row per powerschool_school_id, region) — multiple
+    -- campuses can share a powerschool_school_id but always share the same
+    -- city. Sources from stg_google_sheets__people__locations per
+    -- kipptaf/CLAUDE.md, not int_people__location_crosswalk (which is at the
+    -- aliased-name grain).
     school_to_region as (
-        select powerschool_school_id, city as region,
+        select distinct powerschool_school_id, city as region,
         from {{ ref("stg_google_sheets__people__locations") }}
         where powerschool_school_id != 0
     ),
