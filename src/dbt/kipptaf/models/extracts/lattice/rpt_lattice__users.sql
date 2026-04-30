@@ -6,8 +6,6 @@ with
             assignment_status in ('Active', 'Leave')
             and (
                 home_business_unit_name = 'KIPP TEAM and Family Schools Inc.'
-                -- trunk-ignore(sqlfluff/ST09): placeholder — verify name once
-                -- Paterson ADP ingestion is live
                 or home_business_unit_name = 'KIPP Paterson'
                 or (
                     home_business_unit_name in (
@@ -29,11 +27,11 @@ with
     )
 
 select
-    s.assignment_status as status,
-    s.work_email as email,
-    s.job_title as title,
-    s.employee_number as employee_id,
-    s.work_assignment_actual_start_date as start_date,
+    s.assignment_status as `status`,
+    s.work_email,
+    s.job_title,
+    s.employee_number as external_user_id,
+    coalesce(s.worker_rehire_date, s.worker_original_hire_date) as `start_date`,
     s.home_department_name as department,
 
     m.work_email as manager_email,
