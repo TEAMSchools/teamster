@@ -23,3 +23,12 @@ models:
         data_type: int64
       - name: module_code
         data_type: string
+      - name: regions_assessed_array
+        data_type: array<string>
+        description: >-
+          `regions_assessed` with all whitespace stripped, then split on comma.
+          Within-row duplicates and any empty-string elements (from leading or
+          trailing commas) are resolved by `illuminate_deduped` in
+          `dim_assessment_administrations`. Consumers can `cross join
+          unnest(regions_assessed_array)` to get one row per (assessment,
+          region).

@@ -16,6 +16,7 @@ select
     iae.grade_level,
     iae.illuminate_grade_level_id,
     iae.regions_assessed,
+    iae.regions_assessed_array,
     iae.regions_report_card,
     iae.regions_progress_report,
 

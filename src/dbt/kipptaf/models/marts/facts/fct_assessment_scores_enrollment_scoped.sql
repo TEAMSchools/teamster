@@ -1,35 +1,40 @@
 with
     internal_assessments_raw as (
         select
-            powerschool_student_number as student_number,
-            academic_year,
-            scope,
-            subject_area,
-            module_code,
-            region,
-            title,
-            assessment_id,
-            response_type,
-            response_type_id,
-            response_type_code,
-            performance_band_label,
-            is_mastery,
-            n_assessments,
-            assessment_ids,
+            rr.powerschool_student_number as student_number,
+            rr.region,
+            rr.assessment_id,
+            rr.response_type,
+            rr.response_type_id,
+            rr.response_type_code,
+            rr.performance_band_label,
+            rr.is_mastery,
+            rr.n_assessments,
+            rr.assessment_ids,
+            rr.percent_correct,
 
-            cast(date_taken as date) as test_date,
+            a.title,
+            a.subject_area,
+            a.scope,
+            a.module_code,
+            a.grade_level,
+            a.academic_year,
+
+            cast(rr.date_taken as date) as test_date,
+            cast(a.administered_at as date) as administered_date,
 
             cast(null as numeric) as scale_score,
 
-            percent_correct,
-
-            performance_band_label as proficiency_level,
+            rr.performance_band_label as proficiency_level,
 
             cast(null as numeric) as growth_percentile,
 
             'internal' as score_source,
-        from {{ ref("int_assessments__response_rollup") }}
-        where is_internal_assessment
+        from {{ ref("int_assessments__response_rollup") }} as rr
+        left join
+            {{ ref("int_assessments__assessments") }} as a
+            on rr.assessment_id = a.assessment_id
+        where rr.is_internal_assessment
     ),
 
     internal_assessments as (
@@ -83,6 +88,8 @@ with
 
             assessment_name as title,
 
+            initcap(regexp_extract(_dbt_source_relation, r'kipp(\w+)_')) as region,
+
             _dbt_source_relation,
 
             cast(null as date) as test_date,
@@ -112,6 +119,8 @@ with
             season,
             assessment_name as title,
 
+            initcap(regexp_extract(_dbt_source_relation, r'kipp(\w+)_')) as region,
+
             _dbt_source_relation,
 
             cast(null as date) as test_date,
@@ -138,6 +147,7 @@ with
             nj.administration_window,
             nj.season,
             nj.title,
+            nj.region,
             nj.test_date,
             nj.percent_correct,
             nj.growth_percentile,
@@ -163,6 +173,7 @@ with
             fl.administration_window,
             fl.season,
             fl.title,
+            fl.region,
             fl.test_date,
             fl.percent_correct,
             fl.growth_percentile,
@@ -196,21 +207,25 @@ select
                 "ia.subject_area",
                 "ia.scope",
                 "ia.module_code",
-                "cast(null as int64)",
+                "ia.grade_level",
+                "ia.administered_date",
+                "ia.academic_year",
+                "cast(null as string)",
+                "ia.region",
+                "cast(null as string)",
+                "cast(null as string)",
             ]
         )
-    }} as assessment_key,
+    }} as assessment_administration_key,
 
     {{ dbt_utils.generate_surrogate_key(["ia.student_number"]) }} as student_key,
 
     ia.test_date as test_date_key,
 
-    ia.academic_year,
     ia.scale_score,
     ia.percent_correct,
     ia.proficiency_level,
     ia.is_mastery,
-    ia.score_source as provider,
 from internal_assessments as ia
 
 union all
@@ -238,9 +253,15 @@ select
                 "su.discipline",
                 "su.module_code",
                 "su.grade_level",
+                "cast(null as date)",
+                "su.academic_year",
+                "cast(null as string)",
+                "su.region",
+                "su.season",
+                "su.administration_window",
             ]
         )
-    }} as assessment_key,
+    }} as assessment_administration_key,
 
     {{
         dbt_utils.generate_surrogate_key(
@@ -252,12 +273,9 @@ select
 
     su.test_date as test_date_key,
 
-    su.academic_year,
     su.scale_score,
     su.percent_correct,
     su.performance_band as proficiency_level,
 
     su.is_proficient as is_mastery,
-
-    su.score_source as provider,
 from state_union as su

@@ -1,5 +1,10 @@
 models:
   - name: int_assessments__scaffold
+    description: >-
+      Cross-joins the assessment catalog (assessment x administered_at x region)
+      against course enrollments to produce the canonical "expected to take"
+      grain. Used as the join scaffold for response and score data and as the
+      source for assessment-administration bridges.
     config:
       materialized: table
     data_tests:
@@ -44,6 +49,39 @@ models:
         data_type: string
       - name: module_code
         data_type: string
+      - name: discipline
+        data_type: string
+        description: >-
+          Course discipline from the matched PowerSchool course enrollment.
+          Populated only for the internal-assessment branch
+          (is_internal_assessment=true and is_replacement=false); null for K-8
+          replacement curriculum and external-assessment rows.
+        config:
+          meta:
+            source_column: int_assessments__course_enrollments.discipline
+      - name: cc_dcid
+        data_type: int64
+        description: >-
+          PowerSchool course enrollment row identifier from the matched
+          enrollment in int_assessments__course_enrollments. Populated only for
+          the internal-assessment branch (is_internal_assessment=true and
+          is_replacement=false); null for K-8 replacement curriculum and
+          external-assessment rows. Used as an upstream component of
+          dim_student_section_enrollments.student_section_enrollment_key.
+        config:
+          meta:
+            source_column: int_assessments__course_enrollments.cc_dcid
+      - name: cc_source_relation
+        data_type: string
+        description: >-
+          dbt union-relation metadata string identifying the source district
+          project for the matched course enrollment. Populated only for the
+          internal-assessment branch; null for K-8 replacement curriculum and
+          external-assessment rows. Pairs with cc_dcid to uniquely identify a
+          course enrollment across the four district projects.
+        config:
+          meta:
+            source_column: int_assessments__course_enrollments._dbt_source_relation
       - name: student_assessment_id
         data_type: int64
       - name: date_taken
