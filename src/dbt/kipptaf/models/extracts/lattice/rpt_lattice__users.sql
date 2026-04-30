@@ -31,7 +31,7 @@ select
     s.work_email,
     s.job_title,
     s.employee_number as external_user_id,
-    coalesce(s.worker_rehire_date, s.worker_original_hire_date) as `start_date`,
+    s.worker_hire_date_recent as `start_date`,
     s.home_department_name as department,
 
     m.work_email as manager_email,

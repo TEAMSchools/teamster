@@ -24,7 +24,7 @@ models:
         data_type: string
       - name: start_date
         quote: true
-        description: >
+        description:
           Most recent hire date — rehire date when present, otherwise original
           hire date.
         data_type: date
