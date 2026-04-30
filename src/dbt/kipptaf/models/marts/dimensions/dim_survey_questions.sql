@@ -60,7 +60,7 @@ with
             dbt_utils.deduplicate(
                 relation="all_questions",
                 partition_by="question_shortname",
-                order_by="question_text asc",
+                order_by="question_type nulls last, question_text asc",
             )
         }}
     )
