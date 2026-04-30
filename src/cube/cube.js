@@ -40,7 +40,9 @@ module.exports = {
   }),
 
   contextToGroups: async ({ securityContext }) => {
-    const email = securityContext?.email;
+    const email =
+      securityContext?.email ??
+      securityContext?.cubeCloud?.userAttributes?.email;
     if (!email) return [];
 
     // Pre-Directory-API testing allowlist. Remove once Directory API is live.
@@ -121,7 +123,9 @@ module.exports = {
   },
 
   queryRewrite: (query, { securityContext }) => {
-    const email = securityContext?.email;
+    const email =
+      securityContext?.email ??
+      securityContext?.cubeCloud?.userAttributes?.email;
     const jwtGroups = securityContext?.groups;
     const cached = email ? groupCache.get(email) : null;
     const groups =
