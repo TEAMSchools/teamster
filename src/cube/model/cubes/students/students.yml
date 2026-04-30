@@ -1,5 +1,6 @@
 cubes:
   - name: dim_students
+    public: false
     sql_table: kipptaf_marts.dim_students
 
     dimensions:

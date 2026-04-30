@@ -1,5 +1,6 @@
 cubes:
   - name: dim_school_calendars
+    public: false
     sql_table: kipptaf_marts.dim_school_calendars
 
     dimensions:
