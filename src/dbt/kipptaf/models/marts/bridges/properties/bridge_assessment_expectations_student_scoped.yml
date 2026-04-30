@@ -1,0 +1,70 @@
+models:
+  - name: bridge_assessment_expectations_student_scoped
+    description: >-
+      Factless many-to-many bridge linking students to scheduled assessment
+      administrations for K-8 replacement-curriculum assessments where there is
+      no section enrollment context. One row per (student x assessment
+      administration). Replaces the K-8 replacement portion of the deleted
+      dim_student_assessment_expectations. Sources only the `is_replacement`
+      branch of int_assessments__scaffold; teacher-created Illuminate items that
+      live on the non-internal scaffold branch are excluded because they have no
+      corresponding row in dim_assessment_administrations and would produce 100%
+      FK orphans. Hash inputs mirror the illuminate branch of
+      dim_assessment_administrations exactly — int_assessments__assessments is
+      re-joined to recover the canonical `grade_level` and `academic_year` (the
+      scaffold's `grade_level_id` is illuminate-indexed and its `academic_year`
+      is `academic_year_clean`, neither of which match the dim's hash inputs).
+    columns:
+      - name: assessment_expectation_key
+        data_type: string
+        description: Surrogate key. Primary key.
+        constraints:
+          - type: primary_key
+            warn_unsupported: false
+        data_tests:
+          - unique
+          - not_null
+
+      - name: student_key
+        data_type: string
+        description: FK to dim_students.
+        constraints:
+          - type: foreign_key
+            to: ref('dim_students')
+            to_columns: [student_key]
+            warn_unsupported: false
+        data_tests:
+          - relationships:
+              arguments:
+                to: ref('dim_students')
+                field: student_key
+
+      - name: assessment_administration_key
+        data_type: string
+        description: FK to dim_assessment_administrations.
+        constraints:
+          - type: foreign_key
+            to: ref('dim_assessment_administrations')
+            to_columns: [assessment_administration_key]
+            warn_unsupported: false
+        data_tests:
+          - relationships:
+              arguments:
+                to: ref('dim_assessment_administrations')
+                field: assessment_administration_key
+
+      - name: term_key
+        data_type: string
+        description: >-
+          FK to dim_terms. Resolves via (region x administered_date x school)
+          against the reporting terms sheet.
+        constraints:
+          - type: foreign_key
+            to: ref('dim_terms')
+            to_columns: [term_key]
+            warn_unsupported: false
+        data_tests:
+          - relationships:
+              arguments:
+                to: ref('dim_terms')
+                field: term_key

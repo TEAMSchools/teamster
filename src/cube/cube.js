@@ -31,7 +31,9 @@ function resolveGroupsSync(securityContext) {
   const groups = securityContext?.groups;
   if (Array.isArray(groups) && groups.length > 0) return groups;
 
-  const email = securityContext?.email;
+  const email =
+    securityContext?.email ??
+    securityContext?.cubeCloud?.userAttributes?.email;
 
   if (email) {
     const cached = groupCache.get(email);
@@ -75,15 +77,36 @@ module.exports = {
       return jwtGroups.filter((g) => g.startsWith("cube-"));
     }
 
-    const email = securityContext?.email;
+    const email =
+      securityContext?.email ??
+      securityContext?.cubeCloud?.userAttributes?.email;
     if (!email) return [];
+
+    // Pre-Directory-API testing allowlist. Remove once Directory API is live.
+    // Set CUBE_TESTING_USERS in Cube Cloud env vars (never commit values).
+    // Format: {"user@example.com": ["cube-access-student-data", "cube-network-detail"]}
+    if (process.env.CUBE_TESTING_USERS) {
+      try {
+        const map = JSON.parse(process.env.CUBE_TESTING_USERS);
+        // All users handled here — listed get groups, unlisted get [] (default
+        // deny). Prevents fallthrough to Directory API in testing deployments.
+        const groups = (map[email] ?? []).filter((g) => g.startsWith("cube-"));
+        groupCache.set(email, { groups, expiresAt: nextMidnightEastern() });
+        return groups;
+      } catch (err) {
+        console.error("CUBE_TESTING_USERS is not valid JSON:", err.message);
+        return [];
+      }
+    }
 
     // Local dev only: CUBE_GROUP_MAP bypasses Directory API.
     // Must never be set in Cube Cloud — see docs/guides/cube.md.
     if (process.env.NODE_ENV !== "production" && process.env.CUBE_GROUP_MAP) {
       try {
         const map = JSON.parse(process.env.CUBE_GROUP_MAP);
-        return (map[email] ?? []).filter((g) => g.startsWith("cube-"));
+        const groups = (map[email] ?? []).filter((g) => g.startsWith("cube-"));
+        groupCache.set(email, { groups, expiresAt: nextMidnightEastern() });
+        return groups;
       } catch (err) {
         console.error("CUBE_GROUP_MAP is not valid JSON:", err.message);
         return [];
