@@ -47,7 +47,6 @@ with
             cast(null as string) as administration_round,
             cast(null as string) as season,
             cast(null as string) as administration_window,
-            cast(null as string) as test_type,
         from illuminate_deduped
     ),
 
@@ -88,8 +87,6 @@ with
 
             if(`period` = 'FallBlock', 'Fall', `period`) as season,
             if(`period` = 'FallBlock', 'Fall', `period`) as administration_window,
-
-            cast(null as string) as test_type,
         from {{ ref("int_pearson__all_assessments") }}
         where testscalescore is not null
     ),
@@ -115,8 +112,6 @@ with
 
             season,
             administration_window,
-
-            cast(null as string) as test_type,
         from {{ ref("int_fldoe__all_assessments") }}
         where scale_score is not null
     ),
@@ -143,8 +138,6 @@ with
 
             cast(null as string) as season,
             cast(null as string) as administration_window,
-
-            test_type,
         from {{ ref("int_assessments__college_assessment") }}
     ),
 
@@ -169,8 +162,6 @@ with
             cast(null as string) as administration_round,
             cast(null as string) as season,
             cast(null as string) as administration_window,
-
-            'Official' as test_type,
         from {{ ref("int_assessments__ap_assessments") }}
     ),
 
@@ -226,10 +217,8 @@ select
 
     administered_date as administered_date_key,
 
-    academic_year,
     region,
     administration_round,
     season,
     administration_window,
-    test_type,
 from all_administrations

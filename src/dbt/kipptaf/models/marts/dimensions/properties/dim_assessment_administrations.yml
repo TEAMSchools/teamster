@@ -59,11 +59,6 @@ models:
               config:
                 where: administered_date_key >= '2000-01-01'
 
-      - name: academic_year
-        data_type: int64
-        description: >-
-          Academic year of the administration.
-
       - name: region
         data_type: string
         description: >-
@@ -92,9 +87,3 @@ models:
         description: >-
           State assessment administration window. Populated for state
           assessments only; mirrors season for NJ but distinct for FL.
-
-      - name: test_type
-        data_type: string
-        description: >-
-          'Official' for AP and college assessments; null for internal and
-          state.
