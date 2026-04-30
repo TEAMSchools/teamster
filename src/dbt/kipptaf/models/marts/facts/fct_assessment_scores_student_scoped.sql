@@ -1,6 +1,5 @@
 with
-    -- trunk-ignore(sqlfluff/ST03): referenced by string in dbt_utils.deduplicate
-    college_assessments_raw as (
+    college_assessments as (
         select
             student_number,
             academic_year,
@@ -20,16 +19,6 @@ with
 
             'college' as score_source,
         from {{ ref("int_assessments__college_assessment") }}
-    ),
-
-    college_assessments as (
-        {{
-            dbt_utils.deduplicate(
-                relation="college_assessments_raw",
-                partition_by="student_number, score_type, test_date, rn_highest",
-                order_by="scale_score desc",
-            )
-        }}
     ),
 
     ap_assessments as (
@@ -72,25 +61,25 @@ select
                 "ca.scope",
                 "ca.score_type",
                 "cast(null as int64)",
+                "ca.test_date",
+                "ca.academic_year",
+                "ca.administration_round",
+                "cast(null as string)",
+                "cast(null as string)",
+                "cast(null as string)",
             ]
         )
-    }} as assessment_key,
+    }} as assessment_administration_key,
 
     ca.test_date as test_date_key,
 
-    ca.academic_year,
-    ca.score_type as `type`,
     ca.scale_score,
-    ca.administration_round,
-    ca.test_type,
-    ca.rn_highest as rank,
+    ca.rn_highest as `rank`,
     ca.max_scale_score,
     ca.superscore,
     ca.running_max_scale_score,
 
     cast(null as string) as proficiency_level,
-
-    ca.score_source as provider,
 from college_assessments as ca
 
 union all
@@ -119,22 +108,21 @@ select
                 "'AP'",
                 "ap.ps_ap_course_subject_code",
                 "cast(null as int64)",
+                "cast(null as date)",
+                "ap.academic_year",
+                "cast(null as string)",
+                "cast(null as string)",
+                "cast(null as string)",
+                "cast(null as string)",
             ]
         )
-    }} as assessment_key,
+    }} as assessment_administration_key,
 
     cast(null as date) as test_date_key,
 
-    ap.academic_year,
-    ap.ps_ap_course_subject_code as `type`,
-
     cast(ap.exam_score as numeric) as scale_score,
 
-    cast(null as string) as administration_round,
-
-    'Official' as test_type,
-
-    ap.rn_highest as rank,
+    ap.rn_highest as `rank`,
 
     cast(null as numeric) as max_scale_score,
     cast(null as numeric) as superscore,
@@ -143,6 +131,4 @@ select
     case
         when ap.exam_score >= 3 then 'Qualified' else 'Not Qualified'
     end as proficiency_level,
-
-    ap.score_source as provider,
 from ap_assessments as ap
