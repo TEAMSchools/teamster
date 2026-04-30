@@ -306,13 +306,6 @@ dimension and fail.
 Corollary: never add `not_null` tests on `generate_surrogate_key` output — it
 never returns NULL.
 
-### dbt_utils.deduplicate `order_by` on BigQuery
-
-The macro compiles to `array_agg(original order by <expr> limit 1)`. BigQuery
-rejects `asc nulls last` and `desc nulls first` inside aggregate `array_agg`.
-Use `desc` (default NULLS LAST) or `(col is null) asc` instead of explicit
-`nulls last` with ascending sort.
-
 ### Don't inline CASE expressions in generate_surrogate_key
 
 `dbt_utils.generate_surrogate_key(["case <col> when ... end"])` compiles via
