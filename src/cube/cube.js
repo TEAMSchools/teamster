@@ -49,11 +49,12 @@ module.exports = {
     if (process.env.CUBE_TESTING_USERS) {
       try {
         const map = JSON.parse(process.env.CUBE_TESTING_USERS);
-        if (Object.prototype.hasOwnProperty.call(map, email)) {
-          return (map[email] ?? []).filter((g) => g.startsWith("cube-"));
-        }
+        // All users handled here — listed get groups, unlisted get [] (default
+        // deny). Prevents fallthrough to Directory API in testing deployments.
+        return (map[email] ?? []).filter((g) => g.startsWith("cube-"));
       } catch (err) {
         console.error("CUBE_TESTING_USERS is not valid JSON:", err.message);
+        return [];
       }
     }
 
