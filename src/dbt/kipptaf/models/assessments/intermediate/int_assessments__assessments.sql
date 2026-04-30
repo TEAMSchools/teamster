@@ -19,6 +19,12 @@ select
     iae.regions_report_card,
     iae.regions_progress_report,
 
+    array(
+        select distinct trim(r),
+        from unnest(split(iae.regions_assessed, ',')) as r
+        where trim(r) != ''
+    ) as regions_assessed_array,
+
     coalesce(iae.administered_at, a.administered_at) as administered_at,
     coalesce(iae.subject, a.subject_area) as subject_area,
 

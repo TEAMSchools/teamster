@@ -65,7 +65,7 @@ with
 
             safe_cast(sr.response_id as string) as survey_response_id,
 
-            null as survey_question_id,
+            safe_cast(sr.question_id as string) as survey_question_id,
 
             sr.response_value as answer,
             sr.question_title_english as question_title,
@@ -118,24 +118,11 @@ with
             between srh.effective_date_start_timestamp
             and srh.effective_date_end_timestamp
             and srh.primary_indicator
-    ),
-
-    with_identifier as (
-        select
-            e.*,
-            coalesce(
-                cast(e.respondent_employee_number as string), e.respondent_email
-            ) as respondent_identifier,
-        from enriched as e
     )
 
-    {{
-        dbt_utils.deduplicate(
-            relation="with_identifier",
-            partition_by=(
-                "survey_id, survey_response_id, "
-                "respondent_identifier, question_shortname"
-            ),
-            order_by="answer asc",
-        )
-    }}
+select
+    e.*,
+    coalesce(
+        cast(e.respondent_employee_number as string), e.respondent_email
+    ) as respondent_identifier,
+from enriched as e

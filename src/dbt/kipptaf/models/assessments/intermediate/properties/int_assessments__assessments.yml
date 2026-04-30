@@ -37,6 +37,13 @@ models:
         data_type: string
       - name: regions_progress_report
         data_type: string
+      - name: regions_assessed_array
+        data_type: array<string>
+        description: >-
+          `regions_assessed` split on comma, trimmed, deduped, and empty-string
+          filtered. Consumers can `cross join unnest(regions_assessed_array)` to
+          get one row per (assessment, region) without the whitespace-variant
+          collapse that requires DISTINCT downstream.
       - name: administered_at
         data_type: date
         description: First non-null of administered_at.

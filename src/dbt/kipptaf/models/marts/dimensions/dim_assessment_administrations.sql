@@ -1,30 +1,21 @@
 with
-    -- DISTINCT projects from response grain to administration grain (one row
-    -- per scheduled occurrence). Internal assessments use administered_at as
-    -- the occurrence date; regions_assessed is a comma-separated list of
-    -- KIPP regions and is unnested to one row per region.
     illuminate_administrations as (
-        select distinct
+        select
             'illuminate' as assessment_type,
             title,
             subject_area,
             scope,
             module_code,
             grade_level,
-
-            cast(administered_at as date) as administered_date,
+            administered_date,
             academic_year,
-
-            trim(region) as region,
+            region,
 
             cast(null as string) as administration_round,
             cast(null as string) as season,
             cast(null as string) as administration_window,
             cast(null as string) as test_type,
-        from
-            {{ ref("int_assessments__assessments") }},
-            unnest(split(regions_assessed, ',')) as region
-        where is_internal_assessment and regions_assessed is not null
+        from {{ ref("int_assessments__administrations") }}
     ),
 
     -- State NJ: one administration per (testcode, period, academic_year,

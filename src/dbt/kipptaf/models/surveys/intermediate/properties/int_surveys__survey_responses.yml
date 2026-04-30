@@ -1,19 +1,22 @@
 models:
   - name: int_surveys__survey_responses
     description: >-
-      Unioned survey response grain across Google Forms and Alchemer sources.
-      One row per (survey, response, respondent, question) with academic-year
-      and term enrichment from the reporting terms sheet, respondent enrichment
-      from staff roster history, and a per-respondent round rank for selecting
-      the latest submission within a term.
+      Unioned raw response grain across Google Forms and Alchemer sources. One
+      row per (survey_id, survey_response_id, survey_question_id,
+      question_shortname, answer). Google Forms grid and check-all-that-apply
+      questions produce multiple rows per (response, question_id) — one per row
+      shortname or selected option — so the natural grain extends to shortname +
+      answer. Marts that need per-shortname or per-question rollups project to
+      that grain themselves.
     data_tests:
       - dbt_utils.unique_combination_of_columns:
           arguments:
             combination_of_columns:
               - survey_id
               - survey_response_id
-              - respondent_identifier
+              - survey_question_id
               - question_shortname
+              - answer
     columns:
       - name: survey_id
         data_type: string

@@ -12,27 +12,21 @@ with
             a.module_type,
             a.module_code,
 
-            trim(region) as region,
+            region,
 
             coalesce(a.illuminate_grade_level_id, agl.grade_level_id) as grade_level_id,
         from {{ ref("int_assessments__assessments") }} as a
-        cross join unnest(split(a.regions_assessed, ',')) as region
+        cross join unnest(a.regions_assessed_array) as region
         left join
             {{ ref("stg_illuminate__dna_assessments__assessment_grade_levels") }} as agl
             on a.assessment_id = agl.assessment_id
         where a.is_internal_assessment
     ),
 
-    -- DISTINCT projects from alias-grain (one row per location alias) to
-    -- canonical-school grain (one row per powerschool_school_id).
     school_to_region as (
-        select distinct
-            location_powerschool_school_id as powerschool_school_id,
-            initcap(
-                regexp_extract(location_dagster_code_location, r'kipp(\w+)')
-            ) as region,
-        from {{ ref("int_people__location_crosswalk") }}
-        where location_powerschool_school_id != 0
+        select powerschool_school_id, city as region,
+        from {{ ref("stg_google_sheets__people__locations") }}
+        where powerschool_school_id != 0
     ),
 
     -- trunk-ignore(sqlfluff/ST03)
