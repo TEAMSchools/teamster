@@ -1,0 +1,14 @@
+exposures:
+  - name: lattice
+    label: Lattice
+    type: application
+    owner:
+      name: Data Team
+    depends_on:
+      - ref("rpt_lattice__users")
+    url: https://kipp.latticehq.com
+    config:
+      meta:
+        dagster:
+          kinds:
+            - sftp

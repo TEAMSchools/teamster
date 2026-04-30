@@ -134,6 +134,7 @@ defs = Definitions(
         "ssh_egencia": resources.SSH_RESOURCE_EGENCIA,
         "ssh_idauto": resources.SSH_RESOURCE_IDAUTO,
         "ssh_illuminate": resources.SSH_RESOURCE_ILLUMINATE,
+        "ssh_lattice": resources.SSH_RESOURCE_LATTICE,
         "ssh_littlesis": resources.SSH_RESOURCE_LITTLESIS,
         "tableau": resources.TABLEAU_SERVER_RESOURCE,
         "zendesk": ZENDESK_RESOURCE,
