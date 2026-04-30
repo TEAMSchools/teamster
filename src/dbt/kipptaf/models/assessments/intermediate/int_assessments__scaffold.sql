@@ -23,6 +23,8 @@ with
         where a.is_internal_assessment
     ),
 
+    -- DISTINCT projects from alias-grain (one row per location alias) to
+    -- canonical-school grain (one row per powerschool_school_id).
     school_to_region as (
         select distinct
             location_powerschool_school_id as powerschool_school_id,
