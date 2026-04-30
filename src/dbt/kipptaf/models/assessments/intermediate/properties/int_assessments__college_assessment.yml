@@ -6,14 +6,6 @@ models:
       running-max scale scores, overall vs subject-score flags, and a surrogate
       key on (student_number, score_type, test_date) for downstream fact
       loading.
-    data_tests:
-      - dbt_utils.unique_combination_of_columns:
-          arguments:
-            combination_of_columns:
-              - student_number
-              - score_type
-              - test_date
-              - rn_highest
     columns:
       - name: student_number
         data_type: int64

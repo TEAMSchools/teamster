@@ -5,16 +5,6 @@ models:
       attach administration context (region, academic year, subject area,
       module), then aggregates points and percent-correct to the (student x
       response_type) grain for internal-assessment scoring.
-    data_tests:
-      - dbt_utils.unique_combination_of_columns:
-          arguments:
-            combination_of_columns:
-              - illuminate_student_id
-              - assessment_id
-              - response_type
-              - response_type_id
-              - response_type_code
-              - powerschool_school_id
     columns:
       - name: illuminate_student_id
         data_type: int64

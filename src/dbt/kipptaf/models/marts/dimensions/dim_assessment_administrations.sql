@@ -1,4 +1,24 @@
 with
+    -- trunk-ignore(sqlfluff/ST03): referenced by string in dbt_utils.deduplicate
+    illuminate_unnested as (
+        select
+            a.title,
+            a.subject_area,
+            a.scope,
+            a.module_code,
+            a.grade_level,
+
+            cast(a.administered_at as date) as administered_date,
+            a.academic_year,
+            region,
+        from {{ ref("int_assessments__assessments") }} as a
+        cross join unnest(a.regions_assessed_array) as region
+        where a.is_internal_assessment
+    ),
+
+    -- Multiple `assessment_id` rows can share the same admin grain
+    -- (region-specific copies of the same module checkpoint), so dedupe
+    -- here rather than via DISTINCT.
     illuminate_administrations as (
         select
             'illuminate' as assessment_type,
@@ -15,7 +35,20 @@ with
             cast(null as string) as season,
             cast(null as string) as administration_window,
             cast(null as string) as test_type,
-        from {{ ref("int_assessments__administrations") }}
+        from
+            (
+                {{
+                    dbt_utils.deduplicate(
+                        relation="illuminate_unnested",
+                        partition_by=(
+                            "title, subject_area, scope, module_code, "
+                            "grade_level, administered_date, academic_year, "
+                            "region"
+                        ),
+                        order_by="title",
+                    )
+                }}
+            )
     ),
 
     -- State NJ: one administration per (testcode, period, academic_year,

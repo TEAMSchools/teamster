@@ -275,10 +275,5 @@ with
             and rtt.type = 'RT'
     )
 
-    {{
-        dbt_utils.deduplicate(
-            relation="enriched",
-            partition_by="illuminate_student_id, assessment_id, response_type, response_type_id, response_type_code, powerschool_school_id",
-            order_by="date_taken desc, points desc",
-        )
-    }}
+select *,
+from enriched

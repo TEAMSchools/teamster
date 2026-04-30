@@ -1,5 +1,6 @@
 with
-    college_assessments as (
+    -- trunk-ignore(sqlfluff/ST03): referenced by string in dbt_utils.deduplicate
+    college_assessments_raw as (
         select
             student_number,
             academic_year,
@@ -19,6 +20,16 @@ with
 
             'college' as score_source,
         from {{ ref("int_assessments__college_assessment") }}
+    ),
+
+    college_assessments as (
+        {{
+            dbt_utils.deduplicate(
+                relation="college_assessments_raw",
+                partition_by="student_number, score_type, test_date, rn_highest",
+                order_by="scale_score desc",
+            )
+        }}
     ),
 
     ap_assessments as (

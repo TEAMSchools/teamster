@@ -1,5 +1,5 @@
 with
-    internal_assessments as (
+    internal_assessments_raw as (
         select
             rr.powerschool_student_number as student_number,
             rr.region,
@@ -35,6 +35,21 @@ with
             {{ ref("int_assessments__assessments") }} as a
             on rr.assessment_id = a.assessment_id
         where rr.is_internal_assessment
+    ),
+
+    internal_assessments as (
+        {{
+            dbt_utils.deduplicate(
+                relation="internal_assessments_raw",
+                partition_by=(
+                    "student_number, assessment_id, "
+                    "TO_JSON_STRING(assessment_ids), "
+                    "response_type, response_type_id, "
+                    "response_type_code"
+                ),
+                order_by="test_date desc",
+            )
+        }}
     ),
 
     state_nj as (
