@@ -23,6 +23,10 @@ with
         where a.is_internal_assessment
     ),
 
+    -- Sources from stg_google_sheets__people__locations (canonical-school
+    -- grain, one row per powerschool_school_id) per kipptaf/CLAUDE.md, not
+    -- int_people__location_crosswalk (alias grain, one row per
+    -- location_name alternate spelling).
     school_to_region as (
         select powerschool_school_id, city as region,
         from {{ ref("stg_google_sheets__people__locations") }}

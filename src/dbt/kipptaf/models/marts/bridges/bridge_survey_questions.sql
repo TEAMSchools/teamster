@@ -52,6 +52,11 @@ with
     ),
 
     deduped as (
+        -- order_by prefers the concrete is_required boolean from
+        -- google_forms_pairs / scd_powerschool_pairs over the
+        -- `cast(null as bool)` placeholder from alchemer_pairs / manager_pairs
+        -- when the same (survey_id, question_shortname) appears in multiple
+        -- CTEs.
         {{
             dbt_utils.deduplicate(
                 relation="all_pairs",

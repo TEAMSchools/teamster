@@ -26,7 +26,9 @@ models:
       - name: regions_assessed_array
         data_type: array<string>
         description: >-
-          `regions_assessed` split on comma, trimmed, deduped, and empty-string
-          filtered. Consumers can `cross join unnest(regions_assessed_array)` to
-          get one row per (assessment, region) without the whitespace-variant
-          collapse that requires DISTINCT downstream.
+          `regions_assessed` with all whitespace stripped, then split on comma.
+          Within-row duplicates and any empty-string elements (from leading or
+          trailing commas) are resolved by `illuminate_deduped` in
+          `dim_assessment_administrations`. Consumers can `cross join
+          unnest(regions_assessed_array)` to get one row per (assessment,
+          region).

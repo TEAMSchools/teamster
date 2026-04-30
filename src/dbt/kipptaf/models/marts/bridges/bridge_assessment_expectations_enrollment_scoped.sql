@@ -24,6 +24,11 @@ with
         inner join
             {{ ref("int_assessments__assessments") }} as a
             on sc.assessment_id = a.assessment_id
+        -- ES Writing rows in int_assessments__course_enrollments synthesize
+        -- NULL cc_dcid (no PowerSchool course-enrollment record exists for
+        -- those students). Excluded here because cc_dcid + cc_source_relation
+        -- form the student_section_enrollment_key — NULL inputs would all hash
+        -- to the same generate_surrogate_key placeholder and collide on the PK.
         where
             sc.is_internal_assessment
             and not sc.is_replacement
