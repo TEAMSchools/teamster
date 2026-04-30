@@ -167,6 +167,8 @@ MCP equivalent. Before running `gh <subcommand>` via Bash, check the
 - `gh workflow *` — Actions workflow inspection/dispatch; no MCP coverage.
 - `gh repo edit` — repo settings; `gh repo create/view/list` have MCP
   equivalents and are not on this list.
+- Editing an existing comment — `mcp__github__add_issue_comment` only creates.
+  Use `gh api -X PATCH repos/<owner>/<repo>/issues/comments/<id> -f body='...'`.
 
 ### Dagster asset diagnosis
 
@@ -212,6 +214,10 @@ wide tables, paginate with `WHERE ordinal_position > N`.
 Pre-merge queries against PR-branch schema use
 `dbt_cloud_pr_<ci_id>_<pr_num>_<schema>` — prod `<schema>` lacks unmerged
 renames.
+
+Chained joins through PR-branch marts (mart-view → mart-view → upstream-view)
+hit BigQuery's 16-view nesting limit. Query materialized prod tables instead, or
+split the query.
 
 ### dbt MCP
 

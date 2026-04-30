@@ -129,6 +129,12 @@ Pure output-alias renames don't change hashes. Any of the five above require an
 entry in the "Enumerated surrogate-key changes" table of the column-naming audit
 spec.
 
+Hash inputs must be derived identically across producer and consumer.
+Intermediates may rename or transform columns (e.g. scaffold's
+`academic_year_clean` aliased as `academic_year` is +1 vs
+`int_assessments__assessments.academic_year`); the consumer must re-join the
+source-of-truth model rather than trust the matching column name.
+
 ## Verify source precision before R9 drops
 
 Staging cast chains (`cast(x as datetime)` → `cast(as date)`) and field names

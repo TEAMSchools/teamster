@@ -303,6 +303,9 @@ if(
 Without this, relationship tests check the placeholder hash against the parent
 dimension and fail.
 
+Corollary: never add `not_null` tests on `generate_surrogate_key` output — it
+never returns NULL.
+
 ### Don't inline CASE expressions in generate_surrogate_key
 
 `dbt_utils.generate_surrogate_key(["case <col> when ... end"])` compiles via
