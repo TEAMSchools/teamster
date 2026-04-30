@@ -221,7 +221,6 @@ with
         where not is_internal_assessment
     ),
 
-    -- trunk-ignore(sqlfluff/ST03): referenced by string in dbt_utils.deduplicate
     enriched as (
         select
             ru.illuminate_student_id,
@@ -276,14 +275,10 @@ with
             and rtt.type = 'RT'
     )
 
-select *,
-from
-    (
-        {{
-            dbt_utils.deduplicate(
-                relation="enriched",
-                partition_by="illuminate_student_id, assessment_id, response_type, response_type_id, response_type_code, powerschool_school_id",
-                order_by="date_taken desc, points desc",
-            )
-        }}
-    )
+    {{
+        dbt_utils.deduplicate(
+            relation="enriched",
+            partition_by="illuminate_student_id, assessment_id, response_type, response_type_id, response_type_code, powerschool_school_id",
+            order_by="date_taken desc, points desc",
+        )
+    }}

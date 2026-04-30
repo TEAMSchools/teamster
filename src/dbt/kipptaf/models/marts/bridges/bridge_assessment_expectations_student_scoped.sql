@@ -1,19 +1,3 @@
-/* This bridge covers K-8 replacement-curriculum scheduled administrations
-   (the `is_replacement` branch of int_assessments__scaffold). It does NOT
-   currently cover the non-internal scaffold branch (state / college / AP):
-   that branch sources from int_assessments__assessments and represents
-   teacher-created Illuminate items that are not surfaced in
-   dim_assessment_administrations (the dim's state / college / AP rows come
-   from int_pearson__all_assessments / int_fldoe__all_assessments /
-   int_assessments__college_assessment / int_assessments__ap_assessments,
-   which the scaffold has no upstream linkage to). Including those rows
-   would produce 100% orphans against dim_assessment_administrations.
-
-   Hash inputs mirror the illuminate branch of dim_assessment_administrations
-   exactly: re-join int_assessments__assessments to recover the canonical
-   `grade_level` and `academic_year` (the scaffold's `grade_level_id` is
-   illuminate-indexed and the scaffold's `academic_year` is
-   `academic_year_clean`, neither of which match the dim's hash inputs). */
 with
     expectations as (
         select

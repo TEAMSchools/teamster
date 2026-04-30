@@ -241,7 +241,6 @@ with
             and g.previous_total_score_change is not null
     ),
 
-    -- trunk-ignore(sqlfluff/ST03): referenced by string in dbt_utils.deduplicate
     enriched as (
         select
             student_number,
@@ -304,16 +303,12 @@ with
         from score_calcs
     )
 
-select *,
-from
-    (
-        -- 80% of dup groups tie on scale_score; superscore breaks the tie
-        -- deterministically.
-        {{
-            dbt_utils.deduplicate(
-                relation="enriched",
-                partition_by="student_number, score_type, test_date, rn_highest",
-                order_by="scale_score desc, superscore desc",
-            )
-        }}
-    )
+    -- 80% of dup groups tie on scale_score; superscore breaks the tie
+    -- deterministically.
+    {{
+        dbt_utils.deduplicate(
+            relation="enriched",
+            partition_by="student_number, score_type, test_date, rn_highest",
+            order_by="scale_score desc, superscore desc",
+        )
+    }}

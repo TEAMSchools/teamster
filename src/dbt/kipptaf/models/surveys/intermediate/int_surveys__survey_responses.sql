@@ -120,7 +120,6 @@ with
             and srh.primary_indicator
     ),
 
-    -- trunk-ignore(sqlfluff/ST03): referenced by string in dbt_utils.deduplicate
     with_identifier as (
         select
             e.*,
@@ -130,17 +129,13 @@ with
         from enriched as e
     )
 
-select *,
-from
-    (
-        {{
-            dbt_utils.deduplicate(
-                relation="with_identifier",
-                partition_by=(
-                    "survey_id, survey_response_id, "
-                    "respondent_identifier, question_shortname"
-                ),
-                order_by="answer asc",
-            )
-        }}
-    )
+    {{
+        dbt_utils.deduplicate(
+            relation="with_identifier",
+            partition_by=(
+                "survey_id, survey_response_id, "
+                "respondent_identifier, question_shortname"
+            ),
+            order_by="answer asc",
+        )
+    }}
