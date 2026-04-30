@@ -1,0 +1,62 @@
+cubes:
+  - name: dim_students
+    sql_table: kipptaf_marts.dim_students
+
+    dimensions:
+      - name: student_key
+        sql: student_key
+        type: string
+        primary_key: true
+
+      # PII — excluded from detail views without cube-access-student-pii
+      - name: lea_student_identifier
+        sql: lea_student_identifier
+        type: number
+
+      - name: full_name
+        sql: full_name
+        type: string
+
+      - name: birth_date
+        sql: CAST(birth_date AS TIMESTAMP)
+        type: time
+
+      - name: state_student_identifier
+        sql: state_student_identifier
+        type: string
+
+      - name: district_student_identifier
+        sql: district_student_identifier
+        type: string
+
+      - name: salesforce_contact_id
+        sql: salesforce_contact_id
+        type: string
+
+      - name: gender_identity
+        sql: gender_identity
+        type: string
+
+      - name: race
+        sql: race
+        type: string
+
+      - name: meal_eligibility_status
+        sql: meal_eligibility_status
+        type: string
+
+      - name: enrollment_status
+        sql: enrollment_status
+        type: string
+
+      - name: is_gifted
+        sql: is_gifted
+        type: boolean
+
+      - name: is_ell
+        sql: is_ell
+        type: boolean
+
+      - name: has_iep
+        sql: has_iep
+        type: boolean

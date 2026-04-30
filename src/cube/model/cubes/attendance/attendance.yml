@@ -1,0 +1,144 @@
+cubes:
+  - name: attendance
+    sql_table: kipptaf_marts.fct_student_attendance_daily
+
+    joins:
+      - name: dim_dates
+        sql: "{dim_dates.date_day} = CAST({CUBE}.date_key AS TIMESTAMP)"
+        relationship: many_to_one
+
+      - name: dim_locations
+        sql: "{dim_locations.location_key} = {CUBE}.location_key"
+        relationship: many_to_one
+
+      # compound join avoids a diamond path through dim_locations
+      - name: dim_school_calendars
+        sql: >
+          {dim_school_calendars.date_key} = {CUBE}.date_key AND
+          {dim_school_calendars.location_key} = {CUBE}.location_key
+        relationship: many_to_one
+
+      - name: dim_student_enrollments
+        sql: >
+          {dim_student_enrollments.student_enrollment_key} =
+          {CUBE}.student_enrollment_key
+        relationship: many_to_one
+
+      - name: dim_terms
+        sql: "{dim_terms.term_key} = {CUBE}.term_key"
+        relationship: many_to_one
+
+    dimensions:
+      - name: student_attendance_daily_key
+        sql: student_attendance_daily_key
+        type: string
+        primary_key: true
+
+      - name: attendance_date
+        sql: CAST(date_key AS TIMESTAMP)
+        type: time
+
+      - name: academic_year
+        sql: academic_year
+        type: number
+
+      - name: semester
+        sql: semester
+        type: string
+
+      - name: attendance_code
+        sql: attendance_code
+        type: string
+
+      - name: attendance_category
+        sql: attendance_category
+        type: string
+
+      - name: attendance_value
+        sql: attendance_value
+        type: number
+
+      - name: membership_value
+        sql: membership_value
+        type: number
+
+      - name: present_weight
+        sql: present_weight
+        type: number
+
+      - name: is_absent
+        sql: is_absent
+        type: number
+
+      - name: is_tardy
+        sql: is_tardy
+        type: number
+
+      - name: is_ontime
+        sql: is_ontime
+        type: number
+
+      - name: is_oss
+        sql: is_oss
+        type: number
+
+      - name: is_iss
+        sql: is_iss
+        type: number
+
+      - name: is_suspended
+        sql: is_suspended
+        type: number
+
+      - name: is_truant
+        sql: is_truant
+        type: boolean
+
+    measures:
+      - name: count_students
+        sql: student_enrollment_key
+        type: count_distinct
+        filters:
+          - sql: "{CUBE}.membership_value > 0"
+
+      - name: _sum_attendance_value
+        sql: attendance_value
+        type: sum
+        public: false
+
+      - name: _sum_membership_value
+        sql: membership_value
+        type: sum
+        public: false
+
+      - name: avg_daily_attendance
+        description:
+          Average Daily Attendance (ADA) — SUM(attendance_value) /
+          SUM(membership_value)
+        sql: "{_sum_attendance_value} / NULLIF({_sum_membership_value}, 0)"
+        type: number
+        format: percent
+
+      - name: pct_tardy
+        description: Percentage of membership days where the student was tardy
+        sql: is_tardy
+        type: avg
+        format: percent
+        filters:
+          - sql: "{CUBE}.membership_value = 1"
+
+      - name: count_truants
+        description: >-
+          Students meeting truancy criteria across the filtered period. For a
+          point-in-time snapshot, filter to a single date.
+        sql: student_enrollment_key
+        type: count_distinct
+        filters:
+          - sql: "{CUBE}.is_truant = true"
+          - sql: "{CUBE}.membership_value = 1"
+
+      - name: pct_truant
+        description: Percentage of students meeting truancy criteria
+        sql: "1.0 * {count_truants} / NULLIF({count_students}, 0)"
+        type: number
+        format: percent
