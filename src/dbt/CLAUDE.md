@@ -109,8 +109,10 @@ manifest". The prod manifest is refreshed by `.git/hooks/post-merge` on every
 - Missing prod relations → silent skip with
   `No relation found in state manifest for <unique_id>`. Treat as a diagnostic
   signal, not an error.
-- `--threads` applies; parallelism × project count hits BQ `INFORMATION_SCHEMA`
-  rate limits the same way `stage_external_sources` does.
+- `--state` manifest must be parsed with `target=prod` so model schemas resolve
+  to prod warehouse relations. A staging-target manifest causes every model to
+  fall through to view materialization, eventually hitting BigQuery's 16-level
+  nested-view limit.
 
 ## Stale dev tables shadow `--defer`
 
