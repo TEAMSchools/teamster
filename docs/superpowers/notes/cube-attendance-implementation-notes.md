@@ -134,3 +134,81 @@ POC had this measure referencing `fct_attendance_communications.is_successful`.
 No equivalent exists in the new mart design. Natural home is
 `attendance_interventions.yml` once that cube is built over
 `fct_student_attendance_interventions`.
+
+---
+
+## `public: false` required on all cubes
+
+All cubes must set `public: false`. Without it, users can query the underlying
+cube directly, bypassing any `access_policy` restrictions defined on views.
+Applied to: `attendance.yml`, all conformed cubes (`dates`, `locations`,
+`regions`, `school_calendars`, `terms`), and all student cubes
+(`student_enrollments`, `students`).
+
+---
+
+## `{CUBE}` alias required in SQL expressions
+
+Dimension/measure `sql:` blocks must use `{CUBE}.column_name`, never
+`table_name.column_name`. Hardcoded table names break inside Cube's generated
+subqueries. Fixed on: `locations.yml` (`name` column), `regions.yml` (`name`),
+`terms.yml` (`type`).
+
+---
+
+## `access_policy` hides views from schema entirely
+
+`access_policy` in view YAML is not just a row/column filter — it controls
+schema visibility. If `contextToGroups` returns `[]` (e.g., API token auth with
+no user email), the view is hidden from the schema entirely. This caused "No
+Semantic Views" in the GSheets plugin.
+
+`attendance_summary` has `access_policy: cube-access-student-data`. This is
+correct because the view contains demographic breakdowns. Users without the
+group see no schema entry for the view, which is the intended behavior once the
+Directory API is live.
+
+`attendance_detail` retains `access_policy` for the same reason (plus it
+contains PII fields).
+
+---
+
+## Cube Cloud SSO email path
+
+Cube Cloud SSO injects user identity at
+`securityContext.cubeCloud.userAttributes.email`, not `securityContext.email`.
+Both `resolveGroupsSync` and `contextToGroups` must fall back to this path:
+
+```js
+const email =
+  securityContext?.email ?? securityContext?.cubeCloud?.userAttributes?.email;
+```
+
+JWT playground auth uses `securityContext.email` (or `securityContext.groups`
+for the pass-through). GSheets plugin SSO uses the `cubeCloud` path.
+
+---
+
+## contextToGroups → queryRewrite bridge via groupCache
+
+`contextToGroups` (async) runs before `queryRewrite` (sync) in Cube Cloud. The
+results are NOT automatically injected back into `securityContext.groups`.
+`groupCache` is the bridge: `contextToGroups` populates it, `resolveGroupsSync`
+reads from it.
+
+`resolveGroupsSync` checks in priority order:
+
+1. `securityContext.groups` — JWT claims (playground) or direct injection
+2. `groupCache` — populated by `contextToGroups` (Cube Cloud production path)
+3. `CUBE_GROUP_MAP` — local dev only, synchronous bypass
+
+All three paths must resolve email via the `cubeCloud` fallback (step 2 above).
+
+---
+
+## `membership_value` filter alignment (follow-up)
+
+`count_truants` currently uses `membership_value = 1`; `count_students` uses
+`> 0`. These should be aligned to `> 0` for consistency with the denominator.
+Also evaluate whether `pct_tardy` should use a `SUM/SUM` ratio like ADA (same
+dual-enrollment correctness argument).
