@@ -307,6 +307,8 @@ with
 select *,
 from
     (
+        -- 80% of dup groups tie on scale_score; superscore breaks the tie
+        -- deterministically.
         {{
             dbt_utils.deduplicate(
                 relation="enriched",

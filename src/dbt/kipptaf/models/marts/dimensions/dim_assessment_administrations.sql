@@ -1,30 +1,33 @@
 with
-    -- DISTINCT projects from response grain to administration grain (one row
-    -- per scheduled occurrence). Internal assessments use administered_at as
-    -- the occurrence date; regions_assessed is a comma-separated list of
-    -- KIPP regions and is unnested to one row per region.
+    -- DISTINCT projects from per-student grain (one row per student × assessment
+    -- × response_type) to administration grain (one row per scheduled occurrence
+    -- × region). Sourcing from the scaffold guarantees coverage of every
+    -- (assessment × region) tuple that downstream facts/bridges produce —
+    -- including cross-region student responses where the student's resolved
+    -- region isn't in the assessment's declared `regions_assessed`.
     illuminate_administrations as (
         select distinct
             'illuminate' as assessment_type,
-            title,
-            subject_area,
-            scope,
-            module_code,
-            grade_level,
+            a.title,
+            a.subject_area,
+            a.scope,
+            a.module_code,
+            a.grade_level,
 
-            cast(administered_at as date) as administered_date,
-            academic_year,
+            cast(a.administered_at as date) as administered_date,
+            a.academic_year,
 
-            trim(region) as region,
+            sc.region,
 
             cast(null as string) as administration_round,
             cast(null as string) as season,
             cast(null as string) as administration_window,
             cast(null as string) as test_type,
-        from
-            {{ ref("int_assessments__assessments") }},
-            unnest(split(regions_assessed, ',')) as region
-        where is_internal_assessment and regions_assessed is not null
+        from {{ ref("int_assessments__scaffold") }} as sc
+        inner join
+            {{ ref("int_assessments__assessments") }} as a
+            on sc.assessment_id = a.assessment_id
+        where sc.is_internal_assessment and sc.region is not null
     ),
 
     -- State NJ: one administration per (testcode, period, academic_year,

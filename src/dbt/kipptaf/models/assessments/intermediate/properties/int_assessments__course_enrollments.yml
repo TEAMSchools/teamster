@@ -41,6 +41,9 @@ models:
           project. Required upstream for the cc_dcid + _dbt_source_relation
           composite that uniquely identifies a course enrollment across the four
           district projects.
+        config:
+          meta:
+            source_column: base_powerschool__course_enrollments._dbt_source_relation
       - name: region
         data_type: string
       - name: illuminate_academic_year

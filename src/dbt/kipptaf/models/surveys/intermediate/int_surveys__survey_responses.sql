@@ -97,7 +97,7 @@ with
 
             if(safe_cast(sr.response_value as int) is null, 1, 0) as is_open_ended,
 
-            1 as rn_round,
+            1 as round_rn,
         from {{ source("alchemer", "base_alchemer__survey_results") }} as sr
         inner join
             {{ ref("stg_google_sheets__reporting__terms") }} as rt

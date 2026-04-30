@@ -26,6 +26,7 @@ models:
             to_columns: [student_key]
             warn_unsupported: false
         data_tests:
+          - not_null
           - relationships:
               arguments:
                 to: ref('dim_students')
@@ -40,6 +41,7 @@ models:
             to_columns: [assessment_administration_key]
             warn_unsupported: false
         data_tests:
+          - not_null
           - relationships:
               arguments:
                 to: ref('dim_assessment_administrations')
