@@ -32,6 +32,8 @@ with
             ms.answer as response_text,
             ms.answer_value as response_value,
 
+            cast(ms.respondent_df_employee_number as string) as respondent_identifier,
+
             coalesce(
                 ms.survey_response_id,
                 concat(
@@ -42,8 +44,6 @@ with
                     ms.campaign_reporting_term
                 )
             ) as survey_response_id,
-
-            cast(ms.respondent_df_employee_number as string) as respondent_identifier,
         from {{ ref("int_surveys__manager_survey_details") }} as ms
         where ms.campaign_academic_year is not null
     ),
