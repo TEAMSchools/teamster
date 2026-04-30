@@ -18,7 +18,7 @@ with
 
     -- Multiple `assessment_id` rows can share the same admin grain
     -- (region-specific copies of the same module checkpoint), so dedupe
-    -- here rather than via DISTINCT.
+    -- here rather than via DISTINCT. Root-cause fix tracked in #3785.
     illuminate_deduped as (
         {{
             dbt_utils.deduplicate(
