@@ -63,6 +63,9 @@ views:
           - term_type
 
     access_policy:
+      # No PII tier — view contains no direct student identifiers.
+      # Demographic dimensions (race, gender_identity, etc.) are
+      # aggregate breakdowns only.
       - group: cube-access-student-data
         member_level:
           includes: "*"

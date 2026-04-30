@@ -136,7 +136,7 @@ cubes:
         type: count_distinct
         filters:
           - sql: "{CUBE}.is_truant = true"
-          - sql: "{CUBE}.membership_value = 1"
+          - sql: "{CUBE}.membership_value > 0"
 
       - name: pct_truant
         description: Percentage of students meeting truancy criteria

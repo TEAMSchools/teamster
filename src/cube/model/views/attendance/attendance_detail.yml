@@ -99,6 +99,8 @@ views:
             - dim_students_birth_date
             - dim_students_lea_student_identifier
             - dim_students_state_student_identifier
+            - dim_students_salesforce_contact_id
+            - dim_students_district_student_identifier
       - group: cube-access-student-pii
         member_level:
           includes: "*"
