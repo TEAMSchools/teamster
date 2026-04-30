@@ -141,6 +141,11 @@ entirely and must only be used for local dev. The `cube.js` guard relies on
 `NODE_ENV !== "production"` as a second line of defense, but the variable should
 never be configured in Cube Cloud in the first place.
 
+`CUBE_TESTING_USERS` is a pre-Directory-API testing allowlist — set it in Cube
+Cloud env vars only on testing/staging deployments, never on production. Remove
+it from all deployments once Directory API is live and group membership is
+resolved from Google Workspace.
+
 Do **not** use the Cube Playground **Models** tab in dev mode. It overwrites
 YAML files in `model/cubes/` and `model/views/` with auto-generated content,
 discarding hand-authored definitions.

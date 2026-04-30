@@ -43,6 +43,21 @@ module.exports = {
     const email = securityContext?.email;
     if (!email) return [];
 
+    // Pre-Directory-API testing allowlist. Remove once Directory API is live.
+    // Set CUBE_TESTING_USERS in Cube Cloud env vars (never commit values).
+    // Format: {"user@example.com": ["cube-access-student-data", "cube-network-detail"]}
+    if (process.env.CUBE_TESTING_USERS) {
+      try {
+        const map = JSON.parse(process.env.CUBE_TESTING_USERS);
+        // All users handled here — listed get groups, unlisted get [] (default
+        // deny). Prevents fallthrough to Directory API in testing deployments.
+        return (map[email] ?? []).filter((g) => g.startsWith("cube-"));
+      } catch (err) {
+        console.error("CUBE_TESTING_USERS is not valid JSON:", err.message);
+        return [];
+      }
+    }
+
     // Local dev only: CUBE_GROUP_MAP bypasses Directory API.
     // Must never be set in Cube Cloud — see docs/guides/cube.md.
     if (process.env.NODE_ENV !== "production" && process.env.CUBE_GROUP_MAP) {
