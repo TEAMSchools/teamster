@@ -1,5 +1,11 @@
 models:
   - name: int_surveys__survey_responses
+    description: >-
+      Unioned survey response grain across Google Forms and Alchemer sources.
+      One row per (survey, response, respondent, question) with academic-year
+      and term enrichment from the reporting terms sheet, respondent enrichment
+      from staff roster history, and a per-respondent round rank for selecting
+      the latest submission within a term.
     data_tests:
       - dbt_utils.unique_combination_of_columns:
           arguments:

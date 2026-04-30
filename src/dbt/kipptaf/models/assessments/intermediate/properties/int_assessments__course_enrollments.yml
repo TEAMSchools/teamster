@@ -1,5 +1,11 @@
 models:
   - name: int_assessments__course_enrollments
+    description: >-
+      K-12 course enrollments unioned with synthesized Newark/Camden ES Writing
+      enrollments (grade <= 4). Provides the enrollment scaffold that internal
+      Illuminate assessments are joined against. One row per (student, academic
+      year, subject area, date enrolled), deduplicated to the latest exit per
+      enrollment span.
     # config:
     #   materialized: table
     data_tests:

@@ -1,5 +1,10 @@
 models:
   - name: int_assessments__scaffold
+    description: >-
+      Cross-joins the assessment catalog (assessment x administered_at x region)
+      against course enrollments to produce the canonical "expected to take"
+      grain. Used as the join scaffold for response and score data and as the
+      source for assessment-administration bridges.
     config:
       materialized: table
     data_tests:

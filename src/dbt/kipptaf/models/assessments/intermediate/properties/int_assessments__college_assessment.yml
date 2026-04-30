@@ -1,5 +1,11 @@
 models:
   - name: int_assessments__college_assessment
+    description: >-
+      Unioned college-entrance assessment scores (ACT, SAT, PSAT) from
+      Salesforce standardized-test records and CollegeBoard PSAT unpivots. Adds
+      running-max scale scores, overall vs subject-score flags, and a surrogate
+      key on (student_number, score_type, test_date) for downstream fact
+      loading.
     data_tests:
       - dbt_utils.unique_combination_of_columns:
           arguments:
