@@ -26,10 +26,8 @@ this step.**
 - **Before writing any spec or plan**: STOP and explicitly ask the user whether
   to open a GitHub issue first. Required for specs/plans; not required for quick
   fixes. Do not write anything until the user answers. If opening: use
-  `mcp__github__issue_write` (see §MCP tool selection — GitHub MCP is the
-  default for GitHub operations, `gh` CLI is the fallback); label with
-  conventional commit type, related source systems, and `dagster`/`dbt` when
-  applicable.
+  `mcp__github__issue_write`; label with conventional commit type, related
+  source systems, and `dagster`/`dbt` when applicable.
 
 - **Before creating a branch**: ask the user — worktree or branch switch? Do not
   choose for them.
@@ -149,21 +147,28 @@ For run-internal timelines (steps, engine events, failures), use
 unit mismatch: GraphQL `creationTime/startTime/endTime` are float seconds;
 `get_run_logs` event `timestamp` is a millisecond string.
 
-Default to GitHub MCP (`mcp__github__*`) for all GitHub operations. Only fall
-back to `gh` CLI via Bash when no MCP equivalent exists (e.g. `gh pr checks`,
-`gh run view`, `gh repo edit`). Verify by checking the available
-`mcp__github__*` tool list before reaching for `gh` — don't fall back from
-habit.
+GitHub MCP (`mcp__github__*`) is mandatory for any GitHub operation that has an
+MCP equivalent. Before running `gh <subcommand>` via Bash, check the
+`mcp__github__*` tool list — if a matching tool exists, use it.
 
-`mcp__github__issue_write` `labels` parameter expects a comma-separated string
-(`"dbt,feat"`), not a JSON array. Either pass the string or omit and follow up
-with `gh issue edit --add-label`.
+`gh` via Bash is permitted only when no MCP equivalent exists. Current cases:
 
-ProjectV2 field mutations (Status / Tier / Driver / etc.) aren't exposed by
-`mcp__github__*`. Use
-`gh project item-edit --id <ITEM_ID> --project-id <PROJECT_ID> --field-id <FIELD_ID> --single-select-option-id <OPTION_ID>`.
-No output on success — verify via `gh api graphql` querying the item's
-`fieldValues`.
+- `gh issue develop` — linked branch creation; `mcp__github__create_branch` does
+  not link branches to issues.
+- `gh project item-edit --id <ITEM_ID> --project-id <PROJECT_ID> --field-id <FIELD_ID> --single-select-option-id <OPTION_ID>`
+  — ProjectV2 field mutations (Status / Tier / Driver / etc.) aren't exposed by
+  `mcp__github__*`. To unset a field value (any type), replace the value flag
+  with `--clear`. No output on success — verify via `gh api graphql` querying
+  the item's `fieldValues`. `gh project item-list` JSON also omits ProjectV2
+  custom fields whose names contain spaces (e.g. `PR batch`); single-word custom
+  fields (`Driver`, `Tier`, `Status`) do appear. Use the same `fieldValues`
+  GraphQL query to read the omitted ones.
+- `gh run *` — Actions run inspection/control; no MCP coverage.
+- `gh workflow *` — Actions workflow inspection/dispatch; no MCP coverage.
+- `gh repo edit` — repo settings; `gh repo create/view/list` have MCP
+  equivalents and are not on this list.
+- Editing an existing comment — `mcp__github__add_issue_comment` only creates.
+  Use `gh api -X PATCH repos/<owner>/<repo>/issues/comments/<id> -f body='...'`.
 
 ### Dagster asset diagnosis
 
@@ -210,6 +215,10 @@ Pre-merge queries against PR-branch schema use
 `dbt_cloud_pr_<ci_id>_<pr_num>_<schema>` — prod `<schema>` lacks unmerged
 renames.
 
+Chained joins through PR-branch marts (mart-view → mart-view → upstream-view)
+hit BigQuery's 16-view nesting limit. Query materialized prod tables instead, or
+split the query.
+
 ### dbt MCP
 
 Auth via `scripts/dbt-mcp-launch.sh` — do not add `DBT_TOKEN` to `.mcp.json`
@@ -220,6 +229,11 @@ schema are ignored. Run-inspection tools (`list_jobs_runs`,
 environments by `job_id` / `run_id`. For successful runs, call
 `get_job_run_error` with `warning_only=true` to surface test warnings —
 status=Success does not mean warning-free.
+
+Production env id is **70403104000025** but has no scheduled dbt Cloud jobs
+(Dagster-orchestrated). For job inspection, query Staging env (70403104014899)
+jobs by id; production schemas (`kipptaf_*`) are populated by Dagster, not by
+the dbt Cloud Production env.
 
 Job config changes must go through the dbt Cloud UI — no mutation tools exist in
 the MCP. Live step logs (`debug_logs`, `structured_logs`) and

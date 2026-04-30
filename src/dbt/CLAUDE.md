@@ -65,6 +65,11 @@ stage it with `--target staging` before the dbt Cloud CI job will pass.
 project-prefix form (e.g. `kipptaf.google_sheets.<table>`) silently matches zero
 sources.
 
+`stage_external_sources` is a `dbt run-operation` — `--threads` doesn't apply.
+Running it in parallel across all 5 district projects exhausts BigQuery's
+`INFORMATION_SCHEMA.simple_rate.user` quota (429). Serialize across projects, or
+run only the project you need.
+
 ## Source Schema Resolution
 
 dbt source YAML `schema:` fields render with `SchemaYamlContext`, which only
@@ -96,6 +101,18 @@ to `--project-dir`** — repo-root form silently fails with "Could not find
 manifest". The prod manifest is refreshed by `.git/hooks/post-merge` on every
 `git pull`; if stale, regenerate with
 `uv run dbt parse --target prod --project-dir <project> --target-path target/prod`.
+
+## `dbt clone` behavior on BigQuery
+
+- Views fall back to running the view materialization (compiles + runs the model
+  SQL) — not a clone, and not free.
+- Missing prod relations → silent skip with
+  `No relation found in state manifest for <unique_id>`. Treat as a diagnostic
+  signal, not an error.
+- `--state` manifest must be parsed with `target=prod` so model schemas resolve
+  to prod warehouse relations. A staging-target manifest causes every model to
+  fall through to view materialization, eventually hitting BigQuery's 16-level
+  nested-view limit.
 
 ## Stale dev tables shadow `--defer`
 
@@ -285,6 +302,9 @@ if(
 
 Without this, relationship tests check the placeholder hash against the parent
 dimension and fail.
+
+Corollary: never add `not_null` tests on `generate_surrogate_key` output — it
+never returns NULL.
 
 ### Don't inline CASE expressions in generate_surrogate_key
 
