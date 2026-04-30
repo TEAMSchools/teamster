@@ -4,7 +4,8 @@ models:
       Enrollment-scoped assessment score fact table. One row per student x
       assessment x administration. Covers internal Illuminate assessments and
       state assessments (NJSLA, NJGPA, FAST). Scores are linked to a student
-      (via student_key) and an assessment definition (via assessment_key).
+      (via student_key) and an assessment administration (via
+      assessment_administration_key).
     columns:
       - name: assessment_score_key
         data_type: string
@@ -17,21 +18,23 @@ models:
           - unique
           - not_null
 
-      - name: assessment_key
+      - name: assessment_administration_key
         data_type: string
         description: >-
-          FK to dim_assessments.
+          FK to dim_assessment_administrations. Identifies the scheduled
+          administration (assessment definition + occurrence context: academic
+          year, region, season/window) that this score belongs to.
 
         constraints:
           - type: foreign_key
-            to: ref('dim_assessments')
-            to_columns: [assessment_key]
+            to: ref('dim_assessment_administrations')
+            to_columns: [assessment_administration_key]
             warn_unsupported: false
         data_tests:
           - relationships:
               arguments:
-                to: ref('dim_assessments')
-                field: assessment_key
+                to: ref('dim_assessment_administrations')
+                field: assessment_administration_key
       - name: student_key
         data_type: string
         description: >-
@@ -64,10 +67,6 @@ models:
               arguments:
                 to: ref('dim_dates')
                 field: date_key
-      - name: academic_year
-        data_type: int64
-        description: >-
-          Academic year the assessment was administered.
 
       - name: scale_score
         data_type: numeric
@@ -91,8 +90,3 @@ models:
         description: >-
           TRUE if the student met the mastery or proficiency threshold for this
           assessment.
-
-      - name: provider
-        data_type: string
-        description: >-
-          Source provider: internal, state_nj, or state_fl.
