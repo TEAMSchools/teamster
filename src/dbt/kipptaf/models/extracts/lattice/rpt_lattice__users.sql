@@ -12,11 +12,10 @@ with
                         'TEAM Academy Charter School',
                         'KIPP Cooper Norcross Academy'
                     )
-                    and job_title in (
-                        'Director School Operations',
-                        'Director Campus Operations',
-                        'Managing Director of School Operations',
-                        'Managing Director of Operations'
+                    and (
+                        contains_substr(job_title, 'Director')
+                        or contains_substr(job_title, 'Head')
+                        or contains_substr(job_title, 'Leader')
                     )
                 )
             )
