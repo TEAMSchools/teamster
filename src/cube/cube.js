@@ -65,7 +65,9 @@ module.exports = {
     if (process.env.NODE_ENV !== "production" && process.env.CUBE_GROUP_MAP) {
       try {
         const map = JSON.parse(process.env.CUBE_GROUP_MAP);
-        return (map[email] ?? []).filter((g) => g.startsWith("cube-"));
+        const groups = (map[email] ?? []).filter((g) => g.startsWith("cube-"));
+        groupCache.set(email, { groups, expiresAt: nextMidnightEastern() });
+        return groups;
       } catch (err) {
         console.error("CUBE_GROUP_MAP is not valid JSON:", err.message);
         return [];
