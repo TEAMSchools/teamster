@@ -197,6 +197,13 @@ deployments. Developers use `.dbt/profiles.yml` for full target support.
 These conventions apply to **every** dbt project in this directory. Per-project
 CLAUDE.md files reference this section rather than repeating it.
 
+### BigQuery type synonyms in contracts
+
+BQ accepts legacy spellings as synonyms: `boolean`/`bool`, `integer`/`int64`,
+`float`/`float64`, `decimal`/`numeric`, `bigdecimal`/`bignumeric`. YAML
+`data_type` and `INFORMATION_SCHEMA.COLUMNS.data_type` may disagree on spelling
+without it being real drift — normalize before comparing.
+
 ### Per-layer requirements
 
 **All staging models must**:

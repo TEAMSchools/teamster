@@ -161,6 +161,11 @@ dbt Cloud project ID: `211862`.
 CI job: `dbt build --select state:modified+ --full-refresh`, target `staging`,
 defers to Staging environment.
 
+`Clone - Staging (Modified)` clones only `state:modified` models, not their
+parents. When CI fails on a stale staging defer table for an unmodified upstream
+(column missing after a recent merge), trigger the full `Clone - Staging` job —
+or `dbt clone --select <upstream>` against staging.
+
 ## Model Layer Distinctions
 
 - **`rpt_`** — analyst-built reporting views for external tools. Live in

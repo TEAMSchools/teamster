@@ -16,9 +16,7 @@ strict-chain rule as facts — no diamond paths to a shared ancestor dim.
 
 ## Column-naming rubric
 
-Applied to every column in every mart model. Numbering matches the spec
-(`docs/superpowers/specs/2026-04-15-column-naming-audit.md`); R5 is omitted here
-because R7 covers the same ground.
+Applied to every column in every mart model.
 
 - **R1. Strip source-system prefixes/names** (`powerschool_`, `adp_`,
   `deanslist_`) unless disambiguating unified columns.
@@ -112,6 +110,10 @@ Columns named `name`, `type`, `text`, `order`, `role`, `rank`, `timestamp`, etc.
 need backticks in SQL (`as \`type\``) and `quote: true` in the YAML column entry
 — trunk fails sqlfluff RF04 otherwise.
 
+Reserved words also fail as plain SELECT aliases (`count(*) as rows`,
+`count(*) as keys`) — sqlfluff doesn't catch those, BQ throws at parse. Use
+`n_rows`/`n_keys` or backtick.
+
 ## Hash-change discipline
 
 Surrogate-key hash values change for five reasons only:
@@ -125,9 +127,7 @@ Surrogate-key hash values change for five reasons only:
 5. **Structural add** — introducing a new FK/degenerate surrogate where none
    existed before.
 
-Pure output-alias renames don't change hashes. Any of the five above require an
-entry in the "Enumerated surrogate-key changes" table of the column-naming audit
-spec.
+Pure output-alias renames don't change hashes.
 
 Hash inputs must be derived identically across producer and consumer.
 Intermediates may rename or transform columns (e.g. scaffold's
@@ -163,10 +163,7 @@ in the user-visible `description:`.
 
 A copy-pasted column block usually keeps the old `description:` and
 `config.meta.source_*` pointing at the wrong source table. Update both after
-every paste. The audit review caught this twice in one pass
-(`fct_behavioral_consequences.start_date_key/end_date_key` pointed at
-`stg_powerschool__sectionteacher`; `fct_behavioral_incidents.incident_status`
-pointed at `stg_powerschool__courses`).
+every paste.
 
 ## Contract + uniqueness inherited
 

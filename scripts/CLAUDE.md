@@ -64,3 +64,10 @@ uv run dbt run-operation stage_external_sources \
 - `migrate-asset-key.py` creates runless materialization events — automation
   cursors will not recognize migrated events.
 - `update.py` upgrades all 15 dbt projects sequentially — slow operation.
+
+## Testing standalone PEP 723 scripts
+
+Load the script in tests via `importlib.util.spec_from_file_location` and
+register `sys.modules[name] = module` _before_ `exec_module` (the registration
+is required for `@dataclass` to resolve). Don't add `scripts/__init__.py` —
+scripts/ stays a directory of standalone executables.

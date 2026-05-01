@@ -116,8 +116,7 @@ this step.**
 ## CLAUDE.md Editing Rules
 
 - **Before editing any CLAUDE.md file**: present the proposed change as a quote
-  block with a one-line expected-utility note. Do not apply it until the user
-  approves.
+  block. Do not apply it until the user approves.
 
 - **Before adding to any CLAUDE.md file**: for each line, answer: what specific
   wrong action does this prevent? If you can't name one, cut it. General
@@ -180,9 +179,16 @@ When verifying failures, fetch the most recent run per job (`list_runs` with
 `job_name=..., limit=1`, no status filter) — bulk cross-referencing capped
 result sets misses retries and recoveries.
 
-Asset keys do NOT include dbt subdirectory layers (`staging/`, `intermediate/`)
-— `kipptaf/people/int_people__location_crosswalk`, not
-`kipptaf/people/intermediate/int_people__location_crosswalk`.
+Asset keys do NOT include dbt subdirectory layers (`staging/`, `intermediate/`,
+or mart `facts`/`dimensions`/`bridges`) —
+`kipptaf/people/int_people__location_crosswalk` (not `.../intermediate/...`) and
+`kipptaf/marts/fct_x` (not `kipptaf/facts/fct_x`).
+
+### Dagster Cloud GraphQL (direct, not via MCP)
+
+Host is `kipptaf.dagster.cloud/<deployment>/graphql` (org is `kipptaf`).
+`assetChecksOrError` is nested under `assetNodeOrError`; the evaluation success
+field is `success` (not `successful`).
 
 ### GKE MCP
 
