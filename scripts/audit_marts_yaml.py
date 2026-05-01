@@ -59,7 +59,7 @@ def _load_yaml_models() -> dict[str, ParsedModel]:
 
 
 def _candidate_keys_for_unprobed(
-    model: ManifestNode, bq_cols: dict[str, str]
+    bq_cols: dict[str, str],
 ) -> list[tuple[str, ...]]:
     return [(c,) for c in bq_cols if c.endswith("_key") or c.endswith("_id")]
 
@@ -120,7 +120,7 @@ def main() -> None:
                             oversubsets[sub] = grain_probe(bq, relation, list(sub))
         else:
             for cand in _candidate_keys_for_unprobed(
-                m, bq_cols_by_table[(m.database, m.schema, m.alias)]
+                bq_cols_by_table[(m.database, m.schema, m.alias)]
             ):
                 probes[cand] = grain_probe(bq, relation, list(cand))
 
@@ -393,7 +393,7 @@ class BQJob(Protocol):
 
 
 class BQClient(Protocol):
-    def query(self, sql: str) -> BQJob: ...
+    def query(self, query: str) -> BQJob: ...
 
 
 def fetch_dataset_columns(
