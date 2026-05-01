@@ -50,7 +50,14 @@ re-runs.
      flag any subset that is also unique as **over-specified**.
    - For models with no uniqueness test, probe candidate single-column and
      pairwise keys to surface grain candidates.
-5. Emit two artifacts:
+5. For each declared uniqueness test, fetch the current asset-check status from
+   Dagster (`mcp__dagster__get_asset_check_executions`) — last execution outcome
+   (PASSED / FAILED / WARN) and timestamp. Record per-model alongside the BQ
+   probe result so the two can be compared.
+6. Read declared `severity` for each uniqueness test from the YAML. Tests
+   configured `severity: warn` mask fan-out by design — surfaced as their own
+   finding category.
+7. Emit two artifacts:
    - `docs/superpowers/specs/2026-05-01-mart-yaml-audit-report.md` —
      human-readable report.
    - `docs/superpowers/specs/2026-05-01-mart-yaml-audit-report.json` —
@@ -64,19 +71,30 @@ and stops the run:
 - BigQuery query failure for any model
 - YAML parse error in any mart file
 - Model not yet materialized (no BQ table)
+- Dagster asset-check API failure
 
 Resolve underlying issues (e.g. run a build first) and re-run from scratch.
 There is no "skipped" or "errored" bucket in the report.
+
+A currently-failing or warning Dagster test is **not** an audit infrastructure
+error — the audit continues and flags it as a finding. Fail-hard is for the
+audit's own plumbing, not for the conditions the audit is meant to surface.
 
 ### Type bucketing
 
 Findings are bucketed by audit logic, not by fix decision:
 
-- **Pass** — declared test confirmed, no smaller unique subset, no type drift.
+- **Pass** — declared test confirmed, no smaller unique subset, no type drift,
+  Dagster status PASSED, severity not `warn`.
 - **Suspect** — declared test confirmed but a smaller subset is also unique
   (test over-specified), OR multiple plausible grain candidates surfaced.
 - **Broken** — declared test fails against live BQ data (silent fan-out present
-  today).
+  today), OR current Dagster status is FAILED.
+- **Warn-masked** — uniqueness test declared `severity: warn`. Treated as its
+  own finding category regardless of pass/fail status.
+- **Status mismatch** — Dagster shows PASSED but the BQ probe finds duplicates
+  (or vice versa). Indicates staleness, severity masking, or a probe bug;
+  surfaced for human review.
 - **Type drift** — orthogonal to grain status; counted per column per model.
 
 ## Manual triage pass
@@ -138,24 +156,27 @@ per cluster where multiple findings share a root cause), title
 ```markdown
 # Mart YAML Audit Report — 2026-05-01
 
-Run: <commit sha> | Models scanned: N | Pass: A | Suspect: B | Broken: C | Type
-drift: D
+Run: <commit sha> | Models scanned: N | Pass: A | Suspect: B | Broken: C |
+Warn-masked: W | Status-mismatch: M | Type drift: D
 
 ## Summary table
 
-| Model | Materialization | Contract | Type drift | Grain status | Difficulty | Disposition    | Issue |
-| ----- | --------------- | -------- | ---------- | ------------ | ---------- | -------------- | ----- |
-| fct_x | table           | enforced | 0          | pass         | —          | —              | —     |
-| fct_y | table           | enforced | 3          | suspect      | hard       | defer          | #NNNN |
-| fct_z | view            | none     | 0          | broken       | moderate   | fix-in-this-pr | —     |
+| Model | Materialization | Contract | Type drift | Grain status | Test severity | Dagster status | BQ probe | Difficulty | Disposition    | Issue |
+| ----- | --------------- | -------- | ---------- | ------------ | ------------- | -------------- | -------- | ---------- | -------------- | ----- |
+| fct_x | table           | enforced | 0          | pass         | error         | PASSED         | unique   | —          | —              | —     |
+| fct_y | table           | enforced | 3          | suspect      | error         | PASSED         | unique   | hard       | defer          | #NNNN |
+| fct_z | view            | none     | 0          | broken       | warn          | WARN           | dupes    | moderate   | fix-in-this-pr | —     |
 
 ## Per-model details
 
 ### fct_y
 
 - Declared grain (from tests): `(student_id, academic_year)`
+- Test severity: error
+- Dagster current status: PASSED (2026-04-30T03:14:00Z)
 - BQ probe: confirmed unique on declared columns
 - Smaller-subset probe: `student_id` alone is also unique → over-specified
+- Status mismatch: none
 - Type drift: 3 columns
   - `created_timestamp`: YAML `timestamp` vs BQ `DATETIME`
     - Upstream trace: `stg_*.created` (datetime) → no further casts
