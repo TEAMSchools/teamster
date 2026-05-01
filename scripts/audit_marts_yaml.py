@@ -499,6 +499,111 @@ def bucket_model(
     return findings
 
 
+# === Report rendering ===
+
+
+@dataclasses.dataclass(frozen=True)
+class ModelReport:
+    model: str
+    materialization: str
+    contract: str
+    test_severity: str
+    dagster_status: str
+    dagster_status_timestamp: float | None
+    bq_probe_outcome: str
+    grain_status: str
+    findings: list[Finding]
+
+
+def _summary_counts(reports: list[ModelReport]) -> dict[str, int]:
+    counts = {
+        "Pass": 0,
+        "Suspect": 0,
+        "Broken": 0,
+        "Warn-masked": 0,
+        "Status-mismatch": 0,
+        "Type drift": 0,
+        "Missing-test": 0,
+    }
+    for r in reports:
+        if r.grain_status == "pass" and not r.findings:
+            counts["Pass"] += 1
+        for f in r.findings:
+            if f.kind == "type_drift":
+                counts["Type drift"] += 1
+            elif f.kind == "broken":
+                counts["Broken"] += 1
+            elif f.kind == "suspect":
+                counts["Suspect"] += 1
+            elif f.kind == "warn_masked":
+                counts["Warn-masked"] += 1
+            elif f.kind == "status_mismatch":
+                counts["Status-mismatch"] += 1
+            elif f.kind == "missing_test":
+                counts["Missing-test"] += 1
+    return counts
+
+
+def render_report(reports: list[ModelReport], run_sha: str) -> tuple[str, str]:
+    counts = _summary_counts(reports)
+    summary_line = f"Run: {run_sha} | Models scanned: {len(reports)} | " + " | ".join(
+        f"{k}: {v}" for k, v in counts.items()
+    )
+
+    lines: list[str] = [
+        "# Mart YAML Audit Report — 2026-05-01",
+        "",
+        summary_line,
+        "",
+        "## Summary table",
+        "",
+        "| Model | Materialization | Contract | Type drift | Grain status | "
+        "Test severity | Dagster status | BQ probe | Difficulty | Disposition | Issue |",
+        "| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |",
+    ]
+    for r in sorted(reports, key=lambda x: x.model):
+        type_drift_count = sum(1 for f in r.findings if f.kind == "type_drift")
+        lines.append(
+            f"| {r.model} | {r.materialization} | {r.contract} | "
+            f"{type_drift_count} | {r.grain_status} | {r.test_severity} | "
+            f"{r.dagster_status} | {r.bq_probe_outcome} | TBD | TBD | — |"
+        )
+    lines.extend(["", "## Per-model details", ""])
+    for r in sorted(reports, key=lambda x: x.model):
+        lines.append(f"### {r.model}")
+        lines.append("")
+        lines.append(f"- Test severity: {r.test_severity}")
+        lines.append(
+            f"- Dagster current status: {r.dagster_status} "
+            f"({r.dagster_status_timestamp})"
+        )
+        lines.append(f"- BQ probe: {r.bq_probe_outcome}")
+        lines.append(f"- Grain status: {r.grain_status}")
+        if r.findings:
+            lines.append("- Findings:")
+            for f in r.findings:
+                lines.append(f"  - **{f.kind}**: {f.detail}")
+                if f.upstream_trace:
+                    for model, expr in f.upstream_trace:
+                        lines.append(f"    - upstream `{model}`: `{expr}`")
+        lines.append("- Difficulty: TBD")
+        lines.append("- Disposition: TBD")
+        lines.append("")
+
+    md = "\n".join(lines)
+
+    js = json.dumps(
+        {
+            "run_sha": run_sha,
+            "summary": counts,
+            "models": [dataclasses.asdict(r) for r in reports],
+        },
+        indent=2,
+        default=str,
+    )
+    return md, js
+
+
 def trace_column_casts(
     column: str, from_node: str, nodes: dict[str, ManifestNode]
 ) -> list[tuple[str, str]]:

@@ -277,6 +277,51 @@ def test_bucket_model_flags_missing_uniqueness_test() -> None:
     assert any(f.kind == "missing_test" for f in findings)
 
 
+def test_render_report_emits_md_and_json() -> None:
+    import json as _json
+
+    model_reports = [
+        audit.ModelReport(
+            model="fct_y",
+            materialization="table",
+            contract="enforced",
+            test_severity="error",
+            dagster_status="PASSED",
+            dagster_status_timestamp=1714521240.0,
+            bq_probe_outcome="unique",
+            grain_status="suspect",
+            findings=[
+                audit.Finding(
+                    model="fct_y",
+                    kind="type_drift",
+                    column="created_timestamp",
+                    yaml_type="timestamp",
+                    bq_type="datetime",
+                    detail="YAML `timestamp` vs BQ `DATETIME`",
+                    upstream_trace=[("stg_y", "cast(created as datetime)")],
+                ),
+                audit.Finding(
+                    model="fct_y",
+                    kind="suspect",
+                    column=None,
+                    yaml_type=None,
+                    bq_type=None,
+                    detail="declared (student_id, year), but (student_id,) is also unique",
+                ),
+            ],
+        ),
+    ]
+    md, js = audit.render_report(model_reports, run_sha="abc1234")
+    assert "# Mart YAML Audit Report" in md
+    assert "fct_y" in md
+    assert "abc1234" in md
+    assert "Type drift: 1" in md
+    parsed = _json.loads(js)
+    assert parsed["run_sha"] == "abc1234"
+    assert len(parsed["models"]) == 1
+    assert parsed["models"][0]["model"] == "fct_y"
+
+
 def test_bucket_model_flags_over_specified() -> None:
     yaml_model = audit.ParsedModel(
         name="fct_o",
