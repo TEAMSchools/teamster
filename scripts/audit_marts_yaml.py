@@ -479,7 +479,7 @@ def _dagster_graphql(query: str, variables: dict, token: str, deployment: str) -
     from gql.transport.requests import RequestsHTTPTransport
 
     transport = RequestsHTTPTransport(
-        url=f"https://teamschools.dagster.cloud/{deployment}/graphql",
+        url=f"https://kipptaf.dagster.cloud/{deployment}/graphql",
         headers={"Dagster-Cloud-Api-Token": token},
         timeout=30,
     )
