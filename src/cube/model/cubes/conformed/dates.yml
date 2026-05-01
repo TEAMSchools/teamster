@@ -9,11 +9,18 @@ cubes:
         type: string
         description:
           "Calendar date. Primary key and join target for all mart models."
+        meta:
+          pii: false
         primary_key: true
 
-      - name: date_day
+      - name: date_timestamp
         sql: date_timestamp
         type: time
+        description:
+          "Timestamp cast of date_key. Required by Cube for date dimension
+          joins."
+        meta:
+          pii: false
 
       - name: academic_year
         sql: academic_year
@@ -21,6 +28,8 @@ cubes:
         description:
           "KIPP academic year (July start). The calendar year in which the
           academic year begins (e.g., 2025 for the 2025-26 school year)."
+        meta:
+          pii: false
 
       - name: fiscal_year
         sql: fiscal_year
@@ -28,54 +37,90 @@ cubes:
         description:
           "KIPP fiscal year (July start). The calendar year in which the fiscal
           year ends (e.g., 2026 for FY2026 which begins July 2025)."
+        meta:
+          pii: false
 
       - name: year_number
         sql: year_number
         type: number
         description: "Calendar year."
+        meta:
+          pii: false
 
       - name: quarter_number
         sql: quarter_number
         type: number
         description: "Calendar quarter (1-4)."
+        meta:
+          pii: false
 
       - name: month_number
         sql: month_number
         type: number
         description: "Month number (1-12)."
+        meta:
+          pii: false
 
       - name: month_name
         sql: month_name
         type: string
         description: "Full month name (January, February, etc.)."
+        meta:
+          pii: false
 
       - name: day_of_week
         sql: day_of_week
         type: number
         description: "Day of week (1=Sunday through 7=Saturday)."
+        meta:
+          pii: false
 
       - name: day_of_week_name
         sql: day_of_week_name
         type: string
         description: "Full day name (Monday, Tuesday, etc.)."
+        meta:
+          pii: false
 
       - name: is_weekday
         sql: is_weekday
         type: boolean
         description: "TRUE for Monday through Friday."
+        meta:
+          pii: false
 
       - name: school_week_start_date
         sql: CAST(school_week_start_date AS TIMESTAMP)
         type: time
+        description:
+          "First day of the school week containing this date. Cast to TIMESTAMP
+          for Cube type: time."
+        meta:
+          pii: false
 
       - name: school_week_end_date
         sql: CAST(school_week_end_date AS TIMESTAMP)
         type: time
+        description:
+          "Last day of the school week containing this date. Cast to TIMESTAMP
+          for Cube type: time."
+        meta:
+          pii: false
 
       - name: calendar_week_start_date
         sql: CAST(calendar_week_start_date AS TIMESTAMP)
         type: time
+        description:
+          "First day (Monday) of the ISO calendar week containing this date.
+          Cast to TIMESTAMP for Cube type: time."
+        meta:
+          pii: false
 
       - name: calendar_week_end_date
         sql: CAST(calendar_week_end_date AS TIMESTAMP)
         type: time
+        description:
+          "Last day (Sunday) of the ISO calendar week containing this date. Cast
+          to TIMESTAMP for Cube type: time."
+        meta:
+          pii: false

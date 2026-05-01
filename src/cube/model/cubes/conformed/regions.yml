@@ -8,18 +8,29 @@ cubes:
         sql: region_key
         type: string
         description: "Surrogate key derived from region name."
+        meta:
+          pii: false
         primary_key: true
 
       - name: region_name
         sql: "{CUBE}.`name`"
         type: string
+        description:
+          "Display name of the region. Backtick-quoted because `name` is a
+          reserved word in BigQuery."
+        meta:
+          pii: false
 
       - name: state
         sql: state
         type: string
         description: "US state (NJ or FL)."
+        meta:
+          pii: false
 
       - name: timezone
         sql: timezone
         type: string
         description: "IANA timezone identifier."
+        meta:
+          pii: false

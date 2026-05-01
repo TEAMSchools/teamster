@@ -10,6 +10,8 @@ cubes:
         description:
           "Surrogate key derived from student_number. Primary key for the
           student dimension."
+        meta:
+          pii: false
         primary_key: true
 
       # PII — excluded from detail views without cube-access-student-pii
@@ -38,6 +40,10 @@ cubes:
       - name: birth_date
         sql: CAST(birth_date AS TIMESTAMP)
         type: time
+        description:
+          "Student date of birth. Cast to TIMESTAMP for Cube type: time."
+        meta:
+          pii: true
 
       - name: state_student_identifier
         sql: state_student_identifier
@@ -57,6 +63,8 @@ cubes:
           district's ID is not surfaced upstream. Generalizes the previously
           Miami-only mdcps_student_identifier. Ed-Fi District / CEDS
           District-assigned number from the host district's perspective."
+        meta:
+          pii: false
 
       - name: salesforce_contact_id
         sql: salesforce_contact_id
@@ -65,6 +73,8 @@ cubes:
           "KIPPADB (Salesforce) contact identifier for the student. Populated
           where the student has a KIPPADB record; null otherwise. Used across
           KIPPADB consumer tools (Overgrad, alumni tracking, etc.)."
+        meta:
+          pii: false
 
       - name: gender_identity
         sql: gender_identity
@@ -72,6 +82,8 @@ cubes:
         description:
           "Self-identified gender for the student (e.g., M=Male F=Female).
           Matches Ed-Fi's genderIdentity attribute (modern inclusive naming)."
+        meta:
+          pii: false
 
       - name: race
         sql: race
@@ -81,6 +93,8 @@ cubes:
           code to a full category label (e.g., Black/African American, Hispanic
           or Latino, Not Hispanic or Latino, Two or More Races, White).
           Cross-model consistency with dim_staff.race."
+        meta:
+          pii: false
 
       - name: meal_eligibility_status
         sql: meal_eligibility_status
@@ -88,6 +102,8 @@ cubes:
         description:
           "National School Lunch Program (NSLP) meal eligibility status (e.g.,
           Free, Reduced, Paid)."
+        meta:
+          pii: false
 
       - name: enrollment_status
         sql: enrollment_status
@@ -96,12 +112,16 @@ cubes:
           "Current enrollment status of the student. Values: Currently Enrolled,
           Pre-registered, Inactive, Transferred Out, Graduated, Imported as
           Historical."
+        meta:
+          pii: false
 
       - name: is_gifted
         sql: is_gifted
         type: boolean
         description:
           "TRUE if the student has a gifted-and-talented identification."
+        meta:
+          pii: false
 
       - name: is_ell
         sql: is_ell
@@ -109,9 +129,13 @@ cubes:
         description:
           "TRUE if the student is classified as an active English Language
           Learner (ELL)."
+        meta:
+          pii: false
 
       - name: has_iep
         sql: has_iep
         type: boolean
         description:
           "TRUE if the student has an Individualized Education Program (IEP)."
+        meta:
+          pii: false

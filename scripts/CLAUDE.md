@@ -12,6 +12,8 @@ scripts: `bash scripts/<name>.sh`.
 | `day2_collect.py`                             | Day-2 ops data collector — Dagster GraphQL + GCP REST/gcloud → `.claude/scratch/day2.json`  |
 | `dbt-mcp-launch.sh`                           | MCP launcher: exchange OP token for dbt Cloud service token, exec `dbt-mcp`                 |
 | `audit_marts_yaml.py`                         | Audit mart YAMLs against BigQuery + Dagster (#3678)                                         |
+| `check-cube-pii-coverage.py`                  | CI check: verify all PII cube dimensions are excluded from base-tier view access_policy     |
+| `sync-cube-descriptions.py`                   | Sync dbt manifest descriptions + PII flags into Cube YAML (cube dims + view excludes)       |
 | `avro-schema-update.py`                       | Rewrite Avro data in GCS with updated schema                                                |
 | `dbt-bq-audit.py`                             | Audit BigQuery objects against dbt manifest                                                 |
 | `dbt-build-init.sh`                           | Initialize dbt build environment                                                            |

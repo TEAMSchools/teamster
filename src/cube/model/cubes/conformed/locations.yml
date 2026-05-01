@@ -13,6 +13,8 @@ cubes:
         sql: location_key
         type: string
         description: "Surrogate key derived from location name."
+        meta:
+          pii: false
         primary_key: true
 
       - name: region_key
@@ -22,33 +24,50 @@ cubes:
           "Foreign key to dim_regions. Surrogate key derived from the canonical
           region. Nullable when the location has no region mapping (e.g.,
           network-level locations)."
+        meta:
+          pii: false
 
       - name: location_name
         sql: "{CUBE}.`name`"
         type: string
+        description:
+          "Display name of the location. Backtick-quoted because `name` is a
+          reserved word in BigQuery."
+        meta:
+          pii: false
 
       - name: abbreviation
         sql: abbreviation
         type: string
         description: "Short display name for the location."
+        meta:
+          pii: false
 
       - name: grade_band
         sql: grade_band
         type: string
         description: "Grade band served (ES, MS, HS)."
+        meta:
+          pii: false
 
       - name: campus
         sql: campus
         type: string
         description:
           "Physical campus name. Multiple schools may share a campus."
+        meta:
+          pii: false
 
       - name: is_campus
         sql: is_campus
         type: boolean
         description:
           "TRUE if this location record represents a campus-level entity."
+        meta:
+          pii: false
 
       - name: city
         sql: city
         type: string
+        meta:
+          pii: false

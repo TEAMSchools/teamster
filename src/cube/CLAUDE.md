@@ -90,14 +90,26 @@ cubes:
     measures: ...
 ```
 
-**Dimension naming:** use `name: foo` + `sql: foo` for direct column references.
-Only use `name: bar` + `sql: CAST(foo AS TIMESTAMP)` (or other expressions) for
-computed/renamed dimensions. This distinction matters:
-`scripts/sync-cube-descriptions.py` only syncs dbt metadata for dimensions where
-`name == sql`.
+**Dimension naming:** `name` must equal `sql` for direct column references — no
+aliases. If a BI-friendly name is needed, rename the column in dbt.
+`scripts/check-cube-pii-coverage.py` fails CI if `name != sql` for a
+plain-identifier `sql` value.
 
-**Computed dimensions** (where `name != sql`) need manually authored
-`description:` — the sync script will not touch them.
+**Expression dimensions** (where `sql` is an expression, not a plain column
+name) are the only valid case for `name != sql`. Common patterns:
+
+- `CAST(foo AS TIMESTAMP)` — required for `type: time`; name the dim after the
+  business concept (`entry_date`), not the type (`entry_timestamp`)
+- `` {CUBE}.`name` `` / `` {CUBE}.`type` `` — BigQuery reserved-word escaping
+- `CONCAT(...)` — composite keys with no single-column equivalent
+
+Expression dimensions must have a manually authored `description:` that names
+the source column (if different from the dim name) and states why the expression
+is needed. The sync script will not populate these.
+
+**All dimensions** must have an explicit `meta: {pii: true}` or
+`meta: {pii: false}`. The sync script sets this for direct dims; expression dims
+require it manually. CI fails if any dim is missing the block.
 
 **Primary keys** declare `primary_key: true` after `type:`.
 

@@ -7,6 +7,11 @@ cubes:
       - name: school_calendar_key
         sql: CONCAT(CAST(date_key AS STRING), '|', location_key)
         type: string
+        description:
+          "Composite surrogate key derived from date_key and location_key. No
+          single-column natural key exists for this dimension."
+        meta:
+          pii: false
         primary_key: true
 
       - name: date_key
@@ -15,19 +20,27 @@ cubes:
         description:
           "Each day of the school year including holidays and weekends, such as
           the school day. Indexed."
+        meta:
+          pii: false
 
       - name: location_key
         sql: location_key
         type: string
         description: "Surrogate key for the school. FK to dim_locations."
+        meta:
+          pii: false
 
       - name: is_in_session
         sql: is_in_session
         type: boolean
         description: "TRUE if this date is an instructional day at this school."
+        meta:
+          pii: false
 
       - name: is_membership_day
         sql: is_membership_day
         type: boolean
         description:
           "TRUE if this date counts toward student membership at this school."
+        meta:
+          pii: false
