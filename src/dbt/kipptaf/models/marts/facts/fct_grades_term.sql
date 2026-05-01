@@ -34,6 +34,9 @@ select
     -- FK source_relation must match dim_student_section_enrollments, which is
     -- built from base_powerschool__course_enrollments. Rewrite fg's source
     -- relation to the parent's so the hash inputs align.
+    -- TODO: replace() is a no-op if a future district uses a different base
+    -- model name. Long-term fix: hash region prefix only, consistent across
+    -- producer and consumer (#3678 follow-up).
     {{
         dbt_utils.generate_surrogate_key(
             [

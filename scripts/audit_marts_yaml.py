@@ -111,6 +111,7 @@ def main() -> None:
         raise RuntimeError(f"mart manifest nodes missing YAML: {missing_yaml}")
 
     print("Initializing BigQuery client...")
+    # Deferred: keeps `--help` and unit-test imports cheap (no SDK init).
     from google.cloud import bigquery
 
     bq = bigquery.Client()
@@ -454,8 +455,6 @@ def grain_probe(
     return row.n_rows, row.n_keys
 
 
-# === Upstream cast tracer ===
-
 # === Dagster status fetcher ===
 
 
@@ -492,6 +491,8 @@ def asset_key_for_mart_node(node: ManifestNode) -> list[str]:
 
 
 def _dagster_graphql(query: str, variables: dict, token: str, deployment: str) -> dict:
+    # Deferred: tests stub this function via patch.object, so unit tests don't
+    # need `gql` installed.
     from gql import Client, gql
     from gql.transport.requests import RequestsHTTPTransport
 
@@ -680,7 +681,9 @@ def bucket_model(
                 )
             )
 
-        # Status mismatch: Dagster says PASSED but probe found dupes (or vice versa)
+        # Status mismatch: Dagster says PASSED but probe found dupes (or vice versa).
+        # NOTE: substring match — `fct_foo` matches `unique_fct_foobar_key`. Manual
+        # review confirms each status_mismatch finding before action.
         relevant_statuses = [
             s for name, s in dagster_statuses.items() if yaml_model.name in name
         ]
