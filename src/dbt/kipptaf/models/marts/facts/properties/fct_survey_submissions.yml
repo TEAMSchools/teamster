@@ -12,8 +12,8 @@ models:
       - name: survey_submission_key
         data_type: string
         description: >-
-          Surrogate key derived from survey_id, survey_response_id, and
-          respondent identifier. Primary key for this fact.
+          Surrogate key derived from survey_id and survey_response_id. Primary
+          key for this fact.
         constraints:
           - type: primary_key
             warn_unsupported: false
