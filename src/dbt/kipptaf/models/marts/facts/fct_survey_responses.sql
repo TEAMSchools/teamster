@@ -8,7 +8,6 @@ with
             sr.survey_response_id,
             sr.survey_question_id,
             sr.question_shortname,
-            sr.respondent_identifier,
             sr.answer as response_text,
 
             safe_cast(sr.answer as numeric) as response_value,
@@ -34,8 +33,6 @@ with
             ms.answer as response_text,
             ms.answer_value as response_value,
 
-            cast(ms.respondent_df_employee_number as string) as respondent_identifier,
-
             coalesce(
                 ms.survey_response_id,
                 concat(
@@ -56,7 +53,6 @@ with
             survey_response_id,
             survey_question_id,
             question_shortname,
-            respondent_identifier,
             response_text,
             response_value,
         from general_responses
@@ -66,7 +62,6 @@ with
             survey_response_id,
             survey_question_id,
             question_shortname,
-            respondent_identifier,
             response_text,
             response_value,
         from manager_responses
@@ -75,24 +70,12 @@ with
 select
     {{
         dbt_utils.generate_surrogate_key(
-            [
-                "survey_id",
-                "survey_response_id",
-                "respondent_identifier",
-                "survey_question_id",
-            ]
+            ["survey_id", "survey_response_id", "survey_question_id"]
         )
     }} as survey_response_key,
 
-    {{
-        dbt_utils.generate_surrogate_key(
-            [
-                "survey_id",
-                "survey_response_id",
-                "respondent_identifier",
-            ]
-        )
-    }} as survey_submission_key,
+    {{ dbt_utils.generate_surrogate_key(["survey_id", "survey_response_id"]) }}
+    as survey_submission_key,
 
     {{ dbt_utils.generate_surrogate_key(["question_shortname"]) }}
     as survey_question_key,
