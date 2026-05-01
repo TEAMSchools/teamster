@@ -114,7 +114,8 @@ REPORT_JSON = REPO_ROOT / "docs/superpowers/specs/2026-05-01-mart-yaml-audit-rep
 
 
 def main() -> None:
-    parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
+    description = (__doc__ or "").splitlines()[0]
+    parser = argparse.ArgumentParser(description=description)
     parser.parse_args()
     raise NotImplementedError("audit not wired up yet")
 
@@ -1596,7 +1597,8 @@ def _candidate_keys_for_unprobed(model: ManifestNode, bq_cols: dict[str, str]) -
 
 
 def main() -> None:
-    parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
+    description = (__doc__ or "").splitlines()[0]
+    parser = argparse.ArgumentParser(description=description)
     parser.parse_args()
 
     print(f"Loading manifest from {MANIFEST_PATH}...")

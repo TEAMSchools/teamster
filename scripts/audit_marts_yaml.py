@@ -43,7 +43,8 @@ REPORT_JSON = (
 
 
 def main() -> None:
-    parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
+    description = (__doc__ or "").splitlines()[0]
+    parser = argparse.ArgumentParser(description=description)
     parser.parse_args()
     raise NotImplementedError("audit not wired up yet")
 
