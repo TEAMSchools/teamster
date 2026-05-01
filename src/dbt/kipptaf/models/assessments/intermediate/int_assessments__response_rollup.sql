@@ -128,7 +128,8 @@ with
                         module_code,
                         region,
                         grade_level_id,
-                        is_replacement
+                        is_replacement,
+                        powerschool_school_id
                 ),
                 title
             ) as title,
@@ -143,7 +144,8 @@ with
                         module_code,
                         region,
                         grade_level_id,
-                        is_replacement
+                        is_replacement,
+                        powerschool_school_id
                 ),
                 assessment_id
             ) as assessment_id,
@@ -158,7 +160,8 @@ with
                         module_code,
                         region,
                         grade_level_id,
-                        is_replacement
+                        is_replacement,
+                        powerschool_school_id
                 ),
                 administered_at
             ) as administered_at,
@@ -174,6 +177,7 @@ with
                         region,
                         grade_level_id,
                         is_replacement,
+                        powerschool_school_id,
                         response_type,
                         response_type_id
                 ),
