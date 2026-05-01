@@ -120,7 +120,7 @@ def test_fetch_dataset_columns_groups_by_table() -> None:
 
 
 def test_grain_probe_returns_rows_and_distinct_keys() -> None:
-    client = _mock_bq_client([{"rows": 100, "keys": 95}])
+    client = _mock_bq_client([{"n_rows": 100, "n_keys": 95}])
     rows, keys = audit.grain_probe(
         client,
         "`teamster-332318`.`kipptaf`.`fct_sample`",

@@ -250,10 +250,6 @@ def main() -> None:
     print("Done. " + " | ".join(f"{k}: {v}" for k, v in counts.items()))
 
 
-if __name__ == "__main__":
-    main()
-
-
 # === YAML parsing ===
 
 import dataclasses
@@ -434,12 +430,12 @@ def grain_probe(
     fmt = "|".join(["%T"] * len(key_columns))
     cols = ", ".join(f"`{c}`" for c in key_columns)
     sql = (
-        f"select count(*) as rows, "
-        f'count(distinct format("{fmt}", {cols})) as keys '
+        f"select count(*) as n_rows, "
+        f'count(distinct format("{fmt}", {cols})) as n_keys '
         f"from {relation}"
     )
     row = next(iter(client.query(sql).result()))
-    return row.rows, row.keys
+    return row.n_rows, row.n_keys
 
 
 # === Upstream cast tracer ===
@@ -850,3 +846,7 @@ def trace_column_casts(
 
     walk(from_node)
     return out
+
+
+if __name__ == "__main__":
+    main()
