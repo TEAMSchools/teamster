@@ -273,6 +273,21 @@ for references to either `season` or `administration_window`:
 - If only `season` is referenced (or neither) → `administration_period`
   populates from `season` alone; both source columns drop.
 
+**Outcome (run 2026-05-01):**
+
+| season | administration_window | n     |
+| ------ | --------------------- | ----- |
+| Fall   | PM1                   | 6,101 |
+| Spring | PM3                   | 6,038 |
+| Spring | Spring                | 1,776 |
+| Winter | PM2                   | 6,001 |
+
+`administration_window` is strictly more granular than `season` (Spring season
+splits into PM3 and Spring windows). No downstream consumer (cube, rpt, or
+extract) references either column separately — only the dim itself reads them.
+**Decision:** populate `administration_period = administration_window` for FL;
+drop both `season` and `administration_window` columns from the dim.
+
 ### G4 — superscore drift root cause (#3775, pre-spec finalization)
 
 Already partially covered by the dedup tiebreaker shipped in #3770.
