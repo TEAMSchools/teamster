@@ -67,10 +67,16 @@ dagsterCloudAgent:
 
   # Reference the cluster-scoped Custom ComputeClass `dagster-agent` defined
   # in .k8s/dagster/compute-classes.yaml. Built-in classes (`General-Purpose`,
-  # etc.) are not available on this cluster's allowlist, and Autopilot warns
-  # against combining built-in compute-class nodeSelectors with extended-
-  # duration (`safe-to-evict: "false"`) pods. Single t2d priority — image is
-  # amd64-only, no arm64 fallback.
+  # etc.) are not on this cluster's compute-class allowlist. Single t2d
+  # priority — image is amd64-only, no arm64 fallback. GKE warns that
+  # `safe-to-evict: "false"` (extended-duration) combined with a CCC
+  # nodeSelector "may lead to unexpected behavior" — per docs, GKE silently
+  # drops extended-duration when a pod targets a CCC, so the agent's
+  # autoscaler-eviction protection is unspecified. Accept the warning and
+  # watch for unexpected scale-down churn; if it fires repeatedly, drop the
+  # CCC nodeSelector (revert to default Autopilot placement) or drop the
+  # annotation (sacrifice autoscaler-eviction protection for explicit machine
+  # family).
   nodeSelector:
     cloud.google.com/compute-class: dagster-agent
 

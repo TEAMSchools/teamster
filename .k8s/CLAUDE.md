@@ -50,8 +50,20 @@ on GKE Autopilot.
   `kubectl apply -f .k8s/dagster/compute-classes.yaml`, NOT via Helm
   `extraManifests`. The agent's Helm ServiceAccount lacks cluster-scoped create
   perms on `cloud.google.com/v1/ComputeClass`.
-- Agent pods use `safe-to-evict: "false"` (extended-duration), which is mutually
-  exclusive with spot — do not move the agent to a spot tier.
+- **`safe-to-evict: "false"` (extended-duration) is on agent and run pods.** It
+  is the only autoscaler-eviction guard — `podAntiAffinity` is placement,
+  `dagster-agent` PriorityClass blocks lower-priority preemption only. GKE
+  silently drops extended-duration when a pod targets a CCC ("You can't request
+  extended run times for Pods that target custom compute classes") and Warden
+  emits a warning — so on this cluster, autoscaler-eviction protection for both
+  agent and run pods is unspecified. We accept the warning; the annotation also
+  blocks accidental moves to a spot tier (extended-duration is mutually
+  exclusive with spot). Run pods have a real secondary guard via
+  `podFailurePolicy` (`DisruptionTarget` → `Ignore`) — the agent does not.
+  **Watch for unexpected scale-down churn on agent reconciliation** (Service /
+  Deployment recreation across all code locations) — if it fires, the trade is
+  to drop the CCC nodeSelector (revert to default Autopilot placement) or drop
+  the annotation (lose autoscaler-eviction guard for explicit machine family).
 - **Agent topology spread** uses `ScheduleAnyway` across
   `topology.kubernetes.io/zone` via `additionalPodSpecConfig` — prefers
   cross-zone but allows same-zone during capacity exhaustion (do not switch to
