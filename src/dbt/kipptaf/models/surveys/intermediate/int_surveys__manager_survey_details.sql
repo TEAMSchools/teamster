@@ -134,6 +134,7 @@ select
 
     null as respondent_email,
 
+    fi.question_id as survey_question_id,
     sda.question_shortname,
 
     coalesce(fi.title, sda.question_shortname) as question_title,
