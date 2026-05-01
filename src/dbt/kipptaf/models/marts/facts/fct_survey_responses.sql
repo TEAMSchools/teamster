@@ -25,14 +25,12 @@ with
             and sr.question_shortname is not null
     ),
 
-    /* Manager Survey responses. Manager-survey question_shortnames are
-       unique within their survey, so reuse them as the question identifier
-       for the PK hash. */
+    /* Manager Survey responses */
     manager_responses as (
         select
             ms.survey_id,
+            ms.survey_question_id,
             ms.question_shortname,
-            ms.question_shortname as survey_question_id,
             ms.answer as response_text,
             ms.answer_value as response_value,
 

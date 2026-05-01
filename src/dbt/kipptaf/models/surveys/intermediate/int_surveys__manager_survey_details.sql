@@ -69,6 +69,7 @@ select
     ri.subject_df_employee_number,
     ri.respondent_email,
 
+    fr.question_id as survey_question_id,
     fr.item_abbreviation as question_shortname,
     fr.item_title as question_title,
     fr.text_value as answer,
