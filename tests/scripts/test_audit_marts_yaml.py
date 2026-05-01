@@ -4,7 +4,7 @@ import importlib.util
 import sys
 from pathlib import Path
 from types import ModuleType
-from unittest.mock import MagicMock
+from unittest.mock import MagicMock, patch
 
 FIXTURE_DIR = Path(__file__).parent / "fixtures"
 SCRIPT_PATH = Path(__file__).resolve().parents[2] / "scripts/audit_marts_yaml.py"
@@ -141,3 +141,41 @@ def test_trace_column_casts_walks_parent_map() -> None:
     # The mart casts `created` to datetime aliasing as created_timestamp;
     # int_sample passes it through; stg_sample casts the source to datetime.
     assert ("fct_sample", "cast(created as datetime) as created_timestamp") in casts
+
+
+def test_asset_key_includes_mart_subdir() -> None:
+    nodes = audit.load_manifest(FIXTURE_DIR / "sample_manifest.json")
+    fct = nodes["model.kipptaf.fct_sample"]
+    assert audit.asset_key_for_mart_node(fct) == ["kipptaf", "facts", "fct_sample"]
+
+
+def test_fetch_dagster_check_status_parses_response() -> None:
+    fake_response = {
+        "assetChecksOrError": {
+            "checks": [
+                {
+                    "name": "unique_fct_sample_surrogate_key",
+                    "executionForLatestMaterialization": {
+                        "evaluation": {
+                            "severity": "ERROR",
+                            "successful": True,
+                            "timestamp": 1714521240.0,
+                        }
+                    },
+                }
+            ]
+        }
+    }
+    with patch.object(audit, "_dagster_graphql", return_value=fake_response):
+        result = audit.fetch_dagster_check_status(
+            asset_keys=[["kipptaf", "facts", "fct_sample"]],
+            token="fake",
+            deployment="prod",
+        )
+    assert result == {
+        ("kipptaf", "facts", "fct_sample"): {
+            "unique_fct_sample_surrogate_key": audit.DagsterStatus(
+                outcome="PASSED", timestamp=1714521240.0
+            )
+        }
+    }

@@ -243,6 +243,103 @@ def grain_probe(
 
 # === Upstream cast tracer ===
 
+# === Dagster status fetcher ===
+
+import os
+
+
+@dataclasses.dataclass(frozen=True)
+class DagsterStatus:
+    outcome: str  # PASSED | FAILED | WARN | NOT_RUN
+    timestamp: float | None
+
+
+_DAGSTER_QUERY = """
+query AssetChecks($assetKey: AssetKeyInput!) {
+  assetChecksOrError(assetKey: $assetKey) {
+    ... on AssetChecks {
+      checks {
+        name
+        executionForLatestMaterialization {
+          evaluation { severity successful timestamp }
+        }
+      }
+    }
+  }
+}
+"""
+
+
+def asset_key_for_mart_node(node: ManifestNode) -> list[str]:
+    parts = Path(node.original_file_path).parts
+    # parts: ('models', 'marts', 'facts'|'dimensions'|'bridges', '<file>.sql')
+    subdir = parts[2]
+    return ["kipptaf", subdir, node.name]
+
+
+def _dagster_graphql(query: str, variables: dict, token: str, deployment: str) -> dict:
+    from gql import Client, gql
+    from gql.transport.requests import RequestsHTTPTransport
+
+    transport = RequestsHTTPTransport(
+        url=f"https://teamschools.dagster.cloud/{deployment}/graphql",
+        headers={"Dagster-Cloud-Api-Token": token},
+        timeout=30,
+    )
+    with Client(transport=transport) as session:
+        return session.execute(gql(query), variable_values=variables)
+
+
+def fetch_dagster_check_status(
+    asset_keys: list[list[str]], token: str, deployment: str = "prod"
+) -> dict[tuple[str, ...], dict[str, DagsterStatus]]:
+    out: dict[tuple[str, ...], dict[str, DagsterStatus]] = {}
+    for key in asset_keys:
+        resp = _dagster_graphql(
+            _DAGSTER_QUERY,
+            {"assetKey": {"path": key}},
+            token=token,
+            deployment=deployment,
+        )
+        checks = resp.get("assetChecksOrError", {}).get("checks", [])
+        per_check: dict[str, DagsterStatus] = {}
+        for check in checks:
+            execution = (check.get("executionForLatestMaterialization") or {}).get(
+                "evaluation"
+            )
+            if execution is None:
+                per_check[check["name"]] = DagsterStatus(
+                    outcome="NOT_RUN", timestamp=None
+                )
+                continue
+            successful = execution["successful"]
+            severity = execution["severity"]
+            if successful:
+                outcome = "PASSED"
+            elif severity == "WARN":
+                outcome = "WARN"
+            else:
+                outcome = "FAILED"
+            per_check[check["name"]] = DagsterStatus(
+                outcome=outcome, timestamp=execution["timestamp"]
+            )
+        out[tuple(key)] = per_check
+    return out
+
+
+def require_dagster_token() -> str:
+    token = os.environ.get("DAGSTER_CLOUD_API_TOKEN")
+    if not token:
+        raise RuntimeError(
+            "DAGSTER_CLOUD_API_TOKEN is not set. Source it via "
+            "`op read 'op://...' > /tmp/dgst && export DAGSTER_CLOUD_API_TOKEN=$(cat /tmp/dgst)` "
+            "or run from a terminal where the dagster-mcp-launch flow has set it."
+        )
+    return token
+
+
+# === Upstream cast tracer ===
+
 _CAST_RE = re.compile(
     r"\b(?:safe_cast|cast)\s*\([^()]*?\)(?:\s+as\s+[\w_]+)?",
     re.IGNORECASE,
