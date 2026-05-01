@@ -453,12 +453,16 @@ class DagsterStatus:
 
 _DAGSTER_QUERY = """
 query AssetChecks($assetKey: AssetKeyInput!) {
-  assetChecksOrError(assetKey: $assetKey) {
-    ... on AssetChecks {
-      checks {
-        name
-        executionForLatestMaterialization {
-          evaluation { severity successful timestamp }
+  assetNodeOrError(assetKey: $assetKey) {
+    ... on AssetNode {
+      assetChecksOrError {
+        ... on AssetChecks {
+          checks {
+            name
+            executionForLatestMaterialization {
+              evaluation { severity successful timestamp }
+            }
+          }
         }
       }
     }
@@ -498,7 +502,8 @@ def fetch_dagster_check_status(
             token=token,
             deployment=deployment,
         )
-        checks = resp.get("assetChecksOrError", {}).get("checks", [])
+        node = resp.get("assetNodeOrError") or {}
+        checks = (node.get("assetChecksOrError") or {}).get("checks", [])
         per_check: dict[str, DagsterStatus] = {}
         for check in checks:
             execution = (check.get("executionForLatestMaterialization") or {}).get(

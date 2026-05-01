@@ -151,19 +151,21 @@ def test_asset_key_includes_mart_subdir() -> None:
 
 def test_fetch_dagster_check_status_parses_response() -> None:
     fake_response = {
-        "assetChecksOrError": {
-            "checks": [
-                {
-                    "name": "unique_fct_sample_surrogate_key",
-                    "executionForLatestMaterialization": {
-                        "evaluation": {
-                            "severity": "ERROR",
-                            "successful": True,
-                            "timestamp": 1714521240.0,
-                        }
-                    },
-                }
-            ]
+        "assetNodeOrError": {
+            "assetChecksOrError": {
+                "checks": [
+                    {
+                        "name": "unique_fct_sample_surrogate_key",
+                        "executionForLatestMaterialization": {
+                            "evaluation": {
+                                "severity": "ERROR",
+                                "successful": True,
+                                "timestamp": 1714521240.0,
+                            }
+                        },
+                    }
+                ]
+            }
         }
     }
     with patch.object(audit, "_dagster_graphql", return_value=fake_response):
