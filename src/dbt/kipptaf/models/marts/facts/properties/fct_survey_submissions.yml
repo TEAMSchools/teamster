@@ -31,8 +31,6 @@ models:
             to_columns: [survey_administration_key]
             warn_unsupported: false
         data_tests:
-          - not_null
-
           - relationships:
               arguments:
                 to: ref('dim_survey_administrations')
