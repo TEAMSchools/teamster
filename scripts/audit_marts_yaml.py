@@ -31,9 +31,17 @@ Design reference:
 from __future__ import annotations
 
 import argparse
+import dataclasses
+import json
+import os
+import re
 import subprocess
 from collections import defaultdict
+from collections.abc import Iterable
 from pathlib import Path
+from typing import Any, Protocol
+
+import yaml
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
 MARTS_DIR = REPO_ROOT / "src/dbt/kipptaf/models/marts"
@@ -42,6 +50,7 @@ MANIFEST_PATH = REPO_ROOT / "src/dbt/kipptaf/target/manifest.json"
 # fall back to the main repo's manifest.
 MAIN_MANIFEST_PATH = Path("/workspaces/teamster/src/dbt/kipptaf/target/manifest.json")
 OP_TOKEN_PATH = Path("/etc/secret-volume/.op-token")
+# trunk-ignore(bandit/B105): 1Password reference, not a credential value
 DAGSTER_TOKEN_OP_REF = "op://Data Team/Dagster Cloud Agent/credential"
 REPORT_MD = REPO_ROOT / "docs/superpowers/specs/2026-05-01-mart-yaml-audit-report.md"
 REPORT_JSON = (
@@ -50,6 +59,7 @@ REPORT_JSON = (
 
 
 def _git_head_sha() -> str:
+    # trunk-ignore(bandit/B603,bandit/B607): hardcoded git command, no user input
     return subprocess.check_output(
         ["git", "rev-parse", "--short", "HEAD"], cwd=REPO_ROOT, text=True
     ).strip()
@@ -252,11 +262,6 @@ def main() -> None:
 
 # === YAML parsing ===
 
-import dataclasses
-from typing import Any, Protocol
-
-import yaml
-
 
 @dataclasses.dataclass(frozen=True)
 class ParsedModel:
@@ -304,8 +309,6 @@ def _extract_unique_combination_test(test: Any) -> dict[str, Any] | None:
 
 # === Type normalization ===
 
-import re
-
 _TYPE_PARAM_RE = re.compile(r"\s*\([^)]*\)\s*$")
 
 # BigQuery accepts legacy spellings as synonyms — collapse to the canonical
@@ -330,8 +333,6 @@ def normalize_type(t: str) -> str:
 
 
 # === Manifest loader ===
-
-import json
 
 
 @dataclasses.dataclass(frozen=True)
@@ -415,9 +416,6 @@ def parse_mart_yaml(path: Path) -> list[ParsedModel]:
 # === BigQuery introspection ===
 
 
-from collections.abc import Iterable
-
-
 class BQJob(Protocol):
     def result(self) -> Iterable[Any]: ...
 
@@ -429,6 +427,7 @@ class BQClient(Protocol):
 def fetch_dataset_columns(
     client: BQClient, database: str, schema: str
 ) -> dict[str, dict[str, str]]:
+    # trunk-ignore(bandit/B608): inputs are dbt manifest dataset names, not user input
     sql = f"""
     select table_name, column_name, data_type
     from `{database}`.`{schema}`.INFORMATION_SCHEMA.COLUMNS
@@ -446,6 +445,7 @@ def grain_probe(
     fmt = "|".join(["%T"] * len(key_columns))
     cols = ", ".join(f"`{c}`" for c in key_columns)
     sql = (
+        # trunk-ignore(bandit/B608): inputs are mart relation + column names from manifest
         f"select count(*) as n_rows, "
         f'count(distinct format("{fmt}", {cols})) as n_keys '
         f"from {relation}"
@@ -457,8 +457,6 @@ def grain_probe(
 # === Upstream cast tracer ===
 
 # === Dagster status fetcher ===
-
-import os
 
 
 @dataclasses.dataclass(frozen=True)
@@ -555,11 +553,13 @@ def require_dagster_token() -> str:
             "Rebuild Codespace to re-provision the 1Password token."
         )
     op_token = OP_TOKEN_PATH.read_text().strip()
+    # trunk-ignore(bandit/B105): sentinel value from postCreate.sh, not a credential
     if not op_token or op_token == "revoked-after-injection":
         raise RuntimeError(
             f"OP token in {OP_TOKEN_PATH} is empty or revoked. "
             "Rebuild Codespace to re-provision."
         )
+    # trunk-ignore(bandit/B603,bandit/B607): hardcoded `op` invocation, no user input
     result = subprocess.run(
         ["op", "read", DAGSTER_TOKEN_OP_REF],
         capture_output=True,
@@ -749,6 +749,7 @@ class ModelReport:
 
 def _summary_counts(reports: list[ModelReport]) -> dict[str, int]:
     counts = {
+        # trunk-ignore(bandit/B105): false positive on counter dict literals
         "Pass": 0,
         "Suspect": 0,
         "Broken": 0,
