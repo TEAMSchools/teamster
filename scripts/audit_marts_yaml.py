@@ -38,6 +38,11 @@ from pathlib import Path
 REPO_ROOT = Path(__file__).resolve().parent.parent
 MARTS_DIR = REPO_ROOT / "src/dbt/kipptaf/models/marts"
 MANIFEST_PATH = REPO_ROOT / "src/dbt/kipptaf/target/manifest.json"
+# When running from a worktree, the worktree's manifest is usually missing —
+# fall back to the main repo's manifest.
+MAIN_MANIFEST_PATH = Path("/workspaces/teamster/src/dbt/kipptaf/target/manifest.json")
+OP_TOKEN_PATH = Path("/etc/secret-volume/.op-token")
+DAGSTER_TOKEN_OP_REF = "op://Data Team/Dagster Cloud Agent/credential"
 REPORT_MD = REPO_ROOT / "docs/superpowers/specs/2026-05-01-mart-yaml-audit-report.md"
 REPORT_JSON = (
     REPO_ROOT / "docs/superpowers/specs/2026-05-01-mart-yaml-audit-report.json"
@@ -64,13 +69,28 @@ def _candidate_keys_for_unprobed(
     return [(c,) for c in bq_cols if c.endswith("_key") or c.endswith("_id")]
 
 
+def _default_manifest() -> Path:
+    if MANIFEST_PATH.exists():
+        return MANIFEST_PATH
+    if MAIN_MANIFEST_PATH.exists():
+        return MAIN_MANIFEST_PATH
+    return MANIFEST_PATH
+
+
 def main() -> None:
     description = (__doc__ or "").splitlines()[0]
     parser = argparse.ArgumentParser(description=description)
-    parser.parse_args()
+    parser.add_argument(
+        "--manifest",
+        type=Path,
+        default=_default_manifest(),
+        help="path to dbt manifest.json (defaults to worktree, falls back to main repo)",
+    )
+    args = parser.parse_args()
 
-    print(f"Loading manifest from {MANIFEST_PATH}...")
-    nodes = load_manifest(MANIFEST_PATH)
+    print(f"Loading manifest from {args.manifest}...")
+    nodes = load_manifest(args.manifest)
+    raw_manifest = json.loads(args.manifest.read_text())
     marts = mart_models(nodes)
     print(f"  found {len(marts)} mart models")
 
@@ -203,9 +223,7 @@ def main() -> None:
             else "pass"
         )
 
-        node_config = json.loads(MANIFEST_PATH.read_text())["nodes"][m.unique_id][
-            "config"
-        ]
+        node_config = raw_manifest["nodes"][m.unique_id]["config"]
         materialization = node_config.get("materialized", "view")
         contract_enforced = node_config.get("contract", {}).get("enforced", False)
 
@@ -512,13 +530,28 @@ def fetch_dagster_check_status(
 
 def require_dagster_token() -> str:
     token = os.environ.get("DAGSTER_CLOUD_API_TOKEN")
-    if not token:
+    if token:
+        return token
+
+    if not OP_TOKEN_PATH.exists():
         raise RuntimeError(
-            "DAGSTER_CLOUD_API_TOKEN is not set. Source it via "
-            "`op read 'op://...' > /tmp/dgst && export DAGSTER_CLOUD_API_TOKEN=$(cat /tmp/dgst)` "
-            "or run from a terminal where the dagster-mcp-launch flow has set it."
+            f"DAGSTER_CLOUD_API_TOKEN unset and {OP_TOKEN_PATH} missing. "
+            "Rebuild Codespace to re-provision the 1Password token."
         )
-    return token
+    op_token = OP_TOKEN_PATH.read_text().strip()
+    if not op_token or op_token == "revoked-after-injection":
+        raise RuntimeError(
+            f"OP token in {OP_TOKEN_PATH} is empty or revoked. "
+            "Rebuild Codespace to re-provision."
+        )
+    result = subprocess.run(
+        ["op", "read", DAGSTER_TOKEN_OP_REF],
+        capture_output=True,
+        text=True,
+        env={**os.environ, "OP_SERVICE_ACCOUNT_TOKEN": op_token},
+        check=True,
+    )
+    return result.stdout.strip()
 
 
 # === Upstream cast tracer ===
