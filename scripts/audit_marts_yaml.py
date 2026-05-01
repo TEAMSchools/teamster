@@ -51,3 +51,86 @@ def main() -> None:
 
 if __name__ == "__main__":
     main()
+
+
+# === YAML parsing ===
+
+import dataclasses
+from typing import Any
+
+import yaml
+
+
+@dataclasses.dataclass(frozen=True)
+class ParsedModel:
+    name: str
+    yaml_path: Path
+    column_data_types: dict[str, str]
+    uniqueness_tests: list[dict[str, Any]]
+
+
+def _extract_unique_tests_from_column(
+    col_name: str, data_tests: list[Any]
+) -> list[dict[str, Any]]:
+    out: list[dict[str, Any]] = []
+    for test in data_tests:
+        if test == "unique":
+            out.append({"columns": [col_name], "severity": "error", "kind": "unique"})
+        elif isinstance(test, dict) and "unique" in test:
+            cfg = test["unique"].get("config", {})
+            out.append(
+                {
+                    "columns": [col_name],
+                    "severity": cfg.get("severity", "error"),
+                    "kind": "unique",
+                }
+            )
+    return out
+
+
+def _extract_unique_combination_test(test: Any) -> dict[str, Any] | None:
+    if not isinstance(test, dict):
+        return None
+    key = next(iter(test.keys()))
+    if not key.endswith("unique_combination_of_columns"):
+        return None
+    body = test[key] or {}
+    args = body.get("arguments", {})
+    cols = args.get("combination_of_columns", [])
+    cfg = body.get("config", {})
+    return {
+        "columns": list(cols),
+        "severity": cfg.get("severity", "error"),
+        "kind": "unique_combination_of_columns",
+    }
+
+
+def parse_mart_yaml(path: Path) -> list[ParsedModel]:
+    raw = yaml.safe_load(path.read_text())
+    out: list[ParsedModel] = []
+    for model in raw.get("models", []):
+        column_types: dict[str, str] = {}
+        uniqueness: list[dict[str, Any]] = []
+
+        for col in model.get("columns") or []:
+            if "data_type" in col:
+                column_types[col["name"]] = col["data_type"]
+            for t in _extract_unique_tests_from_column(
+                col["name"], col.get("data_tests") or []
+            ):
+                uniqueness.append(t)
+
+        for t in model.get("data_tests") or []:
+            extracted = _extract_unique_combination_test(t)
+            if extracted is not None:
+                uniqueness.append(extracted)
+
+        out.append(
+            ParsedModel(
+                name=model["name"],
+                yaml_path=path,
+                column_data_types=column_types,
+                uniqueness_tests=uniqueness,
+            )
+        )
+    return out
