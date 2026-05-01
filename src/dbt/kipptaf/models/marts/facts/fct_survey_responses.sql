@@ -1,11 +1,12 @@
 with
-    /* Staff/student survey responses from int_surveys__survey_responses
-       (already deduped upstream on survey_id, survey_response_id,
-       respondent_identifier, question_shortname). */
+    /* Staff/student survey responses. PK hashes survey_question_id rather
+       than question_shortname because Alchemer surveys can reuse a
+       question_shortname across multiple internal question_ids. */
     general_responses as (
         select
             sr.survey_id,
             sr.survey_response_id,
+            sr.survey_question_id,
             sr.question_shortname,
             sr.respondent_identifier,
             sr.answer as response_text,
@@ -24,11 +25,14 @@ with
             and sr.question_shortname is not null
     ),
 
-    /* Manager Survey responses */
+    /* Manager Survey responses. Manager-survey question_shortnames are
+       unique within their survey, so reuse them as the question identifier
+       for the PK hash. */
     manager_responses as (
         select
             ms.survey_id,
             ms.question_shortname,
+            ms.question_shortname as survey_question_id,
             ms.answer as response_text,
             ms.answer_value as response_value,
 
@@ -52,6 +56,7 @@ with
         select
             survey_id,
             survey_response_id,
+            survey_question_id,
             question_shortname,
             respondent_identifier,
             response_text,
@@ -61,6 +66,7 @@ with
         select
             survey_id,
             survey_response_id,
+            survey_question_id,
             question_shortname,
             respondent_identifier,
             response_text,
@@ -75,7 +81,7 @@ select
                 "survey_id",
                 "survey_response_id",
                 "respondent_identifier",
-                "question_shortname",
+                "survey_question_id",
             ]
         )
     }} as survey_response_key,
