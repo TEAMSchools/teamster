@@ -67,8 +67,8 @@ This umbrella ships the entire surface area in one atomic PR.
     invalidation) and propagates through the same path.
   - The PR ships with the WARN at 43 (or whatever the bucketed count is at merge
     time); #3774 stays open until the WARN clears to 0.
-- Crosswalk redesign for `int_people__location_crosswalk` beyond filling the 6
-  missing rows (broader redesign tracked under #3633).
+- Any change to `int_people__location_crosswalk` (broader redesign tracked under
+  #3633; G2 verified the 6 bridge orphans are not crosswalk gaps).
 
 ## Scope
 
