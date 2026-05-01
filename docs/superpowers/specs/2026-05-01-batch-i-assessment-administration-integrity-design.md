@@ -303,6 +303,40 @@ clauses.
 - If root cause is additive (e.g., upstream dedup that doesn't change surviving
   values) → fold into this PR.
 
+**Outcome (run 2026-05-01):** Cartesian-product fan-out in
+`int_assessments__college_assessment.score_calcs` LEFT JOIN to
+`max_total_score`. The latter is grouped by
+`(student_number, scope, strategy_case)`, but the join uses only
+`(student_number, scope)` — when a student has multiple `strategy_case` values
+(typically Case 1 on one test date and Case 3 on another), the join produces two
+output rows per `case_calcs` row, each carrying a different joined `superscore`.
+The fan-out exits the int model uncollapsed; the dedup happens downstream in
+`fct_assessment_scores_student_scoped.college_assessments` via
+`dbt_utils.deduplicate(order_by="scale_score desc")`. Because all 114 drift
+groups have identical `scale_score`, that tiebreaker is non-deterministic for
+these rows — the surviving superscore is essentially random across builds.
+
+**Quantified impact (post-fix vs current):**
+
+- 150 dup groups total: 114 with superscore drift, 36 identical-row dupes.
+- 100% of drift groups (114/114) have multi-strategy-case students.
+- All 114 are **ACT scope** (no SAT affected).
+- **14 unique students** affected.
+- Comparing current `max(superscore)` (one possible tiebreaker outcome) vs the
+  strategy-matched value: all 114 decrease by 1–6 points (avg 2.87). Current
+  builds surface either the inflated or the correct value depending on the
+  non-deterministic dedup pick — folded fix produces the deterministic correct
+  value.
+
+**Decision:** fold the fix in. The change is value-mutating but corrects a clear
+JOIN bug — 14 students currently have published ACT superscores too high by 1–6
+points. The "additive" rule was about avoiding destabilization of unrelated
+upstream models; this is a one-line fix in a model directly feeding the
+umbrella's hash redefinition. Task 1.4 implements the fix: add
+`and s.strategy_case = d.strategy_case` to the `score_calcs → max_total_score`
+join. The `alt_superscore` join is grouped by `(student_number, scope)` only and
+needs no change.
+
 ## Pre-merge issue-resolution audit
 
 Run after all implementation tasks pass and dbt Cloud CI is green on the PR
