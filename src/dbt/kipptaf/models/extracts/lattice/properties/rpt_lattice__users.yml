@@ -31,9 +31,9 @@ models:
       - name: department
         description: Employee home department name.
         data_type: string
-      - name: manager_email
-        description: Work email of the employee's direct manager in ADP.
-        data_type: string
+      - name: manager_id
+        description: ADP employee number of the employee's direct manager.
+        data_type: int64
       - name: first_name
         description:
           Preferred first name from ADP; falls back to legal given name.
@@ -41,4 +41,9 @@ models:
       - name: last_name
         description:
           Preferred last name from ADP; falls back to legal family name.
+        data_type: string
+      - name: region
+        description:
+          Friendly region name derived from home business unit (Newark, Camden,
+          Miami, Paterson, KTAF).
         data_type: string

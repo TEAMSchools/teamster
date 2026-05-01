@@ -28,9 +28,7 @@ with
             )
     ),
 
-    managers as (
-        select employee_number, work_email, from {{ ref("int_people__staff_roster") }}
-    )
+    managers as (select employee_number, from {{ ref("int_people__staff_roster") }})
 
 select
     s.assignment_status as `status`,
@@ -40,9 +38,23 @@ select
     s.worker_hire_date_recent as `start_date`,
     s.home_department_name as department,
 
-    m.work_email as manager_email,
+    m.employee_number as manager_id,
 
     coalesce(s.given_name, s.legal_given_name) as first_name,
     coalesce(s.family_name_1, s.legal_family_name) as last_name,
+
+    case
+        s.home_business_unit_name
+        when 'KIPP TEAM and Family Schools Inc.'
+        then 'KTAF'
+        when 'KIPP Paterson'
+        then 'Paterson'
+        when 'KIPP Miami'
+        then 'Miami'
+        when 'TEAM Academy Charter School'
+        then 'Newark'
+        when 'KIPP Cooper Norcross Academy'
+        then 'Camden'
+    end as region,
 from staff as s
 left join managers as m on s.reports_to_employee_number = m.employee_number
