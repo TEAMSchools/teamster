@@ -45,8 +45,28 @@ This umbrella ships the entire surface area in one atomic PR.
   ask for a logical-module rollup, that is a separate `rpt_*` ticket).
 - Promoting `administration_period` from a degenerate column to a real
   `dim_administration_period` (deferred until period-level metadata accrues).
-- Source-system catalog edits (Ops-owned; tracked post-merge against the 43
-  cross-region orphan report).
+- AppSheet catalog edits for the 43 cross-region orphans of #3774 (Ops-owned).
+  Mechanism: each orphan is a `(assessment_id, student, region)` tuple where the
+  student's resolved region is not present in the assessment's declared
+  `regions_assessed` array, so the fact's `assessment_administration_key` hashes
+  to a value with no matching row in `dim_assessment_administrations` (which
+  `cross join unnest`s `regions_assessed_array` to produce one dim row per
+  declared region). This PR generates a bucketed report partitioning each row
+  into interpretation (a) — `regions_assessed` is incomplete and should include
+  the student's region — vs interpretation (b) — student took an assessment
+  outside their region's declared scope (mis-administration or off-region
+  enrollment) — and posts it to #3774. From there:
+  - For (a) rows: Ops edits the AppSheet catalog to widen `regions_assessed`.
+    The AppSheet sync rebuilds the BQ-native source, which propagates through
+    `int_assessments__assessments` → `dim_assessment_administrations`. New dim
+    rows materialize for the added regions and the fact's existing hash
+    resolves. No code change required; the `relationships` WARN clears on the
+    next dbt build.
+  - For (b) rows: Ops escalates to school operations for review. Resolution
+    happens at the source-of-truth level (enrollment correction, score
+    invalidation) and propagates through the same path.
+  - The PR ships with the WARN at 43 (or whatever the bucketed count is at merge
+    time); #3774 stays open until the WARN clears to 0.
 - Crosswalk redesign for `int_people__location_crosswalk` beyond filling the 6
   missing rows (broader redesign tracked under #3633).
 
