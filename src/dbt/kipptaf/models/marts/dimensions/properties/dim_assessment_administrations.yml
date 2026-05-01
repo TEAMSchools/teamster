@@ -2,17 +2,22 @@ models:
   - name: dim_assessment_administrations
     description: >-
       Per-scheduled-occurrence dimension paralleling dim_survey_administrations.
-      One row per (assessment_definition x administered_date x academic_year x
-      administration_round x region x season x administration_window). Covers
-      internal Illuminate assessments, NJ and FL state assessments, and
-      college-entrance assessments (SAT, ACT, AP).
+      One row per distinct administration event, identified by an 8-input
+      surrogate key: assessment_type, module_code, administered_date,
+      academic_year, region, administration_period, source_assessment_id, and
+      test_type. Covers internal Illuminate assessments, NJ and FL state
+      assessments, Official college-entrance assessments (SAT, ACT, PSAT), AP
+      assessments, and Practice college-entrance assessments. Branches that do
+      not populate a given scheduling column carry a typed NULL for that column
+      (e.g. Illuminate and AP carry NULL administration_period; state branches
+      carry NULL source_assessment_id).
     columns:
       - name: assessment_administration_key
         data_type: string
         description: >-
-          Surrogate key derived from the assessment definition components plus
-          administered_date, academic_year, administration_round, region,
-          season, and administration_window. Primary key.
+          Surrogate key derived from assessment_type, module_code,
+          administered_date, academic_year, region, administration_period,
+          source_assessment_id, and test_type. Primary key.
         constraints:
           - type: primary_key
             warn_unsupported: false
@@ -23,9 +28,10 @@ models:
       - name: assessment_key
         data_type: string
         description: >-
-          FK to dim_assessments. Same hash composition as
-          dim_assessments.assessment_key -- joining on this column lifts
-          assessment-definition attributes.
+          FK to dim_assessments. Derived from assessment_type, module_code,
+          source_assessment_id, and test_type — the same 4-input hash
+          composition used in dim_assessments.assessment_key. Joining on this
+          column lifts assessment-definition attributes.
         constraints:
           - type: foreign_key
             to: ref('dim_assessments')
@@ -42,8 +48,8 @@ models:
         description: >-
           FK to dim_dates. Date the assessment administration occurred. Null for
           sources that don't capture an exact date (state, AP) -- the
-          administration is identified by academic_year + season +
-          administration_window instead.
+          administration is identified by academic_year and
+          administration_period instead.
         constraints:
           - type: foreign_key
             to: ref('dim_dates')
@@ -63,27 +69,35 @@ models:
         data_type: string
         description: >-
           KIPP region the administration is scoped to (Newark, Camden, Miami,
-          Paterson). Null for college-entrance assessments which are region-
-          agnostic. For Illuminate, derived by unnesting the comma-separated
-          `regions_assessed` list — a multi-region assessment produces one row
-          per region.
+          Paterson). Null for college-entrance and AP assessments which are
+          region-agnostic. For Illuminate, derived by unnesting the
+          comma-separated regions_assessed list — a multi-region assessment
+          produces one row per region.
 
-      - name: administration_round
+      - name: administration_period
         data_type: string
         description: >-
-          College Board administration round (Sept, Oct, Nov, Dec, Mar, May,
-          June). Populated for college-entrance assessments only.
+          The scheduling period that distinguishes one administration of the
+          same assessment from another within the same academic year. For
+          college-entrance assessments (Official and Practice), this is the
+          College Board administration round (e.g. Sept, Oct, Nov). For NJ state
+          assessments, this is the testing season (Fall, Winter, Spring), with
+          the upstream value FallBlock normalized to Fall. For FL state
+          assessments, this is the administration window as reported by FLDOE.
+          Null for Illuminate and AP assessments.
 
-      - name: season
+      - name: source_assessment_id
+        data_type: int64
+        description: >-
+          Illuminate assessment identifier carried through to the administration
+          grain. Populated for Illuminate assessments only; null for all other
+          branches. Acts as a discriminator within the hash so that
+          region-specific copies of the same Illuminate module checkpoint remain
+          distinct administration rows.
+
+      - name: test_type
         data_type: string
         description: >-
-          State assessment season (e.g., Fall, Winter, Spring). Populated for
-          state assessments only. NJ uses 'Fall' for the spring administration;
-          the upstream value 'FallBlock' is normalized to 'Fall' for
-          cross-region consistency.
-
-      - name: administration_window
-        data_type: string
-        description: >-
-          State assessment administration window. Populated for state
-          assessments only; mirrors season for NJ but distinct for FL.
+          Distinguishes Official from Practice administrations for
+          college-entrance assessments. Values are Official or Practice. Null
+          for all non-college branches (Illuminate, state, AP).
