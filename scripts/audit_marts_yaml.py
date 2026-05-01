@@ -346,6 +346,159 @@ _CAST_RE = re.compile(
 )
 
 
+# === Bucketing ===
+
+
+@dataclasses.dataclass(frozen=True)
+class Finding:
+    model: str
+    kind: str  # type_drift|broken|suspect|warn_masked|status_mismatch|missing_test
+    column: str | None
+    yaml_type: str | None
+    bq_type: str | None
+    detail: str
+    upstream_trace: list[tuple[str, str]] | None = None
+
+
+def bucket_model(
+    *,
+    yaml_model: ParsedModel,
+    bq_columns: dict[str, str],
+    probe_results: dict[tuple[str, ...], tuple[int, int]],
+    oversubset_results: dict[tuple[str, ...], tuple[int, int]],
+    dagster_statuses: dict[str, DagsterStatus],
+    upstream_traces: dict[str, list[tuple[str, str]]],
+) -> list[Finding]:
+    findings: list[Finding] = []
+
+    # Type drift
+    for col, yaml_type in yaml_model.column_data_types.items():
+        bq_type = bq_columns.get(col)
+        if bq_type is None:
+            findings.append(
+                Finding(
+                    model=yaml_model.name,
+                    kind="type_drift",
+                    column=col,
+                    yaml_type=yaml_type,
+                    bq_type=None,
+                    detail="column declared in YAML missing from BQ",
+                )
+            )
+            continue
+        if normalize_type(yaml_type) != normalize_type(bq_type):
+            findings.append(
+                Finding(
+                    model=yaml_model.name,
+                    kind="type_drift",
+                    column=col,
+                    yaml_type=normalize_type(yaml_type),
+                    bq_type=normalize_type(bq_type),
+                    detail=f"YAML `{yaml_type}` vs BQ `{bq_type}`",
+                    upstream_trace=upstream_traces.get(col),
+                )
+            )
+
+    # Missing uniqueness test
+    if not yaml_model.uniqueness_tests:
+        findings.append(
+            Finding(
+                model=yaml_model.name,
+                kind="missing_test",
+                column=None,
+                yaml_type=None,
+                bq_type=None,
+                detail="model has no unique / unique_combination_of_columns test",
+            )
+        )
+
+    # Per-test grain analysis
+    for test in yaml_model.uniqueness_tests:
+        cols = tuple(test["columns"])
+        severity = test["severity"]
+
+        # Warn-masked is its own finding regardless of probe outcome
+        if severity == "warn":
+            findings.append(
+                Finding(
+                    model=yaml_model.name,
+                    kind="warn_masked",
+                    column=None,
+                    yaml_type=None,
+                    bq_type=None,
+                    detail=f"uniqueness test on {cols} is severity=warn",
+                )
+            )
+
+        probe = probe_results.get(cols)
+        if probe is None:
+            continue
+        rows, keys = probe
+        probe_unique = rows == keys
+
+        if not probe_unique:
+            findings.append(
+                Finding(
+                    model=yaml_model.name,
+                    kind="broken",
+                    column=None,
+                    yaml_type=None,
+                    bq_type=None,
+                    detail=f"BQ probe found {rows - keys} dup rows on {cols}",
+                )
+            )
+
+        # Status mismatch: Dagster says PASSED but probe found dupes (or vice versa)
+        relevant_statuses = [
+            s for name, s in dagster_statuses.items() if yaml_model.name in name
+        ]
+        if relevant_statuses and probe is not None:
+            outcomes = {s.outcome for s in relevant_statuses}
+            if probe_unique and "FAILED" in outcomes:
+                findings.append(
+                    Finding(
+                        model=yaml_model.name,
+                        kind="status_mismatch",
+                        column=None,
+                        yaml_type=None,
+                        bq_type=None,
+                        detail="probe unique, Dagster FAILED",
+                    )
+                )
+            if not probe_unique and "PASSED" in outcomes:
+                findings.append(
+                    Finding(
+                        model=yaml_model.name,
+                        kind="status_mismatch",
+                        column=None,
+                        yaml_type=None,
+                        bq_type=None,
+                        detail="probe found dupes, Dagster PASSED",
+                    )
+                )
+
+        # Over-specified: a smaller subset is also unique
+        if probe_unique and len(cols) > 1:
+            for sub_cols, (sub_rows, sub_keys) in oversubset_results.items():
+                if set(sub_cols) < set(cols) and sub_rows == sub_keys and sub_rows > 0:
+                    findings.append(
+                        Finding(
+                            model=yaml_model.name,
+                            kind="suspect",
+                            column=None,
+                            yaml_type=None,
+                            bq_type=None,
+                            detail=(
+                                f"declared {cols} unique, but {sub_cols} is also "
+                                "unique → test over-specified"
+                            ),
+                        )
+                    )
+                    break
+
+    return findings
+
+
 def trace_column_casts(
     column: str, from_node: str, nodes: dict[str, ManifestNode]
 ) -> list[tuple[str, str]]:

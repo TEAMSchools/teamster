@@ -179,3 +179,123 @@ def test_fetch_dagster_check_status_parses_response() -> None:
             )
         }
     }
+
+
+def test_bucket_model_clean_pass() -> None:
+    yaml_model = audit.ParsedModel(
+        name="fct_clean",
+        yaml_path=Path("/tmp/fct_clean.yml"),
+        column_data_types={"k": "string"},
+        uniqueness_tests=[{"columns": ["k"], "severity": "error", "kind": "unique"}],
+    )
+    findings = audit.bucket_model(
+        yaml_model=yaml_model,
+        bq_columns={"k": "STRING"},
+        probe_results={("k",): (100, 100)},
+        oversubset_results={},
+        dagster_statuses={"unique_fct_clean_k": audit.DagsterStatus("PASSED", 1.0)},
+        upstream_traces={},
+    )
+    assert findings == []
+
+
+def test_bucket_model_flags_type_drift() -> None:
+    yaml_model = audit.ParsedModel(
+        name="fct_x",
+        yaml_path=Path("/tmp/fct_x.yml"),
+        column_data_types={"created_timestamp": "timestamp"},
+        uniqueness_tests=[],
+    )
+    findings = audit.bucket_model(
+        yaml_model=yaml_model,
+        bq_columns={"created_timestamp": "DATETIME"},
+        probe_results={},
+        oversubset_results={},
+        dagster_statuses={},
+        upstream_traces={"created_timestamp": [("stg_x", "cast(created as datetime)")]},
+    )
+    drift = [f for f in findings if f.kind == "type_drift"]
+    assert len(drift) == 1
+    assert drift[0].column == "created_timestamp"
+    assert drift[0].yaml_type == "timestamp"
+    assert drift[0].bq_type == "datetime"
+
+
+def test_bucket_model_flags_warn_masked_uniqueness() -> None:
+    yaml_model = audit.ParsedModel(
+        name="fct_w",
+        yaml_path=Path("/tmp/fct_w.yml"),
+        column_data_types={"k": "string"},
+        uniqueness_tests=[{"columns": ["k"], "severity": "warn", "kind": "unique"}],
+    )
+    findings = audit.bucket_model(
+        yaml_model=yaml_model,
+        bq_columns={"k": "STRING"},
+        probe_results={("k",): (100, 100)},
+        oversubset_results={},
+        dagster_statuses={},
+        upstream_traces={},
+    )
+    assert any(f.kind == "warn_masked" for f in findings)
+
+
+def test_bucket_model_flags_broken_when_probe_finds_dupes() -> None:
+    yaml_model = audit.ParsedModel(
+        name="fct_b",
+        yaml_path=Path("/tmp/fct_b.yml"),
+        column_data_types={"k": "string"},
+        uniqueness_tests=[{"columns": ["k"], "severity": "error", "kind": "unique"}],
+    )
+    findings = audit.bucket_model(
+        yaml_model=yaml_model,
+        bq_columns={"k": "STRING"},
+        probe_results={("k",): (100, 90)},  # 10 dupes
+        oversubset_results={},
+        dagster_statuses={"unique_fct_b_k": audit.DagsterStatus("PASSED", 1.0)},
+        upstream_traces={},
+    )
+    kinds = [f.kind for f in findings]
+    assert "broken" in kinds
+    assert "status_mismatch" in kinds  # Dagster says pass, probe says dupes
+
+
+def test_bucket_model_flags_missing_uniqueness_test() -> None:
+    yaml_model = audit.ParsedModel(
+        name="fct_m",
+        yaml_path=Path("/tmp/fct_m.yml"),
+        column_data_types={"k": "string"},
+        uniqueness_tests=[],
+    )
+    findings = audit.bucket_model(
+        yaml_model=yaml_model,
+        bq_columns={"k": "STRING"},
+        probe_results={},
+        oversubset_results={},
+        dagster_statuses={},
+        upstream_traces={},
+    )
+    assert any(f.kind == "missing_test" for f in findings)
+
+
+def test_bucket_model_flags_over_specified() -> None:
+    yaml_model = audit.ParsedModel(
+        name="fct_o",
+        yaml_path=Path("/tmp/fct_o.yml"),
+        column_data_types={"a": "string", "b": "string"},
+        uniqueness_tests=[
+            {
+                "columns": ["a", "b"],
+                "severity": "error",
+                "kind": "unique_combination_of_columns",
+            }
+        ],
+    )
+    findings = audit.bucket_model(
+        yaml_model=yaml_model,
+        bq_columns={"a": "STRING", "b": "STRING"},
+        probe_results={("a", "b"): (100, 100)},
+        oversubset_results={("a",): (100, 100)},  # `a` alone is also unique
+        dagster_statuses={},
+        upstream_traces={},
+    )
+    assert any(f.kind == "suspect" and "over-specified" in f.detail for f in findings)
