@@ -31,6 +31,8 @@ Design reference:
 from __future__ import annotations
 
 import argparse
+import subprocess
+from collections import defaultdict
 from pathlib import Path
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
@@ -42,11 +44,192 @@ REPORT_JSON = (
 )
 
 
+def _git_head_sha() -> str:
+    return subprocess.check_output(
+        ["git", "rev-parse", "--short", "HEAD"], cwd=REPO_ROOT, text=True
+    ).strip()
+
+
+def _load_yaml_models() -> dict[str, ParsedModel]:
+    out: dict[str, ParsedModel] = {}
+    for yml in MARTS_DIR.rglob("*.yml"):
+        for parsed in parse_mart_yaml(yml):
+            out[parsed.name] = parsed
+    return out
+
+
+def _candidate_keys_for_unprobed(
+    model: ManifestNode, bq_cols: dict[str, str]
+) -> list[tuple[str, ...]]:
+    return [(c,) for c in bq_cols if c.endswith("_key") or c.endswith("_id")]
+
+
 def main() -> None:
     description = (__doc__ or "").splitlines()[0]
     parser = argparse.ArgumentParser(description=description)
     parser.parse_args()
-    raise NotImplementedError("audit not wired up yet")
+
+    print(f"Loading manifest from {MANIFEST_PATH}...")
+    nodes = load_manifest(MANIFEST_PATH)
+    marts = mart_models(nodes)
+    print(f"  found {len(marts)} mart models")
+
+    print(f"Loading YAMLs from {MARTS_DIR}...")
+    yamls = _load_yaml_models()
+    missing_yaml = [m.name for m in marts if m.name not in yamls]
+    if missing_yaml:
+        raise RuntimeError(f"mart manifest nodes missing YAML: {missing_yaml}")
+
+    print("Initializing BigQuery client...")
+    from google.cloud import bigquery
+
+    bq = bigquery.Client()
+
+    by_dataset: dict[tuple[str, str], list[ManifestNode]] = defaultdict(list)
+    for m in marts:
+        by_dataset[(m.database, m.schema)].append(m)
+
+    print(f"Fetching INFORMATION_SCHEMA for {len(by_dataset)} dataset(s)...")
+    bq_cols_by_table: dict[tuple[str, str, str], dict[str, str]] = {}
+    for (db, schema), models_in_ds in by_dataset.items():
+        cols = fetch_dataset_columns(bq, db, schema)
+        for m in models_in_ds:
+            if m.alias not in cols:
+                raise RuntimeError(
+                    f"mart {m.name} not materialized in {db}.{schema}.{m.alias} — "
+                    "run `uv run dbt build --project-dir src/dbt/kipptaf --target prod` first"
+                )
+            bq_cols_by_table[(db, schema, m.alias)] = cols[m.alias]
+
+    print("Running grain probes...")
+    probe_results_by_model: dict[str, dict[tuple[str, ...], tuple[int, int]]] = {}
+    oversubset_results_by_model: dict[str, dict[tuple[str, ...], tuple[int, int]]] = {}
+    for m in marts:
+        ym = yamls[m.name]
+        relation = m.relation_name
+        probes: dict[tuple[str, ...], tuple[int, int]] = {}
+        oversubsets: dict[tuple[str, ...], tuple[int, int]] = {}
+
+        if ym.uniqueness_tests:
+            for test in ym.uniqueness_tests:
+                cols = tuple(test["columns"])
+                probes[cols] = grain_probe(bq, relation, list(cols))
+                if len(cols) > 1:
+                    for sub in [cols[:i] + cols[i + 1 :] for i in range(len(cols))]:
+                        if sub:
+                            oversubsets[sub] = grain_probe(bq, relation, list(sub))
+        else:
+            for cand in _candidate_keys_for_unprobed(
+                m, bq_cols_by_table[(m.database, m.schema, m.alias)]
+            ):
+                probes[cand] = grain_probe(bq, relation, list(cand))
+
+        probe_results_by_model[m.name] = probes
+        oversubset_results_by_model[m.name] = oversubsets
+
+    print("Fetching Dagster asset-check statuses...")
+    token = require_dagster_token()
+    asset_keys = [asset_key_for_mart_node(m) for m in marts]
+    statuses = fetch_dagster_check_status(asset_keys, token=token)
+
+    print("Tracing upstream casts for type drifts...")
+    upstream_traces_by_model: dict[str, dict[str, list[tuple[str, str]]]] = {}
+    for m in marts:
+        ym = yamls[m.name]
+        bq_cols = bq_cols_by_table[(m.database, m.schema, m.alias)]
+        traces: dict[str, list[tuple[str, str]]] = {}
+        for col, yt in ym.column_data_types.items():
+            bt = bq_cols.get(col)
+            if bt and normalize_type(yt) != normalize_type(bt):
+                traces[col] = trace_column_casts(col, m.unique_id, nodes)
+        upstream_traces_by_model[m.name] = traces
+
+    print("Bucketing findings...")
+    model_reports: list[ModelReport] = []
+    for m in marts:
+        ym = yamls[m.name]
+        bq_cols = bq_cols_by_table[(m.database, m.schema, m.alias)]
+        probes = probe_results_by_model[m.name]
+        oversubsets = oversubset_results_by_model[m.name]
+        per_model_statuses = statuses.get(tuple(asset_key_for_mart_node(m)), {})
+        traces = upstream_traces_by_model[m.name]
+
+        findings = bucket_model(
+            yaml_model=ym,
+            bq_columns=bq_cols,
+            probe_results=probes,
+            oversubset_results=oversubsets,
+            dagster_statuses=per_model_statuses,
+            upstream_traces=traces,
+        )
+
+        severities = {t["severity"] for t in ym.uniqueness_tests}
+        test_severity = (
+            "warn" if "warn" in severities else "error" if severities else "—"
+        )
+        dagster_outcomes = {s.outcome for s in per_model_statuses.values()}
+        dagster_status = (
+            "FAILED"
+            if "FAILED" in dagster_outcomes
+            else "WARN"
+            if "WARN" in dagster_outcomes
+            else "PASSED"
+            if "PASSED" in dagster_outcomes
+            else "—"
+        )
+        timestamps = [s.timestamp for s in per_model_statuses.values() if s.timestamp]
+        ts = max(timestamps) if timestamps else None
+
+        any_broken = any(f.kind == "broken" for f in findings)
+        any_suspect = any(f.kind == "suspect" for f in findings)
+        bq_probe_outcome = (
+            "dupes"
+            if any_broken
+            else "over-spec"
+            if any_suspect
+            else "unique"
+            if probes
+            else "—"
+        )
+        grain_status = (
+            "broken"
+            if any_broken
+            else "suspect"
+            if any_suspect
+            else "warn-masked"
+            if any(f.kind == "warn_masked" for f in findings)
+            else "missing-test"
+            if any(f.kind == "missing_test" for f in findings)
+            else "pass"
+        )
+
+        node_config = json.loads(MANIFEST_PATH.read_text())["nodes"][m.unique_id][
+            "config"
+        ]
+        materialization = node_config.get("materialized", "view")
+        contract_enforced = node_config.get("contract", {}).get("enforced", False)
+
+        model_reports.append(
+            ModelReport(
+                model=m.name,
+                materialization=materialization,
+                contract="enforced" if contract_enforced else "none",
+                test_severity=test_severity,
+                dagster_status=dagster_status,
+                dagster_status_timestamp=ts,
+                bq_probe_outcome=bq_probe_outcome,
+                grain_status=grain_status,
+                findings=findings,
+            )
+        )
+
+    print(f"Rendering report to {REPORT_MD}...")
+    md, js = render_report(model_reports, run_sha=_git_head_sha())
+    REPORT_MD.write_text(md)
+    REPORT_JSON.write_text(js)
+
+    counts = _summary_counts(model_reports)
+    print("Done. " + " | ".join(f"{k}: {v}" for k, v in counts.items()))
 
 
 if __name__ == "__main__":
