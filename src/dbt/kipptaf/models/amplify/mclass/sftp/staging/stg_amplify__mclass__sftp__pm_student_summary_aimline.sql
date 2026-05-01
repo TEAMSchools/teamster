@@ -23,7 +23,6 @@ with
     ),
 
     enriched as (
-        -- trunk-ignore(sqlfluff/AM04): transformations produces dynamic columns
         select
             t.* except (_dbt_source_relation),
 

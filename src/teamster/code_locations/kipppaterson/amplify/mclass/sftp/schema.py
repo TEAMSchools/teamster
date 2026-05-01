@@ -5,7 +5,6 @@ import py_avro_schema
 from teamster.libraries.amplify.mclass.sftp.schema import (
     BenchmarkStudentSummary,
     PMStudentSummary,
-    PMStudentSummaryAimline,
 )
 
 pas_options = py_avro_schema.Option.NO_DOC | py_avro_schema.Option.NO_AUTO_NAMESPACE
