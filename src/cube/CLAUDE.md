@@ -170,6 +170,11 @@ uv run scripts/sync-cube-descriptions.py --manifest src/dbt/kipptaf/target/prod/
 The script only patches dimensions where `name == sql`. Review the git diff
 before committing — only `description:` and `meta:` lines should change.
 
+Do not replace this script with `cube_dbt` (the official Cube+dbt package). It
+generates whole cube definitions from the manifest and cannot selectively patch
+existing YAML. It also has no mechanism to populate `access_policy.excludes`
+from PII flags — that is a Cube-specific construct with no dbt equivalent.
+
 Automation (pending `#3727`): a GitHub Actions workflow triggered by a dbt Cloud
 webhook will run this automatically and open a PR when descriptions change.
 
