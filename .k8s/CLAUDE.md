@@ -23,18 +23,36 @@ on GKE Autopilot.
 
 ## Scheduling
 
-- Weighted `nodeAffinity` preferences (no hard `nodeSelector`). Compute-class
-  tiers: Scale-Out arm64 > General-Purpose > Scale-Out x86. Balanced removed —
-  its separation/extended-duration minimums (1 vCPU / 4 GiB) exceed our requests
-  (500m / 2 GiB), which would cause pod admission rejection if anti-affinity is
-  ever applied. Spot adds +50 on code server pods (not agent or run pods).
-  Autopilot bills per-pod, so fallback tiers have no cost penalty.
-- Agent pods use `safe-to-evict: "false"` (extended-duration) to prevent
-  Autopilot scale-down churn, which is mutually exclusive with spot. Agent pods
-  exclude arm64 tiers (image is x86-only).
+- **Hard `nodeSelector` on `cloud.google.com/compute-class`** — Autopilot NAP
+  only provisions matching nodes for `required` / `nodeSelector` constraints.
+  `preferredDuringSchedulingIgnoredDuringExecution` is scheduler scoring applied
+  to existing nodes; it does NOT drive provisioning. With only `preferred`, NAP
+  falls back to default N4 amd64 and every weighted preference scores 0. Same
+  trap for `preferred kubernetes.io/arch: arm64`.
+- **One `cloud.google.com/compute-class` value per pod** — Warden
+  (`autopilot-compute-class-limitation`,
+  `ccc-node-affinity-selector-limitation`) rejects multiple values across ORed
+  `nodeSelectorTerms`. Use a Custom ComputeClass with priority-ordered fallbacks
+  instead of multi-value affinity.
+- **Custom ComputeClasses** in
+  [compute-classes.yaml](/.k8s/dagster/compute-classes.yaml):
+  `dagster-codeserver` (spot t2a → on-demand t2a → t2d) and `dagster-run`
+  (on-demand t2a → t2d — no spot, runs are `safe-to-evict: "false"`). Agent uses
+  the built-in `General-Purpose` class — its image is amd64-only, no arm64
+  fallback.
+- **Do NOT add Balanced to CCC priorities** — its separation / extended-duration
+  minimums (1 vCPU / 4 GiB) exceed our requests (500m / 2 GiB) and would cause
+  pod admission rejection if anti-affinity is applied.
+- **CCC delivery is manual** —
+  `kubectl apply -f .k8s/dagster/compute-classes.yaml`, NOT via Helm
+  `extraManifests`. The agent's Helm ServiceAccount lacks cluster-scoped create
+  perms on `cloud.google.com/v1/ComputeClass`.
+- Agent pods use `safe-to-evict: "false"` (extended-duration), which is mutually
+  exclusive with spot — do not move the agent to a spot tier.
 - **Agent topology spread** uses `ScheduleAnyway` across
-  `topology.kubernetes.io/zone` via `additionalPodSpecConfig`. Prefers
-  cross-zone but allows same-zone during capacity exhaustion.
+  `topology.kubernetes.io/zone` via `additionalPodSpecConfig` — prefers
+  cross-zone but allows same-zone during capacity exhaustion (do not switch to
+  `DoNotSchedule`, which would block agent rollouts when one zone is full).
 
 ## Security
 

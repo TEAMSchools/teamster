@@ -1,0 +1,58 @@
+---
+# Cluster-scoped Custom ComputeClasses (CCC) consumed by code server and run
+# pods via `nodeSelector: { cloud.google.com/compute-class: <name> }`.
+#
+# Why CCCs and not weighted nodeAffinity:
+#   On Autopilot, Node Auto-Provisioning (NAP) only honors `required` /
+#   `nodeSelector` constraints when deciding what hardware to provision.
+#   `preferredDuringSchedulingIgnoredDuringExecution` is a scheduler scoring
+#   hint applied AFTER candidate nodes exist; it does not drive provisioning.
+#   With only `preferred` rules, NAP falls back to default N4 amd64 and every
+#   weighted preference scores 0 against those unlabeled nodes.
+#
+#   Hard-requiring `compute-class: Scale-Out, arch: arm64` does drive NAP, but
+#   reintroduces the STOCKOUT hang we hit on 2026-03-30/31. Multi-value
+#   `nodeSelectorTerms` over `cloud.google.com/compute-class` is rejected by
+#   Warden (`autopilot-compute-class-limitation`,
+#   `ccc-node-affinity-selector-limitation` — only one value allowed for that
+#   key per pod).
+#
+#   CCCs solve all three: a single nodeSelector value drives NAP, the
+#   `priorities` list expresses ordered fallback at the GKE layer (not the
+#   pod scheduler layer), and Warden admission passes.
+#
+# Delivery model:
+#   These manifests are applied manually with `kubectl apply -f
+#   .k8s/dagster/compute-classes.yaml`. They are NOT included in the
+#   Dagster Cloud Helm chart's `extraManifests` because:
+#     - CCCs are cluster-scoped CRDs; the agent's Helm ServiceAccount lacks
+#       cluster-scoped create perms on `cloud.google.com/v1/ComputeClass`.
+#     - CCCs change rarely; coupling them to per-release Helm rollouts adds
+#       churn without benefit.
+#
+# Re-apply after editing this file.
+apiVersion: cloud.google.com/v1
+kind: ComputeClass
+metadata:
+  name: dagster-codeserver
+spec:
+  priorities:
+    # Code server pods are stateless, PDB-protected (minAvailable: 1), and
+    # tolerate eviction — spot is safe and saves cost.
+    - machineFamily: t2a
+      spot: true
+    - machineFamily: t2a
+    - machineFamily: t2d
+  whenUnsatisfiable: ScaleUpAnyway
+---
+apiVersion: cloud.google.com/v1
+kind: ComputeClass
+metadata:
+  name: dagster-run
+spec:
+  priorities:
+    # Run/step pods carry `safe-to-evict: "false"` and cannot use spot —
+    # eviction would consume Dagster retry budget and surface as run failures.
+    - machineFamily: t2a
+    - machineFamily: t2d
+  whenUnsatisfiable: ScaleUpAnyway

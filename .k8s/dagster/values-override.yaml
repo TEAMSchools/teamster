@@ -65,23 +65,14 @@ dagsterCloudAgent:
   annotations:
     cluster-autoscaler.kubernetes.io/safe-to-evict: "false"
 
+  # Hard nodeSelector (not preferred) — Autopilot NAP only provisions matching
+  # nodes for required/nodeSelector constraints. The agent image is amd64-only
+  # so arm64 fallback is not an option; pin to the built-in General-Purpose
+  # compute class to drive NAP correctly.
+  nodeSelector:
+    cloud.google.com/compute-class: General-Purpose
+
   affinity:
-    nodeAffinity:
-      preferredDuringSchedulingIgnoredDuringExecution:
-        - weight: 30
-          preference:
-            matchExpressions:
-              - key: cloud.google.com/compute-class
-                operator: In
-                values:
-                  - General-Purpose
-        - weight: 20
-          preference:
-            matchExpressions:
-              - key: cloud.google.com/compute-class
-                operator: In
-                values:
-                  - Scale-Out
     podAntiAffinity:
       requiredDuringSchedulingIgnoredDuringExecution:
         - labelSelector:
@@ -141,38 +132,13 @@ workspace:
       annotations:
         operator.1password.io/auto-restart: "true"
     podSpecConfig:
-      affinity:
-        nodeAffinity:
-          preferredDuringSchedulingIgnoredDuringExecution:
-            - weight: 40
-              preference:
-                matchExpressions:
-                  - key: cloud.google.com/compute-class
-                    operator: In
-                    values:
-                      - Scale-Out
-                  - key: kubernetes.io/arch
-                    operator: In
-                    values:
-                      - arm64
-            - weight: 30
-              preference:
-                matchExpressions:
-                  - key: cloud.google.com/compute-class
-                    operator: In
-                    values:
-                      - General-Purpose
-            - weight: 20
-              preference:
-                matchExpressions:
-                  - key: cloud.google.com/compute-class
-                    operator: In
-                    values:
-                      - Scale-Out
-                  - key: kubernetes.io/arch
-                    operator: In
-                    values:
-                      - amd64
+      # Reference the cluster-scoped Custom ComputeClass `dagster-codeserver`
+      # defined in .k8s/dagster/compute-classes.yaml. Priorities (spot t2a →
+      # on-demand t2a → t2d) are enforced by GKE at provisioning time; a
+      # single nodeSelector value satisfies Warden's one-value-per-pod rule
+      # for `cloud.google.com/compute-class`.
+      nodeSelector:
+        cloud.google.com/compute-class: dagster-codeserver
       terminationGracePeriodSeconds: 60
       topologySpreadConstraints:
         - maxSkew: 1
@@ -242,38 +208,13 @@ workspace:
         cluster-autoscaler.kubernetes.io/safe-to-evict: "false"
     podSpecConfig:
       priorityClassName: dagster-run
+      # Reference the cluster-scoped Custom ComputeClass `dagster-run` defined
+      # in .k8s/dagster/compute-classes.yaml. No spot tier — run/step pods
+      # carry `safe-to-evict: "false"` and cannot be evicted without consuming
+      # Dagster retry budget. Priorities: on-demand t2a → t2d.
+      nodeSelector:
+        cloud.google.com/compute-class: dagster-run
       affinity:
-        nodeAffinity:
-          preferredDuringSchedulingIgnoredDuringExecution:
-            - weight: 40
-              preference:
-                matchExpressions:
-                  - key: cloud.google.com/compute-class
-                    operator: In
-                    values:
-                      - Scale-Out
-                  - key: kubernetes.io/arch
-                    operator: In
-                    values:
-                      - arm64
-            - weight: 30
-              preference:
-                matchExpressions:
-                  - key: cloud.google.com/compute-class
-                    operator: In
-                    values:
-                      - General-Purpose
-            - weight: 20
-              preference:
-                matchExpressions:
-                  - key: cloud.google.com/compute-class
-                    operator: In
-                    values:
-                      - Scale-Out
-                  - key: kubernetes.io/arch
-                    operator: In
-                    values:
-                      - amd64
         # Hard-block run/step pods from sharing a node with code servers
         # (eliminates preemption-driven code server evictions) or with the
         # agent (protects the single-replica agent from kubelet node-pressure
