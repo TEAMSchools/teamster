@@ -232,6 +232,10 @@ where response_type_id is not null
 Pass: `min(response_type_id) >= 0` → sentinel `-1` is safe. Fail: pick a per-row
 synthetic sentinel.
 
+**Outcome (run 2026-05-01):** `min_id=1`, `max_id=457395`, `n_rows=26,910,413`,
+`n_null=3,911,547` (~14.5%). Sentinel `-1` is safe. Task 1.1 will use
+`coalesce(response_type_id, -1)`.
+
 ### G2 — bridge-orphan additivity (item 3)
 
 For each of the 6 `ssa.site_id` values in
