@@ -202,8 +202,15 @@ def parse_mart_yaml(path: Path) -> list[ParsedModel]:
 # === BigQuery introspection ===
 
 
+from collections.abc import Iterable
+
+
+class BQJob(Protocol):
+    def result(self) -> Iterable[Any]: ...
+
+
 class BQClient(Protocol):
-    def query(self, sql: str): ...
+    def query(self, sql: str) -> BQJob: ...
 
 
 def fetch_dataset_columns(
