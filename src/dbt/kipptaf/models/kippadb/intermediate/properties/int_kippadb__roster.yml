@@ -7,3 +7,11 @@ models:
           - unique:
               config:
                 severity: error
+        description: Student Number assigned by the school. Indexed.
+        config:
+          meta:
+            source_system: PowerSchool
+            source_model: stg_powerschool__students
+            source_column: student_number
+            contains_pii: true
+            column_role: primary_key

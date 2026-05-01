@@ -35,3 +35,6 @@ models:
         data_type: string
       - name: aggregation_display
         data_type: string
+        description:
+          The short name for the school displayed on most screens. Categorical
+          mapping of abbreviation, entity, grade_band, layer, org_level.

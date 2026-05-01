@@ -1,0 +1,20 @@
+models:
+  - name: dim_sample
+    description: A fixture model used in unit tests.
+    columns:
+      - name: sample_key
+        data_type: string
+        description: >-
+          Surrogate key for sample. Spanning multiple lines.
+      - name: student_number
+        data_type: int64
+        description: Local student ID from PowerSchool.
+      - name: powerschool_school_id
+        data_type: int64
+        description: PowerSchool school number.
+      - name: _dbt_source_relation
+        data_type: string
+        description: dbt union metadata.
+      - name: ordinary_column
+        data_type: string
+        description: Nothing special.

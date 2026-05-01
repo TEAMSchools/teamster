@@ -71,7 +71,9 @@ models:
         data_type: string
       - name: scope
         data_type: string
+        description: Conditional on code_translation, is_grade_k_1.
       - name: subject_area
         data_type: string
       - name: academic_year_clean
         data_type: int64
+        description: Derived from academic_year.

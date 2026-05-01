@@ -41,7 +41,7 @@ requirements and selection criteria:
 
 | Asset variable            | `select`              | `exclude`                              | Notes                                         |
 | ------------------------- | --------------------- | -------------------------------------- | --------------------------------------------- |
-| `core_dbt_assets`         | `fqn:*`               | `source:adp_payroll+ tag:google_sheet` | Main run, 2000m CPU                           |
+| `core_dbt_assets`         | `fqn:*`               | `source:adp_payroll+ tag:google_sheet` | Main run                                      |
 | `google_sheet_dbt_assets` | `tag:google_sheet`    | —                                      | Separate to isolate brittle gsheet deps       |
 | `adp_payroll_dbt_assets`  | `source:adp_payroll+` | —                                      | Partitioned by payroll file; cannot be merged |
 
@@ -53,13 +53,8 @@ only) built from the manifest.
 
 ## `google` Sub-module
 
-Aggregates all Google Workspace integrations into a single importable module:
-
-- `appsheet` / `sheets` — produce `AssetSpec`s (external, sensor-driven)
-- `directory` — user/group provisioning ops + assets
-- `forms` — Google Forms response assets; sensor lists forms from Drive and
-  triggers runs
-- `bigquery` — sensor that watches BigQuery job completions
+`appsheet` and `sheets` produce `AssetSpec`s (external, sensor-driven) — not
+standard asset definitions.
 
 ## Tableau Workbook Scheduling
 
@@ -72,17 +67,10 @@ the exposure's `asset.metadata`; if the workbook is refreshed by another system
 
 See `src/dbt/kipptaf/CLAUDE.md` for the full exposure YAML reference.
 
-## `resources.py`
+## Freshness Policies
 
-Location-specific resource instances (not shared with other code locations): ADP
-WFN, Airbyte Cloud workspace, Coupa, Google Directory, KnowBe4, LDAP,
-PowerSchool Enrollment, LevelData Grow, SmartRecruiters, Tableau Server, and
-several SSH resources.
-
-## Asset Checks
-
-`asset_checks.py` defines freshness checks on ADP WFN people models (deadline
-1:15am, 45-minute window).
+`freshness.py` attaches `FreshnessPolicy.cron` to ADP WFN people models
+(deadline 1:15am, 45-minute window).
 
 ## Illuminate DLT Schedule Split
 

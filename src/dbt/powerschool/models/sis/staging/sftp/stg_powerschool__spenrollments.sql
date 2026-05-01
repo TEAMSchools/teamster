@@ -8,10 +8,14 @@ with
                 programid,
                 schoolid,
                 studentid,
-                enter_date,
-                exit_date,
-                source_file_name
+                enterdate,
+                exitdate,
+                source_file_name,
+                custom,
+                spcomment
             ),
+
+            spcomment as sp_comment,
 
             cast(dcid as int) as dcid,
             cast(gradelevel as int) as gradelevel,
@@ -20,8 +24,8 @@ with
             cast(schoolid as int) as schoolid,
             cast(studentid as int) as studentid,
 
-            cast(enter_date as date) as enter_date,
-            cast(exit_date as date) as exit_date,
+            parse_date('%m/%d/%Y', enterdate) as enter_date,
+            parse_date('%m/%d/%Y', exitdate) as exit_date,
         from {{ source("powerschool_sftp", "src_powerschool__spenrollments") }}
     ),
 

@@ -35,3 +35,6 @@ models:
         data_type: int64
       - name: rn_student_session_desc
         data_type: int64
+        description:
+          ROWNUMBER of value partitioned by student_id, academic_year ordered by
+          entry_date, leave_date.

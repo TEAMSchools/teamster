@@ -92,3 +92,13 @@ sources:
                 - google
                 - appsheet
                 - src_seat_tracker__people
+      - name: src_google_appsheet__kfwd_career_conversations__output
+        identifier: src_kfwd_career_conversations__output
+        config:
+          meta:
+            dagster:
+              asset_key:
+                - kipptaf
+                - google
+                - appsheet
+                - src_kfwd_career_conversations__output

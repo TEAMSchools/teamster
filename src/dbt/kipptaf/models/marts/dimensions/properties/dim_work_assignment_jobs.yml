@@ -1,0 +1,71 @@
+models:
+  - name: dim_work_assignment_jobs
+    description: >-
+      Work assignment job dimension with derived Type 2 SCD tracking. One row
+      per assignment x job change point. Detects changes to job title and job
+      code via daily payload-hash comparison. FK to dim_staff_work_assignments
+      via work_assignment_key.
+    columns:
+      - name: work_assignment_job_key
+        data_type: string
+        description: >-
+          Surrogate primary key derived from item_id and effective_date_start.
+          Generated with generate_surrogate_key(["item_id",
+          "effective_date_start"]).
+        constraints:
+          - type: primary_key
+            warn_unsupported: false
+        data_tests:
+          - unique
+          - not_null
+
+      - name: work_assignment_key
+        data_type: string
+        description: >-
+          Foreign key to dim_staff_work_assignments. Surrogate key derived from
+          item_id. Generated with generate_surrogate_key(["item_id"]).
+        constraints:
+          - type: foreign_key
+            to: ref('dim_staff_work_assignments')
+            to_columns: [work_assignment_key]
+            warn_unsupported: false
+        data_tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('dim_staff_work_assignments')
+                field: work_assignment_key
+
+      - name: position_title
+        data_type: string
+        description: >-
+          Free-text position title for the work assignment.
+
+      - name: job_code
+        data_type: string
+        description: >-
+          Job code value for the work assignment.
+
+      - name: job_code_description
+        data_type: string
+        description: >-
+          Descriptive label for the job code.
+
+      - name: effective_start_date
+        data_type: date
+        description: >-
+          Date this job version was first observed, derived from the daily
+          partition date where the job attribute hash changed.
+
+      - name: effective_end_date
+        data_type: date
+        description: >-
+          Last date this job version was effective. Computed as one day before
+          the next version's effective_start_date, or 9999-12-31 for the current
+          version.
+
+      - name: is_current
+        data_type: boolean
+        description: >-
+          TRUE if this is the most recent job version for the work assignment
+          (effective_end_date = 9999-12-31).

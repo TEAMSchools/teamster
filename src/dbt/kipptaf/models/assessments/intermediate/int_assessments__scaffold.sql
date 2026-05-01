@@ -12,15 +12,29 @@ with
             a.module_type,
             a.module_code,
 
-            trim(region) as region,
+            region,
 
             coalesce(a.illuminate_grade_level_id, agl.grade_level_id) as grade_level_id,
         from {{ ref("int_assessments__assessments") }} as a
-        cross join unnest(split(a.regions_assessed, ',')) as region
+        cross join unnest(a.regions_assessed_array) as region
         left join
             {{ ref("stg_illuminate__dna_assessments__assessment_grade_levels") }} as agl
             on a.assessment_id = agl.assessment_id
         where a.is_internal_assessment
+    ),
+
+    -- One row per (powerschool_school_id, region). Sources from
+    -- stg_google_sheets__people__locations per kipptaf/CLAUDE.md, not
+    -- int_people__location_crosswalk (which is at aliased-name grain).
+    -- The (is_campus / is_pathways / Whittier) filter mirrors the canonical
+    -- mart-scope filter pattern tracked in #3751 / #3754.
+    school_to_region as (
+        select powerschool_school_id, city as region,
+        from {{ ref("stg_google_sheets__people__locations") }}
+        where
+            not is_campus
+            and not is_pathways
+            and location_name != 'KIPP Whittier Elementary'
     ),
 
     -- trunk-ignore(sqlfluff/ST03)
@@ -47,6 +61,9 @@ with
             ce.cc_dateenrolled,
             ce.cc_dateleft,
             ce.discipline,
+            ce.cc_dcid,
+
+            ce._dbt_source_relation as cc_source_relation,
         from assessment_region_scaffold as a
         inner join
             {{ ref("int_illuminate__student_session_aff") }} as ssa
@@ -89,6 +106,9 @@ with
             ce.cc_dateenrolled,
             ce.cc_dateleft,
             ce.discipline,
+            ce.cc_dcid,
+
+            ce._dbt_source_relation as cc_source_relation,
         from assessment_region_scaffold as a
         inner join
             {{ ref("int_assessments__course_enrollments") }} as ce
@@ -131,6 +151,8 @@ select
     ia.module_type,
     ia.module_code,
     ia.discipline,
+    ia.cc_dcid,
+    ia.cc_source_relation,
 
     sa.student_assessment_id,
     sa.date_taken,
@@ -160,7 +182,8 @@ select
 
     ssa.site_id as powerschool_school_id,
 
-    null as region,
+    str.region,
+
     null as grade_level_id,
 
     a.scope,
@@ -168,6 +191,9 @@ select
     a.module_code,
 
     null as discipline,
+
+    cast(null as int64) as cc_dcid,
+    cast(null as string) as cc_source_relation,
 
     sa.student_assessment_id,
     sa.date_taken,
@@ -186,6 +212,7 @@ inner join
     and a.academic_year = ssa.academic_year
     and a.illuminate_grade_level_id != ssa.grade_level_id
     and ssa.rn_student_session_desc = 1
+left join school_to_region as str on ssa.site_id = str.powerschool_school_id
 where
     a.is_internal_assessment
     and a.subject_area in ('Text Study', 'Mathematics', 'Social Studies', 'Science')
@@ -208,7 +235,8 @@ select
 
     ssa.site_id as powerschool_school_id,
 
-    null as region,
+    str.region,
+
     null as grade_level_id,
 
     a.scope,
@@ -216,6 +244,9 @@ select
     a.module_code,
 
     null as discipline,
+
+    cast(null as int64) as cc_dcid,
+    cast(null as string) as cc_source_relation,
 
     sa.student_assessment_id,
     sa.date_taken,
@@ -233,4 +264,5 @@ inner join
     on a.academic_year = ssa.academic_year
     and sa.student_id = ssa.student_id
     and ssa.rn_student_session_desc = 1
+left join school_to_region as str on ssa.site_id = str.powerschool_school_id
 where not a.is_internal_assessment

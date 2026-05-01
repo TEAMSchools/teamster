@@ -12,6 +12,7 @@ models:
                 field: name
       - name: _dbt_source_relation
         data_type: string
+        description: Derived from _dbt_source_relation, dagster_code_location.
       - name: academic_year_int
         data_type: int64
       - name: student_id

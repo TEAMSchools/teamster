@@ -1,0 +1,50 @@
+cubes:
+  - name: dim_terms
+    public: false
+    sql_table: kipptaf_marts.dim_terms
+
+    dimensions:
+      - name: term_key
+        sql: term_key
+        type: string
+        primary_key: true
+
+      - name: location_key
+        sql: location_key
+        type: string
+
+      - name: term_type
+        sql: "{CUBE}.`type`"
+        type: string
+
+      - name: term_code
+        sql: term_code
+        type: string
+
+      - name: term_name
+        sql: term_name
+        type: string
+
+      - name: academic_year
+        sql: academic_year
+        type: number
+
+      - name: fiscal_year
+        sql: fiscal_year
+        type: number
+
+      - name: grade_band
+        sql: grade_band
+        type: string
+
+      - name: start_date
+        sql: CAST(start_date AS TIMESTAMP)
+        type: time
+
+      - name: end_date
+        sql: CAST(end_date AS TIMESTAMP)
+        type: time
+
+      - name: is_current
+        sql: is_current
+        type: boolean

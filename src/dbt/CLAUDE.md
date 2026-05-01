@@ -57,12 +57,18 @@ deployments.
 
 ## External Table Pattern
 
-All staging sources use BigQuery external tables backed by GCS (Avro format,
-BigLake connection, 7-day staleness window). Each source's `sources.yml`
-includes `dagster: asset_key` metadata so Dagster can track lineage.
-
 When a PR adds or modifies an external source, flag that the developer must
 stage it with `--target staging` before the dbt Cloud CI job will pass.
+
+`stage_external_sources --args "select: ..."` takes a
+`<source_name>.<table_name>` selector — not project-qualified. The
+project-prefix form (e.g. `kipptaf.google_sheets.<table>`) silently matches zero
+sources.
+
+`stage_external_sources` is a `dbt run-operation` — `--threads` doesn't apply.
+Running it in parallel across all 5 district projects exhausts BigQuery's
+`INFORMATION_SCHEMA.simple_rate.user` quota (429). Serialize across projects, or
+run only the project you need.
 
 ## Source Schema Resolution
 
@@ -78,6 +84,54 @@ Two inline patterns (see spec for details):
   `defer` and `dev` targets
 - **Region source schema** (kipptaf `sources-kipp*` files only): prefixes for
   `dev` only (`defer` resolves to production)
+
+## dbt Cloud CI state comparison
+
+`state:modified+` hashes every source node through `{{ target.name }}`
+rendering. The CI job and the parse job in its `deferring_environment_id` must
+share `target_name`, or every source with the target-conditional schema pattern
+hash-mismatches and fans out to rebuild the whole graph.
+
+## Dev `--defer` for unstaged externals
+
+Dev builds depending on GCS externals (`stg_google_sheets__*` etc.) fail with
+"table not found" when those externals aren't staged for the current user. Add
+`--defer --state=src/dbt/<project>/target/prod/`. **`--state` path is relative
+to `--project-dir`** — repo-root form silently fails with "Could not find
+manifest". The prod manifest is refreshed by `.git/hooks/post-merge` on every
+`git pull`; if stale, regenerate with
+`uv run dbt parse --target prod --project-dir <project> --target-path target/prod`.
+
+## `dbt clone` behavior on BigQuery
+
+- Views fall back to running the view materialization (compiles + runs the model
+  SQL) — not a clone, and not free.
+- Missing prod relations → silent skip with
+  `No relation found in state manifest for <unique_id>`. Treat as a diagnostic
+  signal, not an error.
+- `--state` manifest must be parsed with `target=prod` so model schemas resolve
+  to prod warehouse relations. A staging-target manifest causes every model to
+  fall through to view materialization, eventually hitting BigQuery's 16-level
+  nested-view limit.
+
+## Stale dev tables shadow `--defer`
+
+`--defer` uses any existing dev table before falling through to prod, so a stale
+dev parent dim produces false-positive `relationships` orphans. Before trusting
+a dev relationships warning on a FK, include the parent in `--select` or
+`dbt clone --select <parent_dim>` from prod.
+
+## Column-rename refactors strand dependent prod views
+
+When a staging column is dropped or renamed and a downstream view's SQL is
+updated in the same commit, Dagster's auto-materialize may select only the
+staging asset for the deploy run, leaving dependent prod views with their old
+stored definition. BigQuery validates view SQL at read time, so every
+`relationships` / `unique` test on the staging model fails with
+`Name <col> not found inside <alias>; failed to parse view ...`. Confirm the
+stored SQL is stale via `INFORMATION_SCHEMA.VIEWS.view_definition`, then
+rematerialize each dependent view through Dagster `launch_run` — not a code
+change.
 
 ## Source File Conventions
 
@@ -107,6 +161,30 @@ subdirectories, not at the top-level `models/` directory.
   `{{ project_name }}`.
 - **kipp\* projects** (kipptaf, kippnewark, etc.): hardcode the project name.
 
+### Google Sheets external sources
+
+Declare `columns:` at the source level (parallel to `external:`, not nested
+inside it — nested `columns:` silently no-ops back to autodetect). Autodetect
+drops columns where every row is NULL and type-infers from data values, so
+text-formatted `00000` in Sheets becomes INT64.
+
+```yaml
+- name: src_<...>
+  external:
+    options: { ... }
+  columns:
+    - name: <Header_Name>
+      data_type: STRING
+```
+
+### Rebuild staging after sheet edits before testing
+
+After Ops edits a Google Sheet source or after running
+`stage_external_sources --target staging`, rebuild downstream `stg_*` tables
+(default materialization is `table`) before trusting test results:
+`dbt build --select <staging_model>+1 --exclude resource_type:test`. A "drift"
+against stale staging is a false positive.
+
 ## Shipped Profiles (`src/dbt/*/profiles.yml`)
 
 Dagster-only: default target `prod` + `defer` output. Branch deployments
@@ -118,6 +196,13 @@ deployments. Developers use `.dbt/profiles.yml` for full target support.
 
 These conventions apply to **every** dbt project in this directory. Per-project
 CLAUDE.md files reference this section rather than repeating it.
+
+### BigQuery type synonyms in contracts
+
+BQ accepts legacy spellings as synonyms: `boolean`/`bool`, `integer`/`int64`,
+`float`/`float64`, `decimal`/`numeric`, `bigdecimal`/`bignumeric`. YAML
+`data_type` and `INFORMATION_SCHEMA.COLUMNS.data_type` may disagree on spelling
+without it being real drift — normalize before comparing.
 
 ### Per-layer requirements
 
@@ -161,9 +246,86 @@ data_tests:
 
 - Do not add `store_failures: true` to individual tests — the project default
   handles it
-- Tests that must error (not warn) need explicit `config: severity: error`
+- Staging-layer tests MUST set `config: severity: error` on every test. The
+  project default is `warn`, so staging tests without explicit `severity: error`
+  silently degrade to warnings and won't fail CI. Intermediate/mart/`rpt_` tests
+  may omit the override where a warning is acceptable.
 - Unscoped `+config` applies to tests from all installed packages, not just the
   current project
+
+### Generic test syntax (dbt 1.11+)
+
+All generic tests (`relationships`, `accepted_values`,
+`dbt_utils.unique_combination_of_columns`, etc.) require `arguments:` nesting.
+The flat form (without `arguments:`) triggers a deprecation warning:
+
+```yaml
+# wrong — flat
+- accepted_values:
+    values: [a, b]
+
+# right — nested under arguments
+- accepted_values:
+    arguments:
+      values: [a, b]
+```
+
+### Date-range joins
+
+Use half-open intervals for enrollment date-range joins — `BETWEEN` causes
+fan-out when consecutive enrollments share a boundary date:
+
+```sql
+-- wrong: matches both enrollments on the shared boundary
+and cc.dateenrolled between enr.entrydate and enr.exitdate
+
+-- right: half-open interval
+and enr.entrydate <= cc.dateenrolled
+and enr.exitdate > cc.dateenrolled
+```
+
+### Enrollment join fan-out (known upstream issue)
+
+`base_powerschool__student_enrollments` and
+`base_powerschool__course_enrollments` have genuinely overlapping date ranges
+for some students at the same school/section (not just boundary overlaps).
+Half-open interval joins reduce but don't eliminate fan-out. When a date-range
+enrollment/CC join still produces duplicates, add a `qualify` tiebreaker picking
+the latest `entrydate` / `cc_dateenrolled`, with a `-- TODO: #3633` comment.
+
+### Nullable surrogate keys
+
+`dbt_utils.generate_surrogate_key()` hashes NULL inputs into a deterministic
+placeholder string — it never returns NULL. When a surrogate key column can be
+null (e.g., from a LEFT JOIN), wrap the call:
+
+```sql
+if(
+    source_column is not null,
+    {{ dbt_utils.generate_surrogate_key(["source_column"]) }},
+    cast(null as string)
+) as fk_column,
+```
+
+Without this, relationship tests check the placeholder hash against the parent
+dimension and fail.
+
+Corollary: never add `not_null` tests on `generate_surrogate_key` output — it
+never returns NULL.
+
+### dbt_utils.deduplicate `order_by` on BigQuery
+
+The macro compiles to `array_agg(original order by <expr> limit 1)`. BigQuery
+rejects `asc nulls last` and `desc nulls first` inside aggregate `array_agg`.
+Use `desc` (default NULLS LAST) or `(col is null) asc` instead of explicit
+`nulls last` with ascending sort.
+
+### Don't inline CASE expressions in generate_surrogate_key
+
+`dbt_utils.generate_surrogate_key(["case <col> when ... end"])` compiles via
+Jinja's implicit-string-concat across adjacent list elements — unreviewable, and
+a comma inserted between fragments silently changes the SQL. Derive the computed
+value as a named column in an upstream CTE, then hash that column.
 
 ### SQL conventions
 
@@ -171,6 +333,11 @@ data_tests:
   `ON` clauses. Deleted rows should never reach intermediate or mart models.
   Omit columns whose value is predetermined by the WHERE filter (e.g.,
   `deleted_at` after `WHERE deleted_at IS NULL`) — they add no signal.
+- **Google Sheets external-table case**: `select *,` in a staging model inherits
+  the sheet header case (often PascalCase). Contract-enforced YAML column names
+  must match that case, or use explicit `<raw> as <renamed>` aliasing in the
+  staging SQL. Don't rename columns in `sources-external.yml` just to normalize
+  case — that rebuilds the external table and forces sheet-header coordination.
 - **No `GROUP BY` without aggregation** — use `DISTINCT` instead (see next rule
   for deduplication constraints).
 - **No manual deduplication** — do not use `SELECT DISTINCT` or
@@ -219,13 +386,24 @@ alias.
 
 ### YAML conventions
 
+- **Read `properties.yml` before modifying a model.** It carries the
+  authoritative `description:`, `data_tests:`, contract column types, and
+  `config.meta.source_column` pointers. Copy-pasted column blocks rot here first
+  — verify every paste against the current source.
 - All new or modified models require `description:` on the model and every
   column. Profile staging data via BigQuery MCP; infer downstream from parents.
   Describe calculated fields by logic. Use qualitative language — no stats.
 - Columns with `data_tests:` should be sorted to the top of the `columns:` list
   for visibility.
+- Test placement by arity: single-column tests (`unique`, `not_null`, etc.) go
+  on the column itself. Multi-column tests
+  (`dbt_utils.unique_combination_of_columns`, etc.) go at model level in a
+  `data_tests:` block placed ABOVE the `columns:` block.
 - Column renames for semantic clarity (e.g., boolean prefixing with `is_`,
   reserved word aliases) belong in the staging model, not downstream.
+- Data and column semantics — code values, identifier formats, join keys, grain
+  notes — belong in the model's `description:` (or `config.meta`), not
+  CLAUDE.md. CLAUDE.md is for workflow conventions and tooling guidance only.
 
 ### Legacy `base_` prefix
 
@@ -241,6 +419,8 @@ All SQL follows `.trunk/config/.sqlfluff`. Key enforced rules:
 - **Trailing commas**: required in `SELECT` clauses
 - **Reserved words**: BigQuery reserved words as column names must be
   backtick-quoted in SQL and have `quote: true` in properties YAML
+- **No self-aliases** (sqlfluff AL09): drop `as <name>` when the output name
+  equals the source column, including backticked reserved words
 - **String literals**: single quotes only (no double quotes)
 - **Line length**: 88 characters max
 

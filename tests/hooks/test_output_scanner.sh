@@ -46,6 +46,9 @@ check_output "GitHub server token (ghs_)" deny "ghs_ABCDEFGHIJKLMNOPQRSTUVWXYZab
 check_output "GitHub user-to-server (ghu_)" deny "ghu_ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmn"
 check_output "GitHub OAuth token (gho_)" deny "gho_ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmn"
 check_output "GitHub refresh token (ghr_)" deny "ghr_ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmn"
+# 1Password service-account token: ops_ + base64url JWT-style payload.
+check_output "1Password service-account token" deny "ops_eyJzaWduSW5BZGRyZXNzIjoiZXhhbXBsZS4xcGFzc3dvcmQuY29tIiwidXNlckF1dGgiOnsibWV0aG9kIjoiU1JQZy00MDk2In0sImVtYWlsIjoiZmFrZUBleGFtcGxlLmNvbSJ9"
+check_output "ops_ prefix without JWT shape" clean "ops_short"
 check_output "PostgreSQL (ql) conn string" deny "postgresql://admin:s3cret@db.example.com:5432/prod"
 check_output "MongoDB+SRV conn string" deny "mongodb+srv://admin:s3cret@cluster.example.com/prod"
 check_output "MySQL connection string" deny "mysql://admin:s3cret@db.example.com:3306/prod"
@@ -99,13 +102,34 @@ echo -e "${YELLOW}PostToolUse: Exit code regression (must exit 0 on deny)${NC}"
 # trunk-ignore-begin(shellcheck/SC2312): command substitution in function args is intentional
 expect_deny_exit0 "PostToolUse JWT deny exits 0" "${OUTPUT_HOOK}" \
   "$(jq -n --arg c 'eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIn0' \
-    '{tool_name: "Read", tool_output: {content: $c, stdout: $c, stderr: ""}}')"
+    '{tool_name: "Read", tool_response: {content: $c, stdout: $c, stderr: ""}}')"
 expect_deny_exit0 "PostToolUse op:// deny exits 0" "${OUTPUT_HOOK}" \
   "$(jq -n --arg c 'config: op://vault/item/field' \
-    '{tool_name: "Bash", tool_output: {content: $c, stdout: $c, stderr: ""}}')"
+    '{tool_name: "Bash", tool_response: {content: $c, stdout: $c, stderr: ""}}')"
 expect_deny_exit0 "PostToolUse high-entropy deny exits 0" "${OUTPUT_HOOK}" \
   "$(jq -n --arg c "$(printf 'A%.0s' {1..120})" \
-    '{tool_name: "Bash", tool_output: {content: $c, stdout: $c, stderr: ""}}')"
+    '{tool_name: "Bash", tool_response: {content: $c, stdout: $c, stderr: ""}}')"
+# trunk-ignore-end(shellcheck/SC2312)
+
+# ─── Schema regression: hook must read .tool_response (Claude Code's payload key) ──
+# Earlier the hook read .tool_output, which is empty in real payloads, so every
+# Bash output silently passed through unscanned. These cases assert the hook
+# scans .tool_response directly — independent of the helper's payload shape.
+echo ""
+echo -e "${YELLOW}PostToolUse: Schema regression (.tool_response is the real key)${NC}"
+
+# trunk-ignore-begin(shellcheck/SC2312)
+expect_deny_exit0 "scans .tool_response high-entropy string" "${OUTPUT_HOOK}" \
+  "$(jq -n --arg c "$(printf 'A%.0s' {1..200})" \
+    '{tool_name: "Bash", tool_response: {stdout: $c, stderr: ""}}')"
+expect_deny_exit0 "scans .tool_response named pattern (op://)" "${OUTPUT_HOOK}" \
+  "$(jq -n --arg c "leaked: op://vault/item/field" \
+    '{tool_name: "Bash", tool_response: {stdout: $c, stderr: ""}}')"
+# trunk-ignore(gitleaks/generic-api-key): synthetic ops_ token fixture
+_fake_op_trace='+ token=ops_eyJzaWduSW5BZGRyZXNzIjoiZXhhbXBsZS4xcGFzc3dvcmQuY29tIiwidXNlckF1dGgiOnsibWV0aG9kIjoiU1JQZy00MDk2In19'
+expect_deny_exit0 "scans .tool_response stderr (bash -x trace path)" "${OUTPUT_HOOK}" \
+  "$(jq -n --arg c "${_fake_op_trace}" \
+    '{tool_name: "Bash", tool_response: {stdout: "", stderr: $c}}')"
 # trunk-ignore-end(shellcheck/SC2312)
 
 print_summary "Output Scanner"

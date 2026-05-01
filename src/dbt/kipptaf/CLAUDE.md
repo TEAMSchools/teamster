@@ -99,6 +99,28 @@ absence:
 Manager, ADP Workforce Now Fivetran, Alchemer, Coupa Fivetran, Dayforce,
 Facebook, Illuminate Fivetran, Instagram.
 
+## Known Upstream Issues
+
+**`int_people__location_crosswalk`** is NOT a union model — it has no
+`_dbt_source_relation`. Use `extract_code_location()` matched against
+`location_dagster_code_location` for cross-region joins. Each row is one alias
+(alternate spelling of `location_name`) — consumers that join on an aliased name
+(e.g., `fct_staff_observations` on `gro.school_name`) must use this model.
+Canonical-grain consumers (1 row per logical school) should use
+`stg_google_sheets__people__locations` instead (#3633).
+
+**`stg_google_sheets__people__campus_crosswalk`** uniqueness grain is
+`Location_Name` only. `Name` is the parent campus and repeats across sibling
+schools (e.g., `KIPP Miami - North Campus` rolls up five `Location_Name`
+children).
+
+**`_dagster_partition_key` in SchoolMint Grow staging** is the Grow `archived`
+flag (`'f'` = not archived, `'t'` = archived). Most Grow staging models filter
+to `'f'`; `stg_schoolmint_grow__rubrics__measurement_groups__measurements` and
+`stg_schoolmint_grow__measurements` intentionally do not, so observation FKs to
+archived rubrics/measurements still resolve. Don't re-add the filter to those
+two models without understanding the FK-coverage tradeoff.
+
 ## Cross-Project Refs
 
 Sources models from: `powerschool`, `deanslist`, `edplan`, `iready`, `overgrad`,
@@ -138,6 +160,11 @@ dbt Cloud project ID: `211862`.
 
 CI job: `dbt build --select state:modified+ --full-refresh`, target `staging`,
 defers to Staging environment.
+
+`Clone - Staging (Modified)` clones only `state:modified` models, not their
+parents. When CI fails on a stale staging defer table for an unmodified upstream
+(column missing after a recent merge), trigger the full `Clone - Staging` job —
+or `dbt clone --select <upstream>` against staging.
 
 ## Model Layer Distinctions
 

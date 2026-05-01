@@ -18,3 +18,4 @@ select
     /* transformations */
     safe_cast(internalid as int) as internal_id_int,
 from {{ source("schoolmint_grow", "src_schoolmint_grow__users") }}
+where coalesce(safe_cast(internalid as int), 0) != 999999

@@ -1,0 +1,31 @@
+models:
+  - name: dim_staff_observation_types
+    description: >-
+      Observation type dimension. One row per observation type defined in
+      SchoolMint Grow as a generic tag of type observationtypes. Contains the
+      type name and abbreviation (e.g., Walkthrough/WT, O3, PM). Only includes
+      non-archived types.
+    columns:
+      - name: staff_observation_type_key
+        data_type: string
+        description: >-
+          Surrogate primary key derived from the generic tag ID. Generated with
+          generate_surrogate_key(["tag_id"]).
+        constraints:
+          - type: primary_key
+            warn_unsupported: false
+        data_tests:
+          - unique
+          - not_null
+
+      - name: name
+        quote: true
+        data_type: string
+        description: >-
+          Full display name of the observation type (e.g., Walkthrough,
+          One-on-One, PM Semester).
+
+      - name: abbreviation
+        data_type: string
+        description: >-
+          Short code for the observation type (e.g., WT, O3, PMS).
