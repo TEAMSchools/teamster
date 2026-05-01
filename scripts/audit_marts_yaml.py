@@ -308,9 +308,25 @@ import re
 
 _TYPE_PARAM_RE = re.compile(r"\s*\([^)]*\)\s*$")
 
+# BigQuery accepts legacy spellings as synonyms — collapse to the canonical
+# standard SQL form so the audit doesn't flag them as drift.
+# https://cloud.google.com/bigquery/docs/reference/standard-sql/data-types
+_TYPE_SYNONYMS = {
+    "boolean": "bool",
+    "integer": "int64",
+    "int": "int64",
+    "smallint": "int64",
+    "tinyint": "int64",
+    "byteint": "int64",
+    "float": "float64",
+    "decimal": "numeric",
+    "bigdecimal": "bignumeric",
+}
+
 
 def normalize_type(t: str) -> str:
-    return _TYPE_PARAM_RE.sub("", t.strip()).lower()
+    base = _TYPE_PARAM_RE.sub("", t.strip()).lower()
+    return _TYPE_SYNONYMS.get(base, base)
 
 
 # === Manifest loader ===
@@ -472,10 +488,9 @@ query AssetChecks($assetKey: AssetKeyInput!) {
 
 
 def asset_key_for_mart_node(node: ManifestNode) -> list[str]:
-    parts = Path(node.original_file_path).parts
-    # parts: ('models', 'marts', 'facts'|'dimensions'|'bridges', '<file>.sql')
-    subdir = parts[2]
-    return ["kipptaf", subdir, node.name]
+    # Asset key collapses the facts/dimensions/bridges subdir into just `marts`,
+    # mirroring the staging/intermediate stripping pattern. See CLAUDE.md.
+    return ["kipptaf", "marts", node.name]
 
 
 def _dagster_graphql(query: str, variables: dict, token: str, deployment: str) -> dict:

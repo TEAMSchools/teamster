@@ -146,7 +146,7 @@ def test_trace_column_casts_walks_parent_map() -> None:
 def test_asset_key_includes_mart_subdir() -> None:
     nodes = audit.load_manifest(FIXTURE_DIR / "sample_manifest.json")
     fct = nodes["model.kipptaf.fct_sample"]
-    assert audit.asset_key_for_mart_node(fct) == ["kipptaf", "facts", "fct_sample"]
+    assert audit.asset_key_for_mart_node(fct) == ["kipptaf", "marts", "fct_sample"]
 
 
 def test_fetch_dagster_check_status_parses_response() -> None:
@@ -170,12 +170,12 @@ def test_fetch_dagster_check_status_parses_response() -> None:
     }
     with patch.object(audit, "_dagster_graphql", return_value=fake_response):
         result = audit.fetch_dagster_check_status(
-            asset_keys=[["kipptaf", "facts", "fct_sample"]],
+            asset_keys=[["kipptaf", "marts", "fct_sample"]],
             token="fake",
             deployment="prod",
         )
     assert result == {
-        ("kipptaf", "facts", "fct_sample"): {
+        ("kipptaf", "marts", "fct_sample"): {
             "unique_fct_sample_surrogate_key": audit.DagsterStatus(
                 outcome="PASSED", timestamp=1714521240.0
             )
