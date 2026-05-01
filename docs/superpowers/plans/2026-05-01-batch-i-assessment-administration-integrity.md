@@ -393,52 +393,12 @@ violations.
 Refs #3782."
 ```
 
-### Task 1.3: Add missing rows to `int_people__location_crosswalk`
+### Task 1.3: ~~Add missing rows to `int_people__location_crosswalk`~~ — DROPPED
 
-**Skip this task if G2 (Task 0.2) decided non-additive.**
-
-**Files:** Determined by G2 — typically the AppSheet-synced source for the
-crosswalk, or the SQL of `int_people__location_crosswalk` itself if it's derived
-from a static seed.
-
-- [ ] **Step 1: Identify the upstream source the crosswalk is derived from**
-
-```bash
-cd /workspaces/teamster/.worktrees/cbini/feat/claude-batch-i-assessment-admin-integrity
-cat src/dbt/kipptaf/models/people/intermediate/int_people__location_crosswalk.sql
-```
-
-If derived from a Google Sheet → add rows to the sheet (Ops handoff; this PR
-doesn't ship the data, only the request). If derived from a seed CSV → edit the
-seed. If derived from a SQL transformation → edit the SQL only if
-logic-additive.
-
-- [ ] **Step 2: Make the additive change**
-
-Pattern depends on Step 1 outcome. For seed: add 6 rows. For Google Sheet: post
-comment to issue / Ops with the 6 missing tuples; do not block PR on the sheet
-edit, file as residual under #3633 if the sheet is not editable here.
-
-- [ ] **Step 3: Build and verify**
-
-```bash
-uv run dbt build --select int_people__location_crosswalk+1 --project-dir src/dbt/kipptaf --target dev --defer --state src/dbt/kipptaf/target/prod/
-```
-
-Verify the 6 `site_id`s now resolve.
-
-- [ ] **Step 4: Commit**
-
-```bash
-git add <changed-files>
-git commit -m "fix(dbt): add missing site_id rows to int_people__location_crosswalk
-
-Closes 6 bridge orphans on
-bridge_assessment_expectations_student_scoped.assessment_administration_key
-caused by NULL region resolution for these site_ids.
-
-Refs #3774."
-```
+G2 outcome: the 6 bridge orphans are cross-region administrations, not crosswalk
+gaps. They fold into the same Ops/catalog handoff as the 43 fact orphans. No
+code change required in this PR. The bridge orphans are added to the bucketed
+orphan report posted to #3774 in Task 5.1.
 
 ### Task 1.4: (CONDITIONAL) Superscore drift fix
 

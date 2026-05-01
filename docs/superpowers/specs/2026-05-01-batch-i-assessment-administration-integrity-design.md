@@ -163,11 +163,10 @@ string. Rename to `assessment_type='ap'`.
    expected to reduce dupe count to zero. Any residual is a real bug to
    investigate inline.
 
-3. **`int_people__location_crosswalk`** — add missing rows for the 6
-   `ssa.site_id` values surfaced by the bridge-orphan test on
-   `bridge_assessment_expectations_student_scoped`. Pre-edit verification:
-   confirm the gap is "missing rows," not "wrong region on existing rows." If
-   the latter, drop from this PR and escalate to #3633.
+3. **(Removed by G2 outcome.)** Originally proposed adding missing rows to
+   `int_people__location_crosswalk` for the 6 bridge orphans. G2 verified the
+   bridge orphans are cross-region administrations, not crosswalk gaps, so they
+   fold into the same Ops/catalog handoff as the 43 fact orphans.
 
 #### Marts
 
@@ -206,15 +205,15 @@ string. Rename to `assessment_type='ap'`.
 
 ### Issue closure map
 
-| Issue                                    | Resolved by                                                             | Notes                                                                                                                                |
-| ---------------------------------------- | ----------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------ |
-| #3774 (43 cross-region fact orphans)     | Bucketed orphan report posted to issue body pre-merge                   | B′ soft-gate; closes when Ops widens `regions_assessed` post-merge. WARN-level test remains until Ops acts.                          |
-| #3774 (6 bridge orphans)                 | Item 3                                                                  | Conditional on additive verification gate.                                                                                           |
-| #3775 (superscore drift)                 | Pre-PR investigation; outcome documented inline in spec before PR opens | If a non-additive upstream fix is required, drops out of this umbrella into a separate PR.                                           |
-| #3782 Surface 1 (response_rollup dupes)  | Items 1, 2; item 7's dedup removal                                      |                                                                                                                                      |
-| #3782 Surface 2 (illuminate admin dupes) | Item 5 (Illuminate discriminator + drop dedup CTE)                      | Replaces the original "collapse upstream" framing — region-copies are genuinely distinct assessments and remain distinct admin rows. |
-| #3787 (Practice rows)                    | Items 4, 5, 6                                                           | `test_type` lives at assessment level (Option B from #3787).                                                                         |
-| #3788 (period normalization)             | Item 5 (option β: single degenerate column)                             | Closes as "implemented as degenerate; promote to dim later if metadata accrues."                                                     |
+| Issue                                    | Resolved by                                                             | Notes                                                                                                                                      |
+| ---------------------------------------- | ----------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------ |
+| #3774 (43 cross-region fact orphans)     | Bucketed orphan report posted to issue body pre-merge                   | B′ soft-gate; closes when Ops widens `regions_assessed` post-merge. WARN-level test remains until Ops acts.                                |
+| #3774 (6 bridge orphans)                 | Folded into the bucketed orphan report (G2 outcome)                     | Same Ops/catalog path as the 43 fact orphans; closes post-merge with the same residual mechanism. Original crosswalk-gap framing is stale. |
+| #3775 (superscore drift)                 | Pre-PR investigation; outcome documented inline in spec before PR opens | If a non-additive upstream fix is required, drops out of this umbrella into a separate PR.                                                 |
+| #3782 Surface 1 (response_rollup dupes)  | Items 1, 2; item 7's dedup removal                                      |                                                                                                                                            |
+| #3782 Surface 2 (illuminate admin dupes) | Item 5 (Illuminate discriminator + drop dedup CTE)                      | Replaces the original "collapse upstream" framing — region-copies are genuinely distinct assessments and remain distinct admin rows.       |
+| #3787 (Practice rows)                    | Items 4, 5, 6                                                           | `test_type` lives at assessment level (Option B from #3787).                                                                               |
+| #3788 (period normalization)             | Item 5 (option β: single degenerate column)                             | Closes as "implemented as degenerate; promote to dim later if metadata accrues."                                                           |
 
 ## Verification gates (pre-edit)
 
@@ -248,6 +247,20 @@ For each of the 6 `ssa.site_id` values in
 - If the `ssa.site_id` is **present** but resolves to a region not matching the
   assessment's expected region → mutating existing rows. Drop from this PR;
   escalate to #3633.
+
+**Outcome (run 2026-05-01):** All 6 bridge orphans are **cross-region
+administrations**, not crosswalk gaps. Five are Paterson students taking NJ
+assessments where Paterson isn't in `regions_assessed = [Camden, Newark]`; one
+is a Newark student taking a Florida-tagged assessment (`Math-G4-QA1-24-25-FL`,
+`regions_assessed = [Miami]`). All 6 source rows have non-NULL `region` from
+`int_people__location_crosswalk` — no crosswalk gap in current data. The
+original #3774 framing of "NULL region from crosswalk for K-8 replacements" is
+stale (either already fixed or misdiagnosed at filing time).
+
+**Decision:** Task 1.3 has no work. The 6 bridge orphans roll into the same
+Ops/catalog handoff as the 43 fact orphans — they clear post-merge when Ops
+either widens `regions_assessed` (5 Paterson rows) or investigates the
+mis-administration (1 Newark+FL row).
 
 ### G3 — FL season/window separability (item 5)
 
