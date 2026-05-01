@@ -251,6 +251,76 @@ clauses.
 - If root cause is additive (e.g., upstream dedup that doesn't change surviving
   values) → fold into this PR.
 
+## Pre-merge issue-resolution audit
+
+Run after all implementation tasks pass and dbt Cloud CI is green on the PR
+branch, before requesting merge. The audit produces three artifacts attached to
+the PR description: a closure-confirmation table, a residual-and-followup list,
+and a bonus-closure list.
+
+### A1 — closure confirmation per stated issue
+
+For each of #3774, #3775, #3782, #3787, #3788, walk the issue's acceptance
+checklist and mark each item:
+
+- **Met** — verified by a specific test, query, or PR diff. Record the evidence
+  (test name, query, file:line).
+- **Met (residual)** — partially met; document what remains and why (typically:
+  external Ops dependency, deferred sub-decision).
+- **Not met** — unmet; explain why and whether it blocks merge.
+
+Any "Not met" item blocks merge unless explicitly waived in the PR description
+with rationale.
+
+### A2 — dbt Cloud CI warning review
+
+Pull the latest CI run for the PR branch via dbt MCP (`get_job_run_error` with
+`warning_only=true` for status=Success runs). Categorize every WARN:
+
+- **New WARN introduced by this PR** — must be triaged before merge. Either fix
+  in this PR or open a follow-up issue and reference it in the PR description.
+- **Pre-existing WARN unchanged** — note in the PR description; no action
+  required.
+- **Pre-existing WARN cleared by this PR** → bonus closure (see A4).
+
+Compare the WARN list against the same job's last run on `main` to classify.
+
+### A3 — follow-up issues for residuals and newly surfaced problems
+
+Any of the following triggers a new GitHub issue, filed pre-merge and referenced
+in the PR description:
+
+- A G1–G4 verification gate failed non-additively and split work out of this PR.
+- The pre-merge audit (A1) surfaced a residual that needs tracking (e.g., the 43
+  cross-region orphans of #3774 — confirm the issue stays open with the bucketed
+  report attached).
+- A new WARN introduced by this PR cannot be fixed inline.
+- The implementation surfaced a previously-unknown DQ surface (a new orphan set,
+  a new dedup site, an unexpected source-system anomaly).
+
+Each follow-up issue links back to this PR and uses conventional-commit labels
+per project conventions.
+
+### A4 — bonus closure scan
+
+Search open issues in the
+[Data Team project board](https://github.com/orgs/TEAMSchools/projects/4) that
+may have been incidentally resolved by this PR. Triggers to look for:
+
+- Issues mentioning `assessment_administration_key` or `assessment_key`
+  uniqueness, FK orphans, or hash composition.
+- Issues mentioning the specific `dbt_utils.deduplicate` workarounds we removed
+  (`int_assessments__response_rollup`, illuminate dedup CTE).
+- Issues mentioning `int_illuminate__agg_student_responses` NULL
+  `response_type_id`.
+- Issues mentioning `int_people__location_crosswalk` for the 6 specific
+  `ssa.site_id` values.
+- Pre-existing dbt CI WARNs cleared by the change (from A2).
+
+For each candidate: verify resolution against the issue's acceptance, confirm in
+the PR description with a "Bonus closes #NNNN — <reason>" line, and add
+`Closes #NNNN` to the PR body so merge auto-closes it.
+
 ## Risks
 
 - **Hash blast radius.** Every consumer of `assessment_administration_key` and
