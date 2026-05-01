@@ -460,7 +460,7 @@ query AssetChecks($assetKey: AssetKeyInput!) {
           checks {
             name
             executionForLatestMaterialization {
-              evaluation { severity successful timestamp }
+              evaluation { severity success timestamp }
             }
           }
         }
@@ -514,7 +514,7 @@ def fetch_dagster_check_status(
                     outcome="NOT_RUN", timestamp=None
                 )
                 continue
-            successful = execution["successful"]
+            successful = execution["success"]
             severity = execution["severity"]
             if successful:
                 outcome = "PASSED"

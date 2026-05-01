@@ -159,7 +159,7 @@ def test_fetch_dagster_check_status_parses_response() -> None:
                         "executionForLatestMaterialization": {
                             "evaluation": {
                                 "severity": "ERROR",
-                                "successful": True,
+                                "success": True,
                                 "timestamp": 1714521240.0,
                             }
                         },
