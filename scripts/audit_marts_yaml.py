@@ -105,6 +105,17 @@ def _extract_unique_combination_test(test: Any) -> dict[str, Any] | None:
     }
 
 
+# === Type normalization ===
+
+import re
+
+_TYPE_PARAM_RE = re.compile(r"\s*\([^)]*\)\s*$")
+
+
+def normalize_type(t: str) -> str:
+    return _TYPE_PARAM_RE.sub("", t.strip()).lower()
+
+
 def parse_mart_yaml(path: Path) -> list[ParsedModel]:
     raw = yaml.safe_load(path.read_text())
     out: list[ParsedModel] = []

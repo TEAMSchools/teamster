@@ -52,3 +52,13 @@ def test_parse_mart_yaml_handles_multi_model_and_column_severity() -> None:
     assert dim.uniqueness_tests == [
         {"columns": ["dim_key"], "severity": "warn", "kind": "unique"},
     ]
+
+
+def test_normalize_type_strips_params_and_lowercases() -> None:
+    assert audit.normalize_type("STRING") == "string"
+    assert audit.normalize_type("string") == "string"
+    assert audit.normalize_type("STRING(255)") == "string"
+    assert audit.normalize_type("NUMERIC(10,2)") == "numeric"
+    assert audit.normalize_type("BIGNUMERIC(38, 9)") == "bignumeric"
+    assert audit.normalize_type("DATETIME") == "datetime"
+    assert audit.normalize_type("TIMESTAMP") == "timestamp"
