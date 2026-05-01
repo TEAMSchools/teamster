@@ -23,9 +23,22 @@ this step.**
 
 ## Working Conventions
 
-- **PII in PR comments**: never name student numbers, employee numbers, or email
-  addresses in PR comments / review replies. Use redacted labels ("Student A",
-  "Staff B"). The same rule applies to commit messages and issue bodies.
+- **PII stays local**: never post PII values, or screenshots/logs containing
+  them, outside the local dev env (PR comments, commits, issues, scheduled-agent
+  outputs, etc.). Local artifacts (`.claude/scratch/`, `.worktrees/`, terminal)
+  are fine. Reference column names, not values; use redacted labels ("Student
+  A") for examples. Aggregates/deidentified ≠ PII.
+
+  dbt tags PII as `config.meta.contains_pii: true` — authoritative but
+  **incomplete**. Untagged columns are PII if they identify a person: IDs
+  (`student_number`, `employee_number`, `ssn`, `state_id`, `local_id`), names
+  (`*_name`), contact (`email`, `phone`, `address`, `street`, `city`, `zip`),
+  `dob`/`birth_date`, guardian/parent fields, free-text `comment`/ `note` on
+  people tables, credentials/tokens. When unsure, treat as PII.
+
+  Quasi-identifiers (`gender`, `race`, `ethnicity`, `home_language`,
+  `grade_level`, `school`, partial dates, zip alone) reidentify in combination —
+  never post two together.
 
 - **Before writing any spec or plan**: STOP and explicitly ask the user whether
   to open a GitHub issue first. Required for specs/plans; not required for quick
