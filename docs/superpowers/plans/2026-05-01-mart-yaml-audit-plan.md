@@ -24,6 +24,15 @@ block.
 **Spec:**
 [docs/superpowers/specs/2026-05-01-mart-yaml-audit-design.md](../specs/2026-05-01-mart-yaml-audit-design.md)
 
+**Test loading note:** `scripts/audit_marts_yaml.py` is a standalone PEP 723
+script, not a package module. Tests load it via `importlib.util` and reference
+attributes on the loaded module (`audit.ParsedModel`, `audit.parse_mart_yaml`,
+etc.). The loader and `audit` alias live at module scope in
+`tests/scripts/test_audit_marts_yaml.py` (set up in Task 2). Code blocks in
+later tasks use `from scripts.audit_marts_yaml import X` for readability — when
+implementing, replace with `audit.X` references against the module-level `audit`
+alias.
+
 ---
 
 ## File structure
