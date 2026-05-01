@@ -1,5 +1,16 @@
 models:
   - name: int_assessments__response_rollup
+    description:
+      Aggregated assessment response data by student, assessment, and response
+      type. Natural grain is (illuminate_student_id, assessment_id,
+      response_type_id).
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns:
+              - illuminate_student_id
+              - assessment_id
+              - response_type_id
     columns:
       - name: illuminate_student_id
         data_type: int64
