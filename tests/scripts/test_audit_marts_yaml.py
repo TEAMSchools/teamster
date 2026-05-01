@@ -129,3 +129,15 @@ def test_grain_probe_returns_rows_and_distinct_keys() -> None:
     assert (rows, keys) == (100, 95)
     sql = client.query.call_args[0][0]
     assert 'format("%T|%T", `student_id`, `academic_year`)' in sql
+
+
+def test_trace_column_casts_walks_parent_map() -> None:
+    nodes = audit.load_manifest(FIXTURE_DIR / "sample_manifest.json")
+    casts = audit.trace_column_casts(
+        column="created_timestamp",
+        from_node="model.kipptaf.fct_sample",
+        nodes=nodes,
+    )
+    # The mart casts `created` to datetime aliasing as created_timestamp;
+    # int_sample passes it through; stg_sample casts the source to datetime.
+    assert ("fct_sample", "cast(created as datetime) as created_timestamp") in casts

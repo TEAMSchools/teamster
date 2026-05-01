@@ -239,3 +239,43 @@ def grain_probe(
     )
     row = next(iter(client.query(sql).result()))
     return row.rows, row.keys
+
+
+# === Upstream cast tracer ===
+
+_CAST_RE = re.compile(
+    r"\b(?:safe_cast|cast)\s*\([^()]*?\)(?:\s+as\s+[\w_]+)?",
+    re.IGNORECASE,
+)
+
+
+def trace_column_casts(
+    column: str, from_node: str, nodes: dict[str, ManifestNode]
+) -> list[tuple[str, str]]:
+    """Walk parent_map recording cast(...) expressions touching `column`.
+
+    Returns (model_name, cast_expression) pairs, mart-first.
+    Stops descending when an ancestor's compiled SQL no longer mentions
+    the column name verbatim.
+    """
+    out: list[tuple[str, str]] = []
+    visited: set[str] = set()
+
+    def walk(unique_id: str) -> None:
+        if unique_id in visited:
+            return
+        visited.add(unique_id)
+        node = nodes.get(unique_id)
+        if node is None or not node.compiled_code:
+            return
+        if column not in node.compiled_code:
+            return
+        for match in _CAST_RE.finditer(node.compiled_code):
+            expr = match.group(0)
+            if column in expr:
+                out.append((node.name, expr))
+        for parent_id in node.depends_on:
+            walk(parent_id)
+
+    walk(from_node)
+    return out
