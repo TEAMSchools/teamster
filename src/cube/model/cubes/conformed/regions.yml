@@ -7,6 +7,7 @@ cubes:
       - name: region_key
         sql: region_key
         type: string
+        description: "Surrogate key derived from region name."
         primary_key: true
 
       - name: region_name
@@ -16,7 +17,9 @@ cubes:
       - name: state
         sql: state
         type: string
+        description: "US state (NJ or FL)."
 
       - name: timezone
         sql: timezone
         type: string
+        description: "IANA timezone identifier."

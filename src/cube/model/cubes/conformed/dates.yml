@@ -7,6 +7,8 @@ cubes:
       - name: date_key
         sql: date_key
         type: string
+        description:
+          "Calendar date. Primary key and join target for all mart models."
         primary_key: true
 
       - name: date_day
@@ -16,38 +18,51 @@ cubes:
       - name: academic_year
         sql: academic_year
         type: number
+        description:
+          "KIPP academic year (July start). The calendar year in which the
+          academic year begins (e.g., 2025 for the 2025-26 school year)."
 
       - name: fiscal_year
         sql: fiscal_year
         type: number
+        description:
+          "KIPP fiscal year (July start). The calendar year in which the fiscal
+          year ends (e.g., 2026 for FY2026 which begins July 2025)."
 
       - name: year_number
         sql: year_number
         type: number
+        description: "Calendar year."
 
       - name: quarter_number
         sql: quarter_number
         type: number
+        description: "Calendar quarter (1-4)."
 
       - name: month_number
         sql: month_number
         type: number
+        description: "Month number (1-12)."
 
       - name: month_name
         sql: month_name
         type: string
+        description: "Full month name (January, February, etc.)."
 
       - name: day_of_week
         sql: day_of_week
         type: number
+        description: "Day of week (1=Sunday through 7=Saturday)."
 
       - name: day_of_week_name
         sql: day_of_week_name
         type: string
+        description: "Full day name (Monday, Tuesday, etc.)."
 
       - name: is_weekday
         sql: is_weekday
         type: boolean
+        description: "TRUE for Monday through Friday."
 
       - name: school_week_start_date
         sql: CAST(school_week_start_date AS TIMESTAMP)

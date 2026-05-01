@@ -12,11 +12,16 @@ cubes:
       - name: location_key
         sql: location_key
         type: string
+        description: "Surrogate key derived from location name."
         primary_key: true
 
       - name: region_key
         sql: region_key
         type: string
+        description:
+          "Foreign key to dim_regions. Surrogate key derived from the canonical
+          region. Nullable when the location has no region mapping (e.g.,
+          network-level locations)."
 
       - name: location_name
         sql: "{CUBE}.`name`"
@@ -25,18 +30,24 @@ cubes:
       - name: abbreviation
         sql: abbreviation
         type: string
+        description: "Short display name for the location."
 
       - name: grade_band
         sql: grade_band
         type: string
+        description: "Grade band served (ES, MS, HS)."
 
       - name: campus
         sql: campus
         type: string
+        description:
+          "Physical campus name. Multiple schools may share a campus."
 
       - name: is_campus
         sql: is_campus
         type: boolean
+        description:
+          "TRUE if this location record represents a campus-level entity."
 
       - name: city
         sql: city

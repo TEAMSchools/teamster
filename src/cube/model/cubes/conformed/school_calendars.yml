@@ -12,15 +12,22 @@ cubes:
       - name: date_key
         sql: date_key
         type: string
+        description:
+          "Each day of the school year including holidays and weekends, such as
+          the school day. Indexed."
 
       - name: location_key
         sql: location_key
         type: string
+        description: "Surrogate key for the school. FK to dim_locations."
 
       - name: is_in_session
         sql: is_in_session
         type: boolean
+        description: "TRUE if this date is an instructional day at this school."
 
       - name: is_membership_day
         sql: is_membership_day
         type: boolean
+        description:
+          "TRUE if this date counts toward student membership at this school."
