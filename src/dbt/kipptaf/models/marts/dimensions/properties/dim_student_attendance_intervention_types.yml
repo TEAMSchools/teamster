@@ -10,19 +10,31 @@ models:
       - name: intervention_type_key
         data_type: string
         description: >-
-          Surrogate key derived from region and commlog_reason. Primary key for
-          this dimension.
+          Surrogate key derived from region_name and
+          family_communication_reason. Primary key for this dimension.
+        constraints:
+          - type: primary_key
+            warn_unsupported: false
         data_tests:
           - unique
           - not_null
 
-      - name: region
+      - name: region_key
         data_type: string
         description: >-
-          KIPP region code (kippmiami, kippnewark, kippcamden) that this
-          intervention threshold applies to.
+          FK to dim_regions. Surrogate key derived from region_name.
+        constraints:
+          - type: foreign_key
+            to: ref('dim_regions')
+            to_columns: [region_key]
+            warn_unsupported: false
+        data_tests:
+          - relationships:
+              arguments:
+                to: ref('dim_regions')
+                field: region_key
 
-      - name: commlog_reason
+      - name: family_communication_reason
         data_type: string
         description: >-
           DeansList comm log reason value that maps to this intervention type
@@ -32,4 +44,4 @@ models:
         data_type: int64
         description: >-
           Number of unexcused absences at which this intervention is triggered.
-          Extracted from the numeric portion of commlog_reason.
+          Extracted from the numeric portion of family_communication_reason.

@@ -1,6 +1,10 @@
 with
-    -- TODO: DISTINCT needed because upstream has multiple assessment_ids
-    -- for the same logical assessment definition.
+    -- DISTINCT projects from response grain (one row per student) to
+    -- definition grain (one row per assessment definition). Per-student
+    -- columns are not in the projection, so byte-identical projected tuples
+    -- are coalesced. Not a workaround for dirty data — the projection IS
+    -- the operation. Per-administration attributes live on
+    -- dim_assessment_administrations.
     illuminate_assessments as (
         select distinct
             'illuminate' as assessment_type,
@@ -14,12 +18,16 @@ with
             is_internal_assessment,
 
             'enrollment' as assessment_scope,
+
+            cast(null as string) as combined_academic_subject,
+            cast(null as string) as aligned_academic_subject,
+            cast(null as string) as credit_category,
         from {{ ref("int_assessments__assessments") }}
         where is_internal_assessment
     ),
 
-    -- TODO: DISTINCT needed because upstream has per-student rows; no
-    -- single dedup key exists at the assessment-definition grain.
+    -- DISTINCT projects from response grain to definition grain (see
+    -- illuminate_assessments comment above).
     state_nj as (
         select distinct
             'state' as assessment_type,
@@ -52,11 +60,16 @@ with
             false as is_internal_assessment,
 
             'enrollment' as assessment_scope,
+
+            cast(null as string) as combined_academic_subject,
+            cast(null as string) as aligned_academic_subject,
+            cast(null as string) as credit_category,
         from {{ ref("int_pearson__all_assessments") }}
         where testscalescore is not null
     ),
 
-    -- TODO: DISTINCT needed because upstream has per-student rows.
+    -- DISTINCT projects from response grain to definition grain (see
+    -- illuminate_assessments comment above).
     state_fl as (
         select distinct
             'state' as assessment_type,
@@ -73,11 +86,16 @@ with
             false as is_internal_assessment,
 
             'enrollment' as assessment_scope,
+
+            cast(null as string) as combined_academic_subject,
+            cast(null as string) as aligned_academic_subject,
+            cast(null as string) as credit_category,
         from {{ ref("int_fldoe__all_assessments") }}
         where scale_score is not null
     ),
 
-    -- TODO: DISTINCT needed because upstream has per-student rows.
+    -- DISTINCT projects from response grain to definition grain (see
+    -- illuminate_assessments comment above).
     college_assessments as (
         select distinct
             'college' as assessment_type,
@@ -93,10 +111,15 @@ with
             false as is_internal_assessment,
 
             'student' as assessment_scope,
+
+            aligned_subject as combined_academic_subject,
+            aligned_subject_area as aligned_academic_subject,
+            course_discipline as credit_category,
         from {{ ref("int_assessments__college_assessment") }}
     ),
 
-    -- TODO: DISTINCT needed because upstream has per-student rows.
+    -- DISTINCT projects from response grain to definition grain (see
+    -- illuminate_assessments comment above).
     ap_assessments as (
         select distinct
             'college' as assessment_type,
@@ -112,6 +135,10 @@ with
             false as is_internal_assessment,
 
             'student' as assessment_scope,
+
+            cast(null as string) as combined_academic_subject,
+            cast(null as string) as aligned_academic_subject,
+            cast(null as string) as credit_category,
         from {{ ref("int_assessments__ap_assessments") }}
     ),
 
@@ -146,13 +173,16 @@ select
         )
     }} as assessment_key,
 
-    assessment_type,
+    assessment_type as `type`,
     title,
-    subject_area,
-    scope,
+    subject_area as academic_subject,
+    scope as category,
     module_code,
     module_type,
     grade_level as grade_level_tested,
     is_internal_assessment,
-    assessment_scope,
+    assessment_scope as scope,
+    combined_academic_subject,
+    aligned_academic_subject,
+    credit_category,
 from all_assessments

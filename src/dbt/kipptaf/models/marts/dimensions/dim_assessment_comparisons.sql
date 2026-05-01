@@ -32,6 +32,25 @@ with
             ) as neighborhood_schools_total_students,
         from {{ ref("stg_google_sheets__state_test_comparison") }}
         group by academic_year, test_name, test_code, region
+    ),
+
+    with_business_unit as (
+        select
+            *,
+
+            case
+                region
+                when 'Newark'
+                then 'TEAM'
+                when 'Camden'
+                then 'KCNA'
+                when 'Miami'
+                then 'KIPP_MIAMI'
+                when 'Paterson'
+                then 'KPAT'
+                else 'KIPP_TAF'
+            end as business_unit_code,
+        from comparisons
     )
 
 select
@@ -41,16 +60,15 @@ select
         )
     }} as assessment_comparison_key,
 
-    {{ dbt_utils.generate_surrogate_key(["region"]) }} as region_key,
+    {{ dbt_utils.generate_surrogate_key(["business_unit_code"]) }} as region_key,
 
     academic_year,
     test_name,
     test_code,
-    region,
     city_percent_proficient,
     state_percent_proficient,
     neighborhood_schools_percent_proficient,
     city_total_students,
     state_total_students,
     neighborhood_schools_total_students,
-from comparisons
+from with_business_unit

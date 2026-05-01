@@ -1,0 +1,71 @@
+views:
+  - name: attendance_summary
+
+    cubes:
+      - join_path: attendance
+        includes:
+          - count_students
+          - avg_daily_attendance
+          - pct_tardy
+          - count_truants
+          - pct_truant
+          - academic_year
+          - semester
+          - attendance_category
+          - is_truant
+
+      - join_path: attendance.dim_dates
+        prefix: true
+        includes:
+          - date_day
+          - month_number
+          - month_name
+          - quarter_number
+          - school_week_start_date
+
+      - join_path: attendance.dim_locations
+        prefix: true
+        includes:
+          - location_name
+          - abbreviation
+          - grade_band
+          - campus
+          - city
+
+      - join_path: attendance.dim_locations.dim_regions
+        prefix: true
+        includes:
+          - region_name
+          - state
+
+      - join_path: attendance.dim_student_enrollments
+        prefix: true
+        includes:
+          - grade_level
+          - graduation_year
+          - is_retained_year
+
+      - join_path: attendance.dim_student_enrollments.dim_students
+        prefix: true
+        includes:
+          - gender_identity
+          - race
+          - meal_eligibility_status
+          - is_gifted
+          - is_ell
+          - has_iep
+
+      - join_path: attendance.dim_terms
+        prefix: true
+        includes:
+          - term_name
+          - term_code
+          - term_type
+
+    access_policy:
+      # No PII tier — view contains no direct student identifiers.
+      # Demographic dimensions (race, gender_identity, etc.) are
+      # aggregate breakdowns only.
+      - group: cube-access-student-data
+        member_level:
+          includes: "*"

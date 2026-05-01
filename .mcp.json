@@ -13,12 +13,8 @@
       }
     },
     "dbt": {
-      "command": "uvx",
-      "args": ["dbt-mcp"],
-      "env": {
-        "DBT_PROJECT_DIR": "/workspaces/teamster/src/dbt/kipptaf",
-        "DBT_PATH": "/workspaces/teamster/.venv/bin/dbt"
-      }
+      "command": "/workspaces/teamster/scripts/dbt-mcp-launch.sh",
+      "args": []
     },
     "gke": {
       "command": "gke-mcp",
@@ -33,6 +29,17 @@
       "env": {
         "GOOGLE_APPLICATION_CREDENTIALS": "${HOME}/.config/gcloud/application_default_credentials.json"
       }
+    },
+    "github": {
+      "type": "http",
+      "url": "https://api.githubcopilot.com/mcp/",
+      "headers": {
+        "Authorization": "Bearer ${GITHUB_TOKEN}"
+      }
+    },
+    "context7": {
+      "command": "npx",
+      "args": ["-y", "@upstash/context7-mcp"]
     }
   }
 }

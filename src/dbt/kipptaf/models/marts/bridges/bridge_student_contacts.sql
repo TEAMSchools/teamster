@@ -23,14 +23,13 @@ select
     {{ dbt_utils.generate_surrogate_key(["c._dbt_source_relation", "c.personid"]) }}
     as student_contact_person_key,
 
-    s.student_number,
     c.relationship_type,
-    c.contactpriorityorder as contact_priority,
+    c.contactpriorityorder as priority,
 
     c.isemergency = 1 as is_emergency,
     c.schoolpickupflg = 1 as is_pickup,
     c.iscustodial = 1 as is_custodial,
-    c.liveswithflg = 1 as lives_with,
+    c.liveswithflg = 1 as is_household_member,
 
 from contacts_union as c
 inner join

@@ -1,15 +1,15 @@
 with
-    /* Staff/student survey responses from int_surveys__survey_responses */
+    /* Staff/student survey responses. PK hashes survey_question_id rather
+       than question_shortname because Alchemer surveys can reuse a
+       question_shortname across multiple internal question_ids. */
     general_responses as (
         select
             sr.survey_id,
             sr.survey_response_id,
+            sr.survey_question_id,
             sr.question_shortname,
+            sr.respondent_identifier,
             sr.answer as response_text,
-            sr.respondent_employee_number,
-            sr.respondent_email,
-            sr.academic_year,
-            sr.survey_title,
 
             safe_cast(sr.answer as numeric) as response_value,
         from {{ ref("int_surveys__survey_responses") }} as sr
@@ -29,11 +29,12 @@ with
     manager_responses as (
         select
             ms.survey_id,
+            ms.survey_question_id,
             ms.question_shortname,
             ms.answer as response_text,
             ms.answer_value as response_value,
-            ms.respondent_df_employee_number as respondent_employee_number,
-            ms.campaign_academic_year as academic_year,
+
+            cast(ms.respondent_df_employee_number as string) as respondent_identifier,
 
             coalesce(
                 ms.survey_response_id,
@@ -49,66 +50,26 @@ with
         where ms.campaign_academic_year is not null
     ),
 
-    /* Build submission keys to join to fct_survey_submissions */
-    general_with_keys as (
-        select
-            gr.survey_id,
-            gr.survey_response_id,
-            gr.question_shortname,
-            gr.response_text,
-            gr.response_value,
-
-            case
-                when gr.survey_title like '%Staff%'
-                then 'staff'
-                when gr.survey_title like '%Student%'
-                then 'student'
-                when gr.survey_title like '%Family%'
-                then 'family'
-                when gr.survey_title like '%Engagement%'
-                then 'staff'
-                when gr.survey_title like '%Re-Commitment%'
-                then 'family'
-                else 'staff'
-            end as respondent_population,
-
-            coalesce(
-                cast(gr.respondent_employee_number as string), gr.respondent_email
-            ) as respondent_identifier,
-        from general_responses as gr
-    ),
-
-    manager_with_keys as (
-        select
-            mr.survey_id,
-            mr.survey_response_id,
-            mr.question_shortname,
-            mr.response_text,
-            mr.response_value,
-
-            'staff' as respondent_population,
-
-            cast(mr.respondent_employee_number as string) as respondent_identifier,
-        from manager_responses as mr
-    ),
-
-    -- trunk-ignore(sqlfluff/ST03): referenced by string in dbt_utils.deduplicate
     all_responses as (
-        select *,
-        from general_with_keys
+        select
+            survey_id,
+            survey_response_id,
+            survey_question_id,
+            question_shortname,
+            respondent_identifier,
+            response_text,
+            response_value,
+        from general_responses
         union all
-        select *,
-        from manager_with_keys
-    ),
-
-    deduped as (
-        {{
-            dbt_utils.deduplicate(
-                relation="all_responses",
-                partition_by="survey_id, survey_response_id, respondent_identifier, question_shortname",
-                order_by="response_text asc",
-            )
-        }}
+        select
+            survey_id,
+            survey_response_id,
+            survey_question_id,
+            question_shortname,
+            respondent_identifier,
+            response_text,
+            response_value,
+        from manager_responses
     )
 
 select
@@ -118,7 +79,7 @@ select
                 "survey_id",
                 "survey_response_id",
                 "respondent_identifier",
-                "question_shortname",
+                "survey_question_id",
             ]
         )
     }} as survey_response_key,
@@ -136,9 +97,6 @@ select
     {{ dbt_utils.generate_surrogate_key(["question_shortname"]) }}
     as survey_question_key,
 
-    survey_id,
-    survey_response_id,
-    question_shortname,
     response_value,
     response_text,
-from deduped
+from all_responses

@@ -57,6 +57,19 @@ files), `"file"` (writes raw bytes from a local file path). The `test=True` flag
 writes local files to `/tmp/dagster` (not the `dagster-tmp` symlink — causes
 `FileExistsError`) instead of `env/`, and prefixes GCS paths with `test/`.
 
+### `freshness.py`
+
+**`FreshnessPolicy` UI surface**: evaluations do NOT appear on the asset's
+Checks tab — state lives on the Overview sidebar's Freshness panel; alerts fire
+via Dagster+ "Freshness policy violations" policies, not asset-check alerts. Do
+not add `build_last_update_freshness_checks` (it's `@superseded`) to force
+Checks-tab visibility.
+
+**`FreshnessPolicy.cron` window**: valid materialization window is
+`[deadline - lower_bound_delta, deadline]`. A materialization landing AFTER the
+deadline is outside the window. Set `deadline_cron` past the asset's typical
+arrival time, not before, or the check flaps FAIL→PASS every cycle.
+
 ### `asset_checks.py`
 
 Two functions used by every SFTP/API asset factory:

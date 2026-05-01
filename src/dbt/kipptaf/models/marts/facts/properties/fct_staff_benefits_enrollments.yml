@@ -13,6 +13,9 @@ models:
           plan_name, and enrollment_start_date. Generated with
           generate_surrogate_key(["employee_number", "plan_type", "plan_name",
           "enrollment_start_date"]).
+        constraints:
+          - type: primary_key
+            warn_unsupported: false
         data_tests:
           - unique
           - not_null
@@ -22,16 +25,17 @@ models:
         description: >-
           Foreign key to dim_staff. Surrogate key derived from employee_number.
           Generated with generate_surrogate_key(["employee_number"]).
+        constraints:
+          - type: foreign_key
+            to: ref('dim_staff')
+            to_columns: [staff_key]
+            warn_unsupported: false
         data_tests:
           - not_null
           - relationships:
               arguments:
                 to: ref('dim_staff')
                 field: staff_key
-
-      - name: employee_number
-        data_type: int64
-        description: KIPP-assigned unique identifier for the staff member.
 
       - name: plan_type
         data_type: string
@@ -51,18 +55,13 @@ models:
           Degenerate dimension. The tier of coverage selected (e.g., Employee
           Only, Employee + Spouse, Family).
 
-      - name: enrollment_status
-        data_type: string
-        description:
-          The current status of the enrollment record (e.g., Active, Inactive).
-
-      - name: enrollment_start_date
+      - name: start_date
         data_type: date
         description: >-
           Date key (role-playing to dim_dates) for the start of the enrollment
           period.
 
-      - name: enrollment_end_date
+      - name: end_date
         data_type: date
         description: >-
           Date key (role-playing to dim_dates) for the end of the enrollment

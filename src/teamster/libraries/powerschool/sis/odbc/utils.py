@@ -5,6 +5,7 @@ and staleness evaluation logic shared across assets, schedules, and sensors.
 """
 
 import logging
+import sys
 from collections.abc import Callable, Generator, Sequence
 from contextlib import contextmanager
 from dataclasses import dataclass
@@ -77,7 +78,7 @@ def with_powerschool_retry[_T](
     db_resource: PowerSchoolODBCResource,
     log: logging.Logger,
     work_fn: Callable[[oracledb.Connection], _T],
-    max_attempts: int = 2,
+    max_attempts: int = 3,
 ) -> _T:
     """Run a function with a PowerSchool connection, retrying on failure.
 
@@ -91,7 +92,7 @@ def with_powerschool_retry[_T](
         db_resource: PowerSchoolODBCResource with connect() method.
         log: Dagster logger (context.log).
         work_fn: Callable that receives an open connection and returns a result.
-        max_attempts: Total attempts (initial + retries). Defaults to 2.
+        max_attempts: Total attempts (initial + retries). Defaults to 3.
 
     Returns:
         The return value of work_fn.
@@ -103,9 +104,10 @@ def with_powerschool_retry[_T](
         except Exception:
             if attempt == max_attempts:
                 raise
+            exc = sys.exc_info()[1]
             log.warning(
-                f"PowerSchool attempt {attempt}/{max_attempts} failed, retrying...",
-                exc_info=True,
+                f"PowerSchool attempt {attempt}/{max_attempts} failed, retrying: "
+                f"{type(exc).__name__}: {exc}"
             )
 
     raise AssertionError("unreachable: max_attempts must be >= 1")

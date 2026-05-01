@@ -16,10 +16,10 @@ select
         )
     }} as course_key,
 
-    courses_course_number as course_number,
-    courses_course_name as course_name,
+    courses_course_number as course_code,
+    courses_course_name as course_title,
     courses_credittype as credit_type,
-    discipline,
-    courses_credit_hours as credit_hours,
+    discipline as academic_subject,
+    courses_credit_hours as credits,
 
 from deduplicated

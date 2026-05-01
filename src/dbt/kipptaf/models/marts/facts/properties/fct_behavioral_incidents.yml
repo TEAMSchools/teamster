@@ -3,15 +3,19 @@ models:
     description: >-
       Behavioral incident fact table. One row per student x incident from
       DeansList. Contains incident category, tier, infraction, and referral
-      information as degenerate dimensions. Referring staff identified by name
-      (no employee_number available from DeansList). FK to
-      dim_student_enrollments and dim_dates.
+      information as degenerate dimensions. Referring staff resolved to
+      dim_staff via the DeansList user's email matched against
+      int_people__staff_roster.work_email (nullable — see referring_staff_key).
+      FK to dim_student_enrollments, dim_staff, dim_locations, and dim_dates.
     columns:
       - name: behavioral_incident_key
         data_type: string
         description: >-
           Surrogate key derived from incident_id and _dbt_source_relation.
           Primary key for this fact.
+        constraints:
+          - type: primary_key
+            warn_unsupported: false
         data_tests:
           - unique
           - not_null
@@ -21,38 +25,79 @@ models:
         description: >-
           FK to dim_student_enrollments. Surrogate key derived from
           student_number, _dbt_source_relation, academic_year, and entrydate.
+        constraints:
+          - type: foreign_key
+            to: ref('dim_student_enrollments')
+            to_columns: [student_enrollment_key]
+            warn_unsupported: false
         data_tests:
           - not_null
 
-      - name: date_key
+          - relationships:
+              arguments:
+                to: ref('dim_student_enrollments')
+                field: student_enrollment_key
+      - name: referring_staff_key
+        data_type: string
+        description: >-
+          FK to dim_staff for the staff member who created the incident. Derived
+          from the DeansList user's email resolved to an employee_number via
+          int_people__staff_roster, then hashed with generate_surrogate_key.
+          Nullable when the DeansList user cannot be matched to a staff record.
+        constraints:
+          - type: foreign_key
+            to: ref('dim_staff')
+            to_columns: [staff_key]
+            warn_unsupported: false
+        data_tests:
+          - relationships:
+              arguments:
+                to: ref('dim_staff')
+                field: staff_key
+
+      - name: location_key
+        data_type: string
+        description: |
+          Canonical location FK. Resolved upstream in
+          `int_deanslist__incidents` via the canonical master on
+          `deanslist_school_id`. NULL for rows where the DeansList school_id
+          has no canonical mapping.
+        constraints:
+          - type: foreign_key
+            to: ref('dim_locations')
+            to_columns: [location_key]
+            warn_unsupported: false
+        data_tests:
+          - relationships:
+              arguments:
+                to: ref('dim_locations')
+                field: location_key
+              config:
+                severity: error
+
+      - name: creation_date_key
         data_type: date
         description: >-
-          Date the incident was created. FK to dim_dates.
+          FK to dim_dates for the date the incident was created. Matches
+          dim_dates.date_key.
 
-      - name: student_number
-        data_type: int64
-        description: >-
-          Student Number assigned by the school. Indexed.
-
-        config:
-          meta:
-            source_system: PowerSchool
-            source_model: stg_powerschool__students
-            source_column: student_number
-            contains_pii: true
-            column_role: primary_key
+        constraints:
+          - type: foreign_key
+            to: ref('dim_dates')
+            to_columns: [date_key]
+            warn_unsupported: false
+        data_tests:
+          - relationships:
+              arguments:
+                to: ref('dim_dates')
+                field: date_key
       - name: academic_year
         data_type: int64
         description: >-
           KIPP academic year (July start) derived from the incident creation
           timestamp.
 
-      - name: incident_id
-        data_type: int64
-        description: >-
-          DeansList unique identifier for the incident.
-
-      - name: incident_category
+      - name: category
         data_type: string
         description: >-
           Category assigned to the incident in DeansList.
@@ -62,49 +107,35 @@ models:
         description: >-
           Tier code from DeansList (T1, T2, T3, SW, TX, etc.).
 
-      - name: infraction
+      - name: infraction_description
         data_type: string
         description: >-
           Specific infraction description recorded in DeansList.
 
-      - name: incident_location
-        data_type: string
-        description: >-
-          Physical location within the school where the incident occurred.
-
-      - name: incident_context
+      - name: context
         data_type: string
         description: >-
           Context or setting of the incident (e.g., classroom, hallway).
 
-      - name: incident_status
+      - name: status
         data_type: string
         description: >-
-          Indicates if the course was made either by a user or automatically by
-          an import. Validvalues: 0=user-created, 3=auto-created.
+          DeansList workflow status for the incident (e.g., Open, Closed,
+          Pending).
 
         config:
           meta:
-            source_system: PowerSchool
-            source_model: stg_powerschool__courses
+            source_system: DeansList
+            source_model: int_deanslist__incidents
             source_column: status
-      - name: referral_tier
+      - name: referral_category
         data_type: string
         description: >-
-          Normalized severity tier (Low, Middle, High, Social Work,
-          Non-Behavioral, Other). Derived from category_tier with
-          region-specific mappings.
-
-      - name: referring_staff_name
-        data_type: string
-        description: >-
-          Last, First name of the staff member who created the incident.
-
-      - name: referring_staff_id
-        data_type: string
-        description: >-
-          DeansList user identifier of the staff member who created the
-          incident.
+          Categorical routing bucket for the referral — not an ordinal tier.
+          Values: Low, Middle, High, Social Work, Non-Behavioral, Other.
+          "Low"/"Middle"/"High" describe severity; "Social Work" and
+          "Non-Behavioral" are parallel routing categories, not severity levels.
+          Derived from category_tier with region-specific mappings.
 
       - name: is_referral
         data_type: boolean
@@ -116,17 +147,35 @@ models:
         description: >-
           TRUE if the incident is currently active (not archived/closed).
 
-      - name: incident_date
+      - name: close_date_key
         data_type: date
         description: >-
-          Date the incident was created, cast from create_ts_date.
+          FK to dim_dates for the date the incident was closed. Matches
+          dim_dates.date_key. Nullable — open incidents have no close date.
 
-      - name: close_date
+        constraints:
+          - type: foreign_key
+            to: ref('dim_dates')
+            to_columns: [date_key]
+            warn_unsupported: false
+        data_tests:
+          - relationships:
+              arguments:
+                to: ref('dim_dates')
+                field: date_key
+      - name: return_date_key
         data_type: date
         description: >-
-          Date the incident was closed. Null if still open.
-
-      - name: return_date
-        data_type: date
-        description: >-
-          Date the student is expected to return. Null if not applicable.
+          FK to dim_dates for the date the student is expected to return.
+          Matches dim_dates.date_key. Nullable — not all incidents have a return
+          date.
+        constraints:
+          - type: foreign_key
+            to: ref('dim_dates')
+            to_columns: [date_key]
+            warn_unsupported: false
+        data_tests:
+          - relationships:
+              arguments:
+                to: ref('dim_dates')
+                field: date_key

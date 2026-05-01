@@ -10,7 +10,7 @@ with
             s.school,
             s.grade_level,
 
-            x.grade_band as school_level,
+            x.location_grade_band as school_level,
 
             enrollment_type,
 
@@ -18,8 +18,8 @@ with
 
         from {{ ref("stg_google_sheets__finalsite__school_scaffold") }} as s
         left join
-            {{ ref("stg_google_sheets__people__location_crosswalk") }} as x
-            on s.schoolid = x.powerschool_school_id
+            {{ ref("int_people__location_crosswalk") }} as x
+            on s.schoolid = x.location_powerschool_school_id
         cross join unnest(['All', 'New', 'Returning']) as enrollment_type
         where s.grade_level = -1
 

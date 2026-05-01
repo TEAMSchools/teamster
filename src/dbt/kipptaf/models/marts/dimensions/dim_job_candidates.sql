@@ -27,12 +27,8 @@ with
 select
     {{ dbt_utils.generate_surrogate_key(["candidate_id"]) }} as job_candidate_key,
 
-    candidate_id,
-    candidate_first_name,
-    candidate_last_name,
-    candidate_first_and_last_name,
-    candidate_email,
-    candidate_source,
-    candidate_source_type,
-    candidate_source_subtype,
+    candidate_first_name as first_name,
+    candidate_last_name as last_name,
+    candidate_first_and_last_name as full_name,
+    candidate_email as email,
 from deduplicated

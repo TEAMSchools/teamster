@@ -4,6 +4,7 @@ packages:
   - local: ../finalsite
   - local: ../iready
   - local: ../powerschool
+  - local: ../focus
   - local: ../renlearn
   # https://github.com/dbt-labs/dbt-external-tables
   - package: dbt-labs/dbt_external_tables

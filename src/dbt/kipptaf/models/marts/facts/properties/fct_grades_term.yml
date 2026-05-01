@@ -13,6 +13,9 @@ models:
         description: >-
           Surrogate key derived from cc_dcid, _dbt_source_relation, and
           storecode. Primary key for this fact.
+        constraints:
+          - type: primary_key
+            warn_unsupported: false
         data_tests:
           - unique
           - not_null
@@ -22,17 +25,35 @@ models:
         description: >-
           FK to dim_student_section_enrollments. Surrogate key derived from
           cc_dcid and _dbt_source_relation.
+        constraints:
+          - type: foreign_key
+            to: ref('dim_student_section_enrollments')
+            to_columns: [student_section_enrollment_key]
+            warn_unsupported: false
         data_tests:
           - not_null
 
+          - relationships:
+              arguments:
+                to: ref('dim_student_section_enrollments')
+                field: student_section_enrollment_key
       - name: student_enrollment_key
         data_type: string
         description: >-
           FK to dim_student_enrollments. Surrogate key derived from
           student_number, _dbt_source_relation, academic_year, and entrydate.
+        constraints:
+          - type: foreign_key
+            to: ref('dim_student_enrollments')
+            to_columns: [student_enrollment_key]
+            warn_unsupported: false
         data_tests:
           - not_null
 
+          - relationships:
+              arguments:
+                to: ref('dim_student_enrollments')
+                field: student_enrollment_key
       - name: term_key
         data_type: string
         description: >-
@@ -40,45 +61,53 @@ models:
           start_date, region, and school_id. Null when storecode does not map to
           a reporting term for the school and region.
 
+        constraints:
+          - type: foreign_key
+            to: ref('dim_terms')
+            to_columns: [term_key]
+            warn_unsupported: false
+        data_tests:
+          - relationships:
+              arguments:
+                to: ref('dim_terms')
+                field: term_key
       - name: term_start_date_key
         data_type: date
         description: >-
           Start date of the term bin. FK to dim_dates (role-playing as term
           start date).
 
+        constraints:
+          - type: foreign_key
+            to: ref('dim_dates')
+            to_columns: [date_key]
+            warn_unsupported: false
+        data_tests:
+          - relationships:
+              arguments:
+                to: ref('dim_dates')
+                field: date_key
       - name: term_end_date_key
         data_type: date
         description: >-
           End date of the term bin. FK to dim_dates (role-playing as term end
           date).
 
-      - name: student_number
-        data_type: int64
-        description: >-
-          Student Number assigned by the school. Indexed.
-
-        config:
-          meta:
-            source_system: PowerSchool
-            source_model: stg_powerschool__students
-            source_column: student_number
-            contains_pii: true
-            column_role: primary_key
+        constraints:
+          - type: foreign_key
+            to: ref('dim_dates')
+            to_columns: [date_key]
+            warn_unsupported: false
+        data_tests:
+          - relationships:
+              arguments:
+                to: ref('dim_dates')
+                field: date_key
       - name: academic_year
         data_type: int64
         description: >-
           KIPP academic year (July start) in which this grade record falls.
 
-      - name: term_code
-        data_type: string
-        description: >-
-          The code used to represent this grade level to Term ID and School ID.
-
-        config:
-          meta:
-            source_system: PowerSchool
-            source_model: stg_powerschool__storedgrades
-            source_column: storecode
       - name: percent_grade
         data_type: float64
         description: >-
@@ -101,54 +130,58 @@ models:
         description: >-
           Adjusted term letter grade corresponding to percent_grade_adjusted.
 
-      - name: citizenship
+      - name: citizenship_grade
         data_type: string
         description: >-
-          Shows the Citizenship progress of a student in this section, such as
-          E=Excellent, S=Satisfactory,U=Unsatisfactory, N=Neutral.
+          Classroom behavior/conduct grade from PowerSchool, such as
+          E=Excellent, S=Satisfactory, U=Unsatisfactory, N=Neutral. Renamed from
+          citizenship to disambiguate from Ed-Fi citizenshipStatusDescriptor (US
+          citizen status).
 
         config:
           meta:
             source_system: PowerSchool
             source_model: stg_powerschool__pgfinalgrades
             source_column: citizenship
-      - name: y1_percent_grade
+      - name: ytd_percent_grade
         data_type: float64
         description: >-
           Year-to-date (Y1) running percent grade, weighted across terms
           completed so far.
 
-      - name: y1_percent_grade_adjusted
+      - name: ytd_percent_grade_adjusted
         data_type: float64
         description: >-
           Year-to-date adjusted percent grade with minimum-grade floor applied.
 
-      - name: y1_letter_grade
+      - name: ytd_letter_grade
         data_type: string
         description: >-
-          Year-to-date letter grade derived from y1_percent_grade_adjusted via
+          Year-to-date letter grade derived from ytd_percent_grade_adjusted via
           the weighted grade scale.
 
-      - name: y1_letter_grade_adjusted
+      - name: ytd_letter_grade_adjusted
         data_type: string
         description: >-
           Year-to-date adjusted letter grade with F* designation for grades
           below 50%.
 
-      - name: grade_points
+      - name: grade_points_earned
         data_type: float64
         description: >-
-          Points associated to this grade. For example, 4 to A, 3 to B, etc.
+          Points earned for this term's grade (CEDS
+          K12StudentAcademicRecord.GradePointsEarned). For example, 4 for A, 3
+          for B, etc.
 
         config:
           meta:
             source_system: PowerSchool
             source_model: stg_powerschool__gradescaleitem
             source_column: grade_points
-      - name: y1_grade_points
+      - name: ytd_grade_points
         data_type: float64
         description: >-
-          Year-to-date GPA grade points derived from y1_percent_grade_adjusted
+          Year-to-date GPA grade points derived from ytd_percent_grade_adjusted
           via the weighted grade scale.
 
       - name: potential_credit_hours
@@ -156,12 +189,6 @@ models:
         description: >-
           Credit hours the student could earn for this course. Coalesced from
           storedgrades potentialcrhrs or courses credit_hours.
-
-      - name: exclude_from_gpa
-        data_type: int64
-        description: >-
-          Flag indicating whether this course grade is excluded from GPA
-          calculation. 0 = included, 1 = excluded.
 
       - name: last_grade_update_date
         data_type: date
@@ -173,3 +200,8 @@ models:
             source_system: PowerSchool
             source_model: stg_powerschool__pgfinalgrades
             source_column: lastgradeupdate
+      - name: is_excluded_from_gpa
+        data_type: boolean
+        description: >-
+          TRUE if this course grade is excluded from GPA calculation. Cast from
+          upstream int64 0/1 flag per R3 boolean-prefix convention.

@@ -15,14 +15,16 @@ with
         select
             ur.*,
 
-            x.abbreviation as school,
-            x.powerschool_school_id as schoolid,
+            x.location_abbreviation as school,
+            x.location_powerschool_school_id as schoolid,
 
-            initcap(regexp_extract(x.dagster_code_location, r'kipp(\w+)')) as region,
+            initcap(
+                regexp_extract(x.location_dagster_code_location, r'kipp(\w+)')
+            ) as region,
         from union_relations as ur
         left join
-            {{ ref("stg_google_sheets__people__location_crosswalk") }} as x
-            on ur.school_name = x.name
+            {{ ref("int_people__location_crosswalk") }} as x
+            on ur.school_name = x.location_name
     )
 
 select

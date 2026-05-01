@@ -58,15 +58,17 @@ with
             r.basic_comprehension_maze_level,
             r.basic_comprehension_maze_national_norm_percentile,
 
-            x.abbreviation as school,
-            x.powerschool_school_id as schoolid,
+            x.location_abbreviation as school,
+            x.location_powerschool_school_id as schoolid,
 
             e.state_studentnumber,
 
-            initcap(regexp_extract(x.dagster_code_location, r'kipp(\w+)')) as region,
+            initcap(
+                regexp_extract(x.location_dagster_code_location, r'kipp(\w+)')
+            ) as region,
 
             case
-                initcap(regexp_extract(x.dagster_code_location, r'kipp(\w+)'))
+                initcap(regexp_extract(x.location_dagster_code_location, r'kipp(\w+)'))
                 when 'Newark'
                 then '7325'
                 when 'Camden'
@@ -76,7 +78,7 @@ with
             end as district_code,
 
             case
-                initcap(regexp_extract(x.dagster_code_location, r'kipp(\w+)'))
+                initcap(regexp_extract(x.location_dagster_code_location, r'kipp(\w+)'))
                 when 'Newark'
                 then '965'
                 when 'Camden'
@@ -87,8 +89,8 @@ with
 
         from base_scores as r
         inner join
-            {{ ref("stg_google_sheets__people__location_crosswalk") }} as x
-            on r.school_name = x.name
+            {{ ref("int_people__location_crosswalk") }} as x
+            on r.school_name = x.location_name
         inner join
             {{ ref("int_extracts__student_enrollments") }} as e
             on r.academic_year = e.academic_year

@@ -33,9 +33,9 @@ select
         )
     }} as job_posting_key,
 
-    job_title,
-    department_internal,
-    department_org_field_value,
-    job_city,
-    recruiters,
+    job_title as position_title,
+    department_internal as department_name,
+    department_org_field_value as organizational_hierarchy,
+    job_city as city,
+    recruiters as recruiter_names,
 from deduplicated
