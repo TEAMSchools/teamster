@@ -6,6 +6,7 @@ with
             schoolid,
             yearid,
             student_number,
+            academic_year,
             entrydate,
             exitdate,
         from {{ ref("base_powerschool__student_enrollments") }}
@@ -20,15 +21,24 @@ select
             [
                 "enr.student_number",
                 "enr._dbt_source_relation",
-                "cc.cc_academic_year",
+                "enr.academic_year",
                 "enr.entrydate",
             ]
         )
     }} as student_enrollment_key,
 
+    -- FK source_relation must match dim_course_sections, which is built from
+    -- base_powerschool__sections. Rewrite cc's source relation to the parent's.
     {{
         dbt_utils.generate_surrogate_key(
-            ["cc.sections_dcid", "cc._dbt_source_relation"]
+            [
+                "cc.sections_dcid",
+                (
+                    "replace(cc._dbt_source_relation,"
+                    " 'base_powerschool__course_enrollments',"
+                    " 'base_powerschool__sections')"
+                ),
+            ]
         )
     }} as course_section_key,
 
