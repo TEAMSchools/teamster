@@ -400,17 +400,13 @@ gaps. They fold into the same Ops/catalog handoff as the 43 fact orphans. No
 code change required in this PR. The bridge orphans are added to the bucketed
 orphan report posted to #3774 in Task 5.1.
 
-### Task 1.4: (CONDITIONAL) Superscore drift fix
+### Task 1.4: ~~Superscore drift fix~~ — DROPPED
 
-**Skip this task if G4 (Task 0.4) decided to split.**
-
-If G4 decided to fold, the spec records the additive fix shape. Implement it
-here following the same pattern as Tasks 1.1/1.2:
-
-- [ ] **Step 1: Apply the additive fix to the upstream model identified by G4**
-- [ ] **Step 2: Build and verify the affected dedup partition produces 0
-      multi-superscore groups**
-- [ ] **Step 3: Commit referencing #3775**
+G4 outcome: split. Diagnosis (root cause, evidence queries, quantified impact,
+proposed one-line fix) posted to
+[#3775 comment 4361532388](https://github.com/TEAMSchools/teamster/issues/3775#issuecomment-4361532388).
+The fix is value-mutating (14 ACT students lose 1–6 superscore points), so it's
+paused for expert review and ships in a follow-up PR. #3775 stays open.
 
 ### Task 1.5: Phase 1 push checkpoint
 

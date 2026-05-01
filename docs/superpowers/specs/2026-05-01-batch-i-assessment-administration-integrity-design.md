@@ -5,12 +5,15 @@ one hash redefinition of `assessment_administration_key` and `assessment_key`,
 plus the additive upstream and mart changes that support it.
 
 Closes [#3774](https://github.com/TEAMSchools/teamster/issues/3774),
-[#3775](https://github.com/TEAMSchools/teamster/issues/3775),
 [#3782](https://github.com/TEAMSchools/teamster/issues/3782),
 [#3787](https://github.com/TEAMSchools/teamster/issues/3787),
 [#3788](https://github.com/TEAMSchools/teamster/issues/3788) (with the
 documented soft-gate residual on the 43 cross-region orphans of #3774, which
 clears post-merge once Ops widens the AppSheet catalog).
+
+[#3775](https://github.com/TEAMSchools/teamster/issues/3775) (superscore drift)
+is split out: G4 diagnosis posted as a comment on the issue; the fix follows in
+a separate PR pending expert review.
 
 ## Context
 
@@ -205,15 +208,15 @@ string. Rename to `assessment_type='ap'`.
 
 ### Issue closure map
 
-| Issue                                    | Resolved by                                                             | Notes                                                                                                                                      |
-| ---------------------------------------- | ----------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------ |
-| #3774 (43 cross-region fact orphans)     | Bucketed orphan report posted to issue body pre-merge                   | B′ soft-gate; closes when Ops widens `regions_assessed` post-merge. WARN-level test remains until Ops acts.                                |
-| #3774 (6 bridge orphans)                 | Folded into the bucketed orphan report (G2 outcome)                     | Same Ops/catalog path as the 43 fact orphans; closes post-merge with the same residual mechanism. Original crosswalk-gap framing is stale. |
-| #3775 (superscore drift)                 | Pre-PR investigation; outcome documented inline in spec before PR opens | If a non-additive upstream fix is required, drops out of this umbrella into a separate PR.                                                 |
-| #3782 Surface 1 (response_rollup dupes)  | Items 1, 2; item 7's dedup removal                                      |                                                                                                                                            |
-| #3782 Surface 2 (illuminate admin dupes) | Item 5 (Illuminate discriminator + drop dedup CTE)                      | Replaces the original "collapse upstream" framing — region-copies are genuinely distinct assessments and remain distinct admin rows.       |
-| #3787 (Practice rows)                    | Items 4, 5, 6                                                           | `test_type` lives at assessment level (Option B from #3787).                                                                               |
-| #3788 (period normalization)             | Item 5 (option β: single degenerate column)                             | Closes as "implemented as degenerate; promote to dim later if metadata accrues."                                                           |
+| Issue                                    | Resolved by                                                  | Notes                                                                                                                                      |
+| ---------------------------------------- | ------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------ |
+| #3774 (43 cross-region fact orphans)     | Bucketed orphan report posted to issue body pre-merge        | B′ soft-gate; closes when Ops widens `regions_assessed` post-merge. WARN-level test remains until Ops acts.                                |
+| #3774 (6 bridge orphans)                 | Folded into the bucketed orphan report (G2 outcome)          | Same Ops/catalog path as the 43 fact orphans; closes post-merge with the same residual mechanism. Original crosswalk-gap framing is stale. |
+| #3775 (superscore drift)                 | **Split — diagnosis posted to #3775; not closed by this PR** | G4 found a JOIN bug; the fix is value-mutating (14 ACT students lose 1–6 superscore points). Paused for expert review.                     |
+| #3782 Surface 1 (response_rollup dupes)  | Items 1, 2; item 7's dedup removal                           |                                                                                                                                            |
+| #3782 Surface 2 (illuminate admin dupes) | Item 5 (Illuminate discriminator + drop dedup CTE)           | Replaces the original "collapse upstream" framing — region-copies are genuinely distinct assessments and remain distinct admin rows.       |
+| #3787 (Practice rows)                    | Items 4, 5, 6                                                | `test_type` lives at assessment level (Option B from #3787).                                                                               |
+| #3788 (period normalization)             | Item 5 (option β: single degenerate column)                  | Closes as "implemented as degenerate; promote to dim later if metadata accrues."                                                           |
 
 ## Verification gates (pre-edit)
 
@@ -328,14 +331,20 @@ these rows — the surviving superscore is essentially random across builds.
   non-deterministic dedup pick — folded fix produces the deterministic correct
   value.
 
-**Decision:** fold the fix in. The change is value-mutating but corrects a clear
-JOIN bug — 14 students currently have published ACT superscores too high by 1–6
-points. The "additive" rule was about avoiding destabilization of unrelated
-upstream models; this is a one-line fix in a model directly feeding the
-umbrella's hash redefinition. Task 1.4 implements the fix: add
-`and s.strategy_case = d.strategy_case` to the `score_calcs → max_total_score`
-join. The `alt_superscore` join is grouped by `(student_number, scope)` only and
-needs no change.
+**Decision:** split. The fix changes published superscore values for 14 ACT
+students (decreases of 1–6 points). Pausing for expert review before applying.
+The full diagnosis (root cause, evidence queries, quantified impact, proposed
+one-line fix) is posted as a comment on
+[#3775](https://github.com/TEAMSchools/teamster/issues/3775#issuecomment-4361532388).
+
+**Implications for this PR:**
+
+- Task 1.4 is dropped from the plan.
+- #3775 stays open and is **not** closed by this PR.
+- The existing dedup behavior (non-deterministic `scale_score desc` tiebreaker
+  on 114 ACT drift groups) ships unchanged.
+- A follow-up PR will implement the one-line fix and close #3775 once expert
+  review confirms the strategy-specific superscore is the correct semantic.
 
 ## Pre-merge issue-resolution audit
 
