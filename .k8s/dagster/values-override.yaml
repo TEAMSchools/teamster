@@ -65,12 +65,14 @@ dagsterCloudAgent:
   annotations:
     cluster-autoscaler.kubernetes.io/safe-to-evict: "false"
 
-  # Hard nodeSelector (not preferred) — Autopilot NAP only provisions matching
-  # nodes for required/nodeSelector constraints. The agent image is amd64-only
-  # so arm64 fallback is not an option; pin to the built-in General-Purpose
-  # compute class to drive NAP correctly.
+  # Reference the cluster-scoped Custom ComputeClass `dagster-agent` defined
+  # in .k8s/dagster/compute-classes.yaml. Built-in classes (`General-Purpose`,
+  # etc.) are not available on this cluster's allowlist, and Autopilot warns
+  # against combining built-in compute-class nodeSelectors with extended-
+  # duration (`safe-to-evict: "false"`) pods. Single t2d priority — image is
+  # amd64-only, no arm64 fallback.
   nodeSelector:
-    cloud.google.com/compute-class: General-Purpose
+    cloud.google.com/compute-class: dagster-agent
 
   affinity:
     podAntiAffinity:

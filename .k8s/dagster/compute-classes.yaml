@@ -1,6 +1,6 @@
 ---
-# Cluster-scoped Custom ComputeClasses (CCC) consumed by code server and run
-# pods via `nodeSelector: { cloud.google.com/compute-class: <name> }`.
+# Cluster-scoped Custom ComputeClasses (CCC) consumed by agent, code server,
+# and run pods via `nodeSelector: { cloud.google.com/compute-class: <name> }`.
 #
 # Why CCCs and not weighted nodeAffinity:
 #   On Autopilot, Node Auto-Provisioning (NAP) only honors `required` /
@@ -54,5 +54,17 @@ spec:
     # Run/step pods carry `safe-to-evict: "false"` and cannot use spot —
     # eviction would consume Dagster retry budget and surface as run failures.
     - machineFamily: t2a
+    - machineFamily: t2d
+  whenUnsatisfiable: ScaleUpAnyway
+---
+apiVersion: cloud.google.com/v1
+kind: ComputeClass
+metadata:
+  name: dagster-agent
+spec:
+  priorities:
+    # Agent image is amd64-only — no arm64 fallback. Single t2d priority; no
+    # spot since the agent uses `safe-to-evict: "false"` (extended-duration),
+    # which is mutually exclusive with spot.
     - machineFamily: t2d
   whenUnsatisfiable: ScaleUpAnyway

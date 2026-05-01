@@ -36,10 +36,13 @@ on GKE Autopilot.
   instead of multi-value affinity.
 - **Custom ComputeClasses** in
   [compute-classes.yaml](/.k8s/dagster/compute-classes.yaml):
-  `dagster-codeserver` (spot t2a → on-demand t2a → t2d) and `dagster-run`
-  (on-demand t2a → t2d — no spot, runs are `safe-to-evict: "false"`). Agent uses
-  the built-in `General-Purpose` class — its image is amd64-only, no arm64
-  fallback.
+  `dagster-codeserver` (spot t2a → on-demand t2a → t2d), `dagster-run`
+  (on-demand t2a → t2d — no spot, runs are `safe-to-evict: "false"`), and
+  `dagster-agent` (t2d only — image is amd64-only, no spot due to
+  extended-duration). Built-in classes (`General-Purpose`, etc.) are NOT on this
+  cluster's compute-class allowlist — only `Accelerator`, `Balanced`,
+  `Performance`, `Scale-Out`, `autopilot`, `autopilot-spot`, and our three CCCs.
+  Always reference a CCC by name; do not use built-in class names.
 - **Do NOT add Balanced to CCC priorities** — its separation / extended-duration
   minimums (1 vCPU / 4 GiB) exceed our requests (500m / 2 GiB) and would cause
   pod admission rejection if anti-affinity is applied.
