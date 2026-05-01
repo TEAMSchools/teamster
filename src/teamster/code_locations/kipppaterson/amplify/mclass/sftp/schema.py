@@ -17,7 +17,3 @@ BENCHMARK_STUDENT_SUMMARY_SCHEMA = json.loads(
 PM_STUDENT_SUMMARY_SCHEMA = json.loads(
     py_avro_schema.generate(py_type=PMStudentSummary, options=pas_options)
 )
-
-PM_STUDENT_SUMMARY_AIMLINE_SCHEMA = json.loads(
-    py_avro_schema.generate(py_type=PMStudentSummaryAimline, options=pas_options)
-)
