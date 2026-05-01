@@ -62,3 +62,26 @@ def test_normalize_type_strips_params_and_lowercases() -> None:
     assert audit.normalize_type("BIGNUMERIC(38, 9)") == "bignumeric"
     assert audit.normalize_type("DATETIME") == "datetime"
     assert audit.normalize_type("TIMESTAMP") == "timestamp"
+
+
+def test_load_manifest_returns_indexed_nodes() -> None:
+    nodes = audit.load_manifest(FIXTURE_DIR / "sample_manifest.json")
+    assert "model.kipptaf.fct_sample" in nodes
+    assert isinstance(nodes["model.kipptaf.fct_sample"], audit.ManifestNode)
+    assert (
+        nodes["model.kipptaf.fct_sample"].relation_name
+        == "`teamster-332318`.`kipptaf`.`fct_sample`"
+    )
+
+
+def test_mart_models_filters_to_marts_dir() -> None:
+    nodes = audit.load_manifest(FIXTURE_DIR / "sample_manifest.json")
+    marts = audit.mart_models(nodes)
+    assert [n.name for n in marts] == ["fct_sample"]
+
+
+def test_load_manifest_raises_when_missing() -> None:
+    import pytest
+
+    with pytest.raises(FileNotFoundError):
+        audit.load_manifest(FIXTURE_DIR / "does_not_exist.json")

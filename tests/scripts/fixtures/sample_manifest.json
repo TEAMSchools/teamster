@@ -1,0 +1,58 @@
+{
+  "nodes": {
+    "model.kipptaf.fct_sample": {
+      "name": "fct_sample",
+      "resource_type": "model",
+      "package_name": "kipptaf",
+      "original_file_path": "models/marts/facts/fct_sample.sql",
+      "relation_name": "`teamster-332318`.`kipptaf`.`fct_sample`",
+      "schema": "kipptaf",
+      "database": "teamster-332318",
+      "alias": "fct_sample",
+      "depends_on": { "nodes": ["model.kipptaf.int_sample"] },
+      "compiled_code": "select student_id, cast(created as datetime) as created_timestamp from {{ ref('int_sample') }}"
+    },
+    "model.kipptaf.int_sample": {
+      "name": "int_sample",
+      "resource_type": "model",
+      "package_name": "kipptaf",
+      "original_file_path": "models/people/int_sample.sql",
+      "relation_name": "`teamster-332318`.`kipptaf`.`int_sample`",
+      "schema": "kipptaf",
+      "database": "teamster-332318",
+      "alias": "int_sample",
+      "depends_on": { "nodes": ["model.kipptaf.stg_sample"] },
+      "compiled_code": "select student_id, created from {{ ref('stg_sample') }}"
+    },
+    "model.kipptaf.stg_sample": {
+      "name": "stg_sample",
+      "resource_type": "model",
+      "package_name": "kipptaf",
+      "original_file_path": "models/people/staging/stg_sample.sql",
+      "relation_name": "`teamster-332318`.`kipptaf_people`.`stg_sample`",
+      "schema": "kipptaf_people",
+      "database": "teamster-332318",
+      "alias": "stg_sample",
+      "depends_on": { "nodes": [] },
+      "compiled_code": "select student_id, cast(created as datetime) as created from src"
+    },
+    "model.kipptaf.dim_other": {
+      "name": "dim_other",
+      "resource_type": "model",
+      "package_name": "kipptaf",
+      "original_file_path": "models/people/intermediate/int_other.sql",
+      "relation_name": "`teamster-332318`.`kipptaf`.`dim_other`",
+      "schema": "kipptaf",
+      "database": "teamster-332318",
+      "alias": "dim_other",
+      "depends_on": { "nodes": [] },
+      "compiled_code": "select 1"
+    }
+  },
+  "parent_map": {
+    "model.kipptaf.fct_sample": ["model.kipptaf.int_sample"],
+    "model.kipptaf.int_sample": ["model.kipptaf.stg_sample"],
+    "model.kipptaf.stg_sample": [],
+    "model.kipptaf.dim_other": []
+  }
+}

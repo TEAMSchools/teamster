@@ -116,6 +116,58 @@ def normalize_type(t: str) -> str:
     return _TYPE_PARAM_RE.sub("", t.strip()).lower()
 
 
+# === Manifest loader ===
+
+import json
+
+
+@dataclasses.dataclass(frozen=True)
+class ManifestNode:
+    unique_id: str
+    name: str
+    resource_type: str
+    original_file_path: str
+    relation_name: str
+    database: str
+    schema: str
+    alias: str
+    depends_on: list[str]
+    compiled_code: str | None
+
+
+def load_manifest(path: Path) -> dict[str, ManifestNode]:
+    if not path.exists():
+        raise FileNotFoundError(
+            f"manifest not found: {path}. "
+            "Run `uv run dbt parse --project-dir src/dbt/kipptaf` first."
+        )
+    raw = json.loads(path.read_text())
+    out: dict[str, ManifestNode] = {}
+    for unique_id, node in raw.get("nodes", {}).items():
+        out[unique_id] = ManifestNode(
+            unique_id=unique_id,
+            name=node["name"],
+            resource_type=node["resource_type"],
+            original_file_path=node["original_file_path"],
+            relation_name=node.get("relation_name") or "",
+            database=node.get("database") or "",
+            schema=node.get("schema") or "",
+            alias=node.get("alias") or node["name"],
+            depends_on=node.get("depends_on", {}).get("nodes", []),
+            compiled_code=node.get("compiled_code"),
+        )
+    return out
+
+
+def mart_models(nodes: dict[str, ManifestNode]) -> list[ManifestNode]:
+    return [
+        n
+        for n in nodes.values()
+        if n.resource_type == "model"
+        and n.original_file_path.startswith("models/marts/")
+    ]
+
+
 def parse_mart_yaml(path: Path) -> list[ParsedModel]:
     raw = yaml.safe_load(path.read_text())
     out: list[ParsedModel] = []
