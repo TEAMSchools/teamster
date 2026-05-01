@@ -89,17 +89,103 @@ TIMESTAMP comparisons — using `date_key` (DATE) on the join side while filters
 land on `date_day` (TIMESTAMP) diverges types, breaking pre-aggregation matching
 and time filter rewriting.
 
+### PII column metadata and descriptions sourced from dbt
+
+**dbt is the source of truth for PII classification and dimension descriptions —
+not Cube YAML.**
+
+dbt mart properties already carry `config.meta.contains_pii: true` on sensitive
+columns and populated `description:` fields on all columns. Cube dimensions
+should reflect this metadata rather than duplicate or diverge from it.
+
+**PII flags:** The target state is for `meta: {pii: true}` on Cube dimensions to
+be auto-generated from dbt's `config.meta.contains_pii: true` via dbt Cloud
+metadata sync (issue #3764) and access policy annotations auto-generated from
+those flags (issue #3727). Until that tooling lands, hand-author
+`meta: {pii: true}` in Cube YAML for any dimension whose source column carries
+`contains_pii: true` in the dbt property file.
+
+**Descriptions:** Cube dimension `description:` fields are sourced from dbt
+column descriptions via metadata sync. Do not hand-author descriptions in Cube
+YAML — they will drift from the dbt definitions. Once sync is active, any
+`description:` written in Cube YAML will be overwritten.
+
+**dbt `config.meta` example (source of truth):**
+
+```yaml
+# in dim_students.yml (dbt)
+- name: lea_student_identifier
+  data_type: int64
+  description: KIPP's own SIS identifier for the student...
+  config:
+    meta:
+      contains_pii: true
+```
+
+**Cube dimension (derived):**
+
+```yaml
+# in students/students.yml (Cube) — meta and description sourced from dbt
+- name: lea_student_identifier
+  sql: lea_student_identifier
+  type: number
+  meta:
+    pii: true
+```
+
+Tag any dimension whose dbt source column has `contains_pii: true`, or that
+contains sensitive demographic data visible at base access level (race, gender,
+disability status) that downstream tools should handle with care.
+
+Do not tag quasi-identifiers (grade level, zip code, school assignment) — fields
+that become identifying only in combination for small populations. That risk is
+managed by the summary/detail view split and BI-layer cell suppression, not
+column metadata.
+
+Tag location is always the cube dimension, not the view include list. Views
+select from cubes and inherit the signal without re-declaring it.
+
+**Authoritative references for PII classification decisions:**
+
+_Student data (FERPA-governed):_
+
+- [34 CFR § 99.3](https://www.law.cornell.edu/cfr/text/34/99.3) — FERPA's
+  statutory definition of personally identifiable information, including the
+  direct/indirect identifier distinction and the reasonable-person
+  re-identification test
+- [ED.gov PTAC — PII in Education Records](https://studentprivacy.ed.gov/content/personally-identifiable-information-education-records)
+  — Department of Education guidance on what qualifies as PII under FERPA
+- [PTAC — Data De-identification: Basic Terms](https://studentprivacy.ed.gov/sites/default/files/resource_document/file/data_deidentification_terms_0.pdf)
+  — cell suppression thresholds and de-identification standards referenced by
+  FERPA's § 99.31(b) release exemption
+- NJ Student Data Privacy Act (NJSA 18A:36-35 et seq.) — stricter than baseline
+  FERPA for third-party vendors; applies to any external tool consuming Cube
+  data
+
+_Employee data (not FERPA — governed by employment law):_
+
+- [NIST SP 800-122](https://nvlpubs.nist.gov/nistpubs/legacy/sp/nistspecialpublication800-122.pdf)
+  — federal PII classification framework widely adopted for HR data; defines the
+  sensitive PII vs. non-sensitive PII distinction
+- [EEOC 29 CFR Part 1602](https://www.eeoc.gov/employers/summary-selected-recordkeeping-obligations-29-cfr-part-1602)
+  — recordkeeping obligations for race, gender, and employment action data
+- ADA 42 U.S.C. § 12112(d)(3)(B) — requires medical and disability-related
+  records (including benefits enrollment) to be stored separately from general
+  personnel records with access limited to designated personnel
+- FLSA 29 CFR Part 516 — payroll and compensation record retention requirements
+
 ### Two views per domain: detail and summary
 
-Each domain exposes a detail view and a summary view. Detail consumers
-(analysts, coaches) see individual-record dimensions including identifiers and
-optionally PII; summary consumers (school leaders, regional directors) see only
-aggregate-safe dimensions and measures with no individual identifiers. The split
-keeps access policy rules DRY — one rule per view rather than one per
-school/region/role combination. `date_day` is excluded from summary views where
-daily granularity isn't meaningful (e.g., staff headcount) but included where
-the primary metric requires it (e.g., attendance — ADA requires date-level
-grouping).
+Each domain exposes a detail view and a summary view. Detail consumers see
+individual-record dimensions including identifiers and optionally PII; summary
+consumers see only aggregate-safe dimensions and measures with no individual
+identifiers. The split keeps access policy rules DRY — one rule per view rather
+than one per school/region/role combination. `date_day` is included in summary
+views — time-series analysis (week-over-week trends, score trajectories,
+headcount over time) is a core consumer need even at the summary level. Privacy
+protection in summary views comes from removing individual identifiers, not from
+removing dates. For SCD2 cubes, BI tools must apply a date filter before
+querying — without one, each employment period fans out to one row per day.
 
 ## Repository Structure
 
@@ -215,7 +301,7 @@ joined into the domain cube's `sql:` block and have no cube file of their own.
 | behavioral   | behavioral, family_communications                                                                                                     | fct_behavioral_incidents, fct_family_communications                                                                                                                                                     | fct_behavioral_consequences                                                                                                                                                                                                                          |
 | gradebook    | grades_term, grades_gpa, grades_category, grades_assignments                                                                          | fct_grades_term, fct_grades_gpa, fct_grades_category, fct_grades_assignments                                                                                                                            | —                                                                                                                                                                                                                                                    |
 | courses      | course_sections                                                                                                                       | dim_student_section_enrollments                                                                                                                                                                         | dim_courses, dim_course_sections, bridge_course_section_teachers, bridge_course_section_terms                                                                                                                                                        |
-| assessment   | assessment_scores, assessment_scores_student_scoped                                                                                   | fct_assessment_scores_enrollment_scoped, fct_assessment_scores_student_scoped                                                                                                                           | dim_assessments, dim_assessment_comparisons, dim_assessment_goals, dim_student_assessment_expectations                                                                                                                                               |
+| assessment   | assessment_scores, assessment_scores_student_scoped, assessment_administrations                                                       | fct_assessment_scores_enrollment_scoped, fct_assessment_scores_student_scoped, dim_assessment_administrations                                                                                           | dim_assessments, dim_assessment_comparisons, dim_assessment_goals, bridge_assessment_expectations_enrollment_scoped, bridge_assessment_expectations_student_scoped                                                                                   |
 | observations | observations, observation_scores, observation_goals                                                                                   | fct_staff_observations, fct_staff_observation_scores, fct_staff_observation_goals                                                                                                                       | dim_staff_observation_rubrics, dim_staff_observation_rubric_measurements, dim_staff_observation_types, dim_staff_observation_goal_types, dim_staff_observation_expectations                                                                          |
 | surveys      | surveys, survey_responses, survey_expectations                                                                                        | fct_survey_submissions, fct_survey_responses, bridge_survey_expectations                                                                                                                                | dim_surveys, dim_survey_administrations, dim_survey_questions, bridge_survey_questions                                                                                                                                                               |
 | college      | college                                                                                                                               | dim_college_enrollments                                                                                                                                                                                 | dim_colleges                                                                                                                                                                                                                                         |
@@ -239,6 +325,38 @@ on `work_assignment_key` with `effective_start_date` / `effective_end_date`.
 Included in the `staff_work_history` period intersection when primary-position
 filtering is needed at a point in time. See Pattern 3 for the optional LEFT JOIN
 pattern.
+
+**Note on assessment domain (updated 2026-04):**
+`dim_student_assessment_expectations` no longer exists — it was deleted and
+replaced by two bridge models:
+`bridge_assessment_expectations_enrollment_scoped` (internal assessments, joins
+via `student_section_enrollment_key`) and
+`bridge_assessment_expectations_student_scoped` (K-8 replacement-curriculum
+assessments, joins via `student_key`). `dim_assessment_administrations` is a new
+standalone dimension (not inlined) with FK from both fact tables via
+`assessment_administration_key`. The `assessment_administrations` cube file
+should be added to the repository structure.
+
+**Note on surveys — role-playing respondent FKs:** `fct_survey_submissions` uses
+a respondent-type discriminator (`staff`, `student`, `family`) with role-playing
+FKs: `staff_key` → `dim_staff`, `student_enrollment_key` →
+`dim_student_enrollments`, `student_contact_person_key` →
+`dim_student_contact_persons`. Manager surveys also carry `subject_staff_key`
+(the manager being evaluated) as a second FK to `dim_staff` — same role-playing
+FK pattern as `observer_staff_key` in observations: join on the primary role
+(`staff_key` → teacher/respondent), expose `subject_staff_key` as a degenerate
+dimension. All three respondent FK columns carry `meta: {pii: true}`.
+
+**Note on talent:** `dim_job_candidates` (inlined into the talent cube) contains
+candidate PII (name, email, contact details). The talent views require
+`cube-access-staff-pii` or a dedicated `cube-access-talent` group — to be
+decided at implementation. Candidate data is not covered by FERPA or employment
+law but is sensitive personal data governed by general privacy best practices.
+
+**Note on support:** `fct_support_tickets` may reference staff or student
+identifiers depending on the ticket subject. Access group requirements depend on
+which identifier fields are exposed — to be confirmed at implementation against
+the model's column list.
 
 ## Cube Patterns
 
@@ -722,11 +840,9 @@ all grouping dimensions, and all measures. PII fields are present but hidden
 from users without the relevant PII access group.
 
 **Summary view:** Exposes only measures and grouping dimensions. No individual
-identifiers (no staff_key, student_key, or names). `date_day` is excluded from
-summary views where daily granularity isn't meaningful (e.g., staff headcount),
-but included where the primary metric is computed over individual days (e.g.,
-attendance — ADA requires grouping by date; excluding `date_day` would make it
-uncomputable for summary consumers).
+identifiers (no staff_key, student_key, or names). `date_day` is included —
+time-series analysis is a core consumer need at the summary level. Privacy
+protection comes from removing individual identifiers, not dates.
 
 **`prefix: true` and access policy names:** When a join path uses
 `prefix: true`, Cube prepends the cube name to every field in that block's
@@ -764,8 +880,19 @@ views:
         prefix: true
         includes:
           - staff_key
-          - full_name # PII — excluded by default, see access_policy
-          - work_email # PII
+          - full_name
+          - first_name
+          - last_name
+          - birth_date
+          - work_email
+          - google_email
+          - personal_email
+          - personal_cell_phone
+          - active_directory_username
+          - staff_unique_id
+          - gender_identity
+          - race
+          - is_hispanic
 
     access_policy:
       - role: "detail-access"
@@ -773,7 +900,15 @@ views:
           includes: "*"
           excludes:
             - dim_staff_full_name
+            - dim_staff_first_name
+            - dim_staff_last_name
+            - dim_staff_birth_date
             - dim_staff_work_email
+            - dim_staff_google_email
+            - dim_staff_personal_email
+            - dim_staff_personal_cell_phone
+            - dim_staff_active_directory_username
+            - dim_staff_staff_unique_id
       - role: "cube-access-staff-pii"
         member_level:
           includes: "*"
@@ -798,6 +933,7 @@ views:
       - join_path: staff_work_history.dim_dates
         prefix: true
         includes:
+          - date_day
           - academic_year
           - month_name
 
@@ -809,7 +945,7 @@ views:
 
 ## Access Policy Patterns
 
-Three patterns applied consistently across all domains. These implement Layer 3
+Five patterns applied consistently across all domains. These implement Layer 3
 of the security model from the infrastructure spec — column-level visibility.
 Layers 1 and 2 (identity resolution, row-level filtering) live in `cube.js`.
 
@@ -829,10 +965,29 @@ and cannot see detail views. A user with no scope groups sees nothing.
 This approach keeps access policy rules DRY: one rule per view instead of one
 rule per school/region group.
 
+### Access group reference
+
+All named access groups used across views, with their scope and the pattern that
+implements them.
+
+| Group                            | Type                                     | Scope                                                                                                                                                                                    | Pattern                       |
+| -------------------------------- | ---------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------- |
+| `detail-access`                  | Synthetic (emitted by `contextToGroups`) | Grants access to all detail views; applied to any user with a `*-detail` Google group                                                                                                    | Detail vs summary enforcement |
+| `summary-access`                 | Synthetic (emitted by `contextToGroups`) | Grants access to all summary views; applied to any user with a `*-detail` or `*-summary` Google group                                                                                    | Detail vs summary enforcement |
+| `cube-access-student-data`       | Google group                             | Required to see any student-domain view (attendance, assessment, gradebook, behavioral, surveys, students). Primary enforcement via `queryRewrite`; access policy is belt-and-suspenders | Pattern 3                     |
+| `cube-access-student-pii`        | Google group                             | Unlocks student direct identifiers (name, DOB, LEA/state/district IDs, Salesforce contact ID, contact name/phone) on detail views                                                        | Pattern 1                     |
+| `cube-access-staff-pii`          | Google group                             | Unlocks staff direct identifiers and sensitive HR narratives (name, DOB, emails, phone, AD username, employee number, termination reason/date) on detail views                           | Pattern 1                     |
+| `cube-access-staff-compensation` | Google group                             | Unlocks pay rate fields (annual wage, hourly wage, daily rate, period rate, additional earnings) on staff compensation views                                                             | Pattern 2                     |
+| `cube-access-staff-benefits`     | Google group                             | Unlocks benefits enrollment fields (plan type, plan name, coverage level) on staff benefits views                                                                                        | Pattern 4                     |
+| `cube-access-staff-observations` | Google group                             | Unlocks individual observation records, scores, and free-text feedback fields on observations detail views; row-level scoping to own school enforced separately via `queryRewrite`       | Pattern 5                     |
+
 ### Pattern 1 — PII fields
 
 Present in the detail view field list, hidden from users without the PII group.
 Default deny on the specific fields; PII group restores full access.
+
+**Staff PII** — direct identifiers and sensitive HR narratives gated by
+`cube-access-staff-pii`. All carry `meta: {pii: true}` on the cube dimension.
 
 ```yaml
 # applied on detail views that include staff PII
@@ -842,13 +997,24 @@ access_policy:
       includes: "*"
       excludes:
         - dim_staff_full_name
+        - dim_staff_first_name
+        - dim_staff_last_name
+        - dim_staff_birth_date
         - dim_staff_work_email
+        - dim_staff_google_email
         - dim_staff_personal_email
         - dim_staff_personal_cell_phone
+        - dim_staff_active_directory_username
+        - dim_staff_staff_unique_id
+        - termination_reason
+        - termination_effective_date
   - role: "cube-access-staff-pii"
     member_level:
       includes: "*"
 ```
+
+**Student PII** — direct identifiers gated by `cube-access-student-pii`. All
+carry `meta: {pii: true}` on the cube dimension.
 
 ```yaml
 # applied on detail views that include student PII
@@ -857,19 +1023,37 @@ access_policy:
     member_level:
       includes: "*"
       excludes:
+        - dim_students_full_name
+        - dim_students_birth_date
+        - dim_students_lea_student_identifier
+        - dim_students_state_student_identifier
+        - dim_students_district_student_identifier
+        - dim_students_salesforce_contact_id
         - dim_students_contact_name
         - dim_students_contact_phone
-        - dim_students_birth_date
   - role: "cube-access-student-pii"
     member_level:
       includes: "*"
 ```
 
+**Sensitive demographics** — `meta: {pii: true}` tagged in the cube but visible
+at base access level; not in any `excludes:` list. Included in both detail and
+summary views for trend analysis. BI-layer cell suppression applies for small
+populations.
+
+- Students: `gender_identity`, `race`, `meal_eligibility_status`, `is_ell`,
+  `has_iep`, `is_gifted`
+- Staff: `gender_identity`, `race`, `is_hispanic`
+
 ### Pattern 2 — Compensation fields
 
-Applied on the staff detail and summary views for salary and pay rate
-dimensions. Compensation fields are excluded from both views by default; only
-users with the compensation access group see them.
+Applied on the staff compensation and additional earnings views. Compensation
+fields are excluded by default; only users with the compensation access group
+see them. All carry `meta: {pii: true}` on the cube dimension.
+
+Fields: `annual_wage`, `hourly_wage`, `daily_rate`, `period_rate` (from
+`staff_compensation`); `rate_amount`, `earning_code`, `earning_description`
+(from `staff_additional_earnings`).
 
 ```yaml
 access_policy:
@@ -877,9 +1061,13 @@ access_policy:
     member_level:
       includes: "*"
       excludes:
-        - base_pay_rate
-        - annual_salary
-        - pay_frequency
+        - annual_wage
+        - hourly_wage
+        - daily_rate
+        - period_rate
+        - rate_amount
+        - earning_code
+        - earning_description
   - role: "cube-access-staff-compensation"
     member_level:
       includes: "*"
@@ -901,3 +1089,76 @@ access_policy:
     member_level:
       includes: "*"
 ```
+
+### Pattern 4 — Benefits fields
+
+Applied on the staff benefits view. Benefits enrollment data can reveal health
+information — plan type and coverage tier are proxies for health status and
+family circumstances. Per ADA, benefits data must be treated separately from
+general personnel records. All carry `meta: {pii: true}` on the cube dimension.
+
+Fields: `plan_type`, `plan_name`, `coverage_level` (from `staff_benefits`).
+
+```yaml
+access_policy:
+  - role: "detail-access"
+    member_level:
+      includes: "*"
+      excludes:
+        - plan_type
+        - plan_name
+        - coverage_level
+  - role: "cube-access-staff-benefits"
+    member_level:
+      includes: "*"
+```
+
+### Pattern 5 — Observations (column gate + row-level scoping)
+
+Observation data requires two independent layers of restriction beyond the base
+detail/summary split.
+
+**Column gate** (`cube-access-staff-observations`): Controls whether a user can
+see individual observation records, scores, and free-text feedback at all.
+Applied on the observations detail view. Fields gated: `score`,
+`overall_rating`, `notes`, `positive_feedback`, `growth_areas`,
+`text_box_content`, `response_text`. All carry `meta: {pii: true}` on the cube
+dimension.
+
+**Row-level scoping** (`queryRewrite` in `cube.js`): Users with
+`cube-access-staff-observations` see individual records only for their own
+school(s). For other schools, only aggregates are accessible. `queryRewrite`
+reads the user's `locationKeys` claim (a list — APs covering multiple schools
+get multiple values) from the security context and injects a
+`{observations.location_key} IN (...)` filter when the query targets the detail
+view. When the query targets the summary view, no filter is injected — aggregate
+scores across all schools are visible. Users with a regional or org-wide scope
+group get an empty `locationKeys` list, which `queryRewrite` treats as
+unrestricted (no filter injected on either view).
+
+The two layers are independent: a user without `cube-access-staff-observations`
+sees nothing regardless of school assignment. The row filter only applies once
+the column gate passes.
+
+```yaml
+# observations_detail.yml
+access_policy:
+  - role: "detail-access"
+    member_level:
+      includes: "*"
+      excludes:
+        - score
+        - overall_rating
+        - notes
+        - positive_feedback
+        - growth_areas
+        - text_box_content
+        - response_text
+  - role: "cube-access-staff-observations"
+    member_level:
+      includes: "*"
+```
+
+Row-level school scoping is enforced in `cube.js` via `queryRewrite` — not in
+the access policy. The access policy controls column visibility; `queryRewrite`
+controls row visibility for users who pass the column gate.
