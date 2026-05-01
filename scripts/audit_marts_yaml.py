@@ -56,7 +56,7 @@ if __name__ == "__main__":
 # === YAML parsing ===
 
 import dataclasses
-from typing import Any
+from typing import Any, Protocol
 
 import yaml
 
@@ -197,3 +197,38 @@ def parse_mart_yaml(path: Path) -> list[ParsedModel]:
             )
         )
     return out
+
+
+# === BigQuery introspection ===
+
+
+class BQClient(Protocol):
+    def query(self, sql: str): ...
+
+
+def fetch_dataset_columns(
+    client: BQClient, database: str, schema: str
+) -> dict[str, dict[str, str]]:
+    sql = f"""
+    select table_name, column_name, data_type
+    from `{database}`.`{schema}`.INFORMATION_SCHEMA.COLUMNS
+    order by table_name, ordinal_position
+    """
+    out: dict[str, dict[str, str]] = {}
+    for row in client.query(sql).result():
+        out.setdefault(row.table_name, {})[row.column_name] = row.data_type
+    return out
+
+
+def grain_probe(
+    client: BQClient, relation: str, key_columns: list[str]
+) -> tuple[int, int]:
+    fmt = "|".join(["%T"] * len(key_columns))
+    cols = ", ".join(f"`{c}`" for c in key_columns)
+    sql = (
+        f"select count(*) as rows, "
+        f'count(distinct format("{fmt}", {cols})) as keys '
+        f"from {relation}"
+    )
+    row = next(iter(client.query(sql).result()))
+    return row.rows, row.keys

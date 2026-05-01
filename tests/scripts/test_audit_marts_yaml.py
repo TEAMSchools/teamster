@@ -4,6 +4,7 @@ import importlib.util
 import sys
 from pathlib import Path
 from types import ModuleType
+from unittest.mock import MagicMock
 
 FIXTURE_DIR = Path(__file__).parent / "fixtures"
 SCRIPT_PATH = Path(__file__).resolve().parents[2] / "scripts/audit_marts_yaml.py"
@@ -85,3 +86,46 @@ def test_load_manifest_raises_when_missing() -> None:
 
     with pytest.raises(FileNotFoundError):
         audit.load_manifest(FIXTURE_DIR / "does_not_exist.json")
+
+
+def _mock_bq_client(rows: list[dict]) -> MagicMock:
+    client = MagicMock(spec=audit.BQClient)
+    job = MagicMock()
+    job.result.return_value = [MagicMock(**r) for r in rows]
+    client.query.return_value = job
+    return client
+
+
+def test_fetch_dataset_columns_groups_by_table() -> None:
+    client = _mock_bq_client(
+        [
+            {
+                "table_name": "fct_sample",
+                "column_name": "student_id",
+                "data_type": "INT64",
+            },
+            {
+                "table_name": "fct_sample",
+                "column_name": "created_timestamp",
+                "data_type": "DATETIME",
+            },
+            {"table_name": "dim_other", "column_name": "key", "data_type": "STRING"},
+        ]
+    )
+    result = audit.fetch_dataset_columns(client, "teamster-332318", "kipptaf")
+    assert result == {
+        "fct_sample": {"student_id": "INT64", "created_timestamp": "DATETIME"},
+        "dim_other": {"key": "STRING"},
+    }
+
+
+def test_grain_probe_returns_rows_and_distinct_keys() -> None:
+    client = _mock_bq_client([{"rows": 100, "keys": 95}])
+    rows, keys = audit.grain_probe(
+        client,
+        "`teamster-332318`.`kipptaf`.`fct_sample`",
+        ["student_id", "academic_year"],
+    )
+    assert (rows, keys) == (100, 95)
+    sql = client.query.call_args[0][0]
+    assert 'format("%T|%T", `student_id`, `academic_year`)' in sql
