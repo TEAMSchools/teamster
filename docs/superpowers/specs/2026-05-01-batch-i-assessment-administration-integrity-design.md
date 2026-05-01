@@ -346,4 +346,3 @@ the PR description with a "Bonus closes #NNNN — <reason>" line, and add
 - New module-level reporting rollup view.
 - AppSheet catalog edits for the 43 cross-region orphans (Ops-owned).
 - Broader `int_people__location_crosswalk` redesign (#3633).
-- Hash changes to non-assessment marts.
