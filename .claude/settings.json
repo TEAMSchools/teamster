@@ -6,11 +6,9 @@
       "Bash(git diff)",
       "Bash(git status)",
       "Bash(git worktree list)",
-      "Bash(mkdir -p /workspaces/teamster/.claude/scratch/day2)",
-      "Bash(rm -rf /workspaces/teamster/.claude/scratch/day2)",
+      "Bash(uv run scripts/day2_collect.py)",
       "Bash(uv tool list)",
       "Edit(/.claude/scratch/**)",
-      "Edit(/.claude/skills/dagster-day2/**)",
       "Edit(/.worktrees/**)",
       "mcp__bigquery__analyze_contribution",
       "mcp__bigquery__execute_sql",
@@ -101,7 +99,7 @@
       "Skill(claude-md-management:revise-claude-md:*)",
       "Skill(commit-commands:commit:*)",
       "Skill(dbt:using-dbt-for-analytics-engineering:*)",
-      "Write(//workspaces/teamster/.claude/scratch/day2/*)",
+      "Write(//workspaces/teamster/.claude/scratch/**)",
       "Write(//workspaces/teamster/.worktrees/**)"
     ],
     "deny": [
@@ -140,8 +138,7 @@
     ],
     "additionalDirectories": [
       "/workspaces/teamster/.worktrees/**",
-      "/workspaces/teamster/.claude/scratch/**",
-      "/workspaces/teamster/.claude/scratch/day2"
+      "/workspaces/teamster/.claude/scratch/**"
     ]
   },
   "enabledMcpjsonServers": ["dagster", "bigquery", "dbt"],

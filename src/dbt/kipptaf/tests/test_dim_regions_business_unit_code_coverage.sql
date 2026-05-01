@@ -1,4 +1,15 @@
-{{ config(severity="error") }}
+{{
+    config(
+        severity="error",
+        store_failures=true,
+        store_failures_as="view",
+        meta={
+            "dagster": {
+                "ref": {"name": "dim_regions"},
+            },
+        },
+    )
+}}
 
 /* Asserts dim_regions has every business_unit_code that downstream FKs
    target. dim_regions is derived from
