@@ -327,6 +327,12 @@ Jinja's implicit-string-concat across adjacent list elements — unreviewable, a
 a comma inserted between fragments silently changes the SQL. Derive the computed
 value as a named column in an upstream CTE, then hash that column.
 
+### Canonical attributes from a partition
+
+Use `first_value(... order by <pk>)` for every attribute, not separate `min()`
+calls — independent mins on different columns can pick from different rows in
+the same partition.
+
 ### SQL conventions
 
 - **Soft-delete filters**: Apply in the **staging model**, not in downstream

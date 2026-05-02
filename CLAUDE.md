@@ -59,11 +59,11 @@ this step.**
   the branch already exists. Delete the remote branch, then
   `gh issue develop <num> --name <branch>`, then re-push local commits.
 
-- **Worktree commands**: Always `cd` to the worktree before running `git` or any
-  command that reads the working tree (`trunk check`, `uv run`, tests). The main
-  repo and worktree have separate git state and separate files — `git commit`
-  from the main repo commits to `main`, and `trunk check` silently lints main's
-  files instead of the worktree's.
+- **Worktree commands**: Prepend `cd <worktree>` to every Bash call (cwd may not
+  persist between turns) and verify with `git branch --show-current` before any
+  commit. The main repo and worktree have separate git state and separate files
+  — `git commit` from the main repo commits to `main`, and `trunk check`
+  silently lints main's files instead of the worktree's.
 
 - **Branch switch**: `gh issue develop <number> --name <branch> --checkout`.
 
@@ -79,7 +79,10 @@ this step.**
 - **Dispatching subagents**: Subagents do not auto-invoke skills. In the
   dispatch prompt, name the exact `Skill` tool calls the subagent must run
   before starting work (e.g. `Skill` with
-  skill=`dbt:using-dbt-for-analytics-engineering` for a dbt review).
+  skill=`dbt:using-dbt-for-analytics-engineering` for a dbt review). For
+  negation goals (remove X, no Y), list anti-patterns explicitly — subagents
+  otherwise re-introduce familiar idioms (`dbt_utils.deduplicate`,
+  `select distinct`, `qualify row_number()=1`).
 
 - **Git resuming**: Before resuming work on an existing branch, merge `main`:
   `git fetch origin main && git merge origin/main`.
