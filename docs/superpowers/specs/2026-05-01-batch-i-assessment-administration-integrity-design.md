@@ -1,3 +1,5 @@
+<!-- trunk-ignore-all(markdownlint/MD029): list-numbering survives across section breaks intentionally in this spec -->
+
 # Batch I — assessment-administration integrity (umbrella design)
 
 Single atomic PR that consolidates batch I of the Data Team project board into

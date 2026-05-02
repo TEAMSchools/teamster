@@ -15,6 +15,13 @@ with
     ),
 
     illuminate_administrations as (
+        -- TODO: collapse to canonical-grain at int_assessments__assessments
+        -- (a `int_assessments__assessments_canonical` view aggregating
+        -- canonical_* attrs and union-of-regions per canonical_assessment_id)
+        -- so this CTE can be a plain SELECT. DISTINCT here is justified
+        -- because all canonical members in the partition project identical
+        -- (canonical_*, region) tuples — but the upstream collapse is
+        -- preferred per src/dbt/CLAUDE.md "no manual deduplication".
         select distinct
             'illuminate' as assessment_type,
 
@@ -227,6 +234,11 @@ select
         )
     }} as assessment_administration_key,
 
+    -- `academic_year` is intentionally not exposed in the final SELECT —
+    -- it's a hash input only. The canonical-grain dim represents an
+    -- administration scoped by `region` + `administered_date_key` +
+    -- `administration_period`; analysts derive academic year from
+    -- `administered_date_key` via `dim_dates`.
     administered_date as administered_date_key,
 
     region,

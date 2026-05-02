@@ -1,3 +1,5 @@
+<!-- trunk-ignore-all(markdownlint/MD029): list-numbering survives across section breaks intentionally in this plan -->
+
 # Batch I — assessment-administration integrity Implementation Plan
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use

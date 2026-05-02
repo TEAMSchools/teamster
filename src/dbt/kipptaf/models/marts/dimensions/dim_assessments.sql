@@ -191,6 +191,7 @@ with
         credit_category, test_type
     {%- endset %}
 
+    -- trunk-ignore(sqlfluff/ST03): referenced by string in dbt_utils.deduplicate
     all_assessments_unioned as (
         select {{ union_cols }},
         from illuminate_assessments
@@ -212,29 +213,20 @@ with
     ),
 
     -- Dedup after union: state_nj and state_fl historically share module_codes
-    -- (e.g., ELA06, SCI05) for the same logical grade-level state assessment;
-    -- collapse to one row per assessment_key hash input set with deterministic
-    -- title via min().
+    -- (e.g., ELA06, SCI05) for the same logical grade-level state assessment.
+    -- Per src/dbt/CLAUDE.md "Canonical attributes from a partition": pick all
+    -- attributes from a single row (ordered by title for determinism) rather
+    -- than independent min() calls that could draw from different rows.
     all_assessments as (
-        select
-            assessment_type,
-            source_assessment_id,
-            module_code,
-            test_type,
-
-            min(title) as title,
-            min(subject_area) as subject_area,
-            min(scope) as scope,
-            min(module_type) as module_type,
-            min(grade_level) as grade_level,
-            min(combined_academic_subject) as combined_academic_subject,
-            min(aligned_academic_subject) as aligned_academic_subject,
-            min(credit_category) as credit_category,
-            min(assessment_scope) as assessment_scope,
-
-            logical_or(is_internal_assessment) as is_internal_assessment,
-        from all_assessments_unioned
-        group by assessment_type, source_assessment_id, module_code, test_type
+        {{
+            dbt_utils.deduplicate(
+                relation="all_assessments_unioned",
+                partition_by=(
+                    "assessment_type, source_assessment_id, " "module_code, test_type"
+                ),
+                order_by="title",
+            )
+        }}
     )
 
 select
