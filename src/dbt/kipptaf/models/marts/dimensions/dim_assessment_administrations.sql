@@ -15,13 +15,11 @@ with
     ),
 
     illuminate_administrations as (
-        -- TODO: collapse to canonical-grain at int_assessments__assessments
-        -- (a `int_assessments__assessments_canonical` view aggregating
-        -- canonical_* attrs and union-of-regions per canonical_assessment_id)
+        -- TODO(#3800): collapse to canonical-grain at int_assessments__assessments
         -- so this CTE can be a plain SELECT. DISTINCT here is justified
-        -- because all canonical members in the partition project identical
-        -- (canonical_*, region) tuples — but the upstream collapse is
-        -- preferred per src/dbt/CLAUDE.md "no manual deduplication".
+        -- because all canonical members project identical (canonical_*, region)
+        -- tuples, but the upstream collapse is preferred per
+        -- src/dbt/CLAUDE.md "no manual deduplication".
         select distinct
             'illuminate' as assessment_type,
 
