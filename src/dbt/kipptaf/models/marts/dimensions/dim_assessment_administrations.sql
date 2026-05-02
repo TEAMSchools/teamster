@@ -1,38 +1,46 @@
 with
-    -- trunk-ignore(sqlfluff/ST03): referenced by string in dbt_utils.deduplicate
-    illuminate_unnested as (
+    -- Union of regions_assessed across all members of a canonical group.
+    -- Canonical members may individually be tagged for different regions
+    -- (e.g., one tagged Miami, another tagged Camden/Newark/Paterson). The
+    -- canonical-keyed dim must emit one row per (canonical, any-member-region).
+    canonical_regions as (
         select
-            a.title,
-            a.subject_area,
-            a.scope,
-            a.module_code,
-            a.grade_level,
-            a.assessment_id,
-
-            cast(a.administered_at as date) as administered_date,
-            a.academic_year,
-            region,
-        from {{ ref("int_assessments__assessments") }} as a
-        cross join unnest(a.regions_assessed_array) as region
-        where a.is_internal_assessment
+            canonical_assessment_id,
+            array_agg(distinct region) as canonical_regions_array,
+        from
+            {{ ref("int_assessments__assessments") }},
+            unnest(regions_assessed_array) as region
+        where is_internal_assessment
+        group by canonical_assessment_id
     ),
 
     illuminate_administrations as (
-        select
+        select distinct
             'illuminate' as assessment_type,
-            title,
-            subject_area,
-            scope,
-            module_code,
-            grade_level,
-            administered_date,
-            academic_year,
+
+            a.canonical_title as title,
+
+            a.subject_area,
+            a.scope,
+            a.module_code,
+
+            a.canonical_grade_level_id - 1 as grade_level,
+
+            cast(a.canonical_administered_at as date) as administered_date,
+            a.academic_year,
+
             region,
-            assessment_id as source_assessment_id,
+
+            a.canonical_assessment_id as source_assessment_id,
 
             cast(null as string) as administration_period,
             cast(null as string) as test_type,
-        from illuminate_unnested
+        from {{ ref("int_assessments__assessments") }} as a
+        inner join
+            canonical_regions as cr
+            on a.canonical_assessment_id = cr.canonical_assessment_id
+        cross join unnest(cr.canonical_regions_array) as region
+        where a.is_internal_assessment
     ),
 
     -- State NJ: one administration per (testcode, period, academic_year,
@@ -218,17 +226,6 @@ select
             ]
         )
     }} as assessment_administration_key,
-
-    {{
-        dbt_utils.generate_surrogate_key(
-            [
-                "assessment_type",
-                "module_code",
-                "source_assessment_id",
-                "test_type",
-            ]
-        )
-    }} as assessment_key,
 
     administered_date as administered_date_key,
 

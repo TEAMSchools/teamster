@@ -25,24 +25,6 @@ models:
           - unique
           - not_null
 
-      - name: assessment_key
-        data_type: string
-        description: >-
-          FK to dim_assessments. Derived from assessment_type, module_code,
-          source_assessment_id, and test_type — the same 4-input hash
-          composition used in dim_assessments.assessment_key. Joining on this
-          column lifts assessment-definition attributes.
-        constraints:
-          - type: foreign_key
-            to: ref('dim_assessments')
-            to_columns: [assessment_key]
-            warn_unsupported: false
-        data_tests:
-          - relationships:
-              arguments:
-                to: ref('dim_assessments')
-                field: assessment_key
-
       - name: administered_date_key
         data_type: date
         description: >-

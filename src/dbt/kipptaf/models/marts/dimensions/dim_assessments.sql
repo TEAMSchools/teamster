@@ -5,8 +5,12 @@ with
     -- are coalesced. Not a workaround for dirty data — the projection IS
     -- the operation. Per-administration attributes live on
     -- dim_assessment_administrations.
+    -- Member-grain: one row per actual Illuminate assessment_id. Bridge
+    -- table `bridge_assessment_administration_members` maps each
+    -- canonical-grain `dim_assessment_administrations` row to its member(s)
+    -- via this dim's `assessment_key`.
     illuminate_assessments as (
-        select distinct
+        select
             assessment_id as source_assessment_id,
             title,
             subject_area,

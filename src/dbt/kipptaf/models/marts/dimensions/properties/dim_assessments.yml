@@ -23,9 +23,11 @@ models:
         data_type: string
         description: >-
           Surrogate key derived from type, module_code, source_assessment_id,
-          and test_type. Primary key. Hash inputs match
-          dim_assessment_administrations.assessment_key so the two dims align on
-          the same logical assessment definition.
+          and test_type. Primary key. For Illuminate, member-grained — one row
+          per actual `assessment_id`. For state/college/AP, canonical
+          (`source_assessment_id` is null). Drilldown from
+          `dim_assessment_administrations` (canonical-grain) to this dim goes
+          through `bridge_assessment_administration_members`.
         constraints:
           - type: primary_key
             warn_unsupported: false
