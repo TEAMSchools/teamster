@@ -14,7 +14,7 @@ with
             a.canonical_assessment_id,
             a.canonical_title,
             a.canonical_administered_at,
-            a.canonical_performance_band_set_id,
+            a.canonical_grade_level_id,
 
             region,
 
@@ -59,7 +59,7 @@ with
             a.canonical_assessment_id,
             a.canonical_title,
             a.canonical_administered_at,
-            a.canonical_performance_band_set_id,
+            a.canonical_grade_level_id,
 
             ssa.student_id as illuminate_student_id,
 
@@ -110,7 +110,7 @@ with
             a.canonical_assessment_id,
             a.canonical_title,
             a.canonical_administered_at,
-            a.canonical_performance_band_set_id,
+            a.canonical_grade_level_id,
 
             s.student_id as illuminate_student_id,
 
@@ -169,7 +169,7 @@ select
     ia.canonical_assessment_id,
     ia.canonical_title,
     ia.canonical_administered_at,
-    ia.canonical_performance_band_set_id,
+    ia.canonical_grade_level_id,
 
     sa.student_assessment_id,
     sa.date_taken,
@@ -215,7 +215,7 @@ select
     a.canonical_assessment_id,
     a.canonical_title,
     a.canonical_administered_at,
-    a.canonical_performance_band_set_id,
+    a.canonical_grade_level_id,
 
     sa.student_assessment_id,
     sa.date_taken,
@@ -273,7 +273,7 @@ select
     a.canonical_assessment_id,
     a.canonical_title,
     a.canonical_administered_at,
-    a.canonical_performance_band_set_id,
+    a.canonical_grade_level_id,
 
     sa.student_assessment_id,
     sa.date_taken,

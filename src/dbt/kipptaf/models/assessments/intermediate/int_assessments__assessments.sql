@@ -1,4 +1,10 @@
 with
+    agl_dedup as (
+        select assessment_id, min(grade_level_id) as grade_level_id,
+        from {{ ref("stg_illuminate__dna_assessments__assessment_grade_levels") }}
+        group by assessment_id
+    ),
+
     raw as (
         select
             a.assessment_id,
@@ -24,12 +30,16 @@ with
 
             coalesce(iae.administered_at, a.administered_at) as administered_at,
             coalesce(iae.subject, a.subject_area) as subject_area,
+            coalesce(
+                iae.illuminate_grade_level_id, agl.grade_level_id
+            ) as grade_level_id,
 
             if(iae.assessment_id is not null, true, false) as is_internal_assessment,
         from {{ ref("int_illuminate__assessments") }} as a
         left join
             {{ ref("stg_google_appsheet__illuminate_assessments_extension") }} as iae
             on a.assessment_id = iae.assessment_id
+        left join agl_dedup as agl on a.assessment_id = agl.assessment_id
     )
 
 select
@@ -54,13 +64,19 @@ select
     regions_progress_report,
     administered_at,
     subject_area,
+    grade_level_id,
     is_internal_assessment,
 
     if(
         is_internal_assessment,
         first_value(assessment_id) over (
             partition by
-                is_internal_assessment, academic_year, subject_area, module_code
+                is_internal_assessment,
+                academic_year,
+                scope,
+                subject_area,
+                module_code,
+                grade_level_id
             order by assessment_id
         ),
         assessment_id
@@ -70,7 +86,12 @@ select
         is_internal_assessment,
         first_value(title) over (
             partition by
-                is_internal_assessment, academic_year, subject_area, module_code
+                is_internal_assessment,
+                academic_year,
+                scope,
+                subject_area,
+                module_code,
+                grade_level_id
             order by assessment_id
         ),
         title
@@ -80,7 +101,12 @@ select
         is_internal_assessment,
         first_value(administered_at) over (
             partition by
-                is_internal_assessment, academic_year, subject_area, module_code
+                is_internal_assessment,
+                academic_year,
+                scope,
+                subject_area,
+                module_code,
+                grade_level_id
             order by assessment_id
         ),
         administered_at
@@ -88,11 +114,16 @@ select
 
     if(
         is_internal_assessment,
-        first_value(performance_band_set_id) over (
+        first_value(grade_level_id) over (
             partition by
-                is_internal_assessment, academic_year, subject_area, module_code
+                is_internal_assessment,
+                academic_year,
+                scope,
+                subject_area,
+                module_code,
+                grade_level_id
             order by assessment_id
         ),
-        performance_band_set_id
-    ) as canonical_performance_band_set_id,
+        grade_level_id
+    ) as canonical_grade_level_id,
 from raw

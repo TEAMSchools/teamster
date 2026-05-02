@@ -52,6 +52,13 @@ models:
       - name: subject_area
         data_type: string
         description: First non-null of subject, subject_area.
+      - name: grade_level_id
+        data_type: int64
+        description: >-
+          First non-null of `iae.illuminate_grade_level_id` (AppSheet override)
+          and the lowest `grade_level_id` from
+          `stg_illuminate__dna_assessments__assessment_grade_levels` for the
+          assessment.
       - name: is_internal_assessment
         data_type: boolean
         description: Conditional on assessment_id.
@@ -60,11 +67,12 @@ models:
         data_type: int64
         description: >-
           The lowest `assessment_id` within the partition `(academic_year,
-          subject_area, module_code)`. Multipart administrations (e.g., the CRA
-          + CRA-Essay halves of one logical Unit Quarterly Assessment) share a
-          `canonical_assessment_id`. Solo assessments equal their own
-          `assessment_id`. Downstream rollups join on `assessment_id` and read
-          this column to identify the logical assessment.
+          scope, subject_area, module_code, grade_level_id)`. Multipart
+          administrations (e.g., the CRA + CRA-Essay halves of one logical Unit
+          Quarterly Assessment) share a `canonical_assessment_id`. Solo
+          assessments equal their own `assessment_id`. Downstream rollups join
+          on `assessment_id` and read this column to identify the logical
+          assessment.
 
       - name: canonical_title
         data_type: string
@@ -80,9 +88,9 @@ models:
           `canonical_assessment_id`. Consistent with the other `canonical_*`
           attributes (all derived from the same canonical row).
 
-      - name: canonical_performance_band_set_id
+      - name: canonical_grade_level_id
         data_type: int64
         description: >-
-          `performance_band_set_id` of the row whose `assessment_id` equals
+          `grade_level_id` of the row whose `assessment_id` equals
           `canonical_assessment_id`. Consistent with the other `canonical_*`
           attributes (all derived from the same canonical row).

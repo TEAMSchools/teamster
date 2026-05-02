@@ -13,7 +13,6 @@ with
             s.module_type,
             s.module_code,
             s.region,
-            s.performance_band_set_id,
             s.powerschool_school_id,
             s.grade_level_id,
             s.is_internal_assessment,
@@ -23,7 +22,7 @@ with
             s.canonical_assessment_id,
             s.canonical_title,
             s.canonical_administered_at,
-            s.canonical_performance_band_set_id,
+            s.canonical_grade_level_id,
 
             asr.response_type,
             asr.response_type_id,
@@ -33,19 +32,34 @@ with
             asr.points_possible,
             asr.points,
             asr.percent_correct,
+
+            pb.canonical_performance_band_set_id,
         from {{ ref("int_assessments__scaffold") }} as s
         left join
             {{ ref("int_illuminate__agg_student_responses") }} as asr
             on s.student_assessment_id = asr.student_assessment_id
+        left join
+            {{ ref("int_assessments__performance_bands") }} as pb
+            on s.assessment_id = pb.assessment_id
+            and asr.response_type = pb.response_type
+            and asr.response_type_id = pb.response_type_id
     ),
 
     internal_assessment_rollup as (
         select
             illuminate_student_id,
             powerschool_student_number,
-            powerschool_school_id,
-            region,
             canonical_assessment_id as assessment_id,
+            canonical_title as title,
+            canonical_administered_at as administered_at,
+            canonical_grade_level_id as grade_level_id,
+            canonical_performance_band_set_id as performance_band_set_id,
+            academic_year,
+            scope,
+            subject_area,
+            discipline,
+            module_type,
+            module_code,
             is_internal_assessment,
             is_replacement,
             response_type,
@@ -54,17 +68,8 @@ with
             response_type_description,
             response_type_root_description,
 
-            any_value(canonical_title) as title,
-            any_value(canonical_administered_at) as administered_at,
-            any_value(canonical_performance_band_set_id) as performance_band_set_id,
-            any_value(academic_year) as academic_year,
-            any_value(scope) as scope,
-            any_value(subject_area) as subject_area,
-            any_value(discipline) as discipline,
-            any_value(module_type) as module_type,
-            any_value(module_code) as module_code,
-
-            min(grade_level_id) as grade_level_id,
+            min(powerschool_school_id) as powerschool_school_id,
+            min(region) as region,
             min(date_taken) as date_taken,
 
             count(distinct assessment_id) as n_assessments,
@@ -81,9 +86,17 @@ with
         group by
             illuminate_student_id,
             powerschool_student_number,
-            powerschool_school_id,
-            region,
             canonical_assessment_id,
+            canonical_title,
+            canonical_administered_at,
+            canonical_grade_level_id,
+            canonical_performance_band_set_id,
+            academic_year,
+            scope,
+            subject_area,
+            discipline,
+            module_type,
+            module_code,
             is_internal_assessment,
             is_replacement,
             response_type,
@@ -120,6 +133,7 @@ with
             title,
             assessment_id,
             administered_at,
+            grade_level_id,
             performance_band_set_id,
 
             if(n_assessments > 1, true, false) as is_multipart_assessment,
@@ -156,6 +170,7 @@ with
             canonical_title as title,
             canonical_assessment_id as assessment_id,
             canonical_administered_at as administered_at,
+            canonical_grade_level_id as grade_level_id,
             canonical_performance_band_set_id as performance_band_set_id,
 
             false as is_multipart_assessment,
@@ -187,6 +202,7 @@ select
     ru.title,
     ru.assessment_id,
     ru.administered_at,
+    ru.grade_level_id,
     ru.performance_band_set_id,
     ru.n_assessments,
     ru.is_multipart_assessment,
