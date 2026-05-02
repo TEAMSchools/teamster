@@ -11,6 +11,10 @@ with
             a.scope,
             a.module_type,
             a.module_code,
+            a.canonical_assessment_id,
+            a.canonical_title,
+            a.canonical_administered_at,
+            a.canonical_performance_band_set_id,
 
             region,
 
@@ -52,6 +56,10 @@ with
             a.module_code,
             a.region,
             a.grade_level_id,
+            a.canonical_assessment_id,
+            a.canonical_title,
+            a.canonical_administered_at,
+            a.canonical_performance_band_set_id,
 
             ssa.student_id as illuminate_student_id,
 
@@ -98,6 +106,11 @@ with
             a.region,
 
             ce.illuminate_grade_level_id as grade_level_id,
+
+            a.canonical_assessment_id,
+            a.canonical_title,
+            a.canonical_administered_at,
+            a.canonical_performance_band_set_id,
 
             s.student_id as illuminate_student_id,
 
@@ -153,6 +166,10 @@ select
     ia.discipline,
     ia.cc_dcid,
     ia.cc_source_relation,
+    ia.canonical_assessment_id,
+    ia.canonical_title,
+    ia.canonical_administered_at,
+    ia.canonical_performance_band_set_id,
 
     sa.student_assessment_id,
     sa.date_taken,
@@ -194,6 +211,11 @@ select
 
     cast(null as int64) as cc_dcid,
     cast(null as string) as cc_source_relation,
+
+    a.canonical_assessment_id,
+    a.canonical_title,
+    a.canonical_administered_at,
+    a.canonical_performance_band_set_id,
 
     sa.student_assessment_id,
     sa.date_taken,
@@ -247,6 +269,11 @@ select
 
     cast(null as int64) as cc_dcid,
     cast(null as string) as cc_source_relation,
+
+    a.canonical_assessment_id,
+    a.canonical_title,
+    a.canonical_administered_at,
+    a.canonical_performance_band_set_id,
 
     sa.student_assessment_id,
     sa.date_taken,

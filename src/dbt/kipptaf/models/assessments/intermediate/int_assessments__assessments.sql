@@ -56,19 +56,43 @@ select
     subject_area,
     is_internal_assessment,
 
-    first_value(assessment_id) over (
-        partition by academic_year, subject_area, module_code order by assessment_id
+    if(
+        is_internal_assessment,
+        first_value(assessment_id) over (
+            partition by
+                is_internal_assessment, academic_year, subject_area, module_code
+            order by assessment_id
+        ),
+        assessment_id
     ) as canonical_assessment_id,
 
-    first_value(title) over (
-        partition by academic_year, subject_area, module_code order by assessment_id
+    if(
+        is_internal_assessment,
+        first_value(title) over (
+            partition by
+                is_internal_assessment, academic_year, subject_area, module_code
+            order by assessment_id
+        ),
+        title
     ) as canonical_title,
 
-    first_value(administered_at) over (
-        partition by academic_year, subject_area, module_code order by assessment_id
+    if(
+        is_internal_assessment,
+        first_value(administered_at) over (
+            partition by
+                is_internal_assessment, academic_year, subject_area, module_code
+            order by assessment_id
+        ),
+        administered_at
     ) as canonical_administered_at,
 
-    first_value(performance_band_set_id) over (
-        partition by academic_year, subject_area, module_code order by assessment_id
+    if(
+        is_internal_assessment,
+        first_value(performance_band_set_id) over (
+            partition by
+                is_internal_assessment, academic_year, subject_area, module_code
+            order by assessment_id
+        ),
+        performance_band_set_id
     ) as canonical_performance_band_set_id,
 from raw

@@ -90,3 +90,23 @@ models:
         data_type: boolean
       - name: is_replacement
         data_type: boolean
+      - name: canonical_assessment_id
+        data_type: int64
+        description: >-
+          Pass-through of int_assessments__assessments.canonical_assessment_id —
+          the lead assessment_id within the partition (academic_year,
+          subject_area, module_code). See parent column for full semantics.
+      - name: canonical_title
+        data_type: string
+        description:
+          Pass-through of int_assessments__assessments.canonical_title.
+      - name: canonical_administered_at
+        data_type: date
+        description:
+          Pass-through of
+          int_assessments__assessments.canonical_administered_at.
+      - name: canonical_performance_band_set_id
+        data_type: int64
+        description:
+          Pass-through of
+          int_assessments__assessments.canonical_performance_band_set_id.

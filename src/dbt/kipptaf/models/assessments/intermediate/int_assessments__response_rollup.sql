@@ -20,6 +20,10 @@ with
             s.is_replacement,
             s.student_assessment_id,
             s.date_taken,
+            s.canonical_assessment_id,
+            s.canonical_title,
+            s.canonical_administered_at,
+            s.canonical_performance_band_set_id,
 
             asr.response_type,
             asr.response_type_id,
@@ -39,13 +43,9 @@ with
         select
             illuminate_student_id,
             powerschool_student_number,
-            academic_year,
-            scope,
-            subject_area,
-            discipline,
-            module_type,
-            module_code,
+            powerschool_school_id,
             region,
+            canonical_assessment_id as assessment_id,
             is_internal_assessment,
             is_replacement,
             response_type,
@@ -53,20 +53,25 @@ with
             response_type_code,
             response_type_description,
             response_type_root_description,
-            powerschool_school_id,
 
-            min(assessment_id) as assessment_id,
-            min(title) as title,
+            any_value(canonical_title) as title,
+            any_value(canonical_administered_at) as administered_at,
+            any_value(canonical_performance_band_set_id) as performance_band_set_id,
+            any_value(academic_year) as academic_year,
+            any_value(scope) as scope,
+            any_value(subject_area) as subject_area,
+            any_value(discipline) as discipline,
+            any_value(module_type) as module_type,
+            any_value(module_code) as module_code,
+
             min(grade_level_id) as grade_level_id,
-            min(administered_at) as administered_at,
-            min(performance_band_set_id) as performance_band_set_id,
             min(date_taken) as date_taken,
 
             count(distinct assessment_id) as n_assessments,
 
             sum(points) as points,
 
-            array_agg(assessment_id) as assessment_ids,
+            array_agg(distinct assessment_id) as assessment_ids,
 
             round(
                 safe_divide(sum(points), sum(points_possible)) * 100, 1
@@ -76,21 +81,16 @@ with
         group by
             illuminate_student_id,
             powerschool_student_number,
-            academic_year,
-            scope,
-            subject_area,
-            discipline,
-            module_type,
-            module_code,
+            powerschool_school_id,
             region,
+            canonical_assessment_id,
             is_internal_assessment,
             is_replacement,
             response_type,
             response_type_id,
             response_type_code,
             response_type_description,
-            response_type_root_description,
-            powerschool_school_id
+            response_type_root_description
     ),
 
     response_union as (
@@ -117,72 +117,10 @@ with
             n_assessments,
             assessment_ids,
             powerschool_school_id,
-
-            if(
-                not is_replacement,
-                min(title) over (
-                    partition by
-                        academic_year,
-                        scope,
-                        subject_area,
-                        module_code,
-                        region,
-                        grade_level_id,
-                        is_replacement,
-                        powerschool_school_id
-                ),
-                title
-            ) as title,
-
-            if(
-                not is_replacement,
-                min(assessment_id) over (
-                    partition by
-                        academic_year,
-                        scope,
-                        subject_area,
-                        module_code,
-                        region,
-                        grade_level_id,
-                        is_replacement,
-                        powerschool_school_id
-                ),
-                assessment_id
-            ) as assessment_id,
-
-            if(
-                not is_replacement,
-                min(administered_at) over (
-                    partition by
-                        academic_year,
-                        scope,
-                        subject_area,
-                        module_code,
-                        region,
-                        grade_level_id,
-                        is_replacement,
-                        powerschool_school_id
-                ),
-                administered_at
-            ) as administered_at,
-
-            if(
-                not is_replacement,
-                min(performance_band_set_id) over (
-                    partition by
-                        academic_year,
-                        scope,
-                        subject_area,
-                        module_code,
-                        region,
-                        grade_level_id,
-                        is_replacement,
-                        powerschool_school_id,
-                        response_type,
-                        response_type_id
-                ),
-                performance_band_set_id
-            ) as performance_band_set_id,
+            title,
+            assessment_id,
+            administered_at,
+            performance_band_set_id,
 
             if(n_assessments > 1, true, false) as is_multipart_assessment,
         from internal_assessment_rollup
@@ -212,13 +150,13 @@ with
 
             1 as n_assessments,
 
-            [assessment_id] as assessment_ids,
+            [canonical_assessment_id] as assessment_ids,
 
             powerschool_school_id,
-            title,
-            assessment_id,
-            administered_at,
-            performance_band_set_id,
+            canonical_title as title,
+            canonical_assessment_id as assessment_id,
+            canonical_administered_at as administered_at,
+            canonical_performance_band_set_id as performance_band_set_id,
 
             false as is_multipart_assessment,
         from scaffold_responses
