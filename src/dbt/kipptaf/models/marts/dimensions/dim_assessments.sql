@@ -33,29 +33,11 @@ with
 
     -- DISTINCT projects from response grain to definition grain (see
     -- illuminate_assessments comment above).
+    -- Collapse historical title variants (NJSLA / PARCC / FAST share a
+    -- module_code per grade) to one row per assessment_key hash input set.
     state_nj as (
-        select distinct
-            assessment_name as title,
-
-            if(
-                `subject` = 'English Language Arts/Literacy',
-                'English Language Arts',
-                `subject`
-            ) as subject_area,
-
+        select
             discipline as scope,
-
-            case
-                testcode
-                when 'SC05'
-                then 'SCI05'
-                when 'SC08'
-                then 'SCI08'
-                when 'SC11'
-                then 'SCI11'
-                else testcode
-            end as module_code,
-
             test_grade as grade_level,
 
             cast(null as int64) as source_assessment_id,
@@ -69,15 +51,36 @@ with
             cast(null as string) as aligned_academic_subject,
             cast(null as string) as credit_category,
             cast(null as string) as test_type,
+
+            if(
+                `subject` = 'English Language Arts/Literacy',
+                'English Language Arts',
+                `subject`
+            ) as subject_area,
+
+            case
+                testcode
+                when 'SC05'
+                then 'SCI05'
+                when 'SC08'
+                then 'SCI08'
+                when 'SC11'
+                then 'SCI11'
+                else testcode
+            end as module_code,
+
+            min(assessment_name) as title,
         from {{ ref("int_pearson__all_assessments") }}
         where testscalescore is not null
+        group by discipline, test_grade, `subject`, testcode
     ),
 
     -- DISTINCT projects from response grain to definition grain (see
     -- illuminate_assessments comment above).
+    -- Collapse historical title variants (FAST / FSA share a test_code per
+    -- grade) to one row per assessment_key hash input set.
     state_fl as (
-        select distinct
-            assessment_name as title,
+        select
             assessment_subject as subject_area,
             discipline as scope,
             test_code as module_code,
@@ -95,8 +98,11 @@ with
             cast(null as string) as aligned_academic_subject,
             cast(null as string) as credit_category,
             cast(null as string) as test_type,
+
+            min(assessment_name) as title,
         from {{ ref("int_fldoe__all_assessments") }}
         where scale_score is not null
+        group by assessment_subject, discipline, test_code, assessment_grade
     ),
 
     -- DISTINCT projects from response grain to definition grain (see
@@ -124,13 +130,14 @@ with
         from {{ ref("int_assessments__college_assessment") }}
     ),
 
-    -- DISTINCT projects from response grain to definition grain. Practice
-    -- college tests (mock SAT/ACT) administered through Illuminate.
+    -- Collapse subject_area variants (Math/Reading/Writing/Combined share a
+    -- scope per Practice family) to one row per assessment_key hash input
+    -- set, mirroring how dim_assessment_administrations Practice CTE
+    -- aggregates subject_area with any_value().
     practice_assessments as (
-        select distinct
-            scope as title,
-            subject_area,
+        select
             scope,
+            scope as title,
             scope as module_code,
 
             cast(null as int64) as source_assessment_id,
@@ -146,14 +153,16 @@ with
             cast(null as string) as credit_category,
 
             'Practice' as test_type,
+
+            any_value(subject_area) as subject_area,
         from {{ ref("int_assessments__college_assessment_practice") }}
+        group by scope
     ),
 
     -- DISTINCT projects from response grain to definition grain (see
     -- illuminate_assessments comment above).
     ap_assessments as (
         select distinct
-            concat('AP ', test_subject) as title,
             test_subject as subject_area,
             ps_ap_course_subject_code as module_code,
 
@@ -170,17 +179,19 @@ with
             cast(null as string) as aligned_academic_subject,
             cast(null as string) as credit_category,
             cast(null as string) as test_type,
+
+            concat('AP ', test_subject) as title,
         from {{ ref("int_assessments__ap_assessments") }}
     ),
 
     {%- set union_cols -%}
-    assessment_type, source_assessment_id, title, subject_area, scope,
-    module_code, module_type, grade_level, is_internal_assessment,
-    assessment_scope, combined_academic_subject, aligned_academic_subject,
-    credit_category, test_type
-    {%- endset -%}
+        assessment_type, source_assessment_id, title, subject_area, scope,
+        module_code, module_type, grade_level, is_internal_assessment,
+        assessment_scope, combined_academic_subject, aligned_academic_subject,
+        credit_category, test_type
+    {%- endset %}
 
-    all_assessments as (
+    all_assessments_unioned as (
         select {{ union_cols }},
         from illuminate_assessments
         union all
@@ -198,6 +209,32 @@ with
         union all
         select {{ union_cols }},
         from ap_assessments
+    ),
+
+    -- Dedup after union: state_nj and state_fl historically share module_codes
+    -- (e.g., ELA06, SCI05) for the same logical grade-level state assessment;
+    -- collapse to one row per assessment_key hash input set with deterministic
+    -- title via min().
+    all_assessments as (
+        select
+            assessment_type,
+            source_assessment_id,
+            module_code,
+            test_type,
+
+            min(title) as title,
+            min(subject_area) as subject_area,
+            min(scope) as scope,
+            min(module_type) as module_type,
+            min(grade_level) as grade_level,
+            min(combined_academic_subject) as combined_academic_subject,
+            min(aligned_academic_subject) as aligned_academic_subject,
+            min(credit_category) as credit_category,
+            min(assessment_scope) as assessment_scope,
+
+            logical_or(is_internal_assessment) as is_internal_assessment,
+        from all_assessments_unioned
+        group by assessment_type, source_assessment_id, module_code, test_type
     )
 
 select
