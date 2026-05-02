@@ -374,6 +374,14 @@ the same partition.
   current_date('{{ var("local_timezone") }}')
   ```
 
+- **BigQuery-reserved CTE names**: `groups` is reserved (window-frame syntax
+  `OVER (... GROUPS BETWEEN ...)`). A CTE named `groups` fails parsing with
+  "Expected keyword SELECT but got keyword GROUPS". Use `reporting_groups` or
+  similar.
+- **`select *` inside UNION ALL CTEs trips CV03**: sqlfluff requires a trailing
+  comma after the last column, but `select *` has nothing to trail. Enumerate
+  columns explicitly in each UNION branch.
+
 ### SQL column ordering in SELECT clauses (enforced by ST06)
 
 Columns within a SELECT **must** follow this order — no interleaving:
