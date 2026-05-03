@@ -33,8 +33,11 @@ with
 
     -- DISTINCT projects from response grain to definition grain (see
     -- illuminate_assessments comment above).
-    -- Collapse historical title variants (NJSLA / PARCC / FAST share a
-    -- module_code per grade) to one row per assessment_key hash input set.
+    -- Collapse historical title variants (NJSLA / PARCC share a module_code
+    -- per grade) to one row per assessment_key hash input set. NJ kept
+    -- distinct from FL via assessment_type='state_nj' (FL state tests share
+    -- module_codes like ELA05/MAT05/SCI05 but are functionally different
+    -- assessments).
     state_nj as (
         select
             discipline as scope,
@@ -43,7 +46,7 @@ with
             cast(null as int64) as source_assessment_id,
             cast(null as string) as module_type,
 
-            'state' as assessment_type,
+            'state_nj' as assessment_type,
             false as is_internal_assessment,
             'enrollment' as assessment_scope,
 
@@ -75,10 +78,9 @@ with
         group by discipline, test_grade, `subject`, testcode
     ),
 
-    -- DISTINCT projects from response grain to definition grain (see
-    -- illuminate_assessments comment above).
     -- Collapse historical title variants (FAST / FSA share a test_code per
-    -- grade) to one row per assessment_key hash input set.
+    -- grade) to one row per assessment_key hash input set. FL kept distinct
+    -- from NJ via assessment_type='state_fl'.
     state_fl as (
         select
             assessment_subject as subject_area,
@@ -90,7 +92,7 @@ with
             cast(null as int64) as source_assessment_id,
             cast(null as string) as module_type,
 
-            'state' as assessment_type,
+            'state_fl' as assessment_type,
             false as is_internal_assessment,
             'enrollment' as assessment_scope,
 
@@ -130,15 +132,15 @@ with
         from {{ ref("int_assessments__college_assessment") }}
     ),
 
-    -- Collapse subject_area variants (Math/Reading/Writing/Combined share a
-    -- scope per Practice family) to one row per assessment_key hash input
-    -- set, mirroring how dim_assessment_administrations Practice CTE
-    -- aggregates subject_area with any_value().
+    -- One row per (scope, subject_area) — matching Official college's
+    -- per-subject grain (Official uses score_type as module_code, e.g.,
+    -- 'sat_math'). Practice derives a parallel module_code by concatenating
+    -- scope and subject_area so SAT Math, SAT Reading, etc. each get their
+    -- own assessment_key.
     practice_assessments as (
-        select
+        select distinct
             scope,
-            scope as title,
-            scope as module_code,
+            subject_area,
 
             cast(null as int64) as source_assessment_id,
             cast(null as string) as module_type,
@@ -154,9 +156,10 @@ with
 
             'Practice' as test_type,
 
-            any_value(subject_area) as subject_area,
+            scope as title,
+
+            lower(concat(scope, '_', replace(subject_area, ' ', '_'))) as module_code,
         from {{ ref("int_assessments__college_assessment_practice") }}
-        group by scope
     ),
 
     -- DISTINCT projects from response grain to definition grain (see
@@ -221,9 +224,7 @@ with
         {{
             dbt_utils.deduplicate(
                 relation="all_assessments_unioned",
-                partition_by=(
-                    "assessment_type, source_assessment_id, " "module_code, test_type"
-                ),
+                partition_by="assessment_type, source_assessment_id, module_code, test_type",
                 order_by="title",
             )
         }}

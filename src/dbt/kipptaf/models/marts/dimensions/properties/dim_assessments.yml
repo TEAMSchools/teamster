@@ -38,8 +38,12 @@ models:
       - name: type
         data_type: string
         description: >-
-          Source system category: illuminate (internal KIPP), state (NJSLA,
-          FAST, NJGPA), or college (SAT, ACT, PSAT, AP).
+          Source system category: `illuminate` (internal KIPP), `state_nj`
+          (NJSLA, NJGPA, PARCC — share module_codes per grade across history),
+          `state_fl` (FAST, FSA — share test_codes), `college` (SAT, ACT, PSAT —
+          both Official and Practice variants), or `ap`. Two jurisdictions kept
+          distinct so historical NJ and FL state assessments don't collide on
+          shared module_codes (e.g., ELA05).
 
       - name: title
         data_type: string
