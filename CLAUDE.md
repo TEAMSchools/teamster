@@ -182,12 +182,19 @@ MCP equivalent. Before running `gh <subcommand>` via Bash, check the
   custom fields whose names contain spaces (e.g. `PR batch`); single-word custom
   fields (`Driver`, `Tier`, `Status`) do appear. Use the same `fieldValues`
   GraphQL query to read the omitted ones.
+- `gh project item-add <PROJECT_NUMBER> --owner <OWNER> --url <ISSUE_URL>` —
+  adds an issue/PR to a ProjectV2 board. No `mcp__github__*` equivalent. Combine
+  with `gh project item-edit` to set fields after add.
 - `gh run *` — Actions run inspection/control; no MCP coverage.
 - `gh workflow *` — Actions workflow inspection/dispatch; no MCP coverage.
 - `gh repo edit` — repo settings; `gh repo create/view/list` have MCP
   equivalents and are not on this list.
 - Editing an existing comment — `mcp__github__add_issue_comment` only creates.
   Use `gh api -X PATCH repos/<owner>/<repo>/issues/comments/<id> -f body='...'`.
+- Replying to a PR inline review comment in-thread —
+  `mcp__github__add_issue_comment` posts top-level PR comments only, not thread
+  replies. Use
+  `gh api -X POST repos/<owner>/<repo>/pulls/<pr>/comments/<id>/replies -f body='...'`.
 
 ### Dagster asset diagnosis
 
