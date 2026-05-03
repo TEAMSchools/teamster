@@ -1,20 +1,3 @@
-/* Within a (student, year, course) — `cc_studyear` is PowerSchool's composite
-   student+year identifier — consecutive enrollment rows must not have date
-   ranges that overlap by more than one day. A single shared boundary day (one
-   row's `cc_dateleft` = next row's `cc_dateenrolled`) is a normal sequential
-   transfer and is allowed; multi-day overlap is a source-side defect that
-   causes scaffold's date-between join to fan out an admin to multiple
-   schools. */
-{{
-    config(
-        meta={
-            "dagster": {
-                "ref": {"name": "base_powerschool__course_enrollments"},
-            },
-        },
-    )
-}}
-
 with
     enrollments as (
         select
