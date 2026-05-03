@@ -45,6 +45,41 @@ with
             and asr.response_type_id = pb.response_type_id
     ),
 
+    -- Canonical-grain rollup of school/region from response-grain scaffold rows.
+    -- Without this, group-by aggregates would need min() per column, and
+    -- independent mins can pick from different rows in the same partition. Per
+    -- src/dbt/CLAUDE.md "Canonical attributes from a partition", first_value
+    -- on a deterministic ordering picks both attributes from the same row.
+    -- Cross-school groups exist here because of upstream Illuminate
+    -- canonicalization carrying wrong academic_year tags onto duplicated
+    -- assessments — tracked in #3801. Once #3801 is resolved, the canonical
+    -- school/region selection should collapse to a single value per partition
+    -- and this CTE can be removed (reverting school/region to plain group-by
+    -- columns or pruning them entirely if they move to a per-consumer
+    -- enrollment join).
+    canonical_attrs as (
+        select
+            *,
+            first_value(powerschool_school_id) over (w) as canonical_school_id,
+            first_value(region) over (w) as canonical_region,
+        from scaffold_responses
+        window
+            w as (
+                partition by
+                    illuminate_student_id, canonical_assessment_id, is_replacement
+                -- powerschool_school_id is the final tiebreaker so that
+                -- partitions where every row has null date_taken and null
+                -- student_assessment_id (students rostered to canonical members
+                -- but with no responses recorded) still pick deterministically
+                -- across rebuilds.
+                order by
+                    (date_taken is null) asc,
+                    date_taken asc,
+                    student_assessment_id asc,
+                    powerschool_school_id asc
+            )
+    ),
+
     internal_assessment_rollup as (
         select
             illuminate_student_id,
@@ -68,9 +103,13 @@ with
             response_type_description,
             response_type_root_description,
 
-            min(powerschool_school_id) as powerschool_school_id,
-            min(region) as region,
             min(date_taken) as date_taken,
+
+            -- canonical_school_id / canonical_region are constant per partition
+            -- (windowed in canonical_attrs). any_value() makes that explicit
+            -- without independent-min() drift. See #3801.
+            any_value(canonical_school_id) as powerschool_school_id,
+            any_value(canonical_region) as region,
 
             count(distinct assessment_id) as n_assessments,
 
@@ -81,7 +120,7 @@ with
             round(
                 safe_divide(sum(points), sum(points_possible)) * 100, 1
             ) as percent_correct,
-        from scaffold_responses
+        from canonical_attrs
         where is_internal_assessment
         group by
             illuminate_student_id,

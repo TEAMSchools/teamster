@@ -83,10 +83,10 @@ with
             on ssa.student_id = s.student_id
         inner join
             {{ ref("int_assessments__course_enrollments") }} as ce
-            on a.subject_area = ce.illuminate_subject_area
+            on s.local_student_id = ce.powerschool_student_number
             and a.region = ce.region
+            and a.subject_area = ce.illuminate_subject_area
             and a.administered_at between ce.cc_dateenrolled and ce.cc_dateleft
-            and s.local_student_id = ce.powerschool_student_number
             and not ce.is_advanced_math_student
         where a.grade_level_id <= 9
 
