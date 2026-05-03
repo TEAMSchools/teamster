@@ -5,7 +5,7 @@ with
         group by assessment_id
     ),
 
-    raw as (
+    extended as (
         select
             a.assessment_id,
             a.title,
@@ -69,61 +69,34 @@ select
 
     if(
         is_internal_assessment,
-        first_value(assessment_id) over (
-            partition by
-                is_internal_assessment,
-                academic_year,
-                scope,
-                subject_area,
-                module_code,
-                grade_level_id
-            order by assessment_id
-        ),
+        first_value(assessment_id) over canonical_w,
         assessment_id
     ) as canonical_assessment_id,
 
     if(
-        is_internal_assessment,
-        first_value(title) over (
-            partition by
-                is_internal_assessment,
-                academic_year,
-                scope,
-                subject_area,
-                module_code,
-                grade_level_id
-            order by assessment_id
-        ),
-        title
+        is_internal_assessment, first_value(title) over canonical_w, title
     ) as canonical_title,
 
     if(
         is_internal_assessment,
-        first_value(administered_at) over (
-            partition by
-                is_internal_assessment,
-                academic_year,
-                scope,
-                subject_area,
-                module_code,
-                grade_level_id
-            order by assessment_id
-        ),
+        first_value(administered_at) over canonical_w,
         administered_at
     ) as canonical_administered_at,
 
     if(
         is_internal_assessment,
-        first_value(grade_level_id) over (
-            partition by
-                is_internal_assessment,
-                academic_year,
-                scope,
-                subject_area,
-                module_code,
-                grade_level_id
-            order by assessment_id
-        ),
+        first_value(grade_level_id) over canonical_w,
         grade_level_id
     ) as canonical_grade_level_id,
-from raw
+from extended
+window
+    canonical_w as (
+        partition by
+            is_internal_assessment,
+            academic_year,
+            scope,
+            subject_area,
+            module_code,
+            grade_level_id
+        order by assessment_id
+    )

@@ -13,6 +13,9 @@ models:
       canonical attrs to identify the logical assessment.
     columns:
       - name: assessment_id
+        data_tests:
+          - unique
+          - not_null
         data_type: int64
       - name: title
         data_type: string

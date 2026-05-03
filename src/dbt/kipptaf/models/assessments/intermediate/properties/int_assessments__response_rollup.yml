@@ -49,15 +49,21 @@ models:
       - name: region
         data_type: string
         description: >-
-          The student's region for this administration. For canonical groups
-          with cross-school transfers, `min(region)` is used as a deterministic
-          tiebreaker (per the canonical-grain rollup design).
+          The student's region for this administration. Selected together with
+          `powerschool_school_id` from a single source row via `first_value(...)
+          order by date_taken, student_assessment_id, powerschool_school_id`
+          windowed in the `canonical_attrs` CTE, then read via `any_value()` in
+          the rollup. Cross-school groups exist because of upstream
+          canonicalization defects — see #3801.
       - name: powerschool_school_id
         data_type: int64
         description: >-
-          The student's school for this administration. For canonical groups
-          with cross-school transfers, `min(powerschool_school_id)` is used as a
-          deterministic tiebreaker.
+          The student's school for this administration. Selected together with
+          `region` from a single source row via `first_value(...) order by
+          date_taken, student_assessment_id, powerschool_school_id` windowed in
+          the `canonical_attrs` CTE, then read via `any_value()` in the rollup.
+          Cross-school groups exist because of upstream canonicalization defects
+          — see #3801.
       - name: is_internal_assessment
         data_type: boolean
       - name: is_replacement
