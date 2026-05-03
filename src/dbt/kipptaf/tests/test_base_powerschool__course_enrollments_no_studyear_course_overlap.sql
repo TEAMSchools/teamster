@@ -3,8 +3,17 @@
    ranges that overlap by more than one day. A single shared boundary day (one
    row's `cc_dateleft` = next row's `cc_dateenrolled`) is a normal sequential
    transfer and is allowed; multi-day overlap is a source-side defect that
-   causes scaffold's date-between join to fan out an admin to multiple schools.
-   Severity warn + store_failures inherit from project defaults. */
+   causes scaffold's date-between join to fan out an admin to multiple
+   schools. */
+{{
+    config(
+        severity="warn",
+        store_failures=true,
+        store_failures_as="view",
+        meta={"dagster": {"ref": {"name": "base_powerschool__course_enrollments"}}},
+    )
+}}
+
 with
     enrollments as (
         select
