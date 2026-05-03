@@ -23,47 +23,38 @@ on GKE Autopilot.
 
 ## Scheduling
 
-- **Hard `nodeSelector` on `cloud.google.com/compute-class`** — Autopilot NAP
-  only provisions matching nodes for `required` / `nodeSelector` constraints.
-  `preferredDuringSchedulingIgnoredDuringExecution` is scheduler scoring applied
-  to existing nodes; it does NOT drive provisioning. With only `preferred`, NAP
-  falls back to default N4 amd64 and every weighted preference scores 0. Same
-  trap for `preferred kubernetes.io/arch: arm64`.
-- **One `cloud.google.com/compute-class` value per pod** — Warden
-  (`autopilot-compute-class-limitation`,
-  `ccc-node-affinity-selector-limitation`) rejects multiple values across ORed
-  `nodeSelectorTerms`. Use a Custom ComputeClass with priority-ordered fallbacks
-  instead of multi-value affinity.
-- **Custom ComputeClasses** in
-  [compute-classes.yaml](/.k8s/dagster/compute-classes.yaml):
-  `dagster-codeserver` (spot t2a → on-demand t2a → t2d), `dagster-run`
-  (on-demand t2a → t2d — no spot, runs are `safe-to-evict: "false"`), and
-  `dagster-agent` (t2d only — image is amd64-only, no spot due to
-  extended-duration). Built-in classes (`General-Purpose`, etc.) are NOT on this
-  cluster's compute-class allowlist — only `Accelerator`, `Balanced`,
-  `Performance`, `Scale-Out`, `autopilot`, `autopilot-spot`, and our three CCCs.
-  Always reference a CCC by name; do not use built-in class names.
-- **Do NOT add Balanced to CCC priorities** — its separation / extended-duration
-  minimums (1 vCPU / 4 GiB) exceed our requests (500m / 2 GiB) and would cause
-  pod admission rejection if anti-affinity is applied.
-- **CCC delivery is manual** —
-  `kubectl apply -f .k8s/dagster/compute-classes.yaml`, NOT via Helm
-  `extraManifests`. The agent's Helm ServiceAccount lacks cluster-scoped create
-  perms on `cloud.google.com/v1/ComputeClass`.
-- **`safe-to-evict: "false"` (extended-duration) is on agent and run pods.** It
-  is the only autoscaler-eviction guard — `podAntiAffinity` is placement,
-  `dagster-agent` PriorityClass blocks lower-priority preemption only. GKE
-  silently drops extended-duration when a pod targets a CCC ("You can't request
-  extended run times for Pods that target custom compute classes") and Warden
-  emits a warning — so on this cluster, autoscaler-eviction protection for both
-  agent and run pods is unspecified. We accept the warning; the annotation also
-  blocks accidental moves to a spot tier (extended-duration is mutually
-  exclusive with spot). Run pods have a real secondary guard via
-  `podFailurePolicy` (`DisruptionTarget` → `Ignore`) — the agent does not.
-  **Watch for unexpected scale-down churn on agent reconciliation** (Service /
-  Deployment recreation across all code locations) — if it fires, the trade is
-  to drop the CCC nodeSelector (revert to default Autopilot placement) or drop
-  the annotation (lose autoscaler-eviction guard for explicit machine family).
+- **Hard multi-key `nodeSelector`** — Autopilot NAP only provisions matching
+  nodes for `required` / `nodeSelector` constraints. `preferred*` is scheduler
+  scoring against existing nodes and does NOT drive provisioning. With only
+  `preferred`, NAP falls back to default N4 amd64 and every weighted preference
+  scores 0 — same trap for `preferred kubernetes.io/arch: arm64`.
+- **Multi-key allowed; multi-value not** — Warden
+  (`autopilot-compute-class-limitation`) rejects multiple values for the same
+  key but accepts multiple keys. Use `cloud.google.com/compute-class` +
+  `kubernetes.io/arch` together to hard-pin both class and CPU architecture.
+- **Built-in `Scale-Out` only — do NOT use Custom ComputeClasses (CCCs).** CCCs
+  flip the billing model from per-pod (Autopilot pod-based) to per-VM +
+  Autopilot Performance Premium (per-vCPU/GiB management fee), even when the
+  underlying machine family is the same hardware Scale-Out runs on. Our pods
+  don't fill a t2d-standard-4, so we'd pay for empty capacity. CCCs also
+  silently drop `safe-to-evict: "false"` (extended-duration).
+- **Pod placement** — code server and run pods pin to Scale-Out arm64 (T2A);
+  agent pins to Scale-Out amd64 (T2D — image is amd64-only).
+- **No fallback — arm64 STOCKOUT will leave code server / run pods Pending.**
+  PDB-protected code servers tolerate this (last-good Deployment continues to
+  serve). Run pods queue until capacity returns. There is no graceful amd64
+  fallback under pod-priced billing — the only route to ordered fallback is
+  CCCs, which we rejected on cost. If STOCKOUT becomes recurring, manually flip
+  the affected pod's `kubernetes.io/arch` to `amd64` until capacity returns.
+- **Do NOT use `Balanced` or `Performance`** — Balanced minimum requests (1 vCPU
+  / 4 GiB) exceed ours (500m / 2 GiB). Performance has the same node-based
+  pricing penalty as CCCs.
+- **`safe-to-evict: "false"` (extended-duration) is on agent and run pods.**
+  Under built-in Scale-Out it works as documented — blocks cluster autoscaler
+  eviction. Mutually exclusive with spot; do not move agent or run pods to a
+  spot tier. Run pods also have `podFailurePolicy` (`DisruptionTarget` →
+  `Ignore`) as a secondary guard for non-autoscaler disruptions; the agent does
+  not.
 - **Agent topology spread** uses `ScheduleAnyway` across
   `topology.kubernetes.io/zone` via `additionalPodSpecConfig` — prefers
   cross-zone but allows same-zone during capacity exhaustion (do not switch to

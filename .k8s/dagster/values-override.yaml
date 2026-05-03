@@ -65,20 +65,12 @@ dagsterCloudAgent:
   annotations:
     cluster-autoscaler.kubernetes.io/safe-to-evict: "false"
 
-  # Reference the cluster-scoped Custom ComputeClass `dagster-agent` defined
-  # in .k8s/dagster/compute-classes.yaml. Built-in classes (`General-Purpose`,
-  # etc.) are not on this cluster's compute-class allowlist. Single t2d
-  # priority — image is amd64-only, no arm64 fallback. GKE warns that
-  # `safe-to-evict: "false"` (extended-duration) combined with a CCC
-  # nodeSelector "may lead to unexpected behavior" — per docs, GKE silently
-  # drops extended-duration when a pod targets a CCC, so the agent's
-  # autoscaler-eviction protection is unspecified. Accept the warning and
-  # watch for unexpected scale-down churn; if it fires repeatedly, drop the
-  # CCC nodeSelector (revert to default Autopilot placement) or drop the
-  # annotation (sacrifice autoscaler-eviction protection for explicit machine
-  # family).
+  # Hard-pin to built-in Scale-Out (T2D, amd64) under pod-based pricing.
+  # Multi-key nodeSelector is allowed by Warden — only multiple values for
+  # the same key are rejected. Image is amd64-only; arm64 is not an option.
   nodeSelector:
-    cloud.google.com/compute-class: dagster-agent
+    cloud.google.com/compute-class: Scale-Out
+    kubernetes.io/arch: amd64
 
   affinity:
     podAntiAffinity:
@@ -140,13 +132,13 @@ workspace:
       annotations:
         operator.1password.io/auto-restart: "true"
     podSpecConfig:
-      # Reference the cluster-scoped Custom ComputeClass `dagster-codeserver`
-      # defined in .k8s/dagster/compute-classes.yaml. Priorities (spot t2a →
-      # on-demand t2a → t2d) are enforced by GKE at provisioning time; a
-      # single nodeSelector value satisfies Warden's one-value-per-pod rule
-      # for `cloud.google.com/compute-class`.
+      # Hard-pin to built-in Scale-Out arm64 (T2A) under pod-based pricing.
+      # No fallback — arm64 STOCKOUT will leave pods Pending. Code servers
+      # tolerate this: PDB-protected (`minAvailable: 1`), Dagster Cloud
+      # serves the last-good Deployment until replacements bind.
       nodeSelector:
-        cloud.google.com/compute-class: dagster-codeserver
+        cloud.google.com/compute-class: Scale-Out
+        kubernetes.io/arch: arm64
       terminationGracePeriodSeconds: 60
       topologySpreadConstraints:
         - maxSkew: 1
@@ -216,12 +208,14 @@ workspace:
         cluster-autoscaler.kubernetes.io/safe-to-evict: "false"
     podSpecConfig:
       priorityClassName: dagster-run
-      # Reference the cluster-scoped Custom ComputeClass `dagster-run` defined
-      # in .k8s/dagster/compute-classes.yaml. No spot tier — run/step pods
-      # carry `safe-to-evict: "false"` and cannot be evicted without consuming
-      # Dagster retry budget. Priorities: on-demand t2a → t2d.
+      # Hard-pin to built-in Scale-Out arm64 (T2A) under pod-based pricing.
+      # No fallback — arm64 STOCKOUT will leave run pods Pending until
+      # capacity returns. `podFailurePolicy` (`DisruptionTarget` → `Ignore`)
+      # already absorbs autoscaler/preemption disruption mid-run; STOCKOUT
+      # affects scheduling, not running pods.
       nodeSelector:
-        cloud.google.com/compute-class: dagster-run
+        cloud.google.com/compute-class: Scale-Out
+        kubernetes.io/arch: arm64
       affinity:
         # Hard-block run/step pods from sharing a node with code servers
         # (eliminates preemption-driven code server evictions) or with the
