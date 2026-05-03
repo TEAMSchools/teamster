@@ -55,6 +55,12 @@ on GKE Autopilot.
   spot tier. Run pods also have `podFailurePolicy` (`DisruptionTarget` →
   `Ignore`) as a secondary guard for non-autoscaler disruptions; the agent does
   not.
+- **Spot + built-in Scale-Out + arch is supported under pod-priced billing** —
+  set `cloud.google.com/gke-spot: "true"` alongside the compute-class + arch
+  nodeSelector; Autopilot auto-injects the toleration. Mutually exclusive with
+  `safe-to-evict: "false"`. Code-server spot reclaim triggers full agent
+  reconciliation cascade (cold start + ClusterIP churn) — factor into cost
+  analysis.
 - **Agent topology spread** uses `ScheduleAnyway` across
   `topology.kubernetes.io/zone` via `additionalPodSpecConfig` — prefers
   cross-zone but allows same-zone during capacity exhaustion (do not switch to
@@ -116,6 +122,7 @@ on GKE Autopilot.
   Deployment is deleted before pods terminate, causing
   `CalculateExpectedPodCountFailed` and leaving pods unprotected. `minAvailable`
   only counts current healthy pods, no controller lookup needed.
+- **PDBs do NOT block spot reclaim** — spot reclaim is involuntary.
 - **GKE Autopilot system-critical preemption** — `system-cluster-critical` and
   `system-node-critical` pods (priority 2,000,000,000) preempt dagster-run pods
   (priority 1000) cluster-wide whenever GKE needs to land kube-dns, fluent-bit,

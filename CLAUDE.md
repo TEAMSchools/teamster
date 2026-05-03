@@ -135,11 +135,13 @@ this step.**
 - **Before editing any CLAUDE.md file**: present the proposed change as a quote
   block. Do not apply it until the user approves.
 
+- **CLAUDE.md is for Claude, not humans**: cut motivation, rationale, and
+  history written to explain the project to a human reader. Keep them only when
+  they measurably change Claude's behavior.
+
 - **Before adding to any CLAUDE.md file**: answer the question: "what specific
   decision or action will Claude make differently because of this line?" If you
-  can't name one, cut it. CLAUDE.md is for Claude, not humans — cut motivation,
-  rationale, and history written to explain the project to a reader. Keep them
-  only when they measurably change Claude's behavior.
+  can't name one, cut it.
 
 ## MCP Servers
 
