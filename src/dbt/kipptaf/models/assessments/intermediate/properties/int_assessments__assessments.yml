@@ -1,7 +1,21 @@
 models:
   - name: int_assessments__assessments
+    description: >-
+      Assessment-definition layer. Joins Illuminate `assessments` with the
+      AppSheet `Illuminate Assessments Extension` overrides and an `agl_dedup`
+      CTE for `grade_level_id`. Computes the canonical-attribute window
+      (`canonical_assessment_id`, `canonical_title`,
+      `canonical_administered_at`, `canonical_grade_level_id`) via
+      `first_value(... order by assessment_id)` partitioned by
+      `(is_internal_assessment, academic_year, scope, subject_area, module_code,
+      grade_level_id)`. Members of a canonical group share the same
+      `canonical_*` attributes; consumers join on `assessment_id` and read the
+      canonical attrs to identify the logical assessment.
     columns:
       - name: assessment_id
+        data_tests:
+          - unique
+          - not_null
         data_type: int64
       - name: title
         data_type: string
@@ -52,6 +66,45 @@ models:
       - name: subject_area
         data_type: string
         description: First non-null of subject, subject_area.
+      - name: grade_level_id
+        data_type: int64
+        description: >-
+          First non-null of `iae.illuminate_grade_level_id` (AppSheet override)
+          and the lowest `grade_level_id` from
+          `stg_illuminate__dna_assessments__assessment_grade_levels` for the
+          assessment.
       - name: is_internal_assessment
         data_type: boolean
         description: Conditional on assessment_id.
+
+      - name: canonical_assessment_id
+        data_type: int64
+        description: >-
+          The lowest `assessment_id` within the partition `(academic_year,
+          scope, subject_area, module_code, grade_level_id)`. Multipart
+          administrations (e.g., the CRA + CRA-Essay halves of one logical Unit
+          Quarterly Assessment) share a `canonical_assessment_id`. Solo
+          assessments equal their own `assessment_id`. Downstream rollups join
+          on `assessment_id` and read this column to identify the logical
+          assessment.
+
+      - name: canonical_title
+        data_type: string
+        description: >-
+          `title` of the row whose `assessment_id` equals
+          `canonical_assessment_id`. Consistent with the other `canonical_*`
+          attributes (all derived from the same canonical row).
+
+      - name: canonical_administered_at
+        data_type: date
+        description: >-
+          `administered_at` of the row whose `assessment_id` equals
+          `canonical_assessment_id`. Consistent with the other `canonical_*`
+          attributes (all derived from the same canonical row).
+
+      - name: canonical_grade_level_id
+        data_type: int64
+        description: >-
+          `grade_level_id` of the row whose `assessment_id` equals
+          `canonical_assessment_id`. Consistent with the other `canonical_*`
+          attributes (all derived from the same canonical row).

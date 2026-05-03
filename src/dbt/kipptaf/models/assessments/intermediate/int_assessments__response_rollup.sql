@@ -13,13 +13,16 @@ with
             s.module_type,
             s.module_code,
             s.region,
-            s.performance_band_set_id,
             s.powerschool_school_id,
             s.grade_level_id,
             s.is_internal_assessment,
             s.is_replacement,
             s.student_assessment_id,
             s.date_taken,
+            s.canonical_assessment_id,
+            s.canonical_title,
+            s.canonical_administered_at,
+            s.canonical_grade_level_id,
 
             asr.response_type,
             asr.response_type_id,
@@ -29,23 +32,69 @@ with
             asr.points_possible,
             asr.points,
             asr.percent_correct,
+
+            pb.canonical_performance_band_set_id,
         from {{ ref("int_assessments__scaffold") }} as s
         left join
             {{ ref("int_illuminate__agg_student_responses") }} as asr
             on s.student_assessment_id = asr.student_assessment_id
+        left join
+            {{ ref("int_assessments__performance_bands") }} as pb
+            on s.assessment_id = pb.assessment_id
+            and asr.response_type = pb.response_type
+            and asr.response_type_id = pb.response_type_id
+    ),
+
+    -- Canonical-grain rollup of school/region from response-grain scaffold rows.
+    -- Without this, group-by aggregates would need min() per column, and
+    -- independent mins can pick from different rows in the same partition. Per
+    -- src/dbt/CLAUDE.md "Canonical attributes from a partition", first_value
+    -- on a deterministic ordering picks both attributes from the same row.
+    -- Cross-school groups exist here because of upstream Illuminate
+    -- canonicalization carrying wrong academic_year tags onto duplicated
+    -- assessments — tracked in #3801. Once #3801 is resolved, the canonical
+    -- school/region selection should collapse to a single value per partition
+    -- and this CTE can be removed (reverting school/region to plain group-by
+    -- columns or pruning them entirely if they move to a per-consumer
+    -- enrollment join).
+    canonical_attrs as (
+        select
+            *,
+            first_value(powerschool_school_id) over (w) as canonical_school_id,
+            first_value(region) over (w) as canonical_region,
+        from scaffold_responses
+        window
+            w as (
+                partition by
+                    illuminate_student_id, canonical_assessment_id, is_replacement
+                -- powerschool_school_id is the final tiebreaker so that
+                -- partitions where every row has null date_taken and null
+                -- student_assessment_id (students rostered to canonical members
+                -- but with no responses recorded) still pick deterministically
+                -- across rebuilds.
+                order by
+                    (date_taken is null) asc,
+                    date_taken asc,
+                    student_assessment_id asc,
+                    powerschool_school_id asc
+            )
     ),
 
     internal_assessment_rollup as (
         select
             illuminate_student_id,
             powerschool_student_number,
+            canonical_assessment_id as assessment_id,
+            canonical_title as title,
+            canonical_administered_at as administered_at,
+            canonical_grade_level_id as grade_level_id,
+            canonical_performance_band_set_id as performance_band_set_id,
             academic_year,
             scope,
             subject_area,
             discipline,
             module_type,
             module_code,
-            region,
             is_internal_assessment,
             is_replacement,
             response_type,
@@ -53,44 +102,47 @@ with
             response_type_code,
             response_type_description,
             response_type_root_description,
-            powerschool_school_id,
 
-            min(assessment_id) as assessment_id,
-            min(title) as title,
-            min(grade_level_id) as grade_level_id,
-            min(administered_at) as administered_at,
-            min(performance_band_set_id) as performance_band_set_id,
             min(date_taken) as date_taken,
+
+            -- canonical_school_id / canonical_region are constant per partition
+            -- (windowed in canonical_attrs). any_value() makes that explicit
+            -- without independent-min() drift. See #3801.
+            any_value(canonical_school_id) as powerschool_school_id,
+            any_value(canonical_region) as region,
 
             count(distinct assessment_id) as n_assessments,
 
             sum(points) as points,
 
-            array_agg(assessment_id) as assessment_ids,
+            array_agg(distinct assessment_id) as assessment_ids,
 
             round(
                 safe_divide(sum(points), sum(points_possible)) * 100, 1
             ) as percent_correct,
-        from scaffold_responses
+        from canonical_attrs
         where is_internal_assessment
         group by
             illuminate_student_id,
             powerschool_student_number,
+            canonical_assessment_id,
+            canonical_title,
+            canonical_administered_at,
+            canonical_grade_level_id,
+            canonical_performance_band_set_id,
             academic_year,
             scope,
             subject_area,
             discipline,
             module_type,
             module_code,
-            region,
             is_internal_assessment,
             is_replacement,
             response_type,
             response_type_id,
             response_type_code,
             response_type_description,
-            response_type_root_description,
-            powerschool_school_id
+            response_type_root_description
     ),
 
     response_union as (
@@ -117,68 +169,11 @@ with
             n_assessments,
             assessment_ids,
             powerschool_school_id,
-
-            if(
-                not is_replacement,
-                min(title) over (
-                    partition by
-                        academic_year,
-                        scope,
-                        subject_area,
-                        module_code,
-                        region,
-                        grade_level_id,
-                        is_replacement
-                ),
-                title
-            ) as title,
-
-            if(
-                not is_replacement,
-                min(assessment_id) over (
-                    partition by
-                        academic_year,
-                        scope,
-                        subject_area,
-                        module_code,
-                        region,
-                        grade_level_id,
-                        is_replacement
-                ),
-                assessment_id
-            ) as assessment_id,
-
-            if(
-                not is_replacement,
-                min(administered_at) over (
-                    partition by
-                        academic_year,
-                        scope,
-                        subject_area,
-                        module_code,
-                        region,
-                        grade_level_id,
-                        is_replacement
-                ),
-                administered_at
-            ) as administered_at,
-
-            if(
-                not is_replacement,
-                min(performance_band_set_id) over (
-                    partition by
-                        academic_year,
-                        scope,
-                        subject_area,
-                        module_code,
-                        region,
-                        grade_level_id,
-                        is_replacement,
-                        response_type,
-                        response_type_id
-                ),
-                performance_band_set_id
-            ) as performance_band_set_id,
+            title,
+            assessment_id,
+            administered_at,
+            grade_level_id,
+            performance_band_set_id,
 
             if(n_assessments > 1, true, false) as is_multipart_assessment,
         from internal_assessment_rollup
@@ -208,13 +203,14 @@ with
 
             1 as n_assessments,
 
-            [assessment_id] as assessment_ids,
+            [canonical_assessment_id] as assessment_ids,
 
             powerschool_school_id,
-            title,
-            assessment_id,
-            administered_at,
-            performance_band_set_id,
+            canonical_title as title,
+            canonical_assessment_id as assessment_id,
+            canonical_administered_at as administered_at,
+            canonical_grade_level_id as grade_level_id,
+            canonical_performance_band_set_id as performance_band_set_id,
 
             false as is_multipart_assessment,
         from scaffold_responses
@@ -245,6 +241,7 @@ select
     ru.title,
     ru.assessment_id,
     ru.administered_at,
+    ru.grade_level_id,
     ru.performance_band_set_id,
     ru.n_assessments,
     ru.is_multipart_assessment,

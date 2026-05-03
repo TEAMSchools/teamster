@@ -1,5 +1,9 @@
 with
-    internal_assessments_raw as (
+    -- Per `src/dbt/CLAUDE.md` hash-derivation rule: fact must re-join
+    -- int_assessments__assessments to read raw `academic_year`, since
+    -- response_rollup propagates `academic_year_clean as academic_year`
+    -- (+1 offset) while dim_assessment_administrations hashes the raw value.
+    internal_assessments as (
         select
             rr.powerschool_student_number as student_number,
             rr.region,
@@ -13,21 +17,16 @@ with
             rr.assessment_ids,
             rr.percent_correct,
 
-            a.title,
-            a.subject_area,
-            a.scope,
-            a.module_code,
-            a.grade_level,
-            a.academic_year,
-
             cast(rr.date_taken as date) as test_date,
             cast(a.administered_at as date) as administered_date,
+
+            rr.assessment_id as source_assessment_id,
+            a.academic_year,
+            a.module_code,
 
             cast(null as numeric) as scale_score,
 
             rr.performance_band_label as proficiency_level,
-
-            cast(null as numeric) as growth_percentile,
 
             'internal' as score_source,
         from {{ ref("int_assessments__response_rollup") }} as rr
@@ -35,21 +34,6 @@ with
             {{ ref("int_assessments__assessments") }} as a
             on rr.assessment_id = a.assessment_id
         where rr.is_internal_assessment
-    ),
-
-    internal_assessments as (
-        {{
-            dbt_utils.deduplicate(
-                relation="internal_assessments_raw",
-                partition_by=(
-                    "student_number, assessment_id, "
-                    "TO_JSON_STRING(assessment_ids), "
-                    "response_type, response_type_id, "
-                    "response_type_code"
-                ),
-                order_by="test_date desc",
-            )
-        }}
     ),
 
     state_nj as (
@@ -82,9 +66,7 @@ with
             testperformancelevel_text as performance_band,
             testperformancelevel as performance_band_level,
 
-            if(`period` = 'FallBlock', 'Fall', `period`) as administration_window,
-
-            if(`period` = 'FallBlock', 'Fall', `period`) as season,
+            if(`period` = 'FallBlock', 'Fall', `period`) as administration_period,
 
             assessment_name as title,
 
@@ -94,7 +76,6 @@ with
 
             cast(null as date) as test_date,
             cast(null as numeric) as percent_correct,
-            cast(null as numeric) as growth_percentile,
 
             'state_nj' as score_source,
         from {{ ref("int_pearson__all_assessments") }}
@@ -115,8 +96,7 @@ with
             is_proficient,
             achievement_level as performance_band,
             performance_level as performance_band_level,
-            administration_window,
-            season,
+            administration_window as administration_period,
             assessment_name as title,
 
             initcap(regexp_extract(_dbt_source_relation, r'kipp(\w+)_')) as region,
@@ -125,7 +105,6 @@ with
 
             cast(null as date) as test_date,
             cast(null as numeric) as percent_correct,
-            cast(null as numeric) as growth_percentile,
 
             'state_fl' as score_source,
         from {{ ref("int_fldoe__all_assessments") }}
@@ -144,13 +123,11 @@ with
             nj.is_proficient,
             nj.performance_band,
             nj.performance_band_level,
-            nj.administration_window,
-            nj.season,
+            nj.administration_period,
             nj.title,
             nj.region,
             nj.test_date,
             nj.percent_correct,
-            nj.growth_percentile,
             nj.score_source,
             nj._dbt_source_relation,
 
@@ -170,13 +147,11 @@ with
             fl.is_proficient,
             fl.performance_band,
             fl.performance_band_level,
-            fl.administration_window,
-            fl.season,
+            fl.administration_period,
             fl.title,
             fl.region,
             fl.test_date,
             fl.percent_correct,
-            fl.growth_percentile,
             fl.score_source,
             fl._dbt_source_relation,
 
@@ -203,16 +178,12 @@ select
         dbt_utils.generate_surrogate_key(
             [
                 "'illuminate'",
-                "ia.title",
-                "ia.subject_area",
-                "ia.scope",
                 "ia.module_code",
-                "ia.grade_level",
                 "ia.administered_date",
                 "ia.academic_year",
-                "cast(null as string)",
                 "ia.region",
                 "cast(null as string)",
+                "ia.source_assessment_id",
                 "cast(null as string)",
             ]
         )
@@ -238,7 +209,7 @@ select
                 "su._dbt_source_relation",
                 "coalesce(cast(su.student_number as string), su.state_student_id)",
                 "su.academic_year",
-                "su.administration_window",
+                "su.administration_period",
                 "su.subject_area",
             ]
         )
@@ -248,17 +219,13 @@ select
         dbt_utils.generate_surrogate_key(
             [
                 "'state'",
-                "su.title",
-                "su.subject_area",
-                "su.discipline",
                 "su.module_code",
-                "su.grade_level",
                 "cast(null as date)",
                 "su.academic_year",
-                "cast(null as string)",
                 "su.region",
-                "su.season",
-                "su.administration_window",
+                "su.administration_period",
+                "cast(null as int64)",
+                "cast(null as string)",
             ]
         )
     }} as assessment_administration_key,

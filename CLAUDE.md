@@ -31,7 +31,8 @@ this step.**
 
   dbt tags PII as `config.meta.contains_pii: true` — authoritative but
   **incomplete**. Untagged columns are PII if they identify a person: IDs
-  (`student_number`, `employee_number`, `ssn`, `state_id`, `local_id`), names
+  (`student_number`, `employee_number`, `ssn`, `state_id`, `local_id`, including
+  source-system aliases like Salesforce kippadb's `school_specific_id`), names
   (`*_name`), contact (`email`, `phone`, `address`, `street`, `city`, `zip`),
   `dob`/`birth_date`, guardian/parent fields, free-text `comment`/ `note` on
   people tables, credentials/tokens. When unsure, treat as PII.
@@ -59,11 +60,11 @@ this step.**
   the branch already exists. Delete the remote branch, then
   `gh issue develop <num> --name <branch>`, then re-push local commits.
 
-- **Worktree commands**: Always `cd` to the worktree before running `git` or any
-  command that reads the working tree (`trunk check`, `uv run`, tests). The main
-  repo and worktree have separate git state and separate files — `git commit`
-  from the main repo commits to `main`, and `trunk check` silently lints main's
-  files instead of the worktree's.
+- **Worktree commands**: Prepend `cd <worktree>` to every Bash call (cwd may not
+  persist between turns) and verify with `git branch --show-current` before any
+  commit. The main repo and worktree have separate git state and separate files
+  — `git commit` from the main repo commits to `main`, and `trunk check`
+  silently lints main's files instead of the worktree's.
 
 - **Branch switch**: `gh issue develop <number> --name <branch> --checkout`.
 
@@ -79,7 +80,10 @@ this step.**
 - **Dispatching subagents**: Subagents do not auto-invoke skills. In the
   dispatch prompt, name the exact `Skill` tool calls the subagent must run
   before starting work (e.g. `Skill` with
-  skill=`dbt:using-dbt-for-analytics-engineering` for a dbt review).
+  skill=`dbt:using-dbt-for-analytics-engineering` for a dbt review). For
+  negation goals (remove X, no Y), list anti-patterns explicitly — subagents
+  otherwise re-introduce familiar idioms (`dbt_utils.deduplicate`,
+  `select distinct`, `qualify row_number()=1`).
 
 - **Git resuming**: Before resuming work on an existing branch, merge `main`:
   `git fetch origin main && git merge origin/main`.
@@ -179,12 +183,19 @@ MCP equivalent. Before running `gh <subcommand>` via Bash, check the
   custom fields whose names contain spaces (e.g. `PR batch`); single-word custom
   fields (`Driver`, `Tier`, `Status`) do appear. Use the same `fieldValues`
   GraphQL query to read the omitted ones.
+- `gh project item-add <PROJECT_NUMBER> --owner <OWNER> --url <ISSUE_URL>` —
+  adds an issue/PR to a ProjectV2 board. No `mcp__github__*` equivalent. Combine
+  with `gh project item-edit` to set fields after add.
 - `gh run *` — Actions run inspection/control; no MCP coverage.
 - `gh workflow *` — Actions workflow inspection/dispatch; no MCP coverage.
 - `gh repo edit` — repo settings; `gh repo create/view/list` have MCP
   equivalents and are not on this list.
 - Editing an existing comment — `mcp__github__add_issue_comment` only creates.
   Use `gh api -X PATCH repos/<owner>/<repo>/issues/comments/<id> -f body='...'`.
+- Replying to a PR inline review comment in-thread —
+  `mcp__github__add_issue_comment` posts top-level PR comments only, not thread
+  replies. Use
+  `gh api -X POST repos/<owner>/<repo>/pulls/<pr>/comments/<id>/replies -f body='...'`.
 
 ### Dagster asset diagnosis
 

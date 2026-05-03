@@ -22,8 +22,12 @@ models:
       - name: assessment_key
         data_type: string
         description: >-
-          Surrogate key derived from type, title, subject_area, category,
-          module_code, and grade_level_tested. Primary key.
+          Surrogate key derived from type, module_code, source_assessment_id,
+          and test_type. Primary key. For Illuminate, member-grained — one row
+          per actual `assessment_id`. For state/college/AP, canonical
+          (`source_assessment_id` is null). Drilldown from
+          `dim_assessment_administrations` (canonical-grain) to this dim goes
+          through `bridge_assessment_administration_members`.
         constraints:
           - type: primary_key
             warn_unsupported: false
@@ -34,8 +38,12 @@ models:
       - name: type
         data_type: string
         description: >-
-          Source system category: illuminate (internal KIPP), state (NJSLA,
-          FAST, NJGPA), or college (SAT, ACT, PSAT, AP).
+          Source system category: `illuminate` (internal KIPP), `state_nj`
+          (NJSLA, NJGPA, PARCC — share module_codes per grade across history),
+          `state_fl` (FAST, FSA — share test_codes), `college` (SAT, ACT, PSAT —
+          both Official and Practice variants), or `ap`. Two jurisdictions kept
+          distinct so historical NJ and FL state assessments don't collide on
+          shared module_codes (e.g., ELA05).
 
       - name: title
         data_type: string
@@ -109,3 +117,21 @@ models:
           Ed-Fi credit_category_descriptor capturing graduation-requirement
           categorization (e.g., ENG, MATH, SCI). Populated for college-entrance
           assessments; null for AP, state, and internal Illuminate rows.
+
+      - name: source_assessment_id
+        data_type: int64
+        description: >-
+          Illuminate `assessment_id` for internal Illuminate assessments; null
+          for state, college (Official + Practice), and AP rows. Used as a
+          discriminator in `assessment_key` so distinct Illuminate assessments
+          hash to different keys even when their other natural-key columns
+          coincide.
+
+      - name: test_type
+        data_type: string
+        description: >-
+          `'Official'` for college-entrance assessments delivered by the test
+          vendor (SAT, ACT, PSAT). `'Practice'` for mock administrations of the
+          same assessments delivered through Illuminate. Null for Illuminate,
+          state, and AP rows. Discriminator in `assessment_key` so Official and
+          Practice sittings of the same test family don't collide.
