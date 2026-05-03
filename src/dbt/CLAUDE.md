@@ -244,14 +244,28 @@ data_tests:
 
 ### Test config defaults
 
-- Do not add `store_failures: true` to individual tests — the project default
-  handles it
+- Project-level `data_tests:` defaults flow through to singular tests too. Drop
+  redundant `severity` / `store_failures` / `store_failures_as` from
+  singular-test `config()`; keep only per-test fields (`meta.dagster.ref`).
 - Staging-layer tests MUST set `config: severity: error` on every test. The
   project default is `warn`, so staging tests without explicit `severity: error`
   silently degrade to warnings and won't fail CI. Intermediate/mart/`rpt_` tests
   may omit the override where a warning is acceptable.
 - Unscoped `+config` applies to tests from all installed packages, not just the
   current project
+
+### `dbt_utils.expression_is_true` window-function limit
+
+Compiles to `where not (<expression>)`. BigQuery rejects window functions in
+`WHERE`, so the macro can't use `lag()` / `row_number()` / etc. Use a singular
+test (`tests/test_*.sql`) for window-based predicates.
+
+### Singular-test description placement
+
+Top-level `description` on a singular test must go in a properties yml under
+`data_tests:` — `config(description="...")` in the SQL lands at
+`config.description`, which dbt docs doesn't read. After adding/editing the yml,
+run `dbt parse --no-partial-parse`; partial parse caches the unbound state.
 
 ### Generic test syntax (dbt 1.11+)
 

@@ -31,7 +31,8 @@ this step.**
 
   dbt tags PII as `config.meta.contains_pii: true` — authoritative but
   **incomplete**. Untagged columns are PII if they identify a person: IDs
-  (`student_number`, `employee_number`, `ssn`, `state_id`, `local_id`), names
+  (`student_number`, `employee_number`, `ssn`, `state_id`, `local_id`, including
+  source-system aliases like Salesforce kippadb's `school_specific_id`), names
   (`*_name`), contact (`email`, `phone`, `address`, `street`, `city`, `zip`),
   `dob`/`birth_date`, guardian/parent fields, free-text `comment`/ `note` on
   people tables, credentials/tokens. When unsure, treat as PII.
