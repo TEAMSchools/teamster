@@ -2,13 +2,9 @@
 
 ## Project Overview
 
-Teamster is a data engineering platform for KIPP TEAM & Family Schools (Newark,
-Camden, and Paterson, NJ & Miami, FL) built on **Dagster** (orchestration),
-**dbt** (transformations), and **Google BigQuery** (warehouse), with Google
-Cloud Storage (GCS) as the intermediate storage layer. Python ≥3.13.
-
-Production runs on **GKE** (Google Kubernetes Engine) via Dagster Cloud.
-Development uses **GitHub Codespaces** (devcontainer) — secrets are injected
+Stack: **Dagster** (orchestration), **dbt** (transformations), **Google
+BigQuery** (warehouse), **GCS** (intermediate storage). Python ≥3.13. Production
+on **GKE** via Dagster Cloud. Dev in **GitHub Codespaces**; secrets injected
 from 1Password at container start.
 
 ## Architecture
