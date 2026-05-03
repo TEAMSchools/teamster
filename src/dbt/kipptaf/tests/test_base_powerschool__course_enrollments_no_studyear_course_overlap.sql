@@ -7,10 +7,11 @@
    schools. */
 {{
     config(
-        severity="warn",
-        store_failures=true,
-        store_failures_as="view",
-        meta={"dagster": {"ref": {"name": "base_powerschool__course_enrollments"}}},
+        meta={
+            "dagster": {
+                "ref": {"name": "base_powerschool__course_enrollments"},
+            },
+        },
     )
 }}
 
@@ -23,6 +24,7 @@ with
             cc_studentid,
             cc_dateenrolled,
             cc_dateleft,
+
             lag(cc_dateleft) over (
                 partition by _dbt_source_relation, cc_studyear, cc_course_number
                 order by cc_dateenrolled, cc_dateleft
