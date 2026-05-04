@@ -18,7 +18,6 @@ with
             s.is_internal_assessment,
             s.is_replacement,
             s.student_assessment_id,
-            s.date_taken,
             s.canonical_assessment_id,
             s.canonical_title,
             s.canonical_administered_at,
@@ -34,6 +33,8 @@ with
             asr.percent_correct,
 
             pb.canonical_performance_band_set_id,
+
+            if(s.date_taken < date '2000-01-01', null, s.date_taken) as date_taken,
         from {{ ref("int_assessments__scaffold") }} as s
         left join
             {{ ref("int_illuminate__agg_student_responses") }} as asr
