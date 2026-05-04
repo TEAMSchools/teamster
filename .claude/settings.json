@@ -177,16 +177,6 @@
             "statusMessage": "Scanning output for secret leakage..."
           }
         ]
-      },
-      {
-        "matcher": "Edit|Write",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "jq -r '.tool_input.file_path' | xargs /workspaces/teamster/.trunk/tools/trunk fmt --no-progress 2>/dev/null; exit 0",
-            "statusMessage": "Auto-formatting with Trunk"
-          }
-        ]
       }
     ]
   },
