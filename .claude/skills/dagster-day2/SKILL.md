@@ -56,12 +56,18 @@ reclassify based on cross-signal context — see the reclassify table below.
 
 ## Phase 2: Correlate and report
 
-Read `.claude/scratch/day2.json`.
+Run [`scripts/day2_summarize.py`](../../../scripts/day2_summarize.py) first to
+print per-step counts and the error gate, then read `.claude/scratch/day2.json`
+for the details.
 
-**Error gate**: For each `step_NN_*` key, check for an `"error"` field. If any
-step the analysis depends on errored, re-run the collector
-(`uv run scripts/day2_collect.py`) before drawing conclusions — partial data
-produces wrong findings.
+```bash
+uv run scripts/day2_summarize.py
+```
+
+**Error gate**: The summarize script flags any `step_NN_*` key with an `"error"`
+field and exits non-zero. If any step the analysis depends on errored, re-run
+the collector (`uv run scripts/day2_collect.py`) before drawing conclusions —
+partial data produces wrong findings.
 
 **Temporal overlap gate**: Before linking signals as cause/effect, verify
 `max(start_A, start_B) < min(end_A, end_B)`. If false → independent findings.
@@ -232,7 +238,28 @@ timeline.
 
 Reference `.k8s/CLAUDE.md` for scheduling, topology, security, config.
 
-Write report to `.claude/scratch/day2-report.md`.
+Write report to `.claude/scratch/day2-report-<YYYY-MM-DD>.md`, where the date is
+the window end (`window.utc_end` from `day2.json`) converted to ET.
+
+**Run-never-started timestamps**: When a run times out before starting
+(`Run timed out due to taking longer than N seconds to start`), `startTime` and
+`endTime` in step 1 are both the failure-recorded time, not enqueue time.
+Approximate the K8s Job create time as `startTime - N` (typically 480s), or
+query the audit log directly:
+`protoPayload.methodName="io.k8s.batch.v1.jobs.create" protoPayload.resourceName=~"dagster-run-<runId>.*"`.
+
+**Audit logs > pod events for >1h-old bursts**: `mcp__gke__query_logs` with
+`protoPayload.serviceName="k8s.io"` retains Job/Pod create/delete history for
+days; pod events from `mcp__observability__list_log_entries` drop after ~1h. For
+any burst analysis older than the day-2 collector's events lookback, query audit
+logs by runId, not events.
+
+**Slow pod startup at top-of-hour fan-out**: At scheduling spikes (e.g. 04:00
+UTC / 00:00 ET), K8s Jobs are created promptly but pods can take 4–7 min to emit
+their first log line (image pull + autoscaler node provision). The
+`run_monitoring.start_timeout_seconds` measures from enqueue, so
+run-never-started failures during these windows are an autoscaler-latency
+symptom — not an agent or K8s-API symptom.
 
 ## Appendix: Targeted investigations (skip full skill)
 
