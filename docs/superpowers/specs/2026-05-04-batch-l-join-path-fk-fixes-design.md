@@ -158,12 +158,15 @@ staging model:
       expression:
         "{{ column_name }} is null or {{ column_name }} >= '2000-01-01'"
     config:
-      severity: error
+      severity: warn
 ```
 
-Staging-layer tests must set `severity: error` per project convention. The test
-passes immediately after sanitization. If upstream emits new pre-2000 garbage,
-the test catches it before it reaches a fact's `relationships` test.
+`severity: warn` is intentional here, overriding the staging-default
+`severity: error`. New pre-2000 garbage requires a source-system fix
+(user-entered typos in PowerSchool, DeansList, Illuminate); that work shouldn't
+block CI. The warning surfaces the regression in the post-CI warnings audit so
+we can file a follow-up issue against the source system without halting
+downstream builds.
 
 No reusable macro until this pattern recurs in a third domain.
 
@@ -214,7 +217,8 @@ categorize each delta:
       `relationships` test returns 0 rows.
 - [ ] All six date `relationships` tests from #3719 return 0 rows.
 - [ ] Five new `expression_is_true` tests on sanitized date columns added and
-      passing at `severity: error`.
+      passing at `severity: warn` (intentional override of staging default — new
+      pre-2000 garbage requires a source-system fix, not a CI block).
 - [ ] Sampled `student_key` and `course_key` values match pre-merge values (no
       hash drift).
 - [ ] Post-CI warnings audit completed for each commit; PR body lists bonus
