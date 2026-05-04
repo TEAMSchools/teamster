@@ -42,10 +42,12 @@ cubes:
       - name: academic_year
         sql: academic_year
         type: number
+        public: true
 
       - name: semester
         sql: semester
         type: string
+        public: true
 
       - name: attendance_code
         sql: attendance_code
@@ -54,6 +56,7 @@ cubes:
       - name: attendance_category
         sql: attendance_category
         type: string
+        public: true
 
       - name: attendance_value
         sql: attendance_value
@@ -94,11 +97,13 @@ cubes:
       - name: is_truant
         sql: is_truant
         type: boolean
+        public: true
 
     measures:
       - name: count_students
         sql: student_enrollment_key
         type: count_distinct
+        public: true
         filters:
           - sql: "{CUBE}.membership_value > 0"
 
@@ -119,12 +124,14 @@ cubes:
         sql: "{_sum_attendance_value} / NULLIF({_sum_membership_value}, 0)"
         type: number
         format: percent
+        public: true
 
       - name: pct_tardy
         description: Percentage of membership days where the student was tardy
         sql: is_tardy
         type: avg
         format: percent
+        public: true
         filters:
           - sql: "{CUBE}.membership_value = 1"
 
@@ -134,6 +141,7 @@ cubes:
           point-in-time snapshot, filter to a single date.
         sql: student_enrollment_key
         type: count_distinct
+        public: true
         filters:
           - sql: "{CUBE}.is_truant = true"
           - sql: "{CUBE}.membership_value > 0"
@@ -143,3 +151,4 @@ cubes:
         sql: "1.0 * {count_truants} / NULLIF({count_students}, 0)"
         type: number
         format: percent
+        public: true
