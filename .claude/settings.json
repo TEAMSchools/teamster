@@ -95,6 +95,7 @@
       "mcp__observability__list_time_series",
       "Read(/.claude/**)",
       "Read(/.worktrees/**)",
+      "Read(//home/vscode/.claude/**)",
       "Read(//tmp/dagster/**)",
       "Read(//workspaces/teamster/**)",
       "Skill(claude-md-management:revise-claude-md:*)",

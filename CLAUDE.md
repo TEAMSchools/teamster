@@ -56,11 +56,11 @@ this step.**
   the branch already exists. Delete the remote branch, then
   `gh issue develop <num> --name <branch>`, then re-push local commits.
 
-- **Worktree commands**: Prepend `cd <worktree>` to every Bash call (cwd may not
-  persist between turns) and verify with `git branch --show-current` before any
-  commit. The main repo and worktree have separate git state and separate files
-  — `git commit` from the main repo commits to `main`, and `trunk check`
-  silently lints main's files instead of the worktree's.
+- **Worktree commands**: Path-flag-driven tools must name the worktree
+  explicitly. Use `git -C <worktree>` on every git call (bare `git` from the
+  main repo silently commits to `main`) and
+  `uv run dbt ... --project-dir <worktree>/src/dbt/<project>` on every dbt call.
+  Otherwise prefer absolute paths.
 
 - **Branch switch**: `gh issue develop <number> --name <branch> --checkout`.
 
@@ -108,8 +108,8 @@ this step.**
 - **Trunk linting/formatting**: Do not run `trunk fmt` manually — formatting is
   handled by the PostToolUse hook (after Edit/Write) and `trunk-fmt-pre-commit`
   (at commit time). **Before pushing from a worktree**, run
-  `/workspaces/teamster/.trunk/tools/trunk check --ci` from the worktree root
-  and fix any issues — trunk git hooks are not installed in worktrees.
+  `/workspaces/teamster/.trunk/tools/trunk check --ci <worktree>` and fix any
+  issues — trunk git hooks are not installed in worktrees.
 
 - **Linter**: Use `# trunk-ignore(<linter>/<rule>)` with a reason comment — not
   linter-native disable syntax. Binary:
