@@ -19,12 +19,12 @@ select
             [
                 "p.incident_id",
                 "p.incident_penalty_id",
-                "p._dbt_source_relation",
+                "p._dbt_source_project",
             ]
         )
     }} as behavioral_consequence_key,
 
-    {{ dbt_utils.generate_surrogate_key(["p.incident_id", "p._dbt_source_relation"]) }}
+    {{ dbt_utils.generate_surrogate_key(["p.incident_id", "p._dbt_source_project"]) }}
     as behavioral_incident_key,
 
     p.start_date as start_date_key,
