@@ -12,6 +12,7 @@ with
         }}
     )
 
+-- trunk-ignore(sqlfluff/AM04): union_relations produces an unknown column count
 select *,
 from union_relations
 where dcid >= 1
