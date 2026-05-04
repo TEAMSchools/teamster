@@ -54,7 +54,7 @@ and data control → API controls → Domain-wide delegation → Add new**:
 - **Client ID**: the numeric client ID from the service account details page in
   GCP
 - **OAuth scopes**:
-  `https://www.googleapis.com/auth/admin.directory.group.member.readonly`
+  `https://www.googleapis.com/auth/admin.directory.group.readonly`
 
 ### 5. Encode the key and set environment variables
 
@@ -119,7 +119,7 @@ Performed in the Cube Cloud UI by an admin:
 6. The service account for BigQuery needs `roles/bigquery.dataViewer` and
    `roles/bigquery.jobUser` on the `teamster-332318` project
 7. The Admin Directory API service account needs domain-wide delegation scoped
-   to `https://www.googleapis.com/auth/admin.directory.group.member.readonly`
+   to `https://www.googleapis.com/auth/admin.directory.group.readonly`
 
 ## Local Dev
 
