@@ -105,11 +105,11 @@ this step.**
   string fields (issue title, PR body, commit message, etc.), check the returned
   values match intent before moving on.
 
-- **Trunk linting/formatting**: Do not run `trunk fmt` manually — formatting is
-  handled by the PostToolUse hook (after Edit/Write) and `trunk-fmt-pre-commit`
-  (at commit time). **Before pushing from a worktree**, run
-  `/workspaces/teamster/.trunk/tools/trunk check --ci <worktree>` and fix any
-  issues — trunk git hooks are not installed in worktrees.
+- **Trunk linting/formatting**: Do not run `trunk fmt` or `trunk check` manually
+  — `trunk-fmt-pre-commit` formats at commit time and `trunk-check-pre-push`
+  blocks bad pushes, both in the main repo and in worktrees (`core.hooksPath` is
+  shared). The trunk daemon caches in `~/.cache/trunk/repos/` are pruned on
+  Codespace boot via `postStart.sh`.
 
 - **Linter**: Use `# trunk-ignore(<linter>/<rule>)` with a reason comment — not
   linter-native disable syntax. Binary:
