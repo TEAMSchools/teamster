@@ -14,4 +14,4 @@ with
 
 select *,
 from union_relations
-where dcid > 0
+where dcid >= 1
