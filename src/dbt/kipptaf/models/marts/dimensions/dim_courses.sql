@@ -1,4 +1,9 @@
 select
+    -- FK source_relation must match dim_course_sections, which is built from
+    -- base_powerschool__sections. Rewrite c's source relation to the parent's.
+    -- TODO: replace() is a no-op if a future district uses a different base
+    -- model name. Long-term fix: hash region prefix only, consistent across
+    -- producer and consumer (#3678 follow-up).
     {{
         dbt_utils.generate_surrogate_key(
             [

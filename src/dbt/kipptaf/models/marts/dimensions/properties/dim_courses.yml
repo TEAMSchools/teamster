@@ -3,15 +3,15 @@ models:
     description: >-
       Course catalog dimension. One row per course per source region. Course
       numbers are not unique across regions, so the surrogate key includes the
-      source relation. Sourced from the canonical PowerSchool course catalog;
+      source region. Sourced from the canonical PowerSchool course catalog;
       academic_subject joins the assessment course-subject crosswalk by course
       number.
     columns:
       - name: course_key
         data_type: string
         description: >-
-          Surrogate key derived from courses_course_number and
-          _dbt_source_relation. Primary key for this dimension.
+          Surrogate key for this dimension. Derived from the course number and
+          source region.
         constraints:
           - type: primary_key
             warn_unsupported: false
@@ -22,7 +22,7 @@ models:
       - name: course_code
         data_type: string
         description: >-
-          The number the school assigns to a particular course. Indexed.
+          The number the school assigns to a particular course.
         data_tests:
           - not_null
 
@@ -44,8 +44,8 @@ models:
       - name: credit_type
         data_type: string
         description: >-
-          Copied from the Credit Type field in the Course table. The type of
-          credit this counts as towardgraduation, such as Math or elective.
+          The type of credit this course counts toward graduation, such as Math
+          or elective.
 
         config:
           meta:
