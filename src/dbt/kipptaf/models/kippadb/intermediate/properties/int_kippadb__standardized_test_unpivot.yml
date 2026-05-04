@@ -2,6 +2,13 @@ models:
   - name: int_kippadb__standardized_test_unpivot
     config:
       materialized: table
+    data_tests:
+      - dbt_utils.expression_is_true:
+          arguments:
+            expression: |-
+              `date` is null or `date` >= '2000-01-01'
+          config:
+            severity: warn
     columns:
       - name: id
         data_type: string
