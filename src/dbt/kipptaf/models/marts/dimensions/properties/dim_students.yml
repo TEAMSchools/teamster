@@ -111,18 +111,6 @@ models:
             source_system: PowerSchool
             source_model: stg_powerschool__students
             source_column: gender
-      - name: enrollment_status
-        data_type: string
-        description: >-
-          Current enrollment status of the student. Values: Currently Enrolled,
-          Pre-registered, Inactive, Transferred Out, Graduated, Imported as
-          Historical.
-
-        config:
-          meta:
-            source_system: PowerSchool
-            source_model: stg_powerschool__students
-            source_column: enroll_status
       - name: is_gifted
         data_type: boolean
         description: >-
@@ -160,3 +148,16 @@ models:
             source_system: PowerSchool
             source_model: stg_powerschool__students
             source_column: ethnicity
+
+      - name: enrollment_status
+        data_type: string
+        description: >-
+          Current enrollment status of the student. Values: Currently Enrolled,
+          Pre-registered, Inactive, Transferred Out, Graduated, Imported as
+          Historical.
+
+        config:
+          meta:
+            source_system: PowerSchool
+            source_model: stg_powerschool__students
+            source_column: enroll_status

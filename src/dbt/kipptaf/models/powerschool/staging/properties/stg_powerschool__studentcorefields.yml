@@ -2,3 +2,24 @@ models:
   - name: stg_powerschool__studentcorefields
     config:
       materialized: table
+    description: >-
+      Cross-region union of the PowerSchool student core-fields extension table.
+      One row per student per region. Carries the per-student LEP status flag
+      consumed by dim_students.is_ell.
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns:
+              - studentsdcid
+              - _dbt_source_relation
+          config:
+            severity: error
+    columns:
+      - name: studentsdcid
+        data_type: int64
+        description: >-
+          DCID of the associated Student record. Per-region primary key for this
+          extension table.
+      - name: lep_status
+        data_type: boolean
+        description: Student Limited English Proficiency status.
