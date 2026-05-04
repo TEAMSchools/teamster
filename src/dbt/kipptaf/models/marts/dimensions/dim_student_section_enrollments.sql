@@ -31,7 +31,7 @@ select
     -- base_powerschool__sections. Rewrite cc's source relation to the parent's.
     -- TODO: replace() is a no-op if a future district uses a different base
     -- model name. Long-term fix: hash region prefix only, consistent across
-    -- producer and consumer (#3678 follow-up).
+    -- producer and consumer (#3820).
     {{
         dbt_utils.generate_surrogate_key(
             [
