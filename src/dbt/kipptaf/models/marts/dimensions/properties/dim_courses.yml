@@ -3,8 +3,9 @@ models:
     description: >-
       Course catalog dimension. One row per course per source region. Course
       numbers are not unique across regions, so the surrogate key includes the
-      source relation. Attributes represent the most recent non-null values from
-      the PowerSchool course table as observed in enrollment records.
+      source relation. Sourced from the canonical PowerSchool course catalog;
+      academic_subject joins the assessment course-subject crosswalk by course
+      number.
     columns:
       - name: course_key
         data_type: string
@@ -49,14 +50,20 @@ models:
         config:
           meta:
             source_system: PowerSchool
-            source_model: stg_powerschool__storedgrades
-            source_column: credit_type
+            source_model: stg_powerschool__courses
+            source_column: credittype
       - name: academic_subject
         data_type: string
         description: >-
           Subject area discipline mapped from course number via the course
           subject crosswalk. Null when the course number is not in the
           crosswalk.
+
+        config:
+          meta:
+            source_system: Google Sheets
+            source_model: stg_google_sheets__assessments__course_subject_crosswalk
+            source_column: discipline
 
       - name: credits
         data_type: float64
