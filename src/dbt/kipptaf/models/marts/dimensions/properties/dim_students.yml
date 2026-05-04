@@ -45,6 +45,12 @@ models:
           Miami-only mdcps_student_identifier. Ed-Fi District / CEDS
           District-assigned number from the host district's perspective.
 
+        config:
+          meta:
+            source_system: PowerSchool
+            source_model: stg_powerschool__students
+            source_column: state_studentnumber (Miami only)
+            contains_pii: true
       - name: state_student_identifier
         data_type: string
         description: >-
@@ -54,8 +60,9 @@ models:
         config:
           meta:
             source_system: PowerSchool
-            source_model: stg_powerschool__students
-            source_column: state_studentnumber
+            source_model:
+              stg_powerschool__students, stg_powerschool__u_studentsuserfields
+            source_column: state_studentnumber (NJ); fleid (Miami)
             contains_pii: true
       - name: salesforce_contact_id
         data_type: string
@@ -64,6 +71,12 @@ models:
           where the student has a KIPPADB record; null otherwise. Used across
           KIPPADB consumer tools (Overgrad, alumni tracking, etc.).
 
+        config:
+          meta:
+            source_system: Salesforce (KIPPADB)
+            source_model: stg_kippadb__contact
+            source_column: id
+            contains_pii: true
       - name: full_name
         data_type: string
         description: >-
@@ -74,7 +87,7 @@ models:
           meta:
             source_system: PowerSchool
             source_model: stg_powerschool__students
-            source_column: lastfirst
+            source_column: last_name, first_name
             contains_pii: true
       - name: birth_date
         data_type: date
@@ -98,12 +111,6 @@ models:
             source_system: PowerSchool
             source_model: stg_powerschool__students
             source_column: gender
-      - name: meal_eligibility_status
-        data_type: string
-        description: >-
-          National School Lunch Program (NSLP) meal eligibility status (e.g.,
-          Free, Reduced, Paid).
-
       - name: enrollment_status
         data_type: string
         description: >-
@@ -119,18 +126,27 @@ models:
       - name: is_gifted
         data_type: boolean
         description: >-
-          TRUE if the student has a gifted-and-talented identification.
+          TRUE if the student has a gifted-and-talented identification on either
+          the PowerSchool NJ extension or Miami user-fields extension.
+        config:
+          meta:
+            source_system: PowerSchool
+            source_model:
+              stg_powerschool__s_nj_stu_x, stg_powerschool__u_studentsuserfields
+            source_column: gifted_and_talented
 
       - name: is_ell
         data_type: boolean
         description: >-
-          TRUE if the student is classified as an active English Language
-          Learner (ELL).
-
-      - name: has_iep
-        data_type: boolean
-        description: >-
-          TRUE if the student has an Individualized Education Program (IEP).
+          TRUE if the student is currently classified as an English Language
+          Learner per the PowerSchool student core fields. Reflects current
+          status only — does not reflect historical enrollment-date-window LEP
+          status.
+        config:
+          meta:
+            source_system: PowerSchool
+            source_model: stg_powerschool__studentcorefields
+            source_column: lep_status
 
       - name: race
         data_type: string
