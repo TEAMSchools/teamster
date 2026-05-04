@@ -4,7 +4,6 @@ with
             s.*,
             initcap(regexp_extract(s._dbt_source_relation, r'kipp(\w+)_')) as region,
         from {{ ref("stg_powerschool__students") }} as s
-        where s.enroll_status != -100
     )
 
 select
