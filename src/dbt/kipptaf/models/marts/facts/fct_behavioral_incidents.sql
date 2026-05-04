@@ -32,7 +32,7 @@ with
     )
 
 select
-    {{ dbt_utils.generate_surrogate_key(["i.incident_id", "i._dbt_source_relation"]) }}
+    {{ dbt_utils.generate_surrogate_key(["i.incident_id", "i._dbt_source_project"]) }}
     as behavioral_incident_key,
 
     {{

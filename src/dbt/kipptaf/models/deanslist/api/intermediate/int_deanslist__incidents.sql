@@ -1,5 +1,5 @@
 with
-    unioned as (
+    union_relations as (
         {{
             dbt_utils.union_relations(
                 relations=[
@@ -11,8 +11,8 @@ with
         }}
     )
 
-select u.*, loc.location_key,
-from unioned as u
+select u.*, {{ extract_code_location("u") }} as _dbt_source_project, loc.location_key,
+from union_relations as u
 left join
     {{ ref("stg_google_sheets__people__locations") }} as loc
     on u.school_id = loc.deanslist_school_id
