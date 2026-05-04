@@ -9,10 +9,21 @@ with
                 ]
             )
         }}
+    ),
+
+    sanitized as (
+        -- trunk-ignore(sqlfluff/AM04): union_relations expands at compile time
+        select
+            * except (close_ts_date),
+
+            if(
+                close_ts_date < datetime '2000-01-01', null, close_ts_date
+            ) as close_ts_date,
+        from union_relations
     )
 
 select u.*, {{ extract_code_location("u") }} as _dbt_source_project, loc.location_key,
-from union_relations as u
+from sanitized as u
 left join
     {{ ref("stg_google_sheets__people__locations") }} as loc
     on u.school_id = loc.deanslist_school_id
