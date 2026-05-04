@@ -92,11 +92,16 @@ with
             term.semester,
 
             gtq.gpa_semester,
-            gtq.gpa_y1_unweighted,
+
             gtq.total_credit_hours_y1 as gpa_total_credit_hours,
             gtq.n_failing_y1 as gpa_n_failing_y1,
 
+            if(
+                term.quarter = 'Y1', gty.gpa_y1_unweighted, gtq.gpa_y1_unweighted
+            ) as gpa_y1_unweighted,
+
             if(term.quarter = 'Y1', gty.gpa_y1, gtq.gpa_term) as gpa_for_quarter,
+
             if(term.quarter = 'Y1', gty.gpa_y1, gtq.gpa_y1) as gpa_y1,
 
         from {{ ref("int_extracts__student_enrollments") }} as enr
