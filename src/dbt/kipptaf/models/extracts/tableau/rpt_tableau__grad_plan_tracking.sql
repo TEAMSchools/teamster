@@ -11,6 +11,7 @@ select
     g.course_number,
     g.course_name,
     g.sectionid,
+    g.grade_dcid,
     g.credit_type,
     g.letter_grade,
     g.is_transfer_grade,

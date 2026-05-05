@@ -14,7 +14,7 @@ models:
               - plan_id
               - discipline_id
               - subject_id
-              - sectionid
+              - grade_dcid
               - credit_status
     columns:
       - name: _dbt_source_relation
@@ -40,6 +40,13 @@ models:
       - name: course_name
         data_type: string
       - name: sectionid
+        data_type: int64
+      - name: grade_dcid
+        description: >
+          Row identifier for the underlying grade record. storedgrades.dcid for
+          Earned rows; cc_dcid from base_powerschool__final_grades for Enrolled
+          rows. Do not join to final_grades.cc_dcid across both credit_status
+          values.
         data_type: int64
       - name: credit_type
         data_type: string
