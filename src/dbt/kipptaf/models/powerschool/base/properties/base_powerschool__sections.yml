@@ -10,7 +10,7 @@ models:
         description: >-
           District code-location extracted once from `_dbt_source_relation`
           (e.g., `kippnewark`, `kippcamden`). Materialized join key for
-          cross-region region lookups against
+          cross-region lookups against
           `stg_google_sheets__people__locations.dagster_code_location`.
       - name: sections_section_number
         data_type: string
