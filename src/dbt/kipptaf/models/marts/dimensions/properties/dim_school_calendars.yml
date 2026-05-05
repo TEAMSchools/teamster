@@ -21,7 +21,10 @@ models:
         data_type: date
         description: >-
           Each day of the school year including holidays and weekends, such as
-          the school day. Indexed.
+          the school day. Indexed. Currently warns on 3 NULL rows (project-
+          default `not_null` severity) — junk pre-2000 source dates sanitized to
+          NULL upstream by PR #3809; the 3 rows themselves should be filtered
+          out of this dim. See follow-up note in #3719 thread.
         constraints:
           - type: foreign_key
             to: ref('dim_dates')
