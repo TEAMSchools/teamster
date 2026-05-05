@@ -3,6 +3,13 @@ models:
     config:
       materialized: table
     columns:
+      - name: _dbt_source_project
+        data_type: string
+        description: >-
+          District code-location extracted once from `_dbt_source_relation`
+          (e.g., `kippnewark`, `kippcamden`). Materialized join key for
+          cross-region lookups against
+          `stg_google_sheets__people__locations.dagster_code_location`.
       - name: location_key
         data_type: string
         description: |
