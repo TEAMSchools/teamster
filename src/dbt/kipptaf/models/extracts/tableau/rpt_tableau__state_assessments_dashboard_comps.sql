@@ -129,6 +129,8 @@ select
     a.total_students,
     a.percent_proficient,
 
+    -- when a.comparison_entity = 'Region', b is the same row, so region_matched is
+    -- always true
     if(b.percent_proficient = a.percent_proficient, true, false) as region_matched,
     if(b.percent_proficient > a.percent_proficient, true, false) as region_outperformed,
 
