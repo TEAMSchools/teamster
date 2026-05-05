@@ -46,6 +46,15 @@ file; domain specifics live in the nearest subdirectory CLAUDE.md.
   `grade_level`, `school`, partial dates, zip alone) reidentify in combination —
   never post two together.
 
+- **Before writing any content outside the local dev environment** — including
+  GitHub PRs, issue comments, commit messages, Slack, Asana, scheduled-agent
+  outputs, or any other external system — perform a PII redaction pass on any
+  values from local validation work. Values sourced from columns tagged
+  `config.meta.contains_pii: true` in model YAML — or that meet the PII criteria
+  listed above — must be replaced with redacted labels (`a sample student`,
+  `Student A`) or column-name references. The transition from local analysis to
+  any external output is the trigger.
+
 - **Before writing any spec or plan**: STOP and explicitly ask the user whether
   to open a GitHub issue first. Required for specs/plans; not required for quick
   fixes. Do not write anything until the user answers. If opening: use
@@ -117,7 +126,11 @@ file; domain specifics live in the nearest subdirectory CLAUDE.md.
 - **Trunk linting/formatting**: Do not run `trunk fmt` or `trunk check` manually
   — `trunk-fmt-pre-commit` formats at commit time and `trunk-check-pre-push`
   blocks bad pushes, both in the main repo and in worktrees (`core.hooksPath` is
-  shared).
+  shared). **Pre-commit hook runs `fmt` only**; sqlfluff/yamllint and other
+  check-only linters fire at `pre-push` and in CI. If a session reports "trunk
+  clean" on a SQL/YAML change based on commit hooks alone, run
+  `.trunk/tools/trunk check --force <files>` to verify before claiming the
+  change is lint-clean.
 
 - **Linter**: Use `# trunk-ignore(<linter>/<rule>)` with a reason comment — not
   linter-native disable syntax. Binary:
