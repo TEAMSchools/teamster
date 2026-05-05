@@ -22,7 +22,7 @@ select
 
 from {{ ref("base_powerschool__sections") }} as sec
 inner join
-    {{ ref("dim_regions") }} as dr on dr.dagster_code_location = sec._dbt_source_project
+    {{ ref("dim_regions") }} as dr on sec._dbt_source_project = dr.dagster_code_location
 inner join
     {{ ref("stg_google_sheets__reporting__terms") }} as rt
     on sec.sections_schoolid = rt.school_id

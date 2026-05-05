@@ -15,7 +15,7 @@ models:
               - powerschool_year_id
           config:
             severity: error
-            where: "type = 'RT'"
+            where: type = 'RT'
     columns:
       - name: type
         data_type: string

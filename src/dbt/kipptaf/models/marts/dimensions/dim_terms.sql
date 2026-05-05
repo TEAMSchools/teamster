@@ -1,4 +1,4 @@
-with terms as (select * from {{ ref("stg_google_sheets__reporting__terms") }})
+with terms as (select *, from {{ ref("stg_google_sheets__reporting__terms") }})
 
 select
     {{
@@ -27,7 +27,7 @@ select
     t.lockbox_date as data_freeze_date,
     t.is_current,
 from terms as t
-left join {{ ref("dim_regions") }} as dr on dr.`name` = t.city
+left join {{ ref("dim_regions") }} as dr on t.city = dr.`name`
 left join
     {{ ref("stg_powerschool__schools") }} as sch
     on t.school_id = sch.school_number

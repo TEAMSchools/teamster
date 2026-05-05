@@ -111,7 +111,7 @@ inner join
     and fg.termbin_start_date < enr.exitdate
     and {{ union_dataset_join_clause(left_alias="fg", right_alias="enr") }}
 inner join
-    {{ ref("dim_regions") }} as dr on dr.dagster_code_location = fg._dbt_source_project
+    {{ ref("dim_regions") }} as dr on fg._dbt_source_project = dr.dagster_code_location
 left join
     reporting_terms as rt
     on fg.storecode = rt.name
