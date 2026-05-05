@@ -22,6 +22,19 @@ with
             powerschool_year_id,
         from {{ ref("stg_google_sheets__reporting__terms") }}
         where `type` = 'RT'
+    ),
+
+    code_locations as (
+        {{
+            dbt_utils.deduplicate(
+                relation=ref("stg_google_sheets__people__locations"),
+                partition_by="city",
+                order_by=(
+                    "(dagster_code_location = 'kipptaf') asc,"
+                    " powerschool_school_id desc"
+                ),
+            )
+        }}
     )
 
 select
@@ -110,9 +123,10 @@ inner join
     and fg.termbin_start_date >= enr.entrydate
     and fg.termbin_start_date < enr.exitdate
     and {{ union_dataset_join_clause(left_alias="fg", right_alias="enr") }}
+inner join code_locations as cl on cl.dagster_code_location = fg._dbt_source_project
 left join
     reporting_terms as rt
     on fg.storecode = rt.name
     and fg.schoolid = rt.school_id
-    and initcap(regexp_extract(fg._dbt_source_relation, r'kipp(\w+)_')) = rt.region
+    and rt.region = cl.city
     and fg.yearid = rt.powerschool_year_id
