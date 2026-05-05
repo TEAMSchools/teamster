@@ -54,7 +54,7 @@ with
 
             if(
                 a.scoretype in ('PERCENT', 'GRADESCALE', 'COLLECTED'),
-                safe_cast(s.actualscoreentered as numeric),
+                safe_cast(s.actualscoreentered as float64),
                 null
             ) as numeric_grade_earned,
 

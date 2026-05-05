@@ -115,22 +115,31 @@ models:
         description: >-
           Short code for the gradebook category.
 
-      - name: score_type
-        data_type: string
+      - name: points_earned
+        data_type: float64
         description: >-
-          Indicates if this score is a letter grade or percent.
+          Raw points the student scored on this assignment. Populated only when
+          the source assignment uses `POINTS` scoring (NULL otherwise). Ed-Fi
+          studentGradebookEntry `points_earned`.
 
         config:
           meta:
             source_system: PowerSchool
-            source_model: stg_powerschool__assignmentsection
-            source_column: scoretype
-      - name: score
+            source_model: stg_powerschool__assignmentscore
+            source_column: scorepoints
+      - name: numeric_grade_earned
         data_type: float64
         description: >-
-          Score entered for the student. For POINTS type this is scorepoints;
-          for PERCENT type this is the numeric value of actualscoreentered. Null
-          when the student has no score recorded.
+          Numeric grade the student earned (0-100 percent or letter-grade
+          equivalent). Populated only when the source assignment uses `PERCENT`,
+          `GRADESCALE`, or `COLLECTED` scoring (NULL otherwise). Ed-Fi
+          studentGradebookEntry `numeric_grade_earned`.
+
+        config:
+          meta:
+            source_system: PowerSchool
+            source_model: stg_powerschool__assignmentscore
+            source_column: actualscoreentered
 
       - name: max_points
         data_type: float64
