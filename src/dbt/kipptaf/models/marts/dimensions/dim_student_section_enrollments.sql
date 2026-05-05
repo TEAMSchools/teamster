@@ -6,6 +6,7 @@ with
             schoolid,
             yearid,
             student_number,
+            academic_year,
             entrydate,
             exitdate,
         from {{ ref("base_powerschool__student_enrollments") }}
@@ -20,35 +21,50 @@ select
             [
                 "enr.student_number",
                 "enr._dbt_source_relation",
-                "cc.cc_academic_year",
+                "enr.academic_year",
                 "enr.entrydate",
             ]
         )
     }} as student_enrollment_key,
 
-    {{
-        dbt_utils.generate_surrogate_key(
-            ["cc.sections_dcid", "cc._dbt_source_relation"]
-        )
-    }} as course_section_key,
-
+    -- FK source_relation must match dim_course_sections, which is built from
+    -- base_powerschool__sections. Rewrite cc's source relation to the parent's.
+    -- TODO: replace() is a no-op if a future district uses a different base
+    -- model name. Long-term fix: hash region prefix only, consistent across
+    -- producer and consumer (#3820).
     {{
         dbt_utils.generate_surrogate_key(
             [
-                "rt.type",
-                "rt.code",
-                "rt.name",
-                "rt.start_date",
-                "rt.region",
-                "rt.school_id",
+                "cc.sections_dcid",
+                (
+                    "replace(cc._dbt_source_relation,"
+                    " 'base_powerschool__course_enrollments',"
+                    " 'base_powerschool__sections')"
+                ),
             ]
         )
-    }} as term_key,
+    }} as course_section_key,
 
-    cc.students_student_number as student_number,
+    if(
+        rt.code is not null,
+        {{
+            dbt_utils.generate_surrogate_key(
+                [
+                    "rt.type",
+                    "rt.code",
+                    "rt.name",
+                    "rt.start_date",
+                    "rt.region",
+                    "rt.school_id",
+                ]
+            )
+        }},
+        cast(null as string)
+    ) as term_key,
+
     cc.cc_academic_year as academic_year,
-    cc.cc_dateenrolled as date_enrolled,
-    cc.cc_dateleft as date_left,
+    cc.cc_dateenrolled as entry_date,
+    cc.cc_dateleft as exit_date,
     cc.is_dropped_section,
     cc.is_dropped_course,
 
@@ -66,6 +82,7 @@ left join
     on cc.cc_abs_termid = rt.powerschool_term_id
     and cc.sections_schoolid = rt.school_id
     and cc.region = rt.region
+    and rt.`type` = 'RT'
 
 -- TODO: overlapping enrollment records at same school cause join
 -- fan-out; qualify picks latest entrydate (#3633)

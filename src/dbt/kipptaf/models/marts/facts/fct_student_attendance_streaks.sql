@@ -28,12 +28,8 @@ select
     st.streak_start_date as streak_start_date_key,
     st.streak_end_date as streak_end_date_key,
 
-    enr.student_number,
-
     st.yearid + 1990 as academic_year,
-    st.att_code as streak_type,
-    st.streak_start_date,
-    st.streak_end_date,
+    st.att_code as attendance_code,
     st.streak_length_membership,
     st.streak_length_calendar,
 from {{ ref("int_powerschool__attendance_streak") }} as st

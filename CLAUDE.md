@@ -2,13 +2,9 @@
 
 ## Project Overview
 
-Teamster is a data engineering platform for KIPP TEAM & Family Schools (Newark,
-Camden, and Paterson, NJ & Miami, FL) built on **Dagster** (orchestration),
-**dbt** (transformations), and **Google BigQuery** (warehouse), with Google
-Cloud Storage (GCS) as the intermediate storage layer. Python ≥3.13.
-
-Production runs on **GKE** (Google Kubernetes Engine) via Dagster Cloud.
-Development uses **GitHub Codespaces** (devcontainer) — secrets are injected
+Stack: **Dagster** (orchestration), **dbt** (transformations), **Google
+BigQuery** (warehouse), **GCS** (intermediate storage). Python ≥3.13. Production
+on **GKE** via Dagster Cloud. Dev in **GitHub Codespaces**; secrets injected
 from 1Password at container start.
 
 ## Architecture
@@ -23,9 +19,29 @@ this step.**
 
 ## Working Conventions
 
-- **Before writing any spec or plan**: create a GitHub issue (`gh issue create`;
-  label with conventional commit type, related source systems, and
-  `dagster`/`dbt` when applicable). Quick fixes do not require one.
+- **PII stays local**: never post PII values, or screenshots/logs containing
+  them, outside the local dev env (PR comments, commits, issues, scheduled-agent
+  outputs, etc.). Local artifacts (`.claude/scratch/`, `.worktrees/`, terminal)
+  are fine. Reference column names, not values; use redacted labels ("Student
+  A") for examples. Aggregates/deidentified ≠ PII.
+
+  dbt tags PII as `config.meta.contains_pii: true` — authoritative but
+  **incomplete**. Untagged columns are PII if they identify a person: IDs
+  (`student_number`, `employee_number`, `ssn`, `state_id`, `local_id`, including
+  source-system aliases like Salesforce kippadb's `school_specific_id`), names
+  (`*_name`), contact (`email`, `phone`, `address`, `street`, `city`, `zip`),
+  `dob`/`birth_date`, guardian/parent fields, free-text `comment`/ `note` on
+  people tables, credentials/tokens. When unsure, treat as PII.
+
+  Quasi-identifiers (`gender`, `race`, `ethnicity`, `home_language`,
+  `grade_level`, `school`, partial dates, zip alone) reidentify in combination —
+  never post two together.
+
+- **Before writing any spec or plan**: STOP and explicitly ask the user whether
+  to open a GitHub issue first. Required for specs/plans; not required for quick
+  fixes. Do not write anything until the user answers. If opening: use
+  `mcp__github__issue_write`; label with conventional commit type, related
+  source systems, and `dagster`/`dbt` when applicable.
 
 - **Before creating a branch**: ask the user — worktree or branch switch? Do not
   choose for them.
@@ -35,20 +51,35 @@ this step.**
 - **Worktree**: `gh issue develop <number> --name <branch>` (no `--checkout`),
   then `git worktree add .worktrees/<branch> <branch>`.
 
-- **Worktree git commands**: Always `cd` to the worktree before running `git`
-  commands — the main repo and worktree have separate git state. Running
-  `git commit` from the main repo commits to `main`, not the worktree branch.
+- **Linking an existing remote branch to an issue**:
+  `mcp__github__create_branch` and GraphQL `createLinkedBranch` both no-op when
+  the branch already exists. Delete the remote branch, then
+  `gh issue develop <num> --name <branch>`, then re-push local commits.
+
+- **Worktree commands**: Path-flag-driven tools must name the worktree
+  explicitly. Use `git -C <worktree>` on every git call (bare `git` from the
+  main repo silently commits to `main`) and
+  `uv run dbt ... --project-dir <worktree>/src/dbt/<project>` on every dbt call.
+  Otherwise prefer absolute paths.
 
 - **Branch switch**: `gh issue develop <number> --name <branch> --checkout`.
 
 - **Git naming**: Commit messages and branch names use
   [conventional commits](https://www.conventionalcommits.org/en/v1.0.0/). Branch
   naming: `<gh-username>/<commit-type>/claude-<brief-description>` (get username
-  from `gh api user -q .login`).
+  from `mcp__github__get_me`).
 
 - **Git staging**: Prefer `git add -u` — naming protected paths triggers the
   hook, `git add -A` can stage unrelated files. Subagents must name specific
   files in `git add` — never `-u`, `-A`, or `.`.
+
+- **Dispatching subagents**: Subagents do not auto-invoke skills. In the
+  dispatch prompt, name the exact `Skill` tool calls the subagent must run
+  before starting work (e.g. `Skill` with
+  skill=`dbt:using-dbt-for-analytics-engineering` for a dbt review). For
+  negation goals (remove X, no Y), list anti-patterns explicitly — subagents
+  otherwise re-introduce familiar idioms (`dbt_utils.deduplicate`,
+  `select distinct`, `qualify row_number()=1`).
 
 - **Git resuming**: Before resuming work on an existing branch, merge `main`:
   `git fetch origin main && git merge origin/main`.
@@ -59,15 +90,26 @@ this step.**
 - **Python**: Always `uv run` — never bare `python`, `python3`, or
   venv-installed tools (`dbt`, `dagster`, etc.).
 
+- **Transient Python deps**: Use `uv run --with <pkg> python script.py` for
+  one-off scripts needing a package not in `pyproject.toml` — don't
+  `uv add --dev` for throwaway tooling.
+
 - **Built-in tools over Bash**: Use dedicated tools for file I/O (Read, Grep,
   Glob, Edit, Write). Bash is only for commands with no dedicated tool (`git`,
   `uv run`, `gh`, `docker`, `trunk`, `ls`).
 
-- **Trunk linting/formatting**: Do not run `trunk fmt` manually — formatting is
-  handled by the PostToolUse hook (after Edit/Write) and `trunk-fmt-pre-commit`
-  (at commit time). **Before pushing from a worktree**, run
-  `/workspaces/teamster/.trunk/tools/trunk check --ci` from the worktree root
-  and fix any issues — trunk git hooks are not installed in worktrees.
+- **Verify tool-call results for resource creation/update**: syntax errors in
+  structured tool-call parameters (malformed closing tags, misnested blocks) can
+  silently produce corrupted values — the call succeeds without error, just with
+  the wrong payload. After any call that creates or updates a resource with
+  string fields (issue title, PR body, commit message, etc.), check the returned
+  values match intent before moving on.
+
+- **Trunk linting/formatting**: Do not run `trunk fmt` or `trunk check` manually
+  — `trunk-fmt-pre-commit` formats at commit time and `trunk-check-pre-push`
+  blocks bad pushes, both in the main repo and in worktrees (`core.hooksPath` is
+  shared). The trunk daemon caches in `~/.cache/trunk/repos/` are pruned on
+  Codespace boot via `postStart.sh`.
 
 - **Linter**: Use `# trunk-ignore(<linter>/<rule>)` with a reason comment — not
   linter-native disable syntax. Binary:
@@ -87,13 +129,15 @@ this step.**
 ## CLAUDE.md Editing Rules
 
 - **Before editing any CLAUDE.md file**: present the proposed change as a quote
-  block with a one-line expected-utility note. Do not apply it until the user
-  approves.
+  block. Do not apply it until the user approves.
 
-- **Before adding to any CLAUDE.md file**: for each line, answer: what specific
-  wrong action does this prevent? If you can't name one, cut it. General
-  knowledge and human-only context (motivation, rationale, history) don't
-  qualify.
+- **CLAUDE.md is for Claude, not humans**: cut motivation, rationale, and
+  history written to explain the project to a human reader. Keep them only when
+  they measurably change Claude's behavior.
+
+- **Before adding to any CLAUDE.md file**: answer the question: "what specific
+  decision or action will Claude make differently because of this line?" If you
+  can't name one, cut it.
 
 ## MCP Servers
 
@@ -101,17 +145,73 @@ Dagster+ MCP server: `dagster-plus-mcp` package (`dev` group) —
 [TEAMSchools/dagster-plus-mcp](https://github.com/TEAMSchools/dagster-plus-mcp).
 See that repo's CLAUDE.md for package internals.
 
+Authenticated via `scripts/dagster-mcp-launch.sh` (reads
+`/etc/secret-volume/.op-token`, exchanges for scoped `DAGSTER_CLOUD_API_TOKEN`
+via `op read`, execs). Do not revert to `op run` in `.mcp.json` —
+`OP_SERVICE_ACCOUNT_TOKEN` is scrubbed post-boot by `postStart.sh`, so `op run`
+silently breaks after the first Codespace restart.
+
+- **MCP outages**: If an MCP tool returns "server disconnected" or clearly
+  impaired responses, surface to the user before working around with raw `gh` /
+  BigQuery calls.
+
 ### MCP tool selection
 
 Use BigQuery MCP for ad-hoc queries against known production tables. Use dbt
 MCP's `show` only when `ref()` / `source()` resolution is needed — it adds
 compilation overhead.
 
+For run-internal timelines (steps, engine events, failures), use
+`mcp__dagster__get_run_logs` — its events are canonical and structured. Note the
+unit mismatch: GraphQL `creationTime/startTime/endTime` are float seconds;
+`get_run_logs` event `timestamp` is a millisecond string.
+
+GitHub MCP (`mcp__github__*`) is mandatory for any GitHub operation that has an
+MCP equivalent. Before running `gh <subcommand>` via Bash, check the
+`mcp__github__*` tool list — if a matching tool exists, use it.
+
+`gh` via Bash is permitted only when no MCP equivalent exists. Current cases:
+
+- `gh issue develop` — linked branch creation; `mcp__github__create_branch` does
+  not link branches to issues.
+- `gh project item-edit --id <ITEM_ID> --project-id <PROJECT_ID> --field-id <FIELD_ID> --single-select-option-id <OPTION_ID>`
+  — ProjectV2 field mutations (Status / Tier / Driver / etc.) aren't exposed by
+  `mcp__github__*`. To unset a field value (any type), replace the value flag
+  with `--clear`. No output on success — verify via `gh api graphql` querying
+  the item's `fieldValues`. `gh project item-list` JSON also omits ProjectV2
+  custom fields whose names contain spaces (e.g. `PR batch`); single-word custom
+  fields (`Driver`, `Tier`, `Status`) do appear. Use the same `fieldValues`
+  GraphQL query to read the omitted ones.
+- `gh project item-add <PROJECT_NUMBER> --owner <OWNER> --url <ISSUE_URL>` —
+  adds an issue/PR to a ProjectV2 board. No `mcp__github__*` equivalent. Combine
+  with `gh project item-edit` to set fields after add.
+- `gh run *` — Actions run inspection/control; no MCP coverage.
+- `gh workflow *` — Actions workflow inspection/dispatch; no MCP coverage.
+- `gh repo edit` — repo settings; `gh repo create/view/list` have MCP
+  equivalents and are not on this list.
+- Editing an existing comment — `mcp__github__add_issue_comment` only creates.
+  Use `gh api -X PATCH repos/<owner>/<repo>/issues/comments/<id> -f body='...'`.
+- Replying to a PR inline review comment in-thread —
+  `mcp__github__add_issue_comment` posts top-level PR comments only, not thread
+  replies. Use
+  `gh api -X POST repos/<owner>/<repo>/pulls/<pr>/comments/<id>/replies -f body='...'`.
+
 ### Dagster asset diagnosis
 
 When verifying failures, fetch the most recent run per job (`list_runs` with
 `job_name=..., limit=1`, no status filter) — bulk cross-referencing capped
 result sets misses retries and recoveries.
+
+Asset keys do NOT include dbt subdirectory layers (`staging/`, `intermediate/`,
+or mart `facts`/`dimensions`/`bridges`) —
+`kipptaf/people/int_people__location_crosswalk` (not `.../intermediate/...`) and
+`kipptaf/marts/fct_x` (not `kipptaf/facts/fct_x`).
+
+### Dagster Cloud GraphQL (direct, not via MCP)
+
+Host is `kipptaf.dagster.cloud/<deployment>/graphql` (org is `kipptaf`).
+`assetChecksOrError` is nested under `assetNodeOrError`; the evaluation success
+field is `success` (not `successful`).
 
 ### GKE MCP
 
@@ -123,9 +223,10 @@ check the `CodespacesRole` custom IAM role, not user IAM bindings.
 `end_time`), not camelCase. Results cap at 100 — paginate by using the last
 entry's timestamp as the next `start_time`.
 
-`query_logs` format templates reject hyphens in key names
-(`{{.labels.k8s-pod/dagster/op}}` fails). Use full JSON output and extract with
-jq instead.
+`query_logs` format templates reject hyphens in dotted key paths
+(`{{.labels.k8s-pod/dagster/op}}` fails to parse). Use the Go template `index`
+function instead: `{{index .labels "k8s-pod/dagster/op"}}`. Fall back to full
+JSON + jq only when nesting is deeper than `index` can express.
 
 For pod-level logs, prefer `mcp__gke__query_logs` over
 `mcp__observability__list_log_entries` — the GKE MCP returns pod labels (run-id,
@@ -142,3 +243,36 @@ data. `list_time_series` `alignmentPeriod` must end with `s` (e.g., `"60s"` not
 
 Truncates results at 50 rows. When querying `INFORMATION_SCHEMA.COLUMNS` for
 wide tables, paginate with `WHERE ordinal_position > N`.
+
+Pre-merge queries against PR-branch schema use
+`dbt_cloud_pr_<ci_id>_<pr_num>_<schema>` — prod `<schema>` lacks unmerged
+renames.
+
+Chained joins through PR-branch marts (mart-view → mart-view → upstream-view)
+hit BigQuery's 16-view nesting limit. Query materialized prod tables instead, or
+split the query.
+
+For NULL-safe distinct counts on composite keys, use
+`count(distinct format("%T|%T", a, b))` — `concat()` returns NULL when any arg
+is NULL and silently miscounts violations.
+
+### dbt MCP
+
+Auth via `scripts/dbt-mcp-launch.sh` — do not add `DBT_TOKEN` to `.mcp.json`
+directly. `list_jobs` is hard-filtered to `DBT_PROD_ENV_ID`, currently staging
+(70403104014899); per-call `environment_id` / `project_id` args exposed by the
+schema are ignored. Run-inspection tools (`list_jobs_runs`,
+`get_job_run_details`, `get_job_run_error`) ignore env scope and work across
+environments by `job_id` / `run_id`. For successful runs, call
+`get_job_run_error` with `warning_only=true` to surface test warnings —
+status=Success does not mean warning-free.
+
+Production env id is **70403104000025** but has no scheduled dbt Cloud jobs
+(Dagster-orchestrated). For job inspection, query Staging env (70403104014899)
+jobs by id; production schemas (`kipptaf_*`) are populated by Dagster, not by
+the dbt Cloud Production env.
+
+Job config changes must go through the dbt Cloud UI — no mutation tools exist in
+the MCP. Live step logs (`debug_logs`, `structured_logs`) and
+`list_job_run_artifacts` return nothing until `artifacts_saved: true` — don't
+try to diagnose in-flight runs.

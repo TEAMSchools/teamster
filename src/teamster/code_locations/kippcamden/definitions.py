@@ -9,18 +9,19 @@ from dagster_k8s import k8s_job_executor
 from teamster.code_locations.kippcamden import (
     CODE_LOCATION,
     DBT_PROJECT,
-    asset_checks,
     couchdrop,
     dbt,
     deanslist,
     edplan,
     extracts,
     finalsite,
+    freshness,
     overgrad,
     pearson,
     powerschool,
     titan,
 )
+from teamster.core.freshness import apply_freshness_policies
 from teamster.core.resources import (
     BIGQUERY_RESOURCE,
     DB_POWERSCHOOL,
@@ -40,20 +41,22 @@ from teamster.core.resources import (
 
 defs = Definitions(
     executor=k8s_job_executor,
-    assets=load_assets_from_modules(
-        modules=[
-            dbt,
-            extracts,
-            deanslist,
-            edplan,
-            finalsite,
-            overgrad,
-            pearson,
-            powerschool,
-            titan,
-        ]
+    assets=apply_freshness_policies(
+        load_assets_from_modules(
+            modules=[
+                dbt,
+                extracts,
+                deanslist,
+                edplan,
+                finalsite,
+                overgrad,
+                pearson,
+                powerschool,
+                titan,
+            ]
+        ),
+        policies=freshness.policies,
     ),
-    asset_checks=asset_checks.freshness_checks,
     schedules=[
         *extracts.schedules,
         *deanslist.schedules,

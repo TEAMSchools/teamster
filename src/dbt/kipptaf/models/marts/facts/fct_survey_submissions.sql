@@ -17,7 +17,7 @@ with
             rt.region as rt_region,
             rt.school_id as rt_school_id,
 
-            'staff' as respondent_population,
+            'staff' as respondent_type,
 
             cast(null as int64) as subject_employee_number,
         from {{ ref("int_surveys__survey_responses") }} as sr
@@ -52,7 +52,7 @@ with
             rt.region as rt_region,
             rt.school_id as rt_school_id,
 
-            'student' as respondent_population,
+            'student' as respondent_type,
 
             enr.student_number,
             enr._dbt_source_relation,
@@ -90,7 +90,7 @@ with
             rt_start_date,
             rt_region,
             rt_school_id,
-            respondent_population,
+            respondent_type,
             student_number,
             _dbt_source_relation,
             entrydate,
@@ -115,7 +115,7 @@ with
             rt.region as rt_region,
             rt.school_id as rt_school_id,
 
-            'family' as respondent_population,
+            'family' as respondent_type,
         from {{ ref("int_surveys__survey_responses") }} as sr
         inner join
             {{ ref("stg_google_sheets__reporting__terms") }} as rt
@@ -149,7 +149,7 @@ with
             rt.region as rt_region,
             rt.school_id as rt_school_id,
 
-            'staff' as respondent_population,
+            'staff' as respondent_type,
 
             coalesce(
                 ms.survey_response_id,
@@ -190,7 +190,7 @@ with
 
             survey_id,
             survey_response_id,
-            respondent_population,
+            respondent_type,
             respondent_employee_number,
             subject_employee_number,
             date_submitted,
@@ -216,7 +216,7 @@ with
 
             survey_id,
             survey_response_id,
-            respondent_population,
+            respondent_type,
             respondent_employee_number,
             subject_employee_number,
             date_submitted,
@@ -242,7 +242,7 @@ with
 
             survey_id,
             survey_response_id,
-            respondent_population,
+            respondent_type,
             student_number,
             _dbt_source_relation,
             academic_year,
@@ -269,7 +269,7 @@ with
 
             survey_id,
             survey_response_id,
-            respondent_population,
+            respondent_type,
             date_submitted,
             academic_year,
         from family_gforms
@@ -277,21 +277,14 @@ with
 
 /* Staff submissions */
 select
-    {{
-        dbt_utils.generate_surrogate_key(
-            [
-                "survey_id",
-                "survey_response_id",
-                "respondent_employee_number",
-            ]
-        )
-    }} as survey_submission_key,
+    {{ dbt_utils.generate_surrogate_key(["survey_id", "survey_response_id"]) }}
+    as survey_submission_key,
 
     survey_administration_key,
 
     date(date_submitted) as date_submitted_key,
 
-    respondent_population,
+    respondent_type,
 
     {{ dbt_utils.generate_surrogate_key(["respondent_employee_number"]) }} as staff_key,
 
@@ -304,27 +297,23 @@ select
         cast(null as string)
     ) as subject_staff_key,
 
-    survey_id,
-    survey_response_id,
-    date_submitted,
     academic_year,
+
+    date_submitted as `timestamp`,
 from combined_staff
 
 union all
 
 /* Student submissions */
 select
-    {{
-        dbt_utils.generate_surrogate_key(
-            ["survey_id", "survey_response_id", "student_number"]
-        )
-    }} as survey_submission_key,
+    {{ dbt_utils.generate_surrogate_key(["survey_id", "survey_response_id"]) }}
+    as survey_submission_key,
 
     survey_administration_key,
 
     date(date_submitted) as date_submitted_key,
 
-    respondent_population,
+    respondent_type,
 
     cast(null as string) as staff_key,
 
@@ -342,10 +331,9 @@ select
     cast(null as string) as student_contact_person_key,
     cast(null as string) as subject_staff_key,
 
-    survey_id,
-    survey_response_id,
-    date_submitted,
     academic_year,
+
+    date_submitted as `timestamp`,
 from combined_student
 
 union all
@@ -359,15 +347,14 @@ select
 
     date(date_submitted) as date_submitted_key,
 
-    respondent_population,
+    respondent_type,
 
     cast(null as string) as staff_key,
     cast(null as string) as student_enrollment_key,
     cast(null as string) as student_contact_person_key,
     cast(null as string) as subject_staff_key,
 
-    survey_id,
-    survey_response_id,
-    date_submitted,
     academic_year,
+
+    date_submitted as `timestamp`,
 from combined_family

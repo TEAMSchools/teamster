@@ -1,7 +1,18 @@
 models:
   - name: stg_google_sheets__coupa__address_name_crosswalk
+    description: |
+      Crosswalk from canonical `location_clean_name` to Coupa's address name.
+      Sourced from a Google Sheet maintained by the People team.
     columns:
-      - name: adp_home_work_location_name
+      - name: location_clean_name
+        description: |
+          Canonical location name from `int_people__location_crosswalk`. Join
+          key to `int_people__staff_roster.home_work_location_reporting_name`.
         data_type: string
+        data_tests:
+          - unique:
+              config:
+                severity: error
       - name: coupa_address_name
+        description: Address name as it appears in Coupa's address book.
         data_type: string

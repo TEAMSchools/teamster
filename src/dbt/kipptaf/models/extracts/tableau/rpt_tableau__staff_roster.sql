@@ -82,4 +82,4 @@ left join
     and ye.academic_year = {{ var("current_academic_year") }}
 left join
     {{ ref("int_people__leadership_crosswalk") }} as lc
-    on b.home_work_location_name = lc.home_work_location_name
+    on b.home_work_location_reporting_name = lc.home_work_location_reporting_name

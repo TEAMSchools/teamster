@@ -1,46 +1,86 @@
 with
-    deduplicated as (
-        {{
-            dbt_utils.deduplicate(
-                relation=ref("int_extracts__student_enrollments"),
-                partition_by="student_number",
-                order_by="academic_year desc, entrydate desc",
-            )
-        }}
+    students_with_region as (
+        select
+            s.*,
+            initcap(regexp_extract(s._dbt_source_relation, r'kipp(\w+)_')) as region,
+        from {{ ref("stg_powerschool__students") }} as s
     )
 
 select
-    {{ dbt_utils.generate_surrogate_key(["student_number"]) }} as student_key,
+    {{ dbt_utils.generate_surrogate_key(["s.student_number"]) }} as student_key,
 
-    student_number as local_student_identifier,
-    state_studentnumber as state_student_identifier,
-    student_name,
-    dob as birth_date,
-    gender,
-    lunch_status,
+    s.student_number as lea_student_identifier,
 
-    gifted_and_talented is not null as is_gifted,
+    if(
+        s.region = 'Miami', s.state_studentnumber, cast(null as string)
+    ) as district_student_identifier,
 
-    lep_status is not null as is_ell,
-    iep_status = 'With IEP' as has_iep,
+    if(
+        s.region = 'Miami', suf.fleid, s.state_studentnumber
+    ) as state_student_identifier,
+
+    adb.id as salesforce_contact_id,
+
+    concat(s.last_name, ', ', s.first_name) as full_name,
+
+    s.dob as birth_date,
+    s.gender as gender_identity,
+
+    coalesce(njs.gifted_and_talented, suf.gifted_and_talented, 'N') != 'N' as is_gifted,
+
+    scf.lep_status as is_ell,
 
     case
-        when ethnicity = 'B'
+        when s.ethnicity = 'B'
         then 'Black/African American'
-        when ethnicity = 'H'
+        when s.ethnicity = 'H'
         then 'Hispanic or Latino'
-        when ethnicity = 'T'
+        when s.ethnicity = 'T'
         then 'Two or More Races'
-        when ethnicity = 'W'
+        when s.ethnicity = 'W'
         then 'White'
-        when ethnicity = 'I'
+        when s.ethnicity = 'I'
         then 'American Indian or Alaska Native'
-        when ethnicity = 'A'
+        when s.ethnicity = 'A'
         then 'Asian'
-        when ethnicity = 'P'
+        when s.ethnicity = 'P'
         then 'Native Hawaiian or Other Pacific Islander'
-        when ethnicity = 'N'
+        when s.ethnicity = 'N'
         then 'Not Hispanic or Latino'
         else 'Not Listed'
-    end as ethnicity,
-from deduplicated
+    end as race,
+
+    case
+        s.enroll_status
+        when -2
+        then 'Inactive'
+        when -1
+        then 'Pre-registered'
+        when 0
+        then 'Currently Enrolled'
+        when 1
+        then 'Inactive'
+        when 2
+        then 'Transferred Out'
+        when 3
+        then 'Graduated'
+        when 4
+        then 'Imported as Historical'
+    end as enrollment_status,
+
+from students_with_region as s
+left join
+    {{ ref("stg_kippadb__contact") }} as adb
+    on s.student_number = adb.school_specific_id
+left join
+    {{ ref("stg_powerschool__u_studentsuserfields") }} as suf
+    on s.dcid = suf.studentsdcid
+    and {{ union_dataset_join_clause(left_alias="s", right_alias="suf") }}
+left join
+    {{ ref("stg_powerschool__s_nj_stu_x") }} as njs
+    on s.dcid = njs.studentsdcid
+    and {{ union_dataset_join_clause(left_alias="s", right_alias="njs") }}
+left join
+    {{ ref("stg_powerschool__studentcorefields") }} as scf
+    on s.dcid = scf.studentsdcid
+    and {{ union_dataset_join_clause(left_alias="s", right_alias="scf") }}

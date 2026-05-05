@@ -12,32 +12,35 @@ models:
           Surrogate primary key derived from job_title, department_internal, and
           job_city. Generated with generate_surrogate_key(["job_title",
           "department_internal", "job_city"]).
+        constraints:
+          - type: primary_key
+            warn_unsupported: false
         data_tests:
           - unique
           - not_null
 
-      - name: job_title
+      - name: position_title
         data_type: string
         description: Title of the job posting as entered in SmartRecruiters.
 
-      - name: department_internal
+      - name: department_name
         data_type: string
         description: >-
           Internal department name associated with the job posting in
           SmartRecruiters.
 
-      - name: department_org_field_value
+      - name: organizational_hierarchy
         data_type: string
         description: >-
           Organizational hierarchy field value for the department, used for
           reporting rollups in SmartRecruiters.
 
-      - name: job_city
+      - name: city
         data_type: string
         description:
           City where the job posting is located as entered in SmartRecruiters.
 
-      - name: recruiters
+      - name: recruiter_names
         data_type: string
         description: >-
           Name(s) of the recruiter(s) assigned to the job posting in

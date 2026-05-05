@@ -19,6 +19,8 @@ select
 
     ps.ada_term_running,
     ps.n_absences_y1_running,
+    ps.n_absences_y1_running_non_susp,
+    ps.n_absences_y1_running_non_susp_no_tardy,
     ps.iready_reading_recent,
     ps.iready_math_recent,
     ps.n_failing,

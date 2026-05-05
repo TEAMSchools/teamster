@@ -1,6 +1,6 @@
 with
     google_forms_surveys as (
-        -- TODO: upstream at response grain, no definition model (#3635)
+        -- DISTINCT projects from response grain to survey grain.
         select distinct
             form_id as survey_id, info_title as survey_name, 'Google Forms' as platform,
         from {{ ref("int_google_forms__form_responses") }}
@@ -8,7 +8,7 @@ with
     ),
 
     alchemer_surveys as (
-        -- TODO: upstream at response grain, no definition model (#3635)
+        -- DISTINCT projects from response grain to survey grain.
         select distinct
             safe_cast(survey_id as string) as survey_id,
             survey_title as survey_name,
@@ -140,11 +140,11 @@ with
 select
     {{ dbt_utils.generate_surrogate_key(["s.survey_id"]) }} as survey_key,
 
-    s.survey_id,
-    s.survey_name,
-
-    coalesce(c.survey_type, 'Other') as survey_type,
-    c.subject_area,
+    s.survey_name as `name`,
     s.platform,
+
+    c.subject_area as category,
+
+    coalesce(c.survey_type, 'Other') as `type`,
 from all_surveys as s
 left join survey_classification as c on s.survey_name = c.survey_name

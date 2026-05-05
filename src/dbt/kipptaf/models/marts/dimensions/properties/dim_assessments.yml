@@ -3,40 +3,66 @@ models:
     description: >-
       Assessment definition dimension. One row per unique assessment definition.
       Covers internal Illuminate assessments, NJ and FL state assessments, and
-      college-entrance assessments (SAT, ACT, AP). assessment_scope indicates
-      whether scores are linked at the enrollment level or student level.
+      college-entrance assessments (SAT, ACT, AP). scope indicates whether
+      scores are linked at the enrollment level or student level.
+
+      Two subject-normalization columns coexist for college-entrance comparisons
+      (both NULL for other assessment types):
+
+      - `aligned_academic_subject` — **within-test-family** normalization.
+        SAT EBRW and PSAT EBRW both align to EBRW. Use this when comparing
+        scores across administrations of the same test family (e.g.,
+        SAT-to-PSAT growth).
+      - `combined_academic_subject` — **cross-test-family** normalization.
+        Further collapses across test families so SAT and ACT scores can
+        land in the same bucket (e.g., SAT EBRW and ACT Reading combine to
+        EBRW/Reading). Use this for apples-to-oranges comparisons across
+        test families.
     columns:
       - name: assessment_key
         data_type: string
         description: >-
-          Surrogate key derived from assessment_type, title, subject_area,
-          scope, module_code, and grade_level_tested. Primary key.
+          Surrogate key derived from type, module_code, source_assessment_id,
+          and test_type. Primary key. For Illuminate, member-grained — one row
+          per actual `assessment_id`. For state/college/AP, canonical
+          (`source_assessment_id` is null). Drilldown from
+          `dim_assessment_administrations` (canonical-grain) to this dim goes
+          through `bridge_assessment_administration_members`.
+        constraints:
+          - type: primary_key
+            warn_unsupported: false
         data_tests:
           - unique
           - not_null
 
-      - name: assessment_type
+      - name: type
         data_type: string
         description: >-
-          Source system category: illuminate (internal KIPP), state (NJSLA,
-          FAST, NJGPA), or college (SAT, ACT, PSAT, AP).
+          Source system category: `illuminate` (internal KIPP), `state_nj`
+          (NJSLA, NJGPA, PARCC — share module_codes per grade across history),
+          `state_fl` (FAST, FSA — share test_codes), `college` (SAT, ACT, PSAT —
+          both Official and Practice variants), or `ap`. Two jurisdictions kept
+          distinct so historical NJ and FL state assessments don't collide on
+          shared module_codes (e.g., ELA05).
 
       - name: title
         data_type: string
         description: >-
-          Display name of the assessment.
+          Display name of the assessment (Ed-Fi
+          edFi_assessment.assessmentTitle).
 
-      - name: subject_area
+      - name: academic_subject
         data_type: string
         description: >-
           Subject tested (e.g., Mathematics, English Language Arts, Reading,
-          Science, Composite).
+          Science, Composite). Ed-Fi academic_subject_descriptor.
 
-      - name: scope
+      - name: category
         data_type: string
         description: >-
-          Assessment scope or family (e.g., CMA, CGI for internal; NJSLA, FAST
-          for state; SAT, ACT for college).
+          Assessment category based on format and content (Ed-Fi
+          assessment_category_descriptor). Examples: CMA, CGI for internal;
+          NJSLA, FAST for state; SAT, ACT for college.
 
       - name: module_code
         data_type: string
@@ -62,9 +88,50 @@ models:
           TRUE for KIPP-created internal assessments administered via
           Illuminate. FALSE for external state and college assessments.
 
-      - name: assessment_scope
+      - name: scope
         data_type: string
         description: >-
           Determines how scores link to students: enrollment (scores are tied to
           a section enrollment) or student (scores follow the student with no
           enrollment context, e.g., SAT, ACT, AP).
+
+      - name: combined_academic_subject
+        data_type: string
+        description: >-
+          Cross-test-family normalized bucket for comparing scores across SAT
+          and ACT (e.g., EBRW and Reading combine into EBRW/Reading). Populated
+          for college-entrance assessments; null for AP, state, and internal
+          Illuminate rows.
+
+      - name: aligned_academic_subject
+        data_type: string
+        description: >-
+          Within-test-family normalized academic subject used for cross-test
+          comparison (e.g., SAT EBRW and PSAT EBRW both align to EBRW). Ed-Fi
+          academic_subject_descriptor alignment. Populated for college-entrance
+          assessments; null for AP, state, and internal Illuminate rows.
+
+      - name: credit_category
+        data_type: string
+        description: >-
+          Ed-Fi credit_category_descriptor capturing graduation-requirement
+          categorization (e.g., ENG, MATH, SCI). Populated for college-entrance
+          assessments; null for AP, state, and internal Illuminate rows.
+
+      - name: source_assessment_id
+        data_type: int64
+        description: >-
+          Illuminate `assessment_id` for internal Illuminate assessments; null
+          for state, college (Official + Practice), and AP rows. Used as a
+          discriminator in `assessment_key` so distinct Illuminate assessments
+          hash to different keys even when their other natural-key columns
+          coincide.
+
+      - name: test_type
+        data_type: string
+        description: >-
+          `'Official'` for college-entrance assessments delivered by the test
+          vendor (SAT, ACT, PSAT). `'Practice'` for mock administrations of the
+          same assessments delivered through Illuminate. Null for Illuminate,
+          state, and AP rows. Discriminator in `assessment_key` so Official and
+          Practice sittings of the same test family don't collide.

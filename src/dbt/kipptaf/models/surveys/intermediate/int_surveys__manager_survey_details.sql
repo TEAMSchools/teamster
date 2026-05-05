@@ -69,6 +69,7 @@ select
     ri.subject_df_employee_number,
     ri.respondent_email,
 
+    fr.question_id as survey_question_id,
     fr.item_abbreviation as question_shortname,
     fr.item_title as question_title,
     fr.text_value as answer,
@@ -133,6 +134,7 @@ select
 
     null as respondent_email,
 
+    fi.question_id as survey_question_id,
     sda.question_shortname,
 
     coalesce(fi.title, sda.question_shortname) as question_title,
@@ -163,6 +165,8 @@ select
     lower(sr.reports_to_user_principal_name) as subject_manager_userprincipalname,
 
 from {{ source("surveys", "stg_surveys__manager_survey_detail_archive") }} as sda
+-- TODO: #3773 — if a shortname maps to multiple fi.question_id values, this
+-- join fans out and over-counts archive rows. Full fix tracked in #3773.
 inner join
     {{ ref("stg_google_sheets__google_forms__form_items_extension") }} as fi
     on sda.question_shortname = fi.abbreviation

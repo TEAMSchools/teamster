@@ -1,0 +1,66 @@
+cubes:
+  - name: dim_dates
+    public: false
+    sql_table: kipptaf_marts.dim_dates
+
+    dimensions:
+      - name: date_key
+        sql: date_key
+        type: string
+        primary_key: true
+
+      - name: date_day
+        sql: date_timestamp
+        type: time
+
+      - name: academic_year
+        sql: academic_year
+        type: number
+
+      - name: fiscal_year
+        sql: fiscal_year
+        type: number
+
+      - name: year_number
+        sql: year_number
+        type: number
+
+      - name: quarter_number
+        sql: quarter_number
+        type: number
+
+      - name: month_number
+        sql: month_number
+        type: number
+
+      - name: month_name
+        sql: month_name
+        type: string
+
+      - name: day_of_week
+        sql: day_of_week
+        type: number
+
+      - name: day_of_week_name
+        sql: day_of_week_name
+        type: string
+
+      - name: is_weekday
+        sql: is_weekday
+        type: boolean
+
+      - name: school_week_start_date
+        sql: CAST(school_week_start_date AS TIMESTAMP)
+        type: time
+
+      - name: school_week_end_date
+        sql: CAST(school_week_end_date AS TIMESTAMP)
+        type: time
+
+      - name: calendar_week_start_date
+        sql: CAST(calendar_week_start_date AS TIMESTAMP)
+        type: time
+
+      - name: calendar_week_end_date
+        sql: CAST(calendar_week_end_date AS TIMESTAMP)
+        type: time

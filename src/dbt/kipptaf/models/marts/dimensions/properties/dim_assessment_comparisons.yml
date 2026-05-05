@@ -12,6 +12,9 @@ models:
         description: >-
           Surrogate key derived from academic_year, test_name, test_code, and
           region. Primary key.
+        constraints:
+          - type: primary_key
+            warn_unsupported: false
         data_tests:
           - unique
           - not_null
@@ -22,6 +25,16 @@ models:
           FK to dim_regions. Derived from region using
           generate_surrogate_key(["region"]).
 
+        constraints:
+          - type: foreign_key
+            to: ref('dim_regions')
+            to_columns: [region_key]
+            warn_unsupported: false
+        data_tests:
+          - relationships:
+              arguments:
+                to: ref('dim_regions')
+                field: region_key
       - name: academic_year
         data_type: int64
         description: >-
@@ -36,11 +49,6 @@ models:
         data_type: string
         description: >-
           State assessment test code (e.g., ELA05, ALG1, SCI08).
-
-      - name: region
-        data_type: string
-        description: >-
-          Network region (Newark, Camden, Miami, Paterson).
 
       - name: city_percent_proficient
         data_type: float64

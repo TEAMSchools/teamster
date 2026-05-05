@@ -7,7 +7,7 @@ with
             sam_account_name,
             google_email,
             job_title,
-            home_work_location_name,
+            home_work_location_reporting_name,
             home_work_location_region,
             home_work_location_powerschool_school_id,
             home_work_location_abbreviation,
@@ -28,7 +28,7 @@ with
 
     school_leadership as (
         select
-            home_work_location_name,
+            home_work_location_reporting_name,
             home_work_location_region,
             home_work_location_powerschool_school_id,
             home_work_location_abbreviation,
@@ -47,7 +47,7 @@ with
             ) as sl_employee_number,
         from staff_roster
         group by
-            home_work_location_name,
+            home_work_location_reporting_name,
             home_work_location_region,
             home_work_location_powerschool_school_id,
             home_work_location_abbreviation,
@@ -67,7 +67,7 @@ with
 
 select
     l.home_work_location_powerschool_school_id,
-    l.home_work_location_name,
+    l.home_work_location_reporting_name,
     l.home_work_location_abbreviation,
     l.home_work_location_campus_name,
     l.dso_employee_number,

@@ -19,12 +19,12 @@ select
     ldap.sn,
     ldap.title,
 
-    lc.powerschool_school_id,
-    lc.dagster_code_location,
+    lc.location_powerschool_school_id as powerschool_school_id,
+    lc.location_dagster_code_location as dagster_code_location,
 from {{ ref("stg_ldap__user_person") }} as ldap
 inner join
-    {{ ref("stg_google_sheets__people__location_crosswalk") }} as lc
-    on ldap.physical_delivery_office_name = lc.name
+    {{ ref("int_people__location_crosswalk") }} as lc
+    on ldap.physical_delivery_office_name = lc.location_name
 where
     ldap.idauto_status = 'A'
     and ldap.uac_account_disable = 0

@@ -36,7 +36,7 @@ with
             sr.home_business_unit_code,
             sr.home_department_name,
             sr.job_title,
-            sr.home_work_location_name,
+            sr.home_work_location_reporting_name as home_work_location_name,
             sr.uac_account_disable,
             sr.physical_delivery_office_name,
             sr.sam_account_name,
@@ -81,7 +81,7 @@ with
             sr.home_business_unit_code,
             sr.home_department_name,
             sr.job_title,
-            sr.home_work_location_name,
+            sr.home_work_location_reporting_name as home_work_location_name,
             sr.uac_account_disable,
             sr.physical_delivery_office_name,
             sr.sam_account_name,
@@ -176,8 +176,8 @@ with
             on au.employee_number = x.employee_number
         left join
             {{ ref("stg_google_sheets__coupa__address_name_crosswalk") }} as anc
-            on coalesce(x.home_work_location_name, au.home_work_location_name)
-            = anc.adp_home_work_location_name
+            on coalesce(x.location_clean_name, au.home_work_location_name)
+            = anc.location_clean_name
         left join
             {{ ref("stg_coupa__addresses") }} as a
             on anc.coupa_address_name = a.name
@@ -291,11 +291,13 @@ left join
 left join
     {{ ref("stg_google_sheets__coupa__intacct_program_lookup") }} as ipl1
     on sub.home_business_unit_code = ipl1.adp_business_unit_home_code
-    and sub.home_work_location_name = ipl1.adp_home_work_location_name
+    /* sub.home_work_location_name carries home_work_location_reporting_name
+       (clean name) — aliased through the all_users CTE */
+    and sub.home_work_location_name = ipl1.location_clean_name
 left join
     {{ ref("stg_google_sheets__coupa__intacct_program_lookup") }} as ipl2
     on sub.home_business_unit_code = ipl2.adp_business_unit_home_code
-    and ipl2.adp_home_work_location_name = 'Default'
+    and ipl2.location_clean_name = 'Default'
 left join
     {{ ref("stg_google_sheets__coupa__intacct_department_lookup") }} as idl1
     on sub.home_business_unit_code = idl1.adp_business_unit_home_code

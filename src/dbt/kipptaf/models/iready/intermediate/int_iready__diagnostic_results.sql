@@ -14,16 +14,18 @@ with
         select
             dr.* except (_dbt_source_relation),
 
-            lc.region,
-            lc.abbreviation as school_abbreviation,
-            lc.powerschool_school_id as schoolid,
+            lc.location_region as region,
+            lc.location_abbreviation as school_abbreviation,
+            lc.location_powerschool_school_id as schoolid,
 
             regexp_replace(
-                dr._dbt_source_relation, r'kipp[a-z]+_', lc.dagster_code_location || '_'
+                dr._dbt_source_relation,
+                r'kipp[a-z]+_',
+                lc.location_dagster_code_location || '_'
             ) as _dbt_source_relation,
 
             case
-                lc.dagster_code_location
+                lc.location_dagster_code_location
                 when 'kippnewark'
                 then 'NJSLA'
                 when 'kippcamden'
@@ -35,8 +37,8 @@ with
             end as state_assessment_type,
         from union_relations as dr
         left join
-            {{ ref("stg_google_sheets__people__location_crosswalk") }} as lc
-            on dr.school = lc.name
+            {{ ref("int_people__location_crosswalk") }} as lc
+            on dr.school = lc.location_name
     ),
 
     window_calcs as (

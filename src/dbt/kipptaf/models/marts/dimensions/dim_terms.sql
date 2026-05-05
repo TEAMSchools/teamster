@@ -1,22 +1,35 @@
+with terms as (select *, from {{ ref("stg_google_sheets__reporting__terms") }})
+
 select
     {{
         dbt_utils.generate_surrogate_key(
-            ["type", "code", "name", "start_date", "region", "school_id"]
+            [
+                "t.`type`",
+                "t.code",
+                "t.`name`",
+                "t.`start_date`",
+                "t.region",
+                "t.school_id",
+            ]
         )
     }} as term_key,
 
-    `type` as term_type,
-    code as term_code,
-    `name` as term_name,
-    `start_date` as term_start_date,
-    end_date as term_end_date,
-    academic_year,
-    fiscal_year,
-    region,
-    school_id,
-    grade_band,
-    lockbox_date,
-    is_current,
-    powerschool_year_id,
-    powerschool_term_id,
-from {{ ref("stg_google_sheets__reporting__terms") }}
+    sch.location_key,
+
+    t.`type`,
+    t.code as term_code,
+    t.`name` as term_name,
+    t.`start_date`,
+    t.end_date,
+    t.academic_year,
+    t.fiscal_year,
+    t.grade_band,
+    t.lockbox_date as data_freeze_date,
+    t.is_current,
+from terms as t
+left join
+    {{ ref("stg_powerschool__schools") }} as sch
+    on t.school_id = sch.school_number
+    and t.school_id <> 0
+    and lower(concat('kipp', t.city))
+    = regexp_extract(sch._dbt_source_relation, r'(kipp\w+)_')

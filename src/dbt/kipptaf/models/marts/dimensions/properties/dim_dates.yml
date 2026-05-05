@@ -11,6 +11,9 @@ models:
         data_type: date
         description: >-
           Calendar date. Primary key and join target for all mart models.
+        constraints:
+          - type: primary_key
+            warn_unsupported: false
         data_tests:
           - unique
           - not_null
@@ -82,22 +85,22 @@ models:
           KIPP fiscal year (July start). The calendar year in which the fiscal
           year ends (e.g., 2026 for FY2026 which begins July 2025).
 
-      - name: week_start_date
+      - name: calendar_week_start_date
         data_type: date
         description: >-
           Start of the Sunday-based week containing this date.
 
-      - name: week_end_date
+      - name: calendar_week_end_date
         data_type: date
         description: >-
           End of the Sunday-based week (Saturday) containing this date.
 
-      - name: week_start_monday
+      - name: school_week_start_date
         data_type: date
         description: >-
           Start of the Monday-based week containing this date.
 
-      - name: week_end_sunday
+      - name: school_week_end_date
         data_type: date
         description: >-
           End of the Monday-based week (Sunday) containing this date.

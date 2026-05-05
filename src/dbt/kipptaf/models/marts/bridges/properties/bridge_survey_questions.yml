@@ -12,6 +12,9 @@ models:
         description: >-
           Surrogate key derived from survey_id and question_shortname. Primary
           key for this bridge.
+        constraints:
+          - type: primary_key
+            warn_unsupported: false
         data_tests:
           - unique
           - not_null
@@ -20,28 +23,35 @@ models:
         data_type: string
         description: >-
           FK to dim_surveys. Surrogate key derived from survey_id.
+        constraints:
+          - type: foreign_key
+            to: ref('dim_surveys')
+            to_columns: [survey_key]
+            warn_unsupported: false
         data_tests:
           - not_null
 
+          - relationships:
+              arguments:
+                to: ref('dim_surveys')
+                field: survey_key
       - name: survey_question_key
         data_type: string
         description: >-
           FK to dim_survey_questions. Surrogate key derived from
           question_shortname.
+        constraints:
+          - type: foreign_key
+            to: ref('dim_survey_questions')
+            to_columns: [survey_question_key]
+            warn_unsupported: false
         data_tests:
           - not_null
 
-      - name: survey_id
-        data_type: string
-        description: >-
-          Source system identifier for the survey instrument.
-
-      - name: question_shortname
-        data_type: string
-        description: >-
-          Abbreviated identifier for the question within this survey context
-          (e.g., scd_01, Q_1, SF1).
-
+          - relationships:
+              arguments:
+                to: ref('dim_survey_questions')
+                field: survey_question_key
       - name: is_required
         data_type: boolean
         description: >-

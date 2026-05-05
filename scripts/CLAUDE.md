@@ -5,25 +5,31 @@ scripts: `bash scripts/<name>.sh`.
 
 ## Script Catalog
 
-| Script                                        | Purpose                                             |
-| --------------------------------------------- | --------------------------------------------------- |
-| `dagster-dev.py`                              | Start Dagster webserver for selected code locations |
-| `avro-schema-update.py`                       | Rewrite Avro data in GCS with updated schema        |
-| `dbt-bq-audit.py`                             | Audit BigQuery objects against dbt manifest         |
-| `dbt-build-init.sh`                           | Initialize dbt build environment                    |
-| `dbt-manifest.py`                             | Extract dbt manifest model list to CSV              |
-| VS Code task: **dbt: Stage External Sources** | (see below)                                         |
-| `dbt-yaml.py`                                 | Parse and transform dbt YAML files                  |
-| `enrich_staging_descriptions.py`              | Write descriptions + PII flags to staging YAMLs     |
-| `extract_edfi_schema.py`                      | Extract Ed-Fi attribute names from OpenAPI spec     |
-| `extract_pdf_dictionary.py`                   | Extract column descriptions from source-system PDFs |
-| `gen-automations-doc.py`                      | Regenerate `docs/reference/automations.md`          |
-| `gen_column_naming_audit_inventory.py`        | Generate mart column naming audit inventory CSV     |
-| `propagate_mart_descriptions.py`              | Propagate staging descriptions into downstream YAML |
-| `init_sftp_integration.py`                    | Inspect SFTP servers and scaffold new integrations  |
-| `json2py.py`                                  | Generate Pydantic models from JSON schemas          |
-| `migrate-asset-key.py`                        | Migrate asset materialization history to new key    |
-| `update.py`                                   | Update all project dependencies (uv, Trunk, dbt)    |
+| Script                                        | Purpose                                                                                     |
+| --------------------------------------------- | ------------------------------------------------------------------------------------------- |
+| `dagster-dev.py`                              | Start Dagster webserver for selected code locations                                         |
+| `dagster-mcp-launch.sh`                       | MCP launcher: exchange OP token for scoped Dagster Cloud API token, exec `dagster_plus_mcp` |
+| `day2_collect.py`                             | Day-2 ops data collector — Dagster GraphQL + GCP REST/gcloud → `.claude/scratch/day2.json`  |
+| `day2_summarize.py`                           | Print per-step counts and error gate from `.claude/scratch/day2.json` (Phase-2 entry)       |
+| `dbt-mcp-launch.sh`                           | MCP launcher: exchange OP token for dbt Cloud service token, exec `dbt-mcp`                 |
+| `audit_marts_yaml.py`                         | Audit mart YAMLs against BigQuery + Dagster (#3678)                                         |
+| `avro-schema-update.py`                       | Rewrite Avro data in GCS with updated schema                                                |
+| `dbt-bq-audit.py`                             | Audit BigQuery objects against dbt manifest                                                 |
+| `dbt-build-init.sh`                           | Initialize dbt build environment                                                            |
+| `dbt-manifest.py`                             | Extract dbt manifest model list to CSV                                                      |
+| VS Code task: **dbt: Stage External Sources** | (see below)                                                                                 |
+| `dbt-yaml.py`                                 | Parse and transform dbt YAML files                                                          |
+| `enrich_staging_descriptions.py`              | Write descriptions + PII flags to staging YAMLs                                             |
+| `extract_ceds_schema.py`                      | Extract CEDS attribute names from GitHub XLSX                                               |
+| `extract_edfi_schema.py`                      | Extract Ed-Fi attribute names from OpenAPI spec                                             |
+| `extract_pdf_dictionary.py`                   | Extract column descriptions from source-system PDFs                                         |
+| `gen-automations-doc.py`                      | Regenerate `docs/reference/automations.md`                                                  |
+| `gen_column_naming_audit_inventory.py`        | Generate mart column naming audit inventory CSV                                             |
+| `propagate_mart_descriptions.py`              | Propagate staging descriptions into downstream YAML                                         |
+| `init_sftp_integration.py`                    | Inspect SFTP servers and scaffold new integrations                                          |
+| `json2py.py`                                  | Generate Pydantic models from JSON schemas                                                  |
+| `migrate-asset-key.py`                        | Migrate asset materialization history to new key                                            |
+| `update.py`                                   | Update all project dependencies (uv, Trunk, dbt)                                            |
 
 ## VS Code Task: dbt: Stage External Sources
 
@@ -59,3 +65,10 @@ uv run dbt run-operation stage_external_sources \
 - `migrate-asset-key.py` creates runless materialization events — automation
   cursors will not recognize migrated events.
 - `update.py` upgrades all 15 dbt projects sequentially — slow operation.
+
+## Testing standalone PEP 723 scripts
+
+Load the script in tests via `importlib.util.spec_from_file_location` and
+register `sys.modules[name] = module` _before_ `exec_module` (the registration
+is required for `@dataclass` to resolve). Don't add `scripts/__init__.py` —
+scripts/ stays a directory of standalone executables.
