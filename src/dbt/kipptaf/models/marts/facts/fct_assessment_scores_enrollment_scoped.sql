@@ -86,7 +86,7 @@ with
 
     state_fl as (
         select
-            student_id as state_student_id,
+            student_number,
             academic_year,
             assessment_subject as subject_area,
             discipline,
@@ -130,14 +130,12 @@ with
             nj.percent_correct,
             nj.score_source,
             nj._dbt_source_relation,
-
-            cast(null as string) as state_student_id,
         from state_nj as nj
 
         union all
 
         select
-            cast(null as int64) as student_number,
+            fl.student_number,
             fl.academic_year,
             fl.subject_area,
             fl.discipline,
@@ -154,8 +152,6 @@ with
             fl.percent_correct,
             fl.score_source,
             fl._dbt_source_relation,
-
-            fl.state_student_id,
         from state_fl as fl
     )
 
@@ -207,7 +203,7 @@ select
         dbt_utils.generate_surrogate_key(
             [
                 "su._dbt_source_relation",
-                "coalesce(cast(su.student_number as string), su.state_student_id)",
+                "cast(su.student_number as string)",
                 "su.academic_year",
                 "su.administration_period",
                 "su.subject_area",
@@ -230,13 +226,11 @@ select
         )
     }} as assessment_administration_key,
 
-    {{
-        dbt_utils.generate_surrogate_key(
-            [
-                "coalesce(cast(su.student_number as string), su.state_student_id)",
-            ]
-        )
-    }} as student_key,
+    if(
+        su.student_number is not null,
+        {{ dbt_utils.generate_surrogate_key(["su.student_number"]) }},
+        cast(null as string)
+    ) as student_key,
 
     su.test_date as test_date_key,
 
