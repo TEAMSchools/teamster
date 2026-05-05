@@ -96,7 +96,28 @@ with
     )
 
 select
-    *,
+    academic_year,
+    region,
+    admin_season,
+    assessment_grade,
+    assessment_grade_int,
+    measure_standard,
+    round_number,
+    benchmark_goal,
+    round_growth_words_goal,
+    cumulative_growth_words,
+    pm_goal_criteria,
+    student_number,
+    measure_name_code,
+    measure_standard_score,
+    start_date,
+    end_date,
+    completed_test_round,
+    completed_test_round_int,
+    met_measure_standard_goal,
+    met_admin_benchmark_goal,
+    met_measure_name_code_goal,
+    met_pm_round_criteria,
 
     case
         when

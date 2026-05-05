@@ -1,12 +1,8 @@
 sources:
   - name: kippnj_iready
-    schema: |
-      {%- if env_var('DBT_CLOUD_ENVIRONMENT_TYPE', '') in ['staging', 'dev'] -%}
-      z_dev_
-      {%- elif env_var('DBT_CLOUD_ENVIRONMENT_TYPE', '') == 'prod' -%}
-      {%- elif env_var('GITHUB_USER', '') != '' -%}
-      zz_{{ env_var('GITHUB_USER', '') }}_
-      {%- endif -%}kippnewark_iready
+    schema:
+      "{%- if target.name == 'dev' -%}zz_{{ env_var('GITHUB_USER', 'dev') }}_{%-
+      endif -%}kippnewark_iready"
     tables:
       - name: stg_iready__diagnostic_results
         config:

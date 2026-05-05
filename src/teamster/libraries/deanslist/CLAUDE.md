@@ -1,9 +1,4 @@
-# CLAUDE.md
-
-This file provides guidance to Claude Code (claude.ai/code) when working with
-code in this repository.
-
-## Purpose
+# CLAUDE.md — `teamster/libraries/deanslist/`
 
 Dagster assets and resource for the **Deanslist** behavior management platform.
 Assets are school-partitioned (each school has its own Deanslist subdomain and

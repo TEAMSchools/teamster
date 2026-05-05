@@ -10,6 +10,8 @@ with
             ce.illuminate_subject_area,
             ce.discipline,
             ce.is_foundations,
+            ce.cc_dcid,
+            ce._dbt_source_relation,
 
             co.region,
 
@@ -48,6 +50,9 @@ with
             'Writing' as illuminate_subject_area,
             'ELA' as discipline,
             false as is_foundations,
+
+            cast(null as int64) as cc_dcid,
+            cast(null as string) as _dbt_source_relation,
 
             co.region,
 

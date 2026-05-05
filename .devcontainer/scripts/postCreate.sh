@@ -1,116 +1,110 @@
 #!/bin/bash
 
+# override machine-scoped settings seeded by devcontainer features
+MACHINE_SETTINGS="/home/vscode/.vscode-remote/data/Machine/settings.json"
+mkdir -p "$(dirname "${MACHINE_SETTINGS}")"
+[[ -f ${MACHINE_SETTINGS} ]] || echo '{}' >"${MACHINE_SETTINGS}"
+jq '. + {"python.defaultInterpreterPath": "/workspaces/teamster/.venv/bin/python", "[python]": {"editor.defaultFormatter": "trunk.io"}}' \
+  "${MACHINE_SETTINGS}" \
+  >/tmp/machine-settings.json &&
+  mv /tmp/machine-settings.json "${MACHINE_SETTINGS}"
+
+# configure git
 git config pull.rebase false # specify how to reconcile divergent branches (merge)
 git config push.autoSetupRemote true
 
-# rm broken yarn key
-sudo rm /etc/apt/sources.list.d/yarn.list
+# install post-merge hook for future manifest regeneration
+cp .vscode/scripts/post-merge.sh .git/hooks/post-merge
+chmod +x .git/hooks/post-merge
 
-# import the Google Cloud public key
-curl https://packages.cloud.google.com/apt/doc/apt-key.gpg |
-  sudo gpg --dearmor -o /usr/share/keyrings/cloud.google.gpg ||
-  true
-
-# add the gcloud CLI distribution URI as a package source
-echo "deb [signed-by=/usr/share/keyrings/cloud.google.gpg] https://packages.cloud.google.com/apt cloud-sdk main" |
-  sudo tee -a /etc/apt/sources.list.d/google-cloud-sdk.list
-
-# update/install base apt packages
-sudo apt-get -y --no-install-recommends update &&
-  sudo apt-get -y --no-install-recommends upgrade &&
-  sudo apt-get -y --no-install-recommends install \
-    apt-transport-https \
-    bash-completion \
-    ca-certificates \
-    curl \
-    gnupg \
-    google-cloud-cli \
-    sshpass &&
+# install extra apt packages
+sudo apt-get update -y &&
+  sudo apt-get -y install --no-install-recommends sshpass &&
+  sudo apt-get -y clean &&
   sudo rm -rf /var/lib/apt/lists/*
 
 # create env folder
 mkdir -p ./env
-sudo mkdir -p /etc/secret-volume
 
-# inject 1Password secrets into .env
-op inject -f --in-file=.devcontainer/tpl/.env.tpl --out-file=env/.env
+# restrict permissions on secrets-related paths
+chmod 700 ./env
 
-# save secrets to file
-op inject -f --in-file=.devcontainer/tpl/adp_wfn_api.cer.tpl \
-  --out-file=env/adp_wfn_api.cer &&
-  sudo mv -f env/adp_wfn_api.cer /etc/secret-volume/adp_wfn_api.cer
+# restrict permissions on hook/config paths
+chmod 644 .claude/settings.json
+chmod 755 .claude/hooks/ .claude/hooks/*.sh
 
-op inject -f --in-file=.devcontainer/tpl/adp_wfn_api.key.tpl \
-  --out-file=env/adp_wfn_api.key &&
-  sudo mv -f env/adp_wfn_api.key /etc/secret-volume/adp_wfn_api.key
+# install uv -- ignoring feature bc it doesn't allow self update
+curl -LsSf https://astral.sh/uv/install.sh -o /tmp/uv-install.sh &&
+  sh /tmp/uv-install.sh &&
+  rm /tmp/uv-install.sh
 
-op inject -f --in-file=.devcontainer/tpl/deanslist_api_key_map_yaml.tpl \
-  --out-file=env/deanslist_api_key_map_yaml &&
-  sudo mv -f env/deanslist_api_key_map_yaml \
-    /etc/secret-volume/deanslist_api_key_map_yaml
+# add uv to PATH for this shell session
+# trunk-ignore(shellcheck/SC1091): sourced file created at runtime by uv installer
+source "${HOME}/.local/bin/env"
 
-op inject -f --in-file=.devcontainer/tpl/id_rsa_egencia.tpl \
-  --out-file=env/id_rsa_egencia &&
-  sudo mv -f env/id_rsa_egencia /etc/secret-volume/id_rsa_egencia
+# install uv dependencies
+uv tool install datamodel-code-generator
+uv tool install dagster-dg
+uv tool install dbt-mcp
+uv sync --frozen --all-groups
 
-op inject -f --in-file=.devcontainer/tpl/powerschool_ssh_password.txt.tpl \
-  --out-file=env/powerschool_ssh_password.txt &&
-  sudo mv -f env/powerschool_ssh_password.txt /etc/secret-volume/powerschool_ssh_password.txt
+# bootstrap dbt packages
+export DBT_SEND_ANONYMOUS_USAGE_STATS=false
+uv run dbt deps --project-dir=src/dbt/amplify &
+uv run dbt deps --project-dir=src/dbt/deanslist &
+uv run dbt deps --project-dir=src/dbt/edplan &
+uv run dbt deps --project-dir=src/dbt/finalsite &
+uv run dbt deps --project-dir=src/dbt/iready &
+uv run dbt deps --project-dir=src/dbt/overgrad &
+uv run dbt deps --project-dir=src/dbt/pearson &
+uv run dbt deps --project-dir=src/dbt/powerschool &
+uv run dbt deps --project-dir=src/dbt/renlearn &
+uv run dbt deps --project-dir=src/dbt/titan &
+uv run dbt deps --project-dir=src/dbt/kippcamden &
+uv run dbt deps --project-dir=src/dbt/kippmiami &
+uv run dbt deps --project-dir=src/dbt/kippnewark &
+uv run dbt deps --project-dir=src/dbt/kipppaterson &
+uv run dbt deps --project-dir=src/dbt/kipptaf &
+wait
+
+# generate prod manifests for Power User --defer
+for project in kipptaf kippnewark kippcamden kippmiami kipppaterson; do
+  uv run dbt parse --target prod \
+    --project-dir "src/dbt/${project}" \
+    --profiles-dir .dbt \
+    --target-path target/prod &
+done
+wait
 
 # set up trunk
 chmod +x /workspaces/teamster/trunk
-/workspaces/teamster/trunk install
 
-# install uv
-curl -LsSf https://astral.sh/uv/install.sh | sh || true
+# install pyright for Claude Code LSP
+npm install -g pyright
 
-# install dependencies
-uv tool install datamodel-code-generator
-uv tool install dagster-dg
-uv sync
+# install MCP toolbox
+curl --fail -O https://storage.googleapis.com/genai-toolbox/v0.29.0/linux/amd64/toolbox ||
+  {
+    echo "❌ MCP toolbox download failed"
+    exit 1
+  }
+echo "8cb1cacbbaccf0940926643482d20e3b02efba80d1c93eafb4342079b1ebee95  toolbox" |
+  sha256sum -c - ||
+  {
+    echo "❌ MCP toolbox checksum mismatch"
+    exit 1
+  }
+chmod +x toolbox
+sudo mv toolbox /usr/local/bin/
 
-# install dbt projects
-uv run dbt deps --project-dir=src/dbt/amplify
-uv run dbt parse --project-dir=src/dbt/amplify
+# fix tmpfs permissions (Codespaces may override tmpfs-mode from mount config)
+sudo chmod 755 /etc/secret-volume
+sudo chown vscode:vscode /etc/secret-volume
 
-uv run dbt deps --project-dir=src/dbt/deanslist
-uv run dbt parse --project-dir=src/dbt/deanslist
+# create convenience symlinks (-n: don't follow existing symlink-to-directory)
+ln -sfn /etc/secret-volume /workspaces/teamster/secret-volume
+mkdir -p /tmp/dagster
+ln -sfn /tmp/dagster /workspaces/teamster/dagster-tmp
 
-uv run dbt deps --project-dir=src/dbt/edplan
-uv run dbt parse --project-dir=src/dbt/edplan
-
-uv run dbt deps --project-dir=src/dbt/finalsite
-uv run dbt parse --project-dir=src/dbt/finalsite
-
-uv run dbt deps --project-dir=src/dbt/iready
-uv run dbt parse --project-dir=src/dbt/iready
-
-uv run dbt deps --project-dir=src/dbt/overgrad
-uv run dbt parse --project-dir=src/dbt/overgrad
-
-uv run dbt parse --project-dir=src/dbt/pearson
-uv run dbt deps --project-dir=src/dbt/pearson
-
-uv run dbt deps --project-dir=src/dbt/powerschool
-uv run dbt parse --project-dir=src/dbt/powerschool
-
-uv run dbt deps --project-dir=src/dbt/renlearn
-uv run dbt parse --project-dir=src/dbt/renlearn
-
-uv run dbt deps --project-dir=src/dbt/titan
-uv run dbt parse --project-dir=src/dbt/titan
-
-uv run dbt deps --project-dir=src/dbt/kippcamden
-uv run dbt parse --project-dir=src/dbt/kippcamden
-
-uv run dbt deps --project-dir=src/dbt/kippmiami
-uv run dbt parse --project-dir=src/dbt/kippmiami
-
-uv run dbt deps --project-dir=src/dbt/kippnewark
-uv run dbt parse --project-dir=src/dbt/kippnewark
-
-uv run dbt deps --project-dir=src/dbt/kipppaterson
-uv run dbt parse --project-dir=src/dbt/kipppaterson
-
-uv run dbt deps --project-dir=src/dbt/kipptaf
-uv run dbt parse --project-dir=src/dbt/kipptaf
+# remove sudo — must be last privileged step
+sudo rm -f /usr/local/bin/sudo /usr/bin/sudo

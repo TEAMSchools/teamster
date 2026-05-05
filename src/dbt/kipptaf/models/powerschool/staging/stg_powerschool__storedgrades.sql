@@ -14,8 +14,23 @@ with
         }}
     )
 
-select u.*, if(l.name is null, true, false) as is_transfer_grade,
+select
+    u.*,
+
+    case
+        when u.credit_type like 'ENG%'
+        then 'ENG'
+        when u.credit_type like 'MATH%'
+        then 'MATH'
+        when u.credit_type like 'SCI%'
+        then 'SCI'
+        when u.credit_type like 'SOC%'
+        then 'SOC'
+        else u.credit_type
+    end as agg_credittype,
+
+    if(l.location_name is null, true, false) as is_transfer_grade,
+
 from union_relations as u
 left join
-    {{ ref("stg_google_sheets__people__location_crosswalk") }} as l
-    on u.schoolname = l.name
+    {{ ref("int_people__location_crosswalk") }} as l on u.schoolname = l.location_name

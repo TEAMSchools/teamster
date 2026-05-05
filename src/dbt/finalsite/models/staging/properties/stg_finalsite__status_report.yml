@@ -7,7 +7,7 @@ models:
               - finalsite_enrollment_id
               - _dagster_partition_key
           config:
-            store_failures: true
+            severity: error
     columns:
       - name: finalsite_enrollment_id
         data_type: string

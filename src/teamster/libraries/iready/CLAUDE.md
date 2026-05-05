@@ -1,9 +1,4 @@
-# CLAUDE.md
-
-This file provides guidance to Claude Code (claude.ai/code) when working with
-code in this repository.
-
-## Purpose
+# CLAUDE.md — `teamster/libraries/iready/`
 
 Thin wrappers around the core SFTP library for **i-Ready** (diagnostic and
 instructional platform) SFTP ingestion.

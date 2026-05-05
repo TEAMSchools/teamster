@@ -199,8 +199,6 @@ models:
         data_type: string
       - name: courses_termsoffered
         data_type: string
-      - name: courses_credittype
-        data_type: string
       - name: courses_sched_department
         data_type: string
       - name: courses_sched_coursesubjectareacode
@@ -415,6 +413,12 @@ models:
         data_type: int64
       - name: teachernumber
         data_type: string
+        description: The number the district assigns to track the teacher.
+        config:
+          meta:
+            source_system: PowerSchool
+            source_model: stg_powerschool__users
+            source_column: teachernumber
       - name: teacher_lastfirst
         data_type: string
       - name: courses_gradescaleid_unweighted
@@ -473,7 +477,23 @@ models:
         data_type: boolean
       - name: is_advanced_math
         data_type: boolean
+      - name: discipline
+        data_type: string
+      - name: region
+        data_type: string
+        description: Derived from _dbt_source_relation.
       - name: is_ap_course
         data_type: boolean
+        description: Conditional on ap_course_subject.
+      - name: courses_credittype
+        description: >-
+          Normalizes variant credit type codes (ELA → ENG, Math → MATH, Science
+          → SCI, Homeroom → HR) caused by a 2023 PowerSchool plugin glitch in
+          one region that produced non-standard values for that year's records.
+        data_type: string
       - name: rn_student_year_illuminate_subject_desc
         data_type: int64
+        description:
+          ROWNUMBER of value partitioned by _dbt_source_relation, cc_studyear,
+          illuminate_subject_area ordered by cc_termid, cc_dateenrolled,
+          cc_dateleft.

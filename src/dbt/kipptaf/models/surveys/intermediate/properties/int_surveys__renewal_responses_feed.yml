@@ -81,3 +81,7 @@ models:
         data_type: string
       - name: valid_approval
         data_type: string
+        description:
+          Categorical mapping of campaign_academic_year, concated_add_comp,
+          dept_and_job, renewal_decision, rn_approval, salary,
+          subject_employee_number.

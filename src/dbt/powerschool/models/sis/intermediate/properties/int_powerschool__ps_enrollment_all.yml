@@ -7,8 +7,6 @@ models:
               - studentid
               - entrydate
           config:
-            severity: warn
-            store_failures: true
             where: schoolid != 999999
       - dbt_utils.unique_combination_of_columns:
           arguments:
@@ -16,8 +14,6 @@ models:
               - studentid
               - exitdate
           config:
-            severity: warn
-            store_failures: true
             where: schoolid != 999999
     columns:
       - name: studentid

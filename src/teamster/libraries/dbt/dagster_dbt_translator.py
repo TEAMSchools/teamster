@@ -1,11 +1,12 @@
 from collections.abc import Mapping
 from typing import Any
 
-from dagster import AssetKey, AssetSelection, AutomationCondition
+from dagster import AssetKey, AutomationCondition
 from dagster_dbt import DagsterDbtTranslator, DagsterDbtTranslatorSettings
 
 from teamster.core.automation_conditions import (
     dbt_table_automation_condition,
+    dbt_union_relations_automation_condition,
     dbt_view_automation_condition,
 )
 
@@ -38,25 +39,20 @@ class CustomDagsterDbtTranslator(DagsterDbtTranslator):
     def get_automation_condition(
         self, dbt_resource_props: Mapping[str, Any]
     ) -> AutomationCondition | None:
-        automation_condition_config: dict[str, Any] = (
-            dbt_resource_props.get("meta", {})
-            .get("dagster", {})
-            .get("automation_condition", {})
-        )
-
-        if not automation_condition_config.get("enabled", True):
-            return None
-
         materialized = dbt_resource_props.get("config", {}).get("materialized", "view")
 
-        ignore_selection = AssetSelection.keys(
-            *automation_condition_config.get("ignore", {}).get("keys", [])
-        )
+        # union_relations views need dep-aware refresh: their compiled SQL
+        # resolves columns at run time via the macro and becomes stale when
+        # upstream tables are re-materialized with schema changes
+        if materialized == "view" and "union_relations" in dbt_resource_props.get(
+            "raw_code", ""
+        ):
+            return dbt_union_relations_automation_condition()
 
         if materialized in ["view", "ephemeral"]:
-            return dbt_view_automation_condition(ignore_selection=ignore_selection)
+            return dbt_view_automation_condition()
         else:
-            return dbt_table_automation_condition(ignore_selection=ignore_selection)
+            return dbt_table_automation_condition()
 
     def get_group_name(self, dbt_resource_props: Mapping[str, Any]) -> str | None:
         group = super().get_group_name(dbt_resource_props)

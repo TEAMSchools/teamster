@@ -1,7 +1,4 @@
-# CLAUDE.md
-
-This file provides guidance to Claude Code (claude.ai/code) when working with
-code in this repository.
+# CLAUDE.md — `teamster/code_locations/kippmiami/`
 
 ## Identity
 
@@ -16,7 +13,7 @@ GCS bucket: `teamster-kippmiami`
 
 | Module        | Type          | Trigger                                   |
 | ------------- | ------------- | ----------------------------------------- |
-| `_dbt`        | dbt assets    | `AutomationConditionSensor`               |
+| `dbt`         | dbt assets    | `AutomationConditionSensor`               |
 | `powerschool` | ODBC assets   | sensor (`build_powerschool_asset_sensor`) |
 | `deanslist`   | API assets    | schedule (nightly)                        |
 | `finalsite`   | API assets    | `AutomationConditionSensor`               |
@@ -25,6 +22,7 @@ GCS bucket: `teamster-kippmiami`
 | `renlearn`    | SFTP assets   | sensor (`build_renlearn_sftp_sensor`)     |
 | `extracts`    | BigQuery→SFTP | schedule                                  |
 | `couchdrop`   | sensor only   | sensor (Google Drive watcher)             |
+| `dlt/focus`   | dlt assets    | schedule (daily midnight ET)              |
 
 ## Florida-Specific
 
@@ -36,17 +34,3 @@ data file drop.
 
 Uses **ODBC** (live Oracle tunnel). Config YAMLs under `powerschool/config/` —
 same structure as other NJ schools.
-
-## No Asset Checks
-
-Miami does not define freshness checks (`asset_checks.py` is absent).
-
-## Resources
-
-All resources come from `teamster.core.resources`. Notable resources:
-
-- `db_powerschool` — Oracle ODBC
-- `ssh_powerschool` — SSH tunnel for ODBC
-- `ssh_iready`, `ssh_renlearn` — SFTP
-- `ssh_couchdrop` — Couchdrop SFTP
-- `google_drive` — used by Couchdrop sensor

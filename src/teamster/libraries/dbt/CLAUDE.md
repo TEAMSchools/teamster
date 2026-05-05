@@ -1,12 +1,7 @@
-# CLAUDE.md
-
-This file provides guidance to Claude Code (claude.ai/code) when working with
-code in this repository.
-
-## Purpose
+# CLAUDE.md — `teamster/libraries/dbt/`
 
 Core library for wrapping dbt projects as Dagster assets. Every code location's
-`_dbt/assets.py` calls `build_dbt_assets()` from here.
+`dbt/assets.py` calls `build_dbt_assets()` from here.
 
 ## Files
 
@@ -19,7 +14,10 @@ Wraps `@dbt_assets` with two additional behaviors before running `dbt build`:
    `dbt run-operation stage_external_sources` to create/refresh BigLake external
    tables in BigQuery.
 2. **BigLake metadata refresh**: For external sources using a BigLake
-   `connection_name`, runs `dbt run-operation refresh_external_metadata_cache`.
+   `connection_name`, runs `dbt run-operation refresh_external_metadata_cache`
+   with `raise_on_error=False`. BigQuery rejects concurrent refresh jobs for the
+   same table, so the "already ongoing" error is matched by regex and logged as
+   a warning rather than failing the run.
 
 This means adding a new external source to a dbt project automatically triggers
 staging without any Dagster code changes.
@@ -33,7 +31,12 @@ Customizes asset key and automation condition generation:
   `meta.dagster.asset_key` is already set.
 - **Automation condition**: A forked version of `AutomationCondition.eager()`
   that also triggers on `code_version_changed()`, ignores external source assets
-  from dep-missing checks, and allows initial evaluation.
+  from dep-missing checks, and allows initial evaluation. Views using
+  `union_relations` are auto-detected (via `raw_code` inspection) and assigned
+  `dbt_union_relations_automation_condition()` — a third condition that adds
+  recursive ancestor `code_version_changed` detection (but not
+  `any_deps_updated`) to the view condition. This re-runs the view only when
+  upstream model SQL changes after a deploy, not on data-only refreshes.
 - **Group name**: Falls back to the dbt package name (for cross-project refs)
   then the first FQN segment after the project name.
 
@@ -42,7 +45,3 @@ Customizes asset key and automation condition generation:
 Produces a schedule that runs only the dbt assets whose compiled SQL has changed
 since their last materialization (compares `code_versions_by_key` against
 `get_latest_materialization_code_versions`).
-
-> **Note**: `dbt_code_version_schedule` is defined in `_dbt/schedules.py` for
-> `kippnewark`, `kippcamden`, and `kippmiami`, but is **not wired into any
-> `definitions.py`** — it is currently dead code in all code locations.

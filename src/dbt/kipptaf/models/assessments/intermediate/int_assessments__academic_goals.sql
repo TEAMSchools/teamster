@@ -1,5 +1,15 @@
 select
-    g.*,
+    g.academic_year,
+    g.school_id,
+    g.grade_level,
+    g.state_assessment_code,
+    g.illuminate_subject_area,
+    g.grade_goal,
+    g.school_goal,
+    g.region_goal,
+    g.organization_goal,
+    g.grade_band_goal,
+    g.assessment_band_goal,
 
     s.school_level,
 

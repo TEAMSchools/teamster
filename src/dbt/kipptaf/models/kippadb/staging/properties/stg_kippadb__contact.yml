@@ -7,7 +7,7 @@ models:
           - unique:
               config:
                 where: school_specific_id is not null
-                store_failures: true
+                severity: error
       - name: id
         data_type: string
       - name: owner_id
@@ -114,3 +114,7 @@ models:
         data_type: string
       - name: graduation_year
         data_type: int64
+      - name: intent_to_enlist
+        data_type: boolean
+      - name: cte_military_interest
+        data_type: string

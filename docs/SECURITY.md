@@ -1,20 +1,13 @@
 # Security Policy
 
-## Supported Versions
-
-Use this section to tell people about which versions of your project are
-currently being supported with security updates.
-
-| Version | Supported          |
-| ------- | ------------------ |
-| 5.1.x   | :white_check_mark: |
-| 5.0.x   | :x:                |
-| 4.0.x   | :white_check_mark: |
-| < 4.0   | :x:                |
-
 ## Reporting a Vulnerability
 
-Use this section to tell people how to report a vulnerability.
+To report a security vulnerability in this project, please use
+[GitHub's private security advisory feature](https://github.com/TEAMSchools/teamster/security/advisories/new).
 
-Tell them where to go, how often they can expect to get an update on a reported
-vulnerability, what to expect if the vulnerability is accepted or declined, etc.
+This allows us to review and address the issue confidentially before any public
+disclosure. Please include as much detail as possible: affected components,
+reproduction steps, and potential impact.
+
+We will acknowledge the report promptly and keep you informed as we work toward
+a resolution.

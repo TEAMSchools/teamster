@@ -1,5 +1,16 @@
 select
-    asr.*,
+    asr.student_assessment_id,
+    asr.assessment_id,
+    asr.standard_id,
+    asr.student_id,
+    asr.performance_band_id,
+    asr.performance_band_level,
+    asr.mastered,
+    asr.points,
+    asr.points_possible,
+    asr.answered,
+    asr.percent_correct,
+    asr.number_of_questions,
 
     astd.performance_band_set_id,
 

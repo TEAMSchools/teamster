@@ -90,6 +90,48 @@ with
         from {{ ref("base_powerschool__student_enrollments") }}
         where grade_level != 99
         group by _dbt_source_relation, academic_year, student_number
+    ),
+
+    gpa_bands as (
+        select
+            _dbt_source_relation,
+            schoolid,
+            studentid,
+
+            cumulative_y1_gpa,
+            cumulative_y1_gpa_unweighted,
+            cumulative_y1_gpa_projected,
+            cumulative_y1_gpa_projected_s1,
+            cumulative_y1_gpa_projected_s1_unweighted,
+            cumulative_y1_gpa_projected_unweighted,
+            core_cumulative_y1_gpa,
+            earned_credits_cum,
+            earned_credits_cum_projected,
+            potential_credits_cum,
+
+            case
+                when cumulative_y1_gpa_unweighted >= 3.00
+                then 4
+                when cumulative_y1_gpa_unweighted >= 2.50
+                then 3
+                when cumulative_y1_gpa_unweighted >= 2.00
+                then 2
+                when cumulative_y1_gpa_unweighted < 2.00
+                then 1
+            end as cumulative_y1_gpa_unweighted_band,
+
+            case
+                when cumulative_y1_gpa_projected_unweighted >= 3.00
+                then 4
+                when cumulative_y1_gpa_projected_unweighted >= 2.50
+                then 3
+                when cumulative_y1_gpa_projected_unweighted >= 2.00
+                then 2
+                when cumulative_y1_gpa_projected_unweighted < 2.00
+                then 1
+            end as cumulative_y1_gpa_projected_unweighted_band,
+
+        from {{ ref("int_powerschool__gpa_cumulative") }}
     )
 
 select
@@ -123,8 +165,8 @@ select
     e.salesforce_contact_college_match_gpa_band as college_match_gpa_bands,
     e.salesforce_contact_owner_name as contact_owner_name,
 
-    lc.region as region_official_name,
-    lc.deanslist_school_id,
+    lc.location_region as region_official_name,
+    lc.location_deanslist_school_id as deanslist_school_id,
 
     m.school_abbreviation as ms_attended,
 
@@ -160,6 +202,7 @@ select
     gc.cumulative_y1_gpa_projected,
     gc.cumulative_y1_gpa_projected_s1,
     gc.cumulative_y1_gpa_projected_s1_unweighted,
+    gc.cumulative_y1_gpa_projected_unweighted,
     gc.core_cumulative_y1_gpa,
     gc.earned_credits_cum,
     gc.earned_credits_cum_projected,
@@ -198,7 +241,7 @@ select
     ) as self_contained_status,
 
     if(e.region = 'Miami', e.fleid, e.state_studentnumber) as state_studentnumber,
-    -- added this temporarily because we dont have alignment on ids
+    /* temporary: Miami uses a different ID field until we have alignment on ids */
     if(
         e.region = 'Miami', e.state_studentnumber, null
     ) as secondary_state_studentnumber,
@@ -238,6 +281,13 @@ select
     ) as is_tutoring,
 
     if(sip.students_student_number is not null, true, false) as is_sipps,
+
+    if(
+        gc.cumulative_y1_gpa_projected_unweighted_band
+        < gc.cumulative_y1_gpa_unweighted_band,
+        true,
+        false
+    ) as student_slideback,
 
     case
         e.enroll_status
@@ -309,8 +359,8 @@ select
 
 from {{ ref("base_powerschool__student_enrollments") }} as e
 left join
-    {{ ref("stg_google_sheets__people__location_crosswalk") }} as lc
-    on e.school_name = lc.name
+    {{ ref("int_people__location_crosswalk") }} as lc
+    on e.school_name = lc.location_name
 left join
     esms_attend as m
     on e.student_number = m.student_number
@@ -374,7 +424,7 @@ left join
     and e.academic_year = (adapy.academic_year + 1)
     and {{ union_dataset_join_clause(left_alias="e", right_alias="adapy") }}
 left join
-    {{ ref("int_powerschool__gpa_cumulative") }} as gc
+    gpa_bands as gc
     on e.studentid = gc.studentid
     and e.schoolid = gc.schoolid
     and {{ union_dataset_join_clause(left_alias="e", right_alias="gc") }}

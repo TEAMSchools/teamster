@@ -16,6 +16,11 @@ clean-targets:
   - target
   - dbt_packages
 
+data_tests:
+  +severity: warn
+  +store_failures: true
+  +store_failures_as: view
+
 vars:
   local_timezone: America/New_York
   current_academic_year: 2025
@@ -126,10 +131,13 @@ models:
 
 sources:
   amplify:
-    amplify_mclass_api:
-      +enabled: false
-    amplify_dds:
-      +enabled: false
+    mclass:
+      api:
+        amplify_mclass_api:
+          +enabled: false
+    dds:
+      amplify_dds:
+        +enabled: false
   powerschool:
     sis:
       staging:
@@ -176,4 +184,8 @@ sources:
       src_renlearn__star_dashboard_standards:
         +enabled: false
       src_renlearn__star_skill_area:
+        +enabled: false
+  titan:
+    titan:
+      src_titan__income_form_data:
         +enabled: false

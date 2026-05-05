@@ -1,0 +1,118 @@
+models:
+  - name: fct_student_attendance_interventions
+    description: >-
+      Student attendance intervention fact table. One row per student x
+      intervention type x academic year. Tracks whether each required
+      intervention communication was completed based on the student's unexcused
+      absence count exceeding the threshold defined in
+      dim_student_attendance_intervention_types. FK to dim_student_enrollments,
+      dim_student_attendance_intervention_types, and fct_family_communications.
+    columns:
+      - name: student_attendance_intervention_key
+        data_type: string
+        description: >-
+          Surrogate key derived from student_number, academic_year, and the comm
+          log reason that identifies the intervention type. Primary key for this
+          fact.
+        constraints:
+          - type: primary_key
+            warn_unsupported: false
+        data_tests:
+          - unique
+          - not_null
+
+      - name: student_enrollment_key
+        data_type: string
+        description: >-
+          FK to dim_student_enrollments. Surrogate key derived from
+          student_number, _dbt_source_relation, academic_year, and entrydate.
+        constraints:
+          - type: foreign_key
+            to: ref('dim_student_enrollments')
+            to_columns: [student_enrollment_key]
+            warn_unsupported: false
+        data_tests:
+          - not_null
+
+          - relationships:
+              arguments:
+                to: ref('dim_student_enrollments')
+                field: student_enrollment_key
+      - name: intervention_type_key
+        data_type: string
+        description: >-
+          FK to dim_student_attendance_intervention_types. Surrogate key derived
+          from region_name and family_communication_reason.
+        constraints:
+          - type: foreign_key
+            to: ref('dim_student_attendance_intervention_types')
+            to_columns: [intervention_type_key]
+            warn_unsupported: false
+        data_tests:
+          - relationships:
+              arguments:
+                to: ref('dim_student_attendance_intervention_types')
+                field: intervention_type_key
+
+      - name: family_communication_key
+        data_type: string
+        description: >-
+          FK to fct_family_communications. Surrogate key derived from the
+          DeansList comm log record_id and _dbt_source_relation. Nullable when
+          no matching communication was logged (intervention is not complete).
+        constraints:
+          - type: foreign_key
+            to: ref('fct_family_communications')
+            to_columns: [family_communication_key]
+            warn_unsupported: false
+        data_tests:
+          - relationships:
+              arguments:
+                to: ref('fct_family_communications')
+                field: family_communication_key
+
+      - name: date_key
+        data_type: date
+        description: >-
+          Date the communication was logged. FK to dim_dates. Null when the
+          intervention is missing (not yet completed).
+
+        constraints:
+          - type: foreign_key
+            to: ref('dim_dates')
+            to_columns: [date_key]
+            warn_unsupported: false
+        data_tests:
+          - relationships:
+              arguments:
+                to: ref('dim_dates')
+                field: date_key
+      - name: academic_year
+        data_type: int64
+        description: >-
+          KIPP academic year (July start) for this intervention record.
+
+      - name: absence_threshold
+        data_type: int64
+        description: >-
+          Number of unexcused absences that triggered this intervention.
+
+      - name: days_absent_unexcused
+        data_type: float64
+        description: >-
+          Student's year-to-date unexcused absence count at the time of
+          evaluation.
+
+      - name: has_communication_log
+        data_type: boolean
+        description: >-
+          TRUE if the expected intervention was matched against a communication
+          log record, FALSE if no matching record was found. Existence check,
+          not a workflow-completion flag — absence of a log can reflect either a
+          skipped intervention or a logging gap.
+
+      - name: is_chronic_absence_exception
+        data_type: boolean
+        description: >-
+          TRUE if the student is currently enrolled in the Attendance Exceptions
+          special program, exempting them from chronic absence tracking.

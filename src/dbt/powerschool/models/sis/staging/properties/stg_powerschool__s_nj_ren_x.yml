@@ -7,12 +7,18 @@ models:
         data_type: date
       - name: whocreated
         data_type: string
+        description: User login that created the record.
       - name: whencreated
         data_type: timestamp
+        description:
+          Date and time the record was created. Defaults to system date.
       - name: whomodified
         data_type: string
+        description: User login that last modified the record.
       - name: whenmodified
         data_type: timestamp
+        description:
+          Date and time the record was last modified. Defaults to system date.
       - name: liep_type
         data_type: string
       - name: withdrawal_date
@@ -148,7 +154,13 @@ models:
         data_tests:
           - unique:
               config:
-                store_failures: true
+                severity: error
+        description:
+          DCID (unique identifier) of the associated Reenrollment record.
+          Indexed.
+        constraints:
+          - type: foreign_key
+          - type: primary_key
       - name: lep_tf
         data_type: int64
       - name: cumulativedaysabsent

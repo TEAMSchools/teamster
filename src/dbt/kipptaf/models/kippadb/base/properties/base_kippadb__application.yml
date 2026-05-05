@@ -239,19 +239,32 @@ models:
         data_type: boolean
       - name: is_strong_oos_option
         data_type: boolean
+      - name: is_matriculated_ba
+        data_type: boolean
+        description: Conditional on is_4yr_college, is_matriculated.
       - name: is_early_action_decision
         data_type: boolean
+        description: Conditional on is_early_action, is_early_decision.
       - name: is_submitted_aa
         data_type: boolean
+        description: Conditional on is_2yr_college, is_submitted.
       - name: is_submitted_ba
         data_type: boolean
+        description: Conditional on is_4yr_college, is_submitted.
       - name: is_submitted_certificate
         data_type: boolean
+        description: Conditional on is_certificate, is_submitted.
       - name: is_accepted_aa
         data_type: boolean
+        description: Conditional on is_2yr_college, is_accepted, is_submitted.
       - name: is_accepted_ba
         data_type: boolean
+        description: Conditional on is_4yr_college, is_accepted, is_submitted.
       - name: is_accepted_certificate
         data_type: boolean
+        description: Conditional on is_accepted, is_certificate, is_submitted.
       - name: rn_application_school
         data_type: int64
+        description:
+          ROWNUMBER of value partitioned by applicant, school ordered by
+          is_matriculated, is_accepted, is_submitted.

@@ -6,7 +6,7 @@ models:
         data_tests:
           - unique:
               config:
-                store_failures: true
+                severity: error
       - name: PowerSchool_Course_Name
         data_type: string
       - name: Illuminate_Subject_Area
@@ -14,8 +14,6 @@ models:
       - name: Is_Foundations
         data_type: boolean
       - name: Is_Advanced_Math
-        data_type: boolean
-      - name: Exclude_from_Gradebook
         data_type: boolean
       - name: Discipline
         data_type: string

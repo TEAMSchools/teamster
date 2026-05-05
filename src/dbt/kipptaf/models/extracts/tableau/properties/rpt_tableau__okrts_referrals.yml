@@ -41,6 +41,10 @@ models:
         data_type: date
       - name: week_end_sunday
         data_type: date
+      - name: week_number_academic_year
+        data_type: int64
+      - name: is_current_week_mon_sun
+        data_type: boolean
       - name: days_in_session
         data_type: int64
       - name: term
@@ -121,6 +125,8 @@ models:
         data_type: boolean
       - name: school_enrollment_by_week
         data_type: int64
+      - name: is_week_ytd
+        data_type: boolean
       - name: is_suspended_y1_int
         data_type: int64
       - name: is_suspended_y1_oss_int

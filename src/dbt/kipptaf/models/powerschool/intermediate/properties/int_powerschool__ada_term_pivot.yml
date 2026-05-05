@@ -1,5 +1,7 @@
 models:
   - name: int_powerschool__ada_term_pivot
+    config:
+      materialized: table
     data_tests:
       - dbt_utils.unique_combination_of_columns:
           arguments:
@@ -8,55 +10,89 @@ models:
               - studentid
               - academic_year
           config:
-            store_failures: true
+            severity: error
     columns:
       - name: _dbt_source_relation
         data_type: string
       - name: studentid
         data_type: int64
+        description:
+          The internal number and ID of the associated Students record.
+        config:
+          meta:
+            source_system: PowerSchool
+            source_model: stg_powerschool__storedgrades
+            source_column: studentid
+            column_role: foreign_key
       - name: academic_year
         data_type: int64
       - name: ada_term_q1
         data_type: float64
+        description: Derived from ada_term_q1.
       - name: ada_term_q2
         data_type: float64
+        description: Derived from ada_term_q2.
       - name: ada_term_q3
         data_type: float64
+        description: Derived from ada_term_q3.
       - name: ada_term_q4
         data_type: float64
+        description: Derived from ada_term_q4.
       - name: ada_weighted_term_q1
         data_type: float64
+        description: Derived from ada_weighted_term_q1.
       - name: ada_weighted_term_q2
         data_type: float64
+        description: Derived from ada_weighted_term_q2.
       - name: ada_weighted_term_q3
         data_type: float64
+        description: Derived from ada_weighted_term_q3.
       - name: ada_weighted_term_q4
         data_type: float64
+        description: Derived from ada_weighted_term_q4.
       - name: ada_year_running_q1
         data_type: float64
+        description: Derived from ada_year_running_q1.
       - name: ada_year_running_q2
         data_type: float64
+        description: Derived from ada_year_running_q2.
       - name: ada_year_running_q3
         data_type: float64
+        description: Derived from ada_year_running_q3.
       - name: ada_year_running_q4
         data_type: float64
+        description: Derived from ada_year_running_q4.
       - name: ada_weighted_year_running_q1
         data_type: float64
+        description: Derived from ada_weighted_year_running_q1.
       - name: ada_weighted_year_running_q2
         data_type: float64
+        description: Derived from ada_weighted_year_running_q2.
       - name: ada_weighted_year_running_q3
         data_type: float64
+        description: Derived from ada_weighted_year_running_q3.
       - name: ada_weighted_year_running_q4
         data_type: float64
+        description: Derived from ada_weighted_year_running_q4.
       - name: ada_semester_s1
         data_type: float64
+        description: Derived from ada_semester_q1, ada_semester_q2.
       - name: ada_semester_s2
         data_type: float64
+        description: Derived from ada_semester_q3, ada_semester_q4.
       - name: ada_year
         data_type: float64
+        description:
+          Derived from ada_year_q1, ada_year_q2, ada_year_q3, ada_year_q4.
       - name: ada_weighted_semester_s1
         data_type: float64
+        description:
+          Derived from ada_weighted_semester_q1, ada_weighted_semester_q2.
       - name: ada_weighted_semester_s2
         data_type: float64
+        description:
+          Derived from ada_weighted_semester_q3, ada_weighted_semester_q4.
       - name: ada_weighted_year
         data_type: float64
+        description:
+          Derived from ada_year_q1, ada_year_q2, ada_year_q3, ada_year_q4.

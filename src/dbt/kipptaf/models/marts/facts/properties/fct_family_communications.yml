@@ -1,0 +1,133 @@
+models:
+  - name: fct_family_communications
+    description: >-
+      Family communication fact table. One row per communication event from
+      DeansList comm log. General-purpose model covering all communication types
+      (attendance calls, truancy outreach, general family contact). Scoped to
+      enrolled-student recipients only. FK to dim_student_enrollments and
+      dim_dates.
+    columns:
+      - name: family_communication_key
+        data_type: string
+        description: >-
+          Surrogate key derived from record_id and _dbt_source_relation. Primary
+          key for this fact.
+        constraints:
+          - type: primary_key
+            warn_unsupported: false
+        data_tests:
+          - unique
+          - not_null
+
+      - name: student_enrollment_key
+        data_type: string
+        description: >-
+          FK to dim_student_enrollments. Surrogate key derived from
+          student_number, _dbt_source_relation, academic_year, and entrydate.
+        constraints:
+          - type: foreign_key
+            to: ref('dim_student_enrollments')
+            to_columns: [student_enrollment_key]
+            warn_unsupported: false
+        data_tests:
+          - not_null
+
+          - relationships:
+              arguments:
+                to: ref('dim_student_enrollments')
+                field: student_enrollment_key
+      - name: communicator_staff_key
+        data_type: string
+        description: >-
+          FK to dim_staff for the staff member who logged the communication.
+          Derived from the DeansList user's email resolved to an employee_number
+          via int_people__staff_roster, then hashed with generate_surrogate_key.
+          Nullable when the DeansList user cannot be matched to a staff record.
+        constraints:
+          - type: foreign_key
+            to: ref('dim_staff')
+            to_columns: [staff_key]
+            warn_unsupported: false
+        data_tests:
+          - relationships:
+              arguments:
+                to: ref('dim_staff')
+                field: staff_key
+
+      - name: date_key
+        data_type: date
+        description: >-
+          Date the communication occurred. FK to dim_dates.
+
+        constraints:
+          - type: foreign_key
+            to: ref('dim_dates')
+            to_columns: [date_key]
+            warn_unsupported: false
+        data_tests:
+          - relationships:
+              arguments:
+                to: ref('dim_dates')
+                field: date_key
+      - name: academic_year
+        data_type: int64
+        description: >-
+          KIPP academic year (July start) for this communication.
+
+      - name: method
+        data_type: string
+        description: >-
+          Method of communication (e.g., Phone Call, Home Visit, Text, Email).
+
+      - name: topic
+        data_type: string
+        description: >-
+          Topic selected for the communication.
+
+      - name: reason
+        data_type: string
+        description: >-
+          Reason category for the communication (e.g., 'Att: Absent', 'Chronic
+          Absence: 4', general reasons).
+
+      - name: outcome
+        data_type: string
+        description: >-
+          Result of the call attempt as logged in DeansList. Distinct from
+          PowerSchool-style status codes — values describe whether the call
+          connected, went to voicemail, etc.
+
+      - name: notes
+        data_type: string
+        description: >-
+          Free-text response / notes entered by the staff member for this family
+          communication event.
+
+        config:
+          meta:
+            source_system: DeansList
+            source_model: int_deanslist__comm_log
+            source_column: response
+      - name: timestamp
+        quote: true
+        data_type: timestamp
+        description: >-
+          Timestamp the communication was logged, preserving time of day. Cast
+          from the DeansList datetime to timestamp per R4 suffix convention.
+
+      - name: is_attendance_call
+        data_type: boolean
+        description: >-
+          TRUE if the communication reason starts with 'Att:' — routine
+          attendance outreach (absences, tardies). Mutually exclusive with
+          is_truancy_call; chronic-absence / truancy communications are tracked
+          separately. For a total count of attendance-related contacts, use
+          `is_attendance_call OR is_truancy_call`.
+
+      - name: is_truancy_call
+        data_type: boolean
+        description: >-
+          TRUE if the communication reason starts with 'Chronic Absence:' — the
+          specific chronic-absence / truancy intervention workflow. Mutually
+          exclusive with is_attendance_call (which covers routine attendance
+          outreach); neither is a subset of the other.

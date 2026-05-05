@@ -8,7 +8,7 @@ models:
               - test_type
               - latest_psat_date
           config:
-            store_failures: true
+            severity: error
     columns:
       - name: cb_id
         data_type: int64
@@ -17,9 +17,6 @@ models:
               arguments:
                 to: ref("stg_google_sheets__collegeboard__sat_id_crosswalk")
                 field: college_board_id
-              config:
-                store_failures: true
-                severity: warn
       - name: latest_psat_total
         data_type: numeric
       - name: latest_psat_math_section

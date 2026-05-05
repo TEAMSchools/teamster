@@ -81,7 +81,31 @@ with
     )
 
 select
-    *,
+    _dbt_source_relation,
+    assignmentsectionid,
+    sectionsdcid,
+    assignmentid,
+    assignment_name,
+    duedate,
+    scoretype,
+    totalpointvalue,
+    category_name,
+    category_code,
+    iscountedinfinalgrade,
+    scorepoints,
+    actualscoreentered,
+    academic_year,
+    students_dcid,
+    credit_type,
+    is_late,
+    is_exempt,
+    is_missing,
+    region,
+    is_expected,
+    school_level,
+    score_entered,
+    assign_final_score_percent,
+    half_total_point_value,
 
     if(score_entered = 0, 1, 0) as is_zero,
 

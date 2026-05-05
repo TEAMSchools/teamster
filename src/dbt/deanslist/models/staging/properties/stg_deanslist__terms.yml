@@ -6,7 +6,9 @@ models:
         data_tests:
           - unique:
               config:
-                store_failures: true
+                severity: error
+        constraints:
+          - type: primary_key
       - name: stored_grades
         data_type: boolean
       - name: start_date_timezone_type

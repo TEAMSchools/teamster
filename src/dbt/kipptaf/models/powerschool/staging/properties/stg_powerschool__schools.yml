@@ -3,6 +3,19 @@ models:
     config:
       materialized: table
     columns:
+      - name: location_key
+        data_type: string
+        description: |
+          Canonical location_key resolved via the people canonical master on
+          powerschool_school_id. NULL for the `999999` "Graduated Students"
+          sentinel and any school not present on the master.
+        data_tests:
+          - relationships:
+              arguments:
+                to: ref('dim_locations')
+                field: location_key
+              config:
+                severity: error
       - name: school_number
         data_type: int64
         data_tests:
@@ -12,5 +25,3 @@ models:
                 field: powerschool_school_id
               config:
                 where: state_excludefromreporting = 0
-                store_failures: true
-                severity: warn

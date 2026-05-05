@@ -1,23 +1,64 @@
 models:
   - name: rpt_deanslist__mod_assessment
+    description: >
+      DeansList SFTP CDO extract for K-4 enrichment grades (non-ELA, non-Math
+      subjects). Each row is one student-subject-term average score for the
+      current academic year, drawn from Unit Assessments and assessments tagged
+      as report-card-eligible via AppSheet. The avg_pct_correct is the rounded
+      mean of all Illuminate overall scores for that student, subject, and term.
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns:
+              - student_number
+              - academic_year
+              - term_administered
+              - subject_area_label
     columns:
       - name: student_number
         data_type: int64
+        description: PowerSchool student number.
       - name: academic_year
         data_type: int64
+        description:
+          Academic year as a four-digit integer (e.g. 2025 for 2024-25).
       - name: term_administered
         data_type: string
+        description: >
+          Reporting term in which the assessment was administered (e.g. Q1, Q2).
+          Derived from the administered_at date in Illuminate.
       - name: subject_area_label
         data_type: string
+        description: >
+          Illuminate subject area name used as the display label in DeansList
+          (e.g. Science, Social Studies).
       - name: module_num
         data_type: string
+        description: >
+          Module identifier formatted for DeansList (e.g. QA1, QA2), derived
+          from term_administered by replacing the Q prefix with QA.
       - name: avg_pct_correct
         data_type: numeric
+        description: >
+          Rounded average percent correct across all assessments for this
+          student, subject, and term.
       - name: proficiency_label
         data_type: string
+        description: >
+          Performance band label (e.g. Proficient, Developing) corresponding to
+          avg_pct_correct on the Illuminate performance band set for this
+          subject.
       - name: subject_area
         data_type: string
+        description: >
+          Fixed value 'ENRICHMENT', used by DeansList to route rows to the
+          enrichment grade CDO.
       - name: scope
         data_type: string
+        description:
+          Fixed value 'UA', identifying these rows as Unit Assessment scope.
       - name: rn_unit
         data_type: int64
+        description: >
+          Always null in this model; placeholder for the DeansList CDO schema
+          which expects this field.

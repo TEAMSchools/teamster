@@ -6,6 +6,12 @@ models:
         data_tests:
           - unique:
               config:
-                store_failures: true
+                severity: error
+        description: District-assigned student identification number.
+        config:
+          meta:
+            contains_pii: true
+        constraints:
+          - type: primary_key
       - name: email
         data_type: string

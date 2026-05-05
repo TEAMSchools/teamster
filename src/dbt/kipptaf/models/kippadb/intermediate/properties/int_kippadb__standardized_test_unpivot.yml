@@ -2,6 +2,13 @@ models:
   - name: int_kippadb__standardized_test_unpivot
     config:
       materialized: table
+    data_tests:
+      - dbt_utils.expression_is_true:
+          arguments:
+            expression: |-
+              `date` is null or `date` >= '2000-01-01'
+          config:
+            severity: warn
     columns:
       - name: id
         data_type: string
@@ -31,8 +38,12 @@ models:
         data_type: string
       - name: subject_area
         data_type: string
+        description: Categorical mapping of score_type, test_subject.
       - name: rn_highest
         data_type: int64
+        description:
+          ROWNUMBER of value partitioned by contact, test_type, score_type,
+          ap_course_name ordered by score.
       - name: row_count_by_test_date
         data_type: int64
       - name: average_rows

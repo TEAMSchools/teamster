@@ -1,9 +1,4 @@
-# CLAUDE.md
-
-This file provides guidance to Claude Code (claude.ai/code) when working with
-code in this repository.
-
-## Purpose
+# CLAUDE.md — `teamster/core/`
 
 Shared infrastructure used by every code location and library. Nothing here is
 integration-specific — it is the foundation all other modules build on.
@@ -23,11 +18,16 @@ location's `definitions.py`. Two categories:
   SFTP/API assets)
 - `get_io_manager_gcs_file(code_location)` → `GCSIOManager` (raw file, used by
   paginated Deanslist)
-- `get_dbt_cli_resource(dbt_project, test=False)` → `DbtCliResource`
+- `get_dbt_cli_resource(dbt_project)` → `DbtCliResource` (passes
+  `target="defer"` when `DAGSTER_CLOUD_IS_BRANCH_DEPLOYMENT == "1"`; otherwise
+  uses the shipped profile default, which is `prod`)
 - `get_powerschool_ssh_resource()` → `SSHResource` (reads from shared env vars)
 
 All IO manager factories redirect to `teamster-test` bucket when
 `DAGSTER_CLOUD_IS_BRANCH_DEPLOYMENT=1`.
+
+**Env var gotcha**: `DAGSTER_CLOUD_IS_BRANCH_DEPLOYMENT` is `"0"` (not absent)
+in full deployments — always check `== "1"`, never truthy.
 
 **Singletons** (shared across all code locations):
 
@@ -54,7 +54,21 @@ with the current timestamp.
 
 Three `object_type` modes: `"pickle"`, `"avro"` (writes Fastavro container
 files), `"file"` (writes raw bytes from a local file path). The `test=True` flag
-prefixes GCS paths with `test/` to isolate test runs.
+writes local files to `/tmp/dagster` (not the `dagster-tmp` symlink — causes
+`FileExistsError`) instead of `env/`, and prefixes GCS paths with `test/`.
+
+### `freshness.py`
+
+**`FreshnessPolicy` UI surface**: evaluations do NOT appear on the asset's
+Checks tab — state lives on the Overview sidebar's Freshness panel; alerts fire
+via Dagster+ "Freshness policy violations" policies, not asset-check alerts. Do
+not add `build_last_update_freshness_checks` (it's `@superseded`) to force
+Checks-tab visibility.
+
+**`FreshnessPolicy.cron` window**: valid materialization window is
+`[deadline - lower_bound_delta, deadline]`. A materialization landing AFTER the
+deadline is outside the window. Set `deadline_cron` past the asset's typical
+arrival time, not before, or the check flaps FAIL→PASS every cycle.
 
 ### `asset_checks.py`
 
@@ -69,13 +83,40 @@ All asset factories that yield Avro output call both of these.
 
 ### `automation_conditions.py`
 
-Two dbt-specific `AutomationCondition` builders:
+Three dbt-specific `AutomationCondition` builders, all sharing a common skeleton
+via `_build_dbt_condition()`:
 
 - `dbt_view_automation_condition()` — for VIEW models: re-runs on
-  `newly_missing`, `code_version_changed`, or `execution_failed`
+  `newly_missing`, `code_version_changed`, or `execution_failed`. Intentionally
+  omits `any_deps_updated` since views are computed on read.
+- `dbt_union_relations_automation_condition()` — for views using the
+  `union_relations` macro: adds recursive ancestor `code_version_changed`
+  detection (but NOT `any_deps_updated`) to the view condition. Triggers only on
+  code deploys that change upstream model definitions, not on data refreshes.
 - `dbt_table_automation_condition()` — for TABLE models: also triggers on
   upstream data changes, including through intermediate views via
-  `_build_any_ancestor_updated()` (recursive `any_deps_match` up to 5 levels)
+  `_build_any_ancestor_updated()` (recursive `any_deps_match` up to
+  `_MAX_VIEW_DEPTH` levels, currently 10)
+
+**Unsynced badge behavior**: Dagster's "unsynced" indicator is driven by its
+data versioning system, not the automation condition. When an upstream table
+materializes, directly-dependent view assets are marked "unsynced" in the UI
+even though the automation condition correctly suppresses any run. There is no
+built-in Dagster API to suppress this per-asset.
+
+**Deploy rollover + `code_version_changed` race**: if a run completes during
+deploy rollover, the materialization may be stamped with the new deployment's
+code version. `code_version_changed()` returns false permanently — manual
+materialization is the only fix. See dagster-io/dagster#33708.
+
+**Deploy ordering gate**: `_dep_code_version_pending` blocks materialization
+when a direct dependency has `code_version_changed().since(newly_updated())` —
+prevents schema errors when a deploy adds columns through a TABLE → VIEW chain.
+Applied in `_build_dbt_condition()` so all three conditions inherit it.
+
+**Dep fan-out rule**: An unpartitioned dep of a partitioned asset fans out to
+ALL partitions on every materialization. To preserve per-partition triggering,
+the dep must itself be partitioned with the same `PartitionsDefinition`.
 
 ### `utils/classes.py`
 

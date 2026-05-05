@@ -1,0 +1,62 @@
+models:
+  - name: bridge_assessment_administration_members
+    description: >-
+      Factless fact bridging the canonical-grain
+      `dim_assessment_administrations` to the member-grain `dim_assessments`.
+      One row per `(canonical-administration, member-assessment)` pairing.
+
+      Two cases produce multiple bridge rows per
+      `assessment_administration_key`:
+
+      1. **Multipart administrations** (e.g., FTELA U2 CRA + CRA-Essay) — both
+         halves administered to all regions on the same date, sharing one
+         `canonical_assessment_id`. Each region has 2 bridge rows (one per
+         member).
+
+      2. **Region-split assessments** — one canonical group's members were
+         tagged for disjoint regions (e.g., a Miami-only "FL" member and a
+         separate Camden/Newark/Paterson member). Each (canonical, region)
+         resolves to its region-tagged member.
+
+      Single-member canonical groups produce one bridge row per
+      `(canonical_assessment_id, region)`.
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns:
+              - assessment_administration_key
+              - assessment_key
+    columns:
+      - name: assessment_administration_key
+        data_type: string
+        description: >-
+          FK to `dim_assessment_administrations`. Hashed from canonical inputs
+          to match the canonical-grain dim row at the same `(canonical, region,
+          canonical_administered_date)` coordinate.
+        constraints:
+          - type: foreign_key
+            to: ref('dim_assessment_administrations')
+            to_columns: [assessment_administration_key]
+            warn_unsupported: false
+        data_tests:
+          - relationships:
+              arguments:
+                to: ref('dim_assessment_administrations')
+                field: assessment_administration_key
+      - name: assessment_key
+        data_type: string
+        description: >-
+          FK to `dim_assessments`. Hashed from member-level inputs (member
+          `assessment_id`, not canonical). Each bridge row resolves to the
+          member's row in the member-grain `dim_assessments` for full
+          definitional detail (member title, module_type, etc.).
+        constraints:
+          - type: foreign_key
+            to: ref('dim_assessments')
+            to_columns: [assessment_key]
+            warn_unsupported: false
+        data_tests:
+          - relationships:
+              arguments:
+                to: ref('dim_assessments')
+                field: assessment_key

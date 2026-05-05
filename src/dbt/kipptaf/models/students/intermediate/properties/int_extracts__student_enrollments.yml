@@ -12,135 +12,656 @@ models:
               - academic_year
               - entrydate
           config:
-            store_failures: true
-            # severity: warn
+            severity: error
     columns:
-      - name: fafsa_status_mismatch_category
-        data_type: string
-        data_tests:
-          - accepted_values:
-              arguments:
-                values:
-                  - No issues
-              config:
-                where:
-                  grade_level != 99 and academic_year = {{
-                  var('current_academic_year')}}
-                severity: warn
-                store_failures: true
       - name: _dbt_source_relation
         data_type: string
       - name: studentid
         data_type: int64
+        description:
+          The internal number and ID of the associated Students record.
+        config:
+          meta:
+            source_system: PowerSchool
+            source_model: stg_powerschool__storedgrades
+            source_column: studentid
+            column_role: foreign_key
       - name: students_dcid
         data_type: int64
       - name: student_number
         data_type: int64
-      - name: student_name
-        data_type: string
-      - name: student_last_name
-        data_type: string
-      - name: student_first_name
-        data_type: string
-      - name: student_middle_name
-        data_type: string
-      - name: enroll_status
+        description: Student Number assigned by the school. Indexed.
+        config:
+          meta:
+            source_system: PowerSchool
+            source_model: stg_powerschool__students
+            source_column: student_number
+            contains_pii: true
+            column_role: primary_key
+      - name: reenrollments_dcid
         data_type: int64
-      - name: enroll_status_string
-        data_type: string
-      - name: cohort
+      - name: grade_level
         data_type: int64
-      - name: yearid
-        data_type: int64
-      - name: academic_year
-        data_type: int64
-      - name: entrydate
-        data_type: date
-      - name: exitdate
-        data_type: date
-      - name: exitcode
-        data_type: string
-      - name: exitcomment
-        data_type: string
-      - name: region
-        data_type: string
-      - name: school_level
-        data_type: string
+        description:
+          "The grade the student is in. Since this is an integer: 0=Kindergarten
+          1, -2=Preschool. Indexed."
+        config:
+          meta:
+            source_system: PowerSchool
+            source_model: stg_powerschool__students
+            source_column: grade_level
       - name: schoolid
         data_type: int64
-      - name: reporting_schoolid
+        description: The School_Number of the associated Schools record.
+        config:
+          meta:
+            source_system: PowerSchool
+            source_model: stg_powerschool__students
+            source_column: schoolid
+      - name: entrydate
+        data_type: date
+        description:
+          The date the student enrolled in school for the current enrollment.
+          Indexed.
+        config:
+          meta:
+            source_system: PowerSchool
+            source_model: stg_powerschool__students
+            source_column: entrydate
+      - name: exitdate
+        data_type: date
+        description:
+          The date the student exited for the current/last enrollment. This is
+          the day after a student-attended class. For example, if the last day
+          the student is in school is a Wednesday, Thursdayis the exit day.
+          Indexed.
+        config:
+          meta:
+            source_system: PowerSchool
+            source_model: stg_powerschool__students
+            source_column: exitdate
+      - name: entrycode
+        data_type: string
+        description:
+          The code representing how or why the student entered school. These
+          codes are stored in Gen Table [6] cat=entrycodes. These are set in
+          school setup.
+        config:
+          meta:
+            source_system: PowerSchool
+            source_model: stg_powerschool__students
+            source_column: entrycode
+      - name: exitcode
+        data_type: string
+        description:
+          The code representing how or why the student exited the school. These
+          codes are stored in Gen Table [6] cat=exitcodes. These are set in
+          school setup.
+        config:
+          meta:
+            source_system: PowerSchool
+            source_model: stg_powerschool__students
+            source_column: exitcode
+      - name: exitcomment
+        data_type: string
+        description: Any comments for the student exiting this school.
+        config:
+          meta:
+            source_system: PowerSchool
+            source_model: stg_powerschool__students
+            source_column: exitcomment
+      - name: fteid
         data_type: int64
-      - name: school_name
+        description:
+          The internal number for the FTE with which this record is associated.
+          Indexed.
+        config:
+          meta:
+            source_system: PowerSchool
+            source_model: stg_powerschool__students
+            source_column: fteid
+      - name: enroll_status
+        data_type: int64
+        description: The enrollment status of the student.
+        config:
+          meta:
+            source_system: PowerSchool
+            source_model: stg_powerschool__students
+            source_column: enroll_status
+      - name: dob
+        data_type: date
+        description: Date of birth.
+        config:
+          meta:
+            source_system: PowerSchool
+            source_model: stg_powerschool__students
+            source_column: dob
+            contains_pii: true
+      - name: street
         data_type: string
-      - name: school
+        description: Student's street address.
+        config:
+          meta:
+            source_system: PowerSchool
+            source_model: stg_powerschool__students
+            source_column: street
+            contains_pii: true
+      - name: city
         data_type: string
-      - name: grade_level
+        description: City element of the students address.
+        config:
+          meta:
+            source_system: PowerSchool
+            source_model: stg_powerschool__students
+            source_column: city
+            contains_pii: true
+      - name: zip
+        data_type: string
+        description: Students zip code.
+        config:
+          meta:
+            source_system: PowerSchool
+            source_model: stg_powerschool__students
+            source_column: zip
+            contains_pii: true
+      - name: home_phone
+        data_type: string
+        description: Home phone number for the student. Indexed.
+        config:
+          meta:
+            source_system: PowerSchool
+            source_model: stg_powerschool__students
+            source_column: home_phone
+            contains_pii: true
+      - name: fedethnicity
+        data_type: int64
+        description:
+          'Numerical answer to the question "Is the student Hispanic or Latino?"
+          Valid values :'
+        config:
+          meta:
+            source_system: PowerSchool
+            source_model: stg_powerschool__students
+            source_column: fedethnicity
+      - name: next_school
+        data_type: int64
+        description:
+          The school the student will be attending the next school year. It is
+          likely this will be the sameschool. The information is stored as the
+          internal ID on the schools table for that school.
+        config:
+          meta:
+            source_system: PowerSchool
+            source_model: stg_powerschool__students
+            source_column: next_school
+      - name: sched_nextyeargrade
+        data_type: int64
+        description:
+          The grade the student is going to be in next year. If the student is
+          being retained, this shouldbe the same as the current grade level.
+        config:
+          meta:
+            source_system: PowerSchool
+            source_model: stg_powerschool__students
+            source_column: sched_nextyeargrade
+      - name: highest_grade_level_achieved
+        data_type: int64
+      - name: gender
+        data_type: string
+        description: M=Male F=Female. Indexed.
+        config:
+          meta:
+            source_system: PowerSchool
+            source_model: stg_powerschool__students
+            source_column: gender
+      - name: ethnicity
+        data_type: string
+        description:
+          Heritage background of a student. The codes assigned here are stored
+          in the Gen Table [6]Cat=Ethnicity. These are set in school setup.
+        config:
+          meta:
+            source_system: PowerSchool
+            source_model: stg_powerschool__students
+            source_column: ethnicity
+      - name: yearid
+        data_type: int64
+        description:
+          A number representing which year the term belongs to, such as 13 for
+          2003-2004. Thenumber is equal to the ID of the year term divided by
+          100. Maintained in the Terms table.Required. Indexed.
+        config:
+          meta:
+            source_system: PowerSchool
+            source_model: stg_powerschool__gradeschoolconfig
+            source_column: yearid
+      - name: academic_year
+        data_type: int64
+      - name: track
+        data_type: string
+        description:
+          A-H or blank. This represents the times of year a student goes to
+          school. This is most commonwith year-round schools.
+        config:
+          meta:
+            source_system: PowerSchool
+            source_model: stg_powerschool__students
+            source_column: track
+      - name: cohort_primary
+        data_type: int64
+      - name: rn_all
+        data_type: int64
+      - name: rn_year
+        data_type: int64
+      - name: rn_school
         data_type: int64
       - name: grade_level_prev
         data_type: int64
-      - name: advisory_name
-        data_type: string
-      - name: team
-        data_type: string
-      - name: advisor_lastfirst
-        data_type: string
-      - name: student_email
-        data_type: string
-      - name: student_web_id
-        data_type: string
-      - name: student_web_password
-        data_type: string
-      - name: gender
-        data_type: string
-      - name: ethnicity
-        data_type: string
-      - name: fedethnicity
+      - name: yearid_prev
         data_type: int64
-      - name: dob
-        data_type: date
-      - name: lunch_status
-        data_type: string
-      - name: spedlep
-        data_type: string
-      - name: special_education_code
-        data_type: string
-      - name: lep_status
-        data_type: boolean
-      - name: gifted_and_talented
-        data_type: string
-      - name: is_504
-        data_type: boolean
-      - name: is_homeless
-        data_type: boolean
-      - name: is_out_of_district
-        data_type: boolean
-      - name: is_self_contained
-        data_type: boolean
-      - name: is_enrolled_oct01
-        data_type: boolean
-      - name: is_enrolled_recent
-        data_type: boolean
-      - name: is_enrolled_y1
-        data_type: boolean
-      - name: is_retained_year
-        data_type: boolean
-      - name: is_retained_ever
-        data_type: boolean
-      - name: is_fldoe_fte_all
-        data_type: boolean
+      - name: rn_undergrad
+        data_type: int64
       - name: year_in_school
         data_type: int64
       - name: year_in_network
         data_type: int64
+      - name: is_enrolled_y1
+        data_type: boolean
+      - name: is_enrolled_oct01
+        data_type: boolean
+      - name: is_enrolled_oct15
+        data_type: boolean
+      - name: is_enrolled_mar15
+        data_type: boolean
+      - name: is_enrolled_recent
+        data_type: boolean
+      - name: is_enrolled_fdos
+        data_type: boolean
+      - name: is_retained_year
+        data_type: boolean
+      - name: cohort_graduated
+        data_type: int64
+      - name: is_retained_ever
+        data_type: boolean
       - name: boy_status
         data_type: string
-      - name: rn_year
+      - name: cohort_secondary
         data_type: int64
-      - name: rn_undergrad
+      - name: entry_schoolid
         data_type: int64
-      - name: rn_all
+      - name: entry_grade_level
+        data_type: int64
+      - name: school_name
+        data_type: string
+      - name: is_homeless
+        data_type: boolean
+      - name: advisory_name
+        data_type: string
+      - name: advisor_teachernumber
+        data_type: string
+      - name: advisor_lastfirst
+        data_type: string
+      - name: contact_1_address_home
+        data_type: string
+      - name: contact_1_email_current
+        data_type: string
+      - name: contact_1_name
+        data_type: string
+      - name: contact_1_phone_daytime
+        data_type: string
+      - name: contact_1_phone_home
+        data_type: string
+      - name: contact_1_phone_mobile
+        data_type: string
+      - name: contact_1_phone_primary
+        data_type: string
+      - name: contact_1_phone_work
+        data_type: string
+      - name: contact_1_relationship
+        data_type: string
+      - name: contact_2_address_home
+        data_type: string
+      - name: contact_2_email_current
+        data_type: string
+      - name: contact_2_name
+        data_type: string
+      - name: contact_2_phone_daytime
+        data_type: string
+      - name: contact_2_phone_home
+        data_type: string
+      - name: contact_2_phone_mobile
+        data_type: string
+      - name: contact_2_phone_primary
+        data_type: string
+      - name: contact_2_phone_work
+        data_type: string
+      - name: contact_2_relationship
+        data_type: string
+      - name: emergency_1_address_home
+        data_type: string
+      - name: emergency_1_email_current
+        data_type: string
+      - name: emergency_1_name
+        data_type: string
+      - name: emergency_1_phone_daytime
+        data_type: string
+      - name: emergency_1_phone_home
+        data_type: string
+      - name: emergency_1_phone_mobile
+        data_type: string
+      - name: emergency_1_phone_primary
+        data_type: string
+      - name: emergency_1_phone_work
+        data_type: string
+      - name: emergency_1_relationship
+        data_type: string
+      - name: emergency_2_address_home
+        data_type: string
+      - name: emergency_2_email_current
+        data_type: string
+      - name: emergency_2_name
+        data_type: string
+      - name: emergency_2_phone_daytime
+        data_type: string
+      - name: emergency_2_phone_home
+        data_type: string
+      - name: emergency_2_phone_mobile
+        data_type: string
+      - name: emergency_2_phone_primary
+        data_type: string
+      - name: emergency_2_phone_work
+        data_type: string
+      - name: emergency_2_relationship
+        data_type: string
+      - name: emergency_3_address_home
+        data_type: string
+      - name: emergency_3_email_current
+        data_type: string
+      - name: emergency_3_name
+        data_type: string
+      - name: emergency_3_phone_daytime
+        data_type: string
+      - name: emergency_3_phone_home
+        data_type: string
+      - name: emergency_3_phone_mobile
+        data_type: string
+      - name: emergency_3_phone_primary
+        data_type: string
+      - name: emergency_3_phone_work
+        data_type: string
+      - name: emergency_3_relationship
+        data_type: string
+      - name: pickup_1_address_home
+        data_type: string
+      - name: pickup_1_email_current
+        data_type: string
+      - name: pickup_1_name
+        data_type: string
+      - name: pickup_1_phone_daytime
+        data_type: string
+      - name: pickup_1_phone_home
+        data_type: string
+      - name: pickup_1_phone_mobile
+        data_type: string
+      - name: pickup_1_phone_primary
+        data_type: string
+      - name: pickup_1_phone_work
+        data_type: string
+      - name: pickup_1_relationship
+        data_type: string
+      - name: pickup_2_address_home
+        data_type: string
+      - name: pickup_2_email_current
+        data_type: string
+      - name: pickup_2_name
+        data_type: string
+      - name: pickup_2_phone_daytime
+        data_type: string
+      - name: pickup_2_phone_home
+        data_type: string
+      - name: pickup_2_phone_mobile
+        data_type: string
+      - name: pickup_2_phone_primary
+        data_type: string
+      - name: pickup_2_phone_work
+        data_type: string
+      - name: pickup_2_relationship
+        data_type: string
+      - name: pickup_3_address_home
+        data_type: string
+      - name: pickup_3_email_current
+        data_type: string
+      - name: pickup_3_name
+        data_type: string
+      - name: pickup_3_phone_daytime
+        data_type: string
+      - name: pickup_3_phone_home
+        data_type: string
+      - name: pickup_3_phone_mobile
+        data_type: string
+      - name: pickup_3_phone_primary
+        data_type: string
+      - name: pickup_3_phone_work
+        data_type: string
+      - name: pickup_3_relationship
+        data_type: string
+      - name: exit_code_kf
+        data_type: string
+      - name: exit_code_ts
+        data_type: string
+      - name: is_self_contained
+        data_type: boolean
+      - name: is_out_of_district
+        data_type: boolean
+      - name: reporting_schoolid
+        data_type: int64
+      - name: reporting_school_name
+        data_type: string
+      - name: school_level
+        data_type: string
+      - name: cohort
         data_type: int64
       - name: code_location
+        data_type: string
+      - name: region
+        data_type: string
+      - name: fleid
+        data_type: string
+      - name: newark_enrollment_number
+        data_type: string
+      - name: infosnap_id
+        data_type: string
+      - name: infosnap_opt_in
+        data_type: string
+      - name: media_release
+        data_type: string
+      - name: rides_staff
+        data_type: string
+      - name: districtcoderesident
+        data_type: string
+      - name: referral_date
+        data_type: date
+      - name: parental_consent_eval_date
+        data_type: date
+      - name: eligibility_determ_date
+        data_type: date
+      - name: initial_iep_meeting_date
+        data_type: date
+      - name: parent_consent_intial_iep_date
+        data_type: date
+      - name: annual_iep_review_meeting_date
+        data_type: date
+      - name: reevaluation_date
+        data_type: date
+      - name: parent_consent_obtain_code
+        data_type: string
+      - name: initial_process_delay_reason
+        data_type: string
+      - name: special_education_placement
+        data_type: string
+      - name: time_in_regular_program
+        data_type: string
+      - name: early_intervention_yn
+        data_type: string
+      - name: determined_ineligible_yn
+        data_type: string
+      - name: counseling_services_yn
+        data_type: string
+      - name: occupational_therapy_serv_yn
+        data_type: string
+      - name: physical_therapy_services_yn
+        data_type: string
+      - name: speech_lang_theapy_services_yn
+        data_type: string
+      - name: other_related_services_yn
+        data_type: string
+      - name: lepbegindate
+        data_type: date
+      - name: lependdate
+        data_type: date
+      - name: lep_tf
+        data_type: int64
+      - name: liep_parent_refusal_date
+        data_type: date
+      - name: programtypecode
+        data_type: string
+      - name: home_language
+        data_type: string
+      - name: advisor_email
+        data_type: string
+      - name: advisor_phone
+        data_type: string
+      - name: lunch_balance
+        data_type: numeric
+      - name: salesforce_contact_kipp_hs_class
+        data_type: int64
+      - name: salesforce_contact_owner_id
+        data_type: string
+      - name: graduation_year
+        data_type: int64
+        description: Student graduation year.
+        config:
+          meta:
+            source_system: PowerSchool
+            source_model: stg_powerschool__studentcorefields
+            source_column: graduation_year
+      - name: salesforce_contact_owner_phone
+        data_type: string
+      - name: salesforce_contact_owner_email
+        data_type: string
+      - name: illuminate_student_id
+        data_type: int64
+      - name: gifted_and_talented
+        data_type: string
+      - name: is_504
+        data_type: boolean
+      - name: ktc_cohort
+        data_type: int64
+      - name: student_web_id
+        data_type: string
+        description:
+          The student user ID for logging in to Power School Parent. Indexed.
+        config:
+          meta:
+            source_system: PowerSchool
+            source_model: stg_powerschool__students
+            source_column: student_web_id
+      - name: student_web_password
+        data_type: string
+        description: The password for Student_Web_ID.
+        config:
+          meta:
+            source_system: PowerSchool
+            source_model: stg_powerschool__students
+            source_column: student_web_password
+            contains_pii: true
+      - name: is_fldoe_fte_2
+        data_type: boolean
+      - name: is_fldoe_fte_3
+        data_type: boolean
+      - name: is_fldoe_fte_all
+        data_type: boolean
+      - name: special_education_code
+        data_type: string
+      - name: spedlep
+        data_type: string
+        description: Database extension field associated to the Students table.
+        config:
+          meta:
+            source_system: PowerSchool
+            source_model: stg_powerschool__studentcorefields
+            source_column: spedlep
+      - name: lep_status
+        data_type: boolean
+        description: Student Limited English Proficiency status.
+        config:
+          meta:
+            source_system: PowerSchool
+            source_model: stg_powerschool__studentcorefields
+            source_column: lep_status
+      - name: lunch_status
+        data_type: string
+      - name: lunch_application_status
+        data_type: string
+      - name: salesforce_graduation_year
+        data_type: int64
+      - name: pearson_local_student_identifier
+        data_type: int64
+      - name: student_name
+        data_type: string
+        description: Last, First, Mi. Indexed.
+        config:
+          meta:
+            source_system: PowerSchool
+            source_model: stg_powerschool__students
+            source_column: lastfirst
+            contains_pii: true
+      - name: student_last_name
+        data_type: string
+        description: Students last name.
+        config:
+          meta:
+            source_system: PowerSchool
+            source_model: stg_powerschool__students
+            source_column: last_name
+            contains_pii: true
+      - name: student_first_name
+        data_type: string
+        description: Students' first name.
+        config:
+          meta:
+            source_system: PowerSchool
+            source_model: stg_powerschool__students
+            source_column: first_name
+            contains_pii: true
+      - name: student_middle_name
+        data_type: string
+        description: Student's middle name.
+        config:
+          meta:
+            source_system: PowerSchool
+            source_model: stg_powerschool__students
+            source_column: middle_name
+            contains_pii: true
+      - name: school
+        data_type: string
+      - name: team
+        data_type: string
+        description:
+          This field is necessary to capture the team value assigned in Power
+          Scheduler to a student.This will need to be moved from
+          Students:Sched_Next Year Team during the End-of-Yearprocess.
+          Sched_Next Year Team captures the record ID from the Gen table (Cat
+          =Teacher Groups). Current_Team cannot capture the ID since this record
+          is part of Power Scheduler and may be changed when scheduling for a
+          future year. An acceptablecompromise is to capture the value instead
+          (i.e. Blue) and store this.
+        config:
+          meta:
+            source_system: PowerSchool
+            source_model: stg_powerschool__students
+            source_column: team
+      - name: student_email
         data_type: string
       - name: salesforce_id
         data_type: string
@@ -152,30 +673,6 @@ models:
         data_type: string
       - name: contact_owner_name
         data_type: string
-      - name: ktc_cohort
-        data_type: int64
-      - name: illuminate_student_id
-        data_type: int64
-      - name: contact_1_name
-        data_type: string
-      - name: contact_1_phone_home
-        data_type: string
-      - name: contact_1_phone_mobile
-        data_type: string
-      - name: contact_1_email_current
-        data_type: string
-      - name: contact_2_name
-        data_type: string
-      - name: contact_2_phone_home
-        data_type: string
-      - name: contact_2_phone_mobile
-        data_type: string
-      - name: contact_2_email_current
-        data_type: string
-      - name: is_fldoe_fte_2
-        data_type: boolean
-      - name: graduation_year
-        data_type: int64
       - name: region_official_name
         data_type: string
       - name: deanslist_school_id
@@ -184,11 +681,43 @@ models:
         data_type: string
       - name: es_attended
         data_type: string
+      - name: es_graduated
+        data_type: string
       - name: territory
         data_type: string
+      - name: home_instruction_enter_date
+        data_type: date
+        description: The date the student enters a program.
+        config:
+          meta:
+            source_system: PowerSchool
+            source_model: stg_powerschool__spenrollments
+            source_column: enter_date
+      - name: home_instruction_exit_date
+        data_type: date
+        description: The date the student left the program
+        config:
+          meta:
+            source_system: PowerSchool
+            source_model: stg_powerschool__spenrollments
+            source_column: exit_date
+      - name: home_instruction_sp_comment
+        data_type: string
+        description:
+          in5.2.0 CLOB Comment value. Populated when modified by a system
+          process. Mass Create, Import, Drop.
+        config:
+          meta:
+            source_system: PowerSchool
+            source_model: stg_powerschool__spenrollments
+            source_column: sp_comment
       - name: hos
         data_type: string
-      - name: overgrad_fafsa_opt_out
+      - name: school_leader
+        data_type: string
+      - name: school_leader_tableau_username
+        data_type: string
+      - name: best_guess_pathway
         data_type: string
       - name: ada_unweighted_term_q1
         data_type: float64
@@ -208,12 +737,54 @@ models:
         data_type: float64
       - name: ada_weighted_year_prev
         data_type: float64
+      - name: cumulative_y1_gpa
+        data_type: float64
+      - name: cumulative_y1_gpa_unweighted
+        data_type: float64
+      - name: cumulative_y1_gpa_projected
+        data_type: float64
+      - name: cumulative_y1_gpa_projected_s1
+        data_type: float64
+      - name: cumulative_y1_gpa_projected_s1_unweighted
+        data_type: float64
+      - name: cumulative_y1_gpa_projected_unweighted
+        data_type: float64
+      - name: core_cumulative_y1_gpa
+        data_type: float64
+      - name: earned_credits_cum
+        data_type: float64
+      - name: earned_credits_cum_projected
+        data_type: float64
+      - name: potential_credits_cum
+        data_type: float64
       - name: next_year_school
         data_type: string
       - name: next_year_schoolid
         data_type: int64
       - name: finalsite_student_id
         data_type: string
+      - name: district
+        data_type: string
+        description: Computed expression.
+      - name: region_school_level
+        data_type: string
+        description: Derived from region, school_level.
+      - name: guardian_email
+        data_type: string
+        description:
+          First non-null of contact_1_email_current, contact_2_email_current.
+      - name: academic_year_display
+        data_type: string
+        description: Derived from academic_year.
+      - name: next_year_enrollment_history
+        data_type: string
+        description:
+          The grade level the student was in for this enrollment or if EOY, the
+          next grade level unless thestudent is being demoted. Conditional on
+          grade_level, next_year_enrollment_history.
+      - name: overgrad_fafsa_opt_out
+        data_type: string
+        description: Conditional on fafsa_opt_out.
       - name: grad_iep_exempt_status_overall
         data_type: string
         data_tests:
@@ -222,52 +793,124 @@ models:
                 values:
                   - Not Grad IEP Exempt
                   - "Yes"
-              config:
-                severity: warn
-                store_failures: true
-      - name: district
-        data_type: string
-      - name: region_school_level
-        data_type: string
-      - name: guardian_email
-        data_type: string
-      - name: finalsite_enrollment_type
-        data_type: string
-      - name: academic_year_display
-        data_type: string
-      - name: next_year_enrollment_history
-        data_type: string
+        description:
+          The enrollment status of the student. Conditional on enroll_status,
+          grad_iep_exempt_overall.
       - name: iep_status
         data_type: string
+        description:
+          Database extension field associated to the Students table. Conditional
+          on spedlep.
+      - name: ml_status
+        data_type: string
+        description:
+          Student Limited English Proficiency status. Conditional on lep_status.
+      - name: status_504
+        data_type: string
+        description: Conditional on is_504.
+      - name: self_contained_status
+        data_type: string
+        description: Conditional on is_self_contained.
       - name: state_studentnumber
         data_type: string
+        description:
+          The state-assigned student number for the student. In most cases, this
+          number should stay thesame from school to school.
+        config:
+          meta:
+            source_system: PowerSchool
+            source_model: stg_powerschool__students
+            source_column: state_studentnumber
+            contains_pii: true
+      - name: secondary_state_studentnumber
+        data_type: string
+        description:
+          The state-assigned student number for the student. In most cases, this
+          number should stay thesame from school to school. Conditional on
+          region, state_studentnumber.
       - name: ada
         data_type: float64
+        description:
+          Conditional on academic_year, ada_weighted_year, ada_year,
+          school_level.
       - name: met_fafsa_requirement
         data_type: boolean
-      - name: pearson_local_student_identifier
-        data_type: int64
+        description:
+          Conditional on fafsa_opt_out, salesforce_contact_df_has_fafsa.
       - name: is_counseling_services
         data_type: int64
+        description:
+          The date the student enters a program. Conditional on enter_date,
+          exit_date.
       - name: is_student_athlete
         data_type: int64
+        description:
+          The date the student enters a program. Conditional on enter_date,
+          exit_date.
       - name: is_tutoring
         data_type: boolean
-      - name: race_ethnicity
-        data_type: string
-      - name: school_level_alt
-        data_type: string
-      - name: advisory
-        data_type: string
-      - name: state
-        data_type: string
-      - name: ada_above_or_at_80
-        data_type: boolean
-      - name: region_official_name
-        data_type: string
-      - name: is_ms_grad
-        data_type: boolean
+        description:
+          The date the student enters a program. Conditional on enter_date,
+          exit_date.
       - name: is_sipps
         data_type: boolean
-      - name: es_graduated
+        description: Conditional on students_student_number.
+      - name: student_slideback
+        data_type: boolean
+        description: >
+          True if a student's projected unweighted GPA
+          (cumulative_y1_gpa_projected_unweighted) has dropped to a lower KTAF
+          GPA band than their current unweighted GPA
+          (cumulative_y1_gpa_unweighted). False if bands are equal, improving,
+          or either GPA value is null.
+      - name: enroll_status_string
         data_type: string
+        description:
+          The enrollment status of the student. Categorical mapping of
+          enroll_status.
+      - name: race_ethnicity
+        data_type: string
+        description:
+          Heritage background of a student. The codes assigned here are stored
+          in the Gen Table [6]Cat=Ethnicity. These are set in school setup.
+          Categorical mapping of ethnicity.
+      - name: school_level_alt
+        data_type: string
+        description:
+          The grade level the student was in for this enrollment or if EOY, the
+          next grade level unless thestudent is being demoted. Categorical
+          mapping of academic_year, grade_level, school_abbreviation,
+          school_level.
+      - name: advisory
+        data_type: string
+        description:
+          Categorical mapping of advisor_lastfirst, advisory_name, school_level.
+      - name: state
+        data_type: string
+        description: State element of address.
+        config:
+          meta:
+            source_system: PowerSchool
+            source_model: stg_powerschool__students
+            source_column: state
+      - name: ada_above_or_at_80
+        data_type: boolean
+        description:
+          Categorical mapping of academic_year, ada_weighted_year, ada_year,
+          school_level.
+      - name: fafsa_status_mismatch_category
+        data_type: string
+        data_tests:
+          - accepted_values:
+              arguments:
+                values:
+                  - No issues
+              config:
+                where:
+                  grade_level != 99 and academic_year = {{
+                  var('current_academic_year')}}
+        description:
+          The grade level the student was in for this enrollment or if EOY, the
+          next grade level unless thestudent is being demoted. Categorical
+          mapping of academic_year, fafsa_opt_out, grade_level,
+          salesforce_contact_df_has_fafsa.

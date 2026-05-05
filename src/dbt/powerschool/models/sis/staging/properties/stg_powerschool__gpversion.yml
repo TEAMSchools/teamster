@@ -1,5 +1,6 @@
 models:
   - name: stg_powerschool__gpversion
+    description: A specific version of a GradPlan (range of years).
     config:
       enabled: false
     columns:
@@ -8,26 +9,69 @@ models:
         data_tests:
           - unique:
               config:
-                store_failures: true
+                severity: error
+        description: Unique identifier.
+        constraints:
+          - type: primary_key
       - name: gpamethod
         data_type: string
+        description:
+          If set, it specifies which GPA method is used to calculate the
+          student's earned GPA for coursecredits applied to this graduation
+          plan.
       - name: minimumgrade
         data_type: string
+        description:
+          If set, the minimum letter grade is required to fulfill this
+          graduation plan.
       - name: minimumgpa
         data_type: string
+        description:
+          If set, the minimum GPA for course credits is applied to this
+          graduation plan. Must be greater than0 if set.
       - name: sourceid
         data_type: string
+        description:
+          Foreign key to Historic version which was migrated to create this
+          Advanced version. Null if theversion was created directly, not
+          migrated.
+        constraints:
+          - type: foreign_key
       - name: useallcoursesforgpacalc
         data_type: string
+        description:
+          If set, indicates to use all courses that the student has credits in
+          for GPA. If zero, restricts GPAcalculation to courses named in the
+          Graduation Plan.
       - name: gradplanid
         data_type: int64
+        description: Foreign key to Grad Plan.ID.
+        constraints:
+          - type: foreign_key
       - name: startyear
         data_type: int64
+        description:
+          The earliest Student.GPEntry Year (for Grad Contract) or
+          Student.Sched_Year Of Graduation (for Post-Secondary plans), which
+          will automatically get this version when assigned to the plan.
       - name: endyear
         data_type: int64
+        description:
+          The latest Student.GPEntry Year (for Grad Contract) or
+          Student.Sched_Year Of Graduation (for Post-Secondary plans), which
+          will automatically get this version when assigned to the plan.
       - name: minimumgradepercentage
         data_type: float64
+        description:
+          If set, the minimum percent grade is required to fulfill the
+          graduation plan. Valid value is between 0and 100.
       - name: verifyminimumgradefirst
         data_type: int64
+        description:
+          If true, letter grades are verified before percent grades. Else
+          percent grades are verified first.
       - name: isadvancedplan
         data_type: int64
+        description:
+          Column holds Boolean value indicating if the plan version is Advanced
+          (value=1) orlegacy/deprecated (value=0). Required.

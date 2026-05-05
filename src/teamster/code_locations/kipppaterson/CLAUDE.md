@@ -1,7 +1,4 @@
-# CLAUDE.md
-
-This file provides guidance to Claude Code (claude.ai/code) when working with
-code in this repository.
+# CLAUDE.md — `teamster/code_locations/kipppaterson/`
 
 ## Identity
 
@@ -16,8 +13,8 @@ GCS bucket: `teamster-kipppaterson`
 
 | Module                   | Type                      | Trigger                                     |
 | ------------------------ | ------------------------- | ------------------------------------------- |
-| `_dbt`                   | dbt assets                | `AutomationConditionSensor`                 |
-| `powerschool` (sis/sftp) | SFTP assets via Couchdrop | `AutomationConditionSensor`                 |
+| `dbt`                    | dbt assets                | `AutomationConditionSensor`                 |
+| `powerschool` (sis/sftp) | SFTP assets via Couchdrop | sensor (`couchdrop_sftp_sensor`)            |
 | `amplify` (mclass sftp)  | SFTP assets               | sensor (`build_amplify_mclass_sftp_sensor`) |
 | `finalsite`              | API assets                | `AutomationConditionSensor`                 |
 | `pearson`                | SFTP assets               | `AutomationConditionSensor`                 |
@@ -25,7 +22,7 @@ GCS bucket: `teamster-kipppaterson`
 
 ## Critical Difference: PowerSchool via SFTP
 
-Paterson is the **only** school location that does **not** use a live Oracle
+Paterson is the **only** district location that does **not** use a live Oracle
 ODBC connection for PowerSchool. Instead, PowerSchool data arrives as CSV file
 drops on Couchdrop (Google Drive-backed SFTP). Assets are defined in
 `powerschool/sis/sftp/` and use `ssh_resource_key="ssh_couchdrop"`.
@@ -41,12 +38,7 @@ Consequences:
 ## No Asset Checks, No Schedules
 
 Paterson has no freshness checks and no data-pull schedules. All ingestion is
-sensor-driven (Couchdrop file drop detection) or `AutomationConditionSensor`.
-
-## Resources
-
-Minimal resource set — only GCS, dbt, Couchdrop, and Amplify SFTP:
-
-- `gcs`, `io_manager`, `io_manager_gcs_avro`, `dbt_cli`
-- `ssh_couchdrop`, `ssh_amplify`
-- `google_drive` — used by Couchdrop sensor
+sensor-driven (`couchdrop_sftp_sensor` for PowerSchool,
+`build_amplify_mclass_sftp_sensor` for Amplify). `AutomationConditionSensor`
+handles any assets with an automation condition defined (e.g. `finalsite`,
+`pearson`).

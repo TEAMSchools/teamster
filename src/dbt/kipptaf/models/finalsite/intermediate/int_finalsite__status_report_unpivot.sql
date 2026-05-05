@@ -2,8 +2,6 @@ with
     unpivot_data as (
         select
             _dagster_partition_key,
-            current_academic_year,
-            next_academic_year,
             region,
             assigned_school,
             finalsite_enrollment_id,
@@ -11,6 +9,7 @@ with
             first_name,
             last_name,
             grade_level,
+            enrollment_type,
             self_contained,
             gender,
             birthdate,
@@ -59,12 +58,29 @@ with
     )
 
 select
-    u.*,
+    u._dagster_partition_key,
+    u.region,
+    u.assigned_school,
+    u.finalsite_enrollment_id,
+    u.powerschool_student_number,
+    u.first_name,
+    u.last_name,
+    u.grade_level,
+    u.enrollment_type,
+    u.self_contained,
+    u.gender,
+    u.birthdate,
+    u.enrollment_academic_year,
+    u.enrollment_academic_year_display,
+    u.fs_status_field,
+    u.status_start_date,
+    u.file_year,
+    u.detailed_status,
 
     'KTAF' as org,
 
-    coalesce(x.powerschool_school_id, 0) as schoolid,
-    coalesce(x.abbreviation, 'No School Assigned') as school,
+    coalesce(x.location_powerschool_school_id, 0) as schoolid,
+    coalesce(x.location_abbreviation, 'No School Assigned') as school,
 
     case
         u.fs_status_field
@@ -120,5 +136,5 @@ select
 
 from unpivot_data as u
 left join
-    {{ ref("stg_google_sheets__people__location_crosswalk") }} as x
-    on u.assigned_school = x.name
+    {{ ref("int_people__location_crosswalk") }} as x
+    on u.assigned_school = x.location_name

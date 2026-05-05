@@ -1,9 +1,4 @@
-# CLAUDE.md
-
-This file provides guidance to Claude Code (claude.ai/code) when working with
-code in this repository.
-
-## Purpose
+# CLAUDE.md — `teamster/libraries/fivetran/`
 
 Fivetran integration helpers for representing Fivetran-synced BigQuery tables as
 Dagster `AssetSpec`s (external assets, not materialized by Dagster).
@@ -25,10 +20,6 @@ schemas:
   - name: <optional_schema>
     destination_tables: [table1, table2]
 ```
-
-**`schedules.py`**: Schedule that triggers a Fivetran sync via the connector API
-(polling for completion). Used as an alternative to Fivetran's built-in
-scheduler.
 
 **`sensors.py`**: Sensor that detects completed Fivetran syncs and emits asset
 materialization events.

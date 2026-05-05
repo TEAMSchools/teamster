@@ -1,0 +1,45 @@
+{
+  "mcpServers": {
+    "dagster": {
+      "command": "/workspaces/teamster/scripts/dagster-mcp-launch.sh",
+      "args": []
+    },
+    "bigquery": {
+      "command": "/usr/local/bin/toolbox",
+      "args": ["--prebuilt", "bigquery", "--stdio"],
+      "env": {
+        "GOOGLE_APPLICATION_CREDENTIALS": "${HOME}/.config/gcloud/application_default_credentials.json",
+        "BIGQUERY_PROJECT": "teamster-332318"
+      }
+    },
+    "dbt": {
+      "command": "/workspaces/teamster/scripts/dbt-mcp-launch.sh",
+      "args": []
+    },
+    "gke": {
+      "command": "gke-mcp",
+      "args": [],
+      "env": {
+        "GOOGLE_APPLICATION_CREDENTIALS": "${HOME}/.config/gcloud/application_default_credentials.json"
+      }
+    },
+    "observability": {
+      "command": "npx",
+      "args": ["-y", "@google-cloud/observability-mcp"],
+      "env": {
+        "GOOGLE_APPLICATION_CREDENTIALS": "${HOME}/.config/gcloud/application_default_credentials.json"
+      }
+    },
+    "github": {
+      "type": "http",
+      "url": "https://api.githubcopilot.com/mcp/",
+      "headers": {
+        "Authorization": "Bearer ${GITHUB_TOKEN}"
+      }
+    },
+    "context7": {
+      "command": "npx",
+      "args": ["-y", "@upstash/context7-mcp"]
+    }
+  }
+}

@@ -9,9 +9,10 @@ from dagster_k8s import k8s_job_executor
 from teamster.code_locations.kippmiami import (
     CODE_LOCATION,
     DBT_PROJECT,
-    _dbt,
     couchdrop,
+    dbt,
     deanslist,
+    dlt,
     extracts,
     finalsite,
     fldoe,
@@ -23,6 +24,7 @@ from teamster.core.resources import (
     BIGQUERY_RESOURCE,
     DB_POWERSCHOOL,
     DEANSLIST_RESOURCE,
+    DLT_RESOURCE,
     GCS_RESOURCE,
     GOOGLE_DRIVE_RESOURCE,
     SSH_COUCHDROP,
@@ -39,7 +41,8 @@ defs = Definitions(
     executor=k8s_job_executor,
     assets=load_assets_from_modules(
         modules=[
-            _dbt,
+            dbt,
+            dlt,
             extracts,
             deanslist,
             finalsite,
@@ -50,6 +53,7 @@ defs = Definitions(
         ]
     ),
     schedules=[
+        *dlt.schedules,
         *extracts.schedules,
         *deanslist.schedules,
         *powerschool.schedules,
@@ -69,6 +73,7 @@ defs = Definitions(
         "db_powerschool": DB_POWERSCHOOL,
         "dbt_cli": get_dbt_cli_resource(DBT_PROJECT),
         "deanslist": DEANSLIST_RESOURCE,
+        "dlt": DLT_RESOURCE,
         "gcs": GCS_RESOURCE,
         "google_drive": GOOGLE_DRIVE_RESOURCE,
         "io_manager_gcs_avro": get_io_manager_gcs_avro(CODE_LOCATION),

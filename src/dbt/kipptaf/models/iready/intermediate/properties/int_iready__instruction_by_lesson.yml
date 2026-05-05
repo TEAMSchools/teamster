@@ -10,11 +10,9 @@ models:
               arguments:
                 to: ref("stg_google_sheets__people__location_crosswalk")
                 field: name
-              config:
-                store_failures: true
-                severity: warn
       - name: _dbt_source_relation
         data_type: string
+        description: Derived from _dbt_source_relation, dagster_code_location.
       - name: academic_year_int
         data_type: int64
       - name: student_id

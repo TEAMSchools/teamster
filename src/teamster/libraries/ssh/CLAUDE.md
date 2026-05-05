@@ -1,9 +1,4 @@
-# CLAUDE.md
-
-This file provides guidance to Claude Code (claude.ai/code) when working with
-code in this repository.
-
-## Purpose
+# CLAUDE.md — `teamster/libraries/ssh/`
 
 Extended SSH/SFTP resource used by every SFTP-based integration. Wraps
 `dagster-ssh`'s `SSHResource` with two extra capabilities:
@@ -22,6 +17,8 @@ Extended SSH/SFTP resource used by every SFTP-based integration. Wraps
 
 ## Notes
 
+- `SFTPAttributes.st_mtime` and `st_mode` are `int | None` in paramiko's type
+  stubs — wrap in `check.not_none()` when comparing
 - `open_ssh_tunnel()` is only called by the PowerSchool ODBC library
 - In production, the PowerSchool SSH password is read from
   `/etc/secret-volume/powerschool_ssh_password.txt`; in test mode it reads from

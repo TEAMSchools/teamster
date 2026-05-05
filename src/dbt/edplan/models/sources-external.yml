@@ -1,0 +1,33 @@
+sources:
+  - name: edplan
+    schema:
+      "{%- if target.name in ['defer', 'dev'] -%}zz_{{ env_var('GITHUB_USER',
+      'dev') }}_{%- elif target.name == 'staging' -%}zz_stg_{%- endif -%}{{
+      var('edplan_schema', project_name ~ '_edplan') }}"
+    tables:
+      - name: src_edplan__njsmart_powerschool
+        config:
+          meta:
+            dagster:
+              asset_key:
+                - "{{ project_name }}"
+                - edplan
+                - njsmart_powerschool
+        external:
+          location:
+            "{{ var('cloud_storage_uri_base',
+            env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', ''))
+            }}/edplan/njsmart_powerschool/*"
+          options:
+            connection_name: "{{ var('bigquery_external_connection_name') }}"
+            metadata_cache_mode: MANUAL
+            max_staleness: INTERVAL 7 DAY
+            hive_partition_uri_prefix:
+              "{{ var('cloud_storage_uri_base',
+              env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', ''))
+              }}/edplan/njsmart_powerschool/"
+            format: AVRO
+            enable_logical_types: true
+      - name: src_edplan__njsmart_powerschool_archive
+        config:
+          enabled: false

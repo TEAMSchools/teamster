@@ -111,6 +111,7 @@ with
             t.academic_year = {{ var("current_academic_year") }}
             and t.term_start_date <= current_date('{{ var("local_timezone") }}')
             and t.schoolid not in (0, 999999)
+            and t.term not in ('Q1', 'Q2')
     ),
 
     school_level_mod as (
@@ -169,6 +170,17 @@ with
                         tw.quarter_end_date_insession + interval 28 day
                     )
                 then true
+                when
+                    tw.school_level = 'HS'
+                    and tw.`quarter` = 'Q3'
+                    and current_date(
+                        '{{ var("local_timezone") }}'
+                    ) between (tw.quarter_end_date_insession + interval 9 day) and (
+                        tw.quarter_end_date_insession + interval 20 day
+                    )
+                then true
+                when tw.school_level = 'HS' and tw.`quarter` = 'Q3'
+                then false
                 when
                     tw.region != 'Miami'
                     and current_date(

@@ -58,7 +58,7 @@ def test_regex_pattern_replace():
 
 
 def test_ghseet_asset_key_rename():
-    from teamster.code_locations.kipptaf._dbt.assets import manifest
+    from teamster.code_locations.kipptaf.dbt.assets import manifest
 
     asset_keys_old = set()
     asset_keys_new = set()

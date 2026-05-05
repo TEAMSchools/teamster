@@ -1,9 +1,4 @@
-# CLAUDE.md
-
-This file provides guidance to Claude Code (claude.ai/code) when working with
-code in this repository.
-
-## Purpose
+# CLAUDE.md — `teamster/libraries/level_data/`
 
 Dagster asset factory and resource for **LevelData Grow** (formerly SchoolMint
 Grow) — the performance management / staff observation platform.

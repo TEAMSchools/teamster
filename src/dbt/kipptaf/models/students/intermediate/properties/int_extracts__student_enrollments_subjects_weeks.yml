@@ -7,72 +7,238 @@ models:
         data_type: string
       - name: studentid
         data_type: int64
+        description:
+          The internal number and ID of the associated Students record.
+        config:
+          meta:
+            source_system: PowerSchool
+            source_model: stg_powerschool__storedgrades
+            source_column: studentid
+            column_role: foreign_key
       - name: students_dcid
         data_type: int64
       - name: student_number
         data_type: int64
+        description: Student Number assigned by the school. Indexed.
+        config:
+          meta:
+            source_system: PowerSchool
+            source_model: stg_powerschool__students
+            source_column: student_number
+            contains_pii: true
+            column_role: primary_key
       - name: student_name
         data_type: string
+        description: Last, First, Mi. Indexed.
+        config:
+          meta:
+            source_system: PowerSchool
+            source_model: stg_powerschool__students
+            source_column: lastfirst
+            contains_pii: true
       - name: student_last_name
         data_type: string
+        description: Students last name.
+        config:
+          meta:
+            source_system: PowerSchool
+            source_model: stg_powerschool__students
+            source_column: last_name
+            contains_pii: true
       - name: student_first_name
         data_type: string
+        description: Students' first name.
+        config:
+          meta:
+            source_system: PowerSchool
+            source_model: stg_powerschool__students
+            source_column: first_name
+            contains_pii: true
       - name: student_middle_name
         data_type: string
+        description: Student's middle name.
+        config:
+          meta:
+            source_system: PowerSchool
+            source_model: stg_powerschool__students
+            source_column: middle_name
+            contains_pii: true
       - name: enroll_status
         data_type: int64
+        description: The enrollment status of the student.
+        config:
+          meta:
+            source_system: PowerSchool
+            source_model: stg_powerschool__students
+            source_column: enroll_status
       - name: cohort
         data_type: int64
       - name: yearid
         data_type: int64
+        description:
+          A number representing which year the term belongs to, such as 13 for
+          2003-2004. Thenumber is equal to the ID of the year term divided by
+          100. Maintained in the Terms table.Required. Indexed.
+        config:
+          meta:
+            source_system: PowerSchool
+            source_model: stg_powerschool__gradeschoolconfig
+            source_column: yearid
       - name: academic_year
         data_type: int64
+        description:
+          Starting calendar year of the school year, extracted from school_year
+          (e.g., 2025 from '2025-2026').
+        config:
+          meta:
+            source_system: Amplify
+            source_model: stg_amplify__mclass__sftp__pm_student_summary_aimline
+            source_column: academic_year
       - name: entrydate
         data_type: date
+        description:
+          The date the student enrolled in school for the current enrollment.
+          Indexed.
+        config:
+          meta:
+            source_system: PowerSchool
+            source_model: stg_powerschool__students
+            source_column: entrydate
       - name: exitdate
         data_type: date
+        description:
+          The date the student exited for the current/last enrollment. This is
+          the day after a student-attended class. For example, if the last day
+          the student is in school is a Wednesday, Thursdayis the exit day.
+          Indexed.
+        config:
+          meta:
+            source_system: PowerSchool
+            source_model: stg_powerschool__students
+            source_column: exitdate
       - name: region
         data_type: string
       - name: school_level
         data_type: string
       - name: schoolid
         data_type: int64
+        description: The School_Number of the associated Schools record.
+        config:
+          meta:
+            source_system: PowerSchool
+            source_model: stg_powerschool__students
+            source_column: schoolid
       - name: reporting_schoolid
         data_type: int64
       - name: school_name
         data_type: string
+        description: School name.
+        config:
+          meta:
+            source_system: Amplify
+            source_model: stg_amplify__mclass__sftp__pm_student_summary_aimline
+            source_column: school_name
       - name: school
         data_type: string
       - name: grade_level
         data_type: int64
+        description:
+          "The grade the student is in. Since this is an integer: 0=Kindergarten
+          1, -2=Preschool. Indexed."
+        config:
+          meta:
+            source_system: PowerSchool
+            source_model: stg_powerschool__students
+            source_column: grade_level
       - name: grade_level_prev
         data_type: int64
       - name: advisory_name
         data_type: string
       - name: team
         data_type: string
+        description:
+          This field is necessary to capture the team value assigned in Power
+          Scheduler to a student.This will need to be moved from
+          Students:Sched_Next Year Team during the End-of-Yearprocess.
+          Sched_Next Year Team captures the record ID from the Gen table (Cat
+          =Teacher Groups). Current_Team cannot capture the ID since this record
+          is part of Power Scheduler and may be changed when scheduling for a
+          future year. An acceptablecompromise is to capture the value instead
+          (i.e. Blue) and store this.
+        config:
+          meta:
+            source_system: PowerSchool
+            source_model: stg_powerschool__students
+            source_column: team
       - name: advisor_lastfirst
         data_type: string
       - name: student_email
         data_type: string
       - name: student_web_id
         data_type: string
+        description:
+          The student user ID for logging in to Power School Parent. Indexed.
+        config:
+          meta:
+            source_system: PowerSchool
+            source_model: stg_powerschool__students
+            source_column: student_web_id
       - name: student_web_password
         data_type: string
+        description: The password for Student_Web_ID.
+        config:
+          meta:
+            source_system: PowerSchool
+            source_model: stg_powerschool__students
+            source_column: student_web_password
+            contains_pii: true
       - name: gender
         data_type: string
+        description: M=Male F=Female. Indexed.
+        config:
+          meta:
+            source_system: PowerSchool
+            source_model: stg_powerschool__students
+            source_column: gender
       - name: ethnicity
         data_type: string
+        description:
+          Heritage background of a student. The codes assigned here are stored
+          in the Gen Table [6]Cat=Ethnicity. These are set in school setup.
+        config:
+          meta:
+            source_system: PowerSchool
+            source_model: stg_powerschool__students
+            source_column: ethnicity
       - name: dob
         data_type: date
+        description: Date of birth.
+        config:
+          meta:
+            source_system: PowerSchool
+            source_model: stg_powerschool__students
+            source_column: dob
+            contains_pii: true
       - name: lunch_status
         data_type: string
       - name: spedlep
         data_type: string
+        description: Database extension field associated to the Students table.
+        config:
+          meta:
+            source_system: PowerSchool
+            source_model: stg_powerschool__studentcorefields
+            source_column: spedlep
       - name: special_education_code
         data_type: string
       - name: lep_status
         data_type: boolean
+        description: Student Limited English Proficiency status.
+        config:
+          meta:
+            source_system: PowerSchool
+            source_model: stg_powerschool__studentcorefields
+            source_column: lep_status
       - name: gifted_and_talented
         data_type: string
       - name: is_504
@@ -84,6 +250,8 @@ models:
       - name: is_self_contained
         data_type: boolean
       - name: is_enrolled_oct01
+        data_type: boolean
+      - name: is_enrolled_mar15
         data_type: boolean
       - name: is_enrolled_recent
         data_type: boolean
@@ -163,8 +331,23 @@ models:
         data_type: float64
       - name: iep_status
         data_type: string
+        description: Individualized Education Program status.
+        config:
+          meta:
+            source_system: Amplify
+            source_model: stg_amplify__mclass__sftp__pm_student_summary_aimline
+            source_column: iep_status
       - name: state_studentnumber
         data_type: string
+        description:
+          The state-assigned student number for the student. In most cases, this
+          number should stay thesame from school to school.
+        config:
+          meta:
+            source_system: PowerSchool
+            source_model: stg_powerschool__students
+            source_column: state_studentnumber
+            contains_pii: true
       - name: met_fafsa_requirement
         data_type: boolean
       - name: is_counseling_services
@@ -181,6 +364,12 @@ models:
         data_type: string
       - name: state
         data_type: string
+        description: State element of address.
+        config:
+          meta:
+            source_system: PowerSchool
+            source_model: stg_powerschool__students
+            source_column: state
       - name: fafsa_status_mismatch_category
         data_type: string
       - name: iready_subject
@@ -239,3 +428,7 @@ models:
         data_type: int64
       - name: is_enrolled_week
         data_type: boolean
+        description:
+          The school enrollment entry date from the student table for EOY it the
+          next schools beginning date.Indexed. Conditional on entrydate,
+          exitdate, week_start_monday.

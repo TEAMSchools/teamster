@@ -1,0 +1,69 @@
+models:
+  - name: fct_staff_observation_scores
+    description: >-
+      Staff observation score fact table. One row per measurement item per
+      observation. Captures the full response payload: numeric score, dropdown
+      selection, and HTML-cleaned text box content. Foreign keys to
+      fct_staff_observations and dim_staff_observation_rubric_measurements.
+    columns:
+      - name: staff_observation_score_key
+        data_type: string
+        description: >-
+          Surrogate primary key derived from observation_id and measurement_id.
+          Generated with generate_surrogate_key(["sd.observation_id",
+          "sd.measurement_id"]).
+        constraints:
+          - type: primary_key
+            warn_unsupported: false
+        data_tests:
+          - unique
+          - not_null
+
+      - name: staff_observation_key
+        data_type: string
+        description: >-
+          Foreign key to fct_staff_observations. Surrogate key derived from
+          observation_id.
+        constraints:
+          - type: foreign_key
+            to: ref('fct_staff_observations')
+            to_columns: [staff_observation_key]
+            warn_unsupported: false
+        data_tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('fct_staff_observations')
+                field: staff_observation_key
+
+      - name: staff_observation_rubric_measurement_key
+        data_type: string
+        description: >-
+          Foreign key to dim_staff_observation_rubric_measurements. Surrogate
+          key derived from rubric_id and measurement_id.
+
+        constraints:
+          - type: foreign_key
+            to: ref('dim_staff_observation_rubric_measurements')
+            to_columns: [staff_observation_rubric_measurement_key]
+            warn_unsupported: false
+        data_tests:
+          - relationships:
+              arguments:
+                to: ref('dim_staff_observation_rubric_measurements')
+                field: staff_observation_rubric_measurement_key
+      - name: text_box_content
+        data_type: string
+        description: >-
+          HTML-cleaned open text content from the measurement's text box
+          response.
+
+      - name: score_value
+        data_type: int64
+        description: >-
+          Numeric score assigned to this measurement item.
+
+      - name: response_text
+        data_type: string
+        description: >-
+          Dropdown text selection for this measurement item.

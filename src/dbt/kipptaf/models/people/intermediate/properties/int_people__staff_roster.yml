@@ -8,9 +8,6 @@ models:
             combination_of_columns:
               - employee_number
               - powerschool_teacher_number
-          config:
-            severity: warn
-            store_failures: true
     columns:
       - name: _dbt_source_relation
         data_type: string
@@ -124,16 +121,12 @@ models:
         data_tests:
           - not_null:
               config:
-                severity: warn
-                store_failures: true
                 where: worker_status_code != 'Terminated'
       - name: assigned_department_name
         data_type: string
         data_tests:
           - not_null:
               config:
-                severity: warn
-                store_failures: true
                 where: worker_status_code != 'Terminated'
       - name: home_business_unit_code
         data_type: string
@@ -176,8 +169,6 @@ models:
       - name: home_work_location_head_of_schools_employee_number
         data_type: int64
       - name: home_work_location_campus_name
-        data_type: string
-      - name: head_of_schools_sam_account_name
         data_type: string
       - name: physical_delivery_office_name
         data_type: string

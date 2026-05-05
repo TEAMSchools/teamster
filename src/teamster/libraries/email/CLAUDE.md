@@ -1,9 +1,4 @@
-# CLAUDE.md
-
-This file provides guidance to Claude Code (claude.ai/code) when working with
-code in this repository.
-
-## Purpose
+# CLAUDE.md — `teamster/libraries/email/`
 
 SMTP email delivery for Dagster ops — used to send batched outbound emails
 (e.g., recipient lists from BigQuery extract results).

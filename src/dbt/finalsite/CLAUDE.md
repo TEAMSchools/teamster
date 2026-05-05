@@ -1,9 +1,4 @@
-# CLAUDE.md
-
-This file provides guidance to Claude Code (claude.ai/code) when working with
-code in this repository.
-
-## Purpose
+# CLAUDE.md — `dbt/finalsite/`
 
 Source-system staging project for **Finalsite** (school website and
 communications platform). Staging-only project with no intermediate layer.
@@ -12,7 +7,7 @@ communications platform). Staging-only project with no intermediate layer.
 
 ```text
 models/
-  staging/     # materialized: table, contract: enforced: true
+  staging/     # materialized: table
   sources.yml
 ```
 
@@ -22,44 +17,3 @@ by consuming projects).
 ## Cross-Project Usage
 
 Referenced by `kipptaf` only.
-
-## Model Conventions
-
-**All staging models must**:
-
-1. Have `contract: enforced: true` (set at the directory level in
-   `dbt_project.yml` or per-model in the properties YAML)
-2. Have a uniqueness test — either a single-column `unique:` test or a
-   multi-column `dbt_utils.unique_combination_of_columns` test
-
-**All intermediate models must**:
-
-1. Have a uniqueness test — either a single-column `unique:` test or a
-   multi-column `dbt_utils.unique_combination_of_columns` test
-
-**All extracts/marts models must**:
-
-1. Have `contract: enforced: true` — these are the last stop before data reaches
-   an external reporting tool (Tableau, PowerSchool, Google Sheets, etc.).
-   Schema changes break downstream exposures and must be made deliberately.
-2. Have a uniqueness test — either a single-column `unique:` test or a
-   multi-column `dbt_utils.unique_combination_of_columns` test:
-
-```yaml
-# single-column uniqueness
-columns:
-  - name: surrogate_key
-    data_tests:
-      - unique:
-          config:
-            store_failures: true
-
-# multi-column uniqueness (when no single column is unique)
-data_tests:
-  - dbt_utils.unique_combination_of_columns:
-      combination_of_columns:
-        - column_a
-        - column_b
-      config:
-        store_failures: true
-```

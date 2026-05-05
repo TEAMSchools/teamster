@@ -1,9 +1,4 @@
-# CLAUDE.md
-
-This file provides guidance to Claude Code (claude.ai/code) when working with
-code in this repository.
-
-## Purpose
+# CLAUDE.md — `teamster/libraries/extracts/`
 
 Factory for outbound data extract assets that query BigQuery and deliver files
 to SFTP destinations. Used by the `extracts` module in code locations.
@@ -27,11 +22,35 @@ Required resources at runtime:
 
 ## Parameters
 
-| Parameter            | Purpose                                                         |
-| -------------------- | --------------------------------------------------------------- |
-| `query_config`       | `{"type": "text"\|"file"\|"schema", "value": ...}`              |
-| `file_config`        | `{"stem": ..., "suffix": "csv"\|"json"\|"json.gz"\|"tsv", ...}` |
-| `destination_config` | `{"name": "<ssh_key_suffix>", "path": "<remote_dir>"}`          |
+| Parameter              | Purpose                                                              |
+| ---------------------- | -------------------------------------------------------------------- |
+| `query_config`         | `{"type": "text"\|"file"\|"schema", "value": ...}`                   |
+| `file_config`          | `{"stem": ..., "suffix": "csv"\|"json"\|"json.gz"\|"tsv", ...}`      |
+| `destination_config`   | `{"name": "<ssh_key_suffix>", "path": "<remote_dir>"}`               |
+| `partitions_def`       | Optional `PartitionsDefinition`; asset is unpartitioned by default   |
+| `automation_condition` | Optional override; defaults to `None` (no condition)                 |
+| `deps`                 | Optional explicit dep list; overrides the default table-name dep key |
 
 File stems support `{today}` and `{now}` substitutions (and partition dimension
 names for partitioned assets).
+
+## Overriding deps and automation_condition
+
+By default the asset's only Dagster dep is inferred from `query_config` — the
+BigQuery table name becomes `AssetKey([code_location, "extracts", table_name])`.
+
+Pass explicit `deps` to wire in additional upstream assets (e.g., a staging
+table that is the true data source) or to bypass intermediate VIEW assets that
+would otherwise fan out cross-partition updates. Pass `automation_condition` to
+enable reactive triggering (typically `AutomationCondition.eager()`).
+
+## Gotchas
+
+**Empty query results**: The `_asset` function returns early when BigQuery
+yields zero rows — do not remove that guard (`transform_data()` crashes on
+CSV/TSV/TXT with empty data).
+
+**Unpartitioned dep fan-out**: Per `core/CLAUDE.md` "Dep fan-out rule", use
+`any_deps_updated().ignore(AssetSelection.keys(...))` instead of bare `eager()`
+when a partitioned extract has unpartitioned deps. See
+`kipptaf/extracts/assets.py` `_INTACCT_AUTOMATION_CONDITION` for the pattern.

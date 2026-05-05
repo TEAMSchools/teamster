@@ -1,126 +1,299 @@
 models:
   - name: stg_powerschool__storedgrades
+    description:
+      All of the students' historical grade information is maintained in this
+      table.
     columns:
       - name: dcid
         data_type: int64
         data_tests:
           - unique:
               config:
-                store_failures: true
+                severity: error
+        description: Unique identifier for this table. Indexed. Required.
+        constraints:
+          - type: primary_key
       - name: studentid
         data_type: int64
+        description:
+          The internal number and ID of the associated Students record.
+        constraints:
+          - type: foreign_key
       - name: sectionid
         data_type: int64
+        description:
+          The internal number and ID of the associated Sections record.
+        constraints:
+          - type: foreign_key
       - name: termid
         data_type: int64
+        description:
+          The internal number for the term this class was offered. This also
+          needs to be school relatedbecause this ID is duplicated on that table.
+          Indexed.
       - name: percent
         data_type: float64
+        description:
+          The percentage grade earned at the time. This is copied from the
+          students' current percent intheir PGFina Grades record at the time of
+          storage.
       - name: absences
         data_type: float64
+        description:
+          A precalculated total of absences this student has in this course.
+          Copied from the absencesfield in the CC record.
       - name: tardies
         data_type: float64
+        description:
+          A precalculated total of tardies this student has in this course.
+          Copied from the tardies field inthe CC record.
       - name: potentialcrhrs
         data_type: float64
+        description:
+          The credit hours from Courses table - the amount to award specified
+          for the store procedure.
       - name: earnedcrhrs
         data_type: float64
+        description:
+          Checks to see if the student earns that amount of credit based on the
+          grade in the gradescale.
       - name: grade_level
         data_type: int64
+        description:
+          The grade level the student was in when the grade was stored. This
+          simply copies the students'current grade level in to this field.
+          Indexed.
       - name: schoolid
         data_type: int64
+        description:
+          The School_Number of the associated Schools record. Indexed.
       - name: excludefromgpa
         data_type: int64
+        description:
+          Indicates whether this course grade should be excluded during GPA
+          calculations. Valid values:1=True, to be excluded, 0=False.
       - name: gpa_points
         data_type: float64
+        description:
+          If the class counts in the GPA it figures how many points this is
+          worth based on the points in thegrade scale.
       - name: gpa_addedvalue
         data_type: float64
+        description:
+          Number to be added to GPA for this course. Usually for AP courses
+          there is a bump to the GPA,such as 0.125.
       - name: gpa_custom2
         data_type: float64
+        description:
+          Used by Texas State Reporting. Stores the Pass Fail Credit Indicator.
+          The state does not carewhat the specific grade is. Instead they want
+          to know whether or not a course was passed and,if not, why. The have a
+          list of codes to choose from.
       - name: excludefromclassrank
         data_type: int64
+        description:
+          Indicates whether this course grade should be excluded during class
+          ranking. Valid values:1=True, to be excluded, 0=False.
       - name: excludefromhonorroll
         data_type: int64
+        description:
+          "Indicates whether this course grade should be excluded during Honor
+          Roll calculations. Validvalues: 1=True, to be excluded, 0=False."
       - name: isearnedcrhrsfromgb
         data_type: int64
+        description:
+          1 indicates the Earned Cr Hrs value has been applied from Earned Var
+          Credit Value in PGFinal Grade Attrib.
       - name: ispotentialcrhrsfromgb
         data_type: int64
+        description:
+          1 indicates the Potential Cr Hrs value has been applied from Potential
+          Var Credit Value in PGFinal Grade Attrib.
       - name: excludefromtranscripts
         data_type: int64
+        description:
+          "Indicates whether this course grade should be excluded from
+          transcripts. Valid values: 1=True,to be excluded, 0=False."
       - name: replaced_dcid
         data_type: int64
+        description:
+          The DCID of the grade record that replaced this grade record.
       - name: excludefromgraduation
         data_type: int64
+        description:
+          "Indicates whether this course grade should be excluded during
+          graduation calculations. Validvalues: 1=True, to be excluded, 0=False.
+          Defaults to 0."
       - name: excludefromgradesuppression
         data_type: int64
+        description:
+          "Indicates whether this course grade should be excluded grade
+          suppression calculation. Validvalues: 1=True, to be excluded, 0=False.
+          Defaults to 0."
       - name: gradereplacementpolicy_id
         data_type: int64
+        description:
+          The internal number and ID of the associated Grade Replacement Policy
+          record.
+        constraints:
+          - type: foreign_key
       - name: whomodifiedid
         data_type: int64
+        description:
+          Internal identifier of the user who last modified the record.
       - name: storecode
         data_type: string
+        description:
+          The code used to represent this grade level to Term ID and School ID.
       - name: datestored
         data_type: date
+        description: The date the grade was stored.
       - name: grade
         data_type: string
+        description:
+          The letter grade for this student for this section from PGFinal Grades
+          unless the attendancethreshold is not met.
       - name: behavior
         data_type: string
+        description: The Citizenship field in PGFinal Grades.
       - name: comment_value
         data_type: string
       - name: course_name
         data_type: string
+        description:
+          Name of the course. Copied from the Course_Name field in the Course
+          table.
       - name: course_number
         data_type: string
+        description:
+          Course Number assigned. Copied from the Course_Number field in the
+          Course table.
       - name: credit_type
         data_type: string
+        description:
+          Copied from the Credit Type field in the Course table. The type of
+          credit this counts as towardgraduation, such as Math or elective.
       - name: log
         data_type: string
+        description:
+          Tracks the date, time, user ID, School ID and whether the record was
+          created or modified.
       - name: course_equiv
         data_type: string
+        description:
+          Populated when entering a stored grade or editing a stored grade. This
+          is not stored in the storefinal grades process. Currently used only
+          for Texas State Reporting and is flag Y or N toindicate a loss of
+          credit to excessive absences.
       - name: schoolname
         data_type: string
+        description:
+          Name of school associated to this record. This is the school where the
+          class was actually taken.
       - name: gradescale_name
         data_type: string
+        description: Name of the Gradescale associated to the Section ID.
       - name: teacher_name
         data_type: string
+        description:
+          Name of Teacher who assigned this grade. Converted from the teacher ID
+          stored in thestudents CC record.
       - name: gpa_custom1
         data_type: string
+        description:
+          Used by Texas State Reporting. Stores Explanation Code. This indicates
+          Honors course, High School course satisfactorily completed before
+          grade 9, Course taken for Local Credit, etc. Alsoto store this
+          information at the Course and Section level, but it could possibly be
+          stored gradespecific.
       - name: custom
         data_type: string
+        description:
+          This field holds all the storedgrades' custom data in name/value pairs
+          delimited by non-printablecharacters.
       - name: ab_course_cmp_fun_flg
         data_type: string
+        description:
+          Course Completion Fund Flag – CCFF. For use by Alberta Canada for
+          import andreports.
       - name: ab_course_cmp_ext_crd
         data_type: string
+        description:
+          Course Completion External Credential - CCEC. For use by Alberta
+          Canada for import andreports.
       - name: ab_course_cmp_fun_sch
         data_type: string
+        description:
+          Course Completion Funding Schedule - CCFS. For use by Alberta Canada
+          for import andreports.
       - name: ab_course_cmp_met_cd
         data_type: string
+        description:
+          Course Completion Method Code - CCMC. For use by Alberta Canada for
+          import and reports.
       - name: ab_course_eva_pro_cd
         data_type: string
       - name: ab_course_cmp_sta_cd
         data_type: string
+        description:
+          Course Completion Status Code - CCSC. For use by Alberta Canada for
+          import and reports.
       - name: ab_pri_del_met_cd
         data_type: string
       - name: ab_lng_cd
         data_type: string
+        description:
+          Language Code (Instruction) - LC. For use by Alberta Canada for import
+          and reports.
       - name: ab_dipl_exam_mark
         data_type: string
+        description:
+          Diploma Exam Mark. For use by Alberta Canada for import and reports.
       - name: ab_final_mark
         data_type: string
+        description:
+          Final (Blended) Mark. For use by Alberta Canada for import and
+          reports.
       - name: termbinsname
         data_type: string
+        description:
+          The Term Bin name for the source Term Bin of this stored grade.
       - name: psguid
         data_type: string
+        description:
+          If used, a unique identifier for the row. Currently applicable to
+          multi-tenant, Schoolnet, and Pearson Success Net/Pearson Success Net
+          Plus.If used, a unique identifier for the row.Currently applicable to
+          multi-tenant, Schoolnet, and Pearson Success Net/Pearson Success Net
+          Plus.
       - name: replaced_grade
         data_type: string
+        description:
+          "During the Permanently Store Grades process, repeated course grade
+          suppression may beevaluated by the repeated course grade suppression
+          rules. Valid values: R=Stored grade is fora replaced course grade,
+          Blank=Stored grade is not for a replaced course grade, M=Maximumcredit
+          hours. R grades can be included in or excluded from transcripts,
+          graduation, GPAcalculations, class rank calculations, and honor roll
+          calculations. M grades can be included in orexcluded from graduation."
       - name: replaced_equivalent_course
         data_type: string
+        description:
+          If different from the Course_Number of this record, the Course_Number
+          used by the repeatedcourse grade suppression process when calculating
+          permanently store grades.
       - name: ip_address
         data_type: string
+        description: IP address of the client that initiated the transaction.
       - name: whomodifiedtype
         data_type: string
+        description: Type of user account that last modified the record.
       - name: transaction_date
         data_type: timestamp
+        description: Date and time of the database transaction.
       - name: executionid
         data_type: string
+        description: Unique identifier for the database transaction.
       - name: percent_decimal
         data_type: float64
       - name: storecode_type

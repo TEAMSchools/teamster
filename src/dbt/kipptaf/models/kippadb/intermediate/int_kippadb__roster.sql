@@ -42,6 +42,50 @@ with
         where regexp_contains(`subject`, r'Tier\s\d$')
     ),
 
+    military as (
+        select
+            contact,
+            `status`,
+            category as job_industry,
+            military_branch,
+            meps_location,
+            meps_start_date,
+            meps_end_date,
+            delayed_entry_enlistment_program_dep,
+            `start_date`,
+            end_date,
+            ineligible_for_military_enlistment,
+            discharge_type,
+            discharge_date,
+
+            row_number() over (
+                partition by contact order by start_date desc
+            ) as rn_enlistment,
+        from {{ ref("stg_kippadb__employment") }}
+        where category = 'Military Specific Occupations'
+    ),
+
+    military_testing as (
+        select
+            contact,
+            test_type,
+            date as military_test_date,
+            afqt_score,
+            qualified_air_force,
+            qualified_army,
+            qualified_coast_guard,
+            qualified_marine_corps,
+            qualified_navy,
+            total_qualified_military_branches,
+            physical_training_requirement_passed,
+
+            row_number() over (
+                partition by contact, test_type order by date desc
+            ) as rn_military_testing,
+        from {{ ref("int_kippadb__standardized_test") }}
+        where test_type in ('ASVAB', 'Military Physical Training')
+    ),
+
     roster as (
         select
             se._dbt_source_relation as exit_db_name,
@@ -105,8 +149,80 @@ with
             se.emergency_3_phone_primary
             as powerschool_emergency_contact_3_phone_primary,
             se.emergency_3_relationship as powerschool_emergency_contact_3_relationship,
+            se.es_attended,
 
-            c.* except (contact_current_kipp_student, contact_lastfirst),
+            c.contact_school_specific_id,
+            c.contact_id,
+            c.contact_owner_id,
+            c.contact_record_type_id,
+            c.contact_description,
+            c.contact_name,
+            c.contact_birthdate,
+            c.contact_email,
+            c.contact_first_name,
+            c.contact_home_phone,
+            c.contact_last_name,
+            c.contact_mobile_phone,
+            c.contact_actual_college_graduation_date,
+            c.contact_actual_hs_graduation_date,
+            c.contact_advising_provider,
+            c.contact_college_graduated_from,
+            c.contact_college_match_display_gpa,
+            c.contact_current_college_cumulative_gpa,
+            c.contact_current_college_semester_gpa,
+            c.contact_currently_enrolled_school,
+            c.contact_dep_post_hs_simple_admin,
+            c.contact_efc_from_fafsa,
+            c.contact_ethnicity,
+            c.contact_expected_college_graduation,
+            c.contact_expected_hs_graduation,
+            c.contact_full_name,
+            c.contact_gender,
+            c.contact_has_hs_graduated_enrollment,
+            c.contact_high_school_graduated_from,
+            c.contact_highest_act_score,
+            c.contact_highest_sat_score,
+            c.contact_kipp_hs_graduate,
+            c.contact_kipp_ms_graduate,
+            c.contact_kipp_region_name,
+            c.contact_last_outreach,
+            c.contact_last_successful_advisor_contact,
+            c.contact_last_successful_contact,
+            c.contact_latest_fafsa_date,
+            c.contact_latest_resume,
+            c.contact_latest_state_financial_aid_app_date,
+            c.contact_middle_school_attended,
+            c.contact_most_recent_college_enrollment_name,
+            c.contact_most_recent_college_enrollment_status,
+            c.contact_most_recent_iep_date,
+            c.contact_opt_out_national_contact,
+            c.contact_opt_out_regional_contact,
+            c.contact_other_phone,
+            c.contact_postsecondary_status,
+            c.contact_secondary_email,
+            c.contact_postsec_advisor,
+            c.contact_kipp_hs_class,
+            c.contact_mailing_address,
+            c.contact_graduation_year,
+            c.contact_intent_to_enlist,
+            c.contact_cte_military_interest,
+            c.contact_owner_name,
+            c.contact_owner_email,
+            c.contact_owner_phone,
+            c.record_type_name,
+            c.record_type_description,
+            c.record_type_last_modified_date,
+            c.record_type_is_active,
+            c.record_type_business_process_id,
+            c.record_type_system_modstamp,
+            c.record_type_sobject_type,
+            c.record_type_created_by_id,
+            c.record_type_created_date,
+            c.record_type_developer_name,
+            c.record_type_last_modified_by_id,
+            c.record_type_namespace_prefix,
+            c.contact_postsec_advisor_name,
+            c.years_out_of_hs,
 
             os.id as overgrad_students_id,
             os.graduation_year as overgrad_students_graduation_year,
@@ -128,6 +244,28 @@ with
             e.is_es_grad,
 
             t.tier,
+
+            mil.`status` as military_status,
+            mil.military_branch,
+            mil.meps_location,
+            mil.meps_start_date,
+            mil.meps_end_date,
+            mil.delayed_entry_enlistment_program_dep,
+            mil.`start_date` as bmt_start_date,
+            mil.end_date as bmt_end_date,
+            mil.ineligible_for_military_enlistment,
+            mil.discharge_type as military_discharge_type,
+            mil.discharge_date as military_discharge_date,
+
+            ms.afqt_score,
+            ms.qualified_air_force,
+            ms.qualified_army,
+            ms.qualified_coast_guard,
+            ms.qualified_marine_corps,
+            ms.qualified_navy,
+            ms.total_qualified_military_branches,
+
+            mpt.physical_training_requirement_passed,
 
             concat(
                 os.assigned_counselor__last_name,
@@ -206,6 +344,18 @@ with
             on se.student_number = d.student_number
             and {{ union_dataset_join_clause(left_alias="se", right_alias="d") }}
         left join tier as t on se.salesforce_id = t.contact and t.rn_tier_recent = 1
+        left join
+            military as mil on c.contact_id = mil.contact and mil.rn_enlistment = 1
+        left join
+            military_testing as ms
+            on c.contact_id = ms.contact
+            and ms.test_type = 'ASVAB'
+            and ms.rn_military_testing = 1
+        left join
+            military_testing as mpt
+            on c.contact_id = mpt.contact
+            and mpt.test_type = 'Military Physical Training'
+            and mpt.rn_military_testing = 1
         where se.rn_undergrad = 1 and se.grade_level between 8 and 12
     )
 

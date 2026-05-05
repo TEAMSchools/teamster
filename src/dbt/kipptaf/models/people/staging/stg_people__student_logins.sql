@@ -1,7 +1,3 @@
-/* depends_on: {{ ref("stg_powerschool__students") }} */
-/* depends_on: {{ source("people", "src_people__student_logins") }} */
--- trunk-ignore(sqlfluff/LT05)
-/* depends_on: {{ source("google_sheets", "src_google_sheets__people__student_logins_archive") }} */
 {% if env_var("DBT_CLOUD_ENVIRONMENT_TYPE", "") in ["dev", "staging"] %}
     select student_number, username, default_password, google_email,
     from {{ source("people", "src_people__student_logins") }}
@@ -162,16 +158,17 @@
     from username_password
     where username is not null
 {% else %}
-    select
-        student_number,
-        username,
-        default_password,
-
-        username || '@teamstudents.org' as google_email,
+    select student_number, username, default_password, google_email,
     from
         {{
             source(
-                "google_sheets", "src_google_sheets__people__student_logins_archive"
+                "google_sheets",
+                "stg_google_sheets__people__student_logins_archive",
             )
         }}
 {% endif %}
+
+    -- depends_on: {{ ref("stg_powerschool__students") }}
+    -- trunk-ignore(sqlfluff/LT05)
+    -- depends_on: {{ source("google_sheets", "stg_google_sheets__people__student_logins_archive") }}
+    -- depends_on: {{ source("people", "src_people__student_logins") }}
