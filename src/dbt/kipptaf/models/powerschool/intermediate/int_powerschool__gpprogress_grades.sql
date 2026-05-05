@@ -131,25 +131,26 @@ select
     g.credit_status,
     g.earned_credits,
 
-    coalesce(sp.requiredcredits, g.plan_credit_capacity) as plan_required_credits,
     sp.enrolledcredits as plan_enrolled_credits,
     sp.requestedcredits as plan_requested_credits,
     sp.earnedcredits as plan_earned_credits,
     sp.waivedcredits as plan_waived_credits,
 
-    coalesce(
-        sd.requiredcredits, g.discipline_credit_capacity
-    ) as discipline_required_credits,
     sd.enrolledcredits as discipline_enrolled_credits,
     sd.requestedcredits as discipline_requested_credits,
     sd.earnedcredits as discipline_earned_credits,
     sd.waivedcredits as discipline_waived_credits,
 
-    coalesce(ss.requiredcredits, g.subject_credit_capacity) as subject_required_credits,
     ss.enrolledcredits as subject_enrolled_credits,
     ss.requestedcredits as subject_requested_credits,
     ss.earnedcredits as subject_earned_credits,
     ss.waivedcredits as subject_waived_credits,
+
+    coalesce(sp.requiredcredits, g.plan_credit_capacity) as plan_required_credits,
+    coalesce(
+        sd.requiredcredits, g.discipline_credit_capacity
+    ) as discipline_required_credits,
+    coalesce(ss.requiredcredits, g.subject_credit_capacity) as subject_required_credits,
 
 from grades as g
 left join
