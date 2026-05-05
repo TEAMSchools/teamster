@@ -560,6 +560,7 @@ Cube view join path.
 ```yaml
 cubes:
   - name: attendance
+    public: false
     sql_table: kipptaf_marts.fct_student_attendance_daily
 
     joins:
@@ -590,30 +591,37 @@ cubes:
       - name: attendance_date
         sql: CAST(date_key AS TIMESTAMP)
         type: time
+        public: true
 
       - name: attendance_category
         sql: attendance_category
         type: string
+        public: true
 
       - name: is_absent
         sql: is_absent
         type: number
+        public: true
 
       - name: is_present
         sql: is_present
         type: number
+        public: true
 
       - name: is_tardy
         sql: is_tardy
         type: number
+        public: true
 
       - name: membership_value
         sql: membership_value
         type: number
+        public: true
 
       - name: attendance_value
         sql: attendance_value
         type: number
+        public: true
 
     measures:
       - name: avg_daily_attendance
@@ -621,12 +629,14 @@ cubes:
         sql: attendance_value
         type: avg
         format: percent
+        public: true
         filters:
           - sql: "{CUBE}.membership_value = 1"
 
       - name: count_students
         sql: student_enrollment_key
         type: count_distinct
+        public: true
         filters:
           - sql: "{CUBE}.membership_value = 1"
 ```
@@ -703,6 +713,7 @@ employee cannot have two different overlapping states at the same start date.
 ```yaml
 cubes:
   - name: staff_work_history
+    public: false
     sql: |
       SELECT
         swa.work_assignment_key,
@@ -780,36 +791,44 @@ cubes:
       - name: status_name
         sql: status_name
         type: string
+        public: true
 
       - name: position_title
         sql: position_title
         type: string
+        public: true
 
       - name: worker_type
         sql: worker_type
         type: string
+        public: true
 
       - name: department_name
         sql: department_name
         type: string
+        public: true
 
       - name: business_unit_name
         sql: business_unit_name
         type: string
+        public: true
 
       - name: is_primary_position
         sql: is_primary_position
         type: boolean
+        public: true
 
       - name: effective_start_date
         sql: CAST(effective_start_date AS TIMESTAMP)
         type: time
+        public: true
 
     measures:
       - name: count_headcount
         description: Distinct active employees
         sql: staff_key
         type: count_distinct
+        public: true
         filters:
           - sql: "{CUBE}.status_name = 'Active'"
 
@@ -817,6 +836,7 @@ cubes:
         description: Total FTE of active assignments
         sql: full_time_equivalency
         type: sum
+        public: true
         filters:
           - sql: "{CUBE}.status_name = 'Active'"
 ```
@@ -829,6 +849,27 @@ child model's property YAML before writing the SELECT list. The
 GREATEST/LEAST shown above since NULL from a LEFT JOIN would collapse the entire
 result in BigQuery. Add them to the GREATEST/LEAST only when the join is
 converted to INNER.
+
+### Member visibility
+
+All domain cubes set `public: false` at the cube level. Cube treats this as
+cascading — every member (dimension, measure, segment) inherits `public: false`
+unless explicitly overridden.
+
+**Rule:** every member listed in any view `includes:` must declare
+`public: true`. Add it in the same step as writing the view — a missing
+`public: true` is only detected at query time as a "hidden member" error, not at
+schema load.
+
+Two exceptions do not need `public: true`:
+
+- **Primary key dimensions** — never included in view `includes:` lists.
+- **Internal helper measures** (prefixed `_`) — used only as sub-expressions
+  inside other measures; stay hidden via the cascade.
+
+Conformed dimension cubes do **not** set `public: false`. They are never queried
+directly — members are always accessed through a domain cube join path — and
+member `public` defaults to `true`.
 
 ## Views
 
