@@ -114,6 +114,29 @@ models:
         data_type: boolean
       - name: score_entered
         data_type: float64
+      - name: points_earned
+        data_type: float64
+        description: >-
+          Raw points scored, populated only when source `scoretype = POINTS`
+          (NULL for PERCENT/GRADESCALE/COLLECTED). Ed-Fi studentGradebookEntry
+          `points_earned`.
+        config:
+          meta:
+            source_system: PowerSchool
+            source_model: stg_powerschool__assignmentscore
+            source_column: scorepoints
+      - name: numeric_grade_earned
+        data_type: float64
+        description: >-
+          Numeric grade scored (0-100 percent or letter-grade equivalent),
+          populated only when source `scoretype` is `PERCENT`, `GRADESCALE`, or
+          `COLLECTED` (NULL for POINTS). Ed-Fi studentGradebookEntry
+          `numeric_grade_earned`.
+        config:
+          meta:
+            source_system: PowerSchool
+            source_model: stg_powerschool__assignmentscore
+            source_column: actualscoreentered
       - name: assign_final_score_percent
         data_type: float64
       - name: half_total_point_value

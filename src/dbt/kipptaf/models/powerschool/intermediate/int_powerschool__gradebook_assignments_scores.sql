@@ -50,6 +50,14 @@ with
                 safe_cast(s.actualscoreentered as numeric)
             ) as score_entered,
 
+            if(a.scoretype = 'POINTS', s.scorepoints, null) as points_earned,
+
+            if(
+                a.scoretype in ('PERCENT', 'GRADESCALE', 'COLLECTED'),
+                safe_cast(s.actualscoreentered as numeric),
+                null
+            ) as numeric_grade_earned,
+
             if(
                 a.scoretype = 'POINTS',
                 round(safe_divide(s.scorepoints, a.totalpointvalue) * 100, 2),
@@ -104,6 +112,8 @@ select
     is_expected,
     school_level,
     score_entered,
+    points_earned,
+    numeric_grade_earned,
     assign_final_score_percent,
     half_total_point_value,
 
