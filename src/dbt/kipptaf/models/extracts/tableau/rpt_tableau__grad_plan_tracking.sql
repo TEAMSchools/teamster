@@ -47,51 +47,49 @@ with
             and {{ union_dataset_join_clause(left_alias="u", right_alias="ps") }}
     ),
 
-    gpn_gps_prepivot as (
+    gpn_plan_agg as (
         select
             _dbt_source_relation,
             root_node_id,
             studentsdcid,
-            degree_plan_section,
-            enrolledcredits,
-            requestedcredits,
-            earnedcredits,
-            waivedcredits,
-            requiredcredits,
+            max(enrolledcredits) as enrolled_credits_plan,
+            max(requestedcredits) as requested_credits_plan,
+            max(earnedcredits) as earned_credits_plan,
+            max(waivedcredits) as waived_credits_plan,
+            max(requiredcredits) as required_credits_plan,
         from gpn_gps
+        where degree_plan_section = 'plan'
+        group by 1, 2, 3
     ),
 
-    gpn_gps_pivot as (
+    gpn_discipline_agg as (
         select
             _dbt_source_relation,
-            root_node_id,
+            node_id as discipline_id,
             studentsdcid,
+            max(enrolledcredits) as enrolled_credits_discipline,
+            max(requestedcredits) as requested_credits_discipline,
+            max(earnedcredits) as earned_credits_discipline,
+            max(waivedcredits) as waived_credits_discipline,
+            max(requiredcredits) as required_credits_discipline,
+        from gpn_gps
+        where degree_plan_section = 'discipline'
+        group by 1, 2, 3
+    ),
 
-            /* pivot cols */
-            earned_credits_discipline,
-            earned_credits_plan,
-            earned_credits_subject,
-            enrolled_credits_discipline,
-            enrolled_credits_plan,
-            enrolled_credits_subject,
-            requested_credits_discipline,
-            requested_credits_plan,
-            requested_credits_subject,
-            required_credits_discipline,
-            required_credits_plan,
-            required_credits_subject,
-            waived_credits_discipline,
-            waived_credits_plan,
-            waived_credits_subject,
-        from
-            gpn_gps_prepivot pivot (
-                max(enrolledcredits) as enrolled_credits,
-                max(requestedcredits) as requested_credits,
-                max(earnedcredits) as earned_credits,
-                max(waivedcredits) as waived_credits,
-                max(requiredcredits) as required_credits
-                for degree_plan_section in ('plan', 'discipline', 'subject')
-            )
+    gpn_subject_agg as (
+        select
+            _dbt_source_relation,
+            node_id as subject_id,
+            studentsdcid,
+            max(enrolledcredits) as enrolled_credits_subject,
+            max(requestedcredits) as requested_credits_subject,
+            max(earnedcredits) as earned_credits_subject,
+            max(waivedcredits) as waived_credits_subject,
+            max(requiredcredits) as required_credits_subject,
+        from gpn_gps
+        where degree_plan_section = 'subject'
+        group by 1, 2, 3
     ),
 
     gps_grades as (
@@ -203,21 +201,21 @@ select
     gw.discipline_id,
     gw.discipline_name,
 
-    ggp.required_credits_plan as plan_required_credits,
-    ggp.enrolled_credits_plan as plan_enrolled_credits,
-    ggp.requested_credits_plan as plan_requested_credits,
-    ggp.earned_credits_plan as plan_earned_credits,
-    ggp.waived_credits_plan as plan_waived_credits,
-    ggp.required_credits_discipline as discipline_required_credits,
-    ggp.enrolled_credits_discipline as discipline_enrolled_credits,
-    ggp.requested_credits_discipline as discipline_requested_credits,
-    ggp.earned_credits_discipline as discipline_earned_credits,
-    ggp.waived_credits_discipline as discipline_waived_credits,
-    ggp.required_credits_subject as subject_required_credits,
-    ggp.enrolled_credits_subject as subject_enrolled_credits,
-    ggp.requested_credits_subject as subject_requested_credits,
-    ggp.earned_credits_subject as subject_earned_credits,
-    ggp.waived_credits_subject as subject_waived_credits,
+    gpa.required_credits_plan as plan_required_credits,
+    gpa.enrolled_credits_plan as plan_enrolled_credits,
+    gpa.requested_credits_plan as plan_requested_credits,
+    gpa.earned_credits_plan as plan_earned_credits,
+    gpa.waived_credits_plan as plan_waived_credits,
+    gda.required_credits_discipline as discipline_required_credits,
+    gda.enrolled_credits_discipline as discipline_enrolled_credits,
+    gda.requested_credits_discipline as discipline_requested_credits,
+    gda.earned_credits_discipline as discipline_earned_credits,
+    gda.waived_credits_discipline as discipline_waived_credits,
+    gsa.required_credits_subject as subject_required_credits,
+    gsa.enrolled_credits_subject as subject_enrolled_credits,
+    gsa.requested_credits_subject as subject_requested_credits,
+    gsa.earned_credits_subject as subject_earned_credits,
+    gsa.waived_credits_subject as subject_waived_credits,
 
     coalesce(gw.subject_id, gw.discipline_id) as subject_id,
     coalesce(gw.subject_name, gw.discipline_name) as subject_name,
@@ -239,11 +237,23 @@ inner join
     on {{ union_dataset_join_clause(left_alias="e", right_alias="gw") }}
     and gw.plan_name in ('NJ State Diploma', 'HS Distinction Diploma')
 inner join
-    gpn_gps_pivot as ggp
-    on gw.root_node_id = ggp.root_node_id
-    and {{ union_dataset_join_clause(left_alias="gw", right_alias="ggp") }}
-    and e.students_dcid = ggp.studentsdcid
-    and {{ union_dataset_join_clause(left_alias="e", right_alias="ggp") }}
+    gpn_plan_agg as gpa
+    on gw.root_node_id = gpa.root_node_id
+    and {{ union_dataset_join_clause(left_alias="gw", right_alias="gpa") }}
+    and e.students_dcid = gpa.studentsdcid
+    and {{ union_dataset_join_clause(left_alias="e", right_alias="gpa") }}
+inner join
+    gpn_discipline_agg as gda
+    on gw.discipline_id = gda.discipline_id
+    and {{ union_dataset_join_clause(left_alias="gw", right_alias="gda") }}
+    and e.students_dcid = gda.studentsdcid
+    and {{ union_dataset_join_clause(left_alias="e", right_alias="gda") }}
+left join
+    gpn_subject_agg as gsa
+    on gw.subject_id = gsa.subject_id
+    and {{ union_dataset_join_clause(left_alias="gw", right_alias="gsa") }}
+    and e.students_dcid = gsa.studentsdcid
+    and {{ union_dataset_join_clause(left_alias="e", right_alias="gsa") }}
 left join
     gps_grades as ggd
     on e.studentid = ggd.studentid

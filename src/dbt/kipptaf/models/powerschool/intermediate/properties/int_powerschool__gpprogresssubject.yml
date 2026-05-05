@@ -1,0 +1,50 @@
+models:
+  - name: int_powerschool__gpprogresssubject
+    description: >
+      Grad plan progress by subject, one row per gpprogresssubject record per
+      credit status (Enrolled, Earned). Joins enrolled and earned grade DCIDs
+      onto the base progress record.
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns:
+              - _dbt_source_relation
+              - id
+              - credit_status
+    columns:
+      - name: _dbt_source_relation
+        description: Source relation identifier for union models.
+        data_type: string
+      - name: id
+        description: Primary key from gpprogresssubject.
+        data_type: int64
+      - name: gpnodeid
+        description: Foreign key to the grad plan node (gpnode).
+        data_type: int64
+      - name: studentsdcid
+        description: Foreign key to the student (students.dcid).
+        data_type: int64
+      - name: requiredcredits
+        description: Credits required to satisfy this grad plan node.
+        data_type: float64
+      - name: enrolledcredits
+        description: Credits currently enrolled toward this node.
+        data_type: float64
+      - name: requestedcredits
+        description: Credits requested toward this node.
+        data_type: float64
+      - name: earnedcredits
+        description: Credits earned toward this node.
+        data_type: float64
+      - name: waivedcredits
+        description: Credits waived toward this node.
+        data_type: float64
+      - name: grade_dcid
+        description: >
+          DCID of the associated grade record — ccdcid for Enrolled rows,
+          storedgradesdcid for Earned rows.
+        data_type: int64
+      - name: credit_status
+        description:
+          Whether the row represents an Enrolled or Earned credit record.
+        data_type: string
