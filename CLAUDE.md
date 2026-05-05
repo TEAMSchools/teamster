@@ -28,32 +28,38 @@ file; domain specifics live in the nearest subdirectory CLAUDE.md.
 
 ## Working Conventions
 
-- **PII stays local**: never post PII values, or screenshots/logs containing
-  them, outside the local dev env (PR comments, commits, issues, scheduled-agent
-  outputs, etc.). Local artifacts (`.claude/scratch/`, `.worktrees/`, terminal)
-  are fine. Reference column names, not values; use redacted labels ("Student
-  A") for examples. Aggregates/deidentified ≠ PII.
-
-  dbt tags PII as `config.meta.contains_pii: true` — authoritative but
-  **incomplete**. Untagged columns are PII if they identify a person: IDs
-  (`student_number`, `employee_number`, `ssn`, `state_id`, `local_id`, including
-  source-system aliases like Salesforce kippadb's `school_specific_id`), names
-  (`*_name`), contact (`email`, `phone`, `address`, `street`, `city`, `zip`),
-  `dob`/`birth_date`, guardian/parent fields, free-text `comment`/ `note` on
-  people tables, credentials/tokens. When unsure, treat as PII.
-
-  Quasi-identifiers (`gender`, `race`, `ethnicity`, `home_language`,
-  `grade_level`, `school`, partial dates, zip alone) reidentify in combination —
-  never post two together.
-
-- **Before writing any content outside the local dev environment** — including
-  GitHub PRs, issue comments, commit messages, Slack, Asana, scheduled-agent
-  outputs, or any other external system — perform a PII redaction pass on any
-  values from local validation work. Values sourced from columns tagged
-  `config.meta.contains_pii: true` in model YAML — or that meet the PII criteria
-  listed above — must be replaced with redacted labels (`a sample student`,
-  `Student A`) or column-name references. The transition from local analysis to
-  any external output is the trigger.
+- **PII stays local.** Never emit PII values (or screenshots/logs containing
+  them) to PR comments, commits, issues, Slack, Asana, scheduled-agent outputs,
+  or any other external surface. Local artifacts (`.claude/scratch/`,
+  `.worktrees/`, terminal) are fine. Substitute redacted labels (`Student A`,
+  `a sample student`) or column-name references. Aggregates / deidentified ≠
+  PII.
+  - **Redaction pass before external writes**: when an external write touches
+    values from local validation work, replace PII values with labels or
+    column-name references before sending.
+  - **What counts as PII** — `config.meta.contains_pii: true` in model YAML is
+    authoritative but **incomplete**. Untagged columns are PII under FERPA's
+    direct-identifier list
+    ([34 CFR §99.3](https://www.ecfr.gov/current/title-34/part-99/section-99.3)):
+    name, SSN, student/employee ID, address, date/place of birth, mother's
+    maiden name, biometric record, plus "other information... linked or linkable
+    to a specific student." Schema mapping: IDs (`student_number`,
+    `employee_number`, `ssn`, `state_id`, `local_id`, source aliases like
+    kippadb `school_specific_id`), names (`*_name`), contact (`email`, `phone`,
+    `address`, `street`, `city`, `zip`), `dob`/`birth_date`, guardian/parent
+    fields, free-text `comment`/`note` on people tables, credentials/tokens.
+    When unsure, consult [PTAC glossary](https://studentprivacy.ed.gov/glossary)
+    or treat as PII.
+  - **Indirect identifiers** — FERPA's "linked or linkable" standard
+    ([34 CFR §99.3](https://www.ecfr.gov/current/title-34/part-99/section-99.3),
+    [PTAC glossary](https://studentprivacy.ed.gov/glossary)) covers combinations
+    of gender, birth date, geographic indicators (school, zip), race/ethnicity,
+    religion, place of birth, education info (grade level, EL status,
+    IEP/504/disability), financial info (FRL status), activities, and other
+    descriptors that allow identification with "reasonable certainty" by someone
+    in the school community. Each field alone may be safe; the combination may
+    not. When unsure, consult the linked guidance or treat the combination as
+    PII.
 
 - **Before writing any spec or plan**: STOP and explicitly ask the user whether
   to open a GitHub issue first. Required for specs/plans; not required for quick
