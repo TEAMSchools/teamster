@@ -17,14 +17,17 @@ cubes:
       - name: academic_year
         sql: academic_year
         type: number
+        public: true
 
       - name: fiscal_year
         sql: fiscal_year
         type: number
+        public: true
 
       - name: year_number
         sql: year_number
         type: number
+        public: true
 
       - name: quarter_number
         sql: quarter_number
@@ -44,6 +47,7 @@ cubes:
       - name: day_of_week
         sql: day_of_week
         type: number
+        public: true
 
       - name: day_of_week_name
         sql: day_of_week_name
@@ -63,11 +67,14 @@ cubes:
       - name: school_week_end_date
         sql: CAST(school_week_end_date AS TIMESTAMP)
         type: time
+        public: true
 
       - name: calendar_week_start_date
         sql: CAST(calendar_week_start_date AS TIMESTAMP)
         type: time
+        public: true
 
       - name: calendar_week_end_date
         sql: CAST(calendar_week_end_date AS TIMESTAMP)
         type: time
+        public: true
