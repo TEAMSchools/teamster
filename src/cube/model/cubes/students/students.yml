@@ -8,23 +8,28 @@ cubes:
         sql: student_key
         type: string
         primary_key: true
+        public: true
 
       # PII — excluded from detail views without cube-access-student-pii
       - name: lea_student_identifier
         sql: lea_student_identifier
         type: number
+        public: true
 
       - name: full_name
         sql: full_name
         type: string
+        public: true
 
       - name: birth_date
         sql: CAST(birth_date AS TIMESTAMP)
         type: time
+        public: true
 
       - name: state_student_identifier
         sql: state_student_identifier
         type: string
+        public: true
 
       - name: district_student_identifier
         sql: district_student_identifier
@@ -37,27 +42,34 @@ cubes:
       - name: gender_identity
         sql: gender_identity
         type: string
+        public: true
 
       - name: race
         sql: race
         type: string
+        public: true
 
       - name: meal_eligibility_status
         sql: meal_eligibility_status
         type: string
+        public: true
 
       - name: enrollment_status
         sql: enrollment_status
         type: string
+        public: true
 
       - name: is_gifted
         sql: is_gifted
         type: boolean
+        public: true
 
       - name: is_ell
         sql: is_ell
         type: boolean
+        public: true
 
       - name: has_iep
         sql: has_iep
         type: boolean
+        public: true

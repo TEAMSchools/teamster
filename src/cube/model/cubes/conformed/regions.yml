@@ -12,10 +12,12 @@ cubes:
       - name: region_name
         sql: "{CUBE}.`name`"
         type: string
+        public: true
 
       - name: state
         sql: state
         type: string
+        public: true
 
       - name: timezone
         sql: timezone

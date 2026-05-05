@@ -20,7 +20,9 @@ cubes:
       - name: is_in_session
         sql: is_in_session
         type: boolean
+        public: true
 
       - name: is_membership_day
         sql: is_membership_day
         type: boolean
+        public: true
