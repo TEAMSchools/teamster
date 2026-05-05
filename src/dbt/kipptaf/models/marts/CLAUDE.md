@@ -135,6 +135,18 @@ Intermediates may rename or transform columns (e.g. scaffold's
 `int_assessments__assessments.academic_year`); the consumer must re-join the
 source-of-truth model rather than trust the matching column name.
 
+## `_dbt_source_project` joins and hashes
+
+When a marts fix touches joins or surrogate-key composition involving
+`_dbt_source_project` (or `_dbt_source_relation`), promote the
+`extract_code_location()` call up to the union model itself rather than applying
+it at each consumer
+([#3142](https://github.com/TEAMSchools/teamster/issues/3142)). Downstream
+consumers should join and hash on the materialized `code_location` column, not
+re-derive it from `_dbt_source_relation` per-call. This counts as an additive
+upstream edit under "Spec authoring context" and does not require a separate
+refactor PR.
+
 ## Verify source precision before R9 drops
 
 Staging cast chains (`cast(x as datetime)` → `cast(as date)`) and field names
