@@ -90,5 +90,6 @@ models:
         data_type: string
         description: >-
           Canonical city column for region mapping. Drives the `dim_terms →
-          dim_locations` join (`t.city = ll.region`) and feeds
-          `dim_locations.region_key` downstream.
+          dim_regions` join (`t.city = dr.\`name\``) and feeds the
+          `_dbt_source_project → location_key` chain into `dim_locations`
+          downstream.
