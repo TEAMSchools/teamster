@@ -1,15 +1,4 @@
-with
-    terms as (select * from {{ ref("stg_google_sheets__reporting__terms") }}),
-
-    code_locations as (
-        {{
-            dbt_utils.deduplicate(
-                relation=ref("stg_google_sheets__people__locations"),
-                partition_by="city",
-                order_by="(dagster_code_location = 'kipptaf') asc, powerschool_school_id desc",
-            )
-        }}
-    )
+with terms as (select * from {{ ref("stg_google_sheets__reporting__terms") }})
 
 select
     {{
@@ -38,9 +27,9 @@ select
     t.lockbox_date as data_freeze_date,
     t.is_current,
 from terms as t
-left join code_locations as cl on cl.city = t.city
+left join {{ ref("dim_regions") }} as dr on dr.`name` = t.city
 left join
     {{ ref("stg_powerschool__schools") }} as sch
     on t.school_id = sch.school_number
     and t.school_id <> 0
-    and sch._dbt_source_project = cl.dagster_code_location
+    and sch._dbt_source_project = dr.dagster_code_location
