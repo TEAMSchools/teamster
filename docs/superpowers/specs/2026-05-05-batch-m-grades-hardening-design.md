@@ -25,8 +25,9 @@ required reframing — captured per-section below.
   changes are unconstrained.
 - Fix the Paterson CASE bug in `stg_google_sheets__reporting__terms` (data
   correctness).
-- Resolve `dim_terms`'s internal inconsistency (hash on raw region, join on
-  canonical city).
+- Replace the brittle regex+initcap region join in `dim_terms` with a
+  `_dbt_source_project`-keyed lookup against canonical staging locations
+  (covered jointly with #3739).
 - Replace brittle `regexp_extract(_dbt_source_relation, 'kipp(\w+)_')` region
   derivation in three mart models with a join to canonical staging locations,
   keyed on a new materialized `_dbt_source_project` column added to the three
@@ -117,9 +118,12 @@ to `region`. `dim_terms.region_key` derives from `t.city`.
    `location_key`, `type`, `term_code`, `term_name`, dates, `academic_year`,
    `fiscal_year`, `grade_band`, `data_freeze_date`, `is_current` — region is
    **not** a column on the dim. `t.region` (raw) feeds the `term_key` hash;
-   `t.city` (canonical) feeds the `sch.location_key` join. That's an internal
-   inconsistency: hash inputs and join keys disagree about which form of region
-   to use.
+   `t.city` (canonical) feeds the `sch.location_key` join. The two fields serve
+   two different purposes (row identity vs schools-table join key), not one
+   purpose used inconsistently — initially flagged as a bug during
+   brainstorming, then retracted after verifying that nine consumer marts also
+   hash `term_key` from `rt.region` (raw), so producer + consumers are
+   internally consistent today.
 
 2. The CASE expression at lines 4-13 has a bug: it matches `'KIPP Paterson'` but
    not bare `'Paterson'`. 30 rows have raw `region = 'Paterson'` and canonical
@@ -135,10 +139,13 @@ to `region`. `dim_terms.region_key` derives from `t.city`.
    `rpt_tableau__iready_apm.sql:92`) and silently change values for 8 more that
    read `rt.region` (raw).
 
-**Reframe**: Drop the rename. Fix the Paterson CASE bug. Resolve the `dim_terms`
-hash-vs-join inconsistency by switching the hash input to `t.city`. Both are
-pure-additive outside marts (the value Paterson rows now carry on `city` was
-previously NULL; nothing currently reads it as non-NULL).
+**Reframe**: Fix the Paterson CASE bug. Don't switch the `dim_terms` hash input
+— region is load-bearing for term-row uniqueness (599 collision groups in
+`(type, code, name, start_date)` alone, 519 of which require region to
+disambiguate). Switching the hash on `dim_terms` alone would orphan FKs from the
+nine consumer marts that hash from `rt.region`; switching all of them is a
+network-wide change beyond the scope of this batch and produces no behavior
+benefit (RT-row consumers already see `region == city` after the Paterson fix).
 
 ### #3738 — defensive `QUALIFY` in `fct_grades_category`
 
@@ -211,23 +218,20 @@ rows that today have `city = NULL` will gain `city = 'Paterson'`. No existing
 consumer reads those NULL values as non-NULL, so the change is purely additive
 to the `city` column's value distribution.
 
-### Section 2 — `dim_terms` internal consistency fix (#3691)
+### Section 2 — `dim_terms` join refactor (#3691, #3739)
 
-In `dim_terms.sql`:
+`dim_terms.sql` lines 30-35 use a brittle pattern to derive `sch.location_key`:
+`lower(concat('kipp', t.city)) = regexp_extract(sch._dbt_source_relation, r'(kipp\w+)_')`.
+Rewritten under Section 4 to read `sch._dbt_source_project` (added in Section
+4.1) and join to canonical locations, matching the pattern applied to
+`fct_grades_term`, `bridge_course_section_terms`.
 
-- Line 11 (`term_key` hash inputs): `"t.region",` → `"t.city",`
-- Lines 30-35 (join clause to `stg_powerschool__schools`): rewritten by
-  Section 4.
-
-The hash-input switch produces hash churn for ~720 `term_key` values where raw
-`t.region` differs from canonical `t.city` (e.g.,
-`'TEAM Academy Charter School'` rows previously hashed with that long string;
-they will re-hash with `'Newark'`). Plus an additional ~30 rows that gain a
-non-null hash component due to the Paterson fix.
-
-Hash churn is acceptable: `term_key` is a `dim_terms` PK, no facts have
-materialized FK history to it. Downstream relationship tests will rebuild
-through Dagster's auto-materialization.
+The `term_key` hash inputs are **not** changed. Region is load-bearing for
+term-row uniqueness (599 collision groups in `(type, code, name, start_date)`
+alone, 519 of which require region to disambiguate); switching the hash on
+`dim_terms` alone would orphan FKs from nine consumer marts that hash from
+`rt.region` (raw). RT rows already have `region == city` after the Paterson fix,
+so the existing internal consistency holds.
 
 ### Section 3 — Test coverage for term staging (#3677, #3738)
 
@@ -390,7 +394,6 @@ update happens in the Cube repo, separately.
 
 | Risk                                                                                                    | Source      | Mitigation                                                                                                                                                                                     |
 | ------------------------------------------------------------------------------------------------------- | ----------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Hash churn on `dim_terms.term_key`                                                                      | Section 2   | Acceptable; `term_key` is a PK with no historical FK chain. Auto-materialization rebuilds downstream.                                                                                          |
 | Stale view definitions for downstream consumers of `dim_terms` after column-derivation change           | Section 4   | Per `src/dbt/CLAUDE.md` "Column-rename refactors strand dependent prod views," check `INFORMATION_SCHEMA.VIEWS.view_definition` post-merge; rematerialize stragglers via Dagster `launch_run`. |
 | Crosswalk join produces fan-out if `dagster_code_location → location_region` is not functionally unique | Section 4   | Verify in CI before merge; if fanout, switch to `select distinct` CTE form.                                                                                                                    |
 | Cube break on dropped `score` / `score_type`                                                            | Section 5.2 | Cube update tracked separately. PR body lists affected mart columns.                                                                                                                           |
