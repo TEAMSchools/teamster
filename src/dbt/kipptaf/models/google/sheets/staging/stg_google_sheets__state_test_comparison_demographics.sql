@@ -54,7 +54,9 @@ with
             'Total' as comparison_demographic_group,
             'All Students' as comparison_demographic_subgroup,
 
-            sum(percent_proficient) as percent_proficient,
+            safe_divide(
+                sum(percent_proficient * total_students), sum(total_students)
+            ) as percent_proficient,
             sum(total_students) as total_students,
 
         from
