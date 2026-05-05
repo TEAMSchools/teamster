@@ -16,16 +16,20 @@ select
     {{ dbt_utils.generate_surrogate_key(["cc.cc_dcid", "cc._dbt_source_relation"]) }}
     as student_section_enrollment_key,
 
-    {{
-        dbt_utils.generate_surrogate_key(
-            [
-                "enr.student_number",
-                "enr._dbt_source_relation",
-                "enr.academic_year",
-                "enr.entrydate",
-            ]
-        )
-    }} as student_enrollment_key,
+    if(
+        enr.student_number is not null,
+        {{
+            dbt_utils.generate_surrogate_key(
+                [
+                    "enr.student_number",
+                    "enr._dbt_source_relation",
+                    "enr.academic_year",
+                    "enr.entrydate",
+                ]
+            )
+        }},
+        cast(null as string)
+    ) as student_enrollment_key,
 
     -- FK source_relation must match dim_course_sections, which is built from
     -- base_powerschool__sections. Rewrite cc's source relation to the parent's.
