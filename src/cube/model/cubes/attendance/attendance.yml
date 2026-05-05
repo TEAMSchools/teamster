@@ -38,6 +38,7 @@ cubes:
       - name: attendance_date
         sql: CAST(date_key AS TIMESTAMP)
         type: time
+        public: true
 
       - name: academic_year
         sql: academic_year
@@ -52,6 +53,7 @@ cubes:
       - name: attendance_code
         sql: attendance_code
         type: string
+        public: true
 
       - name: attendance_category
         sql: attendance_category
@@ -61,38 +63,47 @@ cubes:
       - name: attendance_value
         sql: attendance_value
         type: number
+        public: true
 
       - name: membership_value
         sql: membership_value
         type: number
+        public: true
 
       - name: present_weight
         sql: present_weight
         type: number
+        public: true
 
       - name: is_absent
         sql: is_absent
         type: number
+        public: true
 
       - name: is_tardy
         sql: is_tardy
         type: number
+        public: true
 
       - name: is_ontime
         sql: is_ontime
         type: number
+        public: true
 
       - name: is_oss
         sql: is_oss
         type: number
+        public: true
 
       - name: is_iss
         sql: is_iss
         type: number
+        public: true
 
       - name: is_suspended
         sql: is_suspended
         type: number
+        public: true
 
       - name: is_truant
         sql: is_truant
