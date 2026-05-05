@@ -62,7 +62,7 @@ with
             min(assessment_name) as title,
         from {{ ref("int_pearson__all_assessments") }}
         where testscalescore is not null
-        group by discipline, test_grade, `subject`, aligned_test_code
+        group by discipline, test_grade, `subject`, aligned_test_code, aligned_subject
     ),
 
     -- Collapse historical title variants (FAST / FSA share a test_code per
