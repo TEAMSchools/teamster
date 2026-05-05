@@ -28,7 +28,7 @@ select
 
     'Earned' as credit_status,
 
-    sg.earnedcrhrs as earned_credits,
+    coalesce(sg.earnedcrhrs, 0.0) as earned_credits,
 
 from {{ ref("int_powerschool__gpnode") }} as gpn
 inner join
