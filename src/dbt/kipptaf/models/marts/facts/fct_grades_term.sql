@@ -116,5 +116,5 @@ left join
     reporting_terms as rt
     on fg.storecode = rt.name
     and fg.schoolid = rt.school_id
-    and rt.region = dr.`name`
+    and dr.`name` = rt.region
     and fg.yearid = rt.powerschool_year_id

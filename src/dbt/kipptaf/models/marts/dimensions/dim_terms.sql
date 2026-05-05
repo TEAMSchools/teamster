@@ -32,4 +32,4 @@ left join
     {{ ref("stg_powerschool__schools") }} as sch
     on t.school_id = sch.school_number
     and t.school_id <> 0
-    and sch._dbt_source_project = dr.dagster_code_location
+    and dr.dagster_code_location = sch._dbt_source_project

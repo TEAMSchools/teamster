@@ -29,4 +29,4 @@ inner join
     and rt.type = 'RT'
     and sec.terms_lastday >= rt.start_date
     and sec.terms_firstday <= rt.end_date
-    and rt.region = dr.`name`
+    and dr.`name` = rt.region
