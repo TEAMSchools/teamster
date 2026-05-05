@@ -28,7 +28,9 @@ required reframing — captured per-section below.
 - Resolve `dim_terms`'s internal inconsistency (hash on raw region, join on
   canonical city).
 - Replace brittle `regexp_extract(_dbt_source_relation, 'kipp(\w+)_')` region
-  derivation in three mart models with a join to canonical staging locations.
+  derivation in three mart models with a join to canonical staging locations,
+  keyed on a new materialized `_dbt_source_project` column added to the three
+  upstream union models the marts read.
 - Defend the term-staging RT grain against future drift via a uniqueness test.
 - Expose Ed-Fi-aligned `points_earned` / `numeric_grade_earned` on
   `fct_grades_assignments` while preserving the legacy `score_entered` /
@@ -52,6 +54,14 @@ required reframing — captured per-section below.
   by #3738). The project's no-manual-deduplication convention
   (`src/dbt/CLAUDE.md`) prohibits it, and the issue itself notes no current
   fan-out. A staging-layer uniqueness test catches future drift more cleanly.
+- Full network-wide implementation of
+  [#3142](https://github.com/TEAMSchools/teamster/issues/3142) (rename
+  `extract_code_location` → `extract_source_project`, add `_dbt_source_project`
+  to all ~73 union models, replace ~268 `union_dataset_join_clause` usages,
+  remove the macro). Batch M adopts the materialized-column pattern only for the
+  three upstream union models its three mart files read; the rest of the
+  network-wide refactor stays scoped to #3142. This is partial — the macro is
+  not renamed, and existing call sites are not migrated.
 
 ## Verification of issue claims
 
@@ -169,6 +179,18 @@ row per logical school) rather than `int_people__location_crosswalk`
 and `location_region` and is already the source for `dim_locations`. Three sites
 in scope: `fct_grades_term`, `bridge_course_section_terms`, `dim_terms`.
 
+Per direction on this batch, also adopt the
+[#3142](https://github.com/TEAMSchools/teamster/issues/3142) pattern at the
+union-model layer for the three upstream models these marts read
+(`base_powerschool__final_grades`, `base_powerschool__sections`,
+`stg_powerschool__schools`): add a materialized `_dbt_source_project` column
+that captures `regexp_extract(_dbt_source_relation, r'(kipp\w+)_')` once per
+row. Mart joins then read the column directly instead of recomputing the regex
+per query, and the join key matches the form
+`stg_google_sheets__people__locations.dagster_code_location` already exposes.
+This is a targeted, additive subset of #3142 — the macro is not renamed and
+other union-model call sites stay on `union_dataset_join_clause`.
+
 ## Design
 
 ### Section 1 — Paterson CASE fix (#3691, #3677 enabler)
@@ -234,7 +256,53 @@ In `src/dbt/kipptaf/models/marts/dimensions/properties/dim_terms.yml`, promote
 PR-branch CI that no duplicates surface; if any do, fix at the sheet before
 merge.
 
-### Section 4 — Replace regex region extraction (#3739)
+### Section 4 — Replace regex region extraction (#3739, partial #3142)
+
+#### Section 4.1 — Add `_dbt_source_project` to three union models
+
+Targeted subset of #3142. Each model adds one new column derived once via
+`extract_code_location()`:
+
+- `src/dbt/kipptaf/models/powerschool/base/base_powerschool__final_grades.sql`
+- `src/dbt/kipptaf/models/powerschool/base/base_powerschool__sections.sql`
+- `src/dbt/kipptaf/models/powerschool/staging/stg_powerschool__schools.sql`
+
+For `base_powerschool__final_grades.sql` (currently a bare `union_relations()`),
+wrap in a CTE and select through:
+
+```sql
+with
+    union_relations as (
+        {{
+            dbt_utils.union_relations(
+                relations=[
+                    source("kippnewark_powerschool", model.name),
+                    source("kippcamden_powerschool", model.name),
+                    source("kippmiami_powerschool", model.name),
+                ]
+            )
+        }}
+    )
+
+select ur.*, {{ extract_code_location("ur") }} as _dbt_source_project,
+from union_relations as ur
+```
+
+For `base_powerschool__sections.sql` and `stg_powerschool__schools.sql` (already
+wrap union in a CTE plus a join), append `_dbt_source_project` to the existing
+final SELECT.
+
+This change is purely additive — adds one column, no existing column changes
+shape or value. Other consumers of these union models continue to read what they
+read today; new consumers can opt into `_dbt_source_project` to skip the regex.
+
+If the upstream model has a contract-enforced properties.yml, add the
+`_dbt_source_project` column entry. Per `kipptaf/CLAUDE.md`: `base_*` models use
+`dbt_utils.star()` and don't have enforced contracts; `stg_powerschool__schools`
+is a kipptaf-level union view treated as a functional intermediate (no enforced
+contract). Verify property file state per file before editing.
+
+#### Section 4.2 — Mart join rewrites
 
 Three mart files: `fct_grades_term.sql`, `bridge_course_section_terms.sql`,
 `dim_terms.sql`. Each adds a CTE pulling the canonical mapping from the
@@ -253,8 +321,7 @@ with
 -- ...
 left join
     location_regions as lr
-    on lr.dagster_code_location
-       = {{ extract_code_location(<source_alias>) }}
+    on lr.dagster_code_location = <upstream_alias>._dbt_source_project
 -- then: rt.region = lr.location_region
 ```
 
@@ -276,7 +343,8 @@ should produce one row per code-location.
 
 `kipptaf` itself never appears in `_dbt_source_relation` for these models — they
 source from per-region district packages (`kippnewark`, `kippcamden`,
-`kippmiami`, `kipppaterson`). No fallback needed.
+`kippmiami`, `kipppaterson`), so `_dbt_source_project` carries one of those four
+district names per row. No fallback needed.
 
 ### Section 5 — Split polymorphic score (#3688)
 
