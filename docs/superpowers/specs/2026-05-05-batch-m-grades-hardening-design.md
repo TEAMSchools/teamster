@@ -415,6 +415,27 @@ Before merge, run on PR branch:
   vs. main, and `points_earned + numeric_grade_earned` non-null counts match the
   prior `score`-non-null count by `scoretype`.
 
+## Pre-merge checklist
+
+Required by `src/dbt/kipptaf/models/marts/CLAUDE.md`.
+
+- **Diamond path scan**: confirm no fact in scope (`fct_grades_term`,
+  `fct_grades_category`, `fct_grades_assignments`,
+  `bridge_course_section_terms`) gains a second FK route to a shared dim.
+  Verified during brainstorming — no new FKs introduced; all changes are joins
+  to derive existing values.
+- **Column-naming rubric scan (R1–R10)** on all touched mart columns:
+  `points_earned`, `numeric_grade_earned`, `max_points`, `score_percent` on
+  `fct_grades_assignments` align with R1 (no source prefix), R3 (no `is_` needed
+  for measures), R4 (no date concerns), R6 (Ed-Fi-aligned). New
+  `_dbt_source_project` column on union models is plumbing per R8 — kept on
+  staging/intermediate, must not leak to any mart SELECT.
+- **Project-board bonus scan**: re-check
+  [project board](https://github.com/orgs/TEAMSchools/projects/4/views/1) for
+  issues incidentally resolved by these changes; close them in the PR body.
+- **New-issue triage**: file any newly surfaced errors as issues on the board,
+  classified with `Tier`, `PR batch`, and `Driver`.
+
 ## Out-of-scope follow-ups captured
 
 - Upstream cleanup of the raw `region` column in
