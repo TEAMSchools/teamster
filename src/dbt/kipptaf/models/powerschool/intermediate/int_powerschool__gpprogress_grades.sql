@@ -22,12 +22,12 @@ select
     sg.sectionid,
     sg.credit_type,
     sg.grade as letter_grade,
+    sg.potentialcrhrs as official_potential_credits,
+    sg.potentialcrhrs as potential_credits,
     sg.is_transfer_grade,
 
     'Earned' as credit_status,
 
-    sg.potentialcrhrs as official_potential_credits,
-    sg.potentialcrhrs as potential_credits,
     sg.earnedcrhrs as earned_credits,
 
 from {{ ref("int_powerschool__gpnode") }} as gpn
@@ -72,14 +72,13 @@ select
     fg.sectionid,
     fg.credittype as credit_type,
     fg.y1_letter_grade_adjusted as letter_grade,
+    fg.courses_credit_hours as official_potential_credits,
+
+    gps.enrolledcredits as potential_credits,
 
     false as is_transfer_grade,
 
     'Enrolled' as credit_status,
-
-    fg.courses_credit_hours as official_potential_credits,
-
-    gps.enrolledcredits as potential_credits,
 
     if(fg.y1_letter_grade not like 'F%', gps.enrolledcredits, 0.0) as earned_credits,
 
