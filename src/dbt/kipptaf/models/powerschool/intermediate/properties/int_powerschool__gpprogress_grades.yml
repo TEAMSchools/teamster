@@ -11,7 +11,7 @@ models:
             combination_of_columns:
               - _dbt_source_relation
               - studentsdcid
-              - cc_dcid
+              - grade_dcid
               - credit_status
     columns:
       - name: _dbt_source_relation
@@ -54,10 +54,12 @@ models:
       - name: academic_year
         description: Academic year of the grade record.
         data_type: int64
-      - name: cc_dcid
-        description:
-          DCID of the course-credit (CC) record; used for joins and as the row
-          identifier.
+      - name: grade_dcid
+        description: >
+          Row identifier for the underlying grade record. storedgrades.dcid for
+          Earned rows; cc_dcid from base_powerschool__final_grades for Enrolled
+          rows. These are different ID types from different tables — do not join
+          this column to final_grades.cc_dcid across both credit_status values.
         data_type: int64
       - name: schoolname
         description: School name from the grade record source.
