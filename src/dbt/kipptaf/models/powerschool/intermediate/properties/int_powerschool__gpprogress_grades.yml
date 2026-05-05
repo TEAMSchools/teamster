@@ -13,6 +13,9 @@ models:
             combination_of_columns:
               - _dbt_source_relation
               - studentsdcid
+              - plan_id
+              - discipline_id
+              - subject_id
               - grade_dcid
               - credit_status
     columns:
