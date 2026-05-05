@@ -126,7 +126,11 @@ file; domain specifics live in the nearest subdirectory CLAUDE.md.
 - **Trunk linting/formatting**: Do not run `trunk fmt` or `trunk check` manually
   — `trunk-fmt-pre-commit` formats at commit time and `trunk-check-pre-push`
   blocks bad pushes, both in the main repo and in worktrees (`core.hooksPath` is
-  shared).
+  shared). **Pre-commit hook runs `fmt` only**; sqlfluff/yamllint and other
+  check-only linters fire at `pre-push` and in CI. If a session reports "trunk
+  clean" on a SQL/YAML change based on commit hooks alone, run
+  `.trunk/tools/trunk check --force <files>` to verify before claiming the
+  change is lint-clean.
 
 - **Linter**: Use `# trunk-ignore(<linter>/<rule>)` with a reason comment — not
   linter-native disable syntax. Binary:

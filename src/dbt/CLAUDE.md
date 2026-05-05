@@ -199,6 +199,10 @@ CLAUDE.md files reference this section rather than repeating it.
 
 ### BigQuery type synonyms in contracts
 
+`numeric` and `float64` are NOT synonyms — they're distinct BigQuery types.
+Casting to one while declaring the other in YAML passes parse but fails contract
+enforcement at build time.
+
 BQ accepts legacy spellings as synonyms: `boolean`/`bool`, `integer`/`int64`,
 `float`/`float64`, `decimal`/`numeric`, `bigdecimal`/`bignumeric`. YAML
 `data_type` and `INFORMATION_SCHEMA.COLUMNS.data_type` may disagree on spelling
@@ -334,6 +338,12 @@ rejects `asc nulls last` and `desc nulls first` inside aggregate `array_agg`.
 Use `desc` (default NULLS LAST) or `(col is null) asc` instead of explicit
 `nulls last` with ascending sort.
 
+**`partition_by` must match the downstream join key**, not the source PK.
+Partitioning by the source's natural key leaves multiple rows that share the
+intended join column, which then fan out at the join site. Use
+`(col = 'sentinel') asc` in `order_by` to demote a specific value when rows tie
+on the chosen partition key.
+
 ### Don't inline CASE expressions in generate_surrogate_key
 
 `dbt_utils.generate_surrogate_key(["case <col> when ... end"])` compiles via
@@ -388,6 +398,11 @@ the same partition.
   current_date('{{ var("local_timezone") }}')
   ```
 
+- **sqlfluff ST09 (join order)**: ON-clause predicates list the
+  earlier-referenced table on the left, including predicates inside a current
+  join that reference a prior-joined table. After
+  `from A ... join B ... join C on X`, predicates referencing both `B` and `C`
+  write `B.x = C.y`, not `C.y = B.x`.
 - **BigQuery-reserved CTE names**: `groups` is reserved (window-frame syntax
   `OVER (... GROUPS BETWEEN ...)`). A CTE named `groups` fails parsing with
   "Expected keyword SELECT but got keyword GROUPS". Use `reporting_groups` or
