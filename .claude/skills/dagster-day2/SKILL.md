@@ -11,14 +11,14 @@ description: >-
 
 ## Phase 1: Collect data
 
-Run [`scripts/day2_collect.py`](../../../scripts/day2_collect.py) — it issues
-all 15 queries (Dagster GraphQL + GCP REST + `gcloud logging`) and writes a
-single artifact to `.claude/scratch/day2.json`. No subagent dispatch.
+Run [`scripts/day2_collect.py`](scripts/day2_collect.py) — it issues all 15
+queries (Dagster GraphQL + GCP REST + `gcloud logging`) and writes a single
+artifact to `.claude/scratch/day2.json`. No subagent dispatch.
 
 ```bash
-uv run scripts/day2_collect.py              # default: 5 PM ET prev biz day → now
-uv run scripts/day2_collect.py --hours 24   # last N hours
-uv run scripts/day2_collect.py --since 2026-03-29   # 5 PM ET that date → now
+uv run .claude/skills/dagster-day2/scripts/day2_collect.py              # default: 5 PM ET prev biz day → now
+uv run .claude/skills/dagster-day2/scripts/day2_collect.py --hours 24   # last N hours
+uv run .claude/skills/dagster-day2/scripts/day2_collect.py --since 2026-03-29   # 5 PM ET that date → now
 ```
 
 Output shape:
@@ -56,18 +56,20 @@ reclassify based on cross-signal context — see the reclassify table below.
 
 ## Phase 2: Correlate and report
 
-Run [`scripts/day2_summarize.py`](../../../scripts/day2_summarize.py) first to
-print per-step counts and the error gate, then read `.claude/scratch/day2.json`
-for the details.
+Run [`scripts/day2_summarize.py`](scripts/day2_summarize.py) with `--details` to
+print per-step counts, the error gate, and the failure / retry / GKE event /
+error-group dump in one call. Drop `--details` for the gate alone; fall back to
+reading `.claude/scratch/day2.json` directly for fields the dump omits.
 
 ```bash
-uv run scripts/day2_summarize.py
+uv run .claude/skills/dagster-day2/scripts/day2_summarize.py --details   # gate + details
+uv run .claude/skills/dagster-day2/scripts/day2_summarize.py             # gate only
 ```
 
 **Error gate**: The summarize script flags any `step_NN_*` key with an `"error"`
 field and exits non-zero. If any step the analysis depends on errored, re-run
-the collector (`uv run scripts/day2_collect.py`) before drawing conclusions —
-partial data produces wrong findings.
+the collector (`uv run .claude/skills/dagster-day2/scripts/day2_collect.py`)
+before drawing conclusions — partial data produces wrong findings.
 
 **Temporal overlap gate**: Before linking signals as cause/effect, verify
 `max(start_A, start_B) < min(end_A, end_B)`. If false → independent findings.
