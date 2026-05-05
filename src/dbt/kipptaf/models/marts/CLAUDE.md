@@ -19,7 +19,9 @@ strict-chain rule as facts — no diamond paths to a shared ancestor dim.
 Applied to every column in every mart model.
 
 - **R1. Strip source-system prefixes/names** (`powerschool_`, `adp_`,
-  `deanslist_`) unless disambiguating unified columns.
+  `deanslist_`, `focus_`, `finalsite_`) unless disambiguating unified columns.
+  Source-agnostic naming is load-bearing — the mart surface must not change when
+  Focus replaces PowerSchool or Finalsite replaces PowerSchool enrollment.
 - **R2. No KIPP-specific language** (`teammate`, `employee_number`, `microgoal`,
   `dcid`, `oid`, `lep`).
 - **R3. Boolean fields use `is_` / `has_` prefix.** On fact tables, countable
@@ -27,6 +29,8 @@ Applied to every column in every mart model.
   read naturally without casting. Weighted non-binary measures drop `is_` (e.g.
   `present_weight`).
 - **R4. Dates end `_date`; timestamps end `_timestamp`.**
+- **R5. \[reserved / removed\]** — numbering retained for stability of
+  references in prior PRs and issue history.
 - **R6. Ed-Fi Unified Data Model** nomenclature is the default for IDs, entity
   names, standard attributes. Deviate toward plain English for awkward
   descriptors.
@@ -39,13 +43,9 @@ Applied to every column in every mart model.
 - **R10. Entity qualification.** Qualify a descriptive column with the model's
   entity prefix only when removing it creates a real downstream-join ambiguity
   (e.g. `full_name` on every person dim — not `student_name`). Otherwise default
-  to unqualified.
-
-### BI presentation is Cube's job
-
-Don't entity-qualify bare reserved-word columns to satisfy BI field-list
-readability — Cube `title:` aliases BI presentation. Evaluate R10 /
-reserved-word rename decisions against raw-SQL ergonomics only.
+  to unqualified. Don't entity-qualify bare reserved-word columns to satisfy BI
+  field-list readability — Cube `title:` aliases BI presentation. Evaluate R10 /
+  reserved-word rename decisions against raw-SQL ergonomics only.
 
 ### Degenerate-dim rule
 
@@ -195,15 +195,30 @@ exposures reference `rpt_*` / staging / intermediate models, not marts.
 - Source-system cleanup — happens in `staging/` and `intermediate/`.
 - Plumbing (see definition above) — never leaks to a mart SELECT (R8).
 
-## Deferred structural follow-ups
+## Spec authoring context
+
+No production consumers yet — column renames, removals, restructures, and
+surrogate-key hash churn are free. Don't add backwards-compat shims or flag hash
+churn as a concern.
+
+Mart-focused PRs may edit upstream files (`staging/`, `intermediate/`, source
+packages) but those edits must be **additive only**. Wider upstream refactors
+require a compelling reason called out in the spec; otherwise split into a
+separate PR.
+
+Before designing a solution for a roadmap issue, verify the issue's claims
+against the current code and data.
 
 Before proposing a new structural mart change, check the open items on the
 [Data Team project board](https://github.com/orgs/TEAMSchools/projects/4) — the
 case may already be tracked and deferred.
 
-## SIS-migration insulation
+Every spec must include a pre-merge checklist covering:
 
-Source-system agnostic naming is a load-bearing design choice. When Focus
-replaces PowerSchool (Miami) and Finalsite replaces PowerSchool enrollment, the
-mart surface should not change. Don't add source-system terminology
-(`powerschool_*`, `focus_*`, `finalsite_*`) to new mart columns.
+- Scan touched models for diamond paths (see "Strict-chain traversal").
+- Scan touched models for column-naming rubric violations (R1–R10 above).
+- Scan the
+  [project board](https://github.com/orgs/TEAMSchools/projects/4/views/1) for
+  bonus issues incidentally resolved; close them in the PR.
+- File newly surfaced errors as new issues on the board, classified with `Tier`,
+  `PR batch`, and `Driver`.

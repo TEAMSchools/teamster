@@ -78,7 +78,7 @@ def with_powerschool_retry[_T](
     db_resource: PowerSchoolODBCResource,
     log: logging.Logger,
     work_fn: Callable[[oracledb.Connection], _T],
-    max_attempts: int = 3,
+    max_attempts: int = 6,
 ) -> _T:
     """Run a function with a PowerSchool connection, retrying on failure.
 
