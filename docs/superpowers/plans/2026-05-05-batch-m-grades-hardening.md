@@ -6,9 +6,11 @@
 > checkbox (`- [ ]`) syntax for tracking.
 
 **Goal:** Resolve five batch-M issues atomically: source-data Paterson fix,
-internal-consistency fix in `dim_terms`, defensive uniqueness test on RT terms,
-regex region-extraction replacement in three mart files, and split of
-polymorphic `score` into Ed-Fi-aligned typed columns.
+defensive uniqueness test on RT terms, regex region-extraction replacement in
+three mart files (`dim_terms`, `fct_grades_term`, `bridge_course_section_terms`)
+keyed on a new materialized `_dbt_source_project` column on three upstream union
+models, severity bump on `unique_dim_terms_term_key`, and split of polymorphic
+`score` into Ed-Fi-aligned typed columns.
 
 **Architecture:** All changes outside `marts/` are strictly additive. The
 grades-mart join chain reads region from `stg_google_sheets__people__locations`
