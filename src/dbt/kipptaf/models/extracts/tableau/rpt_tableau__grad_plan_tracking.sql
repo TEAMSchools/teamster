@@ -56,23 +56,21 @@ select
     e.ada_above_or_at_80,
     e.advisory,
 
-    sp.requiredcredits as plan_required_credits,
-    sp.enrolledcredits as plan_enrolled_credits,
-    sp.requestedcredits as plan_requested_credits,
-    sp.earnedcredits as plan_earned_credits,
-    sp.waivedcredits as plan_waived_credits,
-
-    sd.requiredcredits as discipline_required_credits,
-    sd.enrolledcredits as discipline_enrolled_credits,
-    sd.requestedcredits as discipline_requested_credits,
-    sd.earnedcredits as discipline_earned_credits,
-    sd.waivedcredits as discipline_waived_credits,
-
-    ss.requiredcredits as subject_required_credits,
-    ss.enrolledcredits as subject_enrolled_credits,
-    ss.requestedcredits as subject_requested_credits,
-    ss.earnedcredits as subject_earned_credits,
-    ss.waivedcredits as subject_waived_credits,
+    g.plan_required_credits,
+    g.plan_enrolled_credits,
+    g.plan_requested_credits,
+    g.plan_earned_credits,
+    g.plan_waived_credits,
+    g.discipline_required_credits,
+    g.discipline_enrolled_credits,
+    g.discipline_requested_credits,
+    g.discipline_earned_credits,
+    g.discipline_waived_credits,
+    g.subject_required_credits,
+    g.subject_enrolled_credits,
+    g.subject_requested_credits,
+    g.subject_earned_credits,
+    g.subject_waived_credits,
 
 from {{ ref("int_extracts__student_enrollments") }} as e
 inner join
@@ -80,24 +78,6 @@ inner join
     on e.students_dcid = g.studentsdcid
     and {{ union_dataset_join_clause(left_alias="e", right_alias="g") }}
     and g.plan_name in ('NJ State Diploma', 'HS Distinction Diploma')
-left join
-    {{ ref("int_powerschool__gpprogresssubject") }} as sp
-    on g.studentsdcid = sp.studentsdcid
-    and g.plan_id = sp.id
-    and {{ union_dataset_join_clause(left_alias="g", right_alias="sp") }}
-    and sp.degree_plan_section = 'Plan'
-left join
-    {{ ref("int_powerschool__gpprogresssubject") }} as sd
-    on g.studentsdcid = sd.studentsdcid
-    and g.discipline_id = sd.id
-    and {{ union_dataset_join_clause(left_alias="g", right_alias="sd") }}
-    and sd.degree_plan_section = 'Discipline'
-left join
-    {{ ref("int_powerschool__gpprogresssubject") }} as ss
-    on g.studentsdcid = ss.studentsdcid
-    and g.subject_id = ss.id
-    and {{ union_dataset_join_clause(left_alias="g", right_alias="ss") }}
-    and ss.degree_plan_section = 'Subject'
 where
     e.academic_year = {{ var("current_academic_year") }}
     and e.rn_year = 1

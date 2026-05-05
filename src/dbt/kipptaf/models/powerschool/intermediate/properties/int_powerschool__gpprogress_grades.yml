@@ -3,8 +3,10 @@ models:
     description: >
       One row per grade record per grad plan subject slot per student. Earned
       rows join to storedgrades (Y1 storecode); Enrolled rows join to
-      base_powerschool__final_grades for the current year. Drives the grain of
-      the grad plan tracking Tableau extract.
+      base_powerschool__final_grades for the current year. Plan, discipline, and
+      subject credit totals are joined from stg_powerschool__gpprogresssubject
+      at the outer level. Drives the grain of the grad plan tracking Tableau
+      extract.
     data_tests:
       - dbt_utils.unique_combination_of_columns:
           arguments:
@@ -101,7 +103,52 @@ models:
           Credits available for this course toward the grad plan slot.
         data_type: float64
       - name: earned_credits
-        description:
+        description: >
           Credits earned; for enrolled rows, zero when letter grade starts with
           F.
+        data_type: float64
+      - name: plan_required_credits
+        description: Credits required to satisfy the grad plan.
+        data_type: float64
+      - name: plan_enrolled_credits
+        description: Credits currently enrolled toward the plan.
+        data_type: float64
+      - name: plan_requested_credits
+        description: Credits requested toward the plan.
+        data_type: float64
+      - name: plan_earned_credits
+        description: Credits earned toward the plan.
+        data_type: float64
+      - name: plan_waived_credits
+        description: Credits waived toward the plan.
+        data_type: float64
+      - name: discipline_required_credits
+        description: Credits required to satisfy this discipline.
+        data_type: float64
+      - name: discipline_enrolled_credits
+        description: Credits currently enrolled toward this discipline.
+        data_type: float64
+      - name: discipline_requested_credits
+        description: Credits requested toward this discipline.
+        data_type: float64
+      - name: discipline_earned_credits
+        description: Credits earned toward this discipline.
+        data_type: float64
+      - name: discipline_waived_credits
+        description: Credits waived toward this discipline.
+        data_type: float64
+      - name: subject_required_credits
+        description: Credits required to satisfy this subject slot.
+        data_type: float64
+      - name: subject_enrolled_credits
+        description: Credits currently enrolled toward this subject slot.
+        data_type: float64
+      - name: subject_requested_credits
+        description: Credits requested toward this subject slot.
+        data_type: float64
+      - name: subject_earned_credits
+        description: Credits earned toward this subject slot.
+        data_type: float64
+      - name: subject_waived_credits
+        description: Credits waived toward this subject slot.
         data_type: float64
