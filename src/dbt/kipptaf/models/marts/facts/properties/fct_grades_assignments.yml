@@ -75,8 +75,8 @@ models:
       - name: due_date_key
         data_type: date
         description: >-
-          The date the assignment is due. Defaults to Default is the system date
-          + 1 day. Indexed.
+          The date the assignment is due. Defaults to the system date + 1 day.
+          Indexed.
 
         config:
           meta:
