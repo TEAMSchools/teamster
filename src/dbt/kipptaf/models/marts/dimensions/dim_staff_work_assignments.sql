@@ -58,6 +58,16 @@ select
     wa.worker_time_profile__time_and_attendance_indicator
     as is_time_and_attendance_active,
     wa.worker_time_profile__time_zone_code as time_zone_code,
+
+    if(
+        wa.actual_start_date <= current_date('{{ var("local_timezone") }}')
+        and (
+            wa.termination_date is null
+            or wa.termination_date >= current_date('{{ var("local_timezone") }}')
+        ),
+        true,
+        false
+    ) as is_current,
 from work_assignments as wa
 left join workers as w on wa.associate_oid = w.associate_oid
 left join employee_numbers as en on w.worker_id__id_value = en.adp_associate_id
