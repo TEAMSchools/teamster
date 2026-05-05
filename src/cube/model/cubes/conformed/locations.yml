@@ -21,18 +21,22 @@ cubes:
       - name: location_name
         sql: "{CUBE}.`name`"
         type: string
+        public: true
 
       - name: abbreviation
         sql: abbreviation
         type: string
+        public: true
 
       - name: grade_band
         sql: grade_band
         type: string
+        public: true
 
       - name: campus
         sql: campus
         type: string
+        public: true
 
       - name: is_campus
         sql: is_campus
@@ -41,3 +45,4 @@ cubes:
       - name: city
         sql: city
         type: string
+        public: true

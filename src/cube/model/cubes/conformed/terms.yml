@@ -16,14 +16,17 @@ cubes:
       - name: term_type
         sql: "{CUBE}.`type`"
         type: string
+        public: true
 
       - name: term_code
         sql: term_code
         type: string
+        public: true
 
       - name: term_name
         sql: term_name
         type: string
+        public: true
 
       - name: academic_year
         sql: academic_year
