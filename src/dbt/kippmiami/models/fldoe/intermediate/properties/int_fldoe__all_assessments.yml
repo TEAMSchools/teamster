@@ -8,24 +8,41 @@ models:
     columns:
       - name: test_code
         data_type: string
+        description: State assessment test code (e.g. ELA03, ALG01, ELAGP).
       - name: academic_year
         data_type: int64
+        description: Academic year the assessment was administered.
       - name: administration_window
         data_type: string
+        description: Assessment administration window (PM1, PM2, or PM3).
       - name: season
         data_type: string
+        description: >
+          Testing season derived from administration window (Fall, Winter,
+          Spring). We only use Spring for official reporting.
       - name: discipline
         data_type: string
+        description: Subject discipline category (Math, ELA, Science, etc.).
       - name: assessment_subject
         data_type: string
+        description: Full assessment subject name as reported by FLDOE.
       - name: scale_score
         data_type: int64
+        description: Student's raw scale score on the assessment.
       - name: achievement_level
         data_type: string
+        description: >
+          Achievement level label as reported by FLDOE (e.g. 'Level 1', 'Level
+          3').
       - name: is_proficient
         data_type: boolean
+        description:
+          Whether the student scored at or above the proficiency threshold.
       - name: assessment_grade
         data_type: string
+        description: >
+          Grade level of the assessment. Ideally, it should match a student's
+          enrolled grade.
       - name: achievement_level_int
         data_type: int64
         description: >
@@ -52,8 +69,10 @@ models:
           assessment_subject).
       - name: student_id
         data_type: string
+        description: Student identifier from the source system.
       - name: assessment_name
         data_type: string
+        description: Full assessment name (e.g. FAST, FSA, EOC).
       - name: illuminate_subject
         data_type: string
         description: >

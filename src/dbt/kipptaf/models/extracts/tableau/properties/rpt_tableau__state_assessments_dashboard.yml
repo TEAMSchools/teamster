@@ -8,46 +8,68 @@ models:
     columns:
       - name: academic_year
         data_type: int64
+        description: Academic year the assessment was administered.
       - name: academic_year_display
         data_type: string
+        description: Academic year formatted for display (e.g. 2024-25).
       - name: region
         data_type: string
+        description: KIPP region of the student's enrollment.
       - name: state
         data_type: string
         description: State element of address.
       - name: schoolid
         data_type: int64
+        description: The School_Number of the associated Schools record.
       - name: school
         data_type: string
+        description: School abbreviation or short identifier.
       - name: school_name
         data_type: string
+        description: Full name of the school.
       - name: school_level
         data_type: string
         description: School level of the student's enrollment (ES, MS, or HS).
       - name: student_number
         data_type: int64
+        description: Student Number assigned by the school. Indexed.
       - name: state_studentnumber
         data_type: string
+        description: >
+          The state-assigned student number for the student. In most cases, this
+          number should stay the same from school to school.
       - name: student_first_name
         data_type: string
+        description: Students' first name.
       - name: student_middle_name
         data_type: string
+        description: Student's middle name.
       - name: student_last_name
         data_type: string
+        description: Students last name.
       - name: student_name
         data_type: string
+        description: Last, First, Mi. Indexed.
       - name: grade_level
         data_type: int64
+        description: >
+          The grade the student is in. Since this is an integer: 0=Kindergarten
+          1, -2=Preschool. Indexed.
       - name: cohort
         data_type: int64
+        description: Graduation cohort year for the student.
       - name: enroll_status
         data_type: int64
+        description: The enrollment status of the student.
       - name: gender
         data_type: string
+        description: M=Male F=Female. Indexed.
       - name: lunch_status
         data_type: string
+        description: Student's federal lunch program eligibility status.
       - name: gifted_and_talented
         data_type: string
+        description: Gifted and talented program designation for the student.
       - name: ms_attended
         data_type: string
         description: >
@@ -63,34 +85,59 @@ models:
           Number of years the student has been enrolled in the KIPP network.
       - name: race_ethnicity
         data_type: string
+        description: >
+          Heritage background of a student. The codes assigned here are stored
+          in the Gen Table [6]Cat=Ethnicity. These are set in school setup.
+          Categorical mapping of ethnicity.
       - name: lep_status
         data_type: boolean
+        description: Student Limited English Proficiency status.
       - name: is_504
         data_type: boolean
+        description: Whether the student has a 504 plan.
       - name: iep_status
         data_type: string
+        description: >
+          IEP status label — 'Has IEP' when studentwithdisabilities is 'IEP' or
+          'B', otherwise 'No IEP'.
       - name: dob
         data_type: date
+        description: Date of birth.
       - name: assessment_name
         data_type: string
+        description: Full assessment name (e.g. FAST, FSA, EOC, NJSLA, NJGPA).
       - name: discipline
         data_type: string
+        description: Subject discipline category (Math, ELA, Science, etc.).
       - name: subject
         data_type: string
+        description: Full assessment subject name as reported by the state.
       - name: test_code
         data_type: string
+        description: State assessment test code (e.g. ELA03, ALG01, ELAGP).
       - name: test_grade
         data_type: int64
+        description: Numeric grade level at which the test was taken.
       - name: admin
         data_type: string
+        description:
+          Testing administration period; reserved word alias for Tableau.
       - name: season
         data_type: string
+        description: >
+          Testing season derived from administration window (Fall, Winter,
+          Spring). We only use Spring for official reporting.
       - name: score
         data_type: numeric
+        description: Student's scale score on the assessment.
       - name: performance_band
         data_type: string
+        description:
+          Achievement level label as reported by the state assessment.
       - name: performance_band_level
         data_type: int64
+        description:
+          Numeric performance band level derived from the achievement level.
       - name: performance_band_group_label
         data_type: string
         description: >
@@ -106,6 +153,8 @@ models:
           derived from achievement_level strings.
       - name: is_proficient
         data_type: boolean
+        description:
+          Whether the student scored at or above the proficiency threshold.
       - name: results_type
         data_type: string
         description: >
@@ -113,8 +162,14 @@ models:
           for the sources used in this model.
       - name: proficiency_city
         data_type: float64
+        description: >
+          Percent proficient in the city cohort for the same test, grade, and
+          year, from the comparison demographics source.
       - name: proficiency_state
         data_type: float64
+        description: >
+          Percent proficient statewide for the same test, grade, and year, from
+          the comparison demographics source.
       - name: proficiency_neighborhood_schools
         data_type: float64
         description: >
@@ -137,37 +192,57 @@ models:
           test, grade, and year, from the comparison demographics source.
       - name: assessment_grade_level
         data_type: int64
+        description:
+          Numeric grade level associated with the assessment test code.
       - name: grade_goal
         data_type: float64
+        description: Target percent proficient for this grade level.
       - name: school_goal
         data_type: float64
+        description: Target percent proficient for this school.
       - name: region_goal
         data_type: float64
+        description: Target percent proficient for this region.
       - name: organization_goal
         data_type: float64
+        description: Organization-wide target percent proficient.
       - name: assessment_band_goal
         data_type: float64
         description: Target percent proficient for this assessment band.
       - name: nj_student_tier
         data_type: string
+        description:
+          NJ state assessment intervention tier assigned to the student.
       - name: tutoring_nj
         data_type: boolean
+        description:
+          Whether the student is enrolled in NJ state assessment tutoring.
       - name: iready_proficiency_eoy
         data_type: string
+        description: First non-null of iready_proficiency at end of year.
       - name: teachernumber
         data_type: string
+        description: The number the district assigns to track the teacher.
       - name: teacher_name
         data_type: string
+        description:
+          Full name of the teacher associated with the student's enrollment.
       - name: course_number
         data_type: string
+        description: The course number associated with this section. Indexed.
       - name: course_name
         data_type: string
+        description: The name of the course, such as Algebra.
       - name: school_current
         data_type: string
+        description: School name for the student's current-year enrollment.
       - name: teachernumber_current
         data_type: string
+        description:
+          Teacher number for the student's current-year course section.
       - name: teacher_name_current
         data_type: string
+        description: Teacher name for the student's current-year course section.
       - name: grade_band
         data_type: string
         description: >
