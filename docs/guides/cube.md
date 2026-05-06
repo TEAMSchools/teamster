@@ -36,19 +36,20 @@ A Cube Cloud deployment has two contexts:
   different branches. Suspends after 10 minutes of inactivity by default; toggle
   **always active** in Settings → Staging Environments to keep a branch live for
   multi-day stakeholder review.
-- **Development mode** — the interactive UI session in Cube Cloud. Used for
-  authoring and testing; switching branches here activates that branch's staging
-  environment.
+
+**Development mode** is the interactive UI session in Cube Cloud (not a separate
+environment — it targets whichever branch is currently active in the UI).
+Switching branches in development mode activates that branch's staging
+environment.
 
 ### How KIPP uses them
 
 One deployment covers everything:
 
-| Context     | What it is                                        | Tracks                                      |
-| ----------- | ------------------------------------------------- | ------------------------------------------- |
-| Production  | Production environment                            | `main`, auto-redeploys on merge             |
-| Staging     | Per-branch staging environments, separate API URL | Any branch, multiple active simultaneously  |
-| Development | Interactive dev mode in Cube Cloud UI             | Any branch, activates that branch's staging |
+| Context    | What it is                                        | Tracks                                     |
+| ---------- | ------------------------------------------------- | ------------------------------------------ |
+| Production | Production environment                            | `main`, auto-redeploys on merge            |
+| Staging    | Per-branch staging environments, separate API URL | Any branch, multiple active simultaneously |
 
 Staging environments are how analysts test feature branches, reviewers validate
 changes, and stakeholders preview models before merge — all within one
@@ -60,7 +61,7 @@ deployment, with no additional infrastructure.
 
 ```bash
 git fetch origin main && git merge origin/main
-git checkout -b cbini/feat/claude-my-cube-change
+git checkout -b you/feat/my-cube-change
 ```
 
 ### 2. Edit cube models in VS Code
@@ -88,9 +89,8 @@ see [Local Dev](#local-dev) for setup.
 
 ### 4. Test in Cube Cloud
 
-Push your branch, then switch to it using the branch switcher in Cube Cloud's
-development mode — either via VS Code's git branch switcher or directly in the
-Cube Cloud UI. Cube Cloud activates a staging environment for the branch
+Push your branch, then switch to it in the Cube Cloud UI's development mode
+branch switcher. Cube Cloud activates a staging environment for the branch
 automatically.
 
 Test in the Cube Cloud Playground. Your real Google Workspace group membership
@@ -147,8 +147,8 @@ When a business user needs to validate changes before merge:
 
 1. `cp src/cube/.env.example src/cube/.env`
 2. Fill in `CUBE_GROUP_MAP` with your email and the groups you want to simulate:
-   ```bash
-   CUBE_GROUP_MAP={"you@apps.teamschools.org":["cube-network-detail"]}
+   ```text
+   CUBE_GROUP_MAP='{"you@apps.teamschools.org":["cube-network-detail"]}'
    ```
 3. Run the **Cube: Dev Server** VS Code task (`Ctrl+Shift+P` → Tasks: Run Task)
 4. Playground opens at `http://localhost:4000`
@@ -243,8 +243,8 @@ need a Cube API key from the data team before getting started.
    window), then reopen. A tools/hammer icon in the bottom-right of the chat
    input confirms the server is connected.
 
-!!! warning "Keep your API key private. Treat it like a password — don't share
-your config file with anyone outside the pilot group."
+!!! warning "Keep your API key private." Treat it like a password — don't share
+your config file with anyone outside the pilot group.
 
 ### Claude Code (VS Code)
 
@@ -396,9 +396,9 @@ Performed in the Cube Cloud UI by an admin:
    - `CUBEJS_DB_BQ_CREDENTIALS` — service account JSON (base64-encoded)
    - `GOOGLE_DIRECTORY_SA_KEY` — Admin Directory API service account
      (base64-encoded)
-   - `GOOGLE_DIRECTORY_SA_SUBJECT` — email of the Workspace super-admin that
-     granted the service account domain-wide delegation (e.g.
-     `admin@apps.teamschools.org`)
+   - `GOOGLE_DIRECTORY_SA_SUBJECT` — email of the dedicated Workspace admin
+     account used as the impersonation subject (e.g.
+     `cube-service@apps.teamschools.org`)
    - `CUBEJS_SQL_SUPER_USER=cube-superset-service` — SQL API super-user for
      Superset user impersonation (follow-up integration)
 
