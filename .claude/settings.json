@@ -102,7 +102,8 @@
       "Skill(commit-commands:commit:*)",
       "Skill(dbt:using-dbt-for-analytics-engineering:*)",
       "Write(//workspaces/teamster/.claude/scratch/**)",
-      "Write(//workspaces/teamster/.worktrees/**)"
+      "Write(//workspaces/teamster/.worktrees/**)",
+      "mcp__cube-mcp-server__chat"
     ],
     "deny": [
       "Bash(* gcloud *)",
