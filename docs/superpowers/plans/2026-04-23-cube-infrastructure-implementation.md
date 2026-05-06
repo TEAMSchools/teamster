@@ -145,7 +145,7 @@ contextToGroups: async ({ securityContext }) => {
       credentials: JSON.parse(
         Buffer.from(process.env.GOOGLE_DIRECTORY_SA_KEY, "base64").toString(),
       ),
-      scopes: ["https://www.googleapis.com/auth/admin.directory.group.member.readonly"],
+      scopes: ["https://www.googleapis.com/auth/admin.directory.group.readonly"],
       clientOptions: { subject: process.env.GOOGLE_DIRECTORY_SA_SUBJECT },
     });
     const admin = google.admin({ version: "directory_v1", auth });

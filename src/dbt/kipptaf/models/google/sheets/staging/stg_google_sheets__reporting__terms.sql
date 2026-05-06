@@ -8,7 +8,7 @@ select
         then 'Camden'
         when region in ('KIPP Miami', 'Miami')
         then 'Miami'
-        when region in ('KIPP Paterson')
+        when region in ('KIPP Paterson', 'Paterson')
         then 'Paterson'
     end as city,
 

@@ -135,6 +135,13 @@ to `'f'`; `stg_schoolmint_grow__rubrics__measurement_groups__measurements` and
 archived rubrics/measurements still resolve. Don't re-add the filter to those
 two models without understanding the FK-coverage tradeoff.
 
+**`stg_google_sheets__people__locations` column naming**: `location_region`
+holds long-form entity names (`TEAM Academy Charter School`,
+`KIPP Cooper Norcross Academy`, `KIPP Miami`, `KIPP Paterson`); `city` holds the
+short canonical names (`Newark` / `Camden` / `Miami` / `Paterson`). For region
+lookups by short name, use `city`. For mapping `_dbt_source_project` to region,
+use `dim_regions.dagster_code_location`.
+
 ## Cross-Project Refs
 
 Sources models from: `powerschool`, `deanslist`, `edplan`, `iready`, `overgrad`,

@@ -12,55 +12,69 @@ cubes:
       - name: date_day
         sql: date_timestamp
         type: time
+        public: true
 
       - name: academic_year
         sql: academic_year
         type: number
+        public: true
 
       - name: fiscal_year
         sql: fiscal_year
         type: number
+        public: true
 
       - name: year_number
         sql: year_number
         type: number
+        public: true
 
       - name: quarter_number
         sql: quarter_number
         type: number
+        public: true
 
       - name: month_number
         sql: month_number
         type: number
+        public: true
 
       - name: month_name
         sql: month_name
         type: string
+        public: true
 
       - name: day_of_week
         sql: day_of_week
         type: number
+        public: true
 
       - name: day_of_week_name
         sql: day_of_week_name
         type: string
+        public: true
 
       - name: is_weekday
         sql: is_weekday
         type: boolean
+        public: true
 
       - name: school_week_start_date
         sql: CAST(school_week_start_date AS TIMESTAMP)
         type: time
+        public: true
 
       - name: school_week_end_date
         sql: CAST(school_week_end_date AS TIMESTAMP)
         type: time
+        public: true
 
       - name: calendar_week_start_date
         sql: CAST(calendar_week_start_date AS TIMESTAMP)
         type: time
+        public: true
 
       - name: calendar_week_end_date
         sql: CAST(calendar_week_end_date AS TIMESTAMP)
         type: time
+        public: true

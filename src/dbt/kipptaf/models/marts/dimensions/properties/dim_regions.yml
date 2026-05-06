@@ -36,6 +36,13 @@ models:
         description: >-
           US state (NJ or FL).
 
+      - name: dagster_code_location
+        data_type: string
+        description: >-
+          Dagster code-location identifier (e.g., `kippnewark`, `kippcamden`).
+          Inverse of `business_unit_code`. Join key for marts that read
+          `_dbt_source_project` on union models and need to derive a region.
+
       - name: timezone
         data_type: string
         description: >-

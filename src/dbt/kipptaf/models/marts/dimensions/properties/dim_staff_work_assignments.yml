@@ -1,16 +1,19 @@
 models:
   - name: dim_staff_work_assignments
     description: >-
-      Staff work assignment dimension. One row per ADP work assignment (current
-      state only). Contains stable, low-churn assignment-level scalars: position
-      identifiers, flags, FTE, payroll fields, dates, pay cycle, standard hours,
-      wage law coverage, and worker time profile. Employee number is resolved
-      via LEFT JOIN to stg_people__employee_numbers (filtered to active number
-      records), so staff_key and employee_number may be null for work
-      assignments whose associate_oid has no active number mapping. High-churn
-      attributes (assignment status, job title, worker type, location, org
-      units, reports-to, compensation) are tracked in separate Type 2 child
-      models that FK to this via work_assignment_key.
+      Staff work assignment dimension. One row per ADP work assignment
+      (`item_id`), carrying the latest-known worker-version's attributes —
+      includes currently active assignments, pending future hires, and
+      historical/terminated assignments. Use the `is_current` boolean to filter
+      to assignments active today. Contains stable, low-churn assignment-level
+      scalars: position identifiers, flags, FTE, payroll fields, dates, pay
+      cycle, standard hours, wage law coverage, and worker time profile.
+      Employee number is resolved via LEFT JOIN to stg_people__employee_numbers
+      (filtered to active number records), so staff_key and employee_number may
+      be null for work assignments whose associate_oid has no active number
+      mapping. High-churn attributes (assignment status, job title, worker type,
+      location, org units, reports-to, compensation) are tracked in separate
+      Type 2 child models that FK to this via work_assignment_key.
     columns:
       - name: work_assignment_key
         data_type: string
@@ -178,3 +181,12 @@ models:
         description: >-
           IANA time zone code for this work assignment's time-and-attendance
           clock.
+
+      - name: is_current
+        data_type: boolean
+        description: >-
+          TRUE when today falls within this work assignment's actual_start_date
+          through termination_date range (termination_date NULL is treated as
+          open-ended). FALSE for pending future hires and ended assignments. Use
+          this flag to filter the dim to today's active assignments; leave
+          unfiltered to include pending and historical rows.
