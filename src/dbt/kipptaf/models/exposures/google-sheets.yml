@@ -765,6 +765,20 @@ exposures:
           kinds:
             - googlesheets
 
+  - name: rpt_gsheets__grad_plan_tracking
+    label: Grad Plan Tracking
+    type: analysis
+    owner:
+      name: Data Team
+    url: https://docs.google.com/spreadsheets/d/1QBe6NQ7aZF5Z_3_G4BMbiXsgTacmlH4QKPKcsxmtygI
+    depends_on:
+      - ref("rpt_gsheets__grad_plan_tracking")
+    config:
+      meta:
+        dagster:
+          kinds:
+            - googlesheets
+
   # - name: hro_2425_renewal_workbook_data_team_workspace
   #   label: HRO 24-25 Renewal Workbook - Data Team Workspace
   #   type: application

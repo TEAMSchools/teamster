@@ -1,5 +1,5 @@
 models:
-  - name: rpt_tableau__grad_plan_tracking
+  - name: rpt_gsheets__grad_plan_tracking
     description: >
       Grad plan tracking extract for Tableau. One row per student per
       discipline-subject slot in their active grad plan (NJ State Diploma or HS
