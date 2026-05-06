@@ -78,8 +78,10 @@ uv run dbt compile --project-dir src/dbt/kipptaf
 You only need this when dbt model definitions change. If you are only editing
 Cube YAML files, the existing manifest stays valid.
 
-!!! warning "Do not use the Playground Models tab." In dev mode, Cube treats it
-as a live editor and overwrites YAML files. Edit in VS Code only.
+!!! warning "Do not use the Playground Models tab."
+
+    In dev mode, Cube treats it as a live editor and overwrites YAML files.
+    Edit in VS Code only.
 
 ### 3. Test locally
 
