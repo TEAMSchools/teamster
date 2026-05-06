@@ -9,8 +9,7 @@ for all downstream consumers.
 **Jump to:** [Concepts](#concepts) ·
 [Development Workflow](#development-workflow) ·
 [Review and Staging](#review-and-staging) · [Local Dev](#local-dev) ·
-[Using Cube with Claude](#using-cube-with-claude) ·
-[Admin Setup](#admin-setup)
+[Using Cube with Claude](#using-cube-with-claude) · [Admin Setup](#admin-setup)
 
 ## Concepts
 
@@ -240,43 +239,19 @@ need a Cube API key from the data team before getting started.
    If your config already has content, add `mcpServers` alongside the existing
    keys — don't replace anything.
 
-4. **Restart Claude Desktop.** Press `Cmd+Q` to fully quit (don't just close
-   the window), then reopen. A tools/hammer icon in the bottom-right of the chat
+4. **Restart Claude Desktop.** Press `Cmd+Q` to fully quit (don't just close the
+   window), then reopen. A tools/hammer icon in the bottom-right of the chat
    input confirms the server is connected.
 
-!!! warning "Keep your API key private. Treat it like a password — don't share your config file with anyone outside the pilot group."
+!!! warning "Keep your API key private. Treat it like a password — don't share
+your config file with anyone outside the pilot group."
 
 ### Claude Code (VS Code)
 
-For developers already working in the Codespace, add the Cube MCP server to
-your user-level Claude Code settings so the token stays out of the committed
-`.mcp.json`:
-
-1. Open `~/.claude/settings.json` (create it if it doesn't exist).
-
-2. Add the `mcpServers` block:
-
-   ```json
-   {
-     "mcpServers": {
-       "cube-mcp-server": {
-         "command": "npx",
-         "args": [
-           "-y",
-           "mcp-remote",
-           "https://ai.gcp-us-central1.cubecloud.dev/api/mcp",
-           "--transport",
-           "http"
-         ],
-         "env": {
-           "CUBE_TOKEN": "[YOUR-API-KEY]"
-         }
-       }
-     }
-   }
-   ```
-
-3. Restart Claude Code. The `cube-mcp-server` will appear in the MCP tools list.
+In the Codespace, the Cube MCP server is already configured in `.mcp.json` — no
+manual setup required. When Claude Code first tries to use it, you'll be
+prompted to OAuth into Cube Cloud. Approve the connection and you're ready to
+query.
 
 ### Using Cube in Claude
 
