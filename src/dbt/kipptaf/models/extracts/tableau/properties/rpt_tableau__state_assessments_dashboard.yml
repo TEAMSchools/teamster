@@ -1,5 +1,10 @@
 models:
   - name: rpt_tableau__state_assessments_dashboard
+    description: >
+      Tableau extract joining state assessment results (NJSLA and FLDOE FAST)
+      with student enrollment demographics, performance-band goals, and
+      comparison proficiency rates from city, state, and neighborhood school
+      benchmarks. One row per student per assessment per academic year.
     columns:
       - name: academic_year
         data_type: int64
@@ -9,6 +14,7 @@ models:
         data_type: string
       - name: state
         data_type: string
+        description: State element of address.
       - name: schoolid
         data_type: int64
       - name: school
@@ -17,6 +23,7 @@ models:
         data_type: string
       - name: school_level
         data_type: string
+        description: School level of the student's enrollment (ES, MS, or HS).
       - name: student_number
         data_type: int64
       - name: state_studentnumber
@@ -43,10 +50,17 @@ models:
         data_type: string
       - name: ms_attended
         data_type: string
+        description: >
+          Abbreviation of the middle school the student attended, derived from
+          the student's enrollment history.
       - name: advisory
         data_type: string
+        description:
+          Categorical mapping of advisor_lastfirst, advisory_name, school_level.
       - name: year_in_network
         data_type: int64
+        description:
+          Number of years the student has been enrolled in the KIPP network.
       - name: race_ethnicity
         data_type: string
       - name: lep_status
@@ -79,24 +93,48 @@ models:
         data_type: int64
       - name: performance_band_group_label
         data_type: string
+        description: >
+          Performance band group label derived from the upstream assessment
+          model: for NJSLA, levels 1-2 = 'Not Proficient (1-2)', level 3 =
+          'Bubble (3)', level 4+ = 'Proficient (4-5)'; for FAST, level 1 = 'Not
+          Proficient (1)', level 2 = 'Bubble (2)', level 3+ = 'Proficient
+          (3-5)'.
       - name: aligned_performance_band_group
         data_type: string
+        description: >
+          Aligned performance band group using level labels (e.g. Lvl 1–Lvl 5)
+          derived from achievement_level strings.
       - name: is_proficient
         data_type: boolean
       - name: results_type
         data_type: string
+        description: >
+          Indicates whether scores are actual or preliminary; always 'Actual'
+          for the sources used in this model.
       - name: proficiency_city
         data_type: float64
       - name: proficiency_state
         data_type: float64
       - name: proficiency_neighborhood_schools
         data_type: float64
+        description: >
+          Percent proficient among neighborhood schools for the same test,
+          grade, and year, from the comparison demographics source.
       - name: total_students_city
         data_type: float64
+        description: >
+          Total number of students tested in the city cohort for this test,
+          grade, and year, from the comparison demographics source.
       - name: total_students_state
         data_type: float64
+        description: >
+          Total number of students tested statewide for this test, grade, and
+          year, from the comparison demographics source.
       - name: total_students_neighborhood_schools
         data_type: float64
+        description: >
+          Total number of students tested among neighborhood schools for this
+          test, grade, and year, from the comparison demographics source.
       - name: assessment_grade_level
         data_type: int64
       - name: grade_goal
@@ -109,6 +147,7 @@ models:
         data_type: float64
       - name: assessment_band_goal
         data_type: float64
+        description: Target percent proficient for this assessment band.
       - name: nj_student_tier
         data_type: string
       - name: tutoring_nj
@@ -131,5 +170,12 @@ models:
         data_type: string
       - name: grade_band
         data_type: string
+        description: >
+          Assessment grade band: 'HS' for high-school-level test codes (ALG02,
+          GEO01, MATGP, ELA09–11, ELAGP, SCI11, and ALG01 grade 8+), '3-8' for
+          all others.
       - name: most_recent_grade_level
         data_type: int64
+        description: >
+          The highest grade level the student has reached across all of their
+          enrollment records, derived via window function over student_number.

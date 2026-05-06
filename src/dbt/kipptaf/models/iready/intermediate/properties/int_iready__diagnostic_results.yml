@@ -292,6 +292,9 @@ models:
         description: Derived from code.
       - name: iready_proficiency
         data_type: string
+        description: >
+          Proficiency band derived from overall_relative_placement_int: values
+          1-2 = 'Below/Far Below', 3 = 'Approaching', 4+ = 'At/Above'.
       - name: scale_points_to_proficiency
         data_type: int64
         description: Conditional on most_recent_overall_scale_score, scale_low.

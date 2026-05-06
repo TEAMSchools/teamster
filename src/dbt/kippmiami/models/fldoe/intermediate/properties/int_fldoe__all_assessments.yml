@@ -1,5 +1,10 @@
 models:
   - name: int_fldoe__all_assessments
+    description: >
+      District-level union of FLDOE assessment results (EOC, FAST, Science, and
+      FSA) for KIPP Miami, with standardized metadata columns (results_type,
+      district_state, illuminate_subject, fast_aggregated_proficiency) added for
+      use in network-level reporting and demographic comparisons.
     columns:
       - name: test_code
         data_type: string
@@ -23,21 +28,40 @@ models:
         data_type: string
       - name: achievement_level_int
         data_type: int64
+        description: >
+          Numeric achievement level extracted from the achievement_level label
+          (e.g. 3 from 'Level 3').
       - name: results_type
         data_type: string
+        description: Always 'Actual' for FLDOE results (no preliminary scores).
       - name: district_state
         data_type: string
+        description:
+          Network district/state identifier; always 'KTAF FL' for this model.
       - name: admin
         data_type: string
         quote: true
+        description: >
+          Testing administration period (alias for administration_window);
+          reserved word alias for Tableau.
       - name: subject
         data_type: string
         quote: true
+        description:
+          Full assessment subject name as reported by FLDOE (alias for
+          assessment_subject).
       - name: student_id
         data_type: string
       - name: assessment_name
         data_type: string
       - name: illuminate_subject
         data_type: string
+        description: >
+          Standardized subject label for Illuminate/reporting — ELA subjects map
+          to 'Text Study'; Algebra I, Algebra II, and Geometry map to
+          'Mathematics'; all others pass through unchanged.
       - name: fast_aggregated_proficiency
         data_type: string
+        description: >
+          Aggregated proficiency band: level 1 = 'Below/Far Below', level 2 =
+          'Approaching', level 3+ = 'At/Above'.
