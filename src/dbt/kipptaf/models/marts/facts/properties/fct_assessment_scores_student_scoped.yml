@@ -33,21 +33,23 @@ models:
               arguments:
                 to: ref('dim_students')
                 field: student_key
-      - name: assessment_key
+      - name: assessment_administration_key
         data_type: string
         description: >-
-          FK to dim_assessments.
+          FK to dim_assessment_administrations. Identifies the scheduled
+          administration (assessment definition + occurrence context: academic
+          year, test date, administration round) that this score belongs to.
 
         constraints:
           - type: foreign_key
-            to: ref('dim_assessments')
-            to_columns: [assessment_key]
+            to: ref('dim_assessment_administrations')
+            to_columns: [assessment_administration_key]
             warn_unsupported: false
         data_tests:
           - relationships:
               arguments:
-                to: ref('dim_assessments')
-                field: assessment_key
+                to: ref('dim_assessment_administrations')
+                field: assessment_administration_key
       - name: test_date_key
         data_type: date
         description: >-
@@ -64,33 +66,12 @@ models:
               arguments:
                 to: ref('dim_dates')
                 field: date_key
-      - name: academic_year
-        data_type: int64
-        description: >-
-          Academic year the assessment was administered.
-
-      - name: type
-        quote: true
-        data_type: string
-        description: >-
-          Specific score variant (e.g., act_composite, sat_total_score,
-          sat_ebrw, or AP course subject code).
 
       - name: scale_score
         data_type: numeric
         description: >-
           Scale score achieved on this test section. For AP exams, the exam
           grade (1-5).
-
-      - name: administration_round
-        data_type: string
-        description: >-
-          Administration round label. Null for AP exams.
-
-      - name: test_type
-        data_type: string
-        description: >-
-          Official or Practice.
 
       - name: rank
         quote: true
@@ -121,8 +102,3 @@ models:
         description: >-
           Proficiency classification. For AP: Qualified (score >= 3) or Not
           Qualified. Null for college-entrance assessments.
-
-      - name: provider
-        data_type: string
-        description: >-
-          Source provider: college (SAT/ACT/PSAT) or ap.

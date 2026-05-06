@@ -6,12 +6,12 @@ models:
       information as degenerate dimensions. Referring staff resolved to
       dim_staff via the DeansList user's email matched against
       int_people__staff_roster.work_email (nullable — see referring_staff_key).
-      FK to dim_student_enrollments, dim_staff, and dim_dates.
+      FK to dim_student_enrollments, dim_staff, dim_locations, and dim_dates.
     columns:
       - name: behavioral_incident_key
         data_type: string
         description: >-
-          Surrogate key derived from incident_id and _dbt_source_relation.
+          Surrogate key derived from incident_id and _dbt_source_project.
           Primary key for this fact.
         constraints:
           - type: primary_key
@@ -55,6 +55,26 @@ models:
                 to: ref('dim_staff')
                 field: staff_key
 
+      - name: location_key
+        data_type: string
+        description: |
+          Canonical location FK. Resolved upstream in
+          `int_deanslist__incidents` via the canonical master on
+          `deanslist_school_id`. NULL for rows where the DeansList school_id
+          has no canonical mapping.
+        constraints:
+          - type: foreign_key
+            to: ref('dim_locations')
+            to_columns: [location_key]
+            warn_unsupported: false
+        data_tests:
+          - relationships:
+              arguments:
+                to: ref('dim_locations')
+                field: location_key
+              config:
+                severity: error
+
       - name: creation_date_key
         data_type: date
         description: >-
@@ -91,11 +111,6 @@ models:
         data_type: string
         description: >-
           Specific infraction description recorded in DeansList.
-
-      - name: location
-        data_type: string
-        description: >-
-          Physical location within the school where the incident occurred.
 
       - name: context
         data_type: string

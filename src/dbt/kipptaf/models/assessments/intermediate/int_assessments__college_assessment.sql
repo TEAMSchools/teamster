@@ -229,6 +229,7 @@ with
             max_total_score as d
             on s.student_number = d.student_number
             and s.scope = d.scope
+            and s.strategy_case = d.strategy_case
         left join
             alt_superscore as a
             on s.student_number = a.student_number

@@ -78,7 +78,7 @@ def with_powerschool_retry[_T](
     db_resource: PowerSchoolODBCResource,
     log: logging.Logger,
     work_fn: Callable[[oracledb.Connection], _T],
-    max_attempts: int = 3,
+    max_attempts: int = 5,
 ) -> _T:
     """Run a function with a PowerSchool connection, retrying on failure.
 
@@ -92,7 +92,7 @@ def with_powerschool_retry[_T](
         db_resource: PowerSchoolODBCResource with connect() method.
         log: Dagster logger (context.log).
         work_fn: Callable that receives an open connection and returns a result.
-        max_attempts: Total attempts (initial + retries). Defaults to 3.
+        max_attempts: Total attempts (initial + retries). Defaults to 5.
 
     Returns:
         The return value of work_fn.
@@ -192,15 +192,18 @@ def get_query_text(
     """
     # TODO: parameterize sqlalchemy query to resolve bandit/B608
     if column is None:
+        # trunk-ignore(bandit/B608)
         query = f"SELECT COUNT(*) FROM {table}"
     elif end_value is None:
         query = (
+            # trunk-ignore(bandit/B608)
             f"SELECT COUNT(*) FROM {table} "
             f"WHERE {column} >= "
             f"TO_TIMESTAMP('{start_value}', 'YYYY-MM-DD\"T\"HH24:MI:SS.FF6')"
         )
     else:
         query = (
+            # trunk-ignore(bandit/B608)
             f"SELECT COUNT(*) FROM {table} "
             f"WHERE {column} BETWEEN "
             f"TO_TIMESTAMP('{start_value}', 'YYYY-MM-DD\"T\"HH24:MI:SS.FF6') AND "
@@ -498,6 +501,64 @@ def _evaluate_partitioned(
         )
         if result is not None:
             results.append(result)
+    return results
+
+
+def enumerate_partitions_for_schedule(
+    asset_selection: list[AssetsDefinition],
+    limit_monthly_partitions: int = 12,
+) -> list[StalenessResult]:
+    """Enumerate (asset, partition) pairs for a schedule run, without DB access.
+
+    Returns the same StalenessResult shape as evaluate_asset_staleness but
+    skips every COUNT-based staleness probe. Schedules run once per day and
+    already constrain the partition window, so the per-asset Oracle round-trips
+    add no signal — and they are a recurring source of DPY-4024 timeouts on
+    large tables (assignmentscore, pgfinalgrades). The first partition of each
+    TimeWindow definition is skipped to mirror the legacy staleness-walk
+    behaviour (pre-history boundary partition has no data).
+
+    Args:
+        asset_selection: List of Dagster asset definitions to enumerate.
+        limit_monthly_partitions: For MonthlyPartitionsDefinition assets, only
+            include the most recent N partition keys.
+
+    Returns:
+        List of StalenessResult, one per (asset, partition) pair.
+    """
+    results: list[StalenessResult] = []
+
+    for asset in asset_selection:
+        if asset.partitions_def is None:
+            results.append(
+                StalenessResult(
+                    asset_key=asset.key,
+                    partitions_def_identifier=None,
+                    partition_key=None,
+                )
+            )
+            continue
+
+        partitions_def = asset.partitions_def
+        partitions_def_id = partitions_def.get_serializable_unique_identifier()
+        partition_keys = list(partitions_def.get_partition_keys())
+
+        if isinstance(partitions_def, MonthlyPartitionsDefinition):
+            partition_keys = partition_keys[-limit_monthly_partitions:]
+
+        first_partition_key = partitions_def.get_first_partition_key()
+
+        for partition_key in partition_keys:
+            if partition_key == first_partition_key:
+                continue
+            results.append(
+                StalenessResult(
+                    asset_key=asset.key,
+                    partitions_def_identifier=partitions_def_id,
+                    partition_key=partition_key,
+                )
+            )
+
     return results
 
 

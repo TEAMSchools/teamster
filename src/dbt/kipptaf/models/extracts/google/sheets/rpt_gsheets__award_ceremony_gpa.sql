@@ -4,6 +4,7 @@ with
             'Stored' as gpa_type,
 
             co.school_abbreviation,
+            co.grade_level,
             co.student_number,
             co.lastfirst,
 
@@ -20,7 +21,7 @@ with
             on sg.studentid = co.studentid
             and {{ union_dataset_join_clause(left_alias="sg", right_alias="co") }}
             and sg.schoolid = co.schoolid
-            and co.grade_level = 12
+            and co.grade_level >= 9
             and co.rn_year = 1
             and co.enroll_status = 0
             and co.academic_year = {{ var("current_academic_year") }}
@@ -32,6 +33,7 @@ with
             'Live' as gpa_type,
 
             co.school_abbreviation,
+            co.grade_level,
             co.student_number,
             co.lastfirst,
 
@@ -54,7 +56,7 @@ with
             and {{ union_dataset_join_clause(left_alias="fg", right_alias="co") }}
             and fg.schoolid = co.schoolid
             and fg.academic_year = co.academic_year
-            and co.grade_level = 12
+            and co.grade_level >= 9
             and co.rn_year = 1
             and co.enroll_status = 0
         where
@@ -65,6 +67,7 @@ with
     calculations as (
         select
             school_abbreviation,
+            grade_level,
             student_number,
             lastfirst,
             credittype,
@@ -77,11 +80,12 @@ with
         where
             potentialcrhrs != 0
             and credittype in ('ENG', 'MATH', 'SCI', 'SOC', 'WLANG', 'ART', 'PHYSED')
-        group by school_abbreviation, student_number, lastfirst, credittype
+        group by school_abbreviation, grade_level, student_number, lastfirst, credittype
     )
 
 select
     school_abbreviation as school,
+    grade_level,
     student_number,
     lastfirst as student_name,
     eng as english,

@@ -8,9 +8,7 @@ with
         from {{ ref("int_people__staff_roster") }}
     ),
 
-    schools as (
-        select *, from {{ ref("stg_google_sheets__people__location_crosswalk") }}
-    ),
+    schools as (select *, from {{ ref("int_people__location_crosswalk") }}),
 
     form_responses as (
         select
@@ -60,10 +58,14 @@ with
     ),
 
     final as (
-        select roster.*, responses_pivoted.*, schools.region, schools.grade_band,
+        select
+            roster.*,
+            responses_pivoted.*,
+            schools.location_region as region,
+            schools.location_grade_band as grade_band,
         from responses_pivoted
         left join roster on responses_pivoted.respondent_email = roster.google_email
-        left join schools on responses_pivoted.school = schools.name
+        left join schools on responses_pivoted.school = schools.location_name
         where responses_pivoted.item_id not in ('27596233', '669334db')
     )
 

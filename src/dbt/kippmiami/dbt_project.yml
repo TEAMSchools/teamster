@@ -28,6 +28,7 @@ vars:
   cloud_storage_uri_base: gs://teamster-kippmiami/dagster/kippmiami
   powerschool_external_location_root: gs://teamster-kippmiami/dagster/kippmiami/powerschool
   bigquery_external_connection_name: projects/teamster-332318/locations/us/connections/biglake-teamster-gcs
+  focus_schema: dagster_kippmiami_dlt_focus
 
 models:
   kippmiami:
@@ -48,6 +49,11 @@ models:
         staging:
           +contract:
             enforced: true
+  focus:
+    +materialized: table
+    staging:
+      +contract:
+        enforced: true
   deanslist:
     +materialized: table
     staging:

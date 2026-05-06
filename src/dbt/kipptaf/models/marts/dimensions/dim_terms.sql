@@ -1,13 +1,4 @@
-with
-    terms as (select *, from {{ ref("stg_google_sheets__reporting__terms") }}),
-
-    /* exclude school_id = 0 sentinel rows (admin/campus pseudo-locations) so */
-    /* school-level joins resolve to at most one physical school per region */
-    locations_lookup as (
-        select powerschool_school_id, location_name, region,
-        from {{ ref("stg_people__locations") }}
-        where powerschool_school_id <> 0
-    )
+with terms as (select *, from {{ ref("stg_google_sheets__reporting__terms") }})
 
 select
     {{
@@ -23,11 +14,7 @@ select
         )
     }} as term_key,
 
-    if(
-        ll.location_name is not null,
-        {{ dbt_utils.generate_surrogate_key(["ll.location_name"]) }},
-        cast(null as string)
-    ) as location_key,
+    sch.location_key,
 
     t.`type`,
     t.code as term_code,
@@ -40,7 +27,9 @@ select
     t.lockbox_date as data_freeze_date,
     t.is_current,
 from terms as t
+left join {{ ref("dim_regions") }} as dr on t.city = dr.`name`
 left join
-    locations_lookup as ll
-    on t.school_id = ll.powerschool_school_id
-    and t.city = ll.region
+    {{ ref("stg_powerschool__schools") }} as sch
+    on t.school_id = sch.school_number
+    and t.school_id <> 0
+    and dr.dagster_code_location = sch._dbt_source_project

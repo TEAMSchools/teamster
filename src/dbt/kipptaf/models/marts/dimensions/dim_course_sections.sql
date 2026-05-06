@@ -1,9 +1,3 @@
-with
-    locations as (
-        select powerschool_school_id, dagster_code_location, location_name,
-        from {{ ref("stg_people__locations") }}
-    )
-
 select
     {{
         dbt_utils.generate_surrogate_key(
@@ -17,7 +11,7 @@ select
         )
     }} as course_key,
 
-    {{ dbt_utils.generate_surrogate_key(["loc.location_name"]) }} as location_key,
+    sch.location_key,
 
     sec.sections_section_number as identifier,
     sec.sections_expression as period,
@@ -25,6 +19,6 @@ select
 
 from {{ ref("base_powerschool__sections") }} as sec
 left join
-    locations as loc
-    on sec.sections_schoolid = loc.powerschool_school_id
-    and {{ extract_code_location("sec") }} = loc.dagster_code_location
+    {{ ref("stg_powerschool__schools") }} as sch
+    on sec.sections_schoolid = sch.school_number
+    and {{ union_dataset_join_clause(left_alias="sec", right_alias="sch") }}

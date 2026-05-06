@@ -19,8 +19,12 @@ models:
           - type: primary_key
             warn_unsupported: false
         data_tests:
-          - unique
-          - not_null
+          - unique:
+              config:
+                severity: error
+          - not_null:
+              config:
+                severity: error
 
       - name: location_key
         data_type: string

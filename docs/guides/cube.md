@@ -9,6 +9,7 @@ for all downstream consumers.
 **Jump to:** [Concepts](#concepts) ·
 [Development Workflow](#development-workflow) ·
 [Review and Staging](#review-and-staging) · [Local Dev](#local-dev) ·
+[Using Cube with Claude](#using-cube-with-claude) ·
 [Admin Setup](#admin-setup)
 
 ## Concepts
@@ -163,9 +164,148 @@ entirely and must only be used for local dev. The `cube.js` guard relies on
 `NODE_ENV !== "production"` as a second line of defense, but the variable should
 never be configured in Cube Cloud in the first place.
 
+`CUBE_TESTING_USERS` is a pre-Directory-API testing allowlist — set it in Cube
+Cloud env vars only on testing/staging deployments, never on production. Remove
+it from all deployments once Directory API is live and group membership is
+resolved from Google Workspace.
+
 Do **not** use the Cube Playground **Models** tab in dev mode. It overwrites
 YAML files in `model/cubes/` and `model/views/` with auto-generated content,
 discarding hand-authored definitions.
+
+## Using Cube with Claude
+
+The Cube MCP server lets Claude query your organization's data using plain
+English — no SQL required. Once connected, you can ask questions like:
+
+- "What metrics are available?"
+- "Show me ADA by school for this year"
+- "What are the available dimensions in the student cube?"
+
+Claude uses the Cube semantic layer to find and return the right data. You'll
+need a Cube API key from the data team before getting started.
+
+### Claude Desktop
+
+1. **Install Node.js** if you don't have it:
+
+   ```bash
+   node --version
+   ```
+
+   If you see a version number, skip ahead. Otherwise install via Homebrew:
+
+   ```bash
+   brew install node
+   ```
+
+   Then find the full path to `npx` — you'll need it below:
+
+   ```bash
+   which npx
+   ```
+
+2. **Open the config file.** In Claude Desktop, go to **Settings → Developer →
+   Edit Config**. Or navigate directly in Finder:
+
+   ```text
+   ~/Library/Application Support/Claude/claude_desktop_config.json
+   ```
+
+   If the file doesn't exist yet, create it with an empty `{}`.
+
+3. **Add the Cube MCP server.** Replace `[YOUR-API-KEY]` with your key, and
+   update the `command` path if your `npx` location differs:
+
+   ```json
+   {
+     "mcpServers": {
+       "cube-mcp-server": {
+         "command": "/opt/homebrew/bin/npx",
+         "args": [
+           "-y",
+           "mcp-remote",
+           "https://ai.gcp-us-central1.cubecloud.dev/api/mcp",
+           "--transport",
+           "http"
+         ],
+         "env": {
+           "CUBE_TOKEN": "[YOUR-API-KEY]"
+         }
+       }
+     }
+   }
+   ```
+
+   If your config already has content, add `mcpServers` alongside the existing
+   keys — don't replace anything.
+
+4. **Restart Claude Desktop.** Press `Cmd+Q` to fully quit (don't just close
+   the window), then reopen. A tools/hammer icon in the bottom-right of the chat
+   input confirms the server is connected.
+
+!!! warning "Keep your API key private. Treat it like a password — don't share your config file with anyone outside the pilot group."
+
+### Claude Code (VS Code)
+
+For developers already working in the Codespace, add the Cube MCP server to
+your user-level Claude Code settings so the token stays out of the committed
+`.mcp.json`:
+
+1. Open `~/.claude/settings.json` (create it if it doesn't exist).
+
+2. Add the `mcpServers` block:
+
+   ```json
+   {
+     "mcpServers": {
+       "cube-mcp-server": {
+         "command": "npx",
+         "args": [
+           "-y",
+           "mcp-remote",
+           "https://ai.gcp-us-central1.cubecloud.dev/api/mcp",
+           "--transport",
+           "http"
+         ],
+         "env": {
+           "CUBE_TOKEN": "[YOUR-API-KEY]"
+         }
+       }
+     }
+   }
+   ```
+
+3. Restart Claude Code. The `cube-mcp-server` will appear in the MCP tools list.
+
+### Using Cube in Claude
+
+Once connected, toggle Cube MCP on via the **+** or tools menu in your chat,
+then ask questions in plain English:
+
+- "What data do you have access to?"
+- "What metrics can I query?"
+- "Show me [metric] by [dimension] for [time period]"
+
+Claude interprets your question using the Cube semantic layer and returns
+results directly in the chat. No table names, field names, or SQL required.
+
+### Troubleshooting
+
+**"Server disconnected" error** — Claude can't find `npx`. Run `which npx` in
+Terminal and make sure the path in your config matches exactly.
+
+**`npx` not found** — Node.js isn't installed. Follow step 1 above.
+
+**Tools icon doesn't appear after restart** — Your JSON has a formatting error
+(missing comma, mismatched brackets). Paste the file into
+[jsonlint.com](https://jsonlint.com) to check.
+
+**Check the logs** — For any other issue, check the MCP server log:
+
+```bash
+tail -f ~/Library/Logs/Claude/mcp-server-cube-mcp-server.log
+```
 
 ## Admin Setup
 
@@ -223,7 +363,7 @@ and data control → API controls → Domain-wide delegation → Add new**:
 - **Client ID**: the numeric client ID from the service account details page in
   GCP
 - **OAuth scopes**:
-  `https://www.googleapis.com/auth/admin.directory.group.member.readonly`
+  `https://www.googleapis.com/auth/admin.directory.group.readonly`
 
 #### 5. Encode the key and set environment variables
 
@@ -294,4 +434,4 @@ Performed in the Cube Cloud UI by an admin:
 6. The service account for BigQuery needs `roles/bigquery.dataViewer` and
    `roles/bigquery.jobUser` on the `teamster-332318` project
 7. The Admin Directory API service account needs domain-wide delegation scoped
-   to `https://www.googleapis.com/auth/admin.directory.group.member.readonly`
+   to `https://www.googleapis.com/auth/admin.directory.group.readonly`

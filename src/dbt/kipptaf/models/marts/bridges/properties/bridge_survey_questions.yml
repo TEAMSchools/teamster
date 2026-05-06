@@ -52,12 +52,6 @@ models:
               arguments:
                 to: ref('dim_survey_questions')
                 field: survey_question_key
-      - name: shortname
-        data_type: string
-        description: >-
-          Abbreviated identifier for the question within this survey context
-          (e.g., scd_01, Q_1, SF1).
-
       - name: is_required
         data_type: boolean
         description: >-

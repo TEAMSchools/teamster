@@ -1,9 +1,4 @@
 with
-    locations as (
-        select powerschool_school_id, dagster_code_location, location_name,
-        from {{ ref("stg_people__locations") }}
-    ),
-
     comm_log as (
         {{
             dbt_utils.deduplicate(
@@ -32,7 +27,7 @@ select
         dbt_utils.generate_surrogate_key(
             [
                 "ai.student_number",
-                "ai._dbt_source_relation",
+                "enr._dbt_source_relation",
                 "ai.academic_year",
                 "enr.entrydate",
             ]
@@ -76,10 +71,6 @@ inner join
     and ai.academic_year = enr.academic_year
     and {{ union_dataset_join_clause(left_alias="ai", right_alias="enr") }}
     and enr.rn_year = 1
-left join
-    locations as loc
-    on ai.schoolid = loc.powerschool_school_id
-    and {{ extract_code_location("ai") }} = loc.dagster_code_location
 left join
     comm_log as c
     on ai.student_number = c.student_school_id

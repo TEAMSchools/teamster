@@ -32,7 +32,7 @@ with
     )
 
 select
-    {{ dbt_utils.generate_surrogate_key(["i.incident_id", "i._dbt_source_relation"]) }}
+    {{ dbt_utils.generate_surrogate_key(["i.incident_id", "i._dbt_source_project"]) }}
     as behavioral_incident_key,
 
     {{
@@ -56,10 +56,11 @@ select
 
     i.create_ts_academic_year as academic_year,
 
+    i.location_key,
+
     i.category,
     i.category_tier,
     i.infraction as infraction_description,
-    i.location,
     i.context,
     i.status,
     i.referral_tier as referral_category,
