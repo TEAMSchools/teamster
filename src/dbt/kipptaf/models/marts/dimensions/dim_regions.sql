@@ -40,5 +40,19 @@ select
         then 'TAF'
     end as `name`,
 
+    case
+        business_unit_code
+        when 'TEAM'
+        then 'kippnewark'
+        when 'KCNA'
+        then 'kippcamden'
+        when 'KIPP_MIAMI'
+        then 'kippmiami'
+        when 'KPAT'
+        then 'kipppaterson'
+        when 'KIPP_TAF'
+        then 'kipptaf'
+    end as dagster_code_location,
+
     case business_unit_code when 'KIPP_MIAMI' then 'FL' else 'NJ' end as state,
 from bu_xref

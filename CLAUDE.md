@@ -1,41 +1,65 @@
 # CLAUDE.md
 
-## Project Overview
+## Layout
 
-Stack: **Dagster** (orchestration), **dbt** (transformations), **Google
-BigQuery** (warehouse), **GCS** (intermediate storage). Python ≥3.13. Production
-on **GKE** via Dagster Cloud. Dev in **GitHub Codespaces**; secrets injected
-from 1Password at container start.
+```text
+src/
+  teamster/   # Dagster orchestration code (Python)
+  dbt/        # dbt projects, one per warehouse target
+tests/        # pytest suites
+docs/         # MkDocs site (the "docs" folder; NOT CLAUDE.mds)
+.claude/      # Hooks, settings, skills
+```
 
-## Architecture
+**Read the relevant subdirectory CLAUDE.md before any work there** (reading,
+explaining, reviewing, or modifying). Project-wide conventions live in this
+file; domain specifics live in the nearest subdirectory CLAUDE.md.
 
-This file is a **router** — it contains project-wide conventions, then routes to
-subdirectory CLAUDE.md files for domain-specific context. Keep domain-specific
-guidance in the nearest subdirectory CLAUDE.md, not here.
+### Subdirectory CLAUDE.mds
 
-**You MUST read the relevant CLAUDE.md file before doing any work in a
-subdirectory — reading, explaining, reviewing, or modifying code. Do NOT skip
-this step.**
+| Path                                                                              | Covers                                                                              |
+| --------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------- |
+| `src/teamster/CLAUDE.md`                                                          | Dagster code: library/code-location pattern, Python standards, asset key convention |
+| `src/teamster/code_locations/<name>/CLAUDE.md`                                    | Per-district specifics (read before touching that location)                         |
+| `src/dbt/CLAUDE.md` + `src/dbt/<project>/CLAUDE.md`                               | dbt project conventions per warehouse                                               |
+| `tests/CLAUDE.md`                                                                 | Test layout and fixtures                                                            |
+| `.claude/CLAUDE.md`                                                               | Hook protocol, protected paths, scratch dir                                         |
+| `.devcontainer/`, `.github/`, `.k8s/`, `.trunk/`, `scripts/`, `docs/` `CLAUDE.md` | Domain-specific operational context                                                 |
 
 ## Working Conventions
 
-- **PII stays local**: never post PII values, or screenshots/logs containing
-  them, outside the local dev env (PR comments, commits, issues, scheduled-agent
-  outputs, etc.). Local artifacts (`.claude/scratch/`, `.worktrees/`, terminal)
-  are fine. Reference column names, not values; use redacted labels ("Student
-  A") for examples. Aggregates/deidentified ≠ PII.
-
-  dbt tags PII as `config.meta.contains_pii: true` — authoritative but
-  **incomplete**. Untagged columns are PII if they identify a person: IDs
-  (`student_number`, `employee_number`, `ssn`, `state_id`, `local_id`, including
-  source-system aliases like Salesforce kippadb's `school_specific_id`), names
-  (`*_name`), contact (`email`, `phone`, `address`, `street`, `city`, `zip`),
-  `dob`/`birth_date`, guardian/parent fields, free-text `comment`/ `note` on
-  people tables, credentials/tokens. When unsure, treat as PII.
-
-  Quasi-identifiers (`gender`, `race`, `ethnicity`, `home_language`,
-  `grade_level`, `school`, partial dates, zip alone) reidentify in combination —
-  never post two together.
+- **PII stays local.** Never emit PII values (or screenshots/logs containing
+  them) to PR comments, commits, issues, Slack, Asana, scheduled-agent outputs,
+  or any other external surface. Local artifacts (`.claude/scratch/`,
+  `.worktrees/`, terminal) are fine. Substitute redacted labels (`Student A`,
+  `a sample student`) or column-name references. Aggregates / deidentified ≠
+  PII.
+  - **Redaction pass before external writes**: when an external write touches
+    values from local validation work, replace PII values with labels or
+    column-name references before sending.
+  - **What counts as PII** — `config.meta.contains_pii: true` in model YAML is
+    authoritative but **incomplete**. Untagged columns are PII under FERPA's
+    direct-identifier list
+    ([34 CFR §99.3](https://www.ecfr.gov/current/title-34/part-99/section-99.3)):
+    name, SSN, student/employee ID, address, date/place of birth, mother's
+    maiden name, biometric record, plus "other information... linked or linkable
+    to a specific student." Schema mapping: IDs (`student_number`,
+    `employee_number`, `ssn`, `state_id`, `local_id`, source aliases like
+    kippadb `school_specific_id`), names (`*_name`), contact (`email`, `phone`,
+    `address`, `street`, `city`, `zip`), `dob`/`birth_date`, guardian/parent
+    fields, free-text `comment`/`note` on people tables, credentials/tokens.
+    When unsure, consult [PTAC glossary](https://studentprivacy.ed.gov/glossary)
+    or treat as PII.
+  - **Indirect identifiers** — FERPA's "linked or linkable" standard
+    ([34 CFR §99.3](https://www.ecfr.gov/current/title-34/part-99/section-99.3),
+    [PTAC glossary](https://studentprivacy.ed.gov/glossary)) covers combinations
+    of gender, birth date, geographic indicators (school, zip), race/ethnicity,
+    religion, place of birth, education info (grade level, EL status,
+    IEP/504/disability), financial info (FRL status), activities, and other
+    descriptors that allow identification with "reasonable certainty" by someone
+    in the school community. Each field alone may be safe; the combination may
+    not. When unsure, consult the linked guidance or treat the combination as
+    PII.
 
 - **Before writing any spec or plan**: STOP and explicitly ask the user whether
   to open a GitHub issue first. Required for specs/plans; not required for quick
@@ -108,8 +132,11 @@ this step.**
 - **Trunk linting/formatting**: Do not run `trunk fmt` or `trunk check` manually
   — `trunk-fmt-pre-commit` formats at commit time and `trunk-check-pre-push`
   blocks bad pushes, both in the main repo and in worktrees (`core.hooksPath` is
-  shared). The trunk daemon caches in `~/.cache/trunk/repos/` are pruned on
-  Codespace boot via `postStart.sh`.
+  shared). **Pre-commit hook runs `fmt` only**; sqlfluff/yamllint and other
+  check-only linters fire at `pre-push` and in CI. If a session reports "trunk
+  clean" on a SQL/YAML change based on commit hooks alone, run
+  `.trunk/tools/trunk check --force <files>` to verify before claiming the
+  change is lint-clean.
 
 - **Linter**: Use `# trunk-ignore(<linter>/<rule>)` with a reason comment — not
   linter-native disable syntax. Binary:
@@ -126,6 +153,34 @@ this step.**
 
 - **Docs**: "docs" means the `docs/` folder (MkDocs site), not CLAUDE.md files.
 
+## Superpowers skill overrides
+
+- **Spec/plan write order**: When `superpowers:brainstorming` reaches "Write
+  design doc" or `superpowers:writing-plans` reaches "Save plan," pause first
+  and run the issue-and-branch flow: (a) ask whether to open a tracking issue,
+  (b) ask worktree-or-switch, (c) create the branch via
+  `gh issue develop <num> --name <branch>`, (d) enter the worktree or check out
+  the branch, (e) then write to `docs/superpowers/specs/...` or
+  `docs/superpowers/plans/...` on that branch.
+
+- **Worktree consent**: `superpowers:using-git-worktrees` asks "Would you like
+  me to set up an isolated worktree?" — that's the project's "worktree or branch
+  switch?" question. Either answer, the branch must be created via
+  `gh issue develop <num> --name <branch>` so it's linked to the issue. Never
+  `git worktree add -b` or `git checkout -b` standalone.
+
+- **`finishing-a-development-branch` verification gate**: Skip the skill's
+  `npm test / pytest / ...` heuristic. For dbt changes,
+  `uv run dbt build --select <model>+` against the relevant project. For Python
+  changes, `uv run pytest` where tests exist. PR body uses
+  `.github/pull_request_template.md`.
+
+- **Continuous execution exceptions**: `superpowers:subagent-driven-development`
+  and `superpowers:executing-plans` say "do not pause between tasks." Pause
+  anyway to ask the user before (a) opening a tracking issue, (b) creating a
+  branch or worktree, (c) editing any CLAUDE.md file, (d) modifying protected
+  files (hook scripts, `.devcontainer/scripts/`, `.claude/settings*.json`).
+
 ## CLAUDE.md Editing Rules
 
 - **Before editing any CLAUDE.md file**: present the proposed change as a quote
@@ -141,15 +196,11 @@ this step.**
 
 ## MCP Servers
 
-Dagster+ MCP server: `dagster-plus-mcp` package (`dev` group) —
+Dagster+ MCP auth: do not revert `.mcp.json` to `op run` —
+`OP_SERVICE_ACCOUNT_TOKEN` is scrubbed post-boot, so `op run` silently breaks
+after the first Codespace restart. Keep `scripts/dagster-mcp-launch.sh` as the
+launcher. Package internals: see
 [TEAMSchools/dagster-plus-mcp](https://github.com/TEAMSchools/dagster-plus-mcp).
-See that repo's CLAUDE.md for package internals.
-
-Authenticated via `scripts/dagster-mcp-launch.sh` (reads
-`/etc/secret-volume/.op-token`, exchanges for scoped `DAGSTER_CLOUD_API_TOKEN`
-via `op read`, execs). Do not revert to `op run` in `.mcp.json` —
-`OP_SERVICE_ACCOUNT_TOKEN` is scrubbed post-boot by `postStart.sh`, so `op run`
-silently breaks after the first Codespace restart.
 
 - **MCP outages**: If an MCP tool returns "server disconnected" or clearly
   impaired responses, surface to the user before working around with raw `gh` /
@@ -267,10 +318,8 @@ environments by `job_id` / `run_id`. For successful runs, call
 `get_job_run_error` with `warning_only=true` to surface test warnings —
 status=Success does not mean warning-free.
 
-Production env id is **70403104000025** but has no scheduled dbt Cloud jobs
-(Dagster-orchestrated). For job inspection, query Staging env (70403104014899)
-jobs by id; production schemas (`kipptaf_*`) are populated by Dagster, not by
-the dbt Cloud Production env.
+For job inspection, query Staging env (70403104014899) by job id — Production
+env (70403104000025) has no scheduled dbt Cloud jobs.
 
 Job config changes must go through the dbt Cloud UI — no mutation tools exist in
 the MCP. Live step logs (`debug_logs`, `structured_logs`) and

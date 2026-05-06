@@ -27,9 +27,9 @@ select
     t.lockbox_date as data_freeze_date,
     t.is_current,
 from terms as t
+left join {{ ref("dim_regions") }} as dr on t.city = dr.`name`
 left join
     {{ ref("stg_powerschool__schools") }} as sch
     on t.school_id = sch.school_number
     and t.school_id <> 0
-    and lower(concat('kipp', t.city))
-    = regexp_extract(sch._dbt_source_relation, r'(kipp\w+)_')
+    and dr.dagster_code_location = sch._dbt_source_project
