@@ -7,12 +7,10 @@ with
             sc.region,
             sc.powerschool_school_id,
 
-            a.title,
-            a.subject_area,
-            a.scope,
             a.module_code,
-            a.grade_level,
             a.academic_year,
+            a.canonical_assessment_id,
+            a.canonical_administered_at,
 
             rt.code as term_code,
             rt.type as term_type,
@@ -47,16 +45,12 @@ select
         dbt_utils.generate_surrogate_key(
             [
                 "'illuminate'",
-                "title",
-                "subject_area",
-                "scope",
                 "module_code",
-                "grade_level",
-                "cast(administered_at as date)",
+                "cast(canonical_administered_at as date)",
                 "academic_year",
-                "cast(null as string)",
                 "region",
                 "cast(null as string)",
+                "canonical_assessment_id",
                 "cast(null as string)",
             ]
         )

@@ -1,13 +1,13 @@
 with
-    /* Staff/student survey responses from int_surveys__survey_responses
-       (already deduped upstream on survey_id, survey_response_id,
-       respondent_identifier, question_shortname). */
+    /* Staff/student survey responses. PK hashes survey_question_id rather
+       than question_shortname because Alchemer surveys can reuse a
+       question_shortname across multiple internal question_ids. */
     general_responses as (
         select
             sr.survey_id,
             sr.survey_response_id,
+            sr.survey_question_id,
             sr.question_shortname,
-            sr.respondent_identifier,
             sr.answer as response_text,
 
             safe_cast(sr.answer as numeric) as response_value,
@@ -28,11 +28,10 @@ with
     manager_responses as (
         select
             ms.survey_id,
+            ms.survey_question_id,
             ms.question_shortname,
             ms.answer as response_text,
             ms.answer_value as response_value,
-
-            cast(ms.respondent_df_employee_number as string) as respondent_identifier,
 
             coalesce(
                 ms.survey_response_id,
@@ -52,8 +51,8 @@ with
         select
             survey_id,
             survey_response_id,
+            survey_question_id,
             question_shortname,
-            respondent_identifier,
             response_text,
             response_value,
         from general_responses
@@ -61,8 +60,8 @@ with
         select
             survey_id,
             survey_response_id,
+            survey_question_id,
             question_shortname,
-            respondent_identifier,
             response_text,
             response_value,
         from manager_responses
@@ -71,24 +70,12 @@ with
 select
     {{
         dbt_utils.generate_surrogate_key(
-            [
-                "survey_id",
-                "survey_response_id",
-                "respondent_identifier",
-                "question_shortname",
-            ]
+            ["survey_id", "survey_response_id", "survey_question_id"]
         )
     }} as survey_response_key,
 
-    {{
-        dbt_utils.generate_surrogate_key(
-            [
-                "survey_id",
-                "survey_response_id",
-                "respondent_identifier",
-            ]
-        )
-    }} as survey_submission_key,
+    {{ dbt_utils.generate_surrogate_key(["survey_id", "survey_response_id"]) }}
+    as survey_submission_key,
 
     {{ dbt_utils.generate_surrogate_key(["question_shortname"]) }}
     as survey_question_key,

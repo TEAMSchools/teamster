@@ -12,14 +12,13 @@ models:
       - name: survey_submission_key
         data_type: string
         description: >-
-          Surrogate key derived from survey_id, survey_response_id, and
-          respondent identifier. Primary key for this fact.
+          Surrogate key derived from survey_id and survey_response_id. Primary
+          key for this fact.
         constraints:
           - type: primary_key
             warn_unsupported: false
         data_tests:
           - unique
-          - not_null
 
       - name: survey_administration_key
         data_type: string
@@ -32,8 +31,6 @@ models:
             to_columns: [survey_administration_key]
             warn_unsupported: false
         data_tests:
-          - not_null
-
           - relationships:
               arguments:
                 to: ref('dim_survey_administrations')

@@ -11,7 +11,7 @@ models:
       - name: behavioral_incident_key
         data_type: string
         description: >-
-          Surrogate key derived from incident_id and _dbt_source_relation.
+          Surrogate key derived from incident_id and _dbt_source_project.
           Primary key for this fact.
         constraints:
           - type: primary_key

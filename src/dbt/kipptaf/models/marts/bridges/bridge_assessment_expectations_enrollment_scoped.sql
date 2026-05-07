@@ -1,11 +1,9 @@
 with
-    /* The scaffold's `grade_level_id` and `academic_year` columns are
-       transformed (`coalesce(illuminate_grade_level_id, agl.grade_level_id)`
-       and `academic_year_clean` respectively) and don't match the values
-       hashed into `dim_assessment_administrations.assessment_administration_key`,
-       which uses the raw `grade_level` and `academic_year` from
-       int_assessments__assessments. Re-join to int_assessments__assessments
-       to recover the canonical hash inputs. */
+    /* The scaffold's `academic_year` is `academic_year_clean` (+1 vs raw)
+       which doesn't match the value hashed into
+       `dim_assessment_administrations.assessment_administration_key`.
+       Re-join to int_assessments__assessments to recover the raw
+       `academic_year`. The canonical_* columns also flow from this join. */
     expectations as (
         select
             sc.cc_dcid,
@@ -14,12 +12,10 @@ with
             sc.administered_at,
             sc.region,
 
-            a.title,
-            a.subject_area,
-            a.scope,
             a.module_code,
-            a.grade_level,
             a.academic_year,
+            a.canonical_assessment_id,
+            a.canonical_administered_at,
         from {{ ref("int_assessments__scaffold") }} as sc
         inner join
             {{ ref("int_assessments__assessments") }} as a
@@ -50,16 +46,12 @@ select
         dbt_utils.generate_surrogate_key(
             [
                 "'illuminate'",
-                "title",
-                "subject_area",
-                "scope",
                 "module_code",
-                "grade_level",
-                "cast(administered_at as date)",
+                "cast(canonical_administered_at as date)",
                 "academic_year",
-                "cast(null as string)",
                 "region",
                 "cast(null as string)",
+                "canonical_assessment_id",
                 "cast(null as string)",
             ]
         )

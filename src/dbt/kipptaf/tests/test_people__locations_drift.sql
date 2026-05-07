@@ -1,4 +1,15 @@
-{{ config(severity="error") }}
+{{
+    config(
+        severity="error",
+        store_failures=true,
+        store_failures_as="view",
+        meta={
+            "dagster": {
+                "ref": {"name": "stg_google_sheets__people__locations"},
+            },
+        },
+    )
+}}
 
 /* Returns rows when the canonical-grain location master and the alias
    crosswalk drift apart. Two-direction check:

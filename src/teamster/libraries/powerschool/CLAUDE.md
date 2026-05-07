@@ -49,12 +49,30 @@ because `@contextmanager` only allows one `yield`.
 
 `call_timeout` on `PowerSchoolODBCResource` governs a **single Oracle
 round-trip**, not total query wall time. Sizing it as query time oversizes it —
-healthy COUNT probes complete in <500ms. Default is 30s.
+healthy COUNT probes complete in <500ms. Default is 60s.
 
 Sensor-tick budget: Dagster sensor ticks hard-cap at 600s. Keep
 `call_timeout × max_attempts` well below 600s so a hung round-trip raises
 `DPI-1067` (with the in-flight SQL) before Dagster kills the tick with an opaque
 `DagsterUserCodeUnreachableError`.
+
+## Logging quirks
+
+The `dagster - INFO - resource:db_powerschool - Executing query:` log line is
+truncated to its prefix in GCP `textPayload` — the multi-line SQL on the
+following lines is dropped. After a `DPY-4024` fires the pod stops emitting logs
+immediately, so the in-flight SQL is not recoverable post-hoc. Add a pre-query
+`log.info(f"COUNT {table}")` in `_fetch_count()` if you need to attribute future
+timeouts to a specific table.
+
+## Sensor vs. schedule staleness checks
+
+Sensors call `evaluate_asset_staleness()` (per-asset COUNT probes against
+Oracle, with retry). Schedules call `enumerate_partitions_for_schedule()` (no DB
+access — every asset × every partition in the limited window). Schedules run
+once daily and the partition window is already constrained; COUNT probes added
+no signal and were a recurring `DPY-4024` source on `assignmentscore` /
+`pgfinalgrades`. Do not reintroduce DB calls into the schedule path.
 
 ## Type Annotations
 

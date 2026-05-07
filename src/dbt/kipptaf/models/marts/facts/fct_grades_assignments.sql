@@ -90,9 +90,9 @@ select
     asg.assignment_name as `name`,
     asg.category_name,
     asg.category_code,
-    asg.scoretype as score_type,
 
-    asg.score_entered as score,
+    asg.points_earned,
+    asg.numeric_grade_earned,
     asg.totalpointvalue as max_points,
     asg.assign_final_score_percent as score_percent,
 

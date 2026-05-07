@@ -11,6 +11,10 @@ with
             a.scope,
             a.module_type,
             a.module_code,
+            a.canonical_assessment_id,
+            a.canonical_title,
+            a.canonical_administered_at,
+            a.canonical_grade_level_id,
 
             region,
 
@@ -52,6 +56,10 @@ with
             a.module_code,
             a.region,
             a.grade_level_id,
+            a.canonical_assessment_id,
+            a.canonical_title,
+            a.canonical_administered_at,
+            a.canonical_grade_level_id,
 
             ssa.student_id as illuminate_student_id,
 
@@ -75,10 +83,10 @@ with
             on ssa.student_id = s.student_id
         inner join
             {{ ref("int_assessments__course_enrollments") }} as ce
-            on a.subject_area = ce.illuminate_subject_area
+            on s.local_student_id = ce.powerschool_student_number
             and a.region = ce.region
+            and a.subject_area = ce.illuminate_subject_area
             and a.administered_at between ce.cc_dateenrolled and ce.cc_dateleft
-            and s.local_student_id = ce.powerschool_student_number
             and not ce.is_advanced_math_student
         where a.grade_level_id <= 9
 
@@ -98,6 +106,11 @@ with
             a.region,
 
             ce.illuminate_grade_level_id as grade_level_id,
+
+            a.canonical_assessment_id,
+            a.canonical_title,
+            a.canonical_administered_at,
+            a.canonical_grade_level_id,
 
             s.student_id as illuminate_student_id,
 
@@ -153,6 +166,10 @@ select
     ia.discipline,
     ia.cc_dcid,
     ia.cc_source_relation,
+    ia.canonical_assessment_id,
+    ia.canonical_title,
+    ia.canonical_administered_at,
+    ia.canonical_grade_level_id,
 
     sa.student_assessment_id,
     sa.date_taken,
@@ -194,6 +211,11 @@ select
 
     cast(null as int64) as cc_dcid,
     cast(null as string) as cc_source_relation,
+
+    a.canonical_assessment_id,
+    a.canonical_title,
+    a.canonical_administered_at,
+    a.canonical_grade_level_id,
 
     sa.student_assessment_id,
     sa.date_taken,
@@ -247,6 +269,11 @@ select
 
     cast(null as int64) as cc_dcid,
     cast(null as string) as cc_source_relation,
+
+    a.canonical_assessment_id,
+    a.canonical_title,
+    a.canonical_administered_at,
+    a.canonical_grade_level_id,
 
     sa.student_assessment_id,
     sa.date_taken,

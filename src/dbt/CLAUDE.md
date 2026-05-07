@@ -197,6 +197,17 @@ deployments. Developers use `.dbt/profiles.yml` for full target support.
 These conventions apply to **every** dbt project in this directory. Per-project
 CLAUDE.md files reference this section rather than repeating it.
 
+### BigQuery type synonyms in contracts
+
+`numeric` and `float64` are NOT synonyms — they're distinct BigQuery types.
+Casting to one while declaring the other in YAML passes parse but fails contract
+enforcement at build time.
+
+BQ accepts legacy spellings as synonyms: `boolean`/`bool`, `integer`/`int64`,
+`float`/`float64`, `decimal`/`numeric`, `bigdecimal`/`bignumeric`. YAML
+`data_type` and `INFORMATION_SCHEMA.COLUMNS.data_type` may disagree on spelling
+without it being real drift — normalize before comparing.
+
 ### Per-layer requirements
 
 **All staging models must**:
@@ -237,14 +248,28 @@ data_tests:
 
 ### Test config defaults
 
-- Do not add `store_failures: true` to individual tests — the project default
-  handles it
+- Project-level `data_tests:` defaults flow through to singular tests too. Drop
+  redundant `severity` / `store_failures` / `store_failures_as` from
+  singular-test `config()`; keep only per-test fields (`meta.dagster.ref`).
 - Staging-layer tests MUST set `config: severity: error` on every test. The
   project default is `warn`, so staging tests without explicit `severity: error`
   silently degrade to warnings and won't fail CI. Intermediate/mart/`rpt_` tests
   may omit the override where a warning is acceptable.
 - Unscoped `+config` applies to tests from all installed packages, not just the
   current project
+
+### `dbt_utils.expression_is_true` window-function limit
+
+Compiles to `where not (<expression>)`. BigQuery rejects window functions in
+`WHERE`, so the macro can't use `lag()` / `row_number()` / etc. Use a singular
+test (`tests/test_*.sql`) for window-based predicates.
+
+### Singular-test description placement
+
+Top-level `description` on a singular test must go in a properties yml under
+`data_tests:` — `config(description="...")` in the SQL lands at
+`config.description`, which dbt docs doesn't read. After adding/editing the yml,
+run `dbt parse --no-partial-parse`; partial parse caches the unbound state.
 
 ### Generic test syntax (dbt 1.11+)
 
@@ -313,12 +338,24 @@ rejects `asc nulls last` and `desc nulls first` inside aggregate `array_agg`.
 Use `desc` (default NULLS LAST) or `(col is null) asc` instead of explicit
 `nulls last` with ascending sort.
 
+**`partition_by` must match the downstream join key**, not the source PK.
+Partitioning by the source's natural key leaves multiple rows that share the
+intended join column, which then fan out at the join site. Use
+`(col = 'sentinel') asc` in `order_by` to demote a specific value when rows tie
+on the chosen partition key.
+
 ### Don't inline CASE expressions in generate_surrogate_key
 
 `dbt_utils.generate_surrogate_key(["case <col> when ... end"])` compiles via
 Jinja's implicit-string-concat across adjacent list elements — unreviewable, and
 a comma inserted between fragments silently changes the SQL. Derive the computed
 value as a named column in an upstream CTE, then hash that column.
+
+### Canonical attributes from a partition
+
+Use `first_value(... order by <pk>)` for every attribute, not separate `min()`
+calls — independent mins on different columns can pick from different rows in
+the same partition.
 
 ### SQL conventions
 
@@ -360,6 +397,19 @@ value as a named column in an upstream CTE, then hash that column.
   ```sql
   current_date('{{ var("local_timezone") }}')
   ```
+
+- **sqlfluff ST09 (join order)**: ON-clause predicates list the
+  earlier-referenced table on the left, including predicates inside a current
+  join that reference a prior-joined table. After
+  `from A ... join B ... join C on X`, predicates referencing both `B` and `C`
+  write `B.x = C.y`, not `C.y = B.x`.
+- **BigQuery-reserved CTE names**: `groups` is reserved (window-frame syntax
+  `OVER (... GROUPS BETWEEN ...)`). A CTE named `groups` fails parsing with
+  "Expected keyword SELECT but got keyword GROUPS". Use `reporting_groups` or
+  similar.
+- **`select *` inside UNION ALL CTEs trips CV03**: sqlfluff requires a trailing
+  comma after the last column, but `select *` has nothing to trail. Enumerate
+  columns explicitly in each UNION branch.
 
 ### SQL column ordering in SELECT clauses (enforced by ST06)
 

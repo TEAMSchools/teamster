@@ -277,15 +277,8 @@ with
 
 /* Staff submissions */
 select
-    {{
-        dbt_utils.generate_surrogate_key(
-            [
-                "survey_id",
-                "survey_response_id",
-                "respondent_employee_number",
-            ]
-        )
-    }} as survey_submission_key,
+    {{ dbt_utils.generate_surrogate_key(["survey_id", "survey_response_id"]) }}
+    as survey_submission_key,
 
     survey_administration_key,
 
@@ -313,11 +306,8 @@ union all
 
 /* Student submissions */
 select
-    {{
-        dbt_utils.generate_surrogate_key(
-            ["survey_id", "survey_response_id", "student_number"]
-        )
-    }} as survey_submission_key,
+    {{ dbt_utils.generate_surrogate_key(["survey_id", "survey_response_id"]) }}
+    as survey_submission_key,
 
     survey_administration_key,
 

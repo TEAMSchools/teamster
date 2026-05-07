@@ -31,8 +31,24 @@ select
         )
     }} as grades_term_key,
 
-    {{ dbt_utils.generate_surrogate_key(["fg.cc_dcid", "fg._dbt_source_relation"]) }}
-    as student_section_enrollment_key,
+    -- FK source_relation must match dim_student_section_enrollments, which is
+    -- built from base_powerschool__course_enrollments. Rewrite fg's source
+    -- relation to the parent's so the hash inputs align.
+    -- TODO: replace() is a no-op if a future district uses a different base
+    -- model name. Long-term fix: hash region prefix only, consistent across
+    -- producer and consumer (#3678 follow-up).
+    {{
+        dbt_utils.generate_surrogate_key(
+            [
+                "fg.cc_dcid",
+                (
+                    "replace(fg._dbt_source_relation,"
+                    " 'base_powerschool__final_grades',"
+                    " 'base_powerschool__course_enrollments')"
+                ),
+            ]
+        )
+    }} as student_section_enrollment_key,
 
     {{
         dbt_utils.generate_surrogate_key(
@@ -94,9 +110,11 @@ inner join
     and fg.termbin_start_date >= enr.entrydate
     and fg.termbin_start_date < enr.exitdate
     and {{ union_dataset_join_clause(left_alias="fg", right_alias="enr") }}
+inner join
+    {{ ref("dim_regions") }} as dr on fg._dbt_source_project = dr.dagster_code_location
 left join
     reporting_terms as rt
     on fg.storecode = rt.name
     and fg.schoolid = rt.school_id
-    and initcap(regexp_extract(fg._dbt_source_relation, r'kipp(\w+)_')) = rt.region
+    and dr.`name` = rt.region
     and fg.yearid = rt.powerschool_year_id

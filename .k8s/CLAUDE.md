@@ -23,18 +23,48 @@ on GKE Autopilot.
 
 ## Scheduling
 
-- Weighted `nodeAffinity` preferences (no hard `nodeSelector`). Compute-class
-  tiers: Scale-Out arm64 > General-Purpose > Scale-Out x86. Balanced removed —
-  its separation/extended-duration minimums (1 vCPU / 4 GiB) exceed our requests
-  (500m / 2 GiB), which would cause pod admission rejection if anti-affinity is
-  ever applied. Spot adds +50 on code server pods (not agent or run pods).
-  Autopilot bills per-pod, so fallback tiers have no cost penalty.
-- Agent pods use `safe-to-evict: "false"` (extended-duration) to prevent
-  Autopilot scale-down churn, which is mutually exclusive with spot. Agent pods
-  exclude arm64 tiers (image is x86-only).
+- **Hard multi-key `nodeSelector`** — Autopilot NAP only provisions matching
+  nodes for `required` / `nodeSelector` constraints. `preferred*` is scheduler
+  scoring against existing nodes and does NOT drive provisioning. With only
+  `preferred`, NAP falls back to default N4 amd64 and every weighted preference
+  scores 0 — same trap for `preferred kubernetes.io/arch: arm64`.
+- **Multi-key allowed; multi-value not** — Warden
+  (`autopilot-compute-class-limitation`) rejects multiple values for the same
+  key but accepts multiple keys. Use `cloud.google.com/compute-class` +
+  `kubernetes.io/arch` together to hard-pin both class and CPU architecture.
+- **Built-in `Scale-Out` only — do NOT use Custom ComputeClasses (CCCs).** CCCs
+  flip the billing model from per-pod (Autopilot pod-based) to per-VM +
+  Autopilot Performance Premium (per-vCPU/GiB management fee), even when the
+  underlying machine family is the same hardware Scale-Out runs on. Our pods
+  don't fill a t2d-standard-4, so we'd pay for empty capacity. CCCs also
+  silently drop `safe-to-evict: "false"` (extended-duration).
+- **Pod placement** — code server and run pods pin to Scale-Out arm64 (T2A);
+  agent pins to Scale-Out amd64 (T2D — image is amd64-only).
+- **No fallback — arm64 STOCKOUT will leave code server / run pods Pending.**
+  PDB-protected code servers tolerate this (last-good Deployment continues to
+  serve). Run pods queue until capacity returns. There is no graceful amd64
+  fallback under pod-priced billing — the only route to ordered fallback is
+  CCCs, which we rejected on cost. If STOCKOUT becomes recurring, manually flip
+  the affected pod's `kubernetes.io/arch` to `amd64` until capacity returns.
+- **Do NOT use `Balanced` or `Performance`** — Balanced minimum requests (1 vCPU
+  / 4 GiB) exceed ours (500m / 2 GiB). Performance has the same node-based
+  pricing penalty as CCCs.
+- **`safe-to-evict: "false"` (extended-duration) is on agent and run pods.**
+  Under built-in Scale-Out it works as documented — blocks cluster autoscaler
+  eviction. Mutually exclusive with spot; do not move agent or run pods to a
+  spot tier. Run pods also have `podFailurePolicy` (`DisruptionTarget` →
+  `Ignore`) as a secondary guard for non-autoscaler disruptions; the agent does
+  not.
+- **Spot + built-in Scale-Out + arch is supported under pod-priced billing** —
+  set `cloud.google.com/gke-spot: "true"` alongside the compute-class + arch
+  nodeSelector; Autopilot auto-injects the toleration. Mutually exclusive with
+  `safe-to-evict: "false"`. Code-server spot reclaim triggers full agent
+  reconciliation cascade (cold start + ClusterIP churn) — factor into cost
+  analysis.
 - **Agent topology spread** uses `ScheduleAnyway` across
-  `topology.kubernetes.io/zone` via `additionalPodSpecConfig`. Prefers
-  cross-zone but allows same-zone during capacity exhaustion.
+  `topology.kubernetes.io/zone` via `additionalPodSpecConfig` — prefers
+  cross-zone but allows same-zone during capacity exhaustion (do not switch to
+  `DoNotSchedule`, which would block agent rollouts when one zone is full).
 
 ## Security
 
@@ -92,6 +122,7 @@ on GKE Autopilot.
   Deployment is deleted before pods terminate, causing
   `CalculateExpectedPodCountFailed` and leaving pods unprotected. `minAvailable`
   only counts current healthy pods, no controller lookup needed.
+- **PDBs do NOT block spot reclaim** — spot reclaim is involuntary.
 - **GKE Autopilot system-critical preemption** — `system-cluster-critical` and
   `system-node-critical` pods (priority 2,000,000,000) preempt dagster-run pods
   (priority 1000) cluster-wide whenever GKE needs to land kube-dns, fluent-bit,

@@ -1,0 +1,445 @@
+<!-- trunk-ignore-all(markdownlint/MD029): list-numbering survives across section breaks intentionally in this spec -->
+
+# Batch I — assessment-administration integrity (umbrella design)
+
+Single atomic PR that consolidates batch I of the Data Team project board into
+one hash redefinition of `assessment_administration_key` and `assessment_key`,
+plus the additive upstream and mart changes that support it.
+
+Closes [#3774](https://github.com/TEAMSchools/teamster/issues/3774),
+[#3782](https://github.com/TEAMSchools/teamster/issues/3782),
+[#3787](https://github.com/TEAMSchools/teamster/issues/3787),
+[#3788](https://github.com/TEAMSchools/teamster/issues/3788) (with the
+documented soft-gate residual on the 43 cross-region orphans of #3774, which
+clears post-merge once Ops widens the AppSheet catalog).
+
+[#3775](https://github.com/TEAMSchools/teamster/issues/3775) (superscore drift)
+is split out: G4 diagnosis posted as a comment on the issue; the fix follows in
+a separate PR pending expert review.
+
+## Context
+
+PR [#3770](https://github.com/TEAMSchools/teamster/pull/3770) introduced
+`dim_assessment_administrations` and the `assessment_administration_key`
+surrogate hash, with several `dbt_utils.deduplicate` workarounds at the mart
+layer and three temporal-grouping degenerate columns (`administration_round`,
+`season`, `administration_window`). Five follow-ups were filed (#3774, #3775,
+#3782, #3787, #3788). All five touch the admin-key surface area or its inputs.
+Sequencing them as separate PRs would force `fct_assessment_scores_*` and
+`bridge_assessment_expectations_*` to rebuild 3+ times with churning FK orphan
+reports.
+
+This umbrella ships the entire surface area in one atomic PR.
+
+## Goals
+
+- Redefine `assessment_administration_key` and `assessment_key` once, with
+  pruned input lists that contain only load-bearing natural-key columns.
+- Push all `dbt_utils.deduplicate` workarounds for assessments out of the marts
+  layer, by either fixing upstream additively or restructuring the hash so the
+  dedup is no longer required.
+- Add SAT/ACT Practice rows to `dim_assessment_administrations` and
+  `fct_assessment_scores_student_scoped`.
+- Drive in-code FK orphans on `assessment_administration_key` to zero (43
+  cross-region orphans remain as a soft-gate Ops handoff).
+
+## Non-goals
+
+- Module-level reporting rollup (Newark/Camden/Miami region-copies of an
+  Illuminate module checkpoint stay distinct in the dim; if BI consumers ever
+  ask for a logical-module rollup, that is a separate `rpt_*` ticket).
+- Promoting `administration_period` from a degenerate column to a real
+  `dim_administration_period` (deferred until period-level metadata accrues).
+- AppSheet catalog edits for the 43 cross-region orphans of #3774 (Ops-owned).
+  Mechanism: each orphan is a `(assessment_id, student, region)` tuple where the
+  student's resolved region is not present in the assessment's declared
+  `regions_assessed` array, so the fact's `assessment_administration_key` hashes
+  to a value with no matching row in `dim_assessment_administrations` (which
+  `cross join unnest`s `regions_assessed_array` to produce one dim row per
+  declared region). This PR generates a bucketed report partitioning each row
+  into interpretation (a) — `regions_assessed` is incomplete and should include
+  the student's region — vs interpretation (b) — student took an assessment
+  outside their region's declared scope (mis-administration or off-region
+  enrollment) — and posts it to #3774. From there:
+  - For (a) rows: Ops edits the AppSheet catalog to widen `regions_assessed`.
+    The AppSheet sync rebuilds the BQ-native source, which propagates through
+    `int_assessments__assessments` → `dim_assessment_administrations`. New dim
+    rows materialize for the added regions and the fact's existing hash
+    resolves. No code change required; the `relationships` WARN clears on the
+    next dbt build.
+  - For (b) rows: Ops escalates to school operations for review. Resolution
+    happens at the source-of-truth level (enrollment correction, score
+    invalidation) and propagates through the same path.
+  - The PR ships with the WARN at 43 (or whatever the bucketed count is at merge
+    time); #3774 stays open until the WARN clears to 0.
+- Any change to `int_people__location_crosswalk` (broader redesign tracked under
+  #3633; G2 verified the 6 bridge orphans are not crosswalk gaps).
+
+## Scope
+
+### Hash redefinitions
+
+`assessment_administration_key` — 12 inputs → **8 inputs**:
+
+```sql
+generate_surrogate_key([
+  "assessment_type",
+  "module_code",
+  "administered_date",
+  "academic_year",
+  "region",
+  "administration_period",
+  "source_assessment_id",
+  "test_type",
+])
+```
+
+Removed inputs (functionally determined by `module_code` or
+`source_assessment_id`, retained as descriptive columns on the dim): `title`,
+`subject_area`, `scope`, `grade_level`.
+
+Removed inputs (collapsed into `administration_period`): `administration_round`,
+`season`, `administration_window`.
+
+Added inputs:
+
+- `administration_period` — single text column populated per branch from the
+  source's native period concept (NJ `period`, FL `season`, College Board
+  `administration_round`); NULL where the source has no period concept.
+- `source_assessment_id` — Illuminate-branch discriminator carrying
+  `int_assessments__assessments.assessment_id`; NULL elsewhere. Required because
+  Newark/Camden/Miami region-copies of the same module checkpoint are genuinely
+  distinct assessments in the source and must remain distinct admin rows.
+- `test_type` — `'Official'` / `'Practice'` for college; NULL elsewhere.
+
+`assessment_key` — 6 inputs → **4 inputs**:
+
+```sql
+generate_surrogate_key([
+  "assessment_type",
+  "module_code",
+  "source_assessment_id",
+  "test_type",
+])
+```
+
+Removed inputs (functionally determined): `title`, `subject_area`, `scope`,
+`grade_level`.
+
+Added input: `test_type`.
+
+#### Per-branch null pattern
+
+| Branch             | type | module_code | admin_date | year | region | period | src_id | test_type |
+| ------------------ | ---- | ----------- | ---------- | ---- | ------ | ------ | ------ | --------- |
+| illuminate         | ✓    | ✗           | ✗          | ✗    | ✗      | ✗      | ✓      | ✗         |
+| state_nj           | ✓    | ✓           | ✗          | ✓    | ✓      | ✓      | ✗      | ✗         |
+| state_fl           | ✓    | ✓           | ✗          | ✓    | ✓      | ✓      | ✗      | ✗         |
+| college (Official) | ✓    | ✓           | ✓          | ✗    | ✗      | ✓      | ✗      | ✓         |
+| college (Practice) | ✓    | ✓           | ✓          | ✗    | ✗      | ✓      | ✗      | ✓         |
+| ap                 | ✓    | ✓           | ✗          | ✓    | ✗      | ✗      | ✗      | ✗         |
+
+NULLs hash to a placeholder; branches are collectively unique on the populated
+fields.
+
+#### AP `assessment_type` rename
+
+Today AP rows in `dim_assessment_administrations` set
+`assessment_type='college'`. With descriptive columns dropped from the hash, AP
+and SAT/ACT could collide on `(assessment_type='college', module_code)` if any
+AP `ps_ap_course_subject_code` happens to match a College Board `score_type`
+string. Rename to `assessment_type='ap'`.
+
+### Files touched
+
+#### Additive upstream (outside `marts/`)
+
+1. **`int_illuminate__agg_student_responses`** — replace NULL `response_type_id`
+   with a sentinel for overall-score rows. Pre-edit verification: query the
+   model for the populated range of `response_type_id`. If all real values are
+   positive, sentinel `-1` is safe. Otherwise use
+   `-1 * <stable per-row identifier>` to guarantee no collision with any
+   existing id.
+
+2. **`int_assessments__response_rollup`** properties.yml — re-declare the
+   natural grain to `(illuminate_student_id, assessment_id, response_type_id)`.
+   No SQL change. The current 1014-violation test was on the wrong grain;
+   correcting the declared grain plus the upstream sentinel fix in (1) is
+   expected to reduce dupe count to zero. Any residual is a real bug to
+   investigate inline.
+
+3. **(Removed by G2 outcome.)** Originally proposed adding missing rows to
+   `int_people__location_crosswalk` for the 6 bridge orphans. G2 verified the
+   bridge orphans are cross-region administrations, not crosswalk gaps, so they
+   fold into the same Ops/catalog handoff as the 43 fact orphans.
+
+#### Marts
+
+4. **`dim_assessments`** — add `test_type` column; include in `assessment_key`
+   hash. Source: Official college branch sets `'Official'`; Practice branch sets
+   `'Practice'`; other branches NULL.
+
+5. **`dim_assessment_administrations`**:
+   - Drop the `illuminate_deduped` CTE (lines 22–33 of current SQL).
+   - Add `source_assessment_id` to the Illuminate `illuminate_unnested` CTE
+     (carry `assessment_id` through from `int_assessments__assessments`).
+   - Add `practice_administrations` CTE unioning
+     `int_assessments__college_assessment_practice`. Sets
+     `test_type='Practice'`; Official sets `test_type='Official'`.
+   - Replace `administration_round`, `season`, `administration_window` with
+     single `administration_period`. NJ populates from
+     `if(period='FallBlock','Fall',period)`; FL populates from `season` (see
+     verification gate below for the FL `season`+`administration_window`
+     separability question); College populates from `administration_round`.
+   - Rename AP `assessment_type` from `'college'` to `'ap'`.
+   - Apply pruned 8-input admin-key and 4-input assessment-key hash definitions.
+
+6. **`fct_assessment_scores_student_scoped`** — add Practice CTE with the same
+   8-element admin-key hash; rebuild `assessment_administration_key` for both
+   Official and Practice branches.
+
+7. **`fct_assessment_scores_enrollment_scoped`** — rebuild
+   `assessment_administration_key` with the new 8-input hash, passing
+   `source_assessment_id` (= `assessment_id` from
+   `int_assessments__response_rollup`) through for the Illuminate branch; remove
+   the `dbt_utils.deduplicate` workaround on `int_assessments__response_rollup`
+   (relies on item 1 + item 2 fixing the upstream grain).
+
+8. **`bridge_assessment_expectations_student_scoped`** — rebuild
+   `assessment_administration_key` with the new hash inputs.
+
+### Issue closure map
+
+| Issue                                    | Resolved by                                                  | Notes                                                                                                                                      |
+| ---------------------------------------- | ------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------ |
+| #3774 (43 cross-region fact orphans)     | Bucketed orphan report posted to issue body pre-merge        | B′ soft-gate; closes when Ops widens `regions_assessed` post-merge. WARN-level test remains until Ops acts.                                |
+| #3774 (6 bridge orphans)                 | Folded into the bucketed orphan report (G2 outcome)          | Same Ops/catalog path as the 43 fact orphans; closes post-merge with the same residual mechanism. Original crosswalk-gap framing is stale. |
+| #3775 (superscore drift)                 | **Split — diagnosis posted to #3775; not closed by this PR** | G4 found a JOIN bug; the fix is value-mutating (14 ACT students lose 1–6 superscore points). Paused for expert review.                     |
+| #3782 Surface 1 (response_rollup dupes)  | Items 1, 2; item 7's dedup removal                           |                                                                                                                                            |
+| #3782 Surface 2 (illuminate admin dupes) | Item 5 (Illuminate discriminator + drop dedup CTE)           | Replaces the original "collapse upstream" framing — region-copies are genuinely distinct assessments and remain distinct admin rows.       |
+| #3787 (Practice rows)                    | Items 4, 5, 6                                                | `test_type` lives at assessment level (Option B from #3787).                                                                               |
+| #3788 (period normalization)             | Item 5 (option β: single degenerate column)                  | Closes as "implemented as degenerate; promote to dim later if metadata accrues."                                                           |
+
+## Verification gates (pre-edit)
+
+These run before the corresponding edit lands. Each blocks its edit if the
+result invalidates the design assumption.
+
+### G1 — sentinel collision check (item 1)
+
+```sql
+select min(response_type_id), max(response_type_id), count(*)
+from `<dev_dataset>.int_illuminate__agg_student_responses`
+where response_type_id is not null
+```
+
+Pass: `min(response_type_id) >= 0` → sentinel `-1` is safe. Fail: pick a per-row
+synthetic sentinel.
+
+**Outcome (run 2026-05-01):** `min_id=1`, `max_id=457395`, `n_rows=26,910,413`,
+`n_null=3,911,547` (~14.5%). Sentinel `-1` is safe. Task 1.1 will use
+`coalesce(response_type_id, -1)`.
+
+### G2 — bridge-orphan additivity (item 3)
+
+For each of the 6 `ssa.site_id` values in
+`bridge_assessment_expectations_student_scoped`'s
+`relationships(assessment_administration_key)` orphan list, query
+`int_people__location_crosswalk`:
+
+- If the `ssa.site_id` is **absent** from the crosswalk → adding rows is
+  additive. Proceed.
+- If the `ssa.site_id` is **present** but resolves to a region not matching the
+  assessment's expected region → mutating existing rows. Drop from this PR;
+  escalate to #3633.
+
+**Outcome (run 2026-05-01):** All 6 bridge orphans are **cross-region
+administrations**, not crosswalk gaps. Five are Paterson students taking NJ
+assessments where Paterson isn't in `regions_assessed = [Camden, Newark]`; one
+is a Newark student taking a Florida-tagged assessment (`Math-G4-QA1-24-25-FL`,
+`regions_assessed = [Miami]`). All 6 source rows have non-NULL `region` from
+`int_people__location_crosswalk` — no crosswalk gap in current data. The
+original #3774 framing of "NULL region from crosswalk for K-8 replacements" is
+stale (either already fixed or misdiagnosed at filing time).
+
+**Decision:** Task 1.3 has no work. The 6 bridge orphans roll into the same
+Ops/catalog handoff as the 43 fact orphans — they clear post-merge when Ops
+either widens `regions_assessed` (5 Paterson rows) or investigates the
+mis-administration (1 Newark+FL row).
+
+### G3 — FL season/window separability (item 5)
+
+Query Tableau and Cube exposures depending on `dim_assessment_administrations`
+for references to either `season` or `administration_window`:
+
+- If both are referenced separately → `administration_period` populates from
+  `concat(season, ' ', administration_window)`, plus retain `season` and
+  `administration_window` as descriptive columns on the dim (out of hash).
+- If only `season` is referenced (or neither) → `administration_period`
+  populates from `season` alone; both source columns drop.
+
+**Outcome (run 2026-05-01):**
+
+| season | administration_window | n     |
+| ------ | --------------------- | ----- |
+| Fall   | PM1                   | 6,101 |
+| Spring | PM3                   | 6,038 |
+| Spring | Spring                | 1,776 |
+| Winter | PM2                   | 6,001 |
+
+`administration_window` is strictly more granular than `season` (Spring season
+splits into PM3 and Spring windows). No downstream consumer (cube, rpt, or
+extract) references either column separately — only the dim itself reads them.
+**Decision:** populate `administration_period = administration_window` for FL;
+drop both `season` and `administration_window` columns from the dim.
+
+### G4 — superscore drift root cause (#3775, pre-spec finalization)
+
+Already partially covered by the dedup tiebreaker shipped in #3770.
+Investigation: query `int_kippadb__standardized_test_unpivot` and
+`int_collegeboard__psat_unpivot` for duplicate
+`(student_number, score_type, test_date, rn_highest)` rows; inspect any window
+functions in the superscore computation lineage for non-deterministic `order by`
+clauses.
+
+- If root cause is non-additive (e.g., a window-function fix that changes
+  existing superscore values) → splits to a separate PR; this umbrella documents
+  the finding and keeps the existing tiebreaker.
+- If root cause is additive (e.g., upstream dedup that doesn't change surviving
+  values) → fold into this PR.
+
+**Outcome (run 2026-05-01):** Cartesian-product fan-out in
+`int_assessments__college_assessment.score_calcs` LEFT JOIN to
+`max_total_score`. The latter is grouped by
+`(student_number, scope, strategy_case)`, but the join uses only
+`(student_number, scope)` — when a student has multiple `strategy_case` values
+(typically Case 1 on one test date and Case 3 on another), the join produces two
+output rows per `case_calcs` row, each carrying a different joined `superscore`.
+The fan-out exits the int model uncollapsed; the dedup happens downstream in
+`fct_assessment_scores_student_scoped.college_assessments` via
+`dbt_utils.deduplicate(order_by="scale_score desc")`. Because all 114 drift
+groups have identical `scale_score`, that tiebreaker is non-deterministic for
+these rows — the surviving superscore is essentially random across builds.
+
+**Quantified impact (post-fix vs current):**
+
+- 150 dup groups total: 114 with superscore drift, 36 identical-row dupes.
+- 100% of drift groups (114/114) have multi-strategy-case students.
+- All 114 are **ACT scope** (no SAT affected).
+- **14 unique students** affected.
+- Comparing current `max(superscore)` (one possible tiebreaker outcome) vs the
+  strategy-matched value: all 114 decrease by 1–6 points (avg 2.87). Current
+  builds surface either the inflated or the correct value depending on the
+  non-deterministic dedup pick — folded fix produces the deterministic correct
+  value.
+
+**Decision:** split. The fix changes published superscore values for 14 ACT
+students (decreases of 1–6 points). Pausing for expert review before applying.
+The full diagnosis (root cause, evidence queries, quantified impact, proposed
+one-line fix) is posted as a comment on
+[#3775](https://github.com/TEAMSchools/teamster/issues/3775#issuecomment-4361532388).
+
+**Implications for this PR:**
+
+- Task 1.4 is dropped from the plan.
+- #3775 stays open and is **not** closed by this PR.
+- The existing dedup behavior (non-deterministic `scale_score desc` tiebreaker
+  on 114 ACT drift groups) ships unchanged.
+- A follow-up PR will implement the one-line fix and close #3775 once expert
+  review confirms the strategy-specific superscore is the correct semantic.
+
+## Pre-merge issue-resolution audit
+
+Run after all implementation tasks pass and dbt Cloud CI is green on the PR
+branch, before requesting merge. The audit produces three artifacts attached to
+the PR description: a closure-confirmation table, a residual-and-followup list,
+and a bonus-closure list.
+
+### A1 — closure confirmation per stated issue
+
+For each of #3774, #3775, #3782, #3787, #3788, walk the issue's acceptance
+checklist and mark each item:
+
+- **Met** — verified by a specific test, query, or PR diff. Record the evidence
+  (test name, query, file:line).
+- **Met (residual)** — partially met; document what remains and why (typically:
+  external Ops dependency, deferred sub-decision).
+- **Not met** — unmet; explain why and whether it blocks merge.
+
+Any "Not met" item blocks merge unless explicitly waived in the PR description
+with rationale.
+
+### A2 — dbt Cloud CI warning review
+
+Pull the latest CI run for the PR branch via dbt MCP (`get_job_run_error` with
+`warning_only=true` for status=Success runs). Categorize every WARN:
+
+- **New WARN introduced by this PR** — must be triaged before merge. Either fix
+  in this PR or open a follow-up issue and reference it in the PR description.
+- **Pre-existing WARN unchanged** — note in the PR description; no action
+  required.
+- **Pre-existing WARN cleared by this PR** → bonus closure (see A4).
+
+Compare the WARN list against the same job's last run on `main` to classify.
+
+### A3 — follow-up issues for residuals and newly surfaced problems
+
+Any of the following triggers a new GitHub issue, filed pre-merge and referenced
+in the PR description:
+
+- A G1–G4 verification gate failed non-additively and split work out of this PR.
+- The pre-merge audit (A1) surfaced a residual that needs tracking (e.g., the 43
+  cross-region orphans of #3774 — confirm the issue stays open with the bucketed
+  report attached).
+- A new WARN introduced by this PR cannot be fixed inline.
+- The implementation surfaced a previously-unknown DQ surface (a new orphan set,
+  a new dedup site, an unexpected source-system anomaly).
+
+Each follow-up issue links back to this PR and uses conventional-commit labels
+per project conventions.
+
+### A4 — bonus closure scan
+
+Search open issues in the
+[Data Team project board](https://github.com/orgs/TEAMSchools/projects/4) that
+may have been incidentally resolved by this PR. Triggers to look for:
+
+- Issues mentioning `assessment_administration_key` or `assessment_key`
+  uniqueness, FK orphans, or hash composition.
+- Issues mentioning the specific `dbt_utils.deduplicate` workarounds we removed
+  (`int_assessments__response_rollup`, illuminate dedup CTE).
+- Issues mentioning `int_illuminate__agg_student_responses` NULL
+  `response_type_id`.
+- Issues mentioning `int_people__location_crosswalk` for the 6 specific
+  `ssa.site_id` values.
+- Pre-existing dbt CI WARNs cleared by the change (from A2).
+
+For each candidate: verify resolution against the issue's acceptance, confirm in
+the PR description with a "Bonus closes #NNNN — <reason>" line, and add
+`Closes #NNNN` to the PR body so merge auto-closes it.
+
+## Risks
+
+- **Hash blast radius.** Every consumer of `assessment_administration_key` and
+  `assessment_key` rebuilds. Branch CI must run against all dependents
+  (`fct_assessment_scores_*`, `bridge_assessment_expectations_*`). dbt Cloud CI
+  will need a full-refresh; flag in PR description.
+- **Stale defer tables on hash-changed dims.** Per project conventions,
+  defer-mode dev builds may use stale dev tables for parents of modified models,
+  producing false-positive `relationships` warnings. Pre-merge testing must
+  include the parent dims via `--select` or explicit
+  `dbt clone --select <parent>`.
+- **PR review burden.** Single atomic PR is large. Mitigated by the per-issue
+  closure map and the verification-gate structure — reviewers can audit each
+  gate independently.
+- **#3775 split risk.** If G4 fails non-additively, the umbrella ships with
+  #3775 still open; not a blocker for the hash redefinition but reduces
+  "everything closed in one PR" claim.
+
+## Out of scope
+
+- New `dim_administration_period` (option β chosen instead).
+- `int_assessments__assessments` grain change (region-copies stay distinct).
+- New module-level reporting rollup view.
+- AppSheet catalog edits for the 43 cross-region orphans (Ops-owned).
+- Broader `int_people__location_crosswalk` redesign (#3633).
