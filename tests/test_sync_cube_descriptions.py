@@ -65,3 +65,37 @@ def test_resolve_table_no_dot_returns_none() -> None:
 def test_resolve_table_none_input_returns_none() -> None:
     mod = _load_script()
     assert mod._resolve_table_from_sql_table(None) is None
+
+
+def test_load_dbt_descriptions_from_fixture(tmp_path) -> None:
+    """Reads a fake mart YAML and returns column→description for non-empty descriptions only."""
+    mod = _load_script()
+    facts = tmp_path / "facts" / "properties"
+    facts.mkdir(parents=True)
+    shutil.copy(_FIXTURE_DIR / "dbt_fct_sample.yml", facts / "fct_sample.yml")
+    result = mod._load_dbt_descriptions("fct_sample", [facts])
+    assert result == {
+        "sample_key": "Surrogate key.",
+        "attendance_value": "Daily attendance value (0.0–1.0).",
+        "name": "Canonical name.",
+    }
+    assert "computed_col" not in result
+
+
+def test_load_dbt_descriptions_missing_returns_none(tmp_path) -> None:
+    mod = _load_script()
+    empty = tmp_path / "empty"
+    empty.mkdir()
+    assert mod._load_dbt_descriptions("not_there", [empty]) is None
+
+
+def test_load_dbt_descriptions_searches_multiple_dirs(tmp_path) -> None:
+    mod = _load_script()
+    a = tmp_path / "a"
+    b = tmp_path / "b"
+    a.mkdir()
+    b.mkdir()
+    shutil.copy(_FIXTURE_DIR / "dbt_fct_sample.yml", b / "fct_sample.yml")
+    result = mod._load_dbt_descriptions("fct_sample", [a, b])
+    assert result is not None
+    assert "sample_key" in result
