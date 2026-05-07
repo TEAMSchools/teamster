@@ -45,3 +45,23 @@ def test_resolve_expression_returns_none() -> None:
 def test_resolve_non_string_returns_none() -> None:
     mod = _load_script()
     assert mod._resolve_dbt_column(None) is None
+
+
+def test_resolve_table_kipptaf_marts() -> None:
+    mod = _load_script()
+    assert mod._resolve_table_from_sql_table("kipptaf_marts.fct_sample") == "fct_sample"
+
+
+def test_resolve_table_other_schema_returns_none() -> None:
+    mod = _load_script()
+    assert mod._resolve_table_from_sql_table("other_schema.x") is None
+
+
+def test_resolve_table_no_dot_returns_none() -> None:
+    mod = _load_script()
+    assert mod._resolve_table_from_sql_table("kipptaf_marts") is None
+
+
+def test_resolve_table_none_input_returns_none() -> None:
+    mod = _load_script()
+    assert mod._resolve_table_from_sql_table(None) is None

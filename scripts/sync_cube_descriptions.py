@@ -22,6 +22,19 @@ import re
 _COLUMN_RE = re.compile(r"^[a-z_][a-z0-9_]*$")
 
 
+_EXPECTED_SCHEMA = "kipptaf_marts"
+
+
+def _resolve_table_from_sql_table(sql_table: str | None) -> str | None:
+    """Extract ``<table>`` from ``kipptaf_marts.<table>``; ``None`` otherwise."""
+    if not isinstance(sql_table, str):
+        return None
+    parts = sql_table.split(".", 1)
+    if len(parts) != 2 or parts[0] != _EXPECTED_SCHEMA:
+        return None
+    return parts[1].strip() or None
+
+
 def _resolve_dbt_column(sql: str | None) -> str | None:
     """Return the dbt column name from a Cube dimension's ``sql:`` value.
 
