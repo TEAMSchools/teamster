@@ -83,11 +83,6 @@ cubes:
         type: string
         public: true
 
-      - name: meal_eligibility_status
-        sql: meal_eligibility_status
-        type: string
-        public: true
-
       - name: enrollment_status
         description: >-
           Current enrollment status of the student. Values: Currently Enrolled,
@@ -112,10 +107,5 @@ cubes:
           status only — does not reflect historical enrollment-date-window LEP
           status.
         sql: is_ell
-        type: boolean
-        public: true
-
-      - name: has_iep
-        sql: has_iep
         type: boolean
         public: true
