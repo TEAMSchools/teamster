@@ -6,6 +6,8 @@ import importlib.util
 import shutil
 from pathlib import Path
 
+import yaml as _yaml  # for reading the patched output
+
 _SCRIPT = Path("scripts/sync_cube_descriptions.py")
 _FIXTURE_DIR = Path("tests/fixtures/cube_yaml")
 
@@ -99,3 +101,65 @@ def test_load_dbt_descriptions_searches_multiple_dirs(tmp_path) -> None:
     result = mod._load_dbt_descriptions("fct_sample", [a, b])
     assert result is not None
     assert "sample_key" in result
+
+
+def _patch_cube_with_fixture(tmp_path, cube_fixture: str) -> tuple[Path, dict]:
+    """Copy the cube fixture into tmp_path, run the patcher, return path and counts."""
+    mod = _load_script()
+    cube_path = tmp_path / "cube.yml"
+    shutil.copy(_FIXTURE_DIR / cube_fixture, cube_path)
+    facts = tmp_path / "facts" / "properties"
+    facts.mkdir(parents=True)
+    shutil.copy(_FIXTURE_DIR / "dbt_fct_sample.yml", facts / "fct_sample.yml")
+    counts = mod._patch_cube_file(cube_path, search_dirs=[facts])
+    return cube_path, counts
+
+
+def test_patch_inserts_descriptions_on_matched_dimensions(tmp_path) -> None:
+    cube_path, counts = _patch_cube_with_fixture(tmp_path, "cube_sample.yml")
+    doc = _yaml.safe_load(cube_path.read_text())
+    dims = {d["name"]: d for d in doc["cubes"][0]["dimensions"]}
+    assert dims["sample_key"]["description"] == "Surrogate key."
+    assert (
+        dims["attendance_value"]["description"] == "Daily attendance value (0.0–1.0)."
+    )
+    assert dims["bare_name"]["description"] == "Canonical name."
+    assert counts["updated"] == 3
+
+
+def test_patch_skips_expression_dimension(tmp_path) -> None:
+    cube_path, counts = _patch_cube_with_fixture(tmp_path, "cube_sample.yml")
+    doc = _yaml.safe_load(cube_path.read_text())
+    dims = {d["name"]: d for d in doc["cubes"][0]["dimensions"]}
+    assert "description" not in dims["attendance_date"]
+    assert counts["skipped_expr"] == 1
+
+
+def test_patch_preserves_existing_description_and_skips_no_match(tmp_path) -> None:
+    cube_path, counts = _patch_cube_with_fixture(tmp_path, "cube_sample.yml")
+    doc = _yaml.safe_load(cube_path.read_text())
+    dims = {d["name"]: d for d in doc["cubes"][0]["dimensions"]}
+    assert dims["existing_desc"]["description"] == "Hand-authored, do not touch."
+    assert "description" not in dims["no_match"]
+    assert counts["skipped_already"] == 1
+    assert counts["skipped_no_match"] == 1
+
+
+def test_patch_leaves_measures_untouched(tmp_path) -> None:
+    cube_path, _counts = _patch_cube_with_fixture(tmp_path, "cube_sample.yml")
+    doc = _yaml.safe_load(cube_path.read_text())
+    measures = doc["cubes"][0]["measures"]
+    assert all("description" not in m for m in measures)
+
+
+def test_patch_skips_other_schema_table(tmp_path) -> None:
+    mod = _load_script()
+    cube_path = tmp_path / "cube.yml"
+    shutil.copy(_FIXTURE_DIR / "cube_other_schema.yml", cube_path)
+    counts = mod._patch_cube_file(cube_path, search_dirs=[])
+    assert counts["skipped_no_table"] == 1
+    assert counts["updated"] == 0
+    # File contents unchanged.
+    text_after = cube_path.read_text()
+    text_before = (_FIXTURE_DIR / "cube_other_schema.yml").read_text()
+    assert text_after == text_before

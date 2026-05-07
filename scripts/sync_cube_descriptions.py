@@ -83,3 +83,86 @@ def _resolve_dbt_column(sql: str | None) -> str | None:
         s = s[len("{CUBE}.") :]
     s = s.strip("`").strip()
     return s if _COLUMN_RE.match(s) else None
+
+
+def _get_ryaml():
+    """Lazy-load ruamel.yaml for round-trip YAML editing.
+
+    ruamel.yaml is declared in PEP 723 script dependencies and is available
+    when running via ``uv run``. Tests that import this module via importlib
+    only call this lazily, so importing the module never imports ruamel.
+    """
+    # trunk-ignore-begin(pyright/reportMissingImports): PEP 723 dep
+    from ruamel.yaml import YAML
+    from ruamel.yaml.scalarstring import FoldedScalarString
+
+    # trunk-ignore-end(pyright/reportMissingImports)
+
+    ry = YAML()
+    ry.preserve_quotes = True
+    ry.width = 80
+    ry.indent(mapping=2, sequence=4, offset=2)
+    return ry, FoldedScalarString
+
+
+def _make_description_scalar(text: str, FoldedScalarString):
+    """Pick a YAML scalar style for a description string.
+
+    Folded (``>-``) for multi-line or long descriptions to match the style
+    already used in Cube and dbt YAMLs; plain string for short single-line.
+    """
+    if "\n" in text or len(text) > 80:
+        return FoldedScalarString(text)
+    return text
+
+
+def _patch_cube_file(
+    path: Path,
+    *,
+    search_dirs: tuple[Path, ...] | list[Path] = _DBT_MART_DIRS,
+) -> dict[str, int]:
+    """Patch dimensions in a single cube file. Return per-action counts."""
+    counts = {
+        "updated": 0,
+        "skipped_already": 0,
+        "skipped_expr": 0,
+        "skipped_no_match": 0,
+        "skipped_no_table": 0,
+    }
+    ry, FoldedScalarString = _get_ryaml()
+    with path.open() as f:
+        doc = ry.load(f)
+    cubes = doc.get("cubes") or []
+    if not cubes:
+        return counts
+    cube = cubes[0]
+    table = _resolve_table_from_sql_table(cube.get("sql_table"))
+    if table is None:
+        counts["skipped_no_table"] += 1
+        return counts
+    descriptions = _load_dbt_descriptions(table, search_dirs=search_dirs)
+    if descriptions is None:
+        counts["skipped_no_table"] += 1
+        return counts
+    for dim in cube.get("dimensions") or []:
+        if "description" in dim:
+            counts["skipped_already"] += 1
+            continue
+        col = _resolve_dbt_column(dim.get("sql"))
+        if col is None:
+            counts["skipped_expr"] += 1
+            continue
+        desc = descriptions.get(col)
+        if not desc:
+            counts["skipped_no_match"] += 1
+            continue
+        scalar = _make_description_scalar(desc, FoldedScalarString)
+        # Insert ``description:`` immediately after ``name:``.
+        keys = list(dim.keys())
+        name_idx = keys.index("name") if "name" in keys else 0
+        dim.insert(name_idx + 1, "description", scalar)
+        counts["updated"] += 1
+    if counts["updated"]:
+        with path.open("w") as f:
+            ry.dump(doc, f)
+    return counts
