@@ -22,6 +22,7 @@
       "mcp__bigquery__search_catalog",
       "mcp__context7__query-docs",
       "mcp__context7__resolve-library-id",
+      "mcp__cube-mcp-server__chat",
       "mcp__dagster__get_asset_check_executions",
       "mcp__dagster__get_asset_condition_evaluations",
       "mcp__dagster__get_asset_health",
@@ -92,6 +93,7 @@
       "mcp__observability__list_alerts",
       "mcp__observability__list_group_stats",
       "mcp__observability__list_log_entries",
+      "mcp__observability__list_sinks",
       "mcp__observability__list_time_series",
       "Read(/.claude/**)",
       "Read(/.worktrees/**)",
@@ -102,8 +104,7 @@
       "Skill(commit-commands:commit:*)",
       "Skill(dbt:using-dbt-for-analytics-engineering:*)",
       "Write(//workspaces/teamster/.claude/scratch/**)",
-      "Write(//workspaces/teamster/.worktrees/**)",
-      "mcp__cube-mcp-server__chat"
+      "Write(//workspaces/teamster/.worktrees/**)"
     ],
     "deny": [
       "Bash(* gcloud *)",

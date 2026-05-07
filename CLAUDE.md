@@ -22,6 +22,7 @@ file; domain specifics live in the nearest subdirectory CLAUDE.md.
 | `src/teamster/CLAUDE.md`                                                          | Dagster code: library/code-location pattern, Python standards, asset key convention |
 | `src/teamster/code_locations/<name>/CLAUDE.md`                                    | Per-district specifics (read before touching that location)                         |
 | `src/dbt/CLAUDE.md` + `src/dbt/<project>/CLAUDE.md`                               | dbt project conventions per warehouse                                               |
+| `src/cube/CLAUDE.md`                                                              | Cube semantic layer: layout, view access policies, `cube.js` security model         |
 | `tests/CLAUDE.md`                                                                 | Test layout and fixtures                                                            |
 | `.claude/CLAUDE.md`                                                               | Hook protocol, protected paths, scratch dir                                         |
 | `.devcontainer/`, `.github/`, `.k8s/`, `.trunk/`, `scripts/`, `docs/` `CLAUDE.md` | Domain-specific operational context                                                 |
