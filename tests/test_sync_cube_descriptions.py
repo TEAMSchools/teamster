@@ -1,21 +1,22 @@
 """Tests for scripts/sync_cube_descriptions.py."""
 
-from __future__ import annotations
-
 import importlib.util
 import shutil
+import sys
 from pathlib import Path
 
 import yaml as _yaml  # for reading the patched output
 
 _SCRIPT = Path("scripts/sync_cube_descriptions.py")
 _FIXTURE_DIR = Path("tests/fixtures/cube_yaml")
+_MODULE_NAME = "sync_cube_descriptions"
 
 
 def _load_script():
-    spec = importlib.util.spec_from_file_location("sync_cube_descriptions", _SCRIPT)
+    spec = importlib.util.spec_from_file_location(_MODULE_NAME, _SCRIPT)
     assert spec is not None and spec.loader is not None
     mod = importlib.util.module_from_spec(spec)
+    sys.modules[_MODULE_NAME] = mod
     spec.loader.exec_module(mod)
     return mod
 

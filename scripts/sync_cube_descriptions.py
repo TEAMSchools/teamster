@@ -15,8 +15,6 @@ Usage:
     uv run scripts/sync_cube_descriptions.py [--check]
 """
 
-from __future__ import annotations
-
 import argparse
 import re
 import sys
@@ -50,7 +48,7 @@ def _load_dbt_descriptions(
         path = Path(d) / f"{table}.yml"
         if not path.exists():
             continue
-        doc = yaml.safe_load(path.read_text()) or {}
+        doc = yaml.safe_load(path.read_text(encoding="utf-8")) or {}
         for model in doc.get("models", []) or []:
             if model.get("name") != table:
                 continue
@@ -134,7 +132,7 @@ def _patch_cube_file(
         "skipped_no_table": 0,
     }
     ry, FoldedScalarString = _get_ryaml()
-    with path.open() as f:
+    with path.open(encoding="utf-8") as f:
         doc = ry.load(f)
     cubes = doc.get("cubes") or []
     if not cubes:
@@ -167,7 +165,7 @@ def _patch_cube_file(
         dim.insert(name_idx + 1, "description", scalar)
         counts["updated"] += 1
     if counts["updated"]:
-        with path.open("w") as f:
+        with path.open("w", encoding="utf-8") as f:
             ry.dump(doc, f)
     return counts
 
@@ -195,7 +193,7 @@ def main(argv: list[str] | None = None) -> int:
             any_changes = True
             print(f"{f}: {counts['updated']} updated")
         for k, v in counts.items():
-            total[k] = total.get(k, 0) + v
+            total[k] += v
     print(f"\nTotal: {total}")
     if args.check and any_changes:
         return 1
