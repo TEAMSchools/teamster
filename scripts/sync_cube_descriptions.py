@@ -17,7 +17,9 @@ Usage:
 
 from __future__ import annotations
 
+import argparse
 import re
+import sys
 from pathlib import Path
 
 import yaml
@@ -31,6 +33,8 @@ _DBT_MART_DIRS: tuple[Path, ...] = (
 )
 
 _EXPECTED_SCHEMA = "kipptaf_marts"
+
+_CUBE_MODEL_DIR = Path("src/cube/model/cubes")
 
 
 def _load_dbt_descriptions(
@@ -166,3 +170,37 @@ def _patch_cube_file(
         with path.open("w") as f:
             ry.dump(doc, f)
     return counts
+
+
+def main(argv: list[str] | None = None) -> int:
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument(
+        "--check",
+        action="store_true",
+        help="Exit non-zero if any file would change.",
+    )
+    args = parser.parse_args(argv)
+    files = sorted(_CUBE_MODEL_DIR.rglob("*.yml"))
+    total: dict[str, int] = {
+        "updated": 0,
+        "skipped_already": 0,
+        "skipped_expr": 0,
+        "skipped_no_match": 0,
+        "skipped_no_table": 0,
+    }
+    any_changes = False
+    for f in files:
+        counts = _patch_cube_file(f)
+        if counts["updated"]:
+            any_changes = True
+            print(f"{f}: {counts['updated']} updated")
+        for k, v in counts.items():
+            total[k] = total.get(k, 0) + v
+    print(f"\nTotal: {total}")
+    if args.check and any_changes:
+        return 1
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())
