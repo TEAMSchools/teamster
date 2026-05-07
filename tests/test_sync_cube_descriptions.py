@@ -153,14 +153,65 @@ def test_patch_leaves_measures_untouched(tmp_path) -> None:
     assert all("description" not in m for m in measures)
 
 
-def test_patch_skips_other_schema_table(tmp_path) -> None:
+def test_patch_skips_wrong_schema(tmp_path) -> None:
     mod = _load_script()
     cube_path = tmp_path / "cube.yml"
     shutil.copy(_FIXTURE_DIR / "cube_other_schema.yml", cube_path)
     counts = mod._patch_cube_file(cube_path, search_dirs=[])
-    assert counts["skipped_no_table"] == 1
+    assert counts["skipped_wrong_schema"] == 1
+    assert counts["skipped_no_dbt_yaml"] == 0
     assert counts["updated"] == 0
     # File contents unchanged.
     text_after = cube_path.read_text()
     text_before = (_FIXTURE_DIR / "cube_other_schema.yml").read_text()
     assert text_after == text_before
+
+
+def test_patch_skips_no_dbt_yaml(tmp_path) -> None:
+    """sql_table is kipptaf_marts.<x> but no matching dbt YAML exists."""
+    mod = _load_script()
+    cube_path = tmp_path / "cube.yml"
+    cube_path.write_text(
+        "cubes:\n"
+        "  - name: orphan\n"
+        "    public: false\n"
+        "    sql_table: kipptaf_marts.fct_does_not_exist\n"
+        "\n"
+        "    dimensions:\n"
+        "      - name: x\n"
+        "        sql: x\n"
+        "        type: string\n",
+        encoding="utf-8",
+    )
+    empty = tmp_path / "empty"
+    empty.mkdir()
+    counts = mod._patch_cube_file(cube_path, search_dirs=[empty])
+    assert counts["skipped_no_dbt_yaml"] == 1
+    assert counts["skipped_wrong_schema"] == 0
+    assert counts["updated"] == 0
+
+
+def test_patch_raises_on_multiple_cubes_per_file(tmp_path) -> None:
+    """Each cube YAML should declare exactly one cube; multi-cube files raise."""
+    mod = _load_script()
+    cube_path = tmp_path / "two_cubes.yml"
+    cube_path.write_text(
+        "cubes:\n"
+        "  - name: a\n"
+        "    sql_table: kipptaf_marts.a\n"
+        "    dimensions:\n"
+        "      - name: x\n"
+        "        sql: x\n"
+        "        type: string\n"
+        "  - name: b\n"
+        "    sql_table: kipptaf_marts.b\n"
+        "    dimensions:\n"
+        "      - name: y\n"
+        "        sql: y\n"
+        "        type: string\n",
+        encoding="utf-8",
+    )
+    import pytest
+
+    with pytest.raises(ValueError, match="expected exactly one cube"):
+        mod._patch_cube_file(cube_path, search_dirs=[])

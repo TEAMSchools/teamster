@@ -74,13 +74,8 @@ views:
 
     meta:
       folders:
-        - name: Outcome
+        - name: Attendance
           members:
-            - avg_daily_attendance
-            - pct_tardy
-            - count_truants
-            - pct_truant
-            - count_students
             - attendance_category
             - is_truant
         - name: Date
@@ -119,14 +114,6 @@ views:
           members:
             - academic_year
             - semester
-      usage:
-        ada:
-          SUM(attendance_value) / SUM(membership_value); never average a per-row
-          ratio
-        point_in_time: filter to a single date_day for snapshot questions
-        truancy_regional:
-          Miami uses 15+ absences / 90-day rolling; NJ regions use projected
-          50+/year
 
     access_policy:
       # No PII tier — view contains no direct student identifiers.

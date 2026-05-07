@@ -129,7 +129,8 @@ def _patch_cube_file(
         "skipped_already": 0,
         "skipped_expr": 0,
         "skipped_no_match": 0,
-        "skipped_no_table": 0,
+        "skipped_wrong_schema": 0,
+        "skipped_no_dbt_yaml": 0,
     }
     ry, FoldedScalarString = _get_ryaml()
     with path.open(encoding="utf-8") as f:
@@ -137,14 +138,16 @@ def _patch_cube_file(
     cubes = doc.get("cubes") or []
     if not cubes:
         return counts
+    if len(cubes) != 1:
+        raise ValueError(f"{path}: expected exactly one cube, found {len(cubes)}")
     cube = cubes[0]
     table = _resolve_table_from_sql_table(cube.get("sql_table"))
     if table is None:
-        counts["skipped_no_table"] += 1
+        counts["skipped_wrong_schema"] += 1
         return counts
     descriptions = _load_dbt_descriptions(table, search_dirs=search_dirs)
     if descriptions is None:
-        counts["skipped_no_table"] += 1
+        counts["skipped_no_dbt_yaml"] += 1
         return counts
     for dim in cube.get("dimensions") or []:
         if "description" in dim:
@@ -184,7 +187,8 @@ def main(argv: list[str] | None = None) -> int:
         "skipped_already": 0,
         "skipped_expr": 0,
         "skipped_no_match": 0,
-        "skipped_no_table": 0,
+        "skipped_wrong_schema": 0,
+        "skipped_no_dbt_yaml": 0,
     }
     any_changes = False
     for f in files:
