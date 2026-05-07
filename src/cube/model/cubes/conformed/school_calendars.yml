@@ -10,19 +10,29 @@ cubes:
         primary_key: true
 
       - name: date_key
+        description: >-
+          Each day of the school year including holidays and weekends, such as
+          the school day. Indexed. Currently warns on 3 NULL rows (project-
+          default `not_null` severity) — junk pre-2000 source dates sanitized to
+          NULL upstream by PR #3809; the 3 rows themselves should be filtered
+          out of this dim. See follow-up note in #3719 thread.
         sql: date_key
         type: string
 
       - name: location_key
+        description: Surrogate key for the school. FK to dim_locations.
         sql: location_key
         type: string
 
       - name: is_in_session
+        description: TRUE if this date is an instructional day at this school.
         sql: is_in_session
         type: boolean
         public: true
 
       - name: is_membership_day
+        description:
+          TRUE if this date counts toward student membership at this school.
         sql: is_membership_day
         type: boolean
         public: true
