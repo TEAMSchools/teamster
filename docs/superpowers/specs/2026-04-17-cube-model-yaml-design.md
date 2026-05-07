@@ -145,35 +145,6 @@ column metadata.
 Tag location is always the cube dimension, not the view include list. Views
 select from cubes and inherit the signal without re-declaring it.
 
-**Authoritative references for PII classification decisions:**
-
-_Student data (FERPA-governed):_
-
-- [34 CFR § 99.3](https://www.law.cornell.edu/cfr/text/34/99.3) — FERPA's
-  statutory definition of personally identifiable information, including the
-  direct/indirect identifier distinction and the reasonable-person
-  re-identification test
-- [ED.gov PTAC — PII in Education Records](https://studentprivacy.ed.gov/content/personally-identifiable-information-education-records)
-  — Department of Education guidance on what qualifies as PII under FERPA
-- [PTAC — Data De-identification: Basic Terms](https://studentprivacy.ed.gov/sites/default/files/resource_document/file/data_deidentification_terms_0.pdf)
-  — cell suppression thresholds and de-identification standards referenced by
-  FERPA's § 99.31(b) release exemption
-- NJ Student Data Privacy Act (NJSA 18A:36-35 et seq.) — stricter than baseline
-  FERPA for third-party vendors; applies to any external tool consuming Cube
-  data
-
-_Employee data (not FERPA — governed by employment law):_
-
-- [NIST SP 800-122](https://nvlpubs.nist.gov/nistpubs/legacy/sp/nistspecialpublication800-122.pdf)
-  — federal PII classification framework widely adopted for HR data; defines the
-  sensitive PII vs. non-sensitive PII distinction
-- [EEOC 29 CFR Part 1602](https://www.eeoc.gov/employers/summary-selected-recordkeeping-obligations-29-cfr-part-1602)
-  — recordkeeping obligations for race, gender, and employment action data
-- ADA 42 U.S.C. § 12112(d)(3)(B) — requires medical and disability-related
-  records (including benefits enrollment) to be stored separately from general
-  personnel records with access limited to designated personnel
-- FLSA 29 CFR Part 516 — payroll and compensation record retention requirements
-
 ### Two views per domain: detail and summary
 
 Each domain exposes a detail view and a summary view. Detail consumers see
@@ -232,8 +203,8 @@ src/cube/model/
       surveys.yml
       survey_responses.yml
       survey_expectations.yml
-    college/
-      college.yml
+    postsecondary/
+      postsecondary.yml
     talent/
       talent.yml
     staffing/
@@ -265,9 +236,9 @@ src/cube/model/
     surveys/
       surveys_detail.yml
       surveys_summary.yml
-    college/
-      college_detail.yml
-      college_summary.yml
+    postsecondary/
+      postsecondary_detail.yml
+      postsecondary_summary.yml
     talent/
       talent_detail.yml
       talent_summary.yml
@@ -320,6 +291,18 @@ Included in the `staff_work_history` period intersection when primary-position
 filtering is needed at a point in time. See Pattern 3 for the optional LEFT JOIN
 pattern.
 
+**Note on gradebook — teacher and manager info:** Inlining
+`bridge_course_section_teachers` surfaces `teacher_staff_key` on the gradebook
+cube, enabling a join to `dim_staff` for teacher name. Manager name requires
+`manager_name` and `manager_staff_key` to be denormalized onto `dim_staff`
+(#3838) — Cube cannot join `dim_staff` twice under different roles. Implement
+gradebook cubes after #3838 merges.
+
+**Note on observations — eligible teacher denominator:** `pct_evaluated` and
+`pct_assigned_goals` require a count of eligible teachers as the denominator.
+This is not on `fct_staff_observations` — requires an `is_teaching_role` flag or
+documented filter on `dim_staff_work_assignments` (#3839) before implementation.
+
 **Note on courses:** There is no courses domain cube or view.
 `dim_student_section_enrollments`, `dim_courses`, `dim_course_sections`,
 `bridge_course_section_teachers`, and `bridge_course_section_terms` are
@@ -338,6 +321,10 @@ standalone dimension (not inlined) with FK from both fact tables via
 `assessment_administration_key`. The `assessment_administrations` cube file
 should be added to the repository structure.
 
+`fct_assessment_scores_enrollment_scoped` has `is_mastery`;
+`fct_assessment_scores_student_scoped` does not — mastery-rate measures on
+student-scoped assessments require #3840 before implementation.
+
 **Note on surveys — role-playing respondent FKs:** `fct_survey_submissions` uses
 a respondent-type discriminator (`staff`, `student`, `family`) with role-playing
 FKs: `staff_key` → `dim_staff`, `student_enrollment_key` →
@@ -353,6 +340,16 @@ candidate PII (name, email, contact details). The talent views require
 `cube-access-staff-pii` or a dedicated `cube-access-talent` group — to be
 decided at implementation. Candidate data is not covered by FERPA or employment
 law but is sensitive personal data governed by general privacy best practices.
+`fct_job_candidate_applications.phone_interview_score` is typed `string` —
+requires #3837 before `avg_phone_interview_score` can be implemented.
+
+**Note on college (postsecondary) domain:** `dim_college_enrollments` only
+covers enrollment status, degree, major, `is_graduated`, and `is_withdrawn`. The
+majority of postsecondary metrics (FAFSA, FSA IDs, HESAA, application tracking,
+ECC scores, award letters, college GPA, career launch) require
+KIPPADB/Salesforce models not yet in `models/marts/`. Implement only the
+measures backed by `dim_college_enrollments` now; remaining metrics are blocked
+on #3695.
 
 **Note on support:** `fct_support_tickets` may reference staff or student
 identifiers depending on the ticket subject. Access group requirements depend on
