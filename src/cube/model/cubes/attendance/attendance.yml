@@ -88,9 +88,9 @@ cubes:
       - name: membership_value
         description: >-
           The amount of a student's membership this school claims. If a student
-          attends more than one school eachone will only be able to claim a
+          attends more than one school each one will only be able to claim a
           certain portion of the membership. The largest number for this will
-          usually be1 and fractions expressed as decimals. Like .5 or .25.
+          usually be 1 and fractions expressed as decimals. Like .5 or .25.
         sql: membership_value
         type: number
         public: true
@@ -98,7 +98,7 @@ cubes:
       - name: present_weight
         description: >-
           Weighted presence value. 0.67 for tardy (T-prefix codes), otherwise
-          equals attendancevalue. Fractional by design — not a 0/1 flag.
+          equals attendance_value. Fractional by design — not a 0/1 flag.
         sql: present_weight
         type: number
         public: true
