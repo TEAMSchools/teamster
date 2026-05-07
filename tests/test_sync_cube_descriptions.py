@@ -5,6 +5,7 @@ import shutil
 import sys
 from pathlib import Path
 
+import pytest
 import yaml as _yaml  # for reading the patched output
 
 _SCRIPT = Path("scripts/sync_cube_descriptions.py")
@@ -171,7 +172,7 @@ def test_patch_skips_no_dbt_yaml(tmp_path) -> None:
     """sql_table is kipptaf_marts.<x> but no matching dbt YAML exists."""
     mod = _load_script()
     cube_path = tmp_path / "cube.yml"
-    cube_path.write_text(
+    cube_text = (
         "cubes:\n"
         "  - name: orphan\n"
         "    public: false\n"
@@ -180,15 +181,17 @@ def test_patch_skips_no_dbt_yaml(tmp_path) -> None:
         "    dimensions:\n"
         "      - name: x\n"
         "        sql: x\n"
-        "        type: string\n",
-        encoding="utf-8",
+        "        type: string\n"
     )
+    cube_path.write_text(cube_text, encoding="utf-8")
     empty = tmp_path / "empty"
     empty.mkdir()
     counts = mod._patch_cube_file(cube_path, search_dirs=[empty])
     assert counts["skipped_no_dbt_yaml"] == 1
     assert counts["skipped_wrong_schema"] == 0
     assert counts["updated"] == 0
+    # File contents unchanged on skip — no write should occur.
+    assert cube_path.read_text(encoding="utf-8") == cube_text
 
 
 def test_patch_raises_on_multiple_cubes_per_file(tmp_path) -> None:
@@ -211,7 +214,5 @@ def test_patch_raises_on_multiple_cubes_per_file(tmp_path) -> None:
         "        type: string\n",
         encoding="utf-8",
     )
-    import pytest
-
     with pytest.raises(ValueError, match="expected exactly one cube"):
         mod._patch_cube_file(cube_path, search_dirs=[])

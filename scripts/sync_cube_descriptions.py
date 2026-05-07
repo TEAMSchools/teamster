@@ -143,6 +143,8 @@ def _patch_cube_file(
     cube = cubes[0]
     table = _resolve_table_from_sql_table(cube.get("sql_table"))
     if table is None:
+        # Also covers a missing ``sql_table:`` key — _resolve_table_from_sql_table
+        # returns None for non-string input.
         counts["skipped_wrong_schema"] += 1
         return counts
     descriptions = _load_dbt_descriptions(table, search_dirs=search_dirs)
@@ -191,14 +193,22 @@ def main(argv: list[str] | None = None) -> int:
         "skipped_no_dbt_yaml": 0,
     }
     any_changes = False
+    any_errors = False
     for f in files:
-        counts = _patch_cube_file(f)
+        try:
+            counts = _patch_cube_file(f)
+        except ValueError as exc:
+            print(f"ERROR: {exc}", file=sys.stderr)
+            any_errors = True
+            continue
         if counts["updated"]:
             any_changes = True
             print(f"{f}: {counts['updated']} updated")
         for k, v in counts.items():
             total[k] += v
     print(f"\nTotal: {total}")
+    if any_errors:
+        return 1
     if args.check and any_changes:
         return 1
     return 0
