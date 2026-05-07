@@ -20,3 +20,28 @@ def _load_script():
 
 def test_script_module_loads() -> None:
     assert _load_script() is not None
+
+
+def test_resolve_bare_column() -> None:
+    mod = _load_script()
+    assert mod._resolve_dbt_column("attendance_value") == "attendance_value"
+
+
+def test_resolve_cube_qualified() -> None:
+    mod = _load_script()
+    assert mod._resolve_dbt_column("{CUBE}.`name`") == "name"
+
+
+def test_resolve_cube_unquoted() -> None:
+    mod = _load_script()
+    assert mod._resolve_dbt_column("{CUBE}.location_key") == "location_key"
+
+
+def test_resolve_expression_returns_none() -> None:
+    mod = _load_script()
+    assert mod._resolve_dbt_column("CAST(date_key AS TIMESTAMP)") is None
+
+
+def test_resolve_non_string_returns_none() -> None:
+    mod = _load_script()
+    assert mod._resolve_dbt_column(None) is None
