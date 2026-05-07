@@ -1,0 +1,9 @@
+cubes:
+  - name: other
+    public: false
+    sql_table: other_schema.something
+
+    dimensions:
+      - name: x
+        sql: x
+        type: string
