@@ -238,8 +238,6 @@ src/cube/model/
       talent.yml
     staffing/
       staffing.yml
-    courses/
-      course_sections.yml
     support/
       support.yml
   views/
@@ -276,15 +274,12 @@ src/cube/model/
     staffing/
       staffing_detail.yml
       staffing_summary.yml
-    courses/
-      courses_detail.yml
-      courses_summary.yml
     support/
       support_detail.yml
       support_summary.yml
 ```
 
-Total cube files: ~42 (down from 72 dbt models). Views: 26 (2 per domain × 13
+Total cube files: ~41 (down from 72 dbt models). Views: 24 (2 per domain × 12
 non-conformed domains).
 
 ## Domain Breakdown
@@ -299,8 +294,7 @@ joined into the domain cube's `sql:` block and have no cube file of their own.
 | staff        | staff (Type 1), staff_work_history, staff_compensation, staff_additional_earnings, staff_attrition, staff_benefits, staff_memberships | dim_staff, dim_staff_work_assignments, fct_work_assignment_compensation, fct_work_assignment_additional_earnings, fct_staff_attrition, fct_staff_benefits_enrollments, fct_staff_membership_enrollments | dim_staff_status, dim_work_assignment_status, dim_work_assignment_primary, dim_work_assignment_jobs, dim_work_assignment_types, dim_work_assignment_locations, dim_work_assignment_organizational_units, dim_work_assignment_reporting_relationships |
 | attendance   | attendance, attendance_interventions, attendance_streaks                                                                              | fct_student_attendance_daily, fct_student_attendance_interventions, fct_student_attendance_streaks                                                                                                      | dim_student_attendance_intervention_types                                                                                                                                                                                                            |
 | behavioral   | behavioral, family_communications                                                                                                     | fct_behavioral_incidents, fct_family_communications                                                                                                                                                     | fct_behavioral_consequences                                                                                                                                                                                                                          |
-| gradebook    | grades_term, grades_gpa, grades_category, grades_assignments                                                                          | fct_grades_term, fct_grades_gpa, fct_grades_category, fct_grades_assignments                                                                                                                            | —                                                                                                                                                                                                                                                    |
-| courses      | course_sections                                                                                                                       | dim_student_section_enrollments                                                                                                                                                                         | dim_courses, dim_course_sections, bridge_course_section_teachers, bridge_course_section_terms                                                                                                                                                        |
+| gradebook    | grades_term, grades_gpa, grades_category, grades_assignments                                                                          | fct_grades_term, fct_grades_gpa, fct_grades_category, fct_grades_assignments                                                                                                                            | dim_courses, dim_course_sections, dim_student_section_enrollments, bridge_course_section_teachers, bridge_course_section_terms                                                                                                                       |
 | assessment   | assessment_scores, assessment_scores_student_scoped, assessment_administrations                                                       | fct_assessment_scores_enrollment_scoped, fct_assessment_scores_student_scoped, dim_assessment_administrations                                                                                           | dim_assessments, dim_assessment_comparisons, dim_assessment_goals, bridge_assessment_expectations_enrollment_scoped, bridge_assessment_expectations_student_scoped                                                                                   |
 | observations | observations, observation_scores, observation_goals                                                                                   | fct_staff_observations, fct_staff_observation_scores, fct_staff_observation_goals                                                                                                                       | dim_staff_observation_rubrics, dim_staff_observation_rubric_measurements, dim_staff_observation_types, dim_staff_observation_goal_types, dim_staff_observation_expectations                                                                          |
 | surveys      | surveys, survey_responses, survey_expectations                                                                                        | fct_survey_submissions, fct_survey_responses, bridge_survey_expectations                                                                                                                                | dim_surveys, dim_survey_administrations, dim_survey_questions, bridge_survey_questions                                                                                                                                                               |
@@ -325,6 +319,13 @@ on `work_assignment_key` with `effective_start_date` / `effective_end_date`.
 Included in the `staff_work_history` period intersection when primary-position
 filtering is needed at a point in time. See Pattern 3 for the optional LEFT JOIN
 pattern.
+
+**Note on courses:** There is no courses domain cube or view.
+`dim_student_section_enrollments`, `dim_courses`, `dim_course_sections`,
+`bridge_course_section_teachers`, and `bridge_course_section_terms` are
+dimension-only models with no natural measures — no fact table backs them.
+Course/section attributes are inlined into the gradebook cubes, which are the
+primary analytical consumers of section-level data.
 
 **Note on assessment domain (updated 2026-04):**
 `dim_student_assessment_expectations` no longer exists — it was deleted and
