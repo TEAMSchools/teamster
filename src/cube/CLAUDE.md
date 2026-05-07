@@ -42,6 +42,18 @@ school_calendars) go in `cubes/conformed/`.
   facts cast through (`CAST({CUBE}.date_key AS TIMESTAMP)`).
 - **Hidden helper measures** prefix with `_` and set `public: false` (see
   `_sum_attendance_value` building blocks).
+- **`meta.folders` is the only Cube-rendered `meta.*` key.** Put guidance in
+  `description:`, not `meta.usage` / `meta.synonyms` / etc. — those land in
+  `/v1/meta` but Cube Cloud and the chat agent don't read them.
+- **Folders group dimensions only.** Cube Cloud separates measures natively;
+  don't list measures under `members:`.
+- **Folder member naming.** Bare for top-cube members; `<prefix>_<member>` for
+  `prefix: true` joins, where `<prefix>` is the last `join_path` segment — so
+  `dim_regions_region_name` for the two-hop
+  `attendance.dim_locations.dim_regions`.
+- **Branch schema validation is manual.** Cube Cloud Staging Environments don't
+  auto-create from pushes. Open Cube Cloud → Data Model → Dev Mode → add branch
+  by name to spin up a per-branch staging instance.
 
 ## View access policies
 

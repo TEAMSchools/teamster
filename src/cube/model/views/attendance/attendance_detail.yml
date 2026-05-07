@@ -13,8 +13,11 @@ views:
       Absent, Tardy, In-School Suspension, Out-of-School Suspension);
       attendance_code is the raw SIS code for specific drill-down. is_in_session
       and is_membership_day come from dim_school_calendars and are joined on
-      (date_key, location_key) to avoid a diamond path. Contains direct student
-      identifiers — see access_policy for PII gating.
+      (date_key, location_key) to avoid a diamond path. For point-in-time
+      queries (e.g. is_truant on a specific date), filter to a single date_day.
+      Truancy criteria are regional: Miami uses 15+ absences in a 90-day rolling
+      window; NJ regions use projected 50+ absences for the year. Contains
+      direct student identifiers — see access_policy for PII gating.
 
     cubes:
       - join_path: attendance
@@ -105,13 +108,8 @@ views:
 
     meta:
       folders:
-        - name: Outcome
+        - name: Attendance
           members:
-            - avg_daily_attendance
-            - pct_tardy
-            - count_truants
-            - pct_truant
-            - count_students
             - attendance_code
             - attendance_category
             - attendance_value
@@ -176,17 +174,6 @@ views:
           members:
             - academic_year
             - semester
-      usage:
-        ada:
-          SUM(attendance_value) / SUM(membership_value); never average a per-row
-          ratio
-        point_in_time: filter to a single date_day for snapshot questions
-        truancy_regional:
-          Miami uses 15+ absences / 90-day rolling; NJ regions use projected
-          50+/year
-        category_vs_code:
-          use attendance_category for GROUP BY breakdowns; attendance_code for
-          raw drill-down
 
     access_policy:
       - group: cube-access-student-data
