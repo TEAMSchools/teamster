@@ -12,10 +12,7 @@ cubes:
       - name: date_key
         description: >-
           Each day of the school year including holidays and weekends, such as
-          the school day. Indexed. Currently warns on 3 NULL rows (project-
-          default `not_null` severity) — junk pre-2000 source dates sanitized to
-          NULL upstream by PR #3809; the 3 rows themselves should be filtered
-          out of this dim. See follow-up note in #3719 thread.
+          the school day. Indexed.
         sql: date_key
         type: string
 
