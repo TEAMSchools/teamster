@@ -90,11 +90,19 @@ def build_dbt_assets(
                     context.log.info(msg=event)
 
                 if error := refresh_external_metadata_cache.get_error():
-                    if re.search(
+                    error_str = str(error)
+                    tolerated_patterns = [
+                        # Concurrent refresh on the same table — harmless.
                         r"Another metadata cache refresh job with id [\w-]+ is ongoing for table",
-                        str(error),
-                    ):
-                        context.log.warning(msg=str(error))
+                        # New source's first deploy: relation_name in the manifest
+                        # reflects the deploy-time target's schema (typically prod),
+                        # but stage_external_sources just created the table under the
+                        # runtime target's schema. The just-created table's metadata
+                        # cache is fresh by construction, so the refresh is redundant.
+                        r"Not found: Table \S+ was not found in location",
+                    ]
+                    if any(re.search(p, error_str) for p in tolerated_patterns):
+                        context.log.warning(msg=error_str)
                     else:
                         raise error
 
