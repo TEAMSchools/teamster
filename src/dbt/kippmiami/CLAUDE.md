@@ -25,7 +25,7 @@ PowerSchool data source: **ODBC** (`odbc.+enabled: true`,
 
 All materialized as tables via cross-project `ref()`:
 
-- `powerschool` (ODBC) — `powerschool_external_location_root` points to GCS
+- `powerschool` (ODBC)
 - `deanslist`
 - `iready`
 - `renlearn`
