@@ -342,6 +342,58 @@ The hand-entry problem for Foundation goal rates could be reduced by requesting
 the data from Foundation in a CSV or structured format and uploading directly,
 rather than transcribing from a document.
 
+### PM goal pipeline: `rpt_gsheets__dibels_pm_goal_setting` → `stg_google_sheets__dibels_pm_goals`
+
+This pipeline is the PM equivalent of the BM goals pipeline described above —
+same copy-paste freeze pattern, same motivation, different source calculation
+and snapshot timing.
+
+#### History
+
+In AY 2024–2025, the Literacy Team leader hand-calculated per-round PM goals
+using the same collective-average methodology. In AY 2025–2026 the data team
+automated her process via `rpt_gsheets__dibels_pm_goal_setting`. The methodology
+did not change — only the calculation moved into dbt.
+
+#### What the calculation produces
+
+`rpt_gsheets__dibels_pm_goal_setting` takes the average BOY (or MOY) composite
+score for probe-eligible students and works out, per region × grade × measure ×
+round:
+
+- **`starting_words`** — average score at the start of the PM season
+- **`required_growth_words`** — Foundation benchmark threshold − starting
+  average
+- **`cumulative_growth_words`** — the score a student must reach by round N to
+  be on track (running sum of proportional per-round growth targets, capped at
+  the benchmark goal on the final round)
+- **`round_growth_words_goal`** — growth expected within this specific round,
+  proportional to `pm_round_days / pm_days`
+- **`benchmark_goal`**, **`pm_goal_include`**, **`pm_goal_criteria`** — passed
+  through from `int_google_sheets__dibels_pm_expectations`
+
+#### The snapshot freeze: copy-paste → `stg_google_sheets__dibels_pm_goals`
+
+Just like the BM pipeline, the output is manually copy-pasted into a Google
+Sheet to freeze it before downstream corrections can shift the numbers. The
+freeze happens **twice per year**:
+
+- **After BOY testing** (all regions complete) — for the BOY→MOY PM season
+- **After MOY testing** (all regions complete) — for the MOY→EOY PM season
+
+`int_amplify__pm_met_criteria` then uses `stg_google_sheets__dibels_pm_goals` as
+its goal spine: inner-joining on
+`academic_year + region + grade + admin_season + round_number + measure_standard`,
+filtering to `pm_goal_include is null` (active goal rows), and comparing each
+student's score to `cumulative_growth_words` to set `met_measure_standard_goal`.
+The AND/OR round criteria logic runs on top of that.
+
+!!! warning "Entire pipeline deprecated in AY 2026–2027" With aimline providing
+per-student goals, `rpt_gsheets__dibels_pm_goal_setting`,
+`stg_google_sheets__dibels_pm_goals`, and `int_amplify__pm_met_criteria`'s
+current score-comparison logic are all replaced. See the deprecation list in
+issue [#3834](https://github.com/TEAMSchools/teamster/issues/3834).
+
 ### Reference table: `stg_google_sheets__dibels_goals_long`
 
 A digitized version of the first page of the
