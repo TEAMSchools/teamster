@@ -387,7 +387,22 @@ region:
 - **Gap** — `(expected − actual) × 1.5`
 
 This output tells each school how many students need to reach At/Above to hit
-the Foundation target. The `+ 5` and `× 1.5` adjustments are a planning buffer.
+the Foundation target.
+
+The `+ 5` and `× 1.5` values are **T&L-set planning buffers** — added at T&L's
+request to build in margin above the Foundation floor. Neither is derived from
+the Foundation targets themselves. Both should be reconfirmed with T&L at the
+start of each academic year before the BOY goals calculation is run (see Annual
+rollover procedure below).
+
+!!! warning "Open question: `grade_goal_type` and `max(grade_goal)`"
+`stg_google_sheets__dibels_foundation_goals` contains two goal types:
+`'At/Above'` and `'Well Below'`, each with its own `grade_goal` rate. The model
+collapses them via `max(grade_goal)`, but for some MS grades the Well Below rate
+is _higher_ than the At/Above rate — meaning `max()` picks the Well Below rate
+and uses it to compute the expected At/Above student count. Whether this is
+intentional needs confirmation with T&L before the next BOY goals run. Tracked
+in issue [#3834](https://github.com/TEAMSchools/teamster/issues/3834).
 
 #### The snapshot freeze: copy-paste → `stg_google_sheets__dibels_bm_goals`
 
@@ -763,6 +778,28 @@ field. The benchmark schedule and measures do not change year-over-year.
 **In `stg_google_sheets__reporting__terms`**: add `LIT`-type rows for the BOY,
 MOY, and EOY windows with the new academic year's dates. Benchmark dates are
 typically known early and do not require T&L input.
+
+### Step 1b — Confirm planning buffer values with T&L (before BOY calculation)
+
+Before running the BOY goals calculation, confirm with Teaching & Learning
+whether the two planning buffer values in
+`rpt_gsheets__dibels_bm_goals_calculations` should remain the same or change for
+the new year:
+
+- **`+ 5`** — added to `ceiling(total × grade_goal)` to produce the expected
+  At/Above student count; builds margin above the Foundation floor
+- **`× 1.5`** — multiplies the raw gap to produce the intervention target; adds
+  headroom for students who start PM but don't complete it
+
+These values are hardcoded in the SQL. If T&L wants different values, the model
+must be updated before the BOY snapshot is copy-pasted into
+`stg_google_sheets__dibels_bm_goals`.
+
+!!! note "AY 2026–2027: confirm PM buffer equivalents" The aimline migration
+introduces per-student goals from Amplify, but T&L may still want planning
+buffers applied to PM goal counts or intervention targets. Confirm with T&L what
+(if any) padding should be applied in the new PM model before the first PM round
+of AY 2026–2027 begins.
 
 ### Step 2 — Add PM rows (requires Teaching & Learning sign-off)
 
