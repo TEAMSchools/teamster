@@ -1,0 +1,64 @@
+models:
+  - name: stg_powerschool__u_expectations
+    description:
+      Per-school-level / quarter / week roll-up of expectations counts (W/H/F/S)
+      from the Newark Gradebook Audit plugin's U_EXPECTATIONS extension table.
+      Always scoped to the current academic year — the source has no academic
+      year column.
+    columns:
+      - name: dcid
+        data_type: int64
+        description:
+          Auto-generated PowerSchool descendant ID. Primary key for this
+          extension table.
+        data_tests:
+          - unique:
+              config:
+                severity: error
+          - not_null:
+              config:
+                severity: error
+        constraints:
+          - type: primary_key
+      - name: id
+        data_type: int64
+        description: Plugin-assigned row identifier.
+      - name: school_level
+        data_type: string
+        description:
+          School-level grouping (e.g. ES / MS / HS) for the rollup row.
+      - name: quarter
+        data_type: int64
+        description: Academic quarter (1-4) the rollup row covers.
+      - name: week_number
+        data_type: int64
+        description: Week number within the quarter.
+      - name: cnt_w
+        data_type: int64
+        description: Count of students in the W expectations bucket for the row.
+      - name: cnt_h
+        data_type: int64
+        description: Count of students in the H expectations bucket for the row.
+      - name: cnt_f
+        data_type: int64
+        description: Count of students in the F expectations bucket for the row.
+      - name: cnt_s
+        data_type: int64
+        description: Count of students in the S expectations bucket for the row.
+      - name: notes
+        data_type: string
+        description: Free-text notes captured by the plugin for the rollup row.
+      - name: whocreated
+        data_type: string
+        description: User login that created the record.
+      - name: whencreated
+        data_type: timestamp
+        description:
+          Date and time the record was created. Defaults to system date.
+      - name: whomodified
+        data_type: string
+        description: User login that last modified the record.
+      - name: whenmodified
+        data_type: timestamp
+        description:
+          Date and time the record was last modified. Defaults to system date.
