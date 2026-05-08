@@ -1072,6 +1072,79 @@ explicitly selected in `int_google_sheets__dibels_expected_assessments`. The
 refactored `int_amplify__pm_met_criteria` will source it from there, making
 `stg_google_sheets__dibels_pm_goals` fully deprecatable.
 
+### PM status system — Bright Spots (AY 2026–2027)
+
+T&L has defined a **5-tier PM status** to replace the binary `aimline_status`
+provided by Amplify. Status is computed per student per round and varies across
+three dimensions:
+
+| Dimension       | Values               |
+| --------------- | -------------------- |
+| PM period       | MOY, EOY             |
+| Grade band      | GK–5, G6–8           |
+| Benchmark group | At/Above, Well Below |
+
+The five tiers from best to worst:
+
+| Tier        | Meaning                                 |
+| ----------- | --------------------------------------- |
+| Bright Spot | Score significantly exceeds the PM goal |
+| On Track    | Score at or near the PM goal            |
+| In Range    | Score slightly below the PM goal        |
+| Off Track   | Score significantly below the PM goal   |
+| Not Tested  | No score recorded for the round         |
+
+#### Status thresholds
+
+Status is computed from `gap_to_goal = score - goal` (goal from the aimline
+file).
+
+**GK–5 — At/Above students:**
+
+| Tier        | `gap_to_goal`          |
+| ----------- | ---------------------- |
+| Bright Spot | ≥ +5                   |
+| On Track    | +1 to +4               |
+| In Range    | −1 to −5               |
+| Off Track   | more than 5 below goal |
+
+**G6–8 — At/Above students** (tighter bands; exact thresholds pending T&L
+confirmation — see [Open questions](#open-questions-as-of-may-2026)):
+
+| Tier        | `gap_to_goal`          |
+| ----------- | ---------------------- |
+| Bright Spot | ≥ +5                   |
+| On Track    | +1 to +3               |
+| In Range    | −1 to −4               |
+| Off Track   | more than 5 below goal |
+
+!!! note "Well Below thresholds — direction needs clarification" T&L's document
+defines Well Below students with status bands that appear directionally inverted
+relative to At/Above: "On Track" is 1–4 points _below_ the goal; "Off Track" is
+more than 5 points _above_ the goal. The intended interpretation must be
+confirmed with T&L before implementation. See
+[Open questions](#open-questions-as-of-may-2026).
+
+#### Data model requirements
+
+| New field         | Derivation                                                            | Model                          |
+| ----------------- | --------------------------------------------------------------------- | ------------------------------ |
+| `gap_to_goal`     | `score - goal` (goal from aimline file)                               | `int_amplify__pm_met_criteria` |
+| `grade_band`      | `CASE WHEN assessment_grade_int <= 5 THEN 'GK-5' ELSE 'G6-8' END`     | Same                           |
+| `pm_cohort_group` | Derived from prior BM composite band — not provided by Amplify        | Same                           |
+| `pm_status`       | 5-tier CASE on `gap_to_goal`, `grade_band`, `pm_cohort_group`         | Same                           |
+| `is_sped`         | Student join (PowerSchool) — only if SPED goals branch is implemented | TBD                            |
+
+All five fields must be surfaced in `rpt_tableau__dibels_dashboard`.
+
+#### SPED goals (nice to have)
+
+T&L's document includes a separate SPED goals branch with the same 4-tier status
+structure. Implementing requires: (a) a SPED-specific PM goals data source
+(currently unknown), (b) a staging model for that source, and (c) an `is_sped`
+flag derived from PowerSchool. This is **not in scope** for the initial AY
+2026–2027 migration.
+
 ### Open questions (as of May 2026)
 
 - **Expected PM measures** — not yet defined in
@@ -1098,6 +1171,19 @@ refactored `int_amplify__pm_met_criteria` will source it from there, making
   `'At/Above'` and `'Well Below'` goal rates; `max(grade_goal)` picks the wrong
   rate for MS grades where Well Below > At/Above; confirm intended behavior with
   T&L before next BOY goals run
+- **Well Below PM status direction** — T&L's Bright Spots document shows Well
+  Below student status tiers with direction inverted relative to At/Above: "On
+  Track" is 1–4 points _below_ the goal; "Off Track" is more than 5 points
+  _above_ the goal; intended interpretation must be confirmed with T&L before
+  implementing the `pm_status` CASE logic in `int_amplify__pm_met_criteria`
+- **SPED PM goals data source** — T&L's Bright Spots document includes a
+  SPED-specific status branch (marked "nice to have"); implementing requires a
+  SPED PM goals source not currently in the model — confirm whether one exists
+  and what format it takes
+- **G6–8 Bright Spots exact thresholds** — T&L's document shows different On
+  Track / In Range thresholds for G6–8 (approximately On Track: +1 to +3, In
+  Range: −1 to −4); exact values need T&L confirmation before implementing the
+  `pm_status` CASE logic
 
 ### Planned improvements
 
