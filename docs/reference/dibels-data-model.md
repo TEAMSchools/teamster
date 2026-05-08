@@ -273,6 +273,70 @@ In `int_amplify__pm_met_criteria`, this is implemented via `min()` (AND — all
 must be 1) and `max()` (OR — any must be 1) window functions partitioned by
 student / round.
 
+### Reference table: `stg_google_sheets__dibels_goals_long`
+
+A digitized version of the first page of the
+[DIBELS 8 Official Goals document](https://dibels.uoregon.edu/sites/default/files/2021-06/DIBELS8thEditionGoals.pdf)
+(University of Oregon, 2021). The source sheet maps each measure × grade ×
+benchmark administration season to four score thresholds:
+
+| Column                 | Meaning                                                     |
+| ---------------------- | ----------------------------------------------------------- |
+| `Grade_Level_Standard` | Minimum score to be classified as "At Benchmark" (the norm) |
+| `Above`                | Threshold above which a student is "Above Benchmark"        |
+| `Below`                | Upper boundary of the "Below Benchmark" band                |
+| `Well_Below`           | Upper boundary of the "Well Below Benchmark" band           |
+
+The staging model adds two computed columns:
+
+- **`matching_pm_season`** — maps the BM admin season to the PM window that
+  follows it (`MOY` → `BOY→MOY`, `EOY` → `MOY→EOY`). BOY produces NULL because
+  there is no PM window before it.
+- **`grade_level`** — integer grade; kindergarten mapped from `'K'` to `0`.
+
+**Current use**: `int_google_sheets__dibels_pm_expectations` left joins to this
+table on `measure_standard + grade + admin_season` to pull
+`grade_level_standard` as `benchmark_goal`. That value was used to derive PM
+goals from a collective average of probe-eligible students (Below/Well Below
+composite).
+
+**Likely deprecated in AY 2026–2027**: the Amplify aimline file provides a
+per-student personalized goal, making the collective-average approach obsolete.
+Once `int_amplify__mclass__pm_student_summary` is replaced by the aimline
+source, `int_google_sheets__dibels_pm_expectations` will no longer need this
+join, and this table can be retired.
+
+### Assessment calendar: `stg_google_sheets__reporting__terms`
+
+A multi-domain Google Sheet (one row per term × region × school) that defines
+the date windows for all KIPP TAF reporting periods. The DIBELS model filters to
+`type = 'LIT'` rows, which contain:
+
+- **Benchmark windows** — BOY, MOY, EOY start/end dates by region
+- **PM round windows** — individual round start/end dates for each PM season
+  (`BOY→MOY`, `MOY→EOY`), by region
+
+These dates must be manually entered by the data team after receiving the
+testing calendar from Teaching & Learning. Like
+`stg_google_sheets__dibels_expected_assessments`, this sheet has two separate
+update steps:
+
+- **Benchmark dates** can be added at any time — the benchmark schedule is fixed
+  and does not require T&L approval to enter.
+- **PM round dates** must wait for T&L sign-off on the PM plan for the year,
+  since round counts and timing can change.
+
+`int_google_sheets__dibels_expected_assessments` joins to this table to attach
+start/end dates to each expected assessment row.
+`int_google_sheets__dibels_pm_expectations` uses it to compute the number of
+school days in each PM round and season (`pm_round_days`, `pm_days`), which feed
+the Tableau dashboard.
+
+!!! warning "Missing LIT rows block date resolution" If
+`stg_google_sheets__reporting__terms` does not yet have LIT rows for a new
+academic year, downstream models that join to it will produce rows with NULL
+dates — no error, just missing window information.
+
 ### Historical fixture: `stg_google_sheets__dibels_df_student_xwalk`
 
 This table is a **one-time workaround for AY 2023–2024 (SY24) only** and must
