@@ -339,12 +339,14 @@ and PM), each filtered by `rn_highest = 1`.
 | ------------ | -------------------------------------------------------------------------- |
 | AY 2024–2025 | Camden and Newark only; K–2 only                                           |
 | AY 2025–2026 | K–8 for both NJ and FL; Paterson included for the first time               |
-| AY 2026–2027 | PM deprecated — replaced by aimline; PM branch of this model to be removed |
+| AY 2026–2027 | K–8 all regions; PM source migrates to aimline; model updated, not removed |
 
 #### AY 2026–2027 changes
 
-The PM `UNION ALL` branch will be removed (or this model renamed to a BM-only
-model) once the new aimline-based PM intermediate is built. The DDS branch stays
+`int_amplify__all_assessments` retains both BM and PM branches — it is the
+single safe read point for all valid assessment scores and must stay that way.
+The PM branch will be updated to pull from a new aimline-based PM intermediate
+instead of `int_amplify__mclass__pm_student_summary`. The DDS branch stays
 indefinitely to preserve SY24 7–8 grade benchmark history. The
 `int_google_sheets__dibels_expected_assessments` inner join and all computed
 fields remain unchanged for the BM branch.
@@ -725,13 +727,12 @@ probe attempt within a PM period).
 
 ### Models being deprecated
 
-| Model                                       | Reason                                                              |
-| ------------------------------------------- | ------------------------------------------------------------------- |
-| `stg_google_sheets__dibels_pm_goals`        | Goals and status now come from aimline                              |
-| `int_amplify__mclass__pm_student_summary`   | Replaced by aimline source                                          |
-| PM branch of `int_amplify__all_assessments` | Replaced by new aimline-based intermediate                          |
-| `rpt_gsheets__dibels_pm_goal_setting`       | Collective-average goal calculation replaced by per-student aimline |
-| `PLIT` rows in `reporting__terms`           | Pre-round school day counting no longer needed without goal calc    |
+| Model                                     | Reason                                                              |
+| ----------------------------------------- | ------------------------------------------------------------------- |
+| `stg_google_sheets__dibels_pm_goals`      | Goals and status now come from aimline                              |
+| `int_amplify__mclass__pm_student_summary` | Replaced by aimline source                                          |
+| `rpt_gsheets__dibels_pm_goal_setting`     | Collective-average goal calculation replaced by per-student aimline |
+| `PLIT` rows in `reporting__terms`         | Pre-round school day counting no longer needed without goal calc    |
 
 ### `pm_goal_criteria` — AND/OR round logic
 
