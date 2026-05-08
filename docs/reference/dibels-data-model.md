@@ -362,28 +362,33 @@ this sheet.
 
 ## Annual rollover procedure
 
-At the start of each academic year,
-`stg_google_sheets__dibels_expected_assessments` must be updated before the data
-model will produce rows for that year. The two steps have different dependencies
-and can be done at different times.
+Two Google Sheets must be updated at the start of each academic year before the
+data model will produce rows for that year:
+
+- **`stg_google_sheets__dibels_expected_assessments`** — defines which
+  assessment rounds exist, which measures are expected, and PM goal logic
+- **`stg_google_sheets__reporting__terms`** — defines the date windows (start /
+  end) for each benchmark administration and each PM round
+
+Both sheets have a BM step that can be done immediately and a PM step that
+requires T&L sign-off. These steps have different dependencies and can be done
+at different times.
 
 ### Step 1 — Replicate Benchmark rows (no approval required)
 
-Copy all BM rows (admin seasons `BOY`, `MOY`, `EOY`) from the prior year and
-update the `academic_year` field. This can be done at any time by the data team
-without input from Teaching & Learning, since the benchmark schedule and
-measures do not change year-over-year.
+**In `stg_google_sheets__dibels_expected_assessments`**: copy all BM rows (admin
+seasons `BOY`, `MOY`, `EOY`) from the prior year and update the `academic_year`
+field. The benchmark schedule and measures do not change year-over-year.
 
-This step can be automated via the Google Sheets editing utility (see issue
-[#3834](https://github.com/TEAMSchools/teamster/issues/3834)).
+**In `stg_google_sheets__reporting__terms`**: add `LIT`-type rows for the BOY,
+MOY, and EOY windows with the new academic year's dates. Benchmark dates are
+typically known early and do not require T&L input.
 
 ### Step 2 — Add PM rows (requires Teaching & Learning sign-off)
 
-PM rows define the expected rounds, measures, and test codes for the `BOY→MOY`
-and `MOY→EOY` seasons. These cannot be added until the Teaching & Learning team
-confirms the PM plan for the year.
-
-T&L delivers **one document per state** (NJ and FL), each containing:
+These cannot be added until the Teaching & Learning team confirms the PM plan
+for the year. T&L delivers **one document per state** (NJ and FL), each
+containing:
 
 - Round numbers by PM season (`BOY→MOY`, `MOY→EOY`)
 - Date range for each round
@@ -392,17 +397,20 @@ T&L delivers **one document per state** (NJ and FL), each containing:
   Below Benchmark" students may be assigned different measures than "Below
   Benchmark" students within the same round and grade
 
-Once received, the data team translates this document into rows in
-`stg_google_sheets__dibels_expected_assessments`, setting `pm_goal_include` and
-`pm_goal_criteria` appropriately for each round.
+Once received, the data team enters the information in both sheets:
+
+- **`stg_google_sheets__dibels_expected_assessments`**: add PM rows with the
+  confirmed round numbers, measures, test codes, `pm_goal_include`, and
+  `pm_goal_criteria` for each round.
+- **`stg_google_sheets__reporting__terms`**: add `LIT`-type rows for each PM
+  round with the confirmed start/end dates, by region.
 
 This step must wait for Teaching & Learning guidance regardless of how early in
 the year it is attempted. Plan for this dependency when scheduling the rollover.
 
-!!! warning "PM rows block the PM data model" Until Step 2 is complete,
-`int_google_sheets__dibels_expected_assessments` will have no PM rows for the
-new year. Any model that joins to it for PM scaffolding will produce zero rows
-for PM — no error, just missing data.
+!!! warning "PM rows block the PM data model" Until Step 2 is complete in both
+sheets, the PM data model will produce no rows for the new year — no error, just
+missing data.
 
 ### Mid-year round cancellations
 
