@@ -620,6 +620,126 @@ scores SY24 only") that confirms the scope is limited. After SY24, grades 7–8
 returned to the standard mCLASS system, so no new rows will ever be needed in
 this sheet.
 
+### Participation roster: `int_students__dibels_participation_roster`
+
+This model builds a per-student × per-assessment-round participation record by
+crossing the enrollment roster against the expected assessment schedule, then
+left-joining to actual scores to determine whether each student completed each
+round.
+
+#### Structure: three-branch UNION ALL
+
+**Branch 1 — Benchmark**: All enrolled ELA students (K–8, `enroll_status` in
+0/2/3) whose enrollment window overlaps a scheduled Benchmark round (BOY/MOY/EOY
+from `int_google_sheets__dibels_expected_assessments` where
+`assessment_include is null`). Left-joined to `int_amplify__all_assessments` for
+actual score rows. `completed_test_round` is `TRUE` under two conditions (either
+is sufficient):
+
+- All expected probe rows arrived: `expected_row_count = actual_row_count`
+- A non-"No data" composite score exists for the season (fallback for students
+  who tested but where not every individual probe row was captured)
+
+**Branch 2 — BOY→MOY PM**: Students where the BOY composite was "Below
+Benchmark" or "Well Below Benchmark" (`boy_probe_eligible = 'Yes'`), crossed
+against active BOY→MOY rounds. `completed_test_round` is stricter here:
+`expected_row_count = actual_row_count` only — there is no composite fallback
+for PM.
+
+**Branch 3 — MOY→EOY PM**: Same pattern using `moy_probe_eligible = 'Yes'`
+against MOY→EOY rounds.
+
+The final `where rn = 1` deduplicates students whose enrollment date ranges
+produce multiple matches against the same assessment window.
+
+#### Grain and purpose
+
+One row per `academic_year + student_number + admin_season + round_number`. This
+model is the "did they test" spine. `int_amplify__pm_met_criteria` inner-joins
+to it to attach `completed_test_round` / `completed_test_round_int` to each
+student-goal row, keeping goal-met and test-completed as separate trackable
+fields downstream.
+
+!!! note "Legacy grain: `completed_test_round` in uniqueness key"
+`completed_test_round` is part of the uniqueness test grain because an earlier
+version of this model also produced rows for assessment windows where the
+student was **not enrolled** — which could yield both a TRUE and a FALSE row for
+the same student × round combination. The current model filters enrollment dates
+correctly, but the dual-row case may still occur at the edges. This is a
+candidate for simplification in a future cleanup pass.
+
+#### AY 2026–2027 considerations
+
+The BM branch should be unaffected by the aimline migration. The PM branches
+will need verification once the PM branch of `int_amplify__all_assessments` is
+updated — `actual_row_count` semantics may shift if the aimline file structures
+probes differently than the current `int_amplify__mclass__pm_student_summary`.
+
+---
+
+### PM goal evaluation: `int_amplify__pm_met_criteria`
+
+This model determines, for each probe-eligible student in each PM round, whether
+they met their goal — evaluated at three levels of granularity — and produces a
+single overall pass/fail flag per student per round.
+
+#### Three-CTE pipeline
+
+**`met_standard_goal`** — The base join layer. Joins the PM goals spine
+(`stg_google_sheets__dibels_pm_goals`, filtered to `pm_goal_include is null`) to
+actual PM scores from `int_amplify__all_assessments` (type `'PM'`,
+`overall_probe_eligible = 'Yes'`), then to the participation roster for
+completion status. Two binary goal flags per student × measure standard:
+
+- `met_measure_standard_goal = 1` if score ≥ `cumulative_growth_words` (the
+  per-round cumulative growth target)
+- `met_admin_benchmark_goal = 1` if score ≥ `benchmark_goal` (the absolute
+  benchmark threshold for the season, regardless of PM round)
+
+**`met_measure_code_goal`** — Collapses across measure standards within a
+`measure_name_code` group (e.g., multiple standard tiers under a single code
+like `ORF`). Uses a window `avg = 1` check: if every standard under the code is
+met, the student gets `met_measure_name_code_goal = 1`.
+
+**`met_round_criteria`** — Applies the AND/OR logic from `pm_goal_criteria`
+across all measure codes for the student in that round:
+
+- `AND`: `min(met_measure_name_code_goal)` — every code must be met
+- else: `max(met_measure_name_code_goal)` — meeting any one code is enough
+
+#### Final flag: `met_pm_round_overall_criteria`
+
+The most conservative overall flag:
+
+| `pm_goal_criteria` | `met_pm_round_criteria` | `completed_test_round` | Result |
+| ------------------ | ----------------------- | ---------------------- | ------ |
+| `'AND'`            | 1                       | `TRUE`                 | 1      |
+| `NULL`             | 1                       | any                    | 1      |
+| anything else      | any                     | any                    | 0      |
+
+The NULL case does **not** require `completed_test_round` — this is intentional.
+`pm_goal_criteria` controls the AND/OR pass logic across measures that were
+**expected** to be tested in a given round. When it is NULL, the round has no
+formal multi-measure completion requirement: if a student scored on a valid
+measure, that score counts without gating on whether they finished every probe.
+This matters because `int_amplify__pm_met_criteria` only surfaces assessments
+that appear in `stg_google_sheets__dibels_expected_assessments` — unexpected
+probes are already excluded upstream — so NULL rounds are genuinely
+criteria-free, not data-entry gaps.
+
+#### AY 2026–2027 refactor
+
+The three-CTE structure and AND/OR aggregation logic stay. The changes:
+
+- Goal spine: `stg_google_sheets__dibels_pm_goals` →
+  `int_google_sheets__dibels_expected_assessments` (for `pm_goal_criteria`) +
+  aimline file (for per-student `aimline_status`)
+- `cumulative_growth_words` score comparison → `aimline_status = 'At or Above'`
+  check
+- `met_admin_benchmark_goal` — purpose to be documented in the goals section
+
+---
+
 ## Annual rollover procedure
 
 Two Google Sheets must be updated at the start of each academic year before the
