@@ -273,6 +273,70 @@ In `int_amplify__pm_met_criteria`, this is implemented via `min()` (AND — all
 must be 1) and `max()` (OR — any must be 1) window functions partitioned by
 student / round.
 
+## Annual rollover procedure
+
+At the start of each academic year,
+`stg_google_sheets__dibels_expected_assessments` must be updated before the data
+model will produce rows for that year. The two steps have different dependencies
+and can be done at different times.
+
+### Step 1 — Replicate Benchmark rows (no approval required)
+
+Copy all BM rows (admin seasons `BOY`, `MOY`, `EOY`) from the prior year and
+update the `academic_year` field. This can be done at any time by the data team
+without input from Teaching & Learning, since the benchmark schedule and
+measures do not change year-over-year.
+
+This step can be automated via the Google Sheets editing utility (see issue
+[#3834](https://github.com/TEAMSchools/teamster/issues/3834)).
+
+### Step 2 — Add PM rows (requires Teaching & Learning sign-off)
+
+PM rows define the expected rounds, measures, and test codes for the `BOY→MOY`
+and `MOY→EOY` seasons. These cannot be added until the Teaching & Learning team
+confirms the PM plan for the year.
+
+T&L delivers **one document per state** (NJ and FL), each containing:
+
+- Round numbers by PM season (`BOY→MOY`, `MOY→EOY`)
+- Date range for each round
+- Which measures are expected per region and grade level
+- **Starting AY 2026–2027**: which student cohort tests which measures — "Well
+  Below Benchmark" students may be assigned different measures than "Below
+  Benchmark" students within the same round and grade
+
+Once received, the data team translates this document into rows in
+`stg_google_sheets__dibels_expected_assessments`, setting `pm_goal_include` and
+`pm_goal_criteria` appropriately for each round.
+
+This step must wait for Teaching & Learning guidance regardless of how early in
+the year it is attempted. Plan for this dependency when scheduling the rollover.
+
+!!! warning "PM rows block the PM data model" Until Step 2 is complete,
+`int_google_sheets__dibels_expected_assessments` will have no PM rows for the
+new year. Any model that joins to it for PM scaffolding will produce zero rows
+for PM — no error, just missing data.
+
+### Mid-year round cancellations
+
+If a PM round is cancelled after the academic year has started, set
+`assessment_include = FALSE` on every row for that round in
+`stg_google_sheets__dibels_expected_assessments`. This removes the round from
+all downstream scaffolds without deleting the rows — preserving the record that
+the round was planned. The change takes effect on the next dbt run after the
+sheet is updated.
+
+Benchmark rows (BOY, MOY, EOY) should never be cancelled via this field.
+
+!!! note "AY 2026–2027 design work required: cohort-differentiated measures" The
+introduction of cohort-differentiated measures (Well Below vs. Below testing
+different things) is a new concept not currently represented in the schema.
+`stg_google_sheets__dibels_expected_assessments` does not have a field to
+capture which benchmark band a row applies to, and the PM intermediate model
+does not yet route students to measures based on their prior composite band.
+This will require schema and model design before the first PM round of AY
+2026–2027.
+
 ## Upcoming changes: AY 2026–2027 PM migration
 
 Starting AY 2026–2027, the PM model migrates from custom goal calculations to
