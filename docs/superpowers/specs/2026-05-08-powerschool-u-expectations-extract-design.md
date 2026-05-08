@@ -151,7 +151,28 @@ add:
 
 `kippnewark` requires no override — it's enabled by default in the package.
 
-### 5. No schedule / sensor changes
+### 5. End-to-end test
+
+Add a test in `tests/assets/test_assets_powerschool_sis.py` mirroring
+`test_u_studentsuserfields_kippnewark`:
+
+```python
+def test_u_expectations_kippnewark():
+    from teamster.code_locations.kippnewark import CODE_LOCATION
+    from teamster.code_locations.kippnewark.powerschool import assets
+
+    _test_partitioned_asset(
+        assets=assets,
+        asset_name="u_expectations",
+        code_location=CODE_LOCATION.upper(),
+    )
+```
+
+Materializes a random fiscal-year partition of the asset against Newark prod via
+the existing SSH/ODBC integration-test fixtures. Run locally with
+`OP_SERVICE_ACCOUNT_TOKEN` set; not run in CI.
+
+### 6. No schedule / sensor changes
 
 The existing fiscal-year partitioned PS sensor already covers any asset present
 in `powerschool_table_assets_full`. No new schedule, sensor, or job. No
@@ -164,15 +185,18 @@ Implementation is complete when:
 
 1. `uv run dagster definitions validate -m teamster.code_locations.kippnewark.definitions`
    passes (asset wiring is well-formed).
-2. The asset materializes successfully in branch deployment against Newark prod
+2. `uv run pytest tests/assets/test_assets_powerschool_sis.py::test_u_expectations_kippnewark`
+   passes locally (with `OP_SERVICE_ACCOUNT_TOKEN` set), confirming a real
+   Oracle round-trip and Avro write-out against Newark prod.
+3. The asset materializes successfully in branch deployment against Newark prod
    (latest fiscal-year partition fills with > 0 rows).
-3. `uv run dbt build --select stg_powerschool__u_expectations --project-dir src/dbt/kippnewark`
+4. `uv run dbt build --select stg_powerschool__u_expectations --project-dir src/dbt/kippnewark`
    passes against the branch-deployment-loaded raw table — uniqueness on `dcid`
    and contract enforcement both hold.
-4. The same `dbt build` selector run against `src/dbt/kippcamden`,
+5. The same `dbt build` selector run against `src/dbt/kippcamden`,
    `src/dbt/kippmiami`, and `src/dbt/kipppaterson` resolves to "model is
    disabled" rather than building or erroring (confirms opt-out wiring).
-5. The raw asset's BQ row count and the staging model's row count match.
+6. The raw asset's BQ row count and the staging model's row count match.
 
 If the Oracle table's exact name turns out to be schema-qualified (e.g.,
 `U_GRADEBOOK_AUDIT.U_EXPECTATIONS`) or otherwise differs, adjust the
