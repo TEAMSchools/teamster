@@ -836,6 +836,59 @@ The three-CTE structure and AND/OR aggregation logic stay. The changes:
 
 ---
 
+### Final extract: `rpt_tableau__dibels_dashboard`
+
+The model is a two-branch `UNION ALL` — one row per enrolled student × expected
+measure standard per administration round. Both branches share the same
+enrollment spine and the same output column list (fields not applicable to a
+branch are set to `null`).
+
+#### Enrollment spine
+
+Both branches start from `int_extracts__student_enrollments_subjects` filtered
+to:
+
+- `iready_subject = 'Reading'` — Reading ELA students only
+- `enroll_status in (0, 2, 3)` — active enrollment
+- `not is_self_contained`, `not is_out_of_district`
+
+#### BM branch
+
+| Join                | Model                                            | Type  | Effect if no match                                     |
+| ------------------- | ------------------------------------------------ | ----- | ------------------------------------------------------ |
+| Expected schedule   | `int_google_sheets__dibels_expected_assessments` | INNER | Student × measure must be in the active BM schedule    |
+| Foundation goals    | `stg_google_sheets__dibels_bm_goals`             | LEFT  | All goal count columns are NULL (goals not yet frozen) |
+| ELA course schedule | `base_powerschool__course_enrollments`           | LEFT  | Teacher / section columns are NULL                     |
+| Actual scores       | `int_amplify__all_assessments`                   | LEFT  | Score columns are NULL (student did not test)          |
+| Completion flags    | `int_students__dibels_participation_roster`      | LEFT  | Completion columns are NULL                            |
+
+All PM goal fields (`average_starting_words`, `pm_round_days`, `benchmark_goal`,
+etc.) and all `met_*` flags are hardcoded `null` in BM rows.
+
+#### PM branch
+
+| Join                 | Model                                               | Type  | Effect if no match                                                                          |
+| -------------------- | --------------------------------------------------- | ----- | ------------------------------------------------------------------------------------------- |
+| Expected PM schedule | `int_google_sheets__dibels_pm_expectations`         | INNER | Student × measure × round must be in the active PM schedule                                 |
+| PM goals spine       | `stg_google_sheets__dibels_pm_goals`                | INNER | Student is **excluded** — no goals row means no PM row                                      |
+| Probe eligibility    | `int_amplify__all_assessments` (composite)          | INNER | Student is **excluded** — must have a composite score with `overall_probe_eligible = 'Yes'` |
+| ELA course schedule  | `base_powerschool__course_enrollments`              | LEFT  | Teacher / section columns are NULL                                                          |
+| Actual PM scores     | `int_amplify__all_assessments` (by round + measure) | LEFT  | Score columns are NULL (student did not test that round)                                    |
+| Completion flags     | `int_students__dibels_participation_roster`         | LEFT  | Completion columns are NULL                                                                 |
+| Met-goal flags       | `int_amplify__pm_met_criteria`                      | LEFT  | Met-goal flags are NULL                                                                     |
+
+All Foundation BM goal count columns (`n_admin_season_*`) and
+`aggregated_measure_standard_level` / `foundation_measure_standard_level` are
+`null` in PM rows.
+
+The two INNER joins on the PM branch mean a student only appears in PM rows if
+they are (a) probe-eligible with a composite benchmark score **and** (b) have a
+corresponding row in the frozen PM goals sheet. This is stricter than the BM
+branch, where the Foundation goals join is LEFT and does not filter students
+out.
+
+---
+
 ## Annual rollover procedure
 
 Two Google Sheets must be updated at the start of each academic year before the
