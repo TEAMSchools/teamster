@@ -493,19 +493,34 @@ did not change — only the calculation moved into dbt.
 #### What the calculation produces
 
 `rpt_gsheets__dibels_pm_goal_setting` takes the average BOY (or MOY) composite
-score for probe-eligible students and works out, per region × grade × measure ×
-round:
+score for probe-eligible (Below/Well Below) students and works out, per region ×
+grade × measure × round:
 
-- **`starting_words`** — average score at the start of the PM season
-- **`required_growth_words`** — Foundation benchmark threshold − starting
-  average
-- **`cumulative_growth_words`** — the score a student must reach by round N to
-  be on track (running sum of proportional per-round growth targets, capped at
-  the benchmark goal on the final round)
-- **`round_growth_words_goal`** — growth expected within this specific round,
-  proportional to `pm_round_days / pm_days`
+- **`pm_round_days`** — School days before plus during a round, used to
+  proportion the round's share of total PM growth.
+- **`pm_days`** — Total school days across the full PM admin season (BOY→MOY or
+  MOY→EOY).
+- **`benchmark_goal`** — Amplify's published word goal for the measure by end of
+  admin, padded by **+3 words** and rounded to the nearest tenth.
+- **`average_starting_words`** — Average score for Below/Well Below students on
+  the given measure at the start of the PM season, rounded to the nearest
+  integer.
+- **`required_growth_words`** — `benchmark_goal − average_starting_words` (the
+  +3 padding is already embedded in `benchmark_goal`), rounded to the nearest
+  integer. Total words a student must grow by end of admin to meet the padded
+  Amplify goal.
+- **`daily_growth_rate`** — `required_growth_words / pm_days`, rounded to 2
+  decimal places. Words per school day a student must gain to reach the
+  end-of-admin (EOA) goal.
+- **`round_growth_words_goal`** — Round 1:
+  `(pm_round_days × required_growth_words / pm_days) + average_starting_words`.
+  Round 2+: same formula without adding `average_starting_words` (starting
+  baseline is not re-added in subsequent rounds).
+- **`cumulative_growth_words`** — Running cumulative target by round. This is
+  the actual score threshold compared against a student's score in
+  `int_amplify__pm_met_criteria`.
 - **`benchmark_goal`**, **`pm_goal_include`**, **`pm_goal_criteria`** — passed
-  through from `int_google_sheets__dibels_pm_expectations`
+  through from `int_google_sheets__dibels_pm_expectations`.
 
 #### The snapshot freeze: copy-paste → `stg_google_sheets__dibels_pm_goals`
 
@@ -712,9 +727,10 @@ completion status. Two binary goal flags per student × measure standard:
   benchmark threshold for the season, regardless of PM round)
 
 **`met_measure_code_goal`** — Collapses across measure standards within a
-`measure_name_code` group (e.g., multiple standard tiers under a single code
-like `ORF`). Uses a window `avg = 1` check: if every standard under the code is
-met, the student gets `met_measure_name_code_goal = 1`.
+`measure_name_code` group. NWF (Nonsense Word Fluency), for example, has two
+standards always tested together — `met_measure_name_code_goal = 1` only when
+every standard under the code is met. This prevents partial NWF credit from
+satisfying an OR gate at the round level.
 
 **`met_round_criteria`** — Applies the AND/OR logic from `pm_goal_criteria`
 across all measure codes for the student in that round:
@@ -751,7 +767,11 @@ The three-CTE structure and AND/OR aggregation logic stay. The changes:
   aimline file (for per-student `aimline_status`)
 - `cumulative_growth_words` score comparison → `aimline_status = 'At or Above'`
   check
-- `met_admin_benchmark_goal` — purpose to be documented in the goals section
+- `met_admin_benchmark_goal` — score ≥ `benchmark_goal` (the Amplify
+  end-of-admin target padded by +3 words from the PM goals sheet). This is an
+  absolute season-level threshold, not a round-by-round target — a student who
+  reaches it at any round has already hit the full-season standard. In AY
+  2026–2027 it will compare against the aimline `goal` field directly.
 
 ---
 
