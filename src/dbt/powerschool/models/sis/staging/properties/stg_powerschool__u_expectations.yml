@@ -29,6 +29,7 @@ models:
           School-level grouping (e.g. ES / MS / HS) for the rollup row.
       - name: quarter
         data_type: int64
+        quote: true
         description: Academic quarter (1-4) the rollup row covers.
       - name: week_number
         data_type: int64
