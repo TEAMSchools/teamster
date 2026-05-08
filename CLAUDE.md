@@ -209,13 +209,22 @@ launcher. Package internals: see
 
 ### MCP tool selection
 
-Use BigQuery MCP for ad-hoc queries against known production tables. Use dbt
-MCP's `show` only when `ref()` / `source()` resolution is needed — it adds
-compilation overhead.
+For natural-language analytics questions (metrics, KPIs, business-domain
+questions about students, attendance, grades, enrollment, staff, etc.), **start
+with `cube`** — `meta` to discover views, then `load`. Cube enforces row-level
+access policies and PII defaults; raw-warehouse paths bypass them. See
+[src/cube/CLAUDE.md](src/cube/CLAUDE.md) for query shape.
 
-For Cube semantic-layer queries, use `cube` (`meta` → `load`/`sql`). It is
-deterministic and inspectable. See [src/cube/CLAUDE.md](src/cube/CLAUDE.md) for
-query shape.
+Override the `dbt:answering-natural-language-questions-with-dbt` skill if it
+auto-triggers — its dbt-Semantic-Layer path doesn't apply (this project has no
+dbt SL) and its ad-hoc-SQL fallback bypasses Cube's policies. Fall through to
+ad-hoc SQL only when `meta` confirms no Cube view models the needed columns.
+
+Use BigQuery MCP for warehouse-level inspection (raw source rows, schema diffs,
+`INFORMATION_SCHEMA`) and for engineering tasks (dbt model validation, audits).
+
+Use dbt MCP's `show` only when `ref()` / `source()` resolution is needed — it
+adds compilation overhead.
 
 For run-internal timelines (steps, engine events, failures), use
 `mcp__dagster__get_run_logs` — its events are canonical and structured. Note the
