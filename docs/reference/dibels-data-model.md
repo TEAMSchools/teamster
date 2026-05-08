@@ -321,6 +321,63 @@ and PM), each filtered by `rn_highest = 1`.
 | `aggregated_measure_standard_level`                 | Two-bucket: `At/Above` vs `Below/Well Below` (used in Foundation goal reporting)                       |
 | `foundation_measure_standard_level`                 | Three-bucket: `At/Above`, `Below`, `Well Below` (used in Foundation goal rate join)                    |
 
+#### Measures by grade (AY 2024–2025)
+
+Which measures appear in `int_amplify__all_assessments` is controlled by
+`stg_google_sheets__dibels_expected_assessments`, not hardcoded in the model.
+The configuration below reflects AY 2024–2025 and may change year-to-year.
+
+**Benchmark** — consistent across BOY, MOY, and EOY for all grades:
+
+- **K** — Composite, Letter Names (LNF), Phonemic Awareness (PSF), Letter Sounds
+  (NWF-CLS), Decoding (NWF-WRC), Word Reading (WRF)
+- **Grade 1** — Composite, Letter Names (LNF), Phonemic Awareness (PSF), Letter
+  Sounds (NWF-CLS), Decoding (NWF-WRC), Word Reading (WRF), Reading Fluency
+  (ORF), Reading Accuracy (ORF-Accu)
+- **Grades 2–3** — Composite, Letter Sounds (NWF-CLS), Decoding (NWF-WRC), Word
+  Reading (WRF), Reading Fluency (ORF), Reading Accuracy (ORF-Accu), Reading
+  Comprehension (Maze)
+- **Grades 4–8** — Composite, Reading Fluency (ORF), Reading Accuracy
+  (ORF-Accu), Reading Comprehension (Maze)
+
+Early literacy measures (LNF, PSF) exit after grade 1. NWF and WRF exit after
+grade 3. ORF, ORF-Accu, and Maze run through grade 8.
+
+**Progress Monitoring** — no Composite; varies by grade and season:
+
+BOY→MOY:
+
+- **K–1** — Letter Sounds (NWF-CLS), Decoding (NWF-WRC), Phonemic Awareness
+  (PSF)
+- **Grade 2** — Letter Sounds (NWF-CLS), Decoding (NWF-WRC), Reading Accuracy
+  (ORF-Accu), Reading Comprehension (Maze), Word Reading (WRF)
+- **Grade 3** — Letter Sounds (NWF-CLS), Decoding (NWF-WRC), Reading Accuracy
+  (ORF-Accu), Reading Fluency (ORF), Reading Comprehension (Maze), Word Reading
+  (WRF)
+- **Grades 4–5** — Reading Accuracy (ORF-Accu), Reading Fluency (ORF), Reading
+  Comprehension (Maze), Word Reading (WRF)
+- **Grades 6–8** — Reading Accuracy (ORF-Accu), Reading Fluency (ORF), Reading
+  Comprehension (Maze)
+
+MOY→EOY:
+
+- **K** — Letter Sounds (NWF-CLS), Decoding (NWF-WRC), Reading Accuracy
+  (ORF-Accu), Word Reading (WRF)
+- **Grade 1** — Letter Sounds (NWF-CLS), Decoding (NWF-WRC), Reading Accuracy
+  (ORF-Accu), Reading Fluency (ORF), Word Reading (WRF)
+- **Grades 2–3** — Letter Sounds (NWF-CLS), Decoding (NWF-WRC), Reading Accuracy
+  (ORF-Accu), Reading Fluency (ORF), Reading Comprehension (Maze), Word Reading
+  (WRF)
+- **Grades 4–5** — Reading Accuracy (ORF-Accu), Reading Fluency (ORF), Reading
+  Comprehension (Maze), Word Reading (WRF)
+- **Grades 6–8** — Reading Accuracy (ORF-Accu), Reading Fluency (ORF), Reading
+  Comprehension (Maze)
+
+!!! note "AY 2026–2027: PM measures will change" With cohort-differentiated
+testing (Well Below vs. Below may test different measures) and the aimline
+migration, the PM measure set is expected to change. See
+[#3834](https://github.com/TEAMSchools/teamster/issues/3834).
+
 #### Assessment strategy history
 
 **Benchmark**:
@@ -382,12 +439,16 @@ composite scores (`int_amplify__all_assessments`) to the Foundation goal rates
 (`stg_google_sheets__dibels_foundation_goals`) and computes, per school and
 region:
 
-- **Actual counts** — students At/Above and Below/Well Below by grade and period
-- **Expected count** — `ceiling(total × grade_goal_rate) + 5`
-- **Gap** — `(expected − actual) × 1.5`
-
-This output tells each school how many students need to reach At/Above to hit
-the Foundation target.
+- **Actual counts** — students At/Above and Below/Well Below by grade and
+  period, computed at both school and region granularity
+- **Expected count** — `ceiling(total_enrolled × grade_goal_rate) + 5` — the
+  number of At/Above students the school needs to meet the Foundation target
+  plus the T&L planning buffer
+- **Students to move** (gap) — `(expected − actual_at_above) × 1.5` — how many
+  currently-Below/Well Below students need to reach At/Above to close the gap,
+  inflated by 1.5× to build headroom for students who start PM but don't
+  complete it. A negative value means the school already exceeds the Foundation
+  target.
 
 The `+ 5` and `× 1.5` values are **T&L-set planning buffers** — added at T&L's
 request to build in margin above the Foundation floor. Neither is derived from
