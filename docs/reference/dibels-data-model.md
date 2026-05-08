@@ -342,6 +342,43 @@ The hand-entry problem for Foundation goal rates could be reduced by requesting
 the data from Foundation in a CSV or structured format and uploading directly,
 rather than transcribing from a document.
 
+### PM expectations scaffold: `int_google_sheets__dibels_pm_expectations`
+
+This intermediate model auto-generates the PM goal calculation scaffold by
+joining the three configuration sources together. It replaced an older model,
+`stg_amplify__dibels_pm_expectations`, which was a manually-maintained Google
+Sheet requiring the data team to enumerate every expected round × measure ×
+region × grade combination by hand each year. The current model derives that
+same grid automatically from two already-required inputs: the expected
+assessments config and the reporting terms calendar.
+
+**What it produces** (one row per
+`academic_year × region × grade × admin_season × round_number × measure`):
+
+- All round and measure metadata from
+  `int_google_sheets__dibels_expected_assessments` (`round_number`,
+  `min_pm_round`, `max_pm_round`, `pm_goal_include`, `pm_goal_criteria`,
+  `expected_measure_standard`, etc.)
+- Term window dates (`start_date`, `end_date`, `code`) from
+  `stg_google_sheets__reporting__terms`
+- School day counts (`pm_round_days`, `pm_days`) computed from the PowerSchool
+  calendar — counting in-session days within each `LIT`/`PLIT` window by region
+- `benchmark_goal` (`grade_level_standard`) from
+  `stg_google_sheets__dibels_goals_long`, joined on measure × grade × matching
+  PM season
+
+This enriched scaffold is what `rpt_gsheets__dibels_pm_goal_setting` joins to
+when computing per-round growth targets — it provides everything needed for the
+`pm_round_days / pm_days` proportioning math without any additional manual data
+entry.
+
+**AY 2026–2027 outlook**: with aimline deprecating
+`rpt_gsheets__dibels_pm_goal_setting`, the school-day-counting and
+`benchmark_goal` columns in this model lose their purpose. The round scaffold
+itself (which measures are expected per round/region/grade) is still useful for
+the new PM intermediate, but the model will likely be simplified or replaced by
+a direct join to `int_google_sheets__dibels_expected_assessments`.
+
 ### PM goal pipeline: `rpt_gsheets__dibels_pm_goal_setting` → `stg_google_sheets__dibels_pm_goals`
 
 This pipeline is the PM equivalent of the BM goals pipeline described above —
