@@ -217,12 +217,11 @@ access policies and PII defaults; raw-warehouse paths bypass them. See
 
 **`cube` MCP user email seeding**: The `cube` MCP requires a Google Workspace
 email for its JWT security context. Resolution order: `CUBE_USER_EMAIL` env var
-→ `~/.config/teamster/cube-user-email` cache file → `ctx.elicit()` prompt. The
-elicit branch does not surface in the VS Code extension. Before the first `cube`
-MCP call in any environment where the cache file is missing or empty, write the
-value from the `# userEmail` system context block to
-`~/.config/teamster/cube-user-email`. Skip if the file already exists with
-non-empty content.
+→ `~/.config/teamster/cube-user-email` cache file → `ctx.elicit()` prompt →
+"missing user email" error directing you to the `set_user_email` tool. In the VS
+Code extension (where elicit is silently swallowed), call `set_user_email` with
+the email from the `# userEmail` system context block when prompted by the
+error.
 
 Override the `dbt:answering-natural-language-questions-with-dbt` skill if it
 auto-triggers — its dbt-Semantic-Layer path doesn't apply (this project has no

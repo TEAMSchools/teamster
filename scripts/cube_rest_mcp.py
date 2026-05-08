@@ -17,11 +17,14 @@ Email resolution (in order):
   1. CUBE_USER_EMAIL env var (override, bypasses cache).
   2. ~/.config/teamster/cube-user-email cache file.
   3. ctx.elicit() prompt — answer is cached for future sessions.
+  4. If elicit isn't supported by the client, raise an error directing the
+     agent to call the `set_user_email` tool.
 
 Tools:
-  meta - return the Cube data model catalog (cached until midnight ET per email)
-  load - run a Cube query (JSON body per the REST API spec)
-  sql  - return the SQL Cube would generate for a query, without executing
+  meta            - return the Cube data model catalog (cached until midnight ET per email)
+  load            - run a Cube query (JSON body per the REST API spec)
+  sql             - return the SQL Cube would generate for a query, without executing
+  set_user_email  - cache the requester's email for the JWT security context
 """
 
 import hashlib
@@ -59,6 +62,15 @@ class UserEmailPrompt(BaseModel):
     )
 
 
+class MissingUserEmailError(RuntimeError):
+    """Raised when no email is available and the client can't be prompted."""
+
+
+def _write_user_email(email: str) -> None:
+    USER_EMAIL_CACHE.parent.mkdir(parents=True, exist_ok=True)
+    USER_EMAIL_CACHE.write_text(email + "\n", encoding="utf-8")
+
+
 async def _get_user_email(ctx: Context) -> str:
     env_override = os.environ.get("CUBE_USER_EMAIL", "").strip()
     if env_override:
@@ -67,19 +79,29 @@ async def _get_user_email(ctx: Context) -> str:
         cached = USER_EMAIL_CACHE.read_text(encoding="utf-8").strip()
         if cached:
             return cached
-    result = await ctx.elicit(
-        message=(
-            "cube MCP needs your Google Workspace email to set the JWT "
-            f"security context. Will be cached at {USER_EMAIL_CACHE} for "
-            "future sessions."
-        ),
-        schema=UserEmailPrompt,
-    )
+    try:
+        result = await ctx.elicit(
+            message=(
+                "cube MCP needs your Google Workspace email to set the JWT "
+                f"security context. Will be cached at {USER_EMAIL_CACHE} for "
+                "future sessions."
+            ),
+            schema=UserEmailPrompt,
+        )
+    except Exception as exc:
+        raise MissingUserEmailError(
+            "cube MCP has no user email configured. Call the `set_user_email` "
+            "tool with the user's Google Workspace email (e.g. "
+            "firstlast@apps.teamschools.org), then retry. The value is cached "
+            f"at {USER_EMAIL_CACHE} for future sessions."
+        ) from exc
     if result.action != "accept" or not result.data:
-        raise RuntimeError("cube MCP: email required for security context")
+        raise MissingUserEmailError(
+            "cube MCP: email required for security context. Call the "
+            "`set_user_email` tool to set it."
+        )
     email = result.data.email.strip()
-    USER_EMAIL_CACHE.parent.mkdir(parents=True, exist_ok=True)
-    USER_EMAIL_CACHE.write_text(email + "\n", encoding="utf-8")
+    _write_user_email(email)
     return email
 
 
@@ -218,6 +240,22 @@ async def sql(query: dict[str, Any], ctx: Context) -> dict[str, Any]:
     """
     email = await _get_user_email(ctx)
     return _request("GET", "/sql", params={"query": json.dumps(query)}, email=email)
+
+
+@mcp.tool()
+def set_user_email(email: str) -> dict[str, str]:
+    """Cache the requester's Google Workspace email for the JWT security context.
+
+    Call this when `meta`/`load`/`sql` returns a "missing user email" error and
+    the client doesn't surface elicit prompts (e.g. VS Code extension). The
+    value is written to ~/.config/teamster/cube-user-email and reused across
+    sessions. Overridden by the CUBE_USER_EMAIL env var.
+    """
+    cleaned = email.strip()
+    if "@" not in cleaned:
+        raise ValueError(f"Not a valid email: {email!r}")
+    _write_user_email(cleaned)
+    return {"cached_at": str(USER_EMAIL_CACHE), "email": cleaned}
 
 
 if __name__ == "__main__":
