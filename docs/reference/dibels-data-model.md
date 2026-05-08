@@ -273,6 +273,87 @@ In `int_amplify__pm_met_criteria`, this is implemented via `min()` (AND — all
 must be 1) and `max()` (OR — any must be 1) window functions partitioned by
 student / round.
 
+### Source of truth: `int_amplify__all_assessments`
+
+The single model any team member should use to pull DIBELS scores. It surfaces
+only scores that T&L considers valid for reporting — no consumer needs to
+understand historical assessment strategy to use it safely.
+
+#### How validity filtering works
+
+Every branch of the internal UNION inner-joins to
+`int_google_sheets__dibels_expected_assessments` on
+`academic_year + region + grade + admin_season + measure_standard` with two
+additional filters:
+
+- **`assessment_include is null`** — excludes any row the data team has
+  explicitly cancelled (e.g., a mid-year PM round cancellation)
+- **`pm_goal_include is null`** — for PM, excludes scaffold-only rows that exist
+  for trajectory math but don't represent real tested rounds
+
+If a score exists in Amplify but no matching row exists in the expected
+assessments config, it is silently excluded. This is intentional — new measures
+or grades only appear once the data team adds them to the config.
+
+#### Internal structure
+
+The model has three UNION branches in the `assessments_scores` CTE:
+
+| Branch             | Source                                                     | Scope                            |
+| ------------------ | ---------------------------------------------------------- | -------------------------------- |
+| Benchmark (mCLASS) | `int_amplify__mclass__benchmark_student_summary` + unpivot | All years except SY24 grades 7–8 |
+| Benchmark (DDS)    | `int_amplify__dds__data_farming_unpivot`                   | SY24 grades 7–8 only             |
+| PM                 | `int_amplify__mclass__pm_student_summary`                  | All PM years                     |
+
+The `max_score` CTE deduplicates using
+`row_number() over (partition by surrogate_key, round_number, measure_standard order by measure_standard_level_int desc)`,
+keeping the highest-level score when a student has multiple entries for the same
+assessment slot. The final SELECT is a `UNION ALL` of two branches (Benchmark
+and PM), each filtered by `rn_highest = 1`.
+
+#### Computed fields
+
+| Field                                               | Logic                                                                                                  |
+| --------------------------------------------------- | ------------------------------------------------------------------------------------------------------ |
+| `overall_probe_eligible`                            | `'Yes'` if composite at BOY (for BOY period) or MOY (for MOY period) was Below or Well Below Benchmark |
+| `boy_composite` / `moy_composite` / `eoy_composite` | Pivoted composite levels — available on every row for cross-window lookups                             |
+| `benchmark_goal_season`                             | Next BM season this score contributes goals toward (`BOY` → `MOY`, `MOY` → `EOY`)                      |
+| `aggregated_measure_standard_level`                 | Two-bucket: `At/Above` vs `Below/Well Below` (used in Foundation goal reporting)                       |
+| `foundation_measure_standard_level`                 | Three-bucket: `At/Above`, `Below`, `Well Below` (used in Foundation goal rate join)                    |
+
+#### Assessment strategy history
+
+**Benchmark**:
+
+| Period       | Scope                                                                                        |
+| ------------ | -------------------------------------------------------------------------------------------- |
+| AY 2021–2023 | K–2 only (primary years of BM implementation)                                                |
+| AY 2023–2024 | K–4 added; grades 3–4 coverage inconsistent across regions                                   |
+| AY 2023–2024 | MS grades added but also inconsistent                                                        |
+| AY 2024–2025 | K–8 implemented; grades 7–8 tested on Amplify DDS (separate platform — see DDS branch above) |
+| AY 2025–2026 | First year all K–8 BM data on the same platform (mCLASS); DDS branch is SY24-only from here  |
+
+**Progress Monitoring**:
+
+| Period       | Scope                                                                      |
+| ------------ | -------------------------------------------------------------------------- |
+| AY 2024–2025 | Camden and Newark only; K–2 only                                           |
+| AY 2025–2026 | K–8 for both NJ and FL; Paterson included for the first time               |
+| AY 2026–2027 | PM deprecated — replaced by aimline; PM branch of this model to be removed |
+
+#### AY 2026–2027 changes
+
+The PM `UNION ALL` branch will be removed (or this model renamed to a BM-only
+model) once the new aimline-based PM intermediate is built. The DDS branch stays
+indefinitely to preserve SY24 7–8 grade benchmark history. The
+`int_google_sheets__dibels_expected_assessments` inner join and all computed
+fields remain unchanged for the BM branch.
+
+!!! note "Deprecation approach" Per team convention, deprecated models in this
+refactor are **deactivated** (`config: enabled: false` in properties YAML)
+rather than deleted. This preserves them as reference implementations for
+similar future work.
+
 ### Benchmark goal pipeline: `stg_google_sheets__dibels_foundation_goals` → `stg_google_sheets__dibels_bm_goals`
 
 #### What Foundation goals are
