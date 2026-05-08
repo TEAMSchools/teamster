@@ -64,14 +64,14 @@ async def _get_user_email(ctx: Context) -> str:
             return cached
     result = await ctx.elicit(
         message=(
-            "cube-rest needs your Google Workspace email to set the JWT "
+            "cube MCP needs your Google Workspace email to set the JWT "
             f"security context. Will be cached at {USER_EMAIL_CACHE} for "
             "future sessions."
         ),
         schema=UserEmailPrompt,
     )
     if result.action != "accept" or not result.data:
-        raise RuntimeError("cube-rest: email required for security context")
+        raise RuntimeError("cube MCP: email required for security context")
     email = result.data.email.strip()
     USER_EMAIL_CACHE.parent.mkdir(parents=True, exist_ok=True)
     USER_EMAIL_CACHE.write_text(email + "\n", encoding="utf-8")
@@ -87,11 +87,10 @@ def _mint_token(email: str) -> str:
 
 
 mcp = FastMCP(
-    "cube-rest",
+    "cube",
     instructions=(
         "Query the Cube semantic layer (KIPP TEAM & Family metrics, dimensions, "
-        "and views) via Cube Cloud's REST API. Prefer this server over "
-        "cube-mcp-server for analytics questions: it is deterministic and "
+        "and views) via Cube Cloud's REST API. This server is deterministic and "
         "inspectable, with no LLM-in-the-loop SQL generation.\n\n"
         "Workflow: (1) call `meta` to discover available views, measures, and "
         "dimensions — analyst-facing surfaces are views named `<domain>_<grain>` "

@@ -10,7 +10,7 @@ set -euo pipefail
 
 token="$(</etc/secret-volume/.op-token)"
 if [[ -z ${token} || ${token} == "revoked-after-injection" ]]; then
-  echo "cube-rest MCP: OP token unavailable — rebuild Codespace to re-provision" >&2
+  echo "cube MCP: OP token unavailable — rebuild Codespace to re-provision" >&2
   exit 1
 fi
 

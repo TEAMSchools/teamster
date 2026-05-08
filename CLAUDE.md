@@ -213,10 +213,9 @@ Use BigQuery MCP for ad-hoc queries against known production tables. Use dbt
 MCP's `show` only when `ref()` / `source()` resolution is needed — it adds
 compilation overhead.
 
-For Cube semantic-layer queries, use `cube-rest` (`meta` → `load`/`sql`) — not
-`cube-mcp-server__chat`. `cube-rest` is deterministic and inspectable; `chat`
-runs an LLM-in-the-loop. See [src/cube/CLAUDE.md](src/cube/CLAUDE.md) for query
-shape.
+For Cube semantic-layer queries, use `cube` (`meta` → `load`/`sql`). It is
+deterministic and inspectable. See [src/cube/CLAUDE.md](src/cube/CLAUDE.md) for
+query shape.
 
 For run-internal timelines (steps, engine events, failures), use
 `mcp__dagster__get_run_logs` — its events are canonical and structured. Note the
@@ -286,10 +285,10 @@ function instead: `{{index .labels "k8s-pod/dagster/op"}}`. Fall back to full
 JSON + jq only when nesting is deeper than `index` can express.
 
 For pod-level logs, prefer `mcp__gke__query_logs` over
-`mcp__observability__list_log_entries` — the GKE MCP returns pod labels (run-id,
-op, code-location) that the observability MCP does not.
+`mcp__gcp-observability__list_log_entries` — the GKE MCP returns pod labels
+(run-id, op, code-location) that the gcp-observability MCP does not.
 
-### Observability MCP
+### GCP Observability MCP
 
 If any tool returns permission denied, flag it to the user — don't assume no
 data. `list_time_series` `alignmentPeriod` must end with `s` (e.g., `"60s"` not

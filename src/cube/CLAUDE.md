@@ -97,9 +97,9 @@ Default-deny, group-driven. Read [`cube.js`](cube.js) before modifying.
   `@apps.teamschools.org` accounts (Superset integration). Do not broaden the
   suffix check.
 
-## MCP access (cube-rest)
+## MCP access (cube)
 
-The `cube-rest` MCP wraps Cube Cloud's REST API. Auth path that works:
+The `cube` MCP wraps Cube Cloud's REST API. Auth path that works:
 
 - Mint HS256 JWT locally per request from `CUBEJS_API_SECRET` (1P:
   `op://Data Team/Cube Cloud REST API/credential`).

@@ -252,9 +252,9 @@ query the audit log directly:
 
 **Audit logs > pod events for >1h-old bursts**: `mcp__gke__query_logs` with
 `protoPayload.serviceName="k8s.io"` retains Job/Pod create/delete history for
-days; pod events from `mcp__observability__list_log_entries` drop after ~1h. For
-any burst analysis older than the day-2 collector's events lookback, query audit
-logs by runId, not events.
+days; pod events from `mcp__gcp-observability__list_log_entries` drop after ~1h.
+For any burst analysis older than the day-2 collector's events lookback, query
+audit logs by runId, not events.
 
 **Slow pod startup at top-of-hour fan-out**: At scheduling spikes (e.g. 04:00
 UTC / 00:00 ET), K8s Jobs are created promptly but pods can take 4–7 min to emit

@@ -10,7 +10,7 @@ scripts: `bash scripts/<name>.sh`.
 | `dagster-dev.py`                              | Start Dagster webserver for selected code locations                                                |
 | `dagster-mcp-launch.sh`                       | MCP launcher: exchange OP token for scoped Dagster Cloud API token, exec `dagster_plus_mcp`        |
 | `dbt-mcp-launch.sh`                           | MCP launcher: exchange OP token for dbt Cloud service token, exec `dbt-mcp`                        |
-| `cube-rest-mcp-launch.sh`                     | MCP launcher: fetch `CUBEJS_API_SECRET`, exec `cube_rest_mcp.py`                                   |
+| `cube-rest-mcp-launch.sh`                     | MCP launcher: fetch `CUBEJS_API_SECRET`, exec `cube_rest_mcp.py` (registered as `cube`)            |
 | `cube_rest_mcp.py`                            | MCP server (PEP 723) wrapping Cube REST; tools: `meta`, `load`, `sql`. Mints HS256 JWT per request |
 | `audit_marts_yaml.py`                         | Audit mart YAMLs against BigQuery + Dagster (#3678)                                                |
 | `avro-schema-update.py`                       | Rewrite Avro data in GCS with updated schema                                                       |
