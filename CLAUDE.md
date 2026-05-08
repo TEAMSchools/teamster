@@ -213,6 +213,11 @@ Use BigQuery MCP for ad-hoc queries against known production tables. Use dbt
 MCP's `show` only when `ref()` / `source()` resolution is needed — it adds
 compilation overhead.
 
+For Cube semantic-layer queries, use `cube-rest` (`meta` → `load`/`sql`) — not
+`cube-mcp-server__chat`. `cube-rest` is deterministic and inspectable; `chat`
+runs an LLM-in-the-loop. See [src/cube/CLAUDE.md](src/cube/CLAUDE.md) for query
+shape.
+
 For run-internal timelines (steps, engine events, failures), use
 `mcp__dagster__get_run_logs` — its events are canonical and structured. Note the
 unit mismatch: GraphQL `creationTime/startTime/endTime` are float seconds;

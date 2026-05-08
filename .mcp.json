@@ -50,6 +50,13 @@
         "--transport",
         "http"
       ]
+    },
+    "cube-rest": {
+      "command": "/workspaces/teamster/scripts/cube-rest-mcp-launch.sh",
+      "args": [],
+      "env": {
+        "CUBE_REST_URL": "https://safe-hollsopple.gcp-us-central1.cubecloudapp.dev/cubejs-api/v1"
+      }
     }
   }
 }

@@ -97,6 +97,36 @@ Default-deny, group-driven. Read [`cube.js`](cube.js) before modifying.
   `@apps.teamschools.org` accounts (Superset integration). Do not broaden the
   suffix check.
 
+## MCP access (cube-rest)
+
+The `cube-rest` MCP wraps Cube Cloud's REST API. Auth path that works:
+
+- Mint HS256 JWT locally per request from `CUBEJS_API_SECRET` (1P:
+  `op://Data Team/Cube Cloud REST API/credential`).
+- The **entire JWT payload is `securityContext`** — top-level `email` claim
+  flows into `cube.js`'s `contextToGroups`. Not nested under
+  `u`/`securityContext`/`userContext`.
+- `Authorization` header is raw token — **no `Bearer` prefix** (Cube Cloud
+  Metadata API exception per docs is a footnote, not the norm).
+- Cube Cloud "Personal Core Data API Token" (PAT) returns 403 against `/meta`
+  even with the right format — labeled "for SQL API connections" and behaves
+  that way. JWT-from-secret is the only reliable path.
+- Cube SQL API `SET sql_user TO '...'` does NOT persist across MCP `execute_sql`
+  calls (each call = fresh Postgres connection). REST is the right abstraction
+  for stateless tool calls.
+
+## Diagnostic surfaces
+
+- `/meta` returning `{"cubes": []}` ≠ model not deployed. With no matching
+  `cube-*` group, access policies hide every cube — looks identical to an
+  unpopulated branch. Compile a query via `/sql` to verify model presence before
+  assuming the deployment is empty.
+- `/sql` compiles queries even against `public: false` members; `/load` enforces
+  hiding. A `/load` 500 "You requested hidden member" with `/sql` succeeding =
+  security-context delta, not a schema bug.
+- `queryRewrite` default-deny manifests as `WHERE (1 = 0)` plus
+  `rlsAccessDenied` in `sortedDimensions` of `/sql` output.
+
 ## Operational notes
 
 - **Never use the Cube Playground Models tab.** It overwrites YAML in
