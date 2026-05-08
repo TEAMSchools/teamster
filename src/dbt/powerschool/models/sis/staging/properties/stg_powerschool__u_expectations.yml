@@ -6,11 +6,9 @@ models:
       Always scoped to the current academic year — the source has no academic
       year column.
     columns:
-      - name: dcid
+      - name: id
         data_type: int64
-        description:
-          Auto-generated PowerSchool descendant ID. Primary key for this
-          extension table.
+        description: Plugin-assigned row identifier. Primary key.
         data_tests:
           - unique:
               config:
@@ -20,15 +18,12 @@ models:
                 severity: error
         constraints:
           - type: primary_key
-      - name: id
-        data_type: int64
-        description: Plugin-assigned row identifier.
       - name: school_level
         data_type: string
         description:
           School-level grouping (e.g. ES / MS / HS) for the rollup row.
       - name: quarter
-        data_type: int64
+        data_type: string
         quote: true
         description: Academic quarter (1-4) the rollup row covers.
       - name: week_number

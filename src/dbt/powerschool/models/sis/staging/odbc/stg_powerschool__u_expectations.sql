@@ -1,8 +1,6 @@
 select
     * replace (
-        dcid.int_value as dcid,
         id.int_value as id,
-        `quarter`.int_value as `quarter`,
         week_number.int_value as week_number,
         cnt_w.int_value as cnt_w,
         cnt_h.int_value as cnt_h,
