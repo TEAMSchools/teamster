@@ -215,6 +215,15 @@ with `cube`** — `meta` to discover views, then `load`. Cube enforces row-level
 access policies and PII defaults; raw-warehouse paths bypass them. See
 [src/cube/CLAUDE.md](src/cube/CLAUDE.md) for query shape.
 
+**`cube` MCP user email seeding**: The `cube` MCP requires a Google Workspace
+email for its JWT security context. Resolution order: `CUBE_USER_EMAIL` env var
+→ `~/.config/teamster/cube-user-email` cache file → `ctx.elicit()` prompt. The
+elicit branch does not surface in the VS Code extension. Before the first `cube`
+MCP call in any environment where the cache file is missing or empty, write the
+value from the `# userEmail` system context block to
+`~/.config/teamster/cube-user-email`. Skip if the file already exists with
+non-empty content.
+
 Override the `dbt:answering-natural-language-questions-with-dbt` skill if it
 auto-triggers — its dbt-Semantic-Layer path doesn't apply (this project has no
 dbt SL) and its ad-hoc-SQL fallback bypasses Cube's policies. Fall through to

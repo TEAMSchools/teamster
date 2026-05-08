@@ -19,16 +19,19 @@ Email resolution (in order):
   3. ctx.elicit() prompt — answer is cached for future sessions.
 
 Tools:
-  meta - return the Cube data model catalog (cubes, views, dimensions, measures)
+  meta - return the Cube data model catalog (cached until midnight ET per email)
   load - run a Cube query (JSON body per the REST API spec)
   sql  - return the SQL Cube would generate for a query, without executing
 """
 
+import hashlib
 import json
 import os
 import time
+from datetime import datetime, timedelta
 from pathlib import Path
 from typing import Any
+from zoneinfo import ZoneInfo
 
 import httpx
 import jwt
@@ -38,6 +41,8 @@ from pydantic import BaseModel, Field
 CUBE_REST_URL = os.environ["CUBE_REST_URL"].rstrip("/")
 CUBE_API_SECRET = os.environ["CUBE_API_SECRET"]
 USER_EMAIL_CACHE = Path.home() / ".config" / "teamster" / "cube-user-email"
+META_CACHE_DIR = Path.home() / ".cache" / "teamster"
+META_CACHE_TZ = ZoneInfo("America/New_York")
 TIMEOUT_SECONDS = 60
 TOKEN_TTL_SECONDS = 24 * 60 * 60
 CONTINUE_WAIT_MAX_RETRIES = 30
@@ -152,11 +157,43 @@ def _request(
     )
 
 
+def _meta_cache_path(email: str) -> Path:
+    digest = hashlib.sha256(email.encode("utf-8")).hexdigest()[:16]
+    return META_CACHE_DIR / f"cube-meta-{digest}.json"
+
+
+def _next_midnight_et() -> int:
+    now = datetime.now(META_CACHE_TZ)
+    midnight = (now + timedelta(days=1)).replace(
+        hour=0, minute=0, second=0, microsecond=0
+    )
+    return int(midnight.timestamp())
+
+
 @mcp.tool()
-async def meta(ctx: Context) -> dict[str, Any]:
-    """Return the Cube data model catalog (cubes, views, dimensions, measures)."""
+async def meta(ctx: Context, force_refresh: bool = False) -> dict[str, Any]:
+    """Return the Cube data model catalog (cubes, views, dimensions, measures).
+
+    Cached per-email until midnight America/New_York. Access policies filter
+    `/meta` per-group, so the cache key includes a hash of the requester email.
+    Pass `force_refresh=True` to bypass the cache after a model deploy.
+    """
     email = await _get_user_email(ctx)
-    return _request("GET", "/meta", email=email)
+    cache_path = _meta_cache_path(email)
+    if not force_refresh and cache_path.exists():
+        try:
+            cached = json.loads(cache_path.read_text(encoding="utf-8"))
+            if int(cached.get("expires_at", 0)) > int(time.time()):
+                return cached["payload"]
+        except (json.JSONDecodeError, KeyError, ValueError):
+            pass
+    payload = _request("GET", "/meta", email=email)
+    cache_path.parent.mkdir(parents=True, exist_ok=True)
+    cache_path.write_text(
+        json.dumps({"expires_at": _next_midnight_et(), "payload": payload}),
+        encoding="utf-8",
+    )
+    return payload
 
 
 @mcp.tool()
