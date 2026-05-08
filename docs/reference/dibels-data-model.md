@@ -273,6 +273,75 @@ In `int_amplify__pm_met_criteria`, this is implemented via `min()` (AND — all
 must be 1) and `max()` (OR — any must be 1) window functions partitioned by
 student / round.
 
+### Benchmark goal pipeline: `stg_google_sheets__dibels_foundation_goals` → `stg_google_sheets__dibels_bm_goals`
+
+#### What Foundation goals are
+
+KIPP Foundation sets annual benchmark growth targets for MOY and EOY. The
+targets are expressed as a **percentage of students who should be At/Above
+Benchmark** by that administration, broken out by region, grade level, and
+benchmark band (`At/Above` vs. `Well Below`). The T&L team receives these from
+Foundation and shares them with the data team, who hand-enters them into the
+Google Sheet that becomes `stg_google_sheets__dibels_foundation_goals`.
+
+Grain: one row per
+`academic_year × region × grade_level × period × grade_goal_type`.
+
+The hand-entry step is error-prone. The source document from Foundation is not
+in a machine-readable format, and transcription mistakes are difficult to catch
+until the downstream calculations look wrong.
+
+#### How the goals are calculated: `rpt_gsheets__dibels_bm_goals_calculations`
+
+After each benchmark window (BOY or MOY),
+`rpt_gsheets__dibels_bm_goals_calculations` joins the current year's benchmark
+composite scores (`int_amplify__all_assessments`) to the Foundation goal rates
+(`stg_google_sheets__dibels_foundation_goals`) and computes, per school and
+region:
+
+- **Actual counts** — students At/Above and Below/Well Below by grade and period
+- **Expected count** — `ceiling(total × grade_goal_rate) + 5`
+- **Gap** — `(expected − actual) × 1.5`
+
+This output tells each school how many students need to reach At/Above to hit
+the Foundation target. The `+ 5` and `× 1.5` adjustments are a planning buffer.
+
+#### The snapshot freeze: copy-paste → `stg_google_sheets__dibels_bm_goals`
+
+The output of `rpt_gsheets__dibels_bm_goals_calculations` is **manually
+copy-pasted** into a separate Google Sheet, which is the source for
+`stg_google_sheets__dibels_bm_goals`. That staged table is what
+`rpt_tableau__dibels_dashboard` joins in the Benchmark branch.
+
+The manual step exists deliberately: enrollment corrections and score
+adjustments continue after a benchmark window closes, and if the goals were
+calculated live from `rpt_gsheets__dibels_bm_goals_calculations`, they would
+shift retroactively every time the underlying data changed. The copy-paste
+freezes the calculation as of the moment the goals were set, making them stable
+for the remainder of the year.
+
+!!! warning "Error risk at two points" The pipeline has two manual steps where
+mistakes are hard to catch: (1) hand-entry of Foundation rate targets into
+`stg_google_sheets__dibels_foundation_goals`, and (2) the copy-paste from the
+calculations extract into the goals sheet. A wrong cell in step 1 silently
+produces wrong expected counts; a missed row or column in step 2 produces NULL
+goals on the dashboard with no error.
+
+#### Process improvement opportunity
+
+The copy-paste freeze could be replaced with a **Dagster-managed BigQuery
+append**: after each benchmark window closes, a one-time asset run would
+`INSERT INTO` a permanent BigQuery table the output of
+`rpt_gsheets__dibels_bm_goals_calculations` for that year and period. The table
+would be partitioned by `academic_year + period` and written once — never
+updated. `stg_google_sheets__dibels_bm_goals` would then be replaced by a
+`sources-bigquery.yml` entry pointing to that table, eliminating the Google
+Sheet intermediary and the copy-paste risk entirely.
+
+The hand-entry problem for Foundation goal rates could be reduced by requesting
+the data from Foundation in a CSV or structured format and uploading directly,
+rather than transcribing from a document.
+
 ### Reference table: `stg_google_sheets__dibels_goals_long`
 
 A digitized version of the first page of the
