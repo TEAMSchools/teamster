@@ -273,6 +273,29 @@ In `int_amplify__pm_met_criteria`, this is implemented via `min()` (AND — all
 must be 1) and `max()` (OR — any must be 1) window functions partitioned by
 student / round.
 
+### Historical fixture: `stg_google_sheets__dibels_df_student_xwalk`
+
+This table is a **one-time workaround for AY 2023–2024 (SY24) only** and must
+not be removed.
+
+**Background**: In SY24, grades 7–8 took the benchmark assessment for the first
+time. At that point, Amplify operated two separate systems: mCLASS (used for
+grades K–6) and Data Farming System / DDS (used for grades 7–8). The DDS export
+file did not include enrollment region or testing season — information that
+every other part of the DIBELS model requires.
+
+**What the table provides**: A hand-maintained crosswalk that maps
+`student_number + admin_season → region, grade_level` for the 7/8-grade cohort
+in SY24. `int_amplify__dds__data_farming_unpivot` inner joins to it to supply
+region and grade for those rows before they enter
+`int_amplify__all_assessments`.
+
+**Why it must stay**: Without it, the SY24 7/8-grade benchmark rows would be
+missing from the dashboard. The DDS path has a code comment ("7/8 benchmark
+scores SY24 only") that confirms the scope is limited. After SY24, grades 7–8
+returned to the standard mCLASS system, so no new rows will ever be needed in
+this sheet.
+
 ## Annual rollover procedure
 
 At the start of each academic year,
