@@ -265,12 +265,13 @@ shown.
 
 | Value                     | Meaning                                                                                                   |
 | ------------------------- | --------------------------------------------------------------------------------------------------------- |
+| `NULL`                    | BM rows — field is PM-only; BM rows (`BOY`/`MOY`/`EOY`) are always blank here                             |
 | `OR`                      | Mastery on any one of the tested measures = round mastery                                                 |
 | `AND`                     | Mastery on all tested measures = round mastery                                                            |
 | Combined (e.g., `AND/OR`) | Two measures both met OR a third measure met — group-level logic applied at the `measure_name_code` grain |
 
 In `int_amplify__pm_met_criteria`, this is implemented via `min()` (AND — all
-must be 1) and `max()` (OR — any must be 1) window functions partitioned by
+must be 1) and `max()` (OR/NULL — any must be 1) window functions partitioned by
 student / round.
 
 ### Source of truth: `int_amplify__all_assessments`
@@ -531,12 +532,14 @@ when computing per-round growth targets — it provides everything needed for th
 `pm_round_days / pm_days` proportioning math without any additional manual data
 entry.
 
-**AY 2026–2027 outlook**: with aimline deprecating
-`rpt_gsheets__dibels_pm_goal_setting`, the school-day-counting and
-`benchmark_goal` columns in this model lose their purpose. The round scaffold
-itself (which measures are expected per round/region/grade) is still useful for
-the new PM intermediate, but the model will likely be simplified or replaced by
-a direct join to `int_google_sheets__dibels_expected_assessments`.
+**AY 2026–2027 outlook**: school-day counting (`pm_round_days`, `pm_days`) and
+`benchmark_goal` are confirmed deprecated with the aimline migration — the
+`PLIT` rows in `stg_google_sheets__reporting__terms` that feed them go away too.
+The round scaffold (which measures are expected per round/region/grade) stays
+useful and `int_google_sheets__dibels_pm_expectations` may take on a PM
+completion tracking role: determining whether students completed their required
+probes for each round. Final scope depends on T&L's PM tracking requirements for
+AY 2026–2027 — see open questions in the Upcoming changes section.
 
 ### PM goal pipeline: `rpt_gsheets__dibels_pm_goal_setting` → `stg_google_sheets__dibels_pm_goals`
 
@@ -761,10 +764,15 @@ candidate for simplification in a future cleanup pass.
 
 #### AY 2026–2027 considerations
 
-The BM branch should be unaffected by the aimline migration. The PM branches
-will need verification once the PM branch of `int_amplify__all_assessments` is
-updated — `actual_row_count` semantics may shift if the aimline file structures
-probes differently than the current `int_amplify__mclass__pm_student_summary`.
+The BM branch is unaffected by the aimline migration. The PM branches require
+redesign: the aimline file does not provide a reliable completion signal because
+T&L picks which standards to test per cohort (Well Below vs. Below students may
+be assigned different measures within the same round and grade). The current
+`expected_row_count = actual_row_count` check assumes a fixed expected probe
+count per student, which no longer holds when expected probes vary by cohort.
+`int_google_sheets__dibels_pm_expectations` may be used to derive the correct
+expected count per student based on their benchmark band, but the approach needs
+design before the first PM round of AY 2026–2027.
 
 ---
 
@@ -1066,8 +1074,38 @@ refactored `int_amplify__pm_met_criteria` will source it from there, making
 
 ### Open questions (as of May 2026)
 
-- Expected measures for AY 2026–2027 PM not yet defined in
-  `stg_google_sheets__dibels_expected_assessments` — to be confirmed later in
-  the summer
+- **Expected PM measures** — not yet defined in
+  `stg_google_sheets__dibels_expected_assessments`; to be confirmed with T&L
+  later in the summer
+- **T&L PM tracking requirements for aimline** — until T&L confirms what they
+  want to see on the dashboard for AY 2026–2027 PM, the following cannot be
+  finalized: (a) which goal display fields replace the collective-average growth
+  columns in `rpt_tableau__dibels_dashboard`; (b) whether
+  `int_google_sheets__dibels_pm_expectations` is simplified or replaced; (c)
+  whether any aimline fields (`aimline_value_by_date`, score change) need to be
+  surfaced directly
+- **PM completion signal redesign** — the
+  `expected_row_count = actual_row_count` check in
+  `int_students__dibels_participation_roster` needs a new approach for
+  cohort-differentiated testing; `int_google_sheets__ dibels_pm_expectations` is
+  a candidate for deriving the correct expected probe count per student by
+  benchmark band
+- **`probe_eligible_tag` deduplication** — `int_amplify__all_assessments` uses
+  `select distinct` with a `-- TODO` comment noting the original row-number
+  deduplication approach failed; needs a correct fix before the aimline
+  migration adds new PM rows that may hit the same edge cases
+- **`grade_goal_type` / `max(grade_goal)`** — Foundation provides both
+  `'At/Above'` and `'Well Below'` goal rates; `max(grade_goal)` picks the wrong
+  rate for MS grades where Well Below > At/Above; confirm intended behavior with
+  T&L before next BOY goals run
+
+### Planned improvements
+
+- **BM historical goals** — `rpt_gsheets__dibels_bm_goals_calculations` is
+  current-year-only; prior-year goal counts exist only in the frozen
+  `stg_google_sheets__dibels_bm_goals` snapshot. A Dagster-managed BigQuery
+  append will replace the copy-paste freeze and build historical data going
+  forward (tracked in
+  [#3834](https://github.com/TEAMSchools/teamster/issues/3834))
 
 Tracking issue: [#3834](https://github.com/TEAMSchools/teamster/issues/3834)
