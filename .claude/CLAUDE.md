@@ -1,5 +1,9 @@
 # Hooks
 
+If a tool call is denied, returns empty unexpectedly, or `git add` blocks,
+suspect a hook first. This file documents what the two hooks block and the
+approved bypasses.
+
 Two hooks guard secrets and sensitive paths:
 
 - **`check-sensitive.sh`** — PreToolUse: blocks tool calls that touch sensitive
@@ -149,6 +153,9 @@ no hooks fire, no deny rules apply. Claude Code does not log a warning.
 - Validate after edits: the file must parse as valid JSONC
 - Symptoms of a broken file: hooks stop firing, deny rules stop blocking, no
   error messages
+- Recovery: validate by running `bash tests/hooks/run_all.sh` (denials should
+  pass); if hooks still don't fire, restore `.claude/settings.json` from git.
+  Hooks resume on the next tool call after fix.
 
 ## Regression tests
 

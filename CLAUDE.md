@@ -32,35 +32,10 @@ file; domain specifics live in the nearest subdirectory CLAUDE.md.
 - **PII stays local.** Never emit PII values (or screenshots/logs containing
   them) to PR comments, commits, issues, Slack, Asana, scheduled-agent outputs,
   or any other external surface. Local artifacts (`.claude/scratch/`,
-  `.worktrees/`, terminal) are fine. Substitute redacted labels (`Student A`,
+  `.worktrees/`, terminal) are fine. Before any external write that touched
+  values from local validation, replace PII with redacted labels (`Student A`,
   `a sample student`) or column-name references. Aggregates / deidentified ≠
-  PII.
-  - **Redaction pass before external writes**: when an external write touches
-    values from local validation work, replace PII values with labels or
-    column-name references before sending.
-  - **What counts as PII** — `config.meta.contains_pii: true` in model YAML is
-    authoritative but **incomplete**. Untagged columns are PII under FERPA's
-    direct-identifier list
-    ([34 CFR §99.3](https://www.ecfr.gov/current/title-34/part-99/section-99.3)):
-    name, SSN, student/employee ID, address, date/place of birth, mother's
-    maiden name, biometric record, plus "other information... linked or linkable
-    to a specific student." Schema mapping: IDs (`student_number`,
-    `employee_number`, `ssn`, `state_id`, `local_id`, source aliases like
-    kippadb `school_specific_id`), names (`*_name`), contact (`email`, `phone`,
-    `address`, `street`, `city`, `zip`), `dob`/`birth_date`, guardian/parent
-    fields, free-text `comment`/`note` on people tables, credentials/tokens.
-    When unsure, consult [PTAC glossary](https://studentprivacy.ed.gov/glossary)
-    or treat as PII.
-  - **Indirect identifiers** — FERPA's "linked or linkable" standard
-    ([34 CFR §99.3](https://www.ecfr.gov/current/title-34/part-99/section-99.3),
-    [PTAC glossary](https://studentprivacy.ed.gov/glossary)) covers combinations
-    of gender, birth date, geographic indicators (school, zip), race/ethnicity,
-    religion, place of birth, education info (grade level, EL status,
-    IEP/504/disability), financial info (FRL status), activities, and other
-    descriptors that allow identification with "reasonable certainty" by someone
-    in the school community. Each field alone may be safe; the combination may
-    not. When unsure, consult the linked guidance or treat the combination as
-    PII.
+  PII. See _PII reference_ below for what counts.
 
 - **Before writing any spec or plan**: STOP and explicitly ask the user whether
   to open a GitHub issue first. Required for specs/plans; not required for quick
@@ -149,26 +124,42 @@ file; domain specifics live in the nearest subdirectory CLAUDE.md.
 - **Claude CLI**: Not on `$PATH` — user must run `claude` commands in their
   terminal, not via Bash tool.
 
-- **Verify before claiming**: Read actual source code — do not extrapolate
-  third-party tool behavior from general knowledge.
+- **Verify third-party tool behavior from source**: Before describing how an MCP
+  server, dbt CLI flag, or `gh` subcommand behaves, open the source or run
+  `--help` — do not extrapolate from general knowledge.
 
 - **Docs**: "docs" means the `docs/` folder (MkDocs site), not CLAUDE.md files.
 
+### PII reference
+
+`config.meta.contains_pii: true` in model YAML is authoritative but
+**incomplete**. Untagged columns are PII under FERPA's direct-identifier list
+([34 CFR §99.3](https://www.ecfr.gov/current/title-34/part-99/section-99.3)):
+name, SSN, student/employee ID, address, date/place of birth, mother's maiden
+name, biometric record, plus "other information... linked or linkable to a
+specific student." Schema mapping: IDs (`student_number`, `employee_number`,
+`ssn`, `state_id`, `local_id`, kippadb `school_specific_id`), names (`*_name`),
+contact (`email`, `phone`, `address`, `street`, `city`, `zip`),
+`dob`/`birth_date`, guardian/parent fields, free-text `comment`/`note` on people
+tables, credentials/tokens.
+
+Indirect identifiers (combinations covered by FERPA's "linked or linkable"
+standard): gender, birth date, geographic indicators (school, zip),
+race/ethnicity, religion, place of birth, education info (grade level, EL
+status, IEP/504/disability), financial info (FRL status), activities. Each field
+alone may be safe; combinations may not. When unsure, consult the
+[PTAC glossary](https://studentprivacy.ed.gov/glossary) or treat as PII.
+
 ## Superpowers skill overrides
 
-- **Spec/plan write order**: When `superpowers:brainstorming` reaches "Write
-  design doc" or `superpowers:writing-plans` reaches "Save plan," pause first
-  and run the issue-and-branch flow: (a) ask whether to open a tracking issue,
-  (b) ask worktree-or-switch, (c) create the branch via
-  `gh issue develop <num> --name <branch>`, (d) enter the worktree or check out
-  the branch, (e) then write to `docs/superpowers/specs/...` or
-  `docs/superpowers/plans/...` on that branch.
-
-- **Worktree consent**: `superpowers:using-git-worktrees` asks "Would you like
-  me to set up an isolated worktree?" — that's the project's "worktree or branch
-  switch?" question. Either answer, the branch must be created via
-  `gh issue develop <num> --name <branch>` so it's linked to the issue. Never
-  `git worktree add -b` or `git checkout -b` standalone.
+- **Branch creation always goes through the issue-and-branch flow in _Working
+  Conventions_** — no exceptions for `superpowers:brainstorming`'s "Write design
+  doc" step, `superpowers:writing-plans`' "Save plan" step, or
+  `superpowers:using-git-worktrees`' worktree-consent prompt. Pause those
+  skills, run the flow, then write specs to `docs/superpowers/specs/...` or
+  plans to `docs/superpowers/plans/...` on the new branch. Never
+  `git worktree add -b` or `git checkout -b` standalone — the branch must be
+  created via `gh issue develop` so it's linked to the issue.
 
 - **`finishing-a-development-branch` verification gate**: Skip the skill's
   `npm test / pytest / ...` heuristic. For dbt changes,
@@ -223,10 +214,11 @@ Code extension (where elicit is silently swallowed), call `set_user_email` with
 the email from the `# userEmail` system context block when prompted by the
 error.
 
-Override the `dbt:answering-natural-language-questions-with-dbt` skill if it
-auto-triggers — its dbt-Semantic-Layer path doesn't apply (this project has no
-dbt SL) and its ad-hoc-SQL fallback bypasses Cube's policies. Fall through to
-ad-hoc SQL only when `meta` confirms no Cube view models the needed columns.
+If `dbt:answering-natural-language-questions-with-dbt` auto-loads, do not follow
+it — its dbt-Semantic-Layer path doesn't apply (no dbt SL here) and its
+ad-hoc-SQL fallback bypasses Cube's policies. Use the `cube` MCP instead. Fall
+back to BigQuery MCP for ad-hoc SQL only after `cube meta` confirms no view
+models the needed columns.
 
 Use BigQuery MCP for warehouse-level inspection (raw source rows, schema diffs,
 `INFORMATION_SCHEMA`) and for engineering tasks (dbt model validation, audits).
