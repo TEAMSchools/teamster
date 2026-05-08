@@ -310,11 +310,30 @@ join, and this table can be retired.
 
 A multi-domain Google Sheet (one row per term × region × school) that defines
 the date windows for all KIPP TAF reporting periods. The DIBELS model filters to
-`type = 'LIT'` rows, which contain:
+`type = 'LIT'` rows, which contain three kinds of entries:
 
-- **Benchmark windows** — BOY, MOY, EOY start/end dates by region
-- **PM round windows** — individual round start/end dates for each PM season
-  (`BOY→MOY`, `MOY→EOY`), by region
+- **Benchmark windows** (`code = BOY / MOY / EOY`) — administration start/end
+  dates by region.
+- **PM round windows** (`code = LIT1`, `LIT2`, … ) — start/end dates for each
+  round within a PM season (`BOY→MOY`, `MOY→EOY`), by region.
+- **Pre-round windows** (`code = PLIT1`, `PLIT2`, … ) — date ranges covering the
+  days _before_ each PM round within the same season window. Added starting AY
+  2025–2026.
+
+The `PLIT` rows exist because the collective-average PM goal calculation in
+`rpt_gsheets__dibels_pm_goal_setting` apportions each round's goal
+proportionally to school days:
+`round_goal = (pm_round_days / pm_days) × required_growth`. `pm_round_days` for
+round N counts the school days in both the `LITN` window (during the round) and
+the `PLITN` window (before the round), giving a longer "elapsed time"
+denominator that produces a more accurate daily growth rate. Generating `PLIT`
+start/end dates requires consulting each region's academic calendar manually —
+one of the more labor-intensive parts of the annual rollover.
+
+**All `PLIT` rows are likely deprecated in AY 2026–2027.** With aimline
+providing per-student goals directly, the collective-average goal pipeline
+(`rpt_gsheets__dibels_pm_goal_setting` → `stg_google_sheets__dibels_pm_goals`)
+is no longer needed, and `pm_round_days` / `pm_days` lose their purpose.
 
 These dates must be manually entered by the data team after receiving the
 testing calendar from Teaching & Learning. Like
@@ -467,11 +486,13 @@ probe attempt within a PM period).
 
 ### Models being deprecated
 
-| Model                                       | Reason                                     |
-| ------------------------------------------- | ------------------------------------------ |
-| `stg_google_sheets__dibels_pm_goals`        | Goals and status now come from aimline     |
-| `int_amplify__mclass__pm_student_summary`   | Replaced by aimline source                 |
-| PM branch of `int_amplify__all_assessments` | Replaced by new aimline-based intermediate |
+| Model                                       | Reason                                                              |
+| ------------------------------------------- | ------------------------------------------------------------------- |
+| `stg_google_sheets__dibels_pm_goals`        | Goals and status now come from aimline                              |
+| `int_amplify__mclass__pm_student_summary`   | Replaced by aimline source                                          |
+| PM branch of `int_amplify__all_assessments` | Replaced by new aimline-based intermediate                          |
+| `rpt_gsheets__dibels_pm_goal_setting`       | Collective-average goal calculation replaced by per-student aimline |
+| `PLIT` rows in `reporting__terms`           | Pre-round school day counting no longer needed without goal calc    |
 
 ### `pm_goal_criteria` — AND/OR round logic
 
