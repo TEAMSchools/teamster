@@ -683,6 +683,36 @@ sheet is updated.
 
 Benchmark rows (BOY, MOY, EOY) should never be cancelled via this field.
 
+#### Current two-step problem (AY 2023–2026)
+
+Under the collective-average PM goal pipeline, cancelling a round requires a
+**second manual step**: the Google Sheet that backs
+`stg_google_sheets__dibels_pm_goals` must also be edited to remove or suppress
+the cancelled round's goal rows. If only `dibels_expected_assessments` is
+updated, the frozen goals sheet still contains goal rows for that round, and
+`int_amplify__pm_met_criteria` will continue to use them (because it inner-joins
+on `pm_goal_include is null` from the goals sheet, not from the expected
+assessments sheet).
+
+These two sheets must therefore stay in sync manually after any mid-year
+cancellation — a coordination burden with real risk of inconsistency.
+
+#### AY 2026–2027: partial improvement via aimline
+
+The aimline migration eliminates `stg_google_sheets__dibels_pm_goals` entirely.
+After that change, cancelling a round only requires setting
+`assessment_include = FALSE` in `stg_google_sheets__dibels_expected_assessments`
+— a single-step operation. The `int_amplify__pm_met_criteria` refactor will
+source round metadata exclusively from
+`int_google_sheets__dibels_expected_assessments`, making the expected
+assessments sheet the sole cancellation control.
+
+If PM goals are eventually migrated to a BigQuery-append model (see process
+improvements in issue
+[#3834](https://github.com/TEAMSchools/teamster/issues/3834)), any
+already-frozen goal rows for a cancelled round would need to be suppressed via a
+separate override table or a targeted BQ write — not yet designed.
+
 !!! note "AY 2026–2027 design work required: cohort-differentiated measures" The
 introduction of cohort-differentiated measures (Well Below vs. Below testing
 different things) is a new concept not currently represented in the schema.
