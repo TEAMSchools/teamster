@@ -93,6 +93,10 @@ rendering. The CI job and the parse job in its `deferring_environment_id` must
 share `target_name`, or every source with the target-conditional schema pattern
 hash-mismatches and fans out to rebuild the whole graph.
 
+Auto-retried CI runs invoke `dbt retry`, which replays the prior run's compiled
+SQL. After fixing external state (defer relations, transient BQ errors), trigger
+a fresh `dbt build` — don't rely on the retry.
+
 ## Dev `--defer` for unstaged externals
 
 Dev builds depending on GCS externals (`stg_google_sheets__*` etc.) fail with
@@ -114,6 +118,9 @@ manifest". The prod manifest is refreshed by `.git/hooks/post-merge` on every
   to prod warehouse relations. A staging-target manifest causes every model to
   fall through to view materialization, eventually hitting BigQuery's 16-level
   nested-view limit.
+- Pre-existing target relations are skipped unless `--full-refresh` is passed
+  ([docs](https://docs.getdbt.com/reference/commands/clone)). Use the flag to
+  recreate drifted defer copies.
 
 ## Stale dev tables shadow `--defer`
 
