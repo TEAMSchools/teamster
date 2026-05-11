@@ -67,6 +67,14 @@ Removed from all mart SELECTs:
 Plumbing remains in `staging/` and `intermediate/` — only stripped from the mart
 SELECT.
 
+## Filing follow-up issues from marts work
+
+When filing a GitHub issue from marts work (spec authoring, PR review follow-up,
+CI warning triage), add it to project board
+[#4](https://github.com/orgs/TEAMSchools/projects/4) and set `Tier`, `PR batch`,
+and `Driver`. Commands and `GITHUB_TOKEN=` prefix: see root CLAUDE.md → MCP
+Servers `gh project` bullets. `Status` auto-sets to Todo on add — skip.
+
 ## Strict-chain traversal
 
 Facts and child dims FK to their direct parent(s) only; deeper dimensional
@@ -232,5 +240,5 @@ Every spec must include a pre-merge checklist covering:
 - Scan the
   [project board](https://github.com/orgs/TEAMSchools/projects/4/views/1) for
   bonus issues incidentally resolved; close them in the PR.
-- File newly surfaced errors as new issues on the board, classified with `Tier`,
-  `PR batch`, and `Driver`.
+- File newly surfaced errors per "Filing follow-up issues from marts work"
+  above.
