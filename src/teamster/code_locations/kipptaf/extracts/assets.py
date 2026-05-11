@@ -172,7 +172,10 @@ lattice_extract = build_bigquery_query_sftp_asset(
         },
     },
     file_config={"stem": "users_{today}", "suffix": "csv"},
-    destination_config={"name": "lattice", "path": "/"},
+    destination_config={
+        "name": "lattice",
+        "path": "/sftpgateway-i-04f566964c5b7ff21/kipp/uploads",
+    },
 )
 
 littlesis_extract = build_bigquery_query_sftp_asset(

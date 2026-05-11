@@ -3,7 +3,15 @@ with
         select *,
         from {{ ref("int_people__staff_roster") }}
         where
-            assignment_status in ('Active', 'Leave')
+            (
+                assignment_status in ('Active', 'Leave')
+                or (
+                    assignment_status = 'Terminated'
+                    and worker_termination_date >= date_sub(
+                        current_date('{{ var("local_timezone") }}'), interval 30 day
+                    )
+                )
+            )
             and (
                 home_business_unit_name = 'KIPP TEAM and Family Schools Inc.'
                 or home_business_unit_name = 'KIPP Paterson'
@@ -13,6 +21,8 @@ with
                         contains_substr(job_title, 'Director')
                         or contains_substr(job_title, 'Head')
                         or contains_substr(job_title, 'Leader')
+                        or contains_substr(job_title, 'Dean')
+                        or home_work_location_name = 'Room 11'
                     )
                 )
                 or (
@@ -25,23 +35,33 @@ with
                         'Managing Director of Operations'
                     )
                 )
+                or (
+                    home_business_unit_name
+                    in ('TEAM Academy Charter School', 'KIPP Cooper Norcross Academy')
+                    and home_department_name = 'Technology'
+                    and job_title <> 'Intern'
+                )
             )
     ),
 
-    managers as (select employee_number, from {{ ref("int_people__staff_roster") }})
+    managers as (
+        select employee_number, work_email, from {{ ref("int_people__staff_roster") }}
+    )
 
 select
-    s.assignment_status as `status`,
+    s.employee_number as external_user_id,
     s.work_email,
     s.job_title,
-    s.employee_number as external_user_id,
     s.worker_hire_date_recent as `start_date`,
     s.home_department_name as department,
 
-    m.employee_number as manager_id,
+    m.work_email as manager_email,
 
     coalesce(s.given_name, s.legal_given_name) as first_name,
     coalesce(s.family_name_1, s.legal_family_name) as last_name,
+    coalesce(s.home_work_location_abbreviation, s.home_work_location_name) as location,
+
+    if(s.assignment_status in ('Active', 'Leave'), 'Active', 'Inactive') as `status`,
 
     case
         s.home_business_unit_name
