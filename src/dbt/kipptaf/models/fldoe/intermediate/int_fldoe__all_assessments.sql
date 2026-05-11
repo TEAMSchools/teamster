@@ -7,6 +7,7 @@ with
         }}
     ),
 
+    -- trunk-ignore(sqlfluff/ST03): referenced via dbt_utils.deduplicate below
     fleid_lookup_raw as (
         select s.student_number, s.dcid, suf.fleid,
         from {{ ref("stg_powerschool__students") }} as s
