@@ -20,6 +20,7 @@ with
 
             gc.cumulative_y1_gpa_unweighted,
             gc.cumulative_y1_gpa_projected_unweighted,
+            gc.cumulative_y1_gpa_projected_s1_unweighted,
             gc.cumulative_y1_gpa,
             gc.cumulative_y1_gpa_projected,
 
@@ -75,6 +76,7 @@ select
 
     cumulative_y1_gpa_unweighted,
     cumulative_y1_gpa_projected_unweighted,
+    cumulative_y1_gpa_projected_s1_unweighted,
     cumulative_y1_gpa,
     cumulative_y1_gpa_projected,
 from roster pivot (max(gpa_term) as gpa for term in ('Q1', 'Q2', 'Q3', 'Q4'))
