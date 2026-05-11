@@ -37,7 +37,7 @@ Output shape:
   "step_09_daemons":     {"daemons": [...], "allHealthy": bool},
   "step_10_gke_events":  {"clusterEvents": [...], "podEvents": [{"timestamp":..., "podName":..., "reason":..., "message":..., "runId": "<uuid|null>", "runStatus": "SUCCESS|FAILURE|UNKNOWN"}]},
   "step_11_alerts":      {"alerts": [...]},
-  "step_12_error_groups":{"groups": [...], "buckets": {"inWindow":[], "staleOpen":[]}},
+  "step_12_error_groups":{"groups": [{"groupId":..., "exception":..., "affectedServices":[{"service":...,"version":"<pod>"}], "exceptionLine":"<bottom-of-traceback or null>", "correlatedPodEvent":{"reason":"Preempted|Evicted|OOMKilling", "timestamp":..., "podName":...} | null, "category":"sigterm_during_import|preemption_artifact|unclassified"}], "buckets": {"inWindow":[], "staleOpen":[]}},
   "step_13_oom_metrics": {"oomRuns": [...], "skipped": bool},
   "step_14_queued_runs": {"runs": [...], "stuckCount": N},
   "step_15_backfills":   {"requested": [...], "failed": [...]}
@@ -225,18 +225,39 @@ runs and backfills if present.
 if none. For step 12, split the Emerging Issues section into two subsections:
 
 - **In-window groups** (step 12 `inWindow`): groups that surfaced during the
-  day-2 window. **First, dedupe against the timeline:** each group's
-  `affectedServices[].version` is a pod name (e.g.
-  `dagster-step-<hash>-<suffix>` or `dagster-run-<runId>-<suffix>`). Query GCP
-  logs for ERROR-severity entries on that pod within the group's lastSeenTime
-  window and extract the `k8s-pod/dagster/run-id` label. If that runId is a
-  failed run already listed in the timeline (step 1), mark the group "same event
-  as run X" and fold it INTO the existing timeline entry instead of reporting it
-  as a separate finding. Only groups with NO matching run are standalone
-  emerging issues. For remaining (non-deduped) groups: if the stack trace
-  matches a retry-recovered run, it is likely a false-positive from a
-  retry-wrapped helper (see teamster/CLAUDE.md). Recommend changing the helper's
-  log level in that case.
+  day-2 window. **First, check `category` + `correlatedPodEvent` (auto-resolved
+  by the collector):**
+  - `category: "sigterm_during_import"` with a `correlatedPodEvent` → the group
+    is a SIGTERM-mid-import artifact of code-server preemption (the by-design
+    priority-tier behavior in `.k8s/CLAUDE.md`). Do NOT include in Emerging
+    Issues. Emit a single Actions row:
+    `Mute | Error group <id> (SIGTERM during import, <count> hits)`. The
+    traceback's deepest project-code frame names whichever module was importing
+    when SIGTERM arrived (pathlib, pydantic, fldoe.schema, etc.) — that file is
+    NOT the emitter; it was just in-flight when the signal arrived.
+  - `category: "preemption_artifact"` → correlated to a preemption/eviction
+    event but exception class is not a known SIGTERM type. Investigate
+    `exceptionLine` before recommending action.
+  - `category: "unclassified"` (no correlated pod event) → genuine emerging
+    issue. Proceed with dedupe below.
+
+  **Dedupe remaining (uncorrelated) groups against the timeline:** each group's
+  `affectedServices[].version` is a pod name. Query GCP logs for ERROR-severity
+  entries on that pod within the group's lastSeenTime window and extract the
+  `k8s-pod/dagster/run-id` label. If that runId is a failed run already listed
+  in the timeline (step 1), mark the group "same event as run X" and fold it
+  INTO the existing timeline entry instead of reporting it as a separate
+  finding. Only groups with NO matching run are standalone emerging issues. For
+  remaining (non-deduped) groups: if the stack trace matches a retry-recovered
+  run, it is likely a false-positive from a retry-wrapped helper (see
+  teamster/CLAUDE.md). Recommend changing the helper's log level in that case.
+
+  **Use `exceptionLine`, not `exception`, for triage.** The `exception` field is
+  the 300-char truncated header that Error Reporting groups by — often just the
+  entry-point line (`Traceback... sys.exit(main())`). The collector resolves the
+  bottom-of-traceback class into `exceptionLine` via a pod-log query; that is
+  the real exception class.
+
 - **Stale open groups** (step 12 `staleOpen`): OPEN groups last-seen before the
   window. Treat as cleanup candidates. Note the last-seen date and whether the
   stack matches a retry-wrapped helper. These do not belong in the timeline.

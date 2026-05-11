@@ -193,6 +193,11 @@ explicitly pass `target="defer"` via `DbtCliResource`; prod uses the profile
 default (no Python override needed). No `GITHUB_USER` — not available in Dagster
 deployments. Developers use `.dbt/profiles.yml` for full target support.
 
+- **`job_retries`**: dbt-bigquery defaults to `1`, which doesn't absorb
+  sustained transient 503s on `client.list_datasets()` at adapter init. Set
+  `job_retries: 3` on the `prod` output. Set on kipptaf; not on kippnewark,
+  kippcamden, kippmiami, kipppaterson.
+
 ## Model Conventions
 
 These conventions apply to **every** dbt project in this directory. Per-project
@@ -332,6 +337,15 @@ dimension and fail.
 Corollary: never add `not_null` tests on `generate_surrogate_key` output — it
 never returns NULL.
 
+### Nullable PK inputs need a fallback, not a null-wrap
+
+For a primary key (not an FK), wrapping `generate_surrogate_key` in
+`if(col is not null, ..., cast(null as string))` makes the PK nullable and fails
+`not_null`. Use a fallback discriminator inside the hash inputs:
+`coalesce(cast(primary_id as string), secondary_id)`. The secondary id must be
+unique-per-row within the rows the primary would have disambiguated — otherwise
+rows with NULL primary collide on the placeholder hash and fail `unique`.
+
 ### dbt_utils.deduplicate `order_by` on BigQuery
 
 The macro compiles to `array_agg(original order by <expr> limit 1)`. BigQuery
@@ -344,6 +358,13 @@ Partitioning by the source's natural key leaves multiple rows that share the
 intended join column, which then fan out at the join site. Use
 `(col = 'sentinel') asc` in `order_by` to demote a specific value when rows tie
 on the chosen partition key.
+
+### sqlfluff ST03 on dbt_utils.deduplicate input CTEs
+
+A CTE referenced only via `dbt_utils.deduplicate(relation="<cte>")` fails
+sqlfluff ST03. Add
+`# trunk-ignore(sqlfluff/ST03): referenced via dbt_utils.deduplicate below`
+above the CTE.
 
 ### Don't inline CASE expressions in generate_surrogate_key
 
