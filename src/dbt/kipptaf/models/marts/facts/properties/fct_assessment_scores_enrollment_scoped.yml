@@ -38,9 +38,12 @@ models:
       - name: student_key
         data_type: string
         description: >-
-          FK to dim_students. Derived from student_number, falling back to
-          state_student_id for FL state assessments where student_number is
-          null. FL fallback keys do not resolve in dim_students (#3626).
+          FK to dim_students. Hashed on student_number (PowerSchool-sourced for
+          internal Illuminate, NJ Pearson localstudentidentifier, and FL via
+          FLEID lookup in int_fldoe__all_assessments). Null when the source
+          identifier does not resolve to a PowerSchool student (residual: ~12 FL
+          students missing FLEID in PS lookup, ~8 NJ Paterson Pearson identifier
+          mismatches — both tracked separately).
 
         constraints:
           - type: foreign_key
