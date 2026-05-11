@@ -93,5 +93,3 @@ models:
         data_type: string
       - name: scaffold_name
         data_type: string
-      - name: is_current_week
-        data_type: boolean
