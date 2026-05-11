@@ -39,6 +39,7 @@ with
     state_nj as (
         select
             localstudentidentifier as student_number,
+            cast(null as string) as state_student_id,
             academic_year,
 
             if(
@@ -87,6 +88,7 @@ with
     state_fl as (
         select
             student_number,
+            student_id as state_student_id,
             academic_year,
             assessment_subject as subject_area,
             discipline,
@@ -114,6 +116,7 @@ with
     state_union as (
         select
             nj.student_number,
+            nj.state_student_id,
             nj.academic_year,
             nj.subject_area,
             nj.discipline,
@@ -136,6 +139,7 @@ with
 
         select
             fl.student_number,
+            fl.state_student_id,
             fl.academic_year,
             fl.subject_area,
             fl.discipline,
@@ -203,7 +207,7 @@ select
         dbt_utils.generate_surrogate_key(
             [
                 "su._dbt_source_relation",
-                "cast(su.student_number as string)",
+                "coalesce(cast(su.student_number as string), su.state_student_id)",
                 "su.academic_year",
                 "su.administration_period",
                 "su.subject_area",
