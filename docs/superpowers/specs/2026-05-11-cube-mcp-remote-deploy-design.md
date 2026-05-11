@@ -41,8 +41,10 @@ unchanged.
 
 ## Out of scope
 
-Per-user identity, Google OAuth, Google Groups Directory API integration. Those
-are a follow-up once the POC validates the concept.
+Per-user identity, Google Groups Directory API integration, and per-user OAuth
+(email-scoped Cube access). Those are a follow-up once the POC validates the
+concept. Note: OAuth as an HTTP-layer auth mechanism for the Cloud Run endpoint
+is in scope — see Section 4.
 
 ---
 
