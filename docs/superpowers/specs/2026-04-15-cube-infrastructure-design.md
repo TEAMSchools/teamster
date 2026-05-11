@@ -309,15 +309,19 @@ Performed in the Cube Cloud UI:
 1. Connect `TEAMSchools/teamster` GitHub repo
 2. Set Cube project path to `src/cube/`
 3. Set production branch to `main` — merges trigger automatic redeploy
-4. Create one dev deployment per engineer who works on Cube models:
-   - Type: Development
-   - Name: `dev-{name}`
-   - Branch: engineer's current feature branch (updated in UI when they switch)
-   - Unique `CUBEJS_API_SECRET` per deployment
-5. Set environment variables per deployment (never committed to repo)
+4. Main deployment type: **Development Instance** for now; switch to
+   **Production Cluster** before connecting downstream tools so queries don't
+   hit a cold start on an idle deployment
+5. Set environment variables (never committed to repo)
 6. Request domain-wide delegation for the `GOOGLE_DIRECTORY_SA_KEY` service
    account from Google Workspace admin — required for Admin Directory API access
    in Cloud deployments
+
+Staging environments are per-branch — switching to a branch in Cube Cloud
+activates an isolated staging environment with its own API endpoints. Multiple
+branches can have active staging environments simultaneously. Environments
+suspend after 10 minutes of inactivity; toggle **always active** in Settings →
+Staging Environments to keep a branch live for extended stakeholder review.
 
 ## Local Development
 
@@ -344,7 +348,7 @@ Cube treats it as a live editor and overwrites YAML files. Edit in VS Code only.
 | `CUBEJS_DB_TYPE`                | `bigquery`                         | `bigquery`                                     |
 | `CUBEJS_DB_BQ_PROJECT_ID`       | `teamster-332318`                  | `teamster-332318`                              |
 | `CUBEJS_DB_BQ_CREDENTIALS`      | — (uses ADC)                       | `cube-bq-reader` SA key, base64-encoded        |
-| `CUBEJS_API_SECRET`             | any string                         | random 64-char, unique per deployment          |
+| `CUBEJS_API_SECRET`             | any string                         | auto-generated on deployment creation          |
 | `CUBEJS_DEV_MODE`               | `true`                             | omit                                           |
 | `CUBEJS_CACHE_AND_QUEUE_DRIVER` | `memory`                           | omit (uses CubeStore)                          |
 | `CUBE_GROUP_MAP`                | JSON string mapping email → groups | omit (uses Directory API)                      |

@@ -40,8 +40,9 @@ All district projects share these variables (override via `dbt_project.yml`):
   current values from any district's `dbt_project.yml`
 - `local_timezone` — `America/New_York`
 - `cloud_storage_uri_base` — `gs://teamster-<project>/dagster/<project>`
-- `powerschool_external_location_root` —
-  `gs://teamster-<project>/dagster/<project>/powerschool` (ODBC districts only)
+  (redirects to `gs://teamster-test/dagster/<project>` when
+  `DAGSTER_CLOUD_IS_BRANCH_DEPLOYMENT=1`, via inline conditional in each
+  `external.location` template)
 
 Exceptions: `kippnewark` adds `iready_schema: kippnj_iready` and
 `renlearn_schema: kippnj_renlearn`. `kipptaf` has

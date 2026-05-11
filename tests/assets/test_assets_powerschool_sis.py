@@ -82,6 +82,17 @@ def test_cc_kippnewark():
     )
 
 
+def test_u_expectations_kippnewark():
+    from teamster.code_locations.kippnewark import CODE_LOCATION
+    from teamster.code_locations.kippnewark.powerschool import assets
+
+    _test_partitioned_asset(
+        assets=assets,
+        asset_name="u_expectations",
+        code_location=CODE_LOCATION.upper(),
+    )
+
+
 def test_u_studentsuserfields_kippnewark():
     from teamster.code_locations.kippnewark import CODE_LOCATION
     from teamster.code_locations.kippnewark.powerschool import assets
