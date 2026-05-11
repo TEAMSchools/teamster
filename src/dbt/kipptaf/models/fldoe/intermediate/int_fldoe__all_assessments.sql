@@ -8,7 +8,7 @@ with
     ),
 
     fleid_lookup_raw as (
-        select s._dbt_source_relation, s.student_number, s.dcid, suf.fleid,
+        select s.student_number, s.dcid, suf.fleid,
         from {{ ref("stg_powerschool__students") }} as s
         inner join
             {{ ref("stg_powerschool__u_studentsuserfields") }} as suf
