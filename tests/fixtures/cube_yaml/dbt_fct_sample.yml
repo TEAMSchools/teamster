@@ -1,0 +1,12 @@
+models:
+  - name: fct_sample
+    description: Sample fact for tests.
+    columns:
+      - name: sample_key
+        description: Surrogate key.
+      - name: attendance_value
+        description: Daily attendance value (0.0–1.0).
+      - name: name
+        description: Canonical name.
+      - name: computed_col
+        description: ""

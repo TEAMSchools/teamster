@@ -91,16 +91,21 @@ def build_powerschool_table_asset(
     if select_columns is None:
         select_columns = ["*"]
 
+    resolved_op_tags = {
+        "dagster/concurrency_key": f"{code_location}__powerschool__{table_name}",
+        **(op_tags or {}),
+    }
+
     @asset(
         key=[code_location, "powerschool", table_name],
         metadata={
             "table_name": table_name,
             "partition_column": partition_column,
             "select_columns": select_columns,
-            "op_tags": op_tags,
+            "op_tags": resolved_op_tags,
         },
         partitions_def=partitions_def,
-        op_tags=op_tags,
+        op_tags=resolved_op_tags,
         io_manager_key="io_manager_gcs_file",
         group_name="powerschool",
         kinds={"python"},

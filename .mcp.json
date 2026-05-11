@@ -23,7 +23,7 @@
         "GOOGLE_APPLICATION_CREDENTIALS": "${HOME}/.config/gcloud/application_default_credentials.json"
       }
     },
-    "observability": {
+    "gcp-observability": {
       "command": "npx",
       "args": ["-y", "@google-cloud/observability-mcp"],
       "env": {
@@ -41,15 +41,12 @@
       "command": "npx",
       "args": ["-y", "@upstash/context7-mcp"]
     },
-    "cube-mcp-server": {
-      "command": "npx",
-      "args": [
-        "-y",
-        "mcp-remote",
-        "https://ai.gcp-us-central1.cubecloud.dev/api/mcp",
-        "--transport",
-        "http"
-      ]
+    "cube": {
+      "command": "/workspaces/teamster/scripts/cube-rest-mcp-launch.sh",
+      "args": [],
+      "env": {
+        "CUBE_REST_URL": "https://safe-hollsopple.gcp-us-central1.cubecloudapp.dev/cubejs-api/v1"
+      }
     }
   }
 }

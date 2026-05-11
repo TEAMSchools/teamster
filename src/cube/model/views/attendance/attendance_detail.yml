@@ -1,5 +1,23 @@
 views:
   - name: attendance_detail
+    description: >-
+      Row-level student attendance. One row per student × school day with
+      attendance recorded. Use for drill-down, individual investigations, or
+      breakdowns that need raw codes; for ADA / truancy roll-ups, use
+      attendance_summary instead. ADA is always SUM(attendance_value) /
+      SUM(membership_value); never average a per-row ratio. attendance_value
+      (0.0–1.0) is the fractional attendance contribution; membership_value
+      (0.0–1.0) is the school's claim on the student that day (split across
+      schools if dual-enrolled); present_weight equals attendance_value but
+      tardies count 0.67. attendance_category is the coarse rollup (Present,
+      Absent, Tardy, In-School Suspension, Out-of-School Suspension);
+      attendance_code is the raw SIS code for specific drill-down. is_in_session
+      and is_membership_day come from dim_school_calendars and are joined on
+      (date_key, location_key) to avoid a diamond path. For point-in-time
+      queries (e.g. is_truant on a specific date), filter to a single date_day.
+      Truancy criteria are regional: Miami uses 15+ absences in a 90-day rolling
+      window; NJ regions use projected 50+ absences for the year. Contains
+      direct student identifiers — see access_policy for PII gating.
 
     cubes:
       - join_path: attendance
@@ -71,11 +89,9 @@ views:
           - state_student_identifier
           - gender_identity
           - race
-          - meal_eligibility_status
           - enrollment_status
           - is_gifted
           - is_ell
-          - has_iep
 
       - join_path: attendance.dim_terms
         prefix: true
@@ -89,6 +105,75 @@ views:
         includes:
           - is_in_session
           - is_membership_day
+
+    meta:
+      folders:
+        - name: Attendance
+          members:
+            - attendance_code
+            - attendance_category
+            - attendance_value
+            - membership_value
+            - present_weight
+            - is_absent
+            - is_tardy
+            - is_ontime
+            - is_oss
+            - is_iss
+            - is_suspended
+            - is_truant
+        - name: Date
+          members:
+            - attendance_date
+            - dim_dates_date_day
+            - dim_dates_month_number
+            - dim_dates_month_name
+            - dim_dates_quarter_number
+            - dim_dates_school_week_start_date
+            - dim_dates_day_of_week_name
+            - dim_dates_is_weekday
+        - name: Term
+          members:
+            - dim_terms_term_name
+            - dim_terms_term_code
+            - dim_terms_term_type
+        - name: Location
+          members:
+            - dim_locations_location_name
+            - dim_locations_abbreviation
+            - dim_locations_grade_band
+            - dim_locations_campus
+            - dim_locations_city
+            - dim_regions_region_name
+            - dim_regions_state
+        - name: Student
+          members:
+            - dim_students_student_key
+            - dim_students_full_name
+            - dim_students_birth_date
+            - dim_students_lea_student_identifier
+            - dim_students_state_student_identifier
+            - dim_students_gender_identity
+            - dim_students_race
+            - dim_students_enrollment_status
+            - dim_students_is_gifted
+            - dim_students_is_ell
+        - name: Enrollment
+          members:
+            - dim_student_enrollments_student_enrollment_key
+            - dim_student_enrollments_grade_level
+            - dim_student_enrollments_graduation_year
+            - dim_student_enrollments_entry_date
+            - dim_student_enrollments_exit_date
+            - dim_student_enrollments_is_retained_year
+        - name: Calendar
+          members:
+            - dim_school_calendars_is_in_session
+            - dim_school_calendars_is_membership_day
+        - name: Filter
+          members:
+            - academic_year
+            - semester
 
     access_policy:
       - group: cube-access-student-data

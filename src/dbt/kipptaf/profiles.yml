@@ -15,3 +15,4 @@ kipptaf:
       method: oauth
       project: teamster-332318
       threads: 40
+      job_retries: 3

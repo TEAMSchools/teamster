@@ -40,8 +40,9 @@ All district projects share these variables (override via `dbt_project.yml`):
   current values from any district's `dbt_project.yml`
 - `local_timezone` — `America/New_York`
 - `cloud_storage_uri_base` — `gs://teamster-<project>/dagster/<project>`
-- `powerschool_external_location_root` —
-  `gs://teamster-<project>/dagster/<project>/powerschool` (ODBC districts only)
+  (redirects to `gs://teamster-test/dagster/<project>` when
+  `DAGSTER_CLOUD_IS_BRANCH_DEPLOYMENT=1`, via inline conditional in each
+  `external.location` template)
 
 Exceptions: `kippnewark` adds `iready_schema: kippnj_iready` and
 `renlearn_schema: kippnj_renlearn`. `kipptaf` has
@@ -92,6 +93,10 @@ rendering. The CI job and the parse job in its `deferring_environment_id` must
 share `target_name`, or every source with the target-conditional schema pattern
 hash-mismatches and fans out to rebuild the whole graph.
 
+Auto-retried CI runs invoke `dbt retry`, which replays the prior run's compiled
+SQL. After fixing external state (defer relations, transient BQ errors), trigger
+a fresh `dbt build` — don't rely on the retry.
+
 ## Dev `--defer` for unstaged externals
 
 Dev builds depending on GCS externals (`stg_google_sheets__*` etc.) fail with
@@ -113,6 +118,9 @@ manifest". The prod manifest is refreshed by `.git/hooks/post-merge` on every
   to prod warehouse relations. A staging-target manifest causes every model to
   fall through to view materialization, eventually hitting BigQuery's 16-level
   nested-view limit.
+- Pre-existing target relations are skipped unless `--full-refresh` is passed
+  ([docs](https://docs.getdbt.com/reference/commands/clone)). Use the flag to
+  recreate drifted defer copies.
 
 ## Stale dev tables shadow `--defer`
 
@@ -191,6 +199,11 @@ Dagster-only: default target `prod` + `defer` output. Branch deployments
 explicitly pass `target="defer"` via `DbtCliResource`; prod uses the profile
 default (no Python override needed). No `GITHUB_USER` — not available in Dagster
 deployments. Developers use `.dbt/profiles.yml` for full target support.
+
+- **`job_retries`**: dbt-bigquery defaults to `1`, which doesn't absorb
+  sustained transient 503s on `client.list_datasets()` at adapter init. Set
+  `job_retries: 3` on the `prod` output. Set on kipptaf; not on kippnewark,
+  kippcamden, kippmiami, kipppaterson.
 
 ## Model Conventions
 
@@ -331,6 +344,15 @@ dimension and fail.
 Corollary: never add `not_null` tests on `generate_surrogate_key` output — it
 never returns NULL.
 
+### Nullable PK inputs need a fallback, not a null-wrap
+
+For a primary key (not an FK), wrapping `generate_surrogate_key` in
+`if(col is not null, ..., cast(null as string))` makes the PK nullable and fails
+`not_null`. Use a fallback discriminator inside the hash inputs:
+`coalesce(cast(primary_id as string), secondary_id)`. The secondary id must be
+unique-per-row within the rows the primary would have disambiguated — otherwise
+rows with NULL primary collide on the placeholder hash and fail `unique`.
+
 ### dbt_utils.deduplicate `order_by` on BigQuery
 
 The macro compiles to `array_agg(original order by <expr> limit 1)`. BigQuery
@@ -343,6 +365,13 @@ Partitioning by the source's natural key leaves multiple rows that share the
 intended join column, which then fan out at the join site. Use
 `(col = 'sentinel') asc` in `order_by` to demote a specific value when rows tie
 on the chosen partition key.
+
+### sqlfluff ST03 on dbt_utils.deduplicate input CTEs
+
+A CTE referenced only via `dbt_utils.deduplicate(relation="<cte>")` fails
+sqlfluff ST03. Add
+`# trunk-ignore(sqlfluff/ST03): referenced via dbt_utils.deduplicate below`
+above the CTE.
 
 ### Don't inline CASE expressions in generate_surrogate_key
 

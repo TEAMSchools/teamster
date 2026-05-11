@@ -112,7 +112,12 @@ materialization is the only fix. See dagster-io/dagster#33708.
 **Deploy ordering gate**: `_dep_code_version_pending` blocks materialization
 when a direct dependency has `code_version_changed().since(newly_updated())` —
 prevents schema errors when a deploy adds columns through a TABLE → VIEW chain.
-Applied in `_build_dbt_condition()` so all three conditions inherit it.
+Applied in `_build_dbt_condition()` to tables and union_relations views via the
+default `guard_dep_code_version=True`. Plain views opt out
+(`dbt_view_automation_condition` passes `False`): a view never bakes parent
+columns into stored state, so a pending parent code change can't poison it, and
+the guard would only strand the view's own `code_version_changed` refresh behind
+unrelated upstream churn.
 
 **Dep fan-out rule**: An unpartitioned dep of a partitioned asset fans out to
 ALL partitions on every materialization. To preserve per-partition triggering,
