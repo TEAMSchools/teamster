@@ -1,0 +1,47 @@
+models:
+  - name: bridge_assessment_expectations_enrollment_scoped
+    description: >-
+      Factless many-to-many bridge linking student section enrollments to
+      scheduled assessment administrations. One row per (student section
+      enrollment x assessment administration). Replaces the internal-assessment
+      portion of the deleted dim_student_assessment_expectations.
+    columns:
+      - name: assessment_expectation_key
+        data_type: string
+        description: Surrogate key. Primary key.
+        constraints:
+          - type: primary_key
+            warn_unsupported: false
+        data_tests:
+          - unique
+          - not_null
+
+      - name: student_section_enrollment_key
+        data_type: string
+        description: >-
+          FK to dim_student_section_enrollments.
+        constraints:
+          - type: foreign_key
+            to: ref('dim_student_section_enrollments')
+            to_columns: [student_section_enrollment_key]
+            warn_unsupported: false
+        data_tests:
+          - relationships:
+              arguments:
+                to: ref('dim_student_section_enrollments')
+                field: student_section_enrollment_key
+
+      - name: assessment_administration_key
+        data_type: string
+        description: >-
+          FK to dim_assessment_administrations.
+        constraints:
+          - type: foreign_key
+            to: ref('dim_assessment_administrations')
+            to_columns: [assessment_administration_key]
+            warn_unsupported: false
+        data_tests:
+          - relationships:
+              arguments:
+                to: ref('dim_assessment_administrations')
+                field: assessment_administration_key

@@ -2,6 +2,13 @@ models:
   - name: int_deanslist__incidents
     config:
       materialized: table
+    data_tests:
+      - dbt_utils.expression_is_true:
+          arguments:
+            expression: |-
+              close_ts_date is null or close_ts_date >= '2000-01-01'
+          config:
+            severity: warn
     columns:
       - name: location_key
         data_type: string

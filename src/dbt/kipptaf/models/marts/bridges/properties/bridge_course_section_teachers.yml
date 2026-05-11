@@ -3,13 +3,13 @@ models:
     description: >-
       Bridge table resolving the many-to-many relationship between course
       sections and teachers. One row per section x teacher x assignment period.
-      A teacher may appear more than once per section when their role or
-      effective dates change. FKs to dim_course_sections via course_section_key
-      and to dim_staff via staff_key.
+      A teacher may appear more than once per section when their effective dates
+      change. FKs to dim_course_sections via course_section_key and to dim_staff
+      via staff_key.
 
     constraints:
       - type: primary_key
-        columns: [course_section_key, staff_key, role, effective_start_date]
+        columns: [course_section_key, staff_key, effective_start_date]
         warn_unsupported: false
     columns:
       - name: course_section_key
@@ -83,5 +83,4 @@ models:
             combination_of_columns:
               - course_section_key
               - staff_key
-              - role
               - effective_start_date

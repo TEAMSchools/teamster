@@ -5,6 +5,17 @@ models:
       (quarterly grade reporting, literacy assessment windows, OKR cycles,
       etc.). Source of truth for dim_terms. Each row represents one term
       instance for one domain type at one school (or region-wide).
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns:
+              - name
+              - school_id
+              - region
+              - powerschool_year_id
+          config:
+            severity: error
+            where: type = 'RT'
     columns:
       - name: type
         data_type: string
@@ -79,5 +90,6 @@ models:
         data_type: string
         description: >-
           Canonical city column for region mapping. Drives the `dim_terms →
-          dim_locations` join (`t.city = ll.region`) and feeds
-          `dim_locations.region_key` downstream.
+          dim_regions` join (`t.city = dr.\`name\``) and feeds the
+          `_dbt_source_project → location_key` chain into `dim_locations`
+          downstream.

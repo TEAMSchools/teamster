@@ -1,0 +1,42 @@
+cubes:
+  - name: sample
+    public: false
+    sql_table: kipptaf_marts.fct_sample
+
+    dimensions:
+      - name: sample_key
+        sql: sample_key
+        type: string
+        primary_key: true
+
+      - name: attendance_value
+        sql: attendance_value
+        type: number
+        public: true
+
+      - name: bare_name
+        sql: "{CUBE}.`name`"
+        type: string
+        public: true
+
+      - name: attendance_date
+        sql: CAST(date_key AS TIMESTAMP)
+        type: time
+        public: true
+
+      - name: existing_desc
+        description: Hand-authored, do not touch.
+        sql: attendance_value
+        type: number
+        public: true
+
+      - name: no_match
+        sql: computed_col
+        type: string
+        public: true
+
+    measures:
+      - name: count_rows
+        sql: sample_key
+        type: count_distinct
+        public: true

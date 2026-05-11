@@ -9,11 +9,9 @@ PROJECT="${1:-all}"
 
 run_project() {
   local project="$1"
-  uv run dbt run-operation stage_external_sources \
-    --project-dir "src/dbt/${project}/" \
-    --target defer \
-    --vars "{\"ext_full_refresh\": \"true\", \"cloud_storage_uri_base\": \"gs://teamster-${project}/dagster/${project}\"}"
-  uv run dbt build --full-refresh --project-dir="src/dbt/${project}/"
+  uv run dbt clone --full-refresh \
+    --project-dir="src/dbt/${project}/" \
+    --state target/prod
 }
 
 if [[ ${PROJECT} == "all" ]]; then
@@ -22,8 +20,8 @@ if [[ ${PROJECT} == "all" ]]; then
   run_project kippmiami &
   run_project kippnewark &
   run_project kipppaterson &
+  run_project kipptaf &
   wait
-  run_project kipptaf
 else
   run_project "${PROJECT}"
 fi

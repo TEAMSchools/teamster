@@ -46,23 +46,18 @@ class PowerSchoolODBCResource(ConfigurableResource):
     retry_count: int = 0
     retry_delay: int = 1
     tcp_connect_timeout: float = 5.0
-    call_timeout: int = 30_000
-    """Per-round-trip timeout in milliseconds (default 30s).
+    call_timeout: int = 60_000
+    """Per-round-trip timeout in milliseconds.
 
     Limits each individual Oracle round-trip (execute, fetchmany, etc.).
-    Healthy COUNT(*) probes complete in <500ms; 30s is >60× typical and
-    catches stalled tunnels fast. A hung round-trip raises DPI-1067 with
-    the in-flight SQL surfaced in the run log, which the retry layer can
-    recover from — rather than the whole tick running out the 600s sensor
-    timeout and surfacing an opaque DagsterUserCodeUnreachableError.
+    Observed assignmentscore EXECUTE→first-fetch on kippnewark is 31–35s;
+    60s gives ~25s headroom. A hung round-trip raises DPI-1067 with the
+    in-flight SQL surfaced in the run log so the retry layer can recover,
+    rather than the 600s sensor tick cap surfacing an opaque
+    DagsterUserCodeUnreachableError.
 
-    History: 10s → 15s on 2026-04-24 after pgfinalgrades on kippnewark
-    hit DPY-4024 during post-lockout recovery; 15s → 20s on 2026-04-27
-    after assignmentscore and pgfinalgrades on kippnewark/kippcamden
-    exhausted all 3 retries at 15s; 20s → 30s on 2026-04-29 after the
-    kippnewark powerschool sis sensor and schedule both hit DPY-4024 in
-    `_fetch_count` during the partition staleness walk. At 30s × 3
-    attempts total budget is 90s, still well under the 600s tick cap.
+    Total tick budget = call_timeout × max_attempts + ~30s SSH × max_attempts.
+    At 60s × 5 + 30s × 5 ≈ 450s, under the 600s cap.
     """
 
     _connect_params: ConnectParams = PrivateAttr()

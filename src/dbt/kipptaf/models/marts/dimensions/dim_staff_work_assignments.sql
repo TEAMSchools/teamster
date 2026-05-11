@@ -1,32 +1,12 @@
 with
     work_assignments as (
-        select
-            wa.associate_oid,
-            wa.item_id,
-            wa.position_id,
-            wa.management_position_indicator,
-            wa.voluntary_indicator,
-            wa.full_time_equivalence_ratio,
-            wa.payroll_file_number,
-            wa.payroll_group_code,
-            wa.hire_date,
-            wa.actual_start_date,
-            wa.seniority_date,
-            wa.termination_date,
-            wa.pay_cycle_code__code_value,
-            wa.standard_hours__hours_quantity,
-            wa.standard_hours__unit_code__code_value,
-            wa.standard_pay_period_hours__hours_quantity,
-            wa.wage_law_coverage__coverage_code__code_value,
-            wa.wage_law_coverage__coverage_code__name,
-            wa.wage_law_coverage__wage_law_name_code__code_value,
-            wa.wage_law_coverage__wage_law_name_code__name,
-            wa.worker_time_profile__badge_id,
-            wa.worker_time_profile__time_and_attendance_indicator,
-            wa.worker_time_profile__time_zone_code,
-            wa.worker_time_profile__time_service_supervisor__associate_oid,
-        from {{ ref("int_adp_workforce_now__workers__work_assignments") }} as wa
-        where wa.is_current_record
+        {{
+            dbt_utils.deduplicate(
+                relation=ref("int_adp_workforce_now__workers__work_assignments"),
+                partition_by="item_id",
+                order_by="effective_date_start desc",
+            )
+        }}
     ),
 
     workers as (
@@ -78,6 +58,16 @@ select
     wa.worker_time_profile__time_and_attendance_indicator
     as is_time_and_attendance_active,
     wa.worker_time_profile__time_zone_code as time_zone_code,
+
+    if(
+        wa.actual_start_date <= current_date('{{ var("local_timezone") }}')
+        and (
+            wa.termination_date is null
+            or wa.termination_date >= current_date('{{ var("local_timezone") }}')
+        ),
+        true,
+        false
+    ) as is_current,
 from work_assignments as wa
 left join workers as w on wa.associate_oid = w.associate_oid
 left join employee_numbers as en on w.worker_id__id_value = en.adp_associate_id

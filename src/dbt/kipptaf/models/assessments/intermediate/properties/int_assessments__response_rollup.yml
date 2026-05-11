@@ -1,5 +1,29 @@
 models:
   - name: int_assessments__response_rollup
+    description: >-
+      Per-student × per-canonical-assessment × per-response-type rollup of
+      Illuminate response data. For internal assessments, multipart member
+      assessments (sharing a `canonical_assessment_id` per
+      `int_assessments__assessments`) are aggregated to one row per student with
+      summed points and a deterministic single school/region selection.
+      `assessment_id` here is the canonical id, not the per-row member id;
+      `assessment_ids` (array) preserves the underlying member ids for
+      drilldown.
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns:
+              - illuminate_student_id
+              - assessment_id
+              - response_type
+              - response_type_id
+              - is_replacement
+      - dbt_utils.expression_is_true:
+          arguments:
+            expression: |-
+              date_taken is null or date_taken >= '2000-01-01'
+          config:
+            severity: warn
     columns:
       - name: illuminate_student_id
         data_type: int64
@@ -7,16 +31,45 @@ models:
         data_type: int64
       - name: academic_year
         data_type: int64
+        description: >-
+          `academic_year_clean` from `int_assessments__assessments` propagated
+          via scaffold (not the raw Illuminate `academic_year`). Re-join
+          source-of-truth when computing surrogate hashes — see
+          `src/dbt/CLAUDE.md` "Hash inputs must be derived identically across
+          producer and consumer".
       - name: scope
         data_type: string
       - name: subject_area
         data_type: string
+      - name: discipline
+        data_type: string
+        description: >-
+          Course discipline from the matched PowerSchool course enrollment.
+          Populated only for the internal-assessment branch
+          (`is_internal_assessment=true` and `is_replacement=false`); null for
+          K-8 replacement curriculum and external-assessment rows.
       - name: module_type
         data_type: string
       - name: module_code
         data_type: string
       - name: region
         data_type: string
+        description: >-
+          The student's region for this administration. Selected together with
+          `powerschool_school_id` from a single source row via `first_value(...)
+          order by date_taken, student_assessment_id, powerschool_school_id`
+          windowed in the `canonical_attrs` CTE, then read via `any_value()` in
+          the rollup. Cross-school groups exist because of upstream
+          canonicalization defects — see #3801.
+      - name: powerschool_school_id
+        data_type: int64
+        description: >-
+          The student's school for this administration. Selected together with
+          `region` from a single source row via `first_value(...) order by
+          date_taken, student_assessment_id, powerschool_school_id` windowed in
+          the `canonical_attrs` CTE, then read via `any_value()` in the rollup.
+          Cross-school groups exist because of upstream canonicalization defects
+          — see #3801.
       - name: is_internal_assessment
         data_type: boolean
       - name: is_replacement
@@ -35,27 +88,36 @@ models:
         data_type: date
       - name: points
         data_type: numeric
-        description: The actual points student received for this section.
+        description: >-
+          For internal multipart canonical groups, the sum of points across all
+          member assessments the student took within the canonical group. For
+          non-internal and single-member canonical groups, equals the per-row
+          points from `int_illuminate__agg_student_responses`.
         config:
           meta:
-            source_system: PowerSchool
-            source_model: stg_powerschool__pgfinalgrades
-            source_column: points
+            source_column: int_illuminate__agg_student_responses.points
       - name: percent_correct
         data_type: numeric
       - name: title
         data_type: string
-        description:
-          Stores a title name for the teacher and is used for sorting purposes.
+        description: >-
+          `canonical_title` from `int_assessments__assessments` for the
+          canonical group (lowest member's title within the partition).
         config:
           meta:
-            source_system: PowerSchool
-            source_model: stg_powerschool__users
-            source_column: title
+            source_column: int_assessments__assessments.canonical_title
       - name: assessment_id
         data_type: int64
+        description: >-
+          `canonical_assessment_id` from `int_assessments__assessments` — the
+          lowest member id within the canonical partition. Use `assessment_ids`
+          for the underlying member ids.
       - name: administered_at
         data_type: date
+        description: >-
+          `canonical_administered_at` from `int_assessments__assessments`.
+      - name: grade_level_id
+        data_type: int64
       - name: performance_band_set_id
         data_type: int64
       - name: performance_band_label
@@ -68,3 +130,20 @@ models:
         data_type: string
       - name: term_taken
         data_type: string
+      - name: n_assessments
+        data_type: int64
+        description: >-
+          Count of distinct member `assessment_id`s that rolled up into this
+          canonical row. `1` for non-multipart admins; `>1` for internal
+          multipart canonical groups (e.g., FTELA U2 CRA + CRA-Essay).
+      - name: is_multipart_assessment
+        data_type: boolean
+        description: >-
+          `true` when `n_assessments > 1` — the student took multiple member
+          assessments that share a `canonical_assessment_id` and were rolled up
+          here.
+      - name: assessment_ids
+        data_type: array<int64>
+        description: >-
+          Array of distinct member `assessment_id`s rolled up into this
+          canonical row. Use to drill from the canonical to per-member rows.

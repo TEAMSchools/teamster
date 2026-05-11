@@ -6,8 +6,8 @@
       "Bash(git diff)",
       "Bash(git status)",
       "Bash(git worktree list)",
-      "Bash(mkdir -p /workspaces/teamster/.claude/scratch/day2)",
-      "Bash(rm -rf /workspaces/teamster/.claude/scratch/day2)",
+      "Bash(uv run .claude/skills/dagster-day2/scripts/day2_collect.py)",
+      "Bash(uv run .claude/skills/dagster-day2/scripts/day2_summarize.py --details)",
       "Bash(uv tool list)",
       "Edit(/.claude/scratch/**)",
       "Edit(/.claude/skills/dagster-day2/**)",
@@ -20,6 +20,8 @@
       "mcp__bigquery__list_dataset_ids",
       "mcp__bigquery__list_table_ids",
       "mcp__bigquery__search_catalog",
+      "mcp__context7__query-docs",
+      "mcp__context7__resolve-library-id",
       "mcp__dagster__get_asset_check_executions",
       "mcp__dagster__get_asset_condition_evaluations",
       "mcp__dagster__get_asset_health",
@@ -48,6 +50,13 @@
       "mcp__dbt__list_jobs_runs",
       "mcp__dbt__list_jobs",
       "mcp__dbt__show",
+      "mcp__gcp-observability__get_trace",
+      "mcp__gcp-observability__list_alert_policies",
+      "mcp__gcp-observability__list_alerts",
+      "mcp__gcp-observability__list_group_stats",
+      "mcp__gcp-observability__list_log_entries",
+      "mcp__gcp-observability__list_sinks",
+      "mcp__gcp-observability__list_time_series",
       "mcp__github__add_issue_comment",
       "mcp__github__create_branch",
       "mcp__github__create_pull_request",
@@ -85,15 +94,7 @@
       "mcp__gke__list_monitored_resource_descriptors",
       "mcp__gke__list_recommendations",
       "mcp__gke__query_logs",
-      "mcp__observability__get_trace",
-      "mcp__observability__list_alert_policies",
-      "mcp__observability__list_alerts",
-      "mcp__observability__list_group_stats",
-      "mcp__observability__list_log_entries",
-      "mcp__observability__list_time_series",
-      "mcp__plugin_context7_context7__query-docs",
-      "mcp__plugin_context7_context7__resolve-library-id",
-      "Read(/.claude/scratch/**)",
+      "Read(/.claude/**)",
       "Read(/.worktrees/**)",
       "Read(//home/vscode/.claude/**)",
       "Read(//tmp/dagster/**)",
@@ -101,13 +102,26 @@
       "Skill(claude-md-management:revise-claude-md:*)",
       "Skill(commit-commands:commit:*)",
       "Skill(dbt:using-dbt-for-analytics-engineering:*)",
-      "Write(//workspaces/teamster/.claude/scratch/day2/*)",
+      "Write(//workspaces/teamster/.claude/scratch/**)",
       "Write(//workspaces/teamster/.worktrees/**)"
     ],
     "deny": [
-      "Bash(* gcloud *)",
-      "Bash(* kubectl *)",
-      "Bash(* op *)",
+      "Bash(gcloud *)",
+      "Bash(gh issue close *)",
+      "Bash(gh issue comment *)",
+      "Bash(gh issue create *)",
+      "Bash(gh issue list *)",
+      "Bash(gh issue view *)",
+      "Bash(gh pr comment *)",
+      "Bash(gh pr create *)",
+      "Bash(gh pr list *)",
+      "Bash(gh pr merge *)",
+      "Bash(gh pr review *)",
+      "Bash(gh pr view *)",
+      "Bash(gh repo view *)",
+      "Bash(gh search *)",
+      "Bash(kubectl *)",
+      "Bash(op *)",
       "Edit(**/.env.*)",
       "Edit(**/.env)",
       "Edit(**/*.cer)",
@@ -140,8 +154,7 @@
     ],
     "additionalDirectories": [
       "/workspaces/teamster/.worktrees/**",
-      "/workspaces/teamster/.claude/scratch/**",
-      "/workspaces/teamster/.claude/scratch/day2"
+      "/workspaces/teamster/.claude/scratch/**"
     ]
   },
   "enabledMcpjsonServers": ["dagster", "bigquery", "dbt"],
@@ -176,16 +189,6 @@
             "type": "command",
             "command": "bash .claude/hooks/check-output.sh",
             "statusMessage": "Scanning output for secret leakage..."
-          }
-        ]
-      },
-      {
-        "matcher": "Edit|Write",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "jq -r '.tool_input.file_path' | xargs /workspaces/teamster/.trunk/tools/trunk fmt --no-progress 2>/dev/null; exit 0",
-            "statusMessage": "Auto-formatting with Trunk"
           }
         ]
       }

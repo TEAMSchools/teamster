@@ -6,8 +6,8 @@
     "dev": "cubejs-server"
   },
   "dependencies": {
-    "@cubejs-backend/bigquery-driver": "1.6.38",
-    "@cubejs-backend/server": "1.6.38",
-    "googleapis": "171.4.0"
+    "@cubejs-backend/bigquery-driver": "^1.6.44",
+    "@cubejs-backend/server": "^1.6.44",
+    "googleapis": "^171.4.0"
   }
 }

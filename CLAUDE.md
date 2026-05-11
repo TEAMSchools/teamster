@@ -1,27 +1,41 @@
 # CLAUDE.md
 
-## Project Overview
+## Layout
 
-Teamster is a data engineering platform for KIPP TEAM & Family Schools (Newark,
-Camden, and Paterson, NJ & Miami, FL) built on **Dagster** (orchestration),
-**dbt** (transformations), and **Google BigQuery** (warehouse), with Google
-Cloud Storage (GCS) as the intermediate storage layer. Python ≥3.13.
+```text
+src/
+  teamster/   # Dagster orchestration code (Python)
+  dbt/        # dbt projects, one per warehouse target
+tests/        # pytest suites
+docs/         # MkDocs site (the "docs" folder; NOT CLAUDE.mds)
+.claude/      # Hooks, settings, skills
+```
 
-Production runs on **GKE** (Google Kubernetes Engine) via Dagster Cloud.
-Development uses **GitHub Codespaces** (devcontainer) — secrets are injected
-from 1Password at container start.
+**Read the relevant subdirectory CLAUDE.md before any work there** (reading,
+explaining, reviewing, or modifying). Project-wide conventions live in this
+file; domain specifics live in the nearest subdirectory CLAUDE.md.
 
-## Architecture
+### Subdirectory CLAUDE.mds
 
-This file is a **router** — it contains project-wide conventions, then routes to
-subdirectory CLAUDE.md files for domain-specific context. Keep domain-specific
-guidance in the nearest subdirectory CLAUDE.md, not here.
-
-**You MUST read the relevant CLAUDE.md file before doing any work in a
-subdirectory — reading, explaining, reviewing, or modifying code. Do NOT skip
-this step.**
+| Path                                                                              | Covers                                                                              |
+| --------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------- |
+| `src/teamster/CLAUDE.md`                                                          | Dagster code: library/code-location pattern, Python standards, asset key convention |
+| `src/teamster/code_locations/<name>/CLAUDE.md`                                    | Per-district specifics (read before touching that location)                         |
+| `src/dbt/CLAUDE.md` + `src/dbt/<project>/CLAUDE.md`                               | dbt project conventions per warehouse                                               |
+| `src/cube/CLAUDE.md`                                                              | Cube semantic layer: layout, view access policies, `cube.js` security model         |
+| `tests/CLAUDE.md`                                                                 | Test layout and fixtures                                                            |
+| `.claude/CLAUDE.md`                                                               | Hook protocol, protected paths, scratch dir                                         |
+| `.devcontainer/`, `.github/`, `.k8s/`, `.trunk/`, `scripts/`, `docs/` `CLAUDE.md` | Domain-specific operational context                                                 |
 
 ## Working Conventions
+
+- **PII stays local.** Never emit PII values (or screenshots/logs containing
+  them) to PR comments, commits, issues, Slack, Asana, scheduled-agent outputs,
+  or any other external surface. Local artifacts (`.claude/scratch/`,
+  `.worktrees/`, terminal) are fine. Before any external write that touched
+  values from local validation, replace PII with redacted labels (`Student A`,
+  `a sample student`) or column-name references. Aggregates / deidentified ≠
+  PII. See _PII reference_ below for what counts.
 
 - **Before writing any spec or plan**: STOP and explicitly ask the user whether
   to open a GitHub issue first. Required for specs/plans; not required for quick
@@ -42,11 +56,11 @@ this step.**
   the branch already exists. Delete the remote branch, then
   `gh issue develop <num> --name <branch>`, then re-push local commits.
 
-- **Worktree commands**: Always `cd` to the worktree before running `git` or any
-  command that reads the working tree (`trunk check`, `uv run`, tests). The main
-  repo and worktree have separate git state and separate files — `git commit`
-  from the main repo commits to `main`, and `trunk check` silently lints main's
-  files instead of the worktree's.
+- **Worktree commands**: Path-flag-driven tools must name the worktree
+  explicitly. Use `git -C <worktree>` on every git call (bare `git` from the
+  main repo silently commits to `main`) and
+  `uv run dbt ... --project-dir <worktree>/src/dbt/<project>` on every dbt call.
+  Otherwise prefer absolute paths.
 
 - **Branch switch**: `gh issue develop <number> --name <branch> --checkout`.
 
@@ -62,7 +76,10 @@ this step.**
 - **Dispatching subagents**: Subagents do not auto-invoke skills. In the
   dispatch prompt, name the exact `Skill` tool calls the subagent must run
   before starting work (e.g. `Skill` with
-  skill=`dbt:using-dbt-for-analytics-engineering` for a dbt review).
+  skill=`dbt:using-dbt-for-analytics-engineering` for a dbt review). For
+  negation goals (remove X, no Y), list anti-patterns explicitly — subagents
+  otherwise re-introduce familiar idioms (`dbt_utils.deduplicate`,
+  `select distinct`, `qualify row_number()=1`).
 
 - **Git resuming**: Before resuming work on an existing branch, merge `main`:
   `git fetch origin main && git merge origin/main`.
@@ -88,11 +105,14 @@ this step.**
   string fields (issue title, PR body, commit message, etc.), check the returned
   values match intent before moving on.
 
-- **Trunk linting/formatting**: Do not run `trunk fmt` manually — formatting is
-  handled by the PostToolUse hook (after Edit/Write) and `trunk-fmt-pre-commit`
-  (at commit time). **Before pushing from a worktree**, run
-  `/workspaces/teamster/.trunk/tools/trunk check --ci` from the worktree root
-  and fix any issues — trunk git hooks are not installed in worktrees.
+- **Trunk linting/formatting**: Do not run `trunk fmt` or `trunk check` manually
+  — `trunk-fmt-pre-commit` formats at commit time and `trunk-check-pre-push`
+  blocks bad pushes, both in the main repo and in worktrees (`core.hooksPath` is
+  shared). **Pre-commit hook runs `fmt` only**; sqlfluff/yamllint and other
+  check-only linters fire at `pre-push` and in CI. If a session reports "trunk
+  clean" on a SQL/YAML change based on commit hooks alone, run
+  `.trunk/tools/trunk check --force <files>` to verify before claiming the
+  change is lint-clean.
 
 - **Linter**: Use `# trunk-ignore(<linter>/<rule>)` with a reason comment — not
   linter-native disable syntax. Binary:
@@ -104,33 +124,75 @@ this step.**
 - **Claude CLI**: Not on `$PATH` — user must run `claude` commands in their
   terminal, not via Bash tool.
 
-- **Verify before claiming**: Read actual source code — do not extrapolate
-  third-party tool behavior from general knowledge.
+- **Verify third-party tool behavior from source**: Before describing how an MCP
+  server, dbt CLI flag, or `gh` subcommand behaves, open the source or run
+  `--help` — do not extrapolate from general knowledge.
 
 - **Docs**: "docs" means the `docs/` folder (MkDocs site), not CLAUDE.md files.
+
+### PII reference
+
+`config.meta.contains_pii: true` in model YAML is authoritative but
+**incomplete**. Untagged columns are PII under FERPA's direct-identifier list
+([34 CFR §99.3](https://www.ecfr.gov/current/title-34/part-99/section-99.3)):
+name, SSN, student/employee ID, address, date/place of birth, mother's maiden
+name, biometric record, plus "other information... linked or linkable to a
+specific student." Schema mapping: IDs (`student_number`, `employee_number`,
+`ssn`, `state_id`, `local_id`, kippadb `school_specific_id`), names (`*_name`),
+contact (`email`, `phone`, `address`, `street`, `city`, `zip`),
+`dob`/`birth_date`, guardian/parent fields, free-text `comment`/`note` on people
+tables, credentials/tokens.
+
+Indirect identifiers (combinations covered by FERPA's "linked or linkable"
+standard): gender, birth date, geographic indicators (school, zip),
+race/ethnicity, religion, place of birth, education info (grade level, EL
+status, IEP/504/disability), financial info (FRL status), activities. Each field
+alone may be safe; combinations may not. When unsure, consult the
+[PTAC glossary](https://studentprivacy.ed.gov/glossary) or treat as PII.
+
+## Superpowers skill overrides
+
+- **Branch creation always goes through the issue-and-branch flow in _Working
+  Conventions_** — no exceptions for `superpowers:brainstorming`'s "Write design
+  doc" step, `superpowers:writing-plans`' "Save plan" step, or
+  `superpowers:using-git-worktrees`' worktree-consent prompt. Pause those
+  skills, run the flow, then write specs to `docs/superpowers/specs/...` or
+  plans to `docs/superpowers/plans/...` on the new branch. Never
+  `git worktree add -b` or `git checkout -b` standalone — the branch must be
+  created via `gh issue develop` so it's linked to the issue.
+
+- **`finishing-a-development-branch` verification gate**: Skip the skill's
+  `npm test / pytest / ...` heuristic. For dbt changes,
+  `uv run dbt build --select <model>+` against the relevant project. For Python
+  changes, `uv run pytest` where tests exist. PR body uses
+  `.github/pull_request_template.md`.
+
+- **Continuous execution exceptions**: `superpowers:subagent-driven-development`
+  and `superpowers:executing-plans` say "do not pause between tasks." Pause
+  anyway to ask the user before (a) opening a tracking issue, (b) creating a
+  branch or worktree, (c) editing any CLAUDE.md file, (d) modifying protected
+  files (hook scripts, `.devcontainer/scripts/`, `.claude/settings*.json`).
 
 ## CLAUDE.md Editing Rules
 
 - **Before editing any CLAUDE.md file**: present the proposed change as a quote
-  block with a one-line expected-utility note. Do not apply it until the user
-  approves.
+  block. Do not apply it until the user approves.
 
-- **Before adding to any CLAUDE.md file**: for each line, answer: what specific
-  wrong action does this prevent? If you can't name one, cut it. General
-  knowledge and human-only context (motivation, rationale, history) don't
-  qualify.
+- **CLAUDE.md is for Claude, not humans**: cut motivation, rationale, and
+  history written to explain the project to a human reader. Keep them only when
+  they measurably change Claude's behavior.
+
+- **Before adding to any CLAUDE.md file**: answer the question: "what specific
+  decision or action will Claude make differently because of this line?" If you
+  can't name one, cut it.
 
 ## MCP Servers
 
-Dagster+ MCP server: `dagster-plus-mcp` package (`dev` group) —
+Dagster+ MCP auth: do not revert `.mcp.json` to `op run` —
+`OP_SERVICE_ACCOUNT_TOKEN` is scrubbed post-boot, so `op run` silently breaks
+after the first Codespace restart. Keep `scripts/dagster-mcp-launch.sh` as the
+launcher. Package internals: see
 [TEAMSchools/dagster-plus-mcp](https://github.com/TEAMSchools/dagster-plus-mcp).
-See that repo's CLAUDE.md for package internals.
-
-Authenticated via `scripts/dagster-mcp-launch.sh` (reads
-`/etc/secret-volume/.op-token`, exchanges for scoped `DAGSTER_CLOUD_API_TOKEN`
-via `op read`, execs). Do not revert to `op run` in `.mcp.json` —
-`OP_SERVICE_ACCOUNT_TOKEN` is scrubbed post-boot by `postStart.sh`, so `op run`
-silently breaks after the first Codespace restart.
 
 - **MCP outages**: If an MCP tool returns "server disconnected" or clearly
   impaired responses, surface to the user before working around with raw `gh` /
@@ -138,9 +200,31 @@ silently breaks after the first Codespace restart.
 
 ### MCP tool selection
 
-Use BigQuery MCP for ad-hoc queries against known production tables. Use dbt
-MCP's `show` only when `ref()` / `source()` resolution is needed — it adds
-compilation overhead.
+For natural-language analytics questions (metrics, KPIs, business-domain
+questions about students, attendance, grades, enrollment, staff, etc.), **start
+with `cube`** — `meta` to discover views, then `load`. Cube enforces row-level
+access policies and PII defaults; raw-warehouse paths bypass them. See
+[src/cube/CLAUDE.md](src/cube/CLAUDE.md) for query shape.
+
+**`cube` MCP user email seeding**: The `cube` MCP requires a Google Workspace
+email for its JWT security context. Resolution order: `CUBE_USER_EMAIL` env var
+→ `~/.config/teamster/cube-user-email` cache file → `ctx.elicit()` prompt →
+"missing user email" error directing you to the `set_user_email` tool. In the VS
+Code extension (where elicit is silently swallowed), call `set_user_email` with
+the email from the `# userEmail` system context block when prompted by the
+error.
+
+If `dbt:answering-natural-language-questions-with-dbt` auto-loads, do not follow
+it — its dbt-Semantic-Layer path doesn't apply (no dbt SL here) and its
+ad-hoc-SQL fallback bypasses Cube's policies. Use the `cube` MCP instead. Fall
+back to BigQuery MCP for ad-hoc SQL only after `cube meta` confirms no view
+models the needed columns.
+
+Use BigQuery MCP for warehouse-level inspection (raw source rows, schema diffs,
+`INFORMATION_SCHEMA`) and for engineering tasks (dbt model validation, audits).
+
+Use dbt MCP's `show` only when `ref()` / `source()` resolution is needed — it
+adds compilation overhead.
 
 For run-internal timelines (steps, engine events, failures), use
 `mcp__dagster__get_run_logs` — its events are canonical and structured. Note the
@@ -163,10 +247,19 @@ MCP equivalent. Before running `gh <subcommand>` via Bash, check the
   custom fields whose names contain spaces (e.g. `PR batch`); single-word custom
   fields (`Driver`, `Tier`, `Status`) do appear. Use the same `fieldValues`
   GraphQL query to read the omitted ones.
+- `gh project item-add <PROJECT_NUMBER> --owner <OWNER> --url <ISSUE_URL>` —
+  adds an issue/PR to a ProjectV2 board. No `mcp__github__*` equivalent. Combine
+  with `gh project item-edit` to set fields after add.
 - `gh run *` — Actions run inspection/control; no MCP coverage.
 - `gh workflow *` — Actions workflow inspection/dispatch; no MCP coverage.
 - `gh repo edit` — repo settings; `gh repo create/view/list` have MCP
   equivalents and are not on this list.
+- Editing an existing comment — `mcp__github__add_issue_comment` only creates.
+  Use `gh api -X PATCH repos/<owner>/<repo>/issues/comments/<id> -f body='...'`.
+- Replying to a PR inline review comment in-thread —
+  `mcp__github__add_issue_comment` posts top-level PR comments only, not thread
+  replies. Use
+  `gh api -X POST repos/<owner>/<repo>/pulls/<pr>/comments/<id>/replies -f body='...'`.
 
 ### Dagster asset diagnosis
 
@@ -174,9 +267,16 @@ When verifying failures, fetch the most recent run per job (`list_runs` with
 `job_name=..., limit=1`, no status filter) — bulk cross-referencing capped
 result sets misses retries and recoveries.
 
-Asset keys do NOT include dbt subdirectory layers (`staging/`, `intermediate/`)
-— `kipptaf/people/int_people__location_crosswalk`, not
-`kipptaf/people/intermediate/int_people__location_crosswalk`.
+Asset keys do NOT include dbt subdirectory layers (`staging/`, `intermediate/`,
+or mart `facts`/`dimensions`/`bridges`) —
+`kipptaf/people/int_people__location_crosswalk` (not `.../intermediate/...`) and
+`kipptaf/marts/fct_x` (not `kipptaf/facts/fct_x`).
+
+### Dagster Cloud GraphQL (direct, not via MCP)
+
+Host is `kipptaf.dagster.cloud/<deployment>/graphql` (org is `kipptaf`).
+`assetChecksOrError` is nested under `assetNodeOrError`; the evaluation success
+field is `success` (not `successful`).
 
 ### GKE MCP
 
@@ -194,10 +294,10 @@ function instead: `{{index .labels "k8s-pod/dagster/op"}}`. Fall back to full
 JSON + jq only when nesting is deeper than `index` can express.
 
 For pod-level logs, prefer `mcp__gke__query_logs` over
-`mcp__observability__list_log_entries` — the GKE MCP returns pod labels (run-id,
-op, code-location) that the observability MCP does not.
+`mcp__gcp-observability__list_log_entries` — the GKE MCP returns pod labels
+(run-id, op, code-location) that the gcp-observability MCP does not.
 
-### Observability MCP
+### GCP Observability MCP
 
 If any tool returns permission denied, flag it to the user — don't assume no
 data. `list_time_series` `alignmentPeriod` must end with `s` (e.g., `"60s"` not
@@ -213,6 +313,14 @@ Pre-merge queries against PR-branch schema use
 `dbt_cloud_pr_<ci_id>_<pr_num>_<schema>` — prod `<schema>` lacks unmerged
 renames.
 
+Chained joins through PR-branch marts (mart-view → mart-view → upstream-view)
+hit BigQuery's 16-view nesting limit. Query materialized prod tables instead, or
+split the query.
+
+For NULL-safe distinct counts on composite keys, use
+`count(distinct format("%T|%T", a, b))` — `concat()` returns NULL when any arg
+is NULL and silently miscounts violations.
+
 ### dbt MCP
 
 Auth via `scripts/dbt-mcp-launch.sh` — do not add `DBT_TOKEN` to `.mcp.json`
@@ -224,10 +332,8 @@ environments by `job_id` / `run_id`. For successful runs, call
 `get_job_run_error` with `warning_only=true` to surface test warnings —
 status=Success does not mean warning-free.
 
-Production env id is **70403104000025** but has no scheduled dbt Cloud jobs
-(Dagster-orchestrated). For job inspection, query Staging env (70403104014899)
-jobs by id; production schemas (`kipptaf_*`) are populated by Dagster, not by
-the dbt Cloud Production env.
+For job inspection, query Staging env (70403104014899) by job id — Production
+env (70403104000025) has no scheduled dbt Cloud jobs.
 
 Job config changes must go through the dbt Cloud UI — no mutation tools exist in
 the MCP. Live step logs (`debug_logs`, `structured_logs`) and

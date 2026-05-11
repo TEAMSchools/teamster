@@ -35,7 +35,7 @@ select
         dbt_utils.generate_surrogate_key(
             [
                 "ada.student_number",
-                "ada._dbt_source_relation",
+                "enr._dbt_source_relation",
                 "ada.academic_year",
                 "enr.entrydate",
             ]
