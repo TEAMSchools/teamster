@@ -36,22 +36,27 @@ models:
       - name: gpa_y1
         data_type: float64
       - name: cumulative_y1_gpa_unweighted
-        description: Unweighted cumulative Y1 GPA across all stored grades at the
-          current school.
+        description:
+          Unweighted cumulative Y1 GPA across all stored grades at the current
+          school.
         data_type: float64
       - name: cumulative_y1_gpa_projected_unweighted
-        description: Unweighted projected cumulative Y1 GPA, incorporating current
+        description:
+          Unweighted projected cumulative Y1 GPA, incorporating current
           in-progress grades not yet stored.
         data_type: float64
       - name: cumulative_y1_gpa_projected_s1_unweighted
-        description: Unweighted projected cumulative Y1 GPA based on S1 final grades
-          for the current year.
+        description:
+          Unweighted projected cumulative Y1 GPA based on S1 final grades for
+          the current year.
         data_type: float64
       - name: cumulative_y1_gpa
-        description: Weighted cumulative Y1 GPA across all stored grades at the
-          current school.
+        description:
+          Weighted cumulative Y1 GPA across all stored grades at the current
+          school.
         data_type: float64
       - name: cumulative_y1_gpa_projected
-        description: Weighted projected cumulative Y1 GPA, incorporating current
+        description:
+          Weighted projected cumulative Y1 GPA, incorporating current
           in-progress grades not yet stored.
         data_type: float64
