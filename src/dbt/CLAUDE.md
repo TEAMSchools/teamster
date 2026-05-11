@@ -193,6 +193,11 @@ explicitly pass `target="defer"` via `DbtCliResource`; prod uses the profile
 default (no Python override needed). No `GITHUB_USER` — not available in Dagster
 deployments. Developers use `.dbt/profiles.yml` for full target support.
 
+- **`job_retries`**: dbt-bigquery defaults to `1`, which doesn't absorb
+  sustained transient 503s on `client.list_datasets()` at adapter init. Set
+  `job_retries: 3` on the `prod` output. Set on kipptaf; not on kippnewark,
+  kippcamden, kippmiami, kipppaterson.
+
 ## Model Conventions
 
 These conventions apply to **every** dbt project in this directory. Per-project
