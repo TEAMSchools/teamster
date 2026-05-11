@@ -1150,13 +1150,6 @@ flag derived from PowerSchool. This is **not in scope** for the initial AY
 - **Expected PM measures** — not yet defined in
   `stg_google_sheets__dibels_expected_assessments`; to be confirmed with T&L
   later in the summer
-- **T&L PM tracking requirements for aimline** — until T&L confirms what they
-  want to see on the dashboard for AY 2026–2027 PM, the following cannot be
-  finalized: (a) which goal display fields replace the collective-average growth
-  columns in `rpt_tableau__dibels_dashboard`; (b) whether
-  `int_google_sheets__dibels_pm_expectations` is simplified or replaced; (c)
-  whether any aimline fields (`aimline_value_by_date`, score change) need to be
-  surfaced directly
 - **PM completion signal redesign** — the
   `expected_row_count = actual_row_count` check in
   `int_students__dibels_participation_roster` needs a new approach for
