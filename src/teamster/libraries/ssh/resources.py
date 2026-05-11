@@ -6,12 +6,25 @@ from stat import S_ISDIR, S_ISREG
 from dagster_shared import check
 from dagster_ssh import SSHResource as DagsterSSHResource
 from paramiko import SFTPAttributes, SFTPClient
+from paramiko.ssh_exception import SSHException
+from tenacity import (
+    retry,
+    retry_if_exception_type,
+    stop_after_attempt,
+    wait_exponential_jitter,
+)
 
 
 class SSHResource(DagsterSSHResource):
     tunnel_remote_host: str | None = None
     test: bool = False
 
+    @retry(
+        stop=stop_after_attempt(5),
+        wait=wait_exponential_jitter(initial=2, max=30),
+        retry=retry_if_exception_type(SSHException),
+        reraise=True,
+    )
     def listdir_attr_r(
         self,
         remote_dir: str = ".",

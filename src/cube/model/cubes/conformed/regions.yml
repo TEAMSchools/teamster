@@ -5,20 +5,24 @@ cubes:
 
     dimensions:
       - name: region_key
+        description: Surrogate key derived from business_unit_code.
         sql: region_key
         type: string
         primary_key: true
 
       - name: region_name
+        description: Region name (Camden, Miami, Newark, Paterson, TAF).
         sql: "{CUBE}.`name`"
         type: string
         public: true
 
       - name: state
+        description: US state (NJ or FL).
         sql: state
         type: string
         public: true
 
       - name: timezone
+        description: IANA timezone identifier.
         sql: timezone
         type: string

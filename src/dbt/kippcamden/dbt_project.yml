@@ -27,7 +27,6 @@ vars:
   current_fiscal_year: 2026
   cloud_storage_uri_base: gs://teamster-kippcamden/dagster/kippcamden
   bigquery_external_connection_name: projects/teamster-332318/locations/us/connections/biglake-teamster-gcs
-  powerschool_external_location_root: gs://teamster-kippcamden/dagster/kippcamden/powerschool
 
 models:
   kippcamden:
@@ -99,6 +98,8 @@ models:
             +enabled: false
           stg_powerschool__u_def_ext_students:
             +enabled: false
+          stg_powerschool__u_expectations:
+            +enabled: false
   titan:
     +materialized: table
     staging:
@@ -142,6 +143,8 @@ sources:
             src_powerschool__sced_code_mapping:
               +enabled: false
             src_powerschool__u_def_ext_students:
+              +enabled: false
+            src_powerschool__u_expectations:
               +enabled: false
   titan:
     titan:

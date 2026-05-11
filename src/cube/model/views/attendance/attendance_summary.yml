@@ -1,5 +1,17 @@
 views:
   - name: attendance_summary
+    description: >-
+      Aggregated student attendance for ADA, tardy rate, and truancy breakdowns.
+      One row per filter slice — never per student-day. ADA is always
+      SUM(attendance_value) / SUM(membership_value); never average a per-row
+      ratio. For point-in-time truancy or count-of-students snapshots, filter to
+      a single date_day. Truancy criteria are regional: Miami uses 15+ absences
+      in a 90-day rolling window; NJ regions use projected 50+ absences for the
+      year. attendance_category is the coarse rollup (Present, Absent, Tardy,
+      In-School Suspension, Out-of-School Suspension); use it for GROUP BY
+      breakdowns instead of attempting to sum the boolean is_* flags. No direct
+      student identifiers — demographic dimensions are aggregate breakdowns
+      only.
 
     cubes:
       - join_path: attendance
@@ -50,10 +62,8 @@ views:
         includes:
           - gender_identity
           - race
-          - meal_eligibility_status
           - is_gifted
           - is_ell
-          - has_iep
 
       - join_path: attendance.dim_terms
         prefix: true
@@ -61,6 +71,49 @@ views:
           - term_name
           - term_code
           - term_type
+
+    meta:
+      folders:
+        - name: Attendance
+          members:
+            - attendance_category
+            - is_truant
+        - name: Date
+          members:
+            - dim_dates_date_day
+            - dim_dates_month_number
+            - dim_dates_month_name
+            - dim_dates_quarter_number
+            - dim_dates_school_week_start_date
+        - name: Term
+          members:
+            - dim_terms_term_name
+            - dim_terms_term_code
+            - dim_terms_term_type
+        - name: Location
+          members:
+            - dim_locations_location_name
+            - dim_locations_abbreviation
+            - dim_locations_grade_band
+            - dim_locations_campus
+            - dim_locations_city
+            - dim_regions_region_name
+            - dim_regions_state
+        - name: Student
+          members:
+            - dim_students_gender_identity
+            - dim_students_race
+            - dim_students_is_gifted
+            - dim_students_is_ell
+        - name: Enrollment
+          members:
+            - dim_student_enrollments_grade_level
+            - dim_student_enrollments_graduation_year
+            - dim_student_enrollments_is_retained_year
+        - name: Filter
+          members:
+            - academic_year
+            - semester
 
     access_policy:
       # No PII tier — view contains no direct student identifiers.
