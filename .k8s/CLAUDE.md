@@ -131,6 +131,15 @@ on GKE Autopilot.
   by `runK8sConfig.jobSpecConfig.podFailurePolicy` with `action: Ignore` on the
   `DisruptionTarget` pod condition — preempted pods transparently retry without
   burning `backoffLimit`.
+- **`required` antiAffinity authorizes scheduler preemption** of the target pods
+  when no other node fits. `runK8sConfig.affinity.podAntiAffinity` is `required`
+  against code-server labels, with run pods at priority 1000 vs code-server 0 —
+  so the scheduler CAN evict code servers at schedule time, not just kubelet at
+  eviction time. Do not describe this anti-affinity as "isolating" code servers
+  from runs or "preventing co-location."
+- `ttlSecondsAfterFinished` is etcd/apiserver hygiene only — terminated
+  containers already released cgroup RSS, so TTL does NOT free node memory. Do
+  not propose it as a lever for node memory pressure or eviction issues.
 
 ## gRPC Worker Threads
 

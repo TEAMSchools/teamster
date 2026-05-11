@@ -26,7 +26,7 @@ Output shape:
 ```json
 {
   "window": {"epoch": ..., "utc_start": "...Z", "utc_end": "...Z"},
-  "step_01_failed_runs": {"failureCount": N, "failures": [...], "successCount": N, "canceledCount": N},
+  "step_01_failed_runs": {"failureCount": N, "failures": [...], "successCount": N, "canceledCount": N, "successRunIds": [...]},
   "step_02_retries":     {"retries": [{"parentRunId":..., "retryRunId":..., "retryStatus":"SUCCESS|FAILURE"}]},
   "step_03_sensor_ticks":{"<location>": {"<sensor>": {"failureCount": N, "ticks": [...]}}},
   "step_04_freshness":   {"flaggedAssets": [...], "policyCount": N},
@@ -35,7 +35,7 @@ Output shape:
   "step_07_agents":      {"agents": [...], "agentCount": N},
   "step_08_agent_pod_churn": {"events": [...], "skipped": bool},
   "step_09_daemons":     {"daemons": [...], "allHealthy": bool},
-  "step_10_gke_events":  {"clusterEvents": [...], "podEvents": [...]},
+  "step_10_gke_events":  {"clusterEvents": [...], "podEvents": [{"timestamp":..., "podName":..., "reason":..., "message":..., "runId": "<uuid|null>", "runStatus": "SUCCESS|FAILURE|UNKNOWN"}]},
   "step_11_alerts":      {"alerts": [...]},
   "step_12_error_groups":{"groups": [...], "buckets": {"inWindow":[], "staleOpen":[]}},
   "step_13_oom_metrics": {"oomRuns": [...], "skipped": bool},
@@ -82,6 +82,29 @@ before drawing conclusions — partial data produces wrong findings.
 | Code error                        | K8s API timeout   | Error class is actually `DagsterK8sUnrecoverableAPIError` — stack-trace match alone is insufficient                                                                                                                                                                                                                                                                                                                   |
 | Unclassified                      | Node OOM/eviction | GKE pod event `OOMKilling` or `Evicted` for run's pod — then run step 13 drill-down                                                                                                                                                                                                                                                                                                                                   |
 | Infra timeout                     | Step preempt-hang | `runFailureMessage: Exceeded maximum runtime` AND `engineEventMatch` contains `Exiting to prevent re-running`. Step pod was preempted, replacement bailed via `verify_step` exit-0, K8s Job marked `Complete` so `check_step_health` stays healthy and run hangs until `max_runtime`. Self-heals via `dagster/will_retry`. Upstream: dagster-io/dagster#33728. Do not chase as control-plane / PowerSchool / network. |
+
+**Pod-event run attribution (`step_10_gke_events.podEvents`):** for any
+`dagster-run-*` Evicted/Preempted event, the collector parses the runId from the
+pod name and tags the event with `runId` + `runStatus`:
+
+- `runStatus: "SUCCESS"` — run already terminated successfully. The evicted pod
+  was a disrupted scheduling attempt absorbed by
+  `podFailurePolicy: DisruptionTarget=Ignore`; the Job controller spawned a
+  replacement that ran the work cleanly. **No impact, no action** — do not call
+  it "orphan" or "stale Job"; the Job is/was active and behaved correctly.
+- `runStatus: "FAILURE"` — runId is in `step_01_failed_runs.failures`. The
+  eviction may be the proximate cause; cross-reference the failure's `category`
+  and `errorClass`.
+- `runStatus: "UNKNOWN"` — runId is outside the window, or the pod name didn't
+  match the `dagster-run-<uuid>-` pattern (e.g. `<location>-prod-*` code servers
+  — see Tick failure analysis step 5 for those).
+
+To enumerate every pod attempt for a runId (useful when `runStatus: FAILURE` and
+you need to confirm which attempt was terminal): audit log
+`protoPayload.methodName="io.k8s.core.v1.pods.create" protoPayload.resourceName=~"core/v1/.../pods/dagster-run-<runId>-.*"`.
+Dagster's `startTime` reflects execution start on the surviving pod — **not**
+initial enqueue or first scheduling attempt. Do not use it to back-calculate
+when K8s first tried to schedule.
 
 **Tick failure analysis**: For any location with >5 gRPC UNAVAILABLE tick
 failures, run this procedure before attributing a root cause:
@@ -242,6 +265,14 @@ Reference `.k8s/CLAUDE.md` for scheduling, topology, security, config.
 
 Write report to `.claude/scratch/day2-report-<YYYY-MM-DD>.md`, where the date is
 the window end (`window.utc_end` from `day2.json`) converted to ET.
+
+**Verify epoch conversions before drawing conclusions.** Dagster
+`creationTime`/`startTime`/`endTime` are float seconds. Sanity-check every
+conversion against the window's `utc_start`/`utc_end` in `day2.json` before
+writing narrative — a single-hour math error can flip a "stale orphan pod" into
+a "first scheduling attempt" (or vice-versa) and rewrite the entire root-cause
+story. If a GKE event's UTC timestamp looks far from the run's computed UTC,
+recompute before continuing.
 
 **Run-never-started timestamps**: When a run times out before starting
 (`Run timed out due to taking longer than N seconds to start`), `startTime` and

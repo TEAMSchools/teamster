@@ -26,6 +26,7 @@ import argparse
 import asyncio
 import json
 import os
+import re
 import subprocess
 import sys
 from datetime import UTC, datetime, time, timedelta
@@ -286,6 +287,7 @@ async def step_01_failed_runs(gql: GraphQL, after_epoch: float) -> dict:
         "successCount": len(successes),
         "canceledCount": len(canceled),
         "failures": failure_details,
+        "successRunIds": [r["runId"] for r in successes],
     }
 
 
@@ -741,7 +743,28 @@ def step_08_agent_pod_churn(utc_start: str, utc_end: str, agents: dict) -> dict:
 # ─── Step 10: GKE critical events ─────────────────────────────────────────
 
 
-def step_10_gke_events(utc_start: str, utc_end: str) -> dict:
+DAGSTER_RUN_POD_RE = re.compile(
+    r"^dagster-run-([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})-"
+)
+
+
+def _attribute_pod_event(
+    pod_name: str | None, failed_ids: set[str], success_ids: set[str]
+) -> tuple[str | None, str]:
+    if not pod_name:
+        return None, "UNKNOWN"
+    m = DAGSTER_RUN_POD_RE.match(pod_name)
+    if not m:
+        return None, "UNKNOWN"
+    run_id = m.group(1)
+    if run_id in success_ids:
+        return run_id, "SUCCESS"
+    if run_id in failed_ids:
+        return run_id, "FAILURE"
+    return run_id, "UNKNOWN"
+
+
+def step_10_gke_events(utc_start: str, utc_end: str, step_01: dict) -> dict:
     cluster_query = (
         'resource.type="k8s_cluster" '
         'AND log_name=~"logs/events" '
@@ -759,6 +782,22 @@ def step_10_gke_events(utc_start: str, utc_end: str) -> dict:
     )
     cluster = gcloud_logging_read(cluster_query, utc_start, utc_end)
     pod = gcloud_logging_read(pod_query, utc_start, utc_end)
+    failed_ids = {f.get("runId") for f in step_01.get("failures", []) if f.get("runId")}
+    success_ids = set(step_01.get("successRunIds", []) or [])
+    pod_events = []
+    for e in pod:
+        pod_name = e.get("resource", {}).get("labels", {}).get("pod_name")
+        run_id, run_status = _attribute_pod_event(pod_name, failed_ids, success_ids)
+        pod_events.append(
+            {
+                "timestamp": e["timestamp"],
+                "podName": pod_name,
+                "reason": e.get("jsonPayload", {}).get("reason"),
+                "message": e.get("jsonPayload", {}).get("message"),
+                "runId": run_id,
+                "runStatus": run_status,
+            }
+        )
     return {
         "clusterEvents": [
             {
@@ -771,15 +810,7 @@ def step_10_gke_events(utc_start: str, utc_end: str) -> dict:
             }
             for e in cluster
         ],
-        "podEvents": [
-            {
-                "timestamp": e["timestamp"],
-                "podName": e.get("resource", {}).get("labels", {}).get("pod_name"),
-                "reason": e.get("jsonPayload", {}).get("reason"),
-                "message": e.get("jsonPayload", {}).get("message"),
-            }
-            for e in pod
-        ],
+        "podEvents": pod_events,
     }
 
 
@@ -1032,7 +1063,13 @@ async def main() -> None:
         utc_end,
         s7 if "error" not in s7 else {"agents": []},
     )
-    run_sync("step_10_gke_events", step_10_gke_events, utc_start, utc_end)
+    run_sync(
+        "step_10_gke_events",
+        step_10_gke_events,
+        utc_start,
+        utc_end,
+        s1 if "error" not in s1 else {"failures": [], "successRunIds": []},
+    )
     run_sync("step_11_alerts", step_11_alerts, utc_start)
     run_sync("step_12_error_groups", step_12_error_groups, utc_start)
     run_sync(
