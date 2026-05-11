@@ -233,10 +233,15 @@ Before proposing a new structural mart change, check the open items on the
 [Data Team project board](https://github.com/orgs/TEAMSchools/projects/4) — the
 case may already be tracked and deferred.
 
-Every spec must include a pre-merge checklist covering:
+Before the final PR comment on any marts PR (spec, bugfix, refactor), run this
+checklist:
 
 - Scan touched models for diamond paths (see "Strict-chain traversal").
 - Scan touched models for column-naming rubric violations (R1–R10 above).
+- Pull marts-model warnings from the latest CI run
+  (`mcp__dbt__get_job_run_error` with `warning_only=true`). For each, search
+  open issues by model name + FK target. Bucket orphans (by region, source,
+  test_type, etc.) in the issue body before filing.
 - Scan the
   [project board](https://github.com/orgs/TEAMSchools/projects/4/views/1) for
   bonus issues incidentally resolved; close them in the PR.
