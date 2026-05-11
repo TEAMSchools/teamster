@@ -35,12 +35,35 @@ with
                 _dbt_source_relation, r'stg_fldoe__(\w+)'
             ) as assessment_name,
         from union_relations
+    ),
+
+    -- trunk-ignore(sqlfluff/ST03): referenced via dbt_utils.deduplicate below
+    fleid_lookup_raw as (
+        select s.student_number, s.dcid, suf.fleid,
+        from {{ ref("stg_powerschool__students") }} as s
+        inner join
+            {{ ref("stg_powerschool__u_studentsuserfields") }} as suf
+            on s.dcid = suf.studentsdcid
+        where s.dcid >= 1 and suf.fleid is not null
+    ),
+
+    fleid_lookup as (
+        {{
+            dbt_utils.deduplicate(
+                relation="fleid_lookup_raw",
+                partition_by="fleid",
+                order_by="dcid desc",
+            )
+        }}
     )
 
 select
-    * except (assessment_name),
+    t.* except (assessment_name),
 
     if(
-        assessment_name = 'science', 'Science', upper(assessment_name)
+        t.assessment_name = 'science', 'Science', upper(t.assessment_name)
     ) as assessment_name,
-from transformed
+
+    fl.student_number,
+from transformed as t
+left join fleid_lookup as fl on t.student_id = fl.fleid
