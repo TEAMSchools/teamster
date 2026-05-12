@@ -60,10 +60,10 @@ with
 select
     t.* except (assessment_name),
 
+    fl.student_number,
+
     if(
         t.assessment_name = 'science', 'Science', upper(t.assessment_name)
     ) as assessment_name,
-
-    fl.student_number,
 from transformed as t
 left join fleid_lookup as fl on t.student_id = fl.fleid
