@@ -17,9 +17,12 @@ crosswalk model is built only where no direct join is feasible.
   (19,916 rows).
 - **DeansList** — join DeansList users to `int_people__staff_roster` on email;
   add `staff_key` FK to `fct_behavioral_incidents` with a `relationships` test.
-- **Paterson 8** — investigate root cause; fix in place or downgrade the test
-  with documented rationale. Closes
-  [#3863](https://github.com/TEAMSchools/teamster/issues/3863) Paterson bucket.
+- **Paterson 8 — investigated, re-routed.** Investigation surfaced a structural
+  identifier mis-resolution affecting all 440 Paterson Pearson state assessment
+  rows (the 8 visible orphans plus 407 silent wrong-matches via coincidental
+  district-SIS-ID collisions with other districts' PS student_numbers). Tracked
+  under [#3882](https://github.com/TEAMSchools/teamster/issues/3882). Not in
+  this PR's scope.
 - **SmartRecruiters** — audit-only: feasibility of candidate→associate matching
   (email on hire). Build deferred to follow-on issue.
 
@@ -44,11 +47,15 @@ SmartRecruiters, where the build is deferred regardless.
 
 ## Deliverables
 
-- **PR 1 — direct-key fixes**: FLEID, DeansList, Paterson 8. Includes
-  new/updated `relationships` tests as verification gates. Closes
-  [#3863](https://github.com/TEAMSchools/teamster/issues/3863) and resolves the
-  FLEID + DeansList portions of
-  [#3647](https://github.com/TEAMSchools/teamster/issues/3647).
+- **PR 1 — direct-key fixes**: FLEID resolution hoisted to kippmiami layer,
+  redundant kipptaf FLEID lookup removed, FLDOE BQ source schema fix, and
+  `referring_staff_key` relationships test gated to non-null rows on
+  `fct_behavioral_incidents`. Resolves the FLEID + DeansList portions of
+  [#3647](https://github.com/TEAMSchools/teamster/issues/3647). Does not close
+  [#3863](https://github.com/TEAMSchools/teamster/issues/3863) — Miami bucket
+  was already at 0 in prod and the Paterson bucket was re-routed to
+  [#3882](https://github.com/TEAMSchools/teamster/issues/3882) on investigation
+  (407 silent wrong-matches alongside the 8 visible orphans).
 - **PR 2 — SmartRecruiters feasibility audit**: doc-only, no model changes.
   Files a follow-on issue if/when build is warranted. Closes
   [#3647](https://github.com/TEAMSchools/teamster/issues/3647).
@@ -62,8 +69,10 @@ SmartRecruiters, where the build is deferred regardless.
   reproduce query returns 0 Miami rows in dbt Cloud CI.
 - **DeansList**: new `relationships` test on
   `fct_behavioral_incidents.staff_key` → staff dimension passes.
-- **Paterson 8**: reproduce query returns 0 Paterson rows, or the test is
-  downgraded with rationale documented in PR 1.
+- **Paterson 8**: investigated and re-routed to
+  [#3882](https://github.com/TEAMSchools/teamster/issues/3882) — root cause is
+  upstream Pearson identifier mis-resolution affecting all 440 Paterson rows,
+  not an isolated 8-row identity gap. Out of scope for this PR.
 - **SmartRecruiters**: audit doc merged; follow-on issue exists if build is
   warranted.
 
@@ -75,9 +84,9 @@ SmartRecruiters, where the build is deferred regardless.
   matches `int_people__staff_roster` (`google_email` or equivalent). Audit
   determines fallback handling for unmatched users (NULL FK vs. fuzzy match);
   decision made in PR 1, not pre-committed here.
-- **Paterson 8** root cause is unknown. If investigation shows it is not an
-  identity gap (e.g., orphan due to enrollment-window logic), the fix may be
-  re-routed out of this spec.
+- **Paterson 8** — investigated; root cause is upstream Pearson identifier
+  mis-resolution and re-routed to
+  [#3882](https://github.com/TEAMSchools/teamster/issues/3882).
 
 ## Related
 
