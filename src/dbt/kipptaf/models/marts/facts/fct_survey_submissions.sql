@@ -36,13 +36,13 @@ with
     ),
 
     /* Student SCD submissions */
-    student_submissions_ranked as (
-        select
+    student_submissions as (
+        -- TODO: upstream at response grain (#3629)
+        select distinct
             sr.survey_id,
             sr.survey_response_id,
             sr.respondent_email,
             sr.date_submitted,
-            sr.academic_year,
             sr.term_code,
 
             rt.type as term_type,
@@ -56,11 +56,8 @@ with
 
             enr.student_number,
             enr._dbt_source_relation,
+            enr.academic_year,
             enr.entrydate,
-
-            row_number() over (
-                partition by sr.survey_response_id order by enr.entrydate desc
-            ) as rn_enrollment,
         from {{ ref("int_surveys__survey_responses") }} as sr
         inner join
             {{ ref("stg_google_sheets__reporting__terms") }} as rt
@@ -71,31 +68,9 @@ with
         inner join
             {{ ref("int_extracts__student_enrollments") }} as enr
             on sr.respondent_email = enr.student_email
-            and sr.academic_year = enr.academic_year
-            and enr.enroll_status = 0
+            and enr.entrydate <= date(sr.date_submitted)
+            and enr.exitdate > date(sr.date_submitted)
         where sr.survey_title = 'School Community Diagnostic Student Survey'
-    ),
-
-    student_submissions as (
-        select
-            survey_id,
-            survey_response_id,
-            respondent_email,
-            date_submitted,
-            academic_year,
-            term_code,
-            term_type,
-            rt_code,
-            rt_name,
-            rt_start_date,
-            rt_region,
-            rt_school_id,
-            respondent_type,
-            student_number,
-            _dbt_source_relation,
-            entrydate,
-        from student_submissions_ranked
-        where rn_enrollment = 1
     ),
 
     /* Family SCD submissions from rpt_tableau__school_community_diagnostic */
