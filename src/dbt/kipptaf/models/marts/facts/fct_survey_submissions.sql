@@ -65,20 +65,11 @@ with
             and sr.term_code = rt.code
             and rt.type = 'SURVEY'
         inner join
-            -- date-range membership: an enrollment row is active on the
-            -- submission date when its [entrydate, exitdate) window contains
-            -- the date. enroll_status is a student-level flag and is
-            -- intentionally not filtered here.
             {{ ref("int_extracts__student_enrollments") }} as enr
             on sr.respondent_email = enr.student_email
             and enr.entrydate <= date(sr.date_submitted)
             and enr.exitdate > date(sr.date_submitted)
         where sr.survey_title = 'School Community Diagnostic Student Survey'
-        qualify
-            row_number() over (
-                partition by sr.survey_response_id order by enr.entrydate desc
-            )
-            = 1  -- TODO: #3633 overlapping enrollment windows
     ),
 
     /* Family SCD submissions from rpt_tableau__school_community_diagnostic */
