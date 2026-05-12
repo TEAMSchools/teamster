@@ -28,8 +28,7 @@ with
             and sr.term_code = rt.code
             and rt.type = 'SURVEY'
         where
-            sr.respondent_employee_number is not null
-            and sr.survey_title in (
+            sr.survey_title in (
                 'School Community Diagnostic Staff Survey',
                 'Engagement & Support Surveys'
             )
@@ -261,7 +260,11 @@ select
 
     respondent_type,
 
-    {{ dbt_utils.generate_surrogate_key(["respondent_employee_number"]) }} as staff_key,
+    if(
+        respondent_employee_number is not null,
+        {{ dbt_utils.generate_surrogate_key(["respondent_employee_number"]) }},
+        cast(null as string)
+    ) as staff_key,
 
     cast(null as string) as student_enrollment_key,
     cast(null as string) as student_contact_person_key,
