@@ -41,7 +41,7 @@ with
     fleid_lookup_raw as (
         -- TODO: #3887 — 14 FLEIDs map to multiple student_numbers in PS;
         -- dedupe is a workaround until source is cleaned.
-        select s.student_number, s.dcid, suf.fleid,
+        select s.student_number, suf.fleid,
         from {{ ref("stg_powerschool__students") }} as s
         inner join
             {{ ref("stg_powerschool__u_studentsuserfields") }} as suf
@@ -54,7 +54,7 @@ with
             dbt_utils.deduplicate(
                 relation="fleid_lookup_raw",
                 partition_by="fleid",
-                order_by="dcid desc",
+                order_by="student_number desc",
             )
         }}
     )
