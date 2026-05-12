@@ -2,6 +2,7 @@ with
     course_enrollments as (
         select
             _dbt_source_relation,
+            _dbt_source_project,
             cc_studentid,
             cc_abs_sectionid,
             cc_dcid,
@@ -39,7 +40,7 @@ select
         )
     }} as grades_category_key,
 
-    {{ dbt_utils.generate_surrogate_key(["ce.cc_dcid", "ce._dbt_source_relation"]) }}
+    {{ dbt_utils.generate_surrogate_key(["ce.cc_dcid", "ce._dbt_source_project"]) }}
     as student_section_enrollment_key,
 
     if(

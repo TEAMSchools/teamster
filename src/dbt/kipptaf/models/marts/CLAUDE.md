@@ -160,6 +160,10 @@ Intermediates may rename or transform columns (e.g. scaffold's
 `int_assessments__assessments.academic_year`); the consumer must re-join the
 source-of-truth model rather than trust the matching column name.
 
+Before swapping the input list of any `generate_surrogate_key()` on a dim/fact,
+grep every consumer that hashes the same composition and migrate producer + all
+consumers in one atomic commit.
+
 ## `_dbt_source_project` joins and hashes
 
 When a marts fix touches joins or surrogate-key composition involving
