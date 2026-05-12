@@ -60,3 +60,11 @@ CSV/TSV/TXT with empty data).
 `any_deps_updated().ignore(AssetSelection.keys(...))` instead of bare `eager()`
 when a partitioned extract has unpartitioned deps. See
 `kipptaf/extracts/assets.py` `_INTACCT_AUTOMATION_CONDITION` for the pattern.
+
+**SFTP cwd via `normalize`, not `chdir`**: `load_sftp` uses
+`sftp.normalize(".")` (REALPATH). AWS Transfer Family ENOENTs a STAT on the
+chroot root, breaking `chdir(".")`. Don't switch back.
+
+**Relative `destination_config.path`**: prefer `"uploads"` over the full
+`/sftpgateway-.../user/uploads`. pathlib's `/` resets on absolute so resolved
+paths are identical, and relative survives server-side prefix changes.
