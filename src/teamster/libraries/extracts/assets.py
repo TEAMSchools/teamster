@@ -121,9 +121,7 @@ def load_sftp(
     with ssh.get_connection().open_sftp() as sftp:
         check.not_none(value=sftp.get_channel()).settimeout(ssh.timeout)
 
-        sftp.chdir(".")
-
-        cwd_path = pathlib.Path(str(sftp.getcwd()))
+        cwd_path = pathlib.Path(sftp.normalize("."))
 
         if destination_path != "":
             destination_filepath = cwd_path / destination_path / file_name
