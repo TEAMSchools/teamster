@@ -214,7 +214,7 @@ locations:
                 valueFrom:
                   secretKeyRef:
                     name: op-lattice-sftp
-                    key: password
+                    key: newPassword
               - name: LATTICE_SFTP_USERNAME
                 valueFrom:
                   secretKeyRef:
@@ -587,7 +587,7 @@ locations:
                 valueFrom:
                   secretKeyRef:
                     name: op-lattice-sftp
-                    key: password
+                    key: newPassword
               - name: LATTICE_SFTP_USERNAME
                 valueFrom:
                   secretKeyRef:
