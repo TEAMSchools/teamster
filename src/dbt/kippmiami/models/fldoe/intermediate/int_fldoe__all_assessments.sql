@@ -46,7 +46,7 @@ with
         inner join
             {{ ref("stg_powerschool__u_studentsuserfields") }} as suf
             on s.dcid = suf.studentsdcid
-        where suf.fleid is not null
+            and suf.fleid is not null
     ),
 
     fleid_lookup as (
