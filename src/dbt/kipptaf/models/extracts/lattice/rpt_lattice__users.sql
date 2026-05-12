@@ -3,15 +3,7 @@ with
         select *,
         from {{ ref("int_people__staff_roster") }}
         where
-            (
-                assignment_status in ('Active', 'Leave')
-                or (
-                    assignment_status = 'Terminated'
-                    and worker_termination_date >= date_sub(
-                        current_date('{{ var("local_timezone") }}'), interval 30 day
-                    )
-                )
-            )
+            job_title <> 'Intern'
             and (
                 home_business_unit_name = 'KIPP TEAM and Family Schools Inc.'
                 or home_business_unit_name = 'KIPP Paterson'
@@ -39,7 +31,6 @@ with
                     home_business_unit_name
                     in ('TEAM Academy Charter School', 'KIPP Cooper Norcross Academy')
                     and home_department_name = 'Technology'
-                    and job_title <> 'Intern'
                 )
             )
     ),
