@@ -16,6 +16,7 @@ with
     course_enrollments_joined as (
         select
             cc._dbt_source_relation,
+            cc._dbt_source_project,
             cc.cc_dcid,
             cc.sections_dcid,
             cc.cc_academic_year,
@@ -71,14 +72,16 @@ select
     is_dropped_section,
     is_dropped_course,
 
-    {{ dbt_utils.generate_surrogate_key(["cc_dcid", "_dbt_source_relation"]) }}
+    {{ dbt_utils.generate_surrogate_key(["cc_dcid", "_dbt_source_project"]) }}
     as student_section_enrollment_key,
 
     -- FK source_relation must match dim_course_sections, which is built from
     -- base_powerschool__sections. Rewrite cc's source relation to the parent's.
     -- TODO: replace() is a no-op if a future district uses a different base
     -- model name. Long-term fix: hash region prefix only, consistent across
-    -- producer and consumer (#3820).
+    -- producer and consumer (#3820). student_section_enrollment_key has been
+    -- migrated to _dbt_source_project (this wave); course_section_key and the
+    -- remaining surrogate keys still await full #3820.
     {{
         dbt_utils.generate_surrogate_key(
             [
