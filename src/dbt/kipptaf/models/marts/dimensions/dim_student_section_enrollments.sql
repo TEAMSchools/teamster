@@ -59,7 +59,7 @@ with
         {{
             dbt_utils.deduplicate(
                 relation="course_enrollments_joined",
-                partition_by="cc_dcid, _dbt_source_relation",
+                partition_by="cc_dcid, _dbt_source_project",
                 order_by="enr_entrydate desc",
             )
         }}
