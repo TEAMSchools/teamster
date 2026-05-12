@@ -217,8 +217,8 @@ deployments. Developers use `.dbt/profiles.yml` for full target support.
 
 - **`job_retries`**: dbt-bigquery defaults to `1`, which doesn't absorb
   sustained transient 503s on `client.list_datasets()` at adapter init. Set
-  `job_retries: 3` on the `prod` output. Set on kipptaf; not on kippnewark,
-  kippcamden, kippmiami, kipppaterson.
+  `job_retries: 3` on the `prod` output. Set on all district profiles and
+  kipptaf.
 
 ## Model Conventions
 
