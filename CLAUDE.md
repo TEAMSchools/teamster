@@ -282,6 +282,10 @@ or mart `facts`/`dimensions`/`bridges`) —
 `kipptaf/people/int_people__location_crosswalk` (not `.../intermediate/...`) and
 `kipptaf/marts/fct_x` (not `kipptaf/facts/fct_x`).
 
+`get_asset_condition_evaluations` paginates with
+`cursor=<evaluationId of the oldest record returned>` — not a timestamp or
+opaque token.
+
 ### Dagster Cloud GraphQL (direct, not via MCP)
 
 Host is `kipptaf.dagster.cloud/<deployment>/graphql` (org is `kipptaf`).
