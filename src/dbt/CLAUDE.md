@@ -86,12 +86,29 @@ Two inline patterns (see spec for details):
 - **Region source schema** (kipptaf `sources-kipp*` files only): prefixes for
   `dev` only (`defer` resolves to production)
 
+## kipptaf source consumers of district columns
+
+When adding a new column to a district intermediate consumed by kipptaf via
+`source()`, ship in two PRs: district first, wait for Dagster to materialize
+prod, then kipptaf. The kipptaf source resolves to prod for `target=staging`
+(dbt Cloud CI), so coupling fails CI deterministically.
+
+## dbt logs persist locally
+
+Every `dbt` invocation appends to `<project>/logs/dbt.log` (full output, not
+truncated). When a background build's captured output is incomplete, read that
+file before re-running the build.
+
 ## dbt Cloud CI state comparison
 
 `state:modified+` hashes every source node through `{{ target.name }}`
 rendering. The CI job and the parse job in its `deferring_environment_id` must
 share `target_name`, or every source with the target-conditional schema pattern
 hash-mismatches and fans out to rebuild the whole graph.
+
+Auto-retried CI runs invoke `dbt retry`, which replays the prior run's compiled
+SQL. After fixing external state (defer relations, transient BQ errors), trigger
+a fresh `dbt build` — don't rely on the retry.
 
 ## Dev `--defer` for unstaged externals
 
@@ -114,6 +131,9 @@ manifest". The prod manifest is refreshed by `.git/hooks/post-merge` on every
   to prod warehouse relations. A staging-target manifest causes every model to
   fall through to view materialization, eventually hitting BigQuery's 16-level
   nested-view limit.
+- Pre-existing target relations are skipped unless `--full-refresh` is passed
+  ([docs](https://docs.getdbt.com/reference/commands/clone)). Use the flag to
+  recreate drifted defer copies.
 
 ## Stale dev tables shadow `--defer`
 
@@ -146,15 +166,17 @@ change.
 
 A single integration may have both files under the same source `name:` — dbt
 merges at parse time. When both exist **in the same project**,
-`sources-bigquery.yml` may omit `schema:` (inherits from the external file).
-However, in **source-system packages** consumed by district projects, the
-cross-file schema merge does not bridge the package/consumer boundary — the
-consuming project's schema override won't reach the package-level BQ file. In
-that case, `sources-bigquery.yml` must include its own `schema:` (plain `var()`
-without target-conditional prefixes, since BQ-native tables are static
-production data). Never mix `external:` and non-external active tables in one
-file. Source-system projects place source files alongside or inside their model
-subdirectories, not at the top-level `models/` directory.
+`sources-bigquery.yml` may omit `schema:` ONLY for tables also declared in
+`sources-external.yml`. Tables declared only in the BQ file do NOT inherit and
+resolve to bare `<source_name>` (likely a non-existent dataset). However, in
+**source-system packages** consumed by district projects, the cross-file schema
+merge does not bridge the package/consumer boundary — the consuming project's
+schema override won't reach the package-level BQ file. In that case,
+`sources-bigquery.yml` must include its own `schema:` (plain `var()` without
+target-conditional prefixes, since BQ-native tables are static production data).
+Never mix `external:` and non-external active tables in one file. Source-system
+projects place source files alongside or inside their model subdirectories, not
+at the top-level `models/` directory.
 
 ### `{{ project_name }}` in source schemas
 
@@ -458,8 +480,11 @@ alias.
 - All new or modified models require `description:` on the model and every
   column. Profile staging data via BigQuery MCP; infer downstream from parents.
   Describe calculated fields by logic. Use qualitative language — no stats.
-- Columns with `data_tests:` should be sorted to the top of the `columns:` list
-  for visibility.
+- Columns with **per-column** `data_tests:` should be sorted to the top of the
+  `columns:` list for visibility. Model-level composite tests
+  (`dbt_utils.unique_combination_of_columns`, etc.) do not trigger this rule —
+  they go in the model-level `data_tests:` block ABOVE `columns:`, and their
+  referenced columns can stay in their natural / contract order.
 - Test placement by arity: single-column tests (`unique`, `not_null`, etc.) go
   on the column itself. Multi-column tests
   (`dbt_utils.unique_combination_of_columns`, etc.) go at model level in a

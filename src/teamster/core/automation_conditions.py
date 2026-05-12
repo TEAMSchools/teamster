@@ -50,6 +50,7 @@ DepsAutomationCondition._get_dep_keys = _patched_get_dep_keys
 
 def _build_dbt_condition(
     *extra_triggers: AutomationCondition,
+    guard_dep_code_version: bool = True,
 ) -> AutomationCondition:
     """Build a dbt automation condition with the shared structure.
 
@@ -63,21 +64,18 @@ def _build_dbt_condition(
     - any_deps_missing ignoring external source assets
     - initial_evaluation omitted from .since() reset to avoid suppressing
       newly_missing permanently
-    - any_deps_match(code_version_changed) gate to block materialization when
-      a direct dependency has an unapplied code change (prevents schema errors
-      when a deploy adds columns through a dependency chain)
+    - any_deps_match(code_version_changed) gate (when guard_dep_code_version
+      is True) to block materialization when a direct dependency has an
+      unapplied code change (prevents schema errors when a deploy adds
+      columns through a dependency chain). Plain views set this False because
+      they recompile on read — a pending parent code change can't poison a
+      view's stored state.
     """
-    _dep_code_version_pending = AutomationCondition.any_deps_match(
-        AutomationCondition.code_version_changed().since(
-            AutomationCondition.newly_updated()
-        )
-    )
-
     triggers: AutomationCondition = AutomationCondition.newly_missing()
     for trigger in extra_triggers:
         triggers = triggers | trigger
 
-    return (
+    condition = (
         AutomationCondition.in_latest_time_window()
         & (
             triggers.since(_SINCE_LAST_HANDLED)
@@ -88,8 +86,16 @@ def _build_dbt_condition(
         & ~AutomationCondition.any_deps_missing().ignore(_EXTERNAL_SOURCE_SELECTION)
         & ~AutomationCondition.any_deps_in_progress()
         & ~AutomationCondition.in_progress()
-        & ~_dep_code_version_pending
     )
+
+    if guard_dep_code_version:
+        condition = condition & ~AutomationCondition.any_deps_match(
+            AutomationCondition.code_version_changed().since(
+                AutomationCondition.newly_updated()
+            )
+        )
+
+    return condition
 
 
 def _build_any_ancestor_updated(
@@ -157,9 +163,15 @@ def dbt_view_automation_condition() -> AutomationCondition:
     Views are computed on read and don't store physical data. Only re-runs
     when the view's own definition changes — NOT on upstream data changes.
 
+    Skips the `any_deps_match(code_version_changed)` guard that tables and
+    union_relations views inherit: a plain view never bakes parent columns
+    into stored state, so a pending parent code change can't poison it. The
+    guard would otherwise strand the view's own code-version refresh behind
+    unrelated upstream churn.
+
     Triggers: newly_missing, code_version_changed.
     """
-    return _build_dbt_condition()
+    return _build_dbt_condition(guard_dep_code_version=False)
 
 
 def dbt_union_relations_automation_condition() -> AutomationCondition:
