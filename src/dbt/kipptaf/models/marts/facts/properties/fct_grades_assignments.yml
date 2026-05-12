@@ -25,7 +25,7 @@ models:
         data_type: string
         description: >-
           FK to dim_student_section_enrollments. Surrogate key derived from
-          cc_dcid and _dbt_source_relation.
+          cc_dcid and _dbt_source_project.
         constraints:
           - type: foreign_key
             to: ref('dim_student_section_enrollments')
