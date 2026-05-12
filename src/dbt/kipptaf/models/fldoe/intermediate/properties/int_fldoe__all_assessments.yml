@@ -2,10 +2,13 @@ models:
   - name: int_fldoe__all_assessments
     description: >-
       Union of FLDOE state assessment results (EOC, FAST, Science, FSA) across
-      kippmiami source relations, sourced from the kippmiami
-      int_fldoe__all_assessments intermediate which resolves student_number via
-      the FLEID lookup. Joined to the iReady scale-score crosswalk to expose
-      sublevel and points-to-proficiency / points-to-growth derivations.
+      kippmiami source relations, with assessment-grade and performance-level
+      coalesced to single canonical fields and assessment_name derived from the
+      source relation. Adds a PowerSchool student_number resolved via the
+      stg_powerschool__u_studentsuserfields.fleid lookup so downstream marts can
+      FK into dim_students on the PowerSchool identifier space rather than the
+      FLEID. Joined to the iReady scale-score crosswalk to expose sublevel and
+      points-to-proficiency / points-to-growth derivations.
     data_tests:
       - dbt_utils.unique_combination_of_columns:
           arguments:
@@ -47,11 +50,11 @@ models:
       - name: student_number
         data_type: int64
         description: >-
-          PowerSchool student_number resolved in the upstream kippmiami
-          int_fldoe__all_assessments model by joining FLDOE student_id (FLEID)
-          to stg_powerschool__u_studentsuserfields.fleid. Null when no PS Miami
-          student carries the matching FLEID. Used by downstream marts to FK
-          into dim_students consistently with PowerSchool-sourced facts.
+          PowerSchool student_number resolved by joining FLDOE student_id
+          (FLEID) to stg_powerschool__u_studentsuserfields.fleid for Miami
+          students. Null when no PS Miami student carries the matching FLEID.
+          Used by downstream marts to FK into dim_students consistently with
+          PowerSchool-sourced facts.
       - name: sublevel_number
         data_type: int64
       - name: sublevel_name
