@@ -1,4 +1,15 @@
 with
+    gdir_alias_map as (
+        select gd.primary_email, addr.address as known_address,
+        from {{ ref("stg_google_directory__users") }} as gd, unnest(gd.emails) as addr
+        union distinct
+        select gd.primary_email, alias,
+        from {{ ref("stg_google_directory__users") }} as gd, unnest(gd.aliases) as alias
+        union distinct
+        select gd.primary_email, gd.primary_email,
+        from {{ ref("stg_google_directory__users") }} as gd
+    ),
+
     enriched as (
         select
             fr.form_id as survey_id,
@@ -14,11 +25,19 @@ with
             rt.code as term_code,
             rt.name as term_name,
 
-            srh.employee_number as respondent_employee_number,
+            coalesce(
+                srh.employee_number, srh_alias.employee_number
+            ) as respondent_employee_number,
 
-            srh.formatted_name as respondent_preferred_name,
-            srh.sam_account_name as respondent_samaccountname,
-            srh.user_principal_name as respondent_userprincipalname,
+            coalesce(
+                srh.formatted_name, srh_alias.formatted_name
+            ) as respondent_preferred_name,
+            coalesce(
+                srh.sam_account_name, srh_alias.sam_account_name
+            ) as respondent_samaccountname,
+            coalesce(
+                srh.user_principal_name, srh_alias.user_principal_name
+            ) as respondent_userprincipalname,
 
             safe_cast(fr.text_value as numeric) as answer_value,
 
@@ -55,6 +74,14 @@ with
             between srh.effective_date_start_timestamp
             and srh.effective_date_end_timestamp
             and srh.primary_indicator
+        left join gdir_alias_map as gam on fr.respondent_email = gam.known_address
+        left join
+            {{ ref("int_people__staff_roster_history") }} as srh_alias
+            on gam.primary_email = srh_alias.google_email
+            and timestamp(fr.last_submitted_time)
+            between srh_alias.effective_date_start_timestamp
+            and srh_alias.effective_date_end_timestamp
+            and srh_alias.primary_indicator
 
         union all
 
@@ -78,10 +105,19 @@ with
             coalesce(regexp_extract(sr.campaign_name, r'\s(.*)'), rt.code) as term_code,
 
             rt.name as term_name,
-            srh.employee_number as respondent_employee_number,
-            srh.formatted_name as respondent_preferred_name,
-            srh.sam_account_name as respondent_samaccountname,
-            srh.user_principal_name as respondent_userprincipalname,
+
+            coalesce(
+                srh.employee_number, srh_alias.employee_number
+            ) as respondent_employee_number,
+            coalesce(
+                srh.formatted_name, srh_alias.formatted_name
+            ) as respondent_preferred_name,
+            coalesce(
+                srh.sam_account_name, srh_alias.sam_account_name
+            ) as respondent_samaccountname,
+            coalesce(
+                srh.user_principal_name, srh_alias.user_principal_name
+            ) as respondent_userprincipalname,
 
             safe_cast(sr.response_value as numeric) as answer_value,
 
@@ -118,6 +154,14 @@ with
             between srh.effective_date_start_timestamp
             and srh.effective_date_end_timestamp
             and srh.primary_indicator
+        left join gdir_alias_map as gam on ri.respondent_mail = gam.known_address
+        left join
+            {{ ref("int_people__staff_roster_history") }} as srh_alias
+            on gam.primary_email = srh_alias.google_email
+            and sr.response_date_submitted
+            between srh_alias.effective_date_start_timestamp
+            and srh_alias.effective_date_end_timestamp
+            and srh_alias.primary_indicator
     )
 
 select
