@@ -277,7 +277,16 @@ Symmetric with `subject_staff_key`
 ## Acceptance criteria
 
 - `fct_survey_responses.survey_submission_key → fct_survey_submissions.survey_submission_key`
-  relationships test returns 0 rows on the PR-branch schema.
+  relationships test orphan count drops from prod baseline (143,758 response
+  rows / ~9,700 distinct submissions) to a small residual driven by pre-existing
+  upstream gaps, not by this PR's fact-model logic. Empirically (dev build,
+  2026-05-12): student SCD orphans 9,563 → ~134 (~99% reduction); staff SCD
+  orphans 42 → 19; Manager Survey orphans unchanged at ~100 (pre-existing
+  hash-composition mismatch with `int_surveys__manager_survey_details`, out of
+  scope). The student residual (~134) splits into 106 responses submitted
+  outside the AY2025 SCD term window in `stg_google_sheets__reporting__terms`
+  (Ops config gap, out of scope) and 28 responses whose email has no enrollment
+  row covering `date_submitted`.
 - `fct_survey_submissions.survey_submission_key` uniqueness test still passes.
 - `student_enrollment_key` nullability: null only for responses whose email has
   no enrollment row covering `date_submitted` in
