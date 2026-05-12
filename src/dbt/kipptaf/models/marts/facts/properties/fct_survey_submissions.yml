@@ -4,13 +4,13 @@ models:
       Survey submission fact table. One row per respondent x
       survey_administration. Records survey completion events across all
       populations (staff, student, family). The respondent_type discriminator
-      determines which respondent FK is populated (exactly one per row). For
-      student submissions, student_enrollment_key resolves to the enrollment
-      whose entry / exit window contains the submission date. staff_key and
-      student_enrollment_key are nullable: staff submissions whose respondent
-      identity cannot be linked to a staff dimension row, and student
-      submissions whose respondent email does not match any enrollment window,
-      both produce rows with a null respondent FK. Nullable subject_staff_key is
+      determines which respondent FK is populated. For student submissions,
+      student_enrollment_key resolves to the enrollment row whose [entrydate,
+      exitdate) window contains date_submitted. staff_key and
+      student_enrollment_key are nullable for respondents whose identity cannot
+      be resolved (e.g. staff respondents whose employee_number was never
+      linked, or student respondents whose email is not present in
+      int_extracts__student_enrollments). Nullable subject_staff_key is
       populated only for Manager Survey submissions (role-playing FK to
       dim_staff for the manager being evaluated). FK to
       dim_survey_administrations and dim_dates.

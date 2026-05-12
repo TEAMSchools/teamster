@@ -6,7 +6,7 @@ with
         select gd.primary_email, alias,
         from {{ ref("stg_google_directory__users") }} as gd, unnest(gd.aliases) as alias
         union distinct
-        select gd.primary_email, gd.primary_email,
+        select gd.primary_email, gd.primary_email as known_address,
         from {{ ref("stg_google_directory__users") }} as gd
     ),
 
@@ -74,7 +74,10 @@ with
             between srh.effective_date_start_timestamp
             and srh.effective_date_end_timestamp
             and srh.primary_indicator
-        left join gdir_alias_map as gam on fr.respondent_email = gam.known_address
+        left join
+            gdir_alias_map as gam
+            on srh.employee_number is null
+            and fr.respondent_email = gam.known_address
         left join
             {{ ref("int_people__staff_roster_history") }} as srh_alias
             on gam.primary_email = srh_alias.google_email
@@ -154,7 +157,10 @@ with
             between srh.effective_date_start_timestamp
             and srh.effective_date_end_timestamp
             and srh.primary_indicator
-        left join gdir_alias_map as gam on ri.respondent_mail = gam.known_address
+        left join
+            gdir_alias_map as gam
+            on srh.employee_number is null
+            and ri.respondent_mail = gam.known_address
         left join
             {{ ref("int_people__staff_roster_history") }} as srh_alias
             on gam.primary_email = srh_alias.google_email
