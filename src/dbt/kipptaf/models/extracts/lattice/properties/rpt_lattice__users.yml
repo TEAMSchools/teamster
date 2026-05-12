@@ -31,9 +31,9 @@ models:
       - name: department
         description: Employee home department name.
         data_type: string
-      - name: manager_id
-        description: ADP employee number of the employee's direct manager.
-        data_type: int64
+      - name: manager_email
+        description: Work email address of the employee's direct manager.
+        data_type: string
       - name: first_name
         description:
           Preferred first name from ADP; falls back to legal given name.
@@ -41,6 +41,10 @@ models:
       - name: last_name
         description:
           Preferred last name from ADP; falls back to legal family name.
+        data_type: string
+      - name: location
+        description:
+          Home work location abbreviation; falls back to full location name.
         data_type: string
       - name: region
         description:

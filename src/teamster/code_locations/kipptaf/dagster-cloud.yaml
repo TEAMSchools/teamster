@@ -344,7 +344,7 @@ locations:
                 valueFrom:
                   secretKeyRef:
                     name: op-lattice-sftp
-                    key: host
+                    key: url
               - name: LITTLESIS_SFTP_HOST
                 valueFrom:
                   secretKeyRef:
@@ -732,7 +732,7 @@ locations:
                 valueFrom:
                   secretKeyRef:
                     name: op-lattice-sftp
-                    key: host
+                    key: url
               - name: LITTLESIS_SFTP_HOST
                 valueFrom:
                   secretKeyRef:
