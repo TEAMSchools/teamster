@@ -50,6 +50,16 @@ models:
         config:
           meta:
             source_column: base_powerschool__course_enrollments._dbt_source_relation
+      - name: _dbt_source_project
+        data_type: string
+        description: >-
+          Region prefix extracted from _dbt_source_relation (e.g. kippnewark,
+          kippcamden, kippmiami, kipppaterson). Used as a discriminator in
+          downstream surrogate keys and as part of the dedup partition_by to
+          prevent cross-district student_number collisions. See #3142.
+        config:
+          meta:
+            source_column: base_powerschool__course_enrollments._dbt_source_project
       - name: region
         data_type: string
       - name: illuminate_academic_year

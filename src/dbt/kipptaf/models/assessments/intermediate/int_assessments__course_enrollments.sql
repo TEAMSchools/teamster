@@ -12,6 +12,7 @@ with
             ce.is_foundations,
             ce.cc_dcid,
             ce._dbt_source_relation,
+            ce._dbt_source_project,
 
             co.region,
 
@@ -54,6 +55,7 @@ with
             cast(null as int64) as cc_dcid,
             cast(null as string) as _dbt_source_relation,
 
+            co._dbt_source_project,
             co.region,
 
             co.academic_year + 1 as illuminate_academic_year,
@@ -67,7 +69,7 @@ with
     {{
         dbt_utils.deduplicate(
             relation="enrollments_union",
-            partition_by="powerschool_student_number, illuminate_academic_year, illuminate_subject_area, cc_dateenrolled",
+            partition_by="_dbt_source_project, powerschool_student_number, illuminate_academic_year, illuminate_subject_area, cc_dateenrolled",
             order_by="cc_dateleft desc",
         )
     }}
