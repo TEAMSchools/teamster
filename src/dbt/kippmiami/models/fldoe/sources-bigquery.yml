@@ -1,5 +1,6 @@
 sources:
   - name: fldoe
+    schema: "{{ var('fldoe_schema', 'kippmiami_fldoe') }}"
     tables:
       - name: stg_fldoe__fsa
         config:
