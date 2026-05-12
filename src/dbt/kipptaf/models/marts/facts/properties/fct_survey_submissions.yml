@@ -92,11 +92,13 @@ models:
       - name: student_enrollment_key
         data_type: string
         description: >-
-          FK to dim_student_enrollments for the respondent. The matching
-          enrollment is the one whose entry / exit window contains the
-          submission date. Populated when respondent_type is student AND such an
-          enrollment exists. Null for staff / family respondents, and for
-          student respondents whose email matches no enrollment window.
+          FK to dim_student_enrollments for the respondent, resolved by matching
+          respondent_email to an enrollment row whose [entrydate, exitdate)
+          window contains date_submitted. Populated when respondent_type is
+          student AND such an enrollment exists. Null for staff / family
+          respondents AND for student respondents whose email is not present in
+          int_extracts__student_enrollments or has no enrollment row covering
+          date_submitted.
 
         constraints:
           - type: foreign_key
