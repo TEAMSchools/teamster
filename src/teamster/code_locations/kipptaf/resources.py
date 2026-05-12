@@ -129,6 +129,13 @@ SSH_RESOURCE_IDAUTO = SSHResource(
     password=EnvVar("KTAF_SFTP_PASSWORD"),
 )
 
+SSH_RESOURCE_LATTICE = SSHResource(
+    remote_host=EnvVar("LATTICE_SFTP_HOST"),
+    remote_port=22,
+    username=EnvVar("LATTICE_SFTP_USERNAME"),
+    password=EnvVar("LATTICE_SFTP_PASSWORD"),
+)
+
 SSH_RESOURCE_LITTLESIS = SSHResource(
     remote_host=EnvVar("LITTLESIS_SFTP_HOST"),
     remote_port=int(check.not_none(value=EnvVar("LITTLESIS_SFTP_PORT").get_value())),

@@ -134,6 +134,10 @@ manifest". The prod manifest is refreshed by `.git/hooks/post-merge` on every
 - Pre-existing target relations are skipped unless `--full-refresh` is passed
   ([docs](https://docs.getdbt.com/reference/commands/clone)). Use the flag to
   recreate drifted defer copies.
+- From a worktree, pass `--profiles-dir src/dbt/<project>` (Dagster-shipped
+  profile, not `~/.dbt/profiles.yml`) and
+  `--state /workspaces/teamster/src/dbt/<project>/target/prod` (main repo's
+  manifest — skips a worktree-local parse).
 
 ## Stale dev tables shadow `--defer`
 
