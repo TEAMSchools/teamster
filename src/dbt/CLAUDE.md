@@ -86,6 +86,19 @@ Two inline patterns (see spec for details):
 - **Region source schema** (kipptaf `sources-kipp*` files only): prefixes for
   `dev` only (`defer` resolves to production)
 
+## kipptaf source consumers of district columns
+
+When adding a new column to a district intermediate consumed by kipptaf via
+`source()`, ship in two PRs: district first, wait for Dagster to materialize
+prod, then kipptaf. The kipptaf source resolves to prod for `target=staging`
+(dbt Cloud CI), so coupling fails CI deterministically.
+
+## dbt logs persist locally
+
+Every `dbt` invocation appends to `<project>/logs/dbt.log` (full output, not
+truncated). When a background build's captured output is incomplete, read that
+file before re-running the build.
+
 ## dbt Cloud CI state comparison
 
 `state:modified+` hashes every source node through `{{ target.name }}`
@@ -153,15 +166,17 @@ change.
 
 A single integration may have both files under the same source `name:` — dbt
 merges at parse time. When both exist **in the same project**,
-`sources-bigquery.yml` may omit `schema:` (inherits from the external file).
-However, in **source-system packages** consumed by district projects, the
-cross-file schema merge does not bridge the package/consumer boundary — the
-consuming project's schema override won't reach the package-level BQ file. In
-that case, `sources-bigquery.yml` must include its own `schema:` (plain `var()`
-without target-conditional prefixes, since BQ-native tables are static
-production data). Never mix `external:` and non-external active tables in one
-file. Source-system projects place source files alongside or inside their model
-subdirectories, not at the top-level `models/` directory.
+`sources-bigquery.yml` may omit `schema:` ONLY for tables also declared in
+`sources-external.yml`. Tables declared only in the BQ file do NOT inherit and
+resolve to bare `<source_name>` (likely a non-existent dataset). However, in
+**source-system packages** consumed by district projects, the cross-file schema
+merge does not bridge the package/consumer boundary — the consuming project's
+schema override won't reach the package-level BQ file. In that case,
+`sources-bigquery.yml` must include its own `schema:` (plain `var()` without
+target-conditional prefixes, since BQ-native tables are static production data).
+Never mix `external:` and non-external active tables in one file. Source-system
+projects place source files alongside or inside their model subdirectories, not
+at the top-level `models/` directory.
 
 ### `{{ project_name }}` in source schemas
 
