@@ -44,6 +44,12 @@ table that is the true data source) or to bypass intermediate VIEW assets that
 would otherwise fan out cross-partition updates. Pass `automation_condition` to
 enable reactive triggering (typically `AutomationCondition.eager()`).
 
+## Branch-deploy schema redirect
+
+`construct_query` prefixes `zz_dagster_` onto `query_value.table.schema` when
+`DAGSTER_CLOUD_IS_BRANCH_DEPLOYMENT=1`. Only fires for `query_type: "schema"` —
+`text`/`file` SQL is opaque. Prefer the schema form for new extracts.
+
 ## Gotchas
 
 **Empty query results**: The `_asset` function returns early when BigQuery
