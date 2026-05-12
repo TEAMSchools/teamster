@@ -1,3 +1,4 @@
+import os
 import pathlib
 
 from dagster import AssetKey, AssetSelection, AutomationCondition, config_from_files
@@ -167,7 +168,11 @@ lattice_extract = build_bigquery_query_sftp_asset(
         "value": {
             "table": {
                 "name": "rpt_lattice__users",
-                "schema": "kipptaf_extracts",
+                "schema": (
+                    "zz_dagster_kipptaf_extracts"
+                    if os.getenv("DAGSTER_CLOUD_IS_BRANCH_DEPLOYMENT") == "1"
+                    else "kipptaf_extracts"
+                ),
             }
         },
     },
