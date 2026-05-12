@@ -54,7 +54,6 @@ select
     fl.performance_level,
     fl.student_id,
     fl.assessment_name,
-
     fl.student_number,
 
     cw1.sublevel_number,
