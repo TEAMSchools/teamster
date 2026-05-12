@@ -51,6 +51,8 @@ select
     csc.is_advanced_math,
     csc.discipline,
 
+    regexp_extract(ur._dbt_source_relation, r'(kipp\w+)_') as _dbt_source_project,
+
     initcap(regexp_extract(ur._dbt_source_relation, r'kipp(\w+)_')) as region,
 
     if(cx.ap_course_subject is not null, true, false) as is_ap_course,
