@@ -465,8 +465,11 @@ alias.
 - All new or modified models require `description:` on the model and every
   column. Profile staging data via BigQuery MCP; infer downstream from parents.
   Describe calculated fields by logic. Use qualitative language — no stats.
-- Columns with `data_tests:` should be sorted to the top of the `columns:` list
-  for visibility.
+- Columns with **per-column** `data_tests:` should be sorted to the top of the
+  `columns:` list for visibility. Model-level composite tests
+  (`dbt_utils.unique_combination_of_columns`, etc.) do not trigger this rule —
+  they go in the model-level `data_tests:` block ABOVE `columns:`, and their
+  referenced columns can stay in their natural / contract order.
 - Test placement by arity: single-column tests (`unique`, `not_null`, etc.) go
   on the column itself. Multi-column tests
   (`dbt_utils.unique_combination_of_columns`, etc.) go at model level in a
