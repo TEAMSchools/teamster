@@ -87,6 +87,9 @@ file; domain specifics live in the nearest subdirectory CLAUDE.md.
 - **Pull requests**: Squash merge. Use `.github/pull_request_template.md` as the
   PR body.
 
+- **PR project linkage**: PRs auto-appear on project boards via issue refs
+  (`Refs #N`, `Closes #N`) in the body. Do NOT `gh project item-add` a PR.
+
 - **Python**: Always `uv run` — never bare `python`, `python3`, or
   venv-installed tools (`dbt`, `dagster`, etc.).
 
@@ -97,6 +100,10 @@ file; domain specifics live in the nearest subdirectory CLAUDE.md.
 - **Built-in tools over Bash**: Use dedicated tools for file I/O (Read, Grep,
   Glob, Edit, Write). Bash is only for commands with no dedicated tool (`git`,
   `uv run`, `gh`, `docker`, `trunk`, `ls`).
+
+- **Don't pipe `Bash(run_in_background=true)` output through
+  `head`/`tail`/`grep`**. The pipe truncates what reaches the output file —
+  defeats the purpose. Pipe the raw stream; filter with Read/Bash after.
 
 - **Verify tool-call results for resource creation/update**: syntax errors in
   structured tool-call parameters (malformed closing tags, misnested blocks) can
@@ -308,6 +315,10 @@ data. `list_time_series` `alignmentPeriod` must end with `s` (e.g., `"60s"` not
 
 Truncates results at 50 rows. When querying `INFORMATION_SCHEMA.COLUMNS` for
 wide tables, paginate with `WHERE ordinal_position > N`.
+
+`bq` CLI fallback for shell contexts (Monitor poll loops): binary at
+`/usr/local/share/google-cloud-sdk/bin/bq`, `--project_id=teamster-332318`. Same
+SELECT-only constraints apply.
 
 Pre-merge queries against PR-branch schema use
 `dbt_cloud_pr_<ci_id>_<pr_num>_<schema>` — prod `<schema>` lacks unmerged
