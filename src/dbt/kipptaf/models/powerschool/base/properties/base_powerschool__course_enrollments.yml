@@ -479,6 +479,13 @@ models:
         data_type: boolean
       - name: discipline
         data_type: string
+      - name: _dbt_source_project
+        data_type: string
+        description: |
+          Region prefix extracted from `_dbt_source_relation` via
+          `regexp_extract(..., r'(kipp\w+)_')`. Used as a region discriminator
+          in downstream surrogate keys, consistent across all upstream union
+          tables.
       - name: region
         data_type: string
         description: Derived from _dbt_source_relation.

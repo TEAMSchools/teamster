@@ -494,6 +494,9 @@ alias.
 - Data and column semantics — code values, identifier formats, join keys, grain
   notes — belong in the model's `description:` (or `config.meta`), not
   CLAUDE.md. CLAUDE.md is for workflow conventions and tooling guidance only.
+- YAML `description:` is for what/why a column or model computes. Don't put
+  TODOs, history, migration plumbing, or tracking-issue refs (`#3142`, etc.) in
+  descriptions — those go in inline SQL comments at the derivation site.
 
 ### Legacy `base_` prefix
 

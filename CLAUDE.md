@@ -128,6 +128,9 @@ file; domain specifics live in the nearest subdirectory CLAUDE.md.
 - **Markdown**: Always specify a language on fenced code blocks (MD040). Use
   `text` only when no real language applies.
 
+- **Markdown headings**: increment by one level (markdownlint MD001). `#` title
+  goes directly to `##` — never jump to `###`.
+
 - **Claude CLI**: Not on `$PATH` — user must run `claude` commands in their
   terminal, not via Bash tool.
 
