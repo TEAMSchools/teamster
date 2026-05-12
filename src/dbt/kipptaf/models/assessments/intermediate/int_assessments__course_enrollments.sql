@@ -11,7 +11,6 @@ with
             ce.discipline,
             ce.is_foundations,
             ce.cc_dcid,
-            ce._dbt_source_relation,
             ce._dbt_source_project,
 
             co.region,
@@ -22,7 +21,7 @@ with
 
             max(ce.is_advanced_math) over (
                 partition by
-                    ce._dbt_source_relation,
+                    ce._dbt_source_project,
                     ce.cc_studentid,
                     ce.cc_academic_year,
                     ce.courses_credittype
@@ -53,7 +52,6 @@ with
             false as is_foundations,
 
             cast(null as int64) as cc_dcid,
-            cast(null as string) as _dbt_source_relation,
 
             co._dbt_source_project,
             co.region,
