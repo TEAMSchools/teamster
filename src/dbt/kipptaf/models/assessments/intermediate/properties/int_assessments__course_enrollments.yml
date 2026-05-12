@@ -46,10 +46,11 @@ models:
       - name: _dbt_source_project
         data_type: string
         description: >-
-          Region prefix identifying the source district project (e.g.
-          kippnewark, kippcamden, kippmiami, kipppaterson). Used as a
-          discriminator in downstream surrogate keys and as part of the dedup
-          partition_by to prevent cross-district student_number collisions.
+          Region prefix (e.g. kippnewark, kippcamden, kippmiami, kipppaterson)
+          plumbed through from the upstream PowerSchool union models. Carried on
+          both K-12 and ES Writing branches and used as the region discriminator
+          in the trailing dedup partition and downstream surrogate keys
+          (student_section_enrollment_key). See #3142.
         config:
           meta:
             source_column: base_powerschool__course_enrollments._dbt_source_project
