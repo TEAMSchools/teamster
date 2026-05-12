@@ -80,7 +80,7 @@ models:
           tables. Populated only for the internal-assessment branch; null for
           K-8 replacement curriculum and external-assessment rows. Used as a
           discriminator component in downstream surrogate keys such as
-          student_section_enrollment_key (see #3142).
+          student_section_enrollment_key.
         config:
           meta:
             source_column: int_assessments__course_enrollments._dbt_source_project

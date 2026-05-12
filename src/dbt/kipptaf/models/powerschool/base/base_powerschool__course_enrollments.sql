@@ -51,6 +51,8 @@ select
     csc.is_advanced_math,
     csc.discipline,
 
+    -- materialized region-prefix discriminator for downstream surrogate-key
+    -- composition; replaces per-consumer extract_code_location() per #3142
     regexp_extract(ur._dbt_source_relation, r'(kipp\w+)_') as _dbt_source_project,
 
     initcap(regexp_extract(ur._dbt_source_relation, r'kipp(\w+)_')) as region,
