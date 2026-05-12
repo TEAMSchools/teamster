@@ -45,7 +45,7 @@ and `--project-dir <worktree>/src/dbt/kipptaf` on every dbt call (per
 
 ---
 
-### Task 1: Promote `_dbt_source_project` to `base_powerschool__course_enrollments`
+## Task 1: Promote `_dbt_source_project` to `base_powerschool__course_enrollments`
 
 **Files:**
 
@@ -133,7 +133,7 @@ from _dbt_source_relation at every join. Refs #3777 #3142."
 
 ---
 
-### Task 2: Promote `_dbt_source_project` to `base_powerschool__student_enrollments`
+## Task 2: Promote `_dbt_source_project` to `base_powerschool__student_enrollments`
 
 **Files:**
 
@@ -205,7 +205,7 @@ collapse both names into one. Refs #3777 #3142."
 
 ---
 
-### Task 3: Use `_dbt_source_project` in `int_assessments__course_enrollments` and close the dedup collision
+## Task 3: Use `_dbt_source_project` in `int_assessments__course_enrollments` and close the dedup collision
 
 **Files:**
 
@@ -323,7 +323,7 @@ where the prior all-NULL plumbing left the partition blind. Refs #3777."
 
 ---
 
-### Task 4: Rename `cc_source_relation` → `cc_source_project` in `int_assessments__scaffold`
+## Task 4: Rename `cc_source_relation` → `cc_source_project` in `int_assessments__scaffold`
 
 **Files:**
 
@@ -410,7 +410,7 @@ Refs #3777 #3820."
 
 ---
 
-### Task 5: Swap `student_section_enrollment_key` hash on both producer and consumer (atomic)
+## Task 5: Swap `student_section_enrollment_key` hash on both producer and consumer (atomic)
 
 **Files:**
 
@@ -563,7 +563,7 @@ stay deferred. Refs #3777 #3820."
 
 ---
 
-### Task 6: Widen `bridge_assessment_expectations_student_scoped` to admit ES Writing
+## Task 6: Widen `bridge_assessment_expectations_student_scoped` to admit ES Writing
 
 **Files:**
 
@@ -652,7 +652,7 @@ represent (replacements OR ES Writing). Closes #3777."
 
 ---
 
-### Task 7: Pre-merge verification and PR-branch CI confirmation
+## Task 7: Pre-merge verification and PR-branch CI confirmation
 
 **Files:** no SQL/YAML changes — verification only.
 

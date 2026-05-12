@@ -59,7 +59,7 @@ with
             co.academic_year + 1 as illuminate_academic_year,
             co.grade_level + 1 as illuminate_grade_level_id,
 
-            false as is_advanced_math,
+            false as is_advanced_math_student,
         from {{ ref("base_powerschool__student_enrollments") }} as co
         where co.region in ('Newark', 'Camden') and co.grade_level <= 4
     )

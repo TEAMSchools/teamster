@@ -12,6 +12,7 @@ models:
       - dbt_utils.unique_combination_of_columns:
           arguments:
             combination_of_columns:
+              - _dbt_source_project
               - powerschool_student_number
               - illuminate_academic_year
               - illuminate_subject_area
@@ -28,6 +29,8 @@ models:
       - name: cc_dateleft
         data_type: date
       - name: illuminate_subject_area
+        data_type: string
+      - name: discipline
         data_type: string
       - name: is_foundations
         data_type: boolean
