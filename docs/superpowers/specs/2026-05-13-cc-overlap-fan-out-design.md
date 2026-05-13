@@ -45,8 +45,8 @@ Empirical verification on 2026-05-13 changed the picture:
   `student_enrollments` has no overlap, and the `course_enrollments` anomaly is
   a small frozen corpus.
 - Adding defensive `dbt_utils.deduplicate()` to mask the residual duplicates.
-  The mart PK uniqueness test is expected to fail until Ops cleans the source —
-  that failure is the pressure signal.
+  The mart PK uniqueness test surfaces the violation as a warning; closing
+  `#3915` will restore it to error severity.
 - Fixing the `base_powerschool__course_enrollments` sections-join amplification
   (4× in Newark, 2× in Camden, 3.6× in Miami). Separate concern, file as a
   follow-up if needed.
@@ -105,11 +105,21 @@ no-op with row-count diff.
 
 ### 6. Mart PK uniqueness test severity
 
-Leave `fct_grades_assignments` PK uniqueness test at `severity: error` (do not
-downgrade to warn). Test will fail in CI until source records are cleaned by
-Ops. dbt test failures do not block downstream materialization, so consumers
-continue to receive data — they will see ~71 duplicate rows for historical grade
-assignments until cleanup. Document this in the PR description.
+Downgrade the `fct_grades_assignments` PK uniqueness test to `severity: warn`
+with an inline TODO comment referencing `#3915`: when Ops closes that issue and
+the upstream warn test on `stg_powerschool__cc` returns to 0 failing groups, the
+override comes off and severity returns to error.
+
+```yaml
+# TODO(#3915): remove the warn override once PS source cleanup is complete
+config:
+  severity: warn
+```
+
+Rationale: the residual ~71 violating rows are bounded historical artifacts, not
+ongoing data quality erosion. A persistent red error-level test trains reviewers
+to ignore the failure; a warn surfaces it without that noise. The TODO + `#3915`
+link keeps the cleanup obligation visible.
 
 ### 7. Update `src/dbt/CLAUDE.md`
 
@@ -124,8 +134,8 @@ lines 355–362) to:
 - When date-range joining `base_powerschool__course_enrollments`, filter
   `is_dropped_section` first.
 - Do not add defensive dedupes (`qualify` or `dbt_utils.deduplicate`) to mask
-  residual source-data dupes. A failing mart PK test is the signal Ops needs to
-  clean source.
+  residual source-data dupes. Affected mart PK tests may be downgraded to
+  `severity: warn` with a TODO referencing the Ops cleanup issue.
 - `base_powerschool__student_enrollments` date-range joins do not currently need
   any tiebreaker.
 
@@ -139,8 +149,8 @@ Post a verification comment summarizing:
   AY ≤ 2023.
 - Regional breakdown: Newark 19, Miami 3, Camden 1, Paterson 0.
 - Resolution: warn test upstream, semantic dropped-section filter, remove
-  misleading qualifies. Mart PK test left at error severity pending Ops cleanup.
-  Source cleanup tracked as `#3915`.
+  misleading qualifies, mart PK test downgraded to warn with a TODO. Source
+  cleanup tracked as `#3915`; closing it restores error severity.
 
 Close on merge.
 
@@ -165,9 +175,9 @@ Expected outcomes:
 - `fct_student_attendance_daily` model + PK test: pass.
 - `fct_student_attendance_streaks` model + PK test: pass.
 - `fct_grades_assignments` model: pass.
-- `fct_grades_assignments` PK uniqueness test: **expected to fail** with ~71
-  violating rows (historical PS bookkeeping artifacts). Capture exact count for
-  the PR description.
+- `fct_grades_assignments` PK uniqueness test: emits warn with ~71 violating
+  rows (historical PS bookkeeping artifacts). Capture exact count for the PR
+  description.
 - `stg_powerschool__cc` warn test: surfaces 24 failing groups.
 - Trunk lint clean.
 
@@ -181,9 +191,9 @@ Row-count diffs (dev vs. prod):
 
 ## Risks
 
-- **PR carries a known-failing test.** Reviewers will see a red PK test on
-  `fct_grades_assignments`. The PR description must clearly flag this as
-  intended pressure on Ops, not a regression.
+- **Warn-level PK test on `fct_grades_assignments`** is a real loosening — the
+  TODO + `#3915` link is the only mechanism keeping the cleanup obligation
+  visible. If `#3915` stalls indefinitely, the warning becomes background noise.
 - **Downstream consumers see ~71 duplicate grade rows** for historical
   assignments. Cube/Tableau exposures may need a heads-up if anyone reports
   inflated counts on pre-2024 data.
