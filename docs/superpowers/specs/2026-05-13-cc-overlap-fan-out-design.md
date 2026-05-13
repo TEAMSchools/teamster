@@ -179,6 +179,20 @@ Per
 - PR auto-appears on the board via `Closes #3900` / `Refs #3915` in the body —
   do not `gh project item-add` the PR itself.
 
+### 11. Related open issues — partial resolution
+
+PR body should also reference:
+
+- `Refs #3901` — this PR clears the `#3633` portion of #3901 (the 3 mart SQL
+  files + the CLAUDE.md "Enrollment join fan-out" guidance). The remaining
+  `#3629` and `#3635` portions live in survey-domain models (fct*survey*_,
+  dim*survey*_, bridge*survey*\*) and stay open for a separate doc-only PR. Post
+  a comment on #3901 calling out the partial completion when this PR merges.
+- `Refs #3890` — umbrella issue tracking migration of marts off legacy
+  denormalized intermediates. This PR removes 3 of N `qualify row_number()`
+  workarounds, contributing to its "no `qualify row_number()` in marts"
+  acceptance criterion. Does not close the umbrella.
+
 ## Verification Gates
 
 Run from worktree root:
