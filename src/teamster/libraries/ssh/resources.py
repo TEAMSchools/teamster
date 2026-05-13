@@ -1,6 +1,6 @@
-import pathlib
 import subprocess
 import time
+from pathlib import Path
 from stat import S_ISDIR, S_ISREG
 
 from dagster_shared import check
@@ -48,7 +48,7 @@ class SSHResource(DagsterSSHResource):
 
         files: list[tuple[SFTPAttributes, str]] = []
         for file in sftp_client.listdir_attr(remote_dir):
-            path = str(pathlib.Path(remote_dir) / file.filename)
+            path = str(Path(remote_dir) / file.filename)
             mtime = check.not_none(value=file.st_mtime)
 
             if S_ISDIR(check.not_none(value=file.st_mode)):
@@ -101,24 +101,25 @@ class SSHResource(DagsterSSHResource):
             stderr=subprocess.STDOUT,
         )
 
-        while True:
-            if ssh_tunnel.stdout is not None:
-                stdout = ssh_tunnel.stdout.readline()
-                self.log.debug(msg=stdout)
+        stdout_stream = check.not_none(value=ssh_tunnel.stdout)
 
-                if stdout in [
-                    (
-                        f"Warning: Permanently added '[{self.remote_host}]:"
-                        f"{self.remote_port}' (RSA) to the list of known hosts.\r\n"
-                    ).encode(),
-                    b"A secure connection to your server has been established.\n",
-                ]:
-                    continue
-                elif stdout == b"To disconnect, simply close this window.\n":
-                    break
-                else:
-                    ssh_tunnel.kill()
-                    raise SSHTunnelError(stdout)
+        while True:
+            stdout = stdout_stream.readline()
+            self.log.debug(msg=stdout)
+
+            if stdout in [
+                (
+                    f"Warning: Permanently added '[{self.remote_host}]:"
+                    f"{self.remote_port}' (RSA) to the list of known hosts.\r\n"
+                ).encode(),
+                b"A secure connection to your server has been established.\n",
+            ]:
+                continue
+            elif stdout == b"To disconnect, simply close this window.\n":
+                break
+            else:
+                ssh_tunnel.kill()
+                raise SSHTunnelError(stdout)
 
         time.sleep(1.0)
 
