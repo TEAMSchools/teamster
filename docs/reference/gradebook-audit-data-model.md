@@ -23,6 +23,17 @@ The audit operates at multiple grains simultaneously:
 - **End-of-quarter (EOQ)** — during a window around the last in-session day of
   each quarter, are comments, conduct codes, and final grades correctly entered?
 
+### Dashboard coverage (AY 2025-2026)
+
+| Region   | School level | Coverage depth                              | Notes                                               |
+| -------- | ------------ | ------------------------------------------- | --------------------------------------------------- |
+| Camden   | MS, HS       | Full audit (all applicable flags)           |                                                     |
+| Camden   | ES           | EOQ comments only (`qt_es_comment_missing`) | ES schools do not enter assignments in PS gradebook |
+| Newark   | MS, HS       | Full audit (all applicable flags)           |                                                     |
+| Newark   | ES           | EOQ comments only (`qt_es_comment_missing`) | ES schools do not enter assignments in PS gradebook |
+| Miami    | ES, MS       | Full audit (all applicable flags)           | **Removing AY 2026-2027** - moving to Focus         |
+| Paterson | n/a          | Not on dashboard this year                  | **Adding AY 2026-2027**                             |
+
 ## Grading policy overview
 
 KIPP TAF teachers use four assignment categories in PowerSchool:
@@ -407,35 +418,66 @@ override is applied in the `sections` CTE and propagates through
 
 ### `int_tableau__gradebook_audit_student_scaffold`
 
-Adds enrolled students to the teacher scaffold. Computes EOQ flag values
-directly as boolean columns that are later unpivoted in
-`int_tableau__gradebook_audit_flags`.
+Adds enrolled students to the teacher scaffold. Mirrors the two-branch structure
+of `int_tableau__gradebook_audit_teacher_scaffold` at the student grain —
+`student_scaffold` produces quarter-level flags, and `student_category_scaffold`
+produces flags tied to a specific gradebook category. Because this model is
+built on top of the teacher scaffold, any section or category exception applied
+there is automatically inherited here.
+
+**Why two branches**: same reason as the teacher scaffold — some flags are
+section-level only (e.g., a student's quarter grade is above 100), while others
+require the category dimension (e.g., a student's W% is suspiciously inflated).
+The `scaffold_name` field identifies which branch a row belongs to:
+`'student_scaffold'` or `'student_category_scaffold'`.
 
 **Scope**: `current_academic_year`, `enroll_status = 0`, not out-of-district,
-`rn_year = 1` (deduplicated enrollment). Inherits section and section-week
-exclusions from `int_tableau__gradebook_audit_teacher_scaffold`.
+`rn_year = 1` (deduplicated enrollment). Inherits all section and category
+exclusions from `int_tableau__gradebook_audit_teacher_scaffold` — no additional
+section-level exception joins are needed here.
 
-**Produces two scaffold variants** tagged by `scaffold_name`:
+**Source table temporal scope**:
+
+| Source                                          | Scope             |
+| ----------------------------------------------- | ----------------- |
+| `int_extracts__student_enrollments`             | Multi-year        |
+| `base_powerschool__course_enrollments`          | Multi-year        |
+| `int_powerschool__category_grades`              | Multi-year        |
+| `base_powerschool__final_grades`                | Current year only |
+| `stg_powerschool__storedgrades`                 | Multi-year        |
+| `int_tableau__gradebook_audit_teacher_scaffold` | Current year only |
+
+!!! note "Scope is determined by the teacher scaffold join" The join to
+`int_tableau__gradebook_audit_teacher_scaffold` enforces `current_academic_year`
+scope regardless of what the multi-year sources contain.
+`base_powerschool__final_grades` adds an additional
+`termbin_start_date <= current_date` filter.
 
 **`student_scaffold`** — one row per student × section × quarter × week. Joins
 `int_extracts__student_enrollments` to `base_powerschool__course_enrollments` to
 `int_tableau__gradebook_audit_teacher_scaffold` (teacher scaffold variant).
-Pulls quarter course grades from `base_powerschool__final_grades` (current year,
-`termbin_start_date <= current_date`) and `stg_powerschool__storedgrades` (prior
-year Q grades). Computes EOQ boolean columns:
+Pulls quarter course grades from `base_powerschool__final_grades` and
+`stg_powerschool__storedgrades`. Computes boolean columns that are later
+unpivoted in `int_tableau__gradebook_audit_flags`:
 
 | Column                                 | Fires when                                                                              |
 | -------------------------------------- | --------------------------------------------------------------------------------------- |
-| `qt_student_is_ada_80_plus_gpa_less_2` | Non-ES; ADA ≥ 80% and quarter GPA < 2.0                                                 |
-| `qt_percent_grade_greater_100`         | Quarter course percent grade > 100                                                      |
+| `qt_student_is_ada_80_plus_gpa_less_2` | Non-ES (Camden/Newark/Miami-MS); ADA >= 80% and quarter GPA < 2.0                       |
+| `qt_percent_grade_greater_100`         | Camden and Miami (ES/MS/HS) only; quarter course percent grade > 100                    |
 | `qt_grade_70_comment_missing`          | Non-ES; EOQ window; grade < 70; comment is null                                         |
 | `qt_comment_missing`                   | MiamiES; EOQ window; comment is null                                                    |
 | `qt_es_comment_missing`                | CamdenES or NewarkES; EOQ window; credit type in (HR, MATH, ENG, RHET); comment is null |
-| `qt_g1_g8_conduct_code_missing`        | Miami G1–G8; EOQ window; non-HR course; conduct is null                                 |
-| `qt_g1_g8_conduct_code_incorrect`      | Miami G1–G8; EOQ window; non-HR course; conduct not in (A, B, C, D, E, F)               |
+| `qt_g1_g8_conduct_code_missing`        | Miami G1-G8; EOQ window; non-HR course; conduct is null                                 |
+| `qt_g1_g8_conduct_code_incorrect`      | Miami G1-G8; EOQ window; non-HR course; conduct not in (A, B, C, D, E, F)               |
 | `qt_kg_conduct_code_missing`           | MiamiES KG; EOQ window; HR course; conduct is null                                      |
 | `qt_kg_conduct_code_incorrect`         | MiamiES KG; EOQ window; HR course; conduct not in (E, G, S, M)                          |
 | `qt_kg_conduct_code_not_hr`            | MiamiES KG; EOQ window; non-HR course; conduct is not null                              |
+
+!!! note "Authoritative flag scope" The SQL conditions above define when a
+boolean column is set to `true`. Whether a flag is ultimately shown in the
+dashboard depends on whether a matching row exists in
+`stg_google_sheets__gradebook_flags` — that sheet is the authoritative source
+for which flags apply to which region/school_level combinations.
 
 **`student_category_scaffold`** — one row per student × section × quarter × week
 × category. Same enrollment joins, but uses the teacher category scaffold
@@ -446,9 +488,9 @@ Computes category-level boolean columns:
 | Column                       | Fires when                                                                       |
 | ---------------------------- | -------------------------------------------------------------------------------- |
 | `w_grade_inflation`          | Non-ES; student's W% differs from class-wide W average by ≥ 30 percentage points |
-| `qt_effort_grade_missing`    | Miami; W category; EOQ window; category grade is null                            |
-| `qt_formative_grade_missing` | MiamiES; F category; EOQ window; category grade is null                          |
-| `qt_summative_grade_missing` | MiamiES; S category; non-ENG/MATH; EOQ window; category grade is null            |
+| `qt_effort_grade_missing`    | Miami (ES and MS); W category; EOQ window; category grade is null                |
+| `qt_formative_grade_missing` | MiamiES only; F category; EOQ window; category grade is null                     |
+| `qt_summative_grade_missing` | MiamiES only; S category; non-ENG/MATH; EOQ window; category grade is null       |
 
 ---
 
@@ -654,17 +696,54 @@ Tracking issue: [#3908](https://github.com/TEAMSchools/teamster/issues/3908)
 
 ---
 
+## Planned AY 2026-2027 changes
+
+Known scope for next year. Tracking issue:
+[#3908](https://github.com/TEAMSchools/teamster/issues/3908).
+
+### Add Paterson
+
+Paterson MS and HS will join the dashboard for the first time. Required work:
+
+- Add Paterson rows to `stg_google_sheets__gradebook_flags` (confirm which flags
+  apply with T&L)
+- Add Paterson rows to `stg_google_sheets__gradebook_expectations_assignments`
+  (expected assignment counts per category / quarter / week)
+- Review `stg_google_sheets__gradebook_exceptions` for any Paterson exceptions
+  needed at launch
+- Verify the teacher scaffold picks up Paterson sections correctly once the
+  flags sheet has rows (no SQL change expected)
+
+### Remove Miami ES and MS
+
+Miami ES and MS are migrating to Focus gradebook and will be removed from the
+dashboard. Required work:
+
+- Remove Miami rows from `stg_google_sheets__gradebook_flags`
+- Remove Miami rows from `stg_google_sheets__gradebook_expectations_assignments`
+- Remove Miami exceptions from `stg_google_sheets__gradebook_exceptions`
+- The following flags exist only for Miami and will become dead code once Miami
+  is removed — verify they can be dropped from the SQL:
+  - `qt_teacher_s_total_greater_100` / `qt_teacher_s_total_less_100` (MiamiES;
+    `categories_teacher`)
+  - `qt_comment_missing` (MiamiES)
+  - `qt_kg_conduct_code_missing` / `_incorrect` / `_not_hr` (MiamiES KG)
+  - `qt_g1_g8_conduct_code_missing` / `_incorrect` (Miami G1-G8; also fires for
+    Miami-MS — confirm MS-only variant not needed before removing)
+  - `qt_effort_grade_missing` (Miami ES and MS — verify no other region uses
+    this before removing)
+  - `qt_formative_grade_missing` / `qt_summative_grade_missing` (MiamiES)
+  - `s_max_score_greater_100` (Miami ES/MS; `assignments_teacher`)
+
+---
+
 ## Open questions (as of May 2026)
 
 - **Grading policy changes** — what flag additions, removals, or threshold
-  changes are planned for AY 2026–2027?
-- **New schools or regions** — are any new `region` / `school_level`
-  combinations being added that require new rows in
-  `stg_google_sheets__gradebook_flags` or
-  `stg_google_sheets__gradebook_expectations_assignments`?
+  changes are planned for AY 2026-2027?
 - **Complexity reduction** — is there appetite to refactor the exceptions
   pattern or split the multi-grain UNION before next year, or is scope limited
-  to policy changes only?
+  to the Paterson/Miami changes?
 - **Q1/Q2 history** — is there a need to surface Q1/Q2 audit data from prior
   years, or is the audit forward-only from Q3 onward?
 - **Tableau architecture** — does Tableau consume `rpt_tableau__gradebook_audit`
