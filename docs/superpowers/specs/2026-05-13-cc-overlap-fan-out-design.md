@@ -160,6 +160,19 @@ Close on merge.
 cleanup of the 24 historical PS source records. PR body should reference both
 `#3900` (closes) and `#3915` (refs).
 
+### 10. Project board hygiene
+
+Per
+[src/dbt/kipptaf/models/marts/CLAUDE.md](src/dbt/kipptaf/models/marts/CLAUDE.md)
+"Filing follow-up issues from marts work":
+
+- Add `#3915` to project board
+  [#4](https://github.com/orgs/TEAMSchools/projects/4) with `Tier`, `PR batch`,
+  and `Driver` set. Values require user input — the plan should pause here.
+- Verify `#3900` is on board `#4` with fields set; add if missing.
+- PR auto-appears on the board via `Closes #3900` / `Refs #3915` in the body —
+  do not `gh project item-add` the PR itself.
+
 ## Verification Gates
 
 Run from worktree root:
@@ -180,6 +193,20 @@ Expected outcomes:
   description.
 - `stg_powerschool__cc` warn test: surfaces 24 failing groups.
 - Trunk lint clean.
+
+Marts pre-merge checklist (see
+[src/dbt/kipptaf/models/marts/CLAUDE.md](src/dbt/kipptaf/models/marts/CLAUDE.md)
+"Pre-merge checklist (marts PRs)"):
+
+- Diamond-path scan on touched mart facts. (Expected clean — this PR removes
+  qualifies and adds a WHERE filter; no new FKs.)
+- Column-naming rubric R1–R10 scan on touched mart facts. (Expected clean — no
+  column renames or additions.)
+- `mcp__dbt__get_job_run_error` with `warning_only=true` on the latest CI run
+  for surfaced marts warnings; bucket and file follow-ups.
+- Scan
+  [project board #4](https://github.com/orgs/TEAMSchools/projects/4/views/1) for
+  issues incidentally resolved by this PR; close them in the PR body.
 
 Row-count diffs (dev vs. prod):
 
