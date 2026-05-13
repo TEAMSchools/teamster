@@ -352,15 +352,6 @@ and enr.entrydate <= cc.dateenrolled
 and enr.exitdate > cc.dateenrolled
 ```
 
-### Enrollment join fan-out (known upstream issue)
-
-`base_powerschool__student_enrollments` and
-`base_powerschool__course_enrollments` have genuinely overlapping date ranges
-for some students at the same school/section (not just boundary overlaps).
-Half-open interval joins reduce but don't eliminate fan-out. When a date-range
-enrollment/CC join still produces duplicates, add a `qualify` tiebreaker picking
-the latest `entrydate` / `cc_dateenrolled`, with a `-- TODO: #3633` comment.
-
 ### Nullable surrogate keys
 
 `dbt_utils.generate_surrogate_key()` hashes NULL inputs into a deterministic
