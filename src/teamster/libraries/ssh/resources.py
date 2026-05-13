@@ -35,14 +35,25 @@ class SSHResource(DagsterSSHResource):
         exclude_dirs: list[str] | None = None,
         min_mtime: float | None = None,
         dir_mtimes: dict[str, float] | None = None,
-        files: list[tuple[SFTPAttributes, str]] | None = None,
     ) -> list[tuple[SFTPAttributes, str]]:
-        if exclude_dirs is None:
-            exclude_dirs = []
+        return self._listdir_attr_r(
+            sftp_client=sftp_client,
+            remote_dir=remote_dir,
+            exclude_dirs=exclude_dirs if exclude_dirs is not None else [],
+            min_mtime=min_mtime,
+            dir_mtimes=dir_mtimes,
+            files=[],
+        )
 
-        if files is None:
-            files = []
-
+    def _listdir_attr_r(
+        self,
+        sftp_client: SFTPClient,
+        remote_dir: str,
+        exclude_dirs: list[str],
+        min_mtime: float | None,
+        dir_mtimes: dict[str, float] | None,
+        files: list[tuple[SFTPAttributes, str]],
+    ) -> list[tuple[SFTPAttributes, str]]:
         if remote_dir in exclude_dirs:
             return files
 
@@ -56,13 +67,13 @@ class SSHResource(DagsterSSHResource):
                     if cached_mtime is not None and mtime <= cached_mtime:
                         continue
 
-                self.listdir_attr_r(
+                self._listdir_attr_r(
                     sftp_client=sftp_client,
                     remote_dir=path,
                     exclude_dirs=exclude_dirs,
-                    files=files,
                     min_mtime=min_mtime,
                     dir_mtimes=dir_mtimes,
+                    files=files,
                 )
 
                 if dir_mtimes is not None:
