@@ -1,5 +1,7 @@
 models:
   - name: int_topline__microgoals_assigned_weekly
+    config:
+      materialized: table
     data_tests:
       - dbt_utils.unique_combination_of_columns:
           arguments:
