@@ -138,9 +138,9 @@ Post a verification comment summarizing:
 - Real anomaly is `course_enrollments`: 24 dup groups / 48 rows, frozen corpus
   AY ≤ 2023.
 - Regional breakdown: Newark 19, Miami 3, Camden 1, Paterson 0.
-- Resolution: warn test upstream + semantic dropped-section filter
-  - remove misleading qualifies. Mart PK test left at error severity pending Ops
-    cleanup. Source cleanup tracked as `#3915`.
+- Resolution: warn test upstream, semantic dropped-section filter, remove
+  misleading qualifies. Mart PK test left at error severity pending Ops cleanup.
+  Source cleanup tracked as `#3915`.
 
 Close on merge.
 
