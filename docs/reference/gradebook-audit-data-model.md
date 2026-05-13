@@ -453,9 +453,25 @@ scope regardless of what the multi-year sources contain.
 **`student_scaffold`** — one row per student × section × quarter × week. Joins
 `int_extracts__student_enrollments` to `base_powerschool__course_enrollments` to
 `int_tableau__gradebook_audit_teacher_scaffold` (teacher scaffold variant).
-Pulls quarter course grades from `base_powerschool__final_grades` and
-`stg_powerschool__storedgrades`. Computes boolean columns that are later
-unpivoted in `int_tableau__gradebook_audit_flags`:
+Pulls quarter course grades via the `quarter_course_grades` CTE (see note
+below). Computes boolean columns that are later unpivoted in
+`int_tableau__gradebook_audit_flags`:
+
+!!! note "quarter_course_grades CTE — summer refresh toggle" The
+`quarter_course_grades` CTE UNIONs two sources:
+
+    - `'current_year'` — from `base_powerschool__final_grades` (current year
+      only), filtered to `termbin_start_date <= current_date`
+    - `'last_year'` — from `stg_powerschool__storedgrades` for
+      `current_academic_year - 1`, `storecode_type = 'Q'`, non-transfer grades
+
+    The JOIN to `quarter_course_grades` filters to `grades_type = 'current_year'`
+    during the school year. After PowerSchool rolls over in summer (before new
+    quarter grades exist), flip the filter to `grades_type = 'last_year'` to keep
+    the dashboard operational with stored prior-year grades. Flip back to
+    `'current_year'` when new-year data is ready. The `category_grades` CTE
+    uses a parallel seasonal toggle (`yearid = current_academic_year - 1991`
+    vs `- 1990`).
 
 | Column                                 | Fires when                                                                              |
 | -------------------------------------- | --------------------------------------------------------------------------------------- |
@@ -482,29 +498,77 @@ variant. Pulls `category_quarter_percent_grade` and
 `category_quarter_average_all_courses` from `int_powerschool__category_grades`.
 Computes category-level boolean columns:
 
-| Column                       | Fires when                                                                       |
-| ---------------------------- | -------------------------------------------------------------------------------- |
-| `w_grade_inflation`          | Non-ES; student's W% differs from class-wide W average by ≥ 30 percentage points |
-| `qt_effort_grade_missing`    | Miami (ES and MS); W category; EOQ window; category grade is null                |
-| `qt_formative_grade_missing` | MiamiES only; F category; EOQ window; category grade is null                     |
-| `qt_summative_grade_missing` | MiamiES only; S category; non-ENG/MATH; EOQ window; category grade is null       |
+| Column                       | Fires when                                                                        |
+| ---------------------------- | --------------------------------------------------------------------------------- |
+| `w_grade_inflation`          | Non-ES; student's W% differs from class-wide W average by >= 30 percentage points |
+| `qt_effort_grade_missing`    | Miami (ES and MS); W category; EOQ window; category grade is null                 |
+| `qt_formative_grade_missing` | MiamiES only; F category; EOQ window; category grade is null                      |
+| `qt_summative_grade_missing` | MiamiES only; S category; non-ENG/MATH; EOQ window; category grade is null        |
 
 ---
 
 ## Assignment and category rollup layer
 
-All three rollup models join against
-`int_powerschool__gradebook_assignments_scores` (the combined assignments +
-scores intermediate that denormalizes score rows onto their parent assignment).
-It is the shared raw-score source for this entire layer.
+### `int_powerschool__gradebook_assignments_scores`
+
+One row per student × assignment. Generates every assignment a student should
+have a score for based on enrollment dates — including assignments in exempt
+courses or gradebook categories, which are filtered out downstream.
+
+**Key business logic**: PowerSchool automatically assigns all section
+assignments to every student who has ever enrolled in that section, regardless
+of when they enrolled. The INNER JOIN to `base_powerschool__course_enrollments`
+on `duedate between cc_dateenrolled and cc_dateleft` is what scopes each
+assignment to only the students whose enrollment was active when the assignment
+was due. The LEFT JOIN to `stg_powerschool__assignmentscore` means a student row
+exists even when no score has been entered — `score_entered` will be null in
+that case.
+
+**Source table temporal scope**: all sources are multi-year
+(`int_powerschool__gradebook_assignments`,
+`base_powerschool__course_enrollments`, `stg_powerschool__schools`,
+`stg_powerschool__assignmentscore`).
+
+**Key computed columns** used by downstream flag logic:
+
+| Column                            | Definition                                                                 |
+| --------------------------------- | -------------------------------------------------------------------------- |
+| `is_expected`                     | True if not exempt and `iscountedinfinalgrade = 1`                         |
+| `is_expected_null`                | `is_expected` and `score_entered is null` (blank score field)              |
+| `is_expected_zero`                | `is_expected` and `score_entered = 0`                                      |
+| `is_expected_missing`             | `is_expected` and `is_missing = 1`                                         |
+| `is_expected_late`                | `is_expected` and `is_late = 1`                                            |
+| `is_expected_scored`              | `is_expected` and `score_entered is not null`                              |
+| `is_academic_dishonesty`          | HS; `score_entered = 0` and not marked missing                             |
+| `is_expected_academic_dishonesty` | `is_expected` and HS; `score_entered = 0` and not marked missing           |
+| `score_entered`                   | `scorepoints` for POINTS; `actualscoreentered` cast to numeric for PERCENT |
+| `half_total_point_value`          | `totalpointvalue / 2` (used for the min-50%-of-max missing score checks)   |
+
+!!! note "KIPP Sumner G5 school_level override" The same override from the
+teacher scaffold is hardcoded here: school 179905, grade 5, AY 2025 is treated
+as `'MS'` rather than `'ES'`. This is what allows the same HS-vs-non-HS flag
+conditions to apply consistently to those students across both models.
+
+Feeds `int_tableau__gradebook_audit_assignments_student` (student-level flags)
+and `int_tableau__gradebook_audit_assignments_teacher` (teacher-level flags).
 
 ### `int_tableau__gradebook_audit_assignments_student`
 
-One row per student × assignment × week. Joins the student category scaffold to
-`int_powerschool__gradebook_assignments_scores` on
-`sections_dcid + students_dcid + category_code + duedate within week`. Only
-includes assignments with `iscountedinfinalgrade = 1` and
-`scoretype in ('POINTS', 'PERCENT')`.
+One row per student × assignment × week. Joins
+`int_tableau__gradebook_audit_student_scaffold` (`student_category_scaffold`
+variant) to `int_powerschool__gradebook_assignments_scores` on
+`sections_dcid + students_dcid + category_code + duedate within week`.
+
+**Exception handling**: inherits all section and category exceptions from
+`int_tableau__gradebook_audit_teacher_scaffold` and
+`int_tableau__gradebook_audit_student_scaffold` via the scaffold join. This view
+applies its own assignment-level filters in the JOIN condition:
+`iscountedinfinalgrade = 1` and `scoretype in ('POINTS', 'PERCENT')`.
+Assignments that fail these criteria are excluded entirely rather than producing
+a flag.
+
+**Source temporal scope**: `int_powerschool__gradebook_assignments_scores` is
+multi-year; scope is inherited from the student scaffold join.
 
 **Per-student per-assignment flags** (`cte_grouping = 'assignment_student'`):
 
