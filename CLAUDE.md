@@ -342,6 +342,17 @@ Chained joins through PR-branch marts (mart-view → mart-view → upstream-view
 hit BigQuery's 16-view nesting limit. Query materialized prod tables instead, or
 split the query.
 
+Two BQ query-shape failure modes (not interchangeable):
+
+- `exceeds the maximum allowed number of nested views` — chain depth >16.
+  Materialize a mid-chain model.
+- `Resources exceeded during query execution: Not enough resources for query planning - query is too complex`
+  — fan-out width, can fire well below 16. Materialize the fan-out point.
+
+`INFORMATION_SCHEMA.JOBS.referenced_tables` lists base tables reached via view
+expansion, NOT a directly-selected view. To find consumers of a view, filter by
+`REGEXP_CONTAINS(query, '<view_name>')`.
+
 For NULL-safe distinct counts on composite keys, use
 `count(distinct format("%T|%T", a, b))` — `concat()` returns NULL when any arg
 is NULL and silently miscounts violations.
