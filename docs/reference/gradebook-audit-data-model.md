@@ -316,20 +316,46 @@ values correspond to actual call sites in the SQL.
 
 ### `int_tableau__gradebook_audit_teacher_scaffold`
 
-The time spine. One row per active section × calendar week × scaffold variant
-for the current academic year.
+The time spine for the audit. One row per active section × calendar week ×
+scaffold variant for the current academic year. Feeds directly into
+`int_tableau__gradebook_audit_student_scaffold` — changes here cascade
+immediately to the student scaffold.
+
+**Why two scaffold variants**: some audit flags apply at the section level (e.g.
+a teacher hasn't set up their gradebook at all), while others apply at the
+section × gradebook category level (e.g. too few homework grades in a given
+category). The `scaffold_name` field distinguishes the two variants downstream —
+flags referencing `scaffold_name = 'teacher_scaffold'` are section-level only;
+flags referencing `scaffold_name = 'teacher_category_scaffold'` are per
+category.
+
+**The four gradebook categories** (carried only in `teacher_category_scaffold`
+rows): Work Habits, Homework, Formative Mastery, Summative Mastery.
 
 **Scope**: `current_academic_year` only; Q3 and Q4 only (Q1/Q2 excluded — see
 [Q1/Q2 removal](#recent-change-q12-removal-may-2026)); sections with zero
-enrolled students excluded; sections suppressed via
-`stg_google_sheets__gradebook_exceptions` (`view_name = 'teacher_scaffold'`,
-`cte = 'sections'`) excluded.
+enrolled students excluded (`sections_no_of_students != 0`).
+
+**Source table temporal scope**:
+
+| Source                             | Scope         |
+| ---------------------------------- | ------------- |
+| `base_powerschool__sections`       | Multi-year    |
+| `int_powerschool__terms`           | Multi-year    |
+| `int_powerschool__calendar_week`   | Multi-year    |
+| `int_people__staff_roster`         | Year-agnostic |
+| `stg_powerschool__schools`         | Year-agnostic |
+| `int_people__leadership_crosswalk` | Year-agnostic |
+
+The model's `current_academic_year` WHERE filter in the `sections` CTE is what
+limits output to a single year regardless of source scope.
 
 **CTE chain**:
 
 1. `sections` — active sections from `base_powerschool__sections` joined to
-   `int_people__staff_roster` for `teacher_tableau_username`; applies
-   section-level and school-scoped section exceptions.
+   `int_people__staff_roster` for `teacher_tableau_username`; filters to
+   `current_academic_year` and excludes zero-student sections; applies
+   section-level exceptions (see exceptions below).
 2. `term_weeks` — joins `int_powerschool__terms` to
    `int_powerschool__calendar_week` on `yearid + schoolid + quarter`; joins
    `stg_powerschool__schools` for the school abbreviation; joins
@@ -341,10 +367,26 @@ enrolled students excluded; sections suppressed via
    (HS uses `external_expression`; others use `section_number`); applies
    scaffold-level exceptions.
 4. `final` — UNION ALL of the two scaffold variants:
-   - `teacher_scaffold` — bare section × week row with null category columns
+   - `teacher_scaffold` — bare section × week row; category columns are `null`
    - `teacher_category_scaffold` — inner-joined to
-     `stg_google_sheets__gradebook_expectations_assignments` for category
-     context; exceptions applied to remove specific categories
+     `stg_google_sheets__gradebook_expectations_assignments` on
+     `region + school_level + academic_year + quarter + week_number`; carries
+     category columns; applies category exceptions (see below)
+
+**Global exception rules** (from `stg_google_sheets__gradebook_exceptions`):
+
+- **Exception type 1 — remove an entire section**
+  (`view_name = 'teacher_scaffold'`, `cte = 'sections'`): applied in the
+  `sections` CTE. Two sub-variants: by `course_number` only (any school), or by
+  `course_number
+  - school_id`(specific school). Removes the section from both scaffold variants since`teacher_category_scaffold`is built on top of`school_level_mod`.
+
+- **Exception type 2 — remove a gradebook category from a section**
+  (`view_name = 'teacher_category_scaffold'`, `cte = 'final'`): applied in the
+  `teacher_category_scaffold` branch of `final`. Three sub-variants: by
+  `course_number` (any region), by `course_number + region`, or by
+  `credit_type + region + school_level`. Removes category rows from the
+  scaffold; flags for that category will not fire for those sections.
 
 **`is_quarter_end_date_range`** — boolean computed against `current_date`;
 controls when EOQ-only flags fire and which exception rows apply:
