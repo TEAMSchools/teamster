@@ -1,0 +1,626 @@
+# Gradebook Audit Data Model
+
+Reference document for `rpt_tableau__gradebook_audit` — the Tableau extract that
+powers the gradebook audit dashboard used by school leaders to monitor teacher
+gradebook compliance with KIPP TAF grading policy.
+
+## What is the gradebook audit?
+
+KIPP TAF schools require teachers to maintain PowerSchool gradebooks that follow
+the network's grading policy. The gradebook audit dashboard gives school leaders
+and instructional coaches a weekly view of compliance across every section,
+flagging deviations from policy so they can be addressed before the end of the
+quarter.
+
+The audit operates at multiple grains simultaneously:
+
+- **Assignment-student** — did this specific student receive a valid score on
+  this assignment?
+- **Class-category** — has this teacher posted the required number of
+  assignments in this category this week? Are scores being entered on time?
+- **Student-course** — does this student's category grade meet policy thresholds
+  (grade inflation, effort/formative/summative missing)?
+- **End-of-quarter (EOQ)** — during a window around the last in-session day of
+  each quarter, are comments, conduct codes, and final grades correctly entered?
+
+## Grading policy overview
+
+KIPP TAF teachers use four assignment categories in PowerSchool:
+
+| Code | Name              | Policy: max score | Policy: missing score           |
+| ---- | ----------------- | ----------------- | ------------------------------- |
+| `W`  | Work Habits       | 10 pts            | 5 (non-HS) / 0 (HS)             |
+| `H`  | Homework          | 10 pts            | 5 (non-HS) / 0 (HS)             |
+| `F`  | Formative Mastery | 10 pts            | 5 (non-HS) / 0 (HS)             |
+| `S`  | Summative Mastery | No fixed max      | 0 (HS); min 50% of max (non-HS) |
+
+Summative scores for MS must fall on the conversion chart:
+`50, 55, 58, 60, 65, 68, 70, 75, 78, 80, 85, 88, 90, 95, 100`.
+
+Summative scores for HS (non-AP) must fall on the conversion chart:
+`50, 55, 58, 60, 65, 68, 70, 75, 78, 80, 85, 88, 93, 97, 100`. AP courses are
+excluded from conversion chart enforcement.
+
+MiamiES Summative: total point value per quarter must equal 100. All other
+school levels: total point value per quarter must equal 200.
+
+## Current data model
+
+Lineage diagram for `rpt_tableau__gradebook_audit`:
+
+```mermaid
+flowchart TD
+    %% ── Sources ──────────────────────────────────────────────────────────────
+    subgraph SRC ["Sources"]
+        direction TB
+        src_ps_sec["PowerSchool\nsections / courses"]
+        src_ps_cc["PowerSchool\ncourse_enrollments"]
+        src_ps_ga["PowerSchool\ngradebook_assignments\n+ scores"]
+        src_ps_grades["PowerSchool\nfinal_grades\n+ stored_grades"]
+        src_ps_terms["PowerSchool\nterms / calendar_week"]
+        src_ps_sch["PowerSchool\nschools"]
+        src_gs_flags["Google Sheets\ngradebook_flags"]
+        src_gs_exp["Google Sheets\ngradebook_expectations\n_assignments"]
+        src_gs_exc["Google Sheets\ngradebook_exceptions"]
+    end
+
+    %% ── Staging / Base ───────────────────────────────────────────────────────
+    subgraph STG ["Staging & Base"]
+        direction TB
+        stg_flags["stg_google_sheets__\ngradebook_flags"]
+        stg_exp["stg_google_sheets__\ngradebook_expectations\n_assignments"]
+        stg_exc["stg_google_sheets__\ngradebook_exceptions"]
+        base_sec["base_powerschool__\nsections"]
+        base_ce["base_powerschool__\ncourse_enrollments"]
+        base_fg["base_powerschool__\nfinal_grades"]
+        stg_sg["stg_powerschool__\nstoredgrades"]
+    end
+
+    %% ── Intermediate – Upstream ──────────────────────────────────────────────
+    subgraph INT_UP ["Intermediate · Upstream"]
+        direction TB
+        int_terms["int_powerschool__terms\n+ calendar_week"]
+        int_catgr["int_powerschool__\ncategory_grades"]
+        int_ga["int_powerschool__\ngradebook_assignments"]
+        int_gas["int_powerschool__\ngradebook_assignments_scores"]
+        int_enroll["int_extracts__\nstudent_enrollments"]
+        int_staff["int_people__staff_roster"]
+        int_lead["int_people__\nleadership_crosswalk"]
+    end
+
+    %% ── Intermediate – Audit Scaffolds ───────────────────────────────────────
+    subgraph INT_SCAF ["Intermediate · Audit Scaffolds"]
+        direction TB
+        int_tscaf["int_tableau__\ngradebook_audit_teacher_scaffold"]
+        int_sscaf["int_tableau__\ngradebook_audit_student_scaffold"]
+    end
+
+    %% ── Intermediate – Audit Rollups ─────────────────────────────────────────
+    subgraph INT_ROLL ["Intermediate · Audit Rollups"]
+        direction TB
+        int_at["int_tableau__\ngradebook_audit_assignments_teacher"]
+        int_as["int_tableau__\ngradebook_audit_assignments_student"]
+        int_ct["int_tableau__\ngradebook_audit_categories_teacher"]
+    end
+
+    %% ── Flag Assembly + Final ─────────────────────────────────────────────────
+    int_flags["int_tableau__\ngradebook_audit_flags"]
+    RPT(["rpt_tableau__gradebook_audit"])
+
+    %% ── Edges: Sources → Staging/Base ────────────────────────────────────────
+    src_gs_flags --> stg_flags
+    src_gs_exp   --> stg_exp
+    src_gs_exc   --> stg_exc
+    src_ps_sec   --> base_sec
+    src_ps_cc    --> base_ce
+    src_ps_grades --> base_fg
+    src_ps_grades --> stg_sg
+
+    %% ── Edges: Sources → Upstream Intermediates ──────────────────────────────
+    src_ps_terms --> int_terms
+    src_ps_sch   --> int_terms
+    src_ps_grades --> int_catgr
+    src_ps_ga    --> int_ga
+    src_ps_ga    --> int_gas
+
+    %% ── Edges: → Teacher Scaffold ────────────────────────────────────────────
+    base_sec   --> int_tscaf
+    int_terms  --> int_tscaf
+    int_staff  --> int_tscaf
+    int_lead   --> int_tscaf
+    stg_exp    --> int_tscaf
+    stg_exc    --> int_tscaf
+
+    %% ── Edges: → Student Scaffold ────────────────────────────────────────────
+    int_enroll --> int_sscaf
+    base_ce    --> int_sscaf
+    base_fg    --> int_sscaf
+    stg_sg     --> int_sscaf
+    int_tscaf  --> int_sscaf
+    int_catgr  --> int_sscaf
+    stg_exp    --> int_sscaf
+    stg_exc    --> int_sscaf
+
+    %% ── Edges: → Rollups ─────────────────────────────────────────────────────
+    int_tscaf --> int_at
+    int_ga    --> int_at
+    int_gas   --> int_at
+    stg_exc   --> int_at
+
+    int_sscaf --> int_as
+    int_gas   --> int_as
+
+    int_tscaf --> int_ct
+    int_ga    --> int_ct
+    int_gas   --> int_ct
+    stg_exc   --> int_ct
+
+    %% ── Edges: → Flag Assembly ───────────────────────────────────────────────
+    int_as    --> int_flags
+    int_at    --> int_flags
+    int_ct    --> int_flags
+    int_sscaf --> int_flags
+    stg_flags --> int_flags
+    stg_exc   --> int_flags
+
+    %% ── Edges: → Final ───────────────────────────────────────────────────────
+    int_flags --> RPT
+
+    %% ── Styling ───────────────────────────────────────────────────────────────
+    classDef source   fill:#e8f4f8,stroke:#5b9bd5,color:#000
+    classDef staging  fill:#e2f0d9,stroke:#70ad47,color:#000
+    classDef intmodel fill:#fce4d6,stroke:#ed7d31,color:#000
+    classDef report   fill:#d9e1f2,stroke:#4472c4,color:#000,font-weight:bold
+
+    class src_ps_sec,src_ps_cc,src_ps_ga,src_ps_grades,src_ps_terms,src_ps_sch,src_gs_flags,src_gs_exp,src_gs_exc source
+    class stg_flags,stg_exp,stg_exc,base_sec,base_ce,base_fg,stg_sg staging
+    class int_terms,int_catgr,int_ga,int_gas,int_enroll,int_staff,int_lead,int_tscaf,int_sscaf,int_at,int_as,int_ct,int_flags intmodel
+    class RPT report
+```
+
+### Layer summary
+
+| Layer                  | Count | Purpose                                                                                      |
+| ---------------------- | ----- | -------------------------------------------------------------------------------------------- |
+| Sources                | 9     | PowerSchool gradebook, enrollment, and calendar data; three Google Sheets config tables      |
+| Staging & Base         | 7     | Light cleaning of config sheets; union of district PowerSchool tables                        |
+| Upstream intermediates | 7     | Gradebook assignments/scores, enrollment, terms, staff/leadership — shared with other models |
+| Audit scaffolds        | 2     | Time spine (section × week × category) and student roster with EOQ flag columns              |
+| Audit rollups          | 3     | Assignment and category metrics at teacher and student grain                                 |
+| Flag assembly          | 1     | UNION ALL + UNPIVOT of all flag sources; applies allowlist and suppressions                  |
+| Report                 | 1     | Final 5-branch UNION joining teacher aggregates to student flag rows                         |
+
+### Key data flows
+
+**Teacher/section stream** — tracks what teachers have posted: how many
+assignments per category per week, whether max scores are correct, whether the
+class is keeping up with grading. Teacher-scoped; no individual student
+identifiers. Flows through `int_tableau__gradebook_audit_teacher_scaffold` →
+`int_tableau__gradebook_audit_assignments_teacher` and
+`int_tableau__gradebook_audit_categories_teacher`.
+
+**Student stream** — tracks what each individual student has received: whether
+scores are valid, whether missing assignments are coded correctly, and whether
+EOQ requirements are satisfied. Flows through
+`int_tableau__gradebook_audit_student_scaffold` →
+`int_tableau__gradebook_audit_assignments_student`.
+
+Both streams converge in `int_tableau__gradebook_audit_flags`, where boolean
+flag columns are unpivoted to rows and filtered through the configuration
+allowlist and suppression tables. The final extract joins teacher-aggregated
+flag rows to individual student flag rows via a LEFT JOIN — teacher-level flags
+(class-category, class-category-assignment) appear with `null` student fields
+unless a student-level row also fired that flag.
+
+---
+
+## Configuration: `stg_google_sheets__gradebook_flags`
+
+The flag allowlist. A flag only appears in the dashboard if a matching row
+exists in this table — making it the primary on/off switch for every audit
+check.
+
+**Grain**: one row per
+`academic_year × region × school_level × code × audit_flag_name`.
+
+| Column            | Purpose                                                                              |
+| ----------------- | ------------------------------------------------------------------------------------ |
+| `code_type`       | `'Quarter'` (EOQ flags) or `'Gradebook Category'` (weekly flags)                     |
+| `code`            | Quarter (`Q3`, `Q4`) or category code (`W`, `H`, `F`, `S`)                           |
+| `audit_category`  | Human-readable grouping shown in Tableau (e.g., `'Missing Score'`, `'Conduct Code'`) |
+| `audit_flag_name` | Snake-case name matching the boolean column in the source model                      |
+| `cte_grouping`    | Which UNION branch in `int_tableau__gradebook_audit_flags` this row targets          |
+| `grade_level`     | Set only for conduct code flags that require a grade-level-specific join             |
+| `alt_code`        | Computed in staging; maps student-category flags to their category code for joining  |
+
+Activating a new flag for a region requires adding a row here. Deactivating a
+flag removes or disables its row. There is no validation that `audit_flag_name`
+values in this sheet match the column names in the SQL — a typo silently
+excludes all rows for that flag without raising an error.
+
+---
+
+## Configuration: `stg_google_sheets__gradebook_expectations_assignments`
+
+Defines the minimum number of assignments a teacher is expected to have posted
+per category by each week of each quarter.
+
+**Grain**: one row per
+`academic_year × region × school_level × quarter × week_number × assignment_category_code`
+(after staging unpivot).
+
+The source sheet stores expectations in a wide format — one column per category
+code (`W`, `H`, `F`, `S`) — with rows for each region / school level / quarter /
+week combination. Staging unpivots to one row per category (dropping nulls,
+meaning that category is not expected that week in that context) and computes:
+
+- `assignment_category_term` — `code || right(quarter, 1)`, e.g. `W3` for Work
+  Habits in Q3
+- `assignment_category_name` — full name from code (`W` → `'Work Habits'`, etc.)
+
+`int_tableau__gradebook_audit_teacher_scaffold` inner-joins to this table to
+expand each section × week to one row per category. If a region / school level /
+week combination has no rows here, the teacher category scaffold produces no
+rows for that context — the audit is silent rather than erroring.
+
+---
+
+## Configuration: `stg_google_sheets__gradebook_exceptions`
+
+The suppression table. Used in 15+ LEFT JOINs across five intermediate models to
+permanently or temporarily exclude specific rows from the audit output.
+
+**Grain**: no natural grain — each row is an override instruction addressed to a
+specific model and CTE, identified by `view_name` + `cte`.
+
+**How suppression works**: every consuming CTE does a LEFT JOIN to this table,
+then adds `WHERE e.include_row IS NULL`. A row where `include_row` is non-null
+causes the matched data rows to be dropped from that CTE's output. When the LEFT
+JOIN finds no matching exception row, `include_row` is null and the data row
+passes through.
+
+**Call sites** — `view_name` and `cte` together identify where in the code a row
+applies:
+
+| `view_name`                 | `cte`                     | Where used                                         | Effect                                                          |
+| --------------------------- | ------------------------- | -------------------------------------------------- | --------------------------------------------------------------- |
+| `teacher_scaffold`          | `sections`                | `int_tableau__gradebook_audit_teacher_scaffold`    | Removes an entire section from the audit                        |
+| `teacher_scaffold`          | `null`                    | `int_tableau__gradebook_audit_teacher_scaffold`    | Removes section-weeks from the final scaffold output            |
+| `teacher_category_scaffold` | `final`                   | `int_tableau__gradebook_audit_teacher_scaffold`    | Removes a gradebook category from the teacher category scaffold |
+| `assignments_teacher`       | `null`                    | `int_tableau__gradebook_audit_assignments_teacher` | Suppresses assignment rollup counts for a course                |
+| `categories_teacher`        | `null`                    | `int_tableau__gradebook_audit_categories_teacher`  | Removes category-level rows                                     |
+| `categories_teacher`        | `assignment_score_rollup` | `int_tableau__gradebook_audit_categories_teacher`  | Excludes students from `n_expected` / `n_expected_scored`       |
+| `audit_flags`               | `student_unpivot`         | `int_tableau__gradebook_audit_flags`               | Suppresses specific student-assignment flags                    |
+| `audit_flags`               | `teacher_unpivot_cca`     | `int_tableau__gradebook_audit_flags`               | Suppresses teacher assignment flags                             |
+| `audit_flags`               | `teacher_unpivot_cc`      | `int_tableau__gradebook_audit_flags`               | Suppresses teacher category flags                               |
+| `audit_flags`               | `eoq_items`               | `int_tableau__gradebook_audit_flags`               | Suppresses EOQ student flags (non-conduct)                      |
+| `audit_flags`               | `eoq_items_conduct_code`  | `int_tableau__gradebook_audit_flags`               | Suppresses conduct code flags                                   |
+| `audit_flags`               | `student_course_category` | `int_tableau__gradebook_audit_flags`               | Suppresses student-category flags                               |
+
+**Permanent vs. temporary suppression** is controlled by
+`is_quarter_end_date_range`:
+
+| Value   | Suppression applies when    |
+| ------- | --------------------------- |
+| `NULL`  | Always (permanent)          |
+| `TRUE`  | Only during the EOQ window  |
+| `FALSE` | Only outside the EOQ window |
+
+!!! warning "Silent failures" A typo in `view_name` or `cte` means the exception
+is never matched and silently has no effect. There is no validation that these
+values correspond to actual call sites in the SQL.
+
+---
+
+## Scaffold layer
+
+### `int_tableau__gradebook_audit_teacher_scaffold`
+
+The time spine. One row per active section × calendar week × scaffold variant
+for the current academic year.
+
+**Scope**: `current_academic_year` only; Q3 and Q4 only (Q1/Q2 excluded — see
+[Q1/Q2 removal](#recent-change-q12-removal-may-2026)); sections with zero
+enrolled students excluded; sections suppressed via
+`stg_google_sheets__gradebook_exceptions` (`view_name = 'teacher_scaffold'`,
+`cte = 'sections'`) excluded.
+
+**CTE chain**:
+
+1. `sections` — active sections from `base_powerschool__sections` joined to
+   `int_people__staff_roster` for `teacher_tableau_username`; applies
+   section-level and school-scoped section exceptions.
+2. `term_weeks` — joins `int_powerschool__terms` to
+   `int_powerschool__calendar_week` on `yearid + schoolid + quarter`; joins
+   `stg_powerschool__schools` for the school abbreviation; joins
+   `int_people__leadership_crosswalk` for HoS and school leader names; computes
+   `quarter_end_date_insession` (last in-session day of the quarter via window
+   `max(week_end_date)`).
+3. `school_level_mod` — crosses sections and term weeks; computes
+   `is_quarter_end_date_range`, `region_school_level`, and `section_or_period`
+   (HS uses `external_expression`; others use `section_number`); applies
+   scaffold-level exceptions.
+4. `final` — UNION ALL of the two scaffold variants:
+   - `teacher_scaffold` — bare section × week row with null category columns
+   - `teacher_category_scaffold` — inner-joined to
+     `stg_google_sheets__gradebook_expectations_assignments` for category
+     context; exceptions applied to remove specific categories
+
+**`is_quarter_end_date_range`** — boolean computed against `current_date`;
+controls when EOQ-only flags fire and which exception rows apply:
+
+| Context                      | `TRUE` when `current_date` is...                                 |
+| ---------------------------- | ---------------------------------------------------------------- |
+| Miami (all levels)           | 9 days before through 28 days after `quarter_end_date_insession` |
+| HS, Q3                       | 9 days after through 20 days after `quarter_end_date_insession`  |
+| HS, Q3 (outside above range) | Never (`FALSE`)                                                  |
+| All others                   | 5 days before through 14 days after `quarter_end_date_insession` |
+
+!!! note "KIPP Sumner Elementary grade 5" Grade 5 sections at KIPP Sumner
+Elementary are treated as MS (`school_level_alt = 'MS'`) rather than ES. This
+override is applied in the `sections` CTE and propagates through
+`region_school_level` and all downstream school-level filters.
+
+### `int_tableau__gradebook_audit_student_scaffold`
+
+Adds enrolled students to the teacher scaffold. Computes EOQ flag values
+directly as boolean columns that are later unpivoted in
+`int_tableau__gradebook_audit_flags`.
+
+**Scope**: `current_academic_year`, `enroll_status = 0`, not out-of-district,
+`rn_year = 1` (deduplicated enrollment). Inherits section and section-week
+exclusions from `int_tableau__gradebook_audit_teacher_scaffold`.
+
+**Produces two scaffold variants** tagged by `scaffold_name`:
+
+**`student_scaffold`** — one row per student × section × quarter × week. Joins
+`int_extracts__student_enrollments` to `base_powerschool__course_enrollments` to
+`int_tableau__gradebook_audit_teacher_scaffold` (teacher scaffold variant).
+Pulls quarter course grades from `base_powerschool__final_grades` (current year,
+`termbin_start_date <= current_date`) and `stg_powerschool__storedgrades` (prior
+year Q grades). Computes EOQ boolean columns:
+
+| Column                                 | Fires when                                                                              |
+| -------------------------------------- | --------------------------------------------------------------------------------------- |
+| `qt_student_is_ada_80_plus_gpa_less_2` | Non-ES; ADA ≥ 80% and quarter GPA < 2.0                                                 |
+| `qt_percent_grade_greater_100`         | Quarter course percent grade > 100                                                      |
+| `qt_grade_70_comment_missing`          | Non-ES; EOQ window; grade < 70; comment is null                                         |
+| `qt_comment_missing`                   | MiamiES; EOQ window; comment is null                                                    |
+| `qt_es_comment_missing`                | CamdenES or NewarkES; EOQ window; credit type in (HR, MATH, ENG, RHET); comment is null |
+| `qt_g1_g8_conduct_code_missing`        | Miami G1–G8; EOQ window; non-HR course; conduct is null                                 |
+| `qt_g1_g8_conduct_code_incorrect`      | Miami G1–G8; EOQ window; non-HR course; conduct not in (A, B, C, D, E, F)               |
+| `qt_kg_conduct_code_missing`           | MiamiES KG; EOQ window; HR course; conduct is null                                      |
+| `qt_kg_conduct_code_incorrect`         | MiamiES KG; EOQ window; HR course; conduct not in (E, G, S, M)                          |
+| `qt_kg_conduct_code_not_hr`            | MiamiES KG; EOQ window; non-HR course; conduct is not null                              |
+
+**`student_category_scaffold`** — one row per student × section × quarter × week
+× category. Same enrollment joins, but uses the teacher category scaffold
+variant. Pulls `category_quarter_percent_grade` and
+`category_quarter_average_all_courses` from `int_powerschool__category_grades`.
+Computes category-level boolean columns:
+
+| Column                       | Fires when                                                                       |
+| ---------------------------- | -------------------------------------------------------------------------------- |
+| `w_grade_inflation`          | Non-ES; student's W% differs from class-wide W average by ≥ 30 percentage points |
+| `qt_effort_grade_missing`    | Miami; W category; EOQ window; category grade is null                            |
+| `qt_formative_grade_missing` | MiamiES; F category; EOQ window; category grade is null                          |
+| `qt_summative_grade_missing` | MiamiES; S category; non-ENG/MATH; EOQ window; category grade is null            |
+
+---
+
+## Assignment and category rollup layer
+
+### `int_tableau__gradebook_audit_assignments_teacher`
+
+One row per section × assignment × week. Joins the teacher category scaffold to
+`int_powerschool__gradebook_assignments` on
+`sections_dcid + category_name + duedate within week window`, then to
+`int_powerschool__gradebook_assignments_scores` aggregated by
+`assignmentsectionid`.
+
+**Class-level max-score flags** (`cte_grouping = 'class_category_assignment'`):
+
+| Flag                        | Fires when                                     |
+| --------------------------- | ---------------------------------------------- |
+| `w_assign_max_score_not_10` | W assignment; `totalpointvalue != 10`          |
+| `h_assign_max_score_not_10` | H assignment (non-ES); `totalpointvalue != 10` |
+| `f_assign_max_score_not_10` | F assignment; `totalpointvalue != 10`          |
+| `s_max_score_greater_100`   | Miami S assignment; `totalpointvalue > 100`    |
+
+**Aggregates passed downstream**:
+
+- `n_students`, `n_late`, `n_exempt`, `n_missing`, `n_null`,
+  `n_academic_dishonesty`, `n_is_null_missing`, `n_is_null_not_missing`,
+  `n_expected`, `n_expected_scored`
+- `teacher_avg_score_for_assign_per_class_section_and_assign_id`
+- `sum_totalpointvalue_section_quarter_category` (window sum over
+  `quarter + sectionid + category`)
+- `teacher_running_total_assign_by_cat` (window count ordered by
+  `week_number_quarter`, cumulative per category per section)
+
+### `int_tableau__gradebook_audit_assignments_student`
+
+One row per student × assignment × week. Joins the student category scaffold to
+`int_powerschool__gradebook_assignments_scores` on
+`sections_dcid + students_dcid + category_code + duedate within week`. Only
+includes assignments with `iscountedinfinalgrade = 1` and
+`scoretype in ('POINTS', 'PERCENT')`.
+
+**Per-student per-assignment flags** (`cte_grouping = 'assignment_student'`):
+
+| Flag                                             | Fires when                                                   |
+| ------------------------------------------------ | ------------------------------------------------------------ |
+| `assign_null_score`                              | `is_expected_null = 1` (score field is blank)                |
+| `assign_score_above_max`                         | `score_entered > totalpointvalue`                            |
+| `assign_w_score_less_5`                          | W; not missing; `score_entered < 5`                          |
+| `assign_h_score_less_5`                          | H; not missing; `score_entered < 5`                          |
+| `assign_f_score_less_5`                          | F; not missing; `score_entered < 5`                          |
+| `assign_w_missing_score_not_5`                   | W; non-HS; marked missing; `score_entered != 5`              |
+| `assign_h_missing_score_not_5`                   | H; non-HS; marked missing; `score_entered != 5`              |
+| `assign_f_missing_score_not_5`                   | F; non-HS; marked missing; `score_entered != 5`              |
+| `assign_w_missing_score_not_0`                   | W; HS; marked missing; `score_entered != 0`                  |
+| `assign_h_missing_score_not_0`                   | H; HS; marked missing; `score_entered != 0`                  |
+| `assign_f_missing_score_not_0`                   | F; HS; marked missing; `score_entered != 0`                  |
+| `assign_s_missing_score_not_0`                   | S; HS; marked missing; `score_entered != 0`                  |
+| `assign_s_score_less_50p`                        | S; non-HS; `score_entered < half_total_point_value`          |
+| `assign_s_hs_score_less_50p`                     | S; HS; not missing; `score_entered < half_total_point_value` |
+| `assign_s_ms_score_not_conversion_chart_options` | S; MS; not exempt; not null; score not on MS chart           |
+| `assign_s_hs_score_not_conversion_chart_options` | S; HS; not AP; not exempt; not null; score not on HS chart   |
+
+### `int_tableau__gradebook_audit_categories_teacher`
+
+One row per section × category × week (after `GROUP BY` in the `final` CTE).
+Joins the same assignment sources as
+`int_tableau__gradebook_audit_assignments_teacher` but aggregates to category
+level to produce category-wide compliance flags.
+
+**Per-category per-section flags** (`cte_grouping = 'class_category'`):
+
+| Flag                              | Fires when                                             |
+| --------------------------------- | ------------------------------------------------------ |
+| `w_expected_assign_count_not_met` | W; `teacher_running_total_assign_by_cat < expectation` |
+| `h_expected_assign_count_not_met` | H; same                                                |
+| `f_expected_assign_count_not_met` | F; same                                                |
+| `s_expected_assign_count_not_met` | S; same                                                |
+| `w_percent_graded_min_not_met`    | W; `percent_graded_for_quarter_week_class < 0.70`      |
+| `h_percent_graded_min_not_met`    | H; same                                                |
+| `f_percent_graded_min_not_met`    | F; same                                                |
+| `s_percent_graded_min_not_met`    | S; same                                                |
+| `qt_teacher_s_total_greater_200`  | S; non-MiamiES; `sum_totalpointvalue > 200`            |
+| `qt_teacher_s_total_less_200`     | S; non-MiamiES; `sum_totalpointvalue < 200`            |
+| `qt_teacher_s_total_greater_100`  | S; MiamiES; `sum_totalpointvalue > 100`                |
+| `qt_teacher_s_total_less_100`     | S; MiamiES; `sum_totalpointvalue < 100`                |
+
+`percent_graded_for_quarter_week_class` is computed as
+`total_expected_scored / total_expected` — the share of expected assignments
+that have a score entered for the week. The 70% minimum applies to all four
+categories.
+
+---
+
+## Flag assembly: `int_tableau__gradebook_audit_flags`
+
+Six-branch `UNION ALL` that converts boolean flag columns to rows, applies the
+active-flag allowlist, and applies suppressions. This is the single source for
+`rpt_tableau__gradebook_audit`.
+
+**Pattern per CTE**:
+
+```sql
+<source_model> UNPIVOT (audit_flag_value FOR audit_flag_name IN (...flags...))
+INNER JOIN stg_google_sheets__gradebook_flags   -- allowlist: only active flags
+LEFT JOIN stg_google_sheets__gradebook_exceptions  -- suppression (one or more)
+WHERE e.include_row IS NULL
+```
+
+| CTE                       | Source                                             | Flags unpivoted | `cte_grouping`                |
+| ------------------------- | -------------------------------------------------- | --------------- | ----------------------------- |
+| `student_unpivot`         | `int_tableau__gradebook_audit_assignments_student` | 16              | `assignment_student`          |
+| `teacher_unpivot_cca`     | `int_tableau__gradebook_audit_assignments_teacher` | 4               | `class_category_assignment`   |
+| `teacher_unpivot_cc`      | `int_tableau__gradebook_audit_categories_teacher`  | 12              | `class_category`              |
+| `eoq_items`               | `int_tableau__gradebook_audit_student_scaffold`    | 7               | `student_course` or `student` |
+| `eoq_items_conduct_code`  | `int_tableau__gradebook_audit_student_scaffold`    | 5               | `student_course`              |
+| `student_course_category` | `int_tableau__gradebook_audit_student_scaffold`    | 4               | `student_course_category`     |
+
+`eoq_items_conduct_code` is the only CTE that joins
+`stg_google_sheets__gradebook_flags` on `grade_level` in addition to the
+standard keys — conduct code flags are grade-level-specific (KG vs. G1–G8 have
+different valid conduct codes).
+
+---
+
+## Final extract: `rpt_tableau__gradebook_audit`
+
+**Two input CTEs** from `int_tableau__gradebook_audit_flags`:
+
+- `teacher_aggs` — groups by all non-flag fields; uses `max(audit_flag_value)`
+  to produce one 0/1 per flag per section × week. Adds `is_current_week` (true
+  if `current_date` falls in the week window).
+- `valid_flags` — filters `audit_flag_value = 1`; carries student-level
+  demographic and grade fields.
+
+**Five-branch UNION ALL**: each branch LEFT JOINs `teacher_aggs` to
+`valid_flags`. The join key varies by flag type to avoid fan-out:
+
+| Branch | `cte_grouping` / `code_type`                                                      | Includes `teacher_assign_id` in join? | Includes `assignment_category_term`? |
+| ------ | --------------------------------------------------------------------------------- | ------------------------------------- | ------------------------------------ |
+| 1      | `code_type = 'Gradebook Category'` + `cte_grouping = 'assignment_student'`        | Yes                                   | Yes                                  |
+| 2      | `cte_grouping = 'student_course_category'`                                        | No                                    | Yes                                  |
+| 3      | `code_type = 'Quarter'` + `cte_grouping != 'student_course_category'`             | No                                    | No                                   |
+| 4      | `code_type = 'Gradebook Category'` + `cte_grouping = 'class_category_assignment'` | Yes                                   | Yes                                  |
+| 5      | `code_type = 'Gradebook Category'` + `cte_grouping = 'class_category'`            | No                                    | Yes                                  |
+
+All branches filter
+`audit_start_date <= current_date('{{ var("local_timezone") }}')` and
+`not is_current_week`. The current week is always excluded — grading is still in
+progress.
+
+Teacher-level flags (branches 4 and 5) have `null` student demographic fields in
+`teacher_aggs`. Student values arrive only via the `valid_flags` LEFT JOIN when
+individual students also triggered the flag.
+
+---
+
+## Start-of-year procedure
+
+At the start of each academic year, configuration sheets must be updated before
+the audit will produce data for the new year.
+
+### Step 1 — Update `stg_google_sheets__gradebook_expectations_assignments`
+
+Add rows for the new `academic_year` for every region / school level / quarter /
+week combination. Expected assignment counts may change year to year — confirm
+required counts with Teaching & Learning before copying prior-year values.
+
+### Step 2 — Update `stg_google_sheets__gradebook_flags`
+
+Add rows for the new `academic_year`. Flag configuration (which flags are active
+per region and school level) may change — confirm with T&L before replicating
+prior-year values.
+
+### Step 3 — Review `stg_google_sheets__gradebook_exceptions`
+
+Review prior-year permanent exceptions (`is_quarter_end_date_range IS NULL`) to
+determine if they should carry forward. Update the `academic_year` field on
+exceptions that should persist. Exceptions scoped to the prior year will
+silently have no effect once the scaffold advances to the new year.
+
+!!! warning "Empty sheets block the audit" If
+`stg_google_sheets__gradebook_expectations_assignments` or
+`stg_google_sheets__gradebook_flags` have no rows for the new academic year, the
+teacher category scaffold produces no rows (inner join on both) and the entire
+audit is empty — no error, just no data.
+
+---
+
+## Recent change: Q1/Q2 removal (May 2026)
+
+Q1 and Q2 were removed from `int_tableau__gradebook_audit_teacher_scaffold` by
+adding `t.term not in ('Q1', 'Q2')` to the `term_weeks` CTE. This was not a
+policy change — the audit policy for Q1 and Q2 was unchanged — but a volume
+reduction to address Tableau Server refresh failures. The audit now covers Q3
+and Q4 only for the current academic year.
+
+Tracking issue: [#3908](https://github.com/TEAMSchools/teamster/issues/3908)
+
+---
+
+## Open questions (as of May 2026)
+
+- **Grading policy changes** — what flag additions, removals, or threshold
+  changes are planned for AY 2026–2027?
+- **New schools or regions** — are any new `region` / `school_level`
+  combinations being added that require new rows in
+  `stg_google_sheets__gradebook_flags` or
+  `stg_google_sheets__gradebook_expectations_assignments`?
+- **Complexity reduction** — is there appetite to refactor the exceptions
+  pattern or split the multi-grain UNION before next year, or is scope limited
+  to policy changes only?
+- **Q1/Q2 history** — is there a need to surface Q1/Q2 audit data from prior
+  years, or is the audit forward-only from Q3 onward?
+- **Tableau architecture** — does Tableau consume `rpt_tableau__gradebook_audit`
+  as a single data source, or could it be split by `cte_grouping` to reduce
+  per-source volume?
+- **Exceptions sheet usability** — should the `view_name` / `cte` identifiers be
+  documented in the exceptions sheet itself to reduce the risk of silent
+  suppression failures?

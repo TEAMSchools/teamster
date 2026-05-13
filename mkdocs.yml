@@ -55,6 +55,7 @@ nav:
       - Fiscal Year & Partitioning: reference/fiscal-year-partitioning.md
       - dbt Conventions: reference/dbt-conventions.md
       - Automation Conditions: reference/automation-conditions.md
+      - Gradebook Audit Data Model: reference/gradebook-audit-data-model.md
   - Automations: reference/automations.md
 
 markdown_extensions:
