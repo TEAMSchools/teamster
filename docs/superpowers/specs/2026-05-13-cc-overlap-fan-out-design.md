@@ -223,7 +223,18 @@ Marts pre-merge checklist (see
 - Column-naming rubric R1–R10 scan on touched mart facts. (Expected clean — no
   column renames or additions.)
 - `mcp__dbt__get_job_run_error` with `warning_only=true` on the latest CI run
-  for surfaced marts warnings; bucket and file follow-ups.
+  for surfaced marts warnings. For each warning:
+  1. Identify the model and the test (or compiler diagnostic) emitting it.
+  2. Search open issues on
+     [project board #4](https://github.com/orgs/TEAMSchools/projects/4) by model
+     name and FK target — does an existing issue already track this warning?
+  3. If matched: comment on the existing issue with the current count and any
+     change since last observation (so the issue tracks volume drift).
+  4. If unmatched: file a new issue per "Filing follow-up issues from marts
+     work" in
+     [src/dbt/kipptaf/models/marts/CLAUDE.md](src/dbt/kipptaf/models/marts/CLAUDE.md)
+     — bucket the warning rows (by region, source, test type) in the issue body
+     before filing, set `Tier` / `PR batch` / `Driver`.
 - Scan
   [project board #4](https://github.com/orgs/TEAMSchools/projects/4/views/1) for
   issues incidentally resolved by this PR; close them in the PR body.
