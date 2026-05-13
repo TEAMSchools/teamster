@@ -15,6 +15,10 @@ from tenacity import (
 )
 
 
+class SSHTunnelError(Exception):
+    """Raised when the sshpass tunnel subprocess emits unexpected stdout."""
+
+
 class SSHResource(DagsterSSHResource):
     tunnel_remote_host: str | None = None
     test: bool = False
@@ -71,7 +75,7 @@ class SSHResource(DagsterSSHResource):
 
         return files
 
-    def open_ssh_tunnel(self):
+    def open_ssh_tunnel(self) -> subprocess.Popen[bytes]:
         # trunk-ignore(bandit/B603)
         ssh_tunnel = subprocess.Popen(
             args=[
@@ -114,7 +118,7 @@ class SSHResource(DagsterSSHResource):
                     break
                 else:
                     ssh_tunnel.kill()
-                    raise Exception(stdout)
+                    raise SSHTunnelError(stdout)
 
         time.sleep(1.0)
 
