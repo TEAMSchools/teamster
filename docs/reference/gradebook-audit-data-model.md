@@ -196,6 +196,7 @@ flowchart TD
 assignments per category per week, whether max scores are correct, whether the
 class is keeping up with grading. Teacher-scoped; no individual student
 identifiers. Flows through `int_tableau__gradebook_audit_teacher_scaffold` →
+`int_powerschool__gradebook_assignments_scores` →
 `int_tableau__gradebook_audit_assignments_teacher` and
 `int_tableau__gradebook_audit_categories_teacher`.
 
@@ -203,6 +204,7 @@ identifiers. Flows through `int_tableau__gradebook_audit_teacher_scaffold` →
 scores are valid, whether missing assignments are coded correctly, and whether
 EOQ requirements are satisfied. Flows through
 `int_tableau__gradebook_audit_student_scaffold` →
+`int_powerschool__gradebook_assignments_scores` →
 `int_tableau__gradebook_audit_assignments_student`.
 
 Both streams converge in `int_tableau__gradebook_audit_flags`, where boolean
@@ -452,33 +454,10 @@ Computes category-level boolean columns:
 
 ## Assignment and category rollup layer
 
-### `int_tableau__gradebook_audit_assignments_teacher`
-
-One row per section × assignment × week. Joins the teacher category scaffold to
-`int_powerschool__gradebook_assignments` on
-`sections_dcid + category_name + duedate within week window`, then to
-`int_powerschool__gradebook_assignments_scores` aggregated by
-`assignmentsectionid`.
-
-**Class-level max-score flags** (`cte_grouping = 'class_category_assignment'`):
-
-| Flag                        | Fires when                                     |
-| --------------------------- | ---------------------------------------------- |
-| `w_assign_max_score_not_10` | W assignment; `totalpointvalue != 10`          |
-| `h_assign_max_score_not_10` | H assignment (non-ES); `totalpointvalue != 10` |
-| `f_assign_max_score_not_10` | F assignment; `totalpointvalue != 10`          |
-| `s_max_score_greater_100`   | Miami S assignment; `totalpointvalue > 100`    |
-
-**Aggregates passed downstream**:
-
-- `n_students`, `n_late`, `n_exempt`, `n_missing`, `n_null`,
-  `n_academic_dishonesty`, `n_is_null_missing`, `n_is_null_not_missing`,
-  `n_expected`, `n_expected_scored`
-- `teacher_avg_score_for_assign_per_class_section_and_assign_id`
-- `sum_totalpointvalue_section_quarter_category` (window sum over
-  `quarter + sectionid + category`)
-- `teacher_running_total_assign_by_cat` (window count ordered by
-  `week_number_quarter`, cumulative per category per section)
+All three rollup models join against
+`int_powerschool__gradebook_assignments_scores` (the combined assignments +
+scores intermediate that denormalizes score rows onto their parent assignment).
+It is the shared raw-score source for this entire layer.
 
 ### `int_tableau__gradebook_audit_assignments_student`
 
@@ -508,6 +487,34 @@ includes assignments with `iscountedinfinalgrade = 1` and
 | `assign_s_hs_score_less_50p`                     | S; HS; not missing; `score_entered < half_total_point_value` |
 | `assign_s_ms_score_not_conversion_chart_options` | S; MS; not exempt; not null; score not on MS chart           |
 | `assign_s_hs_score_not_conversion_chart_options` | S; HS; not AP; not exempt; not null; score not on HS chart   |
+
+### `int_tableau__gradebook_audit_assignments_teacher`
+
+One row per section × assignment × week. Joins the teacher category scaffold to
+`int_powerschool__gradebook_assignments` on
+`sections_dcid + category_name + duedate within week window`, then to
+`int_powerschool__gradebook_assignments_scores` aggregated by
+`assignmentsectionid`.
+
+**Class-level max-score flags** (`cte_grouping = 'class_category_assignment'`):
+
+| Flag                        | Fires when                                     |
+| --------------------------- | ---------------------------------------------- |
+| `w_assign_max_score_not_10` | W assignment; `totalpointvalue != 10`          |
+| `h_assign_max_score_not_10` | H assignment (non-ES); `totalpointvalue != 10` |
+| `f_assign_max_score_not_10` | F assignment; `totalpointvalue != 10`          |
+| `s_max_score_greater_100`   | Miami S assignment; `totalpointvalue > 100`    |
+
+**Aggregates passed downstream**:
+
+- `n_students`, `n_late`, `n_exempt`, `n_missing`, `n_null`,
+  `n_academic_dishonesty`, `n_is_null_missing`, `n_is_null_not_missing`,
+  `n_expected`, `n_expected_scored`
+- `teacher_avg_score_for_assign_per_class_section_and_assign_id`
+- `sum_totalpointvalue_section_quarter_category` (window sum over
+  `quarter + sectionid + category`)
+- `teacher_running_total_assign_by_cat` (window count ordered by
+  `week_number_quarter`, cumulative per category per section)
 
 ### `int_tableau__gradebook_audit_categories_teacher`
 
