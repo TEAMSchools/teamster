@@ -154,7 +154,13 @@ mtimes.
 Match on a specific exception class (define one if the upstream code raises bare
 `Exception`), never on error message or bare `Exception`. Existing examples:
 `libraries/adp/workforce_now/api/resources.py`,
-`libraries/tableau/resources.py`, `libraries/level_data/grow/resources.py`.
+`libraries/tableau/resources.py`, `libraries/level_data/grow/resources.py`. Wrap
+the init path (`fetch_token` / `connect` in `setup_for_execution`) too, not just
+the request method. For network-call retries, the predicate must include
+`(RequestsConnectionError, Timeout, HTTPError)` — `HTTPError` alone misses
+`ConnectTimeout`. For runtime-parameterized retry loops (e.g.
+`with_powerschool_retry`), use `tenacity.Retrying` — a manual
+`for attempt in range(...)` has no backoff.
 
 **Don't `log.exception` inside retry-wrapped helpers**. GCP Error Reporting
 files groups at ERROR severity, so logging a traceback inside a context manager

@@ -991,8 +991,6 @@ def step_12_error_groups(utc_start: str, step_10: dict) -> dict:
     pod_events = step_10.get("podEvents", []) or []
     events_url = f"https://clouderrorreporting.googleapis.com/v1beta1/projects/{PROJECT_ID}/events"
     for g in out:
-        if (g.get("lastSeenTime") or "") < utc_start:
-            continue
         if g.get("resolutionStatus") != "OPEN":
             continue
         ev_resp = httpx.get(
@@ -1022,7 +1020,7 @@ def step_12_error_groups(utc_start: str, step_10: dict) -> dict:
         )
         exc = g.get("exceptionLine") or ""
         exc_class = exc.split(":")[0].split(".")[-1] if exc else ""
-        if g["correlatedPodEvent"] and exc_class in SIGTERM_EXC_CLASSES:
+        if exc_class in SIGTERM_EXC_CLASSES:
             g["category"] = "sigterm_during_import"
         elif g["correlatedPodEvent"]:
             g["category"] = "preemption_artifact"

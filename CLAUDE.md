@@ -300,7 +300,11 @@ check the `CodespacesRole` custom IAM role, not user IAM bindings.
 
 `mcp__gke__query_logs` uses snake_case keys in `time_range` (`start_time`,
 `end_time`), not camelCase. Results cap at 100 — paginate by using the last
-entry's timestamp as the next `start_time`.
+entry's timestamp as the next `start_time`. The LQL filter truncates
+`time_range` bounds to second precision, so sub-second offsets (e.g.
+`...:30.534Z`) are silently rounded down and refetch the same first page. To
+page past a sub-second boundary or fetch the tail of a traceback, fall back to
+`mcp__gcp-observability__list_log_entries` with `orderBy: "timestamp desc"`.
 
 `query_logs` format templates reject hyphens in dotted key paths
 (`{{.labels.k8s-pod/dagster/op}}` fails to parse). Use the Go template `index`
