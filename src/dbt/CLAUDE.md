@@ -104,6 +104,11 @@ file before re-running the build.
 Stdout interleaves dbt log lines with JSON records. Pipe through `grep '^{'`
 before parsing.
 
+## Materialization overrides go in properties yml
+
+Use `config: materialized: <kind>` in `properties/<model>.yml`, not inline
+`{{ config(...) }}` in SQL. Create the yml if absent.
+
 ## Table→view materialization conversion needs a drop
 
 `create or replace view` does not drop a pre-existing table at the same path —
