@@ -5,7 +5,7 @@ from stat import S_ISDIR, S_ISREG
 
 from dagster_shared import check
 from dagster_ssh import SSHResource as DagsterSSHResource
-from paramiko import SFTPAttributes, SFTPClient
+from paramiko import SFTPAttributes, SFTPClient, SSHClient
 from paramiko.ssh_exception import SSHException
 from tenacity import (
     retry,
@@ -25,35 +25,21 @@ class SSHResource(DagsterSSHResource):
         retry=retry_if_exception_type(SSHException),
         reraise=True,
     )
+    def get_connection(self) -> SSHClient:
+        return super().get_connection()
+
     def listdir_attr_r(
         self,
+        sftp_client: SFTPClient,
         remote_dir: str = ".",
         exclude_dirs: list[str] | None = None,
         min_mtime: float | None = None,
         dir_mtimes: dict[str, float] | None = None,
+        files: list[tuple[SFTPAttributes, str]] | None = None,
     ) -> list[tuple[SFTPAttributes, str]]:
         if exclude_dirs is None:
             exclude_dirs = []
 
-        with self.get_connection() as connection:
-            with connection.open_sftp() as sftp_client:
-                return self._inner_listdir_attr_r(
-                    sftp_client=sftp_client,
-                    remote_dir=remote_dir,
-                    exclude_dirs=exclude_dirs,
-                    min_mtime=min_mtime,
-                    dir_mtimes=dir_mtimes,
-                )
-
-    def _inner_listdir_attr_r(
-        self,
-        sftp_client: SFTPClient,
-        remote_dir: str,
-        exclude_dirs: list[str],
-        files: list | None = None,
-        min_mtime: float | None = None,
-        dir_mtimes: dict[str, float] | None = None,
-    ) -> list[tuple[SFTPAttributes, str]]:
         if files is None:
             files = []
 
@@ -70,7 +56,7 @@ class SSHResource(DagsterSSHResource):
                     if cached_mtime is not None and mtime <= cached_mtime:
                         continue
 
-                self._inner_listdir_attr_r(
+                self.listdir_attr_r(
                     sftp_client=sftp_client,
                     remote_dir=path,
                     exclude_dirs=exclude_dirs,

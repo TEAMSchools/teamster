@@ -29,7 +29,13 @@ def deanslist_sftp_sensor(context: SensorEvaluationContext, ssh_deanslist: SSHRe
     asset_selection = []
     cursor: dict = json.loads(context.cursor or "{}")
 
-    files = ssh_deanslist.listdir_attr_r("reconcile_report_files")
+    with (
+        ssh_deanslist.get_connection() as connection,
+        connection.open_sftp() as sftp_client,
+    ):
+        files = ssh_deanslist.listdir_attr_r(
+            sftp_client=sftp_client, remote_dir="reconcile_report_files"
+        )
 
     for asset in assets:
         asset_metadata = asset.metadata_by_key[asset.key]
