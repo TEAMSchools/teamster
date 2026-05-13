@@ -332,8 +332,11 @@ wide tables, paginate with `WHERE ordinal_position > N`.
 SELECT-only constraints apply.
 
 Pre-merge queries against PR-branch schema use
-`dbt_cloud_pr_<ci_id>_<pr_num>_<schema>` — prod `<schema>` lacks unmerged
-renames.
+`dbt_cloud_pr_<job_definition_id>_<pr_num>_<schema>`. `<job_definition_id>` is
+the dbt Cloud CI job ID (stable across runs); read from
+`mcp__dbt__get_job_run_details(run_id)` step name
+`"Create profile from connection BigQuery (override schema to '...')"`. Prod
+`<schema>` lacks unmerged renames.
 
 Chained joins through PR-branch marts (mart-view → mart-view → upstream-view)
 hit BigQuery's 16-view nesting limit. Query materialized prod tables instead, or

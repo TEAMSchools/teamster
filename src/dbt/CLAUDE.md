@@ -99,6 +99,19 @@ Every `dbt` invocation appends to `<project>/logs/dbt.log` (full output, not
 truncated). When a background build's captured output is incomplete, read that
 file before re-running the build.
 
+## `dbt ls --output json` stdout is mixed
+
+Stdout interleaves dbt log lines with JSON records. Pipe through `grep '^{'`
+before parsing.
+
+## Table→view materialization conversion needs a drop
+
+`create or replace view` does not drop a pre-existing table at the same path —
+the conversion silently keeps serving the stale table. Ship table→view
+conversions with either an explicit
+`DROP TABLE IF EXISTS <project>.<dataset>.<model>` at deploy time, or run
+`dbt build --select <model> --full-refresh` once after merge.
+
 ## dbt Cloud CI state comparison
 
 `state:modified+` hashes every source node through `{{ target.name }}`
