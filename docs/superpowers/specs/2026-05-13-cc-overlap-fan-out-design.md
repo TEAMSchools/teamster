@@ -47,9 +47,15 @@ Empirical verification on 2026-05-13 changed the picture:
 - Adding defensive `dbt_utils.deduplicate()` to mask the residual duplicates.
   The mart PK uniqueness test surfaces the violation as a warning; closing
   `#3915` will restore it to error severity.
-- Fixing the `base_powerschool__course_enrollments` sections-join amplification
-  (4× in Newark, 2× in Camden, 3.6× in Miami). Separate concern, file as a
-  follow-up if needed.
+- Fixing a "sections-join amplification" in
+  `base_powerschool__course_enrollments`. Investigated and dismissed:
+  `base_powerschool__sections` is unique on `sections_id` per region. The 4×
+  ratio between stg-level and base-level overlap counts was an artifact of the
+  detection query — base CC's `cc.abs_sectionid = sec.sections_id` join
+  collapses negative (dropped) and positive (active) sectionids onto the same
+  `sections_dcid`, so the overlap query partitioned on `sections_dcid` surfaces
+  mixed dropped+active pairs that the signed-sectionid stg query doesn't. The
+  `where not is_dropped_section` filter in change `#2` already handles these.
 - Touching `int_extracts__student_enrollments` or
   `base_powerschool__student_enrollments`.
 
@@ -224,15 +230,10 @@ Row-count diffs (dev vs. prod):
 - **Downstream consumers see ~71 duplicate grade rows** for historical
   assignments. Cube/Tableau exposures may need a heads-up if anyone reports
   inflated counts on pre-2024 data.
-- **Sections-join amplification** in `base_powerschool__course_enrollments`
-  (2–5× by region) remains untouched. If a future mart joins CC on a different
-  grain, it may hit the amplified fan-out and require its own filter logic.
 
 ## Out-of-Scope Follow-Ups
 
 - Investigate Paterson's PowerSchool process — they're the only clean region.
   Replicating their workflow elsewhere could eliminate the anomaly at source.
-- Audit `base_powerschool__course_enrollments` sections-join amplification
-  (separate issue if Ops wants to act on it).
 - Newark 2020 cluster (10 dup groups) is the densest concentration — COVID-era
   enrollment churn likely; potential one-shot cleanup target.
