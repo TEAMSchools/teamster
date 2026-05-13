@@ -38,12 +38,12 @@ The audit operates at multiple grains simultaneously:
 
 KIPP TAF teachers use four assignment categories in PowerSchool:
 
-| Code | Name              | Policy: max score | Policy: missing score           |
-| ---- | ----------------- | ----------------- | ------------------------------- |
-| `W`  | Work Habits       | 10 pts            | 5 (non-HS) / 0 (HS)             |
-| `H`  | Homework          | 10 pts            | 5 (non-HS) / 0 (HS)             |
-| `F`  | Formative Mastery | 10 pts            | 5 (non-HS) / 0 (HS)             |
-| `S`  | Summative Mastery | No fixed max      | 0 (HS); min 50% of max (non-HS) |
+| Code | Name              | Policy: max score per assignment | Policy: quarterly total                  | Policy: missing score           |
+| ---- | ----------------- | -------------------------------- | ---------------------------------------- | ------------------------------- |
+| `W`  | Work Habits       | 10 pts                           | n/a                                      | 5 (non-HS) / 0 (HS)             |
+| `H`  | Homework          | 10 pts                           | n/a                                      | 5 (non-HS) / 0 (HS)             |
+| `F`  | Formative Mastery | 10 pts                           | n/a                                      | 5 (non-HS) / 0 (HS)             |
+| `S`  | Summative Mastery | No per-assignment max            | 200 pts (Camden/Newark); 100 pts (Miami) | 0 (HS); min 50% of max (non-HS) |
 
 Summative scores for MS must fall on the conversion chart:
 `50, 55, 58, 60, 65, 68, 70, 75, 78, 80, 85, 88, 90, 95, 100`.
@@ -51,9 +51,6 @@ Summative scores for MS must fall on the conversion chart:
 Summative scores for HS (non-AP) must fall on the conversion chart:
 `50, 55, 58, 60, 65, 68, 70, 75, 78, 80, 85, 88, 93, 97, 100`. AP courses are
 excluded from conversion chart enforcement.
-
-MiamiES Summative: total point value per quarter must equal 100. All other
-school levels: total point value per quarter must equal 200.
 
 ## Current data model
 
@@ -346,7 +343,7 @@ category.
 rows): Work Habits, Homework, Formative Mastery, Summative Mastery.
 
 **Scope**: `current_academic_year` only; Q3 and Q4 only (Q1/Q2 excluded — see
-[Q1/Q2 removal](#recent-change-q12-removal-may-2026)); sections with zero
+[Q1/Q2 removal](#recent-change-q1q2-removal-may-2026)); sections with zero
 enrolled students excluded (`sections_no_of_students != 0`).
 
 **Source table temporal scope**:
