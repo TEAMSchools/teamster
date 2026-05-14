@@ -776,16 +776,26 @@ value for student-grain flags). One exception join: temporary by
 
 ## Final extract: `rpt_tableau__gradebook_audit`
 
+**Design intent**: Every possible flag slot — whether or not a flag actually
+fired — must appear as a row so Tableau can compute a teacher health score
+(active errors / total possible checks). `teacher_aggs` produces that full set.
+The LEFT JOIN to `valid_flags` attaches student data and sets `flag_value = 1`
+when a flag fired; unmatched slots get `coalesce(v.flag_value, 0) = 0`. A fully
+compliant teacher appears with all-zero flags — contributing to the denominator
+without inflating their error count.
+
 **Two input CTEs** from `int_tableau__gradebook_audit_flags`:
 
-- `teacher_aggs` — groups by all non-flag fields; uses `max(audit_flag_value)`
-  to produce one 0/1 per flag per section × week. Adds `is_current_week` (true
-  if `current_date` falls in the week window).
+- `teacher_aggs` — groups every row (including non-fired flags) by all
+  non-metric fields; uses `max(audit_flag_value)` to produce one 0/1 per flag
+  per section × week. Computes `is_current_week` (true if `current_date` falls
+  within `week_start_monday` ... `week_end_sunday`).
 - `valid_flags` — filters `audit_flag_value = 1`; carries student-level
-  demographic and grade fields.
+  demographic and grade fields for rows where a flag actually fired.
 
-**Five-branch UNION ALL**: each branch LEFT JOINs `teacher_aggs` to
-`valid_flags`. The join key varies by flag type to avoid fan-out:
+**Five-branch UNION ALL**: each branch is `teacher_aggs LEFT JOIN valid_flags`
+(`teacher_aggs` is the preserved left side). The join key varies by flag type to
+avoid fan-out:
 
 | Branch | `cte_grouping` / `code_type`                                                      | Includes `teacher_assign_id` in join? | Includes `assignment_category_term`? |
 | ------ | --------------------------------------------------------------------------------- | ------------------------------------- | ------------------------------------ |
