@@ -126,10 +126,21 @@ with
      * overlay; that model is retained for subject context and the historic
      * Alchemer archive only. TODO: #3918.
      */
-    manager_subject_overlay as (
-        select distinct survey_id, survey_response_id, subject_df_employee_number,
+    -- trunk-ignore(sqlfluff/ST03): referenced via dbt_utils.deduplicate below
+    manager_overlay_source as (
+        select survey_id, survey_response_id, subject_df_employee_number,
         from {{ ref("int_surveys__manager_survey_details") }}
         where survey_response_id is not null
+    ),
+
+    manager_subject_overlay as (
+        {{
+            dbt_utils.deduplicate(
+                relation="manager_overlay_source",
+                partition_by="survey_id, survey_response_id",
+                order_by="subject_df_employee_number",
+            )
+        }}
     ),
 
     manager_submissions as (
