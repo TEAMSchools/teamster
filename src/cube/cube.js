@@ -40,6 +40,12 @@ module.exports = {
   }),
 
   contextToGroups: async ({ securityContext }) => {
+    // Service-account JWTs carry groups directly; skip Directory API.
+    const jwtGroups = securityContext?.groups;
+    if (Array.isArray(jwtGroups) && jwtGroups.length > 0) {
+      return jwtGroups.filter((g) => g.startsWith("cube-"));
+    }
+
     const email =
       securityContext?.email ??
       securityContext?.cubeCloud?.userAttributes?.email;
