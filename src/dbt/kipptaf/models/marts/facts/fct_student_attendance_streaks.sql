@@ -40,11 +40,3 @@ inner join
     and st.streak_start_date >= enr.entrydate
     and st.streak_start_date < enr.exitdate
     and {{ union_dataset_join_clause(left_alias="st", right_alias="enr") }}
-
--- TODO: overlapping enrollment records cause join fan-out;
--- qualify picks latest entrydate (#3633)
-qualify
-    row_number() over (
-        partition by st.streak_id, st._dbt_source_relation order by enr.entrydate desc
-    )
-    = 1

@@ -128,6 +128,20 @@ rows (one per district) with
 filters them via `where dcid >= 1`. Apply the same filter if reading a
 per-region source-system staging table directly.
 
+**`base_powerschool__course_enrollments` PowerSchool double-writes**: a frozen
+historical corpus of duplicate `cc` rows for the same
+`(student, section, dateleft)`, surfaced by a warn-level
+`dbt_utils.unique_combination_of_columns(studentid, sectionid, dateleft)` test
+on `stg_powerschool__cc`. Tracked in
+[#3900](https://github.com/TEAMSchools/teamster/issues/3900); Ops cleanup in
+[#3915](https://github.com/TEAMSchools/teamster/issues/3915). When date-range
+joining `base_powerschool__course_enrollments`, filter `is_dropped_section`
+first. Do not add defensive dedupes (`qualify row_number() = 1` or
+`dbt_utils.deduplicate()`) for the residual fan-out — downgrade the affected
+mart PK uniqueness test to `severity: warn` with a `TODO(#3915)` so it returns
+to error when source cleanup completes. `base_powerschool__student_enrollments`
+date-range joins currently need no tiebreaker.
+
 **`_dagster_partition_key` in SchoolMint Grow staging** is the Grow `archived`
 flag (`'f'` = not archived, `'t'` = archived). Most Grow staging models filter
 to `'f'`; `stg_schoolmint_grow__rubrics__measurement_groups__measurements` and

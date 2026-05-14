@@ -176,6 +176,17 @@ re-derive it from `_dbt_source_relation` per-call. This counts as an additive
 upstream edit under "Spec authoring context" and does not require a separate
 refactor PR.
 
+## Removing a mart-level `qualify row_number() = 1`
+
+Verify the upstream intermediate is unique on the qualify's partition key before
+removing — the qualify often masks an upstream PK collision (hashed ID
+duplicates), not a date-range overlap. "Same join shape as another mart" is not
+sufficient evidence.
+
+Net mart row-count delta is typically `+N` where N is the residual fan-out — not
+`-N`. Adding an upstream `where` filter alongside doesn't drop PKs; it changes
+which rows the surviving PK joins to.
+
 ## Verify source precision before R9 drops
 
 Staging cast chains (`cast(x as datetime)` → `cast(as date)`) and field names
