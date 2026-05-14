@@ -226,6 +226,7 @@ def test_meta_cache_corruption_deletes_cache_file_and_refetches(
 
     # Stub _request so we don't actually hit Cube.
     async def fake_request(*args: object, **kwargs: object) -> dict[str, Any]:
+        del args, kwargs  # signature matches _request; values unused
         return {"cubes": []}
 
     monkeypatch.setattr(server, "_request", fake_request)
