@@ -165,6 +165,14 @@ models:
         description: >-
           Semester code for the attendance date (e.g., S1, S2).
 
+      - name: enroll_status
+        data_type: int64
+        description: >-
+          PowerSchool enrollment status at the time of the attendance record. 0
+          = active; 2 = transferred out. Used to exclude transferred-out
+          students from chronic-absence metrics, matching the Tableau dashboard
+          methodology.
+
       - name: is_absent
         data_type: int64
         description: >-
@@ -211,10 +219,12 @@ models:
         data_type: boolean
         description: >-
           TRUE if the student's cumulative ADA at this school through this date
-          is at or below 90%. Computed as SUM(attendance_value) /
-          SUM(membership_value) partitioned by student × school × academic year,
-          ordered by date. Reflects point-in-time CA status — a student may be
-          chronically absent mid-year and recover later.
+          is at or below 90%. Computed as AVG(attendance_value) on full
+          membership days only (membership_value = 1), partitioned by student ×
+          school × academic year, ordered by date. Fractional membership days
+          (dual-enrolled students) are excluded, matching the methodology in
+          rpt_tableau__attendance_dashboard. Reflects point-in-time CA status —
+          a student may be chronically absent mid-year and recover later.
 
       - name: ada_tier
         data_type: string
@@ -223,3 +233,12 @@ models:
           = 95%+ ADA (on track). Tier 2 = 90–94% (at risk). Tier 3 = 80–89%
           (chronic). Tier 4 = below 80% (severe chronic). Partitioned by student
           × school × academic year, ordered by date.
+
+      - name: is_latest_record
+        data_type: boolean
+        description: >-
+          TRUE for the most recent attendance record within this student
+          enrollment. Use to query each student's latest CA status
+          (is_chronically_absent, ada_tier) without requiring a date filter —
+          equivalent to Tableau's MAX(calendardate) LOD approach. Future dates
+          are excluded at the mart level (calendardate <= current_date).

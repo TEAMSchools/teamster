@@ -1,7 +1,7 @@
 cubes:
   - name: attendance
     public: false
-    sql_table: zz_cristinabaldor_kipptaf_marts.fct_student_attendance_daily
+    sql_table: kipptaf_marts.fct_student_attendance_daily
 
     joins:
       - name: dim_dates
@@ -156,11 +156,22 @@ cubes:
         type: boolean
         public: true
 
+      - name: enroll_status
+        description: >-
+          PowerSchool enrollment status at the time of the attendance record. 0
+          = active; 2 = transferred out. Use to exclude transferred-out students
+          from chronic-absence metrics.
+        sql: enroll_status
+        type: number
+        public: true
+
       - name: is_chronically_absent
         description: >-
           TRUE if the student's cumulative ADA through this date is at or below
-          90%. Point-in-time — filter to a specific date or date range to see CA
-          status at that point in the year.
+          90%. Computed on full membership days only (membership_value = 1),
+          matching Tableau's AttendanceRollup methodology. Point-in-time —
+          filter to a specific date or date range to see CA status at that point
+          in the year.
         sql: is_chronically_absent
         type: boolean
         public: true
@@ -237,23 +248,37 @@ cubes:
         filters:
           - sql: "{CUBE}.membership_value > 0"
 
+      - name: _count_ca_eligible_students
+        description:
+          Denominator for CA rate — active students only (enroll_status != 2).
+        sql: student_enrollment_key
+        type: count_distinct
+        public: false
+        filters:
+          - sql: "{CUBE}.membership_value > 0"
+          - sql: "{CUBE}.enroll_status != 2"
+
       - name: count_chronically_absent
         description: >-
-          Students currently meeting the chronic absence threshold (cumulative
-          ADA ≤ 90%) across the filtered period. For a point-in-time snapshot,
-          filter to a single date.
+          Students meeting the chronic absence threshold (cumulative ADA ≤ 90%)
+          as of the filtered date, excluding transferred-out students
+          (enroll_status = 2). Filter to a specific date for a point-in-time
+          snapshot, or a date range to see CA across a period.
         sql: student_enrollment_key
         type: count_distinct
         public: true
         filters:
           - sql: "{CUBE}.is_chronically_absent = true"
           - sql: "{CUBE}.membership_value > 0"
+          - sql: "{CUBE}.enroll_status != 2"
 
       - name: pct_chronically_absent
         description: >-
-          Percentage of students meeting the chronic absence threshold. ADA ≤
-          90% cumulative through the filtered date.
-        sql: "1.0 * {count_chronically_absent} / NULLIF({count_students}, 0)"
+          Percentage of active students (enroll_status != 2) meeting the chronic
+          absence threshold (cumulative ADA ≤ 90%) as of the filtered date.
+        sql:
+          "1.0 * {count_chronically_absent} /
+          NULLIF({_count_ca_eligible_students}, 0)"
         type: number
         format: percent
         public: true

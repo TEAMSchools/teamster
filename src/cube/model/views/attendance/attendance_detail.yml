@@ -47,6 +47,7 @@ views:
           - is_suspended
           - is_truant
           - is_chronically_absent
+          - enroll_status
 
       - join_path: attendance.dim_dates
         prefix: true
@@ -181,6 +182,7 @@ views:
           members:
             - academic_year
             - semester
+            - enroll_status
 
     access_policy:
       - group: cube-access-student-data

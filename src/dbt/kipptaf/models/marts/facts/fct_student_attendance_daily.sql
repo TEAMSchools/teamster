@@ -82,6 +82,8 @@ with
 
             ada.student_number,
             ada.schoolid,
+
+            enr.enroll_status,
         from {{ ref("int_powerschool__ps_adaadm_daily_ctod") }} as ada
         inner join
             {{ ref("base_powerschool__student_enrollments") }} as enr
@@ -99,28 +101,19 @@ with
             on ada.schoolid = t.school_id
             and ada.term = t.code
             and ada.academic_year = t.academic_year
+        where ada.calendardate <= current_date('{{ var("local_timezone") }}')
     ),
 
     running as (
         select
             *,
 
-            sum(attendance_value) over (
+            avg(if(membership_value = 1, attendance_value, null)) over (
                 partition by student_number, schoolid, academic_year
                 order by date_key asc
                 rows between unbounded preceding and current row
-            ) as _running_att,
-
-            sum(membership_value) over (
-                partition by student_number, schoolid, academic_year
-                order by date_key asc
-                rows between unbounded preceding and current row
-            ) as _running_mem,
+            ) as _running_ada,
         from daily
-    ),
-
-    classified as (
-        select *, _running_att / nullif(_running_mem, 0) as _running_ada, from running
     )
 
 select
@@ -133,6 +126,7 @@ select
 
     academic_year,
     semester,
+    enroll_status,
 
     attendance_code,
     attendance_value,
@@ -161,4 +155,7 @@ select
         then 'Tier 3'
         else 'Tier 4'
     end as ada_tier,
-from classified
+
+    row_number() over (partition by student_enrollment_key order by date_key desc)
+    = 1 as is_latest_record,
+from running
