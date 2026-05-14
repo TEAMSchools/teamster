@@ -80,13 +80,12 @@ def _write_user_email(email: str) -> None:
 async def _get_user_email(ctx: Context) -> str:
     if AUTHKIT_DOMAIN:
         access_token = get_access_token()
-        email = getattr(access_token, "email", None) if access_token else None
-        if not isinstance(email, str) or not email:
-            raise MissingUserEmailError(
-                "cube MCP: OAuth bearer token missing or has no verified "
-                "`email` claim. Check the WorkOS AuthKit JWT template."
-            )
-        return email.strip()
+        if isinstance(access_token, CubeAccessToken) and access_token.email:
+            return access_token.email.strip()
+        raise MissingUserEmailError(
+            "cube MCP: OAuth bearer token missing or has no verified "
+            "`email` claim. Check the WorkOS AuthKit JWT template."
+        )
 
     env_override = os.environ.get("CUBE_USER_EMAIL", "").strip()
     if env_override:
@@ -104,6 +103,9 @@ async def _get_user_email(ctx: Context) -> str:
             ),
             schema=UserEmailPrompt,
         )
+    # VS Code extension and some Codespace MCP runtimes silently raise on
+    # elicit instead of returning a structured "unsupported" result. Broad
+    # catch is intentional; fall through to set_user_email instructions.
     except Exception as exc:
         raise MissingUserEmailError(
             "cube MCP has no user email configured. Call the `set_user_email` "
@@ -173,12 +175,7 @@ _fastmcp_kwargs: dict[str, Any] = {
     "host": "0.0.0.0",  # trunk-ignore(bandit/B104): intentional for Cloud Run
     "port": 8080,
 }
-if AUTHKIT_DOMAIN:
-    if not PUBLIC_URL:
-        raise RuntimeError(
-            "AUTHKIT_DOMAIN is set but PUBLIC_URL is not — the Cloud Run "
-            "service URL is required for the OAuth resource-server metadata."
-        )
+if AUTHKIT_DOMAIN and PUBLIC_URL:
     _fastmcp_kwargs["token_verifier"] = JWKSTokenVerifier(AUTHKIT_DOMAIN)
     _fastmcp_kwargs["auth"] = AuthSettings(
         issuer_url=f"https://{AUTHKIT_DOMAIN}",  # type: ignore[arg-type]
@@ -281,10 +278,13 @@ async def meta(ctx: Context, force_refresh: bool = False) -> dict[str, Any]:
     if not force_refresh and cache_path.exists():
         try:
             cached = json.loads(cache_path.read_text(encoding="utf-8"))
-            if int(cached.get("expires_at", 0)) > int(time.time()):
+            expires_at = int(cached.get("expires_at", 0))
+        except (json.JSONDecodeError, TypeError, ValueError):
+            # Corrupt cache file — drop it so subsequent runs don't keep failing.
+            cache_path.unlink(missing_ok=True)
+        else:
+            if expires_at > int(time.time()) and "payload" in cached:
                 return cached["payload"]
-        except (json.JSONDecodeError, KeyError, ValueError):
-            pass
     payload = await _request("GET", "/meta", email=email)
     cache_path.parent.mkdir(parents=True, exist_ok=True)
     cache_path.write_text(
@@ -341,6 +341,12 @@ def set_user_email(email: str) -> dict[str, str]:
 def main() -> None:
     transport = os.environ.get("TRANSPORT", "stdio")
     if transport == "http":
+        if AUTHKIT_DOMAIN and not PUBLIC_URL:
+            raise RuntimeError(
+                "AUTHKIT_DOMAIN is set but PUBLIC_URL is not — the Cloud "
+                "Run service URL is required for OAuth resource-server "
+                "metadata in HTTP mode."
+            )
         mcp.run(transport="streamable-http")
     else:
         mcp.run()

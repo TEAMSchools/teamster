@@ -102,13 +102,15 @@ def test_oauth_configured_when_AUTHKIT_DOMAIN_and_PUBLIC_URL_set(
     )
 
 
-def test_oauth_raises_when_AUTHKIT_DOMAIN_set_but_PUBLIC_URL_missing(
+def test_main_raises_in_http_mode_when_AUTHKIT_DOMAIN_set_but_PUBLIC_URL_missing(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     monkeypatch.setenv("AUTHKIT_DOMAIN", "kipp.authkit.app")
     monkeypatch.delenv("PUBLIC_URL", raising=False)
+    monkeypatch.setenv("TRANSPORT", "http")
+    server = _load_server(monkeypatch)
     with pytest.raises(RuntimeError, match="PUBLIC_URL"):
-        _load_server(monkeypatch)
+        server.main()
 
 
 def test_jwks_verifier_rejects_invalid_token(
