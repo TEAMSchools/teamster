@@ -16,13 +16,7 @@ models:
           - type: primary_key
             warn_unsupported: false
         data_tests:
-          # TODO(#3919): restore to error once kippmiami overlapping enrollments
-          # are cleaned up. Residual 301-row fanout comes from same-(studentid,
-          # yearid) enrollments whose date ranges overlap, not from streak_id
-          # collisions (those are fixed in this PR).
-          - unique:
-              config:
-                severity: warn
+          - unique
           - not_null
 
       - name: student_enrollment_key
