@@ -73,10 +73,11 @@ jobs:
             --region=${{ env.GCP_REGION }} \
             --service-account=cube-mcp-runtime@${{ env.GCP_PROJECT_ID }}.iam.gserviceaccount.com \
             --port=8080 \
-            --min-instances=0 \
-            --max-instances=10 \
+            --min-instances=1 \
+            --max-instances=1 \
             --memory=256Mi \
-            --cpu=0.25 \
+            --cpu=1 \
+            --concurrency=80 \
             --ingress=all \
             --allow-unauthenticated \
             --set-env-vars=TRANSPORT=http,CUBE_REST_URL=${{ vars.CUBE_REST_URL }},AUTHKIT_DOMAIN=${{ vars.AUTHKIT_DOMAIN }},PUBLIC_URL=${{ vars.PUBLIC_URL }} \
