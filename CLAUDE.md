@@ -81,11 +81,18 @@ file; domain specifics live in the nearest subdirectory CLAUDE.md.
   otherwise re-introduce familiar idioms (`dbt_utils.deduplicate`,
   `select distinct`, `qualify row_number()=1`).
 
+- **Subagent multi-step bail risk**: subagents can abandon multi-step tasks
+  partway through. Scope dispatches to one file / one commit; inspect the file
+  diff and `git log` before marking complete — don't trust the self-report.
+
 - **Git resuming**: Before resuming work on an existing branch, merge `main`:
   `git fetch origin main && git merge origin/main`.
 
 - **Pull requests**: Squash merge. Use `.github/pull_request_template.md` as the
   PR body.
+
+- **PR project linkage**: PRs auto-appear on project boards via issue refs
+  (`Refs #N`, `Closes #N`) in the body. Do NOT `gh project item-add` a PR.
 
 - **Python**: Always `uv run` — never bare `python`, `python3`, or
   venv-installed tools (`dbt`, `dagster`, etc.).
@@ -97,6 +104,10 @@ file; domain specifics live in the nearest subdirectory CLAUDE.md.
 - **Built-in tools over Bash**: Use dedicated tools for file I/O (Read, Grep,
   Glob, Edit, Write). Bash is only for commands with no dedicated tool (`git`,
   `uv run`, `gh`, `docker`, `trunk`, `ls`).
+
+- **Don't pipe `Bash(run_in_background=true)` output through
+  `head`/`tail`/`grep`**. The pipe truncates what reaches the output file —
+  defeats the purpose. Pipe the raw stream; filter with Read/Bash after.
 
 - **Verify tool-call results for resource creation/update**: syntax errors in
   structured tool-call parameters (malformed closing tags, misnested blocks) can
@@ -120,6 +131,13 @@ file; domain specifics live in the nearest subdirectory CLAUDE.md.
 
 - **Markdown**: Always specify a language on fenced code blocks (MD040). Use
   `text` only when no real language applies.
+
+- **Markdown headings**: increment by one level (markdownlint MD001). `#` title
+  goes directly to `##` — never jump to `###`.
+
+- **Nested triple-backticks in markdown**: when a fenced block contains a
+  heredoc with its own ``` examples, promote the outer fence to 4-backticks so
+  trunk-fmt doesn't mangle the structure.
 
 - **Claude CLI**: Not on `$PATH` — user must run `claude` commands in their
   terminal, not via Bash tool.
@@ -231,11 +249,11 @@ For run-internal timelines (steps, engine events, failures), use
 unit mismatch: GraphQL `creationTime/startTime/endTime` are float seconds;
 `get_run_logs` event `timestamp` is a millisecond string.
 
-GitHub MCP (`mcp__github__*`) is mandatory for any GitHub operation that has an
-MCP equivalent. Before running `gh <subcommand>` via Bash, check the
-`mcp__github__*` tool list — if a matching tool exists, use it.
-
-`gh` via Bash is permitted only when no MCP equivalent exists. Current cases:
+GitHub MCP (`mcp__github__*`) is the primary tool for every GitHub operation.
+The `gh`-via-Bash list below is an **exhaustive allowlist** — any `gh`
+subcommand not on it is forbidden via Bash. Before any GitHub operation, first
+identify the `mcp__github__*` tool that handles it; only if none exists, check
+the allowlist.
 
 - `gh issue develop` — linked branch creation; `mcp__github__create_branch` does
   not link branches to issues.
@@ -250,6 +268,8 @@ MCP equivalent. Before running `gh <subcommand>` via Bash, check the
 - `gh project item-add <PROJECT_NUMBER> --owner <OWNER> --url <ISSUE_URL>` —
   adds an issue/PR to a ProjectV2 board. No `mcp__github__*` equivalent. Combine
   with `gh project item-edit` to set fields after add.
+- `gh api graphql` ProjectV2 `items(first: N)` is capped at 100. Paginate with
+  `pageInfo.endCursor` for boards with >100 items.
 - `gh run *` — Actions run inspection/control; no MCP coverage.
 - `gh workflow *` — Actions workflow inspection/dispatch; no MCP coverage.
 - `gh repo edit` — repo settings; `gh repo create/view/list` have MCP
@@ -272,6 +292,10 @@ or mart `facts`/`dimensions`/`bridges`) —
 `kipptaf/people/int_people__location_crosswalk` (not `.../intermediate/...`) and
 `kipptaf/marts/fct_x` (not `kipptaf/facts/fct_x`).
 
+`get_asset_condition_evaluations` paginates with
+`cursor=<evaluationId of the oldest record returned>` — not a timestamp or
+opaque token.
+
 ### Dagster Cloud GraphQL (direct, not via MCP)
 
 Host is `kipptaf.dagster.cloud/<deployment>/graphql` (org is `kipptaf`).
@@ -286,7 +310,11 @@ check the `CodespacesRole` custom IAM role, not user IAM bindings.
 
 `mcp__gke__query_logs` uses snake_case keys in `time_range` (`start_time`,
 `end_time`), not camelCase. Results cap at 100 — paginate by using the last
-entry's timestamp as the next `start_time`.
+entry's timestamp as the next `start_time`. The LQL filter truncates
+`time_range` bounds to second precision, so sub-second offsets (e.g.
+`...:30.534Z`) are silently rounded down and refetch the same first page. To
+page past a sub-second boundary or fetch the tail of a traceback, fall back to
+`mcp__gcp-observability__list_log_entries` with `orderBy: "timestamp desc"`.
 
 `query_logs` format templates reject hyphens in dotted key paths
 (`{{.labels.k8s-pod/dagster/op}}` fails to parse). Use the Go template `index`
@@ -309,13 +337,35 @@ data. `list_time_series` `alignmentPeriod` must end with `s` (e.g., `"60s"` not
 Truncates results at 50 rows. When querying `INFORMATION_SCHEMA.COLUMNS` for
 wide tables, paginate with `WHERE ordinal_position > N`.
 
+Hyphenated identifiers in INFORMATION_SCHEMA paths need backticks — `region-us`
+as a bare token fails with "Syntax error: Expected end of input but got '-'".
+Write `` `teamster-332318`.`region-us`.INFORMATION_SCHEMA.TABLES ``.
+
+`bq` CLI fallback for shell contexts (Monitor poll loops): binary at
+`/usr/local/share/google-cloud-sdk/bin/bq`, `--project_id=teamster-332318`. Same
+SELECT-only constraints apply.
+
 Pre-merge queries against PR-branch schema use
-`dbt_cloud_pr_<ci_id>_<pr_num>_<schema>` — prod `<schema>` lacks unmerged
-renames.
+`dbt_cloud_pr_<job_definition_id>_<pr_num>_<schema>`. `<job_definition_id>` is
+the dbt Cloud CI job ID (stable across runs); read from
+`mcp__dbt__get_job_run_details(run_id)` step name
+`"Create profile from connection BigQuery (override schema to '...')"`. Prod
+`<schema>` lacks unmerged renames.
 
 Chained joins through PR-branch marts (mart-view → mart-view → upstream-view)
 hit BigQuery's 16-view nesting limit. Query materialized prod tables instead, or
 split the query.
+
+Two BQ query-shape failure modes (not interchangeable):
+
+- `exceeds the maximum allowed number of nested views` — chain depth >16.
+  Materialize a mid-chain model.
+- `Resources exceeded during query execution: Not enough resources for query planning - query is too complex`
+  — fan-out width, can fire well below 16. Materialize the fan-out point.
+
+`INFORMATION_SCHEMA.JOBS.referenced_tables` lists base tables reached via view
+expansion, NOT a directly-selected view. To find consumers of a view, filter by
+`REGEXP_CONTAINS(query, '<view_name>')`.
 
 For NULL-safe distinct counts on composite keys, use
 `count(distinct format("%T|%T", a, b))` — `concat()` returns NULL when any arg

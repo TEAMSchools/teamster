@@ -160,6 +160,10 @@ Intermediates may rename or transform columns (e.g. scaffold's
 `int_assessments__assessments.academic_year`); the consumer must re-join the
 source-of-truth model rather than trust the matching column name.
 
+Before swapping the input list of any `generate_surrogate_key()` on a dim/fact,
+grep every consumer that hashes the same composition and migrate producer + all
+consumers in one atomic commit.
+
 ## `_dbt_source_project` joins and hashes
 
 When a marts fix touches joins or surrogate-key composition involving
@@ -171,6 +175,17 @@ consumers should join and hash on the materialized `code_location` column, not
 re-derive it from `_dbt_source_relation` per-call. This counts as an additive
 upstream edit under "Spec authoring context" and does not require a separate
 refactor PR.
+
+## Removing a mart-level `qualify row_number() = 1`
+
+Verify the upstream intermediate is unique on the qualify's partition key before
+removing — the qualify often masks an upstream PK collision (hashed ID
+duplicates), not a date-range overlap. "Same join shape as another mart" is not
+sufficient evidence.
+
+Net mart row-count delta is typically `+N` where N is the residual fan-out — not
+`-N`. Adding an upstream `where` filter alongside doesn't drop PKs; it changes
+which rows the surviving PK joins to.
 
 ## Verify source precision before R9 drops
 

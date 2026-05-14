@@ -66,6 +66,13 @@ on GKE Autopilot.
   cross-zone but allows same-zone during capacity exhaustion (do not switch to
   `DoNotSchedule`, which would block agent rollouts when one zone is full).
 
+## 1Password Connect secret keys
+
+k8s Secret keys come from the 1Password field's internal name, not the UI label.
+Known re-mappings on SFTP items: `password` → `newPassword`, `host` → `url`.
+Verify before writing `secretKeyRef.key`:
+`kubectl -n dagster-cloud get secret <op-name> -o jsonpath='{.data}' | jq keys`.
+
 ## Security
 
 - **Security contexts** on workspace (`serverK8sConfig`) and run

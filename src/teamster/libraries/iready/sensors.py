@@ -58,7 +58,13 @@ def build_iready_sftp_sensor(
         run_requests = []
         cursor: dict = json.loads(context.cursor or "{}")
 
-        files = ssh_iready.listdir_attr_r(remote_dir=remote_dir_regex)
+        with (
+            ssh_iready.get_connection() as connection,
+            connection.open_sftp() as sftp_client,
+        ):
+            files = ssh_iready.listdir_attr_r(
+                sftp_client=sftp_client, remote_dir=remote_dir_regex
+            )
 
         for asset in asset_selection:
             asset_identifier = asset.key.to_python_identifier()

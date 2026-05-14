@@ -138,9 +138,15 @@ def build_sftp_file_asset(
             regexp=remote_file_regex, partition_key=partition_key
         )
 
-        files = ssh.listdir_attr_r(
-            remote_dir=remote_dir_regex_composed, exclude_dirs=exclude_dirs
-        )
+        with (
+            ssh.get_connection() as connection,
+            connection.open_sftp() as sftp_client,
+        ):
+            files = ssh.listdir_attr_r(
+                sftp_client=sftp_client,
+                remote_dir=remote_dir_regex_composed,
+                exclude_dirs=exclude_dirs,
+            )
 
         files.sort(key=lambda x: x[0].st_mtime or 0, reverse=True)
 
@@ -265,9 +271,15 @@ def build_sftp_archive_asset(
             regexp=remote_file_regex, partition_key=partition_key
         )
 
-        files = ssh.listdir_attr_r(
-            remote_dir=remote_dir_regex_composed, exclude_dirs=exclude_dirs
-        )
+        with (
+            ssh.get_connection() as connection,
+            connection.open_sftp() as sftp_client,
+        ):
+            files = ssh.listdir_attr_r(
+                sftp_client=sftp_client,
+                remote_dir=remote_dir_regex_composed,
+                exclude_dirs=exclude_dirs,
+            )
 
         file_matches = [
             path
@@ -417,9 +429,15 @@ def build_sftp_folder_asset(
             regexp=remote_file_regex, partition_key=partition_key
         )
 
-        files = ssh.listdir_attr_r(
-            remote_dir=remote_dir_regex_composed, exclude_dirs=exclude_dirs
-        )
+        with (
+            ssh.get_connection() as connection,
+            connection.open_sftp() as sftp_client,
+        ):
+            files = ssh.listdir_attr_r(
+                sftp_client=sftp_client,
+                remote_dir=remote_dir_regex_composed,
+                exclude_dirs=exclude_dirs,
+            )
 
         file_matches = [
             path
