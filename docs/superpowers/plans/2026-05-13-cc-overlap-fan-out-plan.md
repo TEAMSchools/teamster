@@ -650,7 +650,7 @@ Per
 
 - [ ] **Step 4: Open the PR**
 
-```bash
+````bash
 cd /workspaces/teamster/.worktrees/cbini/fix/claude-collapse-cc-overlap-fan-out && \
   gh pr create --base main --head cbini/fix/claude-collapse-cc-overlap-fan-out \
     --title "fix(dbt): collapse cc overlap fan-out in marts (#3900)" \
@@ -672,39 +672,39 @@ cd /workspaces/teamster/.worktrees/cbini/fix/claude-collapse-cc-overlap-fan-out 
 
 Run from this worktree:
 
-```
-
-uv run dbt build --select stg_powerschool\_\_cc fct_grades_assignments
-fct_student_attendance_daily fct_student_attendance_streaks --project-dir
-src/dbt/kipptaf
-
+```bash
+uv run dbt build --select stg_powerschool__cc fct_grades_assignments fct_student_attendance_daily fct_student_attendance_streaks --project-dir src/dbt/kipptaf
 ```
 
 Row counts (this branch vs. prod):
 
 - `fct_student_attendance_daily`: unchanged.
 - `fct_student_attendance_streaks`: unchanged.
-- `fct_grades_assignments`: drops by N rows (grade rows whose due-date fell in a dropped-section window).
+- `fct_grades_assignments`: drops by N rows (grade rows whose due-date fell in a
+  dropped-section window).
 
-Detailed design rationale: [docs/superpowers/specs/2026-05-13-cc-overlap-fan-out-design.md](docs/superpowers/specs/2026-05-13-cc-overlap-fan-out-design.md)
+Detailed design rationale:
+[docs/superpowers/specs/2026-05-13-cc-overlap-fan-out-design.md](docs/superpowers/specs/2026-05-13-cc-overlap-fan-out-design.md)
 
 ## Issue links
 
 - Closes #3900
 - Refs #3915 (PS source cleanup tracker filed for Ops)
-- Refs #3890 (umbrella: marts off legacy denormalized intermediates — this PR removes 3 of N `qualify row_number()` workarounds)
-- Refs #3901 (partial: the `#3633` portion is fully addressed here; `#3629` / `#3635` portions in survey-domain models remain open)
+- Refs #3890 (umbrella: marts off legacy denormalized intermediates — this PR
+  removes 3 of N `qualify row_number()` workarounds)
+- Refs #3901 (partial: the `#3633` portion is fully addressed here; `#3629` /
+  `#3635` portions in survey-domain models remain open)
 
 ## Test plan
 
 - [ ] dbt CI passes (with the expected warn-level test failures noted above)
-- [ ] Row counts in `fct_student_attendance_daily` and `fct_student_attendance_streaks` are unchanged vs. prod
+- [ ] Row counts in `fct_student_attendance_daily` and
+      `fct_student_attendance_streaks` are unchanged vs. prod
 - [ ] No regression in downstream models that read the three touched facts
 
-🤖 Generated with [Claude Code](https://claude.com/claude-code)
-EOF
-)"
-```
+🤖 Generated with [Claude Code](https://claude.com/claude-code) EOF )"
+
+````
 
 Backfill the actual row count and delta values into the body before posting if
 Task 7 captured them.
