@@ -337,6 +337,10 @@ data. `list_time_series` `alignmentPeriod` must end with `s` (e.g., `"60s"` not
 Truncates results at 50 rows. When querying `INFORMATION_SCHEMA.COLUMNS` for
 wide tables, paginate with `WHERE ordinal_position > N`.
 
+Hyphenated identifiers in INFORMATION_SCHEMA paths need backticks — `region-us`
+as a bare token fails with "Syntax error: Expected end of input but got '-'".
+Write `` `teamster-332318`.`region-us`.INFORMATION_SCHEMA.TABLES ``.
+
 `bq` CLI fallback for shell contexts (Monitor poll loops): binary at
 `/usr/local/share/google-cloud-sdk/bin/bq`, `--project_id=teamster-332318`. Same
 SELECT-only constraints apply.
