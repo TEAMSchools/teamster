@@ -148,6 +148,8 @@ mcp = FastMCP(
         "`WHERE (1=0)` in `sql` output usually means the requester lacks the "
         "required `cube-*` Workspace group, not a missing model."
     ),
+    host="0.0.0.0",  # trunk-ignore(bandit/B104): intentional for Cloud Run
+    port=8080,
 )
 client = httpx.Client(
     base_url=CUBE_REST_URL,
@@ -264,7 +266,7 @@ def set_user_email(email: str) -> dict[str, str]:
 def main() -> None:
     transport = os.environ.get("TRANSPORT", "stdio")
     if transport == "http":
-        mcp.run(transport="streamable-http", host="0.0.0.0", port=8080)
+        mcp.run(transport="streamable-http")
     else:
         mcp.run()
 
