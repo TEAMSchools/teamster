@@ -28,7 +28,7 @@ Output shape:
   "window": {"epoch": ..., "utc_start": "...Z", "utc_end": "...Z"},
   "step_01_failed_runs": {"failureCount": N, "failures": [...], "successCount": N, "canceledCount": N, "successRunIds": [...]},
   "step_02_retries":     {"retries": [{"parentRunId":..., "retryRunId":..., "retryStatus":"SUCCESS|FAILURE"}]},
-  "step_03_sensor_ticks":{"<location>": {"<sensor>": {"failureCount": N, "ticks": [...]}}},
+  "step_03_sensor_ticks":{"<location>": {"<sensor>": {"failureCount": N, "ticks": [{"tickId": "<str>", "timestamp": <float-seconds>, "error": "<str>", "errorChainTop": "<str>"}]}}},
   "step_04_freshness":   {"flaggedAssets": [...], "policyCount": N},
   "step_05_load_failures":{"loadFailures": [...]},
   "step_06_schedule_ticks":{"scheduleTickFailures": {"<loc>/<schedule>": [...]}},
@@ -202,7 +202,8 @@ succeeded after agent retries — those are noise from code server preemption.
 
 ### Emerging Issues
 
-{Omit if no error groups.}
+{Omit only if BOTH `inWindow` and `staleOpen` are empty. Always list `staleOpen`
+entries here — never in the timeline.}
 
 ### Actions
 
@@ -222,7 +223,9 @@ outages, agent errors → tick failures, daemon issues → tick/run impacts, ale
 runs and backfills if present.
 
 **Emerging issues**: Error groups not yet causing failures but increasing. Omit
-if none. For step 12, split the Emerging Issues section into two subsections:
+only when BOTH `inWindow` and `staleOpen` are empty — a staleOpen entry alone is
+still grounds to include the section. For step 12, split the Emerging Issues
+section into two subsections:
 
 - **In-window groups** (step 12 `inWindow`): groups that surfaced during the
   day-2 window. **First, check `category` + `correlatedPodEvent` (auto-resolved

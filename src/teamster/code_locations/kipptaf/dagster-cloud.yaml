@@ -210,6 +210,16 @@ locations:
                   secretKeyRef:
                     name: op-ldap-service-account
                     key: username
+              - name: LATTICE_SFTP_PASSWORD
+                valueFrom:
+                  secretKeyRef:
+                    name: op-lattice-sftp
+                    key: newPassword
+              - name: LATTICE_SFTP_USERNAME
+                valueFrom:
+                  secretKeyRef:
+                    name: op-lattice-sftp
+                    key: username
               - name: LITTLESIS_SFTP_PASSWORD
                 valueFrom:
                   secretKeyRef:
@@ -330,6 +340,11 @@ locations:
                   secretKeyRef:
                     name: op-ldap-service-account
                     key: port
+              - name: LATTICE_SFTP_HOST
+                valueFrom:
+                  secretKeyRef:
+                    name: op-lattice-sftp
+                    key: url
               - name: LITTLESIS_SFTP_HOST
                 valueFrom:
                   secretKeyRef:
@@ -568,6 +583,16 @@ locations:
                   secretKeyRef:
                     name: op-ldap-service-account
                     key: username
+              - name: LATTICE_SFTP_PASSWORD
+                valueFrom:
+                  secretKeyRef:
+                    name: op-lattice-sftp
+                    key: newPassword
+              - name: LATTICE_SFTP_USERNAME
+                valueFrom:
+                  secretKeyRef:
+                    name: op-lattice-sftp
+                    key: username
               - name: LITTLESIS_SFTP_PASSWORD
                 valueFrom:
                   secretKeyRef:
@@ -703,6 +728,11 @@ locations:
                   secretKeyRef:
                     name: op-ldap-service-account
                     key: port
+              - name: LATTICE_SFTP_HOST
+                valueFrom:
+                  secretKeyRef:
+                    name: op-lattice-sftp
+                    key: url
               - name: LITTLESIS_SFTP_HOST
                 valueFrom:
                   secretKeyRef:

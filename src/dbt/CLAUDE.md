@@ -86,6 +86,40 @@ Two inline patterns (see spec for details):
 - **Region source schema** (kipptaf `sources-kipp*` files only): prefixes for
   `dev` only (`defer` resolves to production)
 
+## kipptaf source consumers of district columns
+
+When adding a column or changing values (hash recomposition, restructure) in a
+district intermediate consumed by kipptaf via `source()`, ship in two PRs:
+district first, wait for Dagster to materialize prod, then kipptaf. The kipptaf
+source resolves to prod for `target=staging` (dbt Cloud CI), so coupling fails
+CI deterministically. Kipptaf-level test tightenings (e.g. restoring
+`severity: error` on a mart PK that depended on the upstream value change)
+belong in the follow-up PR.
+
+## dbt logs persist locally
+
+Every `dbt` invocation appends to `<project>/logs/dbt.log` (full output, not
+truncated). When a background build's captured output is incomplete, read that
+file before re-running the build.
+
+## `dbt ls --output json` stdout is mixed
+
+Stdout interleaves dbt log lines with JSON records. Pipe through `grep '^{'`
+before parsing.
+
+## Materialization overrides go in properties yml
+
+Use `config: materialized: <kind>` in `properties/<model>.yml`, not inline
+`{{ config(...) }}` in SQL. Create the yml if absent.
+
+## Table→view materialization conversion needs a drop
+
+`create or replace view` does not drop a pre-existing table at the same path —
+the conversion silently keeps serving the stale table. Ship table→view
+conversions with either an explicit
+`DROP TABLE IF EXISTS <project>.<dataset>.<model>` at deploy time, or run
+`dbt build --select <model> --full-refresh` once after merge.
+
 ## dbt Cloud CI state comparison
 
 `state:modified+` hashes every source node through `{{ target.name }}`
@@ -121,6 +155,10 @@ manifest". The prod manifest is refreshed by `.git/hooks/post-merge` on every
 - Pre-existing target relations are skipped unless `--full-refresh` is passed
   ([docs](https://docs.getdbt.com/reference/commands/clone)). Use the flag to
   recreate drifted defer copies.
+- From a worktree, pass `--profiles-dir src/dbt/<project>` (Dagster-shipped
+  profile, not `~/.dbt/profiles.yml`) and
+  `--state /workspaces/teamster/src/dbt/<project>/target/prod` (main repo's
+  manifest — skips a worktree-local parse).
 
 ## Stale dev tables shadow `--defer`
 
@@ -128,6 +166,10 @@ manifest". The prod manifest is refreshed by `.git/hooks/post-merge` on every
 dev parent dim produces false-positive `relationships` orphans. Before trusting
 a dev relationships warning on a FK, include the parent in `--select` or
 `dbt clone --select <parent_dim>` from prod.
+
+Same trap applies to mart PK `unique` tests — a stale dev parent fans out a
+date-range join. Query prod before filing upstream bugs or adding defensive
+dedupe from a dev mart-test failure.
 
 ## Column-rename refactors strand dependent prod views
 
@@ -153,15 +195,17 @@ change.
 
 A single integration may have both files under the same source `name:` — dbt
 merges at parse time. When both exist **in the same project**,
-`sources-bigquery.yml` may omit `schema:` (inherits from the external file).
-However, in **source-system packages** consumed by district projects, the
-cross-file schema merge does not bridge the package/consumer boundary — the
-consuming project's schema override won't reach the package-level BQ file. In
-that case, `sources-bigquery.yml` must include its own `schema:` (plain `var()`
-without target-conditional prefixes, since BQ-native tables are static
-production data). Never mix `external:` and non-external active tables in one
-file. Source-system projects place source files alongside or inside their model
-subdirectories, not at the top-level `models/` directory.
+`sources-bigquery.yml` may omit `schema:` ONLY for tables also declared in
+`sources-external.yml`. Tables declared only in the BQ file do NOT inherit and
+resolve to bare `<source_name>` (likely a non-existent dataset). However, in
+**source-system packages** consumed by district projects, the cross-file schema
+merge does not bridge the package/consumer boundary — the consuming project's
+schema override won't reach the package-level BQ file. In that case,
+`sources-bigquery.yml` must include its own `schema:` (plain `var()` without
+target-conditional prefixes, since BQ-native tables are static production data).
+Never mix `external:` and non-external active tables in one file. Source-system
+projects place source files alongside or inside their model subdirectories, not
+at the top-level `models/` directory.
 
 ### `{{ project_name }}` in source schemas
 
@@ -202,8 +246,8 @@ deployments. Developers use `.dbt/profiles.yml` for full target support.
 
 - **`job_retries`**: dbt-bigquery defaults to `1`, which doesn't absorb
   sustained transient 503s on `client.list_datasets()` at adapter init. Set
-  `job_retries: 3` on the `prod` output. Set on kipptaf; not on kippnewark,
-  kippcamden, kippmiami, kipppaterson.
+  `job_retries: 3` on the `prod` output. Set on all district profiles and
+  kipptaf.
 
 ## Model Conventions
 
@@ -268,6 +312,8 @@ data_tests:
   project default is `warn`, so staging tests without explicit `severity: error`
   silently degrade to warnings and won't fail CI. Intermediate/mart/`rpt_` tests
   may omit the override where a warning is acceptable.
+- Removing a `severity: warn` override reverts to project default (`warn`), not
+  `error`. To restore `error`, set `config: severity: error` explicitly.
 - Unscoped `+config` applies to tests from all installed packages, not just the
   current project
 
@@ -314,15 +360,6 @@ and cc.dateenrolled between enr.entrydate and enr.exitdate
 and enr.entrydate <= cc.dateenrolled
 and enr.exitdate > cc.dateenrolled
 ```
-
-### Enrollment join fan-out (known upstream issue)
-
-`base_powerschool__student_enrollments` and
-`base_powerschool__course_enrollments` have genuinely overlapping date ranges
-for some students at the same school/section (not just boundary overlaps).
-Half-open interval joins reduce but don't eliminate fan-out. When a date-range
-enrollment/CC join still produces duplicates, add a `qualify` tiebreaker picking
-the latest `entrydate` / `cc_dateenrolled`, with a `-- TODO: #3633` comment.
 
 ### Nullable surrogate keys
 
@@ -379,6 +416,13 @@ above the CTE.
 Jinja's implicit-string-concat across adjacent list elements — unreviewable, and
 a comma inserted between fragments silently changes the SQL. Derive the computed
 value as a named column in an upstream CTE, then hash that column.
+
+### Namespace UNION-ed `generate_surrogate_key` branches
+
+When two `generate_surrogate_key()` calls feed `UNION ALL` into one key column,
+prepend a branch-discriminator literal (`"'left'"` / `"'right'"`) as the first
+input. `generate_surrogate_key` stringifies inputs, so `'1'` (string) and `1`
+(int) collide when remaining inputs align.
 
 ### Canonical attributes from a partition
 
@@ -465,8 +509,11 @@ alias.
 - All new or modified models require `description:` on the model and every
   column. Profile staging data via BigQuery MCP; infer downstream from parents.
   Describe calculated fields by logic. Use qualitative language — no stats.
-- Columns with `data_tests:` should be sorted to the top of the `columns:` list
-  for visibility.
+- Columns with **per-column** `data_tests:` should be sorted to the top of the
+  `columns:` list for visibility. Model-level composite tests
+  (`dbt_utils.unique_combination_of_columns`, etc.) do not trigger this rule —
+  they go in the model-level `data_tests:` block ABOVE `columns:`, and their
+  referenced columns can stay in their natural / contract order.
 - Test placement by arity: single-column tests (`unique`, `not_null`, etc.) go
   on the column itself. Multi-column tests
   (`dbt_utils.unique_combination_of_columns`, etc.) go at model level in a
@@ -476,6 +523,9 @@ alias.
 - Data and column semantics — code values, identifier formats, join keys, grain
   notes — belong in the model's `description:` (or `config.meta`), not
   CLAUDE.md. CLAUDE.md is for workflow conventions and tooling guidance only.
+- YAML `description:` is for what/why a column or model computes. Don't put
+  TODOs, history, migration plumbing, or tracking-issue refs (`#3142`, etc.) in
+  descriptions — those go in inline SQL comments at the derivation site.
 
 ### Legacy `base_` prefix
 

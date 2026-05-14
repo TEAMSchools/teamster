@@ -5,7 +5,6 @@ and staleness evaluation logic shared across assets, schedules, and sensors.
 """
 
 import logging
-import sys
 from collections.abc import Callable, Generator, Sequence
 from contextlib import contextmanager
 from dataclasses import dataclass
@@ -25,6 +24,12 @@ from dagster import (
 from dagster_shared import check
 from dateutil.relativedelta import relativedelta
 from sqlalchemy import TextClause, text
+from tenacity import (
+    Retrying,
+    before_sleep_log,
+    stop_after_attempt,
+    wait_exponential_jitter,
+)
 
 from teamster.core.utils.classes import FiscalYearPartitionsDefinition
 from teamster.libraries.powerschool.sis.odbc.resources import PowerSchoolODBCResource
@@ -97,18 +102,15 @@ def with_powerschool_retry[_T](
     Returns:
         The return value of work_fn.
     """
-    for attempt in range(1, max_attempts + 1):
-        try:
+    for attempt in Retrying(
+        stop=stop_after_attempt(max_attempts),
+        wait=wait_exponential_jitter(initial=10, max=60),
+        before_sleep=before_sleep_log(log, logging.WARNING),
+        reraise=True,
+    ):
+        with attempt:
             with powerschool_connection(ssh_resource, db_resource, log) as conn:
                 return work_fn(conn)
-        except Exception:
-            if attempt == max_attempts:
-                raise
-            exc = sys.exc_info()[1]
-            log.warning(
-                f"PowerSchool attempt {attempt}/{max_attempts} failed, retrying: "
-                f"{type(exc).__name__}: {exc}"
-            )
 
     raise AssertionError("unreachable: max_attempts must be >= 1")
 

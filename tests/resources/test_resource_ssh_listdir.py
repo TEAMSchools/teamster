@@ -52,7 +52,7 @@ def test_min_mtime_filters_old_files():
     with build_resources(
         {"ssh": SSHResource(remote_host="fake-host", username="u", password="p")}
     ) as resources:
-        files = resources.ssh._inner_listdir_attr_r(
+        files = resources.ssh.listdir_attr_r(
             sftp_client=sftp,
             remote_dir=".",
             exclude_dirs=[],
@@ -76,7 +76,7 @@ def test_min_mtime_none_returns_all_files():
     with build_resources(
         {"ssh": SSHResource(remote_host="fake-host", username="u", password="p")}
     ) as resources:
-        files = resources.ssh._inner_listdir_attr_r(
+        files = resources.ssh.listdir_attr_r(
             sftp_client=sftp,
             remote_dir=".",
             exclude_dirs=[],
@@ -103,7 +103,7 @@ def test_dir_mtimes_skips_unchanged_subtree():
     ) as resources:
         # dir_mtimes says subdir was last seen at mtime=100 — unchanged, skip it
         dir_mtimes = {"subdir": 100}
-        files = resources.ssh._inner_listdir_attr_r(
+        files = resources.ssh.listdir_attr_r(
             sftp_client=sftp,
             remote_dir=".",
             exclude_dirs=[],
@@ -133,7 +133,7 @@ def test_dir_mtimes_traverses_changed_subtree():
     ) as resources:
         # dir_mtimes says subdir was last seen at mtime=100 — changed, traverse it
         dir_mtimes = {"subdir": 100}
-        files = resources.ssh._inner_listdir_attr_r(
+        files = resources.ssh.listdir_attr_r(
             sftp_client=sftp,
             remote_dir=".",
             exclude_dirs=[],
@@ -162,7 +162,7 @@ def test_dir_mtimes_traverses_unseen_directory():
     ) as resources:
         # empty dir_mtimes — newdir is unseen, must traverse
         dir_mtimes: dict[str, float] = {}
-        files = resources.ssh._inner_listdir_attr_r(
+        files = resources.ssh.listdir_attr_r(
             sftp_client=sftp,
             remote_dir=".",
             exclude_dirs=[],
@@ -187,7 +187,7 @@ def test_dir_mtimes_none_returns_list_only():
     with build_resources(
         {"ssh": SSHResource(remote_host="fake-host", username="u", password="p")}
     ) as resources:
-        result = resources.ssh._inner_listdir_attr_r(
+        result = resources.ssh.listdir_attr_r(
             sftp_client=sftp,
             remote_dir=".",
             exclude_dirs=[],

@@ -1,3 +1,17 @@
+/*
+ * NOTE (post-#3899): This model is retained for two purposes only:
+ *  - The subject-of-evaluation overlay (subject_df_employee_number and
+ *    subject staff columns), joined onto submissions_grain in
+ *    fct_survey_submissions.
+ *  - The historic Alchemer Manager archive (survey_id =
+ *    'historic_alchemer_Manager_survey'), sourced directly by
+ *    fct_survey_submissions and dim_survey_administrations.
+ *
+ * Manager Survey respondent identity (live Google Forms) now flows through
+ * int_surveys__survey_responses, not this model. Do not extend the
+ * Google-Forms arm here; add new logic to int_surveys__survey_responses
+ * or wait for the int_surveys__survey_submissions extraction (#3918).
+ */
 with
     response_identifiers as (
         select
