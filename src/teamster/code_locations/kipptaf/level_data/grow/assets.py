@@ -137,7 +137,7 @@ def grow_user_sync(
                 "course": u["course_id"],
             },
             "coach": u["coach_id"],
-            "roles": [u["role_id"]],
+            "roles": list(u["role_ids"]),
         }
 
         # reset request_args
@@ -231,7 +231,7 @@ def grow_user_sync(
             payload[key] = [
                 {"_id": u["user_id"], "name": u["user_name"]}
                 for u in school_users
-                if role_name == u["role_name"]
+                if role_name in u["role_names"]
             ]
 
         try:
