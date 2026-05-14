@@ -411,17 +411,69 @@ New page: `docs/guides/claude-cube-connector.md`.
 labels documented in the project CLAUDE.md (`Student A`, etc.). The page is
 registered in `mkdocs.yml` under **Guides**.
 
-## Section 10: Local stdio path — unchanged
+## Section 10: Data-team workflow — dogfood the remote service
 
-Data team continues running the MCP server via
-[scripts/cube-rest-mcp-launch.sh](../../../scripts/cube-rest-mcp-launch.sh) in
-Codespace. The launcher invokes `src/cube/mcp/server.py` at its new path;
-`TRANSPORT` and `AUTHKIT_DOMAIN` are not set, so the server runs stdio mode with
-the existing `CUBE_USER_EMAIL` resolution (env / cache / elicit).
+The data team switches their VS Code Codespace `.mcp.json` `cube` entry to point
+at the same Cloud Run service the directors use. The Claude Code VS Code
+extension's native remote-MCP+OAuth support is undocumented and has known bugs
+([anthropics/claude-code#46640](https://github.com/anthropics/claude-code/issues/46640)),
+so the bridge tool [`mcp-remote`](https://www.npmjs.com/package/mcp-remote) runs
+as a stdio adapter — the extension sees stdio (well supported), the remote
+service sees HTTP (well supported), and OAuth (DCR, browser flow, token refresh)
+is handled inside `mcp-remote`. The pattern is the same one Claude Desktop uses
+to reach remote MCP servers.
 
-The [scripts/CLAUDE.md](../../../scripts/CLAUDE.md) and
+Updated `.mcp.json` `cube` entry:
+
+```json
+{
+  "mcpServers": {
+    "cube": {
+      "command": "npx",
+      "args": ["-y", "mcp-remote", "https://<cloud-run-url>/mcp"]
+    }
+  }
+}
+```
+
+Benefits:
+
+- Per-user OAuth identity for the data team — same auth surface as directors.
+- Cube signing secret no longer fetched into every Codespace via 1Password.
+- New engineers don't need 1Password access to the Cube credential to query
+  Cube. They only need it if they're modifying the MCP server itself.
+- Tool description / instruction tuning ships via Cloud Run deploy; no
+  per-Codespace MCP restart required.
+- Dogfoods the same path directors are using — issues surface to engineers who
+  can fix them.
+
+### Smoke test required before rollout
+
+`mcp-remote`'s OAuth flow opens a browser with a `localhost:<port>` callback.
+Codespaces auto-forwards localhost ports, but this needs end-to-end verification
+before declaring it the official data-team path. Step 12 in the rollout sequence
+(Section 11) covers this.
+
+### Escape hatch — stdio mode for MCP-server development
+
+Stdio mode in `src/cube/mcp/server.py` is retained as a development mode for
+iterating on the MCP server itself (editing tool descriptions, adding tools,
+fixing bugs locally before deploy). The launcher
 [scripts/cube-rest-mcp-launch.sh](../../../scripts/cube-rest-mcp-launch.sh)
-references are updated to the new server path.
+stays in `scripts/`, updated to point at the new `src/cube/mcp/server.py` path.
+Behavior is unchanged from today: `TRANSPORT` and `AUTHKIT_DOMAIN` unset →
+server runs stdio with `CUBE_USER_EMAIL` resolution.
+
+### CLAUDE.md updates required
+
+- Project CLAUDE.md "MCP tool selection" section: drop the "VS Code extension
+  silently swallows elicit; call `set_user_email`" workaround — no longer
+  applies to the data-team path. Replace with a note that `cube` MCP is now
+  served from Cloud Run via `mcp-remote`; stdio mode (and `set_user_email`) is
+  documented as MCP-server-development-only.
+- [scripts/CLAUDE.md](../../../scripts/CLAUDE.md) script-catalog entry for
+  `cube-rest-mcp-launch.sh` reframed as "dev-mode launcher" rather than the
+  default cube MCP path.
 
 ## Section 11: Rollout sequence
 
@@ -443,3 +495,10 @@ references are updated to the new server path.
 9. Director-facing docs page drafted and published.
 10. Claude.ai Custom Connector created pointing at Cloud Run service URL.
 11. Smoke test with one director account before broader rollout.
+12. Data-team smoke test: one engineer switches their Codespace `.mcp.json` to
+    the `mcp-remote` bridge entry per Section 10 and verifies the Codespace
+    OAuth callback flow works end to end. If successful, document the switch in
+    the project CLAUDE.md and roll out to the rest of the data team. If the
+    Codespace callback flow fails, file an upstream issue against `mcp-remote`
+    or the VS Code extension and revert that engineer to stdio dev mode while
+    the Cloud Run path remains live for directors.
