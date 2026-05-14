@@ -49,6 +49,8 @@ passed it. `chunk()` from `core/utils/functions` returns `Iterator[list]`, not
 **Docstrings**: Follow the
 [Google Python Style Guide](https://google.github.io/styleguide/pyguide.html#38-comments-and-docstrings).
 API reference URLs go in the extended description, never the summary line.
+Multi-line docstrings are permitted under Google style — this overrides Claude's
+default "one short line max" rule.
 
 `ScheduleEvaluationContext.log` and `SensorEvaluationContext.log` return
 `logging.Logger`; `AssetExecutionContext.log` returns `DagsterLogManager`. Use
@@ -183,4 +185,6 @@ uv run dagster-dbt project prepare-and-package --file src/teamster/code_location
 ```
 
 `dagster definitions validate` may mislead locally — env vars unavailable in
-codespace cause false errors unrelated to production failures.
+codespace cause false errors unrelated to production failures. Fall back to
+`uv run python -c "import <module>"` for syntactic checks when validate fails on
+missing manifest or env vars.
