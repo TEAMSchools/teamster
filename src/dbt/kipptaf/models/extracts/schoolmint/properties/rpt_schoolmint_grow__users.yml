@@ -20,6 +20,9 @@ models:
       - name: user_internal_id
         data_type: int64
         description: ADP employee number. Sent as Grow `internalId`.
+        data_tests:
+          - unique
+          - not_null
       - name: user_name
         data_type: string
         description: Display name (`given_name || ' ' || family_name_1`).
