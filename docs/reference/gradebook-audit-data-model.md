@@ -784,6 +784,21 @@ when a flag fired; unmatched slots get `coalesce(v.flag_value, 0) = 0`. A fully
 compliant teacher appears with all-zero flags — contributing to the denominator
 without inflating their error count.
 
+!!! note "Flags excluded from the Tableau health score" Five flags are present
+in the extract but excluded from the gradebook completion rate in Tableau via a
+calculated field on `[Audit Flag Name]`:
+
+    - `qt_student_is_ada_80_plus_gpa_less_2`
+    - `w_grade_inflation`
+    - `qt_teacher_s_total_less_200`
+    - `assign_s_hs_score_not_conversion_chart_options`
+    - `assign_s_ms_score_not_conversion_chart_options`
+
+    These rows exist in the extract (with `flag_value = 0` or `1`) but do not
+    count against a teacher's completion rate in the workbook. Any future change
+    to this list must be made in Tableau — there is no corresponding filter in
+    the dbt model.
+
 **Two input CTEs** from `int_tableau__gradebook_audit_flags`:
 
 - `teacher_aggs` — groups every row (including non-fired flags) by all
