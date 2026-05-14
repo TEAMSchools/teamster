@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import asyncio
 import importlib.util
+import json
 import sys
 from pathlib import Path
 from types import ModuleType
@@ -207,3 +208,33 @@ def test_set_user_email_persists_valid_email(
         cache_path.read_text(encoding="utf-8").strip()
         == "engineer@apps.teamschools.org"
     )
+
+
+def test_meta_cache_corruption_deletes_cache_file_and_refetches(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    monkeypatch.setenv("CUBE_USER_EMAIL", "engineer@apps.teamschools.org")
+    monkeypatch.delenv("AUTHKIT_DOMAIN", raising=False)
+    monkeypatch.delenv("PUBLIC_URL", raising=False)
+    server = _load_server(monkeypatch)
+
+    # Point the meta cache at an isolated tmp dir.
+    monkeypatch.setattr(server, "META_CACHE_DIR", tmp_path)
+    cache_path = server._meta_cache_path("engineer@apps.teamschools.org")
+    cache_path.write_text("not-json-at-all", encoding="utf-8")
+    assert cache_path.exists()
+
+    # Stub _request so we don't actually hit Cube.
+    async def fake_request(*args: object, **kwargs: object) -> dict[str, Any]:
+        return {"cubes": []}
+
+    monkeypatch.setattr(server, "_request", fake_request)
+
+    ctx = MagicMock()
+    result = asyncio.run(server.meta(ctx))
+
+    assert result == {"cubes": []}
+    # Fresh cache was written (replacing the corrupt one).
+    assert cache_path.exists()
+    cached = json.loads(cache_path.read_text(encoding="utf-8"))
+    assert cached["payload"] == {"cubes": []}

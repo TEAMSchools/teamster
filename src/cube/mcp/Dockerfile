@@ -1,6 +1,6 @@
 # syntax=docker/dockerfile:1.7
 
-FROM python:3.13-slim AS base
+FROM python:3.13-slim
 
 # Build-time only: install uv to extract PEP 723 deps from server.py.
 RUN pip install --no-cache-dir uv==0.11.14
