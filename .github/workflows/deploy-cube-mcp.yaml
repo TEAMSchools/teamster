@@ -1,0 +1,81 @@
+# uses:
+# https://github.com/actions/checkout
+# https://github.com/docker/build-push-action
+# https://github.com/docker/setup-buildx-action
+# https://github.com/google-github-actions/auth
+# https://github.com/google-github-actions/setup-gcloud
+
+name: Cube MCP Cloud Run Deployment
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - src/cube/mcp/**
+      - .github/workflows/deploy-cube-mcp.yaml
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  GCP_PROJECT_ID: teamster-mcp
+  GCP_REGION: us-central1
+  SERVICE_NAME: cube-mcp
+  REGISTRY_IMAGE: us-central1-docker.pkg.dev/teamster-mcp/cube-mcp/cube-mcp
+
+permissions:
+  id-token: write
+  contents: read
+
+jobs:
+  deploy:
+    if: github.actor != 'dependabot[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Authenticate to Google Cloud
+        id: auth
+        uses: google-github-actions/auth@v3
+        with:
+          project_id: ${{ env.GCP_PROJECT_ID }}
+          workload_identity_provider: |
+            projects/${{ vars.GCP_PROJECT_NUMBER }}/locations/global/workloadIdentityPools/github/providers/teamster
+
+      - name: Set up Cloud SDK
+        uses: google-github-actions/setup-gcloud@v3
+
+      - name: Configure Docker for Artifact Registry
+        run: gcloud auth configure-docker ${{ env.GCP_REGION }}-docker.pkg.dev
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build and push image
+        uses: docker/build-push-action@v6
+        with:
+          context: src/cube/mcp
+          file: src/cube/mcp/Dockerfile
+          push: true
+          tags: ${{ env.REGISTRY_IMAGE }}:${{ github.sha }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Deploy to Cloud Run
+        run: |
+          gcloud run deploy ${{ env.SERVICE_NAME }} \
+            --image=${{ env.REGISTRY_IMAGE }}:${{ github.sha }} \
+            --project=${{ env.GCP_PROJECT_ID }} \
+            --region=${{ env.GCP_REGION }} \
+            --service-account=cube-mcp-runtime@${{ env.GCP_PROJECT_ID }}.iam.gserviceaccount.com \
+            --port=8080 \
+            --min-instances=0 \
+            --max-instances=10 \
+            --memory=256Mi \
+            --cpu=0.25 \
+            --ingress=all \
+            --allow-unauthenticated \
+            --set-env-vars=TRANSPORT=http,CUBE_REST_URL=${{ vars.CUBE_REST_URL }},AUTHKIT_DOMAIN=${{ vars.AUTHKIT_DOMAIN }},PUBLIC_URL=${{ vars.PUBLIC_URL }} \
+            --set-secrets=CUBE_API_SECRET=cube-api-secret:latest
