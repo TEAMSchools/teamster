@@ -79,6 +79,9 @@ Cloud Run service via `--set-secrets`).
   `dynamic_client_registration_disabled` until the toggle is on.
 - Google OAuth provider is under Authentication → Providers (Authentication →
   Connections is enterprise SSO).
+- MCP resource indicators (RFC 8707) live at Connect → Configuration → MCP
+  resource indicators. Add each MCP server's public URL there to bind issued
+  tokens to that resource.
 
 ## PII reminder
 

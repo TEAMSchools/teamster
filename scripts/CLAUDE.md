@@ -79,6 +79,10 @@ Pattern:
   prompt fires once per user. Allow `<UPPER>_OVERRIDE` env var to bypass.
 - Launcher (`<name>-mcp-launch.sh`) handles only the secret fetch via `op read`;
   non-secret config lives in `.mcp.json` `env:`.
+- **Containerizing a PEP 723 script**: install deps at Dockerfile build time via
+  `uv export --script foo.py --no-hashes > /tmp/requirements.txt && uv pip install --system --no-cache -r /tmp/requirements.txt`,
+  then `CMD ["python", "foo.py"]`. `CMD ["uv", "run", "foo.py"]` reinstalls on
+  every Cloud Run cold start. See `src/cube/mcp/Dockerfile`.
 
 ## Testing standalone PEP 723 scripts
 

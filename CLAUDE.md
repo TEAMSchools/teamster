@@ -154,6 +154,11 @@ file; domain specifics live in the nearest subdirectory CLAUDE.md.
   `gcloud auth application-default set-quota-project` fails when ADC is a
   service-account credential — use the gcloud config form instead.
 
+- **Cloud Build prereqs**: `gcloud builds submit` requires
+  `cloudbuild.googleapis.com` enabled, and the Cloud Build SA
+  (`<PROJECT_NUMBER>@cloudbuild.gserviceaccount.com`) needs
+  `roles/artifactregistry.writer` on the target project to push the built image.
+
 - **Docs**: "docs" means the `docs/` folder (MkDocs site), not CLAUDE.md files.
 
 ### PII reference
