@@ -42,10 +42,10 @@ select
 
     ae.athletic_eligibility,
 
-    ss.dcid is not null as is_summer_school_eligible,
-
     null as promo_status_qa_math,
     null as grades_y1_credits_enrolled,
+
+    ss.dcid is not null as is_summer_school_eligible,
 
     if(
         p.attendance_status = 'Off-Track',
