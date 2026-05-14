@@ -784,9 +784,10 @@ when a flag fired; unmatched slots get `coalesce(v.flag_value, 0) = 0`. A fully
 compliant teacher appears with all-zero flags — contributing to the denominator
 without inflating their error count.
 
-!!! note "Flags excluded from the Tableau health score" Five flags are present
-in the extract but excluded from the gradebook completion rate in Tableau via a
-calculated field on `[Audit Flag Name]`:
+!!! note "FYI Flags — excluded from the Tableau health score" Five flags are
+informational only ("FYI Flags"). They are present in the extract but excluded
+from the gradebook completion rate in Tableau via a calculated field on
+`[Audit Flag Name]`:
 
     - `qt_student_is_ada_80_plus_gpa_less_2`
     - `w_grade_inflation`
