@@ -27,6 +27,20 @@
 - `DAGSTER_CLOUD_API_TOKEN` is scoped to the `prerun` and `deploy` jobs only —
   do not move it to workflow-level `env`.
 
+## Workload Identity Federation
+
+WIF pool lives in `teamster-332318`. The `google-github-actions/auth@v3` step
+has no `service_account` field — direct WIF; the deploy identity is the WIF
+principal itself.
+
+- Attribute mapping includes `attribute.repository=assertion.repository`. Grants
+  target:
+  `principalSet://iam.googleapis.com/projects/<PROJECT_NUMBER>/locations/global/workloadIdentityPools/github/attribute.repository/TEAMSchools/teamster`
+- Cross-project IAM for Cloud Run deploys: grant `roles/run.admin`,
+  `roles/artifactregistry.writer`, `roles/iam.serviceAccountUser` to the
+  principalSet on the target project; also bind `serviceAccountUser` on the
+  runtime SA.
+
 ## Teams and CODEOWNERS
 
 | Team                  | Repo role | CODEOWNERS scope                                                              |
