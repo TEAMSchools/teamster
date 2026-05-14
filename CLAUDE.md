@@ -249,11 +249,11 @@ For run-internal timelines (steps, engine events, failures), use
 unit mismatch: GraphQL `creationTime/startTime/endTime` are float seconds;
 `get_run_logs` event `timestamp` is a millisecond string.
 
-GitHub MCP (`mcp__github__*`) is mandatory for any GitHub operation that has an
-MCP equivalent. Before running `gh <subcommand>` via Bash, check the
-`mcp__github__*` tool list — if a matching tool exists, use it.
-
-`gh` via Bash is permitted only when no MCP equivalent exists. Current cases:
+GitHub MCP (`mcp__github__*`) is the primary tool for every GitHub operation.
+The `gh`-via-Bash list below is an **exhaustive allowlist** — any `gh`
+subcommand not on it is forbidden via Bash. Before any GitHub operation, first
+identify the `mcp__github__*` tool that handles it; only if none exists, check
+the allowlist.
 
 - `gh issue develop` — linked branch creation; `mcp__github__create_branch` does
   not link branches to issues.
