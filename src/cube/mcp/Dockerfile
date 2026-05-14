@@ -2,14 +2,19 @@
 
 FROM python:3.13-slim AS base
 
-# Install uv (used to install PEP 723 inline deps at run time).
+# Build-time only: install uv to extract PEP 723 deps from server.py.
 RUN pip install --no-cache-dir uv==0.11.14
 
 WORKDIR /app
 COPY server.py /app/server.py
 
-# Cloud Run sets PORT; our server reads TRANSPORT and binds 8080 explicitly.
+# Extract PEP 723 inline deps from server.py and install to system Python.
+# Single source of truth: deps live in server.py's PEP 723 block; this just
+# replays them at build time so container start doesn't pay the install cost.
+RUN uv export --script /app/server.py --no-hashes > /tmp/requirements.txt \
+    && uv pip install --system --no-cache -r /tmp/requirements.txt \
+    && rm /tmp/requirements.txt
+
 EXPOSE 8080
 
-# Use uv run to honor the PEP 723 inline dependency block at the top of server.py.
-CMD ["uv", "run", "/app/server.py"]
+CMD ["python", "/app/server.py"]
