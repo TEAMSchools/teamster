@@ -9,12 +9,13 @@ select
 
     s.student_number,
 
-    initcap(regexp_extract(log._dbt_source_relation, r'kipp(\w+)_')) as region
+    initcap(regexp_extract(log._dbt_source_relation, r'kipp(\w+)_')) as region,
 from {{ ref("stg_powerschool__log") }} as `log`
 inner join
     {{ ref("stg_powerschool__gen") }} as gen
     on log.logtypeid = gen.id
     and gen.cat = 'logtype'
+    and {{ union_dataset_join_clause(left_alias="log", right_alias="gen") }}
 inner join
     {{ ref("stg_powerschool__students") }} as s
     on log.studentid = s.id
