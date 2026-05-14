@@ -1,4 +1,6 @@
 import pathlib
+from collections.abc import Iterator
+from typing import Any
 
 from dagster import (
     AssetCheckResult,
@@ -22,7 +24,11 @@ from teamster.code_locations.kipptaf.level_data.grow.schema import (
     OBSERVATION_SCHEMA,
 )
 from teamster.libraries.level_data.grow.assets import build_grow_asset
-from teamster.libraries.level_data.grow.resources import GrowResource
+from teamster.libraries.level_data.grow.resources import (
+    GrowAPIError,
+    GrowIncompleteResponseError,
+    GrowResource,
+)
 
 STATIC_PARTITONS_DEF = StaticPartitionsDefinition(["t", "f"])
 MULTI_PARTITIONS_DEF = MultiPartitionsDefinition(
@@ -76,31 +82,26 @@ observations = build_grow_asset(
 )
 def grow_user_sync(
     context: AssetExecutionContext, db_bigquery: BigQueryResource, grow: GrowResource
-):
-    """
-    query data
-    """
+) -> Iterator[Output | AssetCheckResult]:
+    # query data
     query = "select * from kipptaf_extracts.rpt_schoolmint_grow__users"
-    errors = []
+    errors: list[dict[str, Any]] = []
 
-    context.log.info(msg=query)
+    context.log.info(query)
     with db_bigquery.get_client() as bq:
         query_job = bq.query(query=query, project=db_bigquery.project)
 
     arrow = query_job.to_arrow()
 
-    context.log.info(msg=f"Retrieved {arrow.num_rows} rows")
+    context.log.info(f"Retrieved {arrow.num_rows} rows")
     users = arrow.to_pylist()
 
-    """
-    create/update users
-    """
+    # create/update users
     for u in users:
         if u["surrogate_key_source"] == u["surrogate_key_destination"]:
             continue
 
         method = None
-        # request_args = ["users"]
 
         user_id = u["user_id"]
         inactive = u["inactive"]
@@ -113,7 +114,7 @@ def grow_user_sync(
             try:
                 context.log.info(f"RESTORING\t{user_email}")
                 grow.put(*request_args, params={"district": grow.district_id})
-            except Exception as e:
+            except (GrowAPIError, GrowIncompleteResponseError) as e:
                 errors.append(
                     {
                         "method": "PUT",
@@ -125,7 +126,7 @@ def grow_user_sync(
                 continue
 
         # build user payload
-        payload = {
+        payload: dict[str, Any] = {
             "district": grow.district_id,
             "name": u["user_name"],
             "email": user_email,
@@ -137,10 +138,10 @@ def grow_user_sync(
                 "course": u["course_id"],
             },
             "coach": u["coach_id"],
-            "roles": [u["role_id"]],
+            "roles": list(u["role_ids"]),
         }
 
-        # reset request_args
+        # reset request_args after the restore branch may have mutated it
         request_args = ["users"]
 
         try:
@@ -166,7 +167,7 @@ def grow_user_sync(
                 request_args.append(user_id)
 
                 grow.delete(*request_args)
-        except Exception as e:
+        except (GrowAPIError, GrowIncompleteResponseError) as e:
             errors.append(
                 {
                     "method": method,
@@ -178,9 +179,7 @@ def grow_user_sync(
 
             continue
 
-    """
-    update school observation groups
-    """
+    # update school observation groups
     admin_roles = {
         "admins": "School Admin",
         "assistantAdmins": "School Assistant Admin",
@@ -193,7 +192,7 @@ def grow_user_sync(
 
         context.log.info(f"UPDATING\t{school['name']}")
 
-        payload: dict = {"district": grow.district_id}
+        payload: dict[str, Any] = {"district": grow.district_id}
 
         school_users = [
             u
@@ -211,12 +210,10 @@ def grow_user_sync(
         observees = [
             u["user_id"] for u in school_users if "observees" in u["group_type"]
         ]
-        observers = set(
-            [u["user_id"] for u in school_users if "observers" in u["group_type"]]
-        )
-        coaches = set(
-            [u["coach_id"] for u in school_users if u["coach_id"] is not None]
-        )
+        observers = {
+            u["user_id"] for u in school_users if "observers" in u["group_type"]
+        }
+        coaches = {u["coach_id"] for u in school_users if u["coach_id"] is not None}
 
         payload["observationGroups"] = [
             {
@@ -231,12 +228,12 @@ def grow_user_sync(
             payload[key] = [
                 {"_id": u["user_id"], "name": u["user_name"]}
                 for u in school_users
-                if role_name == u["role_name"]
+                if role_name in u["role_names"]
             ]
 
         try:
             grow.put("schools", school_id, json=payload)
-        except Exception as e:
+        except (GrowAPIError, GrowIncompleteResponseError) as e:
             errors.append(
                 {
                     "method": "PUT",
