@@ -16,12 +16,7 @@ models:
           - type: primary_key
             warn_unsupported: false
         data_tests:
-          # TODO(#3917): remove the warn override once int_powerschool__attendance_streak
-          # streak_id collisions are fixed upstream. CI surfaces ~305 dup rows
-          # (all Paterson, AY 2023-24). Restore to error when #3917 closes.
-          - unique:
-              config:
-                severity: warn
+          - unique
           - not_null
 
       - name: student_enrollment_key
