@@ -27,6 +27,7 @@ Tools:
   set_user_email  - cache the requester's email for the JWT security context
 """
 
+import asyncio
 import hashlib
 import json
 import os
@@ -221,14 +222,14 @@ mcp = FastMCP(
     ),
     **_fastmcp_kwargs,
 )
-client = httpx.Client(
+client = httpx.AsyncClient(
     base_url=CUBE_REST_URL,
     headers={"Content-Type": "application/json"},
     timeout=TIMEOUT_SECONDS,
 )
 
 
-def _request(
+async def _request(
     method: str,
     path: str,
     *,
@@ -238,14 +239,14 @@ def _request(
 ) -> dict[str, Any]:
     headers = {"Authorization": _mint_token(email)}
     for _ in range(CONTINUE_WAIT_MAX_RETRIES if poll else 1):
-        response = client.request(method, path, headers=headers, **kwargs)
+        response = await client.request(method, path, headers=headers, **kwargs)
         if response.status_code >= 400:
             raise RuntimeError(
                 f"Cube {method} {path} {response.status_code}: {response.text}"
             )
         body = response.json()
         if poll and isinstance(body, dict) and body.get("error") == "Continue wait":
-            time.sleep(CONTINUE_WAIT_SLEEP_SECONDS)
+            await asyncio.sleep(CONTINUE_WAIT_SLEEP_SECONDS)
             continue
         return body
     raise RuntimeError(
@@ -284,7 +285,7 @@ async def meta(ctx: Context, force_refresh: bool = False) -> dict[str, Any]:
                 return cached["payload"]
         except (json.JSONDecodeError, KeyError, ValueError):
             pass
-    payload = _request("GET", "/meta", email=email)
+    payload = await _request("GET", "/meta", email=email)
     cache_path.parent.mkdir(parents=True, exist_ok=True)
     cache_path.write_text(
         json.dumps({"expires_at": _next_midnight_et(), "payload": payload}),
@@ -304,7 +305,9 @@ async def load(query: dict[str, Any], ctx: Context) -> dict[str, Any]:
     Polls automatically on Cube's 'Continue wait' long-polling response.
     """
     email = await _get_user_email(ctx)
-    return _request("POST", "/load", json={"query": query}, email=email, poll=True)
+    return await _request(
+        "POST", "/load", json={"query": query}, email=email, poll=True
+    )
 
 
 @mcp.tool()
@@ -314,7 +317,9 @@ async def sql(query: dict[str, Any], ctx: Context) -> dict[str, Any]:
     Response is wrapped: {"sql": {"status", "sql": [query-string, [params]], "query_type"}}.
     """
     email = await _get_user_email(ctx)
-    return _request("GET", "/sql", params={"query": json.dumps(query)}, email=email)
+    return await _request(
+        "GET", "/sql", params={"query": json.dumps(query)}, email=email
+    )
 
 
 @mcp.tool()
