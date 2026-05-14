@@ -4,6 +4,9 @@ models:
       This table maintains the student schedules. It contains information such
       as Section ID, Student ID, Term ID and Teacher ID.
     data_tests:
+      # TODO(#3915): severity: warn intentional — 24 historical PS double-write
+      # groups (frozen corpus, AY <= 2023). Restore to error when Ops cleanup
+      # in #3915 completes.
       - dbt_utils.unique_combination_of_columns:
           arguments:
             combination_of_columns:
