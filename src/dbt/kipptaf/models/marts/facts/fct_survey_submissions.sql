@@ -126,6 +126,13 @@ with
      * overlay; that model is retained for subject context and the historic
      * Alchemer archive only. TODO: #3918.
      */
+    /*
+     * subject_df_employee_number is constant per (survey_id, survey_response_id)
+     * by source-model design — int_surveys__manager_survey_details carries one
+     * subject per submission and repeats it across question-grain rows. The
+     * order_by here is arbitrary among identical values; deduplicate's only
+     * job is the question-grain → submission-grain projection.
+     */
     -- trunk-ignore(sqlfluff/ST03): referenced via dbt_utils.deduplicate below
     manager_overlay_source as (
         select survey_id, survey_response_id, subject_df_employee_number,
