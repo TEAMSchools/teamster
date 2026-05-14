@@ -593,13 +593,33 @@ multi-year; scope is inherited from the student scaffold join.
 
 ### `int_tableau__gradebook_audit_assignments_teacher`
 
-One row per section × assignment × week. Joins the teacher category scaffold to
+One row per section × assignment × week. Joins the teacher category scaffold
+(`teacher_category_scaffold` variant) to
 `int_powerschool__gradebook_assignments` on
 `sections_dcid + category_name + duedate within week window`, then to
 `int_powerschool__gradebook_assignments_scores` aggregated by
 `assignmentsectionid`.
 
-**Class-level max-score flags** (`cte_grouping = 'class_category_assignment'`):
+**Source temporal scope**: all direct sources are multi-year
+(`int_powerschool__gradebook_assignments`,
+`int_powerschool__gradebook_assignments_scores`); scope is current-year-only via
+the teacher scaffold join.
+
+**Exception handling** — own exception join to
+`stg_google_sheets__gradebook_exceptions` (`view_name = 'assignments_teacher'`,
+`cte is null`, keyed by `course_number` and `is_quarter_end_date_range`). When
+an exception row matches, all aggregate rollup columns are set to `null`:
+`n_students`, `n_late`, `n_exempt`, `n_missing`, `n_academic_dishonesty`,
+`n_null`, `n_is_null_missing`, `n_is_null_not_missing`, `n_expected`,
+`n_expected_scored`, and
+`teacher_avg_score_for_assign_per_class_section_and_assign_id`. The
+`is_quarter_end_date_range` key in the exceptions sheet controls whether the
+suppression applies inside or outside the EOQ window — a common use is to
+suppress aggregate counts for a course during non-EOQ weeks. The max-score flags
+(`w/h/f_assign_max_score_not_10`, `s_max_score_greater_100`) are computed
+outside the exception and always fire regardless.
+
+**Class-level max-score flags**:
 
 | Flag                        | Fires when                                     |
 | --------------------------- | ---------------------------------------------- |
