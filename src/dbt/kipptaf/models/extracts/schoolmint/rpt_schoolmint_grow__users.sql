@@ -107,12 +107,26 @@ with
             >= '{{ var("current_academic_year") - 1 }}-07-01'
     ),
 
+    people_roles as (
+        select
+            p.user_internal_id,
+            array_agg(rn order by r.role_id) as role_names,
+            array_agg(r.role_id order by r.role_id) as role_ids,
+        from people as p
+        cross join unnest(p.role_names) as rn
+        inner join {{ ref("stg_schoolmint_grow__roles") }} as r on rn = r.name
+        group by p.user_internal_id
+    ),
+
     roster as (
         select
             p.user_internal_id,
             p.user_name,
             p.user_email,
             p.inactive,
+
+            pra.role_names,
+            pra.role_ids,
 
             sch.school_id,
 
@@ -132,20 +146,6 @@ with
             gr.tag_id as grade_id,
 
             array(
-                select rn
-                from unnest(p.role_names) as rn
-                inner join {{ ref("stg_schoolmint_grow__roles") }} as r on rn = r.name
-                order by r.role_id
-            ) as role_names,
-
-            array(
-                select r.role_id
-                from unnest(p.role_names) as rn
-                inner join {{ ref("stg_schoolmint_grow__roles") }} as r on rn = r.name
-                order by r.role_id
-            ) as role_ids,
-
-            array(
                 select role._id from unnest(u.roles) as role order by role._id
             ) as role_ids_ws,
 
@@ -162,6 +162,7 @@ with
                 else 'observees'
             end as group_type,
         from people as p
+        inner join people_roles as pra on p.user_internal_id = pra.user_internal_id
         inner join
             {{ ref("stg_schoolmint_grow__schools") }} as sch on p.school_name = sch.name
         left join
@@ -186,7 +187,6 @@ with
             array_to_string(role_ids, ',') as role_ids_hash,
             array_to_string(role_ids_ws, ',') as role_ids_ws_hash,
         from roster
-        where array_length(role_ids) >= 1
     ),
 
     surrogate_keys as (

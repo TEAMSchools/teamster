@@ -12,18 +12,11 @@ models:
     data_tests:
       - dbt_utils.expression_is_true:
           arguments:
+            expression: array_length(role_ids) >= 1
+      - dbt_utils.expression_is_true:
+          arguments:
             expression: array_length(role_ids) = array_length(role_names)
     columns:
-      - name: role_ids
-        data_type: array<string>
-        description: >
-          Grow role IDs the user should be assigned, ordered alphabetically by
-          role_id. Lines up positionally with `role_names`. Sent verbatim as the
-          `roles` array in the Grow API payload.
-        data_tests:
-          - dbt_utils.expression_is_true:
-              arguments:
-                expression: array_length(role_ids) >= 1
       - name: user_internal_id
         data_type: int64
         description: ADP employee number. Sent as Grow `internalId`.
@@ -49,6 +42,12 @@ models:
         description: >
           Grow school ID resolved from ADP home work location via
           `stg_schoolmint_grow__schools`.
+      - name: role_ids
+        data_type: array<string>
+        description: >
+          Grow role IDs the user should be assigned, ordered alphabetically by
+          role_id. Lines up positionally with `role_names`. Sent verbatim as the
+          `roles` array in the Grow API payload.
       - name: user_id
         data_type: string
         description: >
