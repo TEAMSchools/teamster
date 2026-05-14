@@ -206,3 +206,20 @@ models:
           Out-of-School Suspension, In-School Suspension, Absent, Tardy,
           Present. Use this column for GROUP BY in BI tools; use the raw
           attendance_code for specific-code drill-down.
+
+      - name: is_chronically_absent
+        data_type: boolean
+        description: >-
+          TRUE if the student's cumulative ADA at this school through this date
+          is at or below 90%. Computed as SUM(attendance_value) /
+          SUM(membership_value) partitioned by student × school × academic year,
+          ordered by date. Reflects point-in-time CA status — a student may be
+          chronically absent mid-year and recover later.
+
+      - name: ada_tier
+        data_type: string
+        description: >-
+          ADA tier based on cumulative attendance rate through this date. Tier 1
+          = 95%+ ADA (on track). Tier 2 = 90–94% (at risk). Tier 3 = 80–89%
+          (chronic). Tier 4 = below 80% (severe chronic). Partitioned by student
+          × school × academic year, ordered by date.

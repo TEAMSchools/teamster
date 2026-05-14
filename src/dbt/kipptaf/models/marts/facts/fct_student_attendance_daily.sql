@@ -18,80 +18,147 @@ with
                 )
             }} as term_key,
         from {{ ref("stg_google_sheets__reporting__terms") }} as t
+    ),
+
+    daily as (
+        select
+            {{
+                dbt_utils.generate_surrogate_key(
+                    [
+                        "ada.student_number",
+                        "ada._dbt_source_relation",
+                        "ada.calendardate",
+                    ]
+                )
+            }} as student_attendance_daily_key,
+
+            {{
+                dbt_utils.generate_surrogate_key(
+                    [
+                        "enr.student_number",
+                        "enr._dbt_source_relation",
+                        "enr.academic_year",
+                        "enr.entrydate",
+                    ]
+                )
+            }} as student_enrollment_key,
+
+            ada.calendardate as date_key,
+
+            sch.location_key,
+
+            t.term_key,
+
+            ada.academic_year,
+
+            ada.att_code as attendance_code,
+            ada.attendancevalue as attendance_value,
+            ada.membershipvalue as membership_value,
+
+            ada.is_present_weighted as present_weight,
+
+            ada.is_truant,
+
+            ada.semester,
+
+            cast(ada.is_absent as int64) as is_absent,
+            cast(ada.is_tardy as int64) as is_tardy,
+            cast(ada.is_ontime as int64) as is_ontime,
+            cast(ada.is_oss as int64) as is_oss,
+            cast(ada.is_iss as int64) as is_iss,
+            cast(ada.is_suspended as int64) as is_suspended,
+
+            case
+                when ada.is_oss = 1
+                then 'Out-of-School Suspension'
+                when ada.is_iss = 1
+                then 'In-School Suspension'
+                when ada.is_absent = 1
+                then 'Absent'
+                when ada.is_tardy = 1
+                then 'Tardy'
+                else 'Present'
+            end as attendance_category,
+
+            ada.student_number,
+            ada.schoolid,
+        from {{ ref("int_powerschool__ps_adaadm_daily_ctod") }} as ada
+        inner join
+            {{ ref("base_powerschool__student_enrollments") }} as enr
+            on ada.studentid = enr.studentid
+            and ada.schoolid = enr.schoolid
+            and ada.calendardate >= enr.entrydate
+            and ada.calendardate < enr.exitdate
+            and {{ union_dataset_join_clause(left_alias="ada", right_alias="enr") }}
+        left join
+            {{ ref("stg_powerschool__schools") }} as sch
+            on ada.schoolid = sch.school_number
+            and {{ union_dataset_join_clause(left_alias="ada", right_alias="sch") }}
+        left join
+            terms as t
+            on ada.schoolid = t.school_id
+            and ada.term = t.code
+            and ada.academic_year = t.academic_year
+    ),
+
+    running as (
+        select
+            *,
+
+            sum(attendance_value) over (
+                partition by student_number, schoolid, academic_year
+                order by date_key asc
+                rows between unbounded preceding and current row
+            ) as _running_att,
+
+            sum(membership_value) over (
+                partition by student_number, schoolid, academic_year
+                order by date_key asc
+                rows between unbounded preceding and current row
+            ) as _running_mem,
+        from daily
+    ),
+
+    classified as (
+        select *, _running_att / nullif(_running_mem, 0) as _running_ada, from running
     )
 
 select
-    {{
-        dbt_utils.generate_surrogate_key(
-            [
-                "ada.student_number",
-                "ada._dbt_source_relation",
-                "ada.calendardate",
-            ]
-        )
-    }} as student_attendance_daily_key,
+    student_attendance_daily_key,
+    student_enrollment_key,
 
-    {{
-        dbt_utils.generate_surrogate_key(
-            [
-                "enr.student_number",
-                "enr._dbt_source_relation",
-                "enr.academic_year",
-                "enr.entrydate",
-            ]
-        )
-    }} as student_enrollment_key,
+    date_key,
+    location_key,
+    term_key,
 
-    ada.calendardate as date_key,
+    academic_year,
+    semester,
 
-    sch.location_key,
+    attendance_code,
+    attendance_value,
+    membership_value,
+    present_weight,
 
-    t.term_key,
+    is_truant,
 
-    ada.academic_year,
+    is_absent,
+    is_tardy,
+    is_ontime,
+    is_oss,
+    is_iss,
+    is_suspended,
 
-    ada.att_code as attendance_code,
-    ada.attendancevalue as attendance_value,
-    ada.membershipvalue as membership_value,
+    attendance_category,
 
-    ada.is_present_weighted as present_weight,
-
-    ada.is_truant,
-
-    ada.semester,
-
-    cast(ada.is_absent as int64) as is_absent,
-    cast(ada.is_tardy as int64) as is_tardy,
-    cast(ada.is_ontime as int64) as is_ontime,
-    cast(ada.is_oss as int64) as is_oss,
-    cast(ada.is_iss as int64) as is_iss,
-    cast(ada.is_suspended as int64) as is_suspended,
+    if(_running_ada <= 0.90, true, false) as is_chronically_absent,
 
     case
-        when ada.is_oss = 1
-        then 'Out-of-School Suspension'
-        when ada.is_iss = 1
-        then 'In-School Suspension'
-        when ada.is_absent = 1
-        then 'Absent'
-        when ada.is_tardy = 1
-        then 'Tardy'
-        else 'Present'
-    end as attendance_category,
-from {{ ref("int_powerschool__ps_adaadm_daily_ctod") }} as ada
-inner join
-    {{ ref("base_powerschool__student_enrollments") }} as enr
-    on ada.studentid = enr.studentid
-    and ada.schoolid = enr.schoolid
-    and ada.calendardate >= enr.entrydate
-    and ada.calendardate < enr.exitdate
-    and {{ union_dataset_join_clause(left_alias="ada", right_alias="enr") }}
-left join
-    {{ ref("stg_powerschool__schools") }} as sch
-    on ada.schoolid = sch.school_number
-    and {{ union_dataset_join_clause(left_alias="ada", right_alias="sch") }}
-left join
-    terms as t
-    on ada.schoolid = t.school_id
-    and ada.term = t.code
-    and ada.academic_year = t.academic_year
+        when _running_ada >= 0.95
+        then 'Tier 1'
+        when _running_ada >= 0.90
+        then 'Tier 2'
+        when _running_ada >= 0.80
+        then 'Tier 3'
+        else 'Tier 4'
+    end as ada_tier,
+from classified

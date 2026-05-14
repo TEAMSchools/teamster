@@ -27,11 +27,15 @@ views:
           - pct_tardy
           - count_truants
           - pct_truant
+          - count_absent_days
+          - count_chronically_absent
+          - pct_chronically_absent
           - attendance_date
           - academic_year
           - semester
           - attendance_code
           - attendance_category
+          - ada_tier
           - attendance_value
           - membership_value
           - present_weight
@@ -42,6 +46,7 @@ views:
           - is_iss
           - is_suspended
           - is_truant
+          - is_chronically_absent
 
       - join_path: attendance.dim_dates
         prefix: true
@@ -112,6 +117,7 @@ views:
           members:
             - attendance_code
             - attendance_category
+            - ada_tier
             - attendance_value
             - membership_value
             - present_weight
@@ -122,6 +128,7 @@ views:
             - is_iss
             - is_suspended
             - is_truant
+            - is_chronically_absent
         - name: Date
           members:
             - attendance_date

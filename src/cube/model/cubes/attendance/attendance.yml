@@ -156,6 +156,24 @@ cubes:
         type: boolean
         public: true
 
+      - name: is_chronically_absent
+        description: >-
+          TRUE if the student's cumulative ADA through this date is at or below
+          90%. Point-in-time — filter to a specific date or date range to see CA
+          status at that point in the year.
+        sql: is_chronically_absent
+        type: boolean
+        public: true
+
+      - name: ada_tier
+        description: >-
+          ADA tier based on cumulative attendance rate through this date. Tier 1
+          = 95%+ (on track). Tier 2 = 90–94% (at risk). Tier 3 = 80–89%
+          (chronic). Tier 4 = below 80% (severe chronic).
+        sql: ada_tier
+        type: string
+        public: true
+
     measures:
       - name: count_students
         sql: student_enrollment_key
@@ -206,6 +224,36 @@ cubes:
       - name: pct_truant
         description: Percentage of students meeting truancy criteria
         sql: "1.0 * {count_truants} / NULLIF({count_students}, 0)"
+        type: number
+        format: percent
+        public: true
+
+      - name: count_absent_days
+        description:
+          Total number of absence days (sum of is_absent on membership days).
+        sql: is_absent
+        type: sum
+        public: true
+        filters:
+          - sql: "{CUBE}.membership_value > 0"
+
+      - name: count_chronically_absent
+        description: >-
+          Students currently meeting the chronic absence threshold (cumulative
+          ADA ≤ 90%) across the filtered period. For a point-in-time snapshot,
+          filter to a single date.
+        sql: student_enrollment_key
+        type: count_distinct
+        public: true
+        filters:
+          - sql: "{CUBE}.is_chronically_absent = true"
+          - sql: "{CUBE}.membership_value > 0"
+
+      - name: pct_chronically_absent
+        description: >-
+          Percentage of students meeting the chronic absence threshold. ADA ≤
+          90% cumulative through the filtered date.
+        sql: "1.0 * {count_chronically_absent} / NULLIF({count_students}, 0)"
         type: number
         format: percent
         public: true
