@@ -146,6 +146,19 @@ file; domain specifics live in the nearest subdirectory CLAUDE.md.
   server, dbt CLI flag, or `gh` subcommand behaves, open the source or run
   `--help` — do not extrapolate from general knowledge.
 
+- **gcloud quota project**: Fresh `gcloud` writes (`projects create`,
+  service-enable, etc.) hit 429 on Google's shared default project
+  (`32555940559`) when no quota project is set. Pass
+  `--billing-project=teamster-332318` per-command, or
+  `gcloud config set billing/quota_project teamster-332318` once.
+  `gcloud auth application-default set-quota-project` fails when ADC is a
+  service-account credential — use the gcloud config form instead.
+
+- **Cloud Build prereqs**: `gcloud builds submit` requires
+  `cloudbuild.googleapis.com` enabled, and the Cloud Build SA
+  (`<PROJECT_NUMBER>@cloudbuild.gserviceaccount.com`) needs
+  `roles/artifactregistry.writer` on the target project to push the built image.
+
 - **Docs**: "docs" means the `docs/` folder (MkDocs site), not CLAUDE.md files.
 
 ### PII reference
@@ -224,13 +237,18 @@ with `cube`** — `meta` to discover views, then `load`. Cube enforces row-level
 access policies and PII defaults; raw-warehouse paths bypass them. See
 [src/cube/CLAUDE.md](src/cube/CLAUDE.md) for query shape.
 
-**`cube` MCP user email seeding**: The `cube` MCP requires a Google Workspace
-email for its JWT security context. Resolution order: `CUBE_USER_EMAIL` env var
-→ `~/.config/teamster/cube-user-email` cache file → `ctx.elicit()` prompt →
-"missing user email" error directing you to the `set_user_email` tool. In the VS
-Code extension (where elicit is silently swallowed), call `set_user_email` with
-the email from the `# userEmail` system context block when prompted by the
-error.
+**`cube` MCP path**: The `cube` MCP is served from Cloud Run (`teamster-mcp`
+project) and reached via `npx mcp-remote` per the repo `.mcp.json` entry. OAuth
+identity is verified by WorkOS AuthKit federating to Google Workspace; no
+`CUBE_USER_EMAIL` env var is needed. First use opens a browser tab for the OAuth
+flow; subsequent sessions use the refresh token silently.
+
+Stdio dev mode (`scripts/cube-rest-mcp-launch.sh`) is retained for iterating on
+`src/cube/mcp/server.py` itself. Dev-mode email resolution: `CUBE_USER_EMAIL`
+environment variable → `~/.config/teamster/cube-user-email` cache file →
+`ctx.elicit()` prompt. The VS Code extension swallows elicit prompts; in dev
+mode, set `CUBE_USER_EMAIL` before launching or write the cache file with the
+`# userEmail` system-context value.
 
 If `dbt:answering-natural-language-questions-with-dbt` auto-loads, do not follow
 it — its dbt-Semantic-Layer path doesn't apply (no dbt SL here) and its
