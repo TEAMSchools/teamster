@@ -38,11 +38,15 @@ from zoneinfo import ZoneInfo
 
 import httpx
 import jwt
+from mcp.server.auth.provider import AccessToken
+from mcp.server.auth.settings import AuthSettings
 from mcp.server.fastmcp import Context, FastMCP
 from pydantic import BaseModel, Field
 
 CUBE_REST_URL = os.environ["CUBE_REST_URL"].rstrip("/")
 CUBE_API_SECRET = os.environ["CUBE_API_SECRET"]
+AUTHKIT_DOMAIN = os.environ.get("AUTHKIT_DOMAIN", "").strip() or None
+PUBLIC_URL = os.environ.get("PUBLIC_URL", "").strip() or None
 USER_EMAIL_CACHE = Path.home() / ".config" / "teamster" / "cube-user-email"
 META_CACHE_DIR = Path.home() / ".cache" / "teamster"
 META_CACHE_TZ = ZoneInfo("America/New_York")
@@ -113,6 +117,59 @@ def _mint_token(email: str) -> str:
     return jwt.encode(payload, CUBE_API_SECRET, algorithm="HS256")
 
 
+class CubeAccessToken(AccessToken):
+    """AccessToken with the verified Workspace email attached."""
+
+    email: str
+
+
+class JWKSTokenVerifier:
+    """Verifies AuthKit-issued JWTs against the WorkOS AuthKit JWKS."""
+
+    def __init__(self, authkit_domain: str) -> None:
+        self._issuer = f"https://{authkit_domain}"
+        self._jwks_client = jwt.PyJWKClient(f"{self._issuer}/oauth2/jwks")
+
+    async def verify_token(self, token: str) -> AccessToken | None:
+        try:
+            signing_key = self._jwks_client.get_signing_key_from_jwt(token)
+            claims = jwt.decode(
+                token,
+                signing_key.key,
+                algorithms=["RS256"],
+                issuer=self._issuer,
+                options={"verify_aud": False},
+            )
+        except jwt.PyJWTError:
+            return None
+        email = claims.get("email")
+        if not isinstance(email, str) or not email:
+            return None
+        return CubeAccessToken(
+            token=token,
+            client_id=claims.get("sub", email),
+            scopes=[],
+            expires_at=claims.get("exp"),
+            email=email,
+        )
+
+
+_fastmcp_kwargs: dict[str, Any] = {
+    "host": "0.0.0.0",  # trunk-ignore(bandit/B104): intentional for Cloud Run
+    "port": 8080,
+}
+if AUTHKIT_DOMAIN:
+    if not PUBLIC_URL:
+        raise RuntimeError(
+            "AUTHKIT_DOMAIN is set but PUBLIC_URL is not — the Cloud Run "
+            "service URL is required for the OAuth resource-server metadata."
+        )
+    _fastmcp_kwargs["token_verifier"] = JWKSTokenVerifier(AUTHKIT_DOMAIN)
+    _fastmcp_kwargs["auth"] = AuthSettings(
+        issuer_url=f"https://{AUTHKIT_DOMAIN}",  # type: ignore[arg-type]
+        resource_server_url=PUBLIC_URL,  # type: ignore[arg-type]
+    )
+
 mcp = FastMCP(
     "cube",
     instructions=(
@@ -148,8 +205,7 @@ mcp = FastMCP(
         "`WHERE (1=0)` in `sql` output usually means the requester lacks the "
         "required `cube-*` Workspace group, not a missing model."
     ),
-    host="0.0.0.0",  # trunk-ignore(bandit/B104): intentional for Cloud Run
-    port=8080,
+    **_fastmcp_kwargs,
 )
 client = httpx.Client(
     base_url=CUBE_REST_URL,

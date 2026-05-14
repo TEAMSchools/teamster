@@ -15,8 +15,10 @@ def _load_server(monkeypatch: pytest.MonkeyPatch) -> ModuleType:
     """Load src/cube/mcp/server.py under sys.modules['cube_mcp_server'].
 
     The script reads CUBE_REST_URL and CUBE_API_SECRET at import time, so we
-    set placeholders before exec_module.
+    set placeholders before exec_module. Always evicts any cached module first
+    so monkeypatched env vars are re-read.
     """
+    sys.modules.pop("cube_mcp_server", None)
     monkeypatch.setenv("CUBE_REST_URL", "https://example.invalid/cubejs-api/v1")
     monkeypatch.setenv("CUBE_API_SECRET", "test-secret-not-used")
     spec = importlib.util.spec_from_file_location("cube_mcp_server", SCRIPT_PATH)
@@ -56,9 +58,9 @@ def test_run_dispatches_to_stdio_by_default(
 def test_run_dispatches_to_streamable_http_when_TRANSPORT_http(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
+    monkeypatch.delenv("AUTHKIT_DOMAIN", raising=False)
     server = _load_server(monkeypatch)
     monkeypatch.setenv("TRANSPORT", "http")
-    monkeypatch.delenv("AUTHKIT_DOMAIN", raising=False)
     called_with: dict[str, Any] = {}
 
     def fake_run(*args: object, **kwargs: object) -> None:
@@ -70,3 +72,51 @@ def test_run_dispatches_to_streamable_http_when_TRANSPORT_http(
     assert called_with["kwargs"] == {"transport": "streamable-http"}
     assert server.mcp.settings.host == "0.0.0.0"
     assert server.mcp.settings.port == 8080
+
+
+def test_oauth_disabled_when_AUTHKIT_DOMAIN_unset(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.delenv("AUTHKIT_DOMAIN", raising=False)
+    monkeypatch.delenv("PUBLIC_URL", raising=False)
+    server = _load_server(monkeypatch)
+    assert server.AUTHKIT_DOMAIN is None
+    assert server.mcp.settings.auth is None
+
+
+def test_oauth_configured_when_AUTHKIT_DOMAIN_and_PUBLIC_URL_set(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setenv("AUTHKIT_DOMAIN", "kipp.authkit.app")
+    monkeypatch.setenv("PUBLIC_URL", "https://cube-mcp.example.run.app")
+    server = _load_server(monkeypatch)
+    assert server.AUTHKIT_DOMAIN == "kipp.authkit.app"
+    settings = server.mcp.settings.auth
+    assert settings is not None
+    assert str(settings.issuer_url).rstrip("/") == "https://kipp.authkit.app"
+    assert (
+        str(settings.resource_server_url).rstrip("/")
+        == "https://cube-mcp.example.run.app"
+    )
+
+
+def test_oauth_raises_when_AUTHKIT_DOMAIN_set_but_PUBLIC_URL_missing(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setenv("AUTHKIT_DOMAIN", "kipp.authkit.app")
+    monkeypatch.delenv("PUBLIC_URL", raising=False)
+    with pytest.raises(RuntimeError, match="PUBLIC_URL"):
+        _load_server(monkeypatch)
+
+
+def test_jwks_verifier_rejects_invalid_token(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setenv("AUTHKIT_DOMAIN", "kipp.authkit.app")
+    monkeypatch.setenv("PUBLIC_URL", "https://cube-mcp.example.run.app")
+    server = _load_server(monkeypatch)
+    verifier = server.JWKSTokenVerifier("kipp.authkit.app")
+    import asyncio
+
+    result = asyncio.run(verifier.verify_token("not-a-jwt"))
+    assert result is None
