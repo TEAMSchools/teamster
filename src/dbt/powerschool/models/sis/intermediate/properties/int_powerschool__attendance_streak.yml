@@ -20,6 +20,15 @@ models:
         data_type: int64
         description:
           The internal number and ID of the associated Students record.
+      - name: student_number
+        data_type: int64
+        description: Student Number assigned by the school. Indexed.
+        config:
+          meta:
+            source_system: PowerSchool
+            source_model: stg_powerschool__students
+            source_column: student_number
+            contains_pii: true
       - name: yearid
         data_type: int64
         description:
