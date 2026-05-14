@@ -11,6 +11,16 @@ with
                 )
             )
 
+    ),
+
+    summer_school as (
+        {{
+            dbt_utils.deduplicate(
+                relation=ref("int_powerschool__log"),
+                partition_by="student_number, log_type, academic_year",
+                order_by="entry_date desc",
+            )
+        }}
     )
 
 select
@@ -31,6 +41,8 @@ select
     p.projected_credits_cum as grades_y1_credits_projected,
 
     ae.athletic_eligibility,
+
+    ss.dcid is not null as is_summer_school_eligible,
 
     null as promo_status_qa_math,
     null as grades_y1_credits_enrolled,
@@ -125,4 +137,9 @@ left join
     on co.student_number = ae.student_number
     and co.academic_year = ae.academic_year
     and term = ae.quarter
+left join
+    summer_school as ss
+    on co.student_number = ss.student_number
+    and co.academic_year = ss.academic_year
+    and ss.log_type = 'ARFR (Summer School)'
 where co.academic_year = {{ var("current_academic_year") }} and co.rn_year = 1
