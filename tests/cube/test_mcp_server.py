@@ -120,3 +120,60 @@ def test_jwks_verifier_rejects_invalid_token(
 
     result = asyncio.run(verifier.verify_token("not-a-jwt"))
     assert result is None
+
+
+def test_get_user_email_reads_oauth_token_in_http_mode(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    import asyncio
+    from unittest.mock import MagicMock
+
+    monkeypatch.setenv("AUTHKIT_DOMAIN", "kipp.authkit.app")
+    monkeypatch.setenv("PUBLIC_URL", "https://cube-mcp.example.run.app")
+    server = _load_server(monkeypatch)
+
+    ctx = MagicMock()
+    access_token = server.CubeAccessToken(
+        token="x",
+        client_id="director@apps.teamschools.org",
+        scopes=[],
+        email="director@apps.teamschools.org",
+    )
+    ctx.request_context.user.access_token = access_token
+
+    email = asyncio.run(server._get_user_email(ctx))
+    assert email == "director@apps.teamschools.org"
+
+
+def test_get_user_email_raises_in_http_mode_when_oauth_user_missing(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    import asyncio
+    from unittest.mock import MagicMock
+
+    monkeypatch.setenv("AUTHKIT_DOMAIN", "kipp.authkit.app")
+    monkeypatch.setenv("PUBLIC_URL", "https://cube-mcp.example.run.app")
+    server = _load_server(monkeypatch)
+
+    ctx = MagicMock()
+    # Simulate the MCP SDK not setting access_token (request not authenticated)
+    ctx.request_context.user = None
+
+    with pytest.raises(server.MissingUserEmailError):
+        asyncio.run(server._get_user_email(ctx))
+
+
+def test_get_user_email_falls_through_to_env_var_in_stdio_mode(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    import asyncio
+    from unittest.mock import MagicMock
+
+    monkeypatch.delenv("AUTHKIT_DOMAIN", raising=False)
+    monkeypatch.delenv("PUBLIC_URL", raising=False)
+    monkeypatch.setenv("CUBE_USER_EMAIL", "engineer@apps.teamschools.org")
+    server = _load_server(monkeypatch)
+
+    ctx = MagicMock()
+    email = asyncio.run(server._get_user_email(ctx))
+    assert email == "engineer@apps.teamschools.org"

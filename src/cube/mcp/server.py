@@ -76,6 +76,17 @@ def _write_user_email(email: str) -> None:
 
 
 async def _get_user_email(ctx: Context) -> str:
+    if AUTHKIT_DOMAIN:
+        user = getattr(ctx.request_context, "user", None)
+        access_token = getattr(user, "access_token", None) if user else None
+        email = getattr(access_token, "email", None) if access_token else None
+        if not isinstance(email, str) or not email:
+            raise MissingUserEmailError(
+                "cube MCP: OAuth bearer token missing or has no verified "
+                "`email` claim. Check the WorkOS AuthKit Google connection."
+            )
+        return email.strip()
+
     env_override = os.environ.get("CUBE_USER_EMAIL", "").strip()
     if env_override:
         return env_override
