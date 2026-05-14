@@ -81,6 +81,10 @@ file; domain specifics live in the nearest subdirectory CLAUDE.md.
   otherwise re-introduce familiar idioms (`dbt_utils.deduplicate`,
   `select distinct`, `qualify row_number()=1`).
 
+- **Subagent multi-step bail risk**: subagents can abandon multi-step tasks
+  partway through. Scope dispatches to one file / one commit; inspect the file
+  diff and `git log` before marking complete — don't trust the self-report.
+
 - **Git resuming**: Before resuming work on an existing branch, merge `main`:
   `git fetch origin main && git merge origin/main`.
 
@@ -130,6 +134,10 @@ file; domain specifics live in the nearest subdirectory CLAUDE.md.
 
 - **Markdown headings**: increment by one level (markdownlint MD001). `#` title
   goes directly to `##` — never jump to `###`.
+
+- **Nested triple-backticks in markdown**: when a fenced block contains a
+  heredoc with its own ``` examples, promote the outer fence to 4-backticks so
+  trunk-fmt doesn't mangle the structure.
 
 - **Claude CLI**: Not on `$PATH` — user must run `claude` commands in their
   terminal, not via Bash tool.
@@ -260,6 +268,8 @@ MCP equivalent. Before running `gh <subcommand>` via Bash, check the
 - `gh project item-add <PROJECT_NUMBER> --owner <OWNER> --url <ISSUE_URL>` —
   adds an issue/PR to a ProjectV2 board. No `mcp__github__*` equivalent. Combine
   with `gh project item-edit` to set fields after add.
+- `gh api graphql` ProjectV2 `items(first: N)` is capped at 100. Paginate with
+  `pageInfo.endCursor` for boards with >100 items.
 - `gh run *` — Actions run inspection/control; no MCP coverage.
 - `gh workflow *` — Actions workflow inspection/dispatch; no MCP coverage.
 - `gh repo edit` — repo settings; `gh repo create/view/list` have MCP
