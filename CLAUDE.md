@@ -146,6 +146,14 @@ file; domain specifics live in the nearest subdirectory CLAUDE.md.
   server, dbt CLI flag, or `gh` subcommand behaves, open the source or run
   `--help` — do not extrapolate from general knowledge.
 
+- **gcloud quota project**: Fresh `gcloud` writes (`projects create`,
+  service-enable, etc.) hit 429 on Google's shared default project
+  (`32555940559`) when no quota project is set. Pass
+  `--billing-project=teamster-332318` per-command, or
+  `gcloud config set billing/quota_project teamster-332318` once.
+  `gcloud auth application-default set-quota-project` fails when ADC is a
+  service-account credential — use the gcloud config form instead.
+
 - **Docs**: "docs" means the `docs/` folder (MkDocs site), not CLAUDE.md files.
 
 ### PII reference

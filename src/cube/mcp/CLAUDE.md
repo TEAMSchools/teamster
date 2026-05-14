@@ -61,6 +61,25 @@ deploys on push to `main` when `src/cube/mcp/**` changes. Target project:
 `teamster-mcp`. Secrets: `cube-api-secret` in Secret Manager (referenced by the
 Cloud Run service via `--set-secrets`).
 
+## MCP SDK gotchas
+
+- **Verified bearer-token claims** live behind `get_access_token()` from
+  `mcp.server.auth.middleware.auth_context`. `ctx.request_context.user` does not
+  exist on `Context`.
+- **`host` / `port` are FastMCP constructor kwargs**, not `run()` kwargs; stored
+  at `mcp.settings.host` / `mcp.settings.port`. `run()` accepts only `transport`
+  and `mount_path`.
+
+## WorkOS quirks
+
+- Access tokens omit `email` by default. Add a JWT template at Authentication →
+  Sessions → JWT template: `{"email": "{{ user.email }}"}`.
+- DCR/CIMD lives at Connect → Configuration → MCP Auth (tenant-wide toggle), not
+  per-application. The advertised `registration_endpoint` returns
+  `dynamic_client_registration_disabled` until the toggle is on.
+- Google OAuth provider is under Authentication → Providers (Authentication →
+  Connections is enterprise SSO).
+
 ## PII reminder
 
 Tools return Cube query results. `*_detail` views carry row-level student
