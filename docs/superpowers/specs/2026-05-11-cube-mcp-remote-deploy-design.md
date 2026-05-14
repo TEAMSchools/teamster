@@ -20,16 +20,26 @@ existing per-user security model carries over unchanged.
 
 ### Option considered and set aside
 
-The fastest path would be pointing users at Cube's native `/api/mcp` endpoint
-with `mcp-remote`. Ruled out for two reasons:
+The fastest path would be pointing users at Cube's native `/api/mcp` endpoint.
+Per [Cube's docs](https://cube.dev/docs/product/apis-integrations/mcp-server),
+that server is a thin wrapper around Cube's
+[Chat API](https://cube.dev/docs/product/apis-integrations/embed-apis/chat-api)
+— it exposes a single chat tool that delegates to Cube's own AI agent rather
+than giving Claude direct access to the semantic layer. Ruled out because:
 
-1. **Token overhead.** Cube's native MCP server is verbose — it returns the full
-   data model catalog on every session and generates more tokens per query than
-   the custom server.
-2. **LLM guidance.**
+1. **Wrong AI does the reasoning.** Claude becomes a relay to Cube's AI agent
+   rather than reasoning over the data model itself. The MCP tool calls forward
+   natural-language questions to Cube and stream back agent-generated responses.
+   Claude's value as the orchestrator (planning multi-step analyses, combining
+   Cube results with other tools, applying repo-specific conventions from
+   `CLAUDE.md`) is bypassed.
+2. **No primitive access.** The custom server exposes `meta`, `load`, and `sql`
+   tools that let Claude build queries directly and iterate. Cube's native MCP
+   gives no equivalent — the agent is opaque.
+3. **LLM guidance.**
    [`scripts/cube_rest_mcp.py`](../../../scripts/cube_rest_mcp.py) ships with
-   tighter tool descriptions and query-format guardrails that measurably improve
-   response quality for non-technical users.
+   tighter tool descriptions and query-format guardrails tuned for our views and
+   access policies, which Cube's generic chat tool can't carry.
 
 The custom server is worth the deployment work.
 
