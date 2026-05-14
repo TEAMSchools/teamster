@@ -78,11 +78,14 @@ context. The Cube signing secret never leaves the Cloud Run service.
 audit logs show per-director attribution. Access defaults to deny if a user has
 no `cube-*` groups — correct behavior.
 
-**Groups resolved by Directory API.** The
-[src/cube/cube.js](../../../src/cube/cube.js) `contextToGroups` function calls
-the Google Directory API with the user's email and returns their `cube-*` group
+**Groups resolved by Directory API.** Cube's
+[`contextToGroups`](https://cube.dev/docs/reference/configuration/config#contexttogroups)
+hook (a per-request callback Cube exposes for dynamic group resolution) is
+implemented in [src/cube/cube.js](../../../src/cube/cube.js) to call the Google
+Admin SDK Directory API with the user's email and return their `cube-*` group
 memberships. Workspace is the single source of truth for group membership; no
-parallel mapping file in this repo.
+parallel mapping file in this repo. (Directory API integration is a repo-local
+implementation of Cube's hook, not a Cube-documented feature.)
 
 ## Section 1: Code changes to the MCP server
 
@@ -120,8 +123,9 @@ Port 8080 is what Cloud Run expects. The stdio path is unchanged when
 
 ### 1c. OAuth resource-server middleware
 
-Add an `AUTHKIT_DOMAIN` env var. When set, the server installs FastMCP auth
-middleware that:
+Add an `AUTHKIT_DOMAIN` env var. When set, the server configures FastMCP as an
+OAuth resource server using the SDK's `TokenVerifier` + `AuthSettings` (per the
+[MCP Python SDK README](https://github.com/modelcontextprotocol/python-sdk)):
 
 1. Fetches the AuthKit JWKS from `https://<AUTHKIT_DOMAIN>/oauth2/jwks` on
    startup (cached).
@@ -131,12 +135,15 @@ middleware that:
 4. Rejects requests with no/invalid token with a `401 WWW-Authenticate` response
    that points clients at the OAuth metadata endpoint.
 
-The server also exposes OAuth metadata endpoints required by the MCP spec:
+The server also exposes the OAuth metadata endpoint required by the MCP spec
+(MCP 2025-06-18 authorization section):
 
 - `/.well-known/oauth-protected-resource` — points at the AuthKit AS (RFC 9728
-  protected-resource metadata)
-- `/.well-known/oauth-authorization-server` — proxies/redirects to AuthKit's
-  metadata (RFC 8414); enables DCR client discovery
+  protected-resource metadata; **MUST** per the MCP spec)
+
+AuthKit hosts its own `/.well-known/oauth-authorization-server` (RFC 8414) and
+DCR endpoint (RFC 7591 — **SHOULD** per the MCP spec); clients follow the
+protected-resource metadata to discover the AS and register themselves.
 
 These endpoints are how `claude.ai` discovers the AS and registers itself as an
 OAuth client.
@@ -152,20 +159,20 @@ behavior unchanged.
 
 WorkOS AuthKit handles the OAuth 2.1 + DCR layer. Configuration:
 
-| Setting                     | Value                                                        |
-| --------------------------- | ------------------------------------------------------------ |
-| Identity provider           | Google Workspace (OIDC)                                      |
-| Domain restriction          | `hd=apps.teamschools.org` — rejects personal Gmail accounts  |
-| Dynamic Client Registration | Enabled (required for `claude.ai` connector flow)            |
-| Access token lifetime       | 1 hour (default)                                             |
-| Refresh token lifetime      | 30 days (default)                                            |
-| Token format                | JWT, RS256, JWKS at `https://<domain>/oauth2/jwks`           |
-| Required claim in token     | `email` — the user's `@apps.teamschools.org` Workspace email |
+| Setting                     | Value                                                                                            |
+| --------------------------- | ------------------------------------------------------------------------------------------------ |
+| Identity provider           | Google Workspace (OIDC)                                                                          |
+| Domain restriction          | Configured via the WorkOS Google connection to limit sign-ins to `apps.teamschools.org` accounts |
+| Dynamic Client Registration | Enabled in the WorkOS tenant (required for `claude.ai` connector flow per MCP spec)              |
+| Access token lifetime       | 1 hour (configured in tenant)                                                                    |
+| Refresh token lifetime      | 30 days (configured in tenant)                                                                   |
+| Token format                | JWT, RS256, JWKS at `https://<domain>/oauth2/jwks`                                               |
+| Required claim in token     | `email` — the user's `@apps.teamschools.org` Workspace email                                     |
 
 **Why WorkOS:**
 
-- Published reference templates for remote MCP servers — paved path for the
-  exact scenario.
+- Published [MCP integration guide](https://workos.com/docs/authkit/mcp) — paved
+  path for the exact scenario.
 - Google Workspace SSO with domain restriction is a native config field, not a
   custom integration.
 - Free tier (1M MAU) covers the network indefinitely at our scale.
@@ -215,53 +222,141 @@ CORS is a non-issue: Cube's REST API allows all origins by default; the repo's
 [src/cube/cube.js](../../../src/cube/cube.js) has no override; and Cloud Run →
 Cube traffic is server-to-server (no browser, no preflight).
 
-## Section 4: Dockerfile and Cloud Run
+## Section 4: GCP project setup
+
+The Cloud Run service is deployed to a **new GCP project**, separate from
+`teamster-332318` (which hosts BigQuery, Dagster's GKE cluster, and the
+warehouse-side service accounts). Reasons to isolate:
+
+- The MCP service is public-facing (reachable over the internet, gated only by
+  OAuth) and federates with external identity (WorkOS). Keeping it out of the
+  warehouse project contains blast radius — a compromise of the service cannot
+  pivot into BigQuery or Dagster credentials.
+- The Cloud Run service has no IAM dependency on `teamster-332318`: it talks to
+  Cube Cloud (external) and WorkOS (external), so no cross-project IAM is needed
+  for the runtime.
+- Cleaner audit log / cost attribution for the public-facing surface.
+
+Proposed project ID: **`teamster-mcp`** (final name subject to org naming
+convention).
+
+### One-time setup
+
+```bash
+# 1. Create project, link billing
+gcloud projects create teamster-mcp --name="Teamster MCP Services"
+gcloud beta billing projects link teamster-mcp --billing-account=<BILLING_ACCOUNT_ID>
+
+# 2. Enable required APIs
+gcloud services enable \
+  run.googleapis.com \
+  artifactregistry.googleapis.com \
+  secretmanager.googleapis.com \
+  iamcredentials.googleapis.com \
+  --project=teamster-mcp
+
+# 3. Artifact Registry repo for the container image
+gcloud artifacts repositories create cube-mcp \
+  --repository-format=docker \
+  --location=us-central1 \
+  --project=teamster-mcp
+
+# 4. Cloud Run runtime service account (narrow scope — reads one secret only)
+gcloud iam service-accounts create cube-mcp-runtime \
+  --display-name="Cube MCP Cloud Run runtime" \
+  --project=teamster-mcp
+
+# 5. Store the Cube signing secret in Secret Manager
+#    (value pulled from 1Password by the operator running this step;
+#     never committed to the repo)
+gcloud secrets create cube-api-secret \
+  --replication-policy=automatic \
+  --project=teamster-mcp
+echo -n "<paste-from-1password>" | gcloud secrets versions add cube-api-secret \
+  --data-file=- --project=teamster-mcp
+gcloud secrets add-iam-policy-binding cube-api-secret \
+  --member="serviceAccount:cube-mcp-runtime@teamster-mcp.iam.gserviceaccount.com" \
+  --role="roles/secretmanager.secretAccessor" \
+  --project=teamster-mcp
+```
+
+### Workload Identity Federation (cross-project)
+
+The existing WIF pool/provider in `teamster-332318` can mint tokens for service
+accounts in any project, so we **reuse the existing WIF pool** rather than
+creating a new one. Two options for the GitHub Actions deploy identity:
+
+**Option A — Cross-project IAM binding on the existing deploy SA** (simpler):
+
+```bash
+# Grant the existing teamster-332318 deploy SA permission to deploy to
+# teamster-mcp. Replace <DEPLOY_SA> with the SA currently used by
+# dagster-cloud-deploy.yaml or equivalent.
+gcloud projects add-iam-policy-binding teamster-mcp \
+  --member="serviceAccount:<DEPLOY_SA>@teamster-332318.iam.gserviceaccount.com" \
+  --role="roles/run.admin"
+gcloud projects add-iam-policy-binding teamster-mcp \
+  --member="serviceAccount:<DEPLOY_SA>@teamster-332318.iam.gserviceaccount.com" \
+  --role="roles/artifactregistry.writer"
+gcloud projects add-iam-policy-binding teamster-mcp \
+  --member="serviceAccount:<DEPLOY_SA>@teamster-332318.iam.gserviceaccount.com" \
+  --role="roles/iam.serviceAccountUser"
+```
+
+**Option B — New deploy SA scoped to `teamster-mcp`** (cleaner least-privilege,
+more setup). Create a new SA in `teamster-mcp`, bind it to the existing WIF
+pool's GitHub repo principal, and reference it from the workflow.
+
+Recommendation: **Option A** for the initial deploy; revisit if/when more MCP
+services join `teamster-mcp` and a dedicated deploy SA is warranted.
+
+## Section 5: Dockerfile and Cloud Run
 
 ### `src/cube/mcp/Dockerfile`
 
 Minimal Python 3.13 image (`python:3.13-slim`). Copies `src/cube/mcp/server.py`,
 installs uv, uses `uv run` to execute — inline PEP 723 dependencies (`mcp`,
-`httpx`, `pyjwt`, plus new `authlib` or equivalent for JWKS validation)
+`httpx`, `pyjwt`, plus the MCP SDK's JWKS-validation dependency or equivalent)
 self-install on container start.
 
 ### Cloud Run service config
 
-| Setting           | Value                                                                                        |
-| ----------------- | -------------------------------------------------------------------------------------------- |
-| Region            | `us-central1` (matches GKE cluster)                                                          |
-| Min instances     | 0 (scales to zero — no cost between sessions)                                                |
-| Memory            | 256 MB                                                                                       |
-| CPU               | 0.25 vCPU                                                                                    |
-| Port              | 8080                                                                                         |
-| Ingress           | All (Claude.ai is the client; OAuth enforces auth at MCP layer)                              |
-| `TRANSPORT`       | `http`                                                                                       |
-| `CUBE_REST_URL`   | `https://safe-hollsopple.gcp-us-central1.cubecloudapp.dev/cubejs-api/v1`                     |
-| `AUTHKIT_DOMAIN`  | `<workspace>.authkit.app` (from WorkOS dashboard)                                            |
-| `CUBE_API_SECRET` | Cloud Run secret reference (from 1Password: `op://Data Team/Cube Cloud REST API/credential`) |
+| Setting           | Value                                                                                   |
+| ----------------- | --------------------------------------------------------------------------------------- |
+| Project           | `teamster-mcp`                                                                          |
+| Region            | `us-central1`                                                                           |
+| Min instances     | 0 (scales to zero — no cost between sessions)                                           |
+| Memory            | 256 MB                                                                                  |
+| CPU               | 0.25 vCPU                                                                               |
+| Port              | 8080 ([Cloud Run default](https://cloud.google.com/run/docs/container-contract))        |
+| Ingress           | `all` — required for `claude.ai` to reach it; OAuth at MCP layer is the access boundary |
+| Runtime SA        | `cube-mcp-runtime@teamster-mcp.iam.gserviceaccount.com`                                 |
+| `TRANSPORT`       | `http`                                                                                  |
+| `CUBE_REST_URL`   | `https://safe-hollsopple.gcp-us-central1.cubecloudapp.dev/cubejs-api/v1`                |
+| `AUTHKIT_DOMAIN`  | `<workspace>.authkit.app` (from WorkOS dashboard)                                       |
+| `CUBE_API_SECRET` | Secret Manager reference: `projects/teamster-mcp/secrets/cube-api-secret:latest`        |
 
 `CUBE_USER_EMAIL` and `CUBE_JWT_GROUPS` are **not** set — HTTP mode reads email
 from the verified OAuth token; groups resolve via Directory API.
 
-## Section 5: GitHub Actions deployment
+## Section 6: GitHub Actions deployment
 
 New `.github/workflows/deploy-cube-mcp.yaml`, triggered on push to `main` when
 `src/cube/mcp/**` changes.
 
 Steps:
 
-1. Authenticate to GCP via Workload Identity Federation.
+1. Authenticate to GCP via Workload Identity Federation (pool in
+   `teamster-332318`; impersonates the deploy SA per Section 4).
 2. Build and push image to Artifact Registry
-   (`us-central1-docker.pkg.dev/teamster-332318/cube-mcp/cube-mcp:<sha>`).
-3. `gcloud run deploy` with the new image and config variables.
+   (`us-central1-docker.pkg.dev/teamster-mcp/cube-mcp/cube-mcp:<sha>`).
+3. `gcloud run deploy --project=teamster-mcp` with the new image and config
+   variables.
 
-Follows the same GCP auth pattern as `dagster-cloud-deploy.yaml`.
+Follows the same GCP auth pattern as `dagster-cloud-deploy.yaml`, with the
+`--project` flag retargeted to `teamster-mcp`.
 
-**Engineer prerequisite to verify:** Does the existing GCP service account used
-in GitHub Actions have Cloud Run deploy permissions (`roles/run.admin`,
-`roles/iam.serviceAccountUser`)? If not, those roles must be granted before the
-workflow can be written.
-
-## Section 6: Claude.ai Custom Connector setup
+## Section 7: Claude.ai Custom Connector setup
 
 One-time setup by an admin (data team) at the Claude.ai workspace level:
 
@@ -275,7 +370,7 @@ One-time setup by an admin (data team) at the Claude.ai workspace level:
 The connector configuration is pushed to all workspace members automatically —
 no per-user installation step.
 
-## Section 7: End-user (director) workflow
+## Section 8: End-user (director) workflow
 
 First-time use:
 
@@ -296,7 +391,7 @@ Subsequent sessions: refresh tokens keep the connection alive silently. The
 director sees no auth prompts until the refresh fails (token revoked in WorkOS
 or Workspace), at which point one Connect click re-establishes the session.
 
-## Section 8: Director-facing documentation
+## Section 9: Director-facing documentation
 
 New page: `docs/guides/claude-cube-connector.md`.
 
@@ -316,7 +411,7 @@ New page: `docs/guides/claude-cube-connector.md`.
 labels documented in the project CLAUDE.md (`Student A`, etc.). The page is
 registered in `mkdocs.yml` under **Guides**.
 
-## Section 9: Local stdio path — unchanged
+## Section 10: Local stdio path — unchanged
 
 Data team continues running the MCP server via
 [scripts/cube-rest-mcp-launch.sh](../../../scripts/cube-rest-mcp-launch.sh) in
@@ -328,18 +423,23 @@ The [scripts/CLAUDE.md](../../../scripts/CLAUDE.md) and
 [scripts/cube-rest-mcp-launch.sh](../../../scripts/cube-rest-mcp-launch.sh)
 references are updated to the new server path.
 
-## Section 10: Rollout sequence
+## Section 11: Rollout sequence
 
-1. Engineer verifies GCP service-account permissions for Cloud Run deploy.
-2. WorkOS tenant set up; Google Workspace OIDC configured with domain
-   restriction.
-3. File reorganization (`scripts/cube_rest_mcp.py` → `src/cube/mcp/server.py`)
+1. `teamster-mcp` GCP project created, billing linked, APIs enabled, Artifact
+   Registry repo created, runtime SA created, Cube signing secret stored in
+   Secret Manager (per Section 4).
+2. Cross-project IAM binding granted to the existing GitHub Actions deploy SA
+   (or new SA created in `teamster-mcp` per Option B).
+3. WorkOS tenant set up; Google Workspace OIDC connection configured with domain
+   restriction; DCR enabled.
+4. File reorganization (`scripts/cube_rest_mcp.py` → `src/cube/mcp/server.py`)
    on this branch.
-4. HTTP transport + AuthKit middleware added to `src/cube/mcp/server.py`.
-5. Dockerfile written and tested locally (stdio path unchanged; HTTP path
+5. HTTP transport + OAuth resource-server config added to
+   `src/cube/mcp/server.py`.
+6. Dockerfile written and tested locally (stdio path unchanged; HTTP path
    smoke-tested with a manually-minted AuthKit token).
-6. Manual Cloud Run deploy for end-to-end smoke test.
-7. GitHub Actions workflow written and validated.
-8. Director-facing docs page drafted and published.
-9. Claude.ai Custom Connector created pointing at Cloud Run service URL.
-10. Smoke test with one director account before broader rollout.
+7. Manual Cloud Run deploy to `teamster-mcp` for end-to-end smoke test.
+8. GitHub Actions workflow written and validated.
+9. Director-facing docs page drafted and published.
+10. Claude.ai Custom Connector created pointing at Cloud Run service URL.
+11. Smoke test with one director account before broader rollout.
