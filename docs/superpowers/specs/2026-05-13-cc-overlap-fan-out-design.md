@@ -185,9 +185,10 @@ PR body should also reference:
 
 - `Refs #3901` — this PR clears the `#3633` portion of #3901 (the 3 mart SQL
   files + the CLAUDE.md "Enrollment join fan-out" guidance). The remaining
-  `#3629` and `#3635` portions live in survey-domain models (fct*survey*_,
-  dim*survey*_, bridge*survey*\*) and stay open for a separate doc-only PR. Post
-  a comment on #3901 calling out the partial completion when this PR merges.
+  `#3629` and `#3635` portions live in survey-domain models (`fct_survey_*`,
+  `dim_survey_*`, `bridge_survey_*`) and stay open for a separate doc-only PR.
+  Post a comment on #3901 calling out the partial completion when this PR
+  merges.
 - `Refs #3890` — umbrella issue tracking migration of marts off legacy
   denormalized intermediates. This PR removes 3 of N `qualify row_number()`
   workarounds, contributing to its "no `qualify row_number()` in marts"
