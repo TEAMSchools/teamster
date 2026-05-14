@@ -88,10 +88,13 @@ Two inline patterns (see spec for details):
 
 ## kipptaf source consumers of district columns
 
-When adding a new column to a district intermediate consumed by kipptaf via
-`source()`, ship in two PRs: district first, wait for Dagster to materialize
-prod, then kipptaf. The kipptaf source resolves to prod for `target=staging`
-(dbt Cloud CI), so coupling fails CI deterministically.
+When adding a column or changing values (hash recomposition, restructure) in a
+district intermediate consumed by kipptaf via `source()`, ship in two PRs:
+district first, wait for Dagster to materialize prod, then kipptaf. The kipptaf
+source resolves to prod for `target=staging` (dbt Cloud CI), so coupling fails
+CI deterministically. Kipptaf-level test tightenings (e.g. restoring
+`severity: error` on a mart PK that depended on the upstream value change)
+belong in the follow-up PR.
 
 ## dbt logs persist locally
 
@@ -163,6 +166,10 @@ manifest". The prod manifest is refreshed by `.git/hooks/post-merge` on every
 dev parent dim produces false-positive `relationships` orphans. Before trusting
 a dev relationships warning on a FK, include the parent in `--select` or
 `dbt clone --select <parent_dim>` from prod.
+
+Same trap applies to mart PK `unique` tests — a stale dev parent fans out a
+date-range join. Query prod before filing upstream bugs or adding defensive
+dedupe from a dev mart-test failure.
 
 ## Column-rename refactors strand dependent prod views
 
@@ -305,6 +312,8 @@ data_tests:
   project default is `warn`, so staging tests without explicit `severity: error`
   silently degrade to warnings and won't fail CI. Intermediate/mart/`rpt_` tests
   may omit the override where a warning is acceptable.
+- Removing a `severity: warn` override reverts to project default (`warn`), not
+  `error`. To restore `error`, set `config: severity: error` explicitly.
 - Unscoped `+config` applies to tests from all installed packages, not just the
   current project
 
@@ -407,6 +416,13 @@ above the CTE.
 Jinja's implicit-string-concat across adjacent list elements — unreviewable, and
 a comma inserted between fragments silently changes the SQL. Derive the computed
 value as a named column in an upstream CTE, then hash that column.
+
+### Namespace UNION-ed `generate_surrogate_key` branches
+
+When two `generate_surrogate_key()` calls feed `UNION ALL` into one key column,
+prepend a branch-discriminator literal (`"'left'"` / `"'right'"`) as the first
+input. `generate_surrogate_key` stringifies inputs, so `'1'` (string) and `1`
+(int) collide when remaining inputs align.
 
 ### Canonical attributes from a partition
 
