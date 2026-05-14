@@ -79,6 +79,5 @@ jobs:
             --cpu=0.25 \
             --ingress=all \
             --allow-unauthenticated \
-            --startup-probe-path=/.well-known/oauth-protected-resource \
             --set-env-vars=TRANSPORT=http,CUBE_REST_URL=${{ vars.CUBE_REST_URL }},AUTHKIT_DOMAIN=${{ vars.AUTHKIT_DOMAIN }},PUBLIC_URL=${{ vars.PUBLIC_URL }} \
             --set-secrets=CUBE_API_SECRET=cube-api-secret:latest
