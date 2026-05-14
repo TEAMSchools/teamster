@@ -798,59 +798,8 @@ Tracking issue: [#3908](https://github.com/TEAMSchools/teamster/issues/3908)
 
 ---
 
-## Planned AY 2026-2027 changes
+## Upcoming changes and open questions
 
-Known scope for next year. Tracking issue:
-[#3908](https://github.com/TEAMSchools/teamster/issues/3908).
-
-### Add Paterson
-
-Paterson MS and HS will join the dashboard for the first time. Required work:
-
-- Add Paterson rows to `stg_google_sheets__gradebook_flags` (confirm which flags
-  apply with T&L)
-- Add Paterson rows to `stg_google_sheets__gradebook_expectations_assignments`
-  (expected assignment counts per category / quarter / week)
-- Review `stg_google_sheets__gradebook_exceptions` for any Paterson exceptions
-  needed at launch
-- Verify the teacher scaffold picks up Paterson sections correctly once the
-  flags sheet has rows (no SQL change expected)
-
-### Remove Miami ES and MS
-
-Miami ES and MS are migrating to Focus gradebook and will be removed from the
-dashboard. Required work:
-
-- Remove Miami rows from `stg_google_sheets__gradebook_flags`
-- Remove Miami rows from `stg_google_sheets__gradebook_expectations_assignments`
-- Remove Miami exceptions from `stg_google_sheets__gradebook_exceptions`
-- The following flags exist only for Miami and will become dead code once Miami
-  is removed — verify they can be dropped from the SQL:
-  - `qt_teacher_s_total_greater_100` / `qt_teacher_s_total_less_100` (MiamiES;
-    `categories_teacher`)
-  - `qt_comment_missing` (MiamiES)
-  - `qt_kg_conduct_code_missing` / `_incorrect` / `_not_hr` (MiamiES KG)
-  - `qt_g1_g8_conduct_code_missing` / `_incorrect` (Miami G1-G8; also fires for
-    Miami-MS — confirm MS-only variant not needed before removing)
-  - `qt_effort_grade_missing` (Miami ES and MS — verify no other region uses
-    this before removing)
-  - `qt_formative_grade_missing` / `qt_summative_grade_missing` (MiamiES)
-  - `s_max_score_greater_100` (Miami ES/MS; `assignments_teacher`)
-
----
-
-## Open questions (as of May 2026)
-
-- **Grading policy changes** — what flag additions, removals, or threshold
-  changes are planned for AY 2026-2027?
-- **Complexity reduction** — is there appetite to refactor the exceptions
-  pattern or split the multi-grain UNION before next year, or is scope limited
-  to the Paterson/Miami changes?
-- **Q1/Q2 history** — is there a need to surface Q1/Q2 audit data from prior
-  years, or is the audit forward-only from Q3 onward?
-- **Tableau architecture** — does Tableau consume `rpt_tableau__gradebook_audit`
-  as a single data source, or could it be split by `cte_grouping` to reduce
-  per-source volume?
-- **Exceptions sheet usability** — should the `view_name` / `cte` identifiers be
-  documented in the exceptions sheet itself to reduce the risk of silent
-  suppression failures?
+See [GitHub issue #3908](https://github.com/TEAMSchools/teamster/issues/3908)
+for planned AY 2026-2027 work (Add Paterson, Remove Miami ES/MS) and open
+questions.
