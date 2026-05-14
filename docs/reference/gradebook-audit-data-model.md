@@ -697,28 +697,80 @@ Six-branch `UNION ALL` that converts boolean flag columns to rows, applies the
 active-flag allowlist, and applies suppressions. This is the single source for
 `rpt_tableau__gradebook_audit`.
 
-**Pattern per CTE**:
+### Design principle: `cte_grouping` determines what columns a row carries
+
+Each flag in `stg_google_sheets__gradebook_flags` has a `cte_grouping` value
+that encodes the grain of information that flag needs. The UNION ALL schema is
+wide enough to hold every grain, but each branch only populates the columns
+meaningful for its grouping — everything else is `null`. Tableau uses
+`cte_grouping` to determine which fields to display for a given flag.
+
+The five groupings and what they carry:
+
+| `cte_grouping`              | Carries                                             | Nulls out                              |
+| --------------------------- | --------------------------------------------------- | -------------------------------------- |
+| `assignment_student`        | Student + section + assignment + teacher aggregates | Category-level agg columns             |
+| `student_course`            | Student + section (quarter grain)                   | Category, assignment, teacher agg cols |
+| `student_course_category`   | Student + section + category                        | Assignment, teacher agg columns        |
+| `class_category_assignment` | Section + assignment + teacher agg counts           | Student columns                        |
+| `class_category`            | Section + category-level agg columns                | Student columns, per-assignment counts |
+
+### Pattern per CTE
 
 ```sql
 <source_model> UNPIVOT (audit_flag_value FOR audit_flag_name IN (...flags...))
-INNER JOIN stg_google_sheets__gradebook_flags   -- allowlist: only active flags
-LEFT JOIN stg_google_sheets__gradebook_exceptions  -- suppression (one or more)
+INNER JOIN stg_google_sheets__gradebook_flags   -- allowlist: only rows where flag is active
+LEFT JOIN stg_google_sheets__gradebook_exceptions  -- suppression (one or more joins)
 WHERE e.include_row IS NULL
 ```
 
-| CTE                       | Source                                             | Flags unpivoted | `cte_grouping`                |
-| ------------------------- | -------------------------------------------------- | --------------- | ----------------------------- |
-| `student_unpivot`         | `int_tableau__gradebook_audit_assignments_student` | 16              | `assignment_student`          |
-| `teacher_unpivot_cca`     | `int_tableau__gradebook_audit_assignments_teacher` | 4               | `class_category_assignment`   |
-| `teacher_unpivot_cc`      | `int_tableau__gradebook_audit_categories_teacher`  | 12              | `class_category`              |
-| `eoq_items`               | `int_tableau__gradebook_audit_student_scaffold`    | 7               | `student_course` or `student` |
-| `eoq_items_conduct_code`  | `int_tableau__gradebook_audit_student_scaffold`    | 5               | `student_course`              |
-| `student_course_category` | `int_tableau__gradebook_audit_student_scaffold`    | 4               | `student_course_category`     |
+### CTE inventory
 
-`eoq_items_conduct_code` is the only CTE that joins
-`stg_google_sheets__gradebook_flags` on `grade_level` in addition to the
-standard keys — conduct code flags are grade-level-specific (KG vs. G1–G8 have
-different valid conduct codes).
+| CTE                       | Source                                             | `cte_grouping`              | Flags |
+| ------------------------- | -------------------------------------------------- | --------------------------- | ----- |
+| `student_unpivot`         | `int_tableau__gradebook_audit_assignments_student` | `assignment_student`        | 16    |
+| `teacher_unpivot_cca`     | `int_tableau__gradebook_audit_assignments_teacher` | `class_category_assignment` | 4     |
+| `teacher_unpivot_cc`      | `int_tableau__gradebook_audit_categories_teacher`  | `class_category`            | 12    |
+| `eoq_items`               | `int_tableau__gradebook_audit_student_scaffold`    | `student_course`, `student` | 7     |
+| `eoq_items_conduct_code`  | `int_tableau__gradebook_audit_student_scaffold`    | `student_course`            | 5     |
+| `student_course_category` | `int_tableau__gradebook_audit_student_scaffold`    | `student_course_category`   | 4     |
+
+### CTE-specific notes
+
+**`student_unpivot`** — the `assignment_student` branch also LEFT JOINs
+`int_tableau__gradebook_audit_assignments_teacher` (matched on
+`region + schoolid + quarter + week_number_quarter + sectionid + assignmentid`)
+to bring the teacher-level aggregate counts (`n_students`, `n_late`,
+`n_missing`, `n_null`, etc.) alongside each per-student flag. This lets Tableau
+show both the individual student's flag and the class-wide context in the same
+row.
+
+Three exception joins: (1) by
+`course_number + audit_flag_name + is_quarter_end_date_range`, (2) by
+`course_number + gradebook_category + audit_flag_name + is_quarter_end_date_range`,
+(3) permanent by `credit_type + gradebook_category`.
+
+**`teacher_unpivot_cca`** — two exception joins: (1) permanent by
+`credit_type + school_level`, (2) temporary by
+`course_number + audit_flag_name + is_quarter_end_date_range`.
+
+**`teacher_unpivot_cc`** — one exception join: permanent by
+`credit_type + gradebook_category`.
+
+**`eoq_items`** — joins the flags sheet on `quarter` as `code`; filters to
+`audit_category != 'Conduct Code'`. One exception join: permanent by
+`credit_type + audit_flag_name`.
+
+**`eoq_items_conduct_code`** — split from `eoq_items` because conduct code flags
+are grade-level-specific. The flags sheet join includes `grade_level` (KG vs.
+G1-G8 have different valid codes). WHERE-filtered to `school_level = 'ES'` only.
+Two exception joins: (1) permanent by `credit_type + audit_flag_name`, (2)
+permanent by `course_number + audit_flag_name` (when `credit_type is null`).
+
+**`student_course_category`** — joins the flags sheet on
+`assignment_category_code` as `alt_code` (not `code`, which holds the quarter
+value for student-grain flags). One exception join: temporary by
+`course_number + audit_flag_name + is_quarter_end_date_range`.
 
 ---
 
