@@ -38,6 +38,7 @@ from zoneinfo import ZoneInfo
 
 import httpx
 import jwt
+from mcp.server.auth.middleware.auth_context import get_access_token
 from mcp.server.auth.provider import AccessToken
 from mcp.server.auth.settings import AuthSettings
 from mcp.server.fastmcp import Context, FastMCP
@@ -77,13 +78,12 @@ def _write_user_email(email: str) -> None:
 
 async def _get_user_email(ctx: Context) -> str:
     if AUTHKIT_DOMAIN:
-        user = getattr(ctx.request_context, "user", None)
-        access_token = getattr(user, "access_token", None) if user else None
+        access_token = get_access_token()
         email = getattr(access_token, "email", None) if access_token else None
         if not isinstance(email, str) or not email:
             raise MissingUserEmailError(
                 "cube MCP: OAuth bearer token missing or has no verified "
-                "`email` claim. Check the WorkOS AuthKit Google connection."
+                "`email` claim. Check the WorkOS AuthKit JWT template."
             )
         return email.strip()
 

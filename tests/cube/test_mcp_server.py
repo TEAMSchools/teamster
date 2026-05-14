@@ -132,15 +132,15 @@ def test_get_user_email_reads_oauth_token_in_http_mode(
     monkeypatch.setenv("PUBLIC_URL", "https://cube-mcp.example.run.app")
     server = _load_server(monkeypatch)
 
-    ctx = MagicMock()
     access_token = server.CubeAccessToken(
         token="x",
         client_id="director@apps.teamschools.org",
         scopes=[],
         email="director@apps.teamschools.org",
     )
-    ctx.request_context.user.access_token = access_token
+    monkeypatch.setattr(server, "get_access_token", lambda: access_token)
 
+    ctx = MagicMock()
     email = asyncio.run(server._get_user_email(ctx))
     assert email == "director@apps.teamschools.org"
 
@@ -155,9 +155,8 @@ def test_get_user_email_raises_in_http_mode_when_oauth_user_missing(
     monkeypatch.setenv("PUBLIC_URL", "https://cube-mcp.example.run.app")
     server = _load_server(monkeypatch)
 
+    monkeypatch.setattr(server, "get_access_token", lambda: None)
     ctx = MagicMock()
-    # Simulate the MCP SDK not setting access_token (request not authenticated)
-    ctx.request_context.user = None
 
     with pytest.raises(server.MissingUserEmailError):
         asyncio.run(server._get_user_email(ctx))
