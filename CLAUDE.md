@@ -371,6 +371,12 @@ For NULL-safe distinct counts on composite keys, use
 `count(distinct format("%T|%T", a, b))` — `concat()` returns NULL when any arg
 is NULL and silently miscounts violations.
 
+**Cross-district queries**: Always use `teamster-332318.kipptaf_*` datasets for
+queries spanning multiple districts — never manually `UNION ALL` across
+`kippnewark_*`, `kippcamden_*`, `kippmiami_*`. Extract district from
+`_dbt_source_relation` with
+`REGEXP_EXTRACT(_dbt_source_relation, r'`(kipp[^`]+\_<source>)`')`.
+
 ### dbt MCP
 
 Auth via `scripts/dbt-mcp-launch.sh` — do not add `DBT_TOKEN` to `.mcp.json`
