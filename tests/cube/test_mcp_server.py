@@ -32,3 +32,38 @@ def test_module_loads(monkeypatch: pytest.MonkeyPatch) -> None:
     assert hasattr(server, "load"), "load tool not found"
     assert hasattr(server, "meta"), "meta tool not found"
     assert hasattr(server, "sql"), "sql tool not found"
+
+
+def test_run_dispatches_to_stdio_by_default(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    server = _load_server(monkeypatch)
+    monkeypatch.delenv("TRANSPORT", raising=False)
+    called_with: dict[str, object] = {}
+
+    def fake_run(*args: object, **kwargs: object) -> None:
+        called_with["args"] = args
+        called_with["kwargs"] = kwargs
+
+    monkeypatch.setattr(server.mcp, "run", fake_run)
+    server.main()
+    assert called_with == {"args": (), "kwargs": {}}
+
+
+def test_run_dispatches_to_streamable_http_when_TRANSPORT_http(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    server = _load_server(monkeypatch)
+    monkeypatch.setenv("TRANSPORT", "http")
+    monkeypatch.delenv("AUTHKIT_DOMAIN", raising=False)
+    called_with: dict[str, object] = {}
+
+    def fake_run(*args: object, **kwargs: object) -> None:
+        called_with["args"] = args
+        called_with["kwargs"] = kwargs
+
+    monkeypatch.setattr(server.mcp, "run", fake_run)
+    server.main()
+    assert called_with["kwargs"]["transport"] == "streamable-http"
+    assert called_with["kwargs"]["host"] == "0.0.0.0"
+    assert called_with["kwargs"]["port"] == 8080

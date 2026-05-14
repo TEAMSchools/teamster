@@ -261,5 +261,13 @@ def set_user_email(email: str) -> dict[str, str]:
     return {"cached_at": str(USER_EMAIL_CACHE), "email": cleaned}
 
 
+def main() -> None:
+    transport = os.environ.get("TRANSPORT", "stdio")
+    if transport == "http":
+        mcp.run(transport="streamable-http", host="0.0.0.0", port=8080)
+    else:
+        mcp.run()
+
+
 if __name__ == "__main__":
-    mcp.run()
+    main()
