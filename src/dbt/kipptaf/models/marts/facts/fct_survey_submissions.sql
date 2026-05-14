@@ -192,18 +192,6 @@ with
     historic_archive_submissions as (
         select
             ms.survey_id,
-
-            coalesce(
-                ms.survey_response_id,
-                concat(
-                    ms.respondent_df_employee_number,
-                    '_',
-                    ms.subject_df_employee_number,
-                    '_',
-                    ms.campaign_reporting_term
-                )
-            ) as survey_response_id,
-
             ms.respondent_df_employee_number as respondent_employee_number,
             ms.subject_df_employee_number as subject_employee_number,
             ms.date_submitted,
@@ -218,6 +206,17 @@ with
             rt.school_id as rt_school_id,
 
             'staff' as respondent_type,
+
+            coalesce(
+                ms.survey_response_id,
+                concat(
+                    ms.respondent_df_employee_number,
+                    '_',
+                    ms.subject_df_employee_number,
+                    '_',
+                    ms.campaign_reporting_term
+                )
+            ) as survey_response_id,
         from {{ ref("int_surveys__manager_survey_details") }} as ms
         inner join
             {{ ref("stg_google_sheets__reporting__terms") }} as rt
