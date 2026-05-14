@@ -642,11 +642,32 @@ outside the exception and always fire regardless.
 ### `int_tableau__gradebook_audit_categories_teacher`
 
 One row per section × category × week (after `GROUP BY` in the `final` CTE).
-Joins the same assignment sources as
-`int_tableau__gradebook_audit_assignments_teacher` but aggregates to category
+Joins the teacher category scaffold to `int_powerschool__gradebook_assignments`
+and `int_powerschool__gradebook_assignments_scores`, then aggregates to category
 level to produce category-wide compliance flags.
 
-**Per-category per-section flags** (`cte_grouping = 'class_category'`):
+**Source temporal scope**: `int_powerschool__gradebook_assignments` and
+`int_powerschool__gradebook_assignments_scores` are multi-year; scope is
+current-year-only via the teacher scaffold join.
+
+**Exception handling** — two independent exception joins:
+
+- **`assignment_score_rollup` CTE exception**
+  (`view_name = 'categories_teacher'`, `cte = 'assignment_score_rollup'`, keyed
+  by `credit_type + region + school_level`): applied as a WHERE filter inside
+  the CTE, excluding matching students from the `n_expected` /
+  `n_expected_scored` counts before they are windowed in the `assignments` CTE.
+  Used to exclude specific student groups from the percent-graded denominator.
+
+- **Final-level exception** (`view_name = 'categories_teacher'`, `cte is null`,
+  keyed by `course_number + is_quarter_end_date_range`): applied as a WHERE
+  filter on the final output, removing the entire row. Unlike the
+  `assignments_teacher` exception (which nulls specific columns), this removes
+  the category row completely so no flags fire for that course at all. The
+  `is_quarter_end_date_range` key controls whether the suppression applies
+  inside or outside the EOQ window.
+
+**Per-category per-section flags**:
 
 | Flag                              | Fires when                                             |
 | --------------------------------- | ------------------------------------------------------ |
