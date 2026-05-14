@@ -1,10 +1,12 @@
 from __future__ import annotations
 
+import asyncio
 import importlib.util
 import sys
 from pathlib import Path
 from types import ModuleType
 from typing import Any
+from unittest.mock import MagicMock
 
 import pytest
 
@@ -116,8 +118,6 @@ def test_jwks_verifier_rejects_invalid_token(
     monkeypatch.setenv("PUBLIC_URL", "https://cube-mcp.example.run.app")
     server = _load_server(monkeypatch)
     verifier = server.JWKSTokenVerifier("kipp.authkit.app")
-    import asyncio
-
     result = asyncio.run(verifier.verify_token("not-a-jwt"))
     assert result is None
 
@@ -125,9 +125,6 @@ def test_jwks_verifier_rejects_invalid_token(
 def test_get_user_email_reads_oauth_token_in_http_mode(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    import asyncio
-    from unittest.mock import MagicMock
-
     monkeypatch.setenv("AUTHKIT_DOMAIN", "kipp.authkit.app")
     monkeypatch.setenv("PUBLIC_URL", "https://cube-mcp.example.run.app")
     server = _load_server(monkeypatch)
@@ -148,9 +145,6 @@ def test_get_user_email_reads_oauth_token_in_http_mode(
 def test_get_user_email_raises_in_http_mode_when_oauth_user_missing(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    import asyncio
-    from unittest.mock import MagicMock
-
     monkeypatch.setenv("AUTHKIT_DOMAIN", "kipp.authkit.app")
     monkeypatch.setenv("PUBLIC_URL", "https://cube-mcp.example.run.app")
     server = _load_server(monkeypatch)
@@ -165,9 +159,6 @@ def test_get_user_email_raises_in_http_mode_when_oauth_user_missing(
 def test_get_user_email_falls_through_to_env_var_in_stdio_mode(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    import asyncio
-    from unittest.mock import MagicMock
-
     monkeypatch.delenv("AUTHKIT_DOMAIN", raising=False)
     monkeypatch.delenv("PUBLIC_URL", raising=False)
     monkeypatch.setenv("CUBE_USER_EMAIL", "engineer@apps.teamschools.org")
@@ -176,3 +167,41 @@ def test_get_user_email_falls_through_to_env_var_in_stdio_mode(
     ctx = MagicMock()
     email = asyncio.run(server._get_user_email(ctx))
     assert email == "engineer@apps.teamschools.org"
+
+
+def test_mint_token_puts_email_at_top_level_of_payload(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    import jwt
+
+    server = _load_server(monkeypatch)
+    # CUBE_API_SECRET is bound at module import time; patch the module attribute
+    # directly so _mint_token and jwt.decode use the same key.
+    secret = server.CUBE_API_SECRET
+    token = server._mint_token("director@apps.teamschools.org")
+    decoded = jwt.decode(token, secret, algorithms=["HS256"])
+    # Cube's contextToGroups reads the top-level `email` claim per
+    # src/cube/cube.js — do not nest under `securityContext` / `u` / etc.
+    assert decoded["email"] == "director@apps.teamschools.org"
+
+
+def test_set_user_email_rejects_non_email_string(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    server = _load_server(monkeypatch)
+    with pytest.raises(ValueError, match="Not a valid email"):
+        server.set_user_email("not-an-email")
+
+
+def test_set_user_email_persists_valid_email(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    server = _load_server(monkeypatch)
+    cache_path = tmp_path / "cube-user-email"
+    monkeypatch.setattr(server, "USER_EMAIL_CACHE", cache_path)
+    result = server.set_user_email("  engineer@apps.teamschools.org  ")
+    assert result["email"] == "engineer@apps.teamschools.org"
+    assert (
+        cache_path.read_text(encoding="utf-8").strip()
+        == "engineer@apps.teamschools.org"
+    )

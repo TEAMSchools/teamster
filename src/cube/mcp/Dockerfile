@@ -3,7 +3,7 @@
 FROM python:3.13-slim AS base
 
 # Install uv (used to install PEP 723 inline deps at run time).
-RUN pip install --no-cache-dir uv==0.5.18
+RUN pip install --no-cache-dir uv==0.11.14
 
 WORKDIR /app
 COPY server.py /app/server.py

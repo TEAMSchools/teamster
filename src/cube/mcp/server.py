@@ -149,6 +149,9 @@ class JWKSTokenVerifier:
                 signing_key.key,
                 algorithms=["RS256"],
                 issuer=self._issuer,
+                # aud not included in AuthKit access tokens by default;
+                # token-to-resource binding is enforced via RFC 8707 resource
+                # indicator configured in WorkOS Connect → Configuration.
                 options={"verify_aud": False},
             )
         except jwt.PyJWTError:
