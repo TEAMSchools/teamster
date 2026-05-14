@@ -46,9 +46,12 @@ The custom server is worth the deployment work.
 ## Goal
 
 Deploy the existing Cube MCP server as a Cloud Run service reachable as a remote
-MCP server via OAuth. Each user authenticates with their Google Workspace
-account; their real email and `cube-*` group memberships drive the Cube security
-context per request. The local stdio path (Codespace, Desktop) is unchanged.
+MCP server via OAuth. Each user — directors on `claude.ai` and the data team in
+VS Code Codespaces — authenticates with their Google Workspace account; their
+real email and `cube-*` group memberships drive the Cube security context per
+request. The data team reaches the remote service through the `mcp-remote` stdio
+bridge (Section 10). Stdio mode in the server code is retained as a development
+mode for iterating on the MCP server itself.
 
 ## Architecture
 
