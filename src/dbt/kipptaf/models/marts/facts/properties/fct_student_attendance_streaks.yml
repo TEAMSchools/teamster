@@ -16,7 +16,9 @@ models:
           - type: primary_key
             warn_unsupported: false
         data_tests:
-          - unique
+          - unique:
+              config:
+                severity: error
           - not_null
 
       - name: student_enrollment_key
