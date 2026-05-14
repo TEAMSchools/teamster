@@ -18,13 +18,12 @@ Email resolution (in order):
   2. ~/.config/teamster/cube-user-email cache file.
   3. ctx.elicit() prompt — answer is cached for future sessions.
   4. If elicit isn't supported by the client, raise an error directing the
-     agent to call the `set_user_email` tool.
+     engineer to set CUBE_USER_EMAIL or write the cache file directly.
 
 Tools:
-  meta            - return the Cube data model catalog (cached until midnight ET per email)
-  load            - run a Cube query (JSON body per the REST API spec)
-  sql             - return the SQL Cube would generate for a query, without executing
-  set_user_email  - cache the requester's email for the JWT security context
+  meta  - return the Cube data model catalog (cached until midnight ET per email)
+  load  - run a Cube query (JSON body per the REST API spec)
+  sql   - return the SQL Cube would generate for a query, without executing
 """
 
 import asyncio
@@ -105,18 +104,17 @@ async def _get_user_email(ctx: Context) -> str:
         )
     # VS Code extension and some Codespace MCP runtimes silently raise on
     # elicit instead of returning a structured "unsupported" result. Broad
-    # catch is intentional; fall through to set_user_email instructions.
+    # catch is intentional; fall through to env var / cache file instructions.
     except Exception as exc:
         raise MissingUserEmailError(
-            "cube MCP has no user email configured. Call the `set_user_email` "
-            "tool with the user's Google Workspace email (e.g. "
-            "firstlast@apps.teamschools.org), then retry. The value is cached "
-            f"at {USER_EMAIL_CACHE} for future sessions."
+            "cube MCP has no user email configured. Set the CUBE_USER_EMAIL "
+            "environment variable before launching the server, or write the "
+            f"email to {USER_EMAIL_CACHE} (one line, no trailing newline)."
         ) from exc
     if result.action != "accept" or not result.data:
         raise MissingUserEmailError(
-            "cube MCP: email required for security context. Call the "
-            "`set_user_email` tool to set it."
+            "cube MCP: email required for security context. Set the "
+            "CUBE_USER_EMAIL environment variable or write it to the cache file."
         )
     email = result.data.email.strip()
     _write_user_email(email)
@@ -320,22 +318,6 @@ async def sql(query: dict[str, Any], ctx: Context) -> dict[str, Any]:
     return await _request(
         "GET", "/sql", params={"query": json.dumps(query)}, email=email
     )
-
-
-@mcp.tool()
-def set_user_email(email: str) -> dict[str, str]:
-    """Cache the requester's Google Workspace email for the JWT security context.
-
-    Call this when `meta`/`load`/`sql` returns a "missing user email" error and
-    the client doesn't surface elicit prompts (e.g. VS Code extension). The
-    value is written to ~/.config/teamster/cube-user-email and reused across
-    sessions. Overridden by the CUBE_USER_EMAIL env var.
-    """
-    cleaned = email.strip()
-    if "@" not in cleaned:
-        raise ValueError(f"Not a valid email: {email!r}")
-    _write_user_email(cleaned)
-    return {"cached_at": str(USER_EMAIL_CACHE), "email": cleaned}
 
 
 def main() -> None:

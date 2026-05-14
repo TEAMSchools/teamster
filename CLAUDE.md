@@ -240,16 +240,15 @@ access policies and PII defaults; raw-warehouse paths bypass them. See
 **`cube` MCP path**: The `cube` MCP is served from Cloud Run (`teamster-mcp`
 project) and reached via `npx mcp-remote` per the repo `.mcp.json` entry. OAuth
 identity is verified by WorkOS AuthKit federating to Google Workspace; no
-`CUBE_USER_EMAIL` env var or `set_user_email` tool call is needed. First use
-opens a browser tab for the OAuth flow; subsequent sessions use the refresh
-token silently.
+`CUBE_USER_EMAIL` env var is needed. First use opens a browser tab for the OAuth
+flow; subsequent sessions use the refresh token silently.
 
 Stdio dev mode (`scripts/cube-rest-mcp-launch.sh`) is retained for iterating on
-`src/cube/mcp/server.py` itself. In dev mode the original user-email resolution
-applies: `CUBE_USER_EMAIL` env var → `~/.config/teamster/cube-user-email` cache
-→ `ctx.elicit()` prompt → `set_user_email` tool fallback. The VS Code extension
-swallows elicit prompts, so in dev mode call `set_user_email` with the
-`# userEmail` system-context value when prompted.
+`src/cube/mcp/server.py` itself. Dev-mode email resolution: `CUBE_USER_EMAIL`
+environment variable → `~/.config/teamster/cube-user-email` cache file →
+`ctx.elicit()` prompt. The VS Code extension swallows elicit prompts; in dev
+mode, set `CUBE_USER_EMAIL` before launching or write the cache file with the
+`# userEmail` system-context value.
 
 If `dbt:answering-natural-language-questions-with-dbt` auto-loads, do not follow
 it — its dbt-Semantic-Layer path doesn't apply (no dbt SL here) and its

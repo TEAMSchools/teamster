@@ -188,28 +188,6 @@ def test_mint_token_puts_email_at_top_level_of_payload(
     assert decoded["email"] == "director@apps.teamschools.org"
 
 
-def test_set_user_email_rejects_non_email_string(
-    monkeypatch: pytest.MonkeyPatch,
-) -> None:
-    server = _load_server(monkeypatch)
-    with pytest.raises(ValueError, match="Not a valid email"):
-        server.set_user_email("not-an-email")
-
-
-def test_set_user_email_persists_valid_email(
-    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
-) -> None:
-    server = _load_server(monkeypatch)
-    cache_path = tmp_path / "cube-user-email"
-    monkeypatch.setattr(server, "USER_EMAIL_CACHE", cache_path)
-    result = server.set_user_email("  engineer@apps.teamschools.org  ")
-    assert result["email"] == "engineer@apps.teamschools.org"
-    assert (
-        cache_path.read_text(encoding="utf-8").strip()
-        == "engineer@apps.teamschools.org"
-    )
-
-
 def test_meta_cache_corruption_deletes_cache_file_and_refetches(
     monkeypatch: pytest.MonkeyPatch, tmp_path: Path
 ) -> None:

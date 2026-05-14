@@ -7,14 +7,15 @@ data-team Codespaces via `npx mcp-remote`.
 ## Files
 
 - `server.py` — FastMCP server (PEP 723 inline deps). Tools: `meta`, `load`,
-  `sql`, `set_user_email`.
+  `sql`.
 - `Dockerfile` — Python 3.13-slim, `uv run` entrypoint.
 
 ## Transport modes
 
 - `TRANSPORT=stdio` (default) — for dev iteration via
-  `scripts/cube-rest-mcp-launch.sh`. Email resolution: `CUBE_USER_EMAIL` env var
-  → cache file → `ctx.elicit()` → `set_user_email` tool fallback.
+  `scripts/cube-rest-mcp-launch.sh`. Email resolution: `CUBE_USER_EMAIL`
+  environment variable → cache file at `~/.config/teamster/cube-user-email` →
+  `ctx.elicit()` prompt.
 - `TRANSPORT=http` — Cloud Run runtime. Requires `AUTHKIT_DOMAIN` and
   `PUBLIC_URL`. Email resolution: verified `email` claim on the
   `CubeAccessToken` returned by `JWKSTokenVerifier`.
