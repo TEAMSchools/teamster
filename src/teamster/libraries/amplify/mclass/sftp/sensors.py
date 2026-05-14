@@ -20,6 +20,8 @@ from dagster_shared import check
 
 from teamster.libraries.ssh.resources import SSHResource
 
+DIR_MTIMES_KEY = "__dir_mtimes"
+
 
 def build_amplify_mclass_sftp_sensor(
     code_location: str,
@@ -56,7 +58,7 @@ def build_amplify_mclass_sftp_sensor(
         run_request_kwargs = []
         run_requests = []
         cursor: dict = json.loads(context.cursor or "{}")
-        dir_mtimes: dict[str, float] = cursor.get("__dir_mtimes__", {})
+        dir_mtimes = cursor.pop(DIR_MTIMES_KEY, {})
 
         with (
             ssh_amplify.get_connection() as connection,
@@ -125,7 +127,7 @@ def build_amplify_mclass_sftp_sensor(
                 )
             )
 
-        cursor["__dir_mtimes__"] = dir_mtimes
+        cursor[DIR_MTIMES_KEY] = dir_mtimes
 
         return SensorResult(run_requests=run_requests, cursor=json.dumps(obj=cursor))
 
