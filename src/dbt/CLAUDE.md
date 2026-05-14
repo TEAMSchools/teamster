@@ -88,10 +88,13 @@ Two inline patterns (see spec for details):
 
 ## kipptaf source consumers of district columns
 
-When adding a new column to a district intermediate consumed by kipptaf via
-`source()`, ship in two PRs: district first, wait for Dagster to materialize
-prod, then kipptaf. The kipptaf source resolves to prod for `target=staging`
-(dbt Cloud CI), so coupling fails CI deterministically.
+When adding a column or changing values (hash recomposition, restructure) in a
+district intermediate consumed by kipptaf via `source()`, ship in two PRs:
+district first, wait for Dagster to materialize prod, then kipptaf. The kipptaf
+source resolves to prod for `target=staging` (dbt Cloud CI), so coupling fails
+CI deterministically. Kipptaf-level test tightenings (e.g. restoring
+`severity: error` on a mart PK that depended on the upstream value change)
+belong in the follow-up PR.
 
 ## dbt logs persist locally
 
