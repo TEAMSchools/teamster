@@ -800,6 +800,25 @@ from the gradebook completion rate in Tableau via a calculated field on
     to this list must be made in Tableau — there is no corresponding filter in
     the dbt model.
 
+**Gradebook score formula** (Tableau LOD calculated field):
+
+```text
+1 - {FIXED [Academic Year],[School],[Quarter],[Audit Qt Week #],[Teacher Name]:
+         AVG(IF [Exclude From GPA] = '0' AND NOT [Excluded Audit Flag Names]
+             THEN [Audit Flag Value] END)}
+```
+
+The `FIXED` expression locks the average to the grain of year × school × quarter
+× week × teacher, so the score is consistent regardless of what the dashboard
+view is filtered to. Two conditions gate which rows contribute:
+
+- `[Exclude From GPA] = '0'` — only GPA-counting courses; electives and non-GPA
+  sections are excluded from the denominator
+- `NOT [Excluded Audit Flag Names]` — FYI Flags (listed above) are excluded
+
+Subtracting from `1` converts an error rate to a compliance rate: `1.0` = fully
+compliant, `0.0` = every applicable flag fired.
+
 **Two input CTEs** from `int_tableau__gradebook_audit_flags`:
 
 - `teacher_aggs` — groups every row (including non-fired flags) by all
