@@ -17,7 +17,7 @@ with
         {{
             dbt_utils.deduplicate(
                 relation=ref("int_powerschool__log"),
-                partition_by="student_number, log_type, academic_year",
+                partition_by="_dbt_source_relation, studentid, log_type, academic_year",
                 order_by="entry_date desc",
             )
         }}
@@ -139,7 +139,9 @@ left join
     and term = ae.quarter
 left join
     summer_school as ss
-    on co.student_number = ss.student_number
+    on co.studentid = ss.studentid
     and co.academic_year = ss.academic_year
     and ss.log_type = 'ARFR (Summer School)'
+    and {{ union_dataset_join_clause(left_alias="co", right_alias="ss") }}
+
 where co.academic_year = {{ var("current_academic_year") }} and co.rn_year = 1
