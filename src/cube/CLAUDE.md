@@ -79,6 +79,15 @@ Default-deny, group-driven. Read [`cube.js`](cube.js) before modifying.
   Workspace groups via the Admin Directory API, cached until next midnight ET.
   `CUBE_GROUP_MAP` (local dev only, gated on `NODE_ENV !== "production"`) is the
   sole bypass.
+- **Group membership is direct-only.** Admin Directory API's
+  `groups.list({userKey})` returns direct memberships; nested `cube-*` groups
+  don't transitively resolve. Flat-enroll users in every `cube-*` group they
+  need (scope tier + `cube-access-student-data`, plus `cube-access-staff-all`
+  for staff cubes).
+- **Cloud Identity `searchTransitiveGroups` is edition-gated** (Workspace
+  Enterprise / Education Plus / Cloud Identity Premium). On lower editions it
+  returns `INVALID_ARGUMENT`, not `PERMISSION_DENIED` — don't propose it as a
+  transitive-resolution fix without verifying the tenant's edition.
 - **`queryRewrite`** enforces three filters:
   - Strips dims/measures from `STUDENT_CUBES` for users without
     `cube-access-student-data`.
@@ -124,6 +133,15 @@ The `cube` MCP wraps Cube Cloud's REST API. Auth path that works:
   security-context delta, not a schema bug.
 - `queryRewrite` default-deny manifests as `WHERE (1 = 0)` plus
   `rlsAccessDenied` in `sortedDimensions` of `/sql` output.
+- **Branch endpoints**: `/staging/<branch>/cubejs-api/v1` is the per-branch
+  staging endpoint (stable, redeploys on push).
+  `/user/<urlencoded-email>/<id>/cubejs-api/v1` is the per-developer Dev Mode
+  endpoint. Only Dev Mode surfaces server `console.log` in the playground logs
+  panel — staging has no log UI. Debug `cube.js` code paths on Dev Mode.
+- **Branch staging configuration doesn't fully inherit from production.** Before
+  diagnosing API errors on a branch staging env, verify
+  `GOOGLE_DIRECTORY_SA_KEY` / `GOOGLE_DIRECTORY_SA_SUBJECT` (and any other
+  required secrets) are set on that environment.
 
 ## Operational notes
 
