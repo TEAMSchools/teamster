@@ -1,3 +1,4 @@
+import socket
 import subprocess
 import time
 from pathlib import Path
@@ -26,7 +27,7 @@ class SSHResource(DagsterSSHResource):
     @retry(
         stop=stop_after_attempt(5),
         wait=wait_exponential_jitter(initial=2, max=30),
-        retry=retry_if_exception_type(SSHException),
+        retry=retry_if_exception_type((SSHException, TimeoutError, socket.gaierror)),
         reraise=True,
     )
     def get_connection(self) -> SSHClient:

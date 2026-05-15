@@ -30,15 +30,6 @@
         "GOOGLE_APPLICATION_CREDENTIALS": "${HOME}/.config/gcloud/application_default_credentials.json"
       }
     },
-    "cloud-run": {
-      "command": "npx",
-      "args": ["-y", "@google-cloud/cloud-run-mcp"],
-      "env": {
-        "GOOGLE_APPLICATION_CREDENTIALS": "${HOME}/.config/gcloud/application_default_credentials.json",
-        "GOOGLE_CLOUD_PROJECT": "teamster-mcp",
-        "GOOGLE_CLOUD_REGION": "us-central1"
-      }
-    },
     "github": {
       "type": "http",
       "url": "https://api.githubcopilot.com/mcp/",
