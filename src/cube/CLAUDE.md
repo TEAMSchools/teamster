@@ -76,9 +76,11 @@ FERPA guidance. If PII, add it to the `excludes` list under the
 Default-deny, group-driven. Read [`cube.js`](cube.js) before modifying.
 
 - **`contextToGroups`** resolves the requester's email to `cube-*` Google
-  Workspace groups via the Admin Directory API, cached until next midnight ET.
-  `CUBE_GROUP_MAP` (local dev only, gated on `NODE_ENV !== "production"`) is the
-  sole bypass.
+  Workspace groups via the Cloud Identity Groups API's `searchTransitiveGroups`,
+  which returns both direct and nested memberships. Cached until next midnight
+  ET. `CUBE_GROUP_MAP` (local dev only, gated on `NODE_ENV !== "production"`) is
+  the sole bypass. The SA's domain-wide delegation must include the
+  `https://www.googleapis.com/auth/cloud-identity.groups.readonly` scope.
 - **`queryRewrite`** enforces three filters:
   - Strips dims/measures from `STUDENT_CUBES` for users without
     `cube-access-student-data`.

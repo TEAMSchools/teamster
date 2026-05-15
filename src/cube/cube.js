@@ -56,13 +56,16 @@ module.exports = {
       }
     }
 
-    // DEBUG: skip cache so we always hit Directory API while diagnosing
-    // const cached = groupCache.get(email);
-    // if (cached && cached.expiresAt > Date.now()) return cached.groups;
+    const cached = groupCache.get(email);
+    if (cached && cached.expiresAt > Date.now()) return cached.groups;
 
-    // Call Admin Directory API.
+    // Call Cloud Identity Groups API — searchTransitiveGroups returns both
+    // direct and indirect (nested) memberships, so users can inherit cube-*
+    // access via parent groups.
     // GOOGLE_DIRECTORY_SA_KEY: base64-encoded service account JSON with
-    //   domain-wide delegation granted by GOOGLE_DIRECTORY_SA_SUBJECT.
+    //   domain-wide delegation granted by GOOGLE_DIRECTORY_SA_SUBJECT and
+    //   the cloud-identity.groups.readonly scope authorized in Workspace
+    //   Admin → Security → API controls → Domain-wide delegation.
     // GOOGLE_DIRECTORY_SA_SUBJECT: email of the Workspace admin that granted
     //   delegation (must be a super-admin in apps.teamschools.org).
     try {
@@ -72,31 +75,31 @@ module.exports = {
           Buffer.from(process.env.GOOGLE_DIRECTORY_SA_KEY, "base64").toString(),
         ),
         scopes: [
-          "https://www.googleapis.com/auth/admin.directory.group.readonly",
+          "https://www.googleapis.com/auth/cloud-identity.groups.readonly",
         ],
         clientOptions: {
           subject: process.env.GOOGLE_DIRECTORY_SA_SUBJECT,
         },
       });
-      const admin = google.admin({ version: "directory_v1", auth });
+      const cloudidentity = google.cloudidentity({ version: "v1", auth });
 
       let groups = [];
-      let rawEmails = [];
       let pageToken;
       do {
-        const res = await admin.groups.list({ userKey: email, pageToken });
-        rawEmails = rawEmails.concat(
-          (res.data.groups ?? []).map((g) => g.email ?? "<no-email>"),
-        );
+        const res =
+          await cloudidentity.groups.memberships.searchTransitiveGroups({
+            parent: "groups/-",
+            query: `member_key_id == '${email}' && 'cloudidentitygroups.googleapis.com/groups.discussion_forum' in labels`,
+            pageSize: 500,
+            pageToken,
+          });
         groups = groups.concat(
-          (res.data.groups ?? []).map((g) => (g.email ?? "").split("@")[0]),
+          (res.data.memberships ?? []).map(
+            (m) => (m.groupKey?.id ?? "").split("@")[0],
+          ),
         );
         pageToken = res.data.nextPageToken;
       } while (pageToken);
-
-      console.log(
-        `DEBUG contextToGroups ${email}: raw=${JSON.stringify(rawEmails)} parsed=${JSON.stringify(groups)}`,
-      );
 
       const cubeGroups = groups.filter((g) => g.startsWith("cube-"));
       groupCache.set(email, {
