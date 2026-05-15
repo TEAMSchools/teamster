@@ -350,6 +350,10 @@ data. `list_time_series` `alignmentPeriod` must end with `s` (e.g., `"60s"` not
 `"60"`). Container metrics (`kubernetes.io/container/*`) are keyed by `pod_name`
 — no `node_name` label; use `kubernetes.io/node/*` for node-level data.
 
+`list_log_entries` over a busy day at WARNING+ severity routinely exceeds the
+context budget. Pre-filter (`severity`, `resource.type`), cap with `pageSize`,
+or dump the result to a file and hand it to a subagent.
+
 ### BigQuery MCP
 
 Truncates results at 50 rows. When querying `INFORMATION_SCHEMA.COLUMNS` for

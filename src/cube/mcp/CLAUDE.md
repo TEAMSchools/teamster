@@ -62,6 +62,12 @@ deploys on push to `main` when `src/cube/mcp/**` changes. Target project:
 `teamster-mcp`. Secrets: `cube-api-secret` in Secret Manager (referenced by the
 Cloud Run service via `--set-secrets`).
 
+- **`--min-instances=0`** when the server is stateless. The `=1` pin only pays
+  off when there's in-memory session state to preserve across idle periods.
+- **Cloud Run request timeout defaults to 300s** (no `--timeout` set). Claude
+  Code's 60s per-tool ceiling is tighter for tool wall-clock; Cloud Run's
+  governs the underlying connection.
+
 ## MCP SDK gotchas
 
 - **Verified bearer-token claims** live behind `get_access_token()` from
@@ -82,6 +88,11 @@ Cloud Run service via `--set-secrets`).
   For hot-path verifiers pass `cache_keys=True, lifespan=3600`.
 - **Total tool wall-clock must stay under 60s** (Claude Code default per-tool
   timeout). httpx timeout + polling-loop deadline both fit inside that budget.
+- **`stateless_http=True`** on `FastMCP(...)` for any multi-instance Cloud Run
+  deploy. `StreamableHTTPSessionManager` holds session state per-instance, so
+  rollovers return 404 "Session not found". Stateless mode disables
+  subscriptions, progress, sampling, and elicit-over-HTTP — this server uses
+  none.
 
 ## Cube REST quirks
 
