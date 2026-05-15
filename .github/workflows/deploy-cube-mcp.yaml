@@ -74,7 +74,7 @@ jobs:
             --service-account=cube-mcp-runtime@${{ env.GCP_PROJECT_ID }}.iam.gserviceaccount.com \
             --port=8080 \
             --min-instances=1 \
-            --max-instances=1 \
+            --max-instances=3 \
             --memory=256Mi \
             --cpu=1 \
             --concurrency=80 \

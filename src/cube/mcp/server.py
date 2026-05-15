@@ -203,6 +203,11 @@ _fastmcp_kwargs: dict[str, Any] = {
     "host": "0.0.0.0",  # trunk-ignore(bandit/B104): intentional for Cloud Run
     "port": 8080,
     "lifespan": _lifespan,
+    # stateless_http lets Cloud Run scale horizontally — no per-instance session
+    # state, every request stands alone. We don't use MCP features that require
+    # persistent sessions (subscriptions, server-initiated messages); elicit is
+    # only invoked in stdio dev mode.
+    "stateless_http": True,
 }
 if AUTHKIT_DOMAIN and PUBLIC_URL:
     _fastmcp_kwargs["token_verifier"] = JWKSTokenVerifier(AUTHKIT_DOMAIN)
