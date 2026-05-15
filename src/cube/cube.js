@@ -56,9 +56,9 @@ module.exports = {
       }
     }
 
-    // Check cache
-    const cached = groupCache.get(email);
-    if (cached && cached.expiresAt > Date.now()) return cached.groups;
+    // DEBUG: skip cache so we always hit Directory API while diagnosing
+    // const cached = groupCache.get(email);
+    // if (cached && cached.expiresAt > Date.now()) return cached.groups;
 
     // Call Admin Directory API.
     // GOOGLE_DIRECTORY_SA_KEY: base64-encoded service account JSON with
@@ -81,14 +81,22 @@ module.exports = {
       const admin = google.admin({ version: "directory_v1", auth });
 
       let groups = [];
+      let rawEmails = [];
       let pageToken;
       do {
         const res = await admin.groups.list({ userKey: email, pageToken });
+        rawEmails = rawEmails.concat(
+          (res.data.groups ?? []).map((g) => g.email ?? "<no-email>"),
+        );
         groups = groups.concat(
           (res.data.groups ?? []).map((g) => (g.email ?? "").split("@")[0]),
         );
         pageToken = res.data.nextPageToken;
       } while (pageToken);
+
+      console.log(
+        `DEBUG contextToGroups ${email}: raw=${JSON.stringify(rawEmails)} parsed=${JSON.stringify(groups)}`,
+      );
 
       const cubeGroups = groups.filter((g) => g.startsWith("cube-"));
       groupCache.set(email, {
