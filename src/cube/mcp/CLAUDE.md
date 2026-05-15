@@ -70,6 +70,23 @@ Cloud Run service via `--set-secrets`).
 - **`host` / `port` are FastMCP constructor kwargs**, not `run()` kwargs; stored
   at `mcp.settings.host` / `mcp.settings.port`. `run()` accepts only `transport`
   and `mount_path`.
+- **Elicit capability check**:
+  `ctx.session.check_client_capability(ClientCapabilities(elicitation=ElicitationCapability()))`.
+  Don't use the `CapabilityNotSupported` try/except from build-mcp-server's
+  `references/elicitation.md` — that's jlowin's `fastmcp`, not the official
+  SDK's bundled FastMCP.
+- **Resource cleanup**: pass `lifespan=` to `FastMCP(...)` as
+  `Callable[[FastMCP], AbstractAsyncContextManager]`. Required to close the
+  module-level `httpx.AsyncClient` on shutdown.
+- **`PyJWKClient` defaults are uncached** (`cache_keys=False`, `lifespan=300`).
+  For hot-path verifiers pass `cache_keys=True, lifespan=3600`.
+- **Total tool wall-clock must stay under 60s** (Claude Code default per-tool
+  timeout). httpx timeout + polling-loop deadline both fit inside that budget.
+
+## Cube REST quirks
+
+- **`/sql` is GET-only**; query goes in URL via
+  `params={"query": json.dumps(query)}`. `/load` accepts POST with JSON body.
 
 ## WorkOS quirks
 

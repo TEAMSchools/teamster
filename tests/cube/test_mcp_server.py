@@ -114,6 +114,14 @@ def test_main_raises_in_http_mode_when_AUTHKIT_DOMAIN_set_but_PUBLIC_URL_missing
         server.main()
 
 
+def test_main_raises_on_unknown_transport(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.delenv("AUTHKIT_DOMAIN", raising=False)
+    server = _load_server(monkeypatch)
+    monkeypatch.setenv("TRANSPORT", "htp")
+    with pytest.raises(RuntimeError, match="TRANSPORT must be one of"):
+        server.main()
+
+
 def test_jwks_verifier_rejects_invalid_token(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
@@ -188,6 +196,19 @@ def test_mint_token_puts_email_at_top_level_of_payload(
     assert decoded["email"] == "director@apps.teamschools.org"
 
 
+def test_mint_token_reuses_cached_token_within_ttl(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    server = _load_server(monkeypatch)
+    server._token_cache.clear()
+    first = server._mint_token("director@apps.teamschools.org")
+    second = server._mint_token("director@apps.teamschools.org")
+    assert first == second
+    # Different email → different token, cache keyed by email.
+    other = server._mint_token("teacher@apps.teamschools.org")
+    assert other != first
+
+
 def test_meta_cache_corruption_deletes_cache_file_and_refetches(
     monkeypatch: pytest.MonkeyPatch, tmp_path: Path
 ) -> None:
@@ -217,3 +238,36 @@ def test_meta_cache_corruption_deletes_cache_file_and_refetches(
     assert cache_path.exists()
     cached = json.loads(cache_path.read_text(encoding="utf-8"))
     assert cached["payload"] == {"cubes": []}
+
+
+def test_meta_in_memory_cache_skips_disk_read_on_repeat_calls(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    monkeypatch.setenv("CUBE_USER_EMAIL", "engineer@apps.teamschools.org")
+    monkeypatch.delenv("AUTHKIT_DOMAIN", raising=False)
+    monkeypatch.delenv("PUBLIC_URL", raising=False)
+    server = _load_server(monkeypatch)
+    server._meta_memory_cache.clear()
+    monkeypatch.setattr(server, "META_CACHE_DIR", tmp_path)
+
+    call_count = 0
+
+    async def fake_request(*args: object, **kwargs: object) -> dict[str, Any]:
+        del args, kwargs
+        nonlocal call_count
+        call_count += 1
+        return {"cubes": [{"name": "x"}]}
+
+    monkeypatch.setattr(server, "_request", fake_request)
+
+    ctx = MagicMock()
+    first = asyncio.run(server.meta(ctx))
+    second = asyncio.run(server.meta(ctx))
+    assert first == second == {"cubes": [{"name": "x"}]}
+    # Cold call hit /meta once; second call served from memory.
+    assert call_count == 1
+    # Delete disk cache to prove the second hit didn't read from disk.
+    server._meta_cache_path("engineer@apps.teamschools.org").unlink()
+    third = asyncio.run(server.meta(ctx))
+    assert third == {"cubes": [{"name": "x"}]}
+    assert call_count == 1

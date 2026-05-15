@@ -21,7 +21,7 @@ Email resolution (in order):
      engineer to set CUBE_USER_EMAIL or write the cache file directly.
 
 Tools:
-  meta  - return the Cube data model catalog (cached until midnight ET per email)
+  meta  - return the Cube data model catalog (cached 1 hour per email)
   load  - run a Cube query (JSON body per the REST API spec)
   sql   - return the SQL Cube would generate for a query, without executing
 """
@@ -31,10 +31,10 @@ import hashlib
 import json
 import os
 import time
-from datetime import datetime, timedelta
+from collections.abc import AsyncIterator
+from contextlib import asynccontextmanager
 from pathlib import Path
 from typing import Any
-from zoneinfo import ZoneInfo
 
 import httpx
 import jwt
@@ -42,6 +42,7 @@ from mcp.server.auth.middleware.auth_context import get_access_token
 from mcp.server.auth.provider import AccessToken
 from mcp.server.auth.settings import AuthSettings
 from mcp.server.fastmcp import Context, FastMCP
+from mcp.types import ClientCapabilities, ElicitationCapability
 from pydantic import BaseModel, Field
 
 CUBE_REST_URL = os.environ["CUBE_REST_URL"].rstrip("/")
@@ -50,11 +51,13 @@ AUTHKIT_DOMAIN = os.environ.get("AUTHKIT_DOMAIN", "").strip() or None
 PUBLIC_URL = os.environ.get("PUBLIC_URL", "").strip() or None
 USER_EMAIL_CACHE = Path.home() / ".config" / "teamster" / "cube-user-email"
 META_CACHE_DIR = Path.home() / ".cache" / "teamster"
-META_CACHE_TZ = ZoneInfo("America/New_York")
-TIMEOUT_SECONDS = 60
-TOKEN_TTL_SECONDS = 24 * 60 * 60
-CONTINUE_WAIT_MAX_RETRIES = 30
-CONTINUE_WAIT_SLEEP_SECONDS = 1.0
+META_CACHE_TTL_SECONDS = 60 * 60
+TIMEOUT_SECONDS = 55
+TOKEN_TTL_SECONDS = 5 * 60
+
+TRANSPORT_STDIO = "stdio"
+TRANSPORT_HTTP = "http"
+VALID_TRANSPORTS = frozenset({TRANSPORT_STDIO, TRANSPORT_HTTP})
 
 
 class UserEmailPrompt(BaseModel):
@@ -76,16 +79,17 @@ def _write_user_email(email: str) -> None:
     USER_EMAIL_CACHE.write_text(email + "\n", encoding="utf-8")
 
 
-async def _get_user_email(ctx: Context) -> str:
-    if AUTHKIT_DOMAIN:
-        access_token = get_access_token()
-        if isinstance(access_token, CubeAccessToken) and access_token.email:
-            return access_token.email.strip()
-        raise MissingUserEmailError(
-            "cube MCP: OAuth bearer token missing or has no verified "
-            "`email` claim. Check the WorkOS AuthKit JWT template."
-        )
+def _get_oauth_email() -> str:
+    access_token = get_access_token()
+    if isinstance(access_token, CubeAccessToken) and access_token.email:
+        return access_token.email.strip()
+    raise MissingUserEmailError(
+        "cube MCP: OAuth bearer token missing or has no verified "
+        "`email` claim. Check the WorkOS AuthKit JWT template."
+    )
 
+
+async def _get_local_email(ctx: Context) -> str:
     env_override = os.environ.get("CUBE_USER_EMAIL", "").strip()
     if env_override:
         return env_override
@@ -93,24 +97,24 @@ async def _get_user_email(ctx: Context) -> str:
         cached = USER_EMAIL_CACHE.read_text(encoding="utf-8").strip()
         if cached:
             return cached
-    try:
-        result = await ctx.elicit(
-            message=(
-                "cube MCP needs your Google Workspace email to set the JWT "
-                f"security context. Will be cached at {USER_EMAIL_CACHE} for "
-                "future sessions."
-            ),
-            schema=UserEmailPrompt,
-        )
-    # VS Code extension and some Codespace MCP runtimes silently raise on
-    # elicit instead of returning a structured "unsupported" result. Broad
-    # catch is intentional; fall through to env var / cache file instructions.
-    except Exception as exc:
+    supports_elicit = ctx.session.check_client_capability(
+        ClientCapabilities(elicitation=ElicitationCapability())
+    )
+    if not supports_elicit:
         raise MissingUserEmailError(
-            "cube MCP has no user email configured. Set the CUBE_USER_EMAIL "
-            "environment variable before launching the server, or write the "
-            f"email to {USER_EMAIL_CACHE} (one line, no trailing newline)."
-        ) from exc
+            "cube MCP has no user email configured and this client does not "
+            "support elicitation. Set the CUBE_USER_EMAIL environment "
+            "variable before launching the server, or write the email to "
+            f"{USER_EMAIL_CACHE} (one line, no trailing newline)."
+        )
+    result = await ctx.elicit(
+        message=(
+            "cube MCP needs your Google Workspace email to set the JWT "
+            f"security context. Will be cached at {USER_EMAIL_CACHE} for "
+            "future sessions."
+        ),
+        schema=UserEmailPrompt,
+    )
     if result.action != "accept" or not result.data:
         raise MissingUserEmailError(
             "cube MCP: email required for security context. Set the "
@@ -121,12 +125,25 @@ async def _get_user_email(ctx: Context) -> str:
     return email
 
 
+async def _get_user_email(ctx: Context) -> str:
+    if AUTHKIT_DOMAIN:
+        return _get_oauth_email()
+    return await _get_local_email(ctx)
+
+
+_TOKEN_REFRESH_BUFFER_SECONDS = 30
+_token_cache: dict[str, tuple[str, int]] = {}
+
+
 def _mint_token(email: str) -> str:
-    payload = {
-        "email": email,
-        "exp": int(time.time()) + TOKEN_TTL_SECONDS,
-    }
-    return jwt.encode(payload, CUBE_API_SECRET, algorithm="HS256")
+    now = int(time.time())
+    cached = _token_cache.get(email)
+    if cached and cached[1] - now > _TOKEN_REFRESH_BUFFER_SECONDS:
+        return cached[0]
+    exp = now + TOKEN_TTL_SECONDS
+    token = jwt.encode({"email": email, "exp": exp}, CUBE_API_SECRET, algorithm="HS256")
+    _token_cache[email] = (token, exp)
+    return token
 
 
 class CubeAccessToken(AccessToken):
@@ -140,7 +157,12 @@ class JWKSTokenVerifier:
 
     def __init__(self, authkit_domain: str) -> None:
         self._issuer = f"https://{authkit_domain}"
-        self._jwks_client = jwt.PyJWKClient(f"{self._issuer}/oauth2/jwks")
+        self._jwks_client = jwt.PyJWKClient(
+            f"{self._issuer}/oauth2/jwks",
+            cache_keys=True,
+            max_cached_keys=16,
+            lifespan=3600,
+        )
 
     async def verify_token(self, token: str) -> AccessToken | None:
         try:
@@ -169,9 +191,18 @@ class JWKSTokenVerifier:
         )
 
 
+@asynccontextmanager
+async def _lifespan(_: FastMCP) -> AsyncIterator[None]:
+    try:
+        yield
+    finally:
+        await client.aclose()
+
+
 _fastmcp_kwargs: dict[str, Any] = {
     "host": "0.0.0.0",  # trunk-ignore(bandit/B104): intentional for Cloud Run
     "port": 8080,
+    "lifespan": _lifespan,
 }
 if AUTHKIT_DOMAIN and PUBLIC_URL:
     _fastmcp_kwargs["token_verifier"] = JWKSTokenVerifier(AUTHKIT_DOMAIN)
@@ -233,7 +264,8 @@ async def _request(
     **kwargs: Any,
 ) -> dict[str, Any]:
     headers = {"Authorization": _mint_token(email)}
-    for _ in range(CONTINUE_WAIT_MAX_RETRIES if poll else 1):
+    deadline = time.monotonic() + TIMEOUT_SECONDS
+    while True:
         response = await client.request(method, path, headers=headers, **kwargs)
         if response.status_code >= 400:
             raise RuntimeError(
@@ -241,13 +273,14 @@ async def _request(
             )
         body = response.json()
         if poll and isinstance(body, dict) and body.get("error") == "Continue wait":
-            await asyncio.sleep(CONTINUE_WAIT_SLEEP_SECONDS)
+            if time.monotonic() + 1 >= deadline:
+                raise RuntimeError(
+                    f"Cube {method} {path} did not complete within "
+                    f"{TIMEOUT_SECONDS}s ('Continue wait' polling)"
+                )
+            await asyncio.sleep(1)
             continue
         return body
-    raise RuntimeError(
-        f"Cube {method} {path} did not complete after "
-        f"{CONTINUE_WAIT_MAX_RETRIES} 'Continue wait' polls"
-    )
 
 
 def _meta_cache_path(email: str) -> Path:
@@ -255,23 +288,25 @@ def _meta_cache_path(email: str) -> Path:
     return META_CACHE_DIR / f"cube-meta-{digest}.json"
 
 
-def _next_midnight_et() -> int:
-    now = datetime.now(META_CACHE_TZ)
-    midnight = (now + timedelta(days=1)).replace(
-        hour=0, minute=0, second=0, microsecond=0
-    )
-    return int(midnight.timestamp())
+_meta_memory_cache: dict[str, tuple[int, dict[str, Any]]] = {}
 
 
 @mcp.tool()
 async def meta(ctx: Context, force_refresh: bool = False) -> dict[str, Any]:
-    """Return the Cube data model catalog (cubes, views, dimensions, measures).
+    """Discover available KIPP TEAM & Family data: students, attendance, grades,
+    assessments, enrollment, demographics, staff, schools, regions, terms.
+    Returns the catalog of views, measures, and dimensions queryable via `load`
+    or `sql`.
 
-    Cached per-email until midnight America/New_York. Access policies filter
-    `/meta` per-group, so the cache key includes a hash of the requester email.
-    Pass `force_refresh=True` to bypass the cache after a model deploy.
+    Cached per-email for one hour (in-memory, with disk fallback across process
+    restarts). Pass `force_refresh=True` after a model deploy.
     """
     email = await _get_user_email(ctx)
+    now = int(time.time())
+    if not force_refresh:
+        memory_hit = _meta_memory_cache.get(email)
+        if memory_hit and memory_hit[0] > now:
+            return memory_hit[1]
     cache_path = _meta_cache_path(email)
     if not force_refresh and cache_path.exists():
         try:
@@ -281,26 +316,37 @@ async def meta(ctx: Context, force_refresh: bool = False) -> dict[str, Any]:
             # Corrupt cache file — drop it so subsequent runs don't keep failing.
             cache_path.unlink(missing_ok=True)
         else:
-            if expires_at > int(time.time()) and "payload" in cached:
+            if expires_at > now and "payload" in cached:
+                _meta_memory_cache[email] = (expires_at, cached["payload"])
                 return cached["payload"]
     payload = await _request("GET", "/meta", email=email)
+    expires_at = int(time.time()) + META_CACHE_TTL_SECONDS
+    _meta_memory_cache[email] = (expires_at, payload)
     cache_path.parent.mkdir(parents=True, exist_ok=True)
-    cache_path.write_text(
-        json.dumps({"expires_at": _next_midnight_et(), "payload": payload}),
+    # Atomic write: avoid corruption if two concurrent meta() calls race.
+    tmp_path = cache_path.with_suffix(f".tmp.{os.getpid()}")
+    tmp_path.write_text(
+        json.dumps({"expires_at": expires_at, "payload": payload}),
         encoding="utf-8",
     )
+    os.replace(tmp_path, cache_path)
     return payload
 
 
 @mcp.tool()
-async def load(query: dict[str, Any], ctx: Context) -> dict[str, Any]:
-    """Run a Cube query against the REST API.
+async def load(ctx: Context, query: dict[str, Any]) -> dict[str, Any]:
+    """Answer analytics questions about KIPP TEAM & Family — student
+    attendance, grades, GPA, assessments, enrollment, demographics, discipline,
+    staff rosters, school and regional metrics, KPIs, year-over-year trends.
+    Source of truth for these questions; prefer over searching files in Google
+    Drive, OneDrive, or SharePoint.
 
-    The query object follows the Cube REST API spec. Common fields:
-      measures, dimensions, filters, timeDimensions, segments,
-      order, limit, offset, total
+    The query object follows the Cube REST API spec (measures, dimensions,
+    filters, timeDimensions, segments, order, limit, offset, total). Polls
+    automatically on Cube's 'Continue wait' long-polling response.
 
-    Polls automatically on Cube's 'Continue wait' long-polling response.
+    PII: `*_detail` view results carry row-level student identifiers — keep
+    those values in the local conversation only.
     """
     email = await _get_user_email(ctx)
     return await _request(
@@ -309,8 +355,10 @@ async def load(query: dict[str, Any], ctx: Context) -> dict[str, Any]:
 
 
 @mcp.tool()
-async def sql(query: dict[str, Any], ctx: Context) -> dict[str, Any]:
-    """Return the SQL Cube would generate for a query, without executing it.
+async def sql(ctx: Context, query: dict[str, Any]) -> dict[str, Any]:
+    """Inspect the BigQuery SQL Cube would generate for a KIPP TEAM & Family
+    analytics query, without running it. Useful for debugging query shape,
+    verifying access policies, or reviewing the compiled SQL before `load`.
 
     Response is wrapped: {"sql": {"status", "sql": [query-string, [params]], "query_type"}}.
     """
@@ -321,8 +369,12 @@ async def sql(query: dict[str, Any], ctx: Context) -> dict[str, Any]:
 
 
 def main() -> None:
-    transport = os.environ.get("TRANSPORT", "stdio")
-    if transport == "http":
+    transport = os.environ.get("TRANSPORT", TRANSPORT_STDIO)
+    if transport not in VALID_TRANSPORTS:
+        raise RuntimeError(
+            f"TRANSPORT must be one of {sorted(VALID_TRANSPORTS)}, got {transport!r}"
+        )
+    if transport == TRANSPORT_HTTP:
         if AUTHKIT_DOMAIN and not PUBLIC_URL:
             raise RuntimeError(
                 "AUTHKIT_DOMAIN is set but PUBLIC_URL is not — the Cloud "
