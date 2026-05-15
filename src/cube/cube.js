@@ -108,7 +108,9 @@ module.exports = {
       });
       return cubeGroups;
     } catch (err) {
-      console.error(`contextToGroups failed for ${email}:`, err);
+      console.error(
+        `contextToGroups failed for ${email}: status=${err.code} message=${err.message} apiError=${JSON.stringify(err.response?.data?.error)}`,
+      );
       return []; // default deny on API failure
     }
   },
