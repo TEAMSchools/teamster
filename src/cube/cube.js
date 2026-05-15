@@ -45,14 +45,16 @@ module.exports = {
       securityContext?.cubeCloud?.userAttributes?.email;
     if (!email) return [];
 
-    // Pre-Directory-API testing allowlist. Remove once Directory API is live.
-    // Set CUBE_TESTING_USERS in Cube Cloud env vars (never commit values).
+    // TODO(#3936): remove once production cube-* Workspace groups exist and
+    // are populated. Without this allowlist, all users resolve to [] via
+    // Directory API (no groups exist yet) and hit queryRewrite default-deny.
     // Format: {"user@example.com": ["cube-access-student-data", "cube-network-detail"]}
+    // Set in Cube Cloud configuration (never commit values).
     if (process.env.CUBE_TESTING_USERS) {
       try {
         const map = JSON.parse(process.env.CUBE_TESTING_USERS);
         // All users handled here — listed get groups, unlisted get [] (default
-        // deny). Prevents fallthrough to Directory API in testing deployments.
+        // deny). Prevents fallthrough to Directory API while groups are absent.
         const groups = (map[email] ?? []).filter((g) => g.startsWith("cube-"));
         groupCache.set(email, { groups, expiresAt: nextMidnightEastern() });
         return groups;
@@ -126,14 +128,8 @@ module.exports = {
     const email =
       securityContext?.email ??
       securityContext?.cubeCloud?.userAttributes?.email;
-    const jwtGroups = securityContext?.groups;
     const cached = email ? groupCache.get(email) : null;
-    const groups =
-      Array.isArray(jwtGroups) && jwtGroups.length > 0
-        ? jwtGroups
-        : cached?.expiresAt > Date.now()
-          ? cached.groups
-          : [];
+    const groups = cached?.expiresAt > Date.now() ? cached.groups : [];
 
     // Users without cube-access-student-data see no student cubes.
     // STUDENT_CUBES list is a placeholder — full list added during YAML implementation.
