@@ -56,16 +56,13 @@ module.exports = {
       }
     }
 
+    // Check cache
     const cached = groupCache.get(email);
     if (cached && cached.expiresAt > Date.now()) return cached.groups;
 
-    // Call Cloud Identity Groups API — searchTransitiveGroups returns both
-    // direct and indirect (nested) memberships, so users can inherit cube-*
-    // access via parent groups.
+    // Call Admin Directory API.
     // GOOGLE_DIRECTORY_SA_KEY: base64-encoded service account JSON with
-    //   domain-wide delegation granted by GOOGLE_DIRECTORY_SA_SUBJECT and
-    //   the cloud-identity.groups.readonly scope authorized in Workspace
-    //   Admin → Security → API controls → Domain-wide delegation.
+    //   domain-wide delegation granted by GOOGLE_DIRECTORY_SA_SUBJECT.
     // GOOGLE_DIRECTORY_SA_SUBJECT: email of the Workspace admin that granted
     //   delegation (must be a super-admin in apps.teamschools.org).
     try {
@@ -75,28 +72,20 @@ module.exports = {
           Buffer.from(process.env.GOOGLE_DIRECTORY_SA_KEY, "base64").toString(),
         ),
         scopes: [
-          "https://www.googleapis.com/auth/cloud-identity.groups.readonly",
+          "https://www.googleapis.com/auth/admin.directory.group.readonly",
         ],
         clientOptions: {
           subject: process.env.GOOGLE_DIRECTORY_SA_SUBJECT,
         },
       });
-      const cloudidentity = google.cloudidentity({ version: "v1", auth });
+      const admin = google.admin({ version: "directory_v1", auth });
 
       let groups = [];
       let pageToken;
       do {
-        const res =
-          await cloudidentity.groups.memberships.searchTransitiveGroups({
-            parent: "groups/-",
-            query: `member_key_id == '${email}' && 'cloudidentitygroups.googleapis.com/groups.discussion_forum' in labels`,
-            pageSize: 500,
-            pageToken,
-          });
+        const res = await admin.groups.list({ userKey: email, pageToken });
         groups = groups.concat(
-          (res.data.memberships ?? []).map(
-            (m) => (m.groupKey?.id ?? "").split("@")[0],
-          ),
+          (res.data.groups ?? []).map((g) => (g.email ?? "").split("@")[0]),
         );
         pageToken = res.data.nextPageToken;
       } while (pageToken);
@@ -108,9 +97,7 @@ module.exports = {
       });
       return cubeGroups;
     } catch (err) {
-      console.error(
-        `contextToGroups failed for ${email}: status=${err.code} message=${err.message} apiError=${JSON.stringify(err.response?.data?.error)}`,
-      );
+      console.error(`contextToGroups failed for ${email}:`, err);
       return []; // default deny on API failure
     }
   },
