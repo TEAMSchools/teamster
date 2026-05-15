@@ -31,8 +31,6 @@ import hashlib
 import json
 import os
 import time
-from collections.abc import AsyncIterator
-from contextlib import asynccontextmanager
 from pathlib import Path
 from typing import Any
 
@@ -191,22 +189,19 @@ class JWKSTokenVerifier:
         )
 
 
-@asynccontextmanager
-async def _lifespan(_: FastMCP) -> AsyncIterator[None]:
-    try:
-        yield
-    finally:
-        await client.aclose()
-
-
 _fastmcp_kwargs: dict[str, Any] = {
     "host": "0.0.0.0",  # trunk-ignore(bandit/B104): intentional for Cloud Run
     "port": 8080,
-    "lifespan": _lifespan,
     # stateless_http lets Cloud Run scale horizontally — no per-instance session
     # state, every request stands alone. We don't use MCP features that require
     # persistent sessions (subscriptions, server-initiated messages); elicit is
     # only invoked in stdio dev mode.
+    #
+    # Do NOT pass a `lifespan=` kwarg: with stateless_http=True the SDK's
+    # _handle_stateless_request invokes `app.run(...)` per HTTP request, which
+    # in turn runs the user lifespan per request. A teardown like
+    # `await client.aclose()` would close the shared httpx client after the
+    # first request and break every subsequent one.
     "stateless_http": True,
 }
 if AUTHKIT_DOMAIN and PUBLIC_URL:

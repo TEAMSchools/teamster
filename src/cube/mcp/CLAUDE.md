@@ -81,9 +81,12 @@ Cloud Run service via `--set-secrets`).
   Don't use the `CapabilityNotSupported` try/except from build-mcp-server's
   `references/elicitation.md` — that's jlowin's `fastmcp`, not the official
   SDK's bundled FastMCP.
-- **Resource cleanup**: pass `lifespan=` to `FastMCP(...)` as
-  `Callable[[FastMCP], AbstractAsyncContextManager]`. Required to close the
-  module-level `httpx.AsyncClient` on shutdown.
+- **Do NOT use `lifespan=` with `stateless_http=True`.** In stateless mode the
+  SDK invokes `app.run(...)` per HTTP request, which runs the user lifespan per
+  request — a `client.aclose()` teardown closes the shared httpx client after
+  the first request and breaks every subsequent one
+  (`Cannot send a request, as the client has been closed`). Let the module-level
+  client live until process exit; SIGTERM cleans up.
 - **`PyJWKClient` defaults are uncached** (`cache_keys=False`, `lifespan=300`).
   For hot-path verifiers pass `cache_keys=True, lifespan=3600`.
 - **Total tool wall-clock must stay under 60s** (Claude Code default per-tool
