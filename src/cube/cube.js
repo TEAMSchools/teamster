@@ -21,11 +21,8 @@ function nextMidnightEastern() {
 }
 
 // STUDENT_CUBES: cubes that require cube-access-student-data.
-// TODO: populate full list during YAML implementation (follow-up to PR #3715).
-const STUDENT_CUBES = [
-  "fct_student_attendance_daily",
-  "fct_student_attendance_interventions",
-];
+// Add cube name: here when adding a new student-data cube.
+const STUDENT_CUBES = ["attendance"];
 
 const STAFF_CUBES = [
   "dim_staff",
@@ -112,8 +109,6 @@ module.exports = {
     const cached = email ? groupCache.get(email) : null;
     const groups = cached?.expiresAt > Date.now() ? cached.groups : [];
 
-    // Users without cube-access-student-data see no student cubes.
-    // STUDENT_CUBES list is a placeholder — full list added during YAML implementation.
     if (!groups.includes("cube-access-student-data")) {
       query = {
         ...query,

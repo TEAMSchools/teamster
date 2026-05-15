@@ -89,9 +89,8 @@ Default-deny, group-driven. Read [`cube.js`](cube.js) before modifying.
     segment unless the user has `cube-access-staff-all`.
 - **`STUDENT_CUBES` / `STAFF_CUBES` arrays.** Entries must match the cube
   `name:` field — `queryRewrite` matches via `startsWith` on
-  `<cube_name>.<member>` query members. Both arrays are currently placeholders
-  flagged TODO in `cube.js`; when adding a new student-data or staff-data cube,
-  append its `name:` to the matching array.
+  `<cube_name>.<member>` query members. When adding a new student-data or
+  staff-data cube, append its `name:` to the matching array.
 - **`canSwitchSqlUser`** only allows the SQL super-user to impersonate
   `@apps.teamschools.org` accounts (Superset integration). Do not broaden the
   suffix check.
