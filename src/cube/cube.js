@@ -21,11 +21,8 @@ function nextMidnightEastern() {
 }
 
 // STUDENT_CUBES: cubes that require cube-access-student-data.
-// TODO: populate full list during YAML implementation (follow-up to PR #3715).
-const STUDENT_CUBES = [
-  "fct_student_attendance_daily",
-  "fct_student_attendance_interventions",
-];
+// Add cube name: here when adding a new student-data cube.
+const STUDENT_CUBES = ["attendance"];
 
 const STAFF_CUBES = [
   "dim_staff",
@@ -44,25 +41,6 @@ module.exports = {
       securityContext?.email ??
       securityContext?.cubeCloud?.userAttributes?.email;
     if (!email) return [];
-
-    // TODO(#3936): remove once production cube-* Workspace groups exist and
-    // are populated. Without this allowlist, all users resolve to [] via
-    // Directory API (no groups exist yet) and hit queryRewrite default-deny.
-    // Format: {"user@example.com": ["cube-access-student-data", "cube-network-detail"]}
-    // Set in Cube Cloud configuration (never commit values).
-    if (process.env.CUBE_TESTING_USERS) {
-      try {
-        const map = JSON.parse(process.env.CUBE_TESTING_USERS);
-        // All users handled here — listed get groups, unlisted get [] (default
-        // deny). Prevents fallthrough to Directory API while groups are absent.
-        const groups = (map[email] ?? []).filter((g) => g.startsWith("cube-"));
-        groupCache.set(email, { groups, expiresAt: nextMidnightEastern() });
-        return groups;
-      } catch (err) {
-        console.error("CUBE_TESTING_USERS is not valid JSON:", err.message);
-        return [];
-      }
-    }
 
     // Local dev only: CUBE_GROUP_MAP bypasses Directory API.
     // Must never be set in Cube Cloud — see docs/guides/cube.md.
@@ -131,8 +109,6 @@ module.exports = {
     const cached = email ? groupCache.get(email) : null;
     const groups = cached?.expiresAt > Date.now() ? cached.groups : [];
 
-    // Users without cube-access-student-data see no student cubes.
-    // STUDENT_CUBES list is a placeholder — full list added during YAML implementation.
     if (!groups.includes("cube-access-student-data")) {
       query = {
         ...query,
