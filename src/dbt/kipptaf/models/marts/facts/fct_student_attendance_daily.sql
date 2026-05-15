@@ -52,10 +52,23 @@ with
             ada.academic_year,
 
             ada.att_code as attendance_code,
-            ada.attendancevalue as attendance_value,
-            ada.membershipvalue as membership_value,
 
-            ada.is_present_weighted as present_weight,
+            if(
+                ada._dbt_source_project = 'kipppaterson' and ada.academic_year < 2026,
+                null,
+                ada.attendancevalue
+            ) as attendance_value,
+            if(
+                ada._dbt_source_project = 'kipppaterson' and ada.academic_year < 2026,
+                null,
+                ada.membershipvalue
+            ) as membership_value,
+
+            if(
+                ada._dbt_source_project = 'kipppaterson' and ada.academic_year < 2026,
+                null,
+                ada.is_present_weighted
+            ) as present_weight,
 
             ada.is_truant,
 
@@ -109,7 +122,7 @@ with
             *,
 
             avg(if(membership_value = 1, attendance_value, null)) over (
-                partition by student_number, schoolid, academic_year
+                partition by student_number, academic_year
                 order by date_key asc
                 rows between unbounded preceding and current row
             ) as _running_ada,
@@ -119,6 +132,7 @@ with
 select
     student_attendance_daily_key,
     student_enrollment_key,
+    student_number,
 
     date_key,
     location_key,
@@ -144,9 +158,11 @@ select
 
     attendance_category,
 
-    if(_running_ada <= 0.90, true, false) as is_chronically_absent,
+    if(_running_ada is null, null, _running_ada <= 0.90) as is_chronically_absent,
 
     case
+        when _running_ada is null
+        then null
         when _running_ada >= 0.95
         then 'Tier 1'
         when _running_ada >= 0.90
@@ -155,6 +171,10 @@ select
         then 'Tier 3'
         else 'Tier 4'
     end as ada_tier,
+
+    not (
+        academic_year = {{ var("current_academic_year") }} and enroll_status = 2
+    ) as is_ca_eligible,
 
     row_number() over (partition by student_enrollment_key order by date_key desc)
     = 1 as is_latest_record,

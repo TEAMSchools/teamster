@@ -54,6 +54,14 @@ models:
               arguments:
                 to: ref('dim_student_enrollments')
                 field: student_enrollment_key
+      - name: student_number
+        data_type: int64
+        description: >-
+          PowerSchool student identifier. PII — do not expose in aggregate
+          outputs or external surfaces. Used as the counting grain for
+          chronic-absence and ADA measures in the Cube semantic layer to avoid
+          double-counting students with multiple enrollment records in a year.
+
       - name: date_key
         data_type: date
         description: >-
@@ -127,7 +135,8 @@ models:
           where 1 is a full attendance day. Used with membership_value to
           compute ADA. Precision depends on the source SIS's attendance mode
           (full-day vs period-level vs day-part); see source_model for
-          provenance.
+          provenance. Null for Paterson records before academic_year 2026
+          (excluded from ADA — data not fully integrated until AY2026).
 
         config:
           meta:
@@ -140,7 +149,9 @@ models:
           The amount of a student's membership this school claims. If a student
           attends more than one school each one will only be able to claim a
           certain portion of the membership. The largest number for this will
-          usually be 1 and fractions expressed as decimals. Like .5 or .25.
+          usually be 1 and fractions expressed as decimals. Like .5 or .25. Null
+          for Paterson records before academic_year 2026 (excluded from ADA —
+          data not fully integrated until AY2026).
 
         config:
           meta:
@@ -151,7 +162,9 @@ models:
         data_type: float64
         description: >-
           Weighted presence value. 0.67 for tardy (T-prefix codes), otherwise
-          equals attendance_value. Fractional by design — not a 0/1 flag.
+          equals attendance_value. Fractional by design — not a 0/1 flag. Null
+          for Paterson records before academic_year 2026 (excluded from ADA —
+          data not fully integrated until AY2026).
 
       - name: is_truant
         data_type: boolean
@@ -218,13 +231,13 @@ models:
       - name: is_chronically_absent
         data_type: boolean
         description: >-
-          TRUE if the student's cumulative ADA at this school through this date
-          is at or below 90%. Computed as AVG(attendance_value) on full
-          membership days only (membership_value = 1), partitioned by student ×
-          school × academic year, ordered by date. Fractional membership days
-          (dual-enrolled students) are excluded, matching the methodology in
-          rpt_tableau__attendance_dashboard. Reflects point-in-time CA status —
-          a student may be chronically absent mid-year and recover later.
+          TRUE if the student's cumulative ADA through this date is at or below
+          90%. Running average of attendance_value on full membership days only
+          (membership_value = 1), partitioned by student × academic year
+          (cross-school), ordered by date. Point-in-time — filter to a single
+          date to get YTD CA status as of that date. Filtering to a date range
+          overcounts by including students CA at any point in the range. Null
+          for Paterson records before academic_year 2026.
 
       - name: ada_tier
         data_type: string
@@ -232,7 +245,16 @@ models:
           ADA tier based on cumulative attendance rate through this date. Tier 1
           = 95%+ ADA (on track). Tier 2 = 90–94% (at risk). Tier 3 = 80–89%
           (chronic). Tier 4 = below 80% (severe chronic). Partitioned by student
-          × school × academic year, ordered by date.
+          × school × academic year, ordered by date. Null for Paterson records
+          before academic_year 2026.
+
+      - name: is_ca_eligible
+        data_type: boolean
+        description: >-
+          TRUE if this student-day should be included in chronic absence
+          calculations. FALSE for transferred-out students (enroll_status = 2)
+          in the current academic year only, matching Tableau's methodology.
+          Prior-year records are always eligible regardless of transfer status.
 
       - name: is_latest_record
         data_type: boolean

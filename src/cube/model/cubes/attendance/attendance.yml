@@ -1,7 +1,7 @@
 cubes:
   - name: attendance
     public: false
-    sql_table: kipptaf_marts.fct_student_attendance_daily
+    sql_table: zz_cristinabaldor_kipptaf_marts.fct_student_attendance_daily
 
     joins:
       - name: dim_dates
@@ -37,6 +37,11 @@ cubes:
         sql: student_attendance_daily_key
         type: string
         primary_key: true
+
+      - name: student_number
+        sql: student_number
+        type: number
+        public: false
 
       - name: attendance_date
         sql: CAST(date_key AS TIMESTAMP)
@@ -165,13 +170,20 @@ cubes:
         type: number
         public: true
 
+      - name: is_ca_eligible
+        description: >-
+          TRUE if this student-day is included in chronic absence calculations.
+          Transferred-out students (enroll_status = 2) are excluded for the
+          current academic year only; prior-year records are always eligible.
+        sql: is_ca_eligible
+        type: boolean
+        public: false
+
       - name: is_chronically_absent
         description: >-
           TRUE if the student's cumulative ADA through this date is at or below
-          90%. Computed on full membership days only (membership_value = 1),
-          matching Tableau's AttendanceRollup methodology. Point-in-time —
-          filter to a specific date or date range to see CA status at that point
-          in the year.
+          90%. Computed on full membership days only (membership_value = 1).
+          Filter to a single date to get YTD CA status as of that date.
         sql: is_chronically_absent
         type: boolean
         public: true
@@ -249,33 +261,40 @@ cubes:
           - sql: "{CUBE}.membership_value > 0"
 
       - name: _count_ca_eligible_students
-        description:
-          Denominator for CA rate — active students only (enroll_status != 2).
-        sql: student_enrollment_key
+        description: >-
+          Denominator for CA rate — distinct students on full membership days
+          (membership_value = 1) who are CA-eligible (is_ca_eligible = true).
+          Must be used with a single date filter. Uses student_number to avoid
+          double-counting students with multiple enrollment records in the same
+          year.
+        sql: student_number
         type: count_distinct
         public: false
         filters:
-          - sql: "{CUBE}.membership_value > 0"
-          - sql: "{CUBE}.enroll_status != 2"
+          - sql: "{CUBE}.membership_value = 1"
+          - sql: "{CUBE}.is_ca_eligible = true"
 
       - name: count_chronically_absent
         description: >-
-          Students meeting the chronic absence threshold (cumulative ADA ≤ 90%)
-          as of the filtered date, excluding transferred-out students
-          (enroll_status = 2). Filter to a specific date for a point-in-time
-          snapshot, or a date range to see CA across a period.
-        sql: student_enrollment_key
+          Students with cumulative ADA ≤ 90% as of the filtered date (YTD
+          chronic absence). Must be filtered to a single date — the running ADA
+          accumulates from the start of the academic year through that date, so
+          the result is "how many students were chronically absent as of X?"
+          Filtering to a date range or omitting the date filter will overcount
+          by including students who were CA at any point in the period.
+        sql: student_number
         type: count_distinct
         public: true
         filters:
           - sql: "{CUBE}.is_chronically_absent = true"
-          - sql: "{CUBE}.membership_value > 0"
-          - sql: "{CUBE}.enroll_status != 2"
+          - sql: "{CUBE}.membership_value = 1"
+          - sql: "{CUBE}.is_ca_eligible = true"
 
       - name: pct_chronically_absent
         description: >-
-          Percentage of active students (enroll_status != 2) meeting the chronic
-          absence threshold (cumulative ADA ≤ 90%) as of the filtered date.
+          YTD chronic absence rate as of the filtered date —
+          count_chronically_absent / _count_ca_eligible_students. Must be
+          filtered to a single date. See count_chronically_absent for details.
         sql:
           "1.0 * {count_chronically_absent} /
           NULLIF({_count_ca_eligible_students}, 0)"
