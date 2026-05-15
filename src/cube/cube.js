@@ -45,25 +45,6 @@ module.exports = {
       securityContext?.cubeCloud?.userAttributes?.email;
     if (!email) return [];
 
-    // TODO(#3936): remove once production cube-* Workspace groups exist and
-    // are populated. Without this allowlist, all users resolve to [] via
-    // Directory API (no groups exist yet) and hit queryRewrite default-deny.
-    // Format: {"user@example.com": ["cube-access-student-data", "cube-network-detail"]}
-    // Set in Cube Cloud configuration (never commit values).
-    if (process.env.CUBE_TESTING_USERS) {
-      try {
-        const map = JSON.parse(process.env.CUBE_TESTING_USERS);
-        // All users handled here — listed get groups, unlisted get [] (default
-        // deny). Prevents fallthrough to Directory API while groups are absent.
-        const groups = (map[email] ?? []).filter((g) => g.startsWith("cube-"));
-        groupCache.set(email, { groups, expiresAt: nextMidnightEastern() });
-        return groups;
-      } catch (err) {
-        console.error("CUBE_TESTING_USERS is not valid JSON:", err.message);
-        return [];
-      }
-    }
-
     // Local dev only: CUBE_GROUP_MAP bypasses Directory API.
     // Must never be set in Cube Cloud — see docs/guides/cube.md.
     if (process.env.NODE_ENV !== "production" && process.env.CUBE_GROUP_MAP) {

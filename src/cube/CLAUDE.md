@@ -77,11 +77,8 @@ Default-deny, group-driven. Read [`cube.js`](cube.js) before modifying.
 
 - **`contextToGroups`** resolves the requester's email to `cube-*` Google
   Workspace groups via the Admin Directory API, cached until next midnight ET.
-  Two bypass paths (priority order):
-  - `CUBE_TESTING_USERS` — required until prod `cube-*` groups are created and
-    populated (see
-    [#3936](https://github.com/TEAMSchools/teamster/issues/3936)).
-  - `CUBE_GROUP_MAP` — local dev only, gated on `NODE_ENV !== "production"`.
+  `CUBE_GROUP_MAP` (local dev only, gated on `NODE_ENV !== "production"`) is the
+  sole bypass.
 - **`queryRewrite`** enforces three filters:
   - Strips dims/measures from `STUDENT_CUBES` for users without
     `cube-access-student-data`.
