@@ -103,7 +103,9 @@
       "Skill(commit-commands:commit:*)",
       "Skill(dbt:using-dbt-for-analytics-engineering:*)",
       "Write(//workspaces/teamster/.claude/scratch/**)",
-      "Write(//workspaces/teamster/.worktrees/**)"
+      "Write(//workspaces/teamster/.worktrees/**)",
+      "mcp__claude_ai_Cube__meta",
+      "mcp__cloud-run__list_services"
     ],
     "deny": [
       "Bash(gcloud *)",
