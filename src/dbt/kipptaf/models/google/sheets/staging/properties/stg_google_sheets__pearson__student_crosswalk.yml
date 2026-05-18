@@ -1,7 +1,5 @@
 models:
   - name: stg_google_sheets__pearson__student_crosswalk
-    config:
-      enabled: false
     columns:
       - name: Student_Test_UUID
         data_type: string

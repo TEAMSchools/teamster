@@ -72,11 +72,12 @@ select
     u.testscorecomplete,
     u.twoormoreraces,
     u.white,
-    u.localstudentidentifier,
 
     cast(u.statestudentidentifier as string) as statestudentidentifier,
 
     coalesce(u.studentwithdisabilities in ('504', 'B'), false) as is_504,
+
+    coalesce(x.student_number, u.localstudentidentifier) as localstudentidentifier,
 
     if(u.englishlearnerel = 'Y', true, false) as lep_status,
 
@@ -100,3 +101,6 @@ select
     end as race_ethnicity,
 
 from union_relations as u
+left join
+    {{ ref("stg_google_sheets__pearson__student_crosswalk") }} as x
+    on u.studenttestuuid = x.student_test_uuid

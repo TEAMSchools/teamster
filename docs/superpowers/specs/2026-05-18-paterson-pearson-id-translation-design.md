@@ -48,14 +48,22 @@ Paterson Pearson wrong-match rows, `localstudentidentifier` matches exactly one
 Paterson PS record via `prevstudentid`. The 8 orphans remain unresolved by any
 model-side join (these students have no PS record — separate Ops concern).
 
-## The crosswalk is vestigial
+## The crosswalk: out of scope, kept
 
 `stg_google_sheets__pearson__student_crosswalk` has 61 entries (61 distinct
 UUIDs, 22 distinct `student_number`s). All 61 fire on non-Paterson rows; 0 fire
-on Paterson. In every case the crosswalk's `student_number` equals the raw
-`localstudentidentifier` — the coalesce is a no-op in current data. After this
-spec ships the crosswalk would still resolve nothing, and Paterson is now
-handled upstream of the union. Remove it.
+on Paterson. A first pass concluded the crosswalk was vestigial, but a deeper
+investigation (comparing `crosswalk.student_number` against the **raw**
+`stg_pearson__*.localstudentidentifier`, not the already-coalesced
+`int_pearson__all_assessments.localstudentidentifier`) showed it overrides 13
+distinct localids (~28 Pearson rows): the raw Pearson `localstudentidentifier`
+is a non-canonical state-ID-shaped value (e.g., `2792`, `701158700`, `15356600`)
+and the crosswalk resolves the UUID to a valid KIPP `student_number` (e.g.,
+`14005`, `203307`). Removing the crosswalk regresses these 28 rows into
+`student_key` orphans against `dim_students`. The crosswalk stays. Architectural
+cleanup (move these per-localid corrections into kippnewark / kippcamden
+intermediates analogous to the Paterson pattern) belongs in a follow-up issue,
+not Phase B.
 
 ## Design
 
@@ -74,7 +82,7 @@ kipppaterson.int_pearson__<assessment>
                           ↓ sourced by kipptaf
 kipptaf.stg_pearson__<assessment>  (union of 3 districts)
                           ↓
-int_pearson__all_assessments  (crosswalk join removed)
+int_pearson__all_assessments  (crosswalk join retained)
 ```
 
 **Architectural rationale**: the asymmetry is structural to Paterson's
@@ -153,23 +161,15 @@ source("kipppaterson_pearson", "int_pearson__<assessment>")
 
 Newark / Camden sources stay unchanged.
 
-### 4. Remove the vestigial crosswalk
+### 4. Crosswalk: keep as-is
 
-In `int_pearson__all_assessments.sql`:
-
-- Drop the `LEFT JOIN stg_google_sheets__pearson__student_crosswalk as x`
-- Replace `coalesce(x.student_number, u.localstudentidentifier)` with
-  `u.localstudentidentifier`
-
-Disable the staging model and the upstream Google Sheet source:
-
-- Set `config: enabled: false` on
-  `stg_google_sheets__pearson__student_crosswalk` in its properties yml.
-- Remove (or disable) the corresponding `pearson__student_crosswalk` entry in
-  `src/dbt/kipptaf/models/google/sheets/sources-external.yml` so the Google
-  Sheet external table is no longer registered as a source. With the staging
-  model and the source both gone, the sheet has no entry points into the
-  warehouse.
+The crosswalk overrides 13 distinct localids (~28 Pearson rows). Initial
+analysis missed those overrides (see "The crosswalk: out of scope, kept" above).
+Removing it now would regress those rows into `dim_students` orphans. Leave the
+`LEFT JOIN` to `stg_google_sheets__pearson__student_crosswalk` in
+`int_pearson__all_assessments` intact. File a follow-up issue to move the
+per-localid corrections to kippnewark / kippcamden intermediates analogous to
+the Paterson pattern; then the crosswalk can be retired.
 
 ## Acceptance criteria
 
@@ -177,10 +177,8 @@ Disable the staging model and the upstream Google Sheet source:
       NJSLA Science) with passing uniqueness tests.
 - [ ] The 2 kipptaf-level `stg_pearson__njsla` / `stg_pearson__njsla_science`
       union models source the translated intermediates for Paterson.
-- [ ] `int_pearson__all_assessments` no longer references the crosswalk.
-- [ ] `stg_google_sheets__pearson__student_crosswalk` is disabled.
-- [ ] `pearson__student_crosswalk` source entry removed (or disabled) in
-      `sources-external.yml`.
+- [ ] Crosswalk join and source declarations remain in place (regression scope
+      avoided; cleanup deferred to a follow-up issue).
 - [ ] 432 Paterson Pearson rows that previously FKed into Newark `student_key`s
       now FK into Paterson `student_key`s.
 - [ ] 8 Paterson Pearson orphans remain orphans (relationships test continues to
