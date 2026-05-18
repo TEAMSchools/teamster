@@ -17,11 +17,15 @@ from teamster.libraries.powerschool.sis.odbc.resources import PowerSchoolODBCRes
 from teamster.libraries.ssh.resources import SSHResource
 from teamster.libraries.zendesk.resources import ZendeskResource
 
+# `DAGSTER_CLOUD_IS_BRANCH_DEPLOYMENT` is `"0"` in full deployments and `"1"` in
+# branch deployments — always compare to `"1"`, never truthy.
+IS_BRANCH_DEPLOYMENT = os.getenv("DAGSTER_CLOUD_IS_BRANCH_DEPLOYMENT") == "1"
+
 GCS_RESOURCE = GCSResource(project=GCS_PROJECT_NAME)
 
 
 def get_io_manager_gcs_pickle(code_location: str) -> GCSIOManager:
-    if os.getenv("DAGSTER_CLOUD_IS_BRANCH_DEPLOYMENT") == "1":
+    if IS_BRANCH_DEPLOYMENT:
         code_location = "test"
 
     return GCSIOManager(
@@ -30,7 +34,7 @@ def get_io_manager_gcs_pickle(code_location: str) -> GCSIOManager:
 
 
 def get_io_manager_gcs_avro(code_location: str, test: bool = False) -> GCSIOManager:
-    if os.getenv("DAGSTER_CLOUD_IS_BRANCH_DEPLOYMENT") == "1":
+    if IS_BRANCH_DEPLOYMENT:
         code_location = "test"
         test = True
 
@@ -43,7 +47,7 @@ def get_io_manager_gcs_avro(code_location: str, test: bool = False) -> GCSIOMana
 
 
 def get_io_manager_gcs_file(code_location: str, test: bool = False) -> GCSIOManager:
-    if os.getenv("DAGSTER_CLOUD_IS_BRANCH_DEPLOYMENT") == "1":
+    if IS_BRANCH_DEPLOYMENT:
         code_location = "test"
         test = True
 
@@ -56,7 +60,7 @@ def get_io_manager_gcs_file(code_location: str, test: bool = False) -> GCSIOMana
 
 
 def get_dbt_cli_resource(dbt_project: DbtProject) -> DbtCliResource:
-    if os.getenv("DAGSTER_CLOUD_IS_BRANCH_DEPLOYMENT") == "1":
+    if IS_BRANCH_DEPLOYMENT:
         return DbtCliResource(project_dir=dbt_project, target="defer")
     return DbtCliResource(project_dir=dbt_project)
 
@@ -118,6 +122,10 @@ SSH_EDPLAN = SSHResource(
     # occasionally exceed that during peak periods, causing transient TimeoutError
     # on connect. 30s tolerates those without masking a truly unreachable host.
     timeout=30,
+    # secureftp.easyiep.com (GlobalSCAPE EFT 8.1) advertises only `ssh-rsa`
+    # (SHA-1 RSA) host keys. paramiko 5.0 dropped ssh-rsa from defaults; opt
+    # back in for this host only.
+    enable_legacy_rsa=True,
 )
 
 SSH_IREADY = SSHResource(

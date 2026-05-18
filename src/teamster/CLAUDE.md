@@ -162,7 +162,11 @@ the request method. For network-call retries, the predicate must include
 `(RequestsConnectionError, Timeout, HTTPError)` — `HTTPError` alone misses
 `ConnectTimeout`. For runtime-parameterized retry loops (e.g.
 `with_powerschool_retry`), use `tenacity.Retrying` — a manual
-`for attempt in range(...)` has no backoff.
+`for attempt in range(...)` has no backoff. Avoid broad base classes whose
+subclasses include deterministic config errors (e.g.
+`paramiko.ssh_exception.SSHException` covers `IncompatiblePeer`,
+`BadHostKeyException`, `BadAuthenticationType`). List transient subclasses
+explicitly.
 
 **Don't `log.exception` inside retry-wrapped helpers**. GCP Error Reporting
 files groups at ERROR severity, so logging a traceback inside a context manager
