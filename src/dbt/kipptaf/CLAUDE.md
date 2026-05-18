@@ -128,6 +128,11 @@ rows (one per district) with
 filters them via `where dcid >= 1`. Apply the same filter if reading a
 per-region source-system staging table directly.
 
+**`stg_powerschool__students` `enroll_status = 1` is invalid.** Filter
+`enroll_status IN (0, 2, 3)` (active / withdrawn / graduated) when resolving
+identity or attributing facts to a student. `-1` is pre-registered (not yet
+enrolled); `1` is inactive — never report against either.
+
 **`base_powerschool__course_enrollments` PowerSchool double-writes**: a frozen
 historical corpus of duplicate `cc` rows for the same
 `(student, section, dateleft)`, surfaced by a warn-level
@@ -196,10 +201,24 @@ dbt Cloud project ID: `211862`.
 CI job: `dbt build --select state:modified+ --full-refresh`, target `staging`,
 defers to Staging environment.
 
+CI is scoped to the kipptaf project only. PRs touching only a district project
+(kipppaterson, kippnewark, kippcamden, kippmiami) get a no-op kipptaf CI run
+that selects no models — kipptaf CI green is not evidence the district-side
+changes are correct. Verify via local `uv run dbt build` against the district
+project.
+
 `Clone - Staging (Modified)` clones only `state:modified` models, not their
 parents. When CI fails on a stale staging defer table for an unmodified upstream
 (column missing after a recent merge), trigger the full `Clone - Staging` job —
 or `dbt clone --select <upstream>` against staging.
+
+## Verifying a coalesce/override layer is vestigial
+
+Compare the override source against the **raw upstream**, not the
+already-coalesced output column. `coalesce(override, raw)` trivially matches
+`override` when it fires; comparing resolved-to-override hides every real
+override. Source the staging model that feeds the coalesce, not the intermediate
+that applies it.
 
 ## Model Layer Distinctions
 

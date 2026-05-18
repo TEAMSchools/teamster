@@ -97,6 +97,11 @@ file; domain specifics live in the nearest subdirectory CLAUDE.md.
 - **PR project linkage**: PRs auto-appear on project boards via issue refs
   (`Refs #N`, `Closes #N`) in the body. Do NOT `gh project item-add` a PR.
 
+- **Check dbt Cloud CI state before pushing fixes**: pushing cancels an
+  in-progress dbt run and restarts it. Before pushing a CI-fix commit, confirm
+  dbt Cloud is in terminal state; if it's still running, wait or ask the user.
+  Bundle multiple CI-fix commits into one push.
+
 - **Python**: Always `uv run` — never bare `python`, `python3`, or
   venv-installed tools (`dbt`, `dagster`, etc.).
 
