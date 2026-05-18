@@ -270,6 +270,19 @@ Inherited from `marts/` directory config: `contract: enforced: true`,
 `materialized: view`. PK/FK `constraints:` blocks include
 `warn_unsupported: false` per marts/CLAUDE.md.
 
+### Strict-chain traversal
+
+These dims FK only to `dim_students` and `dim_dates`. No `region_key`,
+`location_key`, or shortcut FKs to deeper dims — consumers traverse the chain
+through `dim_students` to reach location / region context.
+
+### `dim_dates` sentinel row
+
+The `'9999-12-31'` end-date sentinel requires a matching row in `dim_dates` for
+the `effective_date_end_key` relationships test to pass. Verify the row exists
+before merge; if missing, extend the `dim_dates` generator to include it
+(additive upstream edit).
+
 ## Cube exposure update
 
 Add the three new dim names to `cube.yml`'s `cube_semantic_layer.depends_on`
