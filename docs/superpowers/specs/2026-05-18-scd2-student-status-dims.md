@@ -66,27 +66,33 @@ attributes — not on `dim_students`.
 ## Source map
 
 Each dim has two legs: an NJ leg using a native upstream model with
-effective-date columns, and a Paterson + Miami leg using enrollment-year
-reconstruction from `base_powerschool__student_enrollments`. The two legs union
-into the final dim.
+effective-date columns, and a Paterson + Miami leg pulling current-state values
+from PowerSchool staging.
+
+**Why no enrollment-year reconstruction**: `stg_powerschool__studentcorefields`
+(the source of `spedlep` / `lep_status` for Paterson + Miami) is current-state
+only — one row per student, no per-year history. Joining it across enrollment
+years would propagate the current value backward as fake history. The honest
+shape is one row per student carrying the current value, anchored to the
+earliest observed enrollment.
 
 ### `dim_iep_status`
 
-| Region          | Source model                            | Value columns                                                                                                  | Start date       | End date             |
-| --------------- | --------------------------------------- | -------------------------------------------------------------------------------------------------------------- | ---------------- | -------------------- |
-| Newark, Camden  | `int_edplan__njsmart_powerschool_union` | `spedlep` (→ `iep_classification`), `special_education_code`, `special_education` (→ `special_education_name`) | `effective_date` | `effective_end_date` |
-| Paterson, Miami | `base_powerschool__student_enrollments` | `spedlep` (→ `iep_classification`) only — code / name / placement null                                         | `entrydate`      | `exitdate`           |
+| Region          | Source model                                                                                            | Value columns                                                                                                  | Start date                                                                | End date              |
+| --------------- | ------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------- | --------------------- |
+| Newark, Camden  | `int_edplan__njsmart_powerschool_union`                                                                 | `spedlep` (→ `iep_classification`), `special_education_code`, `special_education` (→ `special_education_name`) | `effective_date`                                                          | `effective_end_date`  |
+| Paterson, Miami | `stg_powerschool__studentcorefields` joined to `base_powerschool__student_enrollments` for entry anchor | `spedlep` (→ `iep_classification`) only — code / name / placement null                                         | `min(entrydate)` per student from `base_powerschool__student_enrollments` | `'9999-12-31'` (open) |
 
-Value-derivation in the Paterson + Miami leg mirrors today's `spedlep` chain in
-`base_powerschool__student_enrollments`: `coalesce(ar.spedlep, 'No IEP')` —
-`is_iep` is derived as `iep_classification != 'No IEP'`.
+Value-derivation in the Paterson + Miami leg uses the current
+`stg_powerschool__studentcorefields.spedlep` coalesced to `'No IEP'`. `is_iep`
+is derived as `iep_classification != 'No IEP'`.
 
 ### `dim_ell_status`
 
-| Region          | Source model                            | Row emission                                                                                                        | Start date     | End date                          |
-| --------------- | --------------------------------------- | ------------------------------------------------------------------------------------------------------------------- | -------------- | --------------------------------- |
-| Newark, Camden  | `stg_powerschool__s_nj_stu_x`           | One row per non-null `lepbegindate` (plus one per non-null `lepbegindate2`) — every emitted row has `is_ell = true` | `lepbegindate` | `lependdate` (9999-12-31 if null) |
-| Paterson, Miami | `base_powerschool__student_enrollments` | Enrollment-year island-collapse on `lep_status` (emits both true and false spans)                                   | `entrydate`    | `exitdate`                        |
+| Region          | Source model                                                                                            | Row emission                                                                                                        | Start date                                                                | End date                          |
+| --------------- | ------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------- | --------------------------------- |
+| Newark, Camden  | `stg_powerschool__s_nj_stu_x`                                                                           | One row per non-null `lepbegindate` (plus one per non-null `lepbegindate2`) — every emitted row has `is_ell = true` | `lepbegindate`                                                            | `lependdate` (9999-12-31 if null) |
+| Paterson, Miami | `stg_powerschool__studentcorefields` joined to `base_powerschool__student_enrollments` for entry anchor | One row per student where `lep_status = true`; no row when `lep_status` is false                                    | `min(entrydate)` per student from `base_powerschool__student_enrollments` | `'9999-12-31'` (open)             |
 
 The secondary NJ range columns (`lepbegindate2`, `liependdate2`) generate
 additional spans where populated.
@@ -99,65 +105,105 @@ known real-world ELL pattern in our population. Document in the model's
 
 ### `dim_meal_eligibility_status`
 
-| Region          | Source model                            | Value column                                                      | Start date               | End date               |
-| --------------- | --------------------------------------- | ----------------------------------------------------------------- | ------------------------ | ---------------------- |
-| Newark, Camden  | `stg_titan__person_data`                | `eligibility_name` (Free / Reduced / Paid / Direct Certification) | `eligibility_start_date` | `eligibility_end_date` |
-| Paterson, Miami | `base_powerschool__student_enrollments` | `lunch_status`                                                    | `entrydate`              | `exitdate`             |
+| Region          | Source model                                                                        | Value column                                                      | Start date                                                                | End date               |
+| --------------- | ----------------------------------------------------------------------------------- | ----------------------------------------------------------------- | ------------------------------------------------------------------------- | ---------------------- |
+| Newark, Camden  | `stg_titan__person_data`                                                            | `eligibility_name` (Free / Reduced / Paid / Direct Certification) | `eligibility_start_date`                                                  | `eligibility_end_date` |
+| Paterson, Miami | Most-recent `lunch_status` from `base_powerschool__student_enrollments` per student | `lunch_status`                                                    | `min(entrydate)` per student from `base_powerschool__student_enrollments` | `'9999-12-31'` (open)  |
 
 `is_meal_eligible` derived as
 `meal_eligibility IN ('Free', 'Reduced', 'Direct Certification')`. Paid / null /
 invalid codes resolve to `false`.
 
-## Build pattern
+For the Paterson + Miami leg, `lunch_status` is picked from the most recent
+enrollment row per student (e.g. via `dbt_utils.deduplicate` partitioned by
+student, ordered by `entrydate desc`) rather than the current PS staging
+snapshot — `lunch_status` doesn't have a stable single-row analog like
+`studentcorefields`.
 
-Each `dim_*` model wraps a single `int_*` model that builds the unioned SCD2
-result. The intermediates live under
-`src/dbt/kipptaf/models/students/intermediate/`:
+## Dim SQL pattern
 
-- `int_students__iep_status_history`
-- `int_students__ell_status_history`
-- `int_students__meal_eligibility_status_history`
+Each dim is a single mart-layer model — no `int_*` intermediate. All logic (NJ
+leg + Paterson/Miami leg, island-collapse for NJ, current-state pick for
+Paterson/Miami) lives inline. Marts/CLAUDE.md only requires `rpt_*` to buffer
+external consumers from intermediates; mart dims building directly off staging
 
-### Intermediate shape
+- existing intermediates is permitted.
 
 ```sql
+-- dim_iep_status.sql (illustrative)
 with
     nj_leg as (
-        -- Source the native effective-date columns from the upstream model.
-        -- Collapse consecutive rows where the tracked values are unchanged
-        -- into a single span via lag()-based island detection.
+        -- Native SCD2 from edplan. Collapse consecutive rows with unchanged
+        -- (spedlep, special_education_code, special_education) into one span.
         select
             student_number,
-            code_location,
-            <value_columns>,
-            <first effective_date_start in island> as effective_date_start,
-            <last  effective_date_end   in island> as effective_date_end,
-        from {{ ref("<nj_upstream>") }}
-        ...
+            _dbt_source_project,
+            spedlep as iep_classification,
+            special_education_code,
+            special_education as special_education_name,
+            <placement_column> as special_education_placement,
+            min(effective_date) as effective_date_start,
+            coalesce(
+                max(effective_end_date), date '9999-12-31'
+            ) as effective_date_end,
+        from {{ ref("int_edplan__njsmart_powerschool_union") }}
+        group by <island_id, ...>      -- see "Island detection" below
     ),
 
-    reconstruction_leg as (
-        -- Pull yearly enrollment rows for regions without a native upstream.
-        -- Same island-collapse pattern on (entrydate, exitdate) bounds.
+    pm_leg as (
+        -- Current-state pick: one row per student in Paterson/Miami, anchored
+        -- to earliest enrollment entrydate, open-ended.
         select
-            student_number,
-            code_location,
-            <value_columns>,
-            <first entrydate in island> as effective_date_start,
-            <last  exitdate  in island> as effective_date_end,
-        from {{ ref("base_powerschool__student_enrollments") }}
-        where region in ('Paterson', 'Miami')
-        ...
+            enr.student_number,
+            enr._dbt_source_project,
+            coalesce(scf.spedlep, 'No IEP') as iep_classification,
+            cast(null as string) as special_education_code,
+            cast(null as string) as special_education_name,
+            cast(null as string) as special_education_placement,
+            min(enr.entrydate) as effective_date_start,
+            date '9999-12-31' as effective_date_end,
+        from {{ ref("base_powerschool__student_enrollments") }} as enr
+        left join
+            {{ ref("stg_powerschool__studentcorefields") }} as scf
+            on enr.students_dcid = scf.studentsdcid
+            and {{ union_dataset_join_clause(
+                left_alias="enr", right_alias="scf"
+            ) }}
+        where enr.region in ('Paterson', 'Miami')
+        group by 1, 2, 3, 4, 5, 6
+    ),
+
+    unioned as (
+        select * from nj_leg
+        union all
+        select * from pm_leg
     )
 
-select * from nj_leg
-union all
-select * from reconstruction_leg
+select
+    {{ dbt_utils.generate_surrogate_key([
+        "student_number", "_dbt_source_project", "effective_date_start"
+    ]) }} as iep_status_key,
+    {{ dbt_utils.generate_surrogate_key(["student_number"]) }} as student_key,
+    iep_classification != 'No IEP' as is_iep,
+    iep_classification,
+    special_education_code,
+    special_education_name,
+    special_education_placement,
+    effective_date_start as effective_date_start_key,
+    effective_date_end as effective_date_end_key,
+    effective_date_end = date '9999-12-31' as is_current,
+from unioned
 ```
 
-### Island detection
+`dim_ell_status` and `dim_meal_eligibility_status` follow the same shape with
+their respective upstreams and value columns.
 
-Standard gap-and-island pattern:
+### Island detection (NJ legs only)
+
+The NJ legs (`int_edplan__njsmart_powerschool_union`,
+`stg_powerschool__s_nj_stu_x`, `stg_titan__person_data`) collapse consecutive
+rows where the tracked value is unchanged into a single span. Gap-and-island
+pattern:
 
 ```sql
 with
@@ -166,7 +212,7 @@ with
             *,
             if(
                 <value_column> = lag(<value_column>) over (
-                    partition by student_number, code_location
+                    partition by student_number, _dbt_source_project
                     order by <start_date_column>
                 ),
                 0,
@@ -179,7 +225,7 @@ with
         select
             *,
             sum(is_island_start) over (
-                partition by student_number, code_location
+                partition by student_number, _dbt_source_project
                 order by <start_date_column>
             ) as island_id,
         from flagged
@@ -187,36 +233,54 @@ with
 
 select
     student_number,
-    code_location,
+    _dbt_source_project,
     <value_column>,
     min(<start_date_column>) as effective_date_start,
     coalesce(max(<end_date_column>), date '9999-12-31') as effective_date_end,
 from islanded
-group by all  -- TODO: enumerate; see SQL conventions
+group by 1, 2, 3, island_id
 ```
 
-(Final implementation enumerates GROUP BY columns per project SQL conventions —
-`GROUP BY ALL` is not allowed.)
+For multi-column value tracking (IEP: `spedlep` + `special_education_code` +
+`special_education_name`), the lag comparison uses `format("%T|%T|%T", ...)` for
+NULL-safe concatenation per `src/dbt/CLAUDE.md`.
 
-For multi-column value tracking (IEP: `spedlep` + `special_education_code`
+## `_dbt_source_project` promotion (additive upstream edits)
 
-- `special_education_name`), the lag comparison uses `format("%T|%T|%T", ...)`
-  to handle null safety per the `src/dbt/CLAUDE.md` cross-district-queries
-  NULL-safe-concat note.
+Per `marts/CLAUDE.md` and
+[#3142](https://github.com/TEAMSchools/teamster/issues/3142), all union models
+feeding this work must materialize `_dbt_source_project` — downstream consumers
+(these dims) join and hash on the materialized column, not re-derive it from
+`_dbt_source_relation`.
 
-### `code_location` materialization
+Status before this work:
 
-`base_powerschool__student_enrollments` already materializes `code_location`
-(per #3142). Confirm `int_edplan__njsmart_powerschool_union` and
-`stg_titan__person_data` do as well; if not, this is an additive upstream edit
-included in scope.
+| Model                                         | Materializes `_dbt_source_project`?    |
+| --------------------------------------------- | -------------------------------------- |
+| `base_powerschool__student_enrollments`       | ✓ (alongside legacy `code_location`)   |
+| `int_edplan__njsmart_powerschool_union`       | ✗ — add as additive edit               |
+| `stg_powerschool__s_nj_stu_x` (kipptaf union) | ✗ — add as additive edit               |
+| `stg_titan__person_data` (kipptaf union)      | ✗ — add as additive edit               |
+| `stg_powerschool__studentcorefields`          | verify; add as additive edit if absent |
+
+Add:
+
+```sql
+regexp_extract(_dbt_source_relation, r'(kipp\w+)_') as _dbt_source_project,
+```
+
+immediately after the `union_relations` CTE in each model. Update their
+`properties/*.yml` to add the column to the contract. Do not drop
+`code_location` from `base_powerschool__student_enrollments` — full
+`code_location` deprecation across consumers is out of scope and will land with
+the rest of #3142.
 
 ## Dim shapes (PK, columns, tests)
 
 ### `dim_iep_status`
 
 ```text
-iep_status_key                = generate_surrogate_key(student_number, code_location, effective_date_start)   -- PK
+iep_status_key                = generate_surrogate_key(student_number, _dbt_source_project, effective_date_start)   -- PK
 student_key                   = generate_surrogate_key(student_number)                                          -- FK → dim_students
 is_iep                        BOOL
 iep_classification            STRING — degenerate
@@ -231,7 +295,7 @@ is_current                    BOOL   (effective_date_end_key = '9999-12-31')
 ### `dim_ell_status`
 
 ```text
-ell_status_key                = generate_surrogate_key(student_number, code_location, effective_date_start)   -- PK
+ell_status_key                = generate_surrogate_key(student_number, _dbt_source_project, effective_date_start)   -- PK
 student_key                   FK → dim_students
 is_ell                        BOOL
 effective_date_start_key      DATE   FK → dim_dates
@@ -242,7 +306,7 @@ is_current                    BOOL
 ### `dim_meal_eligibility_status`
 
 ```text
-meal_eligibility_status_key   = generate_surrogate_key(student_number, code_location, effective_date_start)   -- PK
+meal_eligibility_status_key   = generate_surrogate_key(student_number, _dbt_source_project, effective_date_start)   -- PK
 student_key                   FK → dim_students
 meal_eligibility              STRING — degenerate
 is_meal_eligible              BOOL
@@ -262,7 +326,7 @@ Each dim:
 - `relationships` from `student_key` to `dim_students.student_key`
 - `relationships` from `effective_date_start_key` / `effective_date_end_key` to
   `dim_dates.date_key`
-- Singular test: no overlapping spans per student × code_location
+- Singular test: no overlapping spans per student × `_dbt_source_project`
 
 ### Contracts and constraints
 
@@ -304,7 +368,7 @@ other column changes. Consumers shift to `dim_ell_status` filtered by date.
   them.
 - `dim_504_status`, `dim_gifted_status` — same pattern, separate issues.
 - Cross-district student transfer reconciliation (a student moving Newark →
-  Paterson keeps separate spans per `code_location` rather than unifying).
+  Paterson keeps separate spans per `_dbt_source_project` rather than unifying).
   Consumers filter by date and source as needed.
 
 ## Hash-change posture
@@ -317,13 +381,16 @@ only).
 
 Per marts/CLAUDE.md "Pre-merge checklist (marts PRs)":
 
-- Scan the three new `dim_*` and three new `int_*` files for diamond paths (none
-  expected — FKs go only to `dim_students` + `dim_dates`).
-- Scan all six new files for column-naming rubric violations (R1–R10). Hot spots
-  specific to this work: `iep_classification` (R2 / R7 — no bare `spedlep` or
-  `lep`), `special_education_code` + `special_education_name` (degenerate-dim
+- Scan the three new `dim_*` files for diamond paths (none expected — FKs go
+  only to `dim_students` + `dim_dates`).
+- Scan all three new files for column-naming rubric violations (R1–R10). Hot
+  spots specific to this work: `iep_classification` (R2 / R7 — no bare `spedlep`
+  or `lep`), `special_education_code` + `special_education_name` (degenerate-dim
   code+name pairing), `meal_eligibility` (no `_status` suffix), `is_*` booleans
   (R3).
+- Confirm `_dbt_source_project` is materialized on all four upstream union
+  models touched by this work and that downstream consumers of those models
+  still parse (additive contract change only).
 - Confirm `dim_iep_status`, `dim_ell_status`, `dim_meal_eligibility_status`
   appear in `cube.yml`'s `cube_semantic_layer.depends_on`.
 - Pull marts-model warnings from the latest CI run
@@ -335,12 +402,18 @@ Per marts/CLAUDE.md "Pre-merge checklist (marts PRs)":
 
 ## Implementation order
 
-1. Confirm `int_edplan__njsmart_powerschool_union` and `stg_titan__person_data`
-   materialize `code_location`. Add if missing (additive upstream edit).
-2. Build the three `int_*` intermediates with island-collapse logic.
-3. Build the three `dim_*` mart wrappers + YAML properties.
+1. Promote `_dbt_source_project` to the upstream union models that need it
+   (`int_edplan__njsmart_powerschool_union`, `stg_powerschool__s_nj_stu_x`
+   kipptaf union, `stg_titan__person_data` kipptaf union, and
+   `stg_powerschool__studentcorefields` kipptaf union if absent). Update each
+   model's `properties/*.yml` contract. Additive only — no `code_location`
+   removal in this PR.
+2. Verify `dim_dates` has a `'9999-12-31'` row; extend the generator if not.
+3. Build the three `dim_*` models (each a single mart-layer file containing NJ
+   leg + Paterson/Miami leg + island-collapse). Write `properties/*.yml` with
+   descriptions, constraints (`warn_unsupported: false`), and tests.
 4. Remove `is_ell` from `dim_students` SQL + YAML.
 5. Add the three dim names to `cube.yml` `cube_semantic_layer.depends_on`.
 6. Verify with
    `uv run dbt build --select dim_iep_status+ dim_ell_status+ dim_meal_eligibility_status+`
-   against the relevant project.
+   against the relevant project (worktree-scoped `--project-dir`).
