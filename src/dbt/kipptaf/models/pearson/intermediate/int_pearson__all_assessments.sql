@@ -72,12 +72,11 @@ select
     u.testscorecomplete,
     u.twoormoreraces,
     u.white,
+    u.localstudentidentifier,
 
     cast(u.statestudentidentifier as string) as statestudentidentifier,
 
     coalesce(u.studentwithdisabilities in ('504', 'B'), false) as is_504,
-
-    u.localstudentidentifier,
 
     if(u.englishlearnerel = 'Y', true, false) as lep_status,
 
