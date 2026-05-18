@@ -113,9 +113,7 @@ class SSHResource(DagsterSSHResource):
         return files
 
     def open_ssh_tunnel(self) -> subprocess.Popen[bytes]:
-        # trunk-ignore(bandit/B603): args are a fixed argv list (no shell, no
-        # user input). Host/port/username/tunnel target come from the resource
-        # config (EnvVar at Dagster init), not from runtime user input.
+        # trunk-ignore(bandit/B603): static argv, no shell; inputs are EnvVar resource config
         ssh_tunnel = subprocess.Popen(
             args=[
                 "sshpass",
