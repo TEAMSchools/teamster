@@ -60,7 +60,10 @@ file; domain specifics live in the nearest subdirectory CLAUDE.md.
   explicitly. Use `git -C <worktree>` on every git call (bare `git` from the
   main repo silently commits to `main`) and
   `uv run dbt ... --project-dir <worktree>/src/dbt/<project>` on every dbt call.
-  Otherwise prefer absolute paths.
+  For Python execution from the main repo, prefix `VIRTUAL_ENV=` and use
+  `uv --directory <worktree> run python ...` — bare `uv run --active` reads the
+  main repo's `.venv` and misses worktree-only changes. Otherwise prefer
+  absolute paths.
 
 - **Branch switch**: `gh issue develop <number> --name <branch> --checkout`.
 
