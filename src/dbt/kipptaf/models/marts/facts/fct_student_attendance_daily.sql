@@ -34,9 +34,9 @@ select
     {{
         dbt_utils.generate_surrogate_key(
             [
-                "ada.student_number",
+                "enr.student_number",
                 "enr._dbt_source_relation",
-                "ada.academic_year",
+                "enr.academic_year",
                 "enr.entrydate",
             ]
         )
@@ -95,12 +95,3 @@ left join
     on ada.schoolid = t.school_id
     and ada.term = t.code
     and ada.academic_year = t.academic_year
-
--- TODO: overlapping enrollment records at same school cause join
--- fan-out; qualify picks latest entrydate (#3633)
-qualify
-    row_number() over (
-        partition by ada.student_number, ada._dbt_source_relation, ada.calendardate
-        order by enr.entrydate desc
-    )
-    = 1

@@ -12,7 +12,7 @@ models:
       - name: student_section_enrollment_key
         data_type: string
         description: >-
-          Surrogate key derived from cc_dcid and _dbt_source_relation. Primary
+          Surrogate key derived from cc_dcid and _dbt_source_project. Primary
           key for this dimension — unique per CC record per region.
         constraints:
           - type: primary_key

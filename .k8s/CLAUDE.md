@@ -66,6 +66,13 @@ on GKE Autopilot.
   cross-zone but allows same-zone during capacity exhaustion (do not switch to
   `DoNotSchedule`, which would block agent rollouts when one zone is full).
 
+## 1Password Connect secret keys
+
+k8s Secret keys come from the 1Password field's internal name, not the UI label.
+Known re-mappings on SFTP items: `password` → `newPassword`, `host` → `url`.
+Verify before writing `secretKeyRef.key`:
+`kubectl -n dagster-cloud get secret <op-name> -o jsonpath='{.data}' | jq keys`.
+
 ## Security
 
 - **Security contexts** on workspace (`serverK8sConfig`) and run
@@ -131,6 +138,27 @@ on GKE Autopilot.
   by `runK8sConfig.jobSpecConfig.podFailurePolicy` with `action: Ignore` on the
   `DisruptionTarget` pod condition — preempted pods transparently retry without
   burning `backoffLimit`.
+- **Step pod replacement zombie (upstream
+  [dagster-io/dagster#33755](https://github.com/dagster-io/dagster/issues/33755))**
+  — when `podFailurePolicy: Ignore` spawns a replacement step pod (preemption,
+  `TaintManagerEviction`, any `DisruptionTarget`), the replacement hits
+  Dagster's `verify_step()` duplicate-start guard, logs
+  `Attempted to run <step_key> again even though it was already started. Exiting to prevent re-running the step.`,
+  and exits 0. Step state never advances; run hangs until
+  `run_monitoring.max_runtime_seconds`. Signature: duplicate
+  `StepWorkerStartedEvent` → "already started" `EngineEvent` → silence →
+  `RunCancelingEvent` at the max_runtime mark. Don't chase the asset's code or
+  query — check the auto-retry; if it succeeded, this was infra disruption, no
+  fix needed.
+- **`required` antiAffinity authorizes scheduler preemption** of the target pods
+  when no other node fits. `runK8sConfig.affinity.podAntiAffinity` is `required`
+  against code-server labels, with run pods at priority 1000 vs code-server 0 —
+  so the scheduler CAN evict code servers at schedule time, not just kubelet at
+  eviction time. Do not describe this anti-affinity as "isolating" code servers
+  from runs or "preventing co-location."
+- `ttlSecondsAfterFinished` is etcd/apiserver hygiene only — terminated
+  containers already released cgroup RSS, so TTL does NOT free node memory. Do
+  not propose it as a lever for node memory pressure or eviction issues.
 
 ## gRPC Worker Threads
 

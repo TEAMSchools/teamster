@@ -1,10 +1,12 @@
 models:
   - name: bridge_assessment_expectations_enrollment_scoped
-    description: >-
-      Factless many-to-many bridge linking student section enrollments to
-      scheduled assessment administrations. One row per (student section
-      enrollment x assessment administration). Replaces the internal-assessment
-      portion of the deleted dim_student_assessment_expectations.
+    description: |
+      Bridges internal assessment expectations whose section enrollment can
+      be resolved (a PowerSchool course-enrollment row exists for the
+      assessed subject) to their student section enrollment and assessment
+      administration. Expectations without a resolvable section enrollment
+      — replacement assessments and ES Writing in grades K-4 Newark/Camden
+      — live in `bridge_assessment_expectations_student_scoped`.
     columns:
       - name: assessment_expectation_key
         data_type: string

@@ -5,56 +5,73 @@ cubes:
 
     dimensions:
       - name: date_key
+        description:
+          Calendar date. Primary key and join target for all mart models.
         sql: date_key
         type: string
         primary_key: true
 
       - name: date_day
+        description:
+          Timestamp cast of date_key. Required by Cube for date dimension joins.
         sql: date_timestamp
         type: time
         public: true
 
       - name: academic_year
+        description: >-
+          KIPP academic year (July start). The calendar year in which the
+          academic year begins (e.g., 2025 for the 2025-26 school year).
         sql: academic_year
         type: number
         public: true
 
       - name: fiscal_year
+        description: >-
+          KIPP fiscal year (July start). The calendar year in which the fiscal
+          year ends (e.g., 2026 for FY2026 which begins July 2025).
         sql: fiscal_year
         type: number
         public: true
 
       - name: year_number
+        description: Calendar year.
         sql: year_number
         type: number
         public: true
 
       - name: quarter_number
+        description: Calendar quarter (1-4).
         sql: quarter_number
         type: number
         public: true
 
       - name: month_number
+        description: Month number (1-12).
         sql: month_number
         type: number
         public: true
 
       - name: month_name
+        description: Full month name (January, February, etc.).
         sql: month_name
         type: string
         public: true
 
       - name: day_of_week
+        description: Day of week (1=Sunday through 7=Saturday).
         sql: day_of_week
         type: number
         public: true
 
       - name: day_of_week_name
+        description: Full day name (Monday, Tuesday, etc.).
         sql: day_of_week_name
         type: string
         public: true
 
       - name: is_weekday
+        description: TRUE for Monday through Friday.
         sql: is_weekday
         type: boolean
         public: true

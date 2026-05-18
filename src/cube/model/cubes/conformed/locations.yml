@@ -10,39 +10,53 @@ cubes:
 
     dimensions:
       - name: location_key
+        description: Surrogate key derived from location name.
         sql: location_key
         type: string
         primary_key: true
 
       - name: region_key
+        description: >-
+          Foreign key to dim_regions. Surrogate key derived from
+          `business_unit_code` so this column hashes exactly the keys produced
+          by `dim_regions.region_key`. Network-level locations (e.g., KIPP NJ)
+          map to KIPP_TAF.
         sql: region_key
         type: string
 
       - name: location_name
+        description: Canonical location name.
         sql: "{CUBE}.`name`"
         type: string
         public: true
 
       - name: abbreviation
+        description: Short display name for the location.
         sql: abbreviation
         type: string
         public: true
 
       - name: grade_band
+        description: Grade band served (ES, MS, HS).
         sql: grade_band
         type: string
         public: true
 
       - name: campus
+        description: Physical campus name. Multiple schools may share a campus.
         sql: campus
         type: string
         public: true
 
       - name: is_campus
+        description:
+          TRUE if this location record represents a campus-level entity.
         sql: is_campus
         type: boolean
 
       - name: city
+        description:
+          City. Nullable for non-physical rows (e.g., campus rollups).
         sql: city
         type: string
         public: true

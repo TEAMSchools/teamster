@@ -49,6 +49,8 @@ passed it. `chunk()` from `core/utils/functions` returns `Iterator[list]`, not
 **Docstrings**: Follow the
 [Google Python Style Guide](https://google.github.io/styleguide/pyguide.html#38-comments-and-docstrings).
 API reference URLs go in the extended description, never the summary line.
+Multi-line docstrings are permitted under Google style — this overrides Claude's
+default "one short line max" rule.
 
 `ScheduleEvaluationContext.log` and `SensorEvaluationContext.log` return
 `logging.Logger`; `AssetExecutionContext.log` returns `DagsterLogManager`. Use
@@ -154,7 +156,13 @@ mtimes.
 Match on a specific exception class (define one if the upstream code raises bare
 `Exception`), never on error message or bare `Exception`. Existing examples:
 `libraries/adp/workforce_now/api/resources.py`,
-`libraries/tableau/resources.py`, `libraries/level_data/grow/resources.py`.
+`libraries/tableau/resources.py`, `libraries/level_data/grow/resources.py`. Wrap
+the init path (`fetch_token` / `connect` in `setup_for_execution`) too, not just
+the request method. For network-call retries, the predicate must include
+`(RequestsConnectionError, Timeout, HTTPError)` — `HTTPError` alone misses
+`ConnectTimeout`. For runtime-parameterized retry loops (e.g.
+`with_powerschool_retry`), use `tenacity.Retrying` — a manual
+`for attempt in range(...)` has no backoff.
 
 **Don't `log.exception` inside retry-wrapped helpers**. GCP Error Reporting
 files groups at ERROR severity, so logging a traceback inside a context manager
@@ -177,4 +185,6 @@ uv run dagster-dbt project prepare-and-package --file src/teamster/code_location
 ```
 
 `dagster definitions validate` may mislead locally — env vars unavailable in
-codespace cause false errors unrelated to production failures.
+codespace cause false errors unrelated to production failures. Fall back to
+`uv run python -c "import <module>"` for syntactic checks when validate fails on
+missing manifest or env vars.

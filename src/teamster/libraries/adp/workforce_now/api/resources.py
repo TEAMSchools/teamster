@@ -6,7 +6,8 @@ from oauthlib.oauth2 import BackendApplicationClient
 from pydantic import PrivateAttr
 from requests import Response
 from requests.auth import HTTPBasicAuth
-from requests.exceptions import HTTPError
+from requests.exceptions import ConnectionError as RequestsConnectionError
+from requests.exceptions import HTTPError, Timeout
 from requests_oauthlib import OAuth2Session
 from tenacity import (
     retry,
@@ -37,11 +38,7 @@ class AdpWorkforceNowResource(ConfigurableResource):
         self._session.cert = (self.cert_filepath, self.key_filepath)
 
         # authorize client
-        token_dict = self._session.fetch_token(
-            # trunk-ignore(bandit/B106)
-            token_url="https://accounts.adp.com/auth/oauth/v2/token",
-            auth=HTTPBasicAuth(username=self.client_id, password=self.client_secret),
-        )
+        token_dict = self._fetch_access_token()
 
         access_token = token_dict.get("access_token")
 
@@ -49,6 +46,18 @@ class AdpWorkforceNowResource(ConfigurableResource):
 
         if not self.masked:
             self._session.headers["Accept"] = "application/json;masked=false"
+
+    @retry(
+        stop=stop_after_attempt(5),
+        wait=wait_exponential_jitter(initial=10, max=60),
+        retry=retry_if_exception_type((RequestsConnectionError, Timeout, HTTPError)),
+    )
+    def _fetch_access_token(self) -> dict:
+        return self._session.fetch_token(
+            # trunk-ignore(bandit/B106)
+            token_url="https://accounts.adp.com/auth/oauth/v2/token",
+            auth=HTTPBasicAuth(username=self.client_id, password=self.client_secret),
+        )
 
     @retry(
         stop=stop_after_attempt(5),

@@ -16,6 +16,11 @@ models:
           - type: primary_key
             warn_unsupported: false
         data_tests:
+          # TODO(#3923): restore to severity:error once Dagster has materialized
+          # the namespace-fixed int_powerschool__attendance_streak in every
+          # district prod dataset. The kipptaf mart source()s district data,
+          # which resolves to prod in dbt Cloud CI — until district prod is
+          # refreshed, CI still sees the 305 Paterson cross-branch collisions.
           - unique
           - not_null
 

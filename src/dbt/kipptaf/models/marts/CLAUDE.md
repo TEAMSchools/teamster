@@ -67,6 +67,31 @@ Removed from all mart SELECTs:
 Plumbing remains in `staging/` and `intermediate/` — only stripped from the mart
 SELECT.
 
+## Filing follow-up issues from marts work
+
+When filing a GitHub issue from marts work (spec authoring, PR review follow-up,
+CI warning triage), add it to project board
+[#4](https://github.com/orgs/TEAMSchools/projects/4) and set `Tier`, `PR batch`,
+and `Driver`. Commands and `GITHUB_TOKEN=` prefix: see root CLAUDE.md → MCP
+Servers `gh project` bullets. `Status` auto-sets to Todo on add — skip.
+
+## Pre-merge checklist (marts PRs)
+
+Run before posting the final PR comment on any marts PR (spec, bugfix,
+refactor):
+
+- Scan touched models for diamond paths (see "Strict-chain traversal").
+- Scan touched models for column-naming rubric violations (R1–R10 above).
+- Pull marts-model warnings from the latest CI run
+  (`mcp__dbt__get_job_run_error` with `warning_only=true`). For each, search
+  open issues by model name + FK target. Bucket orphans (by region, source,
+  test_type, etc.) in the issue body before filing.
+- Scan the
+  [project board](https://github.com/orgs/TEAMSchools/projects/4/views/1) for
+  bonus issues incidentally resolved; close them in the PR.
+- File newly surfaced errors per "Filing follow-up issues from marts work"
+  above.
+
 ## Strict-chain traversal
 
 Facts and child dims FK to their direct parent(s) only; deeper dimensional
@@ -135,6 +160,10 @@ Intermediates may rename or transform columns (e.g. scaffold's
 `int_assessments__assessments.academic_year`); the consumer must re-join the
 source-of-truth model rather than trust the matching column name.
 
+Before swapping the input list of any `generate_surrogate_key()` on a dim/fact,
+grep every consumer that hashes the same composition and migrate producer + all
+consumers in one atomic commit.
+
 ## `_dbt_source_project` joins and hashes
 
 When a marts fix touches joins or surrogate-key composition involving
@@ -146,6 +175,17 @@ consumers should join and hash on the materialized `code_location` column, not
 re-derive it from `_dbt_source_relation` per-call. This counts as an additive
 upstream edit under "Spec authoring context" and does not require a separate
 refactor PR.
+
+## Removing a mart-level `qualify row_number() = 1`
+
+Verify the upstream intermediate is unique on the qualify's partition key before
+removing — the qualify often masks an upstream PK collision (hashed ID
+duplicates), not a date-range overlap. "Same join shape as another mart" is not
+sufficient evidence.
+
+Net mart row-count delta is typically `+N` where N is the residual fan-out — not
+`-N`. Adding an upstream `where` filter alongside doesn't drop PKs; it changes
+which rows the surviving PK joins to.
 
 ## Verify source precision before R9 drops
 
@@ -224,13 +264,3 @@ against the current code and data.
 Before proposing a new structural mart change, check the open items on the
 [Data Team project board](https://github.com/orgs/TEAMSchools/projects/4) — the
 case may already be tracked and deferred.
-
-Every spec must include a pre-merge checklist covering:
-
-- Scan touched models for diamond paths (see "Strict-chain traversal").
-- Scan touched models for column-naming rubric violations (R1–R10 above).
-- Scan the
-  [project board](https://github.com/orgs/TEAMSchools/projects/4/views/1) for
-  bonus issues incidentally resolved; close them in the PR.
-- File newly surfaced errors as new issues on the board, classified with `Tier`,
-  `PR batch`, and `Driver`.

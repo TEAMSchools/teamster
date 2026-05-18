@@ -21,11 +21,8 @@ function nextMidnightEastern() {
 }
 
 // STUDENT_CUBES: cubes that require cube-access-student-data.
-// TODO: populate full list during YAML implementation (follow-up to PR #3715).
-const STUDENT_CUBES = [
-  "fct_student_attendance_daily",
-  "fct_student_attendance_interventions",
-];
+// Add cube name: here when adding a new student-data cube.
+const STUDENT_CUBES = ["attendance"];
 
 const STAFF_CUBES = [
   "dim_staff",
@@ -44,23 +41,6 @@ module.exports = {
       securityContext?.email ??
       securityContext?.cubeCloud?.userAttributes?.email;
     if (!email) return [];
-
-    // Pre-Directory-API testing allowlist. Remove once Directory API is live.
-    // Set CUBE_TESTING_USERS in Cube Cloud env vars (never commit values).
-    // Format: {"user@example.com": ["cube-access-student-data", "cube-network-detail"]}
-    if (process.env.CUBE_TESTING_USERS) {
-      try {
-        const map = JSON.parse(process.env.CUBE_TESTING_USERS);
-        // All users handled here — listed get groups, unlisted get [] (default
-        // deny). Prevents fallthrough to Directory API in testing deployments.
-        const groups = (map[email] ?? []).filter((g) => g.startsWith("cube-"));
-        groupCache.set(email, { groups, expiresAt: nextMidnightEastern() });
-        return groups;
-      } catch (err) {
-        console.error("CUBE_TESTING_USERS is not valid JSON:", err.message);
-        return [];
-      }
-    }
 
     // Local dev only: CUBE_GROUP_MAP bypasses Directory API.
     // Must never be set in Cube Cloud — see docs/guides/cube.md.
@@ -126,17 +106,9 @@ module.exports = {
     const email =
       securityContext?.email ??
       securityContext?.cubeCloud?.userAttributes?.email;
-    const jwtGroups = securityContext?.groups;
     const cached = email ? groupCache.get(email) : null;
-    const groups =
-      Array.isArray(jwtGroups) && jwtGroups.length > 0
-        ? jwtGroups
-        : cached?.expiresAt > Date.now()
-          ? cached.groups
-          : [];
+    const groups = cached?.expiresAt > Date.now() ? cached.groups : [];
 
-    // Users without cube-access-student-data see no student cubes.
-    // STUDENT_CUBES list is a placeholder — full list added during YAML implementation.
     if (!groups.includes("cube-access-student-data")) {
       query = {
         ...query,

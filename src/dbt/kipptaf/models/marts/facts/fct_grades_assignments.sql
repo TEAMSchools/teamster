@@ -2,6 +2,7 @@ with
     course_enrollments as (
         select
             _dbt_source_relation,
+            _dbt_source_project,
             cc_studentid,
             cc_academic_year,
             cc_schoolid,
@@ -13,6 +14,7 @@ with
             students_student_number,
             region,
         from {{ ref("base_powerschool__course_enrollments") }}
+        where not is_dropped_section
     ),
 
     student_enrollments as (
@@ -52,7 +54,7 @@ select
         )
     }} as grades_assignment_key,
 
-    {{ dbt_utils.generate_surrogate_key(["ce.cc_dcid", "ce._dbt_source_relation"]) }}
+    {{ dbt_utils.generate_surrogate_key(["ce.cc_dcid", "ce._dbt_source_project"]) }}
     as student_section_enrollment_key,
 
     {{
@@ -122,12 +124,3 @@ left join
     on asg.duedate between rt.start_date and rt.end_date
     and ce.cc_schoolid = rt.school_id
     and ce.region = rt.region
-
--- TODO: overlapping CC records at same section cause join fan-out;
--- qualify picks latest cc_dateenrolled and entrydate (#3633)
-qualify
-    row_number() over (
-        partition by asg.assignmentsectionid, asg._dbt_source_relation, ce.students_dcid
-        order by ce.cc_dateenrolled desc, enr.entrydate desc
-    )
-    = 1

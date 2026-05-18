@@ -26,18 +26,18 @@ Output shape:
 ```json
 {
   "window": {"epoch": ..., "utc_start": "...Z", "utc_end": "...Z"},
-  "step_01_failed_runs": {"failureCount": N, "failures": [...], "successCount": N, "canceledCount": N},
+  "step_01_failed_runs": {"failureCount": N, "failures": [...], "successCount": N, "canceledCount": N, "successRunIds": [...]},
   "step_02_retries":     {"retries": [{"parentRunId":..., "retryRunId":..., "retryStatus":"SUCCESS|FAILURE"}]},
-  "step_03_sensor_ticks":{"<location>": {"<sensor>": {"failureCount": N, "ticks": [...]}}},
+  "step_03_sensor_ticks":{"<location>": {"<sensor>": {"failureCount": N, "ticks": [{"tickId": "<str>", "timestamp": <float-seconds>, "error": "<str>", "errorChainTop": "<str>"}]}}},
   "step_04_freshness":   {"flaggedAssets": [...], "policyCount": N},
   "step_05_load_failures":{"loadFailures": [...]},
   "step_06_schedule_ticks":{"scheduleTickFailures": {"<loc>/<schedule>": [...]}},
   "step_07_agents":      {"agents": [...], "agentCount": N},
   "step_08_agent_pod_churn": {"events": [...], "skipped": bool},
   "step_09_daemons":     {"daemons": [...], "allHealthy": bool},
-  "step_10_gke_events":  {"clusterEvents": [...], "podEvents": [...]},
+  "step_10_gke_events":  {"clusterEvents": [...], "podEvents": [{"timestamp":..., "podName":..., "reason":..., "message":..., "runId": "<uuid|null>", "runStatus": "SUCCESS|FAILURE|UNKNOWN"}]},
   "step_11_alerts":      {"alerts": [...]},
-  "step_12_error_groups":{"groups": [...], "buckets": {"inWindow":[], "staleOpen":[]}},
+  "step_12_error_groups":{"groups": [{"groupId":..., "exception":..., "affectedServices":[{"service":...,"version":"<pod>"}], "exceptionLine":"<bottom-of-traceback or null>", "correlatedPodEvent":{"reason":"Preempted|Evicted|OOMKilling", "timestamp":..., "podName":...} | null, "category":"sigterm_during_import|preemption_artifact|unclassified"}], "buckets": {"inWindow":[], "staleOpen":[]}},
   "step_13_oom_metrics": {"oomRuns": [...], "skipped": bool},
   "step_14_queued_runs": {"runs": [...], "stuckCount": N},
   "step_15_backfills":   {"requested": [...], "failed": [...]}
@@ -82,6 +82,29 @@ before drawing conclusions — partial data produces wrong findings.
 | Code error                        | K8s API timeout   | Error class is actually `DagsterK8sUnrecoverableAPIError` — stack-trace match alone is insufficient                                                                                                                                                                                                                                                                                                                   |
 | Unclassified                      | Node OOM/eviction | GKE pod event `OOMKilling` or `Evicted` for run's pod — then run step 13 drill-down                                                                                                                                                                                                                                                                                                                                   |
 | Infra timeout                     | Step preempt-hang | `runFailureMessage: Exceeded maximum runtime` AND `engineEventMatch` contains `Exiting to prevent re-running`. Step pod was preempted, replacement bailed via `verify_step` exit-0, K8s Job marked `Complete` so `check_step_health` stays healthy and run hangs until `max_runtime`. Self-heals via `dagster/will_retry`. Upstream: dagster-io/dagster#33728. Do not chase as control-plane / PowerSchool / network. |
+
+**Pod-event run attribution (`step_10_gke_events.podEvents`):** for any
+`dagster-run-*` Evicted/Preempted event, the collector parses the runId from the
+pod name and tags the event with `runId` + `runStatus`:
+
+- `runStatus: "SUCCESS"` — run already terminated successfully. The evicted pod
+  was a disrupted scheduling attempt absorbed by
+  `podFailurePolicy: DisruptionTarget=Ignore`; the Job controller spawned a
+  replacement that ran the work cleanly. **No impact, no action** — do not call
+  it "orphan" or "stale Job"; the Job is/was active and behaved correctly.
+- `runStatus: "FAILURE"` — runId is in `step_01_failed_runs.failures`. The
+  eviction may be the proximate cause; cross-reference the failure's `category`
+  and `errorClass`.
+- `runStatus: "UNKNOWN"` — runId is outside the window, or the pod name didn't
+  match the `dagster-run-<uuid>-` pattern (e.g. `<location>-prod-*` code servers
+  — see Tick failure analysis step 5 for those).
+
+To enumerate every pod attempt for a runId (useful when `runStatus: FAILURE` and
+you need to confirm which attempt was terminal): audit log
+`protoPayload.methodName="io.k8s.core.v1.pods.create" protoPayload.resourceName=~"core/v1/.../pods/dagster-run-<runId>-.*"`.
+Dagster's `startTime` reflects execution start on the surviving pod — **not**
+initial enqueue or first scheduling attempt. Do not use it to back-calculate
+when K8s first tried to schedule.
 
 **Tick failure analysis**: For any location with >5 gRPC UNAVAILABLE tick
 failures, run this procedure before attributing a root cause:
@@ -179,7 +202,8 @@ succeeded after agent retries — those are noise from code server preemption.
 
 ### Emerging Issues
 
-{Omit if no error groups.}
+{Omit only if BOTH `inWindow` and `staleOpen` are empty. Always list `staleOpen`
+entries here — never in the timeline.}
 
 ### Actions
 
@@ -199,21 +223,44 @@ outages, agent errors → tick failures, daemon issues → tick/run impacts, ale
 runs and backfills if present.
 
 **Emerging issues**: Error groups not yet causing failures but increasing. Omit
-if none. For step 12, split the Emerging Issues section into two subsections:
+only when BOTH `inWindow` and `staleOpen` are empty — a staleOpen entry alone is
+still grounds to include the section. For step 12, split the Emerging Issues
+section into two subsections:
 
 - **In-window groups** (step 12 `inWindow`): groups that surfaced during the
-  day-2 window. **First, dedupe against the timeline:** each group's
-  `affectedServices[].version` is a pod name (e.g.
-  `dagster-step-<hash>-<suffix>` or `dagster-run-<runId>-<suffix>`). Query GCP
-  logs for ERROR-severity entries on that pod within the group's lastSeenTime
-  window and extract the `k8s-pod/dagster/run-id` label. If that runId is a
-  failed run already listed in the timeline (step 1), mark the group "same event
-  as run X" and fold it INTO the existing timeline entry instead of reporting it
-  as a separate finding. Only groups with NO matching run are standalone
-  emerging issues. For remaining (non-deduped) groups: if the stack trace
-  matches a retry-recovered run, it is likely a false-positive from a
-  retry-wrapped helper (see teamster/CLAUDE.md). Recommend changing the helper's
-  log level in that case.
+  day-2 window. **First, check `category` + `correlatedPodEvent` (auto-resolved
+  by the collector):**
+  - `category: "sigterm_during_import"` with a `correlatedPodEvent` → the group
+    is a SIGTERM-mid-import artifact of code-server preemption (the by-design
+    priority-tier behavior in `.k8s/CLAUDE.md`). Do NOT include in Emerging
+    Issues. Emit a single Actions row:
+    `Mute | Error group <id> (SIGTERM during import, <count> hits)`. The
+    traceback's deepest project-code frame names whichever module was importing
+    when SIGTERM arrived (pathlib, pydantic, fldoe.schema, etc.) — that file is
+    NOT the emitter; it was just in-flight when the signal arrived.
+  - `category: "preemption_artifact"` → correlated to a preemption/eviction
+    event but exception class is not a known SIGTERM type. Investigate
+    `exceptionLine` before recommending action.
+  - `category: "unclassified"` (no correlated pod event) → genuine emerging
+    issue. Proceed with dedupe below.
+
+  **Dedupe remaining (uncorrelated) groups against the timeline:** each group's
+  `affectedServices[].version` is a pod name. Query GCP logs for ERROR-severity
+  entries on that pod within the group's lastSeenTime window and extract the
+  `k8s-pod/dagster/run-id` label. If that runId is a failed run already listed
+  in the timeline (step 1), mark the group "same event as run X" and fold it
+  INTO the existing timeline entry instead of reporting it as a separate
+  finding. Only groups with NO matching run are standalone emerging issues. For
+  remaining (non-deduped) groups: if the stack trace matches a retry-recovered
+  run, it is likely a false-positive from a retry-wrapped helper (see
+  teamster/CLAUDE.md). Recommend changing the helper's log level in that case.
+
+  **Use `exceptionLine`, not `exception`, for triage.** The `exception` field is
+  the 300-char truncated header that Error Reporting groups by — often just the
+  entry-point line (`Traceback... sys.exit(main())`). The collector resolves the
+  bottom-of-traceback class into `exceptionLine` via a pod-log query; that is
+  the real exception class.
+
 - **Stale open groups** (step 12 `staleOpen`): OPEN groups last-seen before the
   window. Treat as cleanup candidates. Note the last-seen date and whether the
   stack matches a retry-wrapped helper. These do not belong in the timeline.
@@ -243,6 +290,14 @@ Reference `.k8s/CLAUDE.md` for scheduling, topology, security, config.
 Write report to `.claude/scratch/day2-report-<YYYY-MM-DD>.md`, where the date is
 the window end (`window.utc_end` from `day2.json`) converted to ET.
 
+**Verify epoch conversions before drawing conclusions.** Dagster
+`creationTime`/`startTime`/`endTime` are float seconds. Sanity-check every
+conversion against the window's `utc_start`/`utc_end` in `day2.json` before
+writing narrative — a single-hour math error can flip a "stale orphan pod" into
+a "first scheduling attempt" (or vice-versa) and rewrite the entire root-cause
+story. If a GKE event's UTC timestamp looks far from the run's computed UTC,
+recompute before continuing.
+
 **Run-never-started timestamps**: When a run times out before starting
 (`Run timed out due to taking longer than N seconds to start`), `startTime` and
 `endTime` in step 1 are both the failure-recorded time, not enqueue time.
@@ -252,9 +307,9 @@ query the audit log directly:
 
 **Audit logs > pod events for >1h-old bursts**: `mcp__gke__query_logs` with
 `protoPayload.serviceName="k8s.io"` retains Job/Pod create/delete history for
-days; pod events from `mcp__observability__list_log_entries` drop after ~1h. For
-any burst analysis older than the day-2 collector's events lookback, query audit
-logs by runId, not events.
+days; pod events from `mcp__gcp-observability__list_log_entries` drop after ~1h.
+For any burst analysis older than the day-2 collector's events lookback, query
+audit logs by runId, not events.
 
 **Slow pod startup at top-of-hour fan-out**: At scheduling spikes (e.g. 04:00
 UTC / 00:00 ET), K8s Jobs are created promptly but pods can take 4–7 min to emit
