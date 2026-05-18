@@ -53,11 +53,11 @@ coalesce(
 ) as is_iep_on_date
 ```
 
-This is why the NJ legs may emit only positive spans (edplan only sends students
-with IEPs; `s_nj_stu_x` only carries non-null `lepbegindate` for students with
-LEP records) while the Paterson + Miami reconstruction legs emit both true and
-false spans (every enrollment-year row contributes). The asymmetry is acceptable
-under the coalesce-default semantics.
+This affects the NJ legs (where edplan only sends students with IEPs and
+`s_nj_stu_x` only carries non-null `lepbegindate` for students with LEP records)
+and the Paterson + Miami legs (where the dim emits one row per student carrying
+the current value; absence of a row means no student record in scope). Both legs
+share the coalesce-default consumer semantics.
 
 `is_ell` is removed from `dim_students` as part of this work. Boolean rollups
 (`is_iep`, `is_ell`, `is_meal_eligible`) live on the new dims as derived
