@@ -5,6 +5,7 @@ import time
 from pathlib import Path
 from stat import S_ISDIR, S_ISREG
 
+from cryptography.hazmat.primitives import hashes
 from dagster_shared import check
 from dagster_ssh import SSHResource as DagsterSSHResource
 from paramiko import RSAKey, SFTPAttributes, SFTPClient, SSHClient, Transport
@@ -57,24 +58,33 @@ class SSHResource(DagsterSSHResource):
         if not self.enable_legacy_rsa:
             return super().get_connection()
 
-        # Re-enable ssh-rsa at both negotiation and host-key-parsing layers.
-        # paramiko 5.0 stripped "ssh-rsa" from `_preferred_keys` (used by
-        # `_filter_algorithm("keys")` at KEXINIT) AND from `_key_info` (the
-        # algorithm->PKey-class dict consulted by `_verify_key` on the server's
-        # host key). Without both, KEX succeeds and then `_verify_key` raises
-        # `KeyError: 'ssh-rsa'`. ssh-rsa keys parse as RSAKey (same class as
-        # rsa-sha2-256/512). The module-level lock serializes save/restore so
-        # concurrent connects can't leak the mutation beyond this call.
+        # Re-enable ssh-rsa at three layers paramiko 5.0 deliberately disabled:
+        #   1. `Transport._preferred_keys` (used by `_filter_algorithm("keys")`
+        #      at KEXINIT) — without it, negotiation fails with
+        #      `IncompatiblePeer: no acceptable host key`.
+        #   2. `Transport._key_info` (algorithm->PKey-class dict consulted by
+        #      `_verify_key` on the server's host key) — without it, KEX
+        #      succeeds and then raises `KeyError: 'ssh-rsa'`.
+        #   3. `RSAKey.HASHES` (signature-algorithm->hash dict consulted by
+        #      `verify_ssh_sig`) — paramiko intentionally keeps ssh-rsa out of
+        #      HASHES to refuse SHA-1 signatures. Without it, the host-key
+        #      parse succeeds and then `verify_ssh_sig` returns False, raising
+        #      `Signature verification (ssh-rsa) failed.`
+        # All three temporary mutations are held under the module-level lock
+        # so concurrent connects can't see partial state or leak past restore.
         with _PREFERRED_KEYS_LOCK:
             original_preferred_keys: tuple[str, ...] = Transport._preferred_keys
             original_key_info: dict = Transport._key_info
+            original_rsa_hashes: dict = RSAKey.HASHES
             Transport._preferred_keys = original_preferred_keys + ("ssh-rsa",)
             Transport._key_info = {**original_key_info, "ssh-rsa": RSAKey}
+            RSAKey.HASHES = {**original_rsa_hashes, "ssh-rsa": hashes.SHA1}
             try:
                 return super().get_connection()
             finally:
                 Transport._preferred_keys = original_preferred_keys
                 Transport._key_info = original_key_info
+                RSAKey.HASHES = original_rsa_hashes
 
     def listdir_attr_r(
         self,
