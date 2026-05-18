@@ -6,8 +6,8 @@ from stat import S_ISDIR, S_ISREG
 
 from dagster_shared import check
 from dagster_ssh import SSHResource as DagsterSSHResource
-from paramiko import SFTPAttributes, SFTPClient, SSHClient
-from paramiko.ssh_exception import SSHException
+from paramiko import SFTPAttributes, SFTPClient, SSHClient, Transport
+from paramiko.ssh_exception import NoValidConnectionsError
 from tenacity import (
     retry,
     retry_if_exception_type,
@@ -23,15 +23,44 @@ class SSHTunnelError(Exception):
 class SSHResource(DagsterSSHResource):
     tunnel_remote_host: str | None = None
     test: bool = False
+    # paramiko 5.0 dropped `ssh-rsa` (SHA-1 RSA host keys) from its default
+    # _preferred_keys. Set True to re-enable ssh-rsa for servers that only
+    # advertise it (otherwise KEX negotiation fails with IncompatiblePeer).
+    enable_legacy_rsa: bool = False
 
     @retry(
         stop=stop_after_attempt(5),
         wait=wait_exponential_jitter(initial=2, max=30),
-        retry=retry_if_exception_type((SSHException, TimeoutError, socket.gaierror)),
+        # Only retry true transients. SSHException is too broad — it covers
+        # IncompatiblePeer / BadHostKeyException / BadAuthenticationType, which
+        # are deterministic config failures that will fail identically on every
+        # attempt and burn ~30s per call.
+        retry=retry_if_exception_type(
+            (
+                NoValidConnectionsError,
+                TimeoutError,
+                socket.gaierror,
+                ConnectionResetError,
+            )
+        ),
         reraise=True,
     )
     def get_connection(self) -> SSHClient:
-        return super().get_connection()
+        if not self.enable_legacy_rsa:
+            return super().get_connection()
+
+        # Append ssh-rsa to the class-level preferred host-key algorithms for
+        # the duration of this connect. paramiko reads the class attr via
+        # _filter_algorithm("keys") at KEXINIT time. Concurrent connects from
+        # other enable_legacy_rsa resources in the same process can race on
+        # the restore — worst case is a retried IncompatiblePeer, not a
+        # correctness bug.
+        original_preferred_keys: tuple[str, ...] = Transport._preferred_keys
+        Transport._preferred_keys = original_preferred_keys + ("ssh-rsa",)
+        try:
+            return super().get_connection()
+        finally:
+            Transport._preferred_keys = original_preferred_keys
 
     def listdir_attr_r(
         self,
@@ -77,7 +106,6 @@ class SSHResource(DagsterSSHResource):
         return files
 
     def open_ssh_tunnel(self) -> subprocess.Popen[bytes]:
-        # trunk-ignore(bandit/B603)
         ssh_tunnel = subprocess.Popen(
             args=[
                 "sshpass",
@@ -122,6 +150,8 @@ class SSHResource(DagsterSSHResource):
                 ssh_tunnel.kill()
                 raise SSHTunnelError(stdout)
 
+        # Prevent a race condition with the ssh tunnel becoming fully established
+        # before downstream code (e.g. PowerSchool ODBC) opens a forwarded port.
         time.sleep(1.0)
 
         return ssh_tunnel
