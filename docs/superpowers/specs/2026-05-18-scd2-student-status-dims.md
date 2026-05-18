@@ -313,6 +313,26 @@ Three new dims with new PKs — no existing hashes affected. `is_ell` removal fr
 `dim_students` doesn't affect its PK (`student_key` hashes `student_number`
 only).
 
+## Pre-merge checks
+
+Per marts/CLAUDE.md "Pre-merge checklist (marts PRs)":
+
+- Scan the three new `dim_*` and three new `int_*` files for diamond paths (none
+  expected — FKs go only to `dim_students` + `dim_dates`).
+- Scan all six new files for column-naming rubric violations (R1–R10). Hot spots
+  specific to this work: `iep_classification` (R2 / R7 — no bare `spedlep` or
+  `lep`), `special_education_code` + `special_education_name` (degenerate-dim
+  code+name pairing), `meal_eligibility` (no `_status` suffix), `is_*` booleans
+  (R3).
+- Confirm `dim_iep_status`, `dim_ell_status`, `dim_meal_eligibility_status`
+  appear in `cube.yml`'s `cube_semantic_layer.depends_on`.
+- Pull marts-model warnings from the latest CI run
+  (`mcp__dbt__get_job_run_error` with `warning_only=true`); bucket and file
+  follow-ups per marts/CLAUDE.md "Filing follow-up issues from marts work"
+  before the final PR comment.
+- Scan project board [#4](https://github.com/orgs/TEAMSchools/projects/4) for
+  bonus issues incidentally resolved; close them in the PR.
+
 ## Implementation order
 
 1. Confirm `int_edplan__njsmart_powerschool_union` and `stg_titan__person_data`
