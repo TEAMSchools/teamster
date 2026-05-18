@@ -38,6 +38,7 @@ models:
           +contract:
             enforced: true
     pearson:
+      +materialized: table
       +schema: pearson
   amplify:
     dds:
