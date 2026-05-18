@@ -1,0 +1,64 @@
+models:
+  - name: int_powerschool__gpnode
+    description: >
+      Grad plan node hierarchy flattened to one row per plan-discipline-subject
+      slot. Subjects that have no child subject nodes use the discipline node as
+      the subject (coalesce). Includes nodetype for downstream joins to
+      gpprogresssubject.
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns:
+              - _dbt_source_relation
+              - plan_id
+              - discipline_id
+              - subject_id
+    columns:
+      - name: _dbt_source_relation
+        description: Source relation identifier for union models.
+        data_type: string
+      - name: nodetype
+        description:
+          PowerSchool node type code; used to match gpprogresssubject records to
+          the correct plan level.
+        data_type: int64
+      - name: plan_id
+        description: gpnode.id for the plan root node.
+        data_type: int64
+      - name: plan_gpversionid
+        description: Grad plan version ID.
+        data_type: int64
+      - name: plan_parentid
+        description:
+          Parent node ID for the plan root (always null for root plans).
+        data_type: int64
+      - name: plan_name
+        description: Name of the grad plan.
+        data_type: string
+      - name: plan_credit_capacity
+        description: Total credits configured for the plan.
+        data_type: float64
+      - name: discipline_id
+        description: gpnode.id for the discipline node.
+        data_type: int64
+      - name: discipline_name
+        description: Name of the discipline (e.g., English, Math).
+        data_type: string
+      - name: discipline_credit_capacity
+        description: Credits configured for the discipline.
+        data_type: float64
+      - name: subject_id
+        description:
+          gpnode.id for the subject node; falls back to discipline_id when the
+          discipline has no subject children.
+        data_type: int64
+      - name: subject_name
+        description:
+          Name of the subject node; falls back to discipline_name when no
+          subject children exist.
+        data_type: string
+      - name: subject_credit_capacity
+        description:
+          Credits configured for the subject; falls back to discipline credit
+          capacity when no subject children exist.
+        data_type: float64
