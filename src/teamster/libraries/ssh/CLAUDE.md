@@ -24,8 +24,13 @@ Extended SSH/SFTP resource used by every SFTP-based integration. Wraps
 - In production, the PowerSchool SSH password is read from
   `/etc/secret-volume/powerschool_ssh_password.txt`; in test mode it reads from
   the `password` field directly
-- paramiko 5.0 dropped `ssh-rsa` from default `Transport._preferred_keys`.
-  Servers advertising only `ssh-rsa` (e.g. GlobalSCAPE EFT) fail with
-  `IncompatiblePeer: no acceptable host key`. Set `enable_legacy_rsa=True` on
-  the resource. Diagnose with `ssh -vv <host>` — the
-  `peer server KEXINIT proposal` line shows the offered host-key algorithms.
+- paramiko 5.0 dropped `ssh-rsa` from both `Transport._preferred_keys`
+  (negotiation) AND `Transport._key_info` (host-key class lookup at
+  `_verify_key`). Servers advertising only `ssh-rsa` (e.g. GlobalSCAPE EFT) fail
+  at KEX with `IncompatiblePeer: no acceptable host key` if only
+  `_preferred_keys` is patched; if KEX is fixed but `_key_info` is left alone,
+  KEX succeeds and then host-key parsing raises `KeyError: 'ssh-rsa'`. Both
+  dicts must be temporarily extended (ssh-rsa → `RSAKey`, same class as
+  rsa-sha2-256/512) — `enable_legacy_rsa=True` on the resource handles both.
+  Diagnose with `ssh -vv <host>` — the `peer server KEXINIT proposal` line shows
+  the offered host-key algorithms.
