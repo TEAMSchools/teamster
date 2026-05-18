@@ -85,14 +85,16 @@ source-system package stays district-agnostic.
 
 ## Implementation
 
-### 1. kipppaterson intermediates (4 new models)
+### 1. kipppaterson intermediates (2 new models)
 
 Add `src/dbt/kipppaterson/models/pearson/intermediate/`:
 
-- `int_pearson__parcc.sql`
 - `int_pearson__njsla.sql`
 - `int_pearson__njsla_science.sql`
-- `int_pearson__njgpa.sql`
+
+`stg_pearson__parcc` and `stg_pearson__njgpa` are disabled in
+`kipppaterson/dbt_project.yml`, so no Paterson rows exist for those assessments
+in the kipptaf union and no intermediate is needed.
 
 Each model:
 
@@ -130,13 +132,13 @@ The `enroll_status IN (0, 2, 3)` filter follows the kipptaf CLAUDE.md
 
 ### 2. Update kipptaf `sources-kipppaterson.yml`
 
-Declare the 4 new intermediates as sources alongside the existing per-assessment
+Declare the 2 new intermediates as sources alongside the existing per-assessment
 staging models. The kipptaf-level `stg_pearson__<assessment>` union models then
 source the translated intermediates for Paterson.
 
-### 3. Update kipptaf `stg_pearson__<assessment>.sql` (4 union models)
+### 3. Update kipptaf `stg_pearson__<assessment>.sql` (2 union models)
 
-For each of the 4 assessment union models in
+For `stg_pearson__njsla.sql` and `stg_pearson__njsla_science.sql` in
 `src/dbt/kipptaf/models/pearson/staging/`, replace:
 
 ```sql
@@ -171,10 +173,10 @@ Disable the staging model and the upstream Google Sheet source:
 
 ## Acceptance criteria
 
-- [ ] 4 new `int_pearson__<assessment>` models exist in kipppaterson with
-      passing uniqueness tests.
-- [ ] All 4 kipptaf-level `stg_pearson__<assessment>` union models source the
-      translated intermediates for Paterson.
+- [ ] 2 new `int_pearson__<assessment>` models exist in kipppaterson (NJSLA +
+      NJSLA Science) with passing uniqueness tests.
+- [ ] The 2 kipptaf-level `stg_pearson__njsla` / `stg_pearson__njsla_science`
+      union models source the translated intermediates for Paterson.
 - [ ] `int_pearson__all_assessments` no longer references the crosswalk.
 - [ ] `stg_google_sheets__pearson__student_crosswalk` is disabled.
 - [ ] `pearson__student_crosswalk` source entry removed (or disabled) in
