@@ -255,3 +255,5 @@ Expected: `n_changed = 0` for both Newark and Camden source relations.
   consolidation)
 - [#3956](https://github.com/TEAMSchools/teamster/issues/3956) — 8 Paterson
   Pearson rows with no PowerSchool record (Ops follow-up)
+- [#3957](https://github.com/TEAMSchools/teamster/issues/3957) — proactive dbt
+  tests to surface state_studentnumber collisions going forward
