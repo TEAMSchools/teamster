@@ -1,5 +1,6 @@
 import socket
 import subprocess
+import threading
 import time
 from pathlib import Path
 from stat import S_ISDIR, S_ISREG
@@ -14,6 +15,12 @@ from tenacity import (
     stop_after_attempt,
     wait_exponential_jitter,
 )
+
+# Serializes mutation of `Transport._preferred_keys` across concurrent
+# `enable_legacy_rsa` connects in the same process — without it, two threads
+# can interleave save/restore and leak `ssh-rsa` past the legacy resource's
+# call (Thread B captures A's mutated value as "original" and restores to it).
+_PREFERRED_KEYS_LOCK = threading.Lock()
 
 
 class SSHTunnelError(Exception):
@@ -51,16 +58,16 @@ class SSHResource(DagsterSSHResource):
 
         # Append ssh-rsa to the class-level preferred host-key algorithms for
         # the duration of this connect. paramiko reads the class attr via
-        # _filter_algorithm("keys") at KEXINIT time. Concurrent connects from
-        # other enable_legacy_rsa resources in the same process can race on
-        # the restore — worst case is a retried IncompatiblePeer, not a
-        # correctness bug.
-        original_preferred_keys: tuple[str, ...] = Transport._preferred_keys
-        Transport._preferred_keys = original_preferred_keys + ("ssh-rsa",)
-        try:
-            return super().get_connection()
-        finally:
-            Transport._preferred_keys = original_preferred_keys
+        # _filter_algorithm("keys") at KEXINIT time. The module-level lock
+        # serializes save/restore so concurrent connects can't leak ssh-rsa
+        # beyond the legacy resource's call window.
+        with _PREFERRED_KEYS_LOCK:
+            original_preferred_keys: tuple[str, ...] = Transport._preferred_keys
+            Transport._preferred_keys = original_preferred_keys + ("ssh-rsa",)
+            try:
+                return super().get_connection()
+            finally:
+                Transport._preferred_keys = original_preferred_keys
 
     def listdir_attr_r(
         self,
@@ -106,6 +113,7 @@ class SSHResource(DagsterSSHResource):
         return files
 
     def open_ssh_tunnel(self) -> subprocess.Popen[bytes]:
+        # trunk-ignore(bandit/B603)
         ssh_tunnel = subprocess.Popen(
             args=[
                 "sshpass",
