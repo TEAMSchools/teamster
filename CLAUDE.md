@@ -60,7 +60,10 @@ file; domain specifics live in the nearest subdirectory CLAUDE.md.
   explicitly. Use `git -C <worktree>` on every git call (bare `git` from the
   main repo silently commits to `main`) and
   `uv run dbt ... --project-dir <worktree>/src/dbt/<project>` on every dbt call.
-  Otherwise prefer absolute paths.
+  For Python execution from the main repo, prefix `VIRTUAL_ENV=` and use
+  `uv --directory <worktree> run python ...` — bare `uv run --active` reads the
+  main repo's `.venv` and misses worktree-only changes. Otherwise prefer
+  absolute paths.
 
 - **Branch switch**: `gh issue develop <number> --name <branch> --checkout`.
 
@@ -125,8 +128,12 @@ file; domain specifics live in the nearest subdirectory CLAUDE.md.
   `.trunk/tools/trunk check --force <files>` to verify before claiming the
   change is lint-clean.
 
-- **Linter**: Use `# trunk-ignore(<linter>/<rule>)` with a reason comment — not
-  linter-native disable syntax. Binary:
+- **Linter**: Suppress with `# trunk-ignore(linter/rule): reason` (e.g.
+  `# trunk-ignore(bandit/B603): static argv, no shell`) on the line immediately
+  before the flagged line — not linter-native disable syntax. Wrapping the
+  reason onto extra comment lines silently breaks the suppression (trunk only
+  honors the directive on the adjacent line), and CI also flags it with
+  `trunk/ignore-does-nothing`. Binary:
   `/workspaces/teamster/.trunk/tools/trunk`.
 
 - **Markdown**: Always specify a language on fenced code blocks (MD040). Use
