@@ -1,6 +1,4 @@
 with
-    raw as (select * from {{ ref("stg_pearson__njsla_science") }}),
-
     paterson_id_map as (
         select
             scf.prevstudentid as paterson_district_sis_id,
@@ -18,6 +16,6 @@ select
     coalesce(
         m.kipp_student_number, raw.localstudentidentifier
     ) as localstudentidentifier,
-from raw
+from {{ ref("stg_pearson__njsla_science") }} as raw
 left join
     paterson_id_map as m on raw.localstudentidentifier = m.paterson_district_sis_id
