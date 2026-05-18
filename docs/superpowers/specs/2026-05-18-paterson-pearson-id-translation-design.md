@@ -70,7 +70,7 @@ pearson package: stg_pearson__<assessment>  (raw, district-agnostic)
                           ↓ instantiated per-district
 kipppaterson_pearson.stg_pearson__<assessment>  (raw Paterson)
                           ↓ NEW: kipppaterson intermediate translates IDs
-kipppaterson.int_pearson__<assessment>__id_translated
+kipppaterson.int_pearson__<assessment>
                           ↓ sourced by kipptaf
 kipptaf.stg_pearson__<assessment>  (union of 3 districts)
                           ↓
@@ -89,10 +89,10 @@ source-system package stays district-agnostic.
 
 Add `src/dbt/kipppaterson/models/pearson/intermediate/`:
 
-- `int_pearson__parcc__id_translated.sql`
-- `int_pearson__njsla__id_translated.sql`
-- `int_pearson__njsla_science__id_translated.sql`
-- `int_pearson__njgpa__id_translated.sql`
+- `int_pearson__parcc.sql`
+- `int_pearson__njsla.sql`
+- `int_pearson__njsla_science.sql`
+- `int_pearson__njgpa.sql`
 
 Each model:
 
@@ -146,7 +146,7 @@ source("kipppaterson_pearson", "stg_pearson__<assessment>")
 with:
 
 ```sql
-source("kipppaterson_pearson", "int_pearson__<assessment>__id_translated")
+source("kipppaterson_pearson", "int_pearson__<assessment>")
 ```
 
 Newark / Camden sources stay unchanged.
@@ -159,19 +159,26 @@ In `int_pearson__all_assessments.sql`:
 - Replace `coalesce(x.student_number, u.localstudentidentifier)` with
   `u.localstudentidentifier`
 
-Disable `stg_google_sheets__pearson__student_crosswalk` in its properties yml
-(`config: enabled: false`). The Google Sheet source can stay declared in
-`sources-external.yml` since archive-pattern rebuild isn't required — no
-downstream consumers remain after the join is dropped.
+Disable the staging model and the upstream Google Sheet source:
+
+- Set `config: enabled: false` on
+  `stg_google_sheets__pearson__student_crosswalk` in its properties yml.
+- Remove (or disable) the corresponding `pearson__student_crosswalk` entry in
+  `src/dbt/kipptaf/models/google/sheets/sources-external.yml` so the Google
+  Sheet external table is no longer registered as a source. With the staging
+  model and the source both gone, the sheet has no entry points into the
+  warehouse.
 
 ## Acceptance criteria
 
-- [ ] 4 new `int_pearson__<assessment>__id_translated` models exist in
-      kipppaterson with passing uniqueness tests.
+- [ ] 4 new `int_pearson__<assessment>` models exist in kipppaterson with
+      passing uniqueness tests.
 - [ ] All 4 kipptaf-level `stg_pearson__<assessment>` union models source the
       translated intermediates for Paterson.
 - [ ] `int_pearson__all_assessments` no longer references the crosswalk.
 - [ ] `stg_google_sheets__pearson__student_crosswalk` is disabled.
+- [ ] `pearson__student_crosswalk` source entry removed (or disabled) in
+      `sources-external.yml`.
 - [ ] 432 Paterson Pearson rows that previously FKed into Newark `student_key`s
       now FK into Paterson `student_key`s.
 - [ ] 8 Paterson Pearson orphans remain orphans (relationships test continues to
