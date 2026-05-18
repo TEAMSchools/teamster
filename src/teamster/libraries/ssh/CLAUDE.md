@@ -24,13 +24,22 @@ Extended SSH/SFTP resource used by every SFTP-based integration. Wraps
 - In production, the PowerSchool SSH password is read from
   `/etc/secret-volume/powerschool_ssh_password.txt`; in test mode it reads from
   the `password` field directly
-- paramiko 5.0 dropped `ssh-rsa` from both `Transport._preferred_keys`
-  (negotiation) AND `Transport._key_info` (host-key class lookup at
-  `_verify_key`). Servers advertising only `ssh-rsa` (e.g. GlobalSCAPE EFT) fail
-  at KEX with `IncompatiblePeer: no acceptable host key` if only
-  `_preferred_keys` is patched; if KEX is fixed but `_key_info` is left alone,
-  KEX succeeds and then host-key parsing raises `KeyError: 'ssh-rsa'`. Both
-  dicts must be temporarily extended (ssh-rsa → `RSAKey`, same class as
-  rsa-sha2-256/512) — `enable_legacy_rsa=True` on the resource handles both.
-  Diagnose with `ssh -vv <host>` — the `peer server KEXINIT proposal` line shows
-  the offered host-key algorithms.
+- paramiko 5.0 disabled `ssh-rsa` at three independent layers, and ALL three
+  must be temporarily re-enabled for a connect against a legacy-only server
+  (e.g. GlobalSCAPE EFT 8.1) to succeed:
+  1. `Transport._preferred_keys` — KEX negotiation. Skip →
+     `IncompatiblePeer: no acceptable host key`.
+  2. `Transport._key_info` — algorithm→PKey-class dict consulted by
+     `_verify_key` on the server's host key. Skip → `KeyError: 'ssh-rsa'`.
+  3. `RSAKey.HASHES` — signature-algorithm→hash dict consulted by
+     `verify_ssh_sig`. Skip →
+     `SSHException: Signature verification (ssh-rsa) failed`. Map `ssh-rsa` →
+     `cryptography.hazmat.primitives.hashes.SHA1`. (paramiko's `rsakey.py:84-87`
+     comment explicitly justifies the SHA-1 refusal even while accepting ssh-rsa
+     keys.)
+
+  `enable_legacy_rsa=True` on the resource handles all three under a single
+  module-level lock. Diagnose new failures progressively: `ssh -vv <host>` shows
+  the offered host-key algorithms at the `peer server KEXINIT proposal` line,
+  then read the paramiko traceback to identify which of the three layers the
+  failure surfaces from.

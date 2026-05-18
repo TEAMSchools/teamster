@@ -17,11 +17,11 @@ from tenacity import (
     wait_exponential_jitter,
 )
 
-# Serializes mutation of `Transport._preferred_keys` and `Transport._key_info`
-# across concurrent `enable_legacy_rsa` connects in the same process — without
-# it, two threads can interleave save/restore and leak `ssh-rsa` past the
-# legacy resource's call (Thread B captures A's mutated value as "original"
-# and restores to it).
+# Serializes mutation of `Transport._preferred_keys`, `Transport._key_info`,
+# and `RSAKey.HASHES` across concurrent `enable_legacy_rsa` connects in the
+# same process — without it, two threads can interleave save/restore and leak
+# `ssh-rsa` past the legacy resource's call (Thread B captures A's mutated
+# value as "original" and restores to it).
 _PREFERRED_KEYS_LOCK = threading.Lock()
 
 
