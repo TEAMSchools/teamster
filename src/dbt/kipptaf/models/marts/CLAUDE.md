@@ -258,9 +258,6 @@ packages) but those edits must be **additive only**. Wider upstream refactors
 require a compelling reason called out in the spec; otherwise split into a
 separate PR.
 
-Before designing a solution for a roadmap issue, verify the issue's claims
-against the current code and data.
-
 Before proposing a new structural mart change, check the open items on the
 [Data Team project board](https://github.com/orgs/TEAMSchools/projects/4) — the
 case may already be tracked and deferred.

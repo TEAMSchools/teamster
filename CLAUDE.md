@@ -198,6 +198,11 @@ alone may be safe; combinations may not. When unsure, consult the
   changes, `uv run pytest` where tests exist. PR body uses
   `.github/pull_request_template.md`.
 
+- **Before brainstorming a fix for a GitHub issue**: verify the issue's claims
+  (row counts, bucket sizes, reproduce queries, named files/columns) against
+  current code and data. Issue bodies drift — code moves, data changes, prior
+  PRs land. Re-run the diagnostic before designing.
+
 - **Continuous execution exceptions**: `superpowers:subagent-driven-development`
   and `superpowers:executing-plans` say "do not pause between tasks." Pause
   anyway to ask the user before (a) opening a tracking issue, (b) creating a
