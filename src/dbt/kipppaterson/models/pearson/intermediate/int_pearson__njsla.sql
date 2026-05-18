@@ -11,11 +11,11 @@ with
     )
 
 select
-    raw.* except (localstudentidentifier),
-
-    coalesce(
-        m.kipp_student_number, raw.localstudentidentifier
-    ) as localstudentidentifier,
+    raw.* replace (
+        coalesce(
+            m.kipp_student_number, raw.localstudentidentifier
+        ) as localstudentidentifier
+    ),
 from {{ ref("stg_pearson__njsla") }} as raw
 left join
     paterson_id_map as m on raw.localstudentidentifier = m.paterson_district_sis_id
