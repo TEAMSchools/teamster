@@ -43,17 +43,15 @@ with
     )
 
 /*
-    cumulative_y1_gpa_projected_unweighted (from int_powerschool__gpa_cumulative):
-        = (unweighted_points_hist + enrolled_crhrs × current_y1_uw_gpa)
-          / (potentialcrhrs_hist + enrolled_crhrs)
+    cumulative_y1_gpa_projected_unweighted
+        = (hist_uw_pts + E_crhrs * current_y1_uw_gpa) / (hist_crhrs + E_crhrs)
 
-    solving for current_y1_uw_gpa given a target T:
-        needed_y1_uw_gpa = (T × (potentialcrhrs_hist + enrolled_crhrs)
-                            - unweighted_points_hist)
-                           / enrolled_crhrs
+    solving for current_y1_uw_gpa at a target T:
+        needed_y1_uw_gpa = (T * (hist_crhrs + E_crhrs) - hist_uw_pts) / E_crhrs
 
-    the result is the unweighted Y1 GPA a student must earn across all currently
-    enrolled courses this year for their projected cumulative to equal T.
+    hist_crhrs  = sum(potentialcrhrs) from stored Y1 records (excludefromgpa = 0)
+    hist_uw_pts = sum(potentialcrhrs * unweighted_grade_points) from stored Y1
+    E_crhrs     = sum(potential_credit_hours) from currently enrolled courses
 */
 select
     e.studentid,
