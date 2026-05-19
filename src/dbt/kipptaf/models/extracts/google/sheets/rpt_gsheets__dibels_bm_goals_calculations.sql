@@ -156,13 +156,40 @@ with
     )
 
 select
-    * except (grade_goal_type),
+    c.academic_year,
+    c.region,
+    c.assessment_grade,
+    c.assessment_grade_int,
+    c.period,
+    c.benchmark_goal_season,
+    c.school,
 
-    (n_admin_season_school_gl_at_above_expected - n_admin_season_school_gl_at_above)
+    c.grade_goal,
+    c.grade_range_goal,
+    c.n_admin_season_school_gl_all,
+    c.n_admin_season_school_gl_at_above,
+    c.n_admin_season_region_gl_all,
+    c.n_admin_season_region_gl_at_above,
+    c.n_admin_season_school_gl_at_above_expected,
+    c.n_admin_season_region_gl_at_above_expected,
+
+    b.n_admin_season_school_gl_bl_wb,
+    b.n_admin_season_region_gl_bl_wb,
+
+    (c.n_admin_season_school_gl_at_above_expected - c.n_admin_season_school_gl_at_above)
     * 1.5 as n_admin_season_school_gl_at_above_gap,
 
-    (n_admin_season_region_gl_at_above_expected - n_admin_season_region_gl_at_above)
+    (c.n_admin_season_region_gl_at_above_expected - c.n_admin_season_region_gl_at_above)
     * 1.5 as n_admin_season_region_gl_at_above_gap,
 
-from needed_count_calcs
-where grade_goal_type = 'At/Above'
+from needed_count_calcs as c
+left join
+    needed_count_calcs as b
+    on c.academic_year = b.academic_year
+    and c.region = b.region
+    and c.assessment_grade = b.assessment_grade
+    and c.period = b.period
+    and c.benchmark_goal_season = b.benchmark_goal_season
+    and c.school = b.school
+    and b.grade_goal_type = 'Well Below'
+where c.grade_goal_type = 'At/Above'
