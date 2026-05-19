@@ -75,8 +75,11 @@ class GoogleDriveResource(ConfigurableResource):
         batch = self._drive.new_batch_http_request(callback=_callback)
         for file_id in file_ids:
             batch.add(
-                # trunk-ignore(pyright/reportAttributeAccessIssue)
-                self._service.get(fileId=file_id, fields="modifiedTime"),
+                self._service.get(  # trunk-ignore(pyright/reportAttributeAccessIssue)
+                    fileId=file_id,
+                    fields="modifiedTime",
+                    supportsAllDrives=True,
+                ),
                 request_id=file_id,
             )
         batch.execute()
