@@ -1,0 +1,21 @@
+models:
+  - name: int_powerschool__gpa_cumulative_target
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns:
+              - studentid
+              - schoolid
+    columns:
+      - name: studentid
+        data_type: int64
+      - name: schoolid
+        data_type: int64
+      - name: enrolled_potentialcrhrs
+        data_type: float64
+      - name: needed_gpa_unweighted_for_2_5
+        data_type: float64
+      - name: needed_gpa_unweighted_for_3_0
+        data_type: float64
+      - name: needed_gpa_unweighted_for_3_5
+        data_type: float64
