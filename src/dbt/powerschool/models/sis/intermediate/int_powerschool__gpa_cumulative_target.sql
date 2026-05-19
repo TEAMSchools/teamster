@@ -48,7 +48,8 @@ with
           / (potentialcrhrs_hist + enrolled_crhrs)
 
     solving for current_y1_uw_gpa given a target T:
-        needed_y1_uw_gpa = (T × (potentialcrhrs_hist + enrolled_crhrs) - unweighted_points_hist)
+        needed_y1_uw_gpa = (T × (potentialcrhrs_hist + enrolled_crhrs)
+                            - unweighted_points_hist)
                            / enrolled_crhrs
 
     the result is the unweighted Y1 GPA a student must earn across all currently
