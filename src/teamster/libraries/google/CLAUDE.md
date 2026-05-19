@@ -74,7 +74,8 @@ to ingest survey data as assets.
 (not a full asset) from a Google Sheets URL + range. The sheet ID is parsed from
 the URL and stored in metadata.
 
-**`sensors.py`** (`build_google_sheets_asset_sensor()`): Polls
-`spreadsheet.get_lastUpdateTime()` for each unique sheet ID, emits
-`AssetMaterialization` events when a sheet has been updated since the last
-cursor timestamp.
+**`sensors.py`** (`build_google_sheets_asset_sensor()`): For each unique sheet
+ID, calls `GoogleDriveResource.get_modified_time()` (Drive API
+`files.get(fields=modifiedTime)`) and emits `AssetMaterialization` events when
+the modifiedTime has advanced past the last cursor value. Uses the
+`google_drive` resource key — `gspread` is not used.
