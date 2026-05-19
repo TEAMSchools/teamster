@@ -14,6 +14,7 @@ class GoogleDriveResource(ConfigurableResource):
     scopes: list[str] = ["https://www.googleapis.com/auth/drive.metadata.readonly"]
     service_account_file_path: str | None = None
 
+    _drive: discovery.Resource = PrivateAttr()
     _service: discovery.Resource = PrivateAttr()
     _log: Logger = PrivateAttr()
 
@@ -27,9 +28,11 @@ class GoogleDriveResource(ConfigurableResource):
         else:
             credentials, _ = auth.default(scopes=self.scopes)
 
-        self._service = discovery.build(
+        self._drive = discovery.build(
             serviceName="drive", version=self.version, credentials=credentials
-        ).files()
+        )
+        # trunk-ignore(pyright/reportAttributeAccessIssue)
+        self._service = self._drive.files()
 
     def get_modified_times(self, file_ids: list[str]) -> dict[str, float]:
         """Batch Drive files.get for modifiedTime across many file IDs.
@@ -65,7 +68,7 @@ class GoogleDriveResource(ConfigurableResource):
             results[request_id] = datetime.fromisoformat(modified_time).timestamp()
 
         # trunk-ignore(pyright/reportAttributeAccessIssue)
-        batch = self._service.new_batch_http_request(callback=_callback)
+        batch = self._drive.new_batch_http_request(callback=_callback)
         for file_id in file_ids:
             batch.add(
                 # trunk-ignore(pyright/reportAttributeAccessIssue)
