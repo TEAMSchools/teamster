@@ -11,7 +11,6 @@ from teamster.core.io_managers.gcs import GCSIOManager
 from teamster.libraries.deanslist.resources import DeansListResource
 from teamster.libraries.google.drive.resources import GoogleDriveResource
 from teamster.libraries.google.forms.resources import GoogleFormsResource
-from teamster.libraries.google.sheets.resources import GoogleSheetsResource
 from teamster.libraries.overgrad.resources import OvergradResource
 from teamster.libraries.powerschool.sis.odbc.resources import PowerSchoolODBCResource
 from teamster.libraries.ssh.resources import SSHResource
@@ -95,8 +94,6 @@ DLT_RESOURCE = DagsterDltResource()
 GOOGLE_DRIVE_RESOURCE = GoogleDriveResource()
 
 GOOGLE_FORMS_RESOURCE = GoogleFormsResource()
-
-GOOGLE_SHEETS_RESOURCE = GoogleSheetsResource()
 
 OVERGRAD_RESOURCE = OvergradResource(api_key=EnvVar("OVERGRAD_API_KEY"), page_limit=100)
 

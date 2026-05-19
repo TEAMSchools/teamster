@@ -30,6 +30,17 @@ class GoogleDriveResource(ConfigurableResource):
             serviceName="drive", version=self.version, credentials=credentials
         ).files()
 
+    def get_modified_time(self, file_id: str) -> float:
+        """Returns the Drive file's modifiedTime as a POSIX timestamp.
+
+        https://developers.google.com/drive/api/reference/rest/v3/files/get
+
+        Raises googleapiclient.errors.HttpError on API failure.
+        """
+        # trunk-ignore(pyright/reportAttributeAccessIssue)
+        response = self._service.get(fileId=file_id, fields="modifiedTime").execute()
+        return datetime.fromisoformat(response["modifiedTime"]).timestamp()
+
     def files_list(
         self,
         corpora: str | None = None,

@@ -1,5 +1,4 @@
 import json
-from datetime import datetime
 from itertools import groupby
 
 from dagster import (
@@ -10,10 +9,9 @@ from dagster import (
     SkipReason,
     sensor,
 )
-from dagster_shared import check
-from gspread.exceptions import APIError
+from googleapiclient.errors import HttpError
 
-from teamster.libraries.google.sheets.resources import GoogleSheetsResource
+from teamster.libraries.google.drive.resources import GoogleDriveResource
 
 
 def build_google_sheets_asset_sensor(
@@ -23,7 +21,7 @@ def build_google_sheets_asset_sensor(
         name=f"{code_location}__google__sheets__asset_sensor",
         minimum_interval_seconds=minimum_interval_seconds,
     )
-    def _sensor(context: SensorEvaluationContext, gsheets: GoogleSheetsResource):
+    def _sensor(context: SensorEvaluationContext, google_drive: GoogleDriveResource):
         def get_sheet_id(asset_spec: AssetSpec):
             return asset_spec.metadata["sheet_id"]
 
@@ -36,17 +34,13 @@ def build_google_sheets_asset_sensor(
             asset_keys = [g.key for g in group]
 
             try:
-                spreadsheet = check.not_none(value=gsheets.open(sheet_id=sheet_id))
-            except APIError as e:
-                if str(e.code)[0] == "5":
+                last_update_timestamp = google_drive.get_modified_time(file_id=sheet_id)
+            except HttpError as e:
+                if e.resp.status >= 500:
                     context.log.error(msg=str(e))
                     continue
                 else:
-                    raise e
-
-            last_update_timestamp = datetime.fromisoformat(
-                spreadsheet.get_lastUpdateTime()
-            ).timestamp()
+                    raise
 
             last_materialization_timestamp = cursor.get(sheet_id, 0)
 
