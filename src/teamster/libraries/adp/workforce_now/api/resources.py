@@ -81,11 +81,12 @@ class AdpWorkforceNowResource(ConfigurableResource):
             return response
         except HTTPError as e:
             response_json = response.json()
-            self._log.error(msg=response_json)
 
             if response.status_code == 429:
+                self._log.warning(msg=response_json)
                 raise  # retryable via tenacity
 
+            self._log.error(msg=response_json)
             raise Exception(response_json) from e
 
     def post(
