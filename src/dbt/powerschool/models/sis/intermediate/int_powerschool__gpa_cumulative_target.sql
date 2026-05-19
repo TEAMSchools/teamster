@@ -25,11 +25,7 @@ with
             fg.schoolid,
 
             sum(
-                if(
-                    fg.exclude_from_gpa = 0 and fg.y1_letter_grade is not null,
-                    fg.potential_credit_hours,
-                    null
-                )
+                if(fg.y1_letter_grade is null, null, fg.potential_credit_hours)
             ) as enrolled_potentialcrhrs,
         from {{ ref("base_powerschool__final_grades") }} as fg
         left join
