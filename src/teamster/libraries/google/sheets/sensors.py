@@ -41,12 +41,13 @@ def build_google_sheets_asset_sensor(
         }
 
         modified_times = google_drive.get_modified_times(
-            file_ids=list(sheet_id_to_asset_keys.keys())
+            file_ids=list(sheet_id_to_asset_keys.keys()),
+            logger=context.log,
         )
 
         for sheet_id, asset_keys in sheet_id_to_asset_keys.items():
             if sheet_id not in modified_times:
-                continue  # 5xx was logged by the resource; skip
+                continue  # Drive error was logged by the resource; skip
 
             last_update_timestamp = modified_times[sheet_id]
             last_materialization_timestamp = cursor.get(sheet_id, 0)

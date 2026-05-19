@@ -34,7 +34,9 @@ class GoogleDriveResource(ConfigurableResource):
         # trunk-ignore(pyright/reportAttributeAccessIssue)
         self._service = self._drive.files()
 
-    def get_modified_times(self, file_ids: list[str]) -> dict[str, float]:
+    def get_modified_times(
+        self, file_ids: list[str], *, logger: Logger | None = None
+    ) -> dict[str, float]:
         """Batch Drive files.get for modifiedTime across many file IDs.
 
         Issues one HTTP POST to /batch containing one files.get sub-request per
@@ -47,8 +49,13 @@ class GoogleDriveResource(ConfigurableResource):
         dict so one bad sheet does not break the batch — callers detect by
         checking membership. Batch-level execution failures (network, auth)
         propagate from batch.execute().
+
+        Callers should pass `logger=context.log` from a sensor or schedule so
+        warnings land in the tick log. Defaults to the resource's
+        InitResourceContext logger, which may not surface in sensor tick output.
         """
         results: dict[str, float] = {}
+        log = logger if logger is not None else self._log
 
         def _callback(
             request_id: str,
@@ -56,7 +63,7 @@ class GoogleDriveResource(ConfigurableResource):
             exception: HttpError | None,
         ) -> None:
             if exception is not None:
-                self._log.warning(
+                log.warning(
                     f"files.get({request_id}) failed with "
                     f"{exception.resp.status}: {exception}"
                 )
