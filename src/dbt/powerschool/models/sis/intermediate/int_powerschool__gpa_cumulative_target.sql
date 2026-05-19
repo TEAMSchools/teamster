@@ -4,7 +4,9 @@ with
             sg.studentid,
             sg.schoolid,
 
-            sum(if(sg.excludefromgpa = 0, sg.potentialcrhrs, null)) as potentialcrhrs_hist,
+            sum(
+                if(sg.excludefromgpa = 0, sg.potentialcrhrs, null)
+            ) as potentialcrhrs_hist,
             sum(
                 if(sg.excludefromgpa = 0, sg.potentialcrhrs * su.grade_points, null)
             ) as unweighted_points_hist,
