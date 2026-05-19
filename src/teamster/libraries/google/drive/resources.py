@@ -43,26 +43,23 @@ class GoogleDriveResource(ConfigurableResource):
         https://developers.google.com/drive/api/reference/rest/v3/files/get
         https://developers.google.com/api-client-library/python/guide/batch
 
-        Files that return a 5xx are logged and omitted from the result dict.
-        Raises googleapiclient.errors.HttpError on the first non-5xx failure
-        (matches per-call semantics).
+        Per-file failures (4xx or 5xx) are logged and omitted from the result
+        dict so one bad sheet does not break the batch — callers detect by
+        checking membership. Batch-level execution failures (network, auth)
+        propagate from batch.execute().
         """
         results: dict[str, float] = {}
-        fatal_error: HttpError | None = None
 
         def _callback(
             request_id: str,
             response: dict[str, str] | None,
             exception: HttpError | None,
         ) -> None:
-            nonlocal fatal_error
             if exception is not None:
-                if exception.resp.status >= 500:
-                    self._log.warning(
-                        f"files.get({request_id}) failed with 5xx: {exception}"
-                    )
-                elif fatal_error is None:
-                    fatal_error = exception
+                self._log.warning(
+                    f"files.get({request_id}) failed with "
+                    f"{exception.resp.status}: {exception}"
+                )
                 return
             modified_time = check.not_none(value=response)["modifiedTime"]
             results[request_id] = datetime.fromisoformat(modified_time).timestamp()
@@ -77,8 +74,6 @@ class GoogleDriveResource(ConfigurableResource):
             )
         batch.execute()
 
-        if fatal_error is not None:
-            raise fatal_error
         return results
 
     def files_list(
