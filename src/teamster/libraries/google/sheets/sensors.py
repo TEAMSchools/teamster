@@ -64,7 +64,10 @@ def build_google_sheets_asset_sensor(
             return SensorResult(
                 asset_events=asset_events, cursor=json.dumps(obj=cursor)
             )
-        else:
-            return SkipReason()
+
+        return SkipReason(
+            f"No sheet modifiedTime advanced past cursor "
+            f"({len(modified_times)}/{len(sheet_id_to_asset_keys)} polled)"
+        )
 
     return _sensor

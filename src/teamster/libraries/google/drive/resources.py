@@ -55,7 +55,7 @@ class GoogleDriveResource(ConfigurableResource):
             nonlocal fatal_error
             if exception is not None:
                 if exception.resp.status >= 500:
-                    self._log.error(
+                    self._log.warning(
                         f"files.get({request_id}) failed with 5xx: {exception}"
                     )
                 elif fatal_error is None:
