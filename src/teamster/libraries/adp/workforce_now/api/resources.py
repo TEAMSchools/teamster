@@ -62,9 +62,10 @@ class AdpWorkforceNowResource(ConfigurableResource):
     @retry(
         stop=stop_after_attempt(5),
         wait=wait_exponential_jitter(initial=10, max=60),
-        retry=retry_if_exception_type(HTTPError),
+        retry=retry_if_exception_type((RequestsConnectionError, Timeout, HTTPError)),
     )
     def _request(self, method: str, url: str, **kwargs) -> Response:
+        kwargs.setdefault("timeout", (10, 60))
         response = self._session.request(method=method, url=url, **kwargs)
 
         try:
