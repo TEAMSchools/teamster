@@ -10,7 +10,7 @@ def test_google_sheets_asset_sensor():
         google_sheets_asset_sensor,
     )
 
-    cursor: dict = {}
+    cursor: dict[str, float] = {}
 
     sensor_result = google_sheets_asset_sensor(
         context=build_sensor_context(

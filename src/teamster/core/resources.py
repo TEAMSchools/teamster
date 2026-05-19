@@ -32,7 +32,7 @@ def get_io_manager_gcs_pickle(code_location: str) -> GCSIOManager:
     )
 
 
-def get_io_manager_gcs_avro(code_location: str, test: bool = False) -> GCSIOManager:
+def get_io_manager_gcs_avro(code_location: str, *, test: bool = False) -> GCSIOManager:
     if IS_BRANCH_DEPLOYMENT:
         code_location = "test"
         test = True
@@ -45,7 +45,7 @@ def get_io_manager_gcs_avro(code_location: str, test: bool = False) -> GCSIOMana
     )
 
 
-def get_io_manager_gcs_file(code_location: str, test: bool = False) -> GCSIOManager:
+def get_io_manager_gcs_file(code_location: str, *, test: bool = False) -> GCSIOManager:
     if IS_BRANCH_DEPLOYMENT:
         code_location = "test"
         test = True

@@ -148,10 +148,10 @@ class GoogleDriveResource(ConfigurableResource):
         folder_id: str,
         file_path: str = "",
         exclude: list[str] | None = None,
-        files: list | None = None,
+        files: list[dict] | None = None,
         min_modified_time: datetime | None = None,
         _modified_time_q_suffix: str = "",
-    ) -> list:
+    ) -> list[dict]:
         if exclude is None:
             exclude = []
 

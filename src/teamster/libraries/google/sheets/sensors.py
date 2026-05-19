@@ -22,11 +22,11 @@ def build_google_sheets_asset_sensor(
         minimum_interval_seconds=minimum_interval_seconds,
     )
     def _sensor(context: SensorEvaluationContext, google_drive: GoogleDriveResource):
-        def get_sheet_id(asset_spec: AssetSpec):
+        def get_sheet_id(asset_spec: AssetSpec) -> str:
             return asset_spec.metadata["sheet_id"]
 
-        cursor: dict = json.loads(context.cursor or "{}")
-        asset_events: list = []
+        cursor: dict[str, float] = json.loads(context.cursor or "{}")
+        asset_events: list[AssetMaterialization] = []
 
         for sheet_id, group in groupby(
             iterable=sorted(asset_specs, key=get_sheet_id), key=get_sheet_id
