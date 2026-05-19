@@ -48,7 +48,9 @@ class GoogleDriveResource(ConfigurableResource):
         fatal_error: HttpError | None = None
 
         def _callback(
-            request_id: str, response: dict | None, exception: HttpError | None
+            request_id: str,
+            response: dict[str, str] | None,
+            exception: HttpError | None,
         ) -> None:
             nonlocal fatal_error
             if exception is not None:
