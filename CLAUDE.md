@@ -96,6 +96,12 @@ file; domain specifics live in the nearest subdirectory CLAUDE.md.
   declines tracking issues, open minimal ones anyway (title + 1-2 sentences) and
   use `gh issue develop`.
 
+- **Smoke-test the runtime path, not just imports**: `hasattr(cls, "method")`
+  and `python -c "import X"` pass even when a third-party SDK sub-resource (e.g.
+  `googleapiclient` `.files()`, OpenAI sub-client) lacks the attribute at call
+  time. Before claiming a fix is verified, call the method — minimally against a
+  mock or `try` block — not just `hasattr`.
+
 - **Pull requests**: Squash merge. Use `.github/pull_request_template.md` as the
   PR body.
 

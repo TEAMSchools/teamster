@@ -63,6 +63,12 @@ for IO manager output.
 `couchdrop/sensors.py` to detect new files dropped in Couchdrop-managed Google
 Drive folders.
 
+**`new_batch_http_request` is only on the root service**, not on sub-resources
+like `.files()`. `googleapiclient/discovery.py` attaches it via
+`_set_dynamic_attr` only when `resourceDesc == rootDesc`. Keep both refs in
+`setup_for_execution`: `_drive = discovery.build(...)` for batching,
+`_service = self._drive.files()` for individual sub-requests.
+
 ## `forms/`
 
 **`resources.py`** (`GoogleFormsResource`): Fetches Google Forms responses. Used
