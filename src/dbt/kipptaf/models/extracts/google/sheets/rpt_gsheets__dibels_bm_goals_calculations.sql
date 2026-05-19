@@ -10,6 +10,7 @@ with
 
             e.school,
 
+            f.grade_goal_type,
             f.grade_goal,
             f.grade_range_goal,
 
@@ -125,34 +126,20 @@ with
             assessment_grade_int,
             period,
             benchmark_goal_season,
+            grade_goal_type,
             school,
 
-            max(grade_goal) as grade_goal,
-
-            max(grade_range_goal) as grade_range_goal,
-
-            avg(n_admin_season_school_gl_all) as n_admin_season_school_gl_all,
-
-            sum(n_admin_season_school_gl_at_above) as n_admin_season_school_gl_at_above,
-
-            sum(n_admin_season_school_gl_bl_wb) as n_admin_season_school_gl_bl_wb,
-
-            avg(n_admin_season_region_gl_all) as n_admin_season_region_gl_all,
-
-            sum(n_admin_season_region_gl_at_above) as n_admin_season_region_gl_at_above,
-
-            sum(n_admin_season_region_gl_bl_wb) as n_admin_season_region_gl_bl_wb,
+            grade_goal,
+            grade_range_goal,
+            n_admin_season_school_gl_all,
+            n_admin_season_school_gl_at_above,
+            n_admin_season_school_gl_bl_wb,
+            n_admin_season_region_gl_all,
+            n_admin_season_region_gl_at_above,
+            n_admin_season_region_gl_bl_wb,
 
         from roster
         where rn = 1
-        group by
-            academic_year,
-            region,
-            assessment_grade,
-            assessment_grade_int,
-            period,
-            benchmark_goal_season,
-            school
     ),
 
     needed_count_calcs as (
@@ -169,7 +156,7 @@ with
     )
 
 select
-    *,
+    * except (grade_goal_type),
 
     (n_admin_season_school_gl_at_above_expected - n_admin_season_school_gl_at_above)
     * 1.5 as n_admin_season_school_gl_at_above_gap,
@@ -178,3 +165,4 @@ select
     * 1.5 as n_admin_season_region_gl_at_above_gap,
 
 from needed_count_calcs
+where grade_goal_type = 'At/Above'
