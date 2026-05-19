@@ -44,6 +44,18 @@ with
         group by fg.studentid, fg.schoolid
     )
 
+/*
+    cumulative_y1_gpa_projected_unweighted (from int_powerschool__gpa_cumulative):
+        = (unweighted_points_hist + enrolled_crhrs × current_y1_uw_gpa)
+          / (potentialcrhrs_hist + enrolled_crhrs)
+
+    solving for current_y1_uw_gpa given a target T:
+        needed_y1_uw_gpa = (T × (potentialcrhrs_hist + enrolled_crhrs) - unweighted_points_hist)
+                           / enrolled_crhrs
+
+    the result is the unweighted Y1 GPA a student must earn across all currently
+    enrolled courses this year for their projected cumulative to equal T.
+*/
 select
     e.studentid,
     e.schoolid,
