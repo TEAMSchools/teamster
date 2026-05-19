@@ -5,6 +5,7 @@ from dagster import ConfigurableResource, InitResourceContext
 from dagster_shared import check
 from google import auth
 from googleapiclient import discovery
+from googleapiclient.errors import HttpError
 from pydantic import PrivateAttr
 
 
@@ -30,16 +31,50 @@ class GoogleDriveResource(ConfigurableResource):
             serviceName="drive", version=self.version, credentials=credentials
         ).files()
 
-    def get_modified_time(self, file_id: str) -> float:
-        """Returns the Drive file's modifiedTime as a POSIX timestamp.
+    def get_modified_times(self, file_ids: list[str]) -> dict[str, float]:
+        """Batch Drive files.get for modifiedTime across many file IDs.
+
+        Issues one HTTP POST to /batch containing one files.get sub-request per
+        file ID. Returns a dict mapping file_id to POSIX timestamp.
 
         https://developers.google.com/drive/api/reference/rest/v3/files/get
+        https://developers.google.com/api-client-library/python/guide/batch
 
-        Raises googleapiclient.errors.HttpError on API failure.
+        Files that return a 5xx are logged and omitted from the result dict.
+        Raises googleapiclient.errors.HttpError on the first non-5xx failure
+        (matches per-call semantics).
         """
+        results: dict[str, float] = {}
+        fatal_error: HttpError | None = None
+
+        def _callback(
+            request_id: str, response: dict | None, exception: HttpError | None
+        ) -> None:
+            nonlocal fatal_error
+            if exception is not None:
+                if exception.resp.status >= 500:
+                    self._log.error(
+                        f"files.get({request_id}) failed with 5xx: {exception}"
+                    )
+                elif fatal_error is None:
+                    fatal_error = exception
+                return
+            modified_time = check.not_none(value=response)["modifiedTime"]
+            results[request_id] = datetime.fromisoformat(modified_time).timestamp()
+
         # trunk-ignore(pyright/reportAttributeAccessIssue)
-        response = self._service.get(fileId=file_id, fields="modifiedTime").execute()
-        return datetime.fromisoformat(response["modifiedTime"]).timestamp()
+        batch = self._service.new_batch_http_request(callback=_callback)
+        for file_id in file_ids:
+            batch.add(
+                # trunk-ignore(pyright/reportAttributeAccessIssue)
+                self._service.get(fileId=file_id, fields="modifiedTime"),
+                request_id=file_id,
+            )
+        batch.execute()
+
+        if fatal_error is not None:
+            raise fatal_error
+        return results
 
     def files_list(
         self,

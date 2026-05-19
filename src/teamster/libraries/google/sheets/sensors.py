@@ -9,7 +9,6 @@ from dagster import (
     SkipReason,
     sensor,
 )
-from googleapiclient.errors import HttpError
 
 from teamster.libraries.google.drive.resources import GoogleDriveResource
 
@@ -28,29 +27,29 @@ def build_google_sheets_asset_sensor(
         cursor: dict[str, float] = json.loads(context.cursor or "{}")
         asset_events: list[AssetMaterialization] = []
 
-        for sheet_id, group in groupby(
-            iterable=sorted(asset_specs, key=get_sheet_id), key=get_sheet_id
-        ):
-            asset_keys = [g.key for g in group]
+        sheet_id_to_asset_keys: dict[str, list] = {
+            sheet_id: [g.key for g in group]
+            for sheet_id, group in groupby(
+                iterable=sorted(asset_specs, key=get_sheet_id), key=get_sheet_id
+            )
+        }
 
-            try:
-                last_update_timestamp = google_drive.get_modified_time(file_id=sheet_id)
-            except HttpError as e:
-                if e.resp.status >= 500:
-                    context.log.error(msg=str(e))
-                    continue
-                else:
-                    raise
+        modified_times = google_drive.get_modified_times(
+            file_ids=list(sheet_id_to_asset_keys.keys())
+        )
 
+        for sheet_id, asset_keys in sheet_id_to_asset_keys.items():
+            if sheet_id not in modified_times:
+                continue  # 5xx was logged by the resource; skip
+
+            last_update_timestamp = modified_times[sheet_id]
             last_materialization_timestamp = cursor.get(sheet_id, 0)
 
             if last_update_timestamp > last_materialization_timestamp:
                 context.log.info(asset_keys)
                 asset_events.extend(
-                    [
-                        AssetMaterialization(asset_key=asset_key)
-                        for asset_key in asset_keys
-                    ]
+                    AssetMaterialization(asset_key=asset_key)
+                    for asset_key in asset_keys
                 )
 
                 cursor[sheet_id] = last_update_timestamp
