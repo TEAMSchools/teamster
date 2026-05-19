@@ -69,6 +69,11 @@ like `.files()`. `googleapiclient/discovery.py` attaches it via
 `setup_for_execution`: `_drive = discovery.build(...)` for batching,
 `_service = self._drive.files()` for individual sub-requests.
 
+Drive API methods targeting a specific file (`files.get`, `files.list`,
+`files.create`, `files.update`, `files.copy`, `files.delete`) must pass
+`supportsAllDrives=True` — without it, files in shared drives 404 even when ACL
+grants access.
+
 ## `forms/`
 
 **`resources.py`** (`GoogleFormsResource`): Fetches Google Forms responses. Used
