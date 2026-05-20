@@ -144,7 +144,7 @@ file; domain specifics live in the nearest subdirectory CLAUDE.md.
   `.trunk/tools/trunk check --force <files>` to verify before claiming the
   change is lint-clean.
 
-- **Linter**: Suppress with `# trunk-ignore(linter/rule): reason` (e.g.
+- **Linter**: Suppress with `trunk-ignore(linter/rule): reason` (e.g.
   `# trunk-ignore(bandit/B603): static argv, no shell`) on the line immediately
   before the flagged line — not linter-native disable syntax. Wrapping the
   reason onto extra comment lines silently breaks the suppression (trunk only
