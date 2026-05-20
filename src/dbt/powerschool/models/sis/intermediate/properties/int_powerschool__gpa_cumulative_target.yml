@@ -1,6 +1,6 @@
 models:
   - name: int_powerschool__gpa_cumulative_target
-    description: >
+    description:
       For each student currently enrolled in active-term courses not yet stored as
       Y1, calculates the unweighted Y1 GPA needed across those courses to reach
       cumulative projected unweighted GPA targets of 2.5, 3.0, and 3.5. Grain is
