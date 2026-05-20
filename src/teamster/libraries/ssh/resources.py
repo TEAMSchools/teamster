@@ -94,6 +94,18 @@ class SSHResource(DagsterSSHResource):
         min_mtime: float | None = None,
         dir_mtimes: dict[str, float] | None = None,
     ) -> list[tuple[SFTPAttributes, str]]:
+        """Recursively list SFTP files with attributes.
+
+        The ``dir_mtimes`` parameter enables subtree pruning: a directory whose
+        ``st_mtime`` has not advanced since the cached value is skipped. This
+        is only sound when the SFTP server advances parent-directory mtime on
+        entry adds/removes/renames (POSIX semantics). Not all SFTP servers
+        honor this — Amplify mClass returns stale directory mtimes, causing the
+        prune to silently drop new files. Before opting a new sensor into
+        ``dir_mtimes``, verify the server propagates by checking whether any
+        directory's ``st_mtime`` is older than the max ``st_mtime`` of its
+        descendants; if so, do not pass ``dir_mtimes``.
+        """
         if exclude_dirs is None:
             exclude_dirs = []
 
