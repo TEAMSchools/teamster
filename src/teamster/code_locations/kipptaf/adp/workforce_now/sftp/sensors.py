@@ -26,6 +26,8 @@ def adp_wfn_sftp_sensor(
     run_requests = []
     cursor: dict = json.loads(context.cursor or "{}")
 
+    cursor.pop("__dir_mtimes", None)
+
     min_mtime = min(cursor.values(), default=0)
 
     with (
