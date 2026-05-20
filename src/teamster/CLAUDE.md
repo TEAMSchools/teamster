@@ -151,6 +151,11 @@ SFTP server advances parent-dir mtime on entry changes — Amplify mClass does
 not. Before opting a new sensor into `dir_mtimes=`, verify with
 `dir.st_mtime >= max(child.st_mtime)` across the watched tree.
 
+**Sensor cursor schema migration**: when removing a cursor key whose old value
+was non-scalar (dict, list), `cursor.pop("legacy_key", None)` before consuming
+`cursor.values()` — the persisted legacy value crashes `min`/`max`/`sum` on the
+first post-deploy tick.
+
 **Fiscal year**: July 1 start. `FiscalYear` class and
 `FiscalYearPartitionsDefinition` in `core/utils/classes.py`.
 
