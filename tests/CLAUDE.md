@@ -48,6 +48,9 @@ uv run pytest tests/assets/test_assets_dbt.py                         # requires
 - **SSH `test=True`**: `SSHResource` reads the SSH password from a secret file
   by default (`test=False`). Integration tests must set `test=True` and pass
   `password` directly so each district uses its own credentials.
+- **Cross-file conftest imports fail** (`tests/` has no `__init__.py`). For
+  fixture-injected param types, skip the annotation or use `TYPE_CHECKING` with
+  a string forward-ref.
 - `dagster definitions validate` requires env vars from 1Password. Secrets are
   fetched on demand by the root `conftest.py` during test runs. Outside of
   pytest, run commands in the VS Code terminal where the token is available.
