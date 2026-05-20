@@ -8,6 +8,7 @@ unset (e.g. CI without 1Password access).
 
 from collections.abc import Callable
 from dataclasses import dataclass
+from typing import Any
 
 import pytest
 from dagster import EnvVar
@@ -39,7 +40,7 @@ def _password_ssh(
         resolved_port = port
         if port_env is not None:
             resolved_port = int(check.not_none(value=EnvVar(port_env).get_value()))
-        kwargs: dict = {
+        kwargs: dict[str, Any] = {
             "remote_host": EnvVar(host_env),
             "remote_port": resolved_port,
             "username": EnvVar(user_env),

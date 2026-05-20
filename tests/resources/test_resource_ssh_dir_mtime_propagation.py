@@ -22,6 +22,7 @@ from stat import S_ISDIR, S_ISREG
 import pytest
 from dagster import build_resources
 from dagster_shared import check
+from paramiko import SFTPClient
 
 # Bounded walk to keep each server's test under a minute or so.
 _MAX_DIRS = 200
@@ -45,13 +46,20 @@ def _join(parent: str, name: str) -> str:
 
 
 def _walk(
-    sftp,
+    sftp: SFTPClient,
     root: str,
     exclude: frozenset[str],
     max_dirs: int,
     max_depth: int,
 ) -> list[_Violation]:
-    """BFS the tree under ``root``; collect dir-mtime propagation violations."""
+    """BFS the tree under ``root``; collect dir-mtime propagation violations.
+
+    The root directory itself is not audited — only its descendants — because
+    we can't observe root's own ``st_mtime`` via ``listdir_attr`` without
+    statting it from a hypothetical parent. Servers with stale root mtimes
+    will surface elsewhere in the tree as long as the prune would ever
+    recurse past root.
+    """
     violations: list[_Violation] = []
     queue: deque[tuple[str, float, int]] = deque()
 
