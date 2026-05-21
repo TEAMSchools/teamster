@@ -7,10 +7,24 @@ with
 
             person_identifier as student_number,
 
-            -- pre-coalesce the open-ended span sentinel so nj_leg can use a
-            -- plain max() without re-handling NULL.
-            coalesce(
-                eligibility_end_date, cast('9999-12-31' as date)
+            -- Titan ships ~14-month annual windows that overlap at academic-year
+            -- boundaries (current year extends past Sept 30, next year begins
+            -- before Aug 1). Trim each row's end to day-before-next-row's-start
+            -- so cross-value transitions don't produce overlapping spans after
+            -- island collapse. Coalesce the open-ended sentinel so nj_leg can
+            -- use a plain max() without re-handling NULL.
+            least(
+                coalesce(eligibility_end_date, cast('9999-12-31' as date)),
+                coalesce(
+                    date_sub(
+                        lead(eligibility_start_date) over (
+                            partition by person_identifier, _dbt_source_project
+                            order by eligibility_start_date
+                        ),
+                        interval 1 day
+                    ),
+                    cast('9999-12-31' as date)
+                )
             ) as eligibility_end_date,
 
             lag(eligibility_name) over (

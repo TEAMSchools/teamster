@@ -34,6 +34,6 @@ data_tests:
   - name: dim_student_meal_eligibility_status__no_overlapping_spans
     description: >-
       Within a `student_key` partition, consecutive meal-eligibility spans must
-      not overlap. Surfaces students whose Titan annual eligibility window
-      straddles the academic-year boundary (current year extends past Sept 30,
-      next year begins before Aug 1).
+      not overlap. The NJ leg trims each Titan annual window's end to
+      day-before-next-row's-start so academic-year boundary overlaps don't
+      surface in the dim.
