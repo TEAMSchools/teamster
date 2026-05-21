@@ -29,6 +29,11 @@ with
                 nj_se_placement
             ) as island_fingerprint,
         from {{ ref("int_edplan__njsmart_powerschool_union") }}
+        -- edplan emits ~147 rows with NULL student_number that would otherwise
+        -- collapse into one phantom partition (NULL=NULL in window functions)
+        -- and hash to the dbt_utils null-sentinel student_key, producing
+        -- spurious PK collisions across unrelated upstream rows.
+        where student_number is not null
     ),
 
     nj_flagged as (
