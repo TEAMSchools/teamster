@@ -123,6 +123,19 @@ models:
               stg_powerschool__s_nj_stu_x, stg_powerschool__u_studentsuserfields
             source_column: gifted_and_talented
 
+      - name: is_ell
+        data_type: boolean
+        description: >-
+          TRUE if the student is currently classified as an English Language
+          Learner per the PowerSchool student core fields. Reflects current
+          status only — does not reflect historical enrollment-date-window LEP
+          status.
+        config:
+          meta:
+            source_system: PowerSchool
+            source_model: stg_powerschool__studentcorefields
+            source_column: lep_status
+
       - name: race
         data_type: string
         description: >-

@@ -28,6 +28,8 @@ select
 
     coalesce(njs.gifted_and_talented, suf.gifted_and_talented, 'N') != 'N' as is_gifted,
 
+    scf.lep_status as is_ell,
+
     case
         when s.ethnicity = 'B'
         then 'Black/African American'
@@ -78,3 +80,7 @@ left join
     {{ ref("stg_powerschool__s_nj_stu_x") }} as njs
     on s.dcid = njs.studentsdcid
     and {{ union_dataset_join_clause(left_alias="s", right_alias="njs") }}
+left join
+    {{ ref("stg_powerschool__studentcorefields") }} as scf
+    on s.dcid = scf.studentsdcid
+    and {{ union_dataset_join_clause(left_alias="s", right_alias="scf") }}
