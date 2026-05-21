@@ -33,3 +33,5 @@ models:
         data_type: float64
       - name: maximum_value
         data_type: float64
+        description:
+          Derived from label_number, minimum_value, performance_band_set_id.

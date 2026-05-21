@@ -5,6 +5,15 @@ models:
     columns:
       - name: surrogate_key
         data_type: string
+        description:
+          Hash of student_primary_id, school_year, pm_period, measure, and
+          probe_number.
+        config:
+          meta:
+            source_system: Amplify
+            source_model: stg_amplify__mclass__sftp__pm_student_summary_aimline
+            source_column: surrogate_key
+            column_role: primary_key
       - name: mclass_measure_standard
         data_type: string
       - name: mclass_measure_standard_score

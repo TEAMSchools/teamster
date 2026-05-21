@@ -23,7 +23,7 @@ from sqlalchemy import literal_column, select, table, text
 from teamster.libraries.powerschool.sis.odbc.resources import PowerSchoolODBCResource
 from teamster.libraries.powerschool.sis.odbc.utils import (
     get_partition_window,
-    powerschool_connection,
+    with_powerschool_retry,
 )
 from teamster.libraries.ssh.resources import SSHResource
 
@@ -91,16 +91,21 @@ def build_powerschool_table_asset(
     if select_columns is None:
         select_columns = ["*"]
 
+    resolved_op_tags = {
+        "dagster/concurrency_key": f"{code_location}__powerschool__{table_name}",
+        **(op_tags or {}),
+    }
+
     @asset(
         key=[code_location, "powerschool", table_name],
         metadata={
             "table_name": table_name,
             "partition_column": partition_column,
             "select_columns": select_columns,
-            "op_tags": op_tags,
+            "op_tags": resolved_op_tags,
         },
         partitions_def=partitions_def,
-        op_tags=op_tags,
+        op_tags=resolved_op_tags,
         io_manager_key="io_manager_gcs_file",
         group_name="powerschool",
         kinds={"python"},
@@ -141,12 +146,13 @@ def build_powerschool_table_asset(
             .where(text(constructed_where))
         )
 
-        with powerschool_connection(
-            ssh_powerschool, db_powerschool, context.log
-        ) as connection:
-            file_path = check.inst(
+        file_path = with_powerschool_retry(
+            ssh_resource=ssh_powerschool,
+            db_resource=db_powerschool,
+            log=context.log,
+            work_fn=lambda conn: check.inst(
                 obj=db_powerschool.execute_query(
-                    connection=connection,
+                    connection=conn,
                     query=sql,
                     output_format="avro",
                     batch_size=partition_size,
@@ -154,7 +160,8 @@ def build_powerschool_table_asset(
                     array_size=array_size,
                 ),
                 ttype=pathlib.Path,
-            )
+            ),
+        )
 
         with file_path.open(mode="rb") as f:
             num_records = sum(block.num_records for block in block_reader(f))

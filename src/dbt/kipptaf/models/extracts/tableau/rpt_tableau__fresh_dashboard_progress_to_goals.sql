@@ -10,7 +10,7 @@ with
             s.school,
             s.grade_level,
 
-            x.grade_band as school_level,
+            x.location_grade_band as school_level,
 
             enrollment_type,
 
@@ -18,8 +18,8 @@ with
 
         from {{ ref("stg_google_sheets__finalsite__school_scaffold") }} as s
         left join
-            {{ ref("stg_google_sheets__people__location_crosswalk") }} as x
-            on s.schoolid = x.powerschool_school_id
+            {{ ref("int_people__location_crosswalk") }} as x
+            on s.schoolid = x.location_powerschool_school_id
         cross join unnest(['All', 'New', 'Returning']) as enrollment_type
         where s.grade_level = -1
 
@@ -54,6 +54,9 @@ with
             schoolid,
             school,
             finalsite_id,
+            powerschool_student_number,
+            first_name,
+            last_name,
             -1 as grade_level,
             latest_status,
             self_contained,
@@ -61,6 +64,7 @@ with
             is_enrolled_fdos,
             is_enrolled_oct01,
             is_enrolled_oct15,
+            is_enrolled_mar15,
 
             'Student' as row_type,
 
@@ -75,7 +79,9 @@ with
             enrollment_type,
 
         from {{ ref("int_tableau__finalsite_student_scaffold") }}
-        where latest_status = 'Enrolled' and goal_type = 'Enrolled'
+        where
+            goal_type in ('Enrolled', 'Enrollment In Progress')
+            and latest_status = goal_type
 
         union all
 
@@ -86,6 +92,9 @@ with
             schoolid,
             school,
             finalsite_id,
+            powerschool_student_number,
+            first_name,
+            last_name,
             -1 as grade_level,
             latest_status,
             self_contained,
@@ -93,6 +102,7 @@ with
             is_enrolled_fdos,
             is_enrolled_oct01,
             is_enrolled_oct15,
+            is_enrolled_mar15,
 
             'Student' as row_type,
 
@@ -107,7 +117,9 @@ with
             aligned_enrollment_type as enrollment_type,
 
         from {{ ref("int_tableau__finalsite_student_scaffold") }}
-        where latest_status = 'Enrolled' and goal_type = 'Enrolled'
+        where
+            goal_type in ('Enrolled', 'Enrollment In Progress')
+            and latest_status = goal_type
 
         union all
 
@@ -119,6 +131,9 @@ with
             school,
 
             null as finalsite_id,
+            null as powerschool_student_number,
+            null as first_name,
+            null as last_name,
             grade_level,
 
             'Goal Record' as latest_status,
@@ -127,6 +142,7 @@ with
             null as is_enrolled_fdos,
             null as is_enrolled_oct01,
             null as is_enrolled_oct15,
+            null as is_enrolled_mar15,
 
             'Goal' as row_type,
 
@@ -155,6 +171,9 @@ with
             schoolid,
             school,
             finalsite_id,
+            powerschool_student_number,
+            first_name,
+            last_name,
             grade_level,
             latest_status,
             self_contained,
@@ -162,6 +181,7 @@ with
             is_enrolled_fdos,
             is_enrolled_oct01,
             is_enrolled_oct15,
+            is_enrolled_mar15,
 
             'Student' as row_type,
 
@@ -176,7 +196,9 @@ with
             enrollment_type,
 
         from {{ ref("int_tableau__finalsite_student_scaffold") }}
-        where latest_status = 'Enrolled' and goal_type = 'Enrolled'
+        where
+            goal_type in ('Enrolled', 'Enrollment In Progress')
+            and latest_status = goal_type
 
         union all
 
@@ -187,6 +209,9 @@ with
             schoolid,
             school,
             finalsite_id,
+            powerschool_student_number,
+            first_name,
+            last_name,
             grade_level,
             latest_status,
             self_contained,
@@ -194,6 +219,7 @@ with
             is_enrolled_fdos,
             is_enrolled_oct01,
             is_enrolled_oct15,
+            is_enrolled_mar15,
 
             'Student' as row_type,
 
@@ -208,7 +234,9 @@ with
             aligned_enrollment_type as enrollment_type,
 
         from {{ ref("int_tableau__finalsite_student_scaffold") }}
-        where latest_status = 'Enrolled' and goal_type = 'Enrolled'
+        where
+            goal_type in ('Enrolled', 'Enrollment In Progress')
+            and latest_status = goal_type
 
         union all
 
@@ -220,6 +248,9 @@ with
             school,
 
             null as finalsite_id,
+            null as powerschool_student_number,
+            null as first_name,
+            null as last_name,
             grade_level,
 
             'Goal Record' as latest_status,
@@ -228,6 +259,7 @@ with
             null as is_enrolled_fdos,
             null as is_enrolled_oct01,
             null as is_enrolled_oct15,
+            null as is_enrolled_mar15,
 
             'Goal' as row_type,
 
@@ -259,9 +291,16 @@ select
     s.enrollment_type,
 
     d.finalsite_id,
+    d.powerschool_student_number,
+    d.first_name,
+    d.last_name,
     d.latest_status,
     d.enrollment_type as student_enrollment_type,
     d.self_contained,
+    d.is_enrolled_fdos,
+    d.is_enrolled_oct01,
+    d.is_enrolled_oct15,
+    d.is_enrolled_mar15,
     d.row_type,
     d.student_count,
     d.seat_target,
@@ -293,9 +332,16 @@ select
     s.enrollment_type,
 
     d.finalsite_id,
+    d.powerschool_student_number,
+    d.first_name,
+    d.last_name,
     d.latest_status,
     d.enrollment_type as student_enrollment_type,
     d.self_contained,
+    d.is_enrolled_fdos,
+    d.is_enrolled_oct01,
+    d.is_enrolled_oct15,
+    d.is_enrolled_mar15,
     d.row_type,
     d.student_count,
     d.seat_target,

@@ -7,7 +7,7 @@ communications platform). Staging-only project with no intermediate layer.
 
 ```text
 models/
-  staging/     # materialized: table, contract: enforced: true
+  staging/     # materialized: table
   sources.yml
 ```
 

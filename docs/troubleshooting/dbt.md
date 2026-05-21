@@ -79,6 +79,11 @@ uv run dbt build --select {model} --project-dir=src/dbt/kipptaf
 
 ## dbt Power User extension
 
+**"dbt installation or Python environment is not properly configured"** — if
+`deferToProduction` is `true` in `.vscode/settings.json`, Power User v0.60.1
+crashes with dbt 1.11.7 during manifest merge. Set `deferToProduction: false` in
+`dbt.deferConfigPerProject` and use CLI `--defer` instead.
+
 **"No dbt project found"** — the extension needs the project directory set
 explicitly. Open the VS Code command palette and run
 `dbt Power User: Select dbt project`. Choose the project directory under

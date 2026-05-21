@@ -1,0 +1,47 @@
+models:
+  - name: dim_student_attendance_intervention_types
+    description: >-
+      Attendance intervention type dimension. One row per region x intervention
+      threshold combination. Scaffolded from business rules that define at which
+      unexcused-absence thresholds a communication intervention is expected.
+      Miami uses different thresholds (3, 5, 8, 10, 15+) than Newark and Camden
+      (4, 8, 12, 16, 20, 30, 40).
+    columns:
+      - name: intervention_type_key
+        data_type: string
+        description: >-
+          Surrogate key derived from region_name and
+          family_communication_reason. Primary key for this dimension.
+        constraints:
+          - type: primary_key
+            warn_unsupported: false
+        data_tests:
+          - unique
+          - not_null
+
+      - name: region_key
+        data_type: string
+        description: >-
+          FK to dim_regions. Surrogate key derived from region_name.
+        constraints:
+          - type: foreign_key
+            to: ref('dim_regions')
+            to_columns: [region_key]
+            warn_unsupported: false
+        data_tests:
+          - relationships:
+              arguments:
+                to: ref('dim_regions')
+                field: region_key
+
+      - name: family_communication_reason
+        data_type: string
+        description: >-
+          DeansList comm log reason value that maps to this intervention type
+          (e.g., 'Chronic Absence: 4').
+
+      - name: absence_threshold
+        data_type: int64
+        description: >-
+          Number of unexcused absences at which this intervention is triggered.
+          Extracted from the numeric portion of family_communication_reason.

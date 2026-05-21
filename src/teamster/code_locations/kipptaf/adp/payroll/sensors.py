@@ -32,9 +32,14 @@ def adp_payroll_sftp_sensor(
 
     tick_cursor = float(context.cursor or "0.0")
 
-    files = ssh_couchdrop.listdir_attr_r(
-        remote_dir=f"/teamster-{CODE_LOCATION}/couchdrop/adp/payroll"
-    )
+    with (
+        ssh_couchdrop.get_connection() as connection,
+        connection.open_sftp() as sftp_client,
+    ):
+        files = ssh_couchdrop.listdir_attr_r(
+            sftp_client=sftp_client,
+            remote_dir=f"/teamster-{CODE_LOCATION}/couchdrop/adp/payroll",
+        )
 
     add_dynamic_partition_keys = set()
 

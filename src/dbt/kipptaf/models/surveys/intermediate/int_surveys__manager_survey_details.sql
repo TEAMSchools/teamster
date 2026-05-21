@@ -1,3 +1,17 @@
+/*
+ * NOTE (post-#3899): This model is retained for two purposes only:
+ *  - The subject-of-evaluation overlay (subject_df_employee_number and
+ *    subject staff columns), joined onto submissions_grain in
+ *    fct_survey_submissions.
+ *  - The historic Alchemer Manager archive (survey_id =
+ *    'historic_alchemer_Manager_survey'), sourced directly by
+ *    fct_survey_submissions and dim_survey_administrations.
+ *
+ * Manager Survey respondent identity (live Google Forms) now flows through
+ * int_surveys__survey_responses, not this model. Do not extend the
+ * Google-Forms arm here; add new logic to int_surveys__survey_responses
+ * or wait for the int_surveys__survey_submissions extraction (#3918).
+ */
 with
     response_identifiers as (
         select
@@ -69,6 +83,7 @@ select
     ri.subject_df_employee_number,
     ri.respondent_email,
 
+    fr.question_id as survey_question_id,
     fr.item_abbreviation as question_shortname,
     fr.item_title as question_title,
     fr.text_value as answer,
@@ -133,6 +148,7 @@ select
 
     null as respondent_email,
 
+    fi.question_id as survey_question_id,
     sda.question_shortname,
 
     coalesce(fi.title, sda.question_shortname) as question_title,
@@ -163,6 +179,8 @@ select
     lower(sr.reports_to_user_principal_name) as subject_manager_userprincipalname,
 
 from {{ source("surveys", "stg_surveys__manager_survey_detail_archive") }} as sda
+-- TODO: #3773 — if a shortname maps to multiple fi.question_id values, this
+-- join fans out and over-counts archive rows. Full fix tracked in #3773.
 inner join
     {{ ref("stg_google_sheets__google_forms__form_items_extension") }} as fi
     on sda.question_shortname = fi.abbreviation

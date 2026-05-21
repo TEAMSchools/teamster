@@ -1,13 +1,33 @@
 models:
   - name: stg_google_sheets__egencia__traveler_groups
+    description: |
+      Cascading lookup from ADP org / job attributes to Egencia traveler
+      group. Sourced from a Google Sheet maintained by Finance.
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns:
+              - adp_home_business_unit_name
+              - location_clean_name
+              - adp_department_home_name
+              - adp_job_title
+          config:
+            severity: error
     columns:
       - name: adp_home_business_unit_name
+        description: ADP `home_business_unit` name for the traveler.
         data_type: string
-      - name: adp_home_work_location_name
+      - name: location_clean_name
+        description: |
+          Canonical location name from `int_people__location_crosswalk`. Join
+          key to `int_people__staff_roster.home_work_location_reporting_name`.
         data_type: string
       - name: adp_department_home_name
+        description: ADP `home_department` name for the traveler.
         data_type: string
       - name: adp_job_title
+        description: ADP `job_title` for the traveler.
         data_type: string
       - name: egencia_traveler_group
+        description: Traveler group assignment in Egencia.
         data_type: string

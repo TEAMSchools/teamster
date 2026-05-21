@@ -22,6 +22,7 @@ GCS bucket: `teamster-kippmiami`
 | `renlearn`    | SFTP assets   | sensor (`build_renlearn_sftp_sensor`)     |
 | `extracts`    | BigQuery→SFTP | schedule                                  |
 | `couchdrop`   | sensor only   | sensor (Google Drive watcher)             |
+| `dlt/focus`   | dlt assets    | schedule (daily midnight ET)              |
 
 ## Florida-Specific
 
@@ -33,7 +34,3 @@ data file drop.
 
 Uses **ODBC** (live Oracle tunnel). Config YAMLs under `powerschool/config/` —
 same structure as other NJ schools.
-
-## No Asset Checks
-
-Miami does not define freshness checks (`asset_checks.py` is absent).

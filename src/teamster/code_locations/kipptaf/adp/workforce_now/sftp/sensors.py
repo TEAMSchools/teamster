@@ -1,6 +1,5 @@
 import json
 import re
-from datetime import datetime
 
 from dagster import (
     RunRequest,
@@ -11,7 +10,7 @@ from dagster import (
 )
 from dagster_shared import check
 
-from teamster.code_locations.kipptaf import CODE_LOCATION, LOCAL_TIMEZONE
+from teamster.code_locations.kipptaf import CODE_LOCATION
 from teamster.code_locations.kipptaf.adp.workforce_now.sftp.assets import assets
 from teamster.libraries.ssh.resources import SSHResource
 
@@ -24,12 +23,22 @@ from teamster.libraries.ssh.resources import SSHResource
 def adp_wfn_sftp_sensor(
     context: SensorEvaluationContext, ssh_adp_workforce_now: SSHResource
 ):
-    now = datetime.now(LOCAL_TIMEZONE)
-
     run_requests = []
     cursor: dict = json.loads(context.cursor or "{}")
 
-    files = ssh_adp_workforce_now.listdir_attr_r()
+    cursor.pop("__dir_mtimes", None)
+
+    min_mtime = min(cursor.values(), default=0)
+
+    with (
+        ssh_adp_workforce_now.get_connection() as connection,
+        connection.open_sftp() as sftp_client,
+    ):
+        files = ssh_adp_workforce_now.listdir_attr_r(
+            sftp_client=sftp_client,
+            exclude_dirs=["./payroll"],
+            min_mtime=min_mtime,
+        )
 
     for asset in assets:
         asset_metadata = asset.metadata_by_key[asset.key]
@@ -38,11 +47,11 @@ def adp_wfn_sftp_sensor(
         context.log.info(asset_identifier)
         last_run = cursor.get(asset_identifier, 0)
 
-        updates = []
+        pattern = re.compile(pattern=asset_metadata["remote_file_regex"])
+
+        max_mtime = last_run
         for f, _ in files:
-            match = re.match(
-                pattern=asset_metadata["remote_file_regex"], string=f.filename
-            )
+            match = pattern.match(string=f.filename)
 
             if (
                 match is not None
@@ -50,23 +59,23 @@ def adp_wfn_sftp_sensor(
                 and check.not_none(value=f.st_size) > 0
             ):
                 context.log.info(f"{f.filename}: {f.st_mtime} - {f.st_size}")
-                updates.append({"mtime": f.st_mtime})
-
-        if updates:
-            for u in updates:
                 run_requests.append(
                     RunRequest(
-                        run_key=f"{asset_identifier}_{u['mtime']}",
+                        run_key=f"{asset_identifier}_{f.st_mtime}",
                         asset_selection=[asset.key],
                     )
                 )
 
-            cursor[asset_identifier] = now.timestamp()
+                if check.not_none(value=f.st_mtime) > max_mtime:
+                    max_mtime = check.not_none(value=f.st_mtime)
+
+        if max_mtime > last_run:
+            cursor[asset_identifier] = max_mtime
 
     if run_requests:
         return SensorResult(run_requests=run_requests, cursor=json.dumps(obj=cursor))
     else:
-        return SkipReason()
+        return SkipReason("no new files matching asset patterns")
 
 
 sensors = [

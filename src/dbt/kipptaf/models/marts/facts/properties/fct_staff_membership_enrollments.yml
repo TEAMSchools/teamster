@@ -1,0 +1,75 @@
+models:
+  - name: fct_staff_membership_enrollments
+    description: >-
+      Staff membership enrollment fact table. One row per staff member x program
+      x enrollment period. Captures program and category memberships (e.g.,
+      leader and teacher development programs) for each employee, joined from
+      ADP associate ID to employee number via the employee numbers lookup.
+    columns:
+      - name: staff_membership_enrollment_key
+        data_type: string
+        description: >-
+          Surrogate primary key derived from employee_number, membership_code,
+          and effective_date. Generated with
+          generate_surrogate_key(["employee_number", "membership_code",
+          "effective_date"]).
+        constraints:
+          - type: primary_key
+            warn_unsupported: false
+        data_tests:
+          - unique
+          - not_null
+
+      - name: staff_key
+        data_type: string
+        description: >-
+          Foreign key to dim_staff. Surrogate key derived from employee_number.
+          Generated with generate_surrogate_key(["employee_number"]).
+        constraints:
+          - type: foreign_key
+            to: ref('dim_staff')
+            to_columns: [staff_key]
+            warn_unsupported: false
+        data_tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('dim_staff')
+                field: staff_key
+
+      - name: membership_code
+        data_type: string
+        description: >-
+          Degenerate dimension. Short code identifying the membership or program
+          (e.g., NJPRINC, NJTEACH).
+
+      - name: membership_description
+        data_type: string
+        description: >-
+          Degenerate dimension. Human-readable description of the membership or
+          program.
+
+      - name: category_code
+        data_type: string
+        description: >-
+          Degenerate dimension. Short code identifying the membership category
+          (e.g., LDRDEV, TCHDEV).
+
+      - name: category_description
+        data_type: string
+        description: >-
+          Degenerate dimension. Human-readable description of the membership
+          category (e.g., Program - Leader Development, Program - Teacher
+          Development).
+
+      - name: effective_start_date
+        data_type: date
+        description: >-
+          Date key (role-playing to dim_dates) for the start of the membership
+          enrollment period.
+
+      - name: effective_end_date
+        data_type: date
+        description: >-
+          Date key (role-playing to dim_dates) for the end of the membership
+          enrollment period.

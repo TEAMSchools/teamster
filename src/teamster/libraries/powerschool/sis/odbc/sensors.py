@@ -12,7 +12,6 @@ from operator import itemgetter
 from zoneinfo import ZoneInfo
 
 from dagster import (
-    MAX_RUNTIME_SECONDS_TAG,
     AssetKey,
     AssetsDefinition,
     PartitionsDefinition,
@@ -27,7 +26,7 @@ from dagster import (
 from teamster.libraries.powerschool.sis.odbc.resources import PowerSchoolODBCResource
 from teamster.libraries.powerschool.sis.odbc.utils import (
     evaluate_asset_staleness,
-    powerschool_connection,
+    with_powerschool_retry,
 )
 from teamster.libraries.ssh.resources import SSHResource
 
@@ -37,7 +36,6 @@ def build_powerschool_asset_sensor(
     execution_timezone: ZoneInfo,
     asset_selection: list[AssetsDefinition],
     minimum_interval_seconds: int | None = None,
-    max_runtime_seconds: int = (60 * 5),
 ) -> SensorDefinition:
     """Build a Dagster sensor that detects and rematerializes stale assets.
 
@@ -46,7 +44,6 @@ def build_powerschool_asset_sensor(
         execution_timezone: Timezone for sensor evaluation.
         asset_selection: Assets to monitor for staleness.
         minimum_interval_seconds: Minimum seconds between sensor ticks.
-        max_runtime_seconds: Maximum run duration tag value.
 
     Returns:
         A Dagster sensor function.
@@ -81,18 +78,20 @@ def build_powerschool_asset_sensor(
         ssh_powerschool: SSHResource,
         db_powerschool: PowerSchoolODBCResource,
     ) -> SensorResult:
-        with powerschool_connection(
-            ssh_powerschool, db_powerschool, context.log
-        ) as connection:
-            results = evaluate_asset_staleness(
+        results = with_powerschool_retry(
+            ssh_resource=ssh_powerschool,
+            db_resource=db_powerschool,
+            log=context.log,
+            work_fn=lambda conn: evaluate_asset_staleness(
                 asset_selection=asset_selection,
                 execution_timezone=execution_timezone,
                 instance=context.instance,
-                connection=connection,
+                connection=conn,
                 db_powerschool=db_powerschool,
                 log=context.log,
                 limit_monthly_partitions=None,
-            )
+            ),
+        )
 
         kwargs = []
         for r in results:
@@ -123,7 +122,6 @@ def build_powerschool_asset_sensor(
                     job_name=job_name,
                     partition_key=partition_key or None,
                     asset_selection=[g["asset_key"] for g in group],
-                    tags={MAX_RUNTIME_SECONDS_TAG: max_runtime_seconds},
                 )
             )
 

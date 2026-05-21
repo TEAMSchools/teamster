@@ -13,6 +13,10 @@ jq '. + {"python.defaultInterpreterPath": "/workspaces/teamster/.venv/bin/python
 git config pull.rebase false # specify how to reconcile divergent branches (merge)
 git config push.autoSetupRemote true
 
+# install post-merge hook for future manifest regeneration
+cp .vscode/scripts/post-merge.sh .git/hooks/post-merge
+chmod +x .git/hooks/post-merge
+
 # install extra apt packages
 sudo apt-get update -y &&
   sudo apt-get -y install --no-install-recommends sshpass &&
@@ -23,8 +27,6 @@ sudo apt-get update -y &&
 mkdir -p ./env
 
 # restrict permissions on secrets-related paths
-chmod 755 .devcontainer/scripts/inject-secrets.sh
-chmod 600 .devcontainer/tpl/*
 chmod 700 ./env
 
 # restrict permissions on hook/config paths
@@ -65,6 +67,15 @@ uv run dbt deps --project-dir=src/dbt/kipppaterson &
 uv run dbt deps --project-dir=src/dbt/kipptaf &
 wait
 
+# generate prod manifests for Power User --defer
+for project in kipptaf kippnewark kippcamden kippmiami kipppaterson; do
+  uv run dbt parse --target prod \
+    --project-dir "src/dbt/${project}" \
+    --profiles-dir .dbt \
+    --target-path target/prod &
+done
+wait
+
 # set up trunk
 chmod +x /workspaces/teamster/trunk
 
@@ -90,12 +101,8 @@ sudo mv toolbox /usr/local/bin/
 sudo chmod 755 /etc/secret-volume
 sudo chown vscode:vscode /etc/secret-volume
 
-# inject secrets
-.devcontainer/scripts/inject-secrets.sh
-
 # create convenience symlinks (-n: don't follow existing symlink-to-directory)
 ln -sfn /etc/secret-volume /workspaces/teamster/secret-volume
-ln -sfn /etc/secret-volume/.env /workspaces/teamster/env/.env
 mkdir -p /tmp/dagster
 ln -sfn /tmp/dagster /workspaces/teamster/dagster-tmp
 

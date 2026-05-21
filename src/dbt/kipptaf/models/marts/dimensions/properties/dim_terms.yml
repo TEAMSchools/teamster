@@ -1,0 +1,96 @@
+models:
+  - name: dim_terms
+    description: >-
+      Generalized term/period dimension. One row per named period per region.
+      Covers academic terms, performance management rounds, survey windows,
+      assessment administration windows, and fiscal periods. Region is nullable
+      for org-wide periods like fiscal quarters. Conformed dimension joinable
+      from any fact or dimension that operates within a defined time period.
+    columns:
+      - name: term_key
+        data_type: string
+        description: >-
+          Surrogate key for this dimension. Hash composition uses term type,
+          code, name, start date, region, and school ID as internal inputs;
+          region and school ID are not exposed as mart columns. Region
+          attributes are reachable via dim_terms → dim_locations → dim_regions
+          FK traversal.
+        constraints:
+          - type: primary_key
+            warn_unsupported: false
+        data_tests:
+          - unique:
+              config:
+                severity: error
+          - not_null:
+              config:
+                severity: error
+
+      - name: location_key
+        data_type: string
+        description: >-
+          Foreign key to dim_locations. Surrogate key derived from the location
+          name. Nullable when the period is region-wide or when the school is
+          not present in dim_locations.
+        constraints:
+          - type: foreign_key
+            to: ref('dim_locations')
+            to_columns: [location_key]
+            warn_unsupported: false
+        data_tests:
+          - relationships:
+              arguments:
+                to: ref('dim_locations')
+                field: location_key
+
+      - name: type
+        quote: true
+        data_type: string
+        description: >-
+          Category of period (e.g., academic, PM, survey, assessment, fiscal).
+
+      - name: term_code
+        data_type: string
+        description: >-
+          Short code for the period (e.g., Q1, Q2, PM1, Fall).
+
+      - name: term_name
+        data_type: string
+        description: >-
+          Display name for the period.
+
+      - name: start_date
+        data_type: date
+        description: >-
+          First day of the period.
+
+      - name: end_date
+        data_type: date
+        description: >-
+          Last day of the period.
+
+      - name: academic_year
+        data_type: int64
+        description: >-
+          Academic year this period falls within.
+
+      - name: fiscal_year
+        data_type: int64
+        description: >-
+          Fiscal year this period falls within.
+
+      - name: grade_band
+        data_type: string
+        description: >-
+          Grade band (ES, MS, HS). Nullable when not school-specific.
+
+      - name: data_freeze_date
+        data_type: date
+        description: >-
+          Date after which grades are locked for this period.
+
+      - name: is_current
+        data_type: boolean
+        description: >-
+          TRUE if the current date falls within this period, or if the period is
+          the latest for its type in a past academic year.

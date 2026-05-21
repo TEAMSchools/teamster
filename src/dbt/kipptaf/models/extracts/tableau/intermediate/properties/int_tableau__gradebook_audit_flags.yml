@@ -134,6 +134,8 @@ models:
         data_type: date
       - name: school_week_start_date_lead
         data_type: date
+      - name: quarter_end_date_insession
+        data_type: date
       - name: week_number_academic_year
         data_type: int64
       - name: week_number_quarter

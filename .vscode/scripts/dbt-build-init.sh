@@ -9,8 +9,9 @@ PROJECT="${1:-all}"
 
 run_project() {
   local project="$1"
-  uv run scripts/dbt-sxs.py "${project}"
-  uv run dbt build --full-refresh --project-dir="src/dbt/${project}/"
+  uv run dbt clone --full-refresh \
+    --project-dir="src/dbt/${project}/" \
+    --state target/prod
 }
 
 if [[ ${PROJECT} == "all" ]]; then
@@ -19,8 +20,8 @@ if [[ ${PROJECT} == "all" ]]; then
   run_project kippmiami &
   run_project kippnewark &
   run_project kipppaterson &
+  run_project kipptaf &
   wait
-  run_project kipptaf
 else
   run_project "${PROJECT}"
 fi

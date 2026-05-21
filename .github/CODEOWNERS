@@ -17,10 +17,17 @@
 # analytics engineers — all dbt projects
 /src/dbt/ @TEAMSchools/admins @TEAMSchools/analytics-engineers
 
-# analysts — kipptaf extracts, exposures, and marts
-/src/dbt/kipptaf/models/extracts/ @TEAMSchools/admins @TEAMSchools/analytics-engineers @TEAMSchools/analysts
+# analysts — kipptaf folders without staging models
+/src/dbt/kipptaf/models/assessments/ @TEAMSchools/admins @TEAMSchools/analytics-engineers @TEAMSchools/analysts
+/src/dbt/kipptaf/models/edplan/ @TEAMSchools/admins @TEAMSchools/analytics-engineers @TEAMSchools/analysts
 /src/dbt/kipptaf/models/exposures/ @TEAMSchools/admins @TEAMSchools/analytics-engineers @TEAMSchools/analysts
+/src/dbt/kipptaf/models/extracts/ @TEAMSchools/admins @TEAMSchools/analytics-engineers @TEAMSchools/analysts
+/src/dbt/kipptaf/models/finance/ @TEAMSchools/admins @TEAMSchools/analytics-engineers @TEAMSchools/analysts
 /src/dbt/kipptaf/models/marts/ @TEAMSchools/admins @TEAMSchools/analytics-engineers @TEAMSchools/analysts
+/src/dbt/kipptaf/models/reporting/ @TEAMSchools/admins @TEAMSchools/analytics-engineers @TEAMSchools/analysts
+/src/dbt/kipptaf/models/students/ @TEAMSchools/admins @TEAMSchools/analytics-engineers @TEAMSchools/analysts
+/src/dbt/kipptaf/models/surveys/ @TEAMSchools/admins @TEAMSchools/analytics-engineers @TEAMSchools/analysts
+/src/dbt/kipptaf/models/topline/ @TEAMSchools/admins @TEAMSchools/analytics-engineers @TEAMSchools/analysts
 
 # docs — everyone
 /docs/ @TEAMSchools/admins @TEAMSchools/data-team

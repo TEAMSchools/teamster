@@ -1,0 +1,193 @@
+models:
+  - name: fct_grades_assignments
+    description: >-
+      Assignment-level grade fact table. One row per student x assignment
+      (assignmentsectionid x student). Contains score, points possible,
+      missing/late/exempt flags, and category information. Assignments are
+      matched to student enrollments only when the due date falls within the
+      enrollment period. FK to dim_student_section_enrollments,
+      dim_student_enrollments, dim_terms, and dim_dates (role-playing via
+      due_date_key).
+    columns:
+      - name: grades_assignment_key
+        data_type: string
+        description: >-
+          Surrogate key derived from assignmentsectionid, _dbt_source_relation,
+          and students_dcid. Primary key for this fact.
+        constraints:
+          - type: primary_key
+            warn_unsupported: false
+        data_tests:
+          # TODO(#3915): remove the warn override once PS source cleanup
+          # completes; residual ~71 duplicate rows are historical PowerSchool
+          # double-writes (frozen corpus, AY <= 2023). When #3915 closes,
+          # drop this block and restore bare `- unique`.
+          - unique:
+              config:
+                severity: warn
+          - not_null
+
+      - name: student_section_enrollment_key
+        data_type: string
+        description: >-
+          FK to dim_student_section_enrollments. Surrogate key derived from
+          cc_dcid and _dbt_source_project.
+        constraints:
+          - type: foreign_key
+            to: ref('dim_student_section_enrollments')
+            to_columns: [student_section_enrollment_key]
+            warn_unsupported: false
+        data_tests:
+          - not_null
+
+          - relationships:
+              arguments:
+                to: ref('dim_student_section_enrollments')
+                field: student_section_enrollment_key
+      - name: student_enrollment_key
+        data_type: string
+        description: >-
+          FK to dim_student_enrollments. Surrogate key derived from
+          student_number, _dbt_source_relation, academic_year, and entrydate.
+        constraints:
+          - type: foreign_key
+            to: ref('dim_student_enrollments')
+            to_columns: [student_enrollment_key]
+            warn_unsupported: false
+        data_tests:
+          - not_null
+
+          - relationships:
+              arguments:
+                to: ref('dim_student_enrollments')
+                field: student_enrollment_key
+      - name: term_key
+        data_type: string
+        description: >-
+          FK to dim_terms. Surrogate key derived from type, code, name,
+          start_date, region, and school_id. Null when due_date does not fall
+          within any reporting term for the school and region.
+
+        constraints:
+          - type: foreign_key
+            to: ref('dim_terms')
+            to_columns: [term_key]
+            warn_unsupported: false
+        data_tests:
+          - relationships:
+              arguments:
+                to: ref('dim_terms')
+                field: term_key
+      - name: due_date_key
+        data_type: date
+        description: >-
+          The date the assignment is due. Defaults to the system date + 1 day.
+          Indexed.
+
+        config:
+          meta:
+            source_system: PowerSchool
+            source_model: stg_powerschool__assignmentsection
+            source_column: duedate
+        constraints:
+          - type: foreign_key
+            to: ref('dim_dates')
+            to_columns: [date_key]
+            warn_unsupported: false
+        data_tests:
+          - relationships:
+              arguments:
+                to: ref('dim_dates')
+                field: date_key
+      - name: academic_year
+        data_type: int64
+        description: >-
+          KIPP academic year (July start) in which this assignment falls.
+
+      - name: name
+        quote: true
+        data_type: string
+        description: >-
+          Name of the assignment as entered in the PowerSchool gradebook.
+
+      - name: category_name
+        data_type: string
+        description: >-
+          Gradebook category name the assignment belongs to (e.g., Homework,
+          Classwork, Assessment).
+
+      - name: category_code
+        data_type: string
+        description: >-
+          Short code for the gradebook category.
+
+      - name: points_earned
+        data_type: float64
+        description: >-
+          Raw points the student scored on this assignment. Populated only when
+          the source assignment uses `POINTS` scoring (NULL otherwise). Ed-Fi
+          studentGradebookEntry `points_earned`.
+
+        config:
+          meta:
+            source_system: PowerSchool
+            source_model: stg_powerschool__assignmentscore
+            source_column: scorepoints
+      - name: numeric_grade_earned
+        data_type: float64
+        description: >-
+          Numeric grade the student earned (0-100 percent or letter-grade
+          equivalent). Populated only when the source assignment uses `PERCENT`,
+          `GRADESCALE`, or `COLLECTED` scoring (NULL otherwise). Ed-Fi
+          studentGradebookEntry `numeric_grade_earned`.
+
+        config:
+          meta:
+            source_system: PowerSchool
+            source_model: stg_powerschool__assignmentscore
+            source_column: actualscoreentered
+
+      - name: max_points
+        data_type: float64
+        description: >-
+          Maximum points possible for the assignment. Ed-Fi gradebookEntry
+          max_points. If the entry points are 25 and the weight is 4, then the
+          total point value is 100.
+
+        config:
+          meta:
+            source_system: PowerSchool
+            source_model: stg_powerschool__assignmentsection
+            source_column: totalpointvalue
+      - name: score_percent
+        data_type: float64
+        description: >-
+          Score as a percentage (0-100). For POINTS type this is (scorepoints /
+          totalpointvalue) * 100; for PERCENT type this equals the entered
+          value.
+
+      - name: is_missing
+        data_type: boolean
+        description: >-
+          TRUE if the assignment is flagged as missing in PowerSchool.
+
+      - name: is_late
+        data_type: boolean
+        description: >-
+          TRUE if the assignment is flagged as late in PowerSchool.
+
+      - name: is_exempt
+        data_type: boolean
+        description: >-
+          TRUE if the assignment is flagged as exempt (not counted).
+
+      - name: is_expected
+        data_type: boolean
+        description: >-
+          TRUE if the student is expected to have a score for this assignment.
+          FALSE when the assignment is exempt or not counted in the final grade.
+
+      - name: is_counted_in_final_grade
+        data_type: boolean
+        description: >-
+          TRUE if this assignment contributes to the final grade calculation.

@@ -8,7 +8,7 @@ with
             user_principal_name,
             sam_account_name,
             home_business_unit_name,
-            home_work_location_name,
+            home_work_location_reporting_name,
             home_work_location_powerschool_school_id,
             home_work_location_dagster_code_location,
             home_department_name,
@@ -27,7 +27,7 @@ with
             user_principal_name,
             sam_account_name,
             company as home_business_unit_name,
-            physical_delivery_office_name as home_work_location_name,
+            physical_delivery_office_name as home_work_location_reporting_name,
             powerschool_school_id as home_work_location_powerschool_school_id,
             dagster_code_location as home_work_location_dagster_code_location,
             department as home_department_name,
@@ -71,7 +71,7 @@ with
         from staff_roster as sr
         left join
             {{ ref("stg_google_sheets__people__campus_crosswalk") }} as ccw
-            on sr.home_work_location_name = ccw.name
+            on sr.home_work_location_reporting_name = ccw.location_name
             and not ccw.is_pathways
         where
             sr.home_department_name not in ('Data', 'Teaching and Learning')

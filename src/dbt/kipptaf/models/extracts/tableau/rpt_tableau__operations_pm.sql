@@ -3,9 +3,7 @@ with
 
     ops_pm_roster as (select *, from {{ ref("rpt_gsheets__operations_pm_roster") }}),
 
-    schools as (
-        select *, from {{ ref("stg_google_sheets__people__location_crosswalk") }}
-    ),
+    schools as (select *, from {{ ref("int_people__location_crosswalk") }}),
 
     terms as (select *, from {{ ref("stg_google_sheets__reporting__terms") }}),
 
@@ -89,9 +87,9 @@ with
             responses_pivoted.form_employee_number,
             responses_pivoted.round_survey,
 
-            schools.abbreviation,
-            schools.region,
-            schools.grade_band,
+            schools.location_abbreviation as abbreviation,
+            schools.location_region as region,
+            schools.location_grade_band as grade_band,
 
             full_roster.formatted_name as respondent_name,
             full_roster.job_title as respondent_job_title,
@@ -104,9 +102,15 @@ with
             on ops_pm_roster.employee_number = responses_pivoted.form_employee_number
             and responses_pivoted.last_submitted_date_local
             between terms.start_date and terms.end_date
-        left join schools on ops_pm_roster.home_work_location_name = schools.name
         left join
-            full_roster on responses_pivoted.respondent_email = full_roster.google_email
+            schools on ops_pm_roster.home_work_location_name = schools.location_name
+        left join
+            full_roster
+            on (
+                lower(regexp_extract(responses_pivoted.respondent_email, r'^([^@]+)'))
+                = full_roster.sam_account_name
+                or responses_pivoted.respondent_email = full_roster.google_email
+            )
     )
 
 select *,

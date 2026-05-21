@@ -37,12 +37,19 @@ models:
         staging:
           +contract:
             enforced: true
+    pearson:
+      +materialized: table
+      +schema: pearson
   amplify:
     dds:
       +enabled: false
     mclass:
       api:
         +enabled: false
+      sftp:
+        staging:
+          stg_amplify__mclass__sftp__pm_student_summary_aimline:
+            +enabled: false
   pearson:
     +materialized: table
     staging:
@@ -143,10 +150,17 @@ models:
 
 sources:
   amplify:
-    amplify_mclass_api:
-      +enabled: false
-    amplify_dds:
-      +enabled: false
+    mclass:
+      api:
+        amplify_mclass_api:
+          +enabled: false
+      sftp:
+        amplify_mclass_sftp:
+          pm_student_summary_aimline:
+            +enabled: false
+    dds:
+      amplify_dds:
+        +enabled: false
   pearson:
     pearson:
       src_pearson__njgpa:

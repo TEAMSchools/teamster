@@ -31,6 +31,10 @@ with
         select
             *,
 
+            -- materialized region-prefix discriminator for downstream surrogate-key
+            -- composition; replaces per-consumer extract_code_location() per #3142.
+            -- code_location is the prior name; both will collapse when #3142 ships.
+            regexp_extract(_dbt_source_relation, r'(kipp\w+)_') as _dbt_source_project,
             regexp_extract(_dbt_source_relation, r'(kipp\w+)_') as code_location,
 
             initcap(regexp_extract(_dbt_source_relation, r'kipp(\w+)_')) as region,

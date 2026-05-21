@@ -7,8 +7,22 @@ models:
         data_type: string
       - name: studentid
         data_type: int64
+        description:
+          The internal number and ID of the associated Students record.
+        config:
+          meta:
+            source_system: PowerSchool
+            source_model: stg_powerschool__storedgrades
+            source_column: studentid
+            column_role: foreign_key
       - name: schoolid
         data_type: int64
+        description: The School_Number of the associated Schools record.
+        config:
+          meta:
+            source_system: PowerSchool
+            source_model: stg_powerschool__students
+            source_column: schoolid
       - name: earned_credits_cum
         data_type: float64
       - name: potential_credits_cum
@@ -26,6 +40,8 @@ models:
       - name: cumulative_y1_gpa_projected_s1
         data_type: float64
       - name: cumulative_y1_gpa_projected_s1_unweighted
+        data_type: float64
+      - name: cumulative_y1_gpa_projected_unweighted
         data_type: float64
       - name: core_cumulative_y1_gpa
         data_type: float64

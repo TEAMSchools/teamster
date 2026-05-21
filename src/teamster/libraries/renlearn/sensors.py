@@ -59,7 +59,11 @@ def build_renlearn_sftp_sensor(
         run_requests = []
         cursor: dict = json.loads(context.cursor or "{}")
 
-        files = ssh_renlearn.listdir_attr_r()
+        with (
+            ssh_renlearn.get_connection() as connection,
+            connection.open_sftp() as sftp_client,
+        ):
+            files = ssh_renlearn.listdir_attr_r(sftp_client=sftp_client)
 
         for asset in asset_selection:
             asset_metadata = asset.metadata_by_key[asset.key]

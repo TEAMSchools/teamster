@@ -1,6 +1,16 @@
 models:
   - name: int_seat_tracker__snapshot
     columns:
+      - name: location_key
+        data_type: string
+        description: >
+          MD5 surrogate key for the canonical school location. Null when
+          adp_location does not resolve through int_people__location_crosswalk.
+        data_tests:
+          - relationships:
+              arguments:
+                to: ref("dim_locations")
+                field: location_key
       - name: staffing_model_id
         data_type: string
       - name: staffing_status
@@ -11,10 +21,14 @@ models:
         data_type: boolean
       - name: plan_status
         data_type: string
+      - name: adp_location
+        data_type: string
+      - name: entity
+        data_type: string
       - name: academic_year
-        data_type: string
-      - name: teammate
-        data_type: string
+        data_type: int64
+      - name: teammate_employee_number
+        data_type: int64
       - name: is_open
         data_type: boolean
       - name: is_staffed
@@ -27,3 +41,4 @@ models:
         data_type: date
       - name: valid_to
         data_type: date
+        description: Conditional on valid_from, valid_to.
