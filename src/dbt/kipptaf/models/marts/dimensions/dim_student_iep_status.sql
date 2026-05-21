@@ -114,7 +114,7 @@ with
         left join
             {{ ref("stg_powerschool__studentcorefields") }} as scf
             on r.students_dcid = scf.studentsdcid
-            and {{ union_dataset_join_clause(left_alias="r", right_alias="scf") }}
+            and r._dbt_source_project = scf._dbt_source_project
         where r.region in ('Paterson', 'Miami')
     ),
 
