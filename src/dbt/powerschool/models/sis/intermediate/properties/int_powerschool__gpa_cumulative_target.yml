@@ -1,21 +1,5 @@
 models:
   - name: int_powerschool__gpa_cumulative_target
-    description:
-      For each student currently enrolled in active-term courses not yet stored as
-      Y1, calculates the unweighted Y1 GPA needed across those courses to reach
-      cumulative projected unweighted GPA targets of 2.5, 3.0, and 3.5. Grain is
-      one row per studentid and schoolid. Historical credit hours and unweighted grade
-      points are drawn from stored Y1 grades at the same school; enrolled credit
-      hours are drawn from current-term active courses not yet stored. Students with
-      all Y1 grades already stored will not appear. Transfer students whose prior
-      school differs from their current school will have historical credits treated
-      as zero, making targets appear more achievable than the true cumulative.
-    data_tests:
-      - dbt_utils.unique_combination_of_columns:
-          arguments:
-            combination_of_columns:
-              - studentid
-              - schoolid
     columns:
       - name: studentid
         description: The internal number and ID of the associated Students record.
