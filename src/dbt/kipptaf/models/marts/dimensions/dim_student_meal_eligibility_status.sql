@@ -12,22 +12,17 @@ with
             coalesce(
                 eligibility_end_date, cast('9999-12-31' as date)
             ) as eligibility_end_date,
+
+            lag(eligibility_name) over (
+                partition by person_identifier, _dbt_source_project
+                order by eligibility_start_date
+            ) as prev_eligibility_name,
         from {{ ref("stg_titan__person_data") }}
         where eligibility_start_date is not null
     ),
 
     nj_flagged as (
-        select
-            *,
-
-            if(
-                eligibility_name = lag(eligibility_name) over (
-                    partition by student_number, _dbt_source_project
-                    order by eligibility_start_date
-                ),
-                0,
-                1
-            ) as is_island_start,
+        select *, if(eligibility_name = prev_eligibility_name, 0, 1) as is_island_start,
         from nj_unioned
     ),
 
