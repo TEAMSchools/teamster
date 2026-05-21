@@ -106,8 +106,10 @@ models:
         data_type: string
         description: >-
           Special-education program classification (e.g. `Resource Center`,
-          `In-Class Resource`, `Self-Contained`, `No IEP`). Renamed from the
-          source-system field `spedlep`.
+          `In-Class Resource`, `Self-Contained`, `No IEP`).
+        config:
+          meta:
+            source_column: spedlep
 
       - name: special_education_code
         data_type: string
