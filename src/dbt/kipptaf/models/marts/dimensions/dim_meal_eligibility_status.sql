@@ -46,7 +46,7 @@ with
             eligibility_name as meal_eligibility,
             min(eligibility_start_date) as effective_date_start,
             coalesce(
-                max(eligibility_end_date), date '9999-12-31'
+                max(eligibility_end_date), cast('9999-12-31' as date)
             ) as effective_date_end,
         from nj_islanded
         group by student_number, _dbt_source_project, eligibility_name, island_id
@@ -77,7 +77,7 @@ with
 
             anchor.effective_date_start,
 
-            date '9999-12-31' as effective_date_end,
+            cast('9999-12-31' as date) as effective_date_end,
 
             coalesce(r.lunch_status, 'Unknown') as meal_eligibility,
         from pm_recent as r
@@ -122,5 +122,5 @@ select
     effective_date_end as effective_date_end_key,
 
     meal_eligibility in ('F', 'R', 'FDC') as is_meal_eligible,
-    effective_date_end = date '9999-12-31' as is_current,
+    effective_date_end = '9999-12-31' as is_current,
 from unioned

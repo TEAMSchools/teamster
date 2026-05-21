@@ -63,7 +63,9 @@ with
             special_education as special_education_name,
             cast(nj_se_placement as string) as special_education_placement,
             min(effective_date) as effective_date_start,
-            coalesce(max(effective_end_date), date '9999-12-31') as effective_date_end,
+            coalesce(
+                max(effective_end_date), cast('9999-12-31' as date)
+            ) as effective_date_end,
         from nj_islanded
         group by
             student_number,
@@ -75,25 +77,44 @@ with
             island_id
     ),
 
-    pm_leg as (
-        -- trunk-ignore(sqlfluff/ST06): two-table join + aggregate + constants
+    pm_anchor as (
         select
-            enr.student_number,
-            enr._dbt_source_project,
+            student_number, _dbt_source_project, min(entrydate) as effective_date_start,
+        from {{ ref("base_powerschool__student_enrollments") }}
+        where region in ('Paterson', 'Miami')
+        group by student_number, _dbt_source_project
+    ),
+
+    pm_recent as (
+        {{
+            dbt_utils.deduplicate(
+                relation=ref("base_powerschool__student_enrollments"),
+                partition_by="student_number, _dbt_source_project",
+                order_by="entrydate desc",
+            )
+        }}
+    ),
+
+    pm_leg as (
+        select
+            r.student_number,
+            r._dbt_source_project,
+
+            anchor.effective_date_start,
+
+            cast('9999-12-31' as date) as effective_date_end,
+
             coalesce(scf.spedlep, 'No IEP') as iep_classification,
-            cast(null as string) as special_education_code,
-            cast(null as string) as special_education_name,
-            cast(null as string) as special_education_placement,
-            min(enr.entrydate) as effective_date_start,
-            date '9999-12-31' as effective_date_end,
-        from {{ ref("base_powerschool__student_enrollments") }} as enr
+        from pm_recent as r
+        inner join
+            pm_anchor as anchor
+            on r.student_number = anchor.student_number
+            and r._dbt_source_project = anchor._dbt_source_project
         left join
             {{ ref("stg_powerschool__studentcorefields") }} as scf
-            on enr.students_dcid = scf.studentsdcid
-            and {{ union_dataset_join_clause(left_alias="enr", right_alias="scf") }}
-        where enr.region in ('Paterson', 'Miami')
-        group by
-            enr.student_number, enr._dbt_source_project, coalesce(scf.spedlep, 'No IEP')
+            on r.students_dcid = scf.studentsdcid
+            and {{ union_dataset_join_clause(left_alias="r", right_alias="scf") }}
+        where r.region in ('Paterson', 'Miami')
     ),
 
     unioned as (
@@ -101,22 +122,22 @@ with
             student_number,
             _dbt_source_project,
             iep_classification,
+            effective_date_start,
+            effective_date_end,
             special_education_code,
             special_education_name,
             special_education_placement,
-            effective_date_start,
-            effective_date_end,
         from nj_leg
         union all
         select
             student_number,
             _dbt_source_project,
             iep_classification,
-            special_education_code,
-            special_education_name,
-            special_education_placement,
             effective_date_start,
             effective_date_end,
+            cast(null as string) as special_education_code,
+            cast(null as string) as special_education_name,
+            cast(null as string) as special_education_placement,
         from pm_leg
     )
 
@@ -139,5 +160,5 @@ select
     effective_date_end as effective_date_end_key,
 
     iep_classification != 'No IEP' as is_iep,
-    effective_date_end = date '9999-12-31' as is_current,
+    effective_date_end = '9999-12-31' as is_current,
 from unioned

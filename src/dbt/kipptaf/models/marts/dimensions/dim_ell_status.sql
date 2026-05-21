@@ -11,7 +11,7 @@ with
             sl.student_number,
             njs._dbt_source_project,
             njs.lepbegindate as effective_date_start,
-            coalesce(njs.lependdate, date '9999-12-31') as effective_date_end,
+            coalesce(njs.lependdate, cast('9999-12-31' as date)) as effective_date_end,
         from {{ ref("stg_powerschool__s_nj_stu_x") }} as njs
         inner join
             student_lookup as sl
@@ -25,7 +25,9 @@ with
             sl.student_number,
             njs._dbt_source_project,
             njs.lepbegindate2 as effective_date_start,
-            coalesce(njs.liependdate2, date '9999-12-31') as effective_date_end,
+            coalesce(
+                njs.liependdate2, cast('9999-12-31' as date)
+            ) as effective_date_end,
         from {{ ref("stg_powerschool__s_nj_stu_x") }} as njs
         inner join
             student_lookup as sl
@@ -55,7 +57,7 @@ with
             enr.student_number,
             enr._dbt_source_project,
 
-            date '9999-12-31' as effective_date_end,
+            cast('9999-12-31' as date) as effective_date_end,
 
             min(enr.entrydate) as effective_date_start,
         from {{ ref("base_powerschool__student_enrollments") }} as enr
@@ -100,5 +102,5 @@ select
     effective_date_end as effective_date_end_key,
 
     true as is_ell,
-    effective_date_end = date '9999-12-31' as is_current,
+    effective_date_end = '9999-12-31' as is_current,
 from unioned
