@@ -126,7 +126,10 @@ cubes:
         public: true
 
       - name: is_ontime
-        description: 1 if the student arrived on time (non-tardy), 0 if tardy.
+        description: >-
+          1 if the attendance code is not a T-prefix tardy code, 0 if tardy.
+          Note: this is 1 for absent days as well as on-time present days — use
+          pct_ontime for an on-time rate that correctly excludes absent days.
         sql: is_ontime
         type: number
         public: true
@@ -268,12 +271,21 @@ cubes:
       - name: pct_tardy
         description: >-
           Percentage of present days where the student was tardy (tardy days /
-          present days). Absent days are excluded from the denominator, matching
-          the Tableau dashboard. Note: is_ontime in the source data is 1 for all
-          non-tardy days including absent days and cannot be used as a
-          denominator proxy — present days are counted directly via is_absent =
-          0.
+          present days). Absent days are excluded from both numerator and
+          denominator.
         sql: "1.0 * {_sum_tardy} / NULLIF({_count_present_days}, 0)"
+        type: number
+        format: percent
+        public: true
+
+      - name: pct_ontime
+        description: >-
+          Percentage of present days where the student arrived on time (on-time
+          days / present days). Complement of pct_tardy. Absent days are
+          excluded from both numerator and denominator.
+        sql: >-
+          1.0 * ({_count_present_days} - {_sum_tardy}) /
+          NULLIF({_count_present_days}, 0)
         type: number
         format: percent
         public: true

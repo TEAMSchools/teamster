@@ -30,6 +30,7 @@ views:
           - count_students
           - avg_daily_attendance
           - pct_tardy
+          - pct_ontime
           - count_truants
           - pct_truant
           - count_absent_days
