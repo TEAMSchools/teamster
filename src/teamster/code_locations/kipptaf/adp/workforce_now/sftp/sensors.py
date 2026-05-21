@@ -14,8 +14,6 @@ from teamster.code_locations.kipptaf import CODE_LOCATION
 from teamster.code_locations.kipptaf.adp.workforce_now.sftp.assets import assets
 from teamster.libraries.ssh.resources import SSHResource
 
-DIR_MTIMES_KEY = "__dir_mtimes"
-
 
 @sensor(
     name=f"{CODE_LOCATION}__adp__workforce_now__sftp_assets_sensor",
@@ -28,7 +26,8 @@ def adp_wfn_sftp_sensor(
     run_requests = []
     cursor: dict = json.loads(context.cursor or "{}")
 
-    dir_mtimes = cursor.pop(DIR_MTIMES_KEY, {})
+    cursor.pop("__dir_mtimes", None)
+
     min_mtime = min(cursor.values(), default=0)
 
     with (
@@ -39,7 +38,6 @@ def adp_wfn_sftp_sensor(
             sftp_client=sftp_client,
             exclude_dirs=["./payroll"],
             min_mtime=min_mtime,
-            dir_mtimes=dir_mtimes,
         )
 
     for asset in assets:
@@ -73,8 +71,6 @@ def adp_wfn_sftp_sensor(
 
         if max_mtime > last_run:
             cursor[asset_identifier] = max_mtime
-
-    cursor[DIR_MTIMES_KEY] = dir_mtimes
 
     if run_requests:
         return SensorResult(run_requests=run_requests, cursor=json.dumps(obj=cursor))

@@ -31,4 +31,5 @@ API.
 **`sensors.py`** (`build_amplify_mclass_sftp_sensor()`): SFTP sensor that
 detects new mClass files using `SSHResource.listdir_attr_r()`, matching paths
 against asset `remote_dir_regex`/`remote_file_regex` metadata. Extracts
-partition keys from regex named groups.
+partition keys from regex named groups. The Amplify mClass SFTP server returns
+stale directory mtimes — do not pass `dir_mtimes=` to `listdir_attr_r`.

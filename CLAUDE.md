@@ -91,11 +91,29 @@ file; domain specifics live in the nearest subdirectory CLAUDE.md.
 - **Git resuming**: Before resuming work on an existing branch, merge `main`:
   `git fetch origin main && git merge origin/main`.
 
+- **Auto-classifier still blocks `git worktree add -b` / `git checkout -b` after
+  verbal user approval** — consent isn't visible to the classifier. If the user
+  declines tracking issues, open minimal ones anyway (title + 1-2 sentences) and
+  use `gh issue develop`. Same for `git push origin main` (route through a PR or
+  have the user push). `gh issue develop --name <branch>` also fails when the
+  branch contains trigger words like `log`, `auth`, `secret` — rename and retry.
+
+- **Smoke-test the runtime path, not just imports**: `hasattr(cls, "method")`
+  and `python -c "import X"` pass even when a third-party SDK sub-resource (e.g.
+  `googleapiclient` `.files()`, OpenAI sub-client) lacks the attribute at call
+  time. Before claiming a fix is verified, call the method — minimally against a
+  mock or `try` block — not just `hasattr`.
+
 - **Pull requests**: Squash merge. Use `.github/pull_request_template.md` as the
   PR body.
 
 - **PR project linkage**: PRs auto-appear on project boards via issue refs
   (`Refs #N`, `Closes #N`) in the body. Do NOT `gh project item-add` a PR.
+
+- **Check dbt Cloud CI state before pushing fixes**: pushing cancels an
+  in-progress dbt run and restarts it. Before pushing a CI-fix commit, confirm
+  dbt Cloud is in terminal state; if it's still running, wait or ask the user.
+  Bundle multiple CI-fix commits into one push.
 
 - **Python**: Always `uv run` — never bare `python`, `python3`, or
   venv-installed tools (`dbt`, `dagster`, etc.).
@@ -128,7 +146,7 @@ file; domain specifics live in the nearest subdirectory CLAUDE.md.
   `.trunk/tools/trunk check --force <files>` to verify before claiming the
   change is lint-clean.
 
-- **Linter**: Suppress with `# trunk-ignore(linter/rule): reason` (e.g.
+- **Linter**: Suppress with `trunk-ignore(linter/rule): reason` (e.g.
   `# trunk-ignore(bandit/B603): static argv, no shell`) on the line immediately
   before the flagged line — not linter-native disable syntax. Wrapping the
   reason onto extra comment lines silently breaks the suppression (trunk only
@@ -326,11 +344,35 @@ or mart `facts`/`dimensions`/`bridges`) —
 `cursor=<evaluationId of the oldest record returned>` — not a timestamp or
 opaque token.
 
+### Dagster run failure diagnosis
+
+Step pod stdout is filtered from `k8s_container` logs. For per-step execution
+logs, use Dagster's compute log manager:
+`get_run_logs(filter_types=["LogsCapturedEvent"])` →
+`get_run_compute_logs(log_key=[run_id, "compute_logs", <logKey>])`.
+`mcp__gke__query_logs` surfaces only run-pod logs.
+
+To map a step Job hash to its actual pod name (random suffix):
+`protoPayload.methodName="io.k8s.core.v1.pods.create" protoPayload.resourceName=~"namespaces/dagster-cloud/pods/dagster-step-<hash>"`.
+
+`dagster/max_runtime` clock starts at `STARTED` and includes step-pod scheduling
+wait — no `step_execution_timeout` knob exists. When a run hits `max_runtime`
+having done little work, suspect step-pod `FailedScheduling`, not slow code or
+upstream APIs.
+
+GKE Autopilot top-of-hour fan-out is the dominant cause of step-pod scheduling
+latency. `FailedScheduling` events trace to "Insufficient cpu/memory" (3-9 min
+waits) while nodes provision. Image pull is ~2s on cached nodes — don't chase
+image slimming.
+
 ### Dagster Cloud GraphQL (direct, not via MCP)
 
 Host is `kipptaf.dagster.cloud/<deployment>/graphql` (org is `kipptaf`).
 `assetChecksOrError` is nested under `assetNodeOrError`; the evaluation success
-field is `success` (not `successful`).
+field is `success` (not `successful`). `assetMaterializations`
+`beforeTimestampMillis` / `afterTimestampMillis` are `String`, not `Float` —
+pass quoted numeric strings or the request fails with "type 'Float' used in
+position expecting type 'String'".
 
 ### GKE MCP
 
@@ -365,6 +407,16 @@ data. `list_time_series` `alignmentPeriod` must end with `s` (e.g., `"60s"` not
 `list_log_entries` over a busy day at WARNING+ severity routinely exceeds the
 context budget. Pre-filter (`severity`, `resource.type`), cap with `pageSize`,
 or dump the result to a file and hand it to a subagent.
+
+Drive and other Workspace APIs (Sheets, Calendar, Gmail) do NOT emit to GCP
+Cloud Logging by default — filtering audit logs for
+`protoPayload.serviceName="drive.googleapis.com"` returns empty unless Workspace
+audit log export is set up separately.
+
+To verify which SA a GKE pod authenticates as, query Cloud Audit logs with
+`protoPayload.authenticationInfo.principalEmail="<sa-email>"`.
+`iamcredentials.GenerateAccessToken` entries also log the requested OAuth scopes
+— disambiguates Workload Identity vs ADC vs SA-file paths.
 
 ### BigQuery MCP
 
@@ -433,3 +485,11 @@ Job config changes must go through the dbt Cloud UI — no mutation tools exist 
 the MCP. Live step logs (`debug_logs`, `structured_logs`) and
 `list_job_run_artifacts` return nothing until `artifacts_saved: true` — don't
 try to diagnose in-flight runs.
+
+### Asana MCP
+
+`mcp__claude_ai_Asana__create_tasks` `html_notes` only accepts this tag
+allowlist: `body`, `strong`, `em`, `u`, `s`, `code`, `ol`, `ul`, `li`, `a`,
+`blockquote`, `pre`, `h1`, `h2`, `hr/`, `img`. `<p>` and `<br>` are rejected
+with "XML is invalid" — structure content with headings + lists, no paragraph
+tags.

@@ -3,7 +3,7 @@
         relations=[
             source("kippnewark_pearson", "stg_pearson__njsla_science"),
             source("kippcamden_pearson", "stg_pearson__njsla_science"),
-            source("kipppaterson_pearson", "stg_pearson__njsla_science"),
+            source("kipppaterson_pearson", "int_pearson__njsla_science"),
         ]
     )
 }}

@@ -62,9 +62,10 @@ class AdpWorkforceNowResource(ConfigurableResource):
     @retry(
         stop=stop_after_attempt(5),
         wait=wait_exponential_jitter(initial=10, max=60),
-        retry=retry_if_exception_type(HTTPError),
+        retry=retry_if_exception_type((RequestsConnectionError, Timeout, HTTPError)),
     )
     def _request(self, method: str, url: str, **kwargs) -> Response:
+        kwargs.setdefault("timeout", (10, 60))
         response = self._session.request(method=method, url=url, **kwargs)
 
         try:
@@ -80,11 +81,12 @@ class AdpWorkforceNowResource(ConfigurableResource):
             return response
         except HTTPError as e:
             response_json = response.json()
-            self._log.error(msg=response_json)
 
             if response.status_code == 429:
+                self._log.warning(msg=response_json)
                 raise  # retryable via tenacity
 
+            self._log.error(msg=response_json)
             raise Exception(response_json) from e
 
     def post(
