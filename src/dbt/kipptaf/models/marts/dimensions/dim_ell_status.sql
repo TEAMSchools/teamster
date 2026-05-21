@@ -35,10 +35,18 @@ with
     ),
 
     nj_leg as (
-        select *
+        select
+            student_number,
+            _dbt_source_project,
+            effective_date_start,
+            effective_date_end,
         from nj_primary
         union all
-        select *
+        select
+            student_number,
+            _dbt_source_project,
+            effective_date_start,
+            effective_date_end,
         from nj_secondary
     ),
 
@@ -46,8 +54,10 @@ with
         select
             enr.student_number,
             enr._dbt_source_project,
-            min(enr.entrydate) as effective_date_start,
+
             date '9999-12-31' as effective_date_end,
+
+            min(enr.entrydate) as effective_date_start,
         from {{ ref("base_powerschool__student_enrollments") }} as enr
         left join
             {{ ref("stg_powerschool__studentcorefields") }} as scf
@@ -60,10 +70,18 @@ with
     ),
 
     unioned as (
-        select *
+        select
+            student_number,
+            _dbt_source_project,
+            effective_date_start,
+            effective_date_end,
         from nj_leg
         union all
-        select *
+        select
+            student_number,
+            _dbt_source_project,
+            effective_date_start,
+            effective_date_end,
         from pm_leg
     )
 

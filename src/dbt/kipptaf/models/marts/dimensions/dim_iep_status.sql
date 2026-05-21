@@ -3,15 +3,16 @@ with
         select
             student_number,
             _dbt_source_project,
-            -- edplan ships ~24% NULL spedlep; coalesce to 'No IEP' matches the
-            -- base_powerschool__student_enrollments pattern and lets is_iep
-            -- resolve to a non-null boolean for every row.
-            coalesce(spedlep, 'No IEP') as spedlep,
             special_education_code,
             special_education,
             nj_se_placement,
             effective_date,
             effective_end_date,
+
+            -- edplan ships ~24% NULL spedlep; coalesce to 'No IEP' matches the
+            -- base_powerschool__student_enrollments pattern and lets is_iep
+            -- resolve to a non-null boolean for every row.
+            coalesce(spedlep, 'No IEP') as spedlep,
         from {{ ref("int_edplan__njsmart_powerschool_union") }}
     ),
 
@@ -75,6 +76,7 @@ with
     ),
 
     pm_leg as (
+        -- trunk-ignore(sqlfluff/ST06): two-table join + aggregate + constants
         select
             enr.student_number,
             enr._dbt_source_project,
@@ -95,10 +97,26 @@ with
     ),
 
     unioned as (
-        select *
+        select
+            student_number,
+            _dbt_source_project,
+            iep_classification,
+            special_education_code,
+            special_education_name,
+            special_education_placement,
+            effective_date_start,
+            effective_date_end,
         from nj_leg
         union all
-        select *
+        select
+            student_number,
+            _dbt_source_project,
+            iep_classification,
+            special_education_code,
+            special_education_name,
+            special_education_placement,
+            effective_date_start,
+            effective_date_end,
         from pm_leg
     )
 

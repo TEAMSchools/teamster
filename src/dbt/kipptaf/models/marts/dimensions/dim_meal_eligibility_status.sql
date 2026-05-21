@@ -1,14 +1,16 @@
 with
     nj_unioned as (
         select
-            person_identifier as student_number,
             _dbt_source_project,
+            eligibility_start_date,
+            eligibility_end_date,
+
+            person_identifier as student_number,
+
             -- titan staging `eligibility_name` is single-letter (F/R/P); 2 NULLs
             -- in the source coalesce to 'Unknown' so the is_meal_eligible
             -- derivation never returns NULL.
             coalesce(eligibility_name, 'Unknown') as eligibility_name,
-            eligibility_start_date,
-            eligibility_end_date,
         from {{ ref("stg_titan__person_data") }}
         where eligibility_start_date is not null
     ),
@@ -50,7 +52,6 @@ with
         group by student_number, _dbt_source_project, eligibility_name, island_id
     ),
 
-    -- trunk-ignore(sqlfluff/ST03): referenced via dbt_utils.deduplicate above
     pm_recent as (
         {{
             dbt_utils.deduplicate(
@@ -73,9 +74,12 @@ with
         select
             r.student_number,
             r._dbt_source_project,
-            coalesce(r.lunch_status, 'Unknown') as meal_eligibility,
+
             anchor.effective_date_start,
+
             date '9999-12-31' as effective_date_end,
+
+            coalesce(r.lunch_status, 'Unknown') as meal_eligibility,
         from pm_recent as r
         inner join
             pm_anchor as anchor
@@ -85,10 +89,20 @@ with
     ),
 
     unioned as (
-        select *
+        select
+            student_number,
+            _dbt_source_project,
+            meal_eligibility,
+            effective_date_start,
+            effective_date_end,
         from nj_leg
         union all
-        select *
+        select
+            student_number,
+            _dbt_source_project,
+            meal_eligibility,
+            effective_date_start,
+            effective_date_end,
         from pm_leg
     )
 

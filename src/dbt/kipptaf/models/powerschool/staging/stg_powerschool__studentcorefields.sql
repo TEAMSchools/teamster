@@ -21,9 +21,6 @@ with
         }}
     )
 
-select
-    *,
-    -- materialized source-project discriminator for downstream surrogate-key
-    -- composition; replaces per-consumer regexp_extract() per #3142.
-    regexp_extract(_dbt_source_relation, r'(kipp\w+)_') as _dbt_source_project,
+-- trunk-ignore(sqlfluff/AM04): union_relations resolves columns at run time
+select *, regexp_extract(_dbt_source_relation, r'(kipp\w+)_') as _dbt_source_project,
 from unioned
