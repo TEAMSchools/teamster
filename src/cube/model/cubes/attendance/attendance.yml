@@ -243,14 +243,30 @@ cubes:
         format: percent
         public: true
 
-      - name: pct_tardy
-        description: Percentage of membership days where the student was tardy
+      - name: _sum_tardy
         sql: is_tardy
-        type: avg
-        format: percent
-        public: true
+        type: sum
+        public: false
         filters:
           - sql: "{CUBE}.membership_value = 1"
+
+      - name: _sum_ontime
+        sql: is_ontime
+        type: sum
+        public: false
+        filters:
+          - sql: "{CUBE}.membership_value = 1"
+
+      - name: pct_tardy
+        description: >-
+          Percentage of present days where the student was tardy. Denominator is
+          present days only (is_ontime + is_tardy), matching the Tableau
+          dashboard. Absent days are excluded from both numerator and
+          denominator.
+        sql: "1.0 * {_sum_tardy} / NULLIF({_sum_tardy} + {_sum_ontime}, 0)"
+        type: number
+        format: percent
+        public: true
 
       - name: count_truants
         description: >-
