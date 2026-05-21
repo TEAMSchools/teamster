@@ -14,10 +14,24 @@ with
             -- rows group into one island instead of splitting on the lag().
             coalesce(spedlep, 'No IEP') as iep_classification,
 
-            -- pre-coalesce the open-ended span sentinel so nj_leg can use a
-            -- plain max() without re-handling NULL.
-            coalesce(
-                effective_end_date, cast('9999-12-31' as date)
+            -- EdPlan ships per-snapshot rows where the prior row's
+            -- effective_end_date isn't trimmed back when a new row arrives
+            -- mid-period. Trim each row's end to day-before-next-row's-start
+            -- so cross-island transitions don't produce overlapping spans
+            -- after island collapse. Coalesce the open-ended sentinel so
+            -- nj_leg can use plain max().
+            least(
+                coalesce(effective_end_date, cast('9999-12-31' as date)),
+                coalesce(
+                    date_sub(
+                        lead(effective_date) over (
+                            partition by student_number, _dbt_source_project
+                            order by effective_date
+                        ),
+                        interval 1 day
+                    ),
+                    cast('9999-12-31' as date)
+                )
             ) as effective_end_date,
 
             -- fingerprint for island detection in nj_flagged
