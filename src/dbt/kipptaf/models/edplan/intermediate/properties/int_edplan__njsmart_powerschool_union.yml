@@ -61,3 +61,9 @@ models:
         data_type: string
       - name: rn_student_year_desc
         data_type: int64
+      - name: _dbt_source_project
+        description: >-
+          Source-project discriminator (e.g. `kippnewark`, `kippcamden`)
+          extracted from `_dbt_source_relation`. Materialized here per #3142 so
+          consumers can join and hash on the canonical value rather than
+          re-running the regexp.
