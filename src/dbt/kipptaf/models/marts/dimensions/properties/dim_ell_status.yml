@@ -1,0 +1,92 @@
+models:
+  - name: dim_ell_status
+    description: >-
+      SCD2 dimension capturing ELL (English Language Learner) status spans per
+      student. Newark + Camden + Paterson draw from PowerSchool `s_nj_stu_x` LEP
+      date columns; Miami carries a single current-state span anchored to the
+      student's earliest enrollment. Source is current-state — historical
+      entry/exit/re-entry transitions that have been overwritten in PowerSchool
+      are not recoverable.
+    config:
+      meta:
+        dagster:
+          group: marts
+          asset_key:
+            - kipptaf
+            - marts
+            - dim_ell_status
+    constraints:
+      - type: primary_key
+        columns: [ell_status_key]
+        warn_unsupported: false
+      - type: foreign_key
+        columns: [student_key]
+        expression: ref('dim_students')
+        to_columns: [student_key]
+        warn_unsupported: false
+      - type: foreign_key
+        columns: [effective_date_start_key]
+        expression: ref('dim_dates')
+        to_columns: [date_key]
+        warn_unsupported: false
+      - type: foreign_key
+        columns: [effective_date_end_key]
+        expression: ref('dim_dates')
+        to_columns: [date_key]
+        warn_unsupported: false
+    columns:
+      - name: ell_status_key
+        data_type: string
+        description: Surrogate primary key.
+        data_tests:
+          - unique
+          - not_null
+      - name: student_key
+        data_type: string
+        description: Foreign key to `dim_students.student_key`.
+        data_tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('dim_students')
+                field: student_key
+      - name: effective_date_start_key
+        data_type: date
+        description: First date this span is valid for the student.
+        data_tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('dim_dates')
+                field: date_key
+      - name: effective_date_end_key
+        data_type: date
+        description: >-
+          Last date this span is valid (inclusive); `'9999-12-31'` for the
+          currently-active span.
+        data_tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('dim_dates')
+                field: date_key
+      - name: is_current
+        data_type: boolean
+        description: True when `effective_date_end_key = '9999-12-31'`.
+        data_tests:
+          - not_null
+      - name: is_ell
+        data_type: boolean
+        description: True when the student is classified ELL for this span.
+        data_tests:
+          - not_null
+      - name: _dbt_source_project
+        data_type: string
+        description: Source-project discriminator (see Task 1).
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns:
+              - student_key
+              - _dbt_source_project
+              - effective_date_start_key
