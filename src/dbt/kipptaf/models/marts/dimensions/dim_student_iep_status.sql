@@ -5,7 +5,6 @@ with
             _dbt_source_project,
             special_education_code,
             effective_date,
-            effective_end_date,
 
             special_education as special_education_name,
 
@@ -14,6 +13,21 @@ with
             -- edplan ships ~24% NULL spedlep; coalesce so NULL and 'No IEP'
             -- rows group into one island instead of splitting on the lag().
             coalesce(spedlep, 'No IEP') as iep_classification,
+
+            -- pre-coalesce the open-ended span sentinel so nj_leg can use a
+            -- plain max() without re-handling NULL.
+            coalesce(
+                effective_end_date, cast('9999-12-31' as date)
+            ) as effective_end_date,
+
+            -- fingerprint for island detection in nj_flagged
+            format(
+                '%T|%T|%T|%T',
+                coalesce(spedlep, 'No IEP'),
+                special_education_code,
+                special_education,
+                nj_se_placement
+            ) as island_fingerprint,
         from {{ ref("int_edplan__njsmart_powerschool_union") }}
     ),
 
@@ -22,22 +36,7 @@ with
             *,
 
             if(
-                format(
-                    '%T|%T|%T|%T',
-                    iep_classification,
-                    special_education_code,
-                    special_education_name,
-                    special_education_placement
-                )
-                = lag(
-                    format(
-                        '%T|%T|%T|%T',
-                        iep_classification,
-                        special_education_code,
-                        special_education_name,
-                        special_education_placement
-                    )
-                ) over (
+                island_fingerprint = lag(island_fingerprint) over (
                     partition by student_number, _dbt_source_project
                     order by effective_date
                 ),
@@ -67,10 +66,7 @@ with
             special_education_placement,
 
             min(effective_date) as effective_date_start,
-
-            coalesce(
-                max(effective_end_date), cast('9999-12-31' as date)
-            ) as effective_date_end,
+            max(effective_end_date) as effective_date_end,
         from nj_islanded
         group by
             student_number,

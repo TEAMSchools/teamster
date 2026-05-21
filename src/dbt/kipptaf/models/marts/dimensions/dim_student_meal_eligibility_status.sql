@@ -4,9 +4,14 @@ with
             _dbt_source_project,
             eligibility_name,
             eligibility_start_date,
-            eligibility_end_date,
 
             person_identifier as student_number,
+
+            -- pre-coalesce the open-ended span sentinel so nj_leg can use a
+            -- plain max() without re-handling NULL.
+            coalesce(
+                eligibility_end_date, cast('9999-12-31' as date)
+            ) as eligibility_end_date,
         from {{ ref("stg_titan__person_data") }}
         where eligibility_start_date is not null
     ),
@@ -44,10 +49,7 @@ with
             eligibility_name as meal_eligibility,
 
             min(eligibility_start_date) as effective_date_start,
-
-            coalesce(
-                max(eligibility_end_date), cast('9999-12-31' as date)
-            ) as effective_date_end,
+            max(eligibility_end_date) as effective_date_end,
         from nj_islanded
         group by student_number, _dbt_source_project, eligibility_name, island_id
     ),
