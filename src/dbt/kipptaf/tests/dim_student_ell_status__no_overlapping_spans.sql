@@ -2,7 +2,7 @@
     config(
         meta={
             "dagster": {
-                "ref": {"name": "dim_ell_status", "package": "kipptaf"},
+                "ref": {"name": "dim_student_ell_status", "package": "kipptaf"},
             }
         }
     )
@@ -15,10 +15,9 @@ with
             effective_date_start_key,
             effective_date_end_key,
             lead(effective_date_start_key) over (
-                partition by student_key, _dbt_source_project
-                order by effective_date_start_key
+                partition by student_key order by effective_date_start_key
             ) as next_start,
-        from {{ ref("dim_ell_status") }}
+        from {{ ref("dim_student_ell_status") }}
     )
 
 select student_key, effective_date_start_key, effective_date_end_key, next_start,

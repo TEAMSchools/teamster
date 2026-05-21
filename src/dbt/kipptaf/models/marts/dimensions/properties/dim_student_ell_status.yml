@@ -1,5 +1,5 @@
 models:
-  - name: dim_ell_status
+  - name: dim_student_ell_status
     description: >-
       SCD2 dimension capturing ELL (English Language Learner) status spans per
       student. Newark + Camden + Paterson draw from PowerSchool `s_nj_stu_x` LEP
@@ -14,10 +14,10 @@ models:
           asset_key:
             - kipptaf
             - marts
-            - dim_ell_status
+            - dim_student_ell_status
     constraints:
       - type: primary_key
-        columns: [ell_status_key]
+        columns: [student_ell_status_key]
         warn_unsupported: false
       - type: foreign_key
         columns: [student_key]
@@ -35,7 +35,7 @@ models:
         to_columns: [date_key]
         warn_unsupported: false
     columns:
-      - name: ell_status_key
+      - name: student_ell_status_key
         data_type: string
         description: Surrogate primary key.
         data_tests:
@@ -84,16 +84,3 @@ models:
           target date.
         data_tests:
           - not_null
-      - name: _dbt_source_project
-        data_type: string
-        description: >-
-          Source-project discriminator (e.g. `kippnewark`, `kippcamden`,
-          `kippmiami`, `kipppaterson`) — required because students may move
-          between districts and have parallel status spans per source.
-    data_tests:
-      - dbt_utils.unique_combination_of_columns:
-          arguments:
-            combination_of_columns:
-              - student_key
-              - _dbt_source_project
-              - effective_date_start_key

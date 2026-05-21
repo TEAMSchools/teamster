@@ -2,15 +2,11 @@ with
     nj_unioned as (
         select
             _dbt_source_project,
+            eligibility_name,
             eligibility_start_date,
             eligibility_end_date,
 
             person_identifier as student_number,
-
-            -- titan staging `eligibility_name` is single-letter (F/R/P); 2 NULLs
-            -- in the source coalesce to 'Unknown' so the is_meal_eligible
-            -- derivation never returns NULL.
-            coalesce(eligibility_name, 'Unknown') as eligibility_name,
         from {{ ref("stg_titan__person_data") }}
         where eligibility_start_date is not null
     ),
@@ -18,6 +14,7 @@ with
     nj_flagged as (
         select
             *,
+
             if(
                 eligibility_name = lag(eligibility_name) over (
                     partition by student_number, _dbt_source_project
@@ -32,6 +29,7 @@ with
     nj_islanded as (
         select
             *,
+
             sum(is_island_start) over (
                 partition by student_number, _dbt_source_project
                 order by eligibility_start_date
@@ -44,7 +42,9 @@ with
             student_number,
             _dbt_source_project,
             eligibility_name as meal_eligibility,
+
             min(eligibility_start_date) as effective_date_start,
+
             coalesce(
                 max(eligibility_end_date), cast('9999-12-31' as date)
             ) as effective_date_end,
@@ -74,12 +74,11 @@ with
         select
             r.student_number,
             r._dbt_source_project,
+            r.lunch_status as meal_eligibility,
 
             anchor.effective_date_start,
 
             cast('9999-12-31' as date) as effective_date_end,
-
-            coalesce(r.lunch_status, 'Unknown') as meal_eligibility,
         from pm_recent as r
         inner join
             pm_anchor as anchor
@@ -96,7 +95,9 @@ with
             effective_date_start,
             effective_date_end,
         from nj_leg
+
         union all
+
         select
             student_number,
             _dbt_source_project,
@@ -104,6 +105,14 @@ with
             effective_date_start,
             effective_date_end,
         from pm_leg
+    ),
+
+    classified as (
+        -- coalesce both NJ (titan, ~2 NULLs) and PM (lunch_status NULL when no
+        -- titan record / no current eligibility) to a single 'Unknown' so the
+        -- is_meal_eligible derivation never returns NULL.
+        select *, coalesce(meal_eligibility, 'Unknown') as meal_eligibility_clean,
+        from unioned
     )
 
 select
@@ -111,16 +120,15 @@ select
         dbt_utils.generate_surrogate_key(
             ["student_number", "_dbt_source_project", "effective_date_start"]
         )
-    }} as meal_eligibility_status_key,
+    }} as student_meal_eligibility_status_key,
 
     {{ dbt_utils.generate_surrogate_key(["student_number"]) }} as student_key,
 
-    _dbt_source_project,
-    meal_eligibility,
+    meal_eligibility_clean as meal_eligibility,
 
     effective_date_start as effective_date_start_key,
     effective_date_end as effective_date_end_key,
 
-    meal_eligibility in ('F', 'R', 'FDC') as is_meal_eligible,
+    meal_eligibility_clean in ('F', 'R', 'FDC') as is_meal_eligible,
     effective_date_end = '9999-12-31' as is_current,
-from unioned
+from classified

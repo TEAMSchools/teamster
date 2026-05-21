@@ -9,8 +9,10 @@ with
     nj_primary as (
         select
             sl.student_number,
+
             njs._dbt_source_project,
             njs.lepbegindate as effective_date_start,
+
             coalesce(njs.lependdate, cast('9999-12-31' as date)) as effective_date_end,
         from {{ ref("stg_powerschool__s_nj_stu_x") }} as njs
         inner join
@@ -23,8 +25,10 @@ with
     nj_secondary as (
         select
             sl.student_number,
+
             njs._dbt_source_project,
             njs.lepbegindate2 as effective_date_start,
+
             coalesce(
                 njs.liependdate2, cast('9999-12-31' as date)
             ) as effective_date_end,
@@ -92,11 +96,9 @@ select
         dbt_utils.generate_surrogate_key(
             ["student_number", "_dbt_source_project", "effective_date_start"]
         )
-    }} as ell_status_key,
+    }} as student_ell_status_key,
 
     {{ dbt_utils.generate_surrogate_key(["student_number"]) }} as student_key,
-
-    _dbt_source_project,
 
     effective_date_start as effective_date_start_key,
     effective_date_end as effective_date_end_key,

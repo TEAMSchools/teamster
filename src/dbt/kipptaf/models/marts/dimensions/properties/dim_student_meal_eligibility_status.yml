@@ -1,11 +1,11 @@
 models:
-  - name: dim_iep_status
+  - name: dim_student_meal_eligibility_status
     description: >-
-      SCD2 dimension capturing IEP (special-education) status spans per student.
-      One row per student per contiguous value span; active rows end at
-      `'9999-12-31'`. Newark + Camden draw from EdPlan with native effective
-      dates; Paterson + Miami carry a single current-state span anchored to the
-      student's earliest enrollment.
+      SCD2 dimension capturing meal-eligibility (NSLP) status spans per student.
+      Newark + Camden draw from Titan with native effective dates; Paterson +
+      Miami carry a single current-state span using the most recent
+      `lunch_status` value from enrollment, anchored to the student's earliest
+      enrollment.
     config:
       meta:
         dagster:
@@ -13,10 +13,10 @@ models:
           asset_key:
             - kipptaf
             - marts
-            - dim_iep_status
+            - dim_student_meal_eligibility_status
     constraints:
       - type: primary_key
-        columns: [iep_status_key]
+        columns: [student_meal_eligibility_status_key]
         warn_unsupported: false
       - type: foreign_key
         columns: [student_key]
@@ -33,15 +33,8 @@ models:
         expression: ref('dim_dates')
         to_columns: [date_key]
         warn_unsupported: false
-    data_tests:
-      - dbt_utils.unique_combination_of_columns:
-          arguments:
-            combination_of_columns:
-              - student_key
-              - _dbt_source_project
-              - effective_date_start_key
     columns:
-      - name: iep_status_key
+      - name: student_meal_eligibility_status_key
         data_type: string
         description: Surrogate primary key.
         data_tests:
@@ -87,44 +80,18 @@ models:
         data_tests:
           - not_null
 
-      - name: is_iep
+      - name: is_meal_eligible
         data_type: boolean
         description: >-
-          True when the student has an active IEP for this span — derived as
-          `iep_classification != 'No IEP'`.
+          True when `meal_eligibility` indicates Free (`F`), Reduced (`R`), or
+          Direct Certification (`FDC`). Paid (`P`) and Unknown resolve to false.
         data_tests:
           - not_null
 
-      - name: _dbt_source_project
+      - name: meal_eligibility
         data_type: string
         description: >-
-          Source-project discriminator (e.g. `kippnewark`, `kippcamden`,
-          `kippmiami`, `kipppaterson`) — required because students may move
-          between districts and have parallel status spans per source.
-
-      - name: iep_classification
-        data_type: string
-        description: >-
-          Special-education program classification (e.g. `Resource Center`,
-          `In-Class Resource`, `Self-Contained`, `No IEP`).
-        config:
-          meta:
-            source_column: spedlep
-
-      - name: special_education_code
-        data_type: string
-        description: >-
-          NJ state special-education code (e.g. `AU`, `ED`). Populated only for
-          Newark + Camden via EdPlan; null for Paterson + Miami.
-
-      - name: special_education_name
-        data_type: string
-        description: >-
-          Descriptive name paired with `special_education_code`. Populated only
-          for Newark + Camden via EdPlan; null for Paterson + Miami.
-
-      - name: special_education_placement
-        data_type: string
-        description: >-
-          NJ state special-education placement category. Populated only for
-          Newark + Camden via EdPlan; null for Paterson + Miami.
+          Meal-eligibility classification code. Titan-sourced single-letter
+          codes for Newark + Camden (`F` / `R` / `P`); raw `lunch_status` from
+          PowerSchool for Paterson + Miami (`F` / `R` / `P` / `FDC`). NULLs are
+          coalesced to `Unknown`.

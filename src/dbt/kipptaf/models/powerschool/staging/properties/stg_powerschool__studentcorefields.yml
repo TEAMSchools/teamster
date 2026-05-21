@@ -3,10 +3,10 @@ models:
     description: >-
       Cross-region union of the PowerSchool student core-fields extension table.
       One row per student per region. Carries the per-student `lep_status` and
-      `spedlep` flags consumed by `dim_students.is_ell`, `dim_ell_status` (Miami
-      leg), and `dim_iep_status` (Paterson + Miami leg). Functionally an
-      intermediate — uniqueness and contract enforcement live on the per-region
-      staging models.
+      `spedlep` flags consumed by `dim_students.is_ell`,
+      `dim_student_ell_status` (Miami leg), and `dim_student_iep_status`
+      (Paterson + Miami leg). Functionally an intermediate — uniqueness and
+      contract enforcement live on the per-region staging models.
     columns:
       - name: studentsdcid
         data_type: int64
