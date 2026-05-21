@@ -13,7 +13,7 @@ with
 
             -- edplan ships ~24% NULL spedlep; coalesce so NULL and 'No IEP'
             -- rows group into one island instead of splitting on the lag().
-            coalesce(spedlep, 'No IEP') as spedlep,
+            coalesce(spedlep, 'No IEP') as iep_classification,
         from {{ ref("int_edplan__njsmart_powerschool_union") }}
     ),
 
@@ -24,7 +24,7 @@ with
             if(
                 format(
                     '%T|%T|%T|%T',
-                    spedlep,
+                    iep_classification,
                     special_education_code,
                     special_education_name,
                     special_education_placement
@@ -32,7 +32,7 @@ with
                 = lag(
                     format(
                         '%T|%T|%T|%T',
-                        spedlep,
+                        iep_classification,
                         special_education_code,
                         special_education_name,
                         special_education_placement
@@ -61,7 +61,7 @@ with
         select
             student_number,
             _dbt_source_project,
-            spedlep,
+            iep_classification,
             special_education_code,
             special_education_name,
             special_education_placement,
@@ -75,7 +75,7 @@ with
         group by
             student_number,
             _dbt_source_project,
-            spedlep,
+            iep_classification,
             special_education_code,
             special_education_name,
             special_education_placement,
@@ -104,11 +104,12 @@ with
         select
             r.student_number,
             r._dbt_source_project,
-            scf.spedlep,
 
             anchor.effective_date_start,
 
             cast('9999-12-31' as date) as effective_date_end,
+
+            coalesce(scf.spedlep, 'No IEP') as iep_classification,
         from pm_recent as r
         inner join
             pm_anchor as anchor
@@ -125,7 +126,7 @@ with
         select
             student_number,
             _dbt_source_project,
-            spedlep,
+            iep_classification,
             effective_date_start,
             effective_date_end,
             special_education_code,
@@ -138,7 +139,7 @@ with
         select
             student_number,
             _dbt_source_project,
-            spedlep,
+            iep_classification,
             effective_date_start,
             effective_date_end,
 
@@ -146,10 +147,6 @@ with
             cast(null as string) as special_education_name,
             cast(null as string) as special_education_placement,
         from pm_leg
-    ),
-
-    classified as (
-        select *, coalesce(spedlep, 'No IEP') as iep_classification, from unioned
     )
 
 select
@@ -171,4 +168,4 @@ select
 
     iep_classification != 'No IEP' as is_iep,
     effective_date_end = '9999-12-31' as is_current,
-from classified
+from unioned
