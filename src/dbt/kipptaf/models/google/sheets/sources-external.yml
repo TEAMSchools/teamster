@@ -1,12 +1,9 @@
 sources:
   - name: google_sheets
-    schema: |
-      {%- if env_var('DBT_CLOUD_ENVIRONMENT_TYPE', '') in ['staging', 'dev'] -%}
-      z_dev_
-      {%- elif env_var('DBT_CLOUD_ENVIRONMENT_TYPE', '') == 'prod' -%}
-      {%- elif env_var('GITHUB_USER', '') != '' -%}
-      zz_{{ env_var('GITHUB_USER', '') }}_
-      {%- endif -%}kipptaf_google_sheets
+    schema:
+      "{%- if target.name in ['defer', 'dev'] -%}zz_{{ env_var('GITHUB_USER',
+      'dev') }}_{%- elif target.name == 'staging' -%}zz_stg_{%- endif
+      -%}kipptaf_google_sheets"
     tables:
       - name: src_google_sheets__zendesk__org_lookup
         external:
@@ -1168,6 +1165,58 @@ sources:
                 - sheets
                 - people
                 - location_crosswalk
+      - name: src_google_sheets__people__locations
+        external:
+          options:
+            format: GOOGLE_SHEETS
+            uris:
+              - https://docs.google.com/spreadsheets/d/1FCc28XWxFj3gSfItGGJ2tVU0C1fYD1JxKRxuSFqisMo
+            sheet_range: src_google_sheets__people__locations
+            skip_leading_rows: 1
+        config:
+          meta:
+            dagster:
+              asset_key:
+                - kipptaf
+                - google
+                - sheets
+                - people
+                - locations
+        columns:
+          - name: Name
+            data_type: STRING
+          - name: Region
+            data_type: STRING
+          - name: PowerSchool_School_ID
+            data_type: INT64
+          - name: Reporting_School_ID
+            data_type: INT64
+          - name: Grade_Band
+            data_type: STRING
+          - name: Is_Campus
+            data_type: BOOL
+          - name: Is_Pathways
+            data_type: BOOL
+          - name: Abbreviation
+            data_type: STRING
+          - name: Deanslist_School_ID
+            data_type: INT64
+          - name: Dagster_Code_Location
+            data_type: STRING
+          - name: Head_of_Schools_Employee_Number
+            data_type: INT64
+          - name: ADP_Location_Code
+            data_type: INT64
+          - name: Grow_Location_ID
+            data_type: STRING
+          - name: Campus_Name
+            data_type: STRING
+          - name: Address
+            data_type: STRING
+          - name: City
+            data_type: STRING
+          - name: Postal_Code
+            data_type: STRING
       - name: src_google_sheets__people__campus_crosswalk
         external:
           options:

@@ -1,0 +1,63 @@
+models:
+  - name: dim_staff_observation_rubrics
+    description: >-
+      Rubric dimension for staff observations. One row per SchoolMint Grow
+      rubric definition. Contains rubric-level metadata such as name, scoring
+      scale, and publication status. Referenced by
+      dim_staff_observation_rubric_measurements and fct_staff_observations via
+      staff_observation_rubric_key.
+    columns:
+      - name: staff_observation_rubric_key
+        data_type: string
+        description: >-
+          Surrogate primary key derived from rubric_id. Generated with
+          generate_surrogate_key(["rubric_id"]).
+        constraints:
+          - type: primary_key
+            warn_unsupported: false
+        data_tests:
+          - unique
+          - not_null
+
+      - name: name
+        quote: true
+        data_type: string
+        description: >-
+          Display name of the rubric in SchoolMint Grow.
+
+      - name: scale_min
+        data_type: int64
+        description: >-
+          Minimum possible score on the rubric's measurement scale.
+
+      - name: scale_max
+        data_type: int64
+        description: >-
+          Maximum possible score on the rubric's measurement scale.
+
+      - name: is_private
+        data_type: boolean
+        description: >-
+          TRUE if the rubric is marked private in SchoolMint Grow — visible to
+          observers and leaders with access to the observed staff member, but
+          hidden from the observee themselves.
+
+      - name: is_published
+        data_type: boolean
+        description: >-
+          TRUE if the rubric has been published for use.
+
+      - name: archived_timestamp
+        data_type: timestamp
+        description: >-
+          Timestamp when the rubric was archived. Null if still active.
+
+      - name: created_timestamp
+        data_type: timestamp
+        description: >-
+          Timestamp when the rubric was created in SchoolMint Grow.
+
+      - name: last_modified_timestamp
+        data_type: timestamp
+        description: >-
+          Timestamp of the most recent modification to the rubric.

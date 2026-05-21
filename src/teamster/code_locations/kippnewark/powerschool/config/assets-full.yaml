@@ -92,6 +92,8 @@ assets:
       - currenttardies
   - asset_name: u_storedgrades_de
     partition_column: whenmodified
+  - asset_name: u_expectations
+    partition_column: whenmodified
   # - asset_name: gpstudentwaiver
   #   partition_column: whenmodified
   # - asset_name: s_nj_usr_x

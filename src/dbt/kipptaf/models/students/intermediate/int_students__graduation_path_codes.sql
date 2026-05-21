@@ -24,9 +24,6 @@ with
                 then false
             end as pre_met_pathway_cutoff,
 
-            /* needed to join on transfer njgpa scores */
-            safe_cast(e.state_studentnumber as int) as state_studentnumber_int,
-
             if(e.ps_grad_path_code = 'M', true, false) as pre_attempted_njgpa_subject,
 
             /* this is the date we start holding 11th graders accountable to 
@@ -82,10 +79,13 @@ with
 
         from students as s
         inner join
-            {{ ref("stg_pearson__njgpa") }} as n
-            on s.state_studentnumber_int = n.statestudentidentifier
+            {{ ref("int_pearson__all_assessments") }} as n
+            on s.student_number = n.localstudentidentifier
             and s.discipline = n.discipline
-        where n.testscorecomplete = 1 and n.testcode in ('ELAGP', 'MATGP')
+        where
+            n.testscorecomplete = 1
+            and n.assessment_name = 'NJGPA'
+            and n.testcode in ('ELAGP', 'MATGP')
 
         union all
 

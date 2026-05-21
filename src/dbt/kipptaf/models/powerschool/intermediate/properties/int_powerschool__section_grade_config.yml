@@ -11,6 +11,13 @@ models:
         data_type: string
       - name: storecode
         data_type: string
+        description:
+          The code used to represent this grade level to Term ID and School ID.
+        config:
+          meta:
+            source_system: PowerSchool
+            source_model: stg_powerschool__storedgrades
+            source_column: storecode
       - name: storecode_type
         data_type: string
       - name: storecode_order

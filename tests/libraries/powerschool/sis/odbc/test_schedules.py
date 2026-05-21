@@ -10,17 +10,13 @@ from teamster.libraries.powerschool.sis.odbc.utils import StalenessResult
 
 class TestBuildPowerschoolSisAssetSchedule:
     @patch("teamster.libraries.powerschool.sis.odbc.schedules.evaluate_asset_staleness")
-    @patch("teamster.libraries.powerschool.sis.odbc.schedules.powerschool_connection")
-    def test_groups_run_requests_by_partitions_def_and_key(
-        self, mock_conn_ctx, mock_eval
-    ):
+    @patch("teamster.libraries.powerschool.sis.odbc.schedules.with_powerschool_retry")
+    def test_groups_run_requests_by_partitions_def_and_key(self, mock_retry, mock_eval):
         from teamster.libraries.powerschool.sis.odbc.schedules import (
             build_powerschool_sis_asset_schedule,
         )
 
-        mock_conn = MagicMock()
-        mock_conn_ctx.return_value.__enter__ = MagicMock(return_value=mock_conn)
-        mock_conn_ctx.return_value.__exit__ = MagicMock(return_value=False)
+        mock_retry.side_effect = lambda *, work_fn, **kw: work_fn(MagicMock())
 
         mock_eval.return_value = [
             StalenessResult(

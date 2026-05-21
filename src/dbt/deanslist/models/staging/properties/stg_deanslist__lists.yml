@@ -9,6 +9,8 @@ models:
           - unique:
               config:
                 severity: error
+        constraints:
+          - type: primary_key
       - name: is_dated
         data_type: boolean
       - name: list_name

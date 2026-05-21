@@ -18,12 +18,13 @@ models/
       staging/
     sftp/
       staging/
-  sources.yml
+  sources-dds.yml
+  sources-mclass-api.yml
+  sources-mclass-sftp.yml
 ```
 
-All staging models have `contract: enforced: true`. Both `dds` and `mclass/api`
-can be independently enabled/disabled per school in the consuming project's
-`dbt_project.yml`.
+Both `dds` and `mclass/api` can be independently enabled/disabled per school in
+the consuming project's `dbt_project.yml`.
 
 ## Cross-Project Usage
 

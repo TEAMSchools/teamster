@@ -1,5 +1,8 @@
 sources:
   - name: kippmiami_renlearn
+    schema:
+      "{%- if target.name == 'dev' -%}zz_{{ env_var('GITHUB_USER', 'dev') }}_{%-
+      endif -%}kippmiami_renlearn"
     tables:
       - name: stg_renlearn__accelerated_reader
         config:

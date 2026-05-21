@@ -12,6 +12,8 @@ models/
     sis/staging/
   fldoe/         # Florida Department of Education assessment data
     staging/
+  focus/         # Focus SIS staging (refs focus package, dlt-loaded)
+    staging/
   extracts/
     powerschool/ # PowerSchool autocomm extracts (teachers)
 ```
@@ -23,9 +25,10 @@ PowerSchool data source: **ODBC** (`odbc.+enabled: true`,
 
 All materialized as tables via cross-project `ref()`:
 
-- `powerschool` (ODBC) — `powerschool_external_location_root` points to GCS
+- `powerschool` (ODBC)
 - `deanslist`
 - `iready`
 - `renlearn`
+- `focus` — `focus_schema` points to `dagster_kippmiami_dlt_focus`
 
 Note: Miami does not use `edplan`, `overgrad`, `pearson`, or `titan`.

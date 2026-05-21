@@ -1,0 +1,46 @@
+models:
+  - name: dim_survey_questions
+    description: >-
+      Survey question dimension. One row per distinct question shortname. Pure
+      reference data -- no FK to dim_surveys because questions can be reused
+      across surveys. The survey-to-question pairing lives in
+      bridge_survey_questions. Grain is question_shortname (item_abbreviation)
+      because Google Forms grid questions share a question_id across multiple
+      sub-questions.
+    columns:
+      - name: survey_question_key
+        data_type: string
+        description: >-
+          Surrogate key derived from question_shortname. Primary key for this
+          dimension. Generated with
+          generate_surrogate_key(["question_shortname"]).
+        constraints:
+          - type: primary_key
+            warn_unsupported: false
+        data_tests:
+          - unique
+          - not_null
+
+      - name: shortname
+        data_type: string
+        description: >-
+          Abbreviated identifier for the question, used as the unique grain.
+          Derived from item_abbreviation for Google Forms or question_code for
+          SCD. Examples: scd_01, Q_1, regional_data_1, SF1.
+        data_tests:
+          - unique
+          - not_null
+
+      - name: text
+        quote: true
+        data_type: string
+        description: >-
+          Full text of the survey question as presented to respondents.
+
+      - name: type
+        quote: true
+        data_type: string
+        description: >-
+          Type of question (e.g., SCALE, TEXT, RADIO, CHECKBOX, Row). Google
+          Forms question_kind for form-based questions, SCALE for SCD scale
+          items.

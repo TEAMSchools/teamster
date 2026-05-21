@@ -10,6 +10,7 @@ with
 
             e.school,
 
+            f.grade_goal_type,
             f.grade_goal,
             f.grade_range_goal,
 
@@ -125,34 +126,20 @@ with
             assessment_grade_int,
             period,
             benchmark_goal_season,
+            grade_goal_type,
             school,
 
-            max(grade_goal) as grade_goal,
-
-            max(grade_range_goal) as grade_range_goal,
-
-            avg(n_admin_season_school_gl_all) as n_admin_season_school_gl_all,
-
-            sum(n_admin_season_school_gl_at_above) as n_admin_season_school_gl_at_above,
-
-            sum(n_admin_season_school_gl_bl_wb) as n_admin_season_school_gl_bl_wb,
-
-            avg(n_admin_season_region_gl_all) as n_admin_season_region_gl_all,
-
-            sum(n_admin_season_region_gl_at_above) as n_admin_season_region_gl_at_above,
-
-            sum(n_admin_season_region_gl_bl_wb) as n_admin_season_region_gl_bl_wb,
+            grade_goal,
+            grade_range_goal,
+            n_admin_season_school_gl_all,
+            n_admin_season_school_gl_at_above,
+            n_admin_season_school_gl_bl_wb,
+            n_admin_season_region_gl_all,
+            n_admin_season_region_gl_at_above,
+            n_admin_season_region_gl_bl_wb,
 
         from roster
         where rn = 1
-        group by
-            academic_year,
-            region,
-            assessment_grade,
-            assessment_grade_int,
-            period,
-            benchmark_goal_season,
-            school
     ),
 
     needed_count_calcs as (
@@ -169,12 +156,40 @@ with
     )
 
 select
-    *,
+    c.academic_year,
+    c.region,
+    c.assessment_grade,
+    c.assessment_grade_int,
+    c.period,
+    c.benchmark_goal_season,
+    c.school,
 
-    (n_admin_season_school_gl_at_above_expected - n_admin_season_school_gl_at_above)
+    c.grade_goal,
+    c.grade_range_goal,
+    c.n_admin_season_school_gl_all,
+    c.n_admin_season_school_gl_at_above,
+    c.n_admin_season_region_gl_all,
+    c.n_admin_season_region_gl_at_above,
+    c.n_admin_season_school_gl_at_above_expected,
+    c.n_admin_season_region_gl_at_above_expected,
+
+    b.n_admin_season_school_gl_bl_wb,
+    b.n_admin_season_region_gl_bl_wb,
+
+    (c.n_admin_season_school_gl_at_above_expected - c.n_admin_season_school_gl_at_above)
     * 1.5 as n_admin_season_school_gl_at_above_gap,
 
-    (n_admin_season_region_gl_at_above_expected - n_admin_season_region_gl_at_above)
+    (c.n_admin_season_region_gl_at_above_expected - c.n_admin_season_region_gl_at_above)
     * 1.5 as n_admin_season_region_gl_at_above_gap,
 
-from needed_count_calcs
+from needed_count_calcs as c
+left join
+    needed_count_calcs as b
+    on c.academic_year = b.academic_year
+    and c.region = b.region
+    and c.assessment_grade = b.assessment_grade
+    and c.period = b.period
+    and c.benchmark_goal_season = b.benchmark_goal_season
+    and c.school = b.school
+    and b.grade_goal_type = 'Well Below'
+where c.grade_goal_type = 'At/Above'

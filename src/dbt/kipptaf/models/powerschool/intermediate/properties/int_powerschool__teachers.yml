@@ -7,197 +7,894 @@ models:
         data_type: string
       - name: lastfirst
         data_type: string
+        description: Last, First, Mi. Indexed.
+        config:
+          meta:
+            source_system: PowerSchool
+            source_model: stg_powerschool__students
+            source_column: lastfirst
+            contains_pii: true
       - name: first_name
         data_type: string
+        description: Students' first name.
+        config:
+          meta:
+            source_system: PowerSchool
+            source_model: stg_powerschool__students
+            source_column: first_name
+            contains_pii: true
       - name: middle_name
         data_type: string
+        description: Student's middle name.
+        config:
+          meta:
+            source_system: PowerSchool
+            source_model: stg_powerschool__students
+            source_column: middle_name
+            contains_pii: true
       - name: last_name
         data_type: string
+        description: Students last name.
+        config:
+          meta:
+            source_system: PowerSchool
+            source_model: stg_powerschool__students
+            source_column: last_name
+            contains_pii: true
       - name: title
         data_type: string
+        description:
+          Stores a title name for the teacher and is used for sorting purposes.
+        config:
+          meta:
+            source_system: PowerSchool
+            source_model: stg_powerschool__users
+            source_column: title
       - name: homeroom
         data_type: string
+        description:
+          This string does appear on some pages but does not impact any
+          calculations.
+        config:
+          meta:
+            source_system: PowerSchool
+            source_model: stg_powerschool__users
+            source_column: homeroom
       - name: email_addr
         data_type: string
+        description:
+          Stores the teachers email address and is used for email notifications
+          to the teacher, such as studentenrollment information.
+        config:
+          meta:
+            source_system: PowerSchool
+            source_model: stg_powerschool__users
+            source_column: email_addr
+            contains_pii: true
       - name: password
         data_type: string
+        description: The Power School login password.
+        config:
+          meta:
+            source_system: PowerSchool
+            source_model: stg_powerschool__users
+            source_column: password
       - name: ipaddrrestrict
         data_type: string
+        description:
+          The list of IP addresses the user is allowed to log in from. If blank,
+          he or she can log in from any IPaddress.
+        config:
+          meta:
+            source_system: PowerSchool
+            source_model: stg_powerschool__users
+            source_column: ipaddrrestrict
       - name: accessvalue
         data_type: string
+        description:
+          No longer used by the application. This field may still be referenced
+          on reports and/or custom pages.
+        config:
+          meta:
+            source_system: PowerSchool
+            source_model: stg_powerschool__users
+            source_column: accessvalue
       - name: homepage
         data_type: string
+        description: The page that appears when logging in to Power School.
+        config:
+          meta:
+            source_system: PowerSchool
+            source_model: stg_powerschool__users
+            source_column: homepage
       - name: loginid
         data_type: string
+        description: The Power School login name. Indexed.
+        config:
+          meta:
+            source_system: PowerSchool
+            source_model: stg_powerschool__users
+            source_column: loginid
       - name: defaultstudscrn
         data_type: string
+        description: The student page the user wants to appear by default.
+        config:
+          meta:
+            source_system: PowerSchool
+            source_model: stg_powerschool__users
+            source_column: defaultstudscrn
       - name: teachernumber
         data_type: string
+        description: The number the district assigns to track the teacher.
+        config:
+          meta:
+            source_system: PowerSchool
+            source_model: stg_powerschool__users
+            source_column: teachernumber
       - name: ssn
         data_type: string
+        description: Students Social Security number. Indexed.
+        config:
+          meta:
+            source_system: PowerSchool
+            source_model: stg_powerschool__students
+            source_column: ssn
+            contains_pii: true
       - name: home_phone
         data_type: string
+        description: Home phone number for the student. Indexed.
+        config:
+          meta:
+            source_system: PowerSchool
+            source_model: stg_powerschool__students
+            source_column: home_phone
+            contains_pii: true
       - name: school_phone
         data_type: string
+        description:
+          Changed name from School_phone. Phone number at the school assigned to
+          this staff member. Notcurrently used by any application code.
+        config:
+          meta:
+            source_system: PowerSchool
+            source_model: stg_powerschool__users
+            source_column: school_phone
+            contains_pii: true
       - name: street
         data_type: string
+        description: Student's street address.
+        config:
+          meta:
+            source_system: PowerSchool
+            source_model: stg_powerschool__students
+            source_column: street
+            contains_pii: true
       - name: city
         data_type: string
+        description: City element of the students address.
+        config:
+          meta:
+            source_system: PowerSchool
+            source_model: stg_powerschool__students
+            source_column: city
+            contains_pii: true
       - name: state
         data_type: string
+        description: State element of address.
+        config:
+          meta:
+            source_system: PowerSchool
+            source_model: stg_powerschool__students
+            source_column: state
       - name: zip
         data_type: string
+        description: Students zip code.
+        config:
+          meta:
+            source_system: PowerSchool
+            source_model: stg_powerschool__students
+            source_column: zip
+            contains_pii: true
       - name: periodsavail
         data_type: string
+        description:
+          No longer used by the application. This field may still be referenced
+          on reports and/or custom pages.
+        config:
+          meta:
+            source_system: PowerSchool
+            source_model: stg_powerschool__users
+            source_column: periodsavail
       - name: powergradepw
         data_type: string
+        description:
+          No longer used by application. This field may still be referenced on
+          reports and/or custom pages.
+        config:
+          meta:
+            source_system: PowerSchool
+            source_model: stg_powerschool__users
+            source_column: powergradepw
       - name: canchangeschool
         data_type: string
+        description:
+          Semicolon delimited list of Schools.School_Number values the Admin can
+          switch to when logged intothe Admin portal.
+        config:
+          meta:
+            source_system: PowerSchool
+            source_model: stg_powerschool__users
+            source_column: canchangeschool
       - name: teacherloginpw
         data_type: string
+        description: The login password for Power Teacher.
+        config:
+          meta:
+            source_system: PowerSchool
+            source_model: stg_powerschool__users
+            source_column: teacherloginpw
       - name: nameasimported
         data_type: string
+        description: Used as a matching tool when importing teacher information.
+        config:
+          meta:
+            source_system: PowerSchool
+            source_model: stg_powerschool__users
+            source_column: nameasimported
       - name: teacherloginid
         data_type: string
+        description: The login name for Power Teacher.
+        config:
+          meta:
+            source_system: PowerSchool
+            source_model: stg_powerschool__users
+            source_column: teacherloginid
       - name: teacherloginip
         data_type: string
+        description:
+          No longer used by the application. This field may still be referenced
+          on reports and/or custom pages.
+        config:
+          meta:
+            source_system: PowerSchool
+            source_model: stg_powerschool__users
+            source_column: teacherloginip
       - name: wm_status
         data_type: string
+        description:
+          No longer used by the application. This field may still be referenced
+          on reports and/or custompages.
+        config:
+          meta:
+            source_system: PowerSchool
+            source_model: stg_powerschool__students
+            source_column: wm_status
       - name: wm_statusdate
         data_type: date
+        description:
+          No longer used by the application. This field may still be referenced
+          on reports and/or custompages.
+        config:
+          meta:
+            source_system: PowerSchool
+            source_model: stg_powerschool__students
+            source_column: wm_statusdate
       - name: wm_address
         data_type: string
+        description:
+          No longer used by the application. This field may still be referenced
+          on reports and/or custompages.
+        config:
+          meta:
+            source_system: PowerSchool
+            source_model: stg_powerschool__students
+            source_column: wm_address
       - name: wm_password
         data_type: string
+        description:
+          No longer used by the application. This field may still be referenced
+          on reports and/or custompages.
+        config:
+          meta:
+            source_system: PowerSchool
+            source_model: stg_powerschool__students
+            source_column: wm_password
       - name: wm_createdate
         data_type: date
+        description:
+          No longer used by the application. This field may still be referenced
+          on reports and/or custompages.
+        config:
+          meta:
+            source_system: PowerSchool
+            source_model: stg_powerschool__students
+            source_column: wm_createdate
       - name: wm_ta_flag
         data_type: string
+        description:
+          No longer used by the application. This field may still be referenced
+          on reports and/or custompages.
+        config:
+          meta:
+            source_system: PowerSchool
+            source_model: stg_powerschool__students
+            source_column: wm_ta_flag
       - name: wm_ta_date
         data_type: date
+        description:
+          No longer used by the application. This field may still be referenced
+          on reports and/or custompages.
+        config:
+          meta:
+            source_system: PowerSchool
+            source_model: stg_powerschool__students
+            source_column: wm_ta_date
       - name: wm_alias
         data_type: string
+        description:
+          No longer used by the application. This field may still be referenced
+          on reports and/or custom pages.
+        config:
+          meta:
+            source_system: PowerSchool
+            source_model: stg_powerschool__users
+            source_column: wm_alias
       - name: ethnicity
         data_type: string
+        description:
+          Heritage background of a student. The codes assigned here are stored
+          in the Gen Table [6]Cat=Ethnicity. These are set in school setup.
+        config:
+          meta:
+            source_system: PowerSchool
+            source_model: stg_powerschool__students
+            source_column: ethnicity
       - name: preferredname
         data_type: string
+        description: Name the user prefers to use.
+        config:
+          meta:
+            source_system: PowerSchool
+            source_model: stg_powerschool__users
+            source_column: preferredname
       - name: lastmeal
         data_type: string
+        description: Stores the date of last lunch purchase.
+        config:
+          meta:
+            source_system: PowerSchool
+            source_model: stg_powerschool__students
+            source_column: lastmeal
       - name: staffpers_guid
         data_type: string
+        description:
+          Globally unique identifier for this table for SIF compliancy. Indexed.
+        config:
+          meta:
+            source_system: PowerSchool
+            source_model: stg_powerschool__users
+            source_column: staffpers_guid
       - name: sif_stateprid
         data_type: string
+        description:
+          Used by the Power School SIF Agent that requires a state-level unique
+          identifier for teachers. To beused in the SIF Staff Personal object.
+        config:
+          meta:
+            source_system: PowerSchool
+            source_model: stg_powerschool__users
+            source_column: sif_stateprid
       - name: dcid
         data_type: int64
+        description: Unique identifier for this table. Indexed. Required.
+        config:
+          meta:
+            source_system: PowerSchool
+            source_model: stg_powerschool__students
+            source_column: dcid
+            column_role: primary_key
       - name: homeschoolid
         data_type: int64
+        description:
+          The teacher's home school. This ID is linked to the School_Number from
+          the School table. Indexed.
+        config:
+          meta:
+            source_system: PowerSchool
+            source_model: stg_powerschool__users
+            source_column: homeschoolid
       - name: photo
         data_type: int64
+        description: Set to 1 if a photo exists for this user.
+        config:
+          meta:
+            source_system: PowerSchool
+            source_model: stg_powerschool__users
+            source_column: photo
       - name: numlogins
         data_type: int64
+        description:
+          No longer used by the application. This field may still be referenced
+          on reports and/or custom pages.
+        config:
+          meta:
+            source_system: PowerSchool
+            source_model: stg_powerschool__users
+            source_column: numlogins
       - name: allowloginstart
         data_type: int64
+        description:
+          Time-restricted login. This is the start of the time that teachers can
+          log in.
+        config:
+          meta:
+            source_system: PowerSchool
+            source_model: stg_powerschool__users
+            source_column: allowloginstart
       - name: allowloginend
         data_type: int64
+        description:
+          Time-restricted login. This is the end time that teachers can log in.
+        config:
+          meta:
+            source_system: PowerSchool
+            source_model: stg_powerschool__users
+            source_column: allowloginend
       - name: psaccess
         data_type: int64
+        description:
+          "Indicates whether the user can log in to Power School Admin. Valid
+          values: 0=No, 1=Yes."
+        config:
+          meta:
+            source_system: PowerSchool
+            source_model: stg_powerschool__users
+            source_column: psaccess
       - name: groupvalue
         data_type: int64
+        description:
+          The security group (from Gen table) this user belongs to in Power
+          School. This determines which pagesthe user has access to.
+        config:
+          meta:
+            source_system: PowerSchool
+            source_model: stg_powerschool__users
+            source_column: groupvalue
       - name: lunch_id
         data_type: float64
+        description: The students Power Lunch number. Indexed.
+        config:
+          meta:
+            source_system: PowerSchool
+            source_model: stg_powerschool__students
+            source_column: lunch_id
       - name: supportcontact
         data_type: int64
+        description:
+          Value of 1 indicates that this user is an authorized support contact.
+        config:
+          meta:
+            source_system: PowerSchool
+            source_model: stg_powerschool__users
+            source_column: supportcontact
       - name: wm_tier
         data_type: int64
+        description:
+          No longer used by the application. This field may still be referenced
+          on reports and/or custompages.
+        config:
+          meta:
+            source_system: PowerSchool
+            source_model: stg_powerschool__students
+            source_column: wm_tier
       - name: wm_createtime
         data_type: int64
+        description:
+          No longer used by the application. This field may still be referenced
+          on reports and/or custompages.
+        config:
+          meta:
+            source_system: PowerSchool
+            source_model: stg_powerschool__students
+            source_column: wm_createtime
       - name: wm_exclude
         data_type: int64
+        description:
+          No longer used by the application. This field may still be referenced
+          on reports and/or custom pages.
+        config:
+          meta:
+            source_system: PowerSchool
+            source_model: stg_powerschool__users
+            source_column: wm_exclude
       - name: adminldapenabled
         data_type: int64
       - name: teacherldapenabled
         data_type: int64
       - name: maximum_load
         data_type: int64
+        description: Maximum student load permissible for this Teacher.
+        config:
+          meta:
+            source_system: PowerSchool
+            source_model: stg_powerschool__users
+            source_column: maximum_load
       - name: gradebooktype
         data_type: int64
+        description:
+          "Indicates the type of gradebook in use by the teacher. Valid values:
+          0 = Power Grade, 1 =Power Teacher gradebook."
+        config:
+          meta:
+            source_system: PowerSchool
+            source_model: stg_powerschool__users
+            source_column: gradebooktype
       - name: fedethnicity
         data_type: int64
+        description:
+          'Numerical answer to the question "Is the student Hispanic or Latino?"
+          Valid values :'
+        config:
+          meta:
+            source_system: PowerSchool
+            source_model: stg_powerschool__students
+            source_column: fedethnicity
       - name: fedracedecline
         data_type: int64
+        description: "Valid values:"
+        config:
+          meta:
+            source_system: PowerSchool
+            source_model: stg_powerschool__students
+            source_column: fedracedecline
       - name: ptaccess
         data_type: int64
+        description:
+          "Indicates whether the user can log in to Power Teacher. Valid values:
+          0=No, 1=Yes."
+        config:
+          meta:
+            source_system: PowerSchool
+            source_model: stg_powerschool__users
+            source_column: ptaccess
       - name: classpua
         data_type: string
+        description:
+          No longer used by the application. This field may still be referenced
+          on reports and/or custompages.
+        config:
+          meta:
+            source_system: PowerSchool
+            source_model: stg_powerschool__schoolstaff
+            source_column: classpua
       - name: custom
         data_type: string
+        description:
+          This field holds all the storedgrades' custom data in name/value pairs
+          delimited by non-printablecharacters.
+        config:
+          meta:
+            source_system: PowerSchool
+            source_model: stg_powerschool__storedgrades
+            source_column: custom
       - name: log
         data_type: string
+        description: Place to write notes about transferring students.
+        config:
+          meta:
+            source_system: PowerSchool
+            source_model: stg_powerschool__students
+            source_column: log
       - name: sched_gender
         data_type: string
+        description: "Valid values: M = Male, F = Female."
+        config:
+          meta:
+            source_system: PowerSchool
+            source_model: stg_powerschool__schoolstaff
+            source_column: sched_gender
       - name: sched_classroom
         data_type: string
+        description: The classroom this teacher is in most of the time.
+        config:
+          meta:
+            source_system: PowerSchool
+            source_model: stg_powerschool__schoolstaff
+            source_column: sched_classroom
       - name: sched_homeroom
         data_type: string
+        description: The teachers' homeroom.
+        config:
+          meta:
+            source_system: PowerSchool
+            source_model: stg_powerschool__schoolstaff
+            source_column: sched_homeroom
       - name: sched_department
         data_type: string
+        description: The department this course belongs to.
+        config:
+          meta:
+            source_system: PowerSchool
+            source_model: stg_powerschool__courses
+            source_column: sched_department
       - name: sched_housecode
         data_type: string
+        description: The house to which the teacher belongs.
+        config:
+          meta:
+            source_system: PowerSchool
+            source_model: stg_powerschool__schoolstaff
+            source_column: sched_housecode
       - name: sched_buildingcode
         data_type: string
+        description: The building the teacher is in.
+        config:
+          meta:
+            source_system: PowerSchool
+            source_model: stg_powerschool__schoolstaff
+            source_column: sched_buildingcode
       - name: sched_activitystatuscode
         data_type: string
+        description:
+          No longer used by the application. This field may still be referenced
+          on reports and/or custompages.
+        config:
+          meta:
+            source_system: PowerSchool
+            source_model: stg_powerschool__schoolstaff
+            source_column: sched_activitystatuscode
       - name: sched_primaryschoolcode
         data_type: string
+        description:
+          No longer used by the application. This field may still be referenced
+          on reports and/or custompages.
+        config:
+          meta:
+            source_system: PowerSchool
+            source_model: stg_powerschool__schoolstaff
+            source_column: sched_primaryschoolcode
       - name: sched_team
         data_type: string
+        description: The team the teacher is on.
+        config:
+          meta:
+            source_system: PowerSchool
+            source_model: stg_powerschool__schoolstaff
+            source_column: sched_team
       - name: notes
         data_type: string
+        description: Miscellaneous notes.
+        config:
+          meta:
+            source_system: PowerSchool
+            source_model: stg_powerschool__schoolstaff
+            source_column: notes
       - name: id
         data_type: int64
+        description:
+          Sequential number generated by the application, but uniqueness in the
+          table is notguaranteed. Indexed.
+        config:
+          meta:
+            source_system: PowerSchool
+            source_model: stg_powerschool__students
+            source_column: id
+            column_role: primary_key
       - name: schoolid
         data_type: int64
+        description: The School_Number of the associated Schools record.
+        config:
+          meta:
+            source_system: PowerSchool
+            source_model: stg_powerschool__students
+            source_column: schoolid
       - name: balance1
         data_type: float64
+        description: Lunch balance.
+        config:
+          meta:
+            source_system: PowerSchool
+            source_model: stg_powerschool__students
+            source_column: balance1
       - name: balance2
         data_type: float64
+        description:
+          Beginning lunch balance for the year copied from balance 1 in the
+          end-of-year process.
+        config:
+          meta:
+            source_system: PowerSchool
+            source_model: stg_powerschool__students
+            source_column: balance2
       - name: balance3
         data_type: float64
+        description: Fees balance.
+        config:
+          meta:
+            source_system: PowerSchool
+            source_model: stg_powerschool__students
+            source_column: balance3
       - name: balance4
         data_type: float64
+        description:
+          No longer used by the application. This field may still be referenced
+          on reports and/or custompages. Beginning fee balance for the year
+          copied from balance3 in the end-of-year process.
+        config:
+          meta:
+            source_system: PowerSchool
+            source_model: stg_powerschool__students
+            source_column: balance4
       - name: noofcurclasses
         data_type: int64
+        description:
+          No longer used by the application. This field may still be referenced
+          on reports and/or custompages.
+        config:
+          meta:
+            source_system: PowerSchool
+            source_model: stg_powerschool__schoolstaff
+            source_column: noofcurclasses
       - name: staffstatus
         data_type: int64
+        description:
+          "Current title for staff. Valid values: 0 = Not Assigned, 1 = Teacher,
+          2 = Staff, 3 = Lunch Staff, 4= Substitute. Indexed."
+        config:
+          meta:
+            source_system: PowerSchool
+            source_model: stg_powerschool__schoolstaff
+            source_column: staffstatus
       - name: status
         data_type: int64
+        description:
+          "Indicates if the course was made either by a user or automatically by
+          an import. Validvalues: 0=user-created, 3=auto-created."
+        config:
+          meta:
+            source_system: PowerSchool
+            source_model: stg_powerschool__courses
+            source_column: status
       - name: sched_maximumcourses
         data_type: int64
+        description: The maximum number of courses the teacher can teach.
+        config:
+          meta:
+            source_system: PowerSchool
+            source_model: stg_powerschool__schoolstaff
+            source_column: sched_maximumcourses
       - name: sched_maximumduty
         data_type: int64
+        description:
+          No longer used by the application. This field may still be referenced
+          on reports and/or custompages.
+        config:
+          meta:
+            source_system: PowerSchool
+            source_model: stg_powerschool__schoolstaff
+            source_column: sched_maximumduty
       - name: sched_maximumfree
         data_type: int64
+        description:
+          The maximum number of preparatory periods the teacher can have.
+        config:
+          meta:
+            source_system: PowerSchool
+            source_model: stg_powerschool__schoolstaff
+            source_column: sched_maximumfree
       - name: sched_totalcourses
         data_type: int64
+        description:
+          No longer used by the application. This field may still be referenced
+          on reports and/or custompages.
+        config:
+          meta:
+            source_system: PowerSchool
+            source_model: stg_powerschool__schoolstaff
+            source_column: sched_totalcourses
       - name: sched_maximumconsecutive
         data_type: int64
+        description:
+          The most courses a teacher can teach in a row without a break.
+        config:
+          meta:
+            source_system: PowerSchool
+            source_model: stg_powerschool__schoolstaff
+            source_column: sched_maximumconsecutive
       - name: sched_isteacherfree
         data_type: int64
+        description:
+          Flag stating weather the teacher is always free. True=no limit on how
+          many courses a teachercan teach at a time, most often used with fake
+          or SPED teachers. False= teacher can onlyteach one class at a time
+          unless other wise specified at the course level.
+        config:
+          meta:
+            source_system: PowerSchool
+            source_model: stg_powerschool__schoolstaff
+            source_column: sched_isteacherfree
       - name: sched_teachermoreoneschool
         data_type: int64
+        description:
+          No longer used by the application. This field may still be referenced
+          on reports and/or custompages.
+        config:
+          meta:
+            source_system: PowerSchool
+            source_model: stg_powerschool__schoolstaff
+            source_column: sched_teachermoreoneschool
       - name: sched_substitute
         data_type: int64
+        description:
+          No longer used by the application. This field may still be referenced
+          on reports and/or custompages.
+        config:
+          meta:
+            source_system: PowerSchool
+            source_model: stg_powerschool__schoolstaff
+            source_column: sched_substitute
       - name: sched_scheduled
         data_type: int64
+        description:
+          A flag indicating if this student has had a schedule built for them.
+          True means they do have aschedule and another will not be made unless
+          the engine is told to reschedule regardless ofthis flag. False, the
+          engine will build a schedule for this student next time.
+        config:
+          meta:
+            source_system: PowerSchool
+            source_model: stg_powerschool__students
+            source_column: sched_scheduled
       - name: sched_usebuilding
         data_type: int64
+        description:
+          No longer used by the application. This field may still be referenced
+          on reports and/or custompages.
+        config:
+          meta:
+            source_system: PowerSchool
+            source_model: stg_powerschool__schoolstaff
+            source_column: sched_usebuilding
       - name: sched_usehouse
         data_type: int64
       - name: sched_lunch
         data_type: int64
+        description:
+          Identifies the teacher to the engine as one who should be assigned a
+          lunch period for eachvalid lunch day (according to the lunch courses
+          valid days) when automated lunch isscheduled. This flag is used in
+          lieu of creating course assignments for lunch.
+        config:
+          meta:
+            source_system: PowerSchool
+            source_model: stg_powerschool__schoolstaff
+            source_column: sched_lunch
       - name: sched_maxpers
         data_type: int64
+        description:
+          Reflects a long-standing setting in the Engine for Max Periods Per Day
+          the Teacher is to bescheduled.
+        config:
+          meta:
+            source_system: PowerSchool
+            source_model: stg_powerschool__schoolstaff
+            source_column: sched_maxpers
       - name: sched_maxpreps
         data_type: int64
+        description:
+          Reflects the setting in the Engine for Max Prep Codes (per Term) a
+          Teacher is to be scheduled.
+        config:
+          meta:
+            source_system: PowerSchool
+            source_model: stg_powerschool__schoolstaff
+            source_column: sched_maxpreps
       - name: prefixcodesetid
         data_type: int64
+        description: Foreign key to codeset table of category prefix.
+        config:
+          meta:
+            source_system: PowerSchool
+            source_model: stg_powerschool__users
+            source_column: prefixcodesetid
+            column_role: foreign_key

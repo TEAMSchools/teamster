@@ -1,7 +1,22 @@
 models:
   - name: int_assessments__course_enrollments
+    description: >-
+      K-12 course enrollments unioned with synthesized Newark/Camden ES Writing
+      enrollments (grade <= 4). Provides the enrollment scaffold that internal
+      Illuminate assessments are joined against. One row per (student, academic
+      year, subject area, date enrolled), deduplicated to the latest exit per
+      enrollment span.
     # config:
     #   materialized: table
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns:
+              - _dbt_source_project
+              - powerschool_student_number
+              - illuminate_academic_year
+              - illuminate_subject_area
+              - cc_dateenrolled
     columns:
       - name: powerschool_student_number
         data_type: int64
@@ -15,8 +30,30 @@ models:
         data_type: date
       - name: illuminate_subject_area
         data_type: string
+      - name: discipline
+        data_type: string
       - name: is_foundations
         data_type: boolean
+      - name: cc_dcid
+        data_type: int64
+        description: >-
+          PowerSchool course enrollment row identifier. Used as an upstream
+          component of
+          dim_student_section_enrollments.student_section_enrollment_key.
+        config:
+          meta:
+            source_column: base_powerschool__course_enrollments.cc_dcid
+      - name: _dbt_source_project
+        data_type: string
+        description: >-
+          Region prefix (e.g. kippnewark, kippcamden, kippmiami, kipppaterson)
+          plumbed through from the upstream PowerSchool union models. Carried on
+          both K-12 and ES Writing branches and used as the region discriminator
+          in the trailing dedup partition and downstream surrogate keys
+          (student_section_enrollment_key). See #3142.
+        config:
+          meta:
+            source_column: base_powerschool__course_enrollments._dbt_source_project
       - name: region
         data_type: string
       - name: illuminate_academic_year

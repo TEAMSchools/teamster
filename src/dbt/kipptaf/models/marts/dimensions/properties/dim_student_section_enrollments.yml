@@ -1,0 +1,111 @@
+models:
+  - name: dim_student_section_enrollments
+    description: >-
+      Student section enrollment dimension. One row per CC record — each
+      enrollment of a student into a section. Multiple rows per student x
+      section are possible when a student drops and re-enrolls in the same
+      section within a year. FK to dim_student_enrollments via
+      student_enrollment_key, dim_course_sections via course_section_key, and
+      dim_terms via term_key (nullable when CC term does not map to a reporting
+      term).
+    columns:
+      - name: student_section_enrollment_key
+        data_type: string
+        description: >-
+          Surrogate key derived from cc_dcid and _dbt_source_project. Primary
+          key for this dimension — unique per CC record per region.
+        constraints:
+          - type: primary_key
+            warn_unsupported: false
+        data_tests:
+          - unique
+          - not_null
+
+      - name: student_enrollment_key
+        data_type: string
+        description: >-
+          Surrogate key derived from student_number, _dbt_source_relation,
+          academic_year, and entrydate. FK to dim_student_enrollments. Null when
+          no matching student enrollment record covers the CC dateenrolled.
+
+        constraints:
+          - type: foreign_key
+            to: ref('dim_student_enrollments')
+            to_columns: [student_enrollment_key]
+            warn_unsupported: false
+        data_tests:
+          - relationships:
+              arguments:
+                to: ref('dim_student_enrollments')
+                field: student_enrollment_key
+      - name: course_section_key
+        data_type: string
+        description: >-
+          Surrogate key derived from sections_dcid and _dbt_source_relation. FK
+          to dim_course_sections.
+        constraints:
+          - type: foreign_key
+            to: ref('dim_course_sections')
+            to_columns: [course_section_key]
+            warn_unsupported: false
+        data_tests:
+          - not_null
+
+          - relationships:
+              arguments:
+                to: ref('dim_course_sections')
+                field: course_section_key
+      - name: term_key
+        data_type: string
+        description: >-
+          Surrogate key derived from type, code, name, start_date, region, and
+          school_id of the matching reporting term. FK to dim_terms. Null when
+          the course-enrollment's term ID does not match any reporting term for
+          the section's school and region.
+
+        constraints:
+          - type: foreign_key
+            to: ref('dim_terms')
+            to_columns: [term_key]
+            warn_unsupported: false
+        data_tests:
+          - relationships:
+              arguments:
+                to: ref('dim_terms')
+                field: term_key
+      - name: academic_year
+        data_type: int64
+        description: >-
+          KIPP academic year in which this section enrollment falls. The
+          calendar year in which the academic year begins (e.g., 2025 for the
+          2025-26 school year).
+
+      - name: entry_date
+        data_type: date
+        description: >-
+          Date the student enrolled in this section.
+
+      - name: exit_date
+        data_type: date
+        description: >-
+          Date the student left this section.
+
+      - name: is_dropped_section
+        data_type: boolean
+        description: >-
+          TRUE if this specific section enrollment was dropped by the student
+          mid-term, determined by the combination of a negative section ID (drop
+          marker) and an early exit date.
+
+      - name: is_dropped_course
+        data_type: boolean
+        description: >-
+          TRUE if all enrollments for this student x course x year were dropped,
+          meaning the entire course was abandoned rather than just a section
+          transfer.
+
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns:
+              - student_section_enrollment_key

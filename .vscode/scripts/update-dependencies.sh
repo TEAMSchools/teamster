@@ -5,17 +5,27 @@ set -euo pipefail
 # trunk-ignore(shellcheck/SC1091): sourced at runtime
 source "${HOME}/.local/bin/env"
 
+REPO_ROOT="$(git rev-parse --show-toplevel)"
 GITHUB_USER="${GITHUB_USER:-$(gh api user --jq .login 2>/dev/null)}"
 BRANCH="${GITHUB_USER}/chore/update-dependencies-$(date +%Y-%m-%d)"
+WORKTREE="${REPO_ROOT}/.worktrees/${BRANCH}"
 
-if git show-ref --verify --quiet "refs/heads/${BRANCH}"; then
-  echo "Switching to existing branch: ${BRANCH}"
-  git checkout "${BRANCH}"
+# --- create branch + worktree ---
+if [[ -d ${WORKTREE} ]]; then
+  echo "Reusing existing worktree: ${WORKTREE}"
 else
-  echo "Creating branch: ${BRANCH}"
-  git checkout -b "${BRANCH}"
+  if git show-ref --verify --quiet "refs/heads/${BRANCH}"; then
+    echo "Adding worktree for existing branch: ${BRANCH}"
+    git worktree add "${WORKTREE}" "${BRANCH}"
+  else
+    echo "Creating branch + worktree: ${BRANCH}"
+    git worktree add -b "${BRANCH}" "${WORKTREE}"
+  fi
 fi
 
+cd "${WORKTREE}"
+
+# --- update dependencies ---
 echo -e "\n\033[1;34m▶ uv lock --upgrade\033[0m"
 uv lock --upgrade
 
@@ -48,8 +58,12 @@ for project in "${DBT_PROJECTS[@]}"; do
   uv run dbt deps --upgrade "--project-dir=src/dbt/${project}"
 done
 
+# --- commit ---
 echo -e "\n\033[1;34m▶ Committing changes\033[0m"
 git add -u
 git commit -m "chore: update dependencies"
 
-echo -e "\n\033[1;32m✔ All dependencies updated and committed\033[0m"
+echo -e "\n\033[1;34m▶ Pushing to origin\033[0m"
+git push -u origin "${BRANCH}"
+
+echo -e "\n\033[1;32m✔ All dependencies updated, committed, and pushed\033[0m"

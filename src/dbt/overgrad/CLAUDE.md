@@ -7,7 +7,7 @@ application tracking platform). Produces staging and intermediate models.
 
 ```text
 models/
-  staging/     # contract: enforced: true
+  staging/
   intermediate/
   sources.yml
 ```

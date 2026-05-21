@@ -3,6 +3,8 @@ select
     o.observation_id,
     o.rubric_id,
     o.rubric_name,
+    o.staff_observation_type_key,
+    o.staff_observation_rubric_key,
     o.score as observation_score,
     o.glows,
     o.grows,
@@ -21,6 +23,23 @@ select
 
     t.code as term_code,
     t.name as term_name,
+
+    if(
+        t.code is not null,
+        {{
+            dbt_utils.generate_surrogate_key(
+                [
+                    "t.type",
+                    "t.code",
+                    "t.name",
+                    "t.start_date",
+                    "t.region",
+                    "t.school_id",
+                ]
+            )
+        }},
+        cast(null as string)
+    ) as term_key,
 
     case
         when o.score >= 3.495
@@ -43,13 +62,13 @@ select
     end as eval_date,
 from {{ ref("int_schoolmint_grow__observations") }} as o
 inner join
-    {{ ref("stg_google_sheets__people__location_crosswalk") }} as lc
-    on o.school_name = lc.name
+    {{ ref("int_people__location_crosswalk") }} as lc
+    on o.school_name = lc.location_name
 left join
     {{ ref("stg_google_sheets__reporting__terms") }} as t
     on o.observation_type_abbreviation = t.type
     and o.observed_at_date_local between t.start_date and t.end_date
-    and lc.region = t.region
+    and lc.location_region = t.region
 /* data prior to 2024 in snapshot */
 where o.is_published and o.academic_year >= 2024
 
@@ -60,6 +79,8 @@ select
     o.observation_id,
     o.rubric_id,
     o.rubric_name,
+    o.staff_observation_type_key,
+    o.staff_observation_rubric_key,
     o.score as observation_score,
     o.glows,
     o.grows,
@@ -79,6 +100,23 @@ select
 
     t.code as term_code,
     t.name as term_name,
+
+    if(
+        t.code is not null,
+        {{
+            dbt_utils.generate_surrogate_key(
+                [
+                    "t.type",
+                    "t.code",
+                    "t.name",
+                    "t.start_date",
+                    "t.region",
+                    "t.school_id",
+                ]
+            )
+        }},
+        cast(null as string)
+    ) as term_key,
 
     null as overall_tier,
     null as eval_date,

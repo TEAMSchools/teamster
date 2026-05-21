@@ -10,6 +10,8 @@ with
             ce.illuminate_subject_area,
             ce.discipline,
             ce.is_foundations,
+            ce.cc_dcid,
+            ce._dbt_source_project,
 
             co.region,
 
@@ -19,7 +21,7 @@ with
 
             max(ce.is_advanced_math) over (
                 partition by
-                    ce._dbt_source_relation,
+                    ce._dbt_source_project,
                     ce.cc_studentid,
                     ce.cc_academic_year,
                     ce.courses_credittype
@@ -49,12 +51,15 @@ with
             'ELA' as discipline,
             false as is_foundations,
 
+            cast(null as int64) as cc_dcid,
+
+            co._dbt_source_project,
             co.region,
 
             co.academic_year + 1 as illuminate_academic_year,
             co.grade_level + 1 as illuminate_grade_level_id,
 
-            false as is_advanced_math,
+            false as is_advanced_math_student,
         from {{ ref("base_powerschool__student_enrollments") }} as co
         where co.region in ('Newark', 'Camden') and co.grade_level <= 4
     )
@@ -62,7 +67,7 @@ with
     {{
         dbt_utils.deduplicate(
             relation="enrollments_union",
-            partition_by="powerschool_student_number, illuminate_academic_year, illuminate_subject_area, cc_dateenrolled",
+            partition_by="_dbt_source_project, powerschool_student_number, illuminate_academic_year, illuminate_subject_area, cc_dateenrolled",
             order_by="cc_dateleft desc",
         )
     }}

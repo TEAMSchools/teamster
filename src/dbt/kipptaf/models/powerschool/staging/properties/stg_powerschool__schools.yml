@@ -3,6 +3,26 @@ models:
     config:
       materialized: table
     columns:
+      - name: _dbt_source_project
+        data_type: string
+        description: >-
+          District code-location extracted once from `_dbt_source_relation`
+          (e.g., `kippnewark`, `kippcamden`). Materialized join key for
+          cross-region lookups against
+          `stg_google_sheets__people__locations.dagster_code_location`.
+      - name: location_key
+        data_type: string
+        description: |
+          Canonical location_key resolved via the people canonical master on
+          powerschool_school_id. NULL for the `999999` "Graduated Students"
+          sentinel and any school not present on the master.
+        data_tests:
+          - relationships:
+              arguments:
+                to: ref('dim_locations')
+                field: location_key
+              config:
+                severity: error
       - name: school_number
         data_type: int64
         data_tests:

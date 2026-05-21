@@ -76,3 +76,19 @@ def test_amplify_mclass_pm_student_summary_kipppaterson():
     )
 
     _test_asset(code_location="kipppaterson", asset=pm_student_summary)
+
+
+def test_amplify_mclass_pm_student_summary_aimline_kipptaf():
+    from teamster.code_locations.kippnewark.amplify.mclass.sftp.assets import (
+        pm_student_summary_aimline,
+    )
+
+    _test_asset(code_location="kipptaf", asset=pm_student_summary_aimline)
+
+
+def test_amplify_mclass_pm_student_summary_aimline_kipppaterson():
+    from teamster.code_locations.kipppaterson.amplify.mclass.sftp.assets import (
+        pm_student_summary_aimline,
+    )
+
+    _test_asset(code_location="kipppaterson", asset=pm_student_summary_aimline)

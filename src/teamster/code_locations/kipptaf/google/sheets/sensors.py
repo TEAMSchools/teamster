@@ -4,7 +4,7 @@ from teamster.libraries.google.sheets.sensors import build_google_sheets_asset_s
 
 google_sheets_asset_sensor = build_google_sheets_asset_sensor(
     code_location=CODE_LOCATION,
-    minimum_interval_seconds=(60 * 10),
+    minimum_interval_seconds=(60 * 5),
     asset_specs=asset_specs,
 )
 

@@ -9,6 +9,8 @@ models:
           - unique:
               config:
                 severity: error
+        constraints:
+          - type: primary_key
       - name: student_count
         data_type: int64
       - name: student_with_guardian_count

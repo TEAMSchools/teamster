@@ -74,7 +74,7 @@ left join
     and h.job_title is not null
 left join
     {{ ref("int_people__leadership_crosswalk") }} as ayl
-    on h.home_work_location_name = ayl.home_work_location_name
+    on h.home_work_location_reporting_name = ayl.home_work_location_reporting_name
 left join
     {{ ref("int_performance_management__overall_scores") }} as p
     on c.employee_number = p.employee_number
@@ -95,7 +95,10 @@ left join
     and y.fiscal_year = s.academic_year
 left join
     {{ ref("int_people__leadership_crosswalk") }} as nyl
-    on s.adp_location = nyl.home_work_location_name
+    -- TODO: #3728 — s.adp_location is a free-text sheet column; assumes clean
+    -- name convention. Resolve via int_people__location_crosswalk for alias
+    -- tolerance.
+    on s.adp_location = nyl.home_work_location_reporting_name
 left join
     {{ ref("stg_google_appsheet__people__seat_tracker_people") }} as stp
     on c.employee_number = stp.employee_number

@@ -18,17 +18,22 @@ location's `definitions.py`. Two categories:
   SFTP/API assets)
 - `get_io_manager_gcs_file(code_location)` → `GCSIOManager` (raw file, used by
   paginated Deanslist)
-- `get_dbt_cli_resource(dbt_project, test=False)` → `DbtCliResource`
+- `get_dbt_cli_resource(dbt_project)` → `DbtCliResource` (passes
+  `target="defer"` when `DAGSTER_CLOUD_IS_BRANCH_DEPLOYMENT == "1"`; otherwise
+  uses the shipped profile default, which is `prod`)
 - `get_powerschool_ssh_resource()` → `SSHResource` (reads from shared env vars)
 
 All IO manager factories redirect to `teamster-test` bucket when
 `DAGSTER_CLOUD_IS_BRANCH_DEPLOYMENT=1`.
 
+**Env var gotcha**: `DAGSTER_CLOUD_IS_BRANCH_DEPLOYMENT` is `"0"` (not absent)
+in full deployments — always check `== "1"`, never truthy.
+
 **Singletons** (shared across all code locations):
 
 - `BIGQUERY_RESOURCE`, `GCS_RESOURCE`, `DLT_RESOURCE`
 - `DEANSLIST_RESOURCE`, `OVERGRAD_RESOURCE`, `ZENDESK_RESOURCE`
-- `GOOGLE_DRIVE_RESOURCE`, `GOOGLE_FORMS_RESOURCE`, `GOOGLE_SHEETS_RESOURCE`
+- `GOOGLE_DRIVE_RESOURCE`, `GOOGLE_FORMS_RESOURCE`
 - `DB_POWERSCHOOL` — Oracle ODBC resource (shared env vars)
 - `SSH_COUCHDROP`, `SSH_EDPLAN`, `SSH_IREADY`, `SSH_RENLEARN`, `SSH_TITAN`,
   `SSH_RESOURCE_AMPLIFY` — SFTP resources
@@ -49,7 +54,21 @@ with the current timestamp.
 
 Three `object_type` modes: `"pickle"`, `"avro"` (writes Fastavro container
 files), `"file"` (writes raw bytes from a local file path). The `test=True` flag
-prefixes GCS paths with `test/` to isolate test runs.
+writes local files to `/tmp/dagster` (not the `dagster-tmp` symlink — causes
+`FileExistsError`) instead of `env/`, and prefixes GCS paths with `test/`.
+
+### `freshness.py`
+
+**`FreshnessPolicy` UI surface**: evaluations do NOT appear on the asset's
+Checks tab — state lives on the Overview sidebar's Freshness panel; alerts fire
+via Dagster+ "Freshness policy violations" policies, not asset-check alerts. Do
+not add `build_last_update_freshness_checks` (it's `@superseded`) to force
+Checks-tab visibility.
+
+**`FreshnessPolicy.cron` window**: valid materialization window is
+`[deadline - lower_bound_delta, deadline]`. A materialization landing AFTER the
+deadline is outside the window. Set `deadline_cron` past the asset's typical
+arrival time, not before, or the check flaps FAIL→PASS every cycle.
 
 ### `asset_checks.py`
 
@@ -84,6 +103,21 @@ data versioning system, not the automation condition. When an upstream table
 materializes, directly-dependent view assets are marked "unsynced" in the UI
 even though the automation condition correctly suppresses any run. There is no
 built-in Dagster API to suppress this per-asset.
+
+**Deploy rollover + `code_version_changed` race**: if a run completes during
+deploy rollover, the materialization may be stamped with the new deployment's
+code version. `code_version_changed()` returns false permanently — manual
+materialization is the only fix. See dagster-io/dagster#33708.
+
+**Deploy ordering gate**: `_dep_code_version_pending` blocks materialization
+when a direct dependency has `code_version_changed().since(newly_updated())` —
+prevents schema errors when a deploy adds columns through a TABLE → VIEW chain.
+Applied in `_build_dbt_condition()` to tables and union_relations views via the
+default `guard_dep_code_version=True`. Plain views opt out
+(`dbt_view_automation_condition` passes `False`): a view never bakes parent
+columns into stored state, so a pending parent code change can't poison it, and
+the guard would only strand the view's own `code_version_changed` refresh behind
+unrelated upstream churn.
 
 **Dep fan-out rule**: An unpartitioned dep of a partitioned asset fans out to
 ALL partitions on every materialization. To preserve per-partition triggering,

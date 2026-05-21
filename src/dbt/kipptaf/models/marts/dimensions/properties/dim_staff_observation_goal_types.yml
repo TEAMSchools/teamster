@@ -1,0 +1,40 @@
+models:
+  - name: dim_staff_observation_goal_types
+    description: >-
+      Goal type dimension. One row per goal in the SchoolMint Grow 4-level
+      taxonomy: goal_type > bucket > strand > goal. Built from generic tags of
+      type tags with three levels of parent relationships. Only includes
+      leaf-level goals (those with all three ancestor levels).
+    columns:
+      - name: staff_observation_goal_type_key
+        data_type: string
+        description: >-
+          Surrogate primary key derived from the goal tag ID. Generated with
+          generate_surrogate_key(["tag_id"]).
+        constraints:
+          - type: primary_key
+            warn_unsupported: false
+        data_tests:
+          - unique
+          - not_null
+
+      - name: goal_name
+        data_type: string
+        description: >-
+          Display name of the specific goal or look-for.
+
+      - name: strand_name
+        data_type: string
+        description: >-
+          Name of the strand (second level in the taxonomy) this goal belongs
+          to.
+
+      - name: bucket_name
+        data_type: string
+        description: >-
+          Name of the bucket (third level in the taxonomy) this goal belongs to.
+
+      - name: goal_type
+        data_type: string
+        description: >-
+          Top-level goal type category (e.g., Instructional, Cultural).

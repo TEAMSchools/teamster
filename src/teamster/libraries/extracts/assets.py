@@ -1,6 +1,7 @@
 import gc
 import gzip
 import json
+import os
 import pathlib
 import re
 from csv import DictWriter
@@ -18,7 +19,14 @@ from dagster import (
 from dagster_shared import check
 from google.cloud.bigquery import Client
 from google.cloud.storage import Blob
+from paramiko import SSHException
 from sqlalchemy.sql.expression import literal_column, select, table, text
+from tenacity import (
+    retry,
+    retry_if_exception_type,
+    stop_after_attempt,
+    wait_exponential_jitter,
+)
 
 from teamster.core.utils.classes import CustomJSONEncoder
 from teamster.libraries.ssh.resources import SSHResource
@@ -35,11 +43,14 @@ def construct_query(query_type, query_value) -> str:
         sql_file = pathlib.Path(query_value).absolute()
         return sql_file.read_text()
     elif query_type == "schema":
+        table_kwargs = dict(query_value["table"])
+        if os.getenv("DAGSTER_CLOUD_IS_BRANCH_DEPLOYMENT") == "1":
+            table_kwargs["schema"] = f"zz_dagster_{table_kwargs['schema']}"
         return str(
             select(
                 *[literal_column(text=col) for col in query_value.get("select", ["*"])]
             )
-            .select_from(table(**query_value["table"]))
+            .select_from(table(**table_kwargs))
             .where(*[text(w) for w in query_value.get("where", "")])
         )
     else:
@@ -95,6 +106,11 @@ def transform_data(
     return transformed_data
 
 
+@retry(
+    stop=stop_after_attempt(3),
+    wait=wait_exponential_jitter(),
+    retry=retry_if_exception_type((TimeoutError, OSError, EOFError, SSHException)),
+)
 def load_sftp(
     context: AssetExecutionContext,
     ssh: SSHResource,
@@ -105,9 +121,7 @@ def load_sftp(
     with ssh.get_connection().open_sftp() as sftp:
         check.not_none(value=sftp.get_channel()).settimeout(ssh.timeout)
 
-        sftp.chdir(".")
-
-        cwd_path = pathlib.Path(str(sftp.getcwd()))
+        cwd_path = pathlib.Path(sftp.normalize("."))
 
         if destination_path != "":
             destination_filepath = cwd_path / destination_path / file_name
@@ -222,6 +236,7 @@ def build_bigquery_query_sftp_asset(
 
         if len(data) == 0:
             context.log.warning("Query returned an empty result")
+            return
 
         transformed_data = transform_data(
             data=data,

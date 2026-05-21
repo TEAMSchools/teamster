@@ -8,10 +8,10 @@ projects and `kipptaf`.
 
 ```text
 models/
-  staging/     # contract-enforced
+  staging/
   intermediate/
-  sources.yml
-  sources-archive.yml   # legacy archived sources
+  sources-external.yml   # GCS external tables (target-conditional schema)
+  sources-bigquery.yml   # BQ-native static tables (plain schema)
 ```
 
 ## Cross-Project Usage

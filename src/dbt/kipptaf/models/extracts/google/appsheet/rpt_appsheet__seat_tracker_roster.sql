@@ -85,9 +85,11 @@ select
         cast(sr.primary_grade_level_taught as string), sr.home_department_name
     ) as grade_department,
 
-    coalesce(lc.region, sr.home_business_unit_name) as location_entity,
+    coalesce(lc.location_region, sr.home_business_unit_name) as location_entity,
 
-    coalesce(lc.abbreviation, sr.home_work_location_name) as location_shortname,
+    coalesce(
+        lc.location_abbreviation, sr.home_work_location_name
+    ) as location_shortname,
 
     coalesce(cc.name, sr.home_work_location_name) as campus,
 
@@ -166,8 +168,8 @@ select
     end as permission_level,
 from {{ ref("int_people__staff_roster") }} as sr
 inner join
-    {{ ref("stg_google_sheets__people__location_crosswalk") }} as lc
-    on sr.home_work_location_name = lc.name
+    {{ ref("int_people__location_crosswalk") }} as lc
+    on sr.home_work_location_name = lc.location_name
 left join
     {{ ref("stg_google_sheets__people__campus_crosswalk") }} as cc
     on sr.home_work_location_name = cc.location_name

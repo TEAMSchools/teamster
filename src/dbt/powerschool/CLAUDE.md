@@ -38,3 +38,11 @@ project.
 The `odbc/` vs `sftp/` split exists because some schools pull data via live
 Oracle ODBC tunnel and others via SFTP file drops. Only one should be enabled
 per deployment.
+
+## GPA Gotchas
+
+- **`storecode = 'Y1'` only**: Q1–Q4 records have `gpa_points = 0` by design —
+  only `storecode = 'Y1'` rows are used in GPA calculations.
+- **`districtentrydate` null placeholder**: PowerSchool stores null/missing
+  dates as `1899-xx-xx`. Derive network tenure from `MIN(academic_year)` in
+  storedgrades instead.

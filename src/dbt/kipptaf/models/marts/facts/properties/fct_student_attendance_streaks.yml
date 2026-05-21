@@ -1,0 +1,100 @@
+models:
+  - name: fct_student_attendance_streaks
+    description: >-
+      Student attendance streak fact table. One row per student x consecutive
+      attendance streak. A streak is a run of consecutive membership days with
+      the same attendance code (or same attendancevalue for present/absent
+      streaks). FK to dim_student_enrollments and dim_dates (role-playing via
+      streak_start_date_key and streak_end_date_key).
+    columns:
+      - name: student_attendance_streak_key
+        data_type: string
+        description: >-
+          Surrogate key derived from streak_id and _dbt_source_relation. Primary
+          key for this fact.
+        constraints:
+          - type: primary_key
+            warn_unsupported: false
+        data_tests:
+          # TODO(#3923): restore to severity:error once Dagster has materialized
+          # the namespace-fixed int_powerschool__attendance_streak in every
+          # district prod dataset. The kipptaf mart source()s district data,
+          # which resolves to prod in dbt Cloud CI — until district prod is
+          # refreshed, CI still sees the 305 Paterson cross-branch collisions.
+          - unique
+          - not_null
+
+      - name: student_enrollment_key
+        data_type: string
+        description: >-
+          FK to dim_student_enrollments. Surrogate key derived from
+          student_number, _dbt_source_relation, academic_year, and entrydate.
+        constraints:
+          - type: foreign_key
+            to: ref('dim_student_enrollments')
+            to_columns: [student_enrollment_key]
+            warn_unsupported: false
+        data_tests:
+          - not_null
+
+          - relationships:
+              arguments:
+                to: ref('dim_student_enrollments')
+                field: student_enrollment_key
+      - name: streak_start_date_key
+        data_type: date
+        description: >-
+          First date of the streak. FK to dim_dates (role-playing as streak
+          start date).
+
+        constraints:
+          - type: foreign_key
+            to: ref('dim_dates')
+            to_columns: [date_key]
+            warn_unsupported: false
+        data_tests:
+          - relationships:
+              arguments:
+                to: ref('dim_dates')
+                field: date_key
+      - name: streak_end_date_key
+        data_type: date
+        description: >-
+          Last date of the streak. FK to dim_dates (role-playing as streak end
+          date).
+
+        constraints:
+          - type: foreign_key
+            to: ref('dim_dates')
+            to_columns: [date_key]
+            warn_unsupported: false
+        data_tests:
+          - relationships:
+              arguments:
+                to: ref('dim_dates')
+                field: date_key
+      - name: academic_year
+        data_type: int64
+        description: >-
+          KIPP academic year (July start) derived from yearid + 1990.
+
+      - name: attendance_code
+        data_type: string
+        description: >-
+          Attendance identifier set by school. Examples Tardy, Absent, etc.
+
+        config:
+          meta:
+            source_system: PowerSchool
+            source_model: stg_powerschool__attendance_code
+            source_column: att_code
+      - name: streak_length_membership
+        data_type: int64
+        description: >-
+          Number of membership days in the streak (count of school days).
+
+      - name: streak_length_calendar
+        data_type: int64
+        description: >-
+          Number of calendar days in the streak (end_date - start_date + 1),
+          including weekends and holidays.

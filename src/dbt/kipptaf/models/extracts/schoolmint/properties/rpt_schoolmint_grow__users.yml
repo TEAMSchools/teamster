@@ -1,49 +1,121 @@
 models:
   - name: rpt_schoolmint_grow__users
+    description: >
+      One row per Grow user, comparing the desired source-of-truth state (from
+      ADP / staff roster) against the current destination state in SchoolMint
+      Grow. Drives `grow_user_sync` create / update / archive / restore
+      decisions via `surrogate_key_source` vs `surrogate_key_destination`. Users
+      matching both the Coach predicate (instructional manager) and the Teacher
+      predicate (job title contains "Teacher" or "Learning") receive both roles
+      in `role_names` / `role_ids`. Admin classifications take precedence over
+      Coach / Teacher.
+    data_tests:
+      - dbt_utils.expression_is_true:
+          arguments:
+            expression: array_length(role_ids) >= 1
+      - dbt_utils.expression_is_true:
+          arguments:
+            expression: array_length(role_ids) = array_length(role_names)
     columns:
       - name: user_internal_id
         data_type: int64
+        description: ADP employee number. Sent as Grow `internalId`.
+        data_tests:
+          - unique
+          - not_null
       - name: user_name
         data_type: string
+        description: Display name (`given_name || ' ' || family_name_1`).
       - name: user_email
         data_type: string
+        description: ADP Google Workspace email. Sent as Grow `email`.
       - name: inactive
         data_type: int64
-      - name: role_name
-        data_type: string
+        description: >
+          1 when ADP `assignment_status` is `Terminated` or `Deceased`, else 0.
+          Drives archive vs create/update branching.
+      - name: role_names
+        data_type: array<string>
+        description: >
+          Human-readable role labels (`Sub Admin`, `Regional Admin`, `School
+          Admin`, `School Assistant Admin`, `Coach`, `Teacher`), ordered
+          alphabetically by `role_id` so elements align with `role_ids`.
       - name: school_id
         data_type: string
-      - name: role_id
-        data_type: string
+        description: >
+          Grow school ID resolved from ADP home work location via
+          `stg_schoolmint_grow__schools`.
+      - name: role_ids
+        data_type: array<string>
+        description: >
+          Grow role IDs the user should be assigned, ordered alphabetically by
+          role_id. Lines up positionally with `role_names`. Sent verbatim as the
+          `roles` array in the Grow API payload.
       - name: user_id
         data_type: string
+        description: >
+          Grow user `_id` for an existing destination user, NULL when no
+          matching Grow user exists yet.
       - name: archived_at
         data_type: string
+        description:
+          Grow archival timestamp; non-NULL when the Grow user is archived.
       - name: user_email_ws
         data_type: string
+        description: Current `email` on the Grow user (destination side).
       - name: user_name_ws
         data_type: string
+        description: Current `name` on the Grow user (destination side).
       - name: school_id_ws
         data_type: string
+        description: Current `defaultInformation.school` on the Grow user.
       - name: grade_id_ws
         data_type: string
+        description: Current `defaultInformation.gradeLevel` on the Grow user.
       - name: course_id_ws
         data_type: string
+        description: Current `defaultInformation.course` on the Grow user.
       - name: coach_id_ws
         data_type: string
+        description: Current `coach` (Grow user `_id`) on the Grow user.
       - name: coach_id
         data_type: string
+        description: >
+          Desired coach: Grow user `_id` of the manager identified by ADP
+          `reports_to_employee_number`.
       - name: course_id
         data_type: string
+        description: >
+          Grow course tag `_id` matched from ADP `home_department_name` via
+          `stg_schoolmint_grow__generic_tags` (tag_type = 'courses').
       - name: grade_id
         data_type: string
-      - name: role_id_ws
-        data_type: string
+        description: >
+          Grow grade tag `_id` matched from ADP `primary_grade_level_taught`
+          (K-coded for 0) via `stg_schoolmint_grow__generic_tags` (tag_type =
+          'grades').
+      - name: role_ids_ws
+        data_type: array<string>
+        description: >
+          Current Grow role IDs on the destination user, ordered alphabetically.
+          Empty array when the Grow user has no roles.
       - name: inactive_ws
         data_type: int64
+        description: Current Grow `inactive` flag (0/1) on the destination user.
       - name: group_type
         data_type: string
+        description: >
+          Observation-group membership directive consumed by `grow_user_sync`:
+          `observers` for admins, `observees;observers` for users that include
+          `Coach` in `role_names`, otherwise `observees`.
       - name: surrogate_key_source
         data_type: string
+        description: >
+          Hash of the desired-state fields (uses `array_to_string(role_ids,
+          ',')` for the role component). Compared against
+          `surrogate_key_destination` to decide whether to issue a Grow update.
       - name: surrogate_key_destination
         data_type: string
+        description: >
+          Hash of the destination-state fields (uses
+          `array_to_string(role_ids_ws, ',')` for the role component).

@@ -52,14 +52,9 @@ path) to suppress inter-batch delays.
 **`schema.py`**: Pydantic models (`User`, `OrgUnits`, `Role`, `RoleAssignment`,
 `Group`, `Member`) mirroring the Google Directory API response shapes. Code
 locations consume these via `py_avro_schema.generate()` to produce Avro schemas
-for IO manager output. `Group` and `Member` schemas are defined but currently
-unused (commented out in kipptaf).
+for IO manager output.
 
-**`ops.py`**: Four legacy ops (`google_directory_user_create_op`,
-`google_directory_user_update_op`, `google_directory_member_create_op`,
-`google_directory_role_assignment_create_op`). **Not used anywhere** — this
-provisioning logic has been reimplemented as assets in
-`kipptaf/google/directory/assets.py`.
+**`ops.py`**: Legacy — use `kipptaf/google/directory/assets.py` instead.
 
 ## `drive/`
 
@@ -67,6 +62,17 @@ provisioning logic has been reimplemented as assets in
 `files_list_recursive()` helper that traverses folder trees. Used by
 `couchdrop/sensors.py` to detect new files dropped in Couchdrop-managed Google
 Drive folders.
+
+**`new_batch_http_request` is only on the root service**, not on sub-resources
+like `.files()`. `googleapiclient/discovery.py` attaches it via
+`_set_dynamic_attr` only when `resourceDesc == rootDesc`. Keep both refs in
+`setup_for_execution`: `_drive = discovery.build(...)` for batching,
+`_service = self._drive.files()` for individual sub-requests.
+
+Drive API methods targeting a specific file (`files.get`, `files.list`,
+`files.create`, `files.update`, `files.copy`, `files.delete`) must pass
+`supportsAllDrives=True` — without it, files in shared drives 404 even when ACL
+grants access.
 
 ## `forms/`
 
@@ -79,7 +85,9 @@ to ingest survey data as assets.
 (not a full asset) from a Google Sheets URL + range. The sheet ID is parsed from
 the URL and stored in metadata.
 
-**`sensors.py`** (`build_google_sheets_asset_sensor()`): Polls
-`spreadsheet.get_lastUpdateTime()` for each unique sheet ID, emits
-`AssetMaterialization` events when a sheet has been updated since the last
-cursor timestamp.
+**`sensors.py`** (`build_google_sheets_asset_sensor()`): Calls
+`GoogleDriveResource.get_modified_times()` once per tick to batch
+`files.get(fields=modifiedTime)` across all unique sheet IDs in a single Drive
+`/batch` HTTP request. Emits `AssetMaterialization` events when a sheet's
+modifiedTime has advanced past the last cursor value. Uses the `google_drive`
+resource key — `gspread` is not used.

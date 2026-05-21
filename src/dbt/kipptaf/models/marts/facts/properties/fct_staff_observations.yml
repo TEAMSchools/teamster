@@ -1,0 +1,188 @@
+models:
+  - name: fct_staff_observations
+    description: >-
+      Staff observation fact table. One row per observation event. Contains
+      overall observation score, positive feedback, growth areas, and
+      observation metadata. Combines SchoolMint Grow live observations (2024+)
+      with historical walkthrough data (2023). Foreign keys to dim_staff
+      (teacher and observer as role-playing dimensions), dim_locations,
+      dim_terms, dim_staff_observation_types, and dim_staff_observation_rubrics.
+    columns:
+      - name: staff_observation_key
+        data_type: string
+        description: >-
+          Surrogate primary key derived from observation_id. Generated with
+          generate_surrogate_key(["o.observation_id"]).
+        constraints:
+          - type: primary_key
+            warn_unsupported: false
+        data_tests:
+          - unique
+          - not_null
+
+      - name: teacher_staff_key
+        data_type: string
+        description: >-
+          Foreign key to dim_staff for the observed teacher. Surrogate key
+          derived from employee_number. Nullable — observations whose source row
+          has no employee_number (or carries the SchoolMint Grow test sentinel
+          999999) flow through with a NULL key per the standard null-wrap
+          pattern.
+        constraints:
+          - type: foreign_key
+            to: ref('dim_staff')
+            to_columns: [staff_key]
+            warn_unsupported: false
+        data_tests:
+          - relationships:
+              arguments:
+                to: ref('dim_staff')
+                field: staff_key
+      - name: staff_observation_type_key
+        data_type: string
+        description: >-
+          Foreign key to dim_staff_observation_types. Surrogate key derived from
+          the SchoolMint Grow generic tag_id for the observation type. Null when
+          the observation type abbreviation does not resolve to an active
+          observationtypes tag.
+        constraints:
+          - type: foreign_key
+            to: ref('dim_staff_observation_types')
+            to_columns: [staff_observation_type_key]
+            warn_unsupported: false
+        data_tests:
+          - relationships:
+              arguments:
+                to: ref('dim_staff_observation_types')
+                field: staff_observation_type_key
+
+      - name: staff_observation_rubric_key
+        data_type: string
+        description: >-
+          Foreign key to dim_staff_observation_rubrics. Surrogate key pre-hashed
+          from rubric_id in int_schoolmint_grow__observations. Non-nullable —
+          rubric_id is structurally non-null for all published observations and
+          enforced by a not_null test on the upstream intermediate.
+        constraints:
+          - type: foreign_key
+            to: ref('dim_staff_observation_rubrics')
+            to_columns: [staff_observation_rubric_key]
+            warn_unsupported: false
+        data_tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('dim_staff_observation_rubrics')
+                field: staff_observation_rubric_key
+              config:
+                severity: error
+
+      - name: observer_staff_key
+        data_type: string
+        description: >-
+          Foreign key to dim_staff for the observer. Surrogate key derived from
+          observer_employee_number.
+
+        constraints:
+          - type: foreign_key
+            to: ref('dim_staff')
+            to_columns: [staff_key]
+            warn_unsupported: false
+        data_tests:
+          - relationships:
+              arguments:
+                to: ref('dim_staff')
+                field: staff_key
+      - name: location_key
+        data_type: string
+        description: >-
+          Foreign key to dim_locations. Surrogate key derived from the school's
+          location_clean_name.
+
+        constraints:
+          - type: foreign_key
+            to: ref('dim_locations')
+            to_columns: [location_key]
+            warn_unsupported: false
+        data_tests:
+          - relationships:
+              arguments:
+                to: ref('dim_locations')
+                field: location_key
+      - name: term_key
+        data_type: string
+        description: >-
+          Foreign key to dim_terms. Surrogate key derived from term composite
+          fields.
+
+        constraints:
+          - type: foreign_key
+            to: ref('dim_terms')
+            to_columns: [term_key]
+            warn_unsupported: false
+        data_tests:
+          - relationships:
+              arguments:
+                to: ref('dim_terms')
+                field: term_key
+
+      - name: observed_date_key
+        data_type: date
+        description: >-
+          Local date the observation was conducted. Foreign key to dim_dates.
+        constraints:
+          - type: foreign_key
+            to: ref('dim_dates')
+            to_columns: [date_key]
+            warn_unsupported: false
+        data_tests:
+          - relationships:
+              arguments:
+                to: ref('dim_dates')
+                field: date_key
+
+      - name: academic_year
+        data_type: int64
+        description: >-
+          Academic year the observation occurred in.
+
+      - name: score
+        data_type: float64
+        description: >-
+          Overall numeric score for the observation, averaged across measurement
+          items.
+
+      - name: overall_rating
+        data_type: int64
+        description: >-
+          Performance rating (1-4) derived from the overall observation score
+          using standard thresholds. Renamed from `overall_tier` to disambiguate
+          from triage/escalation `_tier` columns elsewhere in the marts (e.g.,
+          `fct_support_tickets.tech_tier`).
+
+      - name: notes
+        data_type: string
+        description: >-
+          Free-text observation notes (magic notes or shared notes).
+
+      - name: observed_timestamp
+        data_type: timestamp
+        description: >-
+          UTC timestamp when the observation was conducted.
+
+      - name: positive_feedback
+        data_type: string
+        description: >-
+          Pipe-delimited list of positive feedback items (strengths) recorded
+          during the observation.
+
+      - name: growth_areas
+        data_type: string
+        description: >-
+          Pipe-delimited list of growth areas (improvements needed) recorded
+          during the observation.
+
+      - name: is_locked
+        data_type: boolean
+        description: >-
+          TRUE if the observation has been locked and cannot be edited.
