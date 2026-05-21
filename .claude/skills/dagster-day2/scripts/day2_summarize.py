@@ -78,6 +78,8 @@ def main() -> int:
     s13 = data.get("step_13_oom_metrics", {})
     s14 = data.get("step_14_queued_runs", {})
     s15 = data.get("step_15_backfills", {})
+    s16 = data.get("step_16_asset_checks", {})
+    s17 = data.get("step_17_degraded_assets", {})
 
     sensor_fail_total = sum(
         sensor.get("failureCount", 0)
@@ -119,6 +121,15 @@ def main() -> int:
     print(f"step_14 queued:      stuck={s14.get('stuckCount')}")
     print(
         f"step_15 backfills:   requested={_len(s15.get('requested'))} failed={_len(s15.get('failed'))}"
+    )
+    print(
+        f"step_16 checks:      total={s16.get('totalChecks')} failed={s16.get('failedCount')}"
+        f"  (inWindow err={_len(s16.get('inWindow_error'))} warn={_len(s16.get('inWindow_warn'))};"
+        f" stale err={_len(s16.get('stale_error'))} warn={_len(s16.get('stale_warn'))})"
+    )
+    print(
+        f"step_17 degraded:    total={s17.get('totalAssets')} degraded={s17.get('degradedCount')}"
+        f"  across {_len(s17.get('byRun'))} failing runs"
     )
     print()
     if errored:
@@ -228,6 +239,53 @@ def _print_details(data: dict) -> None:
         )
         for b in failed:
             print(f"  failed: {_trunc(b, 240)}")
+
+    s16 = data.get("step_16_asset_checks", {})
+    if isinstance(s16, dict) and "error" not in s16:
+        total = (
+            len(s16.get("inWindow_error") or [])
+            + len(s16.get("inWindow_warn") or [])
+            + len(s16.get("stale_error") or [])
+            + len(s16.get("stale_warn") or [])
+        )
+        if total:
+            print(f"\n[step_16] failed asset checks ({total}):")
+            for label in (
+                "inWindow_error",
+                "inWindow_warn",
+                "stale_error",
+                "stale_warn",
+            ):
+                items = s16.get(label) or []
+                if not items:
+                    continue
+                print(f"  [{label}] ({len(items)}):")
+                for x in items:
+                    print(
+                        f"    {x.get('asset')}/{_trunc(x.get('check'), 80)}"
+                        f"  status={x.get('status')} sev={x.get('severity')} ts={x.get('timestamp')}"
+                    )
+                    md = x.get("metadata")
+                    if md:
+                        print(f"      meta: {_trunc(md, 240)}")
+
+    s17 = data.get("step_17_degraded_assets", {})
+    if isinstance(s17, dict) and "error" not in s17:
+        by_run = s17.get("byRun") or []
+        if by_run:
+            print(
+                f"\n[step_17] degraded assets ({s17.get('degradedCount')}) "
+                f"across {len(by_run)} failing runs:"
+            )
+            for entry in by_run:
+                rid = (entry.get("runId") or "?")[:8]
+                print(
+                    f"  run={rid} endTime={entry.get('endTime')} count={entry.get('count')}"
+                )
+                for a in (entry.get("assets") or [])[:5]:
+                    print(f"    - {a}")
+                if entry.get("count", 0) > 5:
+                    print(f"    ... +{entry['count'] - 5} more")
 
 
 if __name__ == "__main__":

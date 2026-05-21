@@ -40,9 +40,27 @@ Output shape:
   "step_12_error_groups":{"groups": [{"groupId":..., "exception":..., "affectedServices":[{"service":...,"version":"<pod>"}], "exceptionLine":"<bottom-of-traceback or null>", "correlatedPodEvent":{"reason":"Preempted|Evicted|OOMKilling", "timestamp":..., "podName":...} | null, "category":"sigterm_during_import|preemption_artifact|unclassified"}], "buckets": {"inWindow":[], "staleOpen":[]}},
   "step_13_oom_metrics": {"oomRuns": [...], "skipped": bool},
   "step_14_queued_runs": {"runs": [...], "stuckCount": N},
-  "step_15_backfills":   {"requested": [...], "failed": [...]}
+  "step_15_backfills":   {"requested": [...], "failed": [...]},
+  "step_16_asset_checks":{"totalChecks": N, "failedCount": N, "inWindow_error": [...], "inWindow_warn": [...], "stale_error": [...], "stale_warn": [...]},
+  "step_17_degraded_assets":{"totalAssets": N, "degradedCount": N, "degraded": [{"asset":..., "latestRunId":..., "latestRunEndTime":...}], "byRun": [{"runId":..., "endTime":..., "count":N, "assets":[...]}]}
 }
 ```
+
+Each step 16 entry:
+`{asset, check, status: "FAILED"|"EXECUTION_FAILED", severity: "ERROR"|"WARN"|"UNKNOWN", timestamp, runId, description, metadata}`.
+WARN-severity FAILED checks include the `avro_schema_valid` checks that warn on
+vendor schema drift; their `metadata` field carries the comma-separated `extras`
+list. EXECUTION_FAILED checks have no evaluation (the check itself crashed) and
+are bucketed alongside ERRORs because they need human triage.
+
+Step 17 (`degraded assets`) uses `latestRun.status == "FAILURE"`. **Caveat: dbt
+run failures are run-level, not step-level** — an asset whose own
+materialization step succeeded mid-run can still be flagged here because the
+overall run failed. Use the `byRun` grouping to identify the actual failing run,
+then cross-reference `step_01_failed_runs.failures` for the run-level root
+cause. Step-level recovery (e.g. auto-mat retry within minutes) leaves the prior
+run's overall status as FAILURE, so a "degraded" asset whose last-mat timestamp
+is later than its `latestRunEndTime` was actually recovered — read both fields.
 
 Per-step error: if a step fails, its key holds `{"error": "..."}` instead of the
 normal payload. Other steps still complete. Re-run the script if a key finding
@@ -56,10 +74,33 @@ reclassify based on cross-signal context — see the reclassify table below.
 
 ## Phase 2: Correlate and report
 
-Run [`scripts/day2_summarize.py`](scripts/day2_summarize.py) with `--details` to
+**Required: Run the `superpowers:systematic-debugging` skill before drawing
+conclusions.** Phase 1 surfaces signals; Phase 2 must reach root cause, not stop
+at symptoms. For every distinct failure cluster you propose in the report:
+
+1. **Root-cause investigation** — read errors completely, trace data flow
+   backward to the source, verify against current code/data (issue bodies and
+   prior session findings drift). State the hypothesis explicitly and test the
+   smallest possible reproduction before writing it up.
+2. **Pattern analysis** — find working examples in the same codebase; list every
+   difference, however small. "Same shape as last week" without verification is
+   rationalizing.
+3. **Hypothesis & evidence** — name what you believe, name the evidence, call
+   out what you can't verify. If the evidence chain has a gap, say so instead of
+   papering over it.
+4. **Tooling caveats first-class** — the collector's queries are proxies, not
+   ground truth. Verify before reporting:
+   - Step 17 `latestRun.status` is RUN-level, not step-level (caveat above).
+   - Step 16 reflects the CURRENT workspace's checks; renamed/removed checks
+     stop appearing (their prior FAILED state is no longer the truth).
+   - Step 04 freshness flags policy presence, not violation state.
+
+After investigation, run
+[`scripts/day2_summarize.py`](scripts/day2_summarize.py) with `--details` to
 print per-step counts, the error gate, and the failure / retry / GKE event /
-error-group dump in one call. Drop `--details` for the gate alone; fall back to
-reading `.claude/scratch/day2.json` directly for fields the dump omits.
+error-group / asset-check / degraded-asset dump in one call. Drop `--details`
+for the gate alone; fall back to reading `.claude/scratch/day2.json` directly
+for fields the dump omits.
 
 ```bash
 uv run .claude/skills/dagster-day2/scripts/day2_summarize.py --details   # gate + details
@@ -274,6 +315,34 @@ helper was in-flight. Before proposing a fix to a file, confirm the file itself
 emits ERROR-level logs for this path (read the source — not just that it appears
 in the stack). Retry-wrapped helpers in `teamster/CLAUDE.md` log at WARNING and
 do NOT file groups; stack frames through them are incidental.
+
+**Asset checks (step 16) integration**:
+
+- **`inWindow_error`** entries → Timeline (and Impact if they correspond to a
+  blocked run). These are blocking data-quality failures.
+- **`inWindow_warn`** entries → Emerging Issues, grouped by check name. The
+  `avro_schema_valid` checks belong here — surface the affected asset list and
+  the `extras` metadata; recommend either schema update (real new fields) or
+  allowlist (vendor positional fillers).
+- **`stale_error` / `stale_warn`** entries → Emerging Issues, labeled stale with
+  last-run timestamp. Treat the same way you'd treat a stale error group:
+  cleanup candidate, not active incident.
+- Always reconcile against `step_01_failed_runs`: an ERROR-severity check FAILED
+  in-window is usually the same event as a failed run. Fold into the existing
+  timeline entry rather than double-reporting.
+
+**Degraded assets (step 17) integration**:
+
+- Surface the **`byRun` aggregation**, not the flat `degraded` list — one
+  failing run typically marks 5–15 downstream assets as degraded; reporting
+  per-asset overcounts the incident.
+- **Verify each cluster is real before listing it.** For each `byRun` entry,
+  read the run's actual failures from `step_01` — the run-level FAILURE may be
+  due to a single failing model while every other selected model in the same run
+  materialized successfully. In that case the "degraded" assets except the
+  genuinely-failed one are noise.
+- Clusters with `endTime` older than the day-2 window are stale candidates; they
+  belong in Emerging Issues, not Impact.
 
 **Actions**: No action (transient + retry success), Monitor
 (recurring/emerging), Investigate (retry failure), Escalate (sustained platform
