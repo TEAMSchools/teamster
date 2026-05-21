@@ -2,9 +2,9 @@
 name: dagster-day2
 disable-model-invocation: true
 description: >-
-  Dagster platform health, run failures, GKE events, tick errors, overnight
-  issues. Triggers: "what broke", "cluster healthy", "why did runs fail", "check
-  production", or any production status question.
+  Diagnose Dagster overnight health: gather Dagster GraphQL, GCP audit, and GKE
+  signals into one artifact, then reach root cause via the systematic-debugging
+  skill. Outputs a structured incident report.
 ---
 
 # Day-2 Operations Check
@@ -74,26 +74,16 @@ reclassify based on cross-signal context — see the reclassify table below.
 
 ## Phase 2: Correlate and report
 
-**Required: Run the `superpowers:systematic-debugging` skill before drawing
+**Required: invoke `superpowers:systematic-debugging` before drawing
 conclusions.** Phase 1 surfaces signals; Phase 2 must reach root cause, not stop
-at symptoms. For every distinct failure cluster you propose in the report:
+at symptoms.
 
-1. **Root-cause investigation** — read errors completely, trace data flow
-   backward to the source, verify against current code/data (issue bodies and
-   prior session findings drift). State the hypothesis explicitly and test the
-   smallest possible reproduction before writing it up.
-2. **Pattern analysis** — find working examples in the same codebase; list every
-   difference, however small. "Same shape as last week" without verification is
-   rationalizing.
-3. **Hypothesis & evidence** — name what you believe, name the evidence, call
-   out what you can't verify. If the evidence chain has a gap, say so instead of
-   papering over it.
-4. **Tooling caveats first-class** — the collector's queries are proxies, not
-   ground truth. Verify before reporting:
-   - Step 17 `latestRun.status` is RUN-level, not step-level (caveat above).
-   - Step 16 reflects the CURRENT workspace's checks; renamed/removed checks
-     stop appearing (their prior FAILED state is no longer the truth).
-   - Step 04 freshness flags policy presence, not violation state.
+The collector's queries are proxies, not ground truth — verify before reporting:
+
+- Step 17 `latestRun.status` is RUN-level, not step-level (caveat at top).
+- Step 16 reflects the CURRENT workspace's checks; renamed/removed checks stop
+  appearing (their prior FAILED state is no longer the truth).
+- Step 04 freshness flags policy presence, not violation state.
 
 After investigation, run
 [`scripts/day2_summarize.py`](scripts/day2_summarize.py) with `--details` to
@@ -138,7 +128,8 @@ pod name and tags the event with `runId` + `runStatus`:
   and `errorClass`.
 - `runStatus: "UNKNOWN"` — runId is outside the window, or the pod name didn't
   match the `dagster-run-<uuid>-` pattern (e.g. `<location>-prod-*` code servers
-  — see Tick failure analysis step 5 for those).
+  — classify those via the GKE-event-type table in
+  [references/tick-failure-analysis.md](references/tick-failure-analysis.md)).
 
 To enumerate every pod attempt for a runId (useful when `runStatus: FAILURE` and
 you need to confirm which attempt was terminal): audit log
@@ -147,53 +138,12 @@ Dagster's `startTime` reflects execution start on the surviving pod — **not**
 initial enqueue or first scheduling attempt. Do not use it to back-calculate
 when K8s first tried to schedule.
 
-**Tick failure analysis**: For any location with >5 gRPC UNAVAILABLE tick
-failures, run this procedure before attributing a root cause:
-
-1. Sort failure ticks ascending, cluster by gap >120s.
-2. Count distinct gRPC IPs across the failure ticks. **Multiple distinct
-   ClusterIPs = agent-driven Service recreation.** The `dagster-cloud` agent's
-   `unique_resource_name()`
-   (`dagster_cloud/workspace/user_code_launcher/ utils.py`) uses a fresh
-   `uuid4().hex[:6]` suffix on every reconcile, so every Deployment+Service
-   recreate gets a new ClusterIP. Services are never updated in place — always
-   delete-old / create-new. This IS a major source of tick gaps independent of
-   preemption. Check the audit log
-   (`protoPayload.methodName="io.k8s.core.v1.services.create"` on
-   `dagster-cloud` namespace) to confirm and count recreations.
-3. Cross-reference deploy timestamps from location load history (step 3 data)
-   AND control-plane-driven reconciliations (any `update_timestamp` change
-   triggers Service recreate — code pushes, workspace refreshes, UI
-   interactions). Clusters aligned with a deploy/reconcile = Service recreation
-   (1-3 ticks per recreate, bounded by code server startup p95 ~22s).
-4. For remaining clusters: query GKE pod events for `<location>-prod-*` pods in
-   the failure window (`mcp__gke__query_logs`, reason includes Preempted,
-   Evicted, OOMKilling, Killing).
-5. Classify by GKE event type:
-   - **Preempted** "by pod \<uuid\>": priority preemption by run/step pods. In
-     this codebase, code server pods run at priority 0 and run/step pods run at
-     priority 1000 (`dagster-run` PriorityClass in
-     `.k8s/dagster/values-override.yaml`) BY DESIGN — preempting code servers to
-     free capacity for runs is intentional. Routine preemption is expected, not
-     an escalation. Only escalate if: (a) preemption rate is
-     sustained >>1/location/hour, (b) no correlation with run/step pod
-     scheduling, or (c) code server pods are being preempted while run/step pods
-     are idle. Check for hourly pattern (>50% in first 5 min of hour =
-     schedule-triggered bursts). PDB is bypassed for priority preemption.
-   - **Evicted** "low on resource: memory": node memory pressure. Monitor.
-   - **OOMKilling**: container OOM (pod survives, container restarts).
-     Investigate memory requests.
-   - **Killing** without Preempted/Evicted: agent cleanup or deploy rollover.
-
-Note: if no GKE pod events correlate with tick failures AND only a single gRPC
-IP appears, consider health check starvation — long sensor evals blocking gRPC
-threads. Diagnose: agent logs "failed a health check … 300 seconds" +
-SuccessfulCreate frequency.
-
-Rule of thumb: count Service recreations vs. pod preemptions in the window. If
-recreations >> preemptions, Service churn is the dominant cause and no amount of
-preemption mitigation (anti-affinity, priority tuning) will help — the fix is
-agent-side (reducing reconciliation rate or upstream deterministic naming).
+**Tick failure analysis** (>5 gRPC UNAVAILABLE per location in the window): see
+[references/tick-failure-analysis.md](references/tick-failure-analysis.md) for
+the Service-recreation vs preemption disambiguation procedure. Don't attribute
+root cause until you've worked through that procedure — Service churn and pod
+preemption look identical from the tick log alone, but imply different fixes
+(agent-side vs cluster-side).
 
 **Agent topology**: Steady state matches the `dagsterCloudAgent.replicas`
 setting (currently 1 in `.k8s/dagster/values-override.yaml`). Flag deviations.
@@ -264,57 +214,15 @@ outages, agent errors → tick failures, daemon issues → tick/run impacts, ale
 runs and backfills if present.
 
 **Emerging issues**: Error groups not yet causing failures but increasing. Omit
-only when BOTH `inWindow` and `staleOpen` are empty — a staleOpen entry alone is
-still grounds to include the section. For step 12, split the Emerging Issues
-section into two subsections:
+the section only when BOTH `inWindow` and `staleOpen` are empty — a `staleOpen`
+entry alone is still grounds to include it.
 
-- **In-window groups** (step 12 `inWindow`): groups that surfaced during the
-  day-2 window. **First, check `category` + `correlatedPodEvent` (auto-resolved
-  by the collector):**
-  - `category: "sigterm_during_import"` with a `correlatedPodEvent` → the group
-    is a SIGTERM-mid-import artifact of code-server preemption (the by-design
-    priority-tier behavior in `.k8s/CLAUDE.md`). Do NOT include in Emerging
-    Issues. Emit a single Actions row:
-    `Mute | Error group <id> (SIGTERM during import, <count> hits)`. The
-    traceback's deepest project-code frame names whichever module was importing
-    when SIGTERM arrived (pathlib, pydantic, fldoe.schema, etc.) — that file is
-    NOT the emitter; it was just in-flight when the signal arrived.
-  - `category: "preemption_artifact"` → correlated to a preemption/eviction
-    event but exception class is not a known SIGTERM type. Investigate
-    `exceptionLine` before recommending action.
-  - `category: "unclassified"` (no correlated pod event) → genuine emerging
-    issue. Proceed with dedupe below.
-
-  **Dedupe remaining (uncorrelated) groups against the timeline:** each group's
-  `affectedServices[].version` is a pod name. Query GCP logs for ERROR-severity
-  entries on that pod within the group's lastSeenTime window and extract the
-  `k8s-pod/dagster/run-id` label. If that runId is a failed run already listed
-  in the timeline (step 1), mark the group "same event as run X" and fold it
-  INTO the existing timeline entry instead of reporting it as a separate
-  finding. Only groups with NO matching run are standalone emerging issues. For
-  remaining (non-deduped) groups: if the stack trace matches a retry-recovered
-  run, it is likely a false-positive from a retry-wrapped helper (see
-  teamster/CLAUDE.md). Recommend changing the helper's log level in that case.
-
-  **Use `exceptionLine`, not `exception`, for triage.** The `exception` field is
-  the 300-char truncated header that Error Reporting groups by — often just the
-  entry-point line (`Traceback... sys.exit(main())`). The collector resolves the
-  bottom-of-traceback class into `exceptionLine` via a pod-log query; that is
-  the real exception class.
-
-- **Stale open groups** (step 12 `staleOpen`): OPEN groups last-seen before the
-  window. Treat as cleanup candidates. Note the last-seen date and whether the
-  stack matches a retry-wrapped helper. These do not belong in the timeline.
-
-When attributing an error group to a file, identify what is logging at ERROR
-severity — GCP Error Reporting fires on ERROR logs, not on stack frames. A
-traceback that passes through a file does NOT mean that file is the emitter.
-`SIGTERM` during run preemption unwinds the stack through wherever execution was
-when the signal arrived, so the top frames of the traceback will name whatever
-helper was in-flight. Before proposing a fix to a file, confirm the file itself
-emits ERROR-level logs for this path (read the source — not just that it appears
-in the stack). Retry-wrapped helpers in `teamster/CLAUDE.md` log at WARNING and
-do NOT file groups; stack frames through them are incidental.
+If any step 12 `inWindow` entries exist, read
+[references/error-group-triage.md](references/error-group-triage.md) before
+writing the section. Three categories (`sigterm_during_import`,
+`preemption_artifact`, `unclassified`) need different treatment, including
+auto-mute and timeline-dedupe rules. `staleOpen` entries are cleanup candidates
+— list them with last-seen date.
 
 **Asset checks (step 16) integration**:
 
@@ -390,6 +298,10 @@ symptom — not an agent or K8s-API symptom.
 ## Appendix: Targeted investigations (skip full skill)
 
 ### Specific agent ID query (not general health)
+
+Single agent showing errors in the UI but no broader symptoms? The UI alone
+isn't enough to conclude no impact — the agent may have already recovered, or
+the impact may be visible only in run-side signals.
 
 1. `get_cloud_agents(agent_id="<id>", errors_after=<epoch>)`
 2. `list_runs(statuses=["FAILURE"])` ±30 min around error
