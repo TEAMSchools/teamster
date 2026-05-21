@@ -50,6 +50,7 @@ with
         group by student_number, _dbt_source_project, eligibility_name, island_id
     ),
 
+    -- trunk-ignore(sqlfluff/ST03): referenced via dbt_utils.deduplicate above
     pm_recent as (
         {{
             dbt_utils.deduplicate(

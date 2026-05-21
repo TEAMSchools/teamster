@@ -53,7 +53,9 @@ with
             {{ ref("stg_powerschool__studentcorefields") }} as scf
             on enr.students_dcid = scf.studentsdcid
             and {{ union_dataset_join_clause(left_alias="enr", right_alias="scf") }}
-        where enr.region in ('Paterson', 'Miami') and scf.lep_status is true
+        -- Miami only: Paterson is already covered by stg_powerschool__s_nj_stu_x
+        -- (NJ leg). Including Paterson here double-counts ELL spans.
+        where enr.region = 'Miami' and scf.lep_status is true
         group by enr.student_number, enr._dbt_source_project
     ),
 

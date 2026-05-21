@@ -77,12 +77,19 @@ models:
           - not_null
       - name: is_ell
         data_type: boolean
-        description: True when the student is classified ELL for this span.
+        description: >-
+          True for every emitted row. The dim is inclusion-based — rows exist
+          only for `(student × source × span)` combinations where the student is
+          classified ELL. Consumers default to `false` when no row covers the
+          target date.
         data_tests:
           - not_null
       - name: _dbt_source_project
         data_type: string
-        description: Source-project discriminator (see Task 1).
+        description: >-
+          Source-project discriminator (e.g. `kippnewark`, `kippcamden`,
+          `kippmiami`, `kipppaterson`) — required because students may move
+          between districts and have parallel status spans per source.
     data_tests:
       - dbt_utils.unique_combination_of_columns:
           arguments:

@@ -13,3 +13,27 @@ data_tests:
         dagster:
           ref:
             name: base_powerschool__course_enrollments
+
+  - name: dim_iep_status__no_overlapping_spans
+    description: >-
+      Within a `(student_key, _dbt_source_project)` partition, consecutive IEP
+      status spans must not overlap. A `lead(effective_date_start_key)` value
+      less than or equal to the current row's `effective_date_end_key` indicates
+      two simultaneously-active classifications for the same student in the same
+      source — most often caused by EdPlan emitting two snapshot rows with
+      overlapping date ranges and different `spedlep` values.
+
+  - name: dim_ell_status__no_overlapping_spans
+    description: >-
+      Within a `(student_key, _dbt_source_project)` partition, consecutive ELL
+      status spans must not overlap. Every emitted row implies `is_ell = true`;
+      overlapping spans indicate a single source emitted two simultaneous LEP
+      windows for the same student — typically the primary `lepbegindate` and a
+      secondary `lepbegindate2` with overlapping ranges.
+
+  - name: dim_meal_eligibility_status__no_overlapping_spans
+    description: >-
+      Within a `(student_key, _dbt_source_project)` partition, consecutive
+      meal-eligibility spans must not overlap. Surfaces students whose Titan
+      annual eligibility window straddles the academic-year boundary (current
+      year extends past Sept 30, next year begins before Aug 1).
