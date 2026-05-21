@@ -201,24 +201,12 @@ select
     cast(admin5_sat_math_test as numeric) as admin5_sat_math_test,
     cast(admin6_sat_math_test as numeric) as admin6_sat_math_test,
 
-    cast(
-        coalesce(latest_record_locator, latest_registration_num) as int
-    ) as admin1_record_locator,
-    cast(
-        coalesce(admin2_record_locator, admin2_registration_num) as int
-    ) as admin2_record_locator,
-    cast(
-        coalesce(admin3_record_locator, admin3_registration_num) as int
-    ) as admin3_record_locator,
-    cast(
-        coalesce(admin4_record_locator, admin4_registration_num) as int
-    ) as admin4_record_locator,
-    cast(
-        coalesce(admin5_record_locator, admin5_registration_num) as int
-    ) as admin5_record_locator,
-    cast(
-        coalesce(admin6_record_locator, admin6_registration_num) as int
-    ) as admin6_record_locator,
+    coalesce(latest_record_locator, latest_registration_num) as admin1_record_locator,
+    coalesce(admin2_record_locator, admin2_registration_num) as admin2_record_locator,
+    coalesce(admin3_record_locator, admin3_registration_num) as admin3_record_locator,
+    coalesce(admin4_record_locator, admin4_registration_num) as admin4_record_locator,
+    coalesce(admin5_record_locator, admin5_registration_num) as admin5_record_locator,
+    coalesce(admin6_record_locator, admin6_registration_num) as admin6_record_locator,
 
     case
         when college_reportable = 'N'

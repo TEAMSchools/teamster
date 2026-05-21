@@ -6,7 +6,7 @@ models:
       - dbt_utils.unique_combination_of_columns:
           arguments:
             combination_of_columns:
-              - powerschool_student_number
+              - cb_id
               - latest_psat_date
               - score_type
           config:
@@ -16,6 +16,10 @@ models:
         data_type: int64
       - name: powerschool_student_number
         data_type: int64
+        data_tests:
+          - not_null:
+              config:
+                severity: warn
       - name: academic_year
         data_type: int64
       - name: administration_round
