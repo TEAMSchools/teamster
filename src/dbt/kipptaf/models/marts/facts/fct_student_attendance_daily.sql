@@ -158,7 +158,7 @@ select
 
     attendance_category,
 
-    if(_running_ada is null, null, _running_ada <= 0.90) as is_chronically_absent,
+    if(_running_ada is null, null, _running_ada < 0.90) as is_chronically_absent,
 
     case
         when _running_ada is null

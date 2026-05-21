@@ -231,8 +231,8 @@ models:
       - name: is_chronically_absent
         data_type: boolean
         description: >-
-          TRUE if the student's cumulative ADA through this date is at or below
-          90%. Running average of attendance_value on full membership days only
+          TRUE if the student's cumulative ADA through this date is below 90%.
+          Running average of attendance_value on full membership days only
           (membership_value = 1), partitioned by student × academic year
           (cross-school), ordered by date. Point-in-time — filter to a single
           date to get YTD CA status as of that date. Filtering to a date range

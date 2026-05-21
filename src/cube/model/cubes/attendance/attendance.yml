@@ -187,9 +187,9 @@ cubes:
 
       - name: is_chronically_absent
         description: >-
-          TRUE if the student's cumulative ADA through this date is at or below
-          90%. Computed on full membership days only (membership_value = 1).
-          Filter to a single date to get YTD CA status as of that date.
+          TRUE if the student's cumulative ADA through this date is below 90%.
+          Computed on full membership days only (membership_value = 1). Filter
+          to a single date to get YTD CA status as of that date.
         sql: is_chronically_absent
         type: boolean
         public: true
@@ -347,7 +347,7 @@ cubes:
 
       - name: count_chronically_absent
         description: >-
-          Students with cumulative ADA ≤ 90% as of the snapshot date. Always use
+          Students with cumulative ADA < 90% as of the snapshot date. Always use
           exactly one of the two CA query patterns — never omit both.
 
           Year-end / year-over-year: filter is_latest_record = true and group by
