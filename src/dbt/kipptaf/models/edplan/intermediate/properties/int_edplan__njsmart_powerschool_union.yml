@@ -64,6 +64,5 @@ models:
       - name: _dbt_source_project
         description: >-
           Source-project discriminator (e.g. `kippnewark`, `kippcamden`)
-          extracted from `_dbt_source_relation`. Materialized here per #3142 so
-          consumers can join and hash on the canonical value rather than
-          re-running the regexp.
+          extracted from `_dbt_source_relation`. Materialized at the union point
+          so downstream consumers can join and hash on a stable value.
