@@ -1,0 +1,111 @@
+models:
+  - name: dim_meal_eligibility_status
+    description: >-
+      SCD2 dimension capturing meal-eligibility (NSLP) status spans per student.
+      Newark + Camden draw from Titan with native effective dates; Paterson +
+      Miami carry a single current-state span using the most recent
+      `lunch_status` value from enrollment, anchored to the student's earliest
+      enrollment.
+    config:
+      meta:
+        dagster:
+          group: marts
+          asset_key:
+            - kipptaf
+            - marts
+            - dim_meal_eligibility_status
+    constraints:
+      - type: primary_key
+        columns: [meal_eligibility_status_key]
+        warn_unsupported: false
+      - type: foreign_key
+        columns: [student_key]
+        expression: ref('dim_students')
+        to_columns: [student_key]
+        warn_unsupported: false
+      - type: foreign_key
+        columns: [effective_date_start_key]
+        expression: ref('dim_dates')
+        to_columns: [date_key]
+        warn_unsupported: false
+      - type: foreign_key
+        columns: [effective_date_end_key]
+        expression: ref('dim_dates')
+        to_columns: [date_key]
+        warn_unsupported: false
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns:
+              - student_key
+              - _dbt_source_project
+              - effective_date_start_key
+    columns:
+      - name: meal_eligibility_status_key
+        data_type: string
+        description: Surrogate primary key.
+        data_tests:
+          - unique
+          - not_null
+
+      - name: student_key
+        data_type: string
+        description: Foreign key to `dim_students.student_key`.
+        data_tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('dim_students')
+                field: student_key
+
+      - name: effective_date_start_key
+        data_type: date
+        description: First date this span is valid for the student.
+        data_tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('dim_dates')
+                field: date_key
+
+      - name: effective_date_end_key
+        data_type: date
+        description: >-
+          Last date this span is valid (inclusive); `'9999-12-31'` for the
+          currently-active span.
+        data_tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('dim_dates')
+                field: date_key
+
+      - name: is_current
+        data_type: boolean
+        description: >-
+          Convenience flag — true when `effective_date_end_key = '9999-12-31'`.
+        data_tests:
+          - not_null
+
+      - name: is_meal_eligible
+        data_type: boolean
+        description: >-
+          True when `meal_eligibility` indicates Free (`F`), Reduced (`R`), or
+          Direct Certification (`FDC`). Paid (`P`) and Unknown resolve to false.
+        data_tests:
+          - not_null
+
+      - name: _dbt_source_project
+        data_type: string
+        description: >-
+          Source-project discriminator (e.g. `kippnewark`, `kippcamden`,
+          `kippmiami`, `kipppaterson`) — required because students may move
+          between districts and have parallel status spans per source.
+
+      - name: meal_eligibility
+        data_type: string
+        description: >-
+          Meal-eligibility classification code. Titan-sourced single-letter
+          codes for Newark + Camden (`F` / `R` / `P`); raw `lunch_status` from
+          PowerSchool for Paterson + Miami (`F` / `R` / `P` / `FDC`). NULLs are
+          coalesced to `Unknown`.
