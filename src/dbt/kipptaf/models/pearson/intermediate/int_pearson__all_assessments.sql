@@ -33,6 +33,7 @@ with
                     "subject",
                     "testcode",
                     "studenttestuuid",
+                    "testscorecomplete",
                     "test_grade",
                     "testperformancelevel_text",
                     "testperformancelevel",
@@ -68,6 +69,7 @@ select
     u.testperformancelevel_text,
     u.testperformancelevel,
     u.testscalescore,
+    u.testscorecomplete,
     u.twoormoreraces,
     u.white,
 

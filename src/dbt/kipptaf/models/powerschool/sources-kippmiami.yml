@@ -1,10 +1,8 @@
 sources:
   - name: kippmiami_powerschool
-    schema: |
-      {%- if target.name == 'staging' -%}z_dev_
-      {%- elif env_var('DBT_CLOUD_ENVIRONMENT_TYPE', '') == 'staging' -%}z_dev_
-      {%- elif env_var('GITHUB_USER', '') != '' -%}zz_{{ env_var('GITHUB_USER') }}_
-      {%- endif -%}kippmiami_powerschool
+    schema:
+      "{%- if target.name == 'dev' -%}zz_{{ env_var('GITHUB_USER', 'dev') }}_{%-
+      endif -%}kippmiami_powerschool"
     tables:
       - name: stg_powerschool__assignmentcategoryassoc
         config:

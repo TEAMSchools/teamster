@@ -1,0 +1,64 @@
+models:
+  - name: bridge_assessment_expectations_student_scoped
+    description: |
+      Bridges internal assessment expectations that cannot be attributed to
+      a student section enrollment to their student and assessment
+      administration. Covers two classes: replacement assessments (which
+      have no enrollment by definition) and ES Writing in grades K-4
+      Newark/Camden (where no PowerSchool course-enrollment row exists for
+      the writing program). Rows whose expectations can be attributed to a
+      section enrollment live in `bridge_assessment_expectations_enrollment_scoped`.
+    columns:
+      - name: assessment_expectation_key
+        data_type: string
+        description: Surrogate key. Primary key.
+        constraints:
+          - type: primary_key
+            warn_unsupported: false
+        data_tests:
+          - unique
+          - not_null
+
+      - name: student_key
+        data_type: string
+        description: FK to dim_students.
+        constraints:
+          - type: foreign_key
+            to: ref('dim_students')
+            to_columns: [student_key]
+            warn_unsupported: false
+        data_tests:
+          - relationships:
+              arguments:
+                to: ref('dim_students')
+                field: student_key
+
+      - name: assessment_administration_key
+        data_type: string
+        description: FK to dim_assessment_administrations.
+        constraints:
+          - type: foreign_key
+            to: ref('dim_assessment_administrations')
+            to_columns: [assessment_administration_key]
+            warn_unsupported: false
+        data_tests:
+          - relationships:
+              arguments:
+                to: ref('dim_assessment_administrations')
+                field: assessment_administration_key
+
+      - name: term_key
+        data_type: string
+        description: >-
+          FK to dim_terms. Resolves via (region x administered_date x school)
+          against the reporting terms sheet.
+        constraints:
+          - type: foreign_key
+            to: ref('dim_terms')
+            to_columns: [term_key]
+            warn_unsupported: false
+        data_tests:
+          - relationships:
+              arguments:
+                to: ref('dim_terms')
+                field: term_key

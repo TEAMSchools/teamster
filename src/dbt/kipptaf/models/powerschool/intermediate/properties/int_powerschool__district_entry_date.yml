@@ -7,12 +7,47 @@ models:
         data_type: string
       - name: studentid
         data_type: int64
+        description:
+          The internal number and ID of the associated Students record.
+        config:
+          meta:
+            source_system: PowerSchool
+            source_model: stg_powerschool__storedgrades
+            source_column: studentid
+            column_role: foreign_key
       - name: entrydate
         data_type: date
+        description:
+          The date the student enrolled in school for the current enrollment.
+          Indexed.
+        config:
+          meta:
+            source_system: PowerSchool
+            source_model: stg_powerschool__students
+            source_column: entrydate
       - name: exitdate
         data_type: date
+        description:
+          The date the student exited for the current/last enrollment. This is
+          the day after a student-attended class. For example, if the last day
+          the student is in school is a Wednesday, Thursdayis the exit day.
+          Indexed.
+        config:
+          meta:
+            source_system: PowerSchool
+            source_model: stg_powerschool__students
+            source_column: exitdate
       - name: entrycode
         data_type: string
+        description:
+          The code representing how or why the student entered school. These
+          codes are stored in Gen Table [6] cat=entrycodes. These are set in
+          school setup.
+        config:
+          meta:
+            source_system: PowerSchool
+            source_model: stg_powerschool__students
+            source_column: entrycode
       - name: exitcode_prev
         data_type: string
       - name: rn_entry

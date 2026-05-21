@@ -1,4 +1,4 @@
-from dagster import MAX_RUNTIME_SECONDS_TAG, ScheduleDefinition
+from dagster import ScheduleDefinition
 
 from teamster.code_locations.kippnewark import CODE_LOCATION, LOCAL_TIMEZONE
 from teamster.code_locations.kippnewark.powerschool.assets import (
@@ -26,7 +26,6 @@ powerschool_sis_asset_no_partition_job_schedule = ScheduleDefinition(
     target=[*powerschool_table_assets_nightly, *powerschool_table_assets_no_partition],
     cron_schedule="0 0 * * *",
     execution_timezone=str(LOCAL_TIMEZONE),
-    tags={MAX_RUNTIME_SECONDS_TAG: str(60 * 10)},
 )
 
 schedules = [

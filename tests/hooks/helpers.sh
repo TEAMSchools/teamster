@@ -176,7 +176,7 @@ check_output() {
   fi
   local input output
   input=$(jq -n --arg tn "${tool}" --arg c "${content_val}" \
-    '{tool_name: $tn, tool_output: {content: $c, stdout: $c, stderr: ""}}')
+    '{tool_name: $tn, tool_response: {content: $c, stdout: $c, stderr: ""}}')
 
   output=$(echo "${input}" | bash "${OUTPUT_HOOK}" 2>/dev/null)
 

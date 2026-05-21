@@ -678,6 +678,7 @@ class User(UserRef, Timestamp):
     pastUserTypes: str | None = None
     sibmeToken: str | None = None
     track: str | None = None
+    edFiStaffId: str | None = None
 
     defaultInformation: DefaultInformation | None = None
     pluConfig: PluConfig | None = None

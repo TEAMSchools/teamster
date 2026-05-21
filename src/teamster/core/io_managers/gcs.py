@@ -115,13 +115,17 @@ class AvroGCSIOManager(GCSUPathIOManager):
     def dump_to_path(self, context: OutputContext, obj: Any, path: UPath) -> None:
         bucket_obj: Bucket = self.bucket_obj
 
+        # trunk-ignore(bandit/B108): intentional /tmp/dagster transient dir
+        base_dir = UPath("/tmp/dagster") if self.test else UPath("env")
+
         records, schema = obj
-        local_path = "env" / path
+
+        local_path = base_dir / path
 
         if self.test:
             import json
 
-            test_path = "env/test" / path.with_suffix(".json")
+            test_path = base_dir / "test" / path.with_suffix(".json")
 
             test_path.parent.mkdir(parents=True, exist_ok=True)
             json.dump(obj=records, fp=test_path.open("w"))

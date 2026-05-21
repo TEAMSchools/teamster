@@ -11,17 +11,20 @@ from teamster.core.io_managers.gcs import GCSIOManager
 from teamster.libraries.deanslist.resources import DeansListResource
 from teamster.libraries.google.drive.resources import GoogleDriveResource
 from teamster.libraries.google.forms.resources import GoogleFormsResource
-from teamster.libraries.google.sheets.resources import GoogleSheetsResource
 from teamster.libraries.overgrad.resources import OvergradResource
 from teamster.libraries.powerschool.sis.odbc.resources import PowerSchoolODBCResource
 from teamster.libraries.ssh.resources import SSHResource
 from teamster.libraries.zendesk.resources import ZendeskResource
 
+# `DAGSTER_CLOUD_IS_BRANCH_DEPLOYMENT` is `"0"` in full deployments and `"1"` in
+# branch deployments — always compare to `"1"`, never truthy.
+IS_BRANCH_DEPLOYMENT = os.getenv("DAGSTER_CLOUD_IS_BRANCH_DEPLOYMENT") == "1"
+
 GCS_RESOURCE = GCSResource(project=GCS_PROJECT_NAME)
 
 
 def get_io_manager_gcs_pickle(code_location: str) -> GCSIOManager:
-    if os.getenv("DAGSTER_CLOUD_IS_BRANCH_DEPLOYMENT") == "1":
+    if IS_BRANCH_DEPLOYMENT:
         code_location = "test"
 
     return GCSIOManager(
@@ -29,8 +32,8 @@ def get_io_manager_gcs_pickle(code_location: str) -> GCSIOManager:
     )
 
 
-def get_io_manager_gcs_avro(code_location: str, test: bool = False) -> GCSIOManager:
-    if os.getenv("DAGSTER_CLOUD_IS_BRANCH_DEPLOYMENT") == "1":
+def get_io_manager_gcs_avro(code_location: str, *, test: bool = False) -> GCSIOManager:
+    if IS_BRANCH_DEPLOYMENT:
         code_location = "test"
         test = True
 
@@ -42,8 +45,8 @@ def get_io_manager_gcs_avro(code_location: str, test: bool = False) -> GCSIOMana
     )
 
 
-def get_io_manager_gcs_file(code_location: str, test: bool = False) -> GCSIOManager:
-    if os.getenv("DAGSTER_CLOUD_IS_BRANCH_DEPLOYMENT") == "1":
+def get_io_manager_gcs_file(code_location: str, *, test: bool = False) -> GCSIOManager:
+    if IS_BRANCH_DEPLOYMENT:
         code_location = "test"
         test = True
 
@@ -55,13 +58,10 @@ def get_io_manager_gcs_file(code_location: str, test: bool = False) -> GCSIOMana
     )
 
 
-def get_dbt_cli_resource(dbt_project: DbtProject, test: bool = False) -> DbtCliResource:
-    if test:
-        return DbtCliResource(
-            project_dir=dbt_project, dbt_executable="/workspaces/teamster/.venv/bin/dbt"
-        )
-    else:
-        return DbtCliResource(project_dir=dbt_project)
+def get_dbt_cli_resource(dbt_project: DbtProject) -> DbtCliResource:
+    if IS_BRANCH_DEPLOYMENT:
+        return DbtCliResource(project_dir=dbt_project, target="defer")
+    return DbtCliResource(project_dir=dbt_project)
 
 
 def get_powerschool_ssh_resource() -> SSHResource:
@@ -95,8 +95,6 @@ GOOGLE_DRIVE_RESOURCE = GoogleDriveResource()
 
 GOOGLE_FORMS_RESOURCE = GoogleFormsResource()
 
-GOOGLE_SHEETS_RESOURCE = GoogleSheetsResource()
-
 OVERGRAD_RESOURCE = OvergradResource(api_key=EnvVar("OVERGRAD_API_KEY"), page_limit=100)
 
 ZENDESK_RESOURCE = ZendeskResource(
@@ -117,6 +115,14 @@ SSH_EDPLAN = SSHResource(
     remote_port=22,
     username=EnvVar("EDPLAN_SFTP_USERNAME"),
     password=EnvVar("EDPLAN_SFTP_PASSWORD"),
+    # Upstream default is 10s. secureftp.easyiep.com TCP handshakes from GKE
+    # occasionally exceed that during peak periods, causing transient TimeoutError
+    # on connect. 30s tolerates those without masking a truly unreachable host.
+    timeout=30,
+    # secureftp.easyiep.com (GlobalSCAPE EFT 8.1) advertises only `ssh-rsa`
+    # (SHA-1 RSA) host keys. paramiko 5.0 dropped ssh-rsa from defaults; opt
+    # back in for this host only.
+    enable_legacy_rsa=True,
 )
 
 SSH_IREADY = SSHResource(

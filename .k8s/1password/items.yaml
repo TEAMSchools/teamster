@@ -226,6 +226,14 @@ spec:
 apiVersion: onepassword.com/v1
 kind: OnePasswordItem
 metadata:
+  name: op-lattice-sftp
+  namespace: dagster-cloud
+spec:
+  itemPath: vaults/Data Team/items/Lattice SFTP
+---
+apiVersion: onepassword.com/v1
+kind: OnePasswordItem
+metadata:
   name: op-littlesis-sftp
   namespace: dagster-cloud
 spec:
@@ -358,3 +366,11 @@ metadata:
   namespace: dagster-cloud
 spec:
   itemPath: vaults/Data Team/items/Amplify SFTP - Paterson
+---
+apiVersion: onepassword.com/v1
+kind: OnePasswordItem
+metadata:
+  name: op-focus-db-kippmiami
+  namespace: dagster-cloud
+spec:
+  itemPath: vaults/Data Team/items/Focus DB - Florida

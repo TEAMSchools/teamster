@@ -29,7 +29,6 @@ vars:
   renlearn_schema: kippnj_renlearn
   cloud_storage_uri_base: gs://teamster-kippnewark/dagster/kippnewark
   bigquery_external_connection_name: projects/teamster-332318/locations/us/connections/biglake-teamster-gcs
-  powerschool_external_location_root: gs://teamster-kippnewark/dagster/kippnewark/powerschool
 
 models:
   kippnewark:
@@ -131,10 +130,13 @@ models:
 
 sources:
   amplify:
-    amplify_mclass_api:
-      +enabled: false
-    amplify_dds:
-      +enabled: false
+    mclass:
+      api:
+        amplify_mclass_api:
+          +enabled: false
+    dds:
+      amplify_dds:
+        +enabled: false
   powerschool:
     sis:
       staging:

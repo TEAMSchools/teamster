@@ -7,30 +7,93 @@ models:
         data_type: string
       - name: surrogate_key
         data_type: string
+        description:
+          Hash of student_primary_id, school_year, pm_period, measure, and
+          probe_number.
+        config:
+          meta:
+            source_system: Amplify
+            source_model: stg_amplify__mclass__sftp__pm_student_summary_aimline
+            source_column: surrogate_key
+            column_role: primary_key
       - name: alternate_assessment
         data_type: string
       - name: approved_accommodations
         data_type: string
       - name: assessing_teacher_name
         data_type: string
+        description: Name of the teacher who administered the assessment.
+        config:
+          meta:
+            source_system: Amplify
+            source_model: stg_amplify__mclass__sftp__pm_student_summary_aimline
+            source_column: assessing_teacher_name
       - name: assessment_edition
         data_type: string
+        description: Assessment edition (e.g., 'DIBELS 8th Edition').
+        config:
+          meta:
+            source_system: Amplify
+            source_model: stg_amplify__mclass__sftp__pm_student_summary_aimline
+            source_column: assessment_edition
       - name: assessment
         data_type: string
+        description: Assessment name (e.g., 'mCLASS').
+        config:
+          meta:
+            source_system: Amplify
+            source_model: stg_amplify__mclass__sftp__pm_student_summary_aimline
+            source_column: assessment
       - name: classed
         data_type: string
       - name: date_of_birth
         data_type: string
+        description: Student date of birth.
+        config:
+          meta:
+            source_system: Amplify
+            source_model: stg_amplify__mclass__sftp__pm_student_summary_aimline
+            source_column: date_of_birth
       - name: disability
         data_type: string
+        description: Disability indicator.
+        config:
+          meta:
+            source_system: Amplify
+            source_model: stg_amplify__mclass__sftp__pm_student_summary_aimline
+            source_column: disability
       - name: district_name
         data_type: string
+        description: District name.
+        config:
+          meta:
+            source_system: Amplify
+            source_model: stg_amplify__mclass__sftp__pm_student_summary_aimline
+            source_column: district_name
       - name: district_primary_id
         data_type: string
+        description: District primary identifier.
+        config:
+          meta:
+            source_system: Amplify
+            source_model: stg_amplify__mclass__sftp__pm_student_summary_aimline
+            source_column: district_primary_id
       - name: economically_disadvantaged
         data_type: string
+        description: Economically disadvantaged indicator.
+        config:
+          meta:
+            source_system: Amplify
+            source_model: stg_amplify__mclass__sftp__pm_student_summary_aimline
+            source_column: economically_disadvantaged
       - name: ell_status
         data_type: string
+        description: English Language Learner status.
+        config:
+          meta:
+            source_system: Amplify
+            source_model: stg_amplify__mclass__sftp__pm_student_summary_aimline
+            source_column: ell_status
       - name: english_proficiency
         data_type: string
       - name: enrollment_date
@@ -39,18 +102,54 @@ models:
         data_type: string
       - name: gender
         data_type: string
+        description: Student gender.
+        config:
+          meta:
+            source_system: Amplify
+            source_model: stg_amplify__mclass__sftp__pm_student_summary_aimline
+            source_column: gender
       - name: hispanic_or_latino_ethnicity
         data_type: string
+        description: Hispanic or Latino ethnicity indicator.
+        config:
+          meta:
+            source_system: Amplify
+            source_model: stg_amplify__mclass__sftp__pm_student_summary_aimline
+            source_column: hispanic_or_latino_ethnicity
       - name: home_language
         data_type: string
+        description: Student home language.
+        config:
+          meta:
+            source_system: Amplify
+            source_model: stg_amplify__mclass__sftp__pm_student_summary_aimline
+            source_column: home_language
       - name: iep_status
         data_type: string
+        description: Individualized Education Program status.
+        config:
+          meta:
+            source_system: Amplify
+            source_model: stg_amplify__mclass__sftp__pm_student_summary_aimline
+            source_column: iep_status
       - name: internal_program
         data_type: string
       - name: meal_status
         data_type: string
+        description: Free/reduced meal status.
+        config:
+          meta:
+            source_system: Amplify
+            source_model: stg_amplify__mclass__sftp__pm_student_summary_aimline
+            source_column: meal_status
       - name: migrant
         data_type: string
+        description: Migrant status indicator.
+        config:
+          meta:
+            source_system: Amplify
+            source_model: stg_amplify__mclass__sftp__pm_student_summary_aimline
+            source_column: migrant
       - name: municipality_name
         data_type: string
       - name: municipality_primary_id
@@ -59,46 +158,134 @@ models:
         data_type: int64
       - name: race
         data_type: string
+        description: Student race.
+        config:
+          meta:
+            source_system: Amplify
+            source_model: stg_amplify__mclass__sftp__pm_student_summary_aimline
+            source_column: race
       - name: reporting_class_id
         data_type: string
       - name: reporting_class_name
         data_type: string
       - name: school_name
         data_type: string
+        description: School name.
+        config:
+          meta:
+            source_system: Amplify
+            source_model: stg_amplify__mclass__sftp__pm_student_summary_aimline
+            source_column: school_name
       - name: school_year
         data_type: string
+        description: School year range (e.g., '2025-2026').
+        config:
+          meta:
+            source_system: Amplify
+            source_model: stg_amplify__mclass__sftp__pm_student_summary_aimline
+            source_column: school_year
       - name: secondary_school_id
         data_type: string
       - name: section_504
         data_type: string
+        description: Section 504 plan indicator.
+        config:
+          meta:
+            source_system: Amplify
+            source_model: stg_amplify__mclass__sftp__pm_student_summary_aimline
+            source_column: section_504
       - name: special_education
         data_type: string
+        description: Special education status.
+        config:
+          meta:
+            source_system: Amplify
+            source_model: stg_amplify__mclass__sftp__pm_student_summary_aimline
+            source_column: special_education
       - name: specific_disability
         data_type: string
+        description: Specific disability category.
+        config:
+          meta:
+            source_system: Amplify
+            source_model: stg_amplify__mclass__sftp__pm_student_summary_aimline
+            source_column: specific_disability
       - name: state
         data_type: string
+        description: State abbreviation.
+        config:
+          meta:
+            source_system: Amplify
+            source_model: stg_amplify__mclass__sftp__pm_student_summary_aimline
+            source_column: state
       - name: student_first_name
         data_type: string
+        description: Student first name.
+        config:
+          meta:
+            source_system: Amplify
+            source_model: stg_amplify__mclass__sftp__pm_student_summary_aimline
+            source_column: student_first_name
       - name: student_id_district_id
         data_type: int64
       - name: student_id_state_id
         data_type: string
+        description:
+          First non-null of student_id_state_id, secondary_student_id_stateid.
       - name: student_last_name
         data_type: string
+        description: Student last name.
+        config:
+          meta:
+            source_system: Amplify
+            source_model: stg_amplify__mclass__sftp__pm_student_summary_aimline
+            source_column: student_last_name
       - name: student_middle_name
         data_type: string
       - name: student_primary_id
         data_type: int64
+        description: Student primary identifier (student number).
+        config:
+          meta:
+            source_system: Amplify
+            source_model: stg_amplify__mclass__sftp__pm_student_summary_aimline
+            source_column: student_primary_id
       - name: title_1
         data_type: string
       - name: measure
         data_type: string
+        description:
+          Expanded measure name with abbreviation (e.g., 'Reading Fluency
+          (ORF)'). Unmapped values pass through.
+        config:
+          meta:
+            source_system: Amplify
+            source_model: stg_amplify__mclass__sftp__pm_student_summary_aimline
+            source_column: measure
       - name: pm_period
         data_type: string
+        description: Progress monitoring period (e.g., 'BOY->MOY').
+        config:
+          meta:
+            source_system: Amplify
+            source_model: stg_amplify__mclass__sftp__pm_student_summary_aimline
+            source_column: pm_period
       - name: probe_number
         data_type: int64
+        description: Probe sequence number within the PM period.
+        config:
+          meta:
+            source_system: Amplify
+            source_model: stg_amplify__mclass__sftp__pm_student_summary_aimline
+            source_column: probe_number
       - name: total_number_of_probes
         data_type: int64
+        description: Total number of probes expected in the PM period.
+        config:
+          meta:
+            source_system: Amplify
+            source_model: stg_amplify__mclass__sftp__pm_student_summary_aimline
+            source_column: total_number_of_probes
       - name: _dagster_partition_fiscal_year
         data_type: int64
       - name: _dagster_partition_date
@@ -109,57 +296,186 @@ models:
         data_type: int64
       - name: sync_date
         data_type: date
+        description: Date the assessment data was synced.
+        config:
+          meta:
+            source_system: Amplify
+            source_model: stg_amplify__mclass__sftp__pm_student_summary_aimline
+            source_column: sync_date
       - name: assessing_teacher_staff_id
         data_type: string
+        description: Staff ID of the assessing teacher.
+        config:
+          meta:
+            source_system: Amplify
+            source_model: stg_amplify__mclass__sftp__pm_student_summary_aimline
+            source_column: assessing_teacher_staff_id
       - name: assessment_grade
         data_type: string
+        description: Grade level of the assessment administered.
+        config:
+          meta:
+            source_system: Amplify
+            source_model: stg_amplify__mclass__sftp__pm_student_summary_aimline
+            source_column: assessment_grade
       - name: enrollment_grade
         data_type: string
+        description: Student enrollment grade level.
+        config:
+          meta:
+            source_system: Amplify
+            source_model: stg_amplify__mclass__sftp__pm_student_summary_aimline
+            source_column: enrollment_grade
       - name: primary_id_student_id_district_id
         data_type: int64
       - name: measure_standard_score
         data_type: numeric
+        description: Raw assessment score, cast from the source score column.
+        config:
+          meta:
+            source_system: Amplify
+            source_model: stg_amplify__mclass__sftp__pm_student_summary_aimline
+            source_column: measure_standard_score
       - name: measure_standard_score_change
         data_type: numeric
       - name: academic_year
         data_type: int64
+        description:
+          Starting calendar year of the school year, extracted from school_year
+          (e.g., 2025 from '2025-2026').
+        config:
+          meta:
+            source_system: Amplify
+            source_model: stg_amplify__mclass__sftp__pm_student_summary_aimline
+            source_column: academic_year
       - name: measure_name_code
         data_type: string
+        description:
+          Short measure abbreviation extracted from the expanded measure name
+          parenthetical (e.g., 'ORF' from 'Reading Fluency (ORF)').
+        config:
+          meta:
+            source_system: Amplify
+            source_model: stg_amplify__mclass__sftp__pm_student_summary_aimline
+            source_column: measure_name_code
       - name: region
         data_type: string
       - name: measure_name
         data_type: string
+        description:
+          Full measure name derived from measure_name_code (e.g., 'Oral Reading
+          Fluency').
+        config:
+          meta:
+            source_system: Amplify
+            source_model: stg_amplify__mclass__sftp__pm_student_summary_aimline
+            source_column: measure_name
       - name: assessment_grade_int
         data_type: int64
+        description: Assessment grade as integer (K mapped to 0).
+        config:
+          meta:
+            source_system: Amplify
+            source_model: stg_amplify__mclass__sftp__pm_student_summary_aimline
+            source_column: assessment_grade_int
       - name: enrollment_grade_int
         data_type: int64
+        description: Enrollment grade as integer (K mapped to 0).
+        config:
+          meta:
+            source_system: Amplify
+            source_model: stg_amplify__mclass__sftp__pm_student_summary_aimline
+            source_column: enrollment_grade_int
       - name: school
         data_type: string
       - name: multi_district_organization_name
         data_type: string
+        description: Multi-district organization name.
+        config:
+          meta:
+            source_system: Amplify
+            source_model: stg_amplify__mclass__sftp__pm_student_summary_aimline
+            source_column: multi_district_organization_name
       - name: reporting_group_name
         data_type: string
+        description: Reporting group name.
+        config:
+          meta:
+            source_system: Amplify
+            source_model: stg_amplify__mclass__sftp__pm_student_summary_aimline
+            source_column: reporting_group_name
       - name: school_primary_id
         data_type: int64
+        description: School primary identifier.
+        config:
+          meta:
+            source_system: Amplify
+            source_model: stg_amplify__mclass__sftp__pm_student_summary_aimline
+            source_column: school_primary_id
       - name: enrollment_class_name
         data_type: string
+        description: Enrollment class name(s), pipe-delimited when multiple.
+        config:
+          meta:
+            source_system: Amplify
+            source_model: stg_amplify__mclass__sftp__pm_student_summary_aimline
+            source_column: enrollment_class_name
       - name: enrollment_class_id
         data_type: string
+        description: Enrollment class ID(s), pipe-delimited when multiple.
+        config:
+          meta:
+            source_system: Amplify
+            source_model: stg_amplify__mclass__sftp__pm_student_summary_aimline
+            source_column: enrollment_class_id
       - name: assessment_class_name
         data_type: string
+        description: Class name for the assessment context.
+        config:
+          meta:
+            source_system: Amplify
+            source_model: stg_amplify__mclass__sftp__pm_student_summary_aimline
+            source_column: assessment_class_name
       - name: assessment_class_id
         data_type: string
+        description: Class ID for the assessment context.
+        config:
+          meta:
+            source_system: Amplify
+            source_model: stg_amplify__mclass__sftp__pm_student_summary_aimline
+            source_column: assessment_class_id
       - name: title_i
         data_type: string
+        description: Title I participation indicator.
+        config:
+          meta:
+            source_system: Amplify
+            source_model: stg_amplify__mclass__sftp__pm_student_summary_aimline
+            source_column: title_i
       - name: _dagster_partition_key
         data_type: string
+        description: Dagster partition key (school year).
+        config:
+          meta:
+            source_system: Amplify
+            source_model: stg_amplify__mclass__sftp__pm_student_summary_aimline
+            source_column: _dagster_partition_key
       - name: additional_student_id_primarysisid
         data_type: int64
       - name: assessing_teacher_staff_id_teachernumber
         data_type: string
       - name: official_teacher_staff_id
         data_type: string
+        description:
+          First non-null of enrollment_teacher_staff_id_teachernumber,
+          official_teacher_staff_id.
       - name: official_teacher_name
         data_type: string
+        description:
+          Enrollment teacher name(s), pipe-delimited when multiple. First
+          non-null of enrollment_teacher_name, official_teacher_name.
       - name: client_date
         data_type: date
+        description:
+          Date the assessment was administered on the device. First non-null of
+          device_date, client_date.

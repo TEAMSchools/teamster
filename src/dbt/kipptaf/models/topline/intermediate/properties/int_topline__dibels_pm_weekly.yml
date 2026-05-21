@@ -1,4 +1,2 @@
 models:
   - name: int_topline__dibels_pm_weekly
-    config:
-      materialized: table

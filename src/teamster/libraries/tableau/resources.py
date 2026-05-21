@@ -9,13 +9,13 @@ class TableauServerResource(ConfigurableResource):
     token_name: str
     personal_access_token: str
     site_id: str
+    api_version: str = "3.25"
 
     _server: Server = PrivateAttr()
 
     def setup_for_execution(self, context: InitResourceContext) -> None:
-        self._server = Server(
-            server_address=self.server_address, use_server_version=True
-        )
+        self._server = Server(server_address=self.server_address)
+        self._server.version = self.api_version
 
         self._server.auth.sign_in(
             PersonalAccessTokenAuth(

@@ -1,0 +1,68 @@
+models:
+  - name: dim_staff_status
+    description: >-
+      Worker-level status dimension with derived Type 2 SCD tracking. One row
+      per worker x status change point. Detects changes to
+      Worker.workerStatus.statusCode via daily payload-hash comparison against
+      stg_adp_workforce_now__workers partitions. FK to dim_staff via staff_key.
+    columns:
+      - name: staff_status_key
+        data_type: string
+        description: >-
+          Surrogate primary key derived from employee_number and
+          effective_date_start. Generated with
+          generate_surrogate_key(["employee_number", "effective_date_start"]).
+        constraints:
+          - type: primary_key
+            warn_unsupported: false
+        data_tests:
+          - unique
+          - not_null
+
+      - name: staff_key
+        data_type: string
+        description: >-
+          Foreign key to dim_staff. Surrogate key derived from employee_number.
+          Generated with generate_surrogate_key(["employee_number"]).
+        constraints:
+          - type: foreign_key
+            to: ref('dim_staff')
+            to_columns: [staff_key]
+            warn_unsupported: false
+        data_tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('dim_staff')
+                field: staff_key
+
+      - name: status_code
+        data_type: string
+        description: >-
+          ADP worker status code value (e.g., 'Active', 'Terminated'), from
+          Worker.workerStatus.statusCode.codeValue.
+
+      - name: status_name
+        data_type: string
+        description: >-
+          Display name for the worker status, coalesced from longName and
+          shortName of Worker.workerStatus.statusCode.
+
+      - name: effective_start_date
+        data_type: date
+        description: >-
+          Date this status version was first observed, derived from the daily
+          partition date where the status hash changed.
+
+      - name: effective_end_date
+        data_type: date
+        description: >-
+          Last date this status version was effective. Computed as one day
+          before the next version's effective_start_date, or 9999-12-31 for the
+          current version.
+
+      - name: is_current
+        data_type: boolean
+        description: >-
+          TRUE if this is the most recent status version for the worker
+          (effective_end_date = 9999-12-31).

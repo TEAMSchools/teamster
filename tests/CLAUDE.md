@@ -25,8 +25,12 @@ uv run pytest tests/assets/test_assets_dbt.py                         # requires
   `subprocess.check_output` — tests the real module load, not a mock.
 - **Automation condition tests**: use ephemeral in-memory Dagster instances
   (fast, no external deps).
-- **No global `conftest.py`**: no shared fixtures at project level. See
+- **`conftest.py`**: contains a single session-scoped autouse fixture that
+  bootstraps secrets from 1Password on demand. No shared test fixtures — see
   `utils.py` for SSH/DB resource helpers (require env vars).
+- **Token file missing**: `_bootstrap_secrets` silently returns when
+  `/etc/secret-volume/.op-token` doesn't exist. If ALL env vars are missing,
+  check the token file first — don't investigate individual env vars.
 - **Archived tests**: `_test_` prefix in `archive/` subdirectories — ignored by
   pytest by convention, not markers.
 - **`EnvVar` in integration tests**: Use `EnvVar("X")` for `str` fields inside
@@ -34,11 +38,20 @@ uv run pytest tests/assets/test_assets_dbt.py                         # requires
   `int(check.not_none(EnvVar("X").get_value()))` — `EnvVar` resolves lazily, so
   `int(EnvVar("X"))` casts the marker object, not the value.
 - **Worktree tests**: VS Code doesn't discover tests in worktrees. Run manually
-  with `set -a && source env/.env && set +a` then
+  ensuring `OP_SERVICE_ACCOUNT_TOKEN` is set, then
   `cd .worktrees/<branch> && uv run pytest ...`.
+- **Unit testing Dagster resources**: `SSHResource` and other
+  `ConfigurableResource` subclasses are frozen Pydantic models — use
+  `build_resources()` context manager to instantiate, then call methods on
+  `resources.<name>`. `PrivateAttr` fields (`_log`, `_service`) accept direct
+  assignment; use `object.__setattr__` to monkey-patch methods.
 - **SSH `test=True`**: `SSHResource` reads the SSH password from a secret file
   by default (`test=False`). Integration tests must set `test=True` and pass
   `password` directly so each district uses its own credentials.
-- `dagster definitions validate` requires env vars from `.env` (injected from
-  1Password at container start). The hook blocks reading `.env`, so validation
-  fails in Claude sessions — this is expected, not a code issue.
+- **Cross-file conftest imports fail** (`tests/` has no `__init__.py`). For
+  fixture-injected param types, skip the annotation or use `TYPE_CHECKING` with
+  a string forward-ref.
+- `dagster definitions validate` requires env vars from 1Password. Secrets are
+  fetched on demand by the root `conftest.py` during test runs. Outside of
+  pytest, run commands in the VS Code terminal where the token is available.
+  Claude sessions cannot access secrets — this is expected, not a code issue.

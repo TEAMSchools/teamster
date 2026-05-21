@@ -1,11 +1,25 @@
 models:
   - name: stg_google_sheets__coupa__user_exceptions
+    description: |
+      Per-employee Coupa override sheet — lets the Finance team pin an
+      employee to a specific school / location / department regardless of
+      their ADP assignment. Sourced from a Google Sheet maintained by Finance.
     columns:
       - name: employee_number
+        description: ADP employee number (HRIS employee ID).
         data_type: int64
+        data_tests:
+          - unique:
+              config:
+                severity: error
       - name: coupa_school_name
+        description: Override school name for Coupa user record.
         data_type: string
-      - name: home_work_location_name
+      - name: location_clean_name
+        description: |
+          Override canonical location name from `int_people__location_crosswalk`.
+          Used in the coalesce chain against `home_work_location_reporting_name`.
         data_type: string
       - name: sage_intacct_department
+        description: Override Sage Intacct department ID.
         data_type: int64

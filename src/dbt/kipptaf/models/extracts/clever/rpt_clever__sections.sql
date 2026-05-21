@@ -9,7 +9,7 @@ with
         from {{ ref("int_people__staff_roster") }} as sr
         left join
             {{ ref("stg_google_sheets__people__campus_crosswalk") }} as ccw
-            on sr.home_work_location_name = ccw.name
+            on sr.home_work_location_reporting_name = ccw.location_name
             and not ccw.is_pathways
         where
             sr.assignment_status != 'Terminated'

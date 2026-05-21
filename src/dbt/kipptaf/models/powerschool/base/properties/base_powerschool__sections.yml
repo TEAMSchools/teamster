@@ -5,6 +5,13 @@ models:
     columns:
       - name: _dbt_source_relation
         data_type: string
+      - name: _dbt_source_project
+        data_type: string
+        description: >-
+          District code-location extracted once from `_dbt_source_relation`
+          (e.g., `kippnewark`, `kippcamden`). Materialized join key for
+          cross-region lookups against
+          `stg_google_sheets__people__locations.dagster_code_location`.
       - name: sections_section_number
         data_type: string
       - name: sections_course_number
@@ -377,9 +384,16 @@ models:
         data_type: int64
       - name: teachernumber
         data_type: string
+        description: The number the district assigns to track the teacher.
+        config:
+          meta:
+            source_system: PowerSchool
+            source_model: stg_powerschool__users
+            source_column: teachernumber
       - name: teacher_lastfirst
         data_type: string
       - name: courses_gradescaleid_unweighted
         data_type: int64
       - name: is_ap_course
         data_type: boolean
+        description: Conditional on ap_course_subject.

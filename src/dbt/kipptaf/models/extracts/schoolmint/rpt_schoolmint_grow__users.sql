@@ -20,7 +20,7 @@ with
             sr.employee_number as user_internal_id,
             sr.google_email as user_email,
             sr.reports_to_employee_number as manager_internal_id,
-            sr.home_work_location_name as school_name,
+            sr.home_work_location_reporting_name as school_name,
             sr.home_department_name as course_name,
 
             sr.given_name || ' ' || sr.family_name_1 as user_name,
@@ -33,51 +33,70 @@ with
                 cast(sr.primary_grade_level_taught as string)
             ) as grade_abbreviation,
 
-            case
-                /* network admins */
-                when sr.home_department_name = 'Executive'
-                then 'Sub Admin'
-                when sr.job_title = 'Head of Schools'
-                then 'Regional Admin'
-                when
-                    sr.home_department_name in (
-                        'Teaching and Learning',
-                        'School Support',
-                        'New Teacher Development'
-                    )
-                    and (
-                        contains_substr(sr.job_title, 'Chief')
-                        or contains_substr(sr.job_title, 'Leader')
-                        or contains_substr(sr.job_title, 'Director')
-                    )
-                then 'Sub Admin'
-                when sr.job_title = 'Achievement Director'
-                then 'Sub Admin'
-                when
-                    sr.home_department_name = 'Special Education'
-                    and contains_substr(sr.job_title, 'Director')
-                then 'Sub Admin'
-                when sr.home_department_name = 'Human Resources'
-                then 'Sub Admin'
-                /* school admins */
-                when sr.job_title = 'School Leader'
-                then 'School Admin'
-                when
-                    sr.home_department_name = 'School Leadership'
-                    and (
-                        contains_substr(sr.job_title, 'Assistant School Leader')
-                        or contains_substr(sr.job_title, 'Dean')
-                        or sr.job_title = 'School Leader in Residence'
-                    )
-                then 'School Assistant Admin'
-                /* basic roles */
-                when
-                    sr.employee_number
-                    in (select reports_to_employee_number from instructional_managers)
-                then 'Coach'
-                when (sr.job_title like '%Teacher%' or sr.job_title like '%Learning%')
-                then 'Teacher'
-            end as role_name,
+            coalesce(
+                case
+                    /* network admins */
+                    when sr.home_department_name = 'Executive'
+                    then ['Sub Admin']
+                    when sr.job_title = 'Head of Schools'
+                    then ['Regional Admin']
+                    when
+                        sr.home_department_name in (
+                            'Teaching and Learning',
+                            'School Support',
+                            'New Teacher Development'
+                        )
+                        and (
+                            contains_substr(sr.job_title, 'Chief')
+                            or contains_substr(sr.job_title, 'Leader')
+                            or contains_substr(sr.job_title, 'Director')
+                        )
+                    then ['Sub Admin']
+                    when sr.job_title = 'Achievement Director'
+                    then ['Sub Admin']
+                    when
+                        sr.home_department_name = 'Special Education'
+                        and contains_substr(sr.job_title, 'Director')
+                    then ['Sub Admin']
+                    when sr.home_department_name = 'Human Resources'
+                    then ['Sub Admin']
+                    /* school admins */
+                    when sr.job_title = 'School Leader'
+                    then ['School Admin']
+                    when
+                        sr.home_department_name = 'School Leadership'
+                        and (
+                            contains_substr(sr.job_title, 'Assistant School Leader')
+                            or contains_substr(sr.job_title, 'Dean')
+                            or sr.job_title = 'School Leader in Residence'
+                        )
+                    then ['School Assistant Admin']
+                end,
+                /* basic roles: Coach and Teacher are independent; a user can be both */
+                array(
+                    select rn
+                    from
+                        unnest(
+                            [
+                                if(
+                                    sr.employee_number in (
+                                        select reports_to_employee_number
+                                        from instructional_managers
+                                    ),
+                                    'Coach',
+                                    null
+                                ),
+                                if(
+                                    sr.job_title like '%Teacher%'
+                                    or sr.job_title like '%Learning%',
+                                    'Teacher',
+                                    null
+                                )
+                            ]
+                        ) as rn
+                    where rn is not null
+                )
+            ) as role_names,
         from {{ ref("int_people__staff_roster") }} as sr
         where
             sr.user_principal_name is not null
@@ -88,17 +107,28 @@ with
             >= '{{ var("current_academic_year") - 1 }}-07-01'
     ),
 
+    people_roles as (
+        select
+            p.user_internal_id,
+            array_agg(rn order by r.role_id) as role_names,
+            array_agg(r.role_id order by r.role_id) as role_ids,
+        from people as p
+        cross join unnest(p.role_names) as rn
+        inner join {{ ref("stg_schoolmint_grow__roles") }} as r on rn = r.name
+        group by p.user_internal_id
+    ),
+
     roster as (
         select
             p.user_internal_id,
             p.user_name,
             p.user_email,
             p.inactive,
-            p.role_name,
+
+            pra.role_names,
+            pra.role_ids,
 
             sch.school_id,
-
-            r.role_id,
 
             u.user_id,
             u.archived_at,
@@ -115,21 +145,26 @@ with
 
             gr.tag_id as grade_id,
 
-            u.roles[0]._id as role_id_ws,
+            array(
+                select role._id from unnest(u.roles) as role order by role._id
+            ) as role_ids_ws,
 
             if(u.inactive, 1, 0) as inactive_ws,
 
             case
-                when p.role_name = 'Coach'
-                then 'observees;observers'
-                when p.role_name like '%Admin%'
+                when
+                    exists (
+                        select 1 from unnest(p.role_names) as rn where rn like '%Admin%'
+                    )
                 then 'observers'
+                when 'Coach' in unnest(p.role_names)
+                then 'observees;observers'
                 else 'observees'
             end as group_type,
         from people as p
+        inner join people_roles as pra on p.user_internal_id = pra.user_internal_id
         inner join
             {{ ref("stg_schoolmint_grow__schools") }} as sch on p.school_name = sch.name
-        inner join {{ ref("stg_schoolmint_grow__roles") }} as r on p.role_name = r.name
         left join
             {{ ref("stg_schoolmint_grow__users") }} as u
             on p.user_internal_id = u.internal_id_int
@@ -146,15 +181,23 @@ with
             and gr.tag_type = 'grades'
     ),
 
+    roster_hashed as (
+        select
+            *,
+            array_to_string(role_ids, ',') as role_ids_hash,
+            array_to_string(role_ids_ws, ',') as role_ids_ws_hash,
+        from roster
+    ),
+
     surrogate_keys as (
         select
             user_internal_id,
             user_name,
             user_email,
             inactive,
-            role_name,
+            role_names,
             school_id,
-            role_id,
+            role_ids,
             user_id,
             archived_at,
             user_email_ws,
@@ -166,7 +209,7 @@ with
             coach_id,
             course_id,
             grade_id,
-            role_id_ws,
+            role_ids_ws,
             inactive_ws,
             group_type,
 
@@ -177,7 +220,7 @@ with
                         "course_id",
                         "grade_id",
                         "inactive",
-                        "role_id",
+                        "role_ids_hash",
                         "school_id",
                         "user_email",
                         "user_name",
@@ -192,14 +235,14 @@ with
                         "course_id_ws",
                         "grade_id_ws",
                         "inactive_ws",
-                        "role_id_ws",
+                        "role_ids_ws_hash",
                         "school_id_ws",
                         "user_email_ws",
                         "user_name_ws",
                     ]
                 )
             }} as surrogate_key_destination,
-        from roster
+        from roster_hashed
     )
 
 select
@@ -207,9 +250,9 @@ select
     user_name,
     user_email,
     inactive,
-    role_name,
+    role_names,
     school_id,
-    role_id,
+    role_ids,
     user_id,
     archived_at,
     user_email_ws,
@@ -221,7 +264,7 @@ select
     coach_id,
     course_id,
     grade_id,
-    role_id_ws,
+    role_ids_ws,
     inactive_ws,
     group_type,
     surrogate_key_source,

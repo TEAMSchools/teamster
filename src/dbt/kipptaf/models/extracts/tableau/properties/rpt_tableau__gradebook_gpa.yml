@@ -1,7 +1,5 @@
 models:
   - name: rpt_tableau__gradebook_gpa
-    config:
-      materialized: table
     columns:
       - name: _dbt_source_relation
         data_type: string
@@ -32,6 +30,8 @@ models:
       - name: enroll_status
         data_type: int64
       - name: cohort
+        data_type: int64
+      - name: graduation_year
         data_type: int64
       - name: gender
         data_type: string

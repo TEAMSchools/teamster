@@ -1,6 +1,16 @@
 models:
   - name: int_zendesk__tickets__custom_fields_pivot
     columns:
+      - name: location_key
+        data_type: string
+        description: >
+          MD5 surrogate key for the canonical school location. Null when the
+          location slug does not resolve through int_people__location_crosswalk.
+        data_tests:
+          - relationships:
+              arguments:
+                to: ref("dim_locations")
+                field: location_key
       - name: ticket_id
         data_type: int64
       - name: actual_received_date

@@ -1,0 +1,83 @@
+models:
+  - name: dim_locations
+    description: >-
+      School and office location dimension. One row per school or office.
+      Conformed dimension. Region context is reached via the region_key FK to
+      dim_regions.
+
+      Mixed-grain: this dim contains BOTH school-level rows and campus-level
+      rows (a campus is a physical site where multiple schools share a
+      building). The `is_campus` flag distinguishes them — set TRUE for
+      campus-level rows, FALSE for individual schools. The `campus` column on a
+      school row names its parent campus (may be null for standalone schools).
+      When joining to a fact, decide deliberately whether you want campus-grain
+      or school-grain aggregation; default is school-grain (filter `WHERE NOT
+      is_campus`).
+    columns:
+      - name: location_key
+        data_type: string
+        description: >-
+          Surrogate key derived from location name.
+        constraints:
+          - type: primary_key
+            warn_unsupported: false
+        data_tests:
+          - unique
+          - not_null
+
+      - name: region_key
+        data_type: string
+        description: >-
+          Foreign key to dim_regions. Surrogate key derived from
+          `business_unit_code` so this column hashes exactly the keys produced
+          by `dim_regions.region_key`. Network-level locations (e.g., KIPP NJ)
+          map to KIPP_TAF.
+        constraints:
+          - type: foreign_key
+            to: ref('dim_regions')
+            to_columns: [region_key]
+            warn_unsupported: false
+        data_tests:
+          - relationships:
+              arguments:
+                to: ref('dim_regions')
+                field: region_key
+
+      - name: name
+        quote: true
+        data_type: string
+        description: >-
+          Canonical location name.
+
+      - name: abbreviation
+        data_type: string
+        description: >-
+          Short display name for the location.
+
+      - name: grade_band
+        data_type: string
+        description: >-
+          Grade band served (ES, MS, HS).
+
+      - name: campus
+        data_type: string
+        description: >-
+          Physical campus name. Multiple schools may share a campus.
+
+      - name: is_campus
+        data_type: boolean
+        description: >-
+          TRUE if this location record represents a campus-level entity.
+
+      - name: address
+        data_type: string
+        description: Physical street address (single line). Nullable.
+
+      - name: city
+        data_type: string
+        description: |
+          City. Nullable for non-physical rows (e.g., campus rollups).
+
+      - name: postal_code
+        data_type: string
+        description: Postal code. Nullable for non-physical rows.
