@@ -473,6 +473,14 @@ the same partition.
 - **`ON` vs `WHERE`** — row filters on the preserved table belong in `WHERE`,
   not `ON`. For `LEFT JOIN`, a filter in `ON` preserves non-matching rows.
   Exception: `FULL JOIN` conditions referencing one side stay in `ON`.
+- **DATE literal across UNION ALL branches needs explicit cast**: BQ coerces
+  `'9999-12-31'` to DATE inside `coalesce(date_col, ...)` but NOT across UNION
+  ALL branches when one side is CTE-typed STRING. Use
+  `cast('9999-12-31' as date)`. Avoid the `date '9999-12-31'` typed-literal
+  form.
+- **Pre-compute `lag()` / `format()` inputs in the source CTE** so the
+  comparison CTE compares plain columns. Avoids duplicating the expression
+  inside `lag(expr)` and the bare-column reference.
 - **Timezone-aware today**:
 
   ```sql

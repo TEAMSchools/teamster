@@ -62,6 +62,10 @@ inner join {{ ref("other_union_model") }} as b
 Macro defined in `macros/utils.sql` — extracts school prefix via
 `regexp_extract(..., r'(kipp\w+)_')`.
 
+When both joined union models materialize `_dbt_source_project`, prefer
+`a._dbt_source_project = b._dbt_source_project` over the macro — same semantics,
+no `regexp_extract` per call.
+
 ### Selecting from `dbt_utils.star()` models
 
 `base_` models using `star()` resolve columns from BigQuery at run time, not

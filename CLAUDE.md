@@ -122,6 +122,10 @@ file; domain specifics live in the nearest subdirectory CLAUDE.md.
   one-off scripts needing a package not in `pyproject.toml` — don't
   `uv add --dev` for throwaway tooling.
 
+- **IDE selection arrives only via `<ide_selection>` tags**, not
+  `<ide_opened_file>` (which only names the open path). When the user references
+  "this" without an `<ide_selection>`, ask for the snippet — don't guess.
+
 - **Built-in tools over Bash**: Use dedicated tools for file I/O (Read, Grep,
   Glob, Edit, Write). Bash is only for commands with no dedicated tool (`git`,
   `uv run`, `gh`, `docker`, `trunk`, `ls`).
