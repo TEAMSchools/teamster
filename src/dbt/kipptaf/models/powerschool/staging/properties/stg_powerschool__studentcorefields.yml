@@ -14,3 +14,9 @@ models:
       - name: lep_status
         data_type: boolean
         description: Student Limited English Proficiency status.
+      - name: _dbt_source_project
+        data_type: string
+        description: >-
+          Source-project discriminator (e.g. `kippnewark`, `kippcamden`)
+          extracted from `_dbt_source_relation`. Materialized at the union point
+          so downstream consumers can join and hash on a stable value.
