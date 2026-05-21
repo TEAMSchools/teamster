@@ -473,7 +473,7 @@ with
             effective_date_start_key,
             effective_date_end_key,
             lead(effective_date_start_key) over (
-                partition by student_key
+                partition by student_key, _dbt_source_project
                 order by effective_date_start_key
             ) as next_start,
         from {{ ref("dim_iep_status") }}
@@ -513,10 +513,13 @@ with
         select
             student_number,
             _dbt_source_project,
-            spedlep,
+            -- edplan ships ~24% NULL spedlep; coalesce to 'No IEP' matches the
+            -- base_powerschool__student_enrollments pattern and lets is_iep
+            -- resolve to a non-null boolean for every row.
+            coalesce(spedlep, 'No IEP') as spedlep,
             special_education_code,
             special_education,
-            nj_se_placement,
+            cast(nj_se_placement as string) as nj_se_placement,
             effective_date,
             effective_end_date,
         from {{ ref("int_edplan__njsmart_powerschool_union") }}
@@ -791,7 +794,7 @@ with
             effective_date_start_key,
             effective_date_end_key,
             lead(effective_date_start_key) over (
-                partition by student_key
+                partition by student_key, _dbt_source_project
                 order by effective_date_start_key
             ) as next_start,
         from {{ ref("dim_ell_status") }}
@@ -1042,7 +1045,7 @@ with
             effective_date_start_key,
             effective_date_end_key,
             lead(effective_date_start_key) over (
-                partition by student_key
+                partition by student_key, _dbt_source_project
                 order by effective_date_start_key
             ) as next_start,
         from {{ ref("dim_meal_eligibility_status") }}
