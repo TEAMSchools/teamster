@@ -41,6 +41,8 @@ views:
           - count_absent_days
           - count_chronically_absent
           - pct_chronically_absent
+          - pct_tier_1_2
+          - pct_tier_3
           - attendance_date
           - academic_year
           - semester

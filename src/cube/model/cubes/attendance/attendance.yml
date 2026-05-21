@@ -273,6 +273,11 @@ cubes:
           Percentage of present days where the student was tardy (tardy days /
           present days). Absent days are excluded from both numerator and
           denominator.
+
+          Date filter behavior: filtering to a single date returns that day's
+          tardy rate only. For a cumulative YTD rate as of a given date, use a
+          date range from the start of the academic year (e.g. 2025-07-01
+          through the target date).
         sql: "1.0 * {_sum_tardy} / NULLIF({_count_present_days}, 0)"
         type: number
         format: percent
@@ -283,6 +288,11 @@ cubes:
           Percentage of present days where the student arrived on time (on-time
           days / present days). Complement of pct_tardy. Absent days are
           excluded from both numerator and denominator.
+
+          Date filter behavior: filtering to a single date returns that day's
+          on-time rate only. For a cumulative YTD rate as of a given date, use a
+          date range from the start of the academic year (e.g. 2025-07-01
+          through the target date).
         sql: >-
           1.0 * ({_count_present_days} - {_sum_tardy}) /
           NULLIF({_count_present_days}, 0)
@@ -370,6 +380,61 @@ cubes:
         sql:
           "1.0 * {count_chronically_absent} /
           NULLIF({_count_ca_eligible_students}, 0)"
+        type: number
+        format: percent
+        public: true
+
+      - name: _count_tier_1_2
+        description: >-
+          Denominator-matched count of students in ADA Tier 1 or Tier 2
+          (cumulative ADA ≥ 90%) as of the snapshot date. Uses student_number to
+          avoid double-counting transfer students. Use the same query patterns
+          as count_chronically_absent.
+        sql: student_number
+        type: count_distinct
+        public: false
+        filters:
+          - sql: "{CUBE}.ada_tier IN ('Tier 1', 'Tier 2')"
+          - sql: "{CUBE}.membership_value = 1"
+          - sql: "{CUBE}.is_ca_eligible = true"
+
+      - name: pct_tier_1_2
+        description: >-
+          Percentage of CA-eligible students with cumulative ADA ≥ 90% (Tier 1
+          or Tier 2) as of the snapshot date. Denominator is
+          _count_ca_eligible_students (same as pct_chronically_absent).
+
+          Use exactly one query pattern: filter is_latest_record = true for
+          year-end / year-over-year, or filter to a single date_key for
+          point-in-time. Omitting both overcounts.
+        sql:
+          "1.0 * {_count_tier_1_2} / NULLIF({_count_ca_eligible_students}, 0)"
+        type: number
+        format: percent
+        public: true
+
+      - name: _count_tier_3
+        description: >-
+          Count of students in ADA Tier 3 (cumulative ADA 80–89%) as of the
+          snapshot date. Uses student_number to avoid double-counting transfer
+          students. Use the same query patterns as count_chronically_absent.
+        sql: student_number
+        type: count_distinct
+        public: false
+        filters:
+          - sql: "{CUBE}.ada_tier = 'Tier 3'"
+          - sql: "{CUBE}.membership_value = 1"
+          - sql: "{CUBE}.is_ca_eligible = true"
+
+      - name: pct_tier_3
+        description: >-
+          Percentage of CA-eligible students with cumulative ADA 80–89% (Tier 3)
+          as of the snapshot date. Denominator is _count_ca_eligible_students.
+
+          Use exactly one query pattern: filter is_latest_record = true for
+          year-end / year-over-year, or filter to a single date_key for
+          point-in-time. Omitting both overcounts.
+        sql: "1.0 * {_count_tier_3} / NULLIF({_count_ca_eligible_students}, 0)"
         type: number
         format: percent
         public: true

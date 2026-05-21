@@ -172,9 +172,9 @@ select
         else 'Tier 4'
     end as ada_tier,
 
-    not (
-        academic_year = {{ var("current_academic_year") }}
-        and enroll_status is not distinct from 2
+    (
+        academic_year != {{ var("current_academic_year") }}
+        or enroll_status is distinct from 2
     ) as is_ca_eligible,
 
     row_number() over (partition by student_enrollment_key order by date_key desc)
