@@ -3,7 +3,10 @@ with
         select
             student_number,
             _dbt_source_project,
-            spedlep,
+            -- edplan ships ~24% NULL spedlep; coalesce to 'No IEP' matches the
+            -- base_powerschool__student_enrollments pattern and lets is_iep
+            -- resolve to a non-null boolean for every row.
+            coalesce(spedlep, 'No IEP') as spedlep,
             special_education_code,
             special_education,
             nj_se_placement,

@@ -15,7 +15,8 @@ with
             effective_date_start_key,
             effective_date_end_key,
             lead(effective_date_start_key) over (
-                partition by student_key order by effective_date_start_key
+                partition by student_key, _dbt_source_project
+                order by effective_date_start_key
             ) as next_start,
         from {{ ref("dim_iep_status") }}
     )
