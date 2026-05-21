@@ -2,34 +2,14 @@ models:
   - name: int_powerschool__gpa_cumulative_target
     columns:
       - name: studentid
-        description: The internal number and ID of the associated Students record.
         data_type: int64
       - name: schoolid
-        description: The School_Number of the associated Schools record.
         data_type: int64
       - name: enrolled_potentialcrhrs
-        description:
-          Sum of potential credit hours for currently enrolled, not-yet-stored Y1
-          courses that have a Y1 letter grade. Denominator of the target GPA formula.
         data_type: float64
       - name: needed_gpa_unweighted_for_2_5
-        description:
-          Unweighted Y1 GPA the student must earn across all currently enrolled
-          courses for their projected cumulative unweighted GPA to equal 2.5. Values
-          above 4.0 indicate the target is not achievable; values at or below 0.0
-          indicate it is already locked in.
         data_type: float64
       - name: needed_gpa_unweighted_for_3_0
-        description:
-          Unweighted Y1 GPA needed across currently enrolled courses to reach a
-          projected cumulative unweighted GPA of 3.0. Values above 4.0 indicate the
-          target is not achievable; values at or below 0.0 indicate it is already
-          locked in.
         data_type: float64
       - name: needed_gpa_unweighted_for_3_5
-        description:
-          Unweighted Y1 GPA needed across currently enrolled courses to reach a
-          projected cumulative unweighted GPA of 3.5. Values above 4.0 indicate the
-          target is not achievable; values at or below 0.0 indicate it is already
-          locked in.
         data_type: float64
