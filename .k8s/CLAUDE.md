@@ -138,6 +138,18 @@ Verify before writing `secretKeyRef.key`:
   by `runK8sConfig.jobSpecConfig.podFailurePolicy` with `action: Ignore` on the
   `DisruptionTarget` pod condition — preempted pods transparently retry without
   burning `backoffLimit`.
+- **Step pod replacement zombie (upstream
+  [dagster-io/dagster#33755](https://github.com/dagster-io/dagster/issues/33755))**
+  — when `podFailurePolicy: Ignore` spawns a replacement step pod (preemption,
+  `TaintManagerEviction`, any `DisruptionTarget`), the replacement hits
+  Dagster's `verify_step()` duplicate-start guard, logs
+  `Attempted to run <step_key> again even though it was already started. Exiting to prevent re-running the step.`,
+  and exits 0. Step state never advances; run hangs until
+  `run_monitoring.max_runtime_seconds`. Signature: duplicate
+  `StepWorkerStartedEvent` → "already started" `EngineEvent` → silence →
+  `RunCancelingEvent` at the max_runtime mark. Don't chase the asset's code or
+  query — check the auto-retry; if it succeeded, this was infra disruption, no
+  fix needed.
 - **`required` antiAffinity authorizes scheduler preemption** of the target pods
   when no other node fits. `runK8sConfig.affinity.podAntiAffinity` is `required`
   against code-server labels, with run pods at priority 1000 vs code-server 0 —

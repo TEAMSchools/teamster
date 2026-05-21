@@ -109,7 +109,6 @@ exposures:
     depends_on:
       - ref("rpt_tableau__community_service")
       - ref("rpt_tableau__graduation_requirements")
-      - ref("rpt_tableau__grad_plan_tracking")
       - ref("rpt_tableau__hs_early_warning_dashboard")
     config:
       meta:

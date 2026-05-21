@@ -1,0 +1,157 @@
+models:
+  - name: int_powerschool__gpprogress_grades
+    description: >
+      One row per grade record per grad plan subject slot per student. Earned
+      rows join to storedgrades (Y1 storecode); Enrolled rows join to
+      base_powerschool__final_grades for the current year. Plan, discipline, and
+      subject credit totals are joined from stg_powerschool__gpprogresssubject
+      at the outer level. Drives the grain of the grad plan tracking Tableau
+      extract.
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns:
+              - _dbt_source_relation
+              - studentsdcid
+              - plan_id
+              - discipline_id
+              - subject_id
+              - grade_dcid
+              - credit_status
+    columns:
+      - name: _dbt_source_relation
+        description: Source relation identifier for union models.
+        data_type: string
+      - name: plan_id
+        description: gpnode.id for the grad plan root node.
+        data_type: int64
+      - name: plan_name
+        description: Name of the grad plan.
+        data_type: string
+      - name: discipline_id
+        description: gpnode.id for the discipline node.
+        data_type: int64
+      - name: discipline_name
+        description: Name of the discipline.
+        data_type: string
+      - name: subject_id
+        description:
+          gpnode.id for the subject node; equals discipline_id for disciplines
+          with no subject children.
+        data_type: int64
+      - name: subject_name
+        description:
+          Name of the subject node; equals discipline_name for disciplines with
+          no subject children.
+        data_type: string
+      - name: plan_credit_capacity
+        description: Total credits configured for the plan.
+        data_type: float64
+      - name: discipline_credit_capacity
+        description: Credits configured for the discipline.
+        data_type: float64
+      - name: subject_credit_capacity
+        description: Credits configured for the subject slot.
+        data_type: float64
+      - name: studentsdcid
+        description: Foreign key to the student (students.dcid).
+        data_type: int64
+      - name: academic_year
+        description: Academic year of the grade record.
+        data_type: int64
+      - name: grade_dcid
+        description: >
+          Row identifier for the underlying grade record. storedgrades.dcid for
+          Earned rows; cc_dcid from base_powerschool__final_grades for Enrolled
+          rows. These are different ID types from different tables — do not join
+          this column to final_grades.cc_dcid across both credit_status values.
+        data_type: int64
+      - name: schoolname
+        description: School name from the grade record source.
+        data_type: string
+      - name: studentid
+        description: PowerSchool student ID.
+        data_type: int64
+      - name: teacher_name
+        description: Teacher name for the course.
+        data_type: string
+      - name: course_number
+        description: Course number.
+        data_type: string
+      - name: course_name
+        description: Course name.
+        data_type: string
+      - name: sectionid
+        description: Section ID.
+        data_type: int64
+      - name: credit_type
+        description: Credit type classification.
+        data_type: string
+      - name: letter_grade
+        description: Letter grade earned or projected for the course.
+        data_type: string
+      - name: is_transfer_grade
+        description:
+          True if the grade was transferred in, false for current-year courses.
+        data_type: boolean
+      - name: credit_status
+        description:
+          Whether this row represents an Earned or Enrolled grade record.
+        data_type: string
+      - name: official_potential_credits
+        description: Potential credits from the source grade table.
+        data_type: float64
+      - name: potential_credits
+        description:
+          Credits available for this course toward the grad plan slot.
+        data_type: float64
+      - name: earned_credits
+        description: >
+          Credits earned; for enrolled rows, zero when letter grade starts with
+          F.
+        data_type: float64
+      - name: plan_required_credits
+        description: Credits required to satisfy the grad plan.
+        data_type: float64
+      - name: plan_enrolled_credits
+        description: Credits currently enrolled toward the plan.
+        data_type: float64
+      - name: plan_requested_credits
+        description: Credits requested toward the plan.
+        data_type: float64
+      - name: plan_earned_credits
+        description: Credits earned toward the plan.
+        data_type: float64
+      - name: plan_waived_credits
+        description: Credits waived toward the plan.
+        data_type: float64
+      - name: discipline_required_credits
+        description: Credits required to satisfy this discipline.
+        data_type: float64
+      - name: discipline_enrolled_credits
+        description: Credits currently enrolled toward this discipline.
+        data_type: float64
+      - name: discipline_requested_credits
+        description: Credits requested toward this discipline.
+        data_type: float64
+      - name: discipline_earned_credits
+        description: Credits earned toward this discipline.
+        data_type: float64
+      - name: discipline_waived_credits
+        description: Credits waived toward this discipline.
+        data_type: float64
+      - name: subject_required_credits
+        description: Credits required to satisfy this subject slot.
+        data_type: float64
+      - name: subject_enrolled_credits
+        description: Credits currently enrolled toward this subject slot.
+        data_type: float64
+      - name: subject_requested_credits
+        description: Credits requested toward this subject slot.
+        data_type: float64
+      - name: subject_earned_credits
+        description: Credits earned toward this subject slot.
+        data_type: float64
+      - name: subject_waived_credits
+        description: Credits waived toward this subject slot.
+        data_type: float64

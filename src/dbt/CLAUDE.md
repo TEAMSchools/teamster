@@ -242,7 +242,8 @@ against stale staging is a false positive.
 Dagster-only: default target `prod` + `defer` output. Branch deployments
 explicitly pass `target="defer"` via `DbtCliResource`; prod uses the profile
 default (no Python override needed). No `GITHUB_USER` — not available in Dagster
-deployments. Developers use `.dbt/profiles.yml` for full target support.
+deployments. Developers use `<repo-root>/.dbt/profiles.yml` (not
+`~/.dbt/profiles.yml`) for full target support.
 
 - **`job_retries`**: dbt-bigquery defaults to `1`, which doesn't absorb
   sustained transient 503s on `client.list_datasets()` at adapter init. Set
@@ -322,6 +323,13 @@ data_tests:
 Compiles to `where not (<expression>)`. BigQuery rejects window functions in
 `WHERE`, so the macro can't use `lag()` / `row_number()` / etc. Use a singular
 test (`tests/test_*.sql`) for window-based predicates.
+
+### `dbt_utils.expression_is_true` column-level prepends the column
+
+Compiles to `where not (<column> <expression>)` — a column-referencing predicate
+like `array_length(role_ids) >= 1` produces
+`where not (role_ids array_length(role_ids) >= 1)`. Put predicates that already
+name the column at model level, not on the column.
 
 ### Singular-test description placement
 
