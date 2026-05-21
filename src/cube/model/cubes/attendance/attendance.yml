@@ -49,8 +49,11 @@ cubes:
         public: true
 
       - name: academic_year
-        description:
+        description: >-
           KIPP academic year (July start) in which this attendance date falls.
+          The calendar year in which the academic year begins (e.g., 2025 for
+          the 2025–26 school year). This is the opposite of typical FY
+          conventions where FY2025 ends in 2025.
         sql: academic_year
         type: number
         public: true
@@ -197,6 +200,22 @@ cubes:
         type: string
         public: true
 
+      - name: is_latest_record
+        description: >-
+          TRUE on the most recent attendance row per student enrollment
+          (partitioned by student × district × academic year × entry date). For
+          completed academic years this is the last instructional day on record;
+          for the current year it is the most recent day with data.
+
+          Use as a filter (is_latest_record = true) with academic_year to get
+          year-end CA status for year-over-year comparisons — one terminal
+          snapshot per enrollment, no date filter required.
+
+          Do not combine with a date_key filter — use exactly one or the other.
+        sql: is_latest_record
+        type: boolean
+        public: true
+
     measures:
       - name: count_students
         sql: student_enrollment_key
@@ -263,10 +282,11 @@ cubes:
       - name: _count_ca_eligible_students
         description: >-
           Denominator for CA rate — distinct students on full membership days
-          (membership_value = 1) who are CA-eligible (is_ca_eligible = true).
-          Must be used with a single date filter. Uses student_number to avoid
-          double-counting students with multiple enrollment records in the same
-          year.
+          (membership_value = 1) who are CA-eligible. Uses student_number to
+          avoid double-counting students with multiple enrollment records in the
+          same year. Must be paired with the same query pattern used for
+          count_chronically_absent: is_latest_record = true for year-end, or a
+          single date_key filter for point-in-time.
         sql: student_number
         type: count_distinct
         public: false
@@ -276,12 +296,21 @@ cubes:
 
       - name: count_chronically_absent
         description: >-
-          Students with cumulative ADA ≤ 90% as of the filtered date (YTD
-          chronic absence). Must be filtered to a single date — the running ADA
-          accumulates from the start of the academic year through that date, so
-          the result is "how many students were chronically absent as of X?"
-          Filtering to a date range or omitting the date filter will overcount
-          by including students who were CA at any point in the period.
+          Students with cumulative ADA ≤ 90% as of the snapshot date. Always use
+          exactly one of the two CA query patterns — never omit both.
+
+          Year-end / year-over-year: filter is_latest_record = true and group by
+          academic_year. Returns the final CA count per year — last day of
+          school for completed years, today for the current year. Use for
+          comparisons like "CA rate in 2023 vs 2024 vs 2025."
+
+          Point-in-time: filter to a single date_key (e.g. 2025-11-01). Returns
+          CA status accumulated from the start of the year through that date.
+          Use for same-point-in-year comparisons like "CA as of November 1 each
+          year."
+
+          Omitting both overcounts — a student CA on 30 days is counted 30
+          times. Combining both is valid only when the date equals today.
         sql: student_number
         type: count_distinct
         public: true
@@ -292,9 +321,11 @@ cubes:
 
       - name: pct_chronically_absent
         description: >-
-          YTD chronic absence rate as of the filtered date —
-          count_chronically_absent / _count_ca_eligible_students. Must be
-          filtered to a single date. See count_chronically_absent for details.
+          Chronic absence rate — count_chronically_absent /
+          _count_ca_eligible_students. Same two query patterns as
+          count_chronically_absent: filter is_latest_record = true for year-end
+          / year-over-year, or a single date_key for point-in-time. Must use
+          exactly one.
         sql:
           "1.0 * {count_chronically_absent} /
           NULLIF({_count_ca_eligible_students}, 0)"

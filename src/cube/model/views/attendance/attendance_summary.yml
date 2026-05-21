@@ -4,14 +4,25 @@ views:
       Aggregated student attendance for ADA, tardy rate, and truancy breakdowns.
       One row per filter slice — never per student-day. ADA is always
       SUM(attendance_value) / SUM(membership_value); never average a per-row
-      ratio. For point-in-time truancy or count-of-students snapshots, filter to
-      a single date_day. Truancy criteria are regional: Miami uses 15+ absences
-      in a 90-day rolling window; NJ regions use projected 50+ absences for the
-      year. attendance_category is the coarse rollup (Present, Absent, Tardy,
+      ratio. attendance_category is the coarse rollup (Present, Absent, Tardy,
       In-School Suspension, Out-of-School Suspension); use it for GROUP BY
       breakdowns instead of attempting to sum the boolean is_* flags. No direct
       student identifiers — demographic dimensions are aggregate breakdowns
       only.
+
+      Chronic absence query patterns — always use exactly one of the two: (1)
+      Year-end / year-over-year: filter is_latest_record = true and group by
+      academic_year. Returns the final CA snapshot per year. Use for "CA rate in
+      2023 vs 2024 vs 2025." (2) Point-in-time: filter to a single date_day.
+      Returns CA accumulated from the start of the year through that date. Use
+      for same-point-in-year comparisons like "CA as of November 1 each year."
+      Omitting both overcounts; combining both is valid only when the date is
+      today.
+
+      For point-in-time truancy or count-of-students snapshots, also filter to a
+      single date_day. Truancy criteria are regional: Miami uses 15+ absences in
+      a 90-day rolling window; NJ regions use projected 50+ absences for the
+      year.
 
     cubes:
       - join_path: attendance
@@ -30,6 +41,7 @@ views:
           - ada_tier
           - is_truant
           - is_chronically_absent
+          - is_latest_record
 
       - join_path: attendance.dim_dates
         prefix: true
@@ -121,6 +133,7 @@ views:
           members:
             - academic_year
             - semester
+            - is_latest_record
 
     access_policy:
       # No PII tier — view contains no direct student identifiers.

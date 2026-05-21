@@ -13,11 +13,21 @@ views:
       Absent, Tardy, In-School Suspension, Out-of-School Suspension);
       attendance_code is the raw SIS code for specific drill-down. is_in_session
       and is_membership_day come from dim_school_calendars and are joined on
-      (date_key, location_key) to avoid a diamond path. For point-in-time
-      queries (e.g. is_truant on a specific date), filter to a single date_day.
+      (date_key, location_key) to avoid a diamond path. Contains direct student
+      identifiers — see access_policy for PII gating.
+
+      Chronic absence query patterns — always use exactly one of the two: (1)
+      Year-end / year-over-year: filter is_latest_record = true and group by
+      academic_year. Returns the final CA snapshot per year. Use for "CA rate in
+      2023 vs 2024 vs 2025." (2) Point-in-time: filter to a single date_day.
+      Returns CA accumulated from the start of the year through that date. Use
+      for same-point-in-year comparisons like "CA as of November 1 each year."
+      Omitting both overcounts; combining both is valid only when the date is
+      today.
+
+      For point-in-time truancy queries, also filter to a single date_day.
       Truancy criteria are regional: Miami uses 15+ absences in a 90-day rolling
-      window; NJ regions use projected 50+ absences for the year. Contains
-      direct student identifiers — see access_policy for PII gating.
+      window; NJ regions use projected 50+ absences for the year.
 
     cubes:
       - join_path: attendance
@@ -47,6 +57,7 @@ views:
           - is_suspended
           - is_truant
           - is_chronically_absent
+          - is_latest_record
           - enroll_status
 
       - join_path: attendance.dim_dates
@@ -182,6 +193,7 @@ views:
           members:
             - academic_year
             - semester
+            - is_latest_record
             - enroll_status
 
     access_policy:
