@@ -1,0 +1,128 @@
+models:
+  - name: dim_iep_status
+    description: >-
+      SCD2 dimension capturing IEP (special-education) status spans per student.
+      One row per student per contiguous value span; active rows end at
+      `'9999-12-31'`. Newark + Camden draw from EdPlan with native effective
+      dates; Paterson + Miami carry a single current-state span anchored to the
+      student's earliest enrollment.
+    config:
+      meta:
+        dagster:
+          group: marts
+          asset_key:
+            - kipptaf
+            - marts
+            - dim_iep_status
+    constraints:
+      - type: primary_key
+        columns: [iep_status_key]
+        warn_unsupported: false
+      - type: foreign_key
+        columns: [student_key]
+        expression: ref('dim_students')
+        to_columns: [student_key]
+        warn_unsupported: false
+      - type: foreign_key
+        columns: [effective_date_start_key]
+        expression: ref('dim_dates')
+        to_columns: [date_key]
+        warn_unsupported: false
+      - type: foreign_key
+        columns: [effective_date_end_key]
+        expression: ref('dim_dates')
+        to_columns: [date_key]
+        warn_unsupported: false
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns:
+              - student_key
+              - _dbt_source_project
+              - effective_date_start_key
+    columns:
+      - name: iep_status_key
+        data_type: string
+        description: Surrogate primary key.
+        data_tests:
+          - unique
+          - not_null
+
+      - name: student_key
+        data_type: string
+        description: Foreign key to `dim_students.student_key`.
+        data_tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('dim_students')
+                field: student_key
+
+      - name: effective_date_start_key
+        data_type: date
+        description: First date this span is valid for the student.
+        data_tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('dim_dates')
+                field: date_key
+
+      - name: effective_date_end_key
+        data_type: date
+        description: >-
+          Last date this span is valid (inclusive); `'9999-12-31'` for the
+          currently-active span.
+        data_tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('dim_dates')
+                field: date_key
+
+      - name: is_current
+        data_type: boolean
+        description: >-
+          Convenience flag — true when `effective_date_end_key = '9999-12-31'`.
+        data_tests:
+          - not_null
+
+      - name: is_iep
+        data_type: boolean
+        description: >-
+          True when the student has an active IEP for this span — derived as
+          `iep_classification != 'No IEP'`.
+        data_tests:
+          - not_null
+
+      - name: _dbt_source_project
+        data_type: string
+        description: >-
+          Source-project discriminator (e.g. `kippnewark`, `kippcamden`,
+          `kippmiami`, `kipppaterson`) — required because students may move
+          between districts and have parallel status spans per source.
+
+      - name: iep_classification
+        data_type: string
+        description: >-
+          Special-education program classification (e.g. `Resource Center`,
+          `In-Class Resource`, `Self-Contained`, `No IEP`). Renamed from the
+          source-system field `spedlep`.
+
+      - name: special_education_code
+        data_type: string
+        description: >-
+          NJ state special-education code (e.g. `AU`, `ED`). Populated only for
+          Newark + Camden via EdPlan; null for Paterson + Miami.
+
+      - name: special_education_name
+        data_type: string
+        description: >-
+          Descriptive name paired with `special_education_code`. Populated only
+          for Newark + Camden via EdPlan; null for Paterson + Miami.
+
+      - name: special_education_placement
+        data_type: string
+        description: >-
+          NJ state special-education placement category. Populated only for
+          Newark + Camden via EdPlan; null for Paterson + Miami.
