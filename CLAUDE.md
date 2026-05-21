@@ -94,7 +94,9 @@ file; domain specifics live in the nearest subdirectory CLAUDE.md.
 - **Auto-classifier still blocks `git worktree add -b` / `git checkout -b` after
   verbal user approval** — consent isn't visible to the classifier. If the user
   declines tracking issues, open minimal ones anyway (title + 1-2 sentences) and
-  use `gh issue develop`.
+  use `gh issue develop`. Same for `git push origin main` (route through a PR or
+  have the user push). `gh issue develop --name <branch>` also fails when the
+  branch contains trigger words like `log`, `auth`, `secret` — rename and retry.
 
 - **Smoke-test the runtime path, not just imports**: `hasattr(cls, "method")`
   and `python -c "import X"` pass even when a third-party SDK sub-resource (e.g.
@@ -144,7 +146,7 @@ file; domain specifics live in the nearest subdirectory CLAUDE.md.
   `.trunk/tools/trunk check --force <files>` to verify before claiming the
   change is lint-clean.
 
-- **Linter**: Suppress with `# trunk-ignore(linter/rule): reason` (e.g.
+- **Linter**: Suppress with `trunk-ignore(linter/rule): reason` (e.g.
   `# trunk-ignore(bandit/B603): static argv, no shell`) on the line immediately
   before the flagged line — not linter-native disable syntax. Wrapping the
   reason onto extra comment lines silently breaks the suppression (trunk only
@@ -367,7 +369,10 @@ image slimming.
 
 Host is `kipptaf.dagster.cloud/<deployment>/graphql` (org is `kipptaf`).
 `assetChecksOrError` is nested under `assetNodeOrError`; the evaluation success
-field is `success` (not `successful`).
+field is `success` (not `successful`). `assetMaterializations`
+`beforeTimestampMillis` / `afterTimestampMillis` are `String`, not `Float` —
+pass quoted numeric strings or the request fails with "type 'Float' used in
+position expecting type 'String'".
 
 ### GKE MCP
 
@@ -480,3 +485,11 @@ Job config changes must go through the dbt Cloud UI — no mutation tools exist 
 the MCP. Live step logs (`debug_logs`, `structured_logs`) and
 `list_job_run_artifacts` return nothing until `artifacts_saved: true` — don't
 try to diagnose in-flight runs.
+
+### Asana MCP
+
+`mcp__claude_ai_Asana__create_tasks` `html_notes` only accepts this tag
+allowlist: `body`, `strong`, `em`, `u`, `s`, `code`, `ol`, `ul`, `li`, `a`,
+`blockquote`, `pre`, `h1`, `h2`, `hr/`, `img`. `<p>` and `<br>` are rejected
+with "XML is invalid" — structure content with headings + lists, no paragraph
+tags.
