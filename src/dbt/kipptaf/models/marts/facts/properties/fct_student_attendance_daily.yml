@@ -245,8 +245,12 @@ models:
           ADA tier based on cumulative attendance rate through this date. Tier 1
           = 95%+ ADA (on track). Tier 2 = 90–94% (at risk). Tier 3 = 80–89%
           (chronic). Tier 4 = below 80% (severe chronic). Partitioned by student
-          × school × academic year, ordered by date. Null for Paterson records
-          before academic_year 2026.
+          × academic year (cross-school), ordered by date. Null for Paterson
+          records before academic_year 2026.
+        data_tests:
+          - accepted_values:
+              arguments:
+                values: [Tier 1, Tier 2, Tier 3, Tier 4]
 
       - name: is_ca_eligible
         data_type: boolean

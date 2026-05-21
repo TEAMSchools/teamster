@@ -212,6 +212,13 @@ cubes:
           snapshot per enrollment, no date filter required.
 
           Do not combine with a date_key filter — use exactly one or the other.
+
+          Transfer student note: a student who transfers intra-district mid-year
+          has two enrollment records for the same academic_year, so two rows get
+          is_latest_record = true. Cube CA measures use count_distinct on
+          student_number and handle this correctly. Raw SQL filtering on
+          is_latest_record = true without COUNT DISTINCT will double-count
+          transfer students.
         sql: is_latest_record
         type: boolean
         public: true
@@ -287,8 +294,11 @@ cubes:
         public: true
 
       - name: count_absent_days
-        description:
-          Total number of absence days (sum of is_absent on membership days).
+        description: >-
+          Total number of absence days (sum of is_absent). Filtered to
+          membership_value > 0 to exclude non-enrollment days while retaining
+          partial-membership days (dual-enrolled students). Not restricted to
+          membership_value = 1 — partial days count as absences too.
         sql: is_absent
         type: sum
         public: true
