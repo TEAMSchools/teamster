@@ -64,6 +64,8 @@ with
 
 select
     *,
+    -- materialized source-project discriminator for downstream surrogate-key
+    -- composition; replaces per-consumer regexp_extract() per #3142.
     regexp_extract(_dbt_source_relation, r'(kipp\w+)_') as _dbt_source_project,
 from unioned
 ```
@@ -76,8 +78,21 @@ from unioned
 - name: _dbt_source_project
   description: >-
     Source-project discriminator (e.g. `kippnewark`, `kippcamden`) extracted
-    from `_dbt_source_relation`. Materialized here per #3142 so consumers can
-    join and hash on the canonical value rather than re-running the regexp.
+    from `_dbt_source_relation`. Materialized at the union point so downstream
+    consumers can join and hash on a stable value.
+```
+
+Per `src/dbt/CLAUDE.md`, tracking-issue refs like `#3142` MUST NOT appear in
+YAML descriptions — put them in an inline SQL comment instead. Update the SQL
+`select` to:
+
+```sql
+select
+    *,
+    -- materialized source-project discriminator for downstream surrogate-key
+    -- composition; replaces per-consumer regexp_extract() per #3142.
+    regexp_extract(_dbt_source_relation, r'(kipp\w+)_') as _dbt_source_project,
+from unioned
 ```
 
 - [ ] **Step 3: Parse to verify the model and YAML still load.**
@@ -138,6 +153,8 @@ with
 
 select
     *,
+    -- materialized source-project discriminator for downstream surrogate-key
+    -- composition; replaces per-consumer regexp_extract() per #3142.
     regexp_extract(_dbt_source_relation, r'(kipp\w+)_') as _dbt_source_project,
 from unioned
 ```
@@ -199,6 +216,8 @@ with
 
 select
     *,
+    -- materialized source-project discriminator for downstream surrogate-key
+    -- composition; replaces per-consumer regexp_extract() per #3142.
     regexp_extract(_dbt_source_relation, r'(kipp\w+)_') as _dbt_source_project,
 from unioned
 ```
@@ -255,6 +274,8 @@ with
 
 select
     *,
+    -- materialized source-project discriminator for downstream surrogate-key
+    -- composition; replaces per-consumer regexp_extract() per #3142.
     regexp_extract(_dbt_source_relation, r'(kipp\w+)_') as _dbt_source_project,
 from unioned
 ```
