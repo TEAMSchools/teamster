@@ -2,6 +2,7 @@ with
     student_enrollments as (
         select
             _dbt_source_relation,
+            _dbt_source_project,
             studentid,
             schoolid,
             yearid,
