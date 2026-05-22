@@ -306,12 +306,8 @@ cubes:
         filters:
           - sql: "{CUBE}.membership_value = 1"
           - sql: >-
-              {dim_students.enrollment_status} != 'Transferred Out' OR
-              {dim_terms.academic_year} != EXTRACT(
-                YEAR FROM DATE_SUB(
-                  CURRENT_DATE('America/New_York'), INTERVAL 6 MONTH
-                )
-              )
+              {dim_students.enrollment_status} != 'Transferred Out' OR NOT
+              {dim_dates.is_current_academic_year}
 
       - name: count_chronically_absent
         description: >-
@@ -337,12 +333,8 @@ cubes:
           - sql: "{CUBE}.is_chronically_absent = true"
           - sql: "{CUBE}.membership_value = 1"
           - sql: >-
-              {dim_students.enrollment_status} != 'Transferred Out' OR
-              {dim_terms.academic_year} != EXTRACT(
-                YEAR FROM DATE_SUB(
-                  CURRENT_DATE('America/New_York'), INTERVAL 6 MONTH
-                )
-              )
+              {dim_students.enrollment_status} != 'Transferred Out' OR NOT
+              {dim_dates.is_current_academic_year}
 
       - name: pct_chronically_absent
         description: >-
@@ -370,12 +362,8 @@ cubes:
           - sql: "{CUBE}.ada_tier IN ('Tier 1', 'Tier 2')"
           - sql: "{CUBE}.membership_value = 1"
           - sql: >-
-              {dim_students.enrollment_status} != 'Transferred Out' OR
-              {dim_terms.academic_year} != EXTRACT(
-                YEAR FROM DATE_SUB(
-                  CURRENT_DATE('America/New_York'), INTERVAL 6 MONTH
-                )
-              )
+              {dim_students.enrollment_status} != 'Transferred Out' OR NOT
+              {dim_dates.is_current_academic_year}
 
       - name: pct_tier_1_2
         description: >-
@@ -404,12 +392,8 @@ cubes:
           - sql: "{CUBE}.ada_tier = 'Tier 3'"
           - sql: "{CUBE}.membership_value = 1"
           - sql: >-
-              {dim_students.enrollment_status} != 'Transferred Out' OR
-              {dim_terms.academic_year} != EXTRACT(
-                YEAR FROM DATE_SUB(
-                  CURRENT_DATE('America/New_York'), INTERVAL 6 MONTH
-                )
-              )
+              {dim_students.enrollment_status} != 'Transferred Out' OR NOT
+              {dim_dates.is_current_academic_year}
 
       - name: pct_tier_3
         description: >-
