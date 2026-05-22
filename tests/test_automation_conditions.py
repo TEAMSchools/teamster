@@ -845,6 +845,100 @@ def test_view_not_blocked_by_parent_pending_code_version():
     assert result.get_num_requested(AssetKey("my_view")) == 1
 
 
+def test_table_gate_scoped_to_same_code_location():
+    """When code_location is passed, the dep-code-version gate only considers
+    deps under that code-location key prefix. Cross-CL deps with unapplied
+    code changes don't block — they're typically materialized by a different
+    sensor and would deadlock the downstream otherwise.
+    """
+
+    @asset(key=["other_cl", "upstream"], tags=_TABLE_TAG, code_version="1")
+    def cross_cl_upstream_v1():
+        return 1
+
+    @asset(
+        key=["my_cl", "downstream"],
+        deps=[cross_cl_upstream_v1],
+        automation_condition=dbt_table_automation_condition(code_location="my_cl"),
+        code_version="1",
+        tags=_TABLE_TAG,
+    )
+    def downstream_v1():
+        return 2
+
+    instance = DagsterInstance.ephemeral()
+    defs1 = Definitions(assets=[cross_cl_upstream_v1, downstream_v1])
+    materialize(assets=[cross_cl_upstream_v1, downstream_v1], instance=instance)
+    result = evaluate_automation_conditions(defs=defs1, instance=instance)
+    assert result.get_num_requested(AssetKey(["my_cl", "downstream"])) == 0
+
+    @asset(key=["other_cl", "upstream"], tags=_TABLE_TAG, code_version="2")
+    def cross_cl_upstream_v2():
+        return 1
+
+    @asset(
+        key=["my_cl", "downstream"],
+        deps=[cross_cl_upstream_v2],
+        automation_condition=dbt_table_automation_condition(code_location="my_cl"),
+        code_version="2",
+        tags=_TABLE_TAG,
+    )
+    def downstream_v2():
+        return 2
+
+    defs2 = Definitions(assets=[cross_cl_upstream_v2, downstream_v2])
+    result = evaluate_automation_conditions(
+        defs=defs2, instance=instance, cursor=result.cursor
+    )
+    assert result.get_num_requested(AssetKey(["my_cl", "downstream"])) == 1
+
+
+def test_table_gate_still_blocks_same_code_location_deps():
+    """Same-CL deps with unapplied code changes still gate downstream
+    materialization — scoping only excludes cross-CL deps.
+    """
+
+    @asset(key=["my_cl", "upstream"], tags=_TABLE_TAG, code_version="1")
+    def same_cl_upstream_v1():
+        return 1
+
+    @asset(
+        key=["my_cl", "downstream"],
+        deps=[same_cl_upstream_v1],
+        automation_condition=dbt_table_automation_condition(code_location="my_cl"),
+        code_version="1",
+        tags=_TABLE_TAG,
+    )
+    def downstream_v1():
+        return 2
+
+    instance = DagsterInstance.ephemeral()
+    defs1 = Definitions(assets=[same_cl_upstream_v1, downstream_v1])
+    materialize(assets=[same_cl_upstream_v1, downstream_v1], instance=instance)
+    result = evaluate_automation_conditions(defs=defs1, instance=instance)
+    assert result.get_num_requested(AssetKey(["my_cl", "downstream"])) == 0
+
+    @asset(key=["my_cl", "upstream"], tags=_TABLE_TAG, code_version="2")
+    def same_cl_upstream_v2():
+        return 1
+
+    @asset(
+        key=["my_cl", "downstream"],
+        deps=[same_cl_upstream_v2],
+        automation_condition=dbt_table_automation_condition(code_location="my_cl"),
+        code_version="2",
+        tags=_TABLE_TAG,
+    )
+    def downstream_v2():
+        return 2
+
+    defs2 = Definitions(assets=[same_cl_upstream_v2, downstream_v2])
+    result = evaluate_automation_conditions(
+        defs=defs2, instance=instance, cursor=result.cursor
+    )
+    assert result.get_num_requested(AssetKey(["my_cl", "downstream"])) == 0
+
+
 class TestKipptafDbtAssets:
     """Integration tests using the real kipptaf dbt manifest.
 

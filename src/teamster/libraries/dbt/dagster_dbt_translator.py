@@ -47,12 +47,14 @@ class CustomDagsterDbtTranslator(DagsterDbtTranslator):
         if materialized == "view" and "union_relations" in dbt_resource_props.get(
             "raw_code", ""
         ):
-            return dbt_union_relations_automation_condition()
+            return dbt_union_relations_automation_condition(
+                code_location=self.code_location
+            )
 
         if materialized in ["view", "ephemeral"]:
             return dbt_view_automation_condition()
         else:
-            return dbt_table_automation_condition()
+            return dbt_table_automation_condition(code_location=self.code_location)
 
     def get_group_name(self, dbt_resource_props: Mapping[str, Any]) -> str | None:
         group = super().get_group_name(dbt_resource_props)
