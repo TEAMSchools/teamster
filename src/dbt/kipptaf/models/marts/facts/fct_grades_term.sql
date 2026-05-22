@@ -28,7 +28,7 @@ with
 select
     {{
         dbt_utils.generate_surrogate_key(
-            ["fg.cc_dcid", "fg._dbt_source_relation", "fg.storecode"]
+            ["fg.cc_dcid", "fg._dbt_source_project", "fg.storecode"]
         )
     }} as grades_term_key,
 

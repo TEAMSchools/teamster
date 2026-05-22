@@ -41,7 +41,7 @@ models:
       - name: course_section_key
         data_type: string
         description: >-
-          Surrogate key derived from sections_dcid and _dbt_source_relation. FK
+          Surrogate key derived from sections_dcid and _dbt_source_project. FK
           to dim_course_sections.
         constraints:
           - type: foreign_key
