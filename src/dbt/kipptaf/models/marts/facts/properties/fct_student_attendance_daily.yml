@@ -236,13 +236,6 @@ models:
               arguments:
                 values: [Tier 1, Tier 2, Tier 3, Tier 4]
 
-      - name: is_ca_eligible
-        data_type: boolean
-        description: >-
-          TRUE if this student-day is included in chronic absence calculations.
-          FALSE for transferred-out students (enroll_status = 2) in the current
-          academic year only. Prior-year records are always eligible.
-
       - name: is_latest_record
         data_type: boolean
         description: >-

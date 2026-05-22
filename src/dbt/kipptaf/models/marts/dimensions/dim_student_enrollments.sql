@@ -18,7 +18,6 @@ select
     enr.exitdate as exit_date_key,
 
     enr.academic_year,
-    enr.enroll_status,
     enr.grade_level,
     enr.cohort_primary as graduation_year,
     enr.is_retained_year,

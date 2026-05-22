@@ -162,15 +162,6 @@ cubes:
         type: boolean
         public: true
 
-      - name: is_ca_eligible
-        description: >-
-          TRUE if this student-day is included in chronic absence calculations.
-          Transferred-out students (enroll_status = 2) are excluded for the
-          current academic year only; prior-year records are always eligible.
-        sql: is_ca_eligible
-        type: boolean
-        public: false
-
       - name: is_chronically_absent
         description: >-
           TRUE if the student's cumulative ADA through this date is below 90%.
@@ -327,7 +318,13 @@ cubes:
         public: false
         filters:
           - sql: "{CUBE}.membership_value = 1"
-          - sql: "{CUBE}.is_ca_eligible = true"
+          - sql: >-
+              {dim_students.enrollment_status} != 'Transferred Out' OR
+              {CUBE}.academic_year != EXTRACT(
+                YEAR FROM DATE_SUB(
+                  CURRENT_DATE('America/New_York'), INTERVAL 6 MONTH
+                )
+              )
 
       - name: count_chronically_absent
         description: >-
@@ -352,7 +349,13 @@ cubes:
         filters:
           - sql: "{CUBE}.is_chronically_absent = true"
           - sql: "{CUBE}.membership_value = 1"
-          - sql: "{CUBE}.is_ca_eligible = true"
+          - sql: >-
+              {dim_students.enrollment_status} != 'Transferred Out' OR
+              {CUBE}.academic_year != EXTRACT(
+                YEAR FROM DATE_SUB(
+                  CURRENT_DATE('America/New_York'), INTERVAL 6 MONTH
+                )
+              )
 
       - name: pct_chronically_absent
         description: >-
@@ -379,7 +382,13 @@ cubes:
         filters:
           - sql: "{CUBE}.ada_tier IN ('Tier 1', 'Tier 2')"
           - sql: "{CUBE}.membership_value = 1"
-          - sql: "{CUBE}.is_ca_eligible = true"
+          - sql: >-
+              {dim_students.enrollment_status} != 'Transferred Out' OR
+              {CUBE}.academic_year != EXTRACT(
+                YEAR FROM DATE_SUB(
+                  CURRENT_DATE('America/New_York'), INTERVAL 6 MONTH
+                )
+              )
 
       - name: pct_tier_1_2
         description: >-
@@ -407,7 +416,13 @@ cubes:
         filters:
           - sql: "{CUBE}.ada_tier = 'Tier 3'"
           - sql: "{CUBE}.membership_value = 1"
-          - sql: "{CUBE}.is_ca_eligible = true"
+          - sql: >-
+              {dim_students.enrollment_status} != 'Transferred Out' OR
+              {CUBE}.academic_year != EXTRACT(
+                YEAR FROM DATE_SUB(
+                  CURRENT_DATE('America/New_York'), INTERVAL 6 MONTH
+                )
+              )
 
       - name: pct_tier_3
         description: >-
