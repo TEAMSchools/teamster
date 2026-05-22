@@ -18,6 +18,7 @@ select
     enr.exitdate as exit_date_key,
 
     enr.academic_year,
+    enr.enroll_status,
     enr.grade_level,
     enr.cohort_primary as graduation_year,
     enr.is_retained_year,
@@ -27,3 +28,4 @@ left join
     {{ ref("stg_powerschool__schools") }} as sch
     on enr.schoolid = sch.school_number
     and enr._dbt_source_project = sch._dbt_source_project
+where enr.entrydate is not null

@@ -38,11 +38,6 @@ cubes:
         type: string
         primary_key: true
 
-      - name: student_number
-        sql: student_number
-        type: number
-        public: false
-
       - name: attendance_date
         sql: CAST(date_key AS TIMESTAMP)
         type: time
@@ -167,21 +162,20 @@ cubes:
         type: boolean
         public: true
 
-      - name: enroll_status
-        description: >-
-          PowerSchool enrollment status at the time of the attendance record. 0
-          = active; 2 = transferred out. Use to exclude transferred-out students
-          from chronic-absence metrics.
-        sql: enroll_status
-        type: number
-        public: true
-
       - name: is_ca_eligible
         description: >-
           TRUE if this student-day is included in chronic absence calculations.
           Transferred-out students (enroll_status = 2) are excluded for the
           current academic year only; prior-year records are always eligible.
-        sql: is_ca_eligible
+        sql: >
+          (
+            {CUBE}.academic_year != IF(
+              EXTRACT(MONTH FROM CURRENT_DATE()) >= 7,
+              EXTRACT(YEAR FROM CURRENT_DATE()),
+              EXTRACT(YEAR FROM CURRENT_DATE()) - 1
+            )
+            OR {dim_student_enrollments.enroll_status} IS DISTINCT FROM 2
+          )
         type: boolean
         public: false
 
@@ -219,9 +213,8 @@ cubes:
           Transfer student note: a student who transfers intra-district mid-year
           has two enrollment records for the same academic_year, so two rows get
           is_latest_record = true. Cube CA measures use count_distinct on
-          student_number and handle this correctly. Raw SQL filtering on
-          is_latest_record = true without COUNT DISTINCT will double-count
-          transfer students.
+          student_enrollment_key. Raw SQL filtering on is_latest_record = true
+          without COUNT DISTINCT will double-count transfer students.
         sql: is_latest_record
         type: boolean
         public: true
@@ -332,13 +325,12 @@ cubes:
 
       - name: _count_ca_eligible_students
         description: >-
-          Denominator for CA rate — distinct students on full membership days
-          (membership_value = 1) who are CA-eligible. Uses student_number to
-          avoid double-counting students with multiple enrollment records in the
-          same year. Must be paired with the same query pattern used for
-          count_chronically_absent: is_latest_record = true for year-end, or a
-          single date_key filter for point-in-time.
-        sql: student_number
+          Denominator for CA rate — distinct enrollment records on full
+          membership days (membership_value = 1) who are CA-eligible. Must be
+          paired with the same query pattern used for count_chronically_absent:
+          is_latest_record = true for year-end, or a single date_key filter for
+          point-in-time.
+        sql: student_enrollment_key
         type: count_distinct
         public: false
         filters:
@@ -362,7 +354,7 @@ cubes:
 
           Omitting both overcounts — a student CA on 30 days is counted 30
           times. Combining both is valid only when the date equals today.
-        sql: student_number
+        sql: student_enrollment_key
         type: count_distinct
         public: true
         filters:
@@ -386,11 +378,10 @@ cubes:
 
       - name: _count_tier_1_2
         description: >-
-          Denominator-matched count of students in ADA Tier 1 or Tier 2
-          (cumulative ADA ≥ 90%) as of the snapshot date. Uses student_number to
-          avoid double-counting transfer students. Use the same query patterns
-          as count_chronically_absent.
-        sql: student_number
+          Denominator-matched count of enrollment records in ADA Tier 1 or Tier
+          2 (cumulative ADA ≥ 90%) as of the snapshot date. Use the same query
+          patterns as count_chronically_absent.
+        sql: student_enrollment_key
         type: count_distinct
         public: false
         filters:
@@ -415,10 +406,10 @@ cubes:
 
       - name: _count_tier_3
         description: >-
-          Count of students in ADA Tier 3 (cumulative ADA 80–89%) as of the
-          snapshot date. Uses student_number to avoid double-counting transfer
-          students. Use the same query patterns as count_chronically_absent.
-        sql: student_number
+          Count of enrollment records in ADA Tier 3 (cumulative ADA 80–89%) as
+          of the snapshot date. Use the same query patterns as
+          count_chronically_absent.
+        sql: student_enrollment_key
         type: count_distinct
         public: false
         filters:

@@ -61,7 +61,6 @@ views:
           - is_truant
           - is_chronically_absent
           - is_latest_record
-          - enroll_status
 
       - join_path: attendance.dim_dates
         prefix: true
@@ -93,6 +92,7 @@ views:
         prefix: true
         includes:
           - student_enrollment_key
+          - enroll_status
           - grade_level
           - graduation_year
           - entry_date
@@ -183,6 +183,7 @@ views:
         - name: Enrollment
           members:
             - dim_student_enrollments_student_enrollment_key
+            - dim_student_enrollments_enroll_status
             - dim_student_enrollments_grade_level
             - dim_student_enrollments_graduation_year
             - dim_student_enrollments_entry_date
@@ -197,7 +198,7 @@ views:
             - academic_year
             - semester
             - is_latest_record
-            - enroll_status
+            - dim_student_enrollments_enroll_status
 
     access_policy:
       - group: cube-access-student-data

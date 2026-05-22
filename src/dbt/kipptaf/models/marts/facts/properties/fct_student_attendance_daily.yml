@@ -54,14 +54,6 @@ models:
               arguments:
                 to: ref('dim_student_enrollments')
                 field: student_enrollment_key
-      - name: student_number
-        data_type: int64
-        description: >-
-          PowerSchool student identifier. PII — do not expose in aggregate
-          outputs or external surfaces. Used as the counting grain for
-          chronic-absence and ADA measures in the Cube semantic layer to avoid
-          double-counting students with multiple enrollment records in a year.
-
       - name: date_key
         data_type: date
         description: >-
@@ -178,14 +170,6 @@ models:
         description: >-
           Semester code for the attendance date (e.g., S1, S2).
 
-      - name: enroll_status
-        data_type: int64
-        description: >-
-          PowerSchool enrollment status at the time of the attendance record. 0
-          = active; 2 = transferred out. Used to exclude transferred-out
-          students from chronic-absence metrics, matching the Tableau dashboard
-          methodology.
-
       - name: is_absent
         data_type: int64
         description: >-
@@ -251,14 +235,6 @@ models:
           - accepted_values:
               arguments:
                 values: [Tier 1, Tier 2, Tier 3, Tier 4]
-
-      - name: is_ca_eligible
-        data_type: boolean
-        description: >-
-          TRUE if this student-day should be included in chronic absence
-          calculations. FALSE for transferred-out students (enroll_status = 2)
-          in the current academic year only, matching Tableau's methodology.
-          Prior-year records are always eligible regardless of transfer status.
 
       - name: is_latest_record
         data_type: boolean

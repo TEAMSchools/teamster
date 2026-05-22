@@ -104,6 +104,20 @@ models:
           calendar year in which the academic year begins (e.g., 2025 for the
           2025-26 school year).
 
+      - name: enroll_status
+        data_type: int64
+        description: >-
+          PowerSchool enrollment status for this enrollment record. 0 = active;
+          2 = transferred out. Per-enrollment granularity — a student who
+          transferred intra-district has enroll_status = 2 on the school they
+          left and 0 on the school they joined.
+
+        config:
+          meta:
+            source_system: PowerSchool
+            source_model: int_powerschool__student_enrollment_union
+            source_column: enroll_status
+
       - name: grade_level
         data_type: int64
         description: >-

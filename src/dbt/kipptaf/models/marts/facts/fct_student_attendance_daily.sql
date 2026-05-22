@@ -93,10 +93,6 @@ with
                 else 'Present'
             end as attendance_category,
 
-            ada.student_number,
-            ada.schoolid,
-
-            enr.enroll_status,
         from {{ ref("int_powerschool__ps_adaadm_daily_ctod") }} as ada
         inner join
             {{ ref("int_powerschool__student_enrollment_union") }} as enr
@@ -122,7 +118,7 @@ with
             *,
 
             avg(if(membership_value = 1, attendance_value, null)) over (
-                partition by student_number, academic_year
+                partition by student_enrollment_key
                 order by date_key asc
                 rows between unbounded preceding and current row
             ) as _running_ada,
@@ -132,7 +128,6 @@ with
 select
     student_attendance_daily_key,
     student_enrollment_key,
-    student_number,
 
     date_key,
     location_key,
@@ -140,7 +135,6 @@ select
 
     academic_year,
     semester,
-    enroll_status,
 
     attendance_code,
     attendance_value,
@@ -171,11 +165,6 @@ select
         then 'Tier 3'
         else 'Tier 4'
     end as ada_tier,
-
-    (
-        academic_year != {{ var("current_academic_year") }}
-        or enroll_status is distinct from 2
-    ) as is_ca_eligible,
 
     row_number() over (partition by student_enrollment_key order by date_key desc)
     = 1 as is_latest_record,

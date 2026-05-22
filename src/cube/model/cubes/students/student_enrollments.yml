@@ -43,6 +43,16 @@ cubes:
         sql: academic_year
         type: number
 
+      - name: enroll_status
+        description: >-
+          PowerSchool enrollment status for this enrollment record. 0 = active;
+          2 = transferred out. Per-enrollment granularity — a student who
+          transferred intra-district has enroll_status = 2 on the school they
+          left and 0 on the school they joined.
+        sql: enroll_status
+        type: number
+        public: true
+
       - name: grade_level
         description: >-
           The grade the student is in. Since this is an integer: 0=Kindergarten
