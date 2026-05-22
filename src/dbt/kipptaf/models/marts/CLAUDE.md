@@ -249,6 +249,23 @@ to surface the dep.
 Every mart must appear in `cube.yml`'s `cube_semantic_layer.depends_on`; other
 exposures reference `rpt_*` / staging / intermediate models, not marts.
 
+## SCD2 status dims bound to enrollments
+
+Status dims sourced from external systems (edplan, titan, s_nj_stu_x) that
+represent enrollment-context status:
+
+- Grain `(student_number, _dbt_source_project, effective_date_start)`; expose
+  `_dbt_source_project` as a dim column.
+- Inner-join external records to enrollment **per stint** (not aggregated
+  min/max). Multi-stint students get separate dim rows per stint. Date-range
+  predicates in ON, not WHERE.
+- Carry `student_enrollment_key` as direct FK to `dim_student_enrollments` via
+  `surrogate_key(student_number, _dbt_source_relation, academic_year, entrydate)`
+  — consumers equi-join instead of date-range BETWEEN.
+- Half-open exit:
+  `enrollment_end = coalesce(date_sub(exitdate, interval 1 day), '9999-12-31')`
+  to avoid boundary-share overlaps.
+
 ## Not in this layer
 
 - Reporting views (`rpt_*`) — live under `extracts/`.

@@ -159,6 +159,9 @@ manifest". The prod manifest is refreshed by `.git/hooks/post-merge` on every
   profile, not `~/.dbt/profiles.yml`) and
   `--state /workspaces/teamster/src/dbt/<project>/target/prod` (main repo's
   manifest — skips a worktree-local parse).
+- `dbt clone --select 'package:<name>'` matches only source-system package
+  models, not district-level overrides with the same name. For cross-project
+  staging seeding, omit `--select`.
 
 ## Stale dev tables shadow `--defer`
 

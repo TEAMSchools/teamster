@@ -91,12 +91,15 @@ file; domain specifics live in the nearest subdirectory CLAUDE.md.
 - **Git resuming**: Before resuming work on an existing branch, merge `main`:
   `git fetch origin main && git merge origin/main`.
 
-- **Auto-classifier still blocks `git worktree add -b` / `git checkout -b` after
-  verbal user approval** — consent isn't visible to the classifier. If the user
-  declines tracking issues, open minimal ones anyway (title + 1-2 sentences) and
-  use `gh issue develop`. Same for `git push origin main` (route through a PR or
-  have the user push). `gh issue develop --name <branch>` also fails when the
-  branch contains trigger words like `log`, `auth`, `secret` — rename and retry.
+- **Auto-classifier doesn't see verbal approval or `AskUserQuestion` answers** —
+  only the assistant message immediately preceding the tool call. After
+  out-of-band consent, re-confirm in plain text the same turn or the write will
+  be denied. Common surfaces: `git worktree add -b` / `git checkout -b`,
+  `git push origin main` (route through a PR or have the user push), bulk Asana
+  `create_tasks`. If the user declined tracking issues, open minimal ones anyway
+  (title + 1-2 sentences) and use `gh issue develop`.
+  `gh issue develop --name <branch>` also fails when the branch contains trigger
+  words like `log`, `auth`, `secret` — rename and retry.
 
 - **Smoke-test the runtime path, not just imports**: `hasattr(cls, "method")`
   and `python -c "import X"` pass even when a third-party SDK sub-resource (e.g.
@@ -490,10 +493,31 @@ the MCP. Live step logs (`debug_logs`, `structured_logs`) and
 `list_job_run_artifacts` return nothing until `artifacts_saved: true` — don't
 try to diagnose in-flight runs.
 
+`mcp__github__pull_request_read get_status` surfaces dbt Cloud check status
+(state + target_url to run page) — fallback when dbt MCP is down.
+
 ### Asana MCP
 
-`mcp__claude_ai_Asana__create_tasks` `html_notes` only accepts this tag
-allowlist: `body`, `strong`, `em`, `u`, `s`, `code`, `ol`, `ul`, `li`, `a`,
-`blockquote`, `pre`, `h1`, `h2`, `hr/`, `img`. `<p>` and `<br>` are rejected
-with "XML is invalid" — structure content with headings + lists, no paragraph
-tags.
+The "TEAMster" project is the canonical tracker for engineering work. Tasks are
+named `#NNNN | title` (NNNN = GitHub issue or PR number) — parse to map Asana ↔
+GitHub. The Type custom field tags each task `Issue`, `Pull Request`, or
+`Ad Hoc`. PR tasks are subtasks of their issue task (parent resolved via
+`Closes/Fixes/Refs #N` in the PR body).
+
+- `create_tasks` `html_notes` only accepts this tag allowlist: `body`, `strong`,
+  `em`, `u`, `s`, `code`, `ol`, `ul`, `li`, `a`, `blockquote`, `pre`, `h1`,
+  `h2`, `hr/`, `img`. `<p>` and `<br>` are rejected with "XML is invalid" —
+  structure content with headings + lists, no paragraph tags.
+- `create_tasks.custom_fields` is a JSON-encoded string, not a nested object:
+  `"{\"<field_gid>\":\"<option_gid>\"}"`.
+- `search_tasks` rejects this workspace's custom-field GIDs
+  (`Not a valid search parameter`). Paginate with `get_tasks` and filter
+  client-side.
+- `get_tasks.completed_since` requires a full ISO 8601 datetime. Pass a
+  far-future date (`"2030-01-01T00:00:00Z"`) to list only incomplete tasks.
+- `update_tasks` supports `parent` for re-parenting; `null` flattens.
+- Pagination cursors return as `next_page.offset` — pass to `get_tasks.offset`
+  until null.
+- Resolve GitHub-login → Asana email via
+  `search_objects(resource_type: "user")`. Workspace spans three email domains
+  (`teamschools.org`, `kippteamandfamily.org`, `kippnj.org`).
