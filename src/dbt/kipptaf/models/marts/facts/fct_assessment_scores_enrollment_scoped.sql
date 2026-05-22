@@ -231,7 +231,7 @@ select
     }} as assessment_administration_key,
 
     if(
-        su.student_number is not null,
+        ds.lea_student_identifier is not null,
         {{ dbt_utils.generate_surrogate_key(["su.student_number"]) }},
         cast(null as string)
     ) as student_key,
@@ -244,3 +244,5 @@ select
 
     su.is_proficient as is_mastery,
 from state_union as su
+left join
+    {{ ref("dim_students") }} as ds on su.student_number = ds.lea_student_identifier
