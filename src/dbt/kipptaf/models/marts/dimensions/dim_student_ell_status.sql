@@ -1,18 +1,26 @@
 with
-    -- Per-(student, district) PowerSchool enrollment range. Inner-joining the
-    -- legs to this CTE clips LEP spans to the student's actual enrollment in
-    -- the district and drops phantom NJSmart records for districts where the
-    -- student was never enrolled.
+    -- Per-enrollment-stint PowerSchool enrollment range. One row per stint;
+    -- multi-stint students get multiple dim rows per LEP record, each clipped
+    -- to its specific entry/exit window. Aggregating to min/max would span
+    -- gaps between stints.
     enrollments as (
         select
             students_dcid,
             student_number,
             _dbt_source_project,
 
-            min(entrydate) as enrollment_start,
-            max(coalesce(exitdate, cast('9999-12-31' as date))) as enrollment_end,
+            entrydate as enrollment_start,
+
+            -- PowerSchool exitdate is half-open (first day AFTER stint).
+            -- Subtract 1 day to get the inclusive last day so boundary-sharing
+            -- stints don't produce overlapping inclusive ends in the dim.
+            coalesce(
+                date_sub(exitdate, interval 1 day), cast('9999-12-31' as date)
+            ) as enrollment_end,
         from {{ ref("int_powerschool__student_enrollment_union") }}
-        group by students_dcid, student_number, _dbt_source_project
+        -- graduates carry NULL entry/exit as a placeholder row; drop them
+        -- (no enrollment context to clip against).
+        where entrydate is not null
     ),
 
     nj_primary as (
@@ -30,11 +38,10 @@ with
             enrollments as e
             on njs.studentsdcid = e.students_dcid
             and njs._dbt_source_project = e._dbt_source_project
-        where
-            njs.lepbegindate is not null
             and njs.lepbegindate <= e.enrollment_end
             and coalesce(njs.lependdate, cast('9999-12-31' as date))
             >= e.enrollment_start
+        where njs.lepbegindate is not null
     ),
 
     nj_secondary as (
@@ -52,11 +59,10 @@ with
             enrollments as e
             on njs.studentsdcid = e.students_dcid
             and njs._dbt_source_project = e._dbt_source_project
-        where
-            njs.lepbegindate2 is not null
             and njs.lepbegindate2 <= e.enrollment_end
             and coalesce(njs.liependdate2, cast('9999-12-31' as date))
             >= e.enrollment_start
+        where njs.lepbegindate2 is not null
     ),
 
     nj_leg as (
@@ -76,7 +82,7 @@ with
     ),
 
     pm_leg as (
-        select distinct
+        select
             e.student_number,
             e._dbt_source_project,
 

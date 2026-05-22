@@ -1,19 +1,28 @@
 {% set invalid_lunch_status = ["", "NoD", "1", "2"] %}
 
 with
-    -- Per-(student, district) PowerSchool enrollment range. Inner-joining the
-    -- legs to this CTE clips eligibility spans to the student's actual
-    -- enrollment in the district and drops phantom Titan records for
-    -- districts where the student was never enrolled.
+    -- Per-enrollment-stint PowerSchool enrollment range. One row per stint;
+    -- multi-stint students get multiple dim rows per eligibility record, each
+    -- clipped to its specific entry/exit window. Aggregating to min/max would
+    -- span gaps between stints.
     enrollments as (
         select
             student_number,
             _dbt_source_project,
+            lunchstatus,
 
-            min(entrydate) as enrollment_start,
-            max(coalesce(exitdate, cast('9999-12-31' as date))) as enrollment_end,
+            entrydate as enrollment_start,
+
+            -- PowerSchool exitdate is half-open (first day AFTER stint).
+            -- Subtract 1 day to get the inclusive last day so boundary-sharing
+            -- stints don't produce overlapping inclusive ends in the dim.
+            coalesce(
+                date_sub(exitdate, interval 1 day), cast('9999-12-31' as date)
+            ) as enrollment_end,
         from {{ ref("int_powerschool__student_enrollment_union") }}
-        group by student_number, _dbt_source_project
+        -- graduates carry NULL entry/exit as a placeholder row; drop them
+        -- (no enrollment context to clip against).
+        where entrydate is not null
     ),
 
     nj_unioned as (
@@ -95,38 +104,23 @@ with
             enrollments as e
             on l.student_number = e.student_number
             and l._dbt_source_project = e._dbt_source_project
-        where
-            l.effective_date_start <= e.enrollment_end
+            and l.effective_date_start <= e.enrollment_end
             and l.effective_date_end >= e.enrollment_start
-    ),
-
-    pm_recent as (
-        {{
-            dbt_utils.deduplicate(
-                relation=ref("int_powerschool__student_enrollment_union"),
-                partition_by="student_number, _dbt_source_project",
-                order_by="entrydate desc",
-            )
-        }}
     ),
 
     pm_leg as (
         select
-            r.student_number,
-            r._dbt_source_project,
+            e.student_number,
+            e._dbt_source_project,
 
             if(
-                r.lunchstatus in unnest({{ invalid_lunch_status }}), null, r.lunchstatus
+                e.lunchstatus in unnest({{ invalid_lunch_status }}), null, e.lunchstatus
             ) as meal_eligibility,
 
             e.enrollment_start as effective_date_start,
             e.enrollment_end as effective_date_end,
-        from pm_recent as r
-        inner join
-            enrollments as e
-            on r.student_number = e.student_number
-            and r._dbt_source_project = e._dbt_source_project
-        where r._dbt_source_project in ('kipppaterson', 'kippmiami')
+        from enrollments as e
+        where e._dbt_source_project in ('kipppaterson', 'kippmiami')
     ),
 
     unioned as (
