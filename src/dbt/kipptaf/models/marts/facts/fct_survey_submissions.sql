@@ -69,11 +69,12 @@ with
             'student' as respondent_type,
 
             enr.student_number,
+            enr.academic_year,
+            enr.entrydate,
+
             regexp_extract(
                 enr._dbt_source_relation, r'(kipp\w+)_'
             ) as _dbt_source_project,
-            enr.academic_year,
-            enr.entrydate,
         from submissions_grain as sg
         inner join
             {{ ref("stg_google_sheets__reporting__terms") }} as rt
