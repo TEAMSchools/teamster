@@ -2,7 +2,6 @@
 
 The **network-wide analytics project** — aggregates all source-system packages
 and four district projects into network-level marts, reporting, and extracts.
-Most complex dbt project in the repo.
 
 ## Model Structure
 
@@ -149,13 +148,16 @@ historical corpus of duplicate `cc` rows for the same
 `dbt_utils.unique_combination_of_columns(studentid, sectionid, dateleft)` test
 on `stg_powerschool__cc`. Tracked in
 [#3900](https://github.com/TEAMSchools/teamster/issues/3900); Ops cleanup in
-[#3915](https://github.com/TEAMSchools/teamster/issues/3915). When date-range
-joining `base_powerschool__course_enrollments`, filter `is_dropped_section`
-first. Do not add defensive dedupes (`qualify row_number() = 1` or
-`dbt_utils.deduplicate()`) for the residual fan-out — downgrade the affected
-mart PK uniqueness test to `severity: warn` with a `TODO(#3915)` so it returns
-to error when source cleanup completes. `base_powerschool__student_enrollments`
-date-range joins currently need no tiebreaker.
+[#3915](https://github.com/TEAMSchools/teamster/issues/3915).
+
+- When date-range joining `base_powerschool__course_enrollments`, filter
+  `is_dropped_section` first.
+- Do not add defensive dedupes (`qualify row_number() = 1` or
+  `dbt_utils.deduplicate()`) for the residual fan-out.
+- Downgrade the affected mart PK uniqueness test to `severity: warn` with a
+  `TODO(#3915)` so it returns to error when source cleanup completes.
+- `base_powerschool__student_enrollments` date-range joins currently need no
+  tiebreaker.
 
 **`_dagster_partition_key` in SchoolMint Grow staging** is the Grow `archived`
 flag (`'f'` = not archived, `'t'` = archived). Most Grow staging models filter
@@ -170,12 +172,6 @@ holds long-form entity names (`TEAM Academy Charter School`,
 short canonical names (`Newark` / `Camden` / `Miami` / `Paterson`). For region
 lookups by short name, use `city`. For mapping `_dbt_source_project` to region,
 use `dim_regions.dagster_code_location`.
-
-## Cross-Project Refs
-
-Sources models from: `powerschool`, `deanslist`, `edplan`, `iready`, `overgrad`,
-`pearson`, `renlearn`, `titan`, `amplify`, `finalsite`. District-specific
-PowerSchool data via multiple `sources-kipp*.yml` files.
 
 ## Exposures
 
@@ -244,9 +240,15 @@ already-coalesced output column. `coalesce(override, raw)` trivially matches
 override. Source the staging model that feeds the coalesce, not the intermediate
 that applies it.
 
+Concretely: compare `stg_x.raw_col` (the staging input feeding the coalesce)
+against `int_x.override_col` (the override source), not `int_x.resolved_col`
+(the post-coalesce output).
+
 ## Model Layer Distinctions
 
 - **`rpt_`** — analyst-built reporting views for external tools. Live in
   `models/extracts/`.
 - **`dim_*` / `fct_*`** — dimensional marts for semantic layer. Live in
-  `models/marts/`. Actively being developed.
+  `models/marts/`. Actively being developed; see
+  `src/dbt/kipptaf/models/marts/CLAUDE.md` for column-naming rubric, hash-change
+  discipline, and strict-chain rules.

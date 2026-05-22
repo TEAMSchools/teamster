@@ -10,10 +10,6 @@ Fifteen dbt projects organized into three tiers:
 | **District-specific** | `kippnewark`, `kippcamden`, `kippmiami`, `kipppaterson`                                                            | Combine source packages for a single district                 |
 | **Network analytics** | `kipptaf`                                                                                                          | Cross-district marts, reporting, and extracts for the network |
 
-Data flows **source → district → kipptaf**: source-system projects are consumed
-as local dbt packages by district projects, which are in turn sourced by
-`kipptaf`.
-
 ## Project Dependency Map
 
 ```text
@@ -52,9 +48,7 @@ Exceptions: `kippnewark` adds `iready_schema: kippnj_iready` and
 
 Source-system projects declare variables with null/zero defaults
 (`bigquery_external_connection_name: null`, `current_academic_year: 0`, etc.).
-Consuming district projects override these in their own `dbt_project.yml`. This
-allows the same source project code to work across multiple district
-deployments.
+Consuming district projects override these in their own `dbt_project.yml`.
 
 ## External Table Pattern
 
@@ -95,6 +89,9 @@ source resolves to prod for `target=staging` (dbt Cloud CI), so coupling fails
 CI deterministically. Kipptaf-level test tightenings (e.g. restoring
 `severity: error` on a mart PK that depended on the upstream value change)
 belong in the follow-up PR.
+
+Alternative single-PR pattern (CI schema branching + cross-project clone): see
+`src/dbt/kipptaf/CLAUDE.md` → "Single-PR cross-project workflow".
 
 ## dbt logs persist locally
 
@@ -197,18 +194,23 @@ change.
   project datasets. Use the region schema pattern (dev-only prefix).
 
 A single integration may have both files under the same source `name:` — dbt
-merges at parse time. When both exist **in the same project**,
-`sources-bigquery.yml` may omit `schema:` ONLY for tables also declared in
-`sources-external.yml`. Tables declared only in the BQ file do NOT inherit and
-resolve to bare `<source_name>` (likely a non-existent dataset). However, in
-**source-system packages** consumed by district projects, the cross-file schema
-merge does not bridge the package/consumer boundary — the consuming project's
-schema override won't reach the package-level BQ file. In that case,
+merges at parse time.
+
+**When both files exist in the same project:**
+
+- `sources-bigquery.yml` may omit `schema:` ONLY for tables also declared in
+  `sources-external.yml`. Tables declared only in the BQ file do NOT inherit and
+  resolve to bare `<source_name>` (likely a non-existent dataset).
+- Never mix `external:` and non-external active tables in one file.
+
+**In source-system packages consumed by district projects**, the cross-file
+schema merge does not bridge the package/consumer boundary — the consuming
+project's schema override won't reach the package-level BQ file. In that case,
 `sources-bigquery.yml` must include its own `schema:` (plain `var()` without
 target-conditional prefixes, since BQ-native tables are static production data).
-Never mix `external:` and non-external active tables in one file. Source-system
-projects place source files alongside or inside their model subdirectories, not
-at the top-level `models/` directory.
+
+Source-system projects place source files alongside or inside their model
+subdirectories, not at the top-level `models/` directory.
 
 ### `{{ project_name }}` in source schemas
 
@@ -475,7 +477,8 @@ the same partition.
 
 - **`ON` vs `WHERE`** — row filters on the preserved table belong in `WHERE`,
   not `ON`. For `LEFT JOIN`, a filter in `ON` preserves non-matching rows.
-  Exception: `FULL JOIN` conditions referencing one side stay in `ON`.
+  Exception: `FULL JOIN` conditions referencing one side stay in `ON` — moving
+  them to `WHERE` collapses the join to an inner.
 - **DATE literal across UNION ALL branches needs explicit cast**: BQ coerces
   `'9999-12-31'` to DATE inside `coalesce(date_col, ...)` but NOT across UNION
   ALL branches when one side is CTE-typed STRING. Use

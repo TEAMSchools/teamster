@@ -164,6 +164,10 @@ Before swapping the input list of any `generate_surrogate_key()` on a dim/fact,
 grep every consumer that hashes the same composition and migrate producer + all
 consumers in one atomic commit.
 
+Adding a column to a hash input or join predicate also requires that column in
+the upstream CTE that aliases the source. Compile fails with
+`Name X not found inside ALIAS` otherwise.
+
 ## `_dbt_source_project` joins and hashes
 
 When a marts fix touches joins or surrogate-key composition involving
