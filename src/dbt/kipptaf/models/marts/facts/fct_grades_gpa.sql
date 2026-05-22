@@ -2,6 +2,7 @@ with
     student_enrollments as (
         select
             _dbt_source_relation,
+            _dbt_source_project,
             studentid,
             schoolid,
             yearid,
@@ -95,7 +96,7 @@ select
         dbt_utils.generate_surrogate_key(
             [
                 "enr.student_number",
-                "enr._dbt_source_relation",
+                "enr._dbt_source_project",
                 "enr.academic_year",
                 "enr.entrydate",
             ]

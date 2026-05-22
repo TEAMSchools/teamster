@@ -7,6 +7,7 @@ with
             entrydate,
             exitdate,
             _dbt_source_relation,
+            _dbt_source_project,
         from {{ ref("int_powerschool__student_enrollment_union") }}
     )
 
@@ -18,7 +19,7 @@ select
         dbt_utils.generate_surrogate_key(
             [
                 "enr.student_number",
-                "enr._dbt_source_relation",
+                "enr._dbt_source_project",
                 "(st.yearid + 1990)",
                 "enr.entrydate",
             ]

@@ -260,7 +260,7 @@ represent enrollment-context status:
   min/max). Multi-stint students get separate dim rows per stint. Date-range
   predicates in ON, not WHERE.
 - Carry `student_enrollment_key` as direct FK to `dim_student_enrollments` via
-  `surrogate_key(student_number, _dbt_source_relation, academic_year, entrydate)`
+  `surrogate_key(student_number, _dbt_source_project, academic_year, entrydate)`
   — consumers equi-join instead of date-range BETWEEN.
 - Half-open exit:
   `enrollment_end = coalesce(date_sub(exitdate, interval 1 day), '9999-12-31')`

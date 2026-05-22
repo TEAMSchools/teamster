@@ -181,7 +181,7 @@ select
 
     {{
         dbt_utils.generate_surrogate_key(
-            ["student_number", "_dbt_source_relation", "academic_year", "entrydate"]
+            ["student_number", "_dbt_source_project", "academic_year", "entrydate"]
         )
     }} as student_enrollment_key,
 

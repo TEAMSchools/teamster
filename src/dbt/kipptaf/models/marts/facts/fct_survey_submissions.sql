@@ -69,7 +69,9 @@ with
             'student' as respondent_type,
 
             enr.student_number,
-            enr._dbt_source_relation,
+            regexp_extract(
+                enr._dbt_source_relation, r'(kipp\w+)_'
+            ) as _dbt_source_project,
             enr.academic_year,
             enr.entrydate,
         from submissions_grain as sg
@@ -328,7 +330,7 @@ with
             survey_response_id,
             respondent_type,
             student_number,
-            _dbt_source_relation,
+            _dbt_source_project,
             academic_year,
             entrydate,
             date_submitted,
@@ -409,7 +411,7 @@ select
         dbt_utils.generate_surrogate_key(
             [
                 "student_number",
-                "_dbt_source_relation",
+                "_dbt_source_project",
                 "academic_year",
                 "entrydate",
             ]

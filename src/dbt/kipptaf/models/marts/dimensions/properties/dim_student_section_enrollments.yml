@@ -24,7 +24,7 @@ models:
       - name: student_enrollment_key
         data_type: string
         description: >-
-          Surrogate key derived from student_number, _dbt_source_relation,
+          Surrogate key derived from student_number, _dbt_source_project,
           academic_year, and entrydate. FK to dim_student_enrollments. Null when
           no matching student enrollment record covers the CC dateenrolled.
 

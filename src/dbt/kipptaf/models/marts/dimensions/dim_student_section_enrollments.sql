@@ -25,7 +25,7 @@ with
             cc.is_dropped_section,
             cc.is_dropped_course,
 
-            enr._dbt_source_relation as enr_source_relation,
+            enr._dbt_source_project as enr_source_project,
             enr.student_number as enr_student_number,
             enr.academic_year as enr_academic_year,
             enr.entrydate as enr_entrydate,
@@ -101,7 +101,7 @@ select
             dbt_utils.generate_surrogate_key(
                 [
                     "enr_student_number",
-                    "enr_source_relation",
+                    "enr_source_project",
                     "enr_academic_year",
                     "enr_entrydate",
                 ]
