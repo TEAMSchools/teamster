@@ -13,7 +13,7 @@ views:
       Absent, Tardy, In-School Suspension, Out-of-School Suspension);
       attendance_code is the raw SIS code for specific drill-down. is_in_session
       and is_membership_day come from dim_school_calendars and are joined on
-      (date_key, location_key) to avoid a diamond path. Contains direct student
+      (date_key, dim_student_enrollments.location_key). Contains direct student
       identifiers — see access_policy for PII gating.
 
       Chronic absence query patterns — always use exactly one of the two: (1)
