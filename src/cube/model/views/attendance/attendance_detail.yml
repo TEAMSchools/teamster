@@ -44,7 +44,6 @@ views:
           - pct_tier_1_2
           - pct_tier_3
           - attendance_date
-          - academic_year
           - semester
           - attendance_code
           - attendance_category
@@ -73,7 +72,7 @@ views:
           - day_of_week_name
           - is_weekday
 
-      - join_path: attendance.dim_locations
+      - join_path: attendance.dim_student_enrollments.dim_locations
         prefix: true
         includes:
           - location_name
@@ -82,7 +81,7 @@ views:
           - campus
           - city
 
-      - join_path: attendance.dim_locations.dim_regions
+      - join_path: attendance.dim_student_enrollments.dim_locations.dim_regions
         prefix: true
         includes:
           - region_name
@@ -115,6 +114,7 @@ views:
       - join_path: attendance.dim_terms
         prefix: true
         includes:
+          - academic_year
           - term_name
           - term_code
           - term_type
@@ -155,6 +155,7 @@ views:
             - dim_dates_is_weekday
         - name: Term
           members:
+            - dim_terms_academic_year
             - dim_terms_term_name
             - dim_terms_term_code
             - dim_terms_term_type
@@ -193,7 +194,6 @@ views:
             - dim_school_calendars_is_membership_day
         - name: Filter
           members:
-            - academic_year
             - semester
             - is_latest_record
 

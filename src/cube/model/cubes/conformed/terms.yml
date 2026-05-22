@@ -43,9 +43,13 @@ cubes:
         public: true
 
       - name: academic_year
-        description: Academic year this period falls within.
+        description: >-
+          KIPP academic year (July start) this term falls within. Calendar year
+          in which the academic year begins (e.g., 2025 for the 2025–26 school
+          year) — opposite of typical FY conventions where FY2025 ends in 2025.
         sql: academic_year
         type: number
+        public: true
 
       - name: fiscal_year
         description: Fiscal year this period falls within.

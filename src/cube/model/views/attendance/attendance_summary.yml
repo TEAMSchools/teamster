@@ -38,7 +38,6 @@ views:
           - pct_chronically_absent
           - pct_tier_1_2
           - pct_tier_3
-          - academic_year
           - semester
           - attendance_category
           - ada_tier
@@ -55,7 +54,7 @@ views:
           - quarter_number
           - school_week_start_date
 
-      - join_path: attendance.dim_locations
+      - join_path: attendance.dim_student_enrollments.dim_locations
         prefix: true
         includes:
           - location_name
@@ -64,7 +63,7 @@ views:
           - campus
           - city
 
-      - join_path: attendance.dim_locations.dim_regions
+      - join_path: attendance.dim_student_enrollments.dim_locations.dim_regions
         prefix: true
         includes:
           - region_name
@@ -88,6 +87,7 @@ views:
       - join_path: attendance.dim_terms
         prefix: true
         includes:
+          - academic_year
           - term_name
           - term_code
           - term_type
@@ -109,6 +109,7 @@ views:
             - dim_dates_school_week_start_date
         - name: Term
           members:
+            - dim_terms_academic_year
             - dim_terms_term_name
             - dim_terms_term_code
             - dim_terms_term_type
@@ -134,7 +135,6 @@ views:
             - dim_student_enrollments_is_retained_year
         - name: Filter
           members:
-            - academic_year
             - semester
             - is_latest_record
 

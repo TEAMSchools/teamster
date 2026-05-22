@@ -8,21 +8,19 @@ cubes:
         sql: "{dim_dates.date_day} = CAST({CUBE}.date_key AS TIMESTAMP)"
         relationship: many_to_one
 
-      - name: dim_locations
-        sql: "{dim_locations.location_key} = {CUBE}.location_key"
-        relationship: many_to_one
-
-      # compound join avoids a diamond path through dim_locations
-      - name: dim_school_calendars
-        sql: >
-          {dim_school_calendars.date_key} = {CUBE}.date_key AND
-          {dim_school_calendars.location_key} = {CUBE}.location_key
-        relationship: many_to_one
-
       - name: dim_student_enrollments
         sql: >
           {dim_student_enrollments.student_enrollment_key} =
           {CUBE}.student_enrollment_key
+        relationship: many_to_one
+
+      # location reached via dim_student_enrollments.location_key; calendar
+      # joined on (date_key, enrollment's location_key)
+      - name: dim_school_calendars
+        sql: >
+          {dim_school_calendars.date_key} = {CUBE}.date_key AND
+          {dim_school_calendars.location_key} =
+          {dim_student_enrollments.location_key}
         relationship: many_to_one
 
       - name: dim_terms
@@ -41,16 +39,6 @@ cubes:
       - name: attendance_date
         sql: CAST(date_key AS TIMESTAMP)
         type: time
-        public: true
-
-      - name: academic_year
-        description: >-
-          KIPP academic year (July start) in which this attendance date falls.
-          The calendar year in which the academic year begins (e.g., 2025 for
-          the 2025–26 school year). This is the opposite of typical FY
-          conventions where FY2025 ends in 2025.
-        sql: academic_year
-        type: number
         public: true
 
       - name: semester
@@ -187,9 +175,9 @@ cubes:
           completed academic years this is the last instructional day on record;
           for the current year it is the most recent day with data.
 
-          Use as a filter (is_latest_record = true) with academic_year to get
-          year-end CA status for year-over-year comparisons — one terminal
-          snapshot per enrollment, no date filter required.
+          Use as a filter (is_latest_record = true) with dim_terms.academic_year
+          to get year-end CA status for year-over-year comparisons — one
+          terminal snapshot per enrollment, no date filter required.
 
           Do not combine with a date_key filter — use exactly one or the other.
 
@@ -320,7 +308,7 @@ cubes:
           - sql: "{CUBE}.membership_value = 1"
           - sql: >-
               {dim_students.enrollment_status} != 'Transferred Out' OR
-              {CUBE}.academic_year != EXTRACT(
+              {dim_terms.academic_year} != EXTRACT(
                 YEAR FROM DATE_SUB(
                   CURRENT_DATE('America/New_York'), INTERVAL 6 MONTH
                 )
@@ -351,7 +339,7 @@ cubes:
           - sql: "{CUBE}.membership_value = 1"
           - sql: >-
               {dim_students.enrollment_status} != 'Transferred Out' OR
-              {CUBE}.academic_year != EXTRACT(
+              {dim_terms.academic_year} != EXTRACT(
                 YEAR FROM DATE_SUB(
                   CURRENT_DATE('America/New_York'), INTERVAL 6 MONTH
                 )
@@ -384,7 +372,7 @@ cubes:
           - sql: "{CUBE}.membership_value = 1"
           - sql: >-
               {dim_students.enrollment_status} != 'Transferred Out' OR
-              {CUBE}.academic_year != EXTRACT(
+              {dim_terms.academic_year} != EXTRACT(
                 YEAR FROM DATE_SUB(
                   CURRENT_DATE('America/New_York'), INTERVAL 6 MONTH
                 )
@@ -418,7 +406,7 @@ cubes:
           - sql: "{CUBE}.membership_value = 1"
           - sql: >-
               {dim_students.enrollment_status} != 'Transferred Out' OR
-              {CUBE}.academic_year != EXTRACT(
+              {dim_terms.academic_year} != EXTRACT(
                 YEAR FROM DATE_SUB(
                   CURRENT_DATE('America/New_York'), INTERVAL 6 MONTH
                 )

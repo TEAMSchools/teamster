@@ -45,11 +45,7 @@ with
 
             ada.calendardate as date_key,
 
-            sch.location_key,
-
             t.term_key,
-
-            ada.academic_year,
 
             ada.att_code as attendance_code,
 
@@ -101,10 +97,6 @@ with
             and ada.calendardate < enr.exitdate
             and ada._dbt_source_project = enr._dbt_source_project
         left join
-            {{ ref("stg_powerschool__schools") }} as sch
-            on ada.schoolid = sch.school_number
-            and ada._dbt_source_project = sch._dbt_source_project
-        left join
             terms as t
             on ada.schoolid = t.school_id
             and ada.term = t.code
@@ -129,10 +121,8 @@ select
     student_enrollment_key,
 
     date_key,
-    location_key,
     term_key,
 
-    academic_year,
     semester,
 
     attendance_code,

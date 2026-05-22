@@ -3,11 +3,9 @@ models:
     description: >-
       Student daily attendance fact table. One row per student x calendar date
       with attendance recorded. Contains attendance code, present/absent/tardy
-      indicators, and membership value. School calendar attributes
-      (is_in_session, is_membership_day) are reached via compound join on
-      (date_key, location_key) to dim_school_calendars, avoiding a diamond path
-      through dim_locations. FK to dim_student_enrollments, dim_dates,
-      dim_locations, dim_terms, and dim_school_calendars.
+      indicators, and membership value. Location, school calendar, and academic
+      year are reached via dim_student_enrollments and dim_terms — not stored on
+      the fact. FK to dim_student_enrollments, dim_dates, and dim_terms.
 
       Four numeric attendance measures coexist — use the right one for the
       question:
@@ -57,9 +55,7 @@ models:
       - name: date_key
         data_type: date
         description: >-
-          Calendar date of the attendance record. FK to dim_dates. Also used
-          with location_key to join dim_school_calendars.
-
+          Calendar date of the attendance record. FK to dim_dates.
         constraints:
           - type: foreign_key
             to: ref('dim_dates')
@@ -70,22 +66,6 @@ models:
               arguments:
                 to: ref('dim_dates')
                 field: date_key
-      - name: location_key
-        data_type: string
-        description: >-
-          FK to dim_locations. Surrogate key derived from location_clean_name.
-          Used with date_key to join dim_school_calendars.
-
-        constraints:
-          - type: foreign_key
-            to: ref('dim_locations')
-            to_columns: [location_key]
-            warn_unsupported: false
-        data_tests:
-          - relationships:
-              arguments:
-                to: ref('dim_locations')
-                field: location_key
       - name: term_key
         data_type: string
         description: >-
@@ -104,11 +84,6 @@ models:
               arguments:
                 to: ref('dim_terms')
                 field: term_key
-
-      - name: academic_year
-        data_type: int64
-        description: >-
-          KIPP academic year (July start) in which this attendance date falls.
 
       - name: attendance_code
         data_type: string
