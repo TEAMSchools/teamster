@@ -38,7 +38,6 @@ views:
           - pct_chronically_absent
           - pct_tier_1_2
           - pct_tier_3
-          - semester
           - attendance_category
           - ada_tier
           - is_truant
@@ -88,6 +87,7 @@ views:
         prefix: true
         includes:
           - academic_year
+          - semester
           - term_name
           - term_code
           - term_type
@@ -110,6 +110,7 @@ views:
         - name: Term
           members:
             - dim_terms_academic_year
+            - dim_terms_semester
             - dim_terms_term_name
             - dim_terms_term_code
             - dim_terms_term_type
@@ -135,7 +136,6 @@ views:
             - dim_student_enrollments_is_retained_year
         - name: Filter
           members:
-            - semester
             - is_latest_record
 
     access_policy:

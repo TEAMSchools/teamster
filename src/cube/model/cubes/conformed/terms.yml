@@ -23,6 +23,13 @@ cubes:
         sql: location_key
         type: string
 
+      - name: school_id
+        description: >-
+          PowerSchool natural school identifier. Source-system join key for
+          facts that match terms by schoolid. Degenerate alongside location_key.
+        sql: school_id
+        type: number
+
       - name: term_type
         description:
           Category of period (e.g., academic, PM, survey, assessment, fiscal).
@@ -75,3 +82,11 @@ cubes:
           the latest for its type in a past academic year.
         sql: is_current
         type: boolean
+
+      - name: semester
+        description: >-
+          Semester this period falls within. S1 for term_name Q1/Q2, S2 for
+          Q3/Q4. NULL for periods that don't map to a quarter.
+        sql: semester
+        type: string
+        public: true

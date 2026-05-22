@@ -44,7 +44,6 @@ views:
           - pct_tier_1_2
           - pct_tier_3
           - attendance_date
-          - semester
           - attendance_code
           - attendance_category
           - ada_tier
@@ -115,6 +114,7 @@ views:
         prefix: true
         includes:
           - academic_year
+          - semester
           - term_name
           - term_code
           - term_type
@@ -156,6 +156,7 @@ views:
         - name: Term
           members:
             - dim_terms_academic_year
+            - dim_terms_semester
             - dim_terms_term_name
             - dim_terms_term_code
             - dim_terms_term_type
@@ -194,7 +195,6 @@ views:
             - dim_school_calendars_is_membership_day
         - name: Filter
           members:
-            - semester
             - is_latest_record
 
     access_policy:

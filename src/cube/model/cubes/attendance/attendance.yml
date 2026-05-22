@@ -41,12 +41,6 @@ cubes:
         type: time
         public: true
 
-      - name: semester
-        description: Semester code for the attendance date (e.g., S1, S2).
-        sql: semester
-        type: string
-        public: true
-
       - name: attendance_code
         description:
           Attendance identifier set by school. Examples Tardy, Absent, etc.

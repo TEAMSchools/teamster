@@ -140,11 +140,6 @@ models:
           absences in 90-day rolling window. NJ regions: projected absences
           reach 50+ for the year.
 
-      - name: semester
-        data_type: string
-        description: >-
-          Semester code for the attendance date (e.g., S1, S2).
-
       - name: is_absent
         data_type: int64
         description: >-
