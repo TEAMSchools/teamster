@@ -217,20 +217,20 @@ models:
         description: >-
           TRUE if the student's cumulative ADA through this date is below 90%.
           Running average of attendance_value on full membership days only
-          (membership_value = 1), partitioned by student × academic year
-          (cross-school), ordered by date. Point-in-time — filter to a single
-          date to get YTD CA status as of that date. Filtering to a date range
-          overcounts by including students CA at any point in the range. Null
-          for Paterson records before academic_year 2026.
+          (membership_value = 1), partitioned by enrollment stint
+          (student_enrollment_key), ordered by date. Point-in-time — filter to a
+          single date to get YTD CA status as of that date. Filtering to a date
+          range overcounts by including students CA at any point in the range.
+          Null for Paterson records before academic_year 2026.
 
       - name: ada_tier
         data_type: string
         description: >-
           ADA tier based on cumulative attendance rate through this date. Tier 1
           = 95%+ ADA (on track). Tier 2 = 90–94% (at risk). Tier 3 = 80–89%
-          (chronic). Tier 4 = below 80% (severe chronic). Partitioned by student
-          × academic year (cross-school), ordered by date. Null for Paterson
-          records before academic_year 2026.
+          (chronic). Tier 4 = below 80% (severe chronic). Partitioned by
+          enrollment stint (student_enrollment_key), ordered by date. Null for
+          Paterson records before academic_year 2026.
         data_tests:
           - accepted_values:
               arguments:
