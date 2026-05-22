@@ -94,7 +94,7 @@ inner join
     and fg.yearid = enr.yearid
     and fg.termbin_start_date >= enr.entrydate
     and fg.termbin_start_date < enr.exitdate
-    and {{ union_dataset_join_clause(left_alias="fg", right_alias="enr") }}
+    and fg._dbt_source_project = enr._dbt_source_project
 inner join
     {{ ref("dim_regions") }} as dr on fg._dbt_source_project = dr.dagster_code_location
 left join

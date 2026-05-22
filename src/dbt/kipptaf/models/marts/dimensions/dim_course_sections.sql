@@ -21,4 +21,4 @@ from {{ ref("base_powerschool__sections") }} as sec
 left join
     {{ ref("stg_powerschool__schools") }} as sch
     on sec.sections_schoolid = sch.school_number
-    and {{ union_dataset_join_clause(left_alias="sec", right_alias="sch") }}
+    and sec._dbt_source_project = sch._dbt_source_project

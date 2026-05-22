@@ -5,6 +5,7 @@ with
             academic_year,
             entrydate,
             _dbt_source_relation,
+            _dbt_source_project,
 
             row_number() over (
                 partition by student_number, academic_year, _dbt_source_relation
@@ -42,6 +43,6 @@ inner join
     enrollments as enr
     on p.student_school_id = enr.student_number
     and p.create_ts_academic_year = enr.academic_year
-    and {{ union_dataset_join_clause(left_alias="p", right_alias="enr") }}
+    and p._dbt_source_project = enr._dbt_source_project
     and enr.rn = 1
 where p.incident_penalty_id is not null

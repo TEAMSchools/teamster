@@ -45,7 +45,7 @@ with
             and cc.cc_yearid = enr.yearid
             and cc.cc_dateenrolled >= enr.entrydate
             and cc.cc_dateenrolled < enr.exitdate
-            and {{ union_dataset_join_clause(left_alias="cc", right_alias="enr") }}
+            and cc._dbt_source_project = enr._dbt_source_project
         left join
             {{ ref("stg_google_sheets__reporting__terms") }} as rt
             on cc.cc_abs_termid = rt.powerschool_term_id

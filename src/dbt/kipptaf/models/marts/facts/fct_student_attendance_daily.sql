@@ -85,11 +85,11 @@ inner join
     and ada.schoolid = enr.schoolid
     and ada.calendardate >= enr.entrydate
     and ada.calendardate < enr.exitdate
-    and {{ union_dataset_join_clause(left_alias="ada", right_alias="enr") }}
+    and ada._dbt_source_project = enr._dbt_source_project
 left join
     {{ ref("stg_powerschool__schools") }} as sch
     on ada.schoolid = sch.school_number
-    and {{ union_dataset_join_clause(left_alias="ada", right_alias="sch") }}
+    and ada._dbt_source_project = sch._dbt_source_project
 left join
     terms as t
     on ada.schoolid = t.school_id
