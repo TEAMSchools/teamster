@@ -266,6 +266,18 @@ represent enrollment-context status:
   `enrollment_end = coalesce(date_sub(exitdate, interval 1 day), '9999-12-31')`
   to avoid boundary-share overlaps.
 
+## Verify FK population, not just compilation
+
+`relationships` tests don't fail on 100%-NULL FKs. After adding or restructuring
+an FK join, sample populated count in prod (or PR-branch schema):
+
+```sql
+select countif(<fk>_key is null) as n_null, count(*) as n_total
+from `<schema>.<fact>`
+```
+
+Treat ≥99% NULL as a broken join, not a sparse FK.
+
 ## Not in this layer
 
 - Reporting views (`rpt_*`) — live under `extracts/`.

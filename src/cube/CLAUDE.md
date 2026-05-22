@@ -143,6 +143,14 @@ The `cube` MCP wraps Cube Cloud's REST API. Auth path that works:
   `GOOGLE_DIRECTORY_SA_KEY` / `GOOGLE_DIRECTORY_SA_SUBJECT` (and any other
   required secrets) are set on that environment.
 
+## Measure filters and joined-cube references
+
+Measure `filters:` SQL substitutes dimension expressions at compile time,
+including `{other_cube.member}` references to joined cubes. Transitive joins
+auto-resolve; don't add redundant intermediate-hop joins. "Column not found" in
+a filter usually means the dimension SQL references a bare column on the
+filtering cube — route through `{joined_cube.col}` instead.
+
 ## Operational notes
 
 - **Never use the Cube Playground Models tab.** It overwrites YAML in
