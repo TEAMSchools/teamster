@@ -4,7 +4,7 @@ models:
       Daily staff roster for Lattice SFTP import. Includes all KIPP TEAM and
       Family Schools Inc. employees, all KIPP Paterson employees, and
       Director/Head/Leader-tier staff in Miami, Newark, and Camden who are
-      Active or on Leave.
+      Active or on Leave, plus any staff terminated within the past 30 days.
     columns:
       - name: external_user_id
         description: ADP employee number used as the Lattice external user ID.
