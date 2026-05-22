@@ -21,10 +21,10 @@ models:
       - name: student_key
         data_type: string
         description: >-
-          FK to dim_students. Derived from student_number. Null when the source
-          record has no PowerSchool student_number (e.g., SAT/ACT scores in
-          int_assessments__college_assessment that did not resolve to a
-          PowerSchool student).
+          FK to dim_students. Derived from student_number. Null in any branch
+          (college, practice, AP) when the source identifier did not resolve to
+          a PowerSchool student — typically a College Board / AP file row whose
+          external ID has no entry in the corresponding crosswalk.
 
         constraints:
           - type: foreign_key
