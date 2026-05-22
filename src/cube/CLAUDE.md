@@ -143,6 +143,13 @@ The `cube` MCP wraps Cube Cloud's REST API. Auth path that works:
   `GOOGLE_DIRECTORY_SA_KEY` / `GOOGLE_DIRECTORY_SA_SUBJECT` (and any other
   required secrets) are set on that environment.
 
+## Jinja in cube YAML
+
+Cube data models support Jinja macros and `{% set %}` variables for SQL snippet
+reuse. Before factoring with Jinja, check whether a dbt-derived dim column (e.g.
+`dim_dates.is_current_academic_year` from `{{ var("current_academic_year") }}`)
+is a better fit — keeps Cube and dbt in lockstep.
+
 ## Measure filters and joined-cube references
 
 Measure `filters:` SQL substitutes dimension expressions at compile time,

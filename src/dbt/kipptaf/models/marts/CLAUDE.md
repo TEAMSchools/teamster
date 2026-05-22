@@ -266,6 +266,13 @@ represent enrollment-context status:
   `enrollment_end = coalesce(date_sub(exitdate, interval 1 day), '9999-12-31')`
   to avoid boundary-share overlaps.
 
+## "Is current X" flags on dim_dates
+
+Date-grain temporal classifiers (`is_current_academic_year`,
+`is_current_fiscal_year`, etc.) live on `dim_dates`, derived from
+`{{ var("current_X") }}` baked in at build time. Don't auto-derive from
+`CURRENT_DATE` at query time — rollover is manual via dbt var bump.
+
 ## Verify FK population, not just compilation
 
 `relationships` tests don't fail on 100%-NULL FKs. After adding or restructuring
