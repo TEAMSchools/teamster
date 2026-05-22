@@ -343,13 +343,18 @@ _LATEST_RECORD_MEMBERS = {
     "attendance_detail.is_latest_record",
 }
 
-_AY_STRING_RE = re.compile(r"^[Aa][Yy]?(\d{4})$")  # "AY2025", "ay2025"
-_AY_RANGE_RE = re.compile(r"^(\d{4})[–\-]\d{2,4}$")  # "2025-26", "2025–2026"
+_AY_STRING_RE = re.compile(r"^[Aa][Yy](\d{4})$")  # "AY2025", "ay2025"
+_AY_RANGE_RE = re.compile(
+    r"^(\d{4})[–\-]\d{2,3}$"
+)  # "2025-26", "2025-026"; NOT "2025-2026"
+_AY_RANGE_4_RE = re.compile(r"^(\d{4})[–\-](\d{4})$")  # "2025-2026", "2023-2025"
 
 _QUERY_ERROR_SENTINEL = "__query_validation_error__"
 
 
-def _query_error(message: str, suggested_fix: dict | None = None) -> dict:
+def _query_error(
+    message: str, suggested_fix: dict[str, Any] | None = None
+) -> dict[str, Any]:
     result: dict[str, Any] = {_QUERY_ERROR_SENTINEL: True, "error": message}
     if suggested_fix is not None:
         result["suggested_fix"] = suggested_fix
@@ -367,6 +372,17 @@ def _normalise_ay_value(raw: str) -> str:
     return s
 
 
+def _expand_ay_range(value: str) -> list[str] | None:
+    """If value looks like 'YYYY-YYYY', return the inclusive year list. Else None."""
+    m = _AY_RANGE_4_RE.match(value.strip())
+    if not m:
+        return None
+    start, end = int(m.group(1)), int(m.group(2))
+    if start >= end or end - start > 10:
+        return None
+    return [str(y) for y in range(start, end + 1)]
+
+
 def _rewrite_ay_filters(query: dict) -> dict:
     """Normalise academic-year filter values ("AY2025" / "2025-26" → "2025")."""
     filters = query.get("filters")
@@ -376,8 +392,8 @@ def _rewrite_ay_filters(query: dict) -> dict:
     changed = False
     for f in filters:
         if f.get("member") in _AY_MEMBERS and f.get("operator") == "equals":
-            new_values = [_normalise_ay_value(v) for v in f.get("values", [])]
-            if new_values != f.get("values"):
+            new_values = [_normalise_ay_value(v) for v in (f.get("values") or [])]
+            if new_values != (f.get("values") or []):
                 f = {**f, "values": new_values}
                 changed = True
         rewritten.append(f)
@@ -386,7 +402,7 @@ def _rewrite_ay_filters(query: dict) -> dict:
     return query
 
 
-def _validate_query(query: dict) -> dict:
+def _validate_query(query: dict[str, Any]) -> dict[str, Any]:
     """Validate and lightly rewrite a Cube query before sending to Cube Cloud.
 
     Returns the (possibly rewritten) query on success, or a sentinel error dict
@@ -400,6 +416,32 @@ def _validate_query(query: dict) -> dict:
          also overcounts.
     """
     query = _rewrite_ay_filters(query)
+
+    # Check for accidental multi-year range in a single AY filter value, e.g.
+    # "2023-2025" instead of ["2023", "2024", "2025"]. The 4-digit suffix isn't
+    # normalised by _rewrite_ay_filters so it would reach Cube as-is and cause
+    # a BigQuery FLOAT64 cast error with no useful message.
+    for f in query.get("filters", []):
+        if f.get("member") not in _AY_MEMBERS or f.get("operator") != "equals":
+            continue
+        for v in f.get("values") or []:
+            expanded = _expand_ay_range(str(v))
+            if expanded is None:
+                continue
+            suggested = {
+                **query,
+                "filters": [
+                    {**f, "values": expanded} if filt is f else filt
+                    for filt in query["filters"]
+                ],
+            }
+            return _query_error(
+                f"Filter value {v!r} looks like a multi-year range. For "
+                "year-over-year queries, send each academic year as a separate "
+                f"value in the same filter (e.g. {expanded}). The suggested_fix "
+                "field expands it automatically.",
+                suggested_fix=suggested,
+            )
 
     measures = set(query.get("measures", []))
     if not (measures & _CA_MEASURES):
@@ -426,12 +468,7 @@ def _validate_query(query: dict) -> dict:
 
     if not date_day_pins and not latest_record_pins:
         ca_measure = next(iter(measures & _CA_MEASURES))
-        date_day_member = (
-            ca_measure.replace(".pct_chronically_absent", ".dim_dates_date_day")
-            .replace(".count_chronically_absent", ".dim_dates_date_day")
-            .replace(".pct_tier_1_2", ".dim_dates_date_day")
-            .replace(".pct_tier_3", ".dim_dates_date_day")
-        )
+        date_day_member = ca_measure.rsplit(".", 1)[0] + ".dim_dates_date_day"
         suggested = {
             **query,
             "filters": list(filters)
@@ -449,25 +486,26 @@ def _validate_query(query: dict) -> dict:
             "or pct_tier_3) but has no CA anchor filter. Without one, a student "
             "who is chronically absent on N days is counted N times.\n\n"
             "Add exactly ONE of the following filters before retrying:\n\n"
-            "  Option A — point-in-time snapshot (CA accumulated as of one date):\n"
-            '    {"member": "attendance_summary.dim_dates_date_day",\n'
-            '     "operator": "equals", "values": ["2026-01-30"]}\n\n'
+            f"  Option A — point-in-time snapshot (CA accumulated as of one date):\n"
+            f'    {{"member": "{date_day_member}",\n'
+            '     "operator": "equals", "values": ["2026-01-30"]}}\n\n'
             "  Option B — year-end / year-over-year snapshot:\n"
-            '    {"member": "attendance_summary.is_latest_record",\n'
-            '     "operator": "equals", "values": [true]}\n\n'
+            f'    {{"member": "{ca_measure.rsplit(".", 1)[0]}.is_latest_record",\n'
+            '     "operator": "equals", "values": [true]}}\n\n'
             "The suggested_fix field adds an Option A stub — fill in the real date.",
             suggested_fix=suggested,
         )
 
     if len(date_day_pins) > 1:
-        dates = [f["values"][0] for f in date_day_pins]
+        sorted_pins = sorted(date_day_pins, key=lambda f: f["values"][0])
+        dates = [f["values"][0] for f in sorted_pins]
         other_filters = [f for f in filters if f not in date_day_pins]
-        suggested = {**query, "filters": other_filters + [date_day_pins[-1]]}
+        suggested = {**query, "filters": other_filters + [sorted_pins[-1]]}
         return _query_error(
             f"Found {len(date_day_pins)} date_day equality filters "
             f"({', '.join(dates)}). CA point-in-time requires exactly ONE date "
             "— multiple dates overcount across the window.\n\n"
-            f"The suggested_fix retains the most recent date ({dates[-1]}) and "
+            f"The suggested_fix retains the most recent date ({sorted_pins[-1]['values'][0]}) and "
             "drops the others — adjust if a different date is intended.",
             suggested_fix=suggested,
         )

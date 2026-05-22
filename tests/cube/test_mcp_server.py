@@ -261,7 +261,8 @@ def test_rewrite_ay_filters_normalises_range_format(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     server = _load_server(monkeypatch)
-    for raw in ["2025-26", "2025–2026", "2025-2026"]:
+    # 2- and 3-digit suffixes normalise to the start year.
+    for raw in ["2025-26", "2025-026"]:
         query = {
             "filters": [
                 {
@@ -273,6 +274,27 @@ def test_rewrite_ay_filters_normalises_range_format(
         }
         result = server._rewrite_ay_filters(query)
         assert result["filters"][0]["values"] == ["2025"], f"failed for {raw!r}"
+
+
+def test_rewrite_ay_filters_passes_through_four_digit_suffix(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    server = _load_server(monkeypatch)
+    # "2023-2025" / "2025-2026" look like multi-year ranges, not single-AY
+    # shorthand — pass through unchanged so Cube surfaces an error rather than
+    # silently picking only the start year.
+    for raw in ["2025-2026", "2025–2026", "2023-2025"]:
+        query = {
+            "filters": [
+                {
+                    "member": "attendance_summary.dim_terms_academic_year",
+                    "operator": "equals",
+                    "values": [raw],
+                }
+            ]
+        }
+        result = server._rewrite_ay_filters(query)
+        assert result["filters"][0]["values"] == [raw], f"should not rewrite {raw!r}"
 
 
 def test_rewrite_ay_filters_leaves_correct_value_unchanged(
@@ -307,6 +329,45 @@ def test_rewrite_ay_filters_ignores_non_equals_operators(
     }
     result = server._rewrite_ay_filters(query)
     assert result["filters"][0]["values"] == ["AY2025"]
+
+
+def test_validate_query_errors_on_multi_year_ay_range(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    server = _load_server(monkeypatch)
+    query = {
+        "measures": ["attendance_summary.count_present"],
+        "filters": [
+            {
+                "member": "attendance_summary.dim_terms_academic_year",
+                "operator": "equals",
+                "values": ["2023-2025"],
+            }
+        ],
+    }
+    result = server._validate_query(query)
+    assert result.get(server._QUERY_ERROR_SENTINEL)
+    assert "2023-2025" in result["error"]
+    assert result["suggested_fix"]["filters"][0]["values"] == ["2023", "2024", "2025"]
+
+
+def test_validate_query_errors_on_two_year_ay_range(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    server = _load_server(monkeypatch)
+    query = {
+        "measures": ["attendance_summary.count_present"],
+        "filters": [
+            {
+                "member": "attendance_summary.dim_terms_academic_year",
+                "operator": "equals",
+                "values": ["2025-2026"],
+            }
+        ],
+    }
+    result = server._validate_query(query)
+    assert result.get(server._QUERY_ERROR_SENTINEL)
+    assert result["suggested_fix"]["filters"][0]["values"] == ["2025", "2026"]
 
 
 def test_validate_query_passes_through_when_no_ca_measure(
@@ -353,6 +414,57 @@ def test_validate_query_passes_through_with_is_latest_record(
     }
     result = server._validate_query(query)
     assert not result.get(server._QUERY_ERROR_SENTINEL)
+
+
+def test_validate_query_passes_through_with_is_latest_record_string_variants(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    server = _load_server(monkeypatch)
+    for val in [["true"], ["1"]]:
+        query = {
+            "measures": ["attendance_summary.count_chronically_absent"],
+            "filters": [
+                {
+                    "member": "attendance_summary.is_latest_record",
+                    "operator": "equals",
+                    "values": val,
+                }
+            ],
+        }
+        result = server._validate_query(query)
+        assert not result.get(server._QUERY_ERROR_SENTINEL), f"failed for values={val}"
+
+
+def test_validate_query_ca_anchor_works_for_attendance_detail_view(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    server = _load_server(monkeypatch)
+    query = {
+        "measures": ["attendance_detail.pct_chronically_absent"],
+        "filters": [
+            {
+                "member": "attendance_detail.dim_dates_date_day",
+                "operator": "equals",
+                "values": ["2026-01-30"],
+            }
+        ],
+    }
+    result = server._validate_query(query)
+    assert not result.get(server._QUERY_ERROR_SENTINEL)
+
+
+def test_validate_query_ca_error_uses_detail_view_member_in_suggested_fix(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    server = _load_server(monkeypatch)
+    query = {
+        "measures": ["attendance_detail.pct_chronically_absent"],
+        "filters": [],
+    }
+    result = server._validate_query(query)
+    assert result.get(server._QUERY_ERROR_SENTINEL)
+    stub = result["suggested_fix"]["filters"][-1]
+    assert stub["member"] == "attendance_detail.dim_dates_date_day"
 
 
 def test_validate_query_errors_when_ca_measure_has_no_anchor(
