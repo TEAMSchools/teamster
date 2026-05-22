@@ -240,6 +240,186 @@ def test_meta_cache_corruption_deletes_cache_file_and_refetches(
     assert cached["payload"] == {"cubes": []}
 
 
+def test_rewrite_ay_filters_normalises_ay_string_prefix(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    server = _load_server(monkeypatch)
+    query = {
+        "filters": [
+            {
+                "member": "attendance_summary.dim_terms_academic_year",
+                "operator": "equals",
+                "values": ["AY2025"],
+            }
+        ]
+    }
+    result = server._rewrite_ay_filters(query)
+    assert result["filters"][0]["values"] == ["2025"]
+
+
+def test_rewrite_ay_filters_normalises_range_format(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    server = _load_server(monkeypatch)
+    for raw in ["2025-26", "2025–2026", "2025-2026"]:
+        query = {
+            "filters": [
+                {
+                    "member": "attendance_summary.dim_terms_academic_year",
+                    "operator": "equals",
+                    "values": [raw],
+                }
+            ]
+        }
+        result = server._rewrite_ay_filters(query)
+        assert result["filters"][0]["values"] == ["2025"], f"failed for {raw!r}"
+
+
+def test_rewrite_ay_filters_leaves_correct_value_unchanged(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    server = _load_server(monkeypatch)
+    query = {
+        "filters": [
+            {
+                "member": "attendance_summary.dim_terms_academic_year",
+                "operator": "equals",
+                "values": ["2025"],
+            }
+        ]
+    }
+    result = server._rewrite_ay_filters(query)
+    assert result is query  # no copy made when nothing changes
+
+
+def test_rewrite_ay_filters_ignores_non_equals_operators(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    server = _load_server(monkeypatch)
+    query = {
+        "filters": [
+            {
+                "member": "attendance_summary.dim_terms_academic_year",
+                "operator": "gte",
+                "values": ["AY2025"],
+            }
+        ]
+    }
+    result = server._rewrite_ay_filters(query)
+    assert result["filters"][0]["values"] == ["AY2025"]
+
+
+def test_validate_query_passes_through_when_no_ca_measure(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    server = _load_server(monkeypatch)
+    query = {"measures": ["attendance_summary.count_present"], "filters": []}
+    result = server._validate_query(query)
+    assert not result.get(server._QUERY_ERROR_SENTINEL)
+    assert result["measures"] == ["attendance_summary.count_present"]
+
+
+def test_validate_query_passes_through_with_date_day_pin(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    server = _load_server(monkeypatch)
+    query = {
+        "measures": ["attendance_summary.pct_chronically_absent"],
+        "filters": [
+            {
+                "member": "attendance_summary.dim_dates_date_day",
+                "operator": "equals",
+                "values": ["2026-01-30"],
+            }
+        ],
+    }
+    result = server._validate_query(query)
+    assert not result.get(server._QUERY_ERROR_SENTINEL)
+
+
+def test_validate_query_passes_through_with_is_latest_record(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    server = _load_server(monkeypatch)
+    query = {
+        "measures": ["attendance_summary.count_chronically_absent"],
+        "filters": [
+            {
+                "member": "attendance_summary.is_latest_record",
+                "operator": "equals",
+                "values": [True],
+            }
+        ],
+    }
+    result = server._validate_query(query)
+    assert not result.get(server._QUERY_ERROR_SENTINEL)
+
+
+def test_validate_query_errors_when_ca_measure_has_no_anchor(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    server = _load_server(monkeypatch)
+    query = {"measures": ["attendance_summary.pct_chronically_absent"], "filters": []}
+    result = server._validate_query(query)
+    assert result.get(server._QUERY_ERROR_SENTINEL)
+    assert "anchor" in result["error"]
+    assert "suggested_fix" in result
+    # suggested_fix should contain a date_day stub filter
+    stub_members = [f["member"] for f in result["suggested_fix"]["filters"]]
+    assert any("dim_dates_date_day" in m for m in stub_members)
+
+
+def test_validate_query_errors_when_multiple_date_day_pins(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    server = _load_server(monkeypatch)
+    query = {
+        "measures": ["attendance_summary.pct_tier_1_2"],
+        "filters": [
+            {
+                "member": "attendance_summary.dim_dates_date_day",
+                "operator": "equals",
+                "values": ["2026-01-15"],
+            },
+            {
+                "member": "attendance_summary.dim_dates_date_day",
+                "operator": "equals",
+                "values": ["2026-01-30"],
+            },
+        ],
+    }
+    result = server._validate_query(query)
+    assert result.get(server._QUERY_ERROR_SENTINEL)
+    assert "2026-01-15" in result["error"]
+    assert "2026-01-30" in result["error"]
+    # suggested_fix keeps only the later date
+    date_pins = [
+        f
+        for f in result["suggested_fix"]["filters"]
+        if f.get("member", "").endswith(".dim_dates_date_day")
+    ]
+    assert len(date_pins) == 1
+    assert date_pins[0]["values"] == ["2026-01-30"]
+
+
+def test_validate_query_normalises_ay_filter_before_returning(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    server = _load_server(monkeypatch)
+    query = {
+        "measures": ["attendance_summary.count_present"],
+        "filters": [
+            {
+                "member": "attendance_summary.dim_terms_academic_year",
+                "operator": "equals",
+                "values": ["AY2025"],
+            }
+        ],
+    }
+    result = server._validate_query(query)
+    assert result["filters"][0]["values"] == ["2025"]
+
+
 def test_meta_in_memory_cache_skips_disk_read_on_repeat_calls(
     monkeypatch: pytest.MonkeyPatch, tmp_path: Path
 ) -> None:

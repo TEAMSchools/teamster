@@ -30,6 +30,7 @@ import asyncio
 import hashlib
 import json
 import os
+import re
 import time
 from pathlib import Path
 from typing import Any
@@ -314,6 +315,165 @@ def _meta_cache_path(email: str) -> Path:
 
 _meta_memory_cache: dict[str, tuple[int, dict[str, Any]]] = {}
 
+# ── Query validation ─────────────────────────────────────────────────────────
+
+_AY_MEMBERS = {
+    "attendance_summary.dim_terms_academic_year",
+    "attendance_detail.dim_terms_academic_year",
+}
+
+_CA_MEASURES = {
+    "attendance_summary.pct_chronically_absent",
+    "attendance_summary.count_chronically_absent",
+    "attendance_summary.pct_tier_1_2",
+    "attendance_summary.pct_tier_3",
+    "attendance_detail.pct_chronically_absent",
+    "attendance_detail.count_chronically_absent",
+    "attendance_detail.pct_tier_1_2",
+    "attendance_detail.pct_tier_3",
+}
+
+_DATE_DAY_MEMBERS = {
+    "attendance_summary.dim_dates_date_day",
+    "attendance_detail.dim_dates_date_day",
+}
+
+_LATEST_RECORD_MEMBERS = {
+    "attendance_summary.is_latest_record",
+    "attendance_detail.is_latest_record",
+}
+
+_AY_STRING_RE = re.compile(r"^[Aa][Yy]?(\d{4})$")  # "AY2025", "ay2025"
+_AY_RANGE_RE = re.compile(r"^(\d{4})[–\-]\d{2,4}$")  # "2025-26", "2025–2026"
+
+_QUERY_ERROR_SENTINEL = "__query_validation_error__"
+
+
+def _query_error(message: str, suggested_fix: dict | None = None) -> dict:
+    result: dict[str, Any] = {_QUERY_ERROR_SENTINEL: True, "error": message}
+    if suggested_fix is not None:
+        result["suggested_fix"] = suggested_fix
+    return result
+
+
+def _normalise_ay_value(raw: str) -> str:
+    s = str(raw).strip()
+    m = _AY_STRING_RE.match(s)
+    if m:
+        return m.group(1)
+    m = _AY_RANGE_RE.match(s)
+    if m:
+        return m.group(1)
+    return s
+
+
+def _rewrite_ay_filters(query: dict) -> dict:
+    """Normalise academic-year filter values ("AY2025" / "2025-26" → "2025")."""
+    filters = query.get("filters")
+    if not filters:
+        return query
+    rewritten = []
+    changed = False
+    for f in filters:
+        if f.get("member") in _AY_MEMBERS and f.get("operator") == "equals":
+            new_values = [_normalise_ay_value(v) for v in f.get("values", [])]
+            if new_values != f.get("values"):
+                f = {**f, "values": new_values}
+                changed = True
+        rewritten.append(f)
+    if changed:
+        query = {**query, "filters": rewritten}
+    return query
+
+
+def _validate_query(query: dict) -> dict:
+    """Validate and lightly rewrite a Cube query before sending to Cube Cloud.
+
+    Returns the (possibly rewritten) query on success, or a sentinel error dict
+    that `load`/`sql` return directly to the LLM so it can fix and retry.
+
+    Checks:
+      1. Academic-year filter values are normalised ("AY2025" → "2025", etc.).
+      2. CA measures require exactly one anchor filter — either a single
+         date_day equality filter (point-in-time) or is_latest_record = true
+         (year-end snapshot). Omitting both overcounts; more than one date pin
+         also overcounts.
+    """
+    query = _rewrite_ay_filters(query)
+
+    measures = set(query.get("measures", []))
+    if not (measures & _CA_MEASURES):
+        return query
+
+    filters = query.get("filters", [])
+
+    date_day_pins = [
+        f
+        for f in filters
+        if f.get("member") in _DATE_DAY_MEMBERS
+        and f.get("operator") == "equals"
+        and isinstance(f.get("values"), list)
+        and len(f["values"]) == 1
+    ]
+
+    latest_record_pins = [
+        f
+        for f in filters
+        if f.get("member") in _LATEST_RECORD_MEMBERS
+        and f.get("operator") == "equals"
+        and f.get("values") in ([True], ["true"], ["1"])
+    ]
+
+    if not date_day_pins and not latest_record_pins:
+        ca_measure = next(iter(measures & _CA_MEASURES))
+        date_day_member = (
+            ca_measure.replace(".pct_chronically_absent", ".dim_dates_date_day")
+            .replace(".count_chronically_absent", ".dim_dates_date_day")
+            .replace(".pct_tier_1_2", ".dim_dates_date_day")
+            .replace(".pct_tier_3", ".dim_dates_date_day")
+        )
+        suggested = {
+            **query,
+            "filters": list(filters)
+            + [
+                {
+                    "member": date_day_member,
+                    "operator": "equals",
+                    "values": ["YYYY-MM-DD"],
+                },
+            ],
+        }
+        return _query_error(
+            "This query includes a chronic-absence measure "
+            "(pct_chronically_absent, count_chronically_absent, pct_tier_1_2, "
+            "or pct_tier_3) but has no CA anchor filter. Without one, a student "
+            "who is chronically absent on N days is counted N times.\n\n"
+            "Add exactly ONE of the following filters before retrying:\n\n"
+            "  Option A — point-in-time snapshot (CA accumulated as of one date):\n"
+            '    {"member": "attendance_summary.dim_dates_date_day",\n'
+            '     "operator": "equals", "values": ["2026-01-30"]}\n\n'
+            "  Option B — year-end / year-over-year snapshot:\n"
+            '    {"member": "attendance_summary.is_latest_record",\n'
+            '     "operator": "equals", "values": [true]}\n\n'
+            "The suggested_fix field adds an Option A stub — fill in the real date.",
+            suggested_fix=suggested,
+        )
+
+    if len(date_day_pins) > 1:
+        dates = [f["values"][0] for f in date_day_pins]
+        other_filters = [f for f in filters if f not in date_day_pins]
+        suggested = {**query, "filters": other_filters + [date_day_pins[-1]]}
+        return _query_error(
+            f"Found {len(date_day_pins)} date_day equality filters "
+            f"({', '.join(dates)}). CA point-in-time requires exactly ONE date "
+            "— multiple dates overcount across the window.\n\n"
+            f"The suggested_fix retains the most recent date ({dates[-1]}) and "
+            "drops the others — adjust if a different date is intended.",
+            suggested_fix=suggested,
+        )
+
+    return query
+
 
 @mcp.tool()
 async def meta(ctx: Context, force_refresh: bool = False) -> dict[str, Any]:
@@ -372,6 +532,9 @@ async def load(ctx: Context, query: dict[str, Any]) -> dict[str, Any]:
     PII: `*_detail` view results carry row-level student identifiers — keep
     those values in the local conversation only.
     """
+    query = _validate_query(query)
+    if query.get(_QUERY_ERROR_SENTINEL):
+        return query
     email = await _get_user_email(ctx)
     return await _request(
         "POST", "/load", json={"query": query}, email=email, poll=True
@@ -386,6 +549,9 @@ async def sql(ctx: Context, query: dict[str, Any]) -> dict[str, Any]:
 
     Response is wrapped: {"sql": {"status", "sql": [query-string, [params]], "query_type"}}.
     """
+    query = _validate_query(query)
+    if query.get(_QUERY_ERROR_SENTINEL):
+        return query
     email = await _get_user_email(ctx)
     return await _request(
         "GET", "/sql", params={"query": json.dumps(query)}, email=email
