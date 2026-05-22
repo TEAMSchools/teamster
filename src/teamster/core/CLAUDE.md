@@ -109,15 +109,16 @@ deploy rollover, the materialization may be stamped with the new deployment's
 code version. `code_version_changed()` returns false permanently — manual
 materialization is the only fix. See dagster-io/dagster#33708.
 
-**Deploy ordering gate**: `_dep_code_version_pending` blocks materialization
-when a direct dependency has `code_version_changed().since(newly_updated())` —
-prevents schema errors when a deploy adds columns through a TABLE → VIEW chain.
-Applied in `_build_dbt_condition()` to tables and union_relations views via the
-default `guard_dep_code_version=True`. Plain views opt out
-(`dbt_view_automation_condition` passes `False`): a view never bakes parent
-columns into stored state, so a pending parent code change can't poison it, and
-the guard would only strand the view's own `code_version_changed` refresh behind
-unrelated upstream churn.
+**Deploy ordering gate**: `_dep_code_version_pending` in
+`_build_dbt_condition()` blocks materialization when a direct dependency has
+`code_version_changed().since(newly_updated())`. Applied to tables and
+union_relations views via `guard_dep_code_version=True`; plain views opt out
+(`guard_dep_code_version=False`). **The gate is scoped per code location** via
+`guard_dep_selection=AssetSelection.key_prefixes(code_location)` —
+cross-code-location deps (kipptaf reading kippmiami via dbt `source()`) bypass
+the gate. When debugging "downstream table not auto-materializing despite
+code_version_changed," check whether a same-CL parent has stuck SINCE memory;
+cross-CL parents are excluded by design.
 
 **Dep fan-out rule**: An unpartitioned dep of a partitioned asset fans out to
 ALL partitions on every materialization. To preserve per-partition triggering,
