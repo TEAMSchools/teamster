@@ -33,7 +33,7 @@ select
         dbt_utils.generate_surrogate_key(
             [
                 "ce.cc_dcid",
-                "ce._dbt_source_relation",
+                "ce._dbt_source_project",
                 "cg.storecode",
                 "cg.storecode_type",
             ]

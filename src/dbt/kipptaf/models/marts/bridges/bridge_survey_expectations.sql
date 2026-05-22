@@ -18,6 +18,18 @@ with
         inner join {{ ref("dim_surveys") }} as s on sa.survey_key = s.survey_key
     ),
 
+    student_enrollments as (
+        select
+            student_number,
+            academic_year,
+            entrydate,
+            enroll_status,
+            grade_level,
+
+            regexp_extract(_dbt_source_relation, r'(kipp\w+)_') as _dbt_source_project,
+        from {{ ref("int_extracts__student_enrollments") }}
+    ),
+
     /* Staff expectations: primary, active staff during the response window
        for the SCD / Manager / Support staff surveys. */
     staff as (
@@ -70,7 +82,7 @@ with
                 dbt_utils.generate_surrogate_key(
                     [
                         "enr.student_number",
-                        "enr._dbt_source_relation",
+                        "enr._dbt_source_project",
                         "enr.academic_year",
                         "enr.entrydate",
                     ]
@@ -80,7 +92,7 @@ with
             cast(null as string) as student_contact_person_key,
         from survey_admin as sa
         inner join
-            {{ ref("int_extracts__student_enrollments") }} as enr
+            student_enrollments as enr
             on sa.academic_year = enr.academic_year
             and enr.enroll_status = 0
             and enr.grade_level between 3 and 12

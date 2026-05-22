@@ -25,7 +25,7 @@ select
         dbt_utils.generate_surrogate_key(
             [
                 "ada.student_number",
-                "ada._dbt_source_relation",
+                "ada._dbt_source_project",
                 "ada.calendardate",
             ]
         )
@@ -35,7 +35,7 @@ select
         dbt_utils.generate_surrogate_key(
             [
                 "enr.student_number",
-                "enr._dbt_source_relation",
+                "enr._dbt_source_project",
                 "enr.academic_year",
                 "enr.entrydate",
             ]
@@ -80,16 +80,16 @@ select
     end as attendance_category,
 from {{ ref("int_powerschool__ps_adaadm_daily_ctod") }} as ada
 inner join
-    {{ ref("base_powerschool__student_enrollments") }} as enr
+    {{ ref("int_powerschool__student_enrollment_union") }} as enr
     on ada.studentid = enr.studentid
     and ada.schoolid = enr.schoolid
     and ada.calendardate >= enr.entrydate
     and ada.calendardate < enr.exitdate
-    and {{ union_dataset_join_clause(left_alias="ada", right_alias="enr") }}
+    and ada._dbt_source_project = enr._dbt_source_project
 left join
     {{ ref("stg_powerschool__schools") }} as sch
     on ada.schoolid = sch.school_number
-    and {{ union_dataset_join_clause(left_alias="ada", right_alias="sch") }}
+    and ada._dbt_source_project = sch._dbt_source_project
 left join
     terms as t
     on ada.schoolid = t.school_id

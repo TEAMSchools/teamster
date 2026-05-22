@@ -69,9 +69,12 @@ with
             'student' as respondent_type,
 
             enr.student_number,
-            enr._dbt_source_relation,
             enr.academic_year,
             enr.entrydate,
+
+            regexp_extract(
+                enr._dbt_source_relation, r'(kipp\w+)_'
+            ) as _dbt_source_project,
         from submissions_grain as sg
         inner join
             {{ ref("stg_google_sheets__reporting__terms") }} as rt
@@ -328,7 +331,7 @@ with
             survey_response_id,
             respondent_type,
             student_number,
-            _dbt_source_relation,
+            _dbt_source_project,
             academic_year,
             entrydate,
             date_submitted,
@@ -409,7 +412,7 @@ select
         dbt_utils.generate_surrogate_key(
             [
                 "student_number",
-                "_dbt_source_relation",
+                "_dbt_source_project",
                 "academic_year",
                 "entrydate",
             ]

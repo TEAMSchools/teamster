@@ -159,6 +159,9 @@ manifest". The prod manifest is refreshed by `.git/hooks/post-merge` on every
   profile, not `~/.dbt/profiles.yml`) and
   `--state /workspaces/teamster/src/dbt/<project>/target/prod` (main repo's
   manifest — skips a worktree-local parse).
+- `dbt clone --select 'package:<name>'` matches only source-system package
+  models, not district-level overrides with the same name. For cross-project
+  staging seeding, omit `--select`.
 
 ## Stale dev tables shadow `--defer`
 
@@ -473,6 +476,14 @@ the same partition.
 - **`ON` vs `WHERE`** — row filters on the preserved table belong in `WHERE`,
   not `ON`. For `LEFT JOIN`, a filter in `ON` preserves non-matching rows.
   Exception: `FULL JOIN` conditions referencing one side stay in `ON`.
+- **DATE literal across UNION ALL branches needs explicit cast**: BQ coerces
+  `'9999-12-31'` to DATE inside `coalesce(date_col, ...)` but NOT across UNION
+  ALL branches when one side is CTE-typed STRING. Use
+  `cast('9999-12-31' as date)`. Avoid the `date '9999-12-31'` typed-literal
+  form.
+- **Pre-compute `lag()` / `format()` inputs in the source CTE** so the
+  comparison CTE compares plain columns. Avoids duplicating the expression
+  inside `lag(expr)` and the bare-column reference.
 - **Timezone-aware today**:
 
   ```sql
