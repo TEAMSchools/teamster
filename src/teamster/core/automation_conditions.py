@@ -50,8 +50,6 @@ DepsAutomationCondition._get_dep_keys = _patched_get_dep_keys
 
 def _build_dbt_condition(
     *extra_triggers: AutomationCondition,
-    guard_dep_code_version: bool = True,
-    guard_dep_selection: AssetSelection | None = None,
 ) -> AutomationCondition:
     """Build a dbt automation condition with the shared structure.
 
@@ -65,21 +63,24 @@ def _build_dbt_condition(
     - any_deps_missing ignoring external source assets
     - initial_evaluation omitted from .since() reset to avoid suppressing
       newly_missing permanently
-    - any_deps_match(code_version_changed) gate (when guard_dep_code_version
-      is True) to block materialization when a direct dependency has an
-      unapplied code change (prevents schema errors when a deploy adds
-      columns through a dependency chain). When guard_dep_selection is set,
-      the gate only considers deps matching that selection — used to scope
-      to same-code-location deps and avoid cross-CL deadlock when upstream
-      sensors don't reach the dep. Plain views set this False because they
-      recompile on read — a pending parent code change can't poison a view's
-      stored state.
+
+    There is no dep-code-version gate. A previous version of this builder
+    blocked materialization when a direct dep had
+    ``code_version_changed().since(newly_updated())``; that operator is
+    cursor-based (compares to the evaluator's prior tick, not the dep's
+    stored materialization), so the SINCE memory could capture phantom
+    "true" state from any past tick — sensor restart, condition tree
+    change, manifest re-parse — and never reset when the dep was already
+    in sync (no ``newly_updated`` event to clear it). The gate produced
+    permanent deadlocks on FRESH deps while the in-CL race it nominally
+    prevented was already covered by dbt's intra-build DAG ordering plus
+    ``any_deps_missing`` / ``any_deps_in_progress``.
     """
     triggers: AutomationCondition = AutomationCondition.newly_missing()
     for trigger in extra_triggers:
         triggers = triggers | trigger
 
-    condition = (
+    return (
         AutomationCondition.in_latest_time_window()
         & (
             triggers.since(_SINCE_LAST_HANDLED)
@@ -91,18 +92,6 @@ def _build_dbt_condition(
         & ~AutomationCondition.any_deps_in_progress()
         & ~AutomationCondition.in_progress()
     )
-
-    if guard_dep_code_version:
-        gate = AutomationCondition.any_deps_match(
-            AutomationCondition.code_version_changed().since(
-                AutomationCondition.newly_updated()
-            )
-        )
-        if guard_dep_selection is not None:
-            gate = gate.allow(guard_dep_selection)
-        condition = condition & ~gate
-
-    return condition
 
 
 def _build_any_ancestor_updated(
@@ -170,24 +159,12 @@ def dbt_view_automation_condition() -> AutomationCondition:
     Views are computed on read and don't store physical data. Only re-runs
     when the view's own definition changes — NOT on upstream data changes.
 
-    Skips the `any_deps_match(code_version_changed)` guard that tables and
-    union_relations views inherit: a plain view never bakes parent columns
-    into stored state, so a pending parent code change can't poison it. The
-    guard would otherwise strand the view's own code-version refresh behind
-    unrelated upstream churn.
-
     Triggers: newly_missing, code_version_changed.
     """
-    return _build_dbt_condition(guard_dep_code_version=False)
+    return _build_dbt_condition()
 
 
-def _same_code_location_selection(code_location: str | None) -> AssetSelection | None:
-    return AssetSelection.key_prefixes(code_location) if code_location else None
-
-
-def dbt_union_relations_automation_condition(
-    code_location: str | None = None,
-) -> AutomationCondition:
+def dbt_union_relations_automation_condition() -> AutomationCondition:
     """Automation condition for dbt views using the union_relations macro.
 
     These views have compiled SQL that resolves column lists at run time.
@@ -201,20 +178,11 @@ def dbt_union_relations_automation_condition(
 
     Does NOT trigger on upstream data changes (any_deps_updated) to avoid
     unnecessary Dagster credit and Kubernetes resource costs.
-
-    When code_location is set, the dep-code-version gate only considers deps
-    in the same code location — cross-CL deps with stale stored code don't
-    deadlock this asset.
     """
-    return _build_dbt_condition(
-        _build_any_ancestor_code_version_changed(),
-        guard_dep_selection=_same_code_location_selection(code_location),
-    )
+    return _build_dbt_condition(_build_any_ancestor_code_version_changed())
 
 
-def dbt_table_automation_condition(
-    code_location: str | None = None,
-) -> AutomationCondition:
+def dbt_table_automation_condition() -> AutomationCondition:
     """Automation condition for dbt TABLE models.
 
     Tables store physical data and must re-materialize when upstream changes.
@@ -225,12 +193,7 @@ def dbt_table_automation_condition(
 
     Triggers: newly_missing, any_deps_updated (direct + through views),
     code_version_changed.
-
-    When code_location is set, the dep-code-version gate only considers deps
-    in the same code location — cross-CL deps with stale stored code don't
-    deadlock this asset.
     """
     return _build_dbt_condition(
-        _build_any_ancestor_updated(view_selection=_VIEW_SELECTION),
-        guard_dep_selection=_same_code_location_selection(code_location),
+        _build_any_ancestor_updated(view_selection=_VIEW_SELECTION)
     )
