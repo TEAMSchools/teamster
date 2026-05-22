@@ -29,7 +29,12 @@ cubes:
           TRUE if the student was classified as an English Language Learner on
           this attendance date. Derived from SCD2 status spans clipped to the
           enrollment stint; reflects status at the time of attendance, not
-          current classification.
+          current classification. NULL when no ELL span covers the attendance
+          date — this means the student was not classified ELL on that date, not
+          that data is missing. Note: Newark, Camden, and Paterson draw from
+          historical LEP entry/exit dates in s_nj_stu_x; Miami uses a single
+          current-state span from studentcorefields.lep_status (no historical
+          transitions recoverable).
         sql: is_ell
         type: boolean
         public: true
