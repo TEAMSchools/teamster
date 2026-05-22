@@ -21,10 +21,11 @@ models:
       - name: student_key
         data_type: string
         description: >-
-          FK to dim_students. Derived from student_number. Null for college
-          branch rows whose CollegeBoard ID has no entry in the sat_id_crosswalk
-          Google Sheet (PSAT score arrives keyed by cb_id; unmatched rows carry
-          NULL student_number).
+          FK to dim_students. Derived from student_number. Null when the
+          CollegeBoard ID has no entry in the corresponding crosswalk Google
+          Sheet (PSAT scores arrive keyed by cb_id via sat_id_crosswalk; AP
+          scores arrive keyed by ap_number_ap_id via ap_id_crosswalk). Unmatched
+          rows carry NULL student_number.
 
         constraints:
           - type: foreign_key
