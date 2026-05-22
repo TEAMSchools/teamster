@@ -167,15 +167,7 @@ cubes:
           TRUE if this student-day is included in chronic absence calculations.
           Transferred-out students (enroll_status = 2) are excluded for the
           current academic year only; prior-year records are always eligible.
-        sql: >
-          (
-            {CUBE}.academic_year != IF(
-              EXTRACT(MONTH FROM CURRENT_DATE()) >= 7,
-              EXTRACT(YEAR FROM CURRENT_DATE()),
-              EXTRACT(YEAR FROM CURRENT_DATE()) - 1
-            )
-            OR {dim_student_enrollments.enroll_status} IS DISTINCT FROM 2
-          )
+        sql: is_ca_eligible
         type: boolean
         public: false
 
