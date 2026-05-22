@@ -2,11 +2,13 @@ models:
   - name: dim_student_ell_status
     description: >-
       SCD2 dimension capturing ELL (English Language Learner) status spans per
-      student. Newark + Camden + Paterson draw from PowerSchool `s_nj_stu_x` LEP
-      date columns; Miami carries a single current-state span anchored to the
-      student's earliest enrollment. Source is current-state — historical
-      entry/exit/re-entry transitions that have been overwritten in PowerSchool
-      are not recoverable.
+      student per district enrollment context. Newark + Camden + Paterson draw
+      from PowerSchool `s_nj_stu_x` LEP date columns; Miami carries a single
+      current-state span derived from PowerSchool enrollments +
+      `studentcorefields.lep_status`. All spans are clipped to the student's
+      PowerSchool enrollment range in the source district. Source is
+      current-state — historical entry/exit/re-entry transitions that have been
+      overwritten in PowerSchool are not recoverable.
     config:
       meta:
         dagster:
@@ -50,9 +52,25 @@ models:
               arguments:
                 to: ref('dim_students')
                 field: student_key
+      - name: _dbt_source_project
+        data_type: string
+        description: >-
+          District context for this status span (`kippnewark`, `kippcamden`,
+          `kippmiami`, `kipppaterson`). Part of the dim's grain — a student
+          enrolled in two districts has independent ELL timelines under each.
+          Consumers joining at student grain must include this column in the
+          join key to avoid fan-out for cross-enrolled students.
+        data_tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: [kippnewark, kippcamden, kippmiami, kipppaterson]
       - name: effective_date_start_key
         data_type: date
-        description: First date this span is valid for the student.
+        description: >-
+          First date this span is valid for the student in this district.
+          Clipped to the later of the LEP record's begin date and the student's
+          PowerSchool enrollment_start in the district.
         data_tests:
           - not_null
           - relationships:
@@ -62,8 +80,10 @@ models:
       - name: effective_date_end_key
         data_type: date
         description: >-
-          Last date this span is valid (inclusive); `'9999-12-31'` for the
-          currently-active span.
+          Last date this span is valid (inclusive). Clipped to the earlier of
+          the LEP record's end date and the student's PowerSchool enrollment_end
+          in the district. `'9999-12-31'` only when the student is currently
+          active in the district AND the LEP record is open-ended.
         data_tests:
           - not_null
           - relationships:
@@ -79,8 +99,8 @@ models:
         data_type: boolean
         description: >-
           True for every emitted row. The dim is inclusion-based — rows exist
-          only for `(student × source × span)` combinations where the student is
-          classified ELL. Consumers default to `false` when no row covers the
+          only for `(student × district × span)` combinations where the student
+          is classified ELL. Consumers default to `false` when no row covers the
           target date.
         data_tests:
           - not_null

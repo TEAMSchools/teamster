@@ -9,7 +9,7 @@ with
             academic_year,
             entrydate,
             exitdate,
-        from {{ ref("base_powerschool__student_enrollments") }}
+        from {{ ref("int_powerschool__student_enrollment_union") }}
     ),
 
     -- trunk-ignore(sqlfluff/ST03): referenced by string in dbt_utils.deduplicate

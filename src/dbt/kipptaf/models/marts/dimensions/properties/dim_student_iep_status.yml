@@ -1,11 +1,15 @@
 models:
   - name: dim_student_iep_status
     description: >-
-      SCD2 dimension capturing IEP (special-education) status spans per student.
-      One row per student per contiguous value span; active rows end at
-      `'9999-12-31'`. Newark + Camden draw from EdPlan with native effective
-      dates; Paterson + Miami carry a single current-state span anchored to the
-      student's earliest enrollment.
+      SCD2 dimension capturing IEP (special-education) status spans per student
+      per district enrollment context. One row per `(student, district,
+      contiguous value span)`; active rows end at `'9999-12-31'`. Newark +
+      Camden draw from EdPlan with native effective dates; Paterson + Miami
+      carry a single current-state span derived from PowerSchool enrollments +
+      `studentcorefields.spedlep`. All spans are clipped to the student's
+      PowerSchool enrollment range in the source district — phantom NJSmart
+      records for districts where the student was never enrolled drop out at the
+      enrollment inner-join.
     config:
       meta:
         dagster:
@@ -51,9 +55,26 @@ models:
                 to: ref('dim_students')
                 field: student_key
 
+      - name: _dbt_source_project
+        data_type: string
+        description: >-
+          District context for this status span (`kippnewark`, `kippcamden`,
+          `kippmiami`, `kipppaterson`). Part of the dim's grain — a student
+          enrolled in two districts has independent IEP timelines under each.
+          Consumers joining at student grain must include this column in the
+          join key to avoid fan-out for cross-enrolled students.
+        data_tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: [kippnewark, kippcamden, kippmiami, kipppaterson]
+
       - name: effective_date_start_key
         data_type: date
-        description: First date this span is valid for the student.
+        description: >-
+          First date this span is valid for the student in this district.
+          Clipped to the later of the IEP record's effective_date and the
+          student's PowerSchool enrollment_start in the district.
         data_tests:
           - not_null
           - relationships:
@@ -64,8 +85,10 @@ models:
       - name: effective_date_end_key
         data_type: date
         description: >-
-          Last date this span is valid (inclusive); `'9999-12-31'` for the
-          currently-active span.
+          Last date this span is valid (inclusive). Clipped to the earlier of
+          the IEP record's effective_end_date and the student's PowerSchool
+          enrollment_end in the district. `'9999-12-31'` only when the student
+          is currently active in the district AND the IEP record is open-ended.
         data_tests:
           - not_null
           - relationships:
@@ -76,7 +99,8 @@ models:
       - name: is_current
         data_type: boolean
         description: >-
-          Convenience flag — true when `effective_date_end_key = '9999-12-31'`.
+          Convenience flag — true when `effective_date_end_key = '9999-12-31'`
+          (open-ended IEP AND currently-active enrollment in the district).
         data_tests:
           - not_null
 

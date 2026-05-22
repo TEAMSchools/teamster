@@ -22,7 +22,7 @@ select
     enr.cohort_primary as graduation_year,
     enr.is_retained_year,
 
-from {{ ref("base_powerschool__student_enrollments") }} as enr
+from {{ ref("int_powerschool__student_enrollment_union") }} as enr
 left join
     {{ ref("stg_powerschool__schools") }} as sch
     on enr.schoolid = sch.school_number

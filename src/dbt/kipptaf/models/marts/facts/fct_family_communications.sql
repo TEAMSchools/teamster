@@ -10,7 +10,7 @@ with
                 partition by student_number, academic_year, _dbt_source_relation
                 order by entrydate desc
             ) as rn,
-        from {{ ref("base_powerschool__student_enrollments") }}
+        from {{ ref("int_powerschool__student_enrollment_union") }}
     )
 
 select

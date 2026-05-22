@@ -7,7 +7,7 @@ with
             entrydate,
             exitdate,
             _dbt_source_relation,
-        from {{ ref("base_powerschool__student_enrollments") }}
+        from {{ ref("int_powerschool__student_enrollment_union") }}
     )
 
 select

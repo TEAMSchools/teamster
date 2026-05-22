@@ -80,7 +80,7 @@ select
     end as attendance_category,
 from {{ ref("int_powerschool__ps_adaadm_daily_ctod") }} as ada
 inner join
-    {{ ref("base_powerschool__student_enrollments") }} as enr
+    {{ ref("int_powerschool__student_enrollment_union") }} as enr
     on ada.studentid = enr.studentid
     and ada.schoolid = enr.schoolid
     and ada.calendardate >= enr.entrydate

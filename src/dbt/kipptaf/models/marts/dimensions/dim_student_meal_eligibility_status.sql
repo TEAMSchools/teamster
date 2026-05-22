@@ -1,4 +1,21 @@
+{% set invalid_lunch_status = ["", "NoD", "1", "2"] %}
+
 with
+    -- Per-(student, district) PowerSchool enrollment range. Inner-joining the
+    -- legs to this CTE clips eligibility spans to the student's actual
+    -- enrollment in the district and drops phantom Titan records for
+    -- districts where the student was never enrolled.
+    enrollments as (
+        select
+            student_number,
+            _dbt_source_project,
+
+            min(entrydate) as enrollment_start,
+            max(coalesce(exitdate, cast('9999-12-31' as date))) as enrollment_end,
+        from {{ ref("int_powerschool__student_enrollment_union") }}
+        group by student_number, _dbt_source_project
+    ),
+
     nj_unioned as (
         select
             _dbt_source_project,
@@ -51,7 +68,7 @@ with
         from nj_flagged
     ),
 
-    nj_leg as (
+    nj_leg_raw as (
         select
             student_number,
             _dbt_source_project,
@@ -63,39 +80,53 @@ with
         group by student_number, _dbt_source_project, eligibility_name, island_id
     ),
 
+    nj_leg as (
+        select
+            l.student_number,
+            l._dbt_source_project,
+            l.meal_eligibility,
+
+            greatest(
+                l.effective_date_start, e.enrollment_start
+            ) as effective_date_start,
+            least(l.effective_date_end, e.enrollment_end) as effective_date_end,
+        from nj_leg_raw as l
+        inner join
+            enrollments as e
+            on l.student_number = e.student_number
+            and l._dbt_source_project = e._dbt_source_project
+        where
+            l.effective_date_start <= e.enrollment_end
+            and l.effective_date_end >= e.enrollment_start
+    ),
+
     pm_recent as (
         {{
             dbt_utils.deduplicate(
-                relation=ref("base_powerschool__student_enrollments"),
+                relation=ref("int_powerschool__student_enrollment_union"),
                 partition_by="student_number, _dbt_source_project",
                 order_by="entrydate desc",
             )
         }}
     ),
 
-    pm_anchor as (
-        select
-            student_number, _dbt_source_project, min(entrydate) as effective_date_start,
-        from {{ ref("base_powerschool__student_enrollments") }}
-        where region in ('Paterson', 'Miami')
-        group by student_number, _dbt_source_project
-    ),
-
     pm_leg as (
         select
             r.student_number,
             r._dbt_source_project,
-            r.lunch_status as meal_eligibility,
 
-            anchor.effective_date_start,
+            if(
+                r.lunchstatus in unnest({{ invalid_lunch_status }}), null, r.lunchstatus
+            ) as meal_eligibility,
 
-            cast('9999-12-31' as date) as effective_date_end,
+            e.enrollment_start as effective_date_start,
+            e.enrollment_end as effective_date_end,
         from pm_recent as r
         inner join
-            pm_anchor as anchor
-            on r.student_number = anchor.student_number
-            and r._dbt_source_project = anchor._dbt_source_project
-        where r.region in ('Paterson', 'Miami')
+            enrollments as e
+            on r.student_number = e.student_number
+            and r._dbt_source_project = e._dbt_source_project
+        where r._dbt_source_project in ('kipppaterson', 'kippmiami')
     ),
 
     unioned as (
@@ -119,14 +150,21 @@ with
     ),
 
     classified as (
-        -- coalesce both NJ (titan, ~2 NULLs) and PM (lunch_status NULL when no
-        -- titan record / no current eligibility) to a single 'Unknown' so the
+        -- coalesce both NJ (titan, ~2 NULLs) and PM (lunchstatus NULL when
+        -- invalid or no current eligibility) to a single 'Unknown' so the
         -- is_meal_eligible derivation never returns NULL.
         select *, coalesce(meal_eligibility, 'Unknown') as meal_eligibility_clean,
         from unioned
     )
 
 select
+    _dbt_source_project,
+
+    meal_eligibility_clean as meal_eligibility,
+
+    effective_date_start as effective_date_start_key,
+    effective_date_end as effective_date_end_key,
+
     {{
         dbt_utils.generate_surrogate_key(
             ["student_number", "_dbt_source_project", "effective_date_start"]
@@ -134,11 +172,6 @@ select
     }} as student_meal_eligibility_status_key,
 
     {{ dbt_utils.generate_surrogate_key(["student_number"]) }} as student_key,
-
-    meal_eligibility_clean as meal_eligibility,
-
-    effective_date_start as effective_date_start_key,
-    effective_date_end as effective_date_end_key,
 
     meal_eligibility_clean in ('F', 'R', 'FDC') as is_meal_eligible,
     effective_date_end = '9999-12-31' as is_current,

@@ -1,4 +1,21 @@
 with
+    -- Per-(student, district) PowerSchool enrollment range. Inner-joining the
+    -- legs to this CTE clips IEP spans to the student's actual enrollment in
+    -- the district and drops phantom NJSmart records for districts where the
+    -- student was never enrolled. enrollment_end = max(exitdate) coalesced so
+    -- open-ended enrollments yield the sentinel and `is_current` resolves
+    -- naturally.
+    enrollments as (
+        select
+            student_number,
+            _dbt_source_project,
+
+            min(entrydate) as enrollment_start,
+            max(coalesce(exitdate, cast('9999-12-31' as date))) as enrollment_end,
+        from {{ ref("int_powerschool__student_enrollment_union") }}
+        group by student_number, _dbt_source_project
+    ),
+
     nj_unioned as (
         select
             student_number,
@@ -61,7 +78,7 @@ with
         from nj_flagged
     ),
 
-    nj_leg as (
+    nj_leg_raw as (
         select
             student_number,
             _dbt_source_project,
@@ -83,18 +100,33 @@ with
             island_id
     ),
 
-    pm_anchor as (
+    nj_leg as (
         select
-            student_number, _dbt_source_project, min(entrydate) as effective_date_start,
-        from {{ ref("base_powerschool__student_enrollments") }}
-        where region in ('Paterson', 'Miami')
-        group by student_number, _dbt_source_project
+            l.student_number,
+            l._dbt_source_project,
+            l.iep_classification,
+            l.special_education_code,
+            l.special_education_name,
+            l.special_education_placement,
+
+            greatest(
+                l.effective_date_start, e.enrollment_start
+            ) as effective_date_start,
+            least(l.effective_date_end, e.enrollment_end) as effective_date_end,
+        from nj_leg_raw as l
+        inner join
+            enrollments as e
+            on l.student_number = e.student_number
+            and l._dbt_source_project = e._dbt_source_project
+        where
+            l.effective_date_start <= e.enrollment_end
+            and l.effective_date_end >= e.enrollment_start
     ),
 
     pm_recent as (
         {{
             dbt_utils.deduplicate(
-                relation=ref("base_powerschool__student_enrollments"),
+                relation=ref("int_powerschool__student_enrollment_union"),
                 partition_by="student_number, _dbt_source_project",
                 order_by="entrydate desc",
             )
@@ -106,21 +138,20 @@ with
             r.student_number,
             r._dbt_source_project,
 
-            anchor.effective_date_start,
-
-            cast('9999-12-31' as date) as effective_date_end,
+            e.enrollment_start as effective_date_start,
+            e.enrollment_end as effective_date_end,
 
             coalesce(scf.spedlep, 'No IEP') as iep_classification,
         from pm_recent as r
         inner join
-            pm_anchor as anchor
-            on r.student_number = anchor.student_number
-            and r._dbt_source_project = anchor._dbt_source_project
+            enrollments as e
+            on r.student_number = e.student_number
+            and r._dbt_source_project = e._dbt_source_project
         left join
             {{ ref("stg_powerschool__studentcorefields") }} as scf
             on r.students_dcid = scf.studentsdcid
             and r._dbt_source_project = scf._dbt_source_project
-        where r.region in ('Paterson', 'Miami')
+        where r._dbt_source_project in ('kipppaterson', 'kippmiami')
     ),
 
     unioned as (
@@ -151,14 +182,7 @@ with
     )
 
 select
-    {{
-        dbt_utils.generate_surrogate_key(
-            ["student_number", "_dbt_source_project", "effective_date_start"]
-        )
-    }} as student_iep_status_key,
-
-    {{ dbt_utils.generate_surrogate_key(["student_number"]) }} as student_key,
-
+    _dbt_source_project,
     iep_classification,
     special_education_code,
     special_education_name,
@@ -166,6 +190,14 @@ select
 
     effective_date_start as effective_date_start_key,
     effective_date_end as effective_date_end_key,
+
+    {{
+        dbt_utils.generate_surrogate_key(
+            ["student_number", "_dbt_source_project", "effective_date_start"]
+        )
+    }} as student_iep_status_key,
+
+    {{ dbt_utils.generate_surrogate_key(["student_number"]) }} as student_key,
 
     iep_classification != 'No IEP' as is_iep,
     effective_date_end = '9999-12-31' as is_current,
