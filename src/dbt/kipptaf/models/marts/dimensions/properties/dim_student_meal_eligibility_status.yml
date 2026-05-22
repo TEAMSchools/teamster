@@ -26,6 +26,11 @@ models:
         to_columns: [student_key]
         warn_unsupported: false
       - type: foreign_key
+        columns: [student_enrollment_key]
+        expression: ref('dim_student_enrollments')
+        to_columns: [student_enrollment_key]
+        warn_unsupported: false
+      - type: foreign_key
         columns: [effective_date_start_key]
         expression: ref('dim_dates')
         to_columns: [date_key]
@@ -52,6 +57,20 @@ models:
               arguments:
                 to: ref('dim_students')
                 field: student_key
+
+      - name: student_enrollment_key
+        data_type: string
+        description: >-
+          Foreign key to `dim_student_enrollments.student_enrollment_key`. Each
+          status row is bound to exactly one enrollment stint (clipped to its
+          entry/exit window at build time). Consumers join here directly rather
+          than re-deriving the stint via date-range overlap.
+        data_tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('dim_student_enrollments')
+                field: student_enrollment_key
 
       - name: _dbt_source_project
         data_type: string

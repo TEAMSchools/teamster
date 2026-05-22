@@ -8,10 +8,11 @@ with
     enrollments as (
         select
             student_number,
+            _dbt_source_relation,
             _dbt_source_project,
+            academic_year,
+            entrydate,
             lunchstatus,
-
-            entrydate as enrollment_start,
 
             -- PowerSchool exitdate is half-open (first day AFTER stint).
             -- Subtract 1 day to get the inclusive last day so boundary-sharing
@@ -95,9 +96,11 @@ with
             l._dbt_source_project,
             l.meal_eligibility,
 
-            greatest(
-                l.effective_date_start, e.enrollment_start
-            ) as effective_date_start,
+            e._dbt_source_relation,
+            e.academic_year,
+            e.entrydate,
+
+            greatest(l.effective_date_start, e.entrydate) as effective_date_start,
             least(l.effective_date_end, e.enrollment_end) as effective_date_end,
         from nj_leg_raw as l
         inner join
@@ -105,19 +108,22 @@ with
             on l.student_number = e.student_number
             and l._dbt_source_project = e._dbt_source_project
             and l.effective_date_start <= e.enrollment_end
-            and l.effective_date_end >= e.enrollment_start
+            and l.effective_date_end >= e.entrydate
     ),
 
     pm_leg as (
         select
             e.student_number,
             e._dbt_source_project,
+            e._dbt_source_relation,
+            e.academic_year,
+            e.entrydate,
 
             if(
                 e.lunchstatus in unnest({{ invalid_lunch_status }}), null, e.lunchstatus
             ) as meal_eligibility,
 
-            e.enrollment_start as effective_date_start,
+            e.entrydate as effective_date_start,
             e.enrollment_end as effective_date_end,
         from enrollments as e
         where e._dbt_source_project in ('kipppaterson', 'kippmiami')
@@ -127,6 +133,9 @@ with
         select
             student_number,
             _dbt_source_project,
+            _dbt_source_relation,
+            academic_year,
+            entrydate,
             meal_eligibility,
             effective_date_start,
             effective_date_end,
@@ -137,6 +146,9 @@ with
         select
             student_number,
             _dbt_source_project,
+            _dbt_source_relation,
+            academic_year,
+            entrydate,
             meal_eligibility,
             effective_date_start,
             effective_date_end,
@@ -166,6 +178,12 @@ select
     }} as student_meal_eligibility_status_key,
 
     {{ dbt_utils.generate_surrogate_key(["student_number"]) }} as student_key,
+
+    {{
+        dbt_utils.generate_surrogate_key(
+            ["student_number", "_dbt_source_relation", "academic_year", "entrydate"]
+        )
+    }} as student_enrollment_key,
 
     meal_eligibility_clean in ('F', 'R', 'FDC') as is_meal_eligible,
     effective_date_end = '9999-12-31' as is_current,

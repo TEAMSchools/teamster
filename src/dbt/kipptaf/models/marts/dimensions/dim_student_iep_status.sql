@@ -11,10 +11,11 @@ with
     enrollments as (
         select
             student_number,
+            _dbt_source_relation,
             _dbt_source_project,
             students_dcid,
-
-            entrydate as enrollment_start,
+            academic_year,
+            entrydate,
 
             -- PowerSchool exitdate is half-open (first day AFTER stint).
             -- Subtract 1 day to get the inclusive last day so boundary-sharing
@@ -122,9 +123,11 @@ with
             l.special_education_name,
             l.special_education_placement,
 
-            greatest(
-                l.effective_date_start, e.enrollment_start
-            ) as effective_date_start,
+            e._dbt_source_relation,
+            e.academic_year,
+            e.entrydate,
+
+            greatest(l.effective_date_start, e.entrydate) as effective_date_start,
             least(l.effective_date_end, e.enrollment_end) as effective_date_end,
         from nj_leg_raw as l
         inner join
@@ -132,15 +135,18 @@ with
             on l.student_number = e.student_number
             and l._dbt_source_project = e._dbt_source_project
             and l.effective_date_start <= e.enrollment_end
-            and l.effective_date_end >= e.enrollment_start
+            and l.effective_date_end >= e.entrydate
     ),
 
     pm_leg as (
         select
             e.student_number,
             e._dbt_source_project,
+            e._dbt_source_relation,
+            e.academic_year,
+            e.entrydate,
 
-            e.enrollment_start as effective_date_start,
+            e.entrydate as effective_date_start,
             e.enrollment_end as effective_date_end,
 
             coalesce(scf.spedlep, 'No IEP') as iep_classification,
@@ -156,6 +162,9 @@ with
         select
             student_number,
             _dbt_source_project,
+            _dbt_source_relation,
+            academic_year,
+            entrydate,
             iep_classification,
             effective_date_start,
             effective_date_end,
@@ -169,6 +178,9 @@ with
         select
             student_number,
             _dbt_source_project,
+            _dbt_source_relation,
+            academic_year,
+            entrydate,
             iep_classification,
             effective_date_start,
             effective_date_end,
@@ -196,6 +208,12 @@ select
     }} as student_iep_status_key,
 
     {{ dbt_utils.generate_surrogate_key(["student_number"]) }} as student_key,
+
+    {{
+        dbt_utils.generate_surrogate_key(
+            ["student_number", "_dbt_source_relation", "academic_year", "entrydate"]
+        )
+    }} as student_enrollment_key,
 
     iep_classification != 'No IEP' as is_iep,
     effective_date_end = '9999-12-31' as is_current,

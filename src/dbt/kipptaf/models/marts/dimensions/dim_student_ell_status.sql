@@ -7,9 +7,10 @@ with
         select
             students_dcid,
             student_number,
+            _dbt_source_relation,
             _dbt_source_project,
-
-            entrydate as enrollment_start,
+            academic_year,
+            entrydate,
 
             -- PowerSchool exitdate is half-open (first day AFTER stint).
             -- Subtract 1 day to get the inclusive last day so boundary-sharing
@@ -27,8 +28,11 @@ with
         select
             e.student_number,
             njs._dbt_source_project,
+            e._dbt_source_relation,
+            e.academic_year,
+            e.entrydate,
 
-            greatest(njs.lepbegindate, e.enrollment_start) as effective_date_start,
+            greatest(njs.lepbegindate, e.entrydate) as effective_date_start,
 
             least(
                 coalesce(njs.lependdate, cast('9999-12-31' as date)), e.enrollment_end
@@ -39,8 +43,7 @@ with
             on njs.studentsdcid = e.students_dcid
             and njs._dbt_source_project = e._dbt_source_project
             and njs.lepbegindate <= e.enrollment_end
-            and coalesce(njs.lependdate, cast('9999-12-31' as date))
-            >= e.enrollment_start
+            and coalesce(njs.lependdate, cast('9999-12-31' as date)) >= e.entrydate
         where njs.lepbegindate is not null
     ),
 
@@ -48,8 +51,11 @@ with
         select
             e.student_number,
             njs._dbt_source_project,
+            e._dbt_source_relation,
+            e.academic_year,
+            e.entrydate,
 
-            greatest(njs.lepbegindate2, e.enrollment_start) as effective_date_start,
+            greatest(njs.lepbegindate2, e.entrydate) as effective_date_start,
 
             least(
                 coalesce(njs.liependdate2, cast('9999-12-31' as date)), e.enrollment_end
@@ -60,8 +66,7 @@ with
             on njs.studentsdcid = e.students_dcid
             and njs._dbt_source_project = e._dbt_source_project
             and njs.lepbegindate2 <= e.enrollment_end
-            and coalesce(njs.liependdate2, cast('9999-12-31' as date))
-            >= e.enrollment_start
+            and coalesce(njs.liependdate2, cast('9999-12-31' as date)) >= e.entrydate
         where njs.lepbegindate2 is not null
     ),
 
@@ -69,6 +74,9 @@ with
         select
             student_number,
             _dbt_source_project,
+            _dbt_source_relation,
+            academic_year,
+            entrydate,
             effective_date_start,
             effective_date_end,
         from nj_primary
@@ -76,6 +84,9 @@ with
         select
             student_number,
             _dbt_source_project,
+            _dbt_source_relation,
+            academic_year,
+            entrydate,
             effective_date_start,
             effective_date_end,
         from nj_secondary
@@ -85,8 +96,11 @@ with
         select
             e.student_number,
             e._dbt_source_project,
+            e._dbt_source_relation,
+            e.academic_year,
+            e.entrydate,
 
-            e.enrollment_start as effective_date_start,
+            e.entrydate as effective_date_start,
             e.enrollment_end as effective_date_end,
         from enrollments as e
         inner join
@@ -102,6 +116,9 @@ with
         select
             student_number,
             _dbt_source_project,
+            _dbt_source_relation,
+            academic_year,
+            entrydate,
             effective_date_start,
             effective_date_end,
         from nj_leg
@@ -109,6 +126,9 @@ with
         select
             student_number,
             _dbt_source_project,
+            _dbt_source_relation,
+            academic_year,
+            entrydate,
             effective_date_start,
             effective_date_end,
         from pm_leg
@@ -127,6 +147,12 @@ select
     }} as student_ell_status_key,
 
     {{ dbt_utils.generate_surrogate_key(["student_number"]) }} as student_key,
+
+    {{
+        dbt_utils.generate_surrogate_key(
+            ["student_number", "_dbt_source_relation", "academic_year", "entrydate"]
+        )
+    }} as student_enrollment_key,
 
     true as is_ell,
     effective_date_end = '9999-12-31' as is_current,
