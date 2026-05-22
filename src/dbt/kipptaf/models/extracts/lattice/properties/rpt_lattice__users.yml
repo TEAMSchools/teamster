@@ -14,7 +14,9 @@ models:
       - name: status
         quote: true
         description:
-          ADP employment status. Lattice-accepted values are Active and Leave.
+          Lattice employment status. Accepted values are Active and Inactive.
+          Staff with ADP assignment status Active or Leave are mapped to Active;
+          all others (including recently terminated) are mapped to Inactive.
         data_type: string
       - name: work_email
         description: Employee work email address.
