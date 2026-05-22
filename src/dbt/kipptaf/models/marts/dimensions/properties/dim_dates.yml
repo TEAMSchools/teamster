@@ -85,6 +85,13 @@ models:
           KIPP fiscal year (July start). The calendar year in which the fiscal
           year ends (e.g., 2026 for FY2026 which begins July 2025).
 
+      - name: is_current_academic_year
+        data_type: boolean
+        description: >-
+          TRUE if this date's academic_year matches the dbt project's
+          current_academic_year var. Manually controlled — rolls over only on
+          var update + mart rebuild. Use to gate "current AY only" filters.
+
       - name: calendar_week_start_date
         data_type: date
         description: >-
