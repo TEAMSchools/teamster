@@ -29,6 +29,31 @@ cubes:
         sql: "{dim_terms.term_key} = {CUBE}.term_key"
         relationship: many_to_one
 
+      - name: dim_student_ell_status
+        sql: >
+          {dim_student_ell_status.student_enrollment_key} =
+          {CUBE}.student_enrollment_key AND {CUBE}.date_key >=
+          {dim_student_ell_status.effective_date_start_key} AND {CUBE}.date_key
+          <= {dim_student_ell_status.effective_date_end_key}
+        relationship: many_to_one
+
+      - name: dim_student_iep_status
+        sql: >
+          {dim_student_iep_status.student_enrollment_key} =
+          {CUBE}.student_enrollment_key AND {CUBE}.date_key >=
+          {dim_student_iep_status.effective_date_start_key} AND {CUBE}.date_key
+          <= {dim_student_iep_status.effective_date_end_key}
+        relationship: many_to_one
+
+      - name: dim_student_meal_eligibility_status
+        sql: >
+          {dim_student_meal_eligibility_status.student_enrollment_key} =
+          {CUBE}.student_enrollment_key AND {CUBE}.date_key >=
+          {dim_student_meal_eligibility_status.effective_date_start_key} AND
+          {CUBE}.date_key <=
+          {dim_student_meal_eligibility_status.effective_date_end_key}
+        relationship: many_to_one
+
     dimensions:
       - name: student_attendance_daily_key
         description: >-
