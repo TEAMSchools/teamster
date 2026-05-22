@@ -10,9 +10,9 @@ models:
       - name: student_enrollment_key
         data_type: string
         description: >-
-          Surrogate key derived from student_number, _dbt_source_relation,
+          Surrogate key derived from student_number, _dbt_source_project,
           academic_year, and entrydate. Primary key for this dimension — matches
-          the uniqueness grain on int_extracts__student_enrollments.
+          the uniqueness grain on int_powerschool__student_enrollment_union.
         constraints:
           - type: primary_key
             warn_unsupported: false

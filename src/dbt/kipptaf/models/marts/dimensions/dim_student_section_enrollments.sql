@@ -2,6 +2,7 @@ with
     student_enrollments as (
         select
             _dbt_source_relation,
+            _dbt_source_project,
             studentid,
             schoolid,
             yearid,
@@ -9,7 +10,7 @@ with
             academic_year,
             entrydate,
             exitdate,
-        from {{ ref("base_powerschool__student_enrollments") }}
+        from {{ ref("int_powerschool__student_enrollment_union") }}
     ),
 
     -- trunk-ignore(sqlfluff/ST03): referenced by string in dbt_utils.deduplicate
@@ -25,7 +26,7 @@ with
             cc.is_dropped_section,
             cc.is_dropped_course,
 
-            enr._dbt_source_relation as enr_source_relation,
+            enr._dbt_source_project as enr_source_project,
             enr.student_number as enr_student_number,
             enr.academic_year as enr_academic_year,
             enr.entrydate as enr_entrydate,
@@ -44,7 +45,7 @@ with
             and cc.cc_yearid = enr.yearid
             and cc.cc_dateenrolled >= enr.entrydate
             and cc.cc_dateenrolled < enr.exitdate
-            and {{ union_dataset_join_clause(left_alias="cc", right_alias="enr") }}
+            and cc._dbt_source_project = enr._dbt_source_project
         left join
             {{ ref("stg_google_sheets__reporting__terms") }} as rt
             on cc.cc_abs_termid = rt.powerschool_term_id
@@ -75,25 +76,8 @@ select
     {{ dbt_utils.generate_surrogate_key(["cc_dcid", "_dbt_source_project"]) }}
     as student_section_enrollment_key,
 
-    -- FK source_relation must match dim_course_sections, which is built from
-    -- base_powerschool__sections. Rewrite cc's source relation to the parent's.
-    -- TODO: replace() is a no-op if a future district uses a different base
-    -- model name. Long-term fix: hash region prefix only, consistent across
-    -- producer and consumer (#3820). student_section_enrollment_key has been
-    -- migrated to _dbt_source_project (this wave); course_section_key and the
-    -- remaining surrogate keys still await full #3820.
-    {{
-        dbt_utils.generate_surrogate_key(
-            [
-                "sections_dcid",
-                (
-                    "replace(_dbt_source_relation,"
-                    " 'base_powerschool__course_enrollments',"
-                    " 'base_powerschool__sections')"
-                ),
-            ]
-        )
-    }} as course_section_key,
+    {{ dbt_utils.generate_surrogate_key(["sections_dcid", "_dbt_source_project"]) }}
+    as course_section_key,
 
     if(
         enr_student_number is not null,
@@ -101,7 +85,7 @@ select
             dbt_utils.generate_surrogate_key(
                 [
                     "enr_student_number",
-                    "enr_source_relation",
+                    "enr_source_project",
                     "enr_academic_year",
                     "enr_entrydate",
                 ]

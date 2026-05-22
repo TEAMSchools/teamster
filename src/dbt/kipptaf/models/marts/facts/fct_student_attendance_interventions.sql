@@ -27,7 +27,7 @@ select
         dbt_utils.generate_surrogate_key(
             [
                 "ai.student_number",
-                "enr._dbt_source_relation",
+                "enr._dbt_source_project",
                 "ai.academic_year",
                 "enr.entrydate",
             ]
@@ -66,7 +66,7 @@ select
     ai.is_ca_exception as is_chronic_absence_exception,
 from {{ ref("int_students__attendance_interventions") }} as ai
 inner join
-    {{ ref("base_powerschool__student_enrollments") }} as enr
+    {{ ref("int_powerschool__student_enrollment_union") }} as enr
     on ai.student_number = enr.student_number
     and ai.academic_year = enr.academic_year
     and {{ union_dataset_join_clause(left_alias="ai", right_alias="enr") }}

@@ -20,13 +20,14 @@ with
     student_enrollments as (
         select
             _dbt_source_relation,
+            _dbt_source_project,
             studentid,
             schoolid,
             yearid,
             student_number,
             entrydate,
             exitdate,
-        from {{ ref("base_powerschool__student_enrollments") }}
+        from {{ ref("int_powerschool__student_enrollment_union") }}
     ),
 
     reporting_terms as (
@@ -61,7 +62,7 @@ select
         dbt_utils.generate_surrogate_key(
             [
                 "enr.student_number",
-                "enr._dbt_source_relation",
+                "enr._dbt_source_project",
                 "asg.academic_year",
                 "enr.entrydate",
             ]
@@ -118,7 +119,7 @@ inner join
     and ce.cc_academic_year - 1990 = enr.yearid
     and asg.duedate >= enr.entrydate
     and asg.duedate < enr.exitdate
-    and {{ union_dataset_join_clause(left_alias="ce", right_alias="enr") }}
+    and ce._dbt_source_project = enr._dbt_source_project
 left join
     reporting_terms as rt
     on asg.duedate between rt.start_date and rt.end_date

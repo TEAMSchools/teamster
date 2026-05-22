@@ -6,12 +6,13 @@ with
             entrydate,
             exitdate,
             _dbt_source_relation,
+            _dbt_source_project,
 
             row_number() over (
                 partition by student_number, academic_year, _dbt_source_relation
                 order by entrydate desc
             ) as rn,
-        from {{ ref("base_powerschool__student_enrollments") }}
+        from {{ ref("int_powerschool__student_enrollment_union") }}
     ),
 
     -- trunk-ignore(sqlfluff/ST03): referenced by string in dbt_utils.deduplicate
@@ -39,7 +40,7 @@ select
         dbt_utils.generate_surrogate_key(
             [
                 "enr.student_number",
-                "enr._dbt_source_relation",
+                "enr._dbt_source_project",
                 "i.create_ts_academic_year",
                 "enr.entrydate",
             ]
@@ -75,7 +76,7 @@ inner join
     enrollments as enr
     on i.student_school_id = enr.student_number
     and i.create_ts_academic_year = enr.academic_year
-    and {{ union_dataset_join_clause(left_alias="i", right_alias="enr") }}
+    and i._dbt_source_project = enr._dbt_source_project
     and enr.rn = 1
 left join {{ ref("stg_deanslist__users") }} as u on i.create_by = u.dl_user_id
 left join staff_roster_by_email_dedup as sr on u.email = sr.work_email

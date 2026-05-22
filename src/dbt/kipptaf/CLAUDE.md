@@ -62,6 +62,10 @@ inner join {{ ref("other_union_model") }} as b
 Macro defined in `macros/utils.sql` — extracts school prefix via
 `regexp_extract(..., r'(kipp\w+)_')`.
 
+When both joined union models materialize `_dbt_source_project`, prefer
+`a._dbt_source_project = b._dbt_source_project` over the macro — same semantics,
+no `regexp_extract` per call.
+
 ### Selecting from `dbt_utils.star()` models
 
 `base_` models using `star()` resolve columns from BigQuery at run time, not
@@ -132,6 +136,12 @@ per-region source-system staging table directly.
 `enroll_status IN (0, 2, 3)` (active / withdrawn / graduated) when resolving
 identity or attributing facts to a student. `-1` is pre-registered (not yet
 enrolled); `1` is inactive — never report against either.
+
+**`int_powerschool__student_enrollment_union` graduate placeholders**: rows with
+`enroll_status = 3` carry NULL `entrydate` / `exitdate`. Filter
+`where entrydate is not null` in any consumer that date-range joins or hashes
+entrydate into a surrogate key — otherwise multiple graduates per (student,
+district) collide on the dbt_utils null hash.
 
 **`base_powerschool__course_enrollments` PowerSchool double-writes**: a frozen
 historical corpus of duplicate `cc` rows for the same
@@ -211,6 +221,20 @@ project.
 parents. When CI fails on a stale staging defer table for an unmodified upstream
 (column missing after a recent merge), trigger the full `Clone - Staging` job —
 or `dbt clone --select <upstream>` against staging.
+
+## Single-PR cross-project workflow
+
+CI only builds kipptaf; district staging schemas aren't auto-populated. For a PR
+touching both a district model and a kipptaf consumer:
+
+1. Add `target=staging` branch to affected `sources-kipp*.yml` (routes to
+   `zz_stg_<district>_<source>`).
+2. From each affected district project, run broad clone (no `--select`):
+   `uv --directory <worktree> run dbt clone --target staging --state target/prod`
+   to seed `zz_stg_<district>_*` from prod.
+3. Push; CI reads staged regional via the schema branch.
+
+Alternative to the two-PR pattern in `src/dbt/CLAUDE.md`.
 
 ## Verifying a coalesce/override layer is vestigial
 

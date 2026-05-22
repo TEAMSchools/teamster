@@ -28,7 +28,7 @@ models:
       - name: student_attendance_daily_key
         data_type: string
         description: >-
-          Surrogate key derived from student_number, _dbt_source_relation, and
+          Surrogate key derived from student_number, _dbt_source_project, and
           calendardate. Primary key for this fact.
         constraints:
           - type: primary_key
@@ -41,7 +41,7 @@ models:
         data_type: string
         description: >-
           FK to dim_student_enrollments. Surrogate key derived from
-          student_number, _dbt_source_relation, academic_year, and entrydate.
+          student_number, _dbt_source_project, academic_year, and entrydate.
         constraints:
           - type: foreign_key
             to: ref('dim_student_enrollments')

@@ -224,6 +224,10 @@ Marts inherit `contract: enforced: true` and `materialized: view` from
 explicit uniqueness test on its PK (`unique` on a single column, or
 `dbt_utils.unique_combination_of_columns` for composite).
 
+Drop model-level `dbt_utils.unique_combination_of_columns` when its column set
+equals the surrogate-key hash inputs — `unique` on the PK detects the same
+violations.
+
 ## Constraints are informational (views)
 
 PK/FK `constraints:` blocks on marts are not enforced (views). dbt emits a parse
@@ -238,8 +242,29 @@ reads a mart must have a dbt exposure under `src/dbt/kipptaf/models/exposures/`.
 Without one, column renames and removals silently break downstream — dbt has no
 other signal.
 
+Before removing a column from any `dim_*` / `fct_*`, grep `src/cube/model/` for
+`sql: <col>` and bare `<col>` — Cube YAML reads by name and dbt has no exposure
+to surface the dep.
+
 Every mart must appear in `cube.yml`'s `cube_semantic_layer.depends_on`; other
 exposures reference `rpt_*` / staging / intermediate models, not marts.
+
+## SCD2 status dims bound to enrollments
+
+Status dims sourced from external systems (edplan, titan, s_nj_stu_x) that
+represent enrollment-context status:
+
+- Grain `(student_number, _dbt_source_project, effective_date_start)`; expose
+  `_dbt_source_project` as a dim column.
+- Inner-join external records to enrollment **per stint** (not aggregated
+  min/max). Multi-stint students get separate dim rows per stint. Date-range
+  predicates in ON, not WHERE.
+- Carry `student_enrollment_key` as direct FK to `dim_student_enrollments` via
+  `surrogate_key(student_number, _dbt_source_project, academic_year, entrydate)`
+  — consumers equi-join instead of date-range BETWEEN.
+- Half-open exit:
+  `enrollment_end = coalesce(date_sub(exitdate, interval 1 day), '9999-12-31')`
+  to avoid boundary-share overlaps.
 
 ## Not in this layer
 
