@@ -137,10 +137,21 @@ identity or attributing facts to a student. `-1` is pre-registered (not yet
 enrolled); `1` is inactive — never report against either.
 
 **`int_powerschool__student_enrollment_union` graduate placeholders**: rows with
-`enroll_status = 3` carry NULL `entrydate` / `exitdate`. Filter
-`where entrydate is not null` in any consumer that date-range joins or hashes
-entrydate into a surrogate key — otherwise multiple graduates per (student,
-district) collide on the dbt_utils null hash.
+`enroll_status = 3` have NULL `entrydate` / `exitdate`, one row per
+`academic_year` per (student, district). `generate_surrogate_key` inputs that
+include `academic_year` hash uniquely; omitting `academic_year` collides.
+Date-range joins on `entrydate` silently drop these rows.
+
+**`enroll_status` is student-level, not per-stint.** Sourced from
+`stg_powerschool__students` and copied identically to every row in
+`int_powerschool__student_enrollment_union`. Don't expect different stints for
+the same student to carry different values.
+
+**`dim_terms.type` is KIPP-managed, not PowerSchool-derived.** Values from
+`stg_google_sheets__reporting__terms` — RT (reporting term, quarter grain), ATT
+(attendance, semester/year grain only), LIT, AR, REP, SURVEY, etc. Quarter
+attendance rows live under `type='RT'` matching `term_name='Q1'..'Q4'` — NOT
+`type='ATT'`, NOT keyed by `term_code='RT1'..'RT4'`.
 
 **`base_powerschool__course_enrollments` PowerSchool double-writes**: a frozen
 historical corpus of duplicate `cc` rows for the same

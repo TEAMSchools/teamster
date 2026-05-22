@@ -3,11 +3,9 @@ models:
     description: >-
       Student daily attendance fact table. One row per student x calendar date
       with attendance recorded. Contains attendance code, present/absent/tardy
-      indicators, and membership value. School calendar attributes
-      (is_in_session, is_membership_day) are reached via compound join on
-      (date_key, location_key) to dim_school_calendars, avoiding a diamond path
-      through dim_locations. FK to dim_student_enrollments, dim_dates,
-      dim_locations, dim_terms, and dim_school_calendars.
+      indicators, and membership value. Location, school calendar, and academic
+      year are reached via dim_student_enrollments and dim_terms — not stored on
+      the fact. FK to dim_student_enrollments, dim_dates, and dim_terms.
 
       Four numeric attendance measures coexist — use the right one for the
       question:
@@ -57,9 +55,7 @@ models:
       - name: date_key
         data_type: date
         description: >-
-          Calendar date of the attendance record. FK to dim_dates. Also used
-          with location_key to join dim_school_calendars.
-
+          Calendar date of the attendance record. FK to dim_dates.
         constraints:
           - type: foreign_key
             to: ref('dim_dates')
@@ -70,22 +66,6 @@ models:
               arguments:
                 to: ref('dim_dates')
                 field: date_key
-      - name: location_key
-        data_type: string
-        description: >-
-          FK to dim_locations. Surrogate key derived from location_clean_name.
-          Used with date_key to join dim_school_calendars.
-
-        constraints:
-          - type: foreign_key
-            to: ref('dim_locations')
-            to_columns: [location_key]
-            warn_unsupported: false
-        data_tests:
-          - relationships:
-              arguments:
-                to: ref('dim_locations')
-                field: location_key
       - name: term_key
         data_type: string
         description: >-
@@ -105,11 +85,6 @@ models:
                 to: ref('dim_terms')
                 field: term_key
 
-      - name: academic_year
-        data_type: int64
-        description: >-
-          KIPP academic year (July start) in which this attendance date falls.
-
       - name: attendance_code
         data_type: string
         description: >-
@@ -127,7 +102,8 @@ models:
           where 1 is a full attendance day. Used with membership_value to
           compute ADA. Precision depends on the source SIS's attendance mode
           (full-day vs period-level vs day-part); see source_model for
-          provenance.
+          provenance. Null for Paterson records before academic_year 2026
+          (excluded from ADA — data not fully integrated until AY2026).
 
         config:
           meta:
@@ -140,7 +116,9 @@ models:
           The amount of a student's membership this school claims. If a student
           attends more than one school each one will only be able to claim a
           certain portion of the membership. The largest number for this will
-          usually be 1 and fractions expressed as decimals. Like .5 or .25.
+          usually be 1 and fractions expressed as decimals. Like .5 or .25. Null
+          for Paterson records before academic_year 2026 (excluded from ADA —
+          data not fully integrated until AY2026).
 
         config:
           meta:
@@ -151,7 +129,9 @@ models:
         data_type: float64
         description: >-
           Weighted presence value. 0.67 for tardy (T-prefix codes), otherwise
-          equals attendance_value. Fractional by design — not a 0/1 flag.
+          equals attendance_value. Fractional by design — not a 0/1 flag. Null
+          for Paterson records before academic_year 2026 (excluded from ADA —
+          data not fully integrated until AY2026).
 
       - name: is_truant
         data_type: boolean
@@ -159,11 +139,6 @@ models:
           TRUE if the student meets regional truancy criteria. Miami: 15+
           absences in 90-day rolling window. NJ regions: projected absences
           reach 50+ for the year.
-
-      - name: semester
-        data_type: string
-        description: >-
-          Semester code for the attendance date (e.g., S1, S2).
 
       - name: is_absent
         data_type: int64
@@ -206,3 +181,36 @@ models:
           Out-of-School Suspension, In-School Suspension, Absent, Tardy,
           Present. Use this column for GROUP BY in BI tools; use the raw
           attendance_code for specific-code drill-down.
+
+      - name: is_chronically_absent
+        data_type: boolean
+        description: >-
+          TRUE if the student's cumulative ADA through this date is below 90%.
+          Running average of attendance_value on full membership days only
+          (membership_value = 1), partitioned by enrollment stint
+          (student_enrollment_key), ordered by date. Point-in-time — filter to a
+          single date to get YTD CA status as of that date. Filtering to a date
+          range overcounts by including students CA at any point in the range.
+          Null for Paterson records before academic_year 2026.
+
+      - name: ada_tier
+        data_type: string
+        description: >-
+          ADA tier based on cumulative attendance rate through this date. Tier 1
+          = 95%+ ADA (on track). Tier 2 = 90–94% (at risk). Tier 3 = 80–89%
+          (chronic). Tier 4 = below 80% (severe chronic). Partitioned by
+          enrollment stint (student_enrollment_key), ordered by date. Null for
+          Paterson records before academic_year 2026.
+        data_tests:
+          - accepted_values:
+              arguments:
+                values: [Tier 1, Tier 2, Tier 3, Tier 4]
+
+      - name: is_latest_record
+        data_type: boolean
+        description: >-
+          TRUE for the most recent attendance record within this student
+          enrollment. Use to query each student's latest CA status
+          (is_chronically_absent, ada_tier) without requiring a date filter —
+          equivalent to Tableau's MAX(calendardate) LOD approach. Future dates
+          are excluded at the mart level (calendardate <= current_date).
