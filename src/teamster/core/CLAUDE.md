@@ -109,15 +109,18 @@ deploy rollover, the materialization may be stamped with the new deployment's
 code version. `code_version_changed()` returns false permanently — manual
 materialization is the only fix. See dagster-io/dagster#33708.
 
-**Deploy ordering gate**: `_dep_code_version_pending` blocks materialization
-when a direct dependency has `code_version_changed().since(newly_updated())` —
-prevents schema errors when a deploy adds columns through a TABLE → VIEW chain.
-Applied in `_build_dbt_condition()` to tables and union_relations views via the
-default `guard_dep_code_version=True`. Plain views opt out
-(`dbt_view_automation_condition` passes `False`): a view never bakes parent
-columns into stored state, so a pending parent code change can't poison it, and
-the guard would only strand the view's own `code_version_changed` refresh behind
-unrelated upstream churn.
+**No dep-code-version gate**: `_build_dbt_condition()` does NOT block
+materialization when a direct dep has
+`code_version_changed().since(newly_updated())`. A previous gate did, but the
+operator is cursor-based — its SINCE memory could capture phantom "true" state
+from any past tick (sensor restart, condition change, manifest re-parse) and
+never reset on a FRESH dep (no `newly_updated` event to clear it), producing
+permanent deadlocks. The in-CL race the gate nominally prevented is already
+covered by dbt's intra-build DAG ordering plus `any_deps_missing` /
+`any_deps_in_progress`; cross-CL races fail at BigQuery query time (recoverable,
+not silent corruption). If a downstream table looks "stuck," the cause is
+elsewhere — start with `any_deps_missing` / `any_deps_in_progress` evaluator
+nodes.
 
 **Dep fan-out rule**: An unpartitioned dep of a partitioned asset fans out to
 ALL partitions on every materialization. To preserve per-partition triggering,
