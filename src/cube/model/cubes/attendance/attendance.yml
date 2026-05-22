@@ -295,6 +295,11 @@ cubes:
           paired with the same query pattern used for count_chronically_absent:
           is_latest_record = true for year-end, or a single date_key filter for
           point-in-time.
+
+          CA eligibility uses the student's current enrollment_status. Students
+          currently marked Transferred Out are excluded across all of their
+          current-AY attendance rows (including pre-transfer days). Prior-AY
+          rows are always eligible regardless of current status.
         sql: student_enrollment_key
         type: count_distinct
         public: false
