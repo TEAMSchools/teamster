@@ -439,12 +439,13 @@ with
         }}
     ),
 
-    -- TODO: #3633 — SELECT DISTINCT needed because
-    -- base_powerschool__student_enrollments has genuinely overlapping date
-    -- ranges for some students, producing duplicate (studentid, schoolid) rows.
-    -- enroll_status filter intentionally omitted: a wider net is needed here so
-    -- that transferred students' section records still resolve to a school/region
-    -- even if their latest enrollment row has enroll_status != 0.
+    -- TODO: #4020 — int_extracts__student_enrollments carries one row per
+    -- enrollment stint, so a student with a transfer-out + transfer-back at
+    -- the same school produces duplicate (studentid, schoolid) rows. SELECT
+    -- DISTINCT collapses them for the downstream join. enroll_status filter
+    -- intentionally omitted: a wider net is needed so transferred students'
+    -- section records still resolve to a school/region even when their latest
+    -- enrollment row has enroll_status != 0.
     section_school_context as (
         select distinct _dbt_source_relation, studentid, schoolid, school, region,
         from {{ ref("int_extracts__student_enrollments") }}
