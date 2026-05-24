@@ -118,7 +118,7 @@ Facebook, Illuminate Fivetran, Instagram.
 (alternate spelling of `location_name`) — consumers that join on an aliased name
 (e.g., `fct_staff_observations` on `gro.school_name`) must use this model.
 Canonical-grain consumers (1 row per logical school) should use
-`stg_google_sheets__people__locations` instead (#3633).
+`stg_google_sheets__people__locations` instead.
 
 **`stg_google_sheets__people__campus_crosswalk`** uniqueness grain is
 `Location_Name` only. `Name` is the parent campus and repeats across sibling

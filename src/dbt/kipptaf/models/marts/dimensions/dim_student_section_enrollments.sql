@@ -13,7 +13,6 @@ with
         from {{ ref("int_powerschool__student_enrollment_union") }}
     ),
 
-    -- trunk-ignore(sqlfluff/ST03): referenced by string in dbt_utils.deduplicate
     course_enrollments_joined as (
         select
             cc._dbt_source_relation,
@@ -52,18 +51,6 @@ with
             and cc.sections_schoolid = rt.school_id
             and cc.region = rt.region
             and rt.`type` = 'RT'
-    ),
-
-    -- TODO: overlapping enrollment records at same school cause join
-    -- fan-out; deduplicate picks latest entrydate (#3633)
-    course_enrollments_deduped as (
-        {{
-            dbt_utils.deduplicate(
-                relation="course_enrollments_joined",
-                partition_by="cc_dcid, _dbt_source_project",
-                order_by="enr_entrydate desc",
-            )
-        }}
     )
 
 select
@@ -110,4 +97,4 @@ select
         }},
         cast(null as string)
     ) as term_key,
-from course_enrollments_deduped
+from course_enrollments_joined
