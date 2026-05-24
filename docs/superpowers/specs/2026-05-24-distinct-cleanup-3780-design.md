@@ -2,11 +2,17 @@
 
 ## Problem
 
-Five mart models in `marts/` collapse response-grain (or per-score-grain) rows
-into entity-grain rows using `SELECT DISTINCT` or `GROUP BY` aggregates. This
-violates `src/dbt/CLAUDE.md` "No manual deduplication" and "Canonical attributes
-from a partition." The collapse belongs in intermediates so marts can read
-pre-projected, entity-grain rows.
+Five mart models in `marts/` use `SELECT DISTINCT` or `GROUP BY` aggregates to
+collapse response-grain (or per-score-grain) rows into entity-grain rows. Some
+of these are pure grain projection (every projected column is functionally
+determined by the partition key); some resolve a canonical attribute from a
+multi-row partition.
+
+`src/dbt/CLAUDE.md` ("SQL conventions") permits DISTINCT for pure grain
+projection with an annotation, and requires `dbt_utils.deduplicate()` when a
+projected column varies within the partition. The fix is to align each CTE with
+the correct construct — not to layer every projection into an intermediate.
+Single-consumer ints add maintenance without payoff.
 
 Affected marts (per
 [#3780](https://github.com/TEAMSchools/teamster/issues/3780)):
@@ -18,37 +24,39 @@ Affected marts (per
 - `dim_surveys`
 - `bridge_survey_questions`
 
-## Investigation: per-CTE source-grain audit
+## Investigation: per-CTE classification
 
-Before deciding whether to build new intermediates, each DISTINCT/GROUP BY CTE
-was audited against its source's actual grain. Three resolutions emerged:
-**drop** (source is already unique, DISTINCT is defensive), **redirect** (an
-entity-grain upstream already exists), or **build new int** (the source is
-genuinely response/score grain with no entity-grain sibling).
+Each CTE was audited against its source's actual grain and classified by whether
+the collapse is **pure projection** (every projected column functionally
+determined by the partition key — byte-identical tuples coalesce) or
+**canonical-attribute resolution** (at least one projected column varies within
+the partition and needs deterministic selection).
 
 ### Assessments group
 
-| Mart CTE                                    | Source                                         | Source grain                                                                                                        | Resolution                                                              |
-| ------------------------------------------- | ---------------------------------------------- | ------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------- |
-| `dim_assessments.illuminate_assessments`    | `int_assessments__assessments`                 | `assessment_id` (unique test)                                                                                       | **Drop stale comment.** No DISTINCT is currently used; comment is stale |
-| `dim_assessments.state_nj`                  | `int_pearson__all_assessments`                 | per-student-per-assessment response                                                                                 | **Build new int** at assessment-definition grain                        |
-| `dim_assessments.state_fl`                  | `int_fldoe__all_assessments`                   | per-student-per-assessment response                                                                                 | **Build new int** at assessment-definition grain                        |
-| `dim_assessments.college_assessments`       | `int_assessments__college_assessment`          | per-student-per-test-date (has `surrogate_key` column)                                                              | **Build new int** at definition grain                                   |
-| `dim_assessments.practice_assessments`      | `int_assessments__college_assessment_practice` | per-student-per-test response                                                                                       | **Build new int** at definition grain                                   |
-| `dim_assessments.ap_assessments`            | `int_assessments__ap_assessments`              | per-student-per-exam (model carries `row_number() over (partition by student, ap_course_name order by exam_score)`) | **Build new int** at definition grain                                   |
-| `dim_assessment_administrations.state_nj_*` | `int_pearson__all_assessments`                 | per-student response                                                                                                | **Build new int** at administration grain                               |
-| `dim_assessment_administrations.state_fl_*` | `int_fldoe__all_assessments`                   | per-student response                                                                                                | **Build new int** at administration grain                               |
-| `dim_assessment_administrations.college_*`  | `int_assessments__college_assessment`          | per-student-per-test-date                                                                                           | **Build new int** at administration grain                               |
-| `dim_assessment_administrations.ap_*`       | `int_assessments__ap_assessments`              | per-student-per-exam                                                                                                | **Build new int** at administration grain                               |
+| Mart CTE                                    | Source                                         | Source grain                                                                                                        | Collapse type                                         | Resolution                                                                                                                                        |
+| ------------------------------------------- | ---------------------------------------------- | ------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `dim_assessments.illuminate_assessments`    | `int_assessments__assessments`                 | `assessment_id` (unique test)                                                                                       | No collapse                                           | Remove stale "DISTINCT projects..." comment block — no DISTINCT is actually present in the SQL                                                    |
+| `dim_assessments.state_nj`                  | `int_pearson__all_assessments`                 | per-student-per-assessment response                                                                                 | Canonical-attribute (`min(assessment_name) as title`) | Inline `dbt_utils.deduplicate(partition_by="discipline, test_grade, subject, testcode", order_by="assessment_name asc")` on a filtered source CTE |
+| `dim_assessments.state_fl`                  | `int_fldoe__all_assessments`                   | per-student-per-assessment response                                                                                 | Canonical-attribute (`min(assessment_name) as title`) | Inline `dbt_utils.deduplicate(partition_by="assessment_subject, discipline, test_code, assessment_grade", order_by="assessment_name asc")`        |
+| `dim_assessments.college_assessments`       | `int_assessments__college_assessment`          | per-student-per-test-date (has `surrogate_key`)                                                                     | Pure projection                                       | Keep DISTINCT; replace existing comment block with the annotation phrase                                                                          |
+| `dim_assessments.practice_assessments`      | `int_assessments__college_assessment_practice` | per-student-per-test response                                                                                       | Pure projection                                       | Keep DISTINCT with annotation                                                                                                                     |
+| `dim_assessments.ap_assessments`            | `int_assessments__ap_assessments`              | per-student-per-exam (model carries `row_number() over (partition by student, ap_course_name order by exam_score)`) | Pure projection                                       | Keep DISTINCT with annotation                                                                                                                     |
+| `dim_assessment_administrations.state_nj_*` | `int_pearson__all_assessments`                 | per-student response                                                                                                | Pure projection                                       | Keep DISTINCT with annotation                                                                                                                     |
+| `dim_assessment_administrations.state_fl_*` | `int_fldoe__all_assessments`                   | per-student response                                                                                                | Pure projection                                       | Keep DISTINCT with annotation                                                                                                                     |
+| `dim_assessment_administrations.college_*`  | `int_assessments__college_assessment`          | per-student-per-test-date                                                                                           | Pure projection                                       | Keep DISTINCT with annotation                                                                                                                     |
+| `dim_assessment_administrations.ap_*`       | `int_assessments__ap_assessments`              | per-student-per-exam                                                                                                | Pure projection                                       | Keep DISTINCT with annotation                                                                                                                     |
 
-Net: **9 new intermediates** + remove one stale comment block.
+Net: **0 new intermediates**, 2 `dbt_utils.deduplicate` switches (state_nj,
+state_fl in `dim_assessments`), 7 DISTINCTs reclassified as pure projection with
+the standard annotation, 1 stale comment block removed.
 
 ### Surveys group
 
 The surveys-side investigation surfaced that all four current
 DISTINCT-collapsing CTEs in `dim_survey_questions` (and their bridge / dim
-counterparts) can resolve to **redirect** or **drop** — no new intermediates
-required.
+counterparts) can resolve to **redirect** or **drop** — entity-grain upstreams
+already exist.
 
 | Mart CTE                                        | Current source                                                                      | Entity-grain upstream that already exists                                                                                                            | Resolution                                                                                                                                                                                                        |
 | ----------------------------------------------- | ----------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -57,71 +65,46 @@ required.
 | `dim_survey_questions.alchemer_questions`       | `int_surveys__survey_responses` (response grain — union of Google Forms + Alchemer) | `stg_alchemer__survey_question` (per-`(survey_id, id)` grain, carries `shortname`, `title_english`)                                                  | **Redirect** to `stg_alchemer__survey_question`, scoped to Alchemer questions only. Google Forms questions in this CTE are now covered by the gforms redirect above                                               |
 | `dim_survey_questions.manager_questions`        | `int_surveys__manager_survey_details` (response grain)                              | Manager Survey is Google Form `'1cvp9RnYxbn-WGLXsYSupbEl2KhVhWKcOFbHR2CgUBH0'`; its questions are already in `int_google_forms__form__items`         | **Drop** the CTE entirely. Coverage is redundant once gforms redirect lands. Per the post-#3899 comment in `int_surveys__manager_survey_details`, live Manager Survey identity already flows through Google Forms |
 | `dim_surveys.google_forms_surveys`              | `int_google_forms__form_responses` (response grain)                                 | `stg_google_forms__form` (form / survey grain — carries `form_id`, `info_title`)                                                                     | **Redirect** to `stg_google_forms__form`                                                                                                                                                                          |
-| `dim_surveys.alchemer_surveys`                  | `source("alchemer", "base_alchemer__survey_results")` (response grain)              | `stg_alchemer__survey` (per-`id` survey grain, carries `id` and title)                                                                               | **Redirect** to `stg_alchemer__survey`                                                                                                                                                                            |
+| `dim_surveys.alchemer_surveys`                  | `source("alchemer", "base_alchemer__survey_results")` (response grain)              | `stg_alchemer__survey` (per-`id` survey grain)                                                                                                       | **Redirect** to `stg_alchemer__survey`                                                                                                                                                                            |
 | `bridge_survey_questions.google_forms_pairs`    | `int_google_forms__form_responses`                                                  | `int_google_forms__form__items` carries `(form_id, item_abbreviation, question_required)`                                                            | **Redirect** to `int_google_forms__form__items`                                                                                                                                                                   |
 | `bridge_survey_questions.alchemer_pairs`        | `int_surveys__survey_responses`                                                     | `stg_alchemer__survey_question` carries `(survey_id, shortname)`                                                                                     | **Redirect** to `stg_alchemer__survey_question`                                                                                                                                                                   |
 | `bridge_survey_questions.manager_pairs`         | `int_surveys__manager_survey_details`                                               | Subset of Google Forms after the gforms redirect                                                                                                     | **Drop** the CTE entirely                                                                                                                                                                                         |
-| `bridge_survey_questions.scd_powerschool_pairs` | `stg_google_sheets__surveys__scd_question_crosswalk`                                | Already at question grain (see above)                                                                                                                | **No-op** — already uses plain `SELECT`                                                                                                                                                                           |
+| `bridge_survey_questions.scd_powerschool_pairs` | `stg_google_sheets__surveys__scd_question_crosswalk`                                | Already at question grain                                                                                                                            | **No-op** — already uses plain `SELECT`                                                                                                                                                                           |
 
-Net: **0 new intermediates**, 6 redirects (gforms ×3, alchemer ×3), 2 redundant
-CTEs dropped, 2 no-ops on SCD CTEs (no DISTINCT was present).
-
-Mart-side aggregate impact: the surveys trio loses 6 `SELECT DISTINCT`
-occurrences, the manager arms simplify away entirely, and the gforms / alchemer
-arms become plain `SELECT col, col ... FROM <entity-grain-model>`.
+Net: **0 new intermediates**, 6 redirects, 2 redundant CTEs dropped, 2 no-ops.
 
 ## Architecture
 
-### Mart-side rewrites
+### Companion `src/dbt/CLAUDE.md` change
 
-All five marts switch their affected CTEs from response-grain `SELECT DISTINCT`
-(or `GROUP BY`-with-min) to plain `SELECT` from an entity-grain source — either
-a new intermediate (assessments) or an existing entity-grain upstream (surveys).
-Final mart `SELECT` columns, surrogate-key composition, and downstream FK shapes
-do not change.
+Replace the "No manual deduplication" bullet with two bullets that distinguish
+dirty-data workarounds from pure grain projection. Applied in the same PR so the
+marts changes and the rule clarification ship together. See commit
+(`refactor(dbt): permit DISTINCT for pure grain projection`).
 
-The stale `-- DISTINCT projects from response grain to definition grain` comment
-block in `dim_assessments.illuminate_assessments` is removed — no DISTINCT is
-actually present in the SQL, and the comment misleads readers.
+### Assessments marts — inline rewrites
 
-### New assessment intermediates (9 total)
+**`dim_assessments`:**
 
-Each new intermediate:
+- Remove the stale "DISTINCT projects..." comment block above
+  `illuminate_assessments` (no DISTINCT is present in that CTE).
+- `state_nj` and `state_fl`: replace
+  `GROUP BY ... min(assessment_name) as title` with a filtered source CTE
+  feeding `dbt_utils.deduplicate(...)` partitioned on the existing group key,
+  `order_by="assessment_name asc"` (matches `min()` semantics for non-NULL ASCII
+  titles).
+- `college_assessments`, `practice_assessments`, `ap_assessments`: keep
+  `SELECT DISTINCT`. Replace the existing "DISTINCT projects..." comment block
+  above each with a single-line annotation:
+  `-- projection IS the operation, not deduplication`.
 
-- Lives next to its source model (`models/pearson/intermediate/`,
-  `models/fldoe/intermediate/`, `models/assessments/intermediate/`)
-- Is `materialized: view` (intermediate default)
-- Uses `dbt_utils.deduplicate` with the entity key as `partition_by` and a
-  deterministic `order_by` for any non-key column resolution
-- Ships a `properties.yml` entry with `description:`, column descriptions, and a
-  uniqueness test on the partition key (per `src/dbt/CLAUDE.md` "All
-  intermediate models must")
+**`dim_assessment_administrations`:** all four non-illuminate CTEs
+(`state_nj_administrations`, `state_fl_administrations`,
+`college_administrations`, `ap_administrations`) keep `SELECT DISTINCT` with the
+same single-line annotation. The illuminate CTE and its existing TODO #3800
+comment stay untouched.
 
-**Definition-grain ints** (consumed by `dim_assessments`):
-
-| New intermediate                                           | Source                                         | `partition_by`                                                | Notes                                                                                                              |
-| ---------------------------------------------------------- | ---------------------------------------------- | ------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------ |
-| `int_pearson__assessments`                                 | `int_pearson__all_assessments`                 | `discipline, test_grade, subject, testcode`                   | Pre-filters `testscalescore is not null`. `order_by` = `assessment_name` to pick canonical title deterministically |
-| `int_fldoe__assessments`                                   | `int_fldoe__all_assessments`                   | `assessment_subject, discipline, test_code, assessment_grade` | Pre-filters `scale_score is not null`. `order_by` = `assessment_name`                                              |
-| `int_assessments__college_assessments_definitions`         | `int_assessments__college_assessment`          | `scope, subject_area, score_type`                             | Projects `aligned_subject`, `aligned_subject_area`, `course_discipline`                                            |
-| `int_assessments__college_assessment_practice_definitions` | `int_assessments__college_assessment_practice` | `scope, subject_area`                                         | Computed `module_code` lives in the mart (it's a mart-shape concern, not a source attribute)                       |
-| `int_assessments__ap_assessments_definitions`              | `int_assessments__ap_assessments`              | `test_subject, ps_ap_course_subject_code`                     |                                                                                                                    |
-
-**Administration-grain ints** (consumed by `dim_assessment_administrations`):
-
-| New intermediate                           | Source                                | `partition_by` (canonical admin key per mart's current DISTINCT)                                                                                                                                   |
-| ------------------------------------------ | ------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `int_pearson__administrations`             | `int_pearson__all_assessments`        | `subject_area, scope, module_code, grade_level, administered_date, academic_year, region, administration_period, test_type` (1:1 with current DISTINCT key list in `state_nj_administrations` CTE) |
-| `int_fldoe__administrations`               | `int_fldoe__all_assessments`          | Same shape, FL-source column names                                                                                                                                                                 |
-| `int_assessments__college_administrations` | `int_assessments__college_assessment` | Same shape                                                                                                                                                                                         |
-| `int_assessments__ap_administrations`      | `int_assessments__ap_assessments`     | Same shape                                                                                                                                                                                         |
-
-Each admin int's `partition_by` column list is copied 1:1 from the columns
-currently inside that CTE's DISTINCT SELECT in `dim_assessment_administrations`.
-Mart CTEs then become `SELECT ... FROM int_<source>__administrations` with no
-DISTINCT.
-
-### Surveys-side redirects (0 new ints)
+### Surveys marts — redirects
 
 | Mart CTE                                      | Replace `ref(...)` with                |
 | --------------------------------------------- | -------------------------------------- |
@@ -134,12 +117,11 @@ DISTINCT.
 | `bridge_survey_questions.alchemer_pairs`      | `ref("stg_alchemer__survey_question")` |
 | `bridge_survey_questions.manager_pairs`       | (delete CTE + its UNION ALL branch)    |
 
-All four `SELECT DISTINCT` clauses in the surveys trio drop to plain `SELECT`.
-The final mart row-count delta is whatever the difference is between "every
-(survey, question) pair that has ever appeared in a response" (current) and
-"every (survey, question) pair that exists in the form/question definition"
-(post-redirect). For well-maintained forms these should match; any delta is
-itself a signal worth investigating in the verification step.
+All four `SELECT DISTINCT` clauses in the surveys trio drop to plain `SELECT`
+because the redirect targets are already at entity grain. Final mart row-count
+delta is whatever the difference is between "every (survey, question) pair that
+has ever appeared in a response" (current) and "every (survey, question) pair
+that exists in the form / question definition" (post-redirect).
 
 ## Phase 0: Pre-merge BQ shape audit
 
@@ -152,7 +134,7 @@ in a way the redirect can't explain, escalate that redirect to a new int
 instead.
 
 Schemas: `kipptaf_google_forms`, `kipptaf_alchemer`, `kipptaf_surveys`,
-`kipptaf_google_sheets`. Replace the placeholders below at query time.
+`kipptaf_google_sheets`.
 
 ### A. Google Forms questions redirect
 
@@ -350,34 +332,31 @@ select
 ```
 
 `n_manager_uncovered` must be 0 (or only `historic_alchemer_Manager_survey`
-archive rows, which are handled by the hardcoded `archive_manager` CTE in
-`dim_surveys` and are already covered by the existing bridge/dim shape). Any
-other uncovered rows mean the drop is unsafe — keep the CTE and build a new
-manager-grain int instead.
+archive rows, handled by the hardcoded `archive_manager` CTE in `dim_surveys`).
+Any other uncovered rows mean the drop is unsafe — keep the CTE.
 
 ### Phase-0 decision rules
 
 For each redirect A–F:
 
 - **Symmetric delta (`n_target` near `n_current` with small `n_*_only` on both
-  sides)**: redirect is safe; deltas are explained by definition rows with no
-  responses (target-only) and stale response rows for removed definitions
-  (current-only). Document the count in the PR body and proceed.
+  sides)**: redirect safe. Document counts in PR body and proceed.
 - **Large `n_target_only`**: many definitions never received responses. Expected
   for surveys with low completion rates; safe to proceed.
 - **Large `n_current_only`**: response rows reference a (survey, question) the
   definition source doesn't carry — typically renamed shortnames or
   deleted/recreated forms. Sample 10 unmatched rows; if they trace to legitimate
-  historical data, escalate that redirect to a new intermediate that unions the
-  definition source with historical response artifacts. Otherwise (test/orphan
-  rows), document and proceed.
+  historical data, escalate that redirect to a new intermediate that unions
+  definition with historical response artifacts. Otherwise (test / orphan rows),
+  document and proceed.
 
 Query G must return `n_manager_uncovered = 0` to proceed with the manager CTE
-drop in commit 4.
+drops in commit 3.
 
 ## Verification
 
-Per CLAUDE.md "For dbt changes, `uv run dbt build --select <model>+`":
+Per CLAUDE.md superpowers override "For dbt changes,
+`uv run dbt build --select <model>+`":
 
 ```bash
 VIRTUAL_ENV= uv \
@@ -392,81 +371,55 @@ VIRTUAL_ENV= uv \
     +bridge_survey_questions
 ```
 
-**Row-count parity** against the PR-branch schema once dbt Cloud CI builds. For
-each of the five marts:
+**Row-count parity** against the PR-branch schema once dbt Cloud CI builds.
 
-```sql
-select
-  (select count(*) from `<prod_schema>.<mart>`) as n_prod,
-  (select count(*) from `<pr_branch_schema>.<mart>`) as n_pr,
-```
+- `dim_assessments`, `dim_assessment_administrations`: **0 delta** — the inline
+  changes are byte-identical projection (DISTINCTs annotated) or semantically
+  equivalent (`min(name)` ↔ `dbt_utils.deduplicate(... order_by="name asc")`).
+- `dim_survey_questions`, `dim_surveys`, `bridge_survey_questions`: delta
+  matches Phase-0 audit counts; any discrepancy is a failed redirect.
 
-Expected delta:
-
-- `dim_assessments`, `dim_assessment_administrations`: **0** — intermediates are
-  1:1 pushes of the mart's current DISTINCT key.
-- `dim_survey_questions`, `dim_surveys`, `bridge_survey_questions`: **may
-  shift**, because the surveys redirects move from "appears in responses" to
-  "exists as a definition." Any delta must be explained — typically rows for
-  forms/questions that exist in metadata but have never received a response (new
-  rows in the mart), or rows for response-only artifacts that shouldn't have
-  been there (removed rows). Investigate each direction.
-
-**Sample-check populated values** for any column whose value depends on which
-row a previous `min()` or DISTINCT picked from a multi-row partition — state_nj
-`title` (`min(assessment_name)`) is the canonical example. Before/after sample
-on PR-branch vs prod for 20 sampled `module_code` values to confirm the new
-`dbt_utils.deduplicate` `order_by` picks the same title as the previous `min()`.
+**Sample-check canonical titles**: for `state_nj` and `state_fl` (the two CTEs
+that switch from `min()` to `dbt_utils.deduplicate`), pick 20 sample
+`module_code` / `test_code` values and confirm post-deduplicate `title` matches
+pre `min()` result. Any mismatch is a failed `order_by` choice.
 
 ## Files touched
 
-**New** (9 SQL + 9 properties YAML entries):
+**Modified**:
 
-- `src/dbt/kipptaf/models/pearson/intermediate/int_pearson__assessments.sql` +
-  properties
-- `src/dbt/kipptaf/models/pearson/intermediate/int_pearson__administrations.sql` +
-  properties
-- `src/dbt/kipptaf/models/fldoe/intermediate/int_fldoe__assessments.sql` +
-  properties
-- `src/dbt/kipptaf/models/fldoe/intermediate/int_fldoe__administrations.sql` +
-  properties
-- `src/dbt/kipptaf/models/assessments/intermediate/int_assessments__college_assessments_definitions.sql` +
-  properties
-- `src/dbt/kipptaf/models/assessments/intermediate/int_assessments__college_assessment_practice_definitions.sql` +
-  properties
-- `src/dbt/kipptaf/models/assessments/intermediate/int_assessments__college_administrations.sql` +
-  properties
-- `src/dbt/kipptaf/models/assessments/intermediate/int_assessments__ap_assessments_definitions.sql` +
-  properties
-- `src/dbt/kipptaf/models/assessments/intermediate/int_assessments__ap_administrations.sql` +
-  properties
-
-**Modified** (5 mart SQL files; YAML untouched since contract surfaces don't
-change):
-
+- `src/dbt/CLAUDE.md` — split "No manual deduplication" bullet (companion rule
+  clarification)
 - `src/dbt/kipptaf/models/marts/dimensions/dim_assessments.sql`
 - `src/dbt/kipptaf/models/marts/dimensions/dim_assessment_administrations.sql`
 - `src/dbt/kipptaf/models/marts/dimensions/dim_survey_questions.sql`
 - `src/dbt/kipptaf/models/marts/dimensions/dim_surveys.sql`
 - `src/dbt/kipptaf/models/marts/bridges/bridge_survey_questions.sql`
 
+**New**: none. Mart-side changes only; YAML untouched since contract surfaces
+don't change.
+
 ## Risks
 
-- **Wrong `partition_by` column list on a new int.** A narrower partition than
-  the mart's current DISTINCT key fans the mart out. Mitigation: copy the
-  partition column list 1:1 from the current DISTINCT/GROUP BY in each mart CTE;
-  row-count parity per mart catches this.
+- **`min()` → `dbt_utils.deduplicate(order_by="name asc")` drift.** `min()` is a
+  deterministic ASCII order on non-NULL values; `dbt_utils.deduplicate` compiles
+  to `array_agg(... order by name asc limit 1)` which is equivalent for non-NULL
+  values, NULLS-LAST. If any `assessment_name` value is NULL in the partition,
+  behavior differs from `min()` (which ignores NULLs). Mitigation: 20-sample
+  title check above; both sources already filter the underlying score column for
+  not-null, but `assessment_name` isn't filtered upstream — verify with a
+  `countif(assessment_name is null)` scan on each source before commit 1.
 - **Surveys redirects shift row counts.** Definitions-grain sources may carry
-  rows that responses-grain sources did not, and vice versa. Mitigation:
-  pre/post row-count comparison is expected to differ for the three surveys
-  marts; investigate each direction before merge. If a meaningful semantic shift
-  surfaces, file follow-up and revert the affected CTE redirect to a new int
-  instead.
-- **Title / canonical-attribute drift.** The pearson / fldoe CTEs currently use
-  `min(assessment_name) as title`. The new int's `dbt_utils.deduplicate`
-  `order_by` must pick the same row. Mitigation: use
-  `order_by="assessment_name asc"` (matches `min()` semantics for non-NULL ASCII
-  titles); sample-check 20 codes.
+  rows that responses-grain sources did not, and vice versa. Mitigation: Phase-0
+  audit, escalation path documented.
+- **Pure-projection misclassification.** A CTE classified as pure projection but
+  actually carrying a column that varies in the partition would silently pick
+  the wrong row when DISTINCT coalesces tuples that differ. Mitigation: each
+  "pure projection" CTE in the assessments marts was inspected and only contains
+  columns derivable from the partition key (constants, casts of constants, and
+  the partition columns themselves). On any future addition of a non-derivable
+  column to one of these CTEs, the annotation rule forces a switch to
+  `dbt_utils.deduplicate`.
 
 ## Out of scope
 
@@ -474,24 +427,23 @@ change):
   existing source, tracked separately).
 - Any column renames, FK restructures, or hash recompositions on the mart side.
 - Re-org of `int_assessments__assessments` itself.
-- The `int_surveys__manager_survey_details` post-#3899 cleanup (#3918) — this
-  spec drops the mart's reads of it, but the model itself stays.
+- `int_surveys__manager_survey_details` post-#3899 cleanup (#3918) — this spec
+  drops the mart's reads of it, but the model stays.
 
 ## Sequencing
 
-One PR, four logical commits plus a pre-commit Phase 0:
+One PR, three commits plus a pre-commit Phase 0:
 
-0. **Phase 0 (no commit)**: run BQ queries A–G from "Phase 0: Pre-merge BQ shape
-   audit" against prod. Paste results into the PR body. Apply Phase-0 decision
-   rules; if any redirect fails its rule, replace that redirect with a new
-   intermediate before commit 3.
-1. Assessment-definition intermediates (5 new) + `dim_assessments` mart rewrite
-   (drops 4 DISTINCTs / GROUP BYs and the stale comment). Verify parity.
-2. Assessment-administration intermediates (4 new) +
-   `dim_assessment_administrations` non-illuminate CTE rewrites. Verify parity.
-3. Surveys redirects across `dim_survey_questions`, `dim_surveys`,
-   `bridge_survey_questions`. Row-count delta against prod is expected to match
-   the Phase-0 audit; flag any discrepancy.
-4. Drop redundant manager CTEs from `dim_survey_questions` and
-   `bridge_survey_questions`. Verify zero net delta vs commit 3 (gated on Phase
-   0 query G returning `n_manager_uncovered = 0`).
+0. **Phase 0 (no commit)**: run BQ queries A–G against prod. Paste results into
+   the PR body. Apply Phase-0 decision rules; if any redirect fails its rule,
+   escalate that redirect to a new intermediate before commit 2.
+1. **Assessments + CLAUDE.md.** Single commit: rule clarification in
+   `src/dbt/CLAUDE.md`, plus all mart-side changes in `dim_assessments` and
+   `dim_assessment_administrations` (annotate DISTINCTs, switch `state_nj` /
+   `state_fl` to `dbt_utils.deduplicate`, remove stale illuminate comment).
+   Verify zero delta.
+2. **Surveys redirects.** All redirects across `dim_survey_questions`,
+   `dim_surveys`, `bridge_survey_questions`. Row-count delta against prod is
+   expected to match Phase-0 audit counts; flag any discrepancy.
+3. **Drop manager CTEs** (gated on Phase 0 query G returning
+   `n_manager_uncovered = 0`). Verify zero net delta vs commit 2.

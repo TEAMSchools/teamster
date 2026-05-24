@@ -456,11 +456,16 @@ the same partition.
   case — that rebuilds the external table and forces sheet-header coordination.
 - **No `GROUP BY` without aggregation** — use `DISTINCT` instead (see next rule
   for deduplication constraints).
-- **No manual deduplication** — do not use `SELECT DISTINCT` or
-  `qualify row_number() over (...) = 1` for deduplication. Use
-  `dbt_utils.deduplicate()` with an explicit `partition_by` and `order_by`. If
-  `DISTINCT` is truly unavoidable, it must include a `-- TODO:` comment
-  explaining why and what needs to be fixed upstream.
+- **No manual deduplication for dirty data** — do not use `SELECT DISTINCT` or
+  `qualify row_number() over (...) = 1` to work around upstream duplicates. Use
+  `dbt_utils.deduplicate()` with explicit `partition_by` and `order_by`; add
+  `-- TODO:` naming the upstream fix.
+- **DISTINCT is allowed for pure grain projection** — every projected column is
+  functionally determined by the partition key, so byte-identical tuples
+  coalesce. Annotate with a comment containing
+  `projection IS the operation, not deduplication`. If any projected column
+  varies within the partition (`min()`, `first_value()`, etc.), use
+  `dbt_utils.deduplicate()` instead.
 - **No `GROUP BY ALL`** — list grouping columns explicitly. `GROUP BY ALL`
   breaks silently when upstream columns change.
 - **No `ORDER BY`** — ordering belongs in the reporting layer, not dbt models.
