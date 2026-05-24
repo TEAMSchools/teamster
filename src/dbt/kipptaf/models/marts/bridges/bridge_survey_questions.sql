@@ -1,12 +1,11 @@
 with
     google_forms_pairs as (
-        -- DISTINCT projects from response grain to (survey, question) pair grain.
-        select distinct
-            fr.form_id as survey_id,
-            fr.item_abbreviation as question_shortname,
-            fr.question_required as is_required,
-        from {{ ref("int_google_forms__form_responses") }} as fr
-        where fr.form_id is not null and fr.item_abbreviation is not null
+        select
+            form_id as survey_id,
+            item_abbreviation as question_shortname,
+            question_required as is_required,
+        from {{ ref("int_google_forms__form__items") }}
+        where form_id is not null and item_abbreviation is not null
     ),
 
     scd_powerschool_pairs as (
@@ -19,21 +18,31 @@ with
     ),
 
     alchemer_pairs as (
-        -- DISTINCT projects from response grain to (survey, question) pair grain.
-        -- Covers Alchemer + Google Forms staff/student survey questions feeding
-        -- fct_survey_responses.general_responses.
-        select distinct
-            sr.survey_id, sr.question_shortname, cast(null as bool) as is_required,
-        from {{ ref("int_surveys__survey_responses") }} as sr
-        where sr.survey_id is not null and sr.question_shortname is not null
+        select
+            safe_cast(survey_id as string) as survey_id,
+            shortname as question_shortname,
+            cast(null as bool) as is_required,
+        from {{ source("alchemer", "stg_alchemer__survey_question") }}
+        where shortname is not null
     ),
 
     manager_pairs as (
-        -- DISTINCT projects from response grain to (survey, question) pair grain.
+        -- Synthesizes pairs for the historic Manager Survey archive, whose
+        -- original Alchemer survey_ids were not preserved. Live Manager
+        -- Survey pairs flow through google_forms_pairs above. Sourced from
+        -- the gforms items extension (not items) because the extension
+        -- carries historic shortnames (e.g. Q_5) that the live form
+        -- removed.
         select distinct
-            ms.survey_id, ms.question_shortname, cast(null as bool) as is_required,
-        from {{ ref("int_surveys__manager_survey_details") }} as ms
-        where ms.survey_id is not null and ms.question_shortname is not null
+            'historic_alchemer_Manager_survey' as survey_id,
+            abbreviation as question_shortname,
+            cast(null as bool) as is_required,
+        from {{ ref("stg_google_sheets__google_forms__form_items_extension") }}
+        where
+            form_id = '1cvp9RnYxbn-WGLXsYSupbEl2KhVhWKcOFbHR2CgUBH0'
+            and abbreviation is not null
+            and abbreviation
+            not in ('respondent_employee_number', 'subject_employee_number')
     ),
 
     -- trunk-ignore(sqlfluff/ST03): referenced by string in dbt_utils.deduplicate
