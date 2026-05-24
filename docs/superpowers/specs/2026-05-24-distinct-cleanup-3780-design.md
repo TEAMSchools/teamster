@@ -141,6 +141,240 @@ The final mart row-count delta is whatever the difference is between "every
 (post-redirect). For well-maintained forms these should match; any delta is
 itself a signal worth investigating in the verification step.
 
+## Phase 0: Pre-merge BQ shape audit
+
+The surveys redirects move grain from "appears in any response" to "exists as a
+definition" — the row-count delta isn't predictable from inspection. Before
+mart-side commits land, run these queries against prod to size the delta per
+redirect and surface anything anomalous. Each query is a symmetric-difference
+count plus a small sample of unmatched rows; if the delta is large or asymmetric
+in a way the redirect can't explain, escalate that redirect to a new int
+instead.
+
+Schemas: `kipptaf_google_forms`, `kipptaf_alchemer`, `kipptaf_surveys`,
+`kipptaf_google_sheets`. Replace the placeholders below at query time.
+
+### A. Google Forms questions redirect
+
+```sql
+with
+  current as (
+    select distinct
+      form_id,
+      item_abbreviation,
+      item_title,
+      question_kind,
+    from `teamster-332318.kipptaf_google_forms.int_google_forms__form_responses`
+    where item_abbreviation is not null and item_title is not null
+  ),
+  target as (
+    select
+      form_id,
+      item_abbreviation,
+      item_title,
+      question_kind,
+    from `teamster-332318.kipptaf_google_forms.int_google_forms__form__items`
+    where item_abbreviation is not null and item_title is not null
+  )
+select
+  (select count(*) from current) as n_current,
+  (select count(*) from target) as n_target,
+  (select count(*) from current except distinct select * from target) as n_current_only,
+  (select count(*) from target except distinct select * from current) as n_target_only,
+```
+
+### B. Alchemer questions redirect
+
+```sql
+with
+  current as (
+    select distinct
+      survey_id,
+      question_shortname,
+      question_title,
+    from `teamster-332318.kipptaf_surveys.int_surveys__survey_responses`
+    where question_shortname is not null
+      and survey_id is not null
+      -- scope to Alchemer rows only; Google Forms rows now flow through redirect A
+      and safe_cast(survey_id as int) is not null
+  ),
+  target as (
+    select
+      safe_cast(survey_id as string) as survey_id,
+      shortname as question_shortname,
+      title_english as question_title,
+    from `teamster-332318.kipptaf_alchemer.stg_alchemer__survey_question`
+    where shortname is not null
+  )
+select
+  (select count(*) from current) as n_current,
+  (select count(*) from target) as n_target,
+  (select count(*) from current except distinct select * from target) as n_current_only,
+  (select count(*) from target except distinct select * from current) as n_target_only,
+```
+
+### C. Google Forms surveys redirect
+
+```sql
+with
+  current as (
+    select distinct form_id, info_title
+    from `teamster-332318.kipptaf_google_forms.int_google_forms__form_responses`
+    where form_id is not null
+  ),
+  target as (
+    select form_id, info_title
+    from `teamster-332318.kipptaf_google_forms.stg_google_forms__form`
+    where form_id is not null
+  )
+select
+  (select count(*) from current) as n_current,
+  (select count(*) from target) as n_target,
+  (select count(*) from current except distinct select * from target) as n_current_only,
+  (select count(*) from target except distinct select * from current) as n_target_only,
+```
+
+### D. Alchemer surveys redirect
+
+```sql
+with
+  current as (
+    select distinct
+      safe_cast(survey_id as string) as survey_id,
+      survey_title,
+    from `teamster-332318.kipptaf_alchemer.base_alchemer__survey_results`
+    where survey_id is not null
+  ),
+  target as (
+    select
+      safe_cast(id as string) as survey_id,
+      <title_col> as survey_title,
+    from `teamster-332318.kipptaf_alchemer.stg_alchemer__survey`
+    where id is not null
+  )
+select
+  (select count(*) from current) as n_current,
+  (select count(*) from target) as n_target,
+  (select count(*) from current except distinct select * from target) as n_current_only,
+  (select count(*) from target except distinct select * from current) as n_target_only,
+```
+
+(Resolve `<title_col>` from `stg_alchemer__survey` schema at query time — the
+staging model uses `dbt_utils.star()` so the title column name depends on the
+source. Run
+`select column_name from INFORMATION_SCHEMA.COLUMNS where table_name = 'stg_alchemer__survey'`
+first.)
+
+### E. Google Forms bridge pairs
+
+```sql
+with
+  current as (
+    select distinct form_id, item_abbreviation, question_required
+    from `teamster-332318.kipptaf_google_forms.int_google_forms__form_responses`
+    where form_id is not null and item_abbreviation is not null
+  ),
+  target as (
+    select form_id, item_abbreviation, question_required
+    from `teamster-332318.kipptaf_google_forms.int_google_forms__form__items`
+    where form_id is not null and item_abbreviation is not null
+  )
+select
+  (select count(*) from current) as n_current,
+  (select count(*) from target) as n_target,
+  (select count(*) from current except distinct select * from target) as n_current_only,
+  (select count(*) from target except distinct select * from current) as n_target_only,
+```
+
+### F. Alchemer bridge pairs
+
+```sql
+with
+  current as (
+    select distinct survey_id, question_shortname
+    from `teamster-332318.kipptaf_surveys.int_surveys__survey_responses`
+    where survey_id is not null
+      and question_shortname is not null
+      and safe_cast(survey_id as int) is not null  -- Alchemer rows only
+  ),
+  target as (
+    select
+      safe_cast(survey_id as string) as survey_id,
+      shortname as question_shortname,
+    from `teamster-332318.kipptaf_alchemer.stg_alchemer__survey_question`
+    where shortname is not null
+  )
+select
+  (select count(*) from current) as n_current,
+  (select count(*) from target) as n_target,
+  (select count(*) from current except distinct select * from target) as n_current_only,
+  (select count(*) from target except distinct select * from current) as n_target_only,
+```
+
+### G. Manager drop validation
+
+Confirm that every `(survey_id, question_shortname)` pair the manager CTEs
+currently contribute is already covered by the gforms or SCD surfaces (otherwise
+the drop loses rows):
+
+```sql
+with
+  manager_pairs as (
+    select distinct survey_id, question_shortname
+    from `teamster-332318.kipptaf_surveys.int_surveys__manager_survey_details`
+    where survey_id is not null and question_shortname is not null
+  ),
+  gforms_pairs as (
+    select form_id as survey_id, item_abbreviation as question_shortname
+    from `teamster-332318.kipptaf_google_forms.int_google_forms__form__items`
+    where item_abbreviation is not null
+  ),
+  scd_pairs as (
+    select 'PowerSchool' as survey_id, question_code as question_shortname
+    from `teamster-332318.kipptaf_google_sheets.stg_google_sheets__surveys__scd_question_crosswalk`
+    where question_code like 'School_Survey_%'
+  ),
+  covered as (
+    select * from gforms_pairs
+    union all
+    select * from scd_pairs
+  )
+select
+  (select count(*) from manager_pairs) as n_manager,
+  (
+    select count(*)
+    from manager_pairs
+    except distinct
+    select * from covered
+  ) as n_manager_uncovered,
+```
+
+`n_manager_uncovered` must be 0 (or only `historic_alchemer_Manager_survey`
+archive rows, which are handled by the hardcoded `archive_manager` CTE in
+`dim_surveys` and are already covered by the existing bridge/dim shape). Any
+other uncovered rows mean the drop is unsafe — keep the CTE and build a new
+manager-grain int instead.
+
+### Phase-0 decision rules
+
+For each redirect A–F:
+
+- **Symmetric delta (`n_target` near `n_current` with small `n_*_only` on both
+  sides)**: redirect is safe; deltas are explained by definition rows with no
+  responses (target-only) and stale response rows for removed definitions
+  (current-only). Document the count in the PR body and proceed.
+- **Large `n_target_only`**: many definitions never received responses. Expected
+  for surveys with low completion rates; safe to proceed.
+- **Large `n_current_only`**: response rows reference a (survey, question) the
+  definition source doesn't carry — typically renamed shortnames or
+  deleted/recreated forms. Sample 10 unmatched rows; if they trace to legitimate
+  historical data, escalate that redirect to a new intermediate that unions the
+  definition source with historical response artifacts. Otherwise (test/orphan
+  rows), document and proceed.
+
+Query G must return `n_manager_uncovered = 0` to proceed with the manager CTE
+drop in commit 4.
+
 ## Verification
 
 Per CLAUDE.md "For dbt changes, `uv run dbt build --select <model>+`":
@@ -245,14 +479,19 @@ change):
 
 ## Sequencing
 
-One PR, four logical commits inside the branch:
+One PR, four logical commits plus a pre-commit Phase 0:
 
+0. **Phase 0 (no commit)**: run BQ queries A–G from "Phase 0: Pre-merge BQ shape
+   audit" against prod. Paste results into the PR body. Apply Phase-0 decision
+   rules; if any redirect fails its rule, replace that redirect with a new
+   intermediate before commit 3.
 1. Assessment-definition intermediates (5 new) + `dim_assessments` mart rewrite
    (drops 4 DISTINCTs / GROUP BYs and the stale comment). Verify parity.
 2. Assessment-administration intermediates (4 new) +
    `dim_assessment_administrations` non-illuminate CTE rewrites. Verify parity.
 3. Surveys redirects across `dim_survey_questions`, `dim_surveys`,
-   `bridge_survey_questions`. Verify (expected non-zero delta; investigate each
-   direction).
+   `bridge_survey_questions`. Row-count delta against prod is expected to match
+   the Phase-0 audit; flag any discrepancy.
 4. Drop redundant manager CTEs from `dim_survey_questions` and
-   `bridge_survey_questions`. Verify zero net delta vs commit 3.
+   `bridge_survey_questions`. Verify zero net delta vs commit 3 (gated on Phase
+   0 query G returning `n_manager_uncovered = 0`).
