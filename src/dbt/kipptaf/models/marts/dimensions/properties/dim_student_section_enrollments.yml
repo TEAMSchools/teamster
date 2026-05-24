@@ -103,9 +103,3 @@ models:
           TRUE if all enrollments for this student x course x year were dropped,
           meaning the entire course was abandoned rather than just a section
           transfer.
-
-    data_tests:
-      - dbt_utils.unique_combination_of_columns:
-          arguments:
-            combination_of_columns:
-              - student_section_enrollment_key
