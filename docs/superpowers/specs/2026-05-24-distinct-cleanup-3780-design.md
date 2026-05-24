@@ -34,22 +34,67 @@ the partition and needs deterministic selection).
 
 ### Assessments group
 
-| Mart CTE                                    | Source                                         | Source grain                                                                                                        | Collapse type                                         | Resolution                                                                                                                                        |
-| ------------------------------------------- | ---------------------------------------------- | ------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `dim_assessments.illuminate_assessments`    | `int_assessments__assessments`                 | `assessment_id` (unique test)                                                                                       | No collapse                                           | Remove stale "DISTINCT projects..." comment block — no DISTINCT is actually present in the SQL                                                    |
-| `dim_assessments.state_nj`                  | `int_pearson__all_assessments`                 | per-student-per-assessment response                                                                                 | Canonical-attribute (`min(assessment_name) as title`) | Inline `dbt_utils.deduplicate(partition_by="discipline, test_grade, subject, testcode", order_by="assessment_name asc")` on a filtered source CTE |
-| `dim_assessments.state_fl`                  | `int_fldoe__all_assessments`                   | per-student-per-assessment response                                                                                 | Canonical-attribute (`min(assessment_name) as title`) | Inline `dbt_utils.deduplicate(partition_by="assessment_subject, discipline, test_code, assessment_grade", order_by="assessment_name asc")`        |
-| `dim_assessments.college_assessments`       | `int_assessments__college_assessment`          | per-student-per-test-date (has `surrogate_key`)                                                                     | Pure projection                                       | Keep DISTINCT; replace existing comment block with the annotation phrase                                                                          |
-| `dim_assessments.practice_assessments`      | `int_assessments__college_assessment_practice` | per-student-per-test response                                                                                       | Pure projection                                       | Keep DISTINCT with annotation                                                                                                                     |
-| `dim_assessments.ap_assessments`            | `int_assessments__ap_assessments`              | per-student-per-exam (model carries `row_number() over (partition by student, ap_course_name order by exam_score)`) | Pure projection                                       | Keep DISTINCT with annotation                                                                                                                     |
-| `dim_assessment_administrations.state_nj_*` | `int_pearson__all_assessments`                 | per-student response                                                                                                | Pure projection                                       | Keep DISTINCT with annotation                                                                                                                     |
-| `dim_assessment_administrations.state_fl_*` | `int_fldoe__all_assessments`                   | per-student response                                                                                                | Pure projection                                       | Keep DISTINCT with annotation                                                                                                                     |
-| `dim_assessment_administrations.college_*`  | `int_assessments__college_assessment`          | per-student-per-test-date                                                                                           | Pure projection                                       | Keep DISTINCT with annotation                                                                                                                     |
-| `dim_assessment_administrations.ap_*`       | `int_assessments__ap_assessments`              | per-student-per-exam                                                                                                | Pure projection                                       | Keep DISTINCT with annotation                                                                                                                     |
+| Mart CTE                                    | Source                                         | Source grain                                                                                                        | Collapse type                                                                           | Resolution                                                                                                                                                 |
+| ------------------------------------------- | ---------------------------------------------- | ------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `dim_assessments.illuminate_assessments`    | `int_assessments__assessments`                 | `assessment_id` (unique test)                                                                                       | No collapse                                                                             | Remove stale "DISTINCT projects..." comment block — no DISTINCT is actually present in the SQL                                                             |
+| `dim_assessments.state_nj`                  | `int_pearson__all_assessments`                 | per-student-per-assessment response                                                                                 | Pure projection AFTER admitting `assessment_name` as a key column (see "Lineage split") | Switch from `GROUP BY ... min(assessment_name)` to plain DISTINCT with annotation; emit `concat('state_nj_', lower(assessment_name))` as `assessment_type` |
+| `dim_assessments.state_fl`                  | `int_fldoe__all_assessments`                   | per-student-per-assessment response                                                                                 | Pure projection AFTER admitting `assessment_name` as a key column                       | Switch from `GROUP BY ... min(assessment_name)` to plain DISTINCT with annotation; emit `concat('state_fl_', lower(assessment_name))` as `assessment_type` |
+| `dim_assessments.college_assessments`       | `int_assessments__college_assessment`          | per-student-per-test-date (has `surrogate_key`)                                                                     | Pure projection                                                                         | Keep DISTINCT; replace existing comment block with the annotation phrase                                                                                   |
+| `dim_assessments.practice_assessments`      | `int_assessments__college_assessment_practice` | per-student-per-test response                                                                                       | Pure projection                                                                         | Keep DISTINCT with annotation                                                                                                                              |
+| `dim_assessments.ap_assessments`            | `int_assessments__ap_assessments`              | per-student-per-exam (model carries `row_number() over (partition by student, ap_course_name order by exam_score)`) | Pure projection                                                                         | Keep DISTINCT with annotation                                                                                                                              |
+| `dim_assessment_administrations.state_nj_*` | `int_pearson__all_assessments`                 | per-student response                                                                                                | Pure projection AFTER lineage split                                                     | Keep DISTINCT with annotation; project `assessment_name`; emit `concat('state_nj_', lower(assessment_name))` as `assessment_type`                          |
+| `dim_assessment_administrations.state_fl_*` | `int_fldoe__all_assessments`                   | per-student response                                                                                                | Pure projection AFTER lineage split                                                     | Keep DISTINCT with annotation; project `assessment_name`; emit `concat('state_fl_', lower(assessment_name))` as `assessment_type`                          |
+| `dim_assessment_administrations.college_*`  | `int_assessments__college_assessment`          | per-student-per-test-date                                                                                           | Pure projection                                                                         | Keep DISTINCT with annotation                                                                                                                              |
+| `dim_assessment_administrations.ap_*`       | `int_assessments__ap_assessments`              | per-student-per-exam                                                                                                | Pure projection                                                                         | Keep DISTINCT with annotation                                                                                                                              |
 
-Net: **0 new intermediates**, 2 `dbt_utils.deduplicate` switches (state_nj,
-state_fl in `dim_assessments`), 7 DISTINCTs reclassified as pure projection with
-the standard annotation, 1 stale comment block removed.
+Net: **0 new intermediates**, 9 DISTINCT CTEs annotated as pure projection, 2
+lineage-split rewrites (state_nj, state_fl across both marts), 1 stale comment
+block removed. No `dbt_utils.deduplicate` switches (the lineage split makes the
+`min()` resolution unnecessary).
+
+### Lineage split: NJSLA / PARCC and FAST / FSA / Science
+
+The current `state_nj` and `state_fl` CTEs collapse historical title variants
+(`NJSLA | PARCC` on every NJ ELA / Math testcode; `FAST | FSA` on every FL ELA /
+Math testcode; `FSA | Science` on SCI05 / SCI08) into one mart row per
+`(module_code, grade)` with `min(assessment_name) as title`. Successor
+assessments (NJSLA after PARCC, FAST after FSA) are different programs
+administered to similar student populations — surfacing them as one dim row
+erases that distinction.
+
+**Fix**: include `assessment_name` in the state-branch projections; encode the
+program-level distinction in `assessment_type`. Per-region literal `'state_nj'`
+becomes `'state_nj_njsla'` / `'state_nj_parcc'`. Per-region literal `'state_fl'`
+becomes `'state_fl_fast'` / `'state_fl_fsa'` / `'state_fl_science'`.
+
+After the split, `state_nj` and `state_fl` CTEs become pure projection (every
+projected column functionally determined by the new partition key that includes
+`assessment_name`) — straight DISTINCT with the standard annotation. Same in the
+corresponding `dim_assessment_administrations` CTEs.
+
+**Hash composition is unchanged.** `assessment_key` and
+`assessment_administration_key` continue to hash from
+`assessment_type, module_code, source_assessment_id, test_type` (and
+admin-specific extras). The type-string split causes hashes to diverge naturally
+— no input list change required.
+
+**Downstream impact**:
+
+- `fct_assessment_scores_enrollment_scoped` state branches hash
+  `assessment_administration_key` from literal `'state'` (not `'state_nj'` /
+  `'state_fl'`), so they were already not joining to
+  `dim_assessment_administrations.assessment_administration_key`. This
+  pre-existing mismatch is out of scope; flag in the PR body and file a separate
+  issue.
+- `fct_assessment_scores_enrollment_scoped.score_source` literals (`'state_nj'`
+  / `'state_fl'`) stay unchanged — `score_source` is a data-integration label
+  (which system produced the score), not a program-lineage label. Program
+  lineage is already on the fact under `title` and reachable from the joined
+  dim.
+- Cube / BI filters that match `assessment_type = 'state_nj'` need to become
+  `assessment_type LIKE 'state_nj_%'`. Per the marts spec-authoring rule ("No
+  production consumers yet"), this is allowed; call out in the PR body so Cube
+  `cube.yml` filters get audited.
 
 ### Surveys group
 
@@ -88,21 +133,25 @@ marts changes and the rule clarification ship together. See commit
 
 - Remove the stale "DISTINCT projects..." comment block above
   `illuminate_assessments` (no DISTINCT is present in that CTE).
-- `state_nj` and `state_fl`: replace
-  `GROUP BY ... min(assessment_name) as title` with a filtered source CTE
-  feeding `dbt_utils.deduplicate(...)` partitioned on the existing group key,
-  `order_by="assessment_name asc"` (matches `min()` semantics for non-NULL ASCII
-  titles).
+- `state_nj` and `state_fl`: drop the `GROUP BY` and `min(assessment_name)`.
+  Switch to plain `SELECT DISTINCT` over a source CTE that retains
+  `assessment_name`. Project `assessment_name as title` directly. Compose
+  `assessment_type` as `concat('state_nj_', lower(assessment_name))` (or
+  `state_fl_` for FL). Annotate with the standard
+  `-- projection IS the operation, not deduplication`. Update the existing block
+  comments that reference "Collapse historical title variants" — those collapses
+  are now treated as distinct lineages, not collapsed.
 - `college_assessments`, `practice_assessments`, `ap_assessments`: keep
   `SELECT DISTINCT`. Replace the existing "DISTINCT projects..." comment block
-  above each with a single-line annotation:
-  `-- projection IS the operation, not deduplication`.
+  above each with the single-line annotation.
 
-**`dim_assessment_administrations`:** all four non-illuminate CTEs
-(`state_nj_administrations`, `state_fl_administrations`,
-`college_administrations`, `ap_administrations`) keep `SELECT DISTINCT` with the
-same single-line annotation. The illuminate CTE and its existing TODO #3800
-comment stay untouched.
+**`dim_assessment_administrations`:** all four non-illuminate CTEs keep
+`SELECT DISTINCT` with the annotation. `state_nj_administrations` and
+`state_fl_administrations` additionally project `assessment_name` and compose
+the split `assessment_type` per the lineage rules above — matching the dim's
+composition exactly so `assessment_administration_key` and `assessment_key`
+hashes align. The illuminate CTE and its existing TODO #3800 comment stay
+untouched.
 
 ### Surveys marts — redirects
 
@@ -373,16 +422,73 @@ VIRTUAL_ENV= uv \
 
 **Row-count parity** against the PR-branch schema once dbt Cloud CI builds.
 
-- `dim_assessments`, `dim_assessment_administrations`: **0 delta** — the inline
-  changes are byte-identical projection (DISTINCTs annotated) or semantically
-  equivalent (`min(name)` ↔ `dbt_utils.deduplicate(... order_by="name asc")`).
+- `dim_assessments`: **+N rows** where N = count of distinct
+  `(module_code, additional_assessment_name)` pairs minus the current
+  single-row-per-`module_code` count. Pre-merge BQ confirmation:
+
+  ```sql
+  -- expected delta on NJ + FL state branches
+  select
+    (
+      select count(distinct (testcode, assessment_name))
+      from `teamster-332318.kipptaf_pearson.int_pearson__all_assessments`
+      where testscalescore is not null
+    ) - (
+      select count(distinct testcode)
+      from `teamster-332318.kipptaf_pearson.int_pearson__all_assessments`
+      where testscalescore is not null
+    ) as nj_added_rows,
+    (
+      select count(distinct (test_code, assessment_name))
+      from `teamster-332318.kipptaf_fldoe.int_fldoe__all_assessments`
+      where scale_score is not null
+    ) - (
+      select count(distinct test_code)
+      from `teamster-332318.kipptaf_fldoe.int_fldoe__all_assessments`
+      where scale_score is not null
+    ) as fl_added_rows,
+  ```
+
+  Based on the lineage audit, expect roughly +18 NJ rows (NJSLA / PARCC split
+  across ELA / Math test codes) and +14 FL rows (FAST / FSA split plus FSA /
+  Science split). The delta count from PR-branch schema must match this expected
+  count exactly; any other delta means the assessment_type composition or the
+  partition is wrong.
+
+- `dim_assessment_administrations`: **+M rows** where M scales with the number
+  of historical administration occurrences carrying split lineages (multiple
+  admin dates per testcode per region across the years NJSLA and PARCC both ran,
+  etc.). Compute the expected M with the analogous query joined on the admin
+  partition columns, before the commit lands.
 - `dim_survey_questions`, `dim_surveys`, `bridge_survey_questions`: delta
   matches Phase-0 audit counts; any discrepancy is a failed redirect.
 
-**Sample-check canonical titles**: for `state_nj` and `state_fl` (the two CTEs
-that switch from `min()` to `dbt_utils.deduplicate`), pick 20 sample
-`module_code` / `test_code` values and confirm post-deduplicate `title` matches
-pre `min()` result. Any mismatch is a failed `order_by` choice.
+**Spot-check `assessment_type` lineage values**:
+
+```sql
+select assessment_type, count(*)
+from `<pr_branch>.dim_assessments`
+where assessment_type like 'state_%'
+group by 1
+order by 1
+```
+
+Must return exactly: `state_fl_fast`, `state_fl_fsa`, `state_fl_science`,
+`state_nj_njsla`, `state_nj_parcc`. Any other value (e.g. `state_nj_null`, extra
+suffixes) indicates a NULL `assessment_name` upstream or a typo / casing bug in
+the `concat(...)` composition.
+
+**`assessment_name` NULL audit** before commit 1:
+
+```sql
+select
+  countif(assessment_name is null) as n_null_nj,
+from `teamster-332318.kipptaf_pearson.int_pearson__all_assessments`
+where testscalescore is not null
+```
+
+(repeat for FL). Must return 0 in both — otherwise the lineage split produces a
+`state_nj_null` lineage that needs handling.
 
 ## Files touched
 
@@ -401,14 +507,21 @@ don't change.
 
 ## Risks
 
-- **`min()` → `dbt_utils.deduplicate(order_by="name asc")` drift.** `min()` is a
-  deterministic ASCII order on non-NULL values; `dbt_utils.deduplicate` compiles
-  to `array_agg(... order by name asc limit 1)` which is equivalent for non-NULL
-  values, NULLS-LAST. If any `assessment_name` value is NULL in the partition,
-  behavior differs from `min()` (which ignores NULLs). Mitigation: 20-sample
-  title check above; both sources already filter the underlying score column for
-  not-null, but `assessment_name` isn't filtered upstream — verify with a
-  `countif(assessment_name is null)` scan on each source before commit 1.
+- **NULL `assessment_name` produces `state_nj_null` / `state_fl_null` lineage
+  rows.** The `concat('state_nj_', lower(assessment_name))` composition emits
+  `state_nj_null` when `assessment_name` is NULL. Mitigation: pre-commit NULL
+  audit query (see Verification); if any NULL rows exist, exclude them with a
+  source CTE `where` filter and document.
+- **Cube / BI filters break on the `assessment_type` split.** Any Cube filter or
+  query expression matching `assessment_type = 'state_nj'` or `'state_fl'`
+  exact-strings no longer returns rows for state assessments. Mitigation: grep
+  `src/cube/model/` for the literal strings; PR body lists every match plus the
+  `LIKE 'state_nj_%'` migration pattern.
+- **`assessment_administration_key` hash collision with the fct's pre-existing
+  `'state'` literal.** The fact already hashes `'state'` (not `'state_nj'` /
+  `'state_fl'`), so the dim split doesn't make the fact↔dim join worse than it
+  already is. But it also doesn't fix it. Mitigation: out-of-scope flag in PR
+  body + separate follow-up issue.
 - **Surveys redirects shift row counts.** Definitions-grain sources may carry
   rows that responses-grain sources did not, and vice versa. Mitigation: Phase-0
   audit, escalation path documented.
@@ -439,9 +552,11 @@ One PR, three commits plus a pre-commit Phase 0:
    escalate that redirect to a new intermediate before commit 2.
 1. **Assessments + CLAUDE.md.** Single commit: rule clarification in
    `src/dbt/CLAUDE.md`, plus all mart-side changes in `dim_assessments` and
-   `dim_assessment_administrations` (annotate DISTINCTs, switch `state_nj` /
-   `state_fl` to `dbt_utils.deduplicate`, remove stale illuminate comment).
-   Verify zero delta.
+   `dim_assessment_administrations`: annotate pure-projection DISTINCTs; apply
+   lineage split to `state_nj` / `state_fl` (and their admin counterparts) —
+   projecting `assessment_name` and composing the split `assessment_type`;
+   remove stale illuminate comment. Verify expected non-zero row-count delta
+   matches the formula in "Verification".
 2. **Surveys redirects.** All redirects across `dim_survey_questions`,
    `dim_surveys`, `bridge_survey_questions`. Row-count delta against prod is
    expected to match Phase-0 audit counts; flag any discrepancy.
