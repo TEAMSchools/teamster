@@ -21,25 +21,23 @@ with
         -- tuples, but the upstream collapse is preferred per
         -- src/dbt/CLAUDE.md "no manual deduplication".
         select distinct
-            'illuminate' as assessment_type,
-
-            a.canonical_title as title,
-
             a.subject_area,
             a.scope,
             a.module_code,
-
-            a.canonical_grade_level_id - 1 as grade_level,
-
-            cast(a.canonical_administered_at as date) as administered_date,
             a.academic_year,
+
+            a.canonical_title as title,
+            a.canonical_assessment_id as source_assessment_id,
 
             region,
 
-            a.canonical_assessment_id as source_assessment_id,
+            'illuminate' as assessment_type,
 
             cast(null as string) as administration_period,
             cast(null as string) as test_type,
+            cast(a.canonical_administered_at as date) as administered_date,
+
+            a.canonical_grade_level_id - 1 as grade_level,
         from {{ ref("int_assessments__assessments") }} as a
         inner join
             canonical_regions as cr
@@ -52,8 +50,16 @@ with
     -- State NJ PARCC: one administration per (testcode, period, academic_year, region).
     state_nj_parcc_administrations as (
         select distinct
+            discipline as scope,
+            test_grade as grade_level,
+            academic_year,
+
             'state_nj_parcc' as assessment_type,
             'PARCC' as title,
+
+            cast(null as date) as administered_date,
+            cast(null as int64) as source_assessment_id,
+            cast(null as string) as test_type,
 
             if(
                 `subject` = 'English Language Arts/Literacy',
@@ -61,7 +67,7 @@ with
                 `subject`
             ) as subject_area,
 
-            discipline as scope,
+            if(`period` = 'FallBlock', 'Fall', `period`) as administration_period,
 
             case
                 testcode
@@ -74,18 +80,7 @@ with
                 else testcode
             end as module_code,
 
-            test_grade as grade_level,
-
-            cast(null as date) as administered_date,
-            academic_year,
-
             initcap(regexp_extract(_dbt_source_relation, r'kipp(\w+)_')) as region,
-
-            cast(null as int64) as source_assessment_id,
-
-            if(`period` = 'FallBlock', 'Fall', `period`) as administration_period,
-
-            cast(null as string) as test_type,
         from {{ ref("stg_pearson__parcc") }}
         where testscalescore is not null
     ),
@@ -94,8 +89,16 @@ with
     -- State NJ NJSLA: one administration per (testcode, period, academic_year, region).
     state_nj_njsla_administrations as (
         select distinct
+            discipline as scope,
+            test_grade as grade_level,
+            academic_year,
+
             'state_nj_njsla' as assessment_type,
             'NJSLA' as title,
+
+            cast(null as date) as administered_date,
+            cast(null as int64) as source_assessment_id,
+            cast(null as string) as test_type,
 
             if(
                 `subject` = 'English Language Arts/Literacy',
@@ -103,7 +106,7 @@ with
                 `subject`
             ) as subject_area,
 
-            discipline as scope,
+            if(`period` = 'FallBlock', 'Fall', `period`) as administration_period,
 
             case
                 testcode
@@ -116,18 +119,7 @@ with
                 else testcode
             end as module_code,
 
-            test_grade as grade_level,
-
-            cast(null as date) as administered_date,
-            academic_year,
-
             initcap(regexp_extract(_dbt_source_relation, r'kipp(\w+)_')) as region,
-
-            cast(null as int64) as source_assessment_id,
-
-            if(`period` = 'FallBlock', 'Fall', `period`) as administration_period,
-
-            cast(null as string) as test_type,
         from {{ ref("stg_pearson__njsla") }}
         where testscalescore is not null
     ),
@@ -137,8 +129,16 @@ with
     -- academic_year, region).
     state_nj_njsla_science_administrations as (
         select distinct
+            discipline as scope,
+            test_grade as grade_level,
+            academic_year,
+
             'state_nj_njsla_science' as assessment_type,
             'NJSLA Science' as title,
+
+            cast(null as date) as administered_date,
+            cast(null as int64) as source_assessment_id,
+            cast(null as string) as test_type,
 
             if(
                 `subject` = 'English Language Arts/Literacy',
@@ -146,7 +146,7 @@ with
                 `subject`
             ) as subject_area,
 
-            discipline as scope,
+            if(`period` = 'FallBlock', 'Fall', `period`) as administration_period,
 
             case
                 testcode
@@ -159,18 +159,7 @@ with
                 else testcode
             end as module_code,
 
-            test_grade as grade_level,
-
-            cast(null as date) as administered_date,
-            academic_year,
-
             initcap(regexp_extract(_dbt_source_relation, r'kipp(\w+)_')) as region,
-
-            cast(null as int64) as source_assessment_id,
-
-            if(`period` = 'FallBlock', 'Fall', `period`) as administration_period,
-
-            cast(null as string) as test_type,
         from {{ ref("stg_pearson__njsla_science") }}
         where testscalescore is not null
     ),
@@ -179,8 +168,16 @@ with
     -- State NJ NJGPA: one administration per (testcode, period, academic_year, region).
     state_nj_njgpa_administrations as (
         select distinct
+            discipline as scope,
+            test_grade as grade_level,
+            academic_year,
+
             'state_nj_njgpa' as assessment_type,
             'NJGPA' as title,
+
+            cast(null as date) as administered_date,
+            cast(null as int64) as source_assessment_id,
+            cast(null as string) as test_type,
 
             if(
                 `subject` = 'English Language Arts/Literacy',
@@ -188,7 +185,7 @@ with
                 `subject`
             ) as subject_area,
 
-            discipline as scope,
+            if(`period` = 'FallBlock', 'Fall', `period`) as administration_period,
 
             case
                 testcode
@@ -201,18 +198,7 @@ with
                 else testcode
             end as module_code,
 
-            test_grade as grade_level,
-
-            cast(null as date) as administered_date,
-            academic_year,
-
             initcap(regexp_extract(_dbt_source_relation, r'kipp(\w+)_')) as region,
-
-            cast(null as int64) as source_assessment_id,
-
-            if(`period` = 'FallBlock', 'Fall', `period`) as administration_period,
-
-            cast(null as string) as test_type,
         from {{ ref("stg_pearson__njgpa") }}
         where testscalescore is not null
     ),
@@ -222,24 +208,21 @@ with
     -- academic_year).
     state_fl_fast_administrations as (
         select distinct
-            'state_fl_fast' as assessment_type,
-            'FAST' as title,
             assessment_subject as subject_area,
             discipline as scope,
             test_code as module_code,
-
-            cast(assessment_grade as int) as grade_level,
-
-            cast(null as date) as administered_date,
             academic_year,
-
-            'Miami' as region,
-
-            cast(null as int64) as source_assessment_id,
-
             administration_window as administration_period,
 
+            'state_fl_fast' as assessment_type,
+            'FAST' as title,
+            'Miami' as region,
+
+            cast(null as date) as administered_date,
+            cast(null as int64) as source_assessment_id,
             cast(null as string) as test_type,
+
+            cast(assessment_grade as int) as grade_level,
         from {{ source("kippmiami_fldoe", "stg_fldoe__fast") }}
         where scale_score is not null
     ),
@@ -249,24 +232,21 @@ with
     -- academic_year).
     state_fl_fsa_administrations as (
         select distinct
-            'state_fl_fsa' as assessment_type,
-            'FSA' as title,
             assessment_subject as subject_area,
             discipline as scope,
             test_code as module_code,
-
-            cast(test_grade as int) as grade_level,
-
-            cast(null as date) as administered_date,
             academic_year,
-
-            'Miami' as region,
-
-            cast(null as int64) as source_assessment_id,
-
             administration_window as administration_period,
 
+            'state_fl_fsa' as assessment_type,
+            'FSA' as title,
+            'Miami' as region,
+
+            cast(null as date) as administered_date,
+            cast(null as int64) as source_assessment_id,
             cast(null as string) as test_type,
+
+            cast(test_grade as int) as grade_level,
         from {{ source("kippmiami_fldoe", "stg_fldoe__fsa") }}
         where scale_score is not null
     ),
@@ -276,24 +256,21 @@ with
     -- academic_year).
     state_fl_eoc_administrations as (
         select distinct
-            'state_fl_eoc' as assessment_type,
-            'EOC' as title,
             assessment_subject as subject_area,
             discipline as scope,
             test_code as module_code,
-
-            cast(enrolled_grade as int) as grade_level,
-
-            cast(null as date) as administered_date,
             academic_year,
-
-            'Miami' as region,
-
-            cast(null as int64) as source_assessment_id,
-
             administration_window as administration_period,
 
+            'state_fl_eoc' as assessment_type,
+            'EOC' as title,
+            'Miami' as region,
+
+            cast(null as date) as administered_date,
+            cast(null as int64) as source_assessment_id,
             cast(null as string) as test_type,
+
+            cast(enrolled_grade as int) as grade_level,
         from {{ source("kippmiami_fldoe", "stg_fldoe__eoc") }}
         where scale_score is not null
     ),
@@ -303,24 +280,21 @@ with
     -- academic_year).
     state_fl_science_administrations as (
         select distinct
-            'state_fl_science' as assessment_type,
-            'Science' as title,
             assessment_subject as subject_area,
             discipline as scope,
             test_code as module_code,
-
-            cast(assessment_grade as int) as grade_level,
-
-            cast(null as date) as administered_date,
             academic_year,
-
-            'Miami' as region,
-
-            cast(null as int64) as source_assessment_id,
-
             administration_window as administration_period,
 
+            'state_fl_science' as assessment_type,
+            'Science' as title,
+            'Miami' as region,
+
+            cast(null as date) as administered_date,
+            cast(null as int64) as source_assessment_id,
             cast(null as string) as test_type,
+
+            cast(assessment_grade as int) as grade_level,
         from {{ source("kippmiami_fldoe", "stg_fldoe__science") }}
         where scale_score is not null
     ),
@@ -358,23 +332,22 @@ with
     -- model.
     practice_administrations as (
         select
-            'college' as assessment_type,
-            scope as title,
-            any_value(subject_area) as subject_area,
             scope,
-            scope as module_code,
-
-            cast(null as int64) as grade_level,
-
-            test_date as administered_date,
             academic_year,
 
-            cast(null as string) as region,
-            cast(null as int64) as source_assessment_id,
-
+            scope as title,
+            scope as module_code,
+            test_date as administered_date,
             administration_round as administration_period,
 
+            'college' as assessment_type,
             'Practice' as test_type,
+
+            cast(null as string) as region,
+            cast(null as int64) as grade_level,
+            cast(null as int64) as source_assessment_id,
+
+            any_value(subject_area) as subject_area,
         from {{ ref("int_assessments__college_assessment_practice") }}
         group by scope, test_date, academic_year, administration_round
     ),
@@ -384,64 +357,66 @@ with
     -- projection IS the operation, not deduplication
     ap_administrations as (
         select distinct
-            'ap' as assessment_type,
-            concat('AP ', test_subject) as title,
-            test_subject as subject_area,
-
-            'AP' as scope,
-
-            ps_ap_course_subject_code as module_code,
-
-            cast(null as int64) as grade_level,
-
-            cast(null as date) as administered_date,
             academic_year,
 
+            test_subject as subject_area,
+            ps_ap_course_subject_code as module_code,
+
+            'ap' as assessment_type,
+            'AP' as scope,
+
+            cast(null as date) as administered_date,
+            cast(null as int64) as grade_level,
             cast(null as string) as region,
-
             cast(null as int64) as source_assessment_id,
-
             cast(null as string) as administration_period,
-
             cast(null as string) as test_type,
+
+            concat('AP ', test_subject) as title,
         from {{ ref("int_assessments__ap_assessments") }}
     ),
 
+    {%- set union_cols -%}
+        assessment_type, title, subject_area, scope, module_code, grade_level,
+        administered_date, academic_year, region, source_assessment_id,
+        administration_period, test_type
+    {%- endset %}
+
     all_administrations as (
-        select *,
+        select {{ union_cols }},
         from illuminate_administrations
         union all
-        select *,
+        select {{ union_cols }},
         from state_nj_njgpa_administrations
         union all
-        select *,
+        select {{ union_cols }},
         from state_nj_njsla_administrations
         union all
-        select *,
+        select {{ union_cols }},
         from state_nj_njsla_science_administrations
         union all
-        select *,
+        select {{ union_cols }},
         from state_nj_parcc_administrations
         union all
-        select *,
+        select {{ union_cols }},
         from state_fl_eoc_administrations
         union all
-        select *,
+        select {{ union_cols }},
         from state_fl_fast_administrations
         union all
-        select *,
+        select {{ union_cols }},
         from state_fl_fsa_administrations
         union all
-        select *,
+        select {{ union_cols }},
         from state_fl_science_administrations
         union all
-        select *,
+        select {{ union_cols }},
         from college_administrations
         union all
-        select *,
+        select {{ union_cols }},
         from practice_administrations
         union all
-        select *,
+        select {{ union_cols }},
         from ap_administrations
     )
 
