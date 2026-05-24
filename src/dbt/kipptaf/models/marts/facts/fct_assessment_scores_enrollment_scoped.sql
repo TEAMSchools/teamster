@@ -78,6 +78,18 @@ with
             cast(null as date) as test_date,
             cast(null as numeric) as percent_correct,
 
+            case
+                assessment_name
+                when 'PARCC'
+                then 'state_nj_parcc'
+                when 'NJSLA'
+                then 'state_nj_njsla'
+                when 'NJSLA Science'
+                then 'state_nj_njsla_science'
+                when 'NJGPA'
+                then 'state_nj_njgpa'
+            end as assessment_type,
+
             'state_nj' as score_source,
         from {{ ref("int_pearson__all_assessments") }}
         where
@@ -108,6 +120,18 @@ with
             cast(null as date) as test_date,
             cast(null as numeric) as percent_correct,
 
+            case
+                assessment_name
+                when 'FAST'
+                then 'state_fl_fast'
+                when 'FSA'
+                then 'state_fl_fsa'
+                when 'EOC'
+                then 'state_fl_eoc'
+                when 'Science'
+                then 'state_fl_science'
+            end as assessment_type,
+
             'state_fl' as score_source,
         from {{ ref("int_fldoe__all_assessments") }}
         where scale_score is not null
@@ -132,6 +156,7 @@ with
             nj.test_date,
             nj.percent_correct,
             nj.score_source,
+            nj.assessment_type,
             nj._dbt_source_relation,
         from state_nj as nj
 
@@ -155,6 +180,7 @@ with
             fl.test_date,
             fl.percent_correct,
             fl.score_source,
+            fl.assessment_type,
             fl._dbt_source_relation,
         from state_fl as fl
     )
@@ -218,7 +244,7 @@ select
     {{
         dbt_utils.generate_surrogate_key(
             [
-                "'state'",
+                "su.assessment_type",
                 "su.module_code",
                 "cast(null as date)",
                 "su.academic_year",
