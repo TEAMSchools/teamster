@@ -88,6 +88,7 @@ with
                 then 'state_nj_njsla_science'
                 when 'NJGPA'
                 then 'state_nj_njgpa'
+                else 'state_nj_unknown'
             end as assessment_type,
 
             'state_nj' as score_source,
@@ -130,6 +131,7 @@ with
                 then 'state_fl_eoc'
                 when 'Science'
                 then 'state_fl_science'
+                else 'state_fl_unknown'
             end as assessment_type,
 
             'state_fl' as score_source,

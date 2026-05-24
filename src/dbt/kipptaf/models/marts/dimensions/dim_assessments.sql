@@ -28,22 +28,20 @@ with
     -- projection IS the operation, not deduplication
     state_nj_parcc as (
         select distinct
+            discipline as scope,
+            test_grade as grade_level,
+
             'state_nj_parcc' as assessment_type,
             'PARCC' as title,
-
-            cast(null as int64) as source_assessment_id,
-            cast(null as string) as module_type,
-
             false as is_internal_assessment,
             'enrollment' as assessment_scope,
 
+            cast(null as int64) as source_assessment_id,
+            cast(null as string) as module_type,
             cast(null as string) as combined_academic_subject,
             cast(null as string) as aligned_academic_subject,
             cast(null as string) as credit_category,
             cast(null as string) as test_type,
-
-            discipline as scope,
-            test_grade as grade_level,
 
             if(
                 `subject` = 'English Language Arts/Literacy',
@@ -68,22 +66,20 @@ with
     -- projection IS the operation, not deduplication
     state_nj_njsla as (
         select distinct
+            discipline as scope,
+            test_grade as grade_level,
+
             'state_nj_njsla' as assessment_type,
             'NJSLA' as title,
-
-            cast(null as int64) as source_assessment_id,
-            cast(null as string) as module_type,
-
             false as is_internal_assessment,
             'enrollment' as assessment_scope,
 
+            cast(null as int64) as source_assessment_id,
+            cast(null as string) as module_type,
             cast(null as string) as combined_academic_subject,
             cast(null as string) as aligned_academic_subject,
             cast(null as string) as credit_category,
             cast(null as string) as test_type,
-
-            discipline as scope,
-            test_grade as grade_level,
 
             if(
                 `subject` = 'English Language Arts/Literacy',
@@ -108,22 +104,20 @@ with
     -- projection IS the operation, not deduplication
     state_nj_njsla_science as (
         select distinct
+            discipline as scope,
+            test_grade as grade_level,
+
             'state_nj_njsla_science' as assessment_type,
             'NJSLA Science' as title,
-
-            cast(null as int64) as source_assessment_id,
-            cast(null as string) as module_type,
-
             false as is_internal_assessment,
             'enrollment' as assessment_scope,
 
+            cast(null as int64) as source_assessment_id,
+            cast(null as string) as module_type,
             cast(null as string) as combined_academic_subject,
             cast(null as string) as aligned_academic_subject,
             cast(null as string) as credit_category,
             cast(null as string) as test_type,
-
-            discipline as scope,
-            test_grade as grade_level,
 
             if(
                 `subject` = 'English Language Arts/Literacy',
@@ -148,22 +142,20 @@ with
     -- projection IS the operation, not deduplication
     state_nj_njgpa as (
         select distinct
+            discipline as scope,
+            test_grade as grade_level,
+
             'state_nj_njgpa' as assessment_type,
             'NJGPA' as title,
-
-            cast(null as int64) as source_assessment_id,
-            cast(null as string) as module_type,
-
             false as is_internal_assessment,
             'enrollment' as assessment_scope,
 
+            cast(null as int64) as source_assessment_id,
+            cast(null as string) as module_type,
             cast(null as string) as combined_academic_subject,
             cast(null as string) as aligned_academic_subject,
             cast(null as string) as credit_category,
             cast(null as string) as test_type,
-
-            discipline as scope,
-            test_grade as grade_level,
 
             if(
                 `subject` = 'English Language Arts/Literacy',
@@ -188,23 +180,21 @@ with
     -- projection IS the operation, not deduplication
     state_fl_fast as (
         select distinct
+            assessment_subject as subject_area,
+            discipline as scope,
+            test_code as module_code,
+
             'state_fl_fast' as assessment_type,
             'FAST' as title,
-
-            cast(null as int64) as source_assessment_id,
-            cast(null as string) as module_type,
-
             false as is_internal_assessment,
             'enrollment' as assessment_scope,
 
+            cast(null as int64) as source_assessment_id,
+            cast(null as string) as module_type,
             cast(null as string) as combined_academic_subject,
             cast(null as string) as aligned_academic_subject,
             cast(null as string) as credit_category,
             cast(null as string) as test_type,
-
-            assessment_subject as subject_area,
-            discipline as scope,
-            test_code as module_code,
 
             cast(assessment_grade as int) as grade_level,
         from {{ source("kippmiami_fldoe", "stg_fldoe__fast") }}
@@ -214,23 +204,21 @@ with
     -- projection IS the operation, not deduplication
     state_fl_fsa as (
         select distinct
+            assessment_subject as subject_area,
+            discipline as scope,
+            test_code as module_code,
+
             'state_fl_fsa' as assessment_type,
             'FSA' as title,
-
-            cast(null as int64) as source_assessment_id,
-            cast(null as string) as module_type,
-
             false as is_internal_assessment,
             'enrollment' as assessment_scope,
 
+            cast(null as int64) as source_assessment_id,
+            cast(null as string) as module_type,
             cast(null as string) as combined_academic_subject,
             cast(null as string) as aligned_academic_subject,
             cast(null as string) as credit_category,
             cast(null as string) as test_type,
-
-            assessment_subject as subject_area,
-            discipline as scope,
-            test_code as module_code,
 
             cast(test_grade as int) as grade_level,
         from {{ source("kippmiami_fldoe", "stg_fldoe__fsa") }}
@@ -240,23 +228,21 @@ with
     -- projection IS the operation, not deduplication
     state_fl_eoc as (
         select distinct
+            assessment_subject as subject_area,
+            discipline as scope,
+            test_code as module_code,
+
             'state_fl_eoc' as assessment_type,
             'EOC' as title,
-
-            cast(null as int64) as source_assessment_id,
-            cast(null as string) as module_type,
-
             false as is_internal_assessment,
             'enrollment' as assessment_scope,
 
+            cast(null as int64) as source_assessment_id,
+            cast(null as string) as module_type,
             cast(null as string) as combined_academic_subject,
             cast(null as string) as aligned_academic_subject,
             cast(null as string) as credit_category,
             cast(null as string) as test_type,
-
-            assessment_subject as subject_area,
-            discipline as scope,
-            test_code as module_code,
 
             cast(enrolled_grade as int) as grade_level,
         from {{ source("kippmiami_fldoe", "stg_fldoe__eoc") }}
@@ -266,23 +252,21 @@ with
     -- projection IS the operation, not deduplication
     state_fl_science as (
         select distinct
+            assessment_subject as subject_area,
+            discipline as scope,
+            test_code as module_code,
+
             'state_fl_science' as assessment_type,
             'Science' as title,
-
-            cast(null as int64) as source_assessment_id,
-            cast(null as string) as module_type,
-
             false as is_internal_assessment,
             'enrollment' as assessment_scope,
 
+            cast(null as int64) as source_assessment_id,
+            cast(null as string) as module_type,
             cast(null as string) as combined_academic_subject,
             cast(null as string) as aligned_academic_subject,
             cast(null as string) as credit_category,
             cast(null as string) as test_type,
-
-            assessment_subject as subject_area,
-            discipline as scope,
-            test_code as module_code,
 
             cast(assessment_grade as int) as grade_level,
         from {{ source("kippmiami_fldoe", "stg_fldoe__science") }}
