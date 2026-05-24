@@ -501,6 +501,51 @@ exist or may exist).
   redirect drops rows. Mitigation: Phase 0 query G must return
   `n_current_only = 0`.
 
+## Pre-merge checklist
+
+Per `src/dbt/kipptaf/models/marts/CLAUDE.md` → "Pre-merge checklist (marts
+PRs)". Each item below is the checklist item plus its specific application to
+this PR.
+
+- **Diamond paths.** This spec adds no new FKs; the `assessment_type` literal
+  split affects hash values but not FK shape. Verification: confirm none of the
+  5 touched marts adds a `*_key` column. (Expected: no changes.)
+- **Column-naming rubric R1–R10.** No new columns; no renames. The new
+  `assessment_type` literal values (`state_nj_njsla`, `state_fl_eoc`, etc.)
+  follow lowercase + underscore convention used by existing types (`illuminate`,
+  `college`, `ap`). Verification: grep touched marts for any column rename or
+  new column outside the existing contract.
+- **CI warning triage.** After commit 1 and 2 land in CI, run
+  `mcp__dbt__get_job_run_error(warning_only=true)` against the PR's run. For
+  each warning on a touched mart:
+  - Search open issues by model name + FK target.
+  - Bucket orphans (by region, source, test_type, lineage) in the issue body
+    before filing.
+  - Anticipated new orphans: `dim_assessments`'s 8-lineage split may surface FK
+    orphans from `bridge_assessment_administration_members` (illuminate-only
+    consumer — likely none) or any fact that references `assessment_key`. None
+    expected, but check.
+- **Project board scan.** Before posting the final PR comment, scan
+  [project #4](https://github.com/orgs/TEAMSchools/projects/4/views/1) for bonus
+  issues incidentally resolved by this PR (lineage-aware assessment reporting
+  requests, NJSLA-vs-PARCC reporting splits, etc.) and close them in the PR.
+- **File newly-surfaced errors.** Use the "Filing follow-up issues from marts
+  work" pattern in marts CLAUDE.md — Tier / PR batch / Driver set,
+  `GITHUB_TOKEN=` prefix for `gh project` mutations.
+
+## Cube semantic-layer audit
+
+Per `src/dbt/kipptaf/models/marts/CLAUDE.md` → "Exposures are the consumer
+contract", before commit 2 lands:
+
+```bash
+grep -rnE "'state_nj'|'state_fl'|state_nj[^_]|state_fl[^_]" src/cube/model/
+```
+
+For each match, swap to `LIKE 'state_nj_%'` / `LIKE 'state_fl_%'` (or to the
+specific lineage literal if the filter wants only one program). PR body must
+list every match plus the migration applied.
+
 ## Out of scope
 
 - `dim_assessment_administrations.illuminate_administrations` (TODO #3800).
