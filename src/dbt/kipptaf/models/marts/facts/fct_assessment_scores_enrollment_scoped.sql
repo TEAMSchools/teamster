@@ -6,7 +6,6 @@ with
     internal_assessments as (
         select
             rr.powerschool_student_number as student_number,
-            rr.region,
             rr.assessment_id,
             rr.response_type,
             rr.response_type_id,
@@ -24,6 +23,8 @@ with
             a.academic_year,
             a.module_code,
 
+            concat('kipp', lower(rr.region)) as _dbt_source_project,
+
             cast(null as numeric) as scale_score,
 
             rr.performance_band_label as proficiency_level,
@@ -39,27 +40,15 @@ with
     state_nj as (
         select
             localstudentidentifier as student_number,
-            cast(null as string) as state_student_id,
             academic_year,
-
-            if(
-                `subject` = 'English Language Arts/Literacy',
-                'English Language Arts',
-                `subject`
-            ) as subject_area,
-
+            subject_area,
             discipline,
+            module_code,
+            administration_period,
+            assessment_type,
+            _dbt_source_project,
 
-            case
-                testcode
-                when 'SC05'
-                then 'SCI05'
-                when 'SC08'
-                then 'SCI08'
-                when 'SC11'
-                then 'SCI11'
-                else testcode
-            end as module_code,
+            cast(null as string) as state_student_id,
 
             test_grade as grade_level,
             testscalescore as scale_score,
@@ -67,29 +56,10 @@ with
             testperformancelevel_text as performance_band,
             testperformancelevel as performance_band_level,
 
-            if(`period` = 'FallBlock', 'Fall', `period`) as administration_period,
-
             assessment_name as title,
-
-            initcap(regexp_extract(_dbt_source_relation, r'kipp(\w+)_')) as region,
-
-            _dbt_source_relation,
 
             cast(null as date) as test_date,
             cast(null as numeric) as percent_correct,
-
-            case
-                assessment_name
-                when 'PARCC'
-                then 'state_nj_parcc'
-                when 'NJSLA'
-                then 'state_nj_njsla'
-                when 'NJSLA Science'
-                then 'state_nj_njsla_science'
-                when 'NJGPA'
-                then 'state_nj_njgpa'
-                else 'state_nj_unknown'
-            end as assessment_type,
 
             'state_nj' as score_source,
         from {{ ref("int_pearson__all_assessments") }}
@@ -101,38 +71,27 @@ with
     state_fl as (
         select
             student_number,
-            student_id as state_student_id,
             academic_year,
             assessment_subject as subject_area,
             discipline,
             test_code as module_code,
-            cast(assessment_grade as int) as grade_level,
             scale_score,
             is_proficient,
+            administration_window as administration_period,
+            assessment_type,
+            _dbt_source_project,
+
+            student_id as state_student_id,
+
             achievement_level as performance_band,
             performance_level as performance_band_level,
-            administration_window as administration_period,
+
             assessment_name as title,
 
-            initcap(regexp_extract(_dbt_source_relation, r'kipp(\w+)_')) as region,
-
-            _dbt_source_relation,
+            cast(assessment_grade as int) as grade_level,
 
             cast(null as date) as test_date,
             cast(null as numeric) as percent_correct,
-
-            case
-                assessment_name
-                when 'FAST'
-                then 'state_fl_fast'
-                when 'FSA'
-                then 'state_fl_fsa'
-                when 'EOC'
-                then 'state_fl_eoc'
-                when 'Science'
-                then 'state_fl_science'
-                else 'state_fl_unknown'
-            end as assessment_type,
 
             'state_fl' as score_source,
         from {{ ref("int_fldoe__all_assessments") }}
@@ -154,12 +113,11 @@ with
             nj.performance_band_level,
             nj.administration_period,
             nj.title,
-            nj.region,
+            nj._dbt_source_project,
             nj.test_date,
             nj.percent_correct,
             nj.score_source,
             nj.assessment_type,
-            nj._dbt_source_relation,
         from state_nj as nj
 
         union all
@@ -178,12 +136,11 @@ with
             fl.performance_band_level,
             fl.administration_period,
             fl.title,
-            fl.region,
+            fl._dbt_source_project,
             fl.test_date,
             fl.percent_correct,
             fl.score_source,
             fl.assessment_type,
-            fl._dbt_source_relation,
         from state_fl as fl
     )
 
@@ -209,7 +166,7 @@ select
                 "ia.module_code",
                 "ia.administered_date",
                 "ia.academic_year",
-                "ia.region",
+                "ia._dbt_source_project",
                 "cast(null as string)",
                 "ia.source_assessment_id",
                 "cast(null as string)",
@@ -234,7 +191,7 @@ select
     {{
         dbt_utils.generate_surrogate_key(
             [
-                "su._dbt_source_relation",
+                "su._dbt_source_project",
                 "coalesce(cast(su.student_number as string), su.state_student_id)",
                 "su.academic_year",
                 "su.administration_period",
@@ -250,7 +207,7 @@ select
                 "su.module_code",
                 "cast(null as date)",
                 "su.academic_year",
-                "su.region",
+                "su._dbt_source_project",
                 "su.administration_period",
                 "cast(null as int64)",
                 "cast(null as string)",

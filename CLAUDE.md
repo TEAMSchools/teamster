@@ -522,6 +522,8 @@ GitHub. The Type custom field tags each task `Issue`, `Pull Request`, or
 - `update_tasks` supports `parent` for re-parenting; `null` flattens.
 - Pagination cursors return as `next_page.offset` — pass to `get_tasks.offset`
   until null.
+- **VS Code extension swallows `create_task_preview*` widgets.** Use
+  `create_tasks` directly.
 - Resolve GitHub-login → Asana email via
   `search_objects(resource_type: "user")`. Workspace spans three email domains
   (`teamschools.org`, `kippteamandfamily.org`, `kippnj.org`).

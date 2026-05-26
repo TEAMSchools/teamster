@@ -28,7 +28,9 @@ with
     -- projection IS the operation, not deduplication
     state_nj_parcc as (
         select distinct
+            subject_area,
             discipline as scope,
+            module_code,
             test_grade as grade_level,
 
             'state_nj_parcc' as assessment_type,
@@ -42,23 +44,6 @@ with
             cast(null as string) as aligned_academic_subject,
             cast(null as string) as credit_category,
             cast(null as string) as test_type,
-
-            if(
-                `subject` = 'English Language Arts/Literacy',
-                'English Language Arts',
-                `subject`
-            ) as subject_area,
-
-            case
-                testcode
-                when 'SC05'
-                then 'SCI05'
-                when 'SC08'
-                then 'SCI08'
-                when 'SC11'
-                then 'SCI11'
-                else testcode
-            end as module_code,
         from {{ ref("stg_pearson__parcc") }}
         where testscalescore is not null
     ),
@@ -66,7 +51,9 @@ with
     -- projection IS the operation, not deduplication
     state_nj_njsla as (
         select distinct
+            subject_area,
             discipline as scope,
+            module_code,
             test_grade as grade_level,
 
             'state_nj_njsla' as assessment_type,
@@ -80,23 +67,6 @@ with
             cast(null as string) as aligned_academic_subject,
             cast(null as string) as credit_category,
             cast(null as string) as test_type,
-
-            if(
-                `subject` = 'English Language Arts/Literacy',
-                'English Language Arts',
-                `subject`
-            ) as subject_area,
-
-            case
-                testcode
-                when 'SC05'
-                then 'SCI05'
-                when 'SC08'
-                then 'SCI08'
-                when 'SC11'
-                then 'SCI11'
-                else testcode
-            end as module_code,
         from {{ ref("stg_pearson__njsla") }}
         where testscalescore is not null
     ),
@@ -104,7 +74,9 @@ with
     -- projection IS the operation, not deduplication
     state_nj_njsla_science as (
         select distinct
+            subject_area,
             discipline as scope,
+            module_code,
             test_grade as grade_level,
 
             'state_nj_njsla_science' as assessment_type,
@@ -118,23 +90,6 @@ with
             cast(null as string) as aligned_academic_subject,
             cast(null as string) as credit_category,
             cast(null as string) as test_type,
-
-            if(
-                `subject` = 'English Language Arts/Literacy',
-                'English Language Arts',
-                `subject`
-            ) as subject_area,
-
-            case
-                testcode
-                when 'SC05'
-                then 'SCI05'
-                when 'SC08'
-                then 'SCI08'
-                when 'SC11'
-                then 'SCI11'
-                else testcode
-            end as module_code,
         from {{ ref("stg_pearson__njsla_science") }}
         where testscalescore is not null
     ),
@@ -142,7 +97,9 @@ with
     -- projection IS the operation, not deduplication
     state_nj_njgpa as (
         select distinct
+            subject_area,
             discipline as scope,
+            module_code,
             test_grade as grade_level,
 
             'state_nj_njgpa' as assessment_type,
@@ -156,23 +113,6 @@ with
             cast(null as string) as aligned_academic_subject,
             cast(null as string) as credit_category,
             cast(null as string) as test_type,
-
-            if(
-                `subject` = 'English Language Arts/Literacy',
-                'English Language Arts',
-                `subject`
-            ) as subject_area,
-
-            case
-                testcode
-                when 'SC05'
-                then 'SCI05'
-                when 'SC08'
-                then 'SCI08'
-                when 'SC11'
-                then 'SCI11'
-                else testcode
-            end as module_code,
         from {{ ref("stg_pearson__njgpa") }}
         where testscalescore is not null
     ),
@@ -183,6 +123,7 @@ with
             assessment_subject as subject_area,
             discipline as scope,
             test_code as module_code,
+            grade_level,
 
             'state_fl_fast' as assessment_type,
             'FAST' as title,
@@ -195,9 +136,7 @@ with
             cast(null as string) as aligned_academic_subject,
             cast(null as string) as credit_category,
             cast(null as string) as test_type,
-
-            cast(assessment_grade as int) as grade_level,
-        from {{ source("kippmiami_fldoe", "stg_fldoe__fast") }}
+        from {{ ref("stg_fldoe__fast") }}
         where scale_score is not null
     ),
 
@@ -207,6 +146,7 @@ with
             assessment_subject as subject_area,
             discipline as scope,
             test_code as module_code,
+            grade_level,
 
             'state_fl_fsa' as assessment_type,
             'FSA' as title,
@@ -219,9 +159,7 @@ with
             cast(null as string) as aligned_academic_subject,
             cast(null as string) as credit_category,
             cast(null as string) as test_type,
-
-            cast(test_grade as int) as grade_level,
-        from {{ source("kippmiami_fldoe", "stg_fldoe__fsa") }}
+        from {{ ref("stg_fldoe__fsa") }}
         where scale_score is not null
     ),
 
@@ -231,6 +169,7 @@ with
             assessment_subject as subject_area,
             discipline as scope,
             test_code as module_code,
+            grade_level,
 
             'state_fl_eoc' as assessment_type,
             'EOC' as title,
@@ -243,9 +182,7 @@ with
             cast(null as string) as aligned_academic_subject,
             cast(null as string) as credit_category,
             cast(null as string) as test_type,
-
-            cast(enrolled_grade as int) as grade_level,
-        from {{ source("kippmiami_fldoe", "stg_fldoe__eoc") }}
+        from {{ ref("stg_fldoe__eoc") }}
         where scale_score is not null
     ),
 
@@ -255,6 +192,7 @@ with
             assessment_subject as subject_area,
             discipline as scope,
             test_code as module_code,
+            grade_level,
 
             'state_fl_science' as assessment_type,
             'Science' as title,
@@ -267,9 +205,7 @@ with
             cast(null as string) as aligned_academic_subject,
             cast(null as string) as credit_category,
             cast(null as string) as test_type,
-
-            cast(assessment_grade as int) as grade_level,
-        from {{ source("kippmiami_fldoe", "stg_fldoe__science") }}
+        from {{ ref("stg_fldoe__science") }}
         where scale_score is not null
     ),
 
@@ -331,6 +267,7 @@ with
     -- projection IS the operation, not deduplication
     ap_assessments as (
         select distinct
+            title,
             test_subject as subject_area,
             ps_ap_course_subject_code as module_code,
 
@@ -347,8 +284,6 @@ with
             cast(null as string) as aligned_academic_subject,
             cast(null as string) as credit_category,
             cast(null as string) as test_type,
-
-            concat('AP ', test_subject) as title,
         from {{ ref("int_assessments__ap_assessments") }}
     ),
 

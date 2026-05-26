@@ -4,20 +4,22 @@ models:
       Per-scheduled-occurrence dimension paralleling dim_survey_administrations.
       One row per distinct administration event, identified by an 8-input
       surrogate key: assessment_type, module_code, administered_date,
-      academic_year, region, administration_period, source_assessment_id, and
-      test_type. Covers internal Illuminate assessments, NJ and FL state
-      assessments, Official college-entrance assessments (SAT, ACT, PSAT), AP
-      assessments, and Practice college-entrance assessments. Branches that do
-      not populate a given scheduling column carry a typed NULL for that column
-      (e.g. Illuminate and AP carry NULL administration_period; state branches
-      carry NULL source_assessment_id).
+      academic_year, _dbt_source_project, administration_period,
+      source_assessment_id, and test_type. Covers internal Illuminate
+      assessments, NJ and FL state assessments, Official college-entrance
+      assessments (SAT, ACT, PSAT), AP assessments, and Practice
+      college-entrance assessments. Branches that do not populate a given
+      scheduling column carry a typed NULL for that column (e.g. Illuminate and
+      AP carry NULL administration_period; state branches carry NULL
+      source_assessment_id).
     columns:
       - name: assessment_administration_key
         data_type: string
         description: >-
           Surrogate key derived from assessment_type, module_code,
-          administered_date, academic_year, region, administration_period,
-          source_assessment_id, and test_type. Primary key.
+          administered_date, academic_year, _dbt_source_project,
+          administration_period, source_assessment_id, and test_type. Primary
+          key.
         constraints:
           - type: primary_key
             warn_unsupported: false
@@ -47,14 +49,14 @@ models:
               config:
                 where: administered_date_key >= '2000-01-01'
 
-      - name: region
+      - name: _dbt_source_project
         data_type: string
         description: >-
-          KIPP region the administration is scoped to (Newark, Camden, Miami,
-          Paterson). Null for college-entrance and AP assessments which are
-          region-agnostic. For Illuminate, derived by unnesting the
-          comma-separated regions_assessed list — a multi-region assessment
-          produces one row per region.
+          Dagster code location identifying the district the administration is
+          scoped to (kippnewark, kippcamden, kippmiami, kipppaterson). Null for
+          college-entrance and AP assessments which are region-agnostic. For
+          Illuminate, derived by unnesting the regions_assessed list — a
+          multi-region assessment produces one row per district.
 
       - name: administration_period
         data_type: string

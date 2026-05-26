@@ -10,12 +10,13 @@ with
             sc.cc_source_project,
             sc.assessment_id,
             sc.administered_at,
-            sc.region,
 
             a.module_code,
             a.academic_year,
             a.canonical_assessment_id,
             a.canonical_administered_at,
+
+            concat('kipp', lower(sc.region)) as _dbt_source_project,
         from {{ ref("int_assessments__scaffold") }} as sc
         inner join
             {{ ref("int_assessments__assessments") }} as a
@@ -48,7 +49,7 @@ select
                 "module_code",
                 "cast(canonical_administered_at as date)",
                 "academic_year",
-                "region",
+                "_dbt_source_project",
                 "cast(null as string)",
                 "canonical_assessment_id",
                 "cast(null as string)",

@@ -160,6 +160,14 @@ manifest". The prod manifest is refreshed by `.git/hooks/post-merge` on every
   models, not district-level overrides with the same name. For cross-project
   staging seeding, omit `--select`.
 
+## `dbt_utils.union_relations` is compile-time
+
+Compiles to the column intersection from source-table
+`INFORMATION_SCHEMA.COLUMNS`. New columns added at package-level staging don't
+surface at kipptaf-level consumers until district projects rebuild prod. For
+single-PR refactors, add transformations at the kipptaf-level wrapper, not at
+package level.
+
 ## Stale dev tables shadow `--defer`
 
 `--defer` uses any existing dev table before falling through to prod, so a stale
