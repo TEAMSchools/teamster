@@ -229,9 +229,6 @@ select
     ru.module_code,
     ru.region,
     ru.powerschool_school_id,
-
-    concat('kipp', lower(ru.region)) as _dbt_source_project,
-
     ru.is_internal_assessment,
     ru.is_replacement,
     ru.response_type,
@@ -258,6 +255,8 @@ select
     rta.name as term_administered,
 
     rtt.name as term_taken,
+
+    concat('kipp', lower(ru.region)) as _dbt_source_project,
 from response_union as ru
 left join
     {{ ref("int_illuminate__performance_band_sets") }} as pbl
