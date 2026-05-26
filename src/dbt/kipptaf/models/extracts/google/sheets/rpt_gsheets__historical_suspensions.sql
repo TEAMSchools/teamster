@@ -31,7 +31,10 @@ with
             on co.student_number = ag.student_school_id
             and co.academic_year = ag.create_ts_academic_year
             and co.deanslist_school_id = ag.school_id
-        where co.academic_year >= 2019 and co.grade_level != 99
+        where
+            co.academic_year >= 2019
+            and co.grade_level != 99
+            and co.region != 'Paterson'
     ),
 
     -- one row per student per school: handles same-school re-enrollments
@@ -88,12 +91,12 @@ select
     null as school,
     null as grade_level,
     'org' as level,
-    round(avg(is_suspended_all_y1_int), 2) as pct_suspended_all_y1,
+    round(avg(is_suspended_all_y1_int), 3) as pct_suspended_all_y1,
     round(
-        avg(if(iep_status = 'Has IEP', is_suspended_all_y1_int, null)), 2
+        avg(if(iep_status = 'Has IEP', is_suspended_all_y1_int, null)), 3
     ) as pct_suspended_iep_y1,
     round(
-        avg(if(lep_status, is_suspended_all_y1_int, null)), 2
+        avg(if(lep_status, is_suspended_all_y1_int, null)), 3
     ) as pct_suspended_lep_y1,
 from student_by_org
 group by academic_year, academic_year_display
@@ -107,12 +110,12 @@ select
     null as school,
     null as grade_level,
     'region' as level,
-    round(avg(is_suspended_all_y1_int), 2) as pct_suspended_all_y1,
+    round(avg(is_suspended_all_y1_int), 3) as pct_suspended_all_y1,
     round(
-        avg(if(iep_status = 'Has IEP', is_suspended_all_y1_int, null)), 2
+        avg(if(iep_status = 'Has IEP', is_suspended_all_y1_int, null)), 3
     ) as pct_suspended_iep_y1,
     round(
-        avg(if(lep_status, is_suspended_all_y1_int, null)), 2
+        avg(if(lep_status, is_suspended_all_y1_int, null)), 3
     ) as pct_suspended_lep_y1,
 from student_by_region
 group by academic_year, academic_year_display, region
@@ -126,12 +129,12 @@ select
     school,
     null as grade_level,
     'school' as level,
-    round(avg(is_suspended_all_y1_int), 2) as pct_suspended_all_y1,
+    round(avg(is_suspended_all_y1_int), 3) as pct_suspended_all_y1,
     round(
-        avg(if(iep_status = 'Has IEP', is_suspended_all_y1_int, null)), 2
+        avg(if(iep_status = 'Has IEP', is_suspended_all_y1_int, null)), 3
     ) as pct_suspended_iep_y1,
     round(
-        avg(if(lep_status, is_suspended_all_y1_int, null)), 2
+        avg(if(lep_status, is_suspended_all_y1_int, null)), 3
     ) as pct_suspended_lep_y1,
 from student_by_school
 group by academic_year, academic_year_display, region, school
@@ -145,12 +148,12 @@ select
     school,
     grade_level,
     'grade' as level,
-    round(avg(is_suspended_all_y1_int), 2) as pct_suspended_all_y1,
+    round(avg(is_suspended_all_y1_int), 3) as pct_suspended_all_y1,
     round(
-        avg(if(iep_status = 'Has IEP', is_suspended_all_y1_int, null)), 2
+        avg(if(iep_status = 'Has IEP', is_suspended_all_y1_int, null)), 3
     ) as pct_suspended_iep_y1,
     round(
-        avg(if(lep_status, is_suspended_all_y1_int, null)), 2
+        avg(if(lep_status, is_suspended_all_y1_int, null)), 3
     ) as pct_suspended_lep_y1,
 from student_by_school
 group by academic_year, academic_year_display, region, school, grade_level
