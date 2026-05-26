@@ -470,10 +470,10 @@ the same partition.
   `-- TODO:` naming the upstream fix.
 - **DISTINCT is allowed for pure grain projection** — every projected column is
   functionally determined by the partition key, so byte-identical tuples
-  coalesce. Annotate with a comment containing
-  `projection IS the operation, not deduplication`. If any projected column
-  varies within the partition (`min()`, `first_value()`, etc.), use
-  `dbt_utils.deduplicate()` instead.
+  coalesce. Annotate with a two-line comment:
+  `grain projection: every selected column is functionally determined / by the partition key; not a mask for upstream duplicates`.
+  If any projected column varies within the partition (`min()`, `first_value()`,
+  etc.), use `dbt_utils.deduplicate()` instead.
 - **No `GROUP BY ALL`** — list grouping columns explicitly. `GROUP BY ALL`
   breaks silently when upstream columns change.
 - **No `ORDER BY`** — ordering belongs in the reporting layer, not dbt models.

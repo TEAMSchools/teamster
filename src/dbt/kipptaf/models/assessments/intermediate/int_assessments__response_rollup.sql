@@ -229,6 +229,9 @@ select
     ru.module_code,
     ru.region,
     ru.powerschool_school_id,
+
+    concat('kipp', lower(ru.region)) as _dbt_source_project,
+
     ru.is_internal_assessment,
     ru.is_replacement,
     ru.response_type,

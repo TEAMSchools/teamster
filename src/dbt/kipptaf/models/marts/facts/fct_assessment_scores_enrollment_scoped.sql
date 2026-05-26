@@ -13,17 +13,18 @@ with
             rr.performance_band_label,
             rr.is_mastery,
             rr.n_assessments,
-            rr.assessment_ids,
             rr.percent_correct,
+            rr._dbt_source_project,
 
-            cast(rr.date_taken as date) as test_date,
-            cast(a.administered_at as date) as administered_date,
+            rr.date_taken as test_date,
+
+            to_json_string(rr.assessment_ids) as assessment_ids_json,
 
             rr.assessment_id as source_assessment_id,
+
             a.academic_year,
             a.module_code,
-
-            concat('kipp', lower(rr.region)) as _dbt_source_project,
+            a.administered_date,
 
             cast(null as numeric) as scale_score,
 
@@ -98,50 +99,60 @@ with
         where scale_score is not null
     ),
 
-    state_union as (
+    state_all as (
         select
-            nj.student_number,
-            nj.state_student_id,
-            nj.academic_year,
-            nj.subject_area,
-            nj.discipline,
-            nj.module_code,
-            nj.grade_level,
-            nj.scale_score,
-            nj.is_proficient,
-            nj.performance_band,
-            nj.performance_band_level,
-            nj.administration_period,
-            nj.title,
-            nj._dbt_source_project,
-            nj.test_date,
-            nj.percent_correct,
-            nj.score_source,
-            nj.assessment_type,
-        from state_nj as nj
+            student_number,
+            state_student_id,
+            academic_year,
+            subject_area,
+            discipline,
+            module_code,
+            grade_level,
+            scale_score,
+            is_proficient,
+            performance_band,
+            performance_band_level,
+            administration_period,
+            title,
+            _dbt_source_project,
+            test_date,
+            percent_correct,
+            score_source,
+            assessment_type,
+        from state_nj
 
         union all
 
         select
-            fl.student_number,
-            fl.state_student_id,
-            fl.academic_year,
-            fl.subject_area,
-            fl.discipline,
-            fl.module_code,
-            fl.grade_level,
-            fl.scale_score,
-            fl.is_proficient,
-            fl.performance_band,
-            fl.performance_band_level,
-            fl.administration_period,
-            fl.title,
-            fl._dbt_source_project,
-            fl.test_date,
-            fl.percent_correct,
-            fl.score_source,
-            fl.assessment_type,
-        from state_fl as fl
+            student_number,
+            state_student_id,
+            academic_year,
+            subject_area,
+            discipline,
+            module_code,
+            grade_level,
+            scale_score,
+            is_proficient,
+            performance_band,
+            performance_band_level,
+            administration_period,
+            title,
+            _dbt_source_project,
+            test_date,
+            percent_correct,
+            score_source,
+            assessment_type,
+        from state_fl
+    ),
+
+    state_union as (
+        select
+            sa.*,
+
+            coalesce(
+                cast(sa.student_number as string), sa.state_student_id
+            ) as student_identifier,
+        from state_all as sa
     )
 
 /* internal assessments */
@@ -151,7 +162,7 @@ select
             [
                 "ia.student_number",
                 "ia.assessment_id",
-                "TO_JSON_STRING(ia.assessment_ids)",
+                "ia.assessment_ids_json",
                 "ia.response_type",
                 "ia.response_type_id",
                 "ia.response_type_code",
@@ -167,9 +178,9 @@ select
                 "ia.administered_date",
                 "ia.academic_year",
                 "ia._dbt_source_project",
-                "cast(null as string)",
+                "null",
                 "ia.source_assessment_id",
-                "cast(null as string)",
+                "null",
             ]
         )
     }} as assessment_administration_key,
@@ -192,7 +203,7 @@ select
         dbt_utils.generate_surrogate_key(
             [
                 "su._dbt_source_project",
-                "coalesce(cast(su.student_number as string), su.state_student_id)",
+                "su.student_identifier",
                 "su.academic_year",
                 "su.administration_period",
                 "su.subject_area",
@@ -205,12 +216,12 @@ select
             [
                 "su.assessment_type",
                 "su.module_code",
-                "cast(null as date)",
+                "null",
                 "su.academic_year",
                 "su._dbt_source_project",
                 "su.administration_period",
-                "cast(null as int64)",
-                "cast(null as string)",
+                "null",
+                "null",
             ]
         )
     }} as assessment_administration_key,

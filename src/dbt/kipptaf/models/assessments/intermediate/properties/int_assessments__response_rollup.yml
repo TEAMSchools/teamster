@@ -70,6 +70,13 @@ models:
           the `canonical_attrs` CTE, then read via `any_value()` in the rollup.
           Cross-school groups exist because of upstream canonicalization defects
           — see #3801.
+      - name: _dbt_source_project
+        data_type: string
+        description: >-
+          Dagster code-location prefix derived from region (e.g. kippnewark,
+          kippcamden, kippmiami, kipppaterson). Carried into downstream hashes
+          so consumers join/hash on a stable column rather than re-deriving via
+          concat(region) at each call.
       - name: is_internal_assessment
         data_type: boolean
       - name: is_replacement

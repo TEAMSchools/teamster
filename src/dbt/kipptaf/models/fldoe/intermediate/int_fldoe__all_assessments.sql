@@ -56,7 +56,7 @@ select
     fl.assessment_name,
     fl.student_number,
 
-    'kippmiami' as _dbt_source_project,
+    {{ extract_code_location("fl") }} as _dbt_source_project,
 
     cw1.sublevel_number,
     cw1.sublevel_name,

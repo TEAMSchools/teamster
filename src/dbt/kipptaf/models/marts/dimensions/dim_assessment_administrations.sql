@@ -45,7 +45,8 @@ with
         where a.is_internal_assessment
     ),
 
-    -- projection IS the operation, not deduplication
+    -- grain projection: every selected column is functionally determined
+    -- by the partition key; not a mask for upstream duplicates
     -- State NJ PARCC: one administration per (testcode, period, academic_year,
     -- _dbt_source_project).
     state_nj_parcc_administrations as (
@@ -68,7 +69,8 @@ with
         where testscalescore is not null
     ),
 
-    -- projection IS the operation, not deduplication
+    -- grain projection: every selected column is functionally determined
+    -- by the partition key; not a mask for upstream duplicates
     -- State NJ NJSLA: one administration per (testcode, period, academic_year,
     -- _dbt_source_project).
     state_nj_njsla_administrations as (
@@ -91,7 +93,8 @@ with
         where testscalescore is not null
     ),
 
-    -- projection IS the operation, not deduplication
+    -- grain projection: every selected column is functionally determined
+    -- by the partition key; not a mask for upstream duplicates
     -- State NJ NJSLA Science: one administration per (testcode, period,
     -- academic_year, _dbt_source_project).
     state_nj_njsla_science_administrations as (
@@ -114,7 +117,8 @@ with
         where testscalescore is not null
     ),
 
-    -- projection IS the operation, not deduplication
+    -- grain projection: every selected column is functionally determined
+    -- by the partition key; not a mask for upstream duplicates
     -- State NJ NJGPA: one administration per (testcode, period, academic_year,
     -- _dbt_source_project).
     state_nj_njgpa_administrations as (
@@ -137,7 +141,8 @@ with
         where testscalescore is not null
     ),
 
-    -- projection IS the operation, not deduplication
+    -- grain projection: every selected column is functionally determined
+    -- by the partition key; not a mask for upstream duplicates
     -- State FL FAST: one administration per (test_code, administration_window,
     -- academic_year).
     state_fl_fast_administrations as (
@@ -160,7 +165,8 @@ with
         where scale_score is not null
     ),
 
-    -- projection IS the operation, not deduplication
+    -- grain projection: every selected column is functionally determined
+    -- by the partition key; not a mask for upstream duplicates
     -- State FL FSA: one administration per (test_code, administration_window,
     -- academic_year).
     state_fl_fsa_administrations as (
@@ -183,7 +189,8 @@ with
         where scale_score is not null
     ),
 
-    -- projection IS the operation, not deduplication
+    -- grain projection: every selected column is functionally determined
+    -- by the partition key; not a mask for upstream duplicates
     -- State FL EOC: one administration per (test_code, administration_window,
     -- academic_year).
     state_fl_eoc_administrations as (
@@ -206,7 +213,8 @@ with
         where scale_score is not null
     ),
 
-    -- projection IS the operation, not deduplication
+    -- grain projection: every selected column is functionally determined
+    -- by the partition key; not a mask for upstream duplicates
     -- State FL Science: one administration per (test_code, administration_window,
     -- academic_year).
     state_fl_science_administrations as (
@@ -232,7 +240,8 @@ with
     -- College Official: one administration per (score_type, test_date,
     -- administration_round). _dbt_source_project is null because college tests
     -- are region-agnostic.
-    -- projection IS the operation, not deduplication
+    -- grain projection: every selected column is functionally determined
+    -- by the partition key; not a mask for upstream duplicates
     college_administrations as (
         select distinct
             scope,
@@ -281,7 +290,8 @@ with
 
     -- AP: one administration per (subject, academic_year). Test date is
     -- not captured upstream.
-    -- projection IS the operation, not deduplication
+    -- grain projection: every selected column is functionally determined
+    -- by the partition key; not a mask for upstream duplicates
     ap_administrations as (
         select distinct
             title,
