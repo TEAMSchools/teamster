@@ -122,7 +122,7 @@ Verify before writing `secretKeyRef.key`:
 - **PriorityClass `dagster-agent`** (value 1000) on agent pods — same tier as
   run/step pods, preventing mutual preemption. Does not protect against OOM
   kills of the pod itself — only eviction ordering. Code servers tolerate
-  eviction: they are stateless and PDB-protected (`minAvailable: 1`).
+  eviction: they are stateless and PDB-protected (`maxUnavailable: 1`).
 - **PDB for code servers** uses `maxUnavailable: 1`. Do not switch to
   `minAvailable: 1` — GKE Recommender flags single-replica + `minAvailable: 1`
   as blocking voluntary evictions (node maintenance). The known
