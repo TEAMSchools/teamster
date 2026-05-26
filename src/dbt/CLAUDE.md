@@ -343,6 +343,16 @@ Top-level `description` on a singular test must go in a properties yml under
 `config.description`, which dbt docs doesn't read. After adding/editing the yml,
 run `dbt parse --no-partial-parse`; partial parse caches the unbound state.
 
+### Singular-test `meta.dagster.ref` needs `package:` for cross-package refs
+
+dagster-dbt resolves `meta.dagster.ref` via `(name, package, version)`. Omitting
+`package:` defaults to the running project — so a test under
+`src/dbt/<source>/tests/` referencing a model in its own package silently misses
+the lookup and logs `AssetObservation` across all parents instead of an
+`AssetCheckResult` on the intended asset. Always set `package: <source>` for
+source-system package tests. Tests in `src/dbt/kipptaf/tests/` don't need it
+(refs default to kipptaf).
+
 ### Generic test syntax (dbt 1.11+)
 
 All generic tests (`relationships`, `accepted_values`,

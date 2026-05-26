@@ -101,6 +101,10 @@ file; domain specifics live in the nearest subdirectory CLAUDE.md.
   `gh issue develop --name <branch>` also fails when the branch contains trigger
   words like `log`, `auth`, `secret` — rename and retry.
 
+- **`git push origin main` is hard-blocked by the classifier** regardless of
+  in-conversation consent (AskUserQuestion answers or plain-text
+  re-confirmation). Hand the push to the user — do not retry.
+
 - **Smoke-test the runtime path, not just imports**: `hasattr(cls, "method")`
   and `python -c "import X"` pass even when a third-party SDK sub-resource (e.g.
   `googleapiclient` `.files()`, OpenAI sub-client) lacks the attribute at call
@@ -354,6 +358,19 @@ or mart `facts`/`dimensions`/`bridges`) —
 `get_asset_condition_evaluations` paginates with
 `cursor=<evaluationId of the oldest record returned>` — not a timestamp or
 opaque token.
+
+- **Schedule/sensor-launched runs report `assetSelection: null`** in
+  `list_runs`. Read `stepKeysToExecute` and convert `__` → `/` to recover asset
+  keys (`kipptaf__tableau__ops_dashboard` → `kipptaf/tableau/ops_dashboard`).
+  Cross-check with `get_asset_health` before declaring a backfill complete —
+  failure-triage groupings keyed on `assetSelection` silently drop these.
+- `mcp__dagster__list_runs` caps at `limit=100` with no truncation signal;
+  paginate via `cursor` for incident triage that may exceed 100 runs.
+- `mcp__dagster__launch_multiple_runs` requires non-empty `asset_keys` per run —
+  jobName alone won't queue. Resolve null-`assetSelection` failures to asset
+  keys first.
+- `mcp__dagster__search_assets` `cursor` is the JSON-string form returned by the
+  prior call (`"[\"a\",\"b\"]"`), not a bare list.
 
 ### Dagster run failure diagnosis
 
