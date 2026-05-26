@@ -1,0 +1,58 @@
+models:
+  - name: rpt_gsheets__historical_suspensions
+    description: >
+      Suspension rates aggregated at four grain levels (org, region, school,
+      school + grade) for the Historical Suspensions Google Sheet. Each row is
+      one aggregation grain for one academic year. Rates are proportions (0–1)
+      of students suspended at least once during the year.
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns:
+              - academic_year
+              - level
+              - region
+              - school
+              - grade_level
+    columns:
+      - name: academic_year
+        description:
+          Four-digit start year of the academic year (e.g., 2024 for 2024–25).
+        data_type: integer
+      - name: academic_year_display
+        description: Human-readable academic year label (e.g., "2024-25").
+        data_type: string
+      - name: region
+        description: >
+          Region name (e.g., Newark, Camden, Miami, Paterson). Null for
+          org-level rows.
+        data_type: string
+      - name: school
+        description: >
+          School abbreviation. Null for org- and region-level rows.
+        data_type: string
+      - name: grade_level
+        description: >
+          Numeric grade level. Null for org-, region-, and school-level rows.
+        data_type: integer
+      - name: level
+        description: >
+          Aggregation grain. One of: org, region, school, grade.
+        data_type: string
+      - name: pct_suspended_all_y1
+        description: >
+          Proportion of all students suspended at least once during the year
+          (any suspension type). Expressed as a decimal (0–1), rounded to two
+          decimal places.
+        data_type: float64
+      - name: pct_suspended_iep_y1
+        description: >
+          Proportion of students with an active IEP suspended at least once
+          during the year. Null when no IEP students are present in the group.
+        data_type: float64
+      - name: pct_suspended_lep_y1
+        description: >
+          Proportion of English Language Learner students suspended at least
+          once during the year. Null when no LEP students are present in the
+          group.
+        data_type: float64
