@@ -1,0 +1,53 @@
+models:
+  - name: rpt_lattice__users
+    description: >
+      Daily staff roster for Lattice SFTP import. Includes all KIPP TEAM and
+      Family Schools Inc. employees, all KIPP Paterson employees, and
+      Director/Head/Leader-tier staff in Miami, Newark, and Camden who are
+      Active or on Leave.
+    columns:
+      - name: external_user_id
+        description: ADP employee number used as the Lattice external user ID.
+        data_type: int64
+        data_tests:
+          - unique
+      - name: status
+        quote: true
+        description:
+          ADP employment status. Lattice-accepted values are Active and Leave.
+        data_type: string
+      - name: work_email
+        description: Employee work email address.
+        data_type: string
+      - name: job_title
+        description: Employee job title.
+        data_type: string
+      - name: start_date
+        quote: true
+        description:
+          Most recent hire date — rehire date when present, otherwise original
+          hire date.
+        data_type: date
+      - name: department
+        description: Employee home department name.
+        data_type: string
+      - name: manager_email
+        description: Work email address of the employee's direct manager.
+        data_type: string
+      - name: first_name
+        description:
+          Preferred first name from ADP; falls back to legal given name.
+        data_type: string
+      - name: last_name
+        description:
+          Preferred last name from ADP; falls back to legal family name.
+        data_type: string
+      - name: location
+        description:
+          Home work location abbreviation; falls back to full location name.
+        data_type: string
+      - name: region
+        description:
+          Friendly region name derived from home business unit (Newark, Camden,
+          Miami, Paterson, KTAF).
+        data_type: string

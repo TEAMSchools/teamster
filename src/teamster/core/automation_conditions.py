@@ -63,16 +63,19 @@ def _build_dbt_condition(
     - any_deps_missing ignoring external source assets
     - initial_evaluation omitted from .since() reset to avoid suppressing
       newly_missing permanently
-    - any_deps_match(code_version_changed) gate to block materialization when
-      a direct dependency has an unapplied code change (prevents schema errors
-      when a deploy adds columns through a dependency chain)
-    """
-    _dep_code_version_pending = AutomationCondition.any_deps_match(
-        AutomationCondition.code_version_changed().since(
-            AutomationCondition.newly_updated()
-        )
-    )
 
+    There is no dep-code-version gate. A previous version of this builder
+    blocked materialization when a direct dep had
+    ``code_version_changed().since(newly_updated())``; that operator is
+    cursor-based (compares to the evaluator's prior tick, not the dep's
+    stored materialization), so the SINCE memory could capture phantom
+    "true" state from any past tick — sensor restart, condition tree
+    change, manifest re-parse — and never reset when the dep was already
+    in sync (no ``newly_updated`` event to clear it). The gate produced
+    permanent deadlocks on FRESH deps while the in-CL race it nominally
+    prevented was already covered by dbt's intra-build DAG ordering plus
+    ``any_deps_missing`` / ``any_deps_in_progress``.
+    """
     triggers: AutomationCondition = AutomationCondition.newly_missing()
     for trigger in extra_triggers:
         triggers = triggers | trigger
@@ -88,7 +91,6 @@ def _build_dbt_condition(
         & ~AutomationCondition.any_deps_missing().ignore(_EXTERNAL_SOURCE_SELECTION)
         & ~AutomationCondition.any_deps_in_progress()
         & ~AutomationCondition.in_progress()
-        & ~_dep_code_version_pending
     )
 
 

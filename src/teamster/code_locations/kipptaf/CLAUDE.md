@@ -86,6 +86,13 @@ Illuminate DLT assets are split across two schedules in
 
 New DLT assets must be assigned to the appropriate schedule.
 
+## Adding a secret env var to `dagster-cloud.yaml`
+
+Env mappings duplicate across `server_k8s_config` and `run_k8s_config`, and each
+splits into a credentials block (password/username) and a host/port block — 4
+insertion points per secret. Missing `run_k8s_config` leaves run pods broken
+while the code server boots clean.
+
 ## Disabled Integrations
 
 `adp` WFM is not integrated (no schedules or assets). Reusable library code for

@@ -2,7 +2,6 @@
 
 The **network-wide analytics project** — aggregates all source-system packages
 and four district projects into network-level marts, reporting, and extracts.
-Most complex dbt project in the repo.
 
 ## Model Structure
 
@@ -62,6 +61,10 @@ inner join {{ ref("other_union_model") }} as b
 Macro defined in `macros/utils.sql` — extracts school prefix via
 `regexp_extract(..., r'(kipp\w+)_')`.
 
+When both joined union models materialize `_dbt_source_project`, prefer
+`a._dbt_source_project = b._dbt_source_project` over the macro — same semantics,
+no `regexp_extract` per call.
+
 ### Selecting from `dbt_utils.star()` models
 
 `base_` models using `star()` resolve columns from BigQuery at run time, not
@@ -115,7 +118,7 @@ Facebook, Illuminate Fivetran, Instagram.
 (alternate spelling of `location_name`) — consumers that join on an aliased name
 (e.g., `fct_staff_observations` on `gro.school_name`) must use this model.
 Canonical-grain consumers (1 row per logical school) should use
-`stg_google_sheets__people__locations` instead (#3633).
+`stg_google_sheets__people__locations` instead.
 
 **`stg_google_sheets__people__campus_crosswalk`** uniqueness grain is
 `Location_Name` only. `Name` is the parent campus and repeats across sibling
@@ -127,6 +130,45 @@ rows (one per district) with
 `dcid = -100, student_number = 0, enroll_status = -100`. The kipptaf-level view
 filters them via `where dcid >= 1`. Apply the same filter if reading a
 per-region source-system staging table directly.
+
+**`stg_powerschool__students` `enroll_status = 1` is invalid.** Filter
+`enroll_status IN (0, 2, 3)` (active / withdrawn / graduated) when resolving
+identity or attributing facts to a student. `-1` is pre-registered (not yet
+enrolled); `1` is inactive — never report against either.
+
+**`int_powerschool__student_enrollment_union` graduate placeholders**: rows with
+`enroll_status = 3` have NULL `entrydate` / `exitdate`, one row per
+`academic_year` per (student, district). `generate_surrogate_key` inputs that
+include `academic_year` hash uniquely; omitting `academic_year` collides.
+Date-range joins on `entrydate` silently drop these rows.
+
+**`enroll_status` is student-level, not per-stint.** Sourced from
+`stg_powerschool__students` and copied identically to every row in
+`int_powerschool__student_enrollment_union`. Don't expect different stints for
+the same student to carry different values.
+
+**`dim_terms.type` is KIPP-managed, not PowerSchool-derived.** Values from
+`stg_google_sheets__reporting__terms` — RT (reporting term, quarter grain), ATT
+(attendance, semester/year grain only), LIT, AR, REP, SURVEY, etc. Quarter
+attendance rows live under `type='RT'` matching `term_name='Q1'..'Q4'` — NOT
+`type='ATT'`, NOT keyed by `term_code='RT1'..'RT4'`.
+
+**`base_powerschool__course_enrollments` PowerSchool double-writes**: a frozen
+historical corpus of duplicate `cc` rows for the same
+`(student, section, dateleft)`, surfaced by a warn-level
+`dbt_utils.unique_combination_of_columns(studentid, sectionid, dateleft)` test
+on `stg_powerschool__cc`. Tracked in
+[#3900](https://github.com/TEAMSchools/teamster/issues/3900); Ops cleanup in
+[#3915](https://github.com/TEAMSchools/teamster/issues/3915).
+
+- When date-range joining `base_powerschool__course_enrollments`, filter
+  `is_dropped_section` first.
+- Do not add defensive dedupes (`qualify row_number() = 1` or
+  `dbt_utils.deduplicate()`) for the residual fan-out.
+- Downgrade the affected mart PK uniqueness test to `severity: warn` with a
+  `TODO(#3915)` so it returns to error when source cleanup completes.
+- `base_powerschool__student_enrollments` date-range joins currently need no
+  tiebreaker.
 
 **`_dagster_partition_key` in SchoolMint Grow staging** is the Grow `archived`
 flag (`'f'` = not archived, `'t'` = archived). Most Grow staging models filter
@@ -141,12 +183,6 @@ holds long-form entity names (`TEAM Academy Charter School`,
 short canonical names (`Newark` / `Camden` / `Miami` / `Paterson`). For region
 lookups by short name, use `city`. For mapping `_dbt_source_project` to region,
 use `dim_regions.dagster_code_location`.
-
-## Cross-Project Refs
-
-Sources models from: `powerschool`, `deanslist`, `edplan`, `iready`, `overgrad`,
-`pearson`, `renlearn`, `titan`, `amplify`, `finalsite`. District-specific
-PowerSchool data via multiple `sources-kipp*.yml` files.
 
 ## Exposures
 
@@ -182,14 +218,48 @@ dbt Cloud project ID: `211862`.
 CI job: `dbt build --select state:modified+ --full-refresh`, target `staging`,
 defers to Staging environment.
 
+CI is scoped to the kipptaf project only. PRs touching only a district project
+(kipppaterson, kippnewark, kippcamden, kippmiami) get a no-op kipptaf CI run
+that selects no models — kipptaf CI green is not evidence the district-side
+changes are correct. Verify via local `uv run dbt build` against the district
+project.
+
 `Clone - Staging (Modified)` clones only `state:modified` models, not their
 parents. When CI fails on a stale staging defer table for an unmodified upstream
 (column missing after a recent merge), trigger the full `Clone - Staging` job —
 or `dbt clone --select <upstream>` against staging.
+
+## Single-PR cross-project workflow
+
+CI only builds kipptaf; district staging schemas aren't auto-populated. For a PR
+touching both a district model and a kipptaf consumer:
+
+1. Add `target=staging` branch to affected `sources-kipp*.yml` (routes to
+   `zz_stg_<district>_<source>`).
+2. From each affected district project, run broad clone (no `--select`):
+   `uv --directory <worktree> run dbt clone --target staging --state target/prod`
+   to seed `zz_stg_<district>_*` from prod.
+3. Push; CI reads staged regional via the schema branch.
+
+Alternative to the two-PR pattern in `src/dbt/CLAUDE.md`.
+
+## Verifying a coalesce/override layer is vestigial
+
+Compare the override source against the **raw upstream**, not the
+already-coalesced output column. `coalesce(override, raw)` trivially matches
+`override` when it fires; comparing resolved-to-override hides every real
+override. Source the staging model that feeds the coalesce, not the intermediate
+that applies it.
+
+Concretely: compare `stg_x.raw_col` (the staging input feeding the coalesce)
+against `int_x.override_col` (the override source), not `int_x.resolved_col`
+(the post-coalesce output).
 
 ## Model Layer Distinctions
 
 - **`rpt_`** — analyst-built reporting views for external tools. Live in
   `models/extracts/`.
 - **`dim_*` / `fct_*`** — dimensional marts for semantic layer. Live in
-  `models/marts/`. Actively being developed.
+  `models/marts/`. Actively being developed; see
+  `src/dbt/kipptaf/models/marts/CLAUDE.md` for column-naming rubric, hash-change
+  discipline, and strict-chain rules.

@@ -159,6 +159,22 @@ intacct_extract = build_bigquery_query_sftp_asset(
     ],
 )
 
+lattice_extract = build_bigquery_query_sftp_asset(
+    code_location=CODE_LOCATION,
+    timezone=LOCAL_TIMEZONE,
+    query_config={
+        "type": "schema",
+        "value": {
+            "table": {
+                "name": "rpt_lattice__users",
+                "schema": "kipptaf_extracts",
+            }
+        },
+    },
+    file_config={"stem": "users_{today}", "suffix": "csv"},
+    destination_config={"name": "lattice", "path": "uploads"},
+)
+
 littlesis_extract = build_bigquery_query_sftp_asset(
     code_location=CODE_LOCATION,
     timezone=LOCAL_TIMEZONE,
@@ -181,6 +197,7 @@ assets = [
     egencia_extract,
     idauto_extract,
     intacct_extract,
+    lattice_extract,
     littlesis_extract,
     *clever_extract_assets,
     *deanslist_annual_extract_assets,

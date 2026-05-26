@@ -26,6 +26,7 @@ import argparse
 import asyncio
 import json
 import os
+import re
 import subprocess
 import sys
 from datetime import UTC, datetime, time, timedelta
@@ -286,6 +287,7 @@ async def step_01_failed_runs(gql: GraphQL, after_epoch: float) -> dict:
         "successCount": len(successes),
         "canceledCount": len(canceled),
         "failures": failure_details,
+        "successRunIds": [r["runId"] for r in successes],
     }
 
 
@@ -393,6 +395,205 @@ async def step_15_backfills(gql: GraphQL, after_epoch: float) -> dict:
             r for r in results if (r.get("timestamp") or 0) >= after_epoch
         ]
     return out
+
+
+# ─── Step 16: Failed asset checks ─────────────────────────────────────────
+
+ASSET_CHECKS_DISCOVERY_QUERY = """
+query AssetChecksDiscovery {
+  assetNodes {
+    assetChecksOrError {
+      __typename
+      ... on AssetChecks {
+        checks { name assetKey { path } }
+      }
+    }
+  }
+}
+"""
+
+ASSET_CHECK_LATEST_QUERY = """
+query AssetCheckLatest($assetKey: AssetKeyInput!, $checkName: String!) {
+  assetCheckExecutions(
+    assetKey: $assetKey
+    checkName: $checkName
+    limit: 1
+  ) {
+    runId
+    status
+    timestamp
+    evaluation {
+      severity
+      description
+      metadataEntries {
+        label
+        ... on TextMetadataEntry { text }
+        ... on JsonMetadataEntry { jsonString }
+        ... on IntMetadataEntry { intValue }
+        ... on FloatMetadataEntry { floatValue }
+      }
+    }
+  }
+}
+"""
+
+
+def _summarize_check_metadata(entries: list[dict] | None) -> str:
+    """Squash metadata entries into a short string for the report."""
+    if not entries:
+        return ""
+    parts: list[str] = []
+    for m in entries:
+        label = m.get("label") or ""
+        val = (
+            m.get("text")
+            or m.get("jsonString")
+            or m.get("intValue")
+            or m.get("floatValue")
+        )
+        if val is None or val == "":
+            continue
+        parts.append(f"{label}={str(val)[:200]}")
+    return "; ".join(parts)[:600]
+
+
+async def step_16_asset_checks(gql: GraphQL, after_epoch: float) -> dict:
+    """Surface asset checks whose latest execution is FAILED.
+
+    Buckets by severity (ERROR vs WARN) and timing (inWindow vs stale).
+    `avro_schema_valid` checks fall under WARN severity by design.
+    """
+    discovery = await gql.query(ASSET_CHECKS_DISCOVERY_QUERY)
+    seen: set[tuple[tuple[str, ...], str]] = set()
+    pairs: list[tuple[tuple[str, ...], str]] = []
+    for node in discovery.get("assetNodes") or []:
+        ck = node.get("assetChecksOrError") or {}
+        if ck.get("__typename") != "AssetChecks":
+            continue
+        for c in ck.get("checks") or []:
+            key = (tuple(c["assetKey"]["path"]), c["name"])
+            if key in seen:
+                continue
+            seen.add(key)
+            pairs.append(key)
+
+    sem = asyncio.Semaphore(20)
+
+    async def fetch(asset_path: tuple[str, ...], check_name: str) -> dict | None:
+        async with sem:
+            d = await gql.query(
+                ASSET_CHECK_LATEST_QUERY,
+                {"assetKey": {"path": list(asset_path)}, "checkName": check_name},
+            )
+        execs = d.get("assetCheckExecutions") or []
+        if not execs:
+            return None
+        ex = execs[0]
+        status = ex.get("status")
+        if status not in ("FAILED", "EXECUTION_FAILED"):
+            return None
+        ev = ex.get("evaluation") or {}
+        return {
+            "asset": "/".join(asset_path),
+            "check": check_name,
+            "status": status,
+            "severity": ev.get("severity") or "UNKNOWN",
+            "timestamp": ex.get("timestamp"),
+            "runId": ex.get("runId"),
+            "description": ev.get("description"),
+            "metadata": _summarize_check_metadata(ev.get("metadataEntries")),
+        }
+
+    results = await asyncio.gather(*(fetch(p, n) for p, n in pairs))
+    buckets: dict[str, list[dict]] = {
+        "inWindow_error": [],
+        "inWindow_warn": [],
+        "stale_error": [],
+        "stale_warn": [],
+    }
+    for r in results:
+        if r is None:
+            continue
+        in_window = (r["timestamp"] or 0) >= after_epoch
+        # EXECUTION_FAILED has no evaluation/severity — bucket as error so it
+        # surfaces alongside check-evaluation ERRORs rather than getting buried
+        # in WARN noise. WARN-severity FAILED is the documented avro_schema_valid
+        # path; anything else (including UNKNOWN) is treated as error.
+        is_warn = r["status"] == "FAILED" and r["severity"] == "WARN"
+        bucket = (
+            f"{'inWindow' if in_window else 'stale'}_{'warn' if is_warn else 'error'}"
+        )
+        buckets[bucket].append(r)
+    return {
+        "totalChecks": len(pairs),
+        "failedCount": sum(len(b) for b in buckets.values()),
+        **buckets,
+    }
+
+
+# ─── Step 17: Degraded assets (latestRun.status = FAILURE) ────────────────
+
+ASSETS_LATEST_QUERY = """
+query AssetsLatest($keys: [AssetKeyInput!]!) {
+  assetsLatestInfo(assetKeys: $keys) {
+    assetKey { path }
+    latestRun { runId status endTime }
+  }
+}
+"""
+
+
+async def step_17_degraded_assets(gql: GraphQL, _after_epoch: float) -> dict:
+    """Assets whose latest run failed.
+
+    Caveat: dbt failures are run-level, not step-level, so an asset can be
+    flagged here even though its own materialization step succeeded mid-run.
+    Use this list as a starting point and verify per-asset.
+    """
+    nodes = (await gql.query(ASSETS_QUERY)).get("assetNodes") or []
+    keys = [{"path": n["assetKey"]["path"]} for n in nodes]
+
+    degraded: list[dict] = []
+    chunk = 200
+    for i in range(0, len(keys), chunk):
+        batch = keys[i : i + chunk]
+        data = await gql.query(ASSETS_LATEST_QUERY, {"keys": batch})
+        for info in data.get("assetsLatestInfo") or []:
+            latest = info.get("latestRun") or {}
+            if latest.get("status") != "FAILURE":
+                continue
+            degraded.append(
+                {
+                    "asset": "/".join(info["assetKey"]["path"]),
+                    "latestRunId": latest.get("runId"),
+                    "latestRunEndTime": latest.get("endTime"),
+                }
+            )
+
+    by_run: dict[str, list[str]] = {}
+    for d in degraded:
+        by_run.setdefault(d["latestRunId"] or "", []).append(d["asset"])
+    return {
+        "totalAssets": len(keys),
+        "degradedCount": len(degraded),
+        "degraded": degraded,
+        "byRun": [
+            {
+                "runId": rid,
+                "endTime": next(
+                    (
+                        d["latestRunEndTime"]
+                        for d in degraded
+                        if d["latestRunId"] == rid
+                    ),
+                    None,
+                ),
+                "count": len(assets),
+                "assets": assets,
+            }
+            for rid, assets in sorted(by_run.items(), key=lambda x: -len(x[1]))
+        ],
+    }
 
 
 # ─── Step 2: Retry verification ───────────────────────────────────────────
@@ -741,7 +942,28 @@ def step_08_agent_pod_churn(utc_start: str, utc_end: str, agents: dict) -> dict:
 # ─── Step 10: GKE critical events ─────────────────────────────────────────
 
 
-def step_10_gke_events(utc_start: str, utc_end: str) -> dict:
+DAGSTER_RUN_POD_RE = re.compile(
+    r"^dagster-run-([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})-"
+)
+
+
+def _attribute_pod_event(
+    pod_name: str | None, failed_ids: set[str], success_ids: set[str]
+) -> tuple[str | None, str]:
+    if not pod_name:
+        return None, "UNKNOWN"
+    m = DAGSTER_RUN_POD_RE.match(pod_name)
+    if not m:
+        return None, "UNKNOWN"
+    run_id = m.group(1)
+    if run_id in success_ids:
+        return run_id, "SUCCESS"
+    if run_id in failed_ids:
+        return run_id, "FAILURE"
+    return run_id, "UNKNOWN"
+
+
+def step_10_gke_events(utc_start: str, utc_end: str, step_01: dict) -> dict:
     cluster_query = (
         'resource.type="k8s_cluster" '
         'AND log_name=~"logs/events" '
@@ -759,6 +981,22 @@ def step_10_gke_events(utc_start: str, utc_end: str) -> dict:
     )
     cluster = gcloud_logging_read(cluster_query, utc_start, utc_end)
     pod = gcloud_logging_read(pod_query, utc_start, utc_end)
+    failed_ids = {f.get("runId") for f in step_01.get("failures", []) if f.get("runId")}
+    success_ids = set(step_01.get("successRunIds", []) or [])
+    pod_events = []
+    for e in pod:
+        pod_name = e.get("resource", {}).get("labels", {}).get("pod_name")
+        run_id, run_status = _attribute_pod_event(pod_name, failed_ids, success_ids)
+        pod_events.append(
+            {
+                "timestamp": e["timestamp"],
+                "podName": pod_name,
+                "reason": e.get("jsonPayload", {}).get("reason"),
+                "message": e.get("jsonPayload", {}).get("message"),
+                "runId": run_id,
+                "runStatus": run_status,
+            }
+        )
     return {
         "clusterEvents": [
             {
@@ -771,15 +1009,7 @@ def step_10_gke_events(utc_start: str, utc_end: str) -> dict:
             }
             for e in cluster
         ],
-        "podEvents": [
-            {
-                "timestamp": e["timestamp"],
-                "podName": e.get("resource", {}).get("labels", {}).get("pod_name"),
-                "reason": e.get("jsonPayload", {}).get("reason"),
-                "message": e.get("jsonPayload", {}).get("message"),
-            }
-            for e in pod
-        ],
+        "podEvents": pod_events,
     }
 
 
@@ -838,7 +1068,76 @@ def step_11_alerts(utc_start: str) -> dict:
 # ─── Step 12: Error groups ────────────────────────────────────────────────
 
 
-def step_12_error_groups(utc_start: str) -> dict:
+EXCEPTION_LINE_RE = re.compile(
+    r"^([A-Za-z_][\w\.]*(?:Error|Exception|Interrupt|Warning))(?::|$)"
+)
+SIGTERM_EXC_CLASSES = {
+    "DagsterExecutionInterruptedError",
+    "KeyboardInterrupt",
+    "SystemExit",
+}
+
+
+def _resolve_exception_line(pod_name: str, last_seen: str) -> str | None:
+    """Find the bottom-of-traceback exception class on the affected pod ±2s."""
+    if not pod_name or not last_seen:
+        return None
+    try:
+        ts = datetime.fromisoformat(last_seen.replace("Z", "+00:00"))
+    except ValueError:
+        return None
+    start = (ts - timedelta(seconds=2)).isoformat().replace("+00:00", "Z")
+    end = (ts + timedelta(seconds=2)).isoformat().replace("+00:00", "Z")
+    try:
+        entries = gcloud_logging_read(
+            f'resource.labels.pod_name="{pod_name}" severity>=ERROR',
+            start,
+            end,
+            limit=100,
+        )
+    except subprocess.CalledProcessError:
+        return None
+    candidates: list[str] = []
+    for e in entries:
+        text = e.get("textPayload") or e.get("jsonPayload", {}).get("message") or ""
+        for line in text.splitlines():
+            stripped = line.strip()
+            if EXCEPTION_LINE_RE.match(stripped):
+                candidates.append(stripped[:300])
+    return candidates[-1] if candidates else None
+
+
+def _correlate_pod_event(
+    pod_names: list[str], last_seen: str, pod_events: list[dict]
+) -> dict | None:
+    """Find a Preempted/Evicted/OOMKilling event on the same pod within ±10s."""
+    if not pod_names or not last_seen or not pod_events:
+        return None
+    try:
+        ts = datetime.fromisoformat(last_seen.replace("Z", "+00:00"))
+    except ValueError:
+        return None
+    target_pods = set(pod_names)
+    benign_reasons = {"Preempted", "Evicted", "OOMKilling"}
+    for ev in pod_events:
+        if ev.get("podName") not in target_pods:
+            continue
+        if ev.get("reason") not in benign_reasons:
+            continue
+        try:
+            ev_ts = datetime.fromisoformat(ev["timestamp"].replace("Z", "+00:00"))
+        except (KeyError, ValueError):
+            continue
+        if abs((ev_ts - ts).total_seconds()) <= 10:
+            return {
+                "reason": ev.get("reason"),
+                "timestamp": ev.get("timestamp"),
+                "podName": ev.get("podName"),
+            }
+    return None
+
+
+def step_12_error_groups(utc_start: str, step_10: dict) -> dict:
     token = gcloud_token()
     url = f"https://clouderrorreporting.googleapis.com/v1beta1/projects/{PROJECT_ID}/groupStats"
     params = {
@@ -863,6 +1162,13 @@ def step_12_error_groups(utc_start: str) -> dict:
             )
         data = resp.json()
         for g in data.get("errorGroupStats", []):
+            affected = [
+                {
+                    "service": (s.get("service") or ""),
+                    "version": (s.get("version") or ""),
+                }
+                for s in (g.get("affectedServices") or [])
+            ]
             out.append(
                 {
                     "groupId": g.get("group", {}).get("groupId"),
@@ -875,11 +1181,50 @@ def step_12_error_groups(utc_start: str) -> dict:
                     "exception": (g.get("representative", {}).get("message") or "")[
                         :300
                     ],
+                    "affectedServices": affected,
                 }
             )
         page_token = data.get("nextPageToken")
         if not page_token:
             break
+    pod_events = step_10.get("podEvents", []) or []
+    events_url = f"https://clouderrorreporting.googleapis.com/v1beta1/projects/{PROJECT_ID}/events"
+    for g in out:
+        if g.get("resolutionStatus") != "OPEN":
+            continue
+        ev_resp = httpx.get(
+            events_url,
+            headers={"Authorization": f"Bearer {token}"},
+            params={
+                "groupId": g["groupId"],
+                "pageSize": 1,
+                "timeRange.period": "PERIOD_30_DAYS",
+            },
+            timeout=30.0,
+        )
+        recent_pod = ""
+        recent_ts = g.get("lastSeenTime", "")
+        if ev_resp.status_code < 400:
+            events = ev_resp.json().get("errorEvents", []) or []
+            if events:
+                recent_pod = (events[0].get("serviceContext") or {}).get(
+                    "version"
+                ) or ""
+                recent_ts = events[0].get("eventTime") or recent_ts
+        g["mostRecentPod"] = recent_pod
+        g["mostRecentEventTime"] = recent_ts
+        g["exceptionLine"] = _resolve_exception_line(recent_pod, recent_ts)
+        g["correlatedPodEvent"] = _correlate_pod_event(
+            [recent_pod] if recent_pod else [], recent_ts, pod_events
+        )
+        exc = g.get("exceptionLine") or ""
+        exc_class = exc.split(":")[0].split(".")[-1] if exc else ""
+        if exc_class in SIGTERM_EXC_CLASSES:
+            g["category"] = "sigterm_during_import"
+        elif g["correlatedPodEvent"]:
+            g["category"] = "preemption_artifact"
+        else:
+            g["category"] = "unclassified"
     in_window = [
         g
         for g in out
@@ -999,6 +1344,8 @@ async def main() -> None:
             run_step("step_14_queued_runs", step_14_queued(gql, epoch)),
             run_step("step_15_backfills", step_15_backfills(gql, epoch)),
             run_step("step_04_freshness", step_04_freshness(gql, epoch)),
+            run_step("step_16_asset_checks", step_16_asset_checks(gql, epoch)),
+            run_step("step_17_degraded_assets", step_17_degraded_assets(gql, epoch)),
         )
         # Workspace once for steps 3, 5, 6.
         try:
@@ -1032,9 +1379,21 @@ async def main() -> None:
         utc_end,
         s7 if "error" not in s7 else {"agents": []},
     )
-    run_sync("step_10_gke_events", step_10_gke_events, utc_start, utc_end)
+    run_sync(
+        "step_10_gke_events",
+        step_10_gke_events,
+        utc_start,
+        utc_end,
+        s1 if "error" not in s1 else {"failures": [], "successRunIds": []},
+    )
     run_sync("step_11_alerts", step_11_alerts, utc_start)
-    run_sync("step_12_error_groups", step_12_error_groups, utc_start)
+    s10 = artifact.get("step_10_gke_events", {})
+    run_sync(
+        "step_12_error_groups",
+        step_12_error_groups,
+        utc_start,
+        s10 if "error" not in s10 else {"podEvents": []},
+    )
     run_sync(
         "step_13_oom_metrics",
         step_13_oom_metrics,

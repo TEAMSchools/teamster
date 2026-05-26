@@ -41,6 +41,7 @@ with
             {{
                 dbt_utils.generate_surrogate_key(
                     [
+                        "'code'",
                         "project_name",
                         "studentid",
                         "yearid",
@@ -53,6 +54,7 @@ with
             {{
                 dbt_utils.generate_surrogate_key(
                     [
+                        "'att'",
                         "project_name",
                         "studentid",
                         "yearid",

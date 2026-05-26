@@ -37,6 +37,9 @@ models:
         staging:
           +contract:
             enforced: true
+    pearson:
+      +materialized: table
+      +schema: pearson
   amplify:
     dds:
       +enabled: false

@@ -67,6 +67,31 @@ Removed from all mart SELECTs:
 Plumbing remains in `staging/` and `intermediate/` — only stripped from the mart
 SELECT.
 
+## Filing follow-up issues from marts work
+
+When filing a GitHub issue from marts work (spec authoring, PR review follow-up,
+CI warning triage), add it to project board
+[#4](https://github.com/orgs/TEAMSchools/projects/4) and set `Tier`, `PR batch`,
+and `Driver`. Commands and `GITHUB_TOKEN=` prefix: see root CLAUDE.md → MCP
+Servers `gh project` bullets. `Status` auto-sets to Todo on add — skip.
+
+## Pre-merge checklist (marts PRs)
+
+Run before posting the final PR comment on any marts PR (spec, bugfix,
+refactor):
+
+- Scan touched models for diamond paths (see "Strict-chain traversal").
+- Scan touched models for column-naming rubric violations (R1–R10 above).
+- Pull marts-model warnings from the latest CI run
+  (`mcp__dbt__get_job_run_error` with `warning_only=true`). For each, search
+  open issues by model name + FK target. Bucket orphans (by region, source,
+  test_type, etc.) in the issue body before filing.
+- Scan the
+  [project board](https://github.com/orgs/TEAMSchools/projects/4/views/1) for
+  bonus issues incidentally resolved; close them in the PR.
+- File newly surfaced errors per "Filing follow-up issues from marts work"
+  above.
+
 ## Strict-chain traversal
 
 Facts and child dims FK to their direct parent(s) only; deeper dimensional
@@ -135,6 +160,14 @@ Intermediates may rename or transform columns (e.g. scaffold's
 `int_assessments__assessments.academic_year`); the consumer must re-join the
 source-of-truth model rather than trust the matching column name.
 
+Before swapping the input list of any `generate_surrogate_key()` on a dim/fact,
+grep every consumer that hashes the same composition and migrate producer + all
+consumers in one atomic commit.
+
+Adding a column to a hash input or join predicate also requires that column in
+the upstream CTE that aliases the source. Compile fails with
+`Name X not found inside ALIAS` otherwise.
+
 ## `_dbt_source_project` joins and hashes
 
 When a marts fix touches joins or surrogate-key composition involving
@@ -146,6 +179,17 @@ consumers should join and hash on the materialized `code_location` column, not
 re-derive it from `_dbt_source_relation` per-call. This counts as an additive
 upstream edit under "Spec authoring context" and does not require a separate
 refactor PR.
+
+## Removing a mart-level `qualify row_number() = 1`
+
+Verify the upstream intermediate is unique on the qualify's partition key before
+removing — the qualify often masks an upstream PK collision (hashed ID
+duplicates), not a date-range overlap. "Same join shape as another mart" is not
+sufficient evidence.
+
+Net mart row-count delta is typically `+N` where N is the residual fan-out — not
+`-N`. Adding an upstream `where` filter alongside doesn't drop PKs; it changes
+which rows the surviving PK joins to.
 
 ## Verify source precision before R9 drops
 
@@ -184,6 +228,10 @@ Marts inherit `contract: enforced: true` and `materialized: view` from
 explicit uniqueness test on its PK (`unique` on a single column, or
 `dbt_utils.unique_combination_of_columns` for composite).
 
+Drop model-level `dbt_utils.unique_combination_of_columns` when its column set
+equals the surrogate-key hash inputs — `unique` on the PK detects the same
+violations.
+
 ## Constraints are informational (views)
 
 PK/FK `constraints:` blocks on marts are not enforced (views). dbt emits a parse
@@ -198,8 +246,48 @@ reads a mart must have a dbt exposure under `src/dbt/kipptaf/models/exposures/`.
 Without one, column renames and removals silently break downstream — dbt has no
 other signal.
 
+Before removing a column from any `dim_*` / `fct_*`, grep `src/cube/model/` for
+`sql: <col>` and bare `<col>` — Cube YAML reads by name and dbt has no exposure
+to surface the dep.
+
 Every mart must appear in `cube.yml`'s `cube_semantic_layer.depends_on`; other
 exposures reference `rpt_*` / staging / intermediate models, not marts.
+
+## SCD2 status dims bound to enrollments
+
+Status dims sourced from external systems (edplan, titan, s_nj_stu_x) that
+represent enrollment-context status:
+
+- Grain `(student_number, _dbt_source_project, effective_date_start)`; expose
+  `_dbt_source_project` as a dim column.
+- Inner-join external records to enrollment **per stint** (not aggregated
+  min/max). Multi-stint students get separate dim rows per stint. Date-range
+  predicates in ON, not WHERE.
+- Carry `student_enrollment_key` as direct FK to `dim_student_enrollments` via
+  `surrogate_key(student_number, _dbt_source_project, academic_year, entrydate)`
+  — consumers equi-join instead of date-range BETWEEN.
+- Half-open exit:
+  `enrollment_end = coalesce(date_sub(exitdate, interval 1 day), '9999-12-31')`
+  to avoid boundary-share overlaps.
+
+## "Is current X" flags on dim_dates
+
+Date-grain temporal classifiers (`is_current_academic_year`,
+`is_current_fiscal_year`, etc.) live on `dim_dates`, derived from
+`{{ var("current_X") }}` baked in at build time. Don't auto-derive from
+`CURRENT_DATE` at query time — rollover is manual via dbt var bump.
+
+## Verify FK population, not just compilation
+
+`relationships` tests don't fail on 100%-NULL FKs. After adding or restructuring
+an FK join, sample populated count in prod (or PR-branch schema):
+
+```sql
+select countif(<fk>_key is null) as n_null, count(*) as n_total
+from `<schema>.<fact>`
+```
+
+Treat ≥99% NULL as a broken join, not a sparse FK.
 
 ## Not in this layer
 
@@ -218,19 +306,6 @@ packages) but those edits must be **additive only**. Wider upstream refactors
 require a compelling reason called out in the spec; otherwise split into a
 separate PR.
 
-Before designing a solution for a roadmap issue, verify the issue's claims
-against the current code and data.
-
 Before proposing a new structural mart change, check the open items on the
 [Data Team project board](https://github.com/orgs/TEAMSchools/projects/4) — the
 case may already be tracked and deferred.
-
-Every spec must include a pre-merge checklist covering:
-
-- Scan touched models for diamond paths (see "Strict-chain traversal").
-- Scan touched models for column-naming rubric violations (R1–R10 above).
-- Scan the
-  [project board](https://github.com/orgs/TEAMSchools/projects/4/views/1) for
-  bonus issues incidentally resolved; close them in the PR.
-- File newly surfaced errors as new issues on the board, classified with `Tier`,
-  `PR batch`, and `Driver`.

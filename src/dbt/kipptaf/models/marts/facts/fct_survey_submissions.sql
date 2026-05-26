@@ -1,14 +1,30 @@
 with
-    /* Staff survey submissions from int_surveys__survey_responses */
+    /*
+     * Submission-grain projection of int_surveys__survey_responses.
+     * One row per (survey_id, survey_response_id). The order_by choice is
+     * arbitrary because projected columns don't vary across questions of the
+     * same submission — survey_question_id is used for determinism only.
+     * TODO: #3918 — extract int_surveys__survey_submissions intermediate.
+     */
+    submissions_grain as (
+        {{
+            dbt_utils.deduplicate(
+                relation=ref("int_surveys__survey_responses"),
+                partition_by="survey_id, survey_response_id",
+                order_by="survey_question_id",
+            )
+        }}
+    ),
+
+    /* Staff SCD submissions */
     staff_submissions as (
-        -- TODO: upstream at response grain (#3629)
-        select distinct
-            sr.survey_id,
-            sr.survey_response_id,
-            sr.respondent_employee_number,
-            sr.date_submitted,
-            sr.academic_year,
-            sr.term_code,
+        select
+            sg.survey_id,
+            sg.survey_response_id,
+            sg.respondent_employee_number,
+            sg.date_submitted,
+            sg.academic_year,
+            sg.term_code,
 
             rt.type as term_type,
             rt.code as rt_code,
@@ -20,30 +36,28 @@ with
             'staff' as respondent_type,
 
             cast(null as int64) as subject_employee_number,
-        from {{ ref("int_surveys__survey_responses") }} as sr
+        from submissions_grain as sg
         inner join
             {{ ref("stg_google_sheets__reporting__terms") }} as rt
-            on sr.survey_title = rt.`name`
-            and sr.academic_year = rt.academic_year
-            and sr.term_code = rt.code
+            on sg.survey_title = rt.`name`
+            and sg.academic_year = rt.academic_year
+            and sg.term_code = rt.code
             and rt.type = 'SURVEY'
         where
-            sr.respondent_employee_number is not null
-            and sr.survey_title in (
+            sg.survey_title in (
                 'School Community Diagnostic Staff Survey',
                 'Engagement & Support Surveys'
             )
     ),
 
     /* Student SCD submissions */
-    student_submissions_ranked as (
+    student_submissions as (
         select
-            sr.survey_id,
-            sr.survey_response_id,
-            sr.respondent_email,
-            sr.date_submitted,
-            sr.academic_year,
-            sr.term_code,
+            sg.survey_id,
+            sg.survey_response_id,
+            sg.respondent_email,
+            sg.date_submitted,
+            sg.term_code,
 
             rt.type as term_type,
             rt.code as rt_code,
@@ -55,58 +69,35 @@ with
             'student' as respondent_type,
 
             enr.student_number,
-            enr._dbt_source_relation,
+            enr.academic_year,
             enr.entrydate,
 
-            row_number() over (
-                partition by sr.survey_response_id order by enr.entrydate desc
-            ) as rn_enrollment,
-        from {{ ref("int_surveys__survey_responses") }} as sr
+            regexp_extract(
+                enr._dbt_source_relation, r'(kipp\w+)_'
+            ) as _dbt_source_project,
+        from submissions_grain as sg
         inner join
             {{ ref("stg_google_sheets__reporting__terms") }} as rt
-            on sr.survey_title = rt.`name`
-            and sr.academic_year = rt.academic_year
-            and sr.term_code = rt.code
+            on sg.survey_title = rt.`name`
+            and sg.academic_year = rt.academic_year
+            and sg.term_code = rt.code
             and rt.type = 'SURVEY'
         inner join
             {{ ref("int_extracts__student_enrollments") }} as enr
-            on sr.respondent_email = enr.student_email
-            and sr.academic_year = enr.academic_year
-            and enr.enroll_status = 0
-        where sr.survey_title = 'School Community Diagnostic Student Survey'
+            on sg.respondent_email = enr.student_email
+            and enr.entrydate <= date(sg.date_submitted)
+            and enr.exitdate > date(sg.date_submitted)
+        where sg.survey_title = 'School Community Diagnostic Student Survey'
     ),
 
-    student_submissions as (
+    /* Family SCD submissions */
+    family_submissions as (
         select
-            survey_id,
-            survey_response_id,
-            respondent_email,
-            date_submitted,
-            academic_year,
-            term_code,
-            term_type,
-            rt_code,
-            rt_name,
-            rt_start_date,
-            rt_region,
-            rt_school_id,
-            respondent_type,
-            student_number,
-            _dbt_source_relation,
-            entrydate,
-        from student_submissions_ranked
-        where rn_enrollment = 1
-    ),
-
-    /* Family SCD submissions from rpt_tableau__school_community_diagnostic */
-    family_gforms as (
-        -- TODO: upstream at response grain (#3629)
-        select distinct
-            sr.survey_id,
-            sr.survey_response_id,
-            sr.date_submitted,
-            sr.academic_year,
-            sr.term_code,
+            sg.survey_id,
+            sg.survey_response_id,
+            sg.date_submitted,
+            sg.academic_year,
+            sg.term_code,
 
             rt.type as term_type,
             rt.code as rt_code,
@@ -116,25 +107,93 @@ with
             rt.school_id as rt_school_id,
 
             'family' as respondent_type,
-        from {{ ref("int_surveys__survey_responses") }} as sr
+        from submissions_grain as sg
         inner join
             {{ ref("stg_google_sheets__reporting__terms") }} as rt
-            on sr.survey_title = rt.`name`
-            and sr.academic_year = rt.academic_year
-            and sr.term_code = rt.code
+            on sg.survey_title = rt.`name`
+            and sg.academic_year = rt.academic_year
+            and sg.term_code = rt.code
             and rt.type = 'SURVEY'
         where
-            sr.survey_title in (
+            sg.survey_title in (
                 'KIPP NJ & KIPP Miami Family Survey',
                 'KIPP Miami Re-Commitment Form'
                 ' & Family School Community Diagnostic'
             )
     ),
 
-    /* Manager Survey submissions */
+    /*
+     * Manager Survey submissions — hash inputs from submissions_grain (Google
+     * Forms branch of int_surveys__survey_responses). Subject-of-evaluation
+     * staff columns come from int_surveys__manager_survey_details as a thin
+     * overlay; that model is retained for subject context and the historic
+     * Alchemer archive only. TODO: #3918.
+     */
+    /*
+     * subject_df_employee_number is constant per (survey_id, survey_response_id)
+     * by source-model design — int_surveys__manager_survey_details carries one
+     * subject per submission and repeats it across question-grain rows. The
+     * order_by here is arbitrary among identical values; deduplicate's only
+     * job is the question-grain → submission-grain projection.
+     */
+    -- trunk-ignore(sqlfluff/ST03): referenced via dbt_utils.deduplicate below
+    manager_overlay_source as (
+        select survey_id, survey_response_id, subject_df_employee_number,
+        from {{ ref("int_surveys__manager_survey_details") }}
+        where survey_response_id is not null
+    ),
+
+    manager_subject_overlay as (
+        {{
+            dbt_utils.deduplicate(
+                relation="manager_overlay_source",
+                partition_by="survey_id, survey_response_id",
+                order_by="subject_df_employee_number",
+            )
+        }}
+    ),
+
     manager_submissions as (
-        -- TODO: upstream at response grain (#3629)
-        select distinct
+        select
+            sg.survey_id,
+            sg.survey_response_id,
+            sg.respondent_employee_number,
+            sg.date_submitted,
+            sg.academic_year,
+            sg.term_code,
+
+            rt.type as term_type,
+            rt.code as rt_code,
+            rt.`name` as rt_name,
+            rt.start_date as rt_start_date,
+            rt.region as rt_region,
+            rt.school_id as rt_school_id,
+
+            'staff' as respondent_type,
+
+            mso.subject_df_employee_number as subject_employee_number,
+        from submissions_grain as sg
+        inner join
+            {{ ref("stg_google_sheets__reporting__terms") }} as rt
+            on rt.`name` = 'Manager Survey'
+            and sg.academic_year = rt.academic_year
+            and sg.term_code = rt.code
+            and rt.type = 'SURVEY'
+        left join
+            manager_subject_overlay as mso
+            on sg.survey_id = mso.survey_id
+            and sg.survey_response_id = mso.survey_response_id
+        where sg.survey_title = 'Manager Survey'
+    ),
+
+    /*
+     * Historic Alchemer Manager archive — these rows have survey_response_id
+     * NULL and don't appear in int_surveys__survey_responses, so they need
+     * the deterministic fallback hash. They produce no FK orphans against
+     * fct_survey_responses because no response-grain rows exist for them.
+     */
+    historic_archive_submissions as (
+        select
             ms.survey_id,
             ms.respondent_df_employee_number as respondent_employee_number,
             ms.subject_df_employee_number as subject_employee_number,
@@ -168,10 +227,12 @@ with
             and ms.campaign_academic_year = rt.academic_year
             and ms.campaign_reporting_term = rt.code
             and rt.type = 'SURVEY'
-        where ms.campaign_academic_year is not null
+        where
+            ms.survey_id = 'historic_alchemer_Manager_survey'
+            and ms.campaign_academic_year is not null
     ),
 
-    /* Combine all staff-type submissions */
+    /* Combine all staff-type submissions (live SCD + Manager + archive) */
     combined_staff as (
         select
             {{
@@ -222,6 +283,32 @@ with
             date_submitted,
             academic_year,
         from manager_submissions
+
+        union all
+
+        select
+            {{
+                dbt_utils.generate_surrogate_key(
+                    [
+                        "survey_id",
+                        "term_type",
+                        "rt_code",
+                        "rt_name",
+                        "rt_start_date",
+                        "rt_region",
+                        "rt_school_id",
+                    ]
+                )
+            }} as survey_administration_key,
+
+            survey_id,
+            survey_response_id,
+            respondent_type,
+            respondent_employee_number,
+            subject_employee_number,
+            date_submitted,
+            academic_year,
+        from historic_archive_submissions
     ),
 
     combined_student as (
@@ -244,7 +331,7 @@ with
             survey_response_id,
             respondent_type,
             student_number,
-            _dbt_source_relation,
+            _dbt_source_project,
             academic_year,
             entrydate,
             date_submitted,
@@ -272,7 +359,7 @@ with
             respondent_type,
             date_submitted,
             academic_year,
-        from family_gforms
+        from family_submissions
     )
 
 /* Staff submissions */
@@ -286,7 +373,11 @@ select
 
     respondent_type,
 
-    {{ dbt_utils.generate_surrogate_key(["respondent_employee_number"]) }} as staff_key,
+    if(
+        respondent_employee_number is not null,
+        {{ dbt_utils.generate_surrogate_key(["respondent_employee_number"]) }},
+        cast(null as string)
+    ) as staff_key,
 
     cast(null as string) as student_enrollment_key,
     cast(null as string) as student_contact_person_key,
@@ -321,7 +412,7 @@ select
         dbt_utils.generate_surrogate_key(
             [
                 "student_number",
-                "_dbt_source_relation",
+                "_dbt_source_project",
                 "academic_year",
                 "entrydate",
             ]

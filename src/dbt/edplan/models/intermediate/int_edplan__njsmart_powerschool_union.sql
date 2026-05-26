@@ -72,7 +72,6 @@ select
     academic_year,
     fiscal_year,
     effective_date,
-    effective_end_date,
     spedlep,
     special_education_code,
     special_education,
@@ -93,6 +92,20 @@ select
     ti_serv_other,
     ti_serv_physical,
     ti_serv_speech,
+
+    -- Hot staging trims within hot rows only; archive passes effective_end_date
+    -- through unchanged. When hot replaces an archived snapshot mid-FY, the
+    -- two emit rows for overlapping date ranges. Re-applying lead() across
+    -- the unioned set trims each row to day-before-next regardless of source.
+    coalesce(
+        date_sub(
+            lead(effective_date) over (
+                partition by student_number, fiscal_year order by effective_date asc
+            ),
+            interval 1 day
+        ),
+        date(fiscal_year, 6, 30)
+    ) as effective_end_date,
 
     row_number() over (
         partition by student_number, fiscal_year order by effective_date desc

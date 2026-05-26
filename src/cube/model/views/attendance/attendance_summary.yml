@@ -4,14 +4,25 @@ views:
       Aggregated student attendance for ADA, tardy rate, and truancy breakdowns.
       One row per filter slice — never per student-day. ADA is always
       SUM(attendance_value) / SUM(membership_value); never average a per-row
-      ratio. For point-in-time truancy or count-of-students snapshots, filter to
-      a single date_day. Truancy criteria are regional: Miami uses 15+ absences
-      in a 90-day rolling window; NJ regions use projected 50+ absences for the
-      year. attendance_category is the coarse rollup (Present, Absent, Tardy,
+      ratio. attendance_category is the coarse rollup (Present, Absent, Tardy,
       In-School Suspension, Out-of-School Suspension); use it for GROUP BY
       breakdowns instead of attempting to sum the boolean is_* flags. No direct
       student identifiers — demographic dimensions are aggregate breakdowns
       only.
+
+      Chronic absence query patterns — always use exactly one of the two: (1)
+      Year-end / year-over-year: filter is_latest_record = true and group by
+      academic_year. Returns the final CA snapshot per year. Use for "CA rate in
+      2023 vs 2024 vs 2025." (2) Point-in-time: filter to a single date_day.
+      Returns CA accumulated from the start of the year through that date. Use
+      for same-point-in-year comparisons like "CA as of November 1 each year."
+      Omitting both overcounts; combining both is valid only when the date is
+      today.
+
+      For point-in-time truancy or count-of-students snapshots, also filter to a
+      single date_day. Truancy criteria are regional: Miami uses 15+ absences in
+      a 90-day rolling window; NJ regions use projected 50+ absences for the
+      year.
 
     cubes:
       - join_path: attendance
@@ -19,12 +30,19 @@ views:
           - count_students
           - avg_daily_attendance
           - pct_tardy
+          - pct_ontime
           - count_truants
           - pct_truant
-          - academic_year
-          - semester
+          - count_absent_days
+          - count_chronically_absent
+          - pct_chronically_absent
+          - pct_tier_1_2
+          - pct_tier_3
           - attendance_category
+          - ada_tier
           - is_truant
+          - is_chronically_absent
+          - is_latest_record
 
       - join_path: attendance.dim_dates
         prefix: true
@@ -35,7 +53,7 @@ views:
           - quarter_number
           - school_week_start_date
 
-      - join_path: attendance.dim_locations
+      - join_path: attendance.dim_student_enrollments.dim_locations
         prefix: true
         includes:
           - location_name
@@ -44,7 +62,7 @@ views:
           - campus
           - city
 
-      - join_path: attendance.dim_locations.dim_regions
+      - join_path: attendance.dim_student_enrollments.dim_locations.dim_regions
         prefix: true
         includes:
           - region_name
@@ -63,11 +81,32 @@ views:
           - gender_identity
           - race
           - is_gifted
+
+      - join_path: attendance.dim_student_ell_status
+        prefix: true
+        includes:
           - is_ell
+
+      - join_path: attendance.dim_student_iep_status
+        prefix: true
+        includes:
+          - is_iep
+          - iep_classification
+          - special_education_code
+          - special_education_name
+          - special_education_placement
+
+      - join_path: attendance.dim_student_meal_eligibility_status
+        prefix: true
+        includes:
+          - is_meal_eligible
+          - meal_eligibility
 
       - join_path: attendance.dim_terms
         prefix: true
         includes:
+          - academic_year
+          - semester
           - term_name
           - term_code
           - term_type
@@ -77,7 +116,9 @@ views:
         - name: Attendance
           members:
             - attendance_category
+            - ada_tier
             - is_truant
+            - is_chronically_absent
         - name: Date
           members:
             - dim_dates_date_day
@@ -87,6 +128,8 @@ views:
             - dim_dates_school_week_start_date
         - name: Term
           members:
+            - dim_terms_academic_year
+            - dim_terms_semester
             - dim_terms_term_name
             - dim_terms_term_code
             - dim_terms_term_type
@@ -104,7 +147,14 @@ views:
             - dim_students_gender_identity
             - dim_students_race
             - dim_students_is_gifted
-            - dim_students_is_ell
+            - dim_student_ell_status_is_ell
+            - dim_student_iep_status_is_iep
+            - dim_student_iep_status_iep_classification
+            - dim_student_iep_status_special_education_code
+            - dim_student_iep_status_special_education_name
+            - dim_student_iep_status_special_education_placement
+            - dim_student_meal_eligibility_status_is_meal_eligible
+            - dim_student_meal_eligibility_status_meal_eligibility
         - name: Enrollment
           members:
             - dim_student_enrollments_grade_level
@@ -112,8 +162,7 @@ views:
             - dim_student_enrollments_is_retained_year
         - name: Filter
           members:
-            - academic_year
-            - semester
+            - is_latest_record
 
     access_policy:
       # No PII tier — view contains no direct student identifiers.

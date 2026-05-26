@@ -37,7 +37,13 @@ def build_edplan_sftp_sensor(
         run_requests = []
         cursor: dict = json.loads(context.cursor or "{}")
 
-        files = ssh_edplan.listdir_attr_r("Reports")
+        with (
+            ssh_edplan.get_connection() as connection,
+            connection.open_sftp() as sftp_client,
+        ):
+            files = ssh_edplan.listdir_attr_r(
+                sftp_client=sftp_client, remote_dir="Reports"
+            )
 
         asset_identifier = asset.key.to_python_identifier()
         context.log.info(asset_identifier)

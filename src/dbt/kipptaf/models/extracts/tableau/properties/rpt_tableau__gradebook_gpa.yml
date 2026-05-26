@@ -1,7 +1,5 @@
 models:
   - name: rpt_tableau__gradebook_gpa
-    config:
-      materialized: table
     columns:
       - name: _dbt_source_relation
         data_type: string
