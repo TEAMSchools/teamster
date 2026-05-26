@@ -474,6 +474,8 @@ the same partition.
   `grain projection: every selected column is functionally determined / by the partition key; not a mask for upstream duplicates`.
   If any projected column varies within the partition (`min()`, `first_value()`,
   etc.), use `dbt_utils.deduplicate()` instead.
+- **`dbt_utils.generate_surrogate_key` coerces nulls internally** —
+  `cast(null as <type>)` and bare `null` hash identically. Don't add the cast.
 - **No `GROUP BY ALL`** — list grouping columns explicitly. `GROUP BY ALL`
   breaks silently when upstream columns change.
 - **No `ORDER BY`** — ordering belongs in the reporting layer, not dbt models.
