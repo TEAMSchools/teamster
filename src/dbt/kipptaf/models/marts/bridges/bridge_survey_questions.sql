@@ -27,22 +27,16 @@ with
     ),
 
     manager_pairs as (
-        -- Synthesizes pairs for the historic Manager Survey archive, whose
-        -- original Alchemer survey_ids were not preserved. Live Manager
-        -- Survey pairs flow through google_forms_pairs above. Sourced from
-        -- the gforms items extension (not items) because the extension
-        -- carries historic shortnames (e.g. Q_5) that the live form
-        -- removed.
+        -- Sources directly from the historic Manager Survey Alchemer
+        -- archive. Original Alchemer survey_ids were not preserved, so
+        -- the synthetic 'historic_alchemer_Manager_survey' survey_id ties
+        -- archive responses to the dim_surveys archive_manager row.
         select distinct
             'historic_alchemer_Manager_survey' as survey_id,
-            abbreviation as question_shortname,
+            question_shortname,
             cast(null as bool) as is_required,
-        from {{ ref("stg_google_sheets__google_forms__form_items_extension") }}
-        where
-            form_id = '1cvp9RnYxbn-WGLXsYSupbEl2KhVhWKcOFbHR2CgUBH0'
-            and abbreviation is not null
-            and abbreviation
-            not in ('respondent_employee_number', 'subject_employee_number')
+        from {{ source("surveys", "stg_surveys__manager_survey_detail_archive") }}
+        where question_shortname is not null
     ),
 
     -- trunk-ignore(sqlfluff/ST03): referenced by string in dbt_utils.deduplicate
