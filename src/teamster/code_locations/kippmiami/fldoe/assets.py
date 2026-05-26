@@ -151,6 +151,36 @@ eoc = build_sftp_file_asset(
             ),
         }
     ),
+    slugify_replacements=[
+        [
+            "1. Expressions, Functions, and Data Analysis Performance",
+            "field_1_expressions_functions_and_data_analysis_performance",
+        ],
+        [
+            "2. Linear Relationships Performance",
+            "field_2_linear_relationships_performance",
+        ],
+        [
+            "3. Non-Linear Relationships Performance",
+            "field_3_non_linear_relationships_performance",
+        ],
+        [
+            "1. Origins and Purposes of Law and Government Performance",
+            "field_1_origins_and_purposes_of_law_and_government_performance",
+        ],
+        [
+            "2. Roles, Rights, and Responsibilities of Citizens Performance",
+            "field_2_roles_rights_and_responsibilities_of_citizens_performance",
+        ],
+        [
+            "3. Government Policies and Political Processes Performance",
+            "field_3_government_policies_and_political_processes_performance",
+        ],
+        [
+            "4. Organization and Function of Government Performance",
+            "field_4_organization_and_function_of_government_performance",
+        ],
+    ],
 )
 
 science = build_sftp_file_asset(
@@ -169,6 +199,24 @@ science = build_sftp_file_asset(
             "grade_level_subject": StaticPartitionsDefinition(["5", "8"]),
         }
     ),
+    slugify_replacements=[
+        [
+            "1. Nature of Science Performance",
+            "field_1_nature_of_science_performance",
+        ],
+        [
+            "2. Earth and Space Science Performance",
+            "field_2_earth_and_space_science_performance",
+        ],
+        [
+            "3. Physical Science Performance",
+            "field_3_physical_science_performance",
+        ],
+        [
+            "4. Life Science Performance",
+            "field_4_life_science_performance",
+        ],
+    ],
 )
 
 fte = build_sftp_file_asset(
