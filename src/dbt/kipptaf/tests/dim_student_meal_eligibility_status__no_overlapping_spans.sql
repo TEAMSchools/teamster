@@ -1,16 +1,3 @@
-{{
-    config(
-        meta={
-            "dagster": {
-                "ref": {
-                    "name": "dim_student_meal_eligibility_status",
-                    "package": "kipptaf",
-                },
-            }
-        }
-    )
-}}
-
 with
     spans as (
         select

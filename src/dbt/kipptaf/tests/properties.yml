@@ -22,6 +22,11 @@ data_tests:
       simultaneously-active classifications for the same student in the same
       source — most often caused by EdPlan emitting two snapshot rows with
       overlapping date ranges and different `spedlep` values.
+    config:
+      meta:
+        dagster:
+          ref:
+            name: dim_student_iep_status
 
   - name: dim_student_ell_status__no_overlapping_spans
     description: >-
@@ -30,6 +35,11 @@ data_tests:
       indicate a single source emitted two simultaneous LEP windows for the same
       student — typically the primary `lepbegindate` and a secondary
       `lepbegindate2` with overlapping ranges.
+    config:
+      meta:
+        dagster:
+          ref:
+            name: dim_student_ell_status
 
   - name: dim_student_meal_eligibility_status__no_overlapping_spans
     description: >-
@@ -37,3 +47,71 @@ data_tests:
       not overlap. The NJ leg trims each Titan annual window's end to
       day-before-next-row's-start so academic-year boundary overlaps don't
       surface in the dim.
+    config:
+      meta:
+        dagster:
+          ref:
+            name: dim_student_meal_eligibility_status
+
+  - name: test_assessment_completion
+    config:
+      enabled: false
+      meta:
+        dagster:
+          ref:
+            name: int_assessments__scaffold
+
+  - name: test_current_courses_on_lookup
+    config:
+      enabled: false
+      meta:
+        dagster:
+          ref:
+            name: base_powerschool__course_enrollments
+
+  - name: test_dim_regions_business_unit_code_coverage
+    description: >-
+      Asserts `dim_regions` has every `business_unit_code` that downstream FKs
+      target. `dim_regions` is derived from
+      `int_adp_workforce_now__workers__work_assignments__organizational_units__pivot`
+      filtered to `business_unit_code is not null` — if ADP stops emitting a
+      code that location/staff models still hash on, the chain orphans silently.
+      This test fires before that happens.
+    config:
+      severity: error
+      meta:
+        dagster:
+          ref:
+            name: dim_regions
+
+  - name: test_incorrect_student_number_pearson
+    config:
+      meta:
+        dagster:
+          ref:
+            name: int_pearson__all_assessments
+
+  - name: test_people__locations_drift
+    description: >-
+      Returns rows when the canonical-grain location master and the alias
+      crosswalk drift apart. Two-direction check: `missing_in_master` — alias
+      `clean_name` not present as a master `location_name` (INNER-join consumers
+      would silently drop these aliases; LEFT-join consumers would propagate
+      NULL canonical attrs); `missing_in_alias` — master `location_name` not
+      present as an alias `clean_name` (aliases are how upstream typed strings —
+      PowerSchool school names, ADP location strings, Zendesk slugs — resolve to
+      a canonical row, so a master row without aliases is unreachable from most
+      upstream lookups).
+    config:
+      severity: error
+      meta:
+        dagster:
+          ref:
+            name: stg_google_sheets__people__locations
+
+  - name: test_sf_contact_note_duplicate
+    config:
+      meta:
+        dagster:
+          ref:
+            name: stg_kippadb__contact_note
