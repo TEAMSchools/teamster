@@ -16,3 +16,4 @@ data_tests:
         dagster:
           ref:
             name: int_powerschool__ps_enrollment_all
+            package: powerschool
