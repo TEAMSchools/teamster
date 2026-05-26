@@ -4,6 +4,7 @@ select
     e.schoolid,
     e.yearid,
     e.fteid,
+
     f.schoolid as fte_schoolid,
     f.yearid as fte_yearid,
 from {{ ref("int_powerschool__ps_enrollment_all") }} as e

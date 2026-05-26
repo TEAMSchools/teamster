@@ -12,7 +12,6 @@ data_tests:
       reference one of PowerSchool's 999999-scoped FTEs, not a real-school FTE
       carried over from prior enrollment.
     config:
-      severity: warn
       meta:
         dagster:
           ref:
