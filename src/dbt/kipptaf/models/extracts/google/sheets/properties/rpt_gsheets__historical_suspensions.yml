@@ -24,8 +24,7 @@ models:
         data_type: string
       - name: region
         description: >
-          Region name (e.g., Newark, Camden, Miami, Paterson). Null for
-          org-level rows.
+          Region name (e.g., Newark, Camden, Miami). Null for org-level rows.
         data_type: string
       - name: school
         description: >
@@ -42,7 +41,7 @@ models:
       - name: pct_suspended_all_y1
         description: >
           Proportion of all students suspended at least once during the year
-          (any suspension type). Expressed as a decimal (0–1), rounded to two
+          (any suspension type). Expressed as a decimal (0–1), rounded to three
           decimal places.
         data_type: float64
       - name: pct_suspended_iep_y1
