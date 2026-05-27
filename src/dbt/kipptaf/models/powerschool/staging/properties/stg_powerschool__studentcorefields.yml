@@ -2,9 +2,11 @@ models:
   - name: stg_powerschool__studentcorefields
     description: >-
       Cross-region union of the PowerSchool student core-fields extension table.
-      One row per student per region. Carries the per-student LEP status flag
-      consumed by dim_students.is_ell. Functionally an intermediate — uniqueness
-      and contract enforcement live on the per-region staging models.
+      One row per student per region. Carries the per-student `lep_status` and
+      `spedlep` flags consumed by `dim_student_ell_status` (Miami leg) and
+      `dim_student_iep_status` (Paterson + Miami leg). Functionally an
+      intermediate — uniqueness and contract enforcement live on the per-region
+      staging models.
     columns:
       - name: studentsdcid
         data_type: int64
@@ -14,3 +16,9 @@ models:
       - name: lep_status
         data_type: boolean
         description: Student Limited English Proficiency status.
+      - name: _dbt_source_project
+        data_type: string
+        description: >-
+          Source-project discriminator (e.g. `kippnewark`, `kippcamden`)
+          extracted from `_dbt_source_relation`. Materialized at the union point
+          so downstream consumers can join and hash on a stable value.

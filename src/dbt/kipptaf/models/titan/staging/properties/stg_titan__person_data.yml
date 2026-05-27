@@ -2,3 +2,9 @@ models:
   - name: stg_titan__person_data
     config:
       materialized: table
+    columns:
+      - name: _dbt_source_project
+        description: >-
+          Source-project discriminator (e.g. `kippnewark`, `kippcamden`)
+          extracted from `_dbt_source_relation`. Materialized at the union point
+          so downstream consumers can join and hash on a stable value.

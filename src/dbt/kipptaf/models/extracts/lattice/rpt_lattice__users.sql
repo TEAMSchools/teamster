@@ -33,6 +33,12 @@ with
                     and home_department_name = 'Technology'
                 )
             )
+            and (
+                assignment_status in ('Active', 'Leave')
+                or worker_termination_date >= date_sub(
+                    current_date('{{ var("local_timezone") }}'), interval 30 day
+                )
+            )
     ),
 
     managers as (

@@ -23,7 +23,7 @@ models:
         data_type: string
         description: >-
           FK to dim_student_enrollments. Surrogate key derived from
-          student_number, _dbt_source_relation, academic_year, and entrydate.
+          student_number, _dbt_source_project, academic_year, and entrydate.
         constraints:
           - type: foreign_key
             to: ref('dim_student_enrollments')

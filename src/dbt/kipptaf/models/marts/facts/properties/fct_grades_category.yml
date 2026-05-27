@@ -11,7 +11,7 @@ models:
       - name: grades_category_key
         data_type: string
         description: >-
-          Surrogate key derived from cc_dcid, _dbt_source_relation, storecode,
+          Surrogate key derived from cc_dcid, _dbt_source_project, storecode,
           and storecode_type. Primary key for this fact.
         constraints:
           - type: primary_key

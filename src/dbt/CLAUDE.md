@@ -10,10 +10,6 @@ Fifteen dbt projects organized into three tiers:
 | **District-specific** | `kippnewark`, `kippcamden`, `kippmiami`, `kipppaterson`                                                            | Combine source packages for a single district                 |
 | **Network analytics** | `kipptaf`                                                                                                          | Cross-district marts, reporting, and extracts for the network |
 
-Data flows **source → district → kipptaf**: source-system projects are consumed
-as local dbt packages by district projects, which are in turn sourced by
-`kipptaf`.
-
 ## Project Dependency Map
 
 ```text
@@ -52,9 +48,7 @@ Exceptions: `kippnewark` adds `iready_schema: kippnj_iready` and
 
 Source-system projects declare variables with null/zero defaults
 (`bigquery_external_connection_name: null`, `current_academic_year: 0`, etc.).
-Consuming district projects override these in their own `dbt_project.yml`. This
-allows the same source project code to work across multiple district
-deployments.
+Consuming district projects override these in their own `dbt_project.yml`.
 
 ## External Table Pattern
 
@@ -95,6 +89,9 @@ source resolves to prod for `target=staging` (dbt Cloud CI), so coupling fails
 CI deterministically. Kipptaf-level test tightenings (e.g. restoring
 `severity: error` on a mart PK that depended on the upstream value change)
 belong in the follow-up PR.
+
+Alternative single-PR pattern (CI schema branching + cross-project clone): see
+`src/dbt/kipptaf/CLAUDE.md` → "Single-PR cross-project workflow".
 
 ## dbt logs persist locally
 
@@ -159,6 +156,17 @@ manifest". The prod manifest is refreshed by `.git/hooks/post-merge` on every
   profile, not `~/.dbt/profiles.yml`) and
   `--state /workspaces/teamster/src/dbt/<project>/target/prod` (main repo's
   manifest — skips a worktree-local parse).
+- `dbt clone --select 'package:<name>'` matches only source-system package
+  models, not district-level overrides with the same name. For cross-project
+  staging seeding, omit `--select`.
+
+## `dbt_utils.union_relations` is compile-time
+
+Compiles to the column intersection from source-table
+`INFORMATION_SCHEMA.COLUMNS`. New columns added at package-level staging don't
+surface at kipptaf-level consumers until district projects rebuild prod. For
+single-PR refactors, add transformations at the kipptaf-level wrapper, not at
+package level.
 
 ## Stale dev tables shadow `--defer`
 
@@ -194,18 +202,23 @@ change.
   project datasets. Use the region schema pattern (dev-only prefix).
 
 A single integration may have both files under the same source `name:` — dbt
-merges at parse time. When both exist **in the same project**,
-`sources-bigquery.yml` may omit `schema:` ONLY for tables also declared in
-`sources-external.yml`. Tables declared only in the BQ file do NOT inherit and
-resolve to bare `<source_name>` (likely a non-existent dataset). However, in
-**source-system packages** consumed by district projects, the cross-file schema
-merge does not bridge the package/consumer boundary — the consuming project's
-schema override won't reach the package-level BQ file. In that case,
+merges at parse time.
+
+**When both files exist in the same project:**
+
+- `sources-bigquery.yml` may omit `schema:` ONLY for tables also declared in
+  `sources-external.yml`. Tables declared only in the BQ file do NOT inherit and
+  resolve to bare `<source_name>` (likely a non-existent dataset).
+- Never mix `external:` and non-external active tables in one file.
+
+**In source-system packages consumed by district projects**, the cross-file
+schema merge does not bridge the package/consumer boundary — the consuming
+project's schema override won't reach the package-level BQ file. In that case,
 `sources-bigquery.yml` must include its own `schema:` (plain `var()` without
 target-conditional prefixes, since BQ-native tables are static production data).
-Never mix `external:` and non-external active tables in one file. Source-system
-projects place source files alongside or inside their model subdirectories, not
-at the top-level `models/` directory.
+
+Source-system projects place source files alongside or inside their model
+subdirectories, not at the top-level `models/` directory.
 
 ### `{{ project_name }}` in source schemas
 
@@ -338,6 +351,16 @@ Top-level `description` on a singular test must go in a properties yml under
 `config.description`, which dbt docs doesn't read. After adding/editing the yml,
 run `dbt parse --no-partial-parse`; partial parse caches the unbound state.
 
+### Singular-test `meta.dagster.ref` needs `package:` for cross-package refs
+
+dagster-dbt resolves `meta.dagster.ref` via `(name, package, version)`. Omitting
+`package:` defaults to the running project — so a test under
+`src/dbt/<source>/tests/` referencing a model in its own package silently misses
+the lookup and logs `AssetObservation` across all parents instead of an
+`AssetCheckResult` on the intended asset. Always set `package: <source>` for
+source-system package tests. Tests in `src/dbt/kipptaf/tests/` don't need it
+(refs default to kipptaf).
+
 ### Generic test syntax (dbt 1.11+)
 
 All generic tests (`relationships`, `accepted_values`,
@@ -411,6 +434,16 @@ intended join column, which then fan out at the join site. Use
 `(col = 'sentinel') asc` in `order_by` to demote a specific value when rows tie
 on the chosen partition key.
 
+**Picked-row attrs include NULL — don't `coalesce` to a fallback row.** When
+`dbt_utils.deduplicate(partition_by=X, order_by=Y)` replicates
+`first_value(...) over (partition by X order by Y)` canonical-pick semantics,
+the picked row's value is authoritative including NULL.
+`coalesce(picked.attr, fallback.attr)` silently substitutes a different row's
+value when the canonical pick is NULL — breaks downstream GROUP BY / uniqueness
+invariants. Use
+`if(<row-belongs-to-picked-partition>, picked.attr, fallback.attr)` to branch on
+row-membership, not on value-nullness.
+
 ### sqlfluff ST03 on dbt_utils.deduplicate input CTEs
 
 A CTE referenced only via `dbt_utils.deduplicate(relation="<cte>")` fails
@@ -451,11 +484,18 @@ the same partition.
   case — that rebuilds the external table and forces sheet-header coordination.
 - **No `GROUP BY` without aggregation** — use `DISTINCT` instead (see next rule
   for deduplication constraints).
-- **No manual deduplication** — do not use `SELECT DISTINCT` or
-  `qualify row_number() over (...) = 1` for deduplication. Use
-  `dbt_utils.deduplicate()` with an explicit `partition_by` and `order_by`. If
-  `DISTINCT` is truly unavoidable, it must include a `-- TODO:` comment
-  explaining why and what needs to be fixed upstream.
+- **No manual deduplication for dirty data** — do not use `SELECT DISTINCT` or
+  `qualify row_number() over (...) = 1` to work around upstream duplicates. Use
+  `dbt_utils.deduplicate()` with explicit `partition_by` and `order_by`; add
+  `-- TODO:` naming the upstream fix.
+- **DISTINCT is allowed for pure grain projection** — every projected column is
+  functionally determined by the partition key, so byte-identical tuples
+  coalesce. Annotate with a two-line comment:
+  `grain projection: every selected column is functionally determined / by the partition key; not a mask for upstream duplicates`.
+  If any projected column varies within the partition (`min()`, `first_value()`,
+  etc.), use `dbt_utils.deduplicate()` instead.
+- **`dbt_utils.generate_surrogate_key` coerces nulls internally** —
+  `cast(null as <type>)` and bare `null` hash identically. Don't add the cast.
 - **No `GROUP BY ALL`** — list grouping columns explicitly. `GROUP BY ALL`
   breaks silently when upstream columns change.
 - **No `ORDER BY`** — ordering belongs in the reporting layer, not dbt models.
@@ -472,7 +512,16 @@ the same partition.
 
 - **`ON` vs `WHERE`** — row filters on the preserved table belong in `WHERE`,
   not `ON`. For `LEFT JOIN`, a filter in `ON` preserves non-matching rows.
-  Exception: `FULL JOIN` conditions referencing one side stay in `ON`.
+  Exception: `FULL JOIN` conditions referencing one side stay in `ON` — moving
+  them to `WHERE` collapses the join to an inner.
+- **DATE literal across UNION ALL branches needs explicit cast**: BQ coerces
+  `'9999-12-31'` to DATE inside `coalesce(date_col, ...)` but NOT across UNION
+  ALL branches when one side is CTE-typed STRING. Use
+  `cast('9999-12-31' as date)`. Avoid the `date '9999-12-31'` typed-literal
+  form.
+- **Pre-compute `lag()` / `format()` inputs in the source CTE** so the
+  comparison CTE compares plain columns. Avoids duplicating the expression
+  inside `lag(expr)` and the bare-column reference.
 - **Timezone-aware today**:
 
   ```sql

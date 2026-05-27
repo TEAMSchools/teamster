@@ -13,15 +13,13 @@ with
             s.module_type,
             s.module_code,
             s.region,
+            s._dbt_source_project,
             s.powerschool_school_id,
             s.grade_level_id,
             s.is_internal_assessment,
             s.is_replacement,
             s.student_assessment_id,
             s.canonical_assessment_id,
-            s.canonical_title,
-            s.canonical_administered_at,
-            s.canonical_grade_level_id,
 
             asr.response_type,
             asr.response_type_id,
@@ -34,6 +32,14 @@ with
 
             pb.canonical_performance_band_set_id,
 
+            if(s.is_internal_assessment, c.title, s.title) as canonical_title,
+            if(
+                s.is_internal_assessment, c.administered_date, s.administered_at
+            ) as canonical_administered_at,
+            if(
+                s.is_internal_assessment, c.grade_level_id, s.grade_level_id
+            ) as canonical_grade_level_id,
+
             if(s.date_taken < date '2000-01-01', null, s.date_taken) as date_taken,
         from {{ ref("int_assessments__scaffold") }} as s
         left join
@@ -44,25 +50,25 @@ with
             on s.assessment_id = pb.assessment_id
             and asr.response_type = pb.response_type
             and asr.response_type_id = pb.response_type_id
+        left join
+            {{ ref("int_assessments__assessments_canonical") }} as c
+            on s.canonical_assessment_id = c.canonical_assessment_id
     ),
 
-    -- Canonical-grain rollup of school/region from response-grain scaffold rows.
-    -- Without this, group-by aggregates would need min() per column, and
-    -- independent mins can pick from different rows in the same partition. Per
-    -- src/dbt/CLAUDE.md "Canonical attributes from a partition", first_value
-    -- on a deterministic ordering picks both attributes from the same row.
-    -- Cross-school groups exist here because of upstream Illuminate
-    -- canonicalization carrying wrong academic_year tags onto duplicated
-    -- assessments — tracked in #3801. Once #3801 is resolved, the canonical
-    -- school/region selection should collapse to a single value per partition
-    -- and this CTE can be removed (reverting school/region to plain group-by
-    -- columns or pruning them entirely if they move to a per-consumer
-    -- enrollment join).
-    canonical_attrs as (
+    -- Per-partition tiebreak for location columns. NOT a canonical attribute —
+    -- school / _dbt_source_project are per-response location data that vary
+    -- across rows in the same (student, canonical_assessment, is_replacement)
+    -- partition because of upstream Illuminate canonicalization defects
+    -- (#3801) carrying wrong academic_year tags onto duplicated assessments.
+    -- first_value on a deterministic ordering picks both columns from the
+    -- same row so independent min() drift can't split them. Once #3801 is
+    -- resolved, the partition becomes pure and this CTE can be removed.
+    tiebroken_attrs as (
         select
             *,
-            first_value(powerschool_school_id) over (w) as canonical_school_id,
-            first_value(region) over (w) as canonical_region,
+            first_value(powerschool_school_id) over (w) as selected_school_id,
+            first_value(region) over (w) as selected_region,
+            first_value(_dbt_source_project) over (w) as selected_dbt_source_project,
         from scaffold_responses
         window
             w as (
@@ -106,11 +112,12 @@ with
 
             min(date_taken) as date_taken,
 
-            -- canonical_school_id / canonical_region are constant per partition
-            -- (windowed in canonical_attrs). any_value() makes that explicit
-            -- without independent-min() drift. See #3801.
-            any_value(canonical_school_id) as powerschool_school_id,
-            any_value(canonical_region) as region,
+            -- selected_* values are constant per partition (windowed in
+            -- tiebroken_attrs). any_value() makes that explicit without
+            -- independent-min() drift. See #3801.
+            any_value(selected_school_id) as powerschool_school_id,
+            any_value(selected_region) as region,
+            any_value(selected_dbt_source_project) as _dbt_source_project,
 
             count(distinct assessment_id) as n_assessments,
 
@@ -121,7 +128,7 @@ with
             round(
                 safe_divide(sum(points), sum(points_possible)) * 100, 1
             ) as percent_correct,
-        from canonical_attrs
+        from tiebroken_attrs
         where is_internal_assessment
         group by
             illuminate_student_id,
@@ -157,6 +164,7 @@ with
             module_type,
             module_code,
             region,
+            _dbt_source_project,
             is_internal_assessment,
             is_replacement,
             response_type,
@@ -191,6 +199,7 @@ with
             module_type,
             module_code,
             region,
+            _dbt_source_project,
             is_internal_assessment,
             is_replacement,
             response_type,
@@ -228,6 +237,7 @@ select
     ru.module_type,
     ru.module_code,
     ru.region,
+    ru._dbt_source_project,
     ru.powerschool_school_id,
     ru.is_internal_assessment,
     ru.is_replacement,

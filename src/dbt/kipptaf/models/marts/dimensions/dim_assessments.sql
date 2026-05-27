@@ -1,24 +1,19 @@
 with
-    -- DISTINCT projects from response grain (one row per student) to
-    -- definition grain (one row per assessment definition). Per-student
-    -- columns are not in the projection, so byte-identical projected tuples
-    -- are coalesced. Not a workaround for dirty data — the projection IS
-    -- the operation. Per-administration attributes live on
-    -- dim_assessment_administrations.
     -- Member-grain: one row per actual Illuminate assessment_id. Bridge
     -- table `bridge_assessment_administration_members` maps each
     -- canonical-grain `dim_assessment_administrations` row to its member(s)
     -- via this dim's `assessment_key`.
     illuminate_assessments as (
         select
-            assessment_id as source_assessment_id,
-            title,
-            subject_area,
-            scope,
-            module_code,
-            module_type,
-            grade_level,
-            is_internal_assessment,
+            m.assessment_id as source_assessment_id,
+            m.title,
+            m.subject_area,
+            m.scope,
+            m.module_code,
+            m.module_type,
+            m.is_internal_assessment,
+
+            c.grade_level,
 
             'illuminate' as assessment_type,
             'enrollment' as assessment_scope,
@@ -27,88 +22,207 @@ with
             cast(null as string) as aligned_academic_subject,
             cast(null as string) as credit_category,
             cast(null as string) as test_type,
-        from {{ ref("int_assessments__assessments") }}
-        where is_internal_assessment
+        from {{ ref("int_assessments__assessments_members") }} as m
+        inner join
+            {{ ref("int_assessments__assessments_canonical") }} as c
+            on m.canonical_assessment_id = c.canonical_assessment_id
+        where m.is_internal_assessment
     ),
 
-    -- DISTINCT projects from response grain to definition grain (see
-    -- illuminate_assessments comment above).
-    -- Collapse historical title variants (NJSLA / PARCC share a module_code
-    -- per grade) to one row per assessment_key hash input set. NJ kept
-    -- distinct from FL via assessment_type='state_nj' (FL state tests share
-    -- module_codes like ELA05/MAT05/SCI05 but are functionally different
-    -- assessments).
-    state_nj as (
-        select
+    -- grain projection: every selected column is functionally determined
+    -- by the partition key; not a mask for upstream duplicates
+    state_nj_parcc as (
+        select distinct
+            subject_area,
             discipline as scope,
+            module_code,
             test_grade as grade_level,
 
-            cast(null as int64) as source_assessment_id,
-            cast(null as string) as module_type,
-
-            'state_nj' as assessment_type,
+            'state_nj_parcc' as assessment_type,
+            'PARCC' as title,
             false as is_internal_assessment,
             'enrollment' as assessment_scope,
 
+            cast(null as int64) as source_assessment_id,
+            cast(null as string) as module_type,
             cast(null as string) as combined_academic_subject,
             cast(null as string) as aligned_academic_subject,
             cast(null as string) as credit_category,
             cast(null as string) as test_type,
-
-            if(
-                `subject` = 'English Language Arts/Literacy',
-                'English Language Arts',
-                `subject`
-            ) as subject_area,
-
-            case
-                testcode
-                when 'SC05'
-                then 'SCI05'
-                when 'SC08'
-                then 'SCI08'
-                when 'SC11'
-                then 'SCI11'
-                else testcode
-            end as module_code,
-
-            min(assessment_name) as title,
-        from {{ ref("int_pearson__all_assessments") }}
+        from {{ ref("stg_pearson__parcc") }}
         where testscalescore is not null
-        group by discipline, test_grade, `subject`, testcode
     ),
 
-    -- Collapse historical title variants (FAST / FSA share a test_code per
-    -- grade) to one row per assessment_key hash input set. FL kept distinct
-    -- from NJ via assessment_type='state_fl'.
-    state_fl as (
-        select
+    -- grain projection: every selected column is functionally determined
+    -- by the partition key; not a mask for upstream duplicates
+    state_nj_njsla as (
+        select distinct
+            subject_area,
+            discipline as scope,
+            module_code,
+            test_grade as grade_level,
+
+            'state_nj_njsla' as assessment_type,
+            'NJSLA' as title,
+            false as is_internal_assessment,
+            'enrollment' as assessment_scope,
+
+            cast(null as int64) as source_assessment_id,
+            cast(null as string) as module_type,
+            cast(null as string) as combined_academic_subject,
+            cast(null as string) as aligned_academic_subject,
+            cast(null as string) as credit_category,
+            cast(null as string) as test_type,
+        from {{ ref("stg_pearson__njsla") }}
+        where testscalescore is not null
+    ),
+
+    -- grain projection: every selected column is functionally determined
+    -- by the partition key; not a mask for upstream duplicates
+    state_nj_njsla_science as (
+        select distinct
+            subject_area,
+            discipline as scope,
+            module_code,
+            test_grade as grade_level,
+
+            'state_nj_njsla_science' as assessment_type,
+            'NJSLA Science' as title,
+            false as is_internal_assessment,
+            'enrollment' as assessment_scope,
+
+            cast(null as int64) as source_assessment_id,
+            cast(null as string) as module_type,
+            cast(null as string) as combined_academic_subject,
+            cast(null as string) as aligned_academic_subject,
+            cast(null as string) as credit_category,
+            cast(null as string) as test_type,
+        from {{ ref("stg_pearson__njsla_science") }}
+        where testscalescore is not null
+    ),
+
+    -- grain projection: every selected column is functionally determined
+    -- by the partition key; not a mask for upstream duplicates
+    state_nj_njgpa as (
+        select distinct
+            subject_area,
+            discipline as scope,
+            module_code,
+            test_grade as grade_level,
+
+            'state_nj_njgpa' as assessment_type,
+            'NJGPA' as title,
+            false as is_internal_assessment,
+            'enrollment' as assessment_scope,
+
+            cast(null as int64) as source_assessment_id,
+            cast(null as string) as module_type,
+            cast(null as string) as combined_academic_subject,
+            cast(null as string) as aligned_academic_subject,
+            cast(null as string) as credit_category,
+            cast(null as string) as test_type,
+        from {{ ref("stg_pearson__njgpa") }}
+        where testscalescore is not null
+    ),
+
+    -- grain projection: every selected column is functionally determined
+    -- by the partition key; not a mask for upstream duplicates
+    state_fl_fast as (
+        select distinct
             assessment_subject as subject_area,
             discipline as scope,
             test_code as module_code,
+            grade_level,
 
-            cast(assessment_grade as int) as grade_level,
-
-            cast(null as int64) as source_assessment_id,
-            cast(null as string) as module_type,
-
-            'state_fl' as assessment_type,
+            'state_fl_fast' as assessment_type,
+            'FAST' as title,
             false as is_internal_assessment,
             'enrollment' as assessment_scope,
 
+            cast(null as int64) as source_assessment_id,
+            cast(null as string) as module_type,
             cast(null as string) as combined_academic_subject,
             cast(null as string) as aligned_academic_subject,
             cast(null as string) as credit_category,
             cast(null as string) as test_type,
-
-            min(assessment_name) as title,
-        from {{ ref("int_fldoe__all_assessments") }}
+        from {{ ref("stg_fldoe__fast") }}
         where scale_score is not null
-        group by assessment_subject, discipline, test_code, assessment_grade
     ),
 
-    -- DISTINCT projects from response grain to definition grain (see
-    -- illuminate_assessments comment above).
+    -- grain projection: every selected column is functionally determined
+    -- by the partition key; not a mask for upstream duplicates
+    state_fl_fsa as (
+        select distinct
+            assessment_subject as subject_area,
+            discipline as scope,
+            test_code as module_code,
+            grade_level,
+
+            'state_fl_fsa' as assessment_type,
+            'FSA' as title,
+            false as is_internal_assessment,
+            'enrollment' as assessment_scope,
+
+            cast(null as int64) as source_assessment_id,
+            cast(null as string) as module_type,
+            cast(null as string) as combined_academic_subject,
+            cast(null as string) as aligned_academic_subject,
+            cast(null as string) as credit_category,
+            cast(null as string) as test_type,
+        from {{ ref("stg_fldoe__fsa") }}
+        where scale_score is not null
+    ),
+
+    -- grain projection: every selected column is functionally determined
+    -- by the partition key; not a mask for upstream duplicates
+    state_fl_eoc as (
+        select distinct
+            assessment_subject as subject_area,
+            discipline as scope,
+            test_code as module_code,
+            grade_level,
+
+            'state_fl_eoc' as assessment_type,
+            'EOC' as title,
+            false as is_internal_assessment,
+            'enrollment' as assessment_scope,
+
+            cast(null as int64) as source_assessment_id,
+            cast(null as string) as module_type,
+            cast(null as string) as combined_academic_subject,
+            cast(null as string) as aligned_academic_subject,
+            cast(null as string) as credit_category,
+            cast(null as string) as test_type,
+        from {{ ref("stg_fldoe__eoc") }}
+        where scale_score is not null
+    ),
+
+    -- grain projection: every selected column is functionally determined
+    -- by the partition key; not a mask for upstream duplicates
+    state_fl_science as (
+        select distinct
+            assessment_subject as subject_area,
+            discipline as scope,
+            test_code as module_code,
+            grade_level,
+
+            'state_fl_science' as assessment_type,
+            'Science' as title,
+            false as is_internal_assessment,
+            'enrollment' as assessment_scope,
+
+            cast(null as int64) as source_assessment_id,
+            cast(null as string) as module_type,
+            cast(null as string) as combined_academic_subject,
+            cast(null as string) as aligned_academic_subject,
+            cast(null as string) as credit_category,
+            cast(null as string) as test_type,
+        from {{ ref("stg_fldoe__science") }}
+        where scale_score is not null
+    ),
+
+    -- grain projection: every selected column is functionally determined
+    -- by the partition key; not a mask for upstream duplicates
     college_assessments as (
         select distinct
             scope as title,
@@ -137,6 +251,8 @@ with
     -- 'sat_math'). Practice derives a parallel module_code by concatenating
     -- scope and subject_area so SAT Math, SAT Reading, etc. each get their
     -- own assessment_key.
+    -- grain projection: every selected column is functionally determined
+    -- by the partition key; not a mask for upstream duplicates
     practice_assessments as (
         select distinct
             scope,
@@ -162,10 +278,11 @@ with
         from {{ ref("int_assessments__college_assessment_practice") }}
     ),
 
-    -- DISTINCT projects from response grain to definition grain (see
-    -- illuminate_assessments comment above).
+    -- grain projection: every selected column is functionally determined
+    -- by the partition key; not a mask for upstream duplicates
     ap_assessments as (
         select distinct
+            title,
             test_subject as subject_area,
             ps_ap_course_subject_code as module_code,
 
@@ -182,8 +299,6 @@ with
             cast(null as string) as aligned_academic_subject,
             cast(null as string) as credit_category,
             cast(null as string) as test_type,
-
-            concat('AP ', test_subject) as title,
         from {{ ref("int_assessments__ap_assessments") }}
     ),
 
@@ -200,10 +315,28 @@ with
         from illuminate_assessments
         union all
         select {{ union_cols }},
-        from state_nj
+        from state_nj_njgpa
         union all
         select {{ union_cols }},
-        from state_fl
+        from state_nj_njsla
+        union all
+        select {{ union_cols }},
+        from state_nj_njsla_science
+        union all
+        select {{ union_cols }},
+        from state_nj_parcc
+        union all
+        select {{ union_cols }},
+        from state_fl_eoc
+        union all
+        select {{ union_cols }},
+        from state_fl_fast
+        union all
+        select {{ union_cols }},
+        from state_fl_fsa
+        union all
+        select {{ union_cols }},
+        from state_fl_science
         union all
         select {{ union_cols }},
         from college_assessments

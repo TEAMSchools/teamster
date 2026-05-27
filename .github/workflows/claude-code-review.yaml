@@ -43,16 +43,16 @@ jobs:
             https://github.com/dagster-io/skills.git
           plugins: |
             superpowers@claude-plugins-official
+            context7@claude-plugins-official
             dagster-expert@dagster
             dignified-python@dagster
             dbt@dbt-agent-marketplace
           track_progress: true
           prompt: >-
-            Use the superpowers:requesting-code-review skill to review ${{
-            github.repository }}/pull/${{ github.event.pull_request.number }}.
-            Apply dignified-python for Python standards, dagster-expert for
-            Dagster assets and pipelines, and
-            dbt:using-dbt-for-analytics-engineering for dbt models and
+            /requesting-code-review ${{ github.repository }}/pull/${{
+            github.event.pull_request.number }}. Apply dignified-python for
+            Python standards, dagster-expert for Dagster assets and pipelines,
+            and dbt:using-dbt-for-analytics-engineering for dbt models and
             transformations.
           allowed_bots: dbt-cloud
           include_fix_links: false
