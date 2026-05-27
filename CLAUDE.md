@@ -157,7 +157,9 @@ file; domain specifics live in the nearest subdirectory CLAUDE.md.
   check-only linters fire at `pre-push` and in CI. If a session reports "trunk
   clean" on a SQL/YAML change based on commit hooks alone, run
   `.trunk/tools/trunk check --force <files>` to verify before claiming the
-  change is lint-clean.
+  change is lint-clean. Run from inside the worktree —
+  `trunk check --force <abs-worktree-paths>` from the main repo silently returns
+  "no applicable linters".
 
 - **Linter**: Suppress with `trunk-ignore(linter/rule): reason` (e.g.
   `# trunk-ignore(bandit/B603): static argv, no shell`) on the line immediately
