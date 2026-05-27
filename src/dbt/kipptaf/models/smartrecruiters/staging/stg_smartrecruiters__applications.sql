@@ -74,6 +74,9 @@ with
                 time_in_application_status_interview_phone_screen_requested as int
             ) as time_in_application_status_interview_phone_screen_requested,
             cast(application_field_resume_score as int) as resume_score,
+            cast(
+                application_field_phone_interview_score as int
+            ) as phone_interview_score,
 
             cast(average_rating as numeric) as average_rating,
 

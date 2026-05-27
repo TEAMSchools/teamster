@@ -20,7 +20,7 @@ with
             a.time_in_application_state_in_review,
             a.time_in_application_state_lead,
             a.school_shared_with,
-            a.application_field_phone_interview_score as phone_interview_score,
+            a.phone_interview_score,
             a.application_reason_for_rejection as reason_for_rejection,
             a.recruiters as recruiter_multiple,
             a.subject_preference as subject_preference_multiple,
