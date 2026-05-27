@@ -1,10 +1,10 @@
 models:
   - name: int_assessments__assessments_canonical
     description: >-
-      Canonical-grain projection of `int_assessments__assessments`. One row per
-      `canonical_assessment_id` — the logical assessment that may span multiple
-      regional members (e.g., the four regional copies of the same Q2 ELA module
-      collapse to one canonical row). Canonical attrs (`title`,
+      Canonical-grain projection of `int_assessments__assessments_members`. One
+      row per `canonical_assessment_id` — the logical assessment that may span
+      multiple regional members (e.g., the four regional copies of the same Q2
+      ELA module collapse to one canonical row). Canonical attrs (`title`,
       `administered_date`, `grade_level_id`) are picked from the member with the
       lowest `assessment_id` in the canonical group via
       `dbt_utils.deduplicate(partition_by="canonical_assessment_id",
@@ -20,14 +20,14 @@ models:
           - not_null
           - relationships:
               arguments:
-                to: ref('int_assessments__assessments')
+                to: ref('int_assessments__assessments_members')
                 field: canonical_assessment_id
         data_type: int64
         description: >-
           Primary key. The lowest `assessment_id` within the canonical partition
           `(academic_year, scope, subject_area, module_code, grade_level_id)`.
-          Members of `int_assessments__assessments` FK here via their own
-          `canonical_assessment_id` column.
+          Members of `int_assessments__assessments_members` FK here via their
+          own `canonical_assessment_id` column.
       - name: regions_array
         data_tests:
           - not_null
@@ -44,7 +44,8 @@ models:
         data_type: string
         description: >-
           `title` from the canonical member (lowest `assessment_id` in the
-          group). Equivalent to `int_assessments__assessments.canonical_title`.
+          group). Equivalent to
+          `int_assessments__assessments_members.canonical_title`.
       - name: administered_date
         data_type: date
         description: >-
@@ -54,7 +55,7 @@ models:
         data_type: int64
         description: >-
           `grade_level_id` from the canonical member. Equivalent to
-          `int_assessments__assessments.canonical_grade_level_id`.
+          `int_assessments__assessments_members.canonical_grade_level_id`.
       - name: grade_level
         data_type: int64
         description: >-
