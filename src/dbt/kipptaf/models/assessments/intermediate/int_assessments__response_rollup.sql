@@ -21,11 +21,13 @@ with
             s.student_assessment_id,
             s.canonical_assessment_id,
 
-            coalesce(c.title, s.title) as canonical_title,
-            coalesce(
-                c.administered_date, s.administered_at
+            if(s.is_internal_assessment, c.title, s.title) as canonical_title,
+            if(
+                s.is_internal_assessment, c.administered_date, s.administered_at
             ) as canonical_administered_at,
-            coalesce(c.grade_level_id, s.grade_level_id) as canonical_grade_level_id,
+            if(
+                s.is_internal_assessment, c.grade_level_id, s.grade_level_id
+            ) as canonical_grade_level_id,
 
             asr.response_type,
             asr.response_type_id,
