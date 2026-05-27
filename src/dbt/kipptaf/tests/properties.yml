@@ -115,3 +115,18 @@ data_tests:
         dagster:
           ref:
             name: stg_kippadb__contact_note
+
+  - name: int_collegeboard__ap_unpivot__crosswalk_resolves
+    description: >-
+      Returns one row per `stg_collegeboard__ap.ap_number_ap_id` that has no
+      matching `college_board_id` in
+      `stg_google_sheets__collegeboard__ap_id_crosswalk`. Each row is an
+      unresolved CB-file student whose AP scores are dropped from
+      `int_assessments__ap_assessments`. Ops signal to add the missing IDs to
+      the crosswalk; failure rows persist in `kipptaf_dbt_test__audit` for
+      direct query.
+    config:
+      meta:
+        dagster:
+          ref:
+            name: int_collegeboard__ap_unpivot
