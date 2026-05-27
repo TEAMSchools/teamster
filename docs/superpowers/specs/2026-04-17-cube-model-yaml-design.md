@@ -104,16 +104,18 @@ dbt mart properties already carry `config.meta.contains_pii: true` on sensitive
 columns and populated `description:` fields on all columns. Cube dimensions
 should reflect this metadata rather than duplicate or diverge from it.
 
-**PII flags:** The target state is for `meta: {pii: true}` on Cube dimensions to
-be auto-generated from dbt's `config.meta.contains_pii: true`, and for access
-policy annotations to be auto-generated from those flags (issue #3727, open).
-Until #3727 lands, hand-author `meta: {pii: true}` in Cube YAML for any
-dimension whose source column carries `contains_pii: true` in the dbt property
-file.
+**PII flags — first pass:** When implementing any domain cube, open the source
+dbt model's property YAML and check each column for
+`config.meta.contains_pii: true`. For every matching column, add
+`meta: {pii: true}` to the corresponding Cube dimension. Do this on the first
+pass — do not defer it. Automation via #3727 (open) will eventually generate
+these flags and access policy annotations from the dbt manifest, but until that
+lands the tagging is manual.
 
-**Descriptions:** Cube dimension `description:` fields are sourced from dbt
-column descriptions via metadata sync (#3764, live). Do not hand-author
-descriptions in Cube YAML — they will be overwritten by sync.
+**Descriptions — first pass:** Do not hand-author `description:` fields on Cube
+dimensions. Metadata sync (#3764, live) populates them automatically from dbt
+column descriptions. Any description written in Cube YAML will be overwritten by
+sync.
 
 **dbt `config.meta` example (source of truth):**
 
