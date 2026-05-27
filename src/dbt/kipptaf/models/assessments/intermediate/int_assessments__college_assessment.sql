@@ -99,6 +99,24 @@ with
         from scores
     ),
 
+    -- trunk-ignore(sqlfluff/ST03): referenced via dbt_utils.deduplicate below
+    growth_candidates as (
+        select *
+        from case_calcs
+        where subject_area in ('Composite', 'Combined') and test_date is not null
+    ),
+
+    -- TODO(#3802): remove dedup once Salesforce dup records cleaned up
+    growth_dedup as (
+        {{
+            dbt_utils.deduplicate(
+                relation="growth_candidates",
+                partition_by="student_number, scope, test_date",
+                order_by="surrogate_key",
+            )
+        }}
+    ),
+
     growth as (
         select
             academic_year,
@@ -111,8 +129,7 @@ with
                 partition by student_number, scope order by test_date asc
             ) as previous_total_score_change,
 
-        from case_calcs
-        where subject_area in ('Composite', 'Combined') and test_date is not null
+        from growth_dedup
     ),
 
     max_score as (
