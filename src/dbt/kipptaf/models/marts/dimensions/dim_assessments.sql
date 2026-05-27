@@ -5,14 +5,15 @@ with
     -- via this dim's `assessment_key`.
     illuminate_assessments as (
         select
-            assessment_id as source_assessment_id,
-            title,
-            subject_area,
-            scope,
-            module_code,
-            module_type,
-            grade_level,
-            is_internal_assessment,
+            m.assessment_id as source_assessment_id,
+            m.title,
+            m.subject_area,
+            m.scope,
+            m.module_code,
+            m.module_type,
+            m.is_internal_assessment,
+
+            c.grade_level,
 
             'illuminate' as assessment_type,
             'enrollment' as assessment_scope,
@@ -21,8 +22,11 @@ with
             cast(null as string) as aligned_academic_subject,
             cast(null as string) as credit_category,
             cast(null as string) as test_type,
-        from {{ ref("int_assessments__assessments_members") }}
-        where is_internal_assessment
+        from {{ ref("int_assessments__assessments_members") }} as m
+        inner join
+            {{ ref("int_assessments__assessments_canonical") }} as c
+            on m.canonical_assessment_id = c.canonical_assessment_id
+        where m.is_internal_assessment
     ),
 
     -- grain projection: every selected column is functionally determined
