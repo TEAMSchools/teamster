@@ -38,13 +38,27 @@ here; `cube.js` auth and infrastructure setup are in the infrastructure spec.
 
 ## Design Decisions
 
-### One cube file per domain, not one per dbt model
+### One cube per analytical grain, not one per dbt model
 
-Cube's join engine does not guarantee independently-chained SCD2 cubes are
-sliced to the same date. Separate cubes for `dim_work_assignment_jobs` and
-`dim_work_assignment_locations` could resolve to different effective periods,
-producing incorrect headcount results. Period intersection in the domain cube's
-`sql:` block eliminates this by computing the overlap before Cube sees the data.
+Each distinct analytical grain gets its own cube file. Ask three questions for
+any dbt model:
+
+**Does it have a distinct fact grain analysts query independently?** It gets its
+own cube. Each fact table maps to one cube: `fct_student_attendance_daily` →
+`student_attendance`, `fct_student_attendance_interventions` →
+`attendance_interventions`. Multiple fact grains in a domain → multiple cubes.
+Attendance has three; gradebook has four; observations has three.
+
+**Is it a lookup dim or bridge with no independent analytical grain?** Inline it
+into the parent cube's `sql:` block. `dim_courses`, `dim_survey_questions`,
+`dim_assessments`, and all bridge tables fall here — they add attributes to a
+parent but are never queried on their own.
+
+**Is it part of an SCD2 cluster?** The anchor table gets the cube; all SCD2
+children are inlined via period intersection (Pattern 3). They must all resolve
+to the same point in time — independent SCD2 cubes would allow different
+children to resolve to different effective periods for the same query, producing
+incorrect results.
 
 ### Period intersection lives in Cube SQL, not dbt
 
@@ -182,124 +196,7 @@ right permission check — no static array to update.
 `sql_table:` points at the BigQuery table name, which retains its `dim_`/`fct_`
 prefix. The cube name and the table name are independent.
 
-## Repository Structure
-
-```text
-src/cube/model/
-  cubes/
-    conformed/
-      dates.yml             # cube: dates        (sql_table: dim_dates)
-      locations.yml         # cube: locations    (sql_table: dim_locations)
-      regions.yml           # cube: regions      (sql_table: dim_regions)
-      terms.yml             # cube: terms        (sql_table: dim_terms)
-      school_calendars.yml  # cube: school_calendars (sql_table: dim_school_calendars)
-    students/
-      students.yml                        # cube: students              (sql_table: dim_students)
-      student_enrollments.yml             # cube: student_enrollments   (sql_table: dim_student_enrollments)
-      student_ell_status.yml              # cube: student_ell_status    (sql_table: dim_student_ell_status)
-      student_iep_status.yml              # cube: student_iep_status    (sql_table: dim_student_iep_status)
-      student_meal_eligibility_status.yml # cube: student_meal_eligibility_status
-    staff/
-      staff.yml                      # cube: staff                   (sql_table: dim_staff)
-      staff_work_history.yml         # cube: staff_work_history      (SCD2 period intersection)
-      staff_compensation.yml         # cube: staff_compensation
-      staff_additional_earnings.yml  # cube: staff_additional_earnings
-      staff_attrition.yml            # cube: staff_attrition
-      staff_benefits.yml             # cube: staff_benefits
-      staff_memberships.yml          # cube: staff_memberships
-    attendance/
-      attendance.yml
-      attendance_interventions.yml
-      attendance_streaks.yml
-    behavioral/
-      behavioral.yml
-      family_communications.yml
-    gradebook/
-      grades_term.yml
-      grades_gpa.yml
-      grades_category.yml
-      grades_assignments.yml
-    assessment/
-      assessment_scores.yml
-      assessment_scores_student_scoped.yml
-    observations/
-      observations.yml
-      observation_scores.yml
-      observation_goals.yml
-    surveys/
-      surveys.yml
-      survey_responses.yml
-      survey_expectations.yml
-    postsecondary/
-      postsecondary.yml
-    talent/
-      talent.yml
-    staffing/
-      staffing.yml
-    support/
-      support.yml
-  views/
-    students/
-      students_detail.yml
-      students_summary.yml
-    staff/
-      staff_detail.yml
-      staff_summary.yml
-    attendance/
-      attendance_detail.yml
-      attendance_summary.yml
-    behavioral/
-      behavioral_detail.yml
-      behavioral_summary.yml
-    gradebook/
-      gradebook_detail.yml
-      gradebook_summary.yml
-    assessment/
-      assessment_detail.yml
-      assessment_summary.yml
-    observations/
-      observations_detail.yml
-      observations_summary.yml
-    surveys/
-      surveys_detail.yml
-      surveys_summary.yml
-    postsecondary/
-      postsecondary_detail.yml
-      postsecondary_summary.yml
-    talent/
-      talent_detail.yml
-      talent_summary.yml
-    staffing/
-      staffing_detail.yml
-      staffing_summary.yml
-    support/
-      support_detail.yml
-      support_summary.yml
-```
-
-Total cube files: ~41 (down from 72 dbt models). Views: 24 (2 per domain × 12
-non-conformed domains).
-
-## Domain Breakdown
-
-How the dbt mart models distribute across cube files. "Inlined" models are
-joined into the domain cube's `sql:` block and have no cube file of their own.
-
-| Domain       | Cube file(s)                                                                                                                          | Primary dbt model(s)                                                                                                                                                                                    | dbt models inlined into SQL                                                                                                                                                                                                                          |
-| ------------ | ------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| conformed    | dates, locations, regions, terms, school_calendars                                                                                    | dim_dates, dim_locations, dim_regions, dim_terms, dim_school_calendars                                                                                                                                  | —                                                                                                                                                                                                                                                    |
-| students     | students (Type 1), student_enrollments, student_ell_status, student_iep_status, student_meal_eligibility_status                       | dim_students, dim_student_enrollments, dim_student_ell_status, dim_student_iep_status, dim_student_meal_eligibility_status                                                                              | dim_student_contact_persons, bridge_student_contacts                                                                                                                                                                                                 |
-| staff        | staff (Type 1), staff_work_history, staff_compensation, staff_additional_earnings, staff_attrition, staff_benefits, staff_memberships | dim_staff, dim_staff_work_assignments, fct_work_assignment_compensation, fct_work_assignment_additional_earnings, fct_staff_attrition, fct_staff_benefits_enrollments, fct_staff_membership_enrollments | dim_staff_status, dim_work_assignment_status, dim_work_assignment_primary, dim_work_assignment_jobs, dim_work_assignment_types, dim_work_assignment_locations, dim_work_assignment_organizational_units, dim_work_assignment_reporting_relationships |
-| attendance   | attendance, attendance_interventions, attendance_streaks                                                                              | fct_student_attendance_daily, fct_student_attendance_interventions, fct_student_attendance_streaks                                                                                                      | dim_student_attendance_intervention_types                                                                                                                                                                                                            |
-| behavioral   | behavioral, family_communications                                                                                                     | fct_behavioral_incidents, fct_family_communications                                                                                                                                                     | fct_behavioral_consequences                                                                                                                                                                                                                          |
-| gradebook    | grades_term, grades_gpa, grades_category, grades_assignments                                                                          | fct_grades_term, fct_grades_gpa, fct_grades_category, fct_grades_assignments                                                                                                                            | dim_courses, dim_course_sections, dim_student_section_enrollments, bridge_course_section_teachers, bridge_course_section_terms                                                                                                                       |
-| assessment   | assessment_scores, assessment_scores_student_scoped, assessment_administrations                                                       | fct_assessment_scores_enrollment_scoped, fct_assessment_scores_student_scoped, dim_assessment_administrations                                                                                           | dim_assessments, dim_assessment_comparisons, dim_assessment_goals, bridge_assessment_expectations_enrollment_scoped, bridge_assessment_expectations_student_scoped                                                                                   |
-| observations | observations, observation_scores, observation_goals                                                                                   | fct_staff_observations, fct_staff_observation_scores, fct_staff_observation_goals                                                                                                                       | dim_staff_observation_rubrics, dim_staff_observation_rubric_measurements, dim_staff_observation_types, dim_staff_observation_goal_types, dim_staff_observation_expectations                                                                          |
-| surveys      | surveys, survey_responses, survey_expectations                                                                                        | fct_survey_submissions, fct_survey_responses, bridge_survey_expectations                                                                                                                                | dim_surveys, dim_survey_administrations, dim_survey_questions, bridge_survey_questions                                                                                                                                                               |
-| college      | college                                                                                                                               | dim_college_enrollments                                                                                                                                                                                 | dim_colleges                                                                                                                                                                                                                                         |
-| talent       | talent                                                                                                                                | fct_job_candidate_applications                                                                                                                                                                          | dim_job_postings, dim_job_candidates                                                                                                                                                                                                                 |
-| staffing     | staffing                                                                                                                              | dim_staffing_positions                                                                                                                                                                                  | —                                                                                                                                                                                                                                                    |
-| support      | support                                                                                                                               | fct_support_tickets                                                                                                                                                                                     | —                                                                                                                                                                                                                                                    |
+## Domain Notes
 
 **Note on student status dims (added 2026-05):** Three point-in-time SCD2 status
 dims were added to the students domain: `dim_student_ell_status`,
@@ -352,10 +249,10 @@ replaced by two bridge models:
 `bridge_assessment_expectations_enrollment_scoped` (internal assessments, joins
 via `student_section_enrollment_key`) and
 `bridge_assessment_expectations_student_scoped` (K-8 replacement-curriculum
-assessments, joins via `student_key`). `dim_assessment_administrations` is a new
+assessments, joins via `student_key`). `dim_assessment_administrations` is a
 standalone dimension (not inlined) with FK from both fact tables via
-`assessment_administration_key`. The `assessment_administrations` cube file
-should be added to the repository structure.
+`assessment_administration_key`; it gets its own `assessment_administrations`
+cube file.
 
 `fct_assessment_scores_enrollment_scoped` has `is_mastery`;
 `fct_assessment_scores_student_scoped` now also has `is_mastery` (added 2026-05,
