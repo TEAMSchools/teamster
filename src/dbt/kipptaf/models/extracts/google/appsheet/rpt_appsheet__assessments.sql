@@ -18,7 +18,7 @@ select
     regions_progress_report,
     administered_at,
     subject_area,
-    grade_level_id,
     is_internal_assessment,
-    canonical_assessment_id,
+
+    illuminate_grade_level_id - 1 as grade_level,
 from {{ ref("int_assessments__assessments_members") }}
