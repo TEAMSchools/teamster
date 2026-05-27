@@ -99,16 +99,15 @@ columns and populated `description:` fields on all columns. Cube dimensions
 should reflect this metadata rather than duplicate or diverge from it.
 
 **PII flags:** The target state is for `meta: {pii: true}` on Cube dimensions to
-be auto-generated from dbt's `config.meta.contains_pii: true` via dbt Cloud
-metadata sync (issue #3764) and access policy annotations auto-generated from
-those flags (issue #3727). Until that tooling lands, hand-author
-`meta: {pii: true}` in Cube YAML for any dimension whose source column carries
-`contains_pii: true` in the dbt property file.
+be auto-generated from dbt's `config.meta.contains_pii: true`, and for access
+policy annotations to be auto-generated from those flags (issue #3727, open).
+Until #3727 lands, hand-author `meta: {pii: true}` in Cube YAML for any
+dimension whose source column carries `contains_pii: true` in the dbt property
+file.
 
 **Descriptions:** Cube dimension `description:` fields are sourced from dbt
-column descriptions via metadata sync. Do not hand-author descriptions in Cube
-YAML — they will drift from the dbt definitions. Once sync is active, any
-`description:` written in Cube YAML will be overwritten.
+column descriptions via metadata sync (#3764, live). Do not hand-author
+descriptions in Cube YAML — they will be overwritten by sync.
 
 **dbt `config.meta` example (source of truth):**
 
@@ -1044,16 +1043,16 @@ rule per school/region group.
 All named access groups used across views, with their scope and the pattern that
 implements them.
 
-| Group                            | Type                                     | Scope                                                                                                                                                                                                                                                         | Pattern                       |
-| -------------------------------- | ---------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------- |
-| `detail-access`                  | Synthetic (emitted by `contextToGroups`) | Grants access to all detail views; applied to any user with a `*-detail` Google group                                                                                                                                                                         | Detail vs summary enforcement |
-| `summary-access`                 | Synthetic (emitted by `contextToGroups`) | Grants access to all summary views; applied to any user with a `*-detail` or `*-summary` Google group                                                                                                                                                         | Detail vs summary enforcement |
-| `cube-access-student-data`       | Google group                             | Required to see any student-domain cube members (attendance, assessment, gradebook, behavioral, surveys, students, student status dims). Primary enforcement via `queryRewrite` filtering on `STUDENT_CUBES` cube names; access policy is belt-and-suspenders | Pattern 3                     |
-| `cube-access-student-pii`        | Google group                             | Unlocks student direct identifiers (name, DOB, LEA/state/district IDs, Salesforce contact ID, contact name/phone) on detail views                                                                                                                             | Pattern 1                     |
-| `cube-access-staff-pii`          | Google group                             | Unlocks staff direct identifiers and sensitive HR narratives (name, DOB, emails, phone, AD username, employee number, termination reason/date) on detail views                                                                                                | Pattern 1                     |
-| `cube-access-staff-compensation` | Google group                             | Unlocks pay rate fields (annual wage, hourly wage, daily rate, period rate, additional earnings) on staff compensation views                                                                                                                                  | Pattern 2                     |
-| `cube-access-staff-benefits`     | Google group                             | Unlocks benefits enrollment fields (plan type, plan name, coverage level) on staff benefits views                                                                                                                                                             | Pattern 4                     |
-| `cube-access-staff-observations` | Google group                             | Unlocks individual observation records, scores, and free-text feedback fields on observations detail views; row-level scoping to own school enforced separately via `queryRewrite`                                                                            | Pattern 5                     |
+| Group                            | Type                                     | Scope                                                                                                                                                                                                                                                                   | Pattern                       |
+| -------------------------------- | ---------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------- |
+| `detail-access`                  | Synthetic (emitted by `contextToGroups`) | Grants access to all detail views; applied to any user with a `*-detail` Google group                                                                                                                                                                                   | Detail vs summary enforcement |
+| `summary-access`                 | Synthetic (emitted by `contextToGroups`) | Grants access to all summary views; applied to any user with a `*-detail` or `*-summary` Google group                                                                                                                                                                   | Detail vs summary enforcement |
+| `cube-access-student-data`       | Google group                             | Required to see any student-domain cube members (attendance, assessment, gradebook, behavioral, surveys, students, student status dims). Primary enforcement via `queryRewrite` `isStudentMember` check (`startsWith("student")`); access policy is belt-and-suspenders | Pattern 3                     |
+| `cube-access-student-pii`        | Google group                             | Unlocks student direct identifiers (name, DOB, LEA/state/district IDs, Salesforce contact ID, contact name/phone) on detail views                                                                                                                                       | Pattern 1                     |
+| `cube-access-staff-pii`          | Google group                             | Unlocks staff direct identifiers and sensitive HR narratives (name, DOB, emails, phone, AD username, employee number, termination reason/date) on detail views                                                                                                          | Pattern 1                     |
+| `cube-access-staff-compensation` | Google group                             | Unlocks pay rate fields (annual wage, hourly wage, daily rate, period rate, additional earnings) on staff compensation views                                                                                                                                            | Pattern 2                     |
+| `cube-access-staff-benefits`     | Google group                             | Unlocks benefits enrollment fields (plan type, plan name, coverage level) on staff benefits views                                                                                                                                                                       | Pattern 4                     |
+| `cube-access-staff-observations` | Google group                             | Unlocks individual observation records, scores, and free-text feedback fields on observations detail views; row-level scoping to own school enforced separately via `queryRewrite`                                                                                      | Pattern 5                     |
 
 ### Pattern 1 — PII fields
 
@@ -1149,12 +1148,11 @@ access_policy:
 
 ### Pattern 3 — Student domain visibility
 
-`queryRewrite` in `cube.js` strips all dimensions and measures belonging to
-`STUDENT_CUBES` from queries for users without `cube-access-student-data` — that
-is the primary enforcement. `STUDENT_CUBES` entries match the cube `name:` field
-(not view names); `queryRewrite` filters via `startsWith` on
-`<cube_name>.<member>`. As belt-and-suspenders, all student-domain views
-(attendance, assessment, gradebook, behavioral, surveys, students) carry:
+`queryRewrite` in `cube.js` strips all dimensions and measures whose cube name
+starts with `student` (via `isStudentMember`) from queries for users without
+`cube-access-student-data` — that is the primary enforcement. As
+belt-and-suspenders, all student-domain views (attendance, assessment,
+gradebook, behavioral, surveys, students) carry:
 
 ```yaml
 access_policy:
