@@ -109,8 +109,8 @@ models:
         data_type: string
         description: >-
           `title` from `int_assessments__assessments_canonical` for the
-          canonical group. For non-internal assessments, falls back to the
-          member's own title via coalesce.
+          canonical group. For non-internal assessments, takes the member's own
+          title via `if(is_internal_assessment, ...)`.
         config:
           meta:
             source_column: int_assessments__assessments_canonical.title
@@ -124,8 +124,8 @@ models:
         data_type: date
         description: >-
           `administered_date` from `int_assessments__assessments_canonical`. For
-          non-internal assessments, falls back to the member's own
-          `administered_at` via coalesce.
+          non-internal assessments, takes the member's own `administered_at` via
+          `if(is_internal_assessment, ...)`.
       - name: grade_level_id
         data_type: int64
       - name: performance_band_set_id

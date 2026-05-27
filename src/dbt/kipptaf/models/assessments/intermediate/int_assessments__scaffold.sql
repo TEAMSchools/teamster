@@ -227,6 +227,7 @@ left join school_to_region as str on ssa.site_id = str.powerschool_school_id
 where
     a.is_internal_assessment
     and a.subject_area in ('Text Study', 'Mathematics', 'Social Studies', 'Science')
+    -- grade_level_id 9 = grade 8 (grade level = grade_level_id - 1)
     and a.grade_level_id <= 9
 
 union all

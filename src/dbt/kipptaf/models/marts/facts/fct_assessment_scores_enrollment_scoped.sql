@@ -33,10 +33,10 @@ with
 
             'internal' as score_source,
         from {{ ref("int_assessments__response_rollup") }} as rr
-        left join
+        inner join
             {{ ref("int_assessments__assessments_members") }} as a
             on rr.assessment_id = a.assessment_id
-        left join
+        inner join
             {{ ref("int_assessments__assessments_canonical") }} as c
             on a.canonical_assessment_id = c.canonical_assessment_id
         where rr.is_internal_assessment
