@@ -1,48 +1,25 @@
 with
-    -- Union of regions_assessed across all members of a canonical group.
-    -- Canonical members may individually be tagged for different regions
-    -- (e.g., one tagged Miami, another tagged Camden/Newark/Paterson). The
-    -- canonical-keyed dim must emit one row per (canonical, any-member-region).
-    canonical_regions as (
-        select
-            canonical_assessment_id,
-            array_agg(distinct region) as canonical_regions_array,
-        from
-            {{ ref("int_assessments__assessments") }},
-            unnest(regions_assessed_array) as region
-        where is_internal_assessment
-        group by canonical_assessment_id
-    ),
-
     illuminate_administrations as (
-        -- TODO(#3800): collapse to canonical-grain at int_assessments__assessments
-        -- so this CTE can be a plain SELECT. DISTINCT here is justified
-        -- because all canonical members project identical (canonical_*, region)
-        -- tuples, but the upstream collapse is preferred per
-        -- src/dbt/CLAUDE.md "no manual deduplication".
-        select distinct
-            a.subject_area,
-            a.scope,
-            a.module_code,
-            a.academic_year,
-            a.administered_date,
-            a.grade_level,
+        select
+            subject_area,
+            scope,
+            module_code,
+            academic_year,
+            administered_date,
+            grade_level,
 
-            a.canonical_title as title,
-            a.canonical_assessment_id as source_assessment_id,
+            title,
 
             'illuminate' as assessment_type,
+
+            canonical_assessment_id as source_assessment_id,
 
             cast(null as string) as administration_period,
             cast(null as string) as test_type,
 
             concat('kipp', lower(region)) as _dbt_source_project,
-        from {{ ref("int_assessments__assessments") }} as a
-        inner join
-            canonical_regions as cr
-            on a.canonical_assessment_id = cr.canonical_assessment_id
-        cross join unnest(cr.canonical_regions_array) as region
-        where a.is_internal_assessment
+        from {{ ref("int_assessments__assessments_canonical") }}
+        cross join unnest(regions_array) as region
     ),
 
     -- grain projection: every selected column is functionally determined
