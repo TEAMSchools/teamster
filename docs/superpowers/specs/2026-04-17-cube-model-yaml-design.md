@@ -931,6 +931,12 @@ synthetic groups and can query either view. A user with
 `cube-region-newark-summary` gets only `summary-access` and cannot see detail
 views. A user with no scope groups sees nothing.
 
+**Tier is derived from the effective scope group only** (same priority as
+`queryRewrite`: network > region > school). A lower-priority `-detail` group
+cannot escalate access past what the effective scope grants — e.g., a user whose
+effective scope is `cube-region-newark-summary` does not get `detail-access`
+because they also happen to hold `cube-school-bold-detail`.
+
 **These two access tiers are independent and additive.** Scope group tier
 determines which view is accessible; `cube-access-student-data` membership
 determines whether student-domain members appear inside that view (enforced by

@@ -35,11 +35,25 @@ function isStaffMember(m) {
 // detail vs summary independently of the specific school/region group.
 // These are NOT cached — derived fresh from the cached real groups on each
 // contextToGroups call so the cache stays clean for queryRewrite lookups.
+//
+// Tier is derived from the SAME effective scope group that queryRewrite uses
+// (network > region > school). A lower-priority detail group cannot escalate
+// access beyond what the effective scope grants.
 function withSyntheticGroups(cubeGroups) {
   const result = [...cubeGroups];
-  if (cubeGroups.some((g) => g.endsWith("-detail")))
-    result.push("detail-access");
-  if (cubeGroups.some((g) => g.endsWith("-detail") || g.endsWith("-summary")))
+  const effectiveScope =
+    cubeGroups.find((g) => g.startsWith("cube-network-")) ??
+    cubeGroups.find((g) =>
+      /^cube-region-[a-z0-9][a-z0-9-]*-(?:detail|summary)$/.test(g),
+    ) ??
+    cubeGroups.find((g) =>
+      /^cube-school-[a-z0-9][a-z0-9-]*-(?:detail|summary)$/.test(g),
+    );
+  if (effectiveScope?.endsWith("-detail")) result.push("detail-access");
+  if (
+    effectiveScope?.endsWith("-detail") ||
+    effectiveScope?.endsWith("-summary")
+  )
     result.push("summary-access");
   return result;
 }
