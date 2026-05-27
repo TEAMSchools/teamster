@@ -15,11 +15,15 @@ with
             a.module_code,
             a.academic_year,
             a.canonical_assessment_id,
-            a.canonical_administered_at,
+
+            c.administered_date as canonical_administered_at,
         from {{ ref("int_assessments__scaffold") }} as sc
         inner join
             {{ ref("int_assessments__assessments_members") }} as a
             on sc.assessment_id = a.assessment_id
+        inner join
+            {{ ref("int_assessments__assessments_canonical") }} as c
+            on a.canonical_assessment_id = c.canonical_assessment_id
         -- ES Writing and other NULL-cc_dcid rows are excluded here because
         -- cc_dcid + _dbt_source_project form the student_section_enrollment_key
         -- and NULL cc_dcid would collide on the placeholder hash. Those rows

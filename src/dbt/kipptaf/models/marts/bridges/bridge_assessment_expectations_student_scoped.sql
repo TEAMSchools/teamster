@@ -11,7 +11,8 @@ with
             a.module_code,
             a.academic_year,
             a.canonical_assessment_id,
-            a.canonical_administered_at,
+
+            c.administered_date as canonical_administered_at,
 
             rt.code as term_code,
             rt.type as term_type,
@@ -23,6 +24,9 @@ with
         inner join
             {{ ref("int_assessments__assessments_members") }} as a
             on sc.assessment_id = a.assessment_id
+        inner join
+            {{ ref("int_assessments__assessments_canonical") }} as c
+            on a.canonical_assessment_id = c.canonical_assessment_id
         left join
             {{ ref("stg_google_sheets__reporting__terms") }} as rt
             on sc.administered_at between rt.start_date and rt.end_date

@@ -24,8 +24,7 @@ models:
         data_type: string
         description: >-
           Per-row member assessment title from
-          `int_assessments__assessments_members.title`. See `canonical_title`
-          for the canonical-group title.
+          `int_assessments__assessments_members.title`.
         config:
           meta:
             source_column: int_assessments__assessments_members.title
@@ -106,18 +105,6 @@ models:
           int_assessments__assessments_members.canonical_assessment_id — the
           lead assessment_id within the partition (academic_year, scope,
           subject_area, module_code, grade_level_id). See parent column for full
-          semantics.
-      - name: canonical_title
-        data_type: string
-        description:
-          Pass-through of int_assessments__assessments_members.canonical_title.
-      - name: canonical_administered_at
-        data_type: date
-        description:
-          Pass-through of
-          int_assessments__assessments_members.canonical_administered_at.
-      - name: canonical_grade_level_id
-        data_type: int64
-        description:
-          Pass-through of
-          int_assessments__assessments_members.canonical_grade_level_id.
+          semantics. Consumers needing canonical_title,
+          canonical_administered_at, or canonical_grade_level_id join
+          int_assessments__assessments_canonical via this key.
