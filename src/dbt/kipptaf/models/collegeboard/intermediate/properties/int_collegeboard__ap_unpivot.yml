@@ -10,3 +10,12 @@ models:
               - rn_exam_number
           config:
             severity: error
+    columns:
+      - name: powerschool_student_number
+        description:
+          PowerSchool student number resolved from the College Board AP ID via
+          stg_google_sheets__collegeboard__ap_id_crosswalk. NULL when the
+          CB-file row's AP Number / AP ID has no crosswalk match — Ops signal to
+          update the crosswalk.
+        data_tests:
+          - not_null
