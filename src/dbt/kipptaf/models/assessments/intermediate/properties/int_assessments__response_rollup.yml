@@ -4,11 +4,11 @@ models:
       Per-student × per-canonical-assessment × per-response-type rollup of
       Illuminate response data. For internal assessments, multipart member
       assessments (sharing a `canonical_assessment_id` per
-      `int_assessments__assessments`) are aggregated to one row per student with
-      summed points and a deterministic single school/region selection.
-      `assessment_id` here is the canonical id, not the per-row member id;
-      `assessment_ids` (array) preserves the underlying member ids for
-      drilldown.
+      `int_assessments__assessments_members`) are aggregated to one row per
+      student with summed points and a deterministic single school/region
+      selection. `assessment_id` here is the canonical id, not the per-row
+      member id; `assessment_ids` (array) preserves the underlying member ids
+      for drilldown.
     data_tests:
       - dbt_utils.unique_combination_of_columns:
           arguments:
@@ -32,9 +32,9 @@ models:
       - name: academic_year
         data_type: int64
         description: >-
-          `academic_year_clean` from `int_assessments__assessments` propagated
-          via scaffold (not the raw Illuminate `academic_year`). Re-join
-          source-of-truth when computing surrogate hashes — see
+          `academic_year_clean` from `int_assessments__assessments_members`
+          propagated via scaffold (not the raw Illuminate `academic_year`).
+          Re-join source-of-truth when computing surrogate hashes — see
           `src/dbt/CLAUDE.md` "Hash inputs must be derived identically across
           producer and consumer".
       - name: scope
@@ -108,21 +108,22 @@ models:
       - name: title
         data_type: string
         description: >-
-          `canonical_title` from `int_assessments__assessments` for the
+          `canonical_title` from `int_assessments__assessments_members` for the
           canonical group (lowest member's title within the partition).
         config:
           meta:
-            source_column: int_assessments__assessments.canonical_title
+            source_column: int_assessments__assessments_members.canonical_title
       - name: assessment_id
         data_type: int64
         description: >-
-          `canonical_assessment_id` from `int_assessments__assessments` — the
-          lowest member id within the canonical partition. Use `assessment_ids`
-          for the underlying member ids.
+          `canonical_assessment_id` from `int_assessments__assessments_members`
+          — the lowest member id within the canonical partition. Use
+          `assessment_ids` for the underlying member ids.
       - name: administered_at
         data_type: date
         description: >-
-          `canonical_administered_at` from `int_assessments__assessments`.
+          `canonical_administered_at` from
+          `int_assessments__assessments_members`.
       - name: grade_level_id
         data_type: int64
       - name: performance_band_set_id

@@ -19,7 +19,7 @@ with
             region,
 
             coalesce(a.illuminate_grade_level_id, agl.grade_level_id) as grade_level_id,
-        from {{ ref("int_assessments__assessments") }} as a
+        from {{ ref("int_assessments__assessments_members") }} as a
         cross join unnest(a.regions_assessed_array) as region
         left join
             {{ ref("stg_illuminate__dna_assessments__assessment_grade_levels") }} as agl
@@ -226,7 +226,7 @@ select
 
     true as is_internal_assessment,
     true as is_replacement,
-from {{ ref("int_assessments__assessments") }} as a
+from {{ ref("int_assessments__assessments_members") }} as a
 inner join
     {{ ref("stg_illuminate__dna_assessments__students_assessments") }} as sa
     on a.assessment_id = sa.assessment_id
@@ -286,7 +286,7 @@ select
 
     false as is_internal_assessment,
     false as is_replacement,
-from {{ ref("int_assessments__assessments") }} as a
+from {{ ref("int_assessments__assessments_members") }} as a
 inner join
     {{ ref("stg_illuminate__dna_assessments__students_assessments") }} as sa
     on a.assessment_id = sa.assessment_id

@@ -157,8 +157,8 @@ Pure output-alias renames don't change hashes.
 Hash inputs must be derived identically across producer and consumer.
 Intermediates may rename or transform columns (e.g. scaffold's
 `academic_year_clean` aliased as `academic_year` is +1 vs
-`int_assessments__assessments.academic_year`); the consumer must re-join the
-source-of-truth model rather than trust the matching column name.
+`int_assessments__assessments_members.academic_year`); the consumer must re-join
+the source-of-truth model rather than trust the matching column name.
 
 Before swapping the input list of any `generate_surrogate_key()` on a dim/fact,
 grep every consumer that hashes the same composition and migrate producer + all
