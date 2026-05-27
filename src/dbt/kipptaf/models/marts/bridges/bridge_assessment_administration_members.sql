@@ -11,7 +11,7 @@ with
             region,
 
             concat('kipp', lower(region)) as _dbt_source_project,
-        from {{ ref("int_assessments__assessments") }} as a
+        from {{ ref("int_assessments__assessments_members") }} as a
         cross join unnest(a.regions_assessed_array) as region
         where a.is_internal_assessment
     )

@@ -21,7 +21,7 @@ with
             cast(null as string) as aligned_academic_subject,
             cast(null as string) as credit_category,
             cast(null as string) as test_type,
-        from {{ ref("int_assessments__assessments") }}
+        from {{ ref("int_assessments__assessments_members") }}
         where is_internal_assessment
     ),
 

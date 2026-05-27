@@ -21,7 +21,7 @@ with
             rt.school_id as term_school_id,
         from {{ ref("int_assessments__scaffold") }} as sc
         inner join
-            {{ ref("int_assessments__assessments") }} as a
+            {{ ref("int_assessments__assessments_members") }} as a
             on sc.assessment_id = a.assessment_id
         left join
             {{ ref("stg_google_sheets__reporting__terms") }} as rt

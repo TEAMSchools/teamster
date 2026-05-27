@@ -1,5 +1,5 @@
 models:
-  - name: int_assessments__assessments
+  - name: int_assessments__assessments_members
     description: >-
       Assessment-definition layer. Joins Illuminate `assessments` with the
       AppSheet `Illuminate Assessments Extension` overrides and an `agl_dedup`
