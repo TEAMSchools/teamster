@@ -49,9 +49,9 @@ select
                 "cast(canonical_administered_at as date)",
                 "academic_year",
                 "_dbt_source_project",
-                "cast(null as string)",
+                "null",
                 "canonical_assessment_id",
-                "cast(null as string)",
+                "null",
             ]
         )
     }} as assessment_administration_key,

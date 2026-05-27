@@ -118,6 +118,7 @@ select
         then 'state_nj_njsla_science'
         when 'NJGPA'
         then 'state_nj_njgpa'
+        else 'state_nj_unknown'
     end as assessment_type,
 
 from union_relations as u

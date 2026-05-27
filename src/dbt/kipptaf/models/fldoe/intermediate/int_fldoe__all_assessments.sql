@@ -90,6 +90,7 @@ select
         then 'state_fl_eoc'
         when 'Science'
         then 'state_fl_science'
+        else 'state_fl_unknown'
     end as assessment_type,
 from source as fl
 left join
