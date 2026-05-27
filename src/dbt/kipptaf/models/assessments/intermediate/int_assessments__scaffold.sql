@@ -12,9 +12,6 @@ with
             a.module_type,
             a.module_code,
             a.canonical_assessment_id,
-            a.canonical_title,
-            a.canonical_administered_at,
-            a.canonical_grade_level_id,
 
             region,
 
@@ -57,9 +54,6 @@ with
             a.region,
             a.grade_level_id,
             a.canonical_assessment_id,
-            a.canonical_title,
-            a.canonical_administered_at,
-            a.canonical_grade_level_id,
 
             ssa.student_id as illuminate_student_id,
 
@@ -108,9 +102,6 @@ with
             ce.illuminate_grade_level_id as grade_level_id,
 
             a.canonical_assessment_id,
-            a.canonical_title,
-            a.canonical_administered_at,
-            a.canonical_grade_level_id,
 
             s.student_id as illuminate_student_id,
 
@@ -169,9 +160,6 @@ select
 
     concat('kipp', lower(ia.region)) as _dbt_source_project,
     ia.canonical_assessment_id,
-    ia.canonical_title,
-    ia.canonical_administered_at,
-    ia.canonical_grade_level_id,
 
     sa.student_assessment_id,
     sa.date_taken,
@@ -217,9 +205,6 @@ select
     concat('kipp', lower(str.region)) as _dbt_source_project,
 
     a.canonical_assessment_id,
-    a.canonical_title,
-    a.canonical_administered_at,
-    a.canonical_grade_level_id,
 
     sa.student_assessment_id,
     sa.date_taken,
@@ -277,9 +262,6 @@ select
     concat('kipp', lower(str.region)) as _dbt_source_project,
 
     a.canonical_assessment_id,
-    a.canonical_title,
-    a.canonical_administered_at,
-    a.canonical_grade_level_id,
 
     sa.student_assessment_id,
     sa.date_taken,
