@@ -28,6 +28,18 @@ models:
           `(academic_year, scope, subject_area, module_code, grade_level_id)`.
           Members of `int_assessments__assessments` FK here via their own
           `canonical_assessment_id` column.
+      - name: regions_array
+        data_tests:
+          - not_null
+        data_type: array<string>
+        description: >-
+          Union of `regions_assessed_array` across all internal members of the
+          canonical group, computed via `array_agg(distinct region)` after
+          `unnest`. Consumers `cross join unnest(regions_array) as region` to
+          fan out to one row per (canonical assessment, region). Guaranteed
+          non-null by the INNER JOIN to `canonical_regions` in the model SQL —
+          canonical groups whose internal members all have empty
+          `regions_assessed_array` are dropped at the join.
       - name: title
         data_type: string
         description: >-
@@ -77,10 +89,3 @@ models:
         description: >-
           Constant within the canonical partition. Picked from the canonical
           member.
-      - name: regions_array
-        data_type: array<string>
-        description: >-
-          Union of `regions_assessed_array` across all internal members of the
-          canonical group, computed via `array_agg(distinct region)` after
-          `unnest`. Consumers `cross join unnest(regions_array) as region` to
-          fan out to one row per (canonical assessment, region).
