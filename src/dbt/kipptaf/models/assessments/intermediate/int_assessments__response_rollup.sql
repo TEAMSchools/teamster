@@ -21,14 +21,6 @@ with
             s.student_assessment_id,
             s.canonical_assessment_id,
 
-            if(s.is_internal_assessment, c.title, s.title) as canonical_title,
-            if(
-                s.is_internal_assessment, c.administered_date, s.administered_at
-            ) as canonical_administered_at,
-            if(
-                s.is_internal_assessment, c.grade_level_id, s.grade_level_id
-            ) as canonical_grade_level_id,
-
             asr.response_type,
             asr.response_type_id,
             asr.response_type_code,
@@ -39,6 +31,14 @@ with
             asr.percent_correct,
 
             pb.canonical_performance_band_set_id,
+
+            if(s.is_internal_assessment, c.title, s.title) as canonical_title,
+            if(
+                s.is_internal_assessment, c.administered_date, s.administered_at
+            ) as canonical_administered_at,
+            if(
+                s.is_internal_assessment, c.grade_level_id, s.grade_level_id
+            ) as canonical_grade_level_id,
 
             if(s.date_taken < date '2000-01-01', null, s.date_taken) as date_taken,
         from {{ ref("int_assessments__scaffold") }} as s
