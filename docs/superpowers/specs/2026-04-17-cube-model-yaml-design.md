@@ -91,11 +91,9 @@ pattern.
 ### Date joins use `date_day` (TIMESTAMP), not `date_key` (DATE)
 
 `dim_dates` exposes `date_key` (DATE, PK) and `date_day` (TIMESTAMP, time
-dimension). All join conditions use `{dim_dates.date_day}` with
-`CAST({CUBE}.<date_fk> AS TIMESTAMP)`. Cube's time filter parameters generate
-TIMESTAMP comparisons — using `date_key` (DATE) on the join side while filters
-land on `date_day` (TIMESTAMP) diverges types, breaking pre-aggregation matching
-and time filter rewriting.
+dimension). Cube requires `type: time` dimensions to be TIMESTAMP. All join
+conditions use `{dates.date_day}` with `CAST({CUBE}.<date_fk> AS TIMESTAMP)` to
+keep both sides of the join type-consistent.
 
 ### PII column metadata and descriptions sourced from dbt
 
