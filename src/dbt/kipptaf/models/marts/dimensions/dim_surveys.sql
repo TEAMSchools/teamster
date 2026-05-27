@@ -1,21 +1,19 @@
 with
     google_forms_surveys as (
-        -- DISTINCT projects from response grain to survey grain.
-        select distinct
+        select
             form_id as survey_id, info_title as survey_name, 'Google Forms' as platform,
-        from {{ ref("int_google_forms__form_responses") }}
+        from {{ ref("stg_google_forms__form") }}
         where form_id is not null
     ),
 
     alchemer_surveys as (
-        -- DISTINCT projects from response grain to survey grain.
-        select distinct
-            safe_cast(survey_id as string) as survey_id,
-            survey_title as survey_name,
+        select
+            safe_cast(id as string) as survey_id,
+            title as survey_name,
 
             'Alchemer' as platform,
-        from {{ source("alchemer", "base_alchemer__survey_results") }}
-        where survey_id is not null
+        from {{ source("alchemer", "stg_alchemer__survey") }}
+        where id is not null
     ),
 
     archive_manager as (

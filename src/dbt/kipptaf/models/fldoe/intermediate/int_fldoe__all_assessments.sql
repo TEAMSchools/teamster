@@ -56,6 +56,8 @@ select
     fl.assessment_name,
     fl.student_number,
 
+    {{ extract_code_location("fl") }} as _dbt_source_project,
+
     cw1.sublevel_number,
     cw1.sublevel_name,
 
@@ -77,6 +79,19 @@ select
         partition by fl.student_id, fl.academic_year, fl.assessment_subject
         order by fl.administration_window asc
     ) as scale_score_prev,
+
+    case
+        fl.assessment_name
+        when 'FAST'
+        then 'state_fl_fast'
+        when 'FSA'
+        then 'state_fl_fsa'
+        when 'EOC'
+        then 'state_fl_eoc'
+        when 'Science'
+        then 'state_fl_science'
+        else 'state_fl_unknown'
+    end as assessment_type,
 from source as fl
 left join
     scale_crosswalk as sc

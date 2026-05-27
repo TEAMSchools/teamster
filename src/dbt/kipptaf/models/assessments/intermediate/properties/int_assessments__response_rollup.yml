@@ -56,20 +56,27 @@ models:
         data_type: string
         description: >-
           The student's region for this administration. Selected together with
-          `powerschool_school_id` from a single source row via `first_value(...)
-          order by date_taken, student_assessment_id, powerschool_school_id`
-          windowed in the `canonical_attrs` CTE, then read via `any_value()` in
-          the rollup. Cross-school groups exist because of upstream
-          canonicalization defects — see #3801.
+          `powerschool_school_id` and `_dbt_source_project` from a single source
+          row via `first_value(...)` windowed in the `tiebroken_attrs` CTE, then
+          read via `any_value()` in the rollup. Not a canonical attribute — it
+          is per-response location data that varies across rows in the same
+          partition because of upstream canonicalization defects (#3801);
+          `first_value` is a deterministic tiebreak, not a canonicalization.
       - name: powerschool_school_id
         data_type: int64
         description: >-
           The student's school for this administration. Selected together with
-          `region` from a single source row via `first_value(...) order by
-          date_taken, student_assessment_id, powerschool_school_id` windowed in
-          the `canonical_attrs` CTE, then read via `any_value()` in the rollup.
-          Cross-school groups exist because of upstream canonicalization defects
-          — see #3801.
+          `region` and `_dbt_source_project` from a single source row via
+          `first_value(...)` windowed in the `tiebroken_attrs` CTE, then read
+          via `any_value()` in the rollup. See `region` for the full tiebreak
+          semantics.
+      - name: _dbt_source_project
+        data_type: string
+        description: >-
+          Dagster code-location prefix derived from region (e.g. kippnewark,
+          kippcamden, kippmiami, kipppaterson). Carried into downstream hashes
+          so consumers join/hash on a stable column rather than re-deriving via
+          concat(region) at each call.
       - name: is_internal_assessment
         data_type: boolean
       - name: is_replacement

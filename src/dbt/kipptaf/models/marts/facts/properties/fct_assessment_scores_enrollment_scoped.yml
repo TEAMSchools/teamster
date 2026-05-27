@@ -41,9 +41,9 @@ models:
           FK to dim_students. Hashed on student_number (PowerSchool-sourced for
           internal Illuminate, NJ Pearson localstudentidentifier, and FL via
           FLEID lookup in int_fldoe__all_assessments). Null when the source
-          identifier does not resolve to a PowerSchool student (residual: ~12 FL
-          students missing FLEID in PS lookup, ~8 NJ Paterson Pearson identifier
-          mismatches — both tracked separately).
+          identifier does not resolve to a row in dim_students — for state
+          assessments, a left join validates that student_number exists in
+          dim_students before hashing.
 
         constraints:
           - type: foreign_key

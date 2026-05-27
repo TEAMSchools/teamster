@@ -1,13 +1,3 @@
-{{
-    config(
-        meta={
-            "dagster": {
-                "ref": {"name": "dim_student_iep_status", "package": "kipptaf"},
-            }
-        }
-    )
-}}
-
 with
     spans as (
         select

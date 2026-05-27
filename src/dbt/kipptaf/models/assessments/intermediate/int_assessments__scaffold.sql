@@ -166,6 +166,8 @@ select
     ia.discipline,
     ia.cc_dcid,
     ia.cc_source_project,
+
+    concat('kipp', lower(ia.region)) as _dbt_source_project,
     ia.canonical_assessment_id,
     ia.canonical_title,
     ia.canonical_administered_at,
@@ -211,6 +213,8 @@ select
 
     cast(null as int64) as cc_dcid,
     cast(null as string) as cc_source_project,
+
+    concat('kipp', lower(str.region)) as _dbt_source_project,
 
     a.canonical_assessment_id,
     a.canonical_title,
@@ -269,6 +273,8 @@ select
 
     cast(null as int64) as cc_dcid,
     cast(null as string) as cc_source_project,
+
+    concat('kipp', lower(str.region)) as _dbt_source_project,
 
     a.canonical_assessment_id,
     a.canonical_title,
