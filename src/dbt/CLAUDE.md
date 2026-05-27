@@ -434,6 +434,16 @@ intended join column, which then fan out at the join site. Use
 `(col = 'sentinel') asc` in `order_by` to demote a specific value when rows tie
 on the chosen partition key.
 
+**Picked-row attrs include NULL — don't `coalesce` to a fallback row.** When
+`dbt_utils.deduplicate(partition_by=X, order_by=Y)` replicates
+`first_value(...) over (partition by X order by Y)` canonical-pick semantics,
+the picked row's value is authoritative including NULL.
+`coalesce(picked.attr, fallback.attr)` silently substitutes a different row's
+value when the canonical pick is NULL — breaks downstream GROUP BY / uniqueness
+invariants. Use
+`if(<row-belongs-to-picked-partition>, picked.attr, fallback.attr)` to branch on
+row-membership, not on value-nullness.
+
 ### sqlfluff ST03 on dbt_utils.deduplicate input CTEs
 
 A CTE referenced only via `dbt_utils.deduplicate(relation="<cte>")` fails

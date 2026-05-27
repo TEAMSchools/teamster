@@ -129,6 +129,14 @@ avoid a join, the chain is probably already there — use it instead.
   (see `src/dbt/CLAUDE.md` → "Nullable surrogate keys") — otherwise
   relationships tests fail against the placeholder hash.
 
+## Hash-input joins: INNER over LEFT when scope guarantees membership
+
+When a fact/bridge joins a parent (members, canonical, dim) purely to read
+hash-input columns, and the `where` filter (`is_internal_assessment`, etc.)
+guarantees the parent row exists, use INNER JOIN. LEFT JOIN silently produces
+null hash inputs that surrogate-key into placeholder hashes — orphans surface
+only at `relationships` test runtime, not at compile.
+
 ## BigQuery reserved identifiers
 
 Columns named `name`, `type`, `text`, `order`, `role`, `rank`, `timestamp`, etc.

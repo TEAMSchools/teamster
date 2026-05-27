@@ -78,6 +78,12 @@ file; domain specifics live in the nearest subdirectory CLAUDE.md.
   hook, `git add -A` can stage unrelated files. Subagents must name specific
   files in `git add` — never `-u`, `-A`, or `.`.
 
+- **Refactor regex sweeps include `*.md`**: a model/column rename's
+  `grep -rl --include='*.sql' --include='*.yml'` misses CLAUDE.md
+  hash-derivation examples, plan/spec docs, and inline doc cross-refs. Use
+  `--include='*.{sql,yml,md}'` (or drop `--include` entirely) for any rename
+  that changes a model or column name.
+
 - **Dispatching subagents**: Subagents do not auto-invoke skills. In the
   dispatch prompt, name the exact `Skill` tool calls the subagent must run
   before starting work (e.g. `Skill` with
