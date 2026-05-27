@@ -71,29 +71,22 @@ Facts declare joins only to their immediate FK parents (e.g., gradebook →
 join path traversal in views. This mirrors the dbt star schema and prevents
 diamond paths that cause Cube to double-count rows.
 
-### Role-playing FK dimensions: join on primary role; degenerate or denormalize secondary
+### Role-playing FK dimensions: always denormalize the secondary role
 
-Some fact tables have two foreign keys that both point to the same dimension —
+Some fact tables have two foreign keys pointing to the same dimension —
 `fct_staff_observations` has `teacher_staff_key` (the teacher being observed)
-and `observer_staff_key` (the person doing the observing), both referencing
-`dim_staff`. In SQL you'd join `dim_staff` twice under different aliases. Cube
-doesn't allow that — you can only declare one join per named cube. Join
-`dim_staff` on the more analytically important FK (`teacher_staff_key`) so that
-teacher name, school, etc. are all available. For the secondary role, choose one
-of two paths:
+and `observer_staff_key` (the observer), both referencing `dim_staff`. In SQL
+you'd join `dim_staff` twice under different aliases. Cube doesn't allow that —
+you can only declare one join per named cube.
 
-**Secondary role needs key-only filtering (degenerate FK):** Store the secondary
-FK as a plain string dimension. Consumers can filter by it (e.g., "show only
-observations by this coach") but cannot look up the secondary role's name or
-attributes. Use this when the secondary role is incidental to the fact.
-`observer_staff_key` and `subject_staff_key` (surveys) follow this pattern.
-
-**Secondary role's attributes are always needed (denormalize onto the primary
-dim):** Denormalize the secondary role's key attributes onto the shared
-dimension so a single join surfaces both roles. The gradebook cube needs both
-teacher and manager name/key on every row — resolved by adding `manager_name`
-and `manager_staff_key` to `dim_staff` (#3838). No second join or alias
-required.
+The correct resolution is always denormalization: add the secondary role's key
+attributes (name, key, etc.) directly to the shared dimension. Join `dim_staff`
+once on the primary FK; the secondary role's attributes are available on the
+same row without a second join. The gradebook cube is the canonical example —
+`manager_name` and `manager_staff_key` are added to `dim_staff` (#3838) so both
+teacher and manager attributes are accessible via a single join. Observations
+(`observer_staff_key`) and surveys (`subject_staff_key`) follow the same
+pattern.
 
 ### Date joins use `date_day` (TIMESTAMP), not `date_key` (DATE)
 
@@ -380,9 +373,9 @@ FKs: `staff_key` → `dim_staff`, `student_enrollment_key` →
 `dim_student_enrollments`, `student_contact_person_key` →
 `dim_student_contact_persons`. Manager surveys also carry `subject_staff_key`
 (the manager being evaluated) as a second FK to `dim_staff` — same role-playing
-FK pattern as `observer_staff_key` in observations: join on the primary role
-(`staff_key` → teacher/respondent), expose `subject_staff_key` as a degenerate
-dimension. All three respondent FK columns carry `meta: {pii: true}`.
+FK pattern as `observer_staff_key` in observations. Both are resolved by
+denormalizing subject/observer attributes onto `dim_staff` (same approach as
+#3838). All three respondent FK columns carry `meta: {pii: true}`.
 
 **Note on talent:** `dim_job_candidates` (inlined into the talent cube) contains
 candidate PII (name, email, contact details). The talent views require
