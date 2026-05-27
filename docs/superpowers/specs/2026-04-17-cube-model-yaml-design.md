@@ -8,9 +8,13 @@ Define the YAML conventions, patterns, and reference implementations for the
 Cube semantic layer model files that sit on top of the infrastructure
 established in the
 [Cube infrastructure spec](2026-04-15-cube-infrastructure-design.md). This spec
-covers how the dbt mart models from `models/marts/` map to cube files, how SCD
-Type 2 tables are handled for point-in-time queries, and how the detail/summary
-access split is enforced via views and access policies.
+covers how the dbt mart models from `models/marts/` map to cube files, the cube
+naming convention that drives automatic security enforcement, how SCD Type 2
+tables are handled for point-in-time queries, the five access policy patterns
+applied across views, and how the detail/summary access split is enforced via
+views and access policies. Where `cube.js` behavior directly governs YAML
+decisions (e.g., how naming convention drives `queryRewrite`), it is documented
+here; `cube.js` auth and infrastructure setup are in the infrastructure spec.
 
 ## Goals
 
@@ -20,15 +24,17 @@ access split is enforced via views and access policies.
   and any other snapshot query correct at any point in time
 - Two consumer-facing views per domain (detail and summary) with access policies
   that enforce the three-layer security model from the infrastructure spec
-- One reference implementation per domain so engineers have a working template
-  to follow for each domain's remaining models
+- Reference YAML for each of the three structural patterns (conformed dim,
+  fact-based domain cube, SCD2 period intersection) so engineers have a working
+  template for all remaining domain implementations
 
 ## Non-goals
 
 - Full field enumeration for all models — implementation plan
 - Pre-aggregations — follow-up spec
 - Downstream integrations (Tableau, Superset, Streamlit) — follow-up spec
-- `cube.js` configuration — covered in the infrastructure spec
+- `cube.js` auth, environment setup, and MCP configuration — covered in the
+  infrastructure spec
 
 ## Design Decisions
 
