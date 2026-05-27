@@ -71,22 +71,6 @@ with
                 first_value(assessment_id) over canonical_w,
                 assessment_id
             ) as canonical_assessment_id,
-
-            if(
-                is_internal_assessment, first_value(title) over canonical_w, title
-            ) as canonical_title,
-
-            if(
-                is_internal_assessment,
-                first_value(administered_at) over canonical_w,
-                administered_at
-            ) as canonical_administered_at,
-
-            if(
-                is_internal_assessment,
-                first_value(grade_level_id) over canonical_w,
-                grade_level_id
-            ) as canonical_grade_level_id,
         from extended
         window
             canonical_w as (
@@ -125,11 +109,4 @@ select
     grade_level_id,
     is_internal_assessment,
     canonical_assessment_id,
-    canonical_title,
-    canonical_administered_at,
-    canonical_grade_level_id,
-
-    cast(canonical_administered_at as date) as administered_date,
-
-    canonical_grade_level_id - 1 as grade_level,
 from canonical
