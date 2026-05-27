@@ -309,3 +309,7 @@ separate PR.
 Before proposing a new structural mart change, check the open items on the
 [Data Team project board](https://github.com/orgs/TEAMSchools/projects/4) — the
 case may already be tracked and deferred.
+
+Adding a column to a model breaks downstream contract-enforced `select *`
+consumers. Grep `select \*` consumers and update their contract YAMLs in the
+same PR — only `dbt build` catches it, not `parse`.

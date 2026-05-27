@@ -21,25 +21,22 @@ with
         -- tuples, but the upstream collapse is preferred per
         -- src/dbt/CLAUDE.md "no manual deduplication".
         select distinct
-            'illuminate' as assessment_type,
-
-            a.canonical_title as title,
-
             a.subject_area,
             a.scope,
             a.module_code,
-
-            a.canonical_grade_level_id - 1 as grade_level,
-
-            cast(a.canonical_administered_at as date) as administered_date,
             a.academic_year,
+            a.administered_date,
+            a.grade_level,
 
-            region,
-
+            a.canonical_title as title,
             a.canonical_assessment_id as source_assessment_id,
+
+            'illuminate' as assessment_type,
 
             cast(null as string) as administration_period,
             cast(null as string) as test_type,
+
+            concat('kipp', lower(region)) as _dbt_source_project,
         from {{ ref("int_assessments__assessments") }} as a
         inner join
             canonical_regions as cr
@@ -48,171 +45,314 @@ with
         where a.is_internal_assessment
     ),
 
-    -- State NJ: one administration per (testcode, period, academic_year,
-    -- region). period acts as the season/window.
-    state_nj_administrations as (
+    -- grain projection: every selected column is functionally determined
+    -- by the partition key; not a mask for upstream duplicates
+    -- State NJ PARCC: one administration per (testcode, period, academic_year,
+    -- _dbt_source_project).
+    state_nj_parcc_administrations as (
         select distinct
-            'state' as assessment_type,
-            assessment_name as title,
-
-            if(
-                `subject` = 'English Language Arts/Literacy',
-                'English Language Arts',
-                `subject`
-            ) as subject_area,
-
+            subject_area,
             discipline as scope,
-
-            case
-                testcode
-                when 'SC05'
-                then 'SCI05'
-                when 'SC08'
-                then 'SCI08'
-                when 'SC11'
-                then 'SCI11'
-                else testcode
-            end as module_code,
-
+            module_code,
             test_grade as grade_level,
+            academic_year,
+            administration_period,
+            _dbt_source_project,
+
+            'state_nj_parcc' as assessment_type,
+            'PARCC' as title,
 
             cast(null as date) as administered_date,
-            academic_year,
-
-            initcap(regexp_extract(_dbt_source_relation, r'kipp(\w+)_')) as region,
-
             cast(null as int64) as source_assessment_id,
-
-            if(`period` = 'FallBlock', 'Fall', `period`) as administration_period,
-
             cast(null as string) as test_type,
-        from {{ ref("int_pearson__all_assessments") }}
+        from {{ ref("stg_pearson__parcc") }}
         where testscalescore is not null
     ),
 
-    -- State FL: one administration per (test_code, administration_window,
-    -- academic_year, region).
-    state_fl_administrations as (
+    -- grain projection: every selected column is functionally determined
+    -- by the partition key; not a mask for upstream duplicates
+    -- State NJ NJSLA: one administration per (testcode, period, academic_year,
+    -- _dbt_source_project).
+    state_nj_njsla_administrations as (
         select distinct
-            'state' as assessment_type,
-            assessment_name as title,
+            subject_area,
+            discipline as scope,
+            module_code,
+            test_grade as grade_level,
+            academic_year,
+            administration_period,
+            _dbt_source_project,
+
+            'state_nj_njsla' as assessment_type,
+            'NJSLA' as title,
+
+            cast(null as date) as administered_date,
+            cast(null as int64) as source_assessment_id,
+            cast(null as string) as test_type,
+        from {{ ref("stg_pearson__njsla") }}
+        where testscalescore is not null
+    ),
+
+    -- grain projection: every selected column is functionally determined
+    -- by the partition key; not a mask for upstream duplicates
+    -- State NJ NJSLA Science: one administration per (testcode, period,
+    -- academic_year, _dbt_source_project).
+    state_nj_njsla_science_administrations as (
+        select distinct
+            subject_area,
+            discipline as scope,
+            module_code,
+            test_grade as grade_level,
+            academic_year,
+            administration_period,
+            _dbt_source_project,
+
+            'state_nj_njsla_science' as assessment_type,
+            'NJSLA Science' as title,
+
+            cast(null as date) as administered_date,
+            cast(null as int64) as source_assessment_id,
+            cast(null as string) as test_type,
+        from {{ ref("stg_pearson__njsla_science") }}
+        where testscalescore is not null
+    ),
+
+    -- grain projection: every selected column is functionally determined
+    -- by the partition key; not a mask for upstream duplicates
+    -- State NJ NJGPA: one administration per (testcode, period, academic_year,
+    -- _dbt_source_project).
+    state_nj_njgpa_administrations as (
+        select distinct
+            subject_area,
+            discipline as scope,
+            module_code,
+            test_grade as grade_level,
+            academic_year,
+            administration_period,
+            _dbt_source_project,
+
+            'state_nj_njgpa' as assessment_type,
+            'NJGPA' as title,
+
+            cast(null as date) as administered_date,
+            cast(null as int64) as source_assessment_id,
+            cast(null as string) as test_type,
+        from {{ ref("stg_pearson__njgpa") }}
+        where testscalescore is not null
+    ),
+
+    -- grain projection: every selected column is functionally determined
+    -- by the partition key; not a mask for upstream duplicates
+    -- State FL FAST: one administration per (test_code, administration_window,
+    -- academic_year).
+    state_fl_fast_administrations as (
+        select distinct
             assessment_subject as subject_area,
             discipline as scope,
             test_code as module_code,
+            grade_level,
+            academic_year,
+            administration_window as administration_period,
+            _dbt_source_project,
 
-            cast(assessment_grade as int) as grade_level,
+            'state_fl_fast' as assessment_type,
+            'FAST' as title,
 
             cast(null as date) as administered_date,
-            academic_year,
-
-            initcap(regexp_extract(_dbt_source_relation, r'kipp(\w+)_')) as region,
-
             cast(null as int64) as source_assessment_id,
-
-            administration_window as administration_period,
-
             cast(null as string) as test_type,
-        from {{ ref("int_fldoe__all_assessments") }}
+        from {{ ref("stg_fldoe__fast") }}
+        where scale_score is not null
+    ),
+
+    -- grain projection: every selected column is functionally determined
+    -- by the partition key; not a mask for upstream duplicates
+    -- State FL FSA: one administration per (test_code, administration_window,
+    -- academic_year).
+    state_fl_fsa_administrations as (
+        select distinct
+            assessment_subject as subject_area,
+            discipline as scope,
+            test_code as module_code,
+            grade_level,
+            academic_year,
+            administration_window as administration_period,
+            _dbt_source_project,
+
+            'state_fl_fsa' as assessment_type,
+            'FSA' as title,
+
+            cast(null as date) as administered_date,
+            cast(null as int64) as source_assessment_id,
+            cast(null as string) as test_type,
+        from {{ ref("stg_fldoe__fsa") }}
+        where scale_score is not null
+    ),
+
+    -- grain projection: every selected column is functionally determined
+    -- by the partition key; not a mask for upstream duplicates
+    -- State FL EOC: one administration per (test_code, administration_window,
+    -- academic_year).
+    state_fl_eoc_administrations as (
+        select distinct
+            assessment_subject as subject_area,
+            discipline as scope,
+            test_code as module_code,
+            grade_level,
+            academic_year,
+            administration_window as administration_period,
+            _dbt_source_project,
+
+            'state_fl_eoc' as assessment_type,
+            'EOC' as title,
+
+            cast(null as date) as administered_date,
+            cast(null as int64) as source_assessment_id,
+            cast(null as string) as test_type,
+        from {{ ref("stg_fldoe__eoc") }}
+        where scale_score is not null
+    ),
+
+    -- grain projection: every selected column is functionally determined
+    -- by the partition key; not a mask for upstream duplicates
+    -- State FL Science: one administration per (test_code, administration_window,
+    -- academic_year).
+    state_fl_science_administrations as (
+        select distinct
+            assessment_subject as subject_area,
+            discipline as scope,
+            test_code as module_code,
+            grade_level,
+            academic_year,
+            administration_window as administration_period,
+            _dbt_source_project,
+
+            'state_fl_science' as assessment_type,
+            'Science' as title,
+
+            cast(null as date) as administered_date,
+            cast(null as int64) as source_assessment_id,
+            cast(null as string) as test_type,
+        from {{ ref("stg_fldoe__science") }}
         where scale_score is not null
     ),
 
     -- College Official: one administration per (score_type, test_date,
-    -- administration_round). region is null because college tests are
-    -- region-agnostic.
+    -- administration_round). _dbt_source_project is null because college tests
+    -- are region-agnostic.
+    -- grain projection: every selected column is functionally determined
+    -- by the partition key; not a mask for upstream duplicates
     college_administrations as (
         select distinct
-            'college' as assessment_type,
-            scope as title,
-            subject_area,
             scope,
+            subject_area,
             score_type as module_code,
-
-            cast(null as int64) as grade_level,
-
             test_date as administered_date,
             academic_year,
-
-            cast(null as string) as region,
-
-            cast(null as int64) as source_assessment_id,
-
             administration_round as administration_period,
+
+            'college' as assessment_type,
+            scope as title,
+
+            cast(null as int64) as grade_level,
+            cast(null as string) as _dbt_source_project,
+            cast(null as int64) as source_assessment_id,
 
             'Official' as test_type,
         from {{ ref("int_assessments__college_assessment") }}
     ),
 
     -- College Practice: one administration per (scope, test_date,
-    -- administration_round). region is null because college tests are
-    -- region-agnostic. Aggregates across subject_area rows in the upstream
+    -- administration_round). _dbt_source_project is null because college tests
+    -- are region-agnostic. Aggregates across subject_area rows in the upstream
     -- model.
     practice_administrations as (
         select
-            'college' as assessment_type,
-            scope as title,
-            any_value(subject_area) as subject_area,
             scope,
-            scope as module_code,
-
-            cast(null as int64) as grade_level,
-
-            test_date as administered_date,
             academic_year,
 
-            cast(null as string) as region,
-            cast(null as int64) as source_assessment_id,
-
+            scope as title,
+            scope as module_code,
+            test_date as administered_date,
             administration_round as administration_period,
 
+            'college' as assessment_type,
             'Practice' as test_type,
+
+            cast(null as string) as _dbt_source_project,
+            cast(null as int64) as grade_level,
+            cast(null as int64) as source_assessment_id,
+
+            any_value(subject_area) as subject_area,
         from {{ ref("int_assessments__college_assessment_practice") }}
         group by scope, test_date, academic_year, administration_round
     ),
 
     -- AP: one administration per (subject, academic_year). Test date is
     -- not captured upstream.
+    -- grain projection: every selected column is functionally determined
+    -- by the partition key; not a mask for upstream duplicates
     ap_administrations as (
         select distinct
-            'ap' as assessment_type,
-            concat('AP ', test_subject) as title,
-            test_subject as subject_area,
-
-            'AP' as scope,
-
-            ps_ap_course_subject_code as module_code,
-
-            cast(null as int64) as grade_level,
-
-            cast(null as date) as administered_date,
+            title,
             academic_year,
 
-            cast(null as string) as region,
+            test_subject as subject_area,
+            ps_ap_course_subject_code as module_code,
 
+            'ap' as assessment_type,
+            'AP' as scope,
+
+            cast(null as date) as administered_date,
+            cast(null as int64) as grade_level,
+            cast(null as string) as _dbt_source_project,
             cast(null as int64) as source_assessment_id,
-
             cast(null as string) as administration_period,
-
             cast(null as string) as test_type,
         from {{ ref("int_assessments__ap_assessments") }}
     ),
 
+    {%- set union_cols -%}
+        assessment_type, title, subject_area, scope, module_code, grade_level,
+        administered_date, academic_year, _dbt_source_project,
+        source_assessment_id, administration_period, test_type
+    {%- endset %}
+
     all_administrations as (
-        select *,
+        select {{ union_cols }},
         from illuminate_administrations
         union all
-        select *,
-        from state_nj_administrations
+        select {{ union_cols }},
+        from state_nj_njgpa_administrations
         union all
-        select *,
-        from state_fl_administrations
+        select {{ union_cols }},
+        from state_nj_njsla_administrations
         union all
-        select *,
+        select {{ union_cols }},
+        from state_nj_njsla_science_administrations
+        union all
+        select {{ union_cols }},
+        from state_nj_parcc_administrations
+        union all
+        select {{ union_cols }},
+        from state_fl_eoc_administrations
+        union all
+        select {{ union_cols }},
+        from state_fl_fast_administrations
+        union all
+        select {{ union_cols }},
+        from state_fl_fsa_administrations
+        union all
+        select {{ union_cols }},
+        from state_fl_science_administrations
+        union all
+        select {{ union_cols }},
         from college_administrations
         union all
-        select *,
+        select {{ union_cols }},
         from practice_administrations
         union all
-        select *,
+        select {{ union_cols }},
         from ap_administrations
     )
 
@@ -224,7 +364,7 @@ select
                 "module_code",
                 "administered_date",
                 "academic_year",
-                "region",
+                "_dbt_source_project",
                 "administration_period",
                 "source_assessment_id",
                 "test_type",
@@ -234,12 +374,12 @@ select
 
     -- `academic_year` is intentionally not exposed in the final SELECT —
     -- it's a hash input only. The canonical-grain dim represents an
-    -- administration scoped by `region` + `administered_date_key` +
-    -- `administration_period`; analysts derive academic year from
+    -- administration scoped by `_dbt_source_project` + `administered_date_key`
+    -- + `administration_period`; analysts derive academic year from
     -- `administered_date_key` via `dim_dates`.
     administered_date as administered_date_key,
 
-    region,
+    _dbt_source_project,
     administration_period,
     source_assessment_id,
     test_type,

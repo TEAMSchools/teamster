@@ -160,6 +160,14 @@ manifest". The prod manifest is refreshed by `.git/hooks/post-merge` on every
   models, not district-level overrides with the same name. For cross-project
   staging seeding, omit `--select`.
 
+## `dbt_utils.union_relations` is compile-time
+
+Compiles to the column intersection from source-table
+`INFORMATION_SCHEMA.COLUMNS`. New columns added at package-level staging don't
+surface at kipptaf-level consumers until district projects rebuild prod. For
+single-PR refactors, add transformations at the kipptaf-level wrapper, not at
+package level.
+
 ## Stale dev tables shadow `--defer`
 
 `--defer` uses any existing dev table before falling through to prod, so a stale
@@ -343,6 +351,16 @@ Top-level `description` on a singular test must go in a properties yml under
 `config.description`, which dbt docs doesn't read. After adding/editing the yml,
 run `dbt parse --no-partial-parse`; partial parse caches the unbound state.
 
+### Singular-test `meta.dagster.ref` needs `package:` for cross-package refs
+
+dagster-dbt resolves `meta.dagster.ref` via `(name, package, version)`. Omitting
+`package:` defaults to the running project — so a test under
+`src/dbt/<source>/tests/` referencing a model in its own package silently misses
+the lookup and logs `AssetObservation` across all parents instead of an
+`AssetCheckResult` on the intended asset. Always set `package: <source>` for
+source-system package tests. Tests in `src/dbt/kipptaf/tests/` don't need it
+(refs default to kipptaf).
+
 ### Generic test syntax (dbt 1.11+)
 
 All generic tests (`relationships`, `accepted_values`,
@@ -456,11 +474,18 @@ the same partition.
   case — that rebuilds the external table and forces sheet-header coordination.
 - **No `GROUP BY` without aggregation** — use `DISTINCT` instead (see next rule
   for deduplication constraints).
-- **No manual deduplication** — do not use `SELECT DISTINCT` or
-  `qualify row_number() over (...) = 1` for deduplication. Use
-  `dbt_utils.deduplicate()` with an explicit `partition_by` and `order_by`. If
-  `DISTINCT` is truly unavoidable, it must include a `-- TODO:` comment
-  explaining why and what needs to be fixed upstream.
+- **No manual deduplication for dirty data** — do not use `SELECT DISTINCT` or
+  `qualify row_number() over (...) = 1` to work around upstream duplicates. Use
+  `dbt_utils.deduplicate()` with explicit `partition_by` and `order_by`; add
+  `-- TODO:` naming the upstream fix.
+- **DISTINCT is allowed for pure grain projection** — every projected column is
+  functionally determined by the partition key, so byte-identical tuples
+  coalesce. Annotate with a two-line comment:
+  `grain projection: every selected column is functionally determined / by the partition key; not a mask for upstream duplicates`.
+  If any projected column varies within the partition (`min()`, `first_value()`,
+  etc.), use `dbt_utils.deduplicate()` instead.
+- **`dbt_utils.generate_surrogate_key` coerces nulls internally** —
+  `cast(null as <type>)` and bare `null` hash identically. Don't add the cast.
 - **No `GROUP BY ALL`** — list grouping columns explicitly. `GROUP BY ALL`
   breaks silently when upstream columns change.
 - **No `ORDER BY`** — ordering belongs in the reporting layer, not dbt models.

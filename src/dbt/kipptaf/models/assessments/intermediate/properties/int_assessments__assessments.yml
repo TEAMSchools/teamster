@@ -41,8 +41,6 @@ models:
         data_type: string
       - name: module_sequence
         data_type: int64
-      - name: grade_level
-        data_type: int64
       - name: illuminate_grade_level_id
         data_type: int64
       - name: regions_assessed
@@ -108,3 +106,13 @@ models:
           `grade_level_id` of the row whose `assessment_id` equals
           `canonical_assessment_id`. Consistent with the other `canonical_*`
           attributes (all derived from the same canonical row).
+
+      - name: administered_date
+        data_type: date
+        description:
+          Canonical administration date (cast from canonical_administered_at).
+      - name: grade_level
+        data_type: int64
+        description: >-
+          Canonical grade level (canonical_grade_level_id - 1, since the
+          upstream uses 1-indexed grade IDs).

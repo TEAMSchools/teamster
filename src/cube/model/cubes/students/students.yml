@@ -99,13 +99,3 @@ cubes:
         sql: is_gifted
         type: boolean
         public: true
-
-      - name: is_ell
-        description: >-
-          TRUE if the student is currently classified as an English Language
-          Learner per the PowerSchool student core fields. Reflects current
-          status only — does not reflect historical enrollment-date-window LEP
-          status.
-        sql: is_ell
-        type: boolean
-        public: true
