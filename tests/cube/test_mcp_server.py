@@ -370,6 +370,25 @@ def test_validate_query_errors_on_two_year_ay_range(
     assert result["suggested_fix"]["filters"][0]["values"] == ["2025", "2026"]
 
 
+def test_validate_query_errors_on_same_year_ay_range(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    server = _load_server(monkeypatch)
+    query = {
+        "measures": ["attendance_summary.count_present"],
+        "filters": [
+            {
+                "member": "attendance_summary.dim_terms_academic_year",
+                "operator": "equals",
+                "values": ["2025-2025"],
+            }
+        ],
+    }
+    result = server._validate_query(query)
+    assert result.get(server._QUERY_ERROR_SENTINEL)
+    assert result["suggested_fix"]["filters"][0]["values"] == ["2025"]
+
+
 def test_validate_query_passes_through_when_no_ca_measure(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:

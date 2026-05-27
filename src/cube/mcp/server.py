@@ -378,7 +378,7 @@ def _expand_ay_range(value: str) -> list[str] | None:
     if not m:
         return None
     start, end = int(m.group(1)), int(m.group(2))
-    if start >= end or end - start > 10:
+    if start > end or end - start > 10:
         return None
     return [str(y) for y in range(start, end + 1)]
 
