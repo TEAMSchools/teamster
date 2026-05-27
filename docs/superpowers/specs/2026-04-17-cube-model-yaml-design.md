@@ -1,6 +1,6 @@
 # Cube Model YAML Design
 
-**Date:** 2026-04-17 **Status:** Draft
+**Date:** 2026-04-17 **Status:** Active
 
 ## Overview
 
@@ -1033,8 +1033,8 @@ at base access level; not in any `excludes:` list. Included in both detail and
 summary views for trend analysis. BI-layer cell suppression applies for small
 populations.
 
-- Students: `gender_identity`, `race`, `meal_eligibility_status`, `is_ell`,
-  `has_iep`, `is_gifted`
+- Students: `gender_identity`, `race`, `meal_eligibility`, `is_ell`, `is_iep`,
+  `is_gifted`
 - Staff: `gender_identity`, `race`, `is_hispanic`
 
 ### Pattern 2 — Compensation fields
@@ -1119,20 +1119,17 @@ Applied on the observations detail view. Fields gated: `score`,
 `text_box_content`, `response_text`. All carry `meta: {pii: true}` on the cube
 dimension.
 
-**Row-level scoping** (`queryRewrite` in `cube.js`): Users with
-`cube-access-staff-observations` see individual records only for their own
-school(s). For other schools, only aggregates are accessible. `queryRewrite`
-reads the user's `locationKeys` claim (a list — APs covering multiple schools
-get multiple values) from the security context and injects a
-`{observations.location_key} IN (...)` filter when the query targets the detail
-view. When the query targets the summary view, no filter is injected — aggregate
-scores across all schools are visible. Users with a regional or org-wide scope
-group get an empty `locationKeys` list, which `queryRewrite` treats as
-unrestricted (no filter injected on either view).
+**Row-level scoping** (`queryRewrite` in `cube.js`): Row-level location gating
+is provided by the existing `queryRewrite` location filter, derived from the
+user's Google group — no observations-specific mechanism is needed. A user with
+`cube-school-bold-detail` has `locations.abbreviation IN ('bold')` injected on
+every query; a regional user gets a `locations.region_key` filter; a network
+user gets no location filter. This applies to observations queries the same as
+any other domain.
 
 The two layers are independent: a user without `cube-access-staff-observations`
-sees nothing regardless of school assignment. The row filter only applies once
-the column gate passes.
+sees nothing regardless of school scope. The location filter only narrows rows
+for users who have already passed the column gate.
 
 ```yaml
 # observations_detail.yml
