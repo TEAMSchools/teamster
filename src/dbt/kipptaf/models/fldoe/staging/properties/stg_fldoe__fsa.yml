@@ -1,7 +1,5 @@
 models:
   - name: stg_fldoe__fsa
-    config:
-      enabled: false
     columns:
       - name: _dbt_source_relation
         data_type: string
@@ -91,3 +89,10 @@ models:
         data_type: string
       - name: assessment_subject
         data_type: string
+      - name: _dbt_source_project
+        data_type: string
+        description: Source project
+          (extract_code_location(_dbt_source_relation)) — 'kippmiami'. Per #3142, materialized at the union model so consumers don't re-derive per-call.
+      - name: grade_level
+        data_type: int64
+        description: Cast from test_grade (per-source grade representation).

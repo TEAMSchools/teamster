@@ -74,3 +74,9 @@ models:
         description:
           LAG of scale_score partitioned by student_id, academic_year,
           assessment_subject ordered by administration_window.
+      - name: assessment_type
+        data_type: string
+        description: >-
+          Program-lineage label ('state_fl_fast' / '..._fsa' / '..._eoc' /
+          '..._science') derived from assessment_name. Used by marts as the
+          hash-input value for assessment_key.

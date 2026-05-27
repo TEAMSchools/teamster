@@ -1,1 +1,24 @@
-select * except (regions_assessed_array), from {{ ref("int_assessments__assessments") }}
+select
+    assessment_id,
+    title,
+    academic_year,
+    academic_year_clean,
+    scope,
+    creator_first_name,
+    creator_last_name,
+    performance_band_set_id,
+    assessment_type,
+    tags,
+    module_code,
+    module_type,
+    module_sequence,
+    illuminate_grade_level_id,
+    regions_assessed,
+    regions_report_card,
+    regions_progress_report,
+    administered_at,
+    subject_area,
+    is_internal_assessment,
+
+    illuminate_grade_level_id - 1 as grade_level,
+from {{ ref("int_assessments__assessments_members") }}

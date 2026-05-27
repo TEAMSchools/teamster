@@ -122,13 +122,13 @@ Verify before writing `secretKeyRef.key`:
 - **PriorityClass `dagster-agent`** (value 1000) on agent pods — same tier as
   run/step pods, preventing mutual preemption. Does not protect against OOM
   kills of the pod itself — only eviction ordering. Code servers tolerate
-  eviction: they are stateless and PDB-protected (`minAvailable: 1`).
-- **PDB for code servers** uses `minAvailable: 1` (not `maxUnavailable`).
-  `maxUnavailable` requires resolving the owning controller (Deployment) to
-  calculate expected pod count — during Dagster Cloud rollovers the old
-  Deployment is deleted before pods terminate, causing
-  `CalculateExpectedPodCountFailed` and leaving pods unprotected. `minAvailable`
-  only counts current healthy pods, no controller lookup needed.
+  eviction: they are stateless and PDB-protected (`maxUnavailable: 1`).
+- **PDB for code servers** uses `maxUnavailable: 1`. Do not switch to
+  `minAvailable: 1` — GKE Recommender flags single-replica + `minAvailable: 1`
+  as blocking voluntary evictions (node maintenance). The known
+  `CalculateExpectedPodCountFailed` warning during Dagster Cloud rollovers (old
+  Deployment deleted before pods terminate) is acceptable: single-replica
+  rollovers are unprotected by definition.
 - **PDBs do NOT block spot reclaim** — spot reclaim is involuntary.
 - **GKE Autopilot system-critical preemption** — `system-cluster-critical` and
   `system-node-critical` pods (priority 2,000,000,000) preempt dagster-run pods

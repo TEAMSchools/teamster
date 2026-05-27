@@ -1,0 +1,40 @@
+cubes:
+  - name: dim_student_ell_status
+    public: false
+    sql_table: kipptaf_marts.dim_student_ell_status
+
+    dimensions:
+      - name: student_ell_status_key
+        sql: student_ell_status_key
+        type: string
+        primary_key: true
+
+      - name: student_enrollment_key
+        sql: student_enrollment_key
+        type: string
+        public: false
+
+      - name: effective_date_start_key
+        sql: effective_date_start_key
+        type: string
+        public: false
+
+      - name: effective_date_end_key
+        sql: effective_date_end_key
+        type: string
+        public: false
+
+      - name: is_ell
+        description: >-
+          TRUE if the student was classified as an English Language Learner on
+          this attendance date. Derived from SCD2 status spans clipped to the
+          enrollment stint; reflects status at the time of attendance, not
+          current classification. NULL when no ELL span covers the attendance
+          date — this means the student was not classified ELL on that date, not
+          that data is missing. Note: Newark, Camden, and Paterson draw from
+          historical LEP entry/exit dates in s_nj_stu_x; Miami uses a single
+          current-state span from studentcorefields.lep_status (no historical
+          transitions recoverable).
+        sql: is_ell
+        type: boolean
+        public: true

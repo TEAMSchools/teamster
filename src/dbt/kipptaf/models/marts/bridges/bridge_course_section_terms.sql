@@ -1,7 +1,7 @@
 select
     {{
         dbt_utils.generate_surrogate_key(
-            ["sec.sections_dcid", "sec._dbt_source_relation"]
+            ["sec.sections_dcid", "sec._dbt_source_project"]
         )
     }} as course_section_key,
 
