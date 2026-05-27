@@ -16,6 +16,11 @@ models:
           - type: primary_key
             warn_unsupported: false
         data_tests:
+          # TODO(#3923): restore to severity:error once Dagster has materialized
+          # the namespace-fixed int_powerschool__attendance_streak in every
+          # district prod dataset. The kipptaf mart source()s district data,
+          # which resolves to prod in dbt Cloud CI — until district prod is
+          # refreshed, CI still sees the 305 Paterson cross-branch collisions.
           - unique
           - not_null
 
@@ -23,7 +28,7 @@ models:
         data_type: string
         description: >-
           FK to dim_student_enrollments. Surrogate key derived from
-          student_number, _dbt_source_relation, academic_year, and entrydate.
+          student_number, _dbt_source_project, academic_year, and entrydate.
         constraints:
           - type: foreign_key
             to: ref('dim_student_enrollments')

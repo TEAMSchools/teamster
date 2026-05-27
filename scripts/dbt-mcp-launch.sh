@@ -17,10 +17,14 @@ DBT_TOKEN="$(OP_SERVICE_ACCOUNT_TOKEN="${token}" \
 unset token
 
 export DBT_TOKEN
-export DBT_HOST=rn998.us1.dbt.com
-export DBT_ACCOUNT_ID=116510
-export DBT_PROD_ENV_ID=70403104014899
-export DBT_PROJECT_DIR=/workspaces/teamster/src/dbt/kipptaf
-export DBT_PATH=/workspaces/teamster/.venv/bin/dbt
+
+# Static config (DBT_HOST*, DBT_ACCOUNT_ID, DBT_PROD_ENV_ID, DISABLE_DBT_CLI,
+# DISABLE_TOOLS) lives in .mcp.json's `env` block. Notes on the choices there:
+# - DBT_PROJECT_DIR / DBT_PATH intentionally unset so boot skips the ~3.4s
+#   `dbt lsp --help` Fusion probe (lsp_binary_manager.detect_fusion_lsp).
+# - DISABLE_TOOLS lists every proxied tool: empty configured_proxied_tools
+#   short-circuits register_proxied_tools before its POST /api/ai/v1/mcp/ 403s
+#   our service token (legacy Team plan — no Developer scope; remote MCP not
+#   available on this plan tier).
 
 exec uvx dbt-mcp

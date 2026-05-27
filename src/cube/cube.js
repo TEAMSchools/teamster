@@ -20,47 +20,12 @@ function nextMidnightEastern() {
   return now.getTime() + (24 * 60 * 60 * 1000 - msElapsedToday);
 }
 
-// resolveGroupsSync: synchronous group lookup for queryRewrite.
-// contextToGroups is async; in some Cube pipeline configurations it runs before
-// queryRewrite (Cube Cloud) and in others after (local dev server). We check
-// three sources in priority order:
-//   1. securityContext.groups — JWT claims or Cube-injected from contextToGroups
-//   2. groupCache — populated by contextToGroups when it runs before queryRewrite
-//   3. CUBE_GROUP_MAP — local dev only, synchronous bypass of the Directory API
-function resolveGroupsSync(securityContext) {
-  const groups = securityContext?.groups;
-  if (Array.isArray(groups) && groups.length > 0) return groups;
-
-  const email =
-    securityContext?.email ??
-    securityContext?.cubeCloud?.userAttributes?.email;
-
-  if (email) {
-    const cached = groupCache.get(email);
-    if (cached && cached.expiresAt > Date.now()) return cached.groups;
-  }
-
-  if (process.env.NODE_ENV !== "production" && process.env.CUBE_GROUP_MAP) {
-    if (!email) return [];
-    try {
-      const map = JSON.parse(process.env.CUBE_GROUP_MAP);
-      return (map[email] ?? []).filter((g) => g.startsWith("cube-"));
-    } catch {
-      return [];
-    }
-  }
-
-  return [];
-}
-
-// STUDENT_CUBES: view prefixes that require cube-access-student-data.
-const STUDENT_CUBES = ["attendance_detail", "attendance_summary"];
-
-const STAFF_CUBES = [
-  "dim_staff",
-  "fct_staff_attrition",
-  "fct_staff_observations",
-];
+// Naming convention drives security — no lists to maintain.
+// student cubes: name starts with "student" (students, student_attendance, etc.)
+// staff cubes:   name starts with "staff"   (staff, staff_attrition, etc.)
+// conformed dims: bare business name (dates, locations, regions, terms, school_calendars)
+function isStudentMember(m) { return m.startsWith("student"); }
+function isStaffMember(m)   { return m.startsWith("staff"); }
 
 module.exports = {
   driverFactory: () => ({
@@ -81,23 +46,6 @@ module.exports = {
       securityContext?.email ??
       securityContext?.cubeCloud?.userAttributes?.email;
     if (!email) return [];
-
-    // Pre-Directory-API testing allowlist. Remove once Directory API is live.
-    // Set CUBE_TESTING_USERS in Cube Cloud env vars (never commit values).
-    // Format: {"user@example.com": ["cube-access-student-data", "cube-network-detail"]}
-    if (process.env.CUBE_TESTING_USERS) {
-      try {
-        const map = JSON.parse(process.env.CUBE_TESTING_USERS);
-        // All users handled here — listed get groups, unlisted get [] (default
-        // deny). Prevents fallthrough to Directory API in testing deployments.
-        const groups = (map[email] ?? []).filter((g) => g.startsWith("cube-"));
-        groupCache.set(email, { groups, expiresAt: nextMidnightEastern() });
-        return groups;
-      } catch (err) {
-        console.error("CUBE_TESTING_USERS is not valid JSON:", err.message);
-        return [];
-      }
-    }
 
     // Local dev only: CUBE_GROUP_MAP bypasses Directory API.
     // Must never be set in Cube Cloud — see docs/guides/cube.md.
@@ -160,18 +108,18 @@ module.exports = {
   },
 
   queryRewrite: (query, { securityContext }) => {
-    const groups = resolveGroupsSync(securityContext);
+    const email =
+      securityContext?.email ??
+      securityContext?.cubeCloud?.userAttributes?.email;
+    const cached = email ? groupCache.get(email) : null;
+    const groups = cached?.expiresAt > Date.now() ? cached.groups : [];
 
-    // Users without cube-access-student-data see no student data views.
+
     if (!groups.includes("cube-access-student-data")) {
       query = {
         ...query,
-        dimensions: (query.dimensions ?? []).filter(
-          (d) => !STUDENT_CUBES.some((c) => d.startsWith(c)),
-        ),
-        measures: (query.measures ?? []).filter(
-          (m) => !STUDENT_CUBES.some((c) => m.startsWith(c)),
-        ),
+        dimensions: (query.dimensions ?? []).filter((d) => !isStudentMember(d)),
+        measures: (query.measures ?? []).filter((m) => !isStudentMember(m)),
       };
     }
 
@@ -193,7 +141,7 @@ module.exports = {
         .replace(/^cube-region-/, "")
         .replace(/-(?:detail|summary)$/, "");
       locationFilter = {
-        member: "dim_locations.region_key",
+        member: "locations.region_key",
         operator: "equals",
         values: [region],
       };
@@ -202,7 +150,7 @@ module.exports = {
         .replace(/^cube-school-/, "")
         .replace(/-(?:detail|summary)$/, "");
       locationFilter = {
-        member: "dim_locations.abbreviation",
+        member: "locations.abbreviation",
         operator: "equals",
         values: [slug],
       };
@@ -212,7 +160,7 @@ module.exports = {
         ...query,
         filters: [
           {
-            member: "dim_locations.abbreviation",
+            member: "locations.abbreviation",
             operator: "equals",
             values: [],
           },
@@ -229,11 +177,11 @@ module.exports = {
     const touchesStaffCube = [
       ...(query.dimensions ?? []),
       ...(query.measures ?? []),
-    ].some((m) => STAFF_CUBES.some((c) => m.startsWith(c)));
+    ].some((m) => isStaffMember(m));
     if (touchesStaffCube && !groups.includes("cube-access-staff-all")) {
       query = {
         ...query,
-        segments: [...(query.segments ?? []), "dim_staff.reporting_chain"],
+        segments: [...(query.segments ?? []), "staff.reporting_chain"],
       };
     }
 

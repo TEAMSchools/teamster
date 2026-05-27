@@ -397,6 +397,205 @@ async def step_15_backfills(gql: GraphQL, after_epoch: float) -> dict:
     return out
 
 
+# ─── Step 16: Failed asset checks ─────────────────────────────────────────
+
+ASSET_CHECKS_DISCOVERY_QUERY = """
+query AssetChecksDiscovery {
+  assetNodes {
+    assetChecksOrError {
+      __typename
+      ... on AssetChecks {
+        checks { name assetKey { path } }
+      }
+    }
+  }
+}
+"""
+
+ASSET_CHECK_LATEST_QUERY = """
+query AssetCheckLatest($assetKey: AssetKeyInput!, $checkName: String!) {
+  assetCheckExecutions(
+    assetKey: $assetKey
+    checkName: $checkName
+    limit: 1
+  ) {
+    runId
+    status
+    timestamp
+    evaluation {
+      severity
+      description
+      metadataEntries {
+        label
+        ... on TextMetadataEntry { text }
+        ... on JsonMetadataEntry { jsonString }
+        ... on IntMetadataEntry { intValue }
+        ... on FloatMetadataEntry { floatValue }
+      }
+    }
+  }
+}
+"""
+
+
+def _summarize_check_metadata(entries: list[dict] | None) -> str:
+    """Squash metadata entries into a short string for the report."""
+    if not entries:
+        return ""
+    parts: list[str] = []
+    for m in entries:
+        label = m.get("label") or ""
+        val = (
+            m.get("text")
+            or m.get("jsonString")
+            or m.get("intValue")
+            or m.get("floatValue")
+        )
+        if val is None or val == "":
+            continue
+        parts.append(f"{label}={str(val)[:200]}")
+    return "; ".join(parts)[:600]
+
+
+async def step_16_asset_checks(gql: GraphQL, after_epoch: float) -> dict:
+    """Surface asset checks whose latest execution is FAILED.
+
+    Buckets by severity (ERROR vs WARN) and timing (inWindow vs stale).
+    `avro_schema_valid` checks fall under WARN severity by design.
+    """
+    discovery = await gql.query(ASSET_CHECKS_DISCOVERY_QUERY)
+    seen: set[tuple[tuple[str, ...], str]] = set()
+    pairs: list[tuple[tuple[str, ...], str]] = []
+    for node in discovery.get("assetNodes") or []:
+        ck = node.get("assetChecksOrError") or {}
+        if ck.get("__typename") != "AssetChecks":
+            continue
+        for c in ck.get("checks") or []:
+            key = (tuple(c["assetKey"]["path"]), c["name"])
+            if key in seen:
+                continue
+            seen.add(key)
+            pairs.append(key)
+
+    sem = asyncio.Semaphore(20)
+
+    async def fetch(asset_path: tuple[str, ...], check_name: str) -> dict | None:
+        async with sem:
+            d = await gql.query(
+                ASSET_CHECK_LATEST_QUERY,
+                {"assetKey": {"path": list(asset_path)}, "checkName": check_name},
+            )
+        execs = d.get("assetCheckExecutions") or []
+        if not execs:
+            return None
+        ex = execs[0]
+        status = ex.get("status")
+        if status not in ("FAILED", "EXECUTION_FAILED"):
+            return None
+        ev = ex.get("evaluation") or {}
+        return {
+            "asset": "/".join(asset_path),
+            "check": check_name,
+            "status": status,
+            "severity": ev.get("severity") or "UNKNOWN",
+            "timestamp": ex.get("timestamp"),
+            "runId": ex.get("runId"),
+            "description": ev.get("description"),
+            "metadata": _summarize_check_metadata(ev.get("metadataEntries")),
+        }
+
+    results = await asyncio.gather(*(fetch(p, n) for p, n in pairs))
+    buckets: dict[str, list[dict]] = {
+        "inWindow_error": [],
+        "inWindow_warn": [],
+        "stale_error": [],
+        "stale_warn": [],
+    }
+    for r in results:
+        if r is None:
+            continue
+        in_window = (r["timestamp"] or 0) >= after_epoch
+        # EXECUTION_FAILED has no evaluation/severity — bucket as error so it
+        # surfaces alongside check-evaluation ERRORs rather than getting buried
+        # in WARN noise. WARN-severity FAILED is the documented avro_schema_valid
+        # path; anything else (including UNKNOWN) is treated as error.
+        is_warn = r["status"] == "FAILED" and r["severity"] == "WARN"
+        bucket = (
+            f"{'inWindow' if in_window else 'stale'}_{'warn' if is_warn else 'error'}"
+        )
+        buckets[bucket].append(r)
+    return {
+        "totalChecks": len(pairs),
+        "failedCount": sum(len(b) for b in buckets.values()),
+        **buckets,
+    }
+
+
+# ─── Step 17: Degraded assets (latestRun.status = FAILURE) ────────────────
+
+ASSETS_LATEST_QUERY = """
+query AssetsLatest($keys: [AssetKeyInput!]!) {
+  assetsLatestInfo(assetKeys: $keys) {
+    assetKey { path }
+    latestRun { runId status endTime }
+  }
+}
+"""
+
+
+async def step_17_degraded_assets(gql: GraphQL, _after_epoch: float) -> dict:
+    """Assets whose latest run failed.
+
+    Caveat: dbt failures are run-level, not step-level, so an asset can be
+    flagged here even though its own materialization step succeeded mid-run.
+    Use this list as a starting point and verify per-asset.
+    """
+    nodes = (await gql.query(ASSETS_QUERY)).get("assetNodes") or []
+    keys = [{"path": n["assetKey"]["path"]} for n in nodes]
+
+    degraded: list[dict] = []
+    chunk = 200
+    for i in range(0, len(keys), chunk):
+        batch = keys[i : i + chunk]
+        data = await gql.query(ASSETS_LATEST_QUERY, {"keys": batch})
+        for info in data.get("assetsLatestInfo") or []:
+            latest = info.get("latestRun") or {}
+            if latest.get("status") != "FAILURE":
+                continue
+            degraded.append(
+                {
+                    "asset": "/".join(info["assetKey"]["path"]),
+                    "latestRunId": latest.get("runId"),
+                    "latestRunEndTime": latest.get("endTime"),
+                }
+            )
+
+    by_run: dict[str, list[str]] = {}
+    for d in degraded:
+        by_run.setdefault(d["latestRunId"] or "", []).append(d["asset"])
+    return {
+        "totalAssets": len(keys),
+        "degradedCount": len(degraded),
+        "degraded": degraded,
+        "byRun": [
+            {
+                "runId": rid,
+                "endTime": next(
+                    (
+                        d["latestRunEndTime"]
+                        for d in degraded
+                        if d["latestRunId"] == rid
+                    ),
+                    None,
+                ),
+                "count": len(assets),
+                "assets": assets,
+            }
+            for rid, assets in sorted(by_run.items(), key=lambda x: -len(x[1]))
+        ],
+    }
+
+
 # ─── Step 2: Retry verification ───────────────────────────────────────────
 
 RUNS_BY_ID_QUERY = """
@@ -991,8 +1190,6 @@ def step_12_error_groups(utc_start: str, step_10: dict) -> dict:
     pod_events = step_10.get("podEvents", []) or []
     events_url = f"https://clouderrorreporting.googleapis.com/v1beta1/projects/{PROJECT_ID}/events"
     for g in out:
-        if (g.get("lastSeenTime") or "") < utc_start:
-            continue
         if g.get("resolutionStatus") != "OPEN":
             continue
         ev_resp = httpx.get(
@@ -1022,7 +1219,7 @@ def step_12_error_groups(utc_start: str, step_10: dict) -> dict:
         )
         exc = g.get("exceptionLine") or ""
         exc_class = exc.split(":")[0].split(".")[-1] if exc else ""
-        if g["correlatedPodEvent"] and exc_class in SIGTERM_EXC_CLASSES:
+        if exc_class in SIGTERM_EXC_CLASSES:
             g["category"] = "sigterm_during_import"
         elif g["correlatedPodEvent"]:
             g["category"] = "preemption_artifact"
@@ -1147,6 +1344,8 @@ async def main() -> None:
             run_step("step_14_queued_runs", step_14_queued(gql, epoch)),
             run_step("step_15_backfills", step_15_backfills(gql, epoch)),
             run_step("step_04_freshness", step_04_freshness(gql, epoch)),
+            run_step("step_16_asset_checks", step_16_asset_checks(gql, epoch)),
+            run_step("step_17_degraded_assets", step_17_degraded_assets(gql, epoch)),
         )
         # Workspace once for steps 3, 5, 6.
         try:

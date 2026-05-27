@@ -26,7 +26,7 @@ select
     ps.is_power_standard,
 
     coalesce(ps.qbl, 'No QBL mapped') as qbl,
-from {{ ref("int_assessments__assessments") }} as a
+from {{ ref("int_assessments__assessments_members") }} as a
 left join grade_level as g on a.assessment_id = g.assessment_id
 left join
     {{ ref("stg_illuminate__dna_assessments__assessment_standards") }} as st
@@ -79,7 +79,7 @@ select
     ps.is_power_standard,
 
     coalesce(ps.qbl, 'No QBL mapped') as qbl,
-from {{ ref("int_assessments__assessments") }} as a
+from {{ ref("int_assessments__assessments_members") }} as a
 left join grade_level as g on a.assessment_id = g.assessment_id
 left join
     {{ ref("stg_illuminate__dna_assessments__assessment_standards") }} as st

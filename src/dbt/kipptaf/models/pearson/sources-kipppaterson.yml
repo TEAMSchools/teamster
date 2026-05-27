@@ -22,6 +22,15 @@ sources:
                 - kipppaterson
                 - pearson
                 - stg_pearson__njsla
+      - name: int_pearson__njsla
+        config:
+          meta:
+            dagster:
+              group: pearson
+              asset_key:
+                - kipppaterson
+                - pearson
+                - int_pearson__njsla
       - name: stg_pearson__njsla_science
         config:
           meta:
@@ -31,6 +40,15 @@ sources:
                 - kipppaterson
                 - pearson
                 - stg_pearson__njsla_science
+      - name: int_pearson__njsla_science
+        config:
+          meta:
+            dagster:
+              group: pearson
+              asset_key:
+                - kipppaterson
+                - pearson
+                - int_pearson__njsla_science
       - name: stg_pearson__parcc
         config:
           meta:

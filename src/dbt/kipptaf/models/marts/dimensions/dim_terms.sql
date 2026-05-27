@@ -16,6 +16,8 @@ select
 
     sch.location_key,
 
+    t.school_id,
+
     t.`type`,
     t.code as term_code,
     t.`name` as term_name,
@@ -26,6 +28,15 @@ select
     t.grade_band,
     t.lockbox_date as data_freeze_date,
     t.is_current,
+
+    case
+        when t.`name` in ('Q1', 'Q2')
+        then 'S1'
+        when t.`name` in ('Q3', 'Q4')
+        then 'S2'
+        when t.code in ('S1', 'S2')
+        then t.code
+    end as semester,
 from terms as t
 left join {{ ref("dim_regions") }} as dr on t.city = dr.`name`
 left join

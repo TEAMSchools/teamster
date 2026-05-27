@@ -9,7 +9,7 @@ models:
       - name: course_section_key
         data_type: string
         description: >-
-          Surrogate key derived from sections_dcid and _dbt_source_relation.
+          Surrogate key derived from sections_dcid and _dbt_source_project.
           Primary key for this dimension.
         constraints:
           - type: primary_key
@@ -22,7 +22,7 @@ models:
         data_type: string
         description: >-
           Surrogate key derived from courses_course_number and
-          _dbt_source_relation. FK to dim_courses.
+          _dbt_source_project. FK to dim_courses.
         constraints:
           - type: foreign_key
             to: ref('dim_courses')

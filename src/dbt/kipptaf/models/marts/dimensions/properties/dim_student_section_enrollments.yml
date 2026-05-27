@@ -12,7 +12,7 @@ models:
       - name: student_section_enrollment_key
         data_type: string
         description: >-
-          Surrogate key derived from cc_dcid and _dbt_source_relation. Primary
+          Surrogate key derived from cc_dcid and _dbt_source_project. Primary
           key for this dimension — unique per CC record per region.
         constraints:
           - type: primary_key
@@ -24,7 +24,7 @@ models:
       - name: student_enrollment_key
         data_type: string
         description: >-
-          Surrogate key derived from student_number, _dbt_source_relation,
+          Surrogate key derived from student_number, _dbt_source_project,
           academic_year, and entrydate. FK to dim_student_enrollments. Null when
           no matching student enrollment record covers the CC dateenrolled.
 
@@ -41,7 +41,7 @@ models:
       - name: course_section_key
         data_type: string
         description: >-
-          Surrogate key derived from sections_dcid and _dbt_source_relation. FK
+          Surrogate key derived from sections_dcid and _dbt_source_project. FK
           to dim_course_sections.
         constraints:
           - type: foreign_key
@@ -103,9 +103,3 @@ models:
           TRUE if all enrollments for this student x course x year were dropped,
           meaning the entire course was abandoned rather than just a section
           transfer.
-
-    data_tests:
-      - dbt_utils.unique_combination_of_columns:
-          arguments:
-            combination_of_columns:
-              - student_section_enrollment_key

@@ -20,4 +20,4 @@ unset token
 
 export CUBE_API_SECRET
 
-exec uv run /workspaces/teamster/scripts/cube_rest_mcp.py
+exec uv run /workspaces/teamster/src/cube/mcp/server.py

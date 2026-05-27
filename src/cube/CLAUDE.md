@@ -77,9 +77,17 @@ Default-deny, group-driven. Read [`cube.js`](cube.js) before modifying.
 
 - **`contextToGroups`** resolves the requester's email to `cube-*` Google
   Workspace groups via the Admin Directory API, cached until next midnight ET.
-  Two bypass paths (priority order):
-  - `CUBE_TESTING_USERS` — Cube Cloud testing/staging only, never production.
-  - `CUBE_GROUP_MAP` — local dev only, gated on `NODE_ENV !== "production"`.
+  `CUBE_GROUP_MAP` (local dev only, gated on `NODE_ENV !== "production"`) is the
+  sole bypass.
+- **Group membership is direct-only.** Admin Directory API's
+  `groups.list({userKey})` returns direct memberships; nested `cube-*` groups
+  don't transitively resolve. Flat-enroll users in every `cube-*` group they
+  need (scope tier + `cube-access-student-data`, plus `cube-access-staff-all`
+  for staff cubes).
+- **Cloud Identity `searchTransitiveGroups` is edition-gated** (Workspace
+  Enterprise / Education Plus / Cloud Identity Premium). On lower editions it
+  returns `INVALID_ARGUMENT`, not `PERMISSION_DENIED` — don't propose it as a
+  transitive-resolution fix without verifying the tenant's edition.
 - **`queryRewrite`** enforces three filters:
   - Strips dims/measures from `STUDENT_CUBES` for users without
     `cube-access-student-data`.
@@ -90,9 +98,8 @@ Default-deny, group-driven. Read [`cube.js`](cube.js) before modifying.
     segment unless the user has `cube-access-staff-all`.
 - **`STUDENT_CUBES` / `STAFF_CUBES` arrays.** Entries must match the cube
   `name:` field — `queryRewrite` matches via `startsWith` on
-  `<cube_name>.<member>` query members. Both arrays are currently placeholders
-  flagged TODO in `cube.js`; when adding a new student-data or staff-data cube,
-  append its `name:` to the matching array.
+  `<cube_name>.<member>` query members. When adding a new student-data or
+  staff-data cube, append its `name:` to the matching array.
 - **`canSwitchSqlUser`** only allows the SQL super-user to impersonate
   `@apps.teamschools.org` accounts (Superset integration). Do not broaden the
   suffix check.
@@ -126,6 +133,30 @@ The `cube` MCP wraps Cube Cloud's REST API. Auth path that works:
   security-context delta, not a schema bug.
 - `queryRewrite` default-deny manifests as `WHERE (1 = 0)` plus
   `rlsAccessDenied` in `sortedDimensions` of `/sql` output.
+- **Branch endpoints**: `/staging/<branch>/cubejs-api/v1` is the per-branch
+  staging endpoint (stable, redeploys on push).
+  `/user/<urlencoded-email>/<id>/cubejs-api/v1` is the per-developer Dev Mode
+  endpoint. Only Dev Mode surfaces server `console.log` in the playground logs
+  panel — staging has no log UI. Debug `cube.js` code paths on Dev Mode.
+- **Branch staging configuration doesn't fully inherit from production.** Before
+  diagnosing API errors on a branch staging env, verify
+  `GOOGLE_DIRECTORY_SA_KEY` / `GOOGLE_DIRECTORY_SA_SUBJECT` (and any other
+  required secrets) are set on that environment.
+
+## Jinja in cube YAML
+
+Cube data models support Jinja macros and `{% set %}` variables for SQL snippet
+reuse. Before factoring with Jinja, check whether a dbt-derived dim column (e.g.
+`dim_dates.is_current_academic_year` from `{{ var("current_academic_year") }}`)
+is a better fit — keeps Cube and dbt in lockstep.
+
+## Measure filters and joined-cube references
+
+Measure `filters:` SQL substitutes dimension expressions at compile time,
+including `{other_cube.member}` references to joined cubes. Transitive joins
+auto-resolve; don't add redundant intermediate-hop joins. "Column not found" in
+a filter usually means the dimension SQL references a bare column on the
+filtering cube — route through `{joined_cube.col}` instead.
 
 ## Operational notes
 

@@ -10,3 +10,5 @@ sources:
                 - kipptaf
                 - alchemer
                 - base_alchemer__survey_results
+      - name: stg_alchemer__survey
+      - name: stg_alchemer__survey_question

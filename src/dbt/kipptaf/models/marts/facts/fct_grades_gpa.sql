@@ -2,6 +2,7 @@ with
     student_enrollments as (
         select
             _dbt_source_relation,
+            _dbt_source_project,
             studentid,
             schoolid,
             yearid,
@@ -9,7 +10,7 @@ with
             entrydate,
             exitdate,
             academic_year,
-        from {{ ref("base_powerschool__student_enrollments") }}
+        from {{ ref("int_powerschool__student_enrollment_union") }}
     ),
 
     reporting_terms as (
@@ -83,7 +84,7 @@ select
         dbt_utils.generate_surrogate_key(
             [
                 "enr.student_number",
-                "enr._dbt_source_relation",
+                "enr._dbt_source_project",
                 "enr.academic_year",
                 "enr.entrydate",
                 "gt.term_name",
@@ -95,7 +96,7 @@ select
         dbt_utils.generate_surrogate_key(
             [
                 "enr.student_number",
-                "enr._dbt_source_relation",
+                "enr._dbt_source_project",
                 "enr.academic_year",
                 "enr.entrydate",
             ]

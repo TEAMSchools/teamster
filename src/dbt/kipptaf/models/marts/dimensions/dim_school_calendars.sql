@@ -11,3 +11,4 @@ inner join
     on cd.schoolid = sch.school_number
     and {{ union_dataset_join_clause(left_alias="cd", right_alias="sch") }}
     and sch.location_key is not null
+where cd.date_value is not null

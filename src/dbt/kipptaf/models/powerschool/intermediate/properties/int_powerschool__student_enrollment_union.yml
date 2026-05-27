@@ -1,0 +1,35 @@
+models:
+  - name: int_powerschool__student_enrollment_union
+    description: >-
+      Cross-district union of district-level
+      `int_powerschool__student_enrollment_union` models (Newark, Camden, Miami,
+      Paterson). Each row is one student-school enrollment event (entry into a
+      school for an academic year, including re-enrollments). Replaces
+      `base_powerschool__student_enrollments` as the canonical enrollment-grain
+      source for marts (#2541).
+    config:
+      materialized: table
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns:
+              - student_number
+              - _dbt_source_project
+              - academic_year
+              - entrydate
+          config:
+            severity: warn
+    columns:
+      - name: _dbt_source_project
+        description: >-
+          Source-project discriminator (`kippnewark`, `kippcamden`, `kippmiami`,
+          `kipppaterson`) extracted from `_dbt_source_relation`. Materialized at
+          the union point so downstream consumers can join and hash on a stable
+          value.
+        data_type: string
+      - name: region
+        description: >-
+          Title-case district short name (`Newark`, `Camden`, `Miami`,
+          `Paterson`) derived from `_dbt_source_project`. Use for region-scoped
+          filters in mart consumers.
+        data_type: string

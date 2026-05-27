@@ -66,6 +66,13 @@ on GKE Autopilot.
   cross-zone but allows same-zone during capacity exhaustion (do not switch to
   `DoNotSchedule`, which would block agent rollouts when one zone is full).
 
+## 1Password Connect secret keys
+
+k8s Secret keys come from the 1Password field's internal name, not the UI label.
+Known re-mappings on SFTP items: `password` → `newPassword`, `host` → `url`.
+Verify before writing `secretKeyRef.key`:
+`kubectl -n dagster-cloud get secret <op-name> -o jsonpath='{.data}' | jq keys`.
+
 ## Security
 
 - **Security contexts** on workspace (`serverK8sConfig`) and run
@@ -115,13 +122,13 @@ on GKE Autopilot.
 - **PriorityClass `dagster-agent`** (value 1000) on agent pods — same tier as
   run/step pods, preventing mutual preemption. Does not protect against OOM
   kills of the pod itself — only eviction ordering. Code servers tolerate
-  eviction: they are stateless and PDB-protected (`minAvailable: 1`).
-- **PDB for code servers** uses `minAvailable: 1` (not `maxUnavailable`).
-  `maxUnavailable` requires resolving the owning controller (Deployment) to
-  calculate expected pod count — during Dagster Cloud rollovers the old
-  Deployment is deleted before pods terminate, causing
-  `CalculateExpectedPodCountFailed` and leaving pods unprotected. `minAvailable`
-  only counts current healthy pods, no controller lookup needed.
+  eviction: they are stateless and PDB-protected (`maxUnavailable: 1`).
+- **PDB for code servers** uses `maxUnavailable: 1`. Do not switch to
+  `minAvailable: 1` — GKE Recommender flags single-replica + `minAvailable: 1`
+  as blocking voluntary evictions (node maintenance). The known
+  `CalculateExpectedPodCountFailed` warning during Dagster Cloud rollovers (old
+  Deployment deleted before pods terminate) is acceptable: single-replica
+  rollovers are unprotected by definition.
 - **PDBs do NOT block spot reclaim** — spot reclaim is involuntary.
 - **GKE Autopilot system-critical preemption** — `system-cluster-critical` and
   `system-node-critical` pods (priority 2,000,000,000) preempt dagster-run pods
@@ -131,6 +138,18 @@ on GKE Autopilot.
   by `runK8sConfig.jobSpecConfig.podFailurePolicy` with `action: Ignore` on the
   `DisruptionTarget` pod condition — preempted pods transparently retry without
   burning `backoffLimit`.
+- **Step pod replacement zombie (upstream
+  [dagster-io/dagster#33755](https://github.com/dagster-io/dagster/issues/33755))**
+  — when `podFailurePolicy: Ignore` spawns a replacement step pod (preemption,
+  `TaintManagerEviction`, any `DisruptionTarget`), the replacement hits
+  Dagster's `verify_step()` duplicate-start guard, logs
+  `Attempted to run <step_key> again even though it was already started. Exiting to prevent re-running the step.`,
+  and exits 0. Step state never advances; run hangs until
+  `run_monitoring.max_runtime_seconds`. Signature: duplicate
+  `StepWorkerStartedEvent` → "already started" `EngineEvent` → silence →
+  `RunCancelingEvent` at the max_runtime mark. Don't chase the asset's code or
+  query — check the auto-retry; if it succeeded, this was infra disruption, no
+  fix needed.
 - **`required` antiAffinity authorizes scheduler preemption** of the target pods
   when no other node fits. `runK8sConfig.affinity.podAntiAffinity` is `required`
   against code-server labels, with run pods at priority 1000 vs code-server 0 —

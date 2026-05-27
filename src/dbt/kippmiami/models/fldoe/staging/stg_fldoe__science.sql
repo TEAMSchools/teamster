@@ -33,10 +33,8 @@ with
             cast(_dagster_partition_school_year_term as int) as academic_year,
             cast(enrolled_grade as int) as enrolled_grade,
 
-            cast(
-                coalesce(
-                    grade_5_science_scale_score, grade_8_science_scale_score
-                ) as int
+            coalesce(
+                grade_5_science_scale_score, grade_8_science_scale_score
             ) as scale_score,
 
             coalesce(
@@ -46,8 +44,14 @@ with
     ),
 
     with_achievement_level_int as (
-        select *, cast(right(achievement_level, 1) as int) as achievement_level_int,
+        select
+            * except (scale_score),
+
+            cast(scale_score as int) as scale_score,
+
+            cast(right(achievement_level, 1) as int) as achievement_level_int,
         from science
+        where scale_score != 'Invalidated'
     )
 
 select

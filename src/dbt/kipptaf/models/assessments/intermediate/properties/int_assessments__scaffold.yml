@@ -24,11 +24,10 @@ models:
         data_type: string
         description: >-
           Per-row member assessment title from
-          `int_assessments__assessments.title`. See `canonical_title` for the
-          canonical-group title.
+          `int_assessments__assessments_members.title`.
         config:
           meta:
-            source_column: int_assessments__assessments.title
+            source_column: int_assessments__assessments_members.title
       - name: subject_area
         data_type: string
       - name: academic_year
@@ -71,17 +70,26 @@ models:
         config:
           meta:
             source_column: int_assessments__course_enrollments.cc_dcid
-      - name: cc_source_relation
+      - name: cc_source_project
         data_type: string
         description: >-
-          dbt union-relation metadata string identifying the source district
-          project for the matched course enrollment. Populated only for the
-          internal-assessment branch; null for K-8 replacement curriculum and
-          external-assessment rows. Pairs with cc_dcid to uniquely identify a
-          course enrollment across the four district projects.
+          Region prefix (e.g. kippnewark, kippcamden, kippmiami, kipppaterson)
+          identifying the source district project for the matched course
+          enrollment, carried via _dbt_source_project from the upstream union
+          tables. Populated only for the internal-assessment branch; null for
+          K-8 replacement curriculum and external-assessment rows. Used as a
+          discriminator component in downstream surrogate keys such as
+          student_section_enrollment_key.
         config:
           meta:
-            source_column: int_assessments__course_enrollments._dbt_source_relation
+            source_column: int_assessments__course_enrollments._dbt_source_project
+      - name: _dbt_source_project
+        data_type: string
+        description: >-
+          Dagster code-location prefix derived from region (e.g. kippnewark,
+          kippcamden, kippmiami, kipppaterson). Carried into downstream hashes
+          so consumers join/hash on a stable column rather than re-deriving via
+          concat(region) or extract_code_location() at each call.
       - name: student_assessment_id
         data_type: int64
       - name: date_taken
@@ -93,20 +101,10 @@ models:
       - name: canonical_assessment_id
         data_type: int64
         description: >-
-          Pass-through of int_assessments__assessments.canonical_assessment_id —
-          the lead assessment_id within the partition (academic_year, scope,
-          subject_area, module_code, grade_level_id). See parent column for full
-          semantics.
-      - name: canonical_title
-        data_type: string
-        description:
-          Pass-through of int_assessments__assessments.canonical_title.
-      - name: canonical_administered_at
-        data_type: date
-        description:
           Pass-through of
-          int_assessments__assessments.canonical_administered_at.
-      - name: canonical_grade_level_id
-        data_type: int64
-        description:
-          Pass-through of int_assessments__assessments.canonical_grade_level_id.
+          int_assessments__assessments_members.canonical_assessment_id — the
+          lead assessment_id within the partition (academic_year, scope,
+          subject_area, module_code, grade_level_id). See parent column for full
+          semantics. Consumers needing canonical_title,
+          canonical_administered_at, or canonical_grade_level_id join
+          int_assessments__assessments_canonical via this key.

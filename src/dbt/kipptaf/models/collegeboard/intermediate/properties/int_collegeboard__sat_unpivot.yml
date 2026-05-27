@@ -6,11 +6,17 @@ models:
       - dbt_utils.unique_combination_of_columns:
           arguments:
             combination_of_columns:
-              - powerschool_student_number
+              - cb_id
               - rn_admin
           config:
             severity: error
     columns:
+      - name: powerschool_student_number
+        data_type: int64
+        data_tests:
+          - not_null:
+              config:
+                severity: warn
       - name: ai_code
         data_type: string
       - name: ai_name
@@ -108,7 +114,7 @@ models:
       - name: percentile_state_total
         data_type: int64
       - name: record_locator
-        data_type: int64
+        data_type: string
       - name: sat_adv_math
         data_type: int64
       - name: sat_comm_evidence
@@ -184,8 +190,6 @@ models:
       - name: sat_grade
         data_type: string
         description: Categorical mapping of sat_grade.
-      - name: powerschool_student_number
-        data_type: int64
       - name: test_name
         data_type: string
         description: Computed expression.

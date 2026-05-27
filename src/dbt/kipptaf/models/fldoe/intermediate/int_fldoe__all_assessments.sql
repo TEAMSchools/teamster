@@ -7,30 +7,6 @@ with
         }}
     ),
 
-    -- trunk-ignore(sqlfluff/ST03): referenced via dbt_utils.deduplicate below
-    fleid_lookup_raw as (
-        select s.student_number, s.dcid, suf.fleid,
-        from {{ ref("stg_powerschool__students") }} as s
-        inner join
-            {{ ref("stg_powerschool__u_studentsuserfields") }} as suf
-            on s.dcid = suf.studentsdcid
-            and {{ union_dataset_join_clause(left_alias="s", right_alias="suf") }}
-        where
-            s._dbt_source_relation like '%kippmiami%'
-            and s.dcid >= 1
-            and suf.fleid is not null
-    ),
-
-    fleid_lookup as (
-        {{
-            dbt_utils.deduplicate(
-                relation="fleid_lookup_raw",
-                partition_by="fleid",
-                order_by="dcid desc",
-            )
-        }}
-    ),
-
     scale_crosswalk as (
         select
             administration_window,
@@ -78,8 +54,9 @@ select
     fl.performance_level,
     fl.student_id,
     fl.assessment_name,
+    fl.student_number,
 
-    pl.student_number,
+    {{ extract_code_location("fl") }} as _dbt_source_project,
 
     cw1.sublevel_number,
     cw1.sublevel_name,
@@ -102,8 +79,20 @@ select
         partition by fl.student_id, fl.academic_year, fl.assessment_subject
         order by fl.administration_window asc
     ) as scale_score_prev,
+
+    case
+        fl.assessment_name
+        when 'FAST'
+        then 'state_fl_fast'
+        when 'FSA'
+        then 'state_fl_fsa'
+        when 'EOC'
+        then 'state_fl_eoc'
+        when 'Science'
+        then 'state_fl_science'
+        else 'state_fl_unknown'
+    end as assessment_type,
 from source as fl
-left join fleid_lookup as pl on fl.student_id = pl.fleid
 left join
     scale_crosswalk as sc
     on fl.academic_year = sc.academic_year
