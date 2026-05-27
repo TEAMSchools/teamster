@@ -71,20 +71,29 @@ Facts declare joins only to their immediate FK parents (e.g., gradebook →
 join path traversal in views. This mirrors the dbt star schema and prevents
 diamond paths that cause Cube to double-count rows.
 
-### Role-playing FK dimensions: join on primary role, expose secondary as degenerate
+### Role-playing FK dimensions: join on primary role; degenerate or denormalize secondary
 
 Some fact tables have two foreign keys that both point to the same dimension —
 `fct_staff_observations` has `teacher_staff_key` (the teacher being observed)
 and `observer_staff_key` (the person doing the observing), both referencing
 `dim_staff`. In SQL you'd join `dim_staff` twice under different aliases. Cube
-doesn't allow that — you can only declare one join per named cube. The
-workaround: join `dim_staff` on the more analytically important FK
-(`teacher_staff_key`) so that teacher name, school, etc. are all available. For
-the observer role, store `observer_staff_key` as a plain string dimension —
-consumers can filter by it (e.g., "show me only observations by this coach") but
-can't look up the observer's name or attributes directly from this cube. Full
-observer attribute lookup via a cube alias is deferred to the implementation
-plan.
+doesn't allow that — you can only declare one join per named cube. Join
+`dim_staff` on the more analytically important FK (`teacher_staff_key`) so that
+teacher name, school, etc. are all available. For the secondary role, choose one
+of two paths:
+
+**Secondary role needs key-only filtering (degenerate FK):** Store the secondary
+FK as a plain string dimension. Consumers can filter by it (e.g., "show only
+observations by this coach") but cannot look up the secondary role's name or
+attributes. Use this when the secondary role is incidental to the fact.
+`observer_staff_key` and `subject_staff_key` (surveys) follow this pattern.
+
+**Secondary role's attributes are always needed (denormalize onto the primary
+dim):** Denormalize the secondary role's key attributes onto the shared
+dimension so a single join surfaces both roles. The gradebook cube needs both
+teacher and manager name/key on every row — resolved by adding `manager_name`
+and `manager_staff_key` to `dim_staff` (#3838). No second join or alias
+required.
 
 ### Date joins use `date_day` (TIMESTAMP), not `date_key` (DATE)
 
