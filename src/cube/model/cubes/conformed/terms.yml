@@ -23,6 +23,13 @@ cubes:
         sql: location_key
         type: string
 
+      - name: school_id
+        description: >-
+          PowerSchool natural school identifier. Source-system join key for
+          facts that match terms by schoolid. Degenerate alongside location_key.
+        sql: school_id
+        type: number
+
       - name: term_type
         description:
           Category of period (e.g., academic, PM, survey, assessment, fiscal).
@@ -43,9 +50,13 @@ cubes:
         public: true
 
       - name: academic_year
-        description: Academic year this period falls within.
+        description: >-
+          KIPP academic year (July start) this term falls within. Calendar year
+          in which the academic year begins (e.g., 2025 for the 2025–26 school
+          year) — opposite of typical FY conventions where FY2025 ends in 2025.
         sql: academic_year
         type: number
+        public: true
 
       - name: fiscal_year
         description: Fiscal year this period falls within.
@@ -71,3 +82,11 @@ cubes:
           the latest for its type in a past academic year.
         sql: is_current
         type: boolean
+
+      - name: semester
+        description: >-
+          Semester this period falls within. S1 for term_name Q1/Q2, S2 for
+          Q3/Q4. NULL for periods that don't map to a quarter.
+        sql: semester
+        type: string
+        public: true

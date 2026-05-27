@@ -8,6 +8,10 @@ cubes:
         sql: "{dim_students.student_key} = {CUBE}.student_key"
         relationship: many_to_one
 
+      - name: dim_locations
+        sql: "{dim_locations.location_key} = {CUBE}.location_key"
+        relationship: many_to_one
+
     dimensions:
       - name: student_enrollment_key
         description: >-
@@ -25,8 +29,6 @@ cubes:
         sql: student_key
         type: string
 
-      # degenerate — no dim_locations join declared here to avoid a diamond
-      # path with attendance's direct location_key FK to dim_locations
       - name: location_key
         description: >-
           Surrogate key derived from location_clean_name. FK to dim_locations.

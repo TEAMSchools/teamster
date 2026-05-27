@@ -75,3 +75,9 @@ models:
           Categorical mapping of americanindianoralaskanative, asian,
           blackorafricanamerican, hispanicorlatinoethnicity,
           nativehawaiianorotherpacificislander, twoormoreraces, white.
+      - name: assessment_type
+        data_type: string
+        description: >-
+          Program-lineage label ('state_nj_parcc' / '..._njsla' /
+          '..._njsla_science' / '..._njgpa') derived from assessment_name. Used
+          by marts as the hash-input value for assessment_key.

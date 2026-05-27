@@ -1,0 +1,159 @@
+models:
+  - name: dim_student_iep_status
+    description: >-
+      SCD2 dimension capturing IEP (special-education) status spans per student
+      per district enrollment context. One row per `(student, district,
+      contiguous value span)`; active rows end at `'9999-12-31'`. Newark +
+      Camden draw from EdPlan with native effective dates; Paterson + Miami
+      carry a single current-state span derived from PowerSchool enrollments +
+      `studentcorefields.spedlep`. All spans are clipped to the student's
+      PowerSchool enrollment range in the source district — phantom NJSmart
+      records for districts where the student was never enrolled drop out at the
+      enrollment inner-join.
+    config:
+      meta:
+        dagster:
+          group: marts
+          asset_key:
+            - kipptaf
+            - marts
+            - dim_student_iep_status
+    constraints:
+      - type: primary_key
+        columns: [student_iep_status_key]
+        warn_unsupported: false
+      - type: foreign_key
+        columns: [student_key]
+        expression: ref('dim_students')
+        to_columns: [student_key]
+        warn_unsupported: false
+      - type: foreign_key
+        columns: [student_enrollment_key]
+        expression: ref('dim_student_enrollments')
+        to_columns: [student_enrollment_key]
+        warn_unsupported: false
+      - type: foreign_key
+        columns: [effective_date_start_key]
+        expression: ref('dim_dates')
+        to_columns: [date_key]
+        warn_unsupported: false
+      - type: foreign_key
+        columns: [effective_date_end_key]
+        expression: ref('dim_dates')
+        to_columns: [date_key]
+        warn_unsupported: false
+    columns:
+      - name: student_iep_status_key
+        data_type: string
+        description: Surrogate primary key.
+        data_tests:
+          - unique
+          - not_null
+
+      - name: student_key
+        data_type: string
+        description: Foreign key to `dim_students.student_key`.
+        data_tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('dim_students')
+                field: student_key
+
+      - name: student_enrollment_key
+        data_type: string
+        description: >-
+          Foreign key to `dim_student_enrollments.student_enrollment_key`. Each
+          status row is bound to exactly one enrollment stint (clipped to its
+          entry/exit window at build time). Consumers join here directly rather
+          than re-deriving the stint via date-range overlap.
+        data_tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('dim_student_enrollments')
+                field: student_enrollment_key
+
+      - name: _dbt_source_project
+        data_type: string
+        description: >-
+          District context for this status span (`kippnewark`, `kippcamden`,
+          `kippmiami`, `kipppaterson`). Part of the dim's grain — a student
+          enrolled in two districts has independent IEP timelines under each.
+          Consumers joining at student grain must include this column in the
+          join key to avoid fan-out for cross-enrolled students.
+        data_tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: [kippnewark, kippcamden, kippmiami, kipppaterson]
+
+      - name: effective_date_start_key
+        data_type: date
+        description: >-
+          First date this span is valid for the student in this district.
+          Clipped to the later of the IEP record's effective_date and the
+          student's PowerSchool enrollment_start in the district.
+        data_tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('dim_dates')
+                field: date_key
+
+      - name: effective_date_end_key
+        data_type: date
+        description: >-
+          Last date this span is valid (inclusive). Clipped to the earlier of
+          the IEP record's effective_end_date and the student's PowerSchool
+          enrollment_end in the district. `'9999-12-31'` only when the student
+          is currently active in the district AND the IEP record is open-ended.
+        data_tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('dim_dates')
+                field: date_key
+
+      - name: is_current
+        data_type: boolean
+        description: >-
+          Convenience flag — true when `effective_date_end_key = '9999-12-31'`
+          (open-ended IEP AND currently-active enrollment in the district).
+        data_tests:
+          - not_null
+
+      - name: is_iep
+        data_type: boolean
+        description: >-
+          True when the student has an active IEP for this span — derived as
+          `iep_classification != 'No IEP'`.
+        data_tests:
+          - not_null
+
+      - name: iep_classification
+        data_type: string
+        description: >-
+          Special-education program classification (e.g. `Resource Center`,
+          `In-Class Resource`, `Self-Contained`, `No IEP`).
+        config:
+          meta:
+            source_column: spedlep
+
+      - name: special_education_code
+        data_type: string
+        description: >-
+          NJ state special-education code (e.g. `AU`, `ED`). Populated only for
+          Newark + Camden via EdPlan; null for Paterson + Miami.
+
+      - name: special_education_name
+        data_type: string
+        description: >-
+          Descriptive name paired with `special_education_code`. Populated only
+          for Newark + Camden via EdPlan; null for Paterson + Miami.
+
+      - name: special_education_placement
+        data_type: string
+        description: >-
+          NJ state special-education placement category. Populated only for
+          Newark + Camden via EdPlan; null for Paterson + Miami.

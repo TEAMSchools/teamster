@@ -1,16 +1,3 @@
-{{
-    config(
-        severity="warn",
-        store_failures=true,
-        store_failures_as="view",
-        meta={
-            "dagster": {
-                "ref": {"name": "stg_kippadb__contact_note"},
-            },
-        },
-    )
-}}
-
 with
     salesforce_notes as (
         select

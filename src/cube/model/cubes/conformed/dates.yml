@@ -34,6 +34,15 @@ cubes:
         type: number
         public: true
 
+      - name: is_current_academic_year
+        description: >-
+          TRUE if this date's academic_year matches the dbt project's
+          current_academic_year var. Manually controlled — rolls over only on
+          var update + mart rebuild.
+        sql: is_current_academic_year
+        type: boolean
+        public: true
+
       - name: year_number
         description: Calendar year.
         sql: year_number

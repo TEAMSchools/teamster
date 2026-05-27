@@ -21,7 +21,6 @@ with
             iae.module_code,
             iae.module_type,
             iae.module_sequence,
-            iae.grade_level,
             iae.illuminate_grade_level_id,
             iae.regions_assessed,
             iae.regions_assessed_array,
@@ -40,6 +39,50 @@ with
             {{ ref("stg_google_appsheet__illuminate_assessments_extension") }} as iae
             on a.assessment_id = iae.assessment_id
         left join agl_dedup as agl on a.assessment_id = agl.assessment_id
+    ),
+
+    canonical as (
+        select
+            assessment_id,
+            title,
+            academic_year,
+            academic_year_clean,
+            scope,
+            creator_first_name,
+            creator_last_name,
+            performance_band_set_id,
+            assessment_type,
+            tags,
+            module_code,
+            module_type,
+            module_sequence,
+            illuminate_grade_level_id,
+            regions_assessed,
+            regions_assessed_array,
+            regions_report_card,
+            regions_progress_report,
+            administered_at,
+            subject_area,
+            grade_level_id,
+            is_internal_assessment,
+
+            if(
+                is_internal_assessment,
+                first_value(assessment_id) over canonical_w,
+                assessment_id
+            ) as canonical_assessment_id,
+        from extended
+        window
+            canonical_w as (
+                partition by
+                    is_internal_assessment,
+                    academic_year,
+                    scope,
+                    subject_area,
+                    module_code,
+                    grade_level_id
+                order by assessment_id
+            )
     )
 
 select
@@ -56,7 +99,6 @@ select
     module_code,
     module_type,
     module_sequence,
-    grade_level,
     illuminate_grade_level_id,
     regions_assessed,
     regions_assessed_array,
@@ -66,37 +108,5 @@ select
     subject_area,
     grade_level_id,
     is_internal_assessment,
-
-    if(
-        is_internal_assessment,
-        first_value(assessment_id) over canonical_w,
-        assessment_id
-    ) as canonical_assessment_id,
-
-    if(
-        is_internal_assessment, first_value(title) over canonical_w, title
-    ) as canonical_title,
-
-    if(
-        is_internal_assessment,
-        first_value(administered_at) over canonical_w,
-        administered_at
-    ) as canonical_administered_at,
-
-    if(
-        is_internal_assessment,
-        first_value(grade_level_id) over canonical_w,
-        grade_level_id
-    ) as canonical_grade_level_id,
-from extended
-window
-    canonical_w as (
-        partition by
-            is_internal_assessment,
-            academic_year,
-            scope,
-            subject_area,
-            module_code,
-            grade_level_id
-        order by assessment_id
-    )
+    canonical_assessment_id,
+from canonical

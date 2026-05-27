@@ -2,12 +2,13 @@ with
     student_enrollments as (
         select
             _dbt_source_relation,
+            _dbt_source_project,
             studentid,
             yearid,
             student_number,
             entrydate,
             exitdate,
-        from {{ ref("base_powerschool__student_enrollments") }}
+        from {{ ref("int_powerschool__student_enrollment_union") }}
     ),
 
     reporting_terms as (
@@ -27,7 +28,7 @@ with
 select
     {{
         dbt_utils.generate_surrogate_key(
-            ["fg.cc_dcid", "fg._dbt_source_relation", "fg.storecode"]
+            ["fg.cc_dcid", "fg._dbt_source_project", "fg.storecode"]
         )
     }} as grades_term_key,
 
@@ -38,7 +39,7 @@ select
         dbt_utils.generate_surrogate_key(
             [
                 "enr.student_number",
-                "enr._dbt_source_relation",
+                "enr._dbt_source_project",
                 "fg.academic_year",
                 "enr.entrydate",
             ]
@@ -93,7 +94,7 @@ inner join
     and fg.yearid = enr.yearid
     and fg.termbin_start_date >= enr.entrydate
     and fg.termbin_start_date < enr.exitdate
-    and {{ union_dataset_join_clause(left_alias="fg", right_alias="enr") }}
+    and fg._dbt_source_project = enr._dbt_source_project
 inner join
     {{ ref("dim_regions") }} as dr on fg._dbt_source_project = dr.dagster_code_location
 left join

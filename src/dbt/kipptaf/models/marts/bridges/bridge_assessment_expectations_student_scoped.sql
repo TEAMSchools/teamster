@@ -6,11 +6,13 @@ with
             sc.administered_at,
             sc.region,
             sc.powerschool_school_id,
+            sc._dbt_source_project,
 
             a.module_code,
             a.academic_year,
             a.canonical_assessment_id,
-            a.canonical_administered_at,
+
+            c.administered_date as canonical_administered_at,
 
             rt.code as term_code,
             rt.type as term_type,
@@ -20,8 +22,11 @@ with
             rt.school_id as term_school_id,
         from {{ ref("int_assessments__scaffold") }} as sc
         inner join
-            {{ ref("int_assessments__assessments") }} as a
+            {{ ref("int_assessments__assessments_members") }} as a
             on sc.assessment_id = a.assessment_id
+        inner join
+            {{ ref("int_assessments__assessments_canonical") }} as c
+            on a.canonical_assessment_id = c.canonical_assessment_id
         left join
             {{ ref("stg_google_sheets__reporting__terms") }} as rt
             on sc.administered_at between rt.start_date and rt.end_date
@@ -48,10 +53,10 @@ select
                 "module_code",
                 "cast(canonical_administered_at as date)",
                 "academic_year",
-                "region",
-                "cast(null as string)",
+                "_dbt_source_project",
+                "null",
                 "canonical_assessment_id",
-                "cast(null as string)",
+                "null",
             ]
         )
     }} as assessment_administration_key,
