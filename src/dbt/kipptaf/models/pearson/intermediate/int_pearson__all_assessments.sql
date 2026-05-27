@@ -11,7 +11,9 @@ with
                 ],
                 include=[
                     "_dbt_source_relation",
+                    "_dbt_source_project",
                     "academic_year",
+                    "administration_period",
                     "americanindianoralaskanative",
                     "asian",
                     "assessment_name",
@@ -23,6 +25,7 @@ with
                     "hispanicorlatinoethnicity",
                     "is_proficient",
                     "is_bl_fb",
+                    "module_code",
                     "nativehawaiianorotherpacificislander",
                     "period",
                     "statestudentidentifier",
@@ -31,6 +34,7 @@ with
                     "lastorsurname",
                     "studentwithdisabilities",
                     "subject",
+                    "subject_area",
                     "testcode",
                     "studenttestuuid",
                     "test_grade",
@@ -48,7 +52,9 @@ with
     transformations as (
         select
             u._dbt_source_relation,
+            u._dbt_source_project,
             u.academic_year,
+            u.administration_period,
             u.americanindianoralaskanative,
             u.asian,
             u.assessment_name,
@@ -59,11 +65,13 @@ with
             u.hispanicorlatinoethnicity,
             u.is_proficient,
             u.is_bl_fb,
+            u.module_code,
             u.nativehawaiianorotherpacificislander,
             u.period,
             u.firstname,
             u.lastorsurname,
             u.`subject`,
+            u.subject_area,
             u.testcode,
             u.studenttestuuid,
             u.test_grade,
@@ -225,5 +233,18 @@ select
         'Students With Disabilities',
         'Students Without Disabilities'
     ) as aligned_iep_status,
+
+    case
+        assessment_name
+        when 'PARCC'
+        then 'state_nj_parcc'
+        when 'NJSLA'
+        then 'state_nj_njsla'
+        when 'NJSLA Science'
+        then 'state_nj_njsla_science'
+        when 'NJGPA'
+        then 'state_nj_njgpa'
+        else 'state_nj_unknown'
+    end as assessment_type,
 
 from transformations

@@ -53,3 +53,5 @@ models:
         data_type: date
       - name: canonical_grade_level_id
         data_type: int64
+      - name: administered_date
+        data_type: date

@@ -11,7 +11,7 @@ models:
       - name: grades_category_key
         data_type: string
         description: >-
-          Surrogate key derived from cc_dcid, _dbt_source_relation, storecode,
+          Surrogate key derived from cc_dcid, _dbt_source_project, storecode,
           and storecode_type. Primary key for this fact.
         constraints:
           - type: primary_key
@@ -24,7 +24,7 @@ models:
         data_type: string
         description: >-
           FK to dim_student_section_enrollments. Surrogate key derived from
-          cc_dcid and _dbt_source_relation.
+          cc_dcid and _dbt_source_project.
         constraints:
           - type: foreign_key
             to: ref('dim_student_section_enrollments')

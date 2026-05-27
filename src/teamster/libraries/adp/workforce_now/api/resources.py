@@ -6,7 +6,8 @@ from oauthlib.oauth2 import BackendApplicationClient
 from pydantic import PrivateAttr
 from requests import Response
 from requests.auth import HTTPBasicAuth
-from requests.exceptions import HTTPError
+from requests.exceptions import ConnectionError as RequestsConnectionError
+from requests.exceptions import HTTPError, Timeout
 from requests_oauthlib import OAuth2Session
 from tenacity import (
     retry,
@@ -37,11 +38,7 @@ class AdpWorkforceNowResource(ConfigurableResource):
         self._session.cert = (self.cert_filepath, self.key_filepath)
 
         # authorize client
-        token_dict = self._session.fetch_token(
-            # trunk-ignore(bandit/B106)
-            token_url="https://accounts.adp.com/auth/oauth/v2/token",
-            auth=HTTPBasicAuth(username=self.client_id, password=self.client_secret),
-        )
+        token_dict = self._fetch_access_token()
 
         access_token = token_dict.get("access_token")
 
@@ -53,9 +50,22 @@ class AdpWorkforceNowResource(ConfigurableResource):
     @retry(
         stop=stop_after_attempt(5),
         wait=wait_exponential_jitter(initial=10, max=60),
-        retry=retry_if_exception_type(HTTPError),
+        retry=retry_if_exception_type((RequestsConnectionError, Timeout, HTTPError)),
+    )
+    def _fetch_access_token(self) -> dict:
+        return self._session.fetch_token(
+            # trunk-ignore(bandit/B106)
+            token_url="https://accounts.adp.com/auth/oauth/v2/token",
+            auth=HTTPBasicAuth(username=self.client_id, password=self.client_secret),
+        )
+
+    @retry(
+        stop=stop_after_attempt(5),
+        wait=wait_exponential_jitter(initial=10, max=60),
+        retry=retry_if_exception_type((RequestsConnectionError, Timeout, HTTPError)),
     )
     def _request(self, method: str, url: str, **kwargs) -> Response:
+        kwargs.setdefault("timeout", (10, 60))
         response = self._session.request(method=method, url=url, **kwargs)
 
         try:
@@ -71,11 +81,12 @@ class AdpWorkforceNowResource(ConfigurableResource):
             return response
         except HTTPError as e:
             response_json = response.json()
-            self._log.error(msg=response_json)
 
             if response.status_code == 429:
+                self._log.warning(msg=response_json)
                 raise  # retryable via tenacity
 
+            self._log.error(msg=response_json)
             raise Exception(response_json) from e
 
     def post(

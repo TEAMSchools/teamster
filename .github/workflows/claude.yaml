@@ -45,6 +45,7 @@ jobs:
           plugins: |
             superpowers@claude-plugins-official
             security-guidance@claude-plugins-official
+            context7@claude-plugins-official
             dagster-expert@dagster
             dignified-python@dagster
             dbt@dbt-agent-marketplace

@@ -1,12 +1,11 @@
 with
     google_forms_pairs as (
-        -- DISTINCT projects from response grain to (survey, question) pair grain.
-        select distinct
-            fr.form_id as survey_id,
-            fr.item_abbreviation as question_shortname,
-            fr.question_required as is_required,
-        from {{ ref("int_google_forms__form_responses") }} as fr
-        where fr.form_id is not null and fr.item_abbreviation is not null
+        select
+            form_id as survey_id,
+            item_abbreviation as question_shortname,
+            question_required as is_required,
+        from {{ ref("int_google_forms__form__items") }}
+        where form_id is not null and item_abbreviation is not null
     ),
 
     scd_powerschool_pairs as (
@@ -19,21 +18,25 @@ with
     ),
 
     alchemer_pairs as (
-        -- DISTINCT projects from response grain to (survey, question) pair grain.
-        -- Covers Alchemer + Google Forms staff/student survey questions feeding
-        -- fct_survey_responses.general_responses.
-        select distinct
-            sr.survey_id, sr.question_shortname, cast(null as bool) as is_required,
-        from {{ ref("int_surveys__survey_responses") }} as sr
-        where sr.survey_id is not null and sr.question_shortname is not null
+        select
+            safe_cast(survey_id as string) as survey_id,
+            shortname as question_shortname,
+            cast(null as bool) as is_required,
+        from {{ source("alchemer", "stg_alchemer__survey_question") }}
+        where shortname is not null
     ),
 
     manager_pairs as (
-        -- DISTINCT projects from response grain to (survey, question) pair grain.
+        -- Sources directly from the historic Manager Survey Alchemer
+        -- archive. Original Alchemer survey_ids were not preserved, so
+        -- the synthetic 'historic_alchemer_Manager_survey' survey_id ties
+        -- archive responses to the dim_surveys archive_manager row.
         select distinct
-            ms.survey_id, ms.question_shortname, cast(null as bool) as is_required,
-        from {{ ref("int_surveys__manager_survey_details") }} as ms
-        where ms.survey_id is not null and ms.question_shortname is not null
+            'historic_alchemer_Manager_survey' as survey_id,
+            question_shortname,
+            cast(null as bool) as is_required,
+        from {{ source("surveys", "stg_surveys__manager_survey_detail_archive") }}
+        where question_shortname is not null
     ),
 
     -- trunk-ignore(sqlfluff/ST03): referenced by string in dbt_utils.deduplicate

@@ -24,6 +24,13 @@ class GrowIncompleteResponseError(Exception):
     """
 
 
+class GrowAPIError(Exception):
+    """Raised when the Grow API returns a non-2xx HTTP status.
+
+    Carries the response body in ``args[0]`` for downstream error reporting.
+    """
+
+
 class GrowResource(ConfigurableResource):
     client_id: str
     client_secret: str
@@ -74,7 +81,7 @@ class GrowResource(ConfigurableResource):
             return response
         except HTTPError as e:
             self._log.error(msg=response.text)
-            raise Exception(response.text) from e
+            raise GrowAPIError(response.text) from e
 
     @retry(
         stop=stop_after_attempt(3),

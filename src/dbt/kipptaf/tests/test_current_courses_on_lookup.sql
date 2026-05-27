@@ -1,5 +1,3 @@
-{{ config(severity="warn", store_failures=true, enabled=false) }}
-
 select distinct cc_course_number,
 from {{ ref("base_powerschool__course_enrollments") }}
 where

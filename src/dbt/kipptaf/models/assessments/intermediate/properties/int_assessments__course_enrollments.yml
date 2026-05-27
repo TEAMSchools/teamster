@@ -12,6 +12,7 @@ models:
       - dbt_utils.unique_combination_of_columns:
           arguments:
             combination_of_columns:
+              - _dbt_source_project
               - powerschool_student_number
               - illuminate_academic_year
               - illuminate_subject_area
@@ -29,6 +30,8 @@ models:
         data_type: date
       - name: illuminate_subject_area
         data_type: string
+      - name: discipline
+        data_type: string
       - name: is_foundations
         data_type: boolean
       - name: cc_dcid
@@ -40,16 +43,17 @@ models:
         config:
           meta:
             source_column: base_powerschool__course_enrollments.cc_dcid
-      - name: _dbt_source_relation
+      - name: _dbt_source_project
         data_type: string
         description: >-
-          dbt union-relation metadata string identifying the source district
-          project. Required upstream for the cc_dcid + _dbt_source_relation
-          composite that uniquely identifies a course enrollment across the four
-          district projects.
+          Region prefix (e.g. kippnewark, kippcamden, kippmiami, kipppaterson)
+          plumbed through from the upstream PowerSchool union models. Carried on
+          both K-12 and ES Writing branches and used as the region discriminator
+          in the trailing dedup partition and downstream surrogate keys
+          (student_section_enrollment_key). See #3142.
         config:
           meta:
-            source_column: base_powerschool__course_enrollments._dbt_source_relation
+            source_column: base_powerschool__course_enrollments._dbt_source_project
       - name: region
         data_type: string
       - name: illuminate_academic_year

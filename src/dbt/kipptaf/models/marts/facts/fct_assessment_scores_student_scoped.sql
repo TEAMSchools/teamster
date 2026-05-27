@@ -83,7 +83,11 @@ select
         )
     }} as assessment_score_key,
 
-    {{ dbt_utils.generate_surrogate_key(["ca.student_number"]) }} as student_key,
+    if(
+        ca.student_number is not null,
+        {{ dbt_utils.generate_surrogate_key(["ca.student_number"]) }},
+        cast(null as string)
+    ) as student_key,
 
     {{
         dbt_utils.generate_surrogate_key(
@@ -127,7 +131,11 @@ select
         )
     }} as assessment_score_key,
 
-    {{ dbt_utils.generate_surrogate_key(["pa.student_number"]) }} as student_key,
+    if(
+        pa.student_number is not null,
+        {{ dbt_utils.generate_surrogate_key(["pa.student_number"]) }},
+        cast(null as string)
+    ) as student_key,
 
     {{
         dbt_utils.generate_surrogate_key(
@@ -172,7 +180,11 @@ select
         )
     }} as assessment_score_key,
 
-    {{ dbt_utils.generate_surrogate_key(["ap.student_number"]) }} as student_key,
+    if(
+        ap.student_number is not null,
+        {{ dbt_utils.generate_surrogate_key(["ap.student_number"]) }},
+        cast(null as string)
+    ) as student_key,
 
     {{
         dbt_utils.generate_surrogate_key(

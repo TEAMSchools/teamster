@@ -16,6 +16,12 @@ models:
         data_type: string
         description: Source relation identifier from dbt_utils.union_relations.
 
+      - name: _dbt_source_project
+        data_type: string
+        description: >-
+          Dagster code-location identifier propagated from the staging union;
+          identifies the district source project (e.g. kippnewark).
+
       - name: academic_year
         data_type: int64
         description: Academic year the assessment was administered.
@@ -98,6 +104,24 @@ models:
         description:
           Full subject name as reported by Pearson (e.g. English Language
           Arts/Literacy, Mathematics).
+
+      - name: subject_area
+        data_type: string
+        description: >
+          Subject area from the staging model, used for stacked reporting
+          across assessment programs.
+
+      - name: module_code
+        data_type: string
+        description: >
+          Module code from the staging model, used as the assessment
+          administration grain identifier.
+
+      - name: administration_period
+        data_type: string
+        description: >
+          Testing administration period as reported by Pearson (e.g. Spring,
+          FallBlock).
 
       - name: testcode
         data_type: string
@@ -261,3 +285,10 @@ models:
           IEP status normalized for stacked reporting across assessment programs
           — 'Students With Disabilities' or 'Students Without Disabilities',
           using the label convention shared across comparison sources.
+
+      - name: assessment_type
+        data_type: string
+        description: >-
+          Program-lineage label ('state_nj_parcc' / '..._njsla' /
+          '..._njsla_science' / '..._njgpa') derived from assessment_name. Used
+          by marts as the hash-input value for assessment_key.

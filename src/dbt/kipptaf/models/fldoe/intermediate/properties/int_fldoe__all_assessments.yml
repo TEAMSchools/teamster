@@ -1,12 +1,14 @@
 models:
   - name: int_fldoe__all_assessments
-    description: >
-      Network-level union of FLDOE FAST assessment results from the kippmiami
-      district project, enriched with iReady scale crosswalk data for sublevel
-      classification and growth/proficiency targets. Adds standardized metadata
-      columns (results_type, district_state, illuminate_subject,
-      fast_aggregated_proficiency) and derived score columns for use in
-      reporting and demographic comparisons.
+    description: >-
+      Union of FLDOE state assessment results (EOC, FAST, Science, FSA) across
+      kippmiami source relations, sourced from the kippmiami
+      int_fldoe__all_assessments intermediate which resolves student_number via
+      the FLEID lookup. Joined to the iReady scale-score crosswalk to expose
+      sublevel and points-to-proficiency / points-to-growth derivations.
+      Carries standardized metadata columns (results_type, district_state,
+      illuminate_subject, fast_aggregated_proficiency) from the district
+      intermediate.
     data_tests:
       - dbt_utils.unique_combination_of_columns:
           arguments:
@@ -15,11 +17,18 @@ models:
               - student_id
               - academic_year
               - administration_window
-              - test_code
+              - assessment_subject
     columns:
       - name: _dbt_source_relation
         data_type: string
         description: Source relation identifier from dbt_utils.union_relations.
+
+      - name: _dbt_source_project
+        data_type: string
+        description: >-
+          Dagster code-location identifier derived via extract_code_location()
+          from _dbt_source_relation; identifies the district source project
+          (e.g. kippmiami).
 
       - name: test_code
         data_type: string
@@ -79,6 +88,14 @@ models:
       - name: assessment_name
         data_type: string
         description: Full assessment name (e.g. FAST, FSA, EOC).
+
+      - name: student_number
+        data_type: int64
+        description: >-
+          PowerSchool student_number resolved in the upstream kippmiami
+          int_fldoe__all_assessments model by joining FLDOE student_id (FLEID)
+          to stg_powerschool__u_studentsuserfields.fleid. Null when no PS Miami
+          student carries the matching FLEID.
 
       - name: sublevel_number
         data_type: int64
@@ -185,3 +202,10 @@ models:
         description: >
           Student's scale score from the prior administration window within the
           same academic year and subject, ordered by administration_window.
+
+      - name: assessment_type
+        data_type: string
+        description: >-
+          Program-lineage label ('state_fl_fast' / '..._fsa' / '..._eoc' /
+          '..._science') derived from assessment_name. Used by marts as the
+          hash-input value for assessment_key.

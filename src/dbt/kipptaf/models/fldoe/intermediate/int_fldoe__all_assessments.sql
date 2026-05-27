@@ -57,6 +57,9 @@ select
     fl.student_id,
     fl.assessment_name,
     fl.performance_level as achievement_level_int,
+    fl.student_number,
+
+    {{ extract_code_location("fl") }} as _dbt_source_project,
 
     cw1.sublevel_number,
     cw1.sublevel_name,
@@ -134,6 +137,18 @@ select
         order by fl.administration_window asc
     ) as scale_score_prev,
 
+    case
+        fl.assessment_name
+        when 'FAST'
+        then 'state_fl_fast'
+        when 'FSA'
+        then 'state_fl_fsa'
+        when 'EOC'
+        then 'state_fl_eoc'
+        when 'Science'
+        then 'state_fl_science'
+        else 'state_fl_unknown'
+    end as assessment_type,
 from source as fl
 left join
     scale_crosswalk as sc

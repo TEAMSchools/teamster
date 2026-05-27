@@ -71,7 +71,7 @@ with
             ce.discipline,
             ce.cc_dcid,
 
-            ce._dbt_source_relation as cc_source_relation,
+            ce._dbt_source_project as cc_source_project,
         from assessment_region_scaffold as a
         inner join
             {{ ref("int_illuminate__student_session_aff") }} as ssa
@@ -121,7 +121,7 @@ with
             ce.discipline,
             ce.cc_dcid,
 
-            ce._dbt_source_relation as cc_source_relation,
+            ce._dbt_source_project as cc_source_project,
         from assessment_region_scaffold as a
         inner join
             {{ ref("int_assessments__course_enrollments") }} as ce
@@ -165,7 +165,9 @@ select
     ia.module_code,
     ia.discipline,
     ia.cc_dcid,
-    ia.cc_source_relation,
+    ia.cc_source_project,
+
+    concat('kipp', lower(ia.region)) as _dbt_source_project,
     ia.canonical_assessment_id,
     ia.canonical_title,
     ia.canonical_administered_at,
@@ -210,7 +212,9 @@ select
     null as discipline,
 
     cast(null as int64) as cc_dcid,
-    cast(null as string) as cc_source_relation,
+    cast(null as string) as cc_source_project,
+
+    concat('kipp', lower(str.region)) as _dbt_source_project,
 
     a.canonical_assessment_id,
     a.canonical_title,
@@ -268,7 +272,9 @@ select
     null as discipline,
 
     cast(null as int64) as cc_dcid,
-    cast(null as string) as cc_source_relation,
+    cast(null as string) as cc_source_project,
+
+    concat('kipp', lower(str.region)) as _dbt_source_project,
 
     a.canonical_assessment_id,
     a.canonical_title,

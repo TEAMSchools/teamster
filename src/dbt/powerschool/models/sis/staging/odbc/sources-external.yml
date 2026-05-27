@@ -15,15 +15,21 @@ sources:
                 - assignmentscore
         external:
           location:
-            "{{ var('powerschool_external_location_root',
-            env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', '')) }}/assignmentscore/*"
+            "{{ 'gs://teamster-test/dagster/' ~ project_name if
+            env_var('DAGSTER_CLOUD_IS_BRANCH_DEPLOYMENT', '0') == '1' else
+            var('cloud_storage_uri_base',
+            env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', ''))
+            }}/powerschool/assignmentscore/*"
           options:
             connection_name: "{{ var('bigquery_external_connection_name') }}"
             metadata_cache_mode: MANUAL
             max_staleness: INTERVAL 7 DAY
             hive_partition_uri_prefix:
-              "{{ var('powerschool_external_location_root',
-              env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', '')) }}/assignmentscore/"
+              "{{ 'gs://teamster-test/dagster/' ~ project_name if
+              env_var('DAGSTER_CLOUD_IS_BRANCH_DEPLOYMENT', '0') == '1' else
+              var('cloud_storage_uri_base',
+              env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', ''))
+              }}/powerschool/assignmentscore/"
             format: AVRO
             enable_logical_types: true
       - name: src_powerschool__attendance
@@ -36,15 +42,21 @@ sources:
                 - attendance
         external:
           location:
-            "{{ var('powerschool_external_location_root',
-            env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', '')) }}/attendance/*"
+            "{{ 'gs://teamster-test/dagster/' ~ project_name if
+            env_var('DAGSTER_CLOUD_IS_BRANCH_DEPLOYMENT', '0') == '1' else
+            var('cloud_storage_uri_base',
+            env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', ''))
+            }}/powerschool/attendance/*"
           options:
             connection_name: "{{ var('bigquery_external_connection_name') }}"
             metadata_cache_mode: MANUAL
             max_staleness: INTERVAL 7 DAY
             hive_partition_uri_prefix:
-              "{{ var('powerschool_external_location_root',
-              env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', '')) }}/attendance/"
+              "{{ 'gs://teamster-test/dagster/' ~ project_name if
+              env_var('DAGSTER_CLOUD_IS_BRANCH_DEPLOYMENT', '0') == '1' else
+              var('cloud_storage_uri_base',
+              env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', ''))
+              }}/powerschool/attendance/"
             format: AVRO
             enable_logical_types: true
       - name: src_powerschool__pgfinalgrades
@@ -57,15 +69,21 @@ sources:
                 - pgfinalgrades
         external:
           location:
-            "{{ var('powerschool_external_location_root',
-            env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', '')) }}/pgfinalgrades/*"
+            "{{ 'gs://teamster-test/dagster/' ~ project_name if
+            env_var('DAGSTER_CLOUD_IS_BRANCH_DEPLOYMENT', '0') == '1' else
+            var('cloud_storage_uri_base',
+            env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', ''))
+            }}/powerschool/pgfinalgrades/*"
           options:
             connection_name: "{{ var('bigquery_external_connection_name') }}"
             metadata_cache_mode: MANUAL
             max_staleness: INTERVAL 7 DAY
             hive_partition_uri_prefix:
-              "{{ var('powerschool_external_location_root',
-              env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', '')) }}/pgfinalgrades/"
+              "{{ 'gs://teamster-test/dagster/' ~ project_name if
+              env_var('DAGSTER_CLOUD_IS_BRANCH_DEPLOYMENT', '0') == '1' else
+              var('cloud_storage_uri_base',
+              env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', ''))
+              }}/powerschool/pgfinalgrades/"
             format: AVRO
             enable_logical_types: true
       - name: src_powerschool__storedgrades
@@ -78,15 +96,21 @@ sources:
                 - storedgrades
         external:
           location:
-            "{{ var('powerschool_external_location_root',
-            env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', '')) }}/storedgrades/*"
+            "{{ 'gs://teamster-test/dagster/' ~ project_name if
+            env_var('DAGSTER_CLOUD_IS_BRANCH_DEPLOYMENT', '0') == '1' else
+            var('cloud_storage_uri_base',
+            env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', ''))
+            }}/powerschool/storedgrades/*"
           options:
             connection_name: "{{ var('bigquery_external_connection_name') }}"
             metadata_cache_mode: MANUAL
             max_staleness: INTERVAL 7 DAY
             hive_partition_uri_prefix:
-              "{{ var('powerschool_external_location_root',
-              env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', '')) }}/storedgrades/"
+              "{{ 'gs://teamster-test/dagster/' ~ project_name if
+              env_var('DAGSTER_CLOUD_IS_BRANCH_DEPLOYMENT', '0') == '1' else
+              var('cloud_storage_uri_base',
+              env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', ''))
+              }}/powerschool/storedgrades/"
             format: AVRO
             enable_logical_types: true
       - name: src_powerschool__assignmentcategoryassoc
@@ -99,9 +123,11 @@ sources:
                 - assignmentcategoryassoc
         external:
           location:
-            "{{ var('powerschool_external_location_root',
+            "{{ 'gs://teamster-test/dagster/' ~ project_name if
+            env_var('DAGSTER_CLOUD_IS_BRANCH_DEPLOYMENT', '0') == '1' else
+            var('cloud_storage_uri_base',
             env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', ''))
-            }}/assignmentcategoryassoc/*"
+            }}/powerschool/assignmentcategoryassoc/*"
           options:
             connection_name: "{{ var('bigquery_external_connection_name') }}"
             metadata_cache_mode: MANUAL
@@ -109,9 +135,11 @@ sources:
             format: AVRO
             enable_logical_types: true
             hive_partition_uri_prefix:
-              "{{ var('powerschool_external_location_root',
+              "{{ 'gs://teamster-test/dagster/' ~ project_name if
+              env_var('DAGSTER_CLOUD_IS_BRANCH_DEPLOYMENT', '0') == '1' else
+              var('cloud_storage_uri_base',
               env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', ''))
-              }}/assignmentcategoryassoc/"
+              }}/powerschool/assignmentcategoryassoc/"
       - name: src_powerschool__assignmentsection
         config:
           meta:
@@ -122,9 +150,11 @@ sources:
                 - assignmentsection
         external:
           location:
-            "{{ var('powerschool_external_location_root',
+            "{{ 'gs://teamster-test/dagster/' ~ project_name if
+            env_var('DAGSTER_CLOUD_IS_BRANCH_DEPLOYMENT', '0') == '1' else
+            var('cloud_storage_uri_base',
             env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', ''))
-            }}/assignmentsection/*"
+            }}/powerschool/assignmentsection/*"
           options:
             connection_name: "{{ var('bigquery_external_connection_name') }}"
             metadata_cache_mode: MANUAL
@@ -132,9 +162,11 @@ sources:
             format: AVRO
             enable_logical_types: true
             hive_partition_uri_prefix:
-              "{{ var('powerschool_external_location_root',
+              "{{ 'gs://teamster-test/dagster/' ~ project_name if
+              env_var('DAGSTER_CLOUD_IS_BRANCH_DEPLOYMENT', '0') == '1' else
+              var('cloud_storage_uri_base',
               env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', ''))
-              }}/assignmentsection/"
+              }}/powerschool/assignmentsection/"
       - name: src_powerschool__cc
         config:
           meta:
@@ -145,8 +177,10 @@ sources:
                 - cc
         external:
           location:
-            "{{ var('powerschool_external_location_root',
-            env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', '')) }}/cc/*"
+            "{{ 'gs://teamster-test/dagster/' ~ project_name if
+            env_var('DAGSTER_CLOUD_IS_BRANCH_DEPLOYMENT', '0') == '1' else
+            var('cloud_storage_uri_base',
+            env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', '')) }}/powerschool/cc/*"
           options:
             connection_name: "{{ var('bigquery_external_connection_name') }}"
             metadata_cache_mode: MANUAL
@@ -163,8 +197,11 @@ sources:
                 - codeset
         external:
           location:
-            "{{ var('powerschool_external_location_root',
-            env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', '')) }}/codeset/*"
+            "{{ 'gs://teamster-test/dagster/' ~ project_name if
+            env_var('DAGSTER_CLOUD_IS_BRANCH_DEPLOYMENT', '0') == '1' else
+            var('cloud_storage_uri_base',
+            env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', ''))
+            }}/powerschool/codeset/*"
           options:
             connection_name: "{{ var('bigquery_external_connection_name') }}"
             metadata_cache_mode: MANUAL
@@ -181,8 +218,11 @@ sources:
                 - courses
         external:
           location:
-            "{{ var('powerschool_external_location_root',
-            env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', '')) }}/courses/*"
+            "{{ 'gs://teamster-test/dagster/' ~ project_name if
+            env_var('DAGSTER_CLOUD_IS_BRANCH_DEPLOYMENT', '0') == '1' else
+            var('cloud_storage_uri_base',
+            env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', ''))
+            }}/powerschool/courses/*"
           options:
             connection_name: "{{ var('bigquery_external_connection_name') }}"
             metadata_cache_mode: MANUAL
@@ -199,9 +239,11 @@ sources:
                 - districtteachercategory
         external:
           location:
-            "{{ var('powerschool_external_location_root',
+            "{{ 'gs://teamster-test/dagster/' ~ project_name if
+            env_var('DAGSTER_CLOUD_IS_BRANCH_DEPLOYMENT', '0') == '1' else
+            var('cloud_storage_uri_base',
             env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', ''))
-            }}/districtteachercategory/*"
+            }}/powerschool/districtteachercategory/*"
           options:
             connection_name: "{{ var('bigquery_external_connection_name') }}"
             metadata_cache_mode: MANUAL
@@ -218,8 +260,11 @@ sources:
                 - emailaddress
         external:
           location:
-            "{{ var('powerschool_external_location_root',
-            env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', '')) }}/emailaddress/*"
+            "{{ 'gs://teamster-test/dagster/' ~ project_name if
+            env_var('DAGSTER_CLOUD_IS_BRANCH_DEPLOYMENT', '0') == '1' else
+            var('cloud_storage_uri_base',
+            env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', ''))
+            }}/powerschool/emailaddress/*"
           options:
             connection_name: "{{ var('bigquery_external_connection_name') }}"
             metadata_cache_mode: MANUAL
@@ -236,9 +281,11 @@ sources:
                 - gradecalcformulaweight
         external:
           location:
-            "{{ var('powerschool_external_location_root',
+            "{{ 'gs://teamster-test/dagster/' ~ project_name if
+            env_var('DAGSTER_CLOUD_IS_BRANCH_DEPLOYMENT', '0') == '1' else
+            var('cloud_storage_uri_base',
             env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', ''))
-            }}/gradecalcformulaweight/*"
+            }}/powerschool/gradecalcformulaweight/*"
           options:
             connection_name: "{{ var('bigquery_external_connection_name') }}"
             metadata_cache_mode: MANUAL
@@ -255,9 +302,11 @@ sources:
                 - gradecalcschoolassoc
         external:
           location:
-            "{{ var('powerschool_external_location_root',
+            "{{ 'gs://teamster-test/dagster/' ~ project_name if
+            env_var('DAGSTER_CLOUD_IS_BRANCH_DEPLOYMENT', '0') == '1' else
+            var('cloud_storage_uri_base',
             env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', ''))
-            }}/gradecalcschoolassoc/*"
+            }}/powerschool/gradecalcschoolassoc/*"
           options:
             connection_name: "{{ var('bigquery_external_connection_name') }}"
             metadata_cache_mode: MANUAL
@@ -274,9 +323,11 @@ sources:
                 - gradecalculationtype
         external:
           location:
-            "{{ var('powerschool_external_location_root',
+            "{{ 'gs://teamster-test/dagster/' ~ project_name if
+            env_var('DAGSTER_CLOUD_IS_BRANCH_DEPLOYMENT', '0') == '1' else
+            var('cloud_storage_uri_base',
             env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', ''))
-            }}/gradecalculationtype/*"
+            }}/powerschool/gradecalculationtype/*"
           options:
             connection_name: "{{ var('bigquery_external_connection_name') }}"
             metadata_cache_mode: MANUAL
@@ -293,8 +344,11 @@ sources:
                 - gradeformulaset
         external:
           location:
-            "{{ var('powerschool_external_location_root',
-            env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', '')) }}/gradeformulaset/*"
+            "{{ 'gs://teamster-test/dagster/' ~ project_name if
+            env_var('DAGSTER_CLOUD_IS_BRANCH_DEPLOYMENT', '0') == '1' else
+            var('cloud_storage_uri_base',
+            env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', ''))
+            }}/powerschool/gradeformulaset/*"
           options:
             connection_name: "{{ var('bigquery_external_connection_name') }}"
             metadata_cache_mode: MANUAL
@@ -311,8 +365,11 @@ sources:
                 - gradescaleitem
         external:
           location:
-            "{{ var('powerschool_external_location_root',
-            env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', '')) }}/gradescaleitem/*"
+            "{{ 'gs://teamster-test/dagster/' ~ project_name if
+            env_var('DAGSTER_CLOUD_IS_BRANCH_DEPLOYMENT', '0') == '1' else
+            var('cloud_storage_uri_base',
+            env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', ''))
+            }}/powerschool/gradescaleitem/*"
           options:
             connection_name: "{{ var('bigquery_external_connection_name') }}"
             metadata_cache_mode: MANUAL
@@ -329,9 +386,11 @@ sources:
                 - gradeschoolconfig
         external:
           location:
-            "{{ var('powerschool_external_location_root',
+            "{{ 'gs://teamster-test/dagster/' ~ project_name if
+            env_var('DAGSTER_CLOUD_IS_BRANCH_DEPLOYMENT', '0') == '1' else
+            var('cloud_storage_uri_base',
             env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', ''))
-            }}/gradeschoolconfig/*"
+            }}/powerschool/gradeschoolconfig/*"
           options:
             connection_name: "{{ var('bigquery_external_connection_name') }}"
             metadata_cache_mode: MANUAL
@@ -348,9 +407,11 @@ sources:
                 - gradeschoolformulaassoc
         external:
           location:
-            "{{ var('powerschool_external_location_root',
+            "{{ 'gs://teamster-test/dagster/' ~ project_name if
+            env_var('DAGSTER_CLOUD_IS_BRANCH_DEPLOYMENT', '0') == '1' else
+            var('cloud_storage_uri_base',
             env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', ''))
-            }}/gradeschoolformulaassoc/*"
+            }}/powerschool/gradeschoolformulaassoc/*"
           options:
             connection_name: "{{ var('bigquery_external_connection_name') }}"
             metadata_cache_mode: MANUAL
@@ -367,9 +428,11 @@ sources:
                 - gradesectionconfig
         external:
           location:
-            "{{ var('powerschool_external_location_root',
+            "{{ 'gs://teamster-test/dagster/' ~ project_name if
+            env_var('DAGSTER_CLOUD_IS_BRANCH_DEPLOYMENT', '0') == '1' else
+            var('cloud_storage_uri_base',
             env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', ''))
-            }}/gradesectionconfig/*"
+            }}/powerschool/gradesectionconfig/*"
           options:
             connection_name: "{{ var('bigquery_external_connection_name') }}"
             metadata_cache_mode: MANUAL
@@ -386,9 +449,11 @@ sources:
                 - originalcontactmap
         external:
           location:
-            "{{ var('powerschool_external_location_root',
+            "{{ 'gs://teamster-test/dagster/' ~ project_name if
+            env_var('DAGSTER_CLOUD_IS_BRANCH_DEPLOYMENT', '0') == '1' else
+            var('cloud_storage_uri_base',
             env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', ''))
-            }}/originalcontactmap/*"
+            }}/powerschool/originalcontactmap/*"
           options:
             connection_name: "{{ var('bigquery_external_connection_name') }}"
             metadata_cache_mode: MANUAL
@@ -405,8 +470,11 @@ sources:
                 - person
         external:
           location:
-            "{{ var('powerschool_external_location_root',
-            env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', '')) }}/person/*"
+            "{{ 'gs://teamster-test/dagster/' ~ project_name if
+            env_var('DAGSTER_CLOUD_IS_BRANCH_DEPLOYMENT', '0') == '1' else
+            var('cloud_storage_uri_base',
+            env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', ''))
+            }}/powerschool/person/*"
           options:
             connection_name: "{{ var('bigquery_external_connection_name') }}"
             metadata_cache_mode: MANUAL
@@ -423,8 +491,11 @@ sources:
                 - personaddress
         external:
           location:
-            "{{ var('powerschool_external_location_root',
-            env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', '')) }}/personaddress/*"
+            "{{ 'gs://teamster-test/dagster/' ~ project_name if
+            env_var('DAGSTER_CLOUD_IS_BRANCH_DEPLOYMENT', '0') == '1' else
+            var('cloud_storage_uri_base',
+            env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', ''))
+            }}/powerschool/personaddress/*"
           options:
             connection_name: "{{ var('bigquery_external_connection_name') }}"
             metadata_cache_mode: MANUAL
@@ -441,9 +512,11 @@ sources:
                 - personaddressassoc
         external:
           location:
-            "{{ var('powerschool_external_location_root',
+            "{{ 'gs://teamster-test/dagster/' ~ project_name if
+            env_var('DAGSTER_CLOUD_IS_BRANCH_DEPLOYMENT', '0') == '1' else
+            var('cloud_storage_uri_base',
             env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', ''))
-            }}/personaddressassoc/*"
+            }}/powerschool/personaddressassoc/*"
           options:
             connection_name: "{{ var('bigquery_external_connection_name') }}"
             metadata_cache_mode: MANUAL
@@ -460,9 +533,11 @@ sources:
                 - personemailaddressassoc
         external:
           location:
-            "{{ var('powerschool_external_location_root',
+            "{{ 'gs://teamster-test/dagster/' ~ project_name if
+            env_var('DAGSTER_CLOUD_IS_BRANCH_DEPLOYMENT', '0') == '1' else
+            var('cloud_storage_uri_base',
             env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', ''))
-            }}/personemailaddressassoc/*"
+            }}/powerschool/personemailaddressassoc/*"
           options:
             connection_name: "{{ var('bigquery_external_connection_name') }}"
             metadata_cache_mode: MANUAL
@@ -479,9 +554,11 @@ sources:
                 - personphonenumberassoc
         external:
           location:
-            "{{ var('powerschool_external_location_root',
+            "{{ 'gs://teamster-test/dagster/' ~ project_name if
+            env_var('DAGSTER_CLOUD_IS_BRANCH_DEPLOYMENT', '0') == '1' else
+            var('cloud_storage_uri_base',
             env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', ''))
-            }}/personphonenumberassoc/*"
+            }}/powerschool/personphonenumberassoc/*"
           options:
             connection_name: "{{ var('bigquery_external_connection_name') }}"
             metadata_cache_mode: MANUAL
@@ -498,8 +575,11 @@ sources:
                 - phonenumber
         external:
           location:
-            "{{ var('powerschool_external_location_root',
-            env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', '')) }}/phonenumber/*"
+            "{{ 'gs://teamster-test/dagster/' ~ project_name if
+            env_var('DAGSTER_CLOUD_IS_BRANCH_DEPLOYMENT', '0') == '1' else
+            var('cloud_storage_uri_base',
+            env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', ''))
+            }}/powerschool/phonenumber/*"
           options:
             connection_name: "{{ var('bigquery_external_connection_name') }}"
             metadata_cache_mode: MANUAL
@@ -516,8 +596,11 @@ sources:
                 - prefs
         external:
           location:
-            "{{ var('powerschool_external_location_root',
-            env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', '')) }}/prefs/*"
+            "{{ 'gs://teamster-test/dagster/' ~ project_name if
+            env_var('DAGSTER_CLOUD_IS_BRANCH_DEPLOYMENT', '0') == '1' else
+            var('cloud_storage_uri_base',
+            env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', ''))
+            }}/powerschool/prefs/*"
           options:
             connection_name: "{{ var('bigquery_external_connection_name') }}"
             metadata_cache_mode: MANUAL
@@ -534,8 +617,11 @@ sources:
                 - roledef
         external:
           location:
-            "{{ var('powerschool_external_location_root',
-            env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', '')) }}/roledef/*"
+            "{{ 'gs://teamster-test/dagster/' ~ project_name if
+            env_var('DAGSTER_CLOUD_IS_BRANCH_DEPLOYMENT', '0') == '1' else
+            var('cloud_storage_uri_base',
+            env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', ''))
+            }}/powerschool/roledef/*"
           options:
             connection_name: "{{ var('bigquery_external_connection_name') }}"
             metadata_cache_mode: MANUAL
@@ -552,8 +638,11 @@ sources:
                 - s_nj_crs_x
         external:
           location:
-            "{{ var('powerschool_external_location_root',
-            env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', '')) }}/s_nj_crs_x/*"
+            "{{ 'gs://teamster-test/dagster/' ~ project_name if
+            env_var('DAGSTER_CLOUD_IS_BRANCH_DEPLOYMENT', '0') == '1' else
+            var('cloud_storage_uri_base',
+            env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', ''))
+            }}/powerschool/s_nj_crs_x/*"
           options:
             connection_name: "{{ var('bigquery_external_connection_name') }}"
             metadata_cache_mode: MANUAL
@@ -570,8 +659,11 @@ sources:
                 - s_nj_ren_x
         external:
           location:
-            "{{ var('powerschool_external_location_root',
-            env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', '')) }}/s_nj_ren_x/*"
+            "{{ 'gs://teamster-test/dagster/' ~ project_name if
+            env_var('DAGSTER_CLOUD_IS_BRANCH_DEPLOYMENT', '0') == '1' else
+            var('cloud_storage_uri_base',
+            env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', ''))
+            }}/powerschool/s_nj_ren_x/*"
           options:
             connection_name: "{{ var('bigquery_external_connection_name') }}"
             metadata_cache_mode: MANUAL
@@ -588,8 +680,11 @@ sources:
                 - s_nj_stu_x
         external:
           location:
-            "{{ var('powerschool_external_location_root',
-            env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', '')) }}/s_nj_stu_x/*"
+            "{{ 'gs://teamster-test/dagster/' ~ project_name if
+            env_var('DAGSTER_CLOUD_IS_BRANCH_DEPLOYMENT', '0') == '1' else
+            var('cloud_storage_uri_base',
+            env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', ''))
+            }}/powerschool/s_nj_stu_x/*"
           options:
             connection_name: "{{ var('bigquery_external_connection_name') }}"
             metadata_cache_mode: MANUAL
@@ -606,8 +701,11 @@ sources:
                 - s_nj_usr_x
         external:
           location:
-            "{{ var('powerschool_external_location_root',
-            env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', '')) }}/s_nj_usr_x/*"
+            "{{ 'gs://teamster-test/dagster/' ~ project_name if
+            env_var('DAGSTER_CLOUD_IS_BRANCH_DEPLOYMENT', '0') == '1' else
+            var('cloud_storage_uri_base',
+            env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', ''))
+            }}/powerschool/s_nj_usr_x/*"
           options:
             connection_name: "{{ var('bigquery_external_connection_name') }}"
             metadata_cache_mode: MANUAL
@@ -624,8 +722,11 @@ sources:
                 - schools
         external:
           location:
-            "{{ var('powerschool_external_location_root',
-            env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', '')) }}/schools/*"
+            "{{ 'gs://teamster-test/dagster/' ~ project_name if
+            env_var('DAGSTER_CLOUD_IS_BRANCH_DEPLOYMENT', '0') == '1' else
+            var('cloud_storage_uri_base',
+            env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', ''))
+            }}/powerschool/schools/*"
           options:
             connection_name: "{{ var('bigquery_external_connection_name') }}"
             metadata_cache_mode: MANUAL
@@ -642,8 +743,11 @@ sources:
                 - schoolstaff
         external:
           location:
-            "{{ var('powerschool_external_location_root',
-            env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', '')) }}/schoolstaff/*"
+            "{{ 'gs://teamster-test/dagster/' ~ project_name if
+            env_var('DAGSTER_CLOUD_IS_BRANCH_DEPLOYMENT', '0') == '1' else
+            var('cloud_storage_uri_base',
+            env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', ''))
+            }}/powerschool/schoolstaff/*"
           options:
             connection_name: "{{ var('bigquery_external_connection_name') }}"
             metadata_cache_mode: MANUAL
@@ -660,8 +764,11 @@ sources:
                 - sections
         external:
           location:
-            "{{ var('powerschool_external_location_root',
-            env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', '')) }}/sections/*"
+            "{{ 'gs://teamster-test/dagster/' ~ project_name if
+            env_var('DAGSTER_CLOUD_IS_BRANCH_DEPLOYMENT', '0') == '1' else
+            var('cloud_storage_uri_base',
+            env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', ''))
+            }}/powerschool/sections/*"
           options:
             connection_name: "{{ var('bigquery_external_connection_name') }}"
             metadata_cache_mode: MANUAL
@@ -678,8 +785,11 @@ sources:
                 - sectionteacher
         external:
           location:
-            "{{ var('powerschool_external_location_root',
-            env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', '')) }}/sectionteacher/*"
+            "{{ 'gs://teamster-test/dagster/' ~ project_name if
+            env_var('DAGSTER_CLOUD_IS_BRANCH_DEPLOYMENT', '0') == '1' else
+            var('cloud_storage_uri_base',
+            env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', ''))
+            }}/powerschool/sectionteacher/*"
           options:
             connection_name: "{{ var('bigquery_external_connection_name') }}"
             metadata_cache_mode: MANUAL
@@ -696,9 +806,11 @@ sources:
                 - studentcontactassoc
         external:
           location:
-            "{{ var('powerschool_external_location_root',
+            "{{ 'gs://teamster-test/dagster/' ~ project_name if
+            env_var('DAGSTER_CLOUD_IS_BRANCH_DEPLOYMENT', '0') == '1' else
+            var('cloud_storage_uri_base',
             env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', ''))
-            }}/studentcontactassoc/*"
+            }}/powerschool/studentcontactassoc/*"
           options:
             connection_name: "{{ var('bigquery_external_connection_name') }}"
             metadata_cache_mode: MANUAL
@@ -715,9 +827,11 @@ sources:
                 - studentcontactdetail
         external:
           location:
-            "{{ var('powerschool_external_location_root',
+            "{{ 'gs://teamster-test/dagster/' ~ project_name if
+            env_var('DAGSTER_CLOUD_IS_BRANCH_DEPLOYMENT', '0') == '1' else
+            var('cloud_storage_uri_base',
             env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', ''))
-            }}/studentcontactdetail/*"
+            }}/powerschool/studentcontactdetail/*"
           options:
             connection_name: "{{ var('bigquery_external_connection_name') }}"
             metadata_cache_mode: MANUAL
@@ -734,9 +848,11 @@ sources:
                 - studentcorefields
         external:
           location:
-            "{{ var('powerschool_external_location_root',
+            "{{ 'gs://teamster-test/dagster/' ~ project_name if
+            env_var('DAGSTER_CLOUD_IS_BRANCH_DEPLOYMENT', '0') == '1' else
+            var('cloud_storage_uri_base',
             env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', ''))
-            }}/studentcorefields/*"
+            }}/powerschool/studentcorefields/*"
           options:
             connection_name: "{{ var('bigquery_external_connection_name') }}"
             metadata_cache_mode: MANUAL
@@ -753,8 +869,11 @@ sources:
                 - studentrace
         external:
           location:
-            "{{ var('powerschool_external_location_root',
-            env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', '')) }}/studentrace/*"
+            "{{ 'gs://teamster-test/dagster/' ~ project_name if
+            env_var('DAGSTER_CLOUD_IS_BRANCH_DEPLOYMENT', '0') == '1' else
+            var('cloud_storage_uri_base',
+            env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', ''))
+            }}/powerschool/studentrace/*"
           options:
             connection_name: "{{ var('bigquery_external_connection_name') }}"
             metadata_cache_mode: MANUAL
@@ -771,8 +890,11 @@ sources:
                 - students
         external:
           location:
-            "{{ var('powerschool_external_location_root',
-            env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', '')) }}/students/*"
+            "{{ 'gs://teamster-test/dagster/' ~ project_name if
+            env_var('DAGSTER_CLOUD_IS_BRANCH_DEPLOYMENT', '0') == '1' else
+            var('cloud_storage_uri_base',
+            env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', ''))
+            }}/powerschool/students/*"
           options:
             connection_name: "{{ var('bigquery_external_connection_name') }}"
             metadata_cache_mode: MANUAL
@@ -789,8 +911,11 @@ sources:
                 - teachercategory
         external:
           location:
-            "{{ var('powerschool_external_location_root',
-            env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', '')) }}/teachercategory/*"
+            "{{ 'gs://teamster-test/dagster/' ~ project_name if
+            env_var('DAGSTER_CLOUD_IS_BRANCH_DEPLOYMENT', '0') == '1' else
+            var('cloud_storage_uri_base',
+            env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', ''))
+            }}/powerschool/teachercategory/*"
           options:
             connection_name: "{{ var('bigquery_external_connection_name') }}"
             metadata_cache_mode: MANUAL
@@ -807,8 +932,11 @@ sources:
                 - termbins
         external:
           location:
-            "{{ var('powerschool_external_location_root',
-            env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', '')) }}/termbins/*"
+            "{{ 'gs://teamster-test/dagster/' ~ project_name if
+            env_var('DAGSTER_CLOUD_IS_BRANCH_DEPLOYMENT', '0') == '1' else
+            var('cloud_storage_uri_base',
+            env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', ''))
+            }}/powerschool/termbins/*"
           options:
             connection_name: "{{ var('bigquery_external_connection_name') }}"
             metadata_cache_mode: MANUAL
@@ -825,8 +953,11 @@ sources:
                 - terms
         external:
           location:
-            "{{ var('powerschool_external_location_root',
-            env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', '')) }}/terms/*"
+            "{{ 'gs://teamster-test/dagster/' ~ project_name if
+            env_var('DAGSTER_CLOUD_IS_BRANCH_DEPLOYMENT', '0') == '1' else
+            var('cloud_storage_uri_base',
+            env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', ''))
+            }}/powerschool/terms/*"
           options:
             connection_name: "{{ var('bigquery_external_connection_name') }}"
             metadata_cache_mode: MANUAL
@@ -843,8 +974,11 @@ sources:
                 - u_clg_et_stu
         external:
           location:
-            "{{ var('powerschool_external_location_root',
-            env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', '')) }}/u_clg_et_stu/*"
+            "{{ 'gs://teamster-test/dagster/' ~ project_name if
+            env_var('DAGSTER_CLOUD_IS_BRANCH_DEPLOYMENT', '0') == '1' else
+            var('cloud_storage_uri_base',
+            env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', ''))
+            }}/powerschool/u_clg_et_stu/*"
           options:
             connection_name: "{{ var('bigquery_external_connection_name') }}"
             metadata_cache_mode: MANUAL
@@ -861,8 +995,11 @@ sources:
                 - u_clg_et_stu_alt
         external:
           location:
-            "{{ var('powerschool_external_location_root',
-            env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', '')) }}/u_clg_et_stu_alt/*"
+            "{{ 'gs://teamster-test/dagster/' ~ project_name if
+            env_var('DAGSTER_CLOUD_IS_BRANCH_DEPLOYMENT', '0') == '1' else
+            var('cloud_storage_uri_base',
+            env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', ''))
+            }}/powerschool/u_clg_et_stu_alt/*"
           options:
             connection_name: "{{ var('bigquery_external_connection_name') }}"
             metadata_cache_mode: MANUAL
@@ -879,9 +1016,11 @@ sources:
                 - u_def_ext_students
         external:
           location:
-            "{{ var('powerschool_external_location_root',
+            "{{ 'gs://teamster-test/dagster/' ~ project_name if
+            env_var('DAGSTER_CLOUD_IS_BRANCH_DEPLOYMENT', '0') == '1' else
+            var('cloud_storage_uri_base',
             env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', ''))
-            }}/u_def_ext_students/*"
+            }}/powerschool/u_def_ext_students/*"
           options:
             connection_name: "{{ var('bigquery_external_connection_name') }}"
             metadata_cache_mode: MANUAL
@@ -898,9 +1037,32 @@ sources:
                 - u_studentsuserfields
         external:
           location:
-            "{{ var('powerschool_external_location_root',
+            "{{ 'gs://teamster-test/dagster/' ~ project_name if
+            env_var('DAGSTER_CLOUD_IS_BRANCH_DEPLOYMENT', '0') == '1' else
+            var('cloud_storage_uri_base',
             env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', ''))
-            }}/u_studentsuserfields/*"
+            }}/powerschool/u_studentsuserfields/*"
+          options:
+            connection_name: "{{ var('bigquery_external_connection_name') }}"
+            metadata_cache_mode: MANUAL
+            max_staleness: INTERVAL 7 DAY
+            format: AVRO
+            enable_logical_types: true
+      - name: src_powerschool__u_expectations
+        config:
+          meta:
+            dagster:
+              asset_key:
+                - "{{ project_name }}"
+                - powerschool
+                - u_expectations
+        external:
+          location:
+            "{{ 'gs://teamster-test/dagster/' ~ project_name if
+            env_var('DAGSTER_CLOUD_IS_BRANCH_DEPLOYMENT', '0') == '1' else
+            var('cloud_storage_uri_base',
+            env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', ''))
+            }}/powerschool/u_expectations/*"
           options:
             connection_name: "{{ var('bigquery_external_connection_name') }}"
             metadata_cache_mode: MANUAL
@@ -917,8 +1079,11 @@ sources:
                 - users
         external:
           location:
-            "{{ var('powerschool_external_location_root',
-            env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', '')) }}/users/*"
+            "{{ 'gs://teamster-test/dagster/' ~ project_name if
+            env_var('DAGSTER_CLOUD_IS_BRANCH_DEPLOYMENT', '0') == '1' else
+            var('cloud_storage_uri_base',
+            env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', ''))
+            }}/powerschool/users/*"
           options:
             connection_name: "{{ var('bigquery_external_connection_name') }}"
             metadata_cache_mode: MANUAL
@@ -936,8 +1101,11 @@ sources:
                 - attendance_code
         external:
           location:
-            "{{ var('powerschool_external_location_root',
-            env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', '')) }}/attendance_code/*"
+            "{{ 'gs://teamster-test/dagster/' ~ project_name if
+            env_var('DAGSTER_CLOUD_IS_BRANCH_DEPLOYMENT', '0') == '1' else
+            var('cloud_storage_uri_base',
+            env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', ''))
+            }}/powerschool/attendance_code/*"
           options:
             connection_name: "{{ var('bigquery_external_connection_name') }}"
             metadata_cache_mode: MANUAL
@@ -954,9 +1122,11 @@ sources:
                 - attendance_conversion_items
         external:
           location:
-            "{{ var('powerschool_external_location_root',
+            "{{ 'gs://teamster-test/dagster/' ~ project_name if
+            env_var('DAGSTER_CLOUD_IS_BRANCH_DEPLOYMENT', '0') == '1' else
+            var('cloud_storage_uri_base',
             env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', ''))
-            }}/attendance_conversion_items/*"
+            }}/powerschool/attendance_conversion_items/*"
           options:
             connection_name: "{{ var('bigquery_external_connection_name') }}"
             metadata_cache_mode: MANUAL
@@ -973,8 +1143,11 @@ sources:
                 - bell_schedule
         external:
           location:
-            "{{ var('powerschool_external_location_root',
-            env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', '')) }}/bell_schedule/*"
+            "{{ 'gs://teamster-test/dagster/' ~ project_name if
+            env_var('DAGSTER_CLOUD_IS_BRANCH_DEPLOYMENT', '0') == '1' else
+            var('cloud_storage_uri_base',
+            env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', ''))
+            }}/powerschool/bell_schedule/*"
           options:
             connection_name: "{{ var('bigquery_external_connection_name') }}"
             metadata_cache_mode: MANUAL
@@ -991,8 +1164,11 @@ sources:
                 - calendar_day
         external:
           location:
-            "{{ var('powerschool_external_location_root',
-            env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', '')) }}/calendar_day/*"
+            "{{ 'gs://teamster-test/dagster/' ~ project_name if
+            env_var('DAGSTER_CLOUD_IS_BRANCH_DEPLOYMENT', '0') == '1' else
+            var('cloud_storage_uri_base',
+            env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', ''))
+            }}/powerschool/calendar_day/*"
           options:
             connection_name: "{{ var('bigquery_external_connection_name') }}"
             metadata_cache_mode: MANUAL
@@ -1009,8 +1185,11 @@ sources:
                 - cycle_day
         external:
           location:
-            "{{ var('powerschool_external_location_root',
-            env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', '')) }}/cycle_day/*"
+            "{{ 'gs://teamster-test/dagster/' ~ project_name if
+            env_var('DAGSTER_CLOUD_IS_BRANCH_DEPLOYMENT', '0') == '1' else
+            var('cloud_storage_uri_base',
+            env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', ''))
+            }}/powerschool/cycle_day/*"
           options:
             connection_name: "{{ var('bigquery_external_connection_name') }}"
             metadata_cache_mode: MANUAL
@@ -1027,8 +1206,10 @@ sources:
                 - fte
         external:
           location:
-            "{{ var('powerschool_external_location_root',
-            env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', '')) }}/fte/*"
+            "{{ 'gs://teamster-test/dagster/' ~ project_name if
+            env_var('DAGSTER_CLOUD_IS_BRANCH_DEPLOYMENT', '0') == '1' else
+            var('cloud_storage_uri_base',
+            env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', '')) }}/powerschool/fte/*"
           options:
             connection_name: "{{ var('bigquery_external_connection_name') }}"
             metadata_cache_mode: MANUAL
@@ -1045,8 +1226,10 @@ sources:
                 - gen
         external:
           location:
-            "{{ var('powerschool_external_location_root',
-            env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', '')) }}/gen/*"
+            "{{ 'gs://teamster-test/dagster/' ~ project_name if
+            env_var('DAGSTER_CLOUD_IS_BRANCH_DEPLOYMENT', '0') == '1' else
+            var('cloud_storage_uri_base',
+            env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', '')) }}/powerschool/gen/*"
           options:
             connection_name: "{{ var('bigquery_external_connection_name') }}"
             metadata_cache_mode: MANUAL
@@ -1063,8 +1246,10 @@ sources:
                 - log
         external:
           location:
-            "{{ var('powerschool_external_location_root',
-            env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', '')) }}/log/*"
+            "{{ 'gs://teamster-test/dagster/' ~ project_name if
+            env_var('DAGSTER_CLOUD_IS_BRANCH_DEPLOYMENT', '0') == '1' else
+            var('cloud_storage_uri_base',
+            env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', '')) }}/powerschool/log/*"
           options:
             connection_name: "{{ var('bigquery_external_connection_name') }}"
             metadata_cache_mode: MANUAL
@@ -1081,8 +1266,11 @@ sources:
                 - period
         external:
           location:
-            "{{ var('powerschool_external_location_root',
-            env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', '')) }}/period/*"
+            "{{ 'gs://teamster-test/dagster/' ~ project_name if
+            env_var('DAGSTER_CLOUD_IS_BRANCH_DEPLOYMENT', '0') == '1' else
+            var('cloud_storage_uri_base',
+            env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', ''))
+            }}/powerschool/period/*"
           options:
             connection_name: "{{ var('bigquery_external_connection_name') }}"
             metadata_cache_mode: MANUAL
@@ -1099,8 +1287,11 @@ sources:
                 - reenrollments
         external:
           location:
-            "{{ var('powerschool_external_location_root',
-            env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', '')) }}/reenrollments/*"
+            "{{ 'gs://teamster-test/dagster/' ~ project_name if
+            env_var('DAGSTER_CLOUD_IS_BRANCH_DEPLOYMENT', '0') == '1' else
+            var('cloud_storage_uri_base',
+            env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', ''))
+            }}/powerschool/reenrollments/*"
           options:
             connection_name: "{{ var('bigquery_external_connection_name') }}"
             metadata_cache_mode: MANUAL
@@ -1117,8 +1308,11 @@ sources:
                 - spenrollments
         external:
           location:
-            "{{ var('powerschool_external_location_root',
-            env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', '')) }}/spenrollments/*"
+            "{{ 'gs://teamster-test/dagster/' ~ project_name if
+            env_var('DAGSTER_CLOUD_IS_BRANCH_DEPLOYMENT', '0') == '1' else
+            var('cloud_storage_uri_base',
+            env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', ''))
+            }}/powerschool/spenrollments/*"
           options:
             connection_name: "{{ var('bigquery_external_connection_name') }}"
             metadata_cache_mode: MANUAL
@@ -1135,8 +1329,10 @@ sources:
                 - test
         external:
           location:
-            "{{ var('powerschool_external_location_root',
-            env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', '')) }}/test/*"
+            "{{ 'gs://teamster-test/dagster/' ~ project_name if
+            env_var('DAGSTER_CLOUD_IS_BRANCH_DEPLOYMENT', '0') == '1' else
+            var('cloud_storage_uri_base',
+            env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', '')) }}/powerschool/test/*"
           options:
             connection_name: "{{ var('bigquery_external_connection_name') }}"
             metadata_cache_mode: MANUAL
@@ -1153,8 +1349,11 @@ sources:
                 - testscore
         external:
           location:
-            "{{ var('powerschool_external_location_root',
-            env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', '')) }}/testscore/*"
+            "{{ 'gs://teamster-test/dagster/' ~ project_name if
+            env_var('DAGSTER_CLOUD_IS_BRANCH_DEPLOYMENT', '0') == '1' else
+            var('cloud_storage_uri_base',
+            env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', ''))
+            }}/powerschool/testscore/*"
           options:
             connection_name: "{{ var('bigquery_external_connection_name') }}"
             metadata_cache_mode: MANUAL
@@ -1171,8 +1370,11 @@ sources:
                 - studenttest
         external:
           location:
-            "{{ var('powerschool_external_location_root',
-            env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', '')) }}/studenttest/*"
+            "{{ 'gs://teamster-test/dagster/' ~ project_name if
+            env_var('DAGSTER_CLOUD_IS_BRANCH_DEPLOYMENT', '0') == '1' else
+            var('cloud_storage_uri_base',
+            env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', ''))
+            }}/powerschool/studenttest/*"
           options:
             connection_name: "{{ var('bigquery_external_connection_name') }}"
             metadata_cache_mode: MANUAL
@@ -1189,8 +1391,11 @@ sources:
                 - studenttestscore
         external:
           location:
-            "{{ var('powerschool_external_location_root',
-            env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', '')) }}/studenttestscore/*"
+            "{{ 'gs://teamster-test/dagster/' ~ project_name if
+            env_var('DAGSTER_CLOUD_IS_BRANCH_DEPLOYMENT', '0') == '1' else
+            var('cloud_storage_uri_base',
+            env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', ''))
+            }}/powerschool/studenttestscore/*"
           options:
             connection_name: "{{ var('bigquery_external_connection_name') }}"
             metadata_cache_mode: MANUAL
@@ -1207,9 +1412,11 @@ sources:
                 - sced_code_mapping
         external:
           location:
-            "{{ var('powerschool_external_location_root',
+            "{{ 'gs://teamster-test/dagster/' ~ project_name if
+            env_var('DAGSTER_CLOUD_IS_BRANCH_DEPLOYMENT', '0') == '1' else
+            var('cloud_storage_uri_base',
             env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', ''))
-            }}/sced_code_mapping/*"
+            }}/powerschool/sced_code_mapping/*"
           options:
             connection_name: "{{ var('bigquery_external_connection_name') }}"
             metadata_cache_mode: MANUAL
@@ -1226,8 +1433,11 @@ sources:
                 - gradplan
         external:
           location:
-            "{{ var('powerschool_external_location_root',
-            env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', '')) }}/gradplan/*"
+            "{{ 'gs://teamster-test/dagster/' ~ project_name if
+            env_var('DAGSTER_CLOUD_IS_BRANCH_DEPLOYMENT', '0') == '1' else
+            var('cloud_storage_uri_base',
+            env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', ''))
+            }}/powerschool/gradplan/*"
           options:
             connection_name: "{{ var('bigquery_external_connection_name') }}"
             metadata_cache_mode: MANUAL
@@ -1244,8 +1454,11 @@ sources:
                 - userscorefields
         external:
           location:
-            "{{ var('powerschool_external_location_root',
-            env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', '')) }}/userscorefields/*"
+            "{{ 'gs://teamster-test/dagster/' ~ project_name if
+            env_var('DAGSTER_CLOUD_IS_BRANCH_DEPLOYMENT', '0') == '1' else
+            var('cloud_storage_uri_base',
+            env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', ''))
+            }}/powerschool/userscorefields/*"
           options:
             connection_name: "{{ var('bigquery_external_connection_name') }}"
             metadata_cache_mode: MANUAL
@@ -1262,9 +1475,11 @@ sources:
                 - u_storedgrades_de
         external:
           location:
-            "{{ var('powerschool_external_location_root',
+            "{{ 'gs://teamster-test/dagster/' ~ project_name if
+            env_var('DAGSTER_CLOUD_IS_BRANCH_DEPLOYMENT', '0') == '1' else
+            var('cloud_storage_uri_base',
             env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', ''))
-            }}/u_storedgrades_de/*"
+            }}/powerschool/u_storedgrades_de/*"
           options:
             connection_name: "{{ var('bigquery_external_connection_name') }}"
             metadata_cache_mode: MANUAL
@@ -1281,8 +1496,11 @@ sources:
                 - gpnode
         external:
           location:
-            "{{ var('powerschool_external_location_root',
-            env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', '')) }}/gpnode/*"
+            "{{ 'gs://teamster-test/dagster/' ~ project_name if
+            env_var('DAGSTER_CLOUD_IS_BRANCH_DEPLOYMENT', '0') == '1' else
+            var('cloud_storage_uri_base',
+            env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', ''))
+            }}/powerschool/gpnode/*"
           options:
             connection_name: "{{ var('bigquery_external_connection_name') }}"
             metadata_cache_mode: MANUAL
@@ -1299,9 +1517,11 @@ sources:
                 - gpprogresssubject
         external:
           location:
-            "{{ var('powerschool_external_location_root',
+            "{{ 'gs://teamster-test/dagster/' ~ project_name if
+            env_var('DAGSTER_CLOUD_IS_BRANCH_DEPLOYMENT', '0') == '1' else
+            var('cloud_storage_uri_base',
             env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', ''))
-            }}/gpprogresssubject/*"
+            }}/powerschool/gpprogresssubject/*"
           options:
             connection_name: "{{ var('bigquery_external_connection_name') }}"
             metadata_cache_mode: MANUAL
@@ -1318,9 +1538,11 @@ sources:
                 - gpprogresssubjectearned
         external:
           location:
-            "{{ var('powerschool_external_location_root',
+            "{{ 'gs://teamster-test/dagster/' ~ project_name if
+            env_var('DAGSTER_CLOUD_IS_BRANCH_DEPLOYMENT', '0') == '1' else
+            var('cloud_storage_uri_base',
             env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', ''))
-            }}/gpprogresssubjectearned/*"
+            }}/powerschool/gpprogresssubjectearned/*"
           options:
             connection_name: "{{ var('bigquery_external_connection_name') }}"
             metadata_cache_mode: MANUAL
@@ -1337,9 +1559,11 @@ sources:
                 - gpprogresssubjectenrolled
         external:
           location:
-            "{{ var('powerschool_external_location_root',
+            "{{ 'gs://teamster-test/dagster/' ~ project_name if
+            env_var('DAGSTER_CLOUD_IS_BRANCH_DEPLOYMENT', '0') == '1' else
+            var('cloud_storage_uri_base',
             env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', ''))
-            }}/gpprogresssubjectenrolled/*"
+            }}/powerschool/gpprogresssubjectenrolled/*"
           options:
             connection_name: "{{ var('bigquery_external_connection_name') }}"
             metadata_cache_mode: MANUAL
@@ -1356,9 +1580,11 @@ sources:
                 - gpprogresssubjectrequested
         external:
           location:
-            "{{ var('powerschool_external_location_root',
+            "{{ 'gs://teamster-test/dagster/' ~ project_name if
+            env_var('DAGSTER_CLOUD_IS_BRANCH_DEPLOYMENT', '0') == '1' else
+            var('cloud_storage_uri_base',
             env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', ''))
-            }}/gpprogresssubjectrequested/*"
+            }}/powerschool/gpprogresssubjectrequested/*"
           options:
             connection_name: "{{ var('bigquery_external_connection_name') }}"
             metadata_cache_mode: MANUAL
@@ -1375,9 +1601,11 @@ sources:
                 - gpprogresssubjectwaived
         external:
           location:
-            "{{ var('powerschool_external_location_root',
+            "{{ 'gs://teamster-test/dagster/' ~ project_name if
+            env_var('DAGSTER_CLOUD_IS_BRANCH_DEPLOYMENT', '0') == '1' else
+            var('cloud_storage_uri_base',
             env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', ''))
-            }}/gpprogresssubjectwaived/*"
+            }}/powerschool/gpprogresssubjectwaived/*"
           options:
             connection_name: "{{ var('bigquery_external_connection_name') }}"
             metadata_cache_mode: MANUAL
@@ -1394,9 +1622,11 @@ sources:
                 - gpprogresssubjwaivedapplied
         external:
           location:
-            "{{ var('powerschool_external_location_root',
+            "{{ 'gs://teamster-test/dagster/' ~ project_name if
+            env_var('DAGSTER_CLOUD_IS_BRANCH_DEPLOYMENT', '0') == '1' else
+            var('cloud_storage_uri_base',
             env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', ''))
-            }}/gpprogresssubjwaivedapplied/*"
+            }}/powerschool/gpprogresssubjwaivedapplied/*"
           options:
             connection_name: "{{ var('bigquery_external_connection_name') }}"
             metadata_cache_mode: MANUAL
@@ -1413,8 +1643,11 @@ sources:
                 - gpselectedcrs
         external:
           location:
-            "{{ var('powerschool_external_location_root',
-            env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', '')) }}/gpselectedcrs/*"
+            "{{ 'gs://teamster-test/dagster/' ~ project_name if
+            env_var('DAGSTER_CLOUD_IS_BRANCH_DEPLOYMENT', '0') == '1' else
+            var('cloud_storage_uri_base',
+            env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', ''))
+            }}/powerschool/gpselectedcrs/*"
           options:
             connection_name: "{{ var('bigquery_external_connection_name') }}"
             metadata_cache_mode: MANUAL
@@ -1431,8 +1664,11 @@ sources:
                 - gpselectedcrtype
         external:
           location:
-            "{{ var('powerschool_external_location_root',
-            env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', '')) }}/gpselectedcrtype/*"
+            "{{ 'gs://teamster-test/dagster/' ~ project_name if
+            env_var('DAGSTER_CLOUD_IS_BRANCH_DEPLOYMENT', '0') == '1' else
+            var('cloud_storage_uri_base',
+            env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', ''))
+            }}/powerschool/gpselectedcrtype/*"
           options:
             connection_name: "{{ var('bigquery_external_connection_name') }}"
             metadata_cache_mode: MANUAL
@@ -1449,8 +1685,11 @@ sources:
                 - gpselector
         external:
           location:
-            "{{ var('powerschool_external_location_root',
-            env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', '')) }}/gpselector/*"
+            "{{ 'gs://teamster-test/dagster/' ~ project_name if
+            env_var('DAGSTER_CLOUD_IS_BRANCH_DEPLOYMENT', '0') == '1' else
+            var('cloud_storage_uri_base',
+            env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', ''))
+            }}/powerschool/gpselector/*"
           options:
             connection_name: "{{ var('bigquery_external_connection_name') }}"
             metadata_cache_mode: MANUAL
@@ -1467,8 +1706,11 @@ sources:
                 - gptarget
         external:
           location:
-            "{{ var('powerschool_external_location_root',
-            env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', '')) }}/gptarget/*"
+            "{{ 'gs://teamster-test/dagster/' ~ project_name if
+            env_var('DAGSTER_CLOUD_IS_BRANCH_DEPLOYMENT', '0') == '1' else
+            var('cloud_storage_uri_base',
+            env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', ''))
+            }}/powerschool/gptarget/*"
           options:
             connection_name: "{{ var('bigquery_external_connection_name') }}"
             metadata_cache_mode: MANUAL
@@ -1485,8 +1727,11 @@ sources:
                 - gpversion
         external:
           location:
-            "{{ var('powerschool_external_location_root',
-            env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', '')) }}/gpversion/*"
+            "{{ 'gs://teamster-test/dagster/' ~ project_name if
+            env_var('DAGSTER_CLOUD_IS_BRANCH_DEPLOYMENT', '0') == '1' else
+            var('cloud_storage_uri_base',
+            env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', ''))
+            }}/powerschool/gpversion/*"
           options:
             connection_name: "{{ var('bigquery_external_connection_name') }}"
             metadata_cache_mode: MANUAL
@@ -1503,8 +1748,11 @@ sources:
                 - gpstudentwaiver
         external:
           location:
-            "{{ var('powerschool_external_location_root',
-            env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', '')) }}/gpstudentwaiver/*"
+            "{{ 'gs://teamster-test/dagster/' ~ project_name if
+            env_var('DAGSTER_CLOUD_IS_BRANCH_DEPLOYMENT', '0') == '1' else
+            var('cloud_storage_uri_base',
+            env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', ''))
+            }}/powerschool/gpstudentwaiver/*"
           options:
             connection_name: "{{ var('bigquery_external_connection_name') }}"
             metadata_cache_mode: MANUAL
@@ -1521,8 +1769,11 @@ sources:
                 - s_stu_x
         external:
           location:
-            "{{ var('powerschool_external_location_root',
-            env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', '')) }}/s_stu_x/*"
+            "{{ 'gs://teamster-test/dagster/' ~ project_name if
+            env_var('DAGSTER_CLOUD_IS_BRANCH_DEPLOYMENT', '0') == '1' else
+            var('cloud_storage_uri_base',
+            env_var('DBT_DEV_CLOUD_STORAGE_URI_BASE', ''))
+            }}/powerschool/s_stu_x/*"
           options:
             connection_name: "{{ var('bigquery_external_connection_name') }}"
             metadata_cache_mode: MANUAL

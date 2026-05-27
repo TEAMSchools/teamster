@@ -6,6 +6,7 @@ with
             sc.administered_at,
             sc.region,
             sc.powerschool_school_id,
+            sc._dbt_source_project,
 
             a.module_code,
             a.academic_year,
@@ -28,7 +29,7 @@ with
             and sc.powerschool_school_id = rt.school_id
             and sc.region = rt.region
             and rt.type = 'RT'
-        where sc.is_replacement and sc.powerschool_student_number is not null
+        where sc.is_internal_assessment and (sc.is_replacement or sc.cc_dcid is null)
     )
 
 select
@@ -48,10 +49,10 @@ select
                 "module_code",
                 "cast(canonical_administered_at as date)",
                 "academic_year",
-                "region",
-                "cast(null as string)",
+                "_dbt_source_project",
+                "null",
                 "canonical_assessment_id",
-                "cast(null as string)",
+                "null",
             ]
         )
     }} as assessment_administration_key,

@@ -24,7 +24,7 @@ models:
         data_type: string
         description: >-
           FK to dim_student_enrollments. Surrogate key derived from
-          student_number, _dbt_source_relation, academic_year, and entrydate.
+          student_number, _dbt_source_project, academic_year, and entrydate.
         constraints:
           - type: foreign_key
             to: ref('dim_student_enrollments')
@@ -43,7 +43,9 @@ models:
           FK to dim_staff for the staff member who created the incident. Derived
           from the DeansList user's email resolved to an employee_number via
           int_people__staff_roster, then hashed with generate_surrogate_key.
-          Nullable when the DeansList user cannot be matched to a staff record.
+          Nullable when the DeansList user cannot be matched to a staff record
+          (approximately 4.8% of rows — typically departed staff absent from the
+          current roster snapshot).
         constraints:
           - type: foreign_key
             to: ref('dim_staff')
@@ -54,6 +56,8 @@ models:
               arguments:
                 to: ref('dim_staff')
                 field: staff_key
+              config:
+                where: referring_staff_key is not null
 
       - name: location_key
         data_type: string

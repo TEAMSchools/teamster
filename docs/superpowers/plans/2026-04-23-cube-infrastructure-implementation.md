@@ -286,9 +286,12 @@ Engineer-facing setup guide — moved to the MkDocs site rather than living in
    grant DWD, encode key
 3. **Impersonation subject account setup** — dedicated super-admin account
 4. **Cube Cloud one-time setup** — environment variables and BigQuery IAM
-5. **Local dev** — `cp .env.example .env`, fill in `CUBE_GROUP_MAP`, run VS Code
+5. **Development workflow** — branch in VS Code, switch branch in Cube Cloud
+   development mode, build, test, PR; peer review and stakeholder review via
+   branch switcher; merge to `main` triggers production redeploy
+6. **Local dev** — `cp .env.example .env`, fill in `CUBE_GROUP_MAP`, run VS Code
    task
-6. **Warnings** — `CUBE_GROUP_MAP` must never be set in Cube Cloud; do not use
+7. **Warnings** — `CUBE_GROUP_MAP` must never be set in Cube Cloud; do not use
    the Playground Models tab
 
 ## Step 7 — VS Code task

@@ -1,19 +1,13 @@
 models:
   - name: bridge_assessment_expectations_student_scoped
-    description: >-
-      Factless many-to-many bridge linking students to scheduled assessment
-      administrations for K-8 replacement-curriculum assessments where there is
-      no section enrollment context. One row per (student x assessment
-      administration). Replaces the K-8 replacement portion of the deleted
-      dim_student_assessment_expectations. Sources only the `is_replacement`
-      branch of int_assessments__scaffold; teacher-created Illuminate items that
-      live on the non-internal scaffold branch are excluded because they have no
-      corresponding row in dim_assessment_administrations and would produce 100%
-      FK orphans. Hash inputs mirror the illuminate branch of
-      dim_assessment_administrations exactly — int_assessments__assessments is
-      re-joined to recover the canonical `grade_level` and `academic_year` (the
-      scaffold's `grade_level_id` is illuminate-indexed and its `academic_year`
-      is `academic_year_clean`, neither of which match the dim's hash inputs).
+    description: |
+      Bridges internal assessment expectations that cannot be attributed to
+      a student section enrollment to their student and assessment
+      administration. Covers two classes: replacement assessments (which
+      have no enrollment by definition) and ES Writing in grades K-4
+      Newark/Camden (where no PowerSchool course-enrollment row exists for
+      the writing program). Rows whose expectations can be attributed to a
+      section enrollment live in `bridge_assessment_expectations_enrollment_scoped`.
     columns:
       - name: assessment_expectation_key
         data_type: string

@@ -57,3 +57,5 @@ models:
         data_type: string
       - name: promo_status_math
         data_type: string
+      - name: is_summer_school_eligible
+        data_type: boolean

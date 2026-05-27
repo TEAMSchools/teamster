@@ -10,6 +10,8 @@ models compared to Newark and Camden.
 models/
   powerschool/   # district-specific PowerSchool staging (refs powerschool package)
     sis/staging/
+  pearson/       # district-specific Pearson intermediates (refs pearson package staging)
+    intermediate/
 ```
 
 PowerSchool data source: **SFTP** (`sftp.+enabled: true`,
@@ -22,5 +24,14 @@ disabled.
 ## Active Source Packages
 
 - `powerschool` (SFTP)
-- `pearson` — all models currently disabled in `dbt_project.yml`
+- `pearson` — `stg_pearson__njsla` and `stg_pearson__njsla_science` enabled;
+  `stg_pearson__njgpa`, `stg_pearson__parcc`, `stg_pearson__student_test_update`
+  disabled in `dbt_project.yml`
 - `amplify` — both `dds` and `mclass/api` disabled
+
+## Models in package-named directories
+
+`models.<package>:` in `dbt_project.yml` configures the imported package.
+kipppaterson's own models in `models/<package>/` go under
+`models.kipppaterson.<package>:` and need `+schema: <package>` to land in
+`kipppaterson_<package>` schema.

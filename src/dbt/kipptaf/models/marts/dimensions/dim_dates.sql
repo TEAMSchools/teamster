@@ -36,6 +36,12 @@ select
     {{ date_to_fiscal_year(date_field="date_value", start_month=7, year_source="end") }}
     as fiscal_year,
 
+    {{
+        date_to_fiscal_year(
+            date_field="date_value", start_month=7, year_source="start"
+        )
+    }} = {{ var("current_academic_year") }} as is_current_academic_year,
+
     date_trunc(date_value, week) as calendar_week_start_date,
     -- date_add can overflow for dates in the last week of 9999; cap days added
     date_add(
