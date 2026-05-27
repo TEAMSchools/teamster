@@ -13,6 +13,7 @@ with
             s.module_type,
             s.module_code,
             s.region,
+            s._dbt_source_project,
             s.powerschool_school_id,
             s.grade_level_id,
             s.is_internal_assessment,
@@ -63,6 +64,7 @@ with
             *,
             first_value(powerschool_school_id) over (w) as canonical_school_id,
             first_value(region) over (w) as canonical_region,
+            first_value(_dbt_source_project) over (w) as canonical_dbt_source_project,
         from scaffold_responses
         window
             w as (
@@ -111,6 +113,7 @@ with
             -- without independent-min() drift. See #3801.
             any_value(canonical_school_id) as powerschool_school_id,
             any_value(canonical_region) as region,
+            any_value(canonical_dbt_source_project) as _dbt_source_project,
 
             count(distinct assessment_id) as n_assessments,
 
@@ -157,6 +160,7 @@ with
             module_type,
             module_code,
             region,
+            _dbt_source_project,
             is_internal_assessment,
             is_replacement,
             response_type,
@@ -191,6 +195,7 @@ with
             module_type,
             module_code,
             region,
+            _dbt_source_project,
             is_internal_assessment,
             is_replacement,
             response_type,
@@ -228,6 +233,7 @@ select
     ru.module_type,
     ru.module_code,
     ru.region,
+    ru._dbt_source_project,
     ru.powerschool_school_id,
     ru.is_internal_assessment,
     ru.is_replacement,
@@ -255,8 +261,6 @@ select
     rta.name as term_administered,
 
     rtt.name as term_taken,
-
-    concat('kipp', lower(ru.region)) as _dbt_source_project,
 from response_union as ru
 left join
     {{ ref("int_illuminate__performance_band_sets") }} as pbl
