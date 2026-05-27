@@ -158,28 +158,54 @@ protection in summary views comes from removing individual identifiers, not from
 removing dates. For SCD2 cubes, BI tools must apply a date filter before
 querying — without one, each employment period fans out to one row per day.
 
+## Cube Naming Convention
+
+All cube names use business-entity names with **no `dim_`/`fct_` prefix**.
+Cube.js documentation recommends business-oriented names; the `dim_`/`fct_`
+prefix is a dbt/warehouse convention, not a Cube one.
+
+| Domain                | Pattern                                          | Examples                                                                      |
+| --------------------- | ------------------------------------------------ | ----------------------------------------------------------------------------- |
+| Student dim/fact      | `students` (base), `student_<name>` (all others) | `students`, `student_enrollments`, `student_attendance`, `student_ell_status` |
+| Staff dim/fact        | `staff` (base), `staff_<name>` (all others)      | `staff`, `staff_attrition`, `staff_observations`, `staff_work_history`        |
+| Conformed shared dims | bare business name                               | `dates`, `locations`, `regions`, `terms`, `school_calendars`                  |
+| Views                 | `<domain>_<grain>`                               | `attendance_detail`, `attendance_summary`                                     |
+
+`sql_table:` still points at the BigQuery warehouse table name, which retains
+its `dim_`/`fct_` prefix — e.g. `sql_table: kipptaf_marts.dim_students` with
+`name: students`. The cube name and the table name are independent.
+
+**Why this matters for security:** `queryRewrite` in `cube.js` uses
+`isStudentMember(m)` (`m.startsWith("student")`) and `isStaffMember(m)`
+(`m.startsWith("staff")`) to enforce access controls. Following the naming
+convention is what makes a new cube automatically subject to the right
+permission check — no static array to update.
+
 ## Repository Structure
 
 ```text
 src/cube/model/
   cubes/
     conformed/
-      dates.yml
-      locations.yml
-      regions.yml
-      terms.yml
-      school_calendars.yml
+      dates.yml             # cube: dates        (sql_table: dim_dates)
+      locations.yml         # cube: locations    (sql_table: dim_locations)
+      regions.yml           # cube: regions      (sql_table: dim_regions)
+      terms.yml             # cube: terms        (sql_table: dim_terms)
+      school_calendars.yml  # cube: school_calendars (sql_table: dim_school_calendars)
     students/
-      students.yml              # dim_students — Type 1 wrapper + PII
-      student_enrollments.yml   # SCD2 domain cube: headcount over time
+      students.yml                        # cube: students              (sql_table: dim_students)
+      student_enrollments.yml             # cube: student_enrollments   (sql_table: dim_student_enrollments)
+      student_ell_status.yml              # cube: student_ell_status    (sql_table: dim_student_ell_status)
+      student_iep_status.yml              # cube: student_iep_status    (sql_table: dim_student_iep_status)
+      student_meal_eligibility_status.yml # cube: student_meal_eligibility_status
     staff/
-      staff.yml                 # dim_staff — Type 1 wrapper + PII
-      staff_work_history.yml    # SCD2 domain cube: period intersection
-      staff_compensation.yml
-      staff_additional_earnings.yml
-      staff_attrition.yml
-      staff_benefits.yml
-      staff_memberships.yml
+      staff.yml                      # cube: staff                   (sql_table: dim_staff)
+      staff_work_history.yml         # cube: staff_work_history      (SCD2 period intersection)
+      staff_compensation.yml         # cube: staff_compensation
+      staff_additional_earnings.yml  # cube: staff_additional_earnings
+      staff_attrition.yml            # cube: staff_attrition
+      staff_benefits.yml             # cube: staff_benefits
+      staff_memberships.yml          # cube: staff_memberships
     attendance/
       attendance.yml
       attendance_interventions.yml
@@ -261,7 +287,7 @@ joined into the domain cube's `sql:` block and have no cube file of their own.
 | Domain       | Cube file(s)                                                                                                                          | Primary dbt model(s)                                                                                                                                                                                    | dbt models inlined into SQL                                                                                                                                                                                                                          |
 | ------------ | ------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | conformed    | dates, locations, regions, terms, school_calendars                                                                                    | dim_dates, dim_locations, dim_regions, dim_terms, dim_school_calendars                                                                                                                                  | —                                                                                                                                                                                                                                                    |
-| students     | students (Type 1), student_enrollments                                                                                                | dim_students, dim_student_enrollments                                                                                                                                                                   | dim_student_contact_persons, bridge_student_contacts                                                                                                                                                                                                 |
+| students     | students (Type 1), student_enrollments, student_ell_status, student_iep_status, student_meal_eligibility_status                       | dim_students, dim_student_enrollments, dim_student_ell_status, dim_student_iep_status, dim_student_meal_eligibility_status                                                                              | dim_student_contact_persons, bridge_student_contacts                                                                                                                                                                                                 |
 | staff        | staff (Type 1), staff_work_history, staff_compensation, staff_additional_earnings, staff_attrition, staff_benefits, staff_memberships | dim_staff, dim_staff_work_assignments, fct_work_assignment_compensation, fct_work_assignment_additional_earnings, fct_staff_attrition, fct_staff_benefits_enrollments, fct_staff_membership_enrollments | dim_staff_status, dim_work_assignment_status, dim_work_assignment_primary, dim_work_assignment_jobs, dim_work_assignment_types, dim_work_assignment_locations, dim_work_assignment_organizational_units, dim_work_assignment_reporting_relationships |
 | attendance   | attendance, attendance_interventions, attendance_streaks                                                                              | fct_student_attendance_daily, fct_student_attendance_interventions, fct_student_attendance_streaks                                                                                                      | dim_student_attendance_intervention_types                                                                                                                                                                                                            |
 | behavioral   | behavioral, family_communications                                                                                                     | fct_behavioral_incidents, fct_family_communications                                                                                                                                                     | fct_behavioral_consequences                                                                                                                                                                                                                          |
@@ -273,6 +299,15 @@ joined into the domain cube's `sql:` block and have no cube file of their own.
 | talent       | talent                                                                                                                                | fct_job_candidate_applications                                                                                                                                                                          | dim_job_postings, dim_job_candidates                                                                                                                                                                                                                 |
 | staffing     | staffing                                                                                                                              | dim_staffing_positions                                                                                                                                                                                  | —                                                                                                                                                                                                                                                    |
 | support      | support                                                                                                                               | fct_support_tickets                                                                                                                                                                                     | —                                                                                                                                                                                                                                                    |
+
+**Note on student status dims (added 2026-05):** Three point-in-time SCD2 status
+dims were added to the students domain: `dim_student_ell_status`,
+`dim_student_iep_status`, and `dim_student_meal_eligibility_status`. All three
+start with `student_` and are automatically covered by `isStudentMember` in
+`cube.js`, requiring `cube-access-student-data`. They follow Pattern 3 — SCD2
+period intersection — joined to `dim_dates` via the `BETWEEN` range join
+(`one_to_many` relationship). They are surfaced via the attendance views where
+ELL/IEP/meal-eligibility breakdowns are a primary consumer need.
 
 **Note on staffing:** `dim_staffing_positions` has no joinable ID to
 `dim_staff_work_assignments` (SmartRecruiters and ADP/Seat Tracker have no
@@ -322,8 +357,8 @@ standalone dimension (not inlined) with FK from both fact tables via
 should be added to the repository structure.
 
 `fct_assessment_scores_enrollment_scoped` has `is_mastery`;
-`fct_assessment_scores_student_scoped` does not — mastery-rate measures on
-student-scoped assessments require #3840 before implementation.
+`fct_assessment_scores_student_scoped` now also has `is_mastery` (added 2026-05,
+unblocked #3840). Mastery-rate measures are implementable on both fact tables.
 
 **Note on surveys — role-playing respondent FKs:** `fct_survey_submissions` uses
 a respondent-type discriminator (`staff`, `student`, `family`) with role-playing
@@ -340,8 +375,8 @@ candidate PII (name, email, contact details). The talent views require
 `cube-access-staff-pii` or a dedicated `cube-access-talent` group — to be
 decided at implementation. Candidate data is not covered by FERPA or employment
 law but is sensitive personal data governed by general privacy best practices.
-`fct_job_candidate_applications.phone_interview_score` is typed `string` —
-requires #3837 before `avg_phone_interview_score` can be implemented.
+`fct_job_candidate_applications.phone_interview_score` is now typed `int64`
+(fixed 2026-05, #3837 resolved). `avg_phone_interview_score` is implementable.
 
 **Note on college (postsecondary) domain:** `dim_college_enrollments` only
 covers enrollment status, degree, major, `is_graduated`, and `is_withdrawn`. The
@@ -446,19 +481,19 @@ Thin wrappers exposing a single dbt model's columns as dimensions. No
 their side. The five conformed cubes (`dates`, `locations`, `regions`, `terms`,
 `school_calendars`) exist to be shared as join targets across all domains.
 
-`dim_dates` is the only exception: it adds a `date_day` time dimension using the
-`date_timestamp` column because Cube requires TIMESTAMP for time dimensions. The
-`date_key` column (DATE) is the primary key used for deduplication. All join
-conditions use `{dim_dates.date_day}` (the TIMESTAMP column) so that Cube's time
-filter parameters — which generate TIMESTAMP comparisons — are type-consistent
-throughout. Fact FK columns (DATE) are cast to TIMESTAMP at the join site:
-`CAST({CUBE}.<date_fk_column> AS TIMESTAMP)`.
+The `dates` cube is the only exception: it adds a `date_day` time dimension
+using the `date_timestamp` column because Cube requires TIMESTAMP for time
+dimensions. The `date_key` column (DATE) is the primary key used for
+deduplication. All join conditions use `{dates.date_day}` (the TIMESTAMP column)
+so that Cube's time filter parameters — which generate TIMESTAMP comparisons —
+are type-consistent throughout. Fact FK columns (DATE) are cast to TIMESTAMP at
+the join site: `CAST({CUBE}.<date_fk_column> AS TIMESTAMP)`.
 
 **Reference: `conformed/dates.yml`**
 
 ```yaml
 cubes:
-  - name: dim_dates
+  - name: dates
     sql_table: kipptaf_marts.dim_dates
 
     dimensions:
@@ -500,12 +535,12 @@ cubes:
 
 ```yaml
 cubes:
-  - name: dim_locations
+  - name: locations
     sql_table: kipptaf_marts.dim_locations
 
     joins:
-      - name: dim_regions
-        sql: "{dim_regions.region_key} = {CUBE}.region_key"
+      - name: regions
+        sql: "{regions.region_key} = {CUBE}.region_key"
         relationship: many_to_one
 
     dimensions:
@@ -557,27 +592,27 @@ Cube view join path.
 
 ```yaml
 cubes:
-  - name: attendance
+  - name: student_attendance
     public: false
     sql_table: kipptaf_marts.fct_student_attendance_daily
 
     joins:
-      - name: dim_dates
-        sql: "{dim_dates.date_day} = CAST({CUBE}.date_key AS TIMESTAMP)"
+      - name: dates
+        sql: "{dates.date_day} = CAST({CUBE}.date_key AS TIMESTAMP)"
         relationship: many_to_one
 
-      - name: dim_locations
-        sql: "{dim_locations.location_key} = {CUBE}.location_key"
+      - name: locations
+        sql: "{locations.location_key} = {CUBE}.location_key"
         relationship: many_to_one
 
-      - name: dim_student_enrollments
+      - name: student_enrollments
         sql: >
-          {dim_student_enrollments.student_enrollment_key} =
+          {student_enrollments.student_enrollment_key} =
           {CUBE}.student_enrollment_key
         relationship: many_to_one
 
-      - name: dim_terms
-        sql: "{dim_terms.term_key} = {CUBE}.term_key"
+      - name: terms
+        sql: "{terms.term_key} = {CUBE}.term_key"
         relationship: many_to_one
 
     dimensions:
@@ -766,14 +801,14 @@ cubes:
         AND ss.effective_end_date   > wp.effective_start_date
 
     joins:
-      - name: dim_dates
+      - name: dates
         sql: >
-          {dim_dates.date_day} BETWEEN CAST({CUBE}.effective_start_date AS
+          {dates.date_day} BETWEEN CAST({CUBE}.effective_start_date AS
           TIMESTAMP) AND CAST({CUBE}.effective_end_date AS TIMESTAMP)
         relationship: one_to_many
 
-      - name: dim_staff
-        sql: "{dim_staff.staff_key} = {CUBE}.staff_key"
+      - name: staff
+        sql: "{staff.staff_key} = {CUBE}.staff_key"
         relationship: many_to_one
 
     dimensions:
@@ -885,10 +920,10 @@ protection comes from removing individual identifiers, not dates.
 
 **`prefix: true` and access policy names:** When a join path uses
 `prefix: true`, Cube prepends the cube name to every field in that block's
-`includes:` list. A field named `full_name` in `dim_staff` becomes
-`dim_staff_full_name` in the view namespace. `access_policy` `excludes:` entries
+`includes:` list. A field named `full_name` in the `staff` cube becomes
+`staff_full_name` in the view namespace. `access_policy` `excludes:` entries
 must use the post-prefix names — that is why the exclude list says
-`dim_staff_full_name`, not `full_name`.
+`staff_full_name`, not `full_name`.
 
 **Reference: `views/staff/staff_detail.yml` and `staff_summary.yml`**
 
@@ -908,14 +943,14 @@ views:
           - department_name
           - business_unit_name
 
-      - join_path: staff_work_history.dim_dates
+      - join_path: staff_work_history.dates
         prefix: true
         includes:
           - date_day
           - academic_year
           - month_name
 
-      - join_path: staff_work_history.dim_staff
+      - join_path: staff_work_history.staff
         prefix: true
         includes:
           - staff_key
@@ -938,16 +973,16 @@ views:
         member_level:
           includes: "*"
           excludes:
-            - dim_staff_full_name
-            - dim_staff_first_name
-            - dim_staff_last_name
-            - dim_staff_birth_date
-            - dim_staff_work_email
-            - dim_staff_google_email
-            - dim_staff_personal_email
-            - dim_staff_personal_cell_phone
-            - dim_staff_active_directory_username
-            - dim_staff_staff_unique_id
+            - staff_full_name
+            - staff_first_name
+            - staff_last_name
+            - staff_birth_date
+            - staff_work_email
+            - staff_google_email
+            - staff_personal_email
+            - staff_personal_cell_phone
+            - staff_active_directory_username
+            - staff_staff_unique_id
       - role: "cube-access-staff-pii"
         member_level:
           includes: "*"
@@ -969,7 +1004,7 @@ views:
           - department_name
           - business_unit_name
 
-      - join_path: staff_work_history.dim_dates
+      - join_path: staff_work_history.dates
         prefix: true
         includes:
           - date_day
@@ -1009,16 +1044,16 @@ rule per school/region group.
 All named access groups used across views, with their scope and the pattern that
 implements them.
 
-| Group                            | Type                                     | Scope                                                                                                                                                                                    | Pattern                       |
-| -------------------------------- | ---------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------- |
-| `detail-access`                  | Synthetic (emitted by `contextToGroups`) | Grants access to all detail views; applied to any user with a `*-detail` Google group                                                                                                    | Detail vs summary enforcement |
-| `summary-access`                 | Synthetic (emitted by `contextToGroups`) | Grants access to all summary views; applied to any user with a `*-detail` or `*-summary` Google group                                                                                    | Detail vs summary enforcement |
-| `cube-access-student-data`       | Google group                             | Required to see any student-domain view (attendance, assessment, gradebook, behavioral, surveys, students). Primary enforcement via `queryRewrite`; access policy is belt-and-suspenders | Pattern 3                     |
-| `cube-access-student-pii`        | Google group                             | Unlocks student direct identifiers (name, DOB, LEA/state/district IDs, Salesforce contact ID, contact name/phone) on detail views                                                        | Pattern 1                     |
-| `cube-access-staff-pii`          | Google group                             | Unlocks staff direct identifiers and sensitive HR narratives (name, DOB, emails, phone, AD username, employee number, termination reason/date) on detail views                           | Pattern 1                     |
-| `cube-access-staff-compensation` | Google group                             | Unlocks pay rate fields (annual wage, hourly wage, daily rate, period rate, additional earnings) on staff compensation views                                                             | Pattern 2                     |
-| `cube-access-staff-benefits`     | Google group                             | Unlocks benefits enrollment fields (plan type, plan name, coverage level) on staff benefits views                                                                                        | Pattern 4                     |
-| `cube-access-staff-observations` | Google group                             | Unlocks individual observation records, scores, and free-text feedback fields on observations detail views; row-level scoping to own school enforced separately via `queryRewrite`       | Pattern 5                     |
+| Group                            | Type                                     | Scope                                                                                                                                                                                                                                                         | Pattern                       |
+| -------------------------------- | ---------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------- |
+| `detail-access`                  | Synthetic (emitted by `contextToGroups`) | Grants access to all detail views; applied to any user with a `*-detail` Google group                                                                                                                                                                         | Detail vs summary enforcement |
+| `summary-access`                 | Synthetic (emitted by `contextToGroups`) | Grants access to all summary views; applied to any user with a `*-detail` or `*-summary` Google group                                                                                                                                                         | Detail vs summary enforcement |
+| `cube-access-student-data`       | Google group                             | Required to see any student-domain cube members (attendance, assessment, gradebook, behavioral, surveys, students, student status dims). Primary enforcement via `queryRewrite` filtering on `STUDENT_CUBES` cube names; access policy is belt-and-suspenders | Pattern 3                     |
+| `cube-access-student-pii`        | Google group                             | Unlocks student direct identifiers (name, DOB, LEA/state/district IDs, Salesforce contact ID, contact name/phone) on detail views                                                                                                                             | Pattern 1                     |
+| `cube-access-staff-pii`          | Google group                             | Unlocks staff direct identifiers and sensitive HR narratives (name, DOB, emails, phone, AD username, employee number, termination reason/date) on detail views                                                                                                | Pattern 1                     |
+| `cube-access-staff-compensation` | Google group                             | Unlocks pay rate fields (annual wage, hourly wage, daily rate, period rate, additional earnings) on staff compensation views                                                                                                                                  | Pattern 2                     |
+| `cube-access-staff-benefits`     | Google group                             | Unlocks benefits enrollment fields (plan type, plan name, coverage level) on staff benefits views                                                                                                                                                             | Pattern 4                     |
+| `cube-access-staff-observations` | Google group                             | Unlocks individual observation records, scores, and free-text feedback fields on observations detail views; row-level scoping to own school enforced separately via `queryRewrite`                                                                            | Pattern 5                     |
 
 ### Pattern 1 — PII fields
 
@@ -1035,16 +1070,16 @@ access_policy:
     member_level:
       includes: "*"
       excludes:
-        - dim_staff_full_name
-        - dim_staff_first_name
-        - dim_staff_last_name
-        - dim_staff_birth_date
-        - dim_staff_work_email
-        - dim_staff_google_email
-        - dim_staff_personal_email
-        - dim_staff_personal_cell_phone
-        - dim_staff_active_directory_username
-        - dim_staff_staff_unique_id
+        - staff_full_name
+        - staff_first_name
+        - staff_last_name
+        - staff_birth_date
+        - staff_work_email
+        - staff_google_email
+        - staff_personal_email
+        - staff_personal_cell_phone
+        - staff_active_directory_username
+        - staff_staff_unique_id
         - termination_reason
         - termination_effective_date
   - role: "cube-access-staff-pii"
@@ -1062,14 +1097,14 @@ access_policy:
     member_level:
       includes: "*"
       excludes:
-        - dim_students_full_name
-        - dim_students_birth_date
-        - dim_students_lea_student_identifier
-        - dim_students_state_student_identifier
-        - dim_students_district_student_identifier
-        - dim_students_salesforce_contact_id
-        - dim_students_contact_name
-        - dim_students_contact_phone
+        - students_full_name
+        - students_birth_date
+        - students_lea_student_identifier
+        - students_state_student_identifier
+        - students_district_student_identifier
+        - students_salesforce_contact_id
+        - students_contact_name
+        - students_contact_phone
   - role: "cube-access-student-pii"
     member_level:
       includes: "*"
@@ -1114,10 +1149,12 @@ access_policy:
 
 ### Pattern 3 — Student domain visibility
 
-`queryRewrite` in `cube.js` removes all student-domain views from schema
-introspection for users without `cube-access-student-data` — that is the primary
-enforcement. As belt-and-suspenders, all student-domain views (attendance,
-assessment, gradebook, behavioral, surveys, students) carry:
+`queryRewrite` in `cube.js` strips all dimensions and measures belonging to
+`STUDENT_CUBES` from queries for users without `cube-access-student-data` — that
+is the primary enforcement. `STUDENT_CUBES` entries match the cube `name:` field
+(not view names); `queryRewrite` filters via `startsWith` on
+`<cube_name>.<member>`. As belt-and-suspenders, all student-domain views
+(attendance, assessment, gradebook, behavioral, surveys, students) carry:
 
 ```yaml
 access_policy:

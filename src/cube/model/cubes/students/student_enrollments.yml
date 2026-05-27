@@ -1,15 +1,15 @@
 cubes:
-  - name: dim_student_enrollments
+  - name: student_enrollments
     public: false
     sql_table: kipptaf_marts.dim_student_enrollments
 
     joins:
-      - name: dim_students
-        sql: "{dim_students.student_key} = {CUBE}.student_key"
+      - name: students
+        sql: "{students.student_key} = {CUBE}.student_key"
         relationship: many_to_one
 
-      - name: dim_locations
-        sql: "{dim_locations.location_key} = {CUBE}.location_key"
+      - name: locations
+        sql: "{locations.location_key} = {CUBE}.location_key"
         relationship: many_to_one
 
     dimensions:
@@ -24,15 +24,14 @@ cubes:
         public: true
 
       - name: student_key
-        description:
-          Surrogate key derived from student_number. FK to dim_students.
+        description: Surrogate key derived from student_number. FK to students.
         sql: student_key
         type: string
 
       - name: location_key
         description: >-
-          Surrogate key derived from location_clean_name. FK to dim_locations.
-          Null when schoolid does not match any location in the crosswalk (e.g.,
+          Surrogate key derived from location_clean_name. FK to locations. Null
+          when schoolid does not match any location in the crosswalk (e.g.,
           grade_level 99 placeholder schools).
         sql: location_key
         type: string

@@ -28,10 +28,21 @@ school_calendars) go in `cubes/conformed/`.
 - **Cubes private, views public.** Every cube YAML gets `public: false` at the
   cube level. Dimensions/measures use `public: true` only when meant to be
   exposed via a view. Never flip a cube to `public: true`.
-- **Naming.** Fact cubes unprefixed (`attendance`); dim cubes match the
-  warehouse table (`dim_students`). View names are `<domain>_<grain>`
-  (`attendance_detail`, `attendance_summary`). `sql_table` always points at
-  `kipptaf_marts.<table>` — cubes never read district datasets directly.
+- **Naming.** Cube names use business-entity names with no `dim_`/`fct_` prefix.
+  Convention by domain:
+  - **Student cubes** — base dim: `students`; all others: `student_<name>` (e.g.
+    `student_attendance`, `student_enrollments`, `student_ell_status`).
+  - **Staff cubes** — base dim: `staff`; all others: `staff_<name>` (e.g.
+    `staff_attrition`, `staff_observations`, `staff_work_history`).
+  - **Conformed shared dims** — bare business name: `dates`, `locations`,
+    `regions`, `terms`, `school_calendars`.
+  - **View names** — `<domain>_<grain>`: `attendance_detail`,
+    `attendance_summary`. The naming convention drives `queryRewrite` security
+    automatically — no `STUDENT_CUBES`/`STAFF_CUBES` lists to maintain. Adding a
+    new student cube named `student_*` is sufficient; it is automatically
+    covered. `sql_table` still points at `kipptaf_marts.<warehouse_table>` — the
+    warehouse table name (which retains `dim_`/`fct_`) is separate from the Cube
+    cube name.
 - **Joins use cube-reference syntax** (`{dim_x.col} = {CUBE}.col`), not raw
   identifiers. Dim joins from facts set `relationship: many_to_one`.
 - **Avoid diamond paths.** Two join paths to the same dim → either a compound
@@ -96,10 +107,10 @@ Default-deny, group-driven. Read [`cube.js`](cube.js) before modifying.
     scope group → empty `IN ()` filter (default deny).
   - For queries touching `STAFF_CUBES`, injects the `dim_staff.reporting_chain`
     segment unless the user has `cube-access-staff-all`.
-- **`STUDENT_CUBES` / `STAFF_CUBES` arrays.** Entries must match the cube
-  `name:` field — `queryRewrite` matches via `startsWith` on
-  `<cube_name>.<member>` query members. When adding a new student-data or
-  staff-data cube, append its `name:` to the matching array.
+- **`isStudentMember` / `isStaffMember`.** These helper functions replace the
+  old static arrays. They match via `startsWith("student")` /
+  `startsWith("staff")` — no maintenance required when new cubes follow the
+  naming convention above.
 - **`canSwitchSqlUser`** only allows the SQL super-user to impersonate
   `@apps.teamschools.org` accounts (Superset integration). Do not broaden the
   suffix check.
