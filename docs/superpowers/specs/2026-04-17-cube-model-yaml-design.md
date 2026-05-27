@@ -46,8 +46,8 @@ any dbt model:
 **Does it have a distinct fact grain analysts query independently?** It gets its
 own cube. Each fact table maps to one cube: `fct_student_attendance_daily` →
 `student_attendance`, `fct_student_attendance_interventions` →
-`attendance_interventions`. Multiple fact grains in a domain → multiple cubes.
-Attendance has three; gradebook has four; observations has three.
+`student_attendance_interventions`. Multiple fact grains in a domain → multiple
+cubes. Attendance has three; gradebook has four; observations has three.
 
 **Is it a lookup dim or bridge with no independent analytical grain?** Inline it
 into the parent cube's `sql:` block. `dim_courses`, `dim_survey_questions`,
