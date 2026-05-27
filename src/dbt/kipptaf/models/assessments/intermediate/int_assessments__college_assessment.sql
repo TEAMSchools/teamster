@@ -101,12 +101,12 @@ with
 
     -- trunk-ignore(sqlfluff/ST03): referenced via dbt_utils.deduplicate below
     growth_candidates as (
-        select *
+        select
+            academic_year, student_number, scope, test_date, scale_score, surrogate_key,
         from case_calcs
         where subject_area in ('Composite', 'Combined') and test_date is not null
     ),
 
-    -- TODO(#3802): remove dedup once Salesforce dup records cleaned up
     growth_dedup as (
         {{
             dbt_utils.deduplicate(
