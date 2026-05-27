@@ -108,8 +108,8 @@ models:
       - name: subject_area
         data_type: string
         description: >
-          Subject area from the staging model, used for stacked reporting
-          across assessment programs.
+          Subject area from the staging model, used for stacked reporting across
+          assessment programs.
 
       - name: module_code
         data_type: string

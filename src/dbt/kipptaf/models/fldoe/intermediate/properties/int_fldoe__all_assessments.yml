@@ -5,8 +5,8 @@ models:
       kippmiami source relations, sourced from the kippmiami
       int_fldoe__all_assessments intermediate which resolves student_number via
       the FLEID lookup. Joined to the iReady scale-score crosswalk to expose
-      sublevel and points-to-proficiency / points-to-growth derivations.
-      Carries standardized metadata columns (results_type, district_state,
+      sublevel and points-to-proficiency / points-to-growth derivations. Carries
+      standardized metadata columns (results_type, district_state,
       illuminate_subject, fast_aggregated_proficiency) from the district
       intermediate.
     data_tests:

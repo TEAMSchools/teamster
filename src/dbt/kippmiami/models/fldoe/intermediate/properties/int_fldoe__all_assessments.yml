@@ -1,13 +1,13 @@
 models:
   - name: int_fldoe__all_assessments
     description: >-
-      Union of FLDOE state assessment results (EOC, FAST, Science, FSA) for
-      KIPP Miami, with assessment-grade and performance-level coalesced to
-      single canonical fields and assessment_name derived from the source
-      relation. Resolves student_number by joining
-      stg_powerschool__u_studentsuserfields on fleid. Adds standardized
-      metadata columns (results_type, district_state, illuminate_subject,
-      fast_aggregated_proficiency) for use in network-level reporting.
+      Union of FLDOE state assessment results (EOC, FAST, Science, FSA) for KIPP
+      Miami, with assessment-grade and performance-level coalesced to single
+      canonical fields and assessment_name derived from the source relation.
+      Resolves student_number by joining stg_powerschool__u_studentsuserfields
+      on fleid. Adds standardized metadata columns (results_type,
+      district_state, illuminate_subject, fast_aggregated_proficiency) for use
+      in network-level reporting.
     data_tests:
       - dbt_utils.unique_combination_of_columns:
           arguments:
