@@ -145,5 +145,7 @@ models:
         data_type: datetime
       - name: resume_score
         data_type: int64
+      - name: phone_interview_score
+        data_type: int64
       - name: school_shared_with
         data_type: string
