@@ -24,7 +24,8 @@ with
 
             a.academic_year,
             a.module_code,
-            a.administered_date,
+
+            c.administered_date,
 
             cast(null as numeric) as scale_score,
 
@@ -35,6 +36,9 @@ with
         left join
             {{ ref("int_assessments__assessments_members") }} as a
             on rr.assessment_id = a.assessment_id
+        left join
+            {{ ref("int_assessments__assessments_canonical") }} as c
+            on a.canonical_assessment_id = c.canonical_assessment_id
         where rr.is_internal_assessment
     ),
 
