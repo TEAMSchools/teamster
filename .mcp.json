@@ -14,7 +14,15 @@
     },
     "dbt": {
       "command": "/workspaces/teamster/scripts/dbt-mcp-launch.sh",
-      "args": []
+      "args": [],
+      "env": {
+        "DBT_HOST": "us1.dbt.com",
+        "DBT_HOST_PREFIX": "rn998",
+        "DBT_ACCOUNT_ID": "116510",
+        "DBT_PROD_ENV_ID": "70403104014899",
+        "DISABLE_DBT_CLI": "true",
+        "DISABLE_TOOLS": "text_to_sql,execute_sql,get_related_models,search,fusion.compile_sql,fusion.get_column_lineage"
+      }
     },
     "gke": {
       "command": "gke-mcp",
