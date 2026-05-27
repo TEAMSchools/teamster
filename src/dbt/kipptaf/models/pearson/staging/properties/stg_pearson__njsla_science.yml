@@ -2,3 +2,22 @@ models:
   - name: stg_pearson__njsla_science
     config:
       materialized: table
+    columns:
+      - name: subject_area
+        data_type: string
+        description:
+          Normalized from `subject` ('English Language Arts/Literacy' → 'English
+          Language Arts').
+      - name: module_code
+        data_type: string
+        description:
+          Normalized from `testcode` (SC05/SC08/SC11 remapped to
+          SCI05/SCI08/SCI11).
+      - name: administration_period
+        data_type: string
+        description: Normalized from `period` ('FallBlock' → 'Fall').
+      - name: _dbt_source_project
+        data_type: string
+        description: Source project
+          (extract_code_location(_dbt_source_relation)) — e.g., 'kippnewark' /
+          'kippcamden'. Per #3142, materialized at the union model so consumers don't re-derive per-call.

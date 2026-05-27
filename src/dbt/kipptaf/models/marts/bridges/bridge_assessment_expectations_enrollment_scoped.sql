@@ -10,7 +10,7 @@ with
             sc.cc_source_project,
             sc.assessment_id,
             sc.administered_at,
-            sc.region,
+            sc._dbt_source_project,
 
             a.module_code,
             a.academic_year,
@@ -48,10 +48,10 @@ select
                 "module_code",
                 "cast(canonical_administered_at as date)",
                 "academic_year",
-                "region",
-                "cast(null as string)",
+                "_dbt_source_project",
+                "null",
                 "canonical_assessment_id",
-                "cast(null as string)",
+                "null",
             ]
         )
     }} as assessment_administration_key,

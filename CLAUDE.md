@@ -59,8 +59,10 @@ file; domain specifics live in the nearest subdirectory CLAUDE.md.
 - **Worktree commands**: Path-flag-driven tools must name the worktree
   explicitly. Use `git -C <worktree>` on every git call (bare `git` from the
   main repo silently commits to `main`) and
-  `uv run dbt ... --project-dir <worktree>/src/dbt/<project>` on every dbt call.
-  For Python execution from the main repo, prefix `VIRTUAL_ENV=` and use
+  `uv run dbt ... --project-dir <worktree>/src/dbt/<project>` on every dbt call
+  (do NOT use `uv --directory <worktree> run dbt ...` — that overrides cwd to
+  the worktree root where `dbt_project.yml` doesn't exist). For Python execution
+  from the main repo, prefix `VIRTUAL_ENV=` and use
   `uv --directory <worktree> run python ...` — bare `uv run --active` reads the
   main repo's `.venv` and misses worktree-only changes. Otherwise prefer
   absolute paths.
@@ -539,6 +541,8 @@ GitHub. The Type custom field tags each task `Issue`, `Pull Request`, or
 - `update_tasks` supports `parent` for re-parenting; `null` flattens.
 - Pagination cursors return as `next_page.offset` — pass to `get_tasks.offset`
   until null.
+- **VS Code extension swallows `create_task_preview*` widgets.** Use
+  `create_tasks` directly.
 - Resolve GitHub-login → Asana email via
   `search_objects(resource_type: "user")`. Workspace spans three email domains
   (`teamschools.org`, `kippteamandfamily.org`, `kippnj.org`).
