@@ -167,26 +167,20 @@ querying — without one, each employment period fans out to one row per day.
 
 ## Cube Naming Convention
 
-All cube names use business-entity names with **no `dim_`/`fct_` prefix**.
-Cube.js documentation recommends business-oriented names; the `dim_`/`fct_`
-prefix is a dbt/warehouse convention, not a Cube one.
+| Domain           | Pattern                                          | Examples                                                                      |
+| ---------------- | ------------------------------------------------ | ----------------------------------------------------------------------------- |
+| Student dim/fact | `students` (base), `student_<name>` (all others) | `students`, `student_enrollments`, `student_attendance`, `student_ell_status` |
+| Staff dim/fact   | `staff` (base), `staff_<name>` (all others)      | `staff`, `staff_attrition`, `staff_observations`, `staff_work_history`        |
+| Conformed dims   | bare business name                               | `dates`, `locations`, `regions`, `terms`, `school_calendars`                  |
+| Views            | `<domain>_<grain>`                               | `attendance_detail`, `attendance_summary`                                     |
 
-| Domain                | Pattern                                          | Examples                                                                      |
-| --------------------- | ------------------------------------------------ | ----------------------------------------------------------------------------- |
-| Student dim/fact      | `students` (base), `student_<name>` (all others) | `students`, `student_enrollments`, `student_attendance`, `student_ell_status` |
-| Staff dim/fact        | `staff` (base), `staff_<name>` (all others)      | `staff`, `staff_attrition`, `staff_observations`, `staff_work_history`        |
-| Conformed shared dims | bare business name                               | `dates`, `locations`, `regions`, `terms`, `school_calendars`                  |
-| Views                 | `<domain>_<grain>`                               | `attendance_detail`, `attendance_summary`                                     |
+`queryRewrite` in `cube.js` uses `isStudentMember` (`startsWith("student")`) and
+`isStaffMember` (`startsWith("staff")`) to enforce access controls. Following
+the naming convention is what makes a new cube automatically subject to the
+right permission check — no static array to update.
 
-`sql_table:` still points at the BigQuery warehouse table name, which retains
-its `dim_`/`fct_` prefix — e.g. `sql_table: kipptaf_marts.dim_students` with
-`name: students`. The cube name and the table name are independent.
-
-**Why this matters for security:** `queryRewrite` in `cube.js` uses
-`isStudentMember(m)` (`m.startsWith("student")`) and `isStaffMember(m)`
-(`m.startsWith("staff")`) to enforce access controls. Following the naming
-convention is what makes a new cube automatically subject to the right
-permission check — no static array to update.
+`sql_table:` points at the BigQuery table name, which retains its `dim_`/`fct_`
+prefix. The cube name and the table name are independent.
 
 ## Repository Structure
 
