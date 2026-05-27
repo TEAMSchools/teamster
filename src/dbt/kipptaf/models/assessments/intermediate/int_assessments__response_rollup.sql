@@ -20,9 +20,12 @@ with
             s.is_replacement,
             s.student_assessment_id,
             s.canonical_assessment_id,
-            s.canonical_title,
-            s.canonical_administered_at,
-            s.canonical_grade_level_id,
+
+            coalesce(c.title, s.title) as canonical_title,
+            coalesce(
+                c.administered_date, s.administered_at
+            ) as canonical_administered_at,
+            coalesce(c.grade_level_id, s.grade_level_id) as canonical_grade_level_id,
 
             asr.response_type,
             asr.response_type_id,
@@ -45,6 +48,9 @@ with
             on s.assessment_id = pb.assessment_id
             and asr.response_type = pb.response_type
             and asr.response_type_id = pb.response_type_id
+        left join
+            {{ ref("int_assessments__assessments_canonical") }} as c
+            on s.canonical_assessment_id = c.canonical_assessment_id
     ),
 
     -- Per-partition tiebreak for location columns. NOT a canonical attribute —

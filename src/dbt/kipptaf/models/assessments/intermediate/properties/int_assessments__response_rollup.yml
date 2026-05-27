@@ -108,11 +108,12 @@ models:
       - name: title
         data_type: string
         description: >-
-          `canonical_title` from `int_assessments__assessments_members` for the
-          canonical group (lowest member's title within the partition).
+          `title` from `int_assessments__assessments_canonical` for the
+          canonical group. For non-internal assessments, falls back to the
+          member's own title via coalesce.
         config:
           meta:
-            source_column: int_assessments__assessments_members.canonical_title
+            source_column: int_assessments__assessments_canonical.title
       - name: assessment_id
         data_type: int64
         description: >-
@@ -122,8 +123,9 @@ models:
       - name: administered_at
         data_type: date
         description: >-
-          `canonical_administered_at` from
-          `int_assessments__assessments_members`.
+          `administered_date` from `int_assessments__assessments_canonical`. For
+          non-internal assessments, falls back to the member's own
+          `administered_at` via coalesce.
       - name: grade_level_id
         data_type: int64
       - name: performance_band_set_id
