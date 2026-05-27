@@ -13,7 +13,6 @@ cubes:
         primary_key: true
         public: true
 
-      # PII — excluded from detail views without cube-access-student-pii
       - name: lea_student_identifier
         description: >-
           KIPP's own SIS identifier for the student. KIPP is a charter Local
@@ -25,6 +24,8 @@ cubes:
         sql: lea_student_identifier
         type: number
         public: true
+        meta:
+          pii: true
 
       - name: full_name
         description: >-
@@ -33,11 +34,15 @@ cubes:
         sql: full_name
         type: string
         public: true
+        meta:
+          pii: true
 
       - name: birth_date
         sql: CAST(birth_date AS TIMESTAMP)
         type: time
         public: true
+        meta:
+          pii: true
 
       - name: state_student_identifier
         description: >-
@@ -46,6 +51,8 @@ cubes:
         sql: state_student_identifier
         type: string
         public: true
+        meta:
+          pii: true
 
       - name: district_student_identifier
         description: >-
@@ -56,6 +63,8 @@ cubes:
           District-assigned number from the host district's perspective.
         sql: district_student_identifier
         type: string
+        meta:
+          pii: true
 
       - name: salesforce_contact_id
         description: >-
@@ -64,6 +73,8 @@ cubes:
           KIPPADB consumer tools (Overgrad, alumni tracking, etc.).
         sql: salesforce_contact_id
         type: string
+        meta:
+          pii: true
 
       - name: gender_identity
         description: >-

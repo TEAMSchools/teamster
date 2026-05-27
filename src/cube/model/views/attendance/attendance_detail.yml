@@ -224,7 +224,7 @@ views:
             - is_latest_record
 
     access_policy:
-      - group: cube-access-student-data
+      - group: detail-access
         member_level:
           includes: "*"
           excludes:
@@ -232,8 +232,6 @@ views:
             - students_birth_date
             - students_lea_student_identifier
             - students_state_student_identifier
-            - students_salesforce_contact_id
-            - students_district_student_identifier
       - group: cube-access-student-pii
         member_level:
           includes: "*"

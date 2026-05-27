@@ -24,8 +24,25 @@ function nextMidnightEastern() {
 // student cubes: name starts with "student" (students, student_attendance, etc.)
 // staff cubes:   name starts with "staff"   (staff, staff_attrition, etc.)
 // conformed dims: bare business name (dates, locations, regions, terms, school_calendars)
-function isStudentMember(m) { return m.startsWith("student"); }
-function isStaffMember(m)   { return m.startsWith("staff"); }
+function isStudentMember(m) {
+  return m.startsWith("student");
+}
+function isStaffMember(m) {
+  return m.startsWith("staff");
+}
+
+// Emit synthetic access groups so view access_policy blocks can gate on
+// detail vs summary independently of the specific school/region group.
+// These are NOT cached — derived fresh from the cached real groups on each
+// contextToGroups call so the cache stays clean for queryRewrite lookups.
+function withSyntheticGroups(cubeGroups) {
+  const result = [...cubeGroups];
+  if (cubeGroups.some((g) => g.endsWith("-detail")))
+    result.push("detail-access");
+  if (cubeGroups.some((g) => g.endsWith("-detail") || g.endsWith("-summary")))
+    result.push("summary-access");
+  return result;
+}
 
 module.exports = {
   driverFactory: () => ({
@@ -54,7 +71,7 @@ module.exports = {
         const map = JSON.parse(process.env.CUBE_GROUP_MAP);
         const groups = (map[email] ?? []).filter((g) => g.startsWith("cube-"));
         groupCache.set(email, { groups, expiresAt: nextMidnightEastern() });
-        return groups;
+        return withSyntheticGroups(groups);
       } catch (err) {
         console.error("CUBE_GROUP_MAP is not valid JSON:", err.message);
         return [];
@@ -63,7 +80,8 @@ module.exports = {
 
     // Check cache
     const cached = groupCache.get(email);
-    if (cached && cached.expiresAt > Date.now()) return cached.groups;
+    if (cached && cached.expiresAt > Date.now())
+      return withSyntheticGroups(cached.groups);
 
     // Call Admin Directory API.
     // GOOGLE_DIRECTORY_SA_KEY: base64-encoded service account JSON with
@@ -100,7 +118,7 @@ module.exports = {
         groups: cubeGroups,
         expiresAt: nextMidnightEastern(),
       });
-      return cubeGroups;
+      return withSyntheticGroups(cubeGroups);
     } catch (err) {
       console.error(`contextToGroups failed for ${email}:`, err);
       return []; // default deny on API failure
@@ -113,7 +131,6 @@ module.exports = {
       securityContext?.cubeCloud?.userAttributes?.email;
     const cached = email ? groupCache.get(email) : null;
     const groups = cached?.expiresAt > Date.now() ? cached.groups : [];
-
 
     if (!groups.includes("cube-access-student-data")) {
       query = {

@@ -71,16 +71,21 @@ school_calendars) go in `cubes/conformed/`.
 Views own access via `access_policy:`. Two patterns:
 
 - **Detail views** (row-level, contain student identifiers): two policy blocks —
-  `cube-access-student-data` with `member_level.excludes` listing PII fields
-  (names, DOB, all `*_student_identifier`, `salesforce_contact_id`), and
-  `cube-access-student-pii` with `includes: "*"`.
+  `detail-access` with `member_level.excludes` listing PII fields (names, DOB,
+  all `*_student_identifier`, `salesforce_contact_id`), and
+  `cube-access-student-pii` (or `cube-access-staff-pii`) with `includes: "*"`.
 - **Summary views** (no direct identifiers, demographic breakdowns only): single
-  `cube-access-student-data` block with `includes: "*"`. Add a comment
-  explaining why no PII tier is needed.
+  `summary-access` block with `includes: "*"`. Add a comment explaining why no
+  PII tier is needed.
+
+`detail-access` and `summary-access` are synthetic groups emitted by
+`contextToGroups` from real `*-detail` / `*-summary` Google groups — see
+`cube.js`. `cube-access-student-data` access is enforced by `queryRewrite`, not
+in view access policies.
 
 When adding a field to a detail view, decide PII status per project CLAUDE.md
-FERPA guidance. If PII, add it to the `excludes` list under the
-`cube-access-student-data` policy block.
+FERPA guidance. If PII, add it to the `excludes` list under the `detail-access`
+policy block.
 
 ## `cube.js` security model
 
@@ -89,7 +94,10 @@ Default-deny, group-driven. Read [`cube.js`](cube.js) before modifying.
 - **`contextToGroups`** resolves the requester's email to `cube-*` Google
   Workspace groups via the Admin Directory API, cached until next midnight ET.
   `CUBE_GROUP_MAP` (local dev only, gated on `NODE_ENV !== "production"`) is the
-  sole bypass.
+  sole bypass. After resolving real groups, `withSyntheticGroups()` emits
+  `detail-access` (if any `*-detail` group is present) and `summary-access` (if
+  any `*-detail` or `*-summary` group is present). Synthetic groups are not
+  cached — derived fresh on every return.
 - **Group membership is direct-only.** Admin Directory API's
   `groups.list({userKey})` returns direct memberships; nested `cube-*` groups
   don't transitively resolve. Flat-enroll users in every `cube-*` group they
@@ -100,15 +108,15 @@ Default-deny, group-driven. Read [`cube.js`](cube.js) before modifying.
   returns `INVALID_ARGUMENT`, not `PERMISSION_DENIED` — don't propose it as a
   transitive-resolution fix without verifying the tenant's edition.
 - **`queryRewrite`** enforces three filters:
-  - Strips dims/measures from `STUDENT_CUBES` for users without
-    `cube-access-student-data`.
+  - Strips dims/measures from student-domain cubes (via `isStudentMember`) for
+    users without `cube-access-student-data`.
   - Adds a `dim_locations` filter based on the highest-priority scope group:
     network (no filter) → region (`region_key`) → school (`abbreviation`). No
     scope group → empty `IN ()` filter (default deny).
-  - For queries touching `STAFF_CUBES`, injects the `dim_staff.reporting_chain`
-    segment unless the user has `cube-access-staff-all`.
-- **`isStudentMember` / `isStaffMember`.** These helper functions replace the
-  old static arrays. They match via `startsWith("student")` /
+  - For queries touching staff-domain cubes (via `isStaffMember`), injects the
+    `dim_staff.reporting_chain` segment unless the user has
+    `cube-access-staff-all`.
+- **`isStudentMember` / `isStaffMember`.** Match via `startsWith("student")` /
   `startsWith("staff")` — no maintenance required when new cubes follow the
   naming convention above.
 - **`canSwitchSqlUser`** only allows the SQL super-user to impersonate
