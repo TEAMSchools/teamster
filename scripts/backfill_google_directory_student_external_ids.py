@@ -83,6 +83,13 @@ def build_directory_client(delegated_account: str) -> discovery.Resource:
     """
     request = requests.Request()
     source_credentials, _ = default()
+    if not hasattr(source_credentials, "service_account_email"):
+        raise SystemExit(
+            "ERROR: ADC must be a service-account credential, not user OAuth.\n"
+            "Run: gcloud auth application-default login "
+            "--impersonate-service-account="
+            "codespaces@teamster-332318.iam.gserviceaccount.com"
+        )
     source_credentials.refresh(request)
 
     credentials = service_account.Credentials(
