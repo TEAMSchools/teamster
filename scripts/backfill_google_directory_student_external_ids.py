@@ -6,7 +6,7 @@
 #     "google-cloud-bigquery",
 # ]
 # ///
-"""One-shot backfill: set externalIds[type='custom', customType='student_number'] on existing student Google accounts.
+r"""One-shot backfill: set externalIds[type='custom', customType='student_number'] on existing student Google accounts.
 
 Identifies matched student accounts under any /Students/* org unit (including
 /Students/Disabled) whose Workspace externalIds does not already contain a
@@ -14,10 +14,15 @@ Identifies matched student accounts under any /Students/* org unit (including
 each one. Dry-run by default; pass --apply to execute.
 
 Usage:
-    uv run scripts/backfill_google_directory_student_external_ids.py [--apply]
+    uv run scripts/backfill_google_directory_student_external_ids.py \\
+        --delegated-account <admin@kippteamandfamily.org> [--apply]
 
-Auth: Uses the same service-account key path as the Dagster
-GoogleDirectoryResource. Pass --service-account-file to override.
+Auth: Uses Application Default Credentials + IAM Signer to impersonate
+`delegated_account` via domain-wide delegation. Same path the prod Dagster
+GoogleDirectoryResource uses when no `service_account_file_path` is set
+(`src/teamster/libraries/google/directory/resources.py`). Works in a Codespace
+(ADC = impersonated `codespaces@teamster-332318.iam.gserviceaccount.com`) and
+in a Dagster pod (Workload Identity).
 
 Output (stdout): one line per user, plus aggregate counts. Output contains
 student emails and student_numbers; capture only to .claude/scratch/ or
@@ -29,6 +34,9 @@ import sys
 import time
 from collections.abc import Iterable, Iterator
 
+from google.auth import default
+from google.auth.iam import Signer
+from google.auth.transport import requests
 from google.cloud import bigquery
 from google.oauth2 import service_account
 from googleapiclient import discovery
@@ -44,8 +52,8 @@ select
     u.primary_email,
     se.student_number,
     u.org_unit_path
-from `teamster-332318.kipptaf_google.stg_google_directory__users` as u
-inner join `teamster-332318.kipptaf_students.int_extracts__student_enrollments` as se
+from `teamster-332318.kipptaf_google_directory.stg_google_directory__users` as u
+inner join `teamster-332318.kipptaf_extracts.int_extracts__student_enrollments` as se
     on u.primary_email = se.student_email
     and se.rn_all = 1
 where u.org_unit_path like '/Students/%'
@@ -66,12 +74,37 @@ def chunks[T](items: list[T], size: int) -> Iterator[list[T]]:
         yield items[i : i + size]
 
 
-def build_directory_client(
-    service_account_file: str, delegated_account: str
-) -> discovery.Resource:
-    credentials = service_account.Credentials.from_service_account_file(
-        service_account_file, scopes=SCOPES
-    ).with_subject(delegated_account)
+def build_directory_client(delegated_account: str) -> discovery.Resource:
+    """Build a Directory API client via ADC + IAM Signer for DWD impersonation.
+
+    Mirrors `GoogleDirectoryResource.setup_for_execution` in
+    `src/teamster/libraries/google/directory/resources.py` when no
+    `service_account_file_path` is set.
+    """
+    request = requests.Request()
+    source_credentials, _ = default()
+    if not hasattr(source_credentials, "service_account_email"):
+        raise SystemExit(
+            "ERROR: ADC must be a service-account credential, not user OAuth.\n"
+            "Run: gcloud auth application-default login "
+            "--impersonate-service-account="
+            "codespaces@teamster-332318.iam.gserviceaccount.com"
+        )
+    source_credentials.refresh(request)
+
+    credentials = service_account.Credentials(
+        signer=Signer(
+            request=request,
+            credentials=source_credentials,
+            service_account_email=source_credentials.service_account_email,
+        ),
+        service_account_email=source_credentials.service_account_email,
+        # trunk-ignore(bandit/B106): public Google OAuth token endpoint
+        token_uri="https://accounts.google.com/o/oauth2/token",
+        scopes=SCOPES,
+        subject=delegated_account,
+    )
+
     return discovery.build("admin", "directory_v1", credentials=credentials)
 
 
@@ -129,11 +162,6 @@ def main() -> int:
         help="Execute PATCHes. Without this flag, runs dry (prints only).",
     )
     parser.add_argument(
-        "--service-account-file",
-        default="/workspaces/teamster/env/teamster-332318-48bf4ca46803.json",
-        help="Path to service-account JSON key with domain-wide delegation.",
-    )
-    parser.add_argument(
         "--delegated-account",
         required=True,
         help="Google Workspace admin email to impersonate (same value Dagster uses).",
@@ -167,7 +195,7 @@ def main() -> int:
         print(f"\nTotal: {len(rows)} would-patch", file=sys.stderr)
         return 0
 
-    service = build_directory_client(args.service_account_file, args.delegated_account)
+    service = build_directory_client(args.delegated_account)
 
     total_patched = 0
     total_errors: list[tuple[str, str]] = []
