@@ -1,6 +1,7 @@
 with
     students as (
         select
+            student_number,
             student_first_name as first_name,
             student_last_name as last_name,
             school_name,
@@ -64,6 +65,7 @@ select
     suspended,
     is_create,
     is_update,
+    student_number,
 
     'SHA-1' as `hashFunction`,
 
