@@ -187,7 +187,11 @@ def google_directory_user_create(
             else:
                 student_number = u.pop("student_number")
                 u["externalIds"] = [
-                    {"value": str(student_number), "type": "organization"}
+                    {
+                        "value": str(student_number),
+                        "type": "custom",
+                        "customType": "student_number",
+                    }
                 ]
                 valid_users.append(u)
 

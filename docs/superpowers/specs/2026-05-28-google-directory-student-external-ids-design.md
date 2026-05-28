@@ -7,7 +7,7 @@ Follow-up: [#4057](https://github.com/TEAMSchools/teamster/issues/4057)
 ## Goal
 
 Populate Google Workspace Directory `externalIds` with each student's
-PowerSchool `student_number` (type `organization`).
+PowerSchool `student_number` as `(type='custom', customType='student_number')`.
 
 - **Recurring**: every new student account created via
   `google_directory_user_create` carries `externalIds` from the moment of
@@ -32,7 +32,8 @@ Out of scope:
 - Uniqueness / not_null tests on `rpt_google_directory__users_import` — moved to
   #4057 (depends on backfill having run).
 - Staff `externalIds`.
-- Any `externalIds` type other than `organization`.
+- Any `externalIds` type other than
+  `(type='custom', customType='student_number')`.
 - Modification of existing accounts' `externalIds` via the recurring update
   path.
 
@@ -57,9 +58,9 @@ Add the column to the contract, with a `not_null` test scoped to create rows:
   data_type: int64
   description: >
     PowerSchool student_number. Consumed by google_directory_user_create to set
-    externalIds[type='organization'] on new accounts; popped by
-    google_directory_user_update before PATCH so the recurring update path never
-    touches externalIds.
+    externalIds[type='custom', customType='student_number'] on new accounts;
+    popped by google_directory_user_update before PATCH so the recurring update
+    path never touches externalIds.
   data_tests:
     - not_null:
         config:
@@ -96,7 +97,11 @@ for u in create_users:
     else:
         student_number = u.pop("student_number")
         u["externalIds"] = [
-            {"value": str(student_number), "type": "organization"}
+            {
+                "value": str(student_number),
+                "type": "custom",
+                "customType": "student_number",
+            }
         ]
         valid_users.append(u)
 
@@ -144,15 +149,19 @@ A standalone PEP 723 Python script. Not added to Dagster.
 
 1. Query the warehouse for matched student accounts under any `/Students/*` org
    unit (including `/Students/Disabled`) whose Workspace `externalIds` does not
-   contain the expected `organization` entry:
+   contain the expected `custom` entry:
 
    ```sql
+   -- stg_google_directory__users.external_ids is ARRAY<STRUCT<value, type>>;
+   -- the upstream avro/Pydantic schema drops customType. The
+   -- (type='custom', value=student_number) pair is practically unique — no
+   -- other consumer writes PowerSchool student_numbers into a custom externalId.
    select
        u.primary_email,
        se.student_number,
        u.org_unit_path
    from `teamster-332318.kipptaf_google.stg_google_directory__users` as u
-   inner join `teamster-332318.kipptaf_extracts.int_extracts__student_enrollments` as se
+   inner join `teamster-332318.kipptaf_students.int_extracts__student_enrollments` as se
        on u.primary_email = se.student_email
        and se.rn_all = 1
    where u.org_unit_path like '/Students/%'
@@ -160,13 +169,13 @@ A standalone PEP 723 Python script. Not added to Dagster.
        and se.student_number is not null
        and not exists (
            select 1 from unnest(u.external_ids) as e
-           where e.type = 'organization'
+           where e.type = 'custom'
                and e.value = cast(se.student_number as string)
        )
    ```
 
 2. For each row, call
-   `users().patch(userKey=primary_email, body={"externalIds": [{"value": str(student_number), "type": "organization"}]})`.
+   `users().patch(userKey=primary_email, body={"externalIds": [{"value": str(student_number), "type": "custom", "customType": "student_number"}]})`.
    Use the same service-account + domain-wide-delegation path as
    `GoogleDirectoryResource` so behavior matches prod.
 
@@ -218,6 +227,6 @@ rebuild. No external table staging required.
    credentials Dagster uses; capture output to `.claude/scratch/`.
 4. Re-materialize the `users` asset; spot-check 5-10 students across
    `/Students/*` (including `/Students/Disabled`) for the
-   `externalIds.organization` entry.
+   `externalIds[type='custom', customType='student_number']` entry.
 5. Pick up #4057 to add uniqueness tests on the rpt model.
 6. Close #3950.

@@ -6,11 +6,11 @@
 #     "google-cloud-bigquery",
 # ]
 # ///
-"""One-shot backfill: set externalIds[type='organization'] on existing student Google accounts.
+"""One-shot backfill: set externalIds[type='custom', customType='student_number'] on existing student Google accounts.
 
 Identifies matched student accounts under any /Students/* org unit (including
-/Students/Disabled) whose Workspace externalIds does not already contain an
-'organization' entry equal to the PowerSchool student_number, then PATCHes
+/Students/Disabled) whose Workspace externalIds does not already contain a
+'custom' entry whose value equals the PowerSchool student_number, then PATCHes
 each one. Dry-run by default; pass --apply to execute.
 
 Usage:
@@ -36,6 +36,10 @@ from googleapiclient import discovery
 BQ_PROJECT = "teamster-332318"
 
 QUERY = """
+-- stg_google_directory__users.external_ids is ARRAY<STRUCT<value, type>>;
+-- the upstream avro/Pydantic schema drops customType. The (type='custom',
+-- value=student_number) pair is practically unique — no other consumer
+-- writes PowerSchool student_numbers into a custom externalId.
 select
     u.primary_email,
     se.student_number,
@@ -49,7 +53,7 @@ where u.org_unit_path like '/Students/%'
     and se.student_number is not null
     and not exists (
         select 1 from unnest(u.external_ids) as e
-        where e.type = 'organization'
+        where e.type = 'custom'
             and e.value = cast(se.student_number as string)
     )
 """
@@ -96,7 +100,11 @@ def patch_batch(
     for row in rows:
         body = {
             "externalIds": [
-                {"value": str(row["student_number"]), "type": "organization"}
+                {
+                    "value": str(row["student_number"]),
+                    "type": "custom",
+                    "customType": "student_number",
+                }
             ]
         }
         batch.add(
