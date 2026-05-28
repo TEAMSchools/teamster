@@ -15,6 +15,7 @@ models:
               - contact
               - test_type
               - score_type
+              - ap_course_name
               - date
           config:
             severity: warn
