@@ -12,7 +12,6 @@
     "security-guidance@claude-plugins-official": true,
     "superpowers@claude-plugins-official": true
   },
-  "remoteControlAtStartup": true,
   "permissions": {
     "allow": [
       "Bash(//workspaces/teamster/.trunk/tools/trunk check --ci)",
