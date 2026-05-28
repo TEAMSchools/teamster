@@ -1,4 +1,18 @@
 data_tests:
+  - name: test_int_surveys__manager_survey_details__terms_coverage
+    description: >-
+      Warns when int_surveys__manager_survey_details has a
+      (campaign_academic_year, campaign_reporting_term) tuple with no matching
+      (name='Manager Survey', type='SURVEY') row in
+      stg_google_sheets__reporting__terms. Surfaces Manager Survey admin-tuple
+      coverage gaps that would otherwise drop archive rows at the
+      fct_survey_submissions terms join.
+    config:
+      meta:
+        dagster:
+          ref:
+            name: int_surveys__manager_survey_details
+
   - name: test_base_powerschool__course_enrollments_no_studyear_course_overlap
     description: >-
       Within a (student, year, course) — `cc_studyear` is PowerSchool's

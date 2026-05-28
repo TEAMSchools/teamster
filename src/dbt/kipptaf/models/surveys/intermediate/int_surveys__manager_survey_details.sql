@@ -74,6 +74,7 @@ select
     ri.survey_id,
     ri.survey_title,
     ri.survey_response_id,
+    ri.survey_response_id as effective_survey_response_id,
     ri.date_started,
     ri.date_submitted,
     ri.campaign_academic_year,
@@ -134,6 +135,15 @@ select
     'historic_alchemer_Manager_survey' as survey_id,
     'Manager Survey' as survey_title,
     null as survey_response_id,
+
+    concat(
+        sda.respondent_df_employee_number,
+        '_',
+        sda.subject_df_employee_number,
+        '_',
+        sda.campaign_reporting_term
+    ) as effective_survey_response_id,
+
     null as date_started,
 
     timestamp(sda.date_submitted) as date_submitted,

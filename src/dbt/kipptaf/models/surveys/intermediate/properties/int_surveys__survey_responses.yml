@@ -18,6 +18,20 @@ models:
               - survey_question_id
               - question_shortname
               - answer
+      - dbt_utils.expression_is_true:
+          arguments:
+            expression: |
+              survey_title not in (
+                  'School Community Diagnostic Staff Survey',
+                  'School Community Diagnostic Student Survey',
+                  'KIPP NJ & KIPP Miami Family Survey',
+                  'KIPP Miami Re-Commitment Form & Family School Community Diagnostic',
+                  'Engagement & Support Surveys',
+                  'Manager Survey'
+              )
+              or (academic_year is not null and term_code is not null)
+          config:
+            severity: warn
     columns:
       - name: survey_id
         data_type: string
