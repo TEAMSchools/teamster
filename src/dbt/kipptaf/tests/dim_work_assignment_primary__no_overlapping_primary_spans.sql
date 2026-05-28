@@ -10,6 +10,8 @@ with
                 partition by swa.staff_key order by wap.effective_start_date
             ) as next_start,
         from {{ ref("dim_work_assignment_primary") }} as wap
+        -- work_assignment_key is swa's PK: exactly one staff_key per primary
+        -- span, so this join cannot fan out the lead() ordering
         inner join
             {{ ref("dim_staff_work_assignments") }} as swa
             on wap.work_assignment_key = swa.work_assignment_key

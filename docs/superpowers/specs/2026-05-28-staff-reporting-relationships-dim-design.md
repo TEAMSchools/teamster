@@ -120,6 +120,8 @@ reaches `staff_manager` on `manager_staff_key`:
 joins:
   - name: staff_reporting_relationships
     relationship: many_to_one
+    # inclusive BETWEEN — spans are end-dated to day-before-next-start, so each
+    # record date matches exactly one span (prod-validated: zero fan-out)
     sql: >
       {staff_reporting_relationships.staff_key} = {CUBE}.teacher_staff_key AND
       CAST({CUBE}.observed_date_key AS TIMESTAMP)
@@ -136,30 +138,37 @@ inclusive bounds match exactly one span (validated: zero fan-out). Manager name
 
 ### dbt: primary-exclusivity guard test
 
-A singular test (`tests/`) asserting no staff has two _distinct_ primary
-assignments with overlapping effective periods — the invariant the resolver's
-unique grain depends on:
+A singular test
+(`tests/dim_work_assignment_primary__no_overlapping_primary_spans.sql`)
+asserting no staff has two primary assignments with overlapping effective
+periods — the invariant the resolver's unique grain depends on. Implemented with
+a `lead()` ordered-window check (mirroring the sibling
+`dim_student_*_status__no_overlapping_spans` tests), not the self-join shown in
+earlier drafts — semantically equivalent for sorted spans and more efficient:
 
 ```sql
-with primary_spans as (
-    select
-        swa.staff_key,
-        wap.work_assignment_key,
-        wap.effective_start_date,
-        wap.effective_end_date,
-    from {{ ref("dim_work_assignment_primary") }} as wap
-    inner join {{ ref("dim_staff_work_assignments") }} as swa
-        on wap.work_assignment_key = swa.work_assignment_key
-    where wap.is_primary_position and swa.staff_key is not null
-)
+with
+    primary_spans as (
+        select
+            wap.effective_start_date,
+            wap.effective_end_date,
 
-select a.staff_key
-from primary_spans as a
-inner join primary_spans as b
-    on a.staff_key = b.staff_key
-    and a.work_assignment_key < b.work_assignment_key
-    and a.effective_start_date <= b.effective_end_date
-    and a.effective_end_date >= b.effective_start_date
+            swa.staff_key,
+
+            lead(wap.effective_start_date) over (
+                partition by swa.staff_key order by wap.effective_start_date
+            ) as next_start,
+        from {{ ref("dim_work_assignment_primary") }} as wap
+        -- work_assignment_key is swa's PK: exactly one staff_key per primary
+        -- span, so this join cannot fan out the lead() ordering
+        inner join {{ ref("dim_staff_work_assignments") }} as swa
+            on wap.work_assignment_key = swa.work_assignment_key
+        where wap.is_primary_position and swa.staff_key is not null
+    )
+
+select staff_key, effective_start_date, effective_end_date, next_start,
+from primary_spans
+where next_start is not null and next_start <= effective_end_date
 ```
 
 `meta.dagster.ref` -> `dim_work_assignment_primary`. Default `warn` severity is
@@ -209,7 +218,7 @@ follow-up. Not addressed here.
 ## Validation plan (implementation)
 
 - dbt:
-  `uv run dbt build --select dim_work_assignment_primary test_staff_primary_assignment_no_overlap`
+  `uv run dbt build --select dim_work_assignment_primary dim_work_assignment_primary__no_overlapping_primary_spans`
   against `kipptaf` (worktree).
 - Cube (on the cube-model branch): compile the resolver via `/sql`, confirm
   nesting and `WHERE`-free `many_to_one` behavior, spot-check a known
