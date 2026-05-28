@@ -1,5 +1,3 @@
-{{ config(severity="warn") }}
-
 select ms.campaign_academic_year, ms.campaign_reporting_term, count(*) as orphan_rows,
 from {{ ref("int_surveys__manager_survey_details") }} as ms
 left join
