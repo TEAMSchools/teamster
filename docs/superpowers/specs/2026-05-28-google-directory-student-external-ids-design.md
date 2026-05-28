@@ -50,7 +50,7 @@ it before PATCH).
 
 ### Properties — `properties/rpt_google_directory__users_import.yml`
 
-Add the column to the contract:
+Add the column to the contract, with a `not_null` test scoped to create rows:
 
 ```yaml
 - name: student_number
@@ -60,26 +60,72 @@ Add the column to the contract:
     externalIds[type='organization'] on new accounts; popped by
     google_directory_user_update before PATCH so the recurring update path never
     touches externalIds.
+  data_tests:
+    - not_null:
+        config:
+          severity: error
+          where: "is_create"
 ```
+
+**Why the `not_null` test:** `int_extracts__student_enrollments` does not
+contractually guarantee `student_number` is populated for every row with a
+`student_email`. If a create row reaches the asset with null `student_number`,
+we would create a Google account without `externalIds`, and the recurring update
+path pops `student_number` so there is no second opportunity to fix it short of
+manual intervention. Failing dbt build instead forces upstream reconciliation
+before any account is created.
 
 No uniqueness test on this PR — see #4057.
 
 ### Dagster — `kipptaf/google/directory/assets.py`
 
-In `google_directory_user_create`, after `arrow.to_pylist()` and before
-`batch_insert_users`:
+In `google_directory_user_create`, after `arrow.to_pylist()`: partition into
+valid create rows and rows missing `student_number`, record one synthetic error
+per missing row, then call `batch_insert_users` on the valid rows only. The
+existing `zero_api_errors` asset check surfaces the missing-student_number rows.
 
 ```python
+errors = []
+valid_users = []
 for u in create_users:
-    student_number = u.pop("student_number", None)
-    if student_number is not None:
+    if u.get("student_number") is None:
+        errors.append({
+            "primaryEmail": u["primaryEmail"],
+            "error": "missing student_number; cannot set externalIds",
+        })
+    else:
+        student_number = u.pop("student_number")
         u["externalIds"] = [
             {"value": str(student_number), "type": "organization"}
         ]
+        valid_users.append(u)
+
+if valid_users:
+    create_errors = google_directory.batch_insert_users(valid_users)
+    for ce in create_errors:
+        context.log.error(msg=ce)
+        errors.append(ce)
+
+    members_data = [
+        {
+            "groupKey": u["groupKey"],
+            "email": u["primaryEmail"],
+            "delivery_settings": "DISABLED",
+        }
+        for u in valid_users
+    ]
+    members_errors = google_directory.batch_insert_members(members_data)
+    for me in members_errors:
+        context.log.error(msg=me)
+        errors.append(me)
 ```
 
 `externalIds[].value` is a string in the Google Directory schema — cast at the
 boundary.
+
+The dbt `not_null` test should prevent any row from reaching this branch; the
+asset-level guard is defense in depth in case the test is downgraded or
+bypassed.
 
 In `google_directory_user_update`, after `arrow.to_pylist()`:
 
