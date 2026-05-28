@@ -86,14 +86,6 @@ with
             {{ ref("int_extracts__student_enrollments") }} as enr
             on sg.respondent_email = enr.student_email
             and enr.entrydate <= date(sg.date_submitted)
-            /*
-             * Closed-on-right for survey attribution: a student who submitted
-             * on their exit day was enrolled when they submitted.
-             * TODO(#4056): structurally exposed to fan-out on same-day
-             * exit-and-re-entry stints. Currently safe (no submissions on
-             * any of the 78 known boundary days) and guarded by warn-level
-             * test int_powerschool__student_enrollment_union_no_shared_stint_boundary.
-             */
             and enr.exitdate >= date(sg.date_submitted)
         where sg.survey_title = 'School Community Diagnostic Student Survey'
     ),
