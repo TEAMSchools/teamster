@@ -17,12 +17,11 @@ Usage:
     uv run scripts/backfill_google_directory_student_external_ids.py \\
         --delegated-account <admin@kippteamandfamily.org> [--apply]
 
-Auth: Uses Application Default Credentials + IAM Signer to impersonate
-`delegated_account` via domain-wide delegation. Same path the prod Dagster
-GoogleDirectoryResource uses when no `service_account_file_path` is set
-(`src/teamster/libraries/google/directory/resources.py`). Works in a Codespace
-(ADC = impersonated `codespaces@teamster-332318.iam.gserviceaccount.com`) and
-in a Dagster pod (Workload Identity).
+Auth: ADC -> impersonate user-cloud-dagster-cloud-agent@... (the
+DWD-allowlisted SA) -> IAM Signer with subject=delegated_account. Caller's
+ADC principal must have roles/iam.serviceAccountTokenCreator on
+user-cloud-dagster-cloud-agent@... — in a Codespace this is codespaces@...,
+in a Dagster pod this is the WI binding (self-impersonation, no-op).
 
 Output (stdout): one line per user, plus aggregate counts. Output contains
 student emails and student_numbers; capture only to .claude/scratch/ or
@@ -34,7 +33,7 @@ import sys
 import time
 from collections.abc import Iterable, Iterator
 
-from google.auth import default
+from google.auth import default, impersonated_credentials
 from google.auth.iam import Signer
 from google.auth.transport import requests
 from google.cloud import bigquery
@@ -42,6 +41,9 @@ from google.oauth2 import service_account
 from googleapiclient import discovery
 
 BQ_PROJECT = "teamster-332318"
+DWD_SERVICE_ACCOUNT = (
+    "user-cloud-dagster-cloud-agent@teamster-332318.iam.gserviceaccount.com"
+)
 
 QUERY = """
 -- stg_google_directory__users.external_ids is ARRAY<STRUCT<value, type>>;
@@ -75,30 +77,36 @@ def chunks[T](items: list[T], size: int) -> Iterator[list[T]]:
 
 
 def build_directory_client(delegated_account: str) -> discovery.Resource:
-    """Build a Directory API client via ADC + IAM Signer for DWD impersonation.
+    """Build a Directory API client via ADC -> impersonated SA -> IAM Signer DWD.
 
-    Mirrors `GoogleDirectoryResource.setup_for_execution` in
-    `src/teamster/libraries/google/directory/resources.py` when no
-    `service_account_file_path` is set.
+    The DWD-authorized service account (`DWD_SERVICE_ACCOUNT`) is the only SA
+    whose OAuth Client ID is allowlisted in Workspace Admin for the
+    admin.directory.user scope. We impersonate it from whatever ADC the caller
+    has (Codespace's `codespaces@...` SA, or the same SA in a Workload Identity
+    pod — self-impersonation is a no-op there), then use IAM Signer to self-sign
+    a JWT with `subject=delegated_account` for DWD.
+
+    Caller's ADC principal needs `roles/iam.serviceAccountTokenCreator` on
+    DWD_SERVICE_ACCOUNT. DWD_SERVICE_ACCOUNT needs the same role on itself
+    (already true since prod uses the same self-sign path).
     """
     request = requests.Request()
     source_credentials, _ = default()
-    if not hasattr(source_credentials, "service_account_email"):
-        raise SystemExit(
-            "ERROR: ADC must be a service-account credential, not user OAuth.\n"
-            "Run: gcloud auth application-default login "
-            "--impersonate-service-account="
-            "codespaces@teamster-332318.iam.gserviceaccount.com"
-        )
-    source_credentials.refresh(request)
+
+    target_credentials = impersonated_credentials.Credentials(
+        source_credentials=source_credentials,
+        target_principal=DWD_SERVICE_ACCOUNT,
+        target_scopes=SCOPES,
+    )
+    target_credentials.refresh(request)
 
     credentials = service_account.Credentials(
         signer=Signer(
             request=request,
-            credentials=source_credentials,
-            service_account_email=source_credentials.service_account_email,
+            credentials=target_credentials,
+            service_account_email=DWD_SERVICE_ACCOUNT,
         ),
-        service_account_email=source_credentials.service_account_email,
+        service_account_email=DWD_SERVICE_ACCOUNT,
         # trunk-ignore(bandit/B106): public Google OAuth token endpoint
         token_uri="https://accounts.google.com/o/oauth2/token",
         scopes=SCOPES,
