@@ -202,9 +202,12 @@ prefix. The cube name and the table name are independent.
 dims were added to the students domain: `dim_student_ell_status`,
 `dim_student_iep_status`, and `dim_student_meal_eligibility_status`. All three
 start with `student_` and are automatically covered by `isStudentMember` in
-`cube.js`, requiring `cube-access-student-data`. They follow Pattern 3 — SCD2
-period intersection — joined to `dim_dates` via the `BETWEEN` range join
-(`one_to_many` relationship). They are surfaced via the attendance views where
+`cube.js`, requiring `cube-access-student-data`. Each is a plain `sql_table:`
+cube joined FROM `student_attendance` via a compound condition on
+`student_enrollment_key` and `date_key` BETWEEN `effective_date_start_key` /
+`effective_date_end_key` — `relationship: many_to_one` (many attendance rows map
+to one status span covering that date). No GREATEST/LEAST; each status dim is
+independent. They are surfaced via the attendance views where
 ELL/IEP/meal-eligibility breakdowns are a primary consumer need.
 
 **Note on staffing:** `dim_staffing_positions` has no joinable ID to
@@ -555,14 +558,24 @@ cubes:
         public: true
 
     measures:
-      - name: avg_daily_attendance
-        description: Average Daily Attendance
+      - name: _sum_attendance_value
         sql: attendance_value
-        type: avg
+        type: sum
+        public: false
+
+      - name: _sum_membership_value
+        sql: membership_value
+        type: sum
+        public: false
+
+      - name: avg_daily_attendance
+        description: >
+          Average Daily Attendance (ADA) — SUM(attendance_value) /
+          SUM(membership_value)
+        sql: "{_sum_attendance_value} / NULLIF({_sum_membership_value}, 0)"
+        type: number
         format: percent
         public: true
-        filters:
-          - sql: "{CUBE}.membership_value = 1"
 
       - name: count_students
         sql: student_enrollment_key

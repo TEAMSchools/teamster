@@ -178,10 +178,12 @@ English — no SQL required. Once connected, you can ask questions like:
 - "Show me ADA by school for this year"
 - "What are the available dimensions in the student cube?"
 
-Claude uses the Cube semantic layer to find and return the right data. You'll
-need a Cube API key from the data team before getting started.
+Claude uses the Cube semantic layer to find and return the right data.
 
 ### Claude Desktop
+
+The Cube MCP uses OAuth. You authenticate with your `@apps.teamschools.org`
+Google Workspace account on first use.
 
 1. **Install Node.js** if you don't have it:
 
@@ -195,13 +197,9 @@ need a Cube API key from the data team before getting started.
    brew install node
    ```
 
-   Then find the full path to `npx` — you'll need it below:
+2. **Get the Cube MCP service URL** from the data team.
 
-   ```bash
-   which npx
-   ```
-
-2. **Open the config file.** In Claude Desktop, go to **Settings → Developer →
+3. **Open the config file.** In Claude Desktop, go to **Settings → Developer →
    Edit Config**. Or navigate directly in Finder:
 
    ```text
@@ -210,24 +208,15 @@ need a Cube API key from the data team before getting started.
 
    If the file doesn't exist yet, create it with an empty `{}`.
 
-3. **Add the Cube MCP server.** Replace `[YOUR-API-KEY]` with your key, and
-   update the `command` path if your `npx` location differs:
+4. **Add the Cube MCP server.** Replace `<CUBE_MCP_URL>` with the URL from step
+   2:
 
    ```json
    {
      "mcpServers": {
-       "cube-mcp-server": {
-         "command": "/opt/homebrew/bin/npx",
-         "args": [
-           "-y",
-           "mcp-remote",
-           "https://ai.gcp-us-central1.cubecloud.dev/api/mcp",
-           "--transport",
-           "http"
-         ],
-         "env": {
-           "CUBE_TOKEN": "[YOUR-API-KEY]"
-         }
+       "cube": {
+         "command": "npx",
+         "args": ["-y", "mcp-remote", "<CUBE_MCP_URL>"]
        }
      }
    }
@@ -236,12 +225,14 @@ need a Cube API key from the data team before getting started.
    If your config already has content, add `mcpServers` alongside the existing
    keys — don't replace anything.
 
-4. **Restart Claude Desktop.** Press `Cmd+Q` to fully quit (don't just close the
-   window), then reopen. A tools/hammer icon in the bottom-right of the chat
-   input confirms the server is connected.
+5. **Restart Claude Desktop.** Press `Cmd+Q` to fully quit (don't just close the
+   window), then reopen.
 
-!!! warning "Keep your API key private." Treat it like a password — don't share
-your config file with anyone outside the pilot group.
+6. **Authenticate.** The first time Claude uses the Cube tool, a browser tab
+   opens to a Google sign-in prompt. Sign in with your `@apps.teamschools.org`
+   account. After approving, you're redirected back to Claude Desktop and the
+   connection is live. Subsequent sessions authenticate silently via refresh
+   token.
 
 ### Claude Code (VS Code)
 

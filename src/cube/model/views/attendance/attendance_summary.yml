@@ -111,6 +111,12 @@ views:
           - term_code
           - term_type
 
+      - join_path: student_attendance.school_calendars
+        prefix: true
+        includes:
+          - is_in_session
+          - is_membership_day
+
     meta:
       folders:
         - name: Attendance
@@ -160,6 +166,10 @@ views:
             - student_enrollments_grade_level
             - student_enrollments_graduation_year
             - student_enrollments_is_retained_year
+        - name: Calendar
+          members:
+            - school_calendars_is_in_session
+            - school_calendars_is_membership_day
         - name: Filter
           members:
             - is_latest_record

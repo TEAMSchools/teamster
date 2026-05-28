@@ -104,6 +104,8 @@ views:
           - birth_date
           - lea_student_identifier
           - state_student_identifier
+          - district_student_identifier
+          - salesforce_contact_id
           - gender_identity
           - race
           - enrollment_status
@@ -195,6 +197,8 @@ views:
             - students_birth_date
             - students_lea_student_identifier
             - students_state_student_identifier
+            - students_district_student_identifier
+            - students_salesforce_contact_id
             - students_gender_identity
             - students_race
             - students_enrollment_status
@@ -232,6 +236,8 @@ views:
             - students_birth_date
             - students_lea_student_identifier
             - students_state_student_identifier
+            - students_district_student_identifier
+            - students_salesforce_contact_id
       - group: cube-access-student-pii
         member_level:
           includes: "*"

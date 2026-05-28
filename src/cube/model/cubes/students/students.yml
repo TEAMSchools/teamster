@@ -63,6 +63,7 @@ cubes:
           District-assigned number from the host district's perspective.
         sql: district_student_identifier
         type: string
+        public: true
         meta:
           pii: true
 
@@ -73,6 +74,7 @@ cubes:
           KIPPADB consumer tools (Overgrad, alumni tracking, etc.).
         sql: salesforce_contact_id
         type: string
+        public: true
         meta:
           pii: true
 
