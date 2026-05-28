@@ -79,4 +79,6 @@ select
     ar.response_value,
     ar.response_text,
 from all_responses as ar
-inner join {{ ref("fct_survey_submissions") }} as fss using (survey_submission_key)
+inner join
+    {{ ref("fct_survey_submissions") }} as fss
+    on ar.survey_submission_key = fss.survey_submission_key
