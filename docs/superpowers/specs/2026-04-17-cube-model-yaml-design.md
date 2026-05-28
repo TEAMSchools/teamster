@@ -85,22 +85,37 @@ Facts declare joins only to their immediate FK parents (e.g., gradebook →
 join path traversal in views. This mirrors the dbt star schema and prevents
 diamond paths that cause Cube to double-count rows.
 
-### Role-playing FK dimensions: always denormalize the secondary role
+### Role-playing FK dimensions: use `extends` to create a role alias cube
 
 Some fact tables have two foreign keys pointing to the same dimension —
 `fct_staff_observations` has `teacher_staff_key` (the teacher being observed)
 and `observer_staff_key` (the observer), both referencing `dim_staff`. In SQL
-you'd join `dim_staff` twice under different aliases. Cube doesn't allow that —
-you can only declare one join per named cube.
+you'd join `dim_staff` twice under different aliases. Cube doesn't allow two
+joins to the same named cube.
 
-The correct resolution is always denormalization: add the secondary role's key
-attributes (name, key, etc.) directly to the shared dimension. Join `dim_staff`
-once on the primary FK; the secondary role's attributes are available on the
-same row without a second join. The gradebook cube is the canonical example —
-`manager_name` and `manager_staff_key` are added to `dim_staff` (#3838) so both
-teacher and manager attributes are accessible via a single join. Observations
-(`observer_staff_key`) and surveys (`subject_staff_key`) follow the same
-pattern.
+The correct resolution is `extends`: create a second cube that inherits all
+dimensions from `staff` but carries a distinct name, backed by the same
+`dim_staff` table. The fact cube then declares two joins — one to `staff` on the
+primary FK, one to the role alias cube on the secondary FK. No dbt model changes
+are required; role attributes stay where they belong, on a staff-shaped cube.
+
+```yaml
+cubes:
+  - name: staff_manager # role alias — inherits all staff dimensions
+    extends: staff
+    public: false
+```
+
+**Naming constraint:** The extended cube must follow the `staff_<role>` naming
+convention (e.g., `staff_manager`, `staff_observer`, `staff_survey_subject`).
+`queryRewrite` in `cube.js` uses `startsWith("staff")` for `isStaffMember` — a
+cube named `manager_staff` would not match and would bypass the staff security
+filter entirely.
+
+**Access policy in views:** A detail view including both a `staff` and a
+`staff_manager` join path needs both sets of PII field names in the `excludes:`
+list — prefixed `staff_*` from the `staff` join path and `staff_manager_*` from
+the `staff_manager` join path (when `prefix: true`).
 
 ### Date joins use `date_day` (TIMESTAMP), not `date_key` (DATE)
 
@@ -229,10 +244,9 @@ pattern.
 
 **Note on gradebook — teacher and manager info:** Inlining
 `bridge_course_section_teachers` surfaces `teacher_staff_key` on the gradebook
-cube, enabling a join to `dim_staff` for teacher name. Manager name requires
-`manager_name` and `manager_staff_key` to be denormalized onto `dim_staff`
-(#3838) — Cube cannot join `dim_staff` twice under different roles. Implement
-gradebook cubes after #3838 merges.
+cube, enabling a join to `staff` for teacher name. Manager name is reached via a
+`staff_manager` cube (`extends: staff`) joined on `manager_staff_key` — no dbt
+model changes required. #3838 is superseded by this approach.
 
 **Note on observations — eligible teacher denominator:** `pct_evaluated` and
 `pct_assigned_goals` require a count of eligible teachers as the denominator.
@@ -267,9 +281,10 @@ FKs: `staff_key` → `dim_staff`, `student_enrollment_key` →
 `dim_student_enrollments`, `student_contact_person_key` →
 `dim_student_contact_persons`. Manager surveys also carry `subject_staff_key`
 (the manager being evaluated) as a second FK to `dim_staff` — same role-playing
-FK pattern as `observer_staff_key` in observations. Both are resolved by
-denormalizing subject/observer attributes onto `dim_staff` (same approach as
-#3838). All three respondent FK columns carry `meta: {pii: true}`.
+FK pattern as `observer_staff_key` in observations. Both are resolved via
+`extends`: create `staff_observer` and `staff_survey_subject` cubes extending
+`staff`, joined on their respective secondary FKs. All three respondent FK
+columns carry `meta: {pii: true}`.
 
 **Note on talent:** `dim_job_candidates` (inlined into the talent cube) contains
 candidate PII (name, email, contact details). The talent views require
