@@ -6,78 +6,37 @@ SCRIPT_DIR="$(dirname "$0")"
 
 source "${SCRIPT_DIR}/shared/claude.sh"
 
-# VS Code opens the folder (triggering this task) while postCreate.sh or
-# postStart.sh may still be running. Wait for both to finish first.
-for script in postCreate.sh postStart.sh; do
-  if pgrep -f "${script}" >/dev/null 2>&1; then
-    echo "⏳ Waiting for ${script} to finish..."
-    while pgrep -f "${script}" >/dev/null 2>&1; do
-      sleep 5
-    done
-    echo -e "\033[1;32m✔ ${script} complete\033[0m"
-  fi
-done
-
-if [[ -z ${GITHUB_USER-} ]]; then
-  GITHUB_USER=$(gh api user --jq .login 2>/dev/null)
-  export GITHUB_USER
-  grep -q "export GITHUB_USER=" ~/.bashrc || echo "export GITHUB_USER=${GITHUB_USER}" >>~/.bashrc
-fi
-
-# On a fresh rebuild the Claude Code extension may still be installing when
-# this task fires. Poll until the binary appears (up to ~5 minutes).
+# Wait for Claude Code extension to install on fresh rebuilds (up to ~1 min).
 if [[ -z ${CLAUDE} ]]; then
-  echo "⏳ Waiting for Claude Code extension to install..."
   _elapsed=0
-  while [[ -z ${CLAUDE} && ${_elapsed} -lt 300 ]]; do
+  while [[ -z ${CLAUDE} && ${_elapsed} -lt 60 ]]; do
     sleep 5
     _elapsed=$((_elapsed + 5))
     CLAUDE=$(find ~/.vscode-remote/extensions/anthropic.claude-code-*/resources/native-binary/claude -type f 2>/dev/null | head -1) || true
   done
-  if [[ -z ${CLAUDE} ]]; then
-    echo -e "\033[1;33m⚠ Claude Code extension not found — skipping Claude setup\033[0m"
-    echo -e "\033[1;33m  Install the extension and run the 'Claude: Login' task manually\033[0m"
-  fi
 fi
 
-if [[ -n ${CLAUDE} ]]; then
-  if ! "${CLAUDE}" auth status 2>/dev/null | grep -q '"loggedIn": true'; then
-    bash "${SCRIPT_DIR}/claude-login.sh"
-  else
-    echo -e "\033[1;32m✔ Claude authenticated\033[0m"
-  fi
+NEEDS_CLAUDE=0
+NEEDS_GCLOUD=0
 
-  PLUGINS_HASH=$(jq -c '{enabledPlugins, extraKnownMarketplaces}' .claude/settings.json | sha256sum | cut -d' ' -f1)
-  HASH_FILE=~/.cache/teamster/claude_plugins_hash
-
-  STORED_HASH=""
-  if [[ -f ${HASH_FILE} ]]; then
-    STORED_HASH=$(cat "${HASH_FILE}")
-  fi
-
-  if [[ ${STORED_HASH} != "${PLUGINS_HASH}" ]]; then
-    bash "${SCRIPT_DIR}/claude-install-plugins.sh"
-    mkdir -p ~/.cache/teamster && echo "${PLUGINS_HASH}" >"${HASH_FILE}"
-  else
-    echo -e "\033[1;32m✔ Claude plugins up to date\033[0m"
-
-    INSTALLED=$(jq -r '.plugins | keys[]' ~/.claude/plugins/installed_plugins.json | sort)
-    EXPECTED=$(jq -r '.enabledPlugins | keys[]' .claude/settings.json | sort)
-    EXTRA=$(comm -23 <(echo "${INSTALLED}") <(echo "${EXPECTED}") || true)
-
-    if [[ -n ${EXTRA} ]]; then
-      echo -e "\033[1;36mℹ plugins installed but not in .claude/settings.json:\033[0m"
-      echo "${EXTRA}" | while read -r plugin; do
-        echo -e "\033[1;36m  - ${plugin}\033[0m"
-      done
-    fi
-  fi
+if [[ -n ${CLAUDE} ]] && ! "${CLAUDE}" auth status 2>/dev/null | grep -q '"loggedIn": true'; then
+  NEEDS_CLAUDE=1
 fi
 
 if ! gcloud auth application-default print-access-token >/dev/null 2>&1; then
-  bash "${SCRIPT_DIR}/gcloud-application-default-login.sh"
-else
-  echo -e "\033[1;32m✔ GCloud authenticated\033[0m"
+  NEEDS_GCLOUD=1
 fi
+
+# Silent exit when nothing interactive is required — the headless work
+# (GITHUB_USER cache, plugin sync, etc.) is handled by postStart.sh.
+if [[ ${NEEDS_CLAUDE} -eq 0 && ${NEEDS_GCLOUD} -eq 0 ]]; then
+  if [[ -z ${CLAUDE} ]]; then
+    echo -e "\033[1;33m⚠ Claude Code extension not found — install it and run the 'Claude: Login' task\033[0m"
+  fi
+  exit 0
+fi
+
+[[ ${NEEDS_CLAUDE} -eq 1 ]] && bash "${SCRIPT_DIR}/claude-login.sh"
+[[ ${NEEDS_GCLOUD} -eq 1 ]] && bash "${SCRIPT_DIR}/gcloud-application-default-login.sh"
 
 echo -e "\033[1;36mℹ First time? Run 'dbt: Build Init' to populate dev datasets (Ctrl+Shift+P → Tasks: Run Task)\033[0m"
