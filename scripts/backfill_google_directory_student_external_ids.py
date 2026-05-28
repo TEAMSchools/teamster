@@ -52,8 +52,8 @@ select
     u.primary_email,
     se.student_number,
     u.org_unit_path
-from `teamster-332318.kipptaf_google.stg_google_directory__users` as u
-inner join `teamster-332318.kipptaf_students.int_extracts__student_enrollments` as se
+from `teamster-332318.kipptaf_google_directory.stg_google_directory__users` as u
+inner join `teamster-332318.kipptaf_extracts.int_extracts__student_enrollments` as se
     on u.primary_email = se.student_email
     and se.rn_all = 1
 where u.org_unit_path like '/Students/%'
