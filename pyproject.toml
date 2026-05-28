@@ -34,7 +34,6 @@ dependencies = [
   "tableauserverclient>=0.25",
   "tenacity>=8.2.3",
   "urllib3>=2.6.3",
-  "kubernetes<36",
 ]
 
 [dependency-groups]
