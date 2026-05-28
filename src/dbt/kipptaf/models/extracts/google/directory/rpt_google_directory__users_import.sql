@@ -65,6 +65,7 @@ select
     suspended,
     is_create,
     is_update,
+    student_number,
 
     'SHA-1' as `hashFunction`,
 
@@ -74,7 +75,5 @@ select
     to_hex(sha1(student_web_password)) as `password`,
 
     if(grade_level >= 3, true, false) as `changePasswordAtNextLogin`,
-
-    student_number,
 from final
 where is_create or is_update
