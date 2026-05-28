@@ -17,3 +17,18 @@ data_tests:
           ref:
             name: int_powerschool__ps_enrollment_all
             package: powerschool
+
+  - name: int_powerschool__student_enrollment_union_no_shared_stint_boundary
+    description: >-
+      Within a `student_number` partition, consecutive enrollment stints must
+      not share a boundary date. A `lead(entrydate)` value equal to the current
+      row's `exitdate` indicates a same-day exit and re-entry that fans out
+      half-open date-range joins on the boundary day (e.g. survey attribution,
+      attendance windows). Source defect surfaced by issue #3902 — currently 78
+      violations across ~100k stints network-wide.
+    config:
+      meta:
+        dagster:
+          ref:
+            name: int_powerschool__student_enrollment_union
+            package: powerschool
