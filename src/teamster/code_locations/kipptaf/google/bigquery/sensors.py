@@ -10,6 +10,7 @@ from dagster import (
 )
 from dagster_gcp import BigQueryResource
 from google.cloud.bigquery import DatasetReference, TableReference
+from google.cloud.bigquery.retry import DEFAULT_RETRY
 
 from teamster import GCS_PROJECT_NAME
 from teamster.code_locations.kipptaf import CODE_LOCATION
@@ -47,7 +48,11 @@ def bigquery_table_modified_sensor(
                 table_id=assets_def.metadata["table_id"],
             )
 
-            table = bq.get_table(table=table_ref)
+            table = bq.get_table(
+                table=table_ref,
+                retry=DEFAULT_RETRY.with_deadline(30),
+                timeout=10,
+            )
 
             if table.modified is None:
                 continue
