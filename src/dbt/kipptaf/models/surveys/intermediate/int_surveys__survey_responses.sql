@@ -16,7 +16,7 @@ with
             fr.info_title as survey_title,
             fr.response_id as survey_response_id,
             fr.question_id as survey_question_id,
-            fr.text_value as answer,
+            coalesce(fr.text_value, fr.file_upload_file_name) as answer,
             fr.item_title as question_title,
             fr.item_abbreviation as question_shortname,
             fr.respondent_email,

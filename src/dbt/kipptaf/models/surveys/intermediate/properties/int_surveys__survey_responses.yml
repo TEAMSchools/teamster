@@ -6,8 +6,9 @@ models:
       question_shortname, answer). Google Forms grid and check-all-that-apply
       questions produce multiple rows per (response, question_id) — one per row
       shortname or selected option — so the natural grain extends to shortname +
-      answer. Marts that need per-shortname or per-question rollups project to
-      that grain themselves.
+      answer. File-upload questions emit one row per uploaded file with the
+      filename projected into `answer`. Marts that need per-shortname or
+      per-question rollups project to that grain themselves.
     data_tests:
       - dbt_utils.unique_combination_of_columns:
           arguments:
