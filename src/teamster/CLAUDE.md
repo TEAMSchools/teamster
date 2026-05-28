@@ -183,6 +183,13 @@ transient failures the retry layer recovers from. Let the retry wrapper log
 intermediate attempts at WARNING; Dagster logs unrecovered failures at the run
 level.
 
+**BigQuery `Client.get_table()`**: defaults are `retry=DEFAULT_RETRY` (600s
+deadline) + `timeout=None`. In sensors, bound both:
+`retry=DEFAULT_RETRY.with_deadline(N), timeout=M`. `with_deadline()` returns a
+new Retry (DEFAULT_RETRY is immutable). `Client.list_tables()` items lack
+`modified` — the only batch-mtime path is `INFORMATION_SCHEMA.TABLES`, which is
+billed (10 MB min/query) while `tables.get` is free metadata.
+
 ## Development Commands
 
 ```bash
