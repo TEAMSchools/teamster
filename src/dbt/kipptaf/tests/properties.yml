@@ -28,6 +28,23 @@ data_tests:
           ref:
             name: base_powerschool__course_enrollments
 
+  - name: dim_work_assignment_primary__no_overlapping_primary_spans
+    description: >-
+      Within a `staff_key` partition, the primary-position spans (joined from
+      `dim_work_assignment_primary` to `dim_staff_work_assignments`, filtered to
+      `is_primary_position`) must not overlap. A `lead(effective_start_date)`
+      value less than or equal to the current row's `effective_end_date` means a
+      staff member had two simultaneously-primary work assignments — which would
+      fan out any point-in-time lookup that resolves a single primary assignment
+      per staff at a date (e.g. the Cube `staff_reporting_relationships` manager
+      resolver). Guards the primary-exclusivity invariant that resolver's grain
+      depends on.
+    config:
+      meta:
+        dagster:
+          ref:
+            name: dim_work_assignment_primary
+
   - name: dim_student_iep_status__no_overlapping_spans
     description: >-
       Within a `student_key` partition, consecutive IEP status spans must not
