@@ -455,7 +455,7 @@ cubes:
         type: string
 
       - name: location_name
-        sql: name
+        sql: "{CUBE}.`name`"
         type: string
 
       - name: location_abbreviation
@@ -502,10 +502,6 @@ cubes:
         sql: "{dates.date_day} = CAST({CUBE}.date_key AS TIMESTAMP)"
         relationship: many_to_one
 
-      - name: locations
-        sql: "{locations.location_key} = {CUBE}.location_key"
-        relationship: many_to_one
-
       - name: student_enrollments
         sql: >
           {student_enrollments.student_enrollment_key} =
@@ -534,11 +530,6 @@ cubes:
 
       - name: is_absent
         sql: is_absent
-        type: number
-        public: true
-
-      - name: is_present
-        sql: is_present
         type: number
         public: true
 
@@ -584,6 +575,14 @@ cubes:
         filters:
           - sql: "{CUBE}.membership_value = 1"
 ```
+
+**Note on locations:** `student_attendance` has no direct `locations` join.
+Location context is reached via `student_enrollments.locations` in the view
+(`join_path: student_attendance.student_enrollments.locations`). Adding a direct
+`locations` join alongside `student_enrollments` would create a diamond path —
+both routes resolve to the same cube and Cube would double-count. Domains whose
+fact table has `location_key` directly but no `student_enrollments` FK can use a
+direct `locations` join safely.
 
 **Note on school_calendars:** `fct_student_attendance_daily` joins
 `dim_school_calendars` via compound key `(date_key, location_key)` to avoid a
