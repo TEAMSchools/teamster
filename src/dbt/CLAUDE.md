@@ -128,6 +128,13 @@ Auto-retried CI runs invoke `dbt retry`, which replays the prior run's compiled
 SQL. After fixing external state (defer relations, transient BQ errors), trigger
 a fresh `dbt build` — don't rely on the retry.
 
+## Fresh worktree needs `dbt deps`
+
+A newly-created worktree has no `dbt_packages/`. Run
+`uv run dbt deps --project-dir <worktree>/src/dbt/<project>` once before any
+`dbt build` / `test` / `clone` there — otherwise it errors with "N package(s)
+specified in packages.yml, but only 0 package(s) installed".
+
 ## Dev `--defer` for unstaged externals
 
 Dev builds depending on GCS externals (`stg_google_sheets__*` etc.) fail with

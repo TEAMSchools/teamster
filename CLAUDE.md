@@ -344,6 +344,11 @@ subcommand not on it is forbidden via Bash. Before any GitHub operation, first
 identify the `mcp__github__*` tool that handles it; only if none exists, check
 the allowlist.
 
+- **GitHub MCP write tools HTML-sanitize body text**: `issue_write`,
+  `add_issue_comment`, and `update_pull_request` silently strip `<...>` tokens
+  (e.g. `<role>`, `<col>`) — **even inside inline backticks**. Use
+  `{placeholder}` braces or a fenced code block (fenced blocks preserve `<`,
+  `<=`, `>=`). Read the stored body back and verify after writing.
 - `gh issue develop` — linked branch creation; `mcp__github__create_branch` does
   not link branches to issues.
 - `gh project item-edit --id <ITEM_ID> --project-id <PROJECT_ID> --field-id <FIELD_ID> --single-select-option-id <OPTION_ID>`
