@@ -312,69 +312,6 @@ dimension.
 **Rule:** `sql_table:` by default. `sql:` with explicit column list when JOINs
 are unavoidable.
 
-### Keeping Cube in sync when dbt column names change
-
-There is no automatic cross-tool check out of the box. Three layers of
-protection cover it:
-
-**Layer 1 — dbt contracts (already enforced)** All `dim_*` and `fct_*` models
-have `contract: enforced: true`. Renaming a column requires updating the
-properties YAML or the dbt build fails in CI. That required edit is the natural
-moment to check whether any Cube YAML in `src/cube/model/` references the old
-column name. Treat the contract YAML diff in PR review as the signal: if a
-column name changes there, grep `src/cube/model/` for it.
-
-**Layer 2 — Cube query-time errors (reactive)** With explicit column references
-in every `sql:` field, a broken reference produces a clear BigQuery error the
-first time someone queries that dimension — not a silent wrong result. It points
-directly to the broken field.
-
-**Layer 3 — `cube validate` in CI (target state)** Cube's `cube validate`
-command parses all YAML and dry-runs the SQL against the warehouse. Adding this
-step to the CI pipeline catches broken column references at merge time, before
-they reach production. This should be wired up as part of the infrastructure
-work — it is the right long-term answer and removes the manual grep step from PR
-review.
-
-**Analyst-facing name vs. source column name** The Cube `name:` field (what
-analysts see in the UI and API) and the `sql:` field (the BigQuery column
-reference) are independent. A dbt column rename requires updating `sql:` only —
-the analyst-facing `name:` is stable. Renaming a field in the UI requires
-updating `name:` only — no BigQuery query changes. Keep these two concerns
-separate when reviewing rename PRs.
-
-### Renaming `name:` fields when BI tools are connected
-
-Once a BI tool (Tableau, Superset, Streamlit, etc.) is connected to a Cube view,
-the `name:` field is a public API. Renaming it breaks any saved report,
-dashboard, or query that references the old name — the field silently drops or
-returns "not found".
-
-**Rule: treat view `name:` fields as stable contracts once a BI tool is
-connected. Do not rename without coordinating with BI consumers first.**
-
-Three options when a rename is unavoidable:
-
-**Option 1 — Deprecation window** Keep the old `name:` in the view alongside the
-new one temporarily. Communicate the cutover date to BI consumers, remove the
-old name after dashboards are updated.
-
-**Option 2 — Views as the stable interface (structural mitigation)** This is the
-strongest argument for the two-view pattern. Analysts connect BI tools to
-`staff_detail` / `staff_summary` views, not directly to cubes. A `name:` change
-inside the cube can be remapped in the view without touching the field name the
-BI tool sees — the view `name:` stays stable even if the underlying cube
-dimension is reorganized.
-
-**Option 3 — Cube aliases** Cube does not have a native field deprecation
-mechanism today. Until it does, Option 1 or Option 2 are the available paths.
-
-**Internal vs. external `name:` fields** Cube `name:` fields are internal — safe
-to rename freely before any BI tool connects. View `name:` fields are external
-once a downstream consumer exists — coordinate before changing. Document which
-views have active BI connections in the exposure YAML (`models/exposures/`) so
-the boundary is visible in PR review.
-
 ### Pattern 1 — Conformed cubes
 
 Thin wrappers exposing a single dbt model's columns as dimensions. No
