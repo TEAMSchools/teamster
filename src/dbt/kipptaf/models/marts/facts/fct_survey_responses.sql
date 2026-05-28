@@ -46,6 +46,9 @@ with
             question_shortname,
             response_text,
             response_value,
+
+            {{ dbt_utils.generate_surrogate_key(["survey_id", "survey_response_id"]) }}
+            as survey_submission_key,
         from general_responses
         union all
         select
@@ -55,22 +58,25 @@ with
             question_shortname,
             response_text,
             response_value,
+
+            {{ dbt_utils.generate_surrogate_key(["survey_id", "survey_response_id"]) }}
+            as survey_submission_key,
         from manager_responses
     )
 
 select
+    ar.survey_submission_key,
+
     {{
         dbt_utils.generate_surrogate_key(
-            ["survey_id", "survey_response_id", "survey_question_id"]
+            ["ar.survey_id", "ar.survey_response_id", "ar.survey_question_id"]
         )
     }} as survey_response_key,
 
-    {{ dbt_utils.generate_surrogate_key(["survey_id", "survey_response_id"]) }}
-    as survey_submission_key,
-
-    {{ dbt_utils.generate_surrogate_key(["question_shortname"]) }}
+    {{ dbt_utils.generate_surrogate_key(["ar.question_shortname"]) }}
     as survey_question_key,
 
-    response_value,
-    response_text,
-from all_responses
+    ar.response_value,
+    ar.response_text,
+from all_responses as ar
+inner join {{ ref("fct_survey_submissions") }} as fss using (survey_submission_key)
