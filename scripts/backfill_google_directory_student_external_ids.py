@@ -88,7 +88,11 @@ def patch_batch(
     patched = 0
     errors: list[tuple[str, str]] = []
 
-    def callback(request_id: str, _response, exception) -> None:
+    def callback(
+        request_id: str,
+        _response: dict | None,
+        exception: Exception | None,
+    ) -> None:
         nonlocal patched
         if exception is not None:
             errors.append((request_id, str(exception)))

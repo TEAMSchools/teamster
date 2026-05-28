@@ -1,6 +1,17 @@
 models:
   - name: rpt_google_directory__users_import
     columns:
+      - name: student_number
+        data_type: int64
+        description: >
+          PowerSchool student identifier. Populates externalIds[type='custom',
+          customType='student_number'] on new Google Workspace student accounts
+          for cross-system identity lookup.
+        data_tests:
+          - not_null:
+              config:
+                severity: error
+                where: is_create
       - name: primaryEmail
         data_type: string
       - name: orgUnitPath
@@ -25,15 +36,3 @@ models:
         data_type: string
       - name: changePasswordAtNextLogin
         data_type: boolean
-      - name: student_number
-        data_type: int64
-        description: >
-          PowerSchool student_number. Consumed by google_directory_user_create
-          to set externalIds[type='custom', customType='student_number'] on new
-          accounts; popped by google_directory_user_update before PATCH so the
-          recurring update path never touches externalIds.
-        data_tests:
-          - not_null:
-              config:
-                severity: error
-                where: is_create
