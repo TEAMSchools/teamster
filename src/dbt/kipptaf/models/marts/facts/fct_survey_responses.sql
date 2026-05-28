@@ -33,16 +33,7 @@ with
             ms.answer as response_text,
             ms.answer_value as response_value,
 
-            coalesce(
-                ms.survey_response_id,
-                concat(
-                    ms.respondent_df_employee_number,
-                    '_',
-                    ms.subject_df_employee_number,
-                    '_',
-                    ms.campaign_reporting_term
-                )
-            ) as survey_response_id,
+            ms.effective_survey_response_id as survey_response_id,
         from {{ ref("int_surveys__manager_survey_details") }} as ms
         where ms.campaign_academic_year is not null
     ),

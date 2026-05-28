@@ -7,6 +7,22 @@ models:
         data_type: string
       - name: survey_response_id
         data_type: string
+      - name: effective_survey_response_id
+        data_type: string
+        description: >-
+          Submission identifier used downstream. For live Google Forms rows,
+          equals `survey_response_id`. For historic Alchemer archive rows (which
+          have no upstream `survey_response_id`), synthesized as
+          `concat(respondent_df_employee_number, '_',
+          subject_df_employee_number, '_', campaign_reporting_term)` — the
+          natural key that uniquely identifies an archive submission. Consumed
+          by `fct_survey_submissions.historic_archive_submissions` and
+          `fct_survey_responses.manager_responses` for `survey_submission_key`
+          hashing.
+        data_tests:
+          - not_null:
+              config:
+                severity: warn
       - name: date_started
         data_type: timestamp
       - name: date_submitted
