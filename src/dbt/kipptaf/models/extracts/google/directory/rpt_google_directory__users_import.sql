@@ -1,6 +1,7 @@
 with
     students as (
         select
+            student_number,
             student_first_name as first_name,
             student_last_name as last_name,
             school_name,
@@ -73,5 +74,7 @@ select
     to_hex(sha1(student_web_password)) as `password`,
 
     if(grade_level >= 3, true, false) as `changePasswordAtNextLogin`,
+
+    student_number,
 from final
 where is_create or is_update
