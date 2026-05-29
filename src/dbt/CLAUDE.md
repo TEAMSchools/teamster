@@ -128,6 +128,13 @@ Auto-retried CI runs invoke `dbt retry`, which replays the prior run's compiled
 SQL. After fixing external state (defer relations, transient BQ errors), trigger
 a fresh `dbt build` — don't rely on the retry.
 
+## Fresh worktree needs `dbt deps`
+
+A newly-created worktree has no `dbt_packages/`. Run
+`uv run dbt deps --project-dir <worktree>/src/dbt/<project>` once before any
+`dbt build` / `test` / `clone` there — otherwise it errors with "N package(s)
+specified in packages.yml, but only 0 package(s) installed".
+
 ## Dev `--defer` for unstaged externals
 
 Dev builds depending on GCS externals (`stg_google_sheets__*` etc.) fail with
@@ -137,6 +144,18 @@ to `--project-dir`** — repo-root form silently fails with "Could not find
 manifest". The prod manifest is refreshed by `.git/hooks/post-merge` on every
 `git pull`; if stale, regenerate with
 `uv run dbt parse --target prod --project-dir <project> --target-path target/prod`.
+
+**From a worktree**, `--state` must be absolute
+(`/workspaces/teamster/src/dbt/<project>/target/prod`). The relative form
+resolves under the worktree, which has no `target/prod/` — only the main repo's
+manifest is refreshed by `post-merge`.
+
+## Multi-line SQL in YAML `data_tests:` expressions
+
+Use literal block (`|`), not folded (`>-`). trunk-fmt reflows past 80 chars and
+the folded scalar collapses the inserted newline INSIDE a quoted SQL string
+literal, producing `Unclosed string literal` at test runtime. Literal block
+preserves newlines as newlines; multi-line SQL is fine.
 
 ## `dbt clone` behavior on BigQuery
 

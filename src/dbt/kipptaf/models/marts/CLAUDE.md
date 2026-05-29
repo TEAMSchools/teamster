@@ -75,6 +75,10 @@ CI warning triage), add it to project board
 and `Driver`. Commands and `GITHUB_TOKEN=` prefix: see root CLAUDE.md → MCP
 Servers `gh project` bullets. `Status` auto-sets to Todo on add — skip.
 
+**Ops-tracked grouping**: file ONE `ops-tracked` issue per underlying source
+(one Google Sheet, one config file) — bullets per orphan bucket inside. Don't
+split per-bucket when the action is one sheet-editing session.
+
 ## Pre-merge checklist (marts PRs)
 
 Run before posting the final PR comment on any marts PR (spec, bugfix,
