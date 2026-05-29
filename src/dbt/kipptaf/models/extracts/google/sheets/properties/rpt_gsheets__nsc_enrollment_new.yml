@@ -1,6 +1,9 @@
 models:
   - name: rpt_gsheets__nsc_enrollment_new
     data_tests:
+      # (student, school, stint_num) is the true PK; (student, school,
+      # start_date) is an equivalent proxy because stint chaining guarantees
+      # chronological, non-overlapping start_dates per (student, school).
       - dbt_utils.unique_combination_of_columns:
           arguments:
             combination_of_columns:

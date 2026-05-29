@@ -21,7 +21,7 @@ with
             on e.student = n.contact_id
             and e.school = n.account_id
             and coalesce(e.actual_end_date, date(9999, 12, 31)) >= n.stint_begin
-            and e.`start_date` <= n.stint_end
+            and e.`start_date` <= coalesce(n.stint_end, date(9999, 12, 31))
     ),
 
     enrollment_latest_stint as (

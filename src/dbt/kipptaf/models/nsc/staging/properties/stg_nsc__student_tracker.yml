@@ -69,3 +69,8 @@ models:
         data_type: string
       - name: contact_id
         data_type: string
+        description: >
+          Canonical Salesforce Contact ID. NSC echoes the requester_return_field
+          all-uppercase; this column recovers the mixed-case form via
+          case-insensitive lookup against stg_kippadb__contact. Falls back to
+          the raw value (uppercase) when no contact match is found.

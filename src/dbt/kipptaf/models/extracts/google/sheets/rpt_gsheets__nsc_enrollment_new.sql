@@ -1,9 +1,11 @@
 with
     /* Anti-join against existing enrollments via date-range overlap.
        An existing enrollment "covers" a stint iff they share student + school
-       AND their date windows overlap (stint_begin <= existing_end AND
-       stint_end >= existing_start). Open-ended existing enrollments use
-       9999-12-31 as the implicit end. */
+       AND their date windows overlap. Open-ended endpoints on either side
+       use 9999-12-31 (NSC term rows may carry a NULL enrollment_end for
+       in-progress terms, propagating to stint_end). */
+    -- grain projection: every selected column is functionally determined
+    -- by the partition key; not a mask for upstream duplicates
     covered_stints as (
         select distinct n.contact_id, n.account_id, n.stint_num,
         from {{ ref("int_nsc__enrollment_stints") }} as n
@@ -12,7 +14,7 @@ with
             on n.contact_id = e.student
             and n.account_id = e.school
             and n.stint_begin <= coalesce(e.actual_end_date, date(9999, 12, 31))
-            and n.stint_end >= e.`start_date`
+            and coalesce(n.stint_end, date(9999, 12, 31)) >= e.`start_date`
     )
 
 select

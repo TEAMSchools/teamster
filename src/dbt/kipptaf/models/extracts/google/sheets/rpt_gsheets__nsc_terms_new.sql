@@ -48,8 +48,10 @@ with
             {{ ref("stg_kippadb__enrollment") }} as e
             on n.contact_id = e.student
             and n.account_id = e.school
-            and n.enrollment_begin
-            between e.`start_date` and coalesce(e.actual_end_date, date(9999, 12, 31))
+            /* Half-open: prevents a term on the shared boundary date of
+               consecutive Salesforce enrollments from matching both. */
+            and n.enrollment_begin >= e.`start_date`
+            and n.enrollment_begin < coalesce(e.actual_end_date, date(9999, 12, 31))
     ),
 
     term_with_parent as (
