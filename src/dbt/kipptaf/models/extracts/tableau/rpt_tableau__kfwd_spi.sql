@@ -3,6 +3,7 @@ with
     overgrad_award_letters_pre as (
         select
             student__external_student_id,
+            university__ipeds_id,
             award_letter__unmet_need,
             award_letter__out_of_pocket,
             award_letter__unmet_need_with_max_family_contribution,
@@ -14,7 +15,7 @@ with
         {{
             dbt_utils.deduplicate(
                 relation="overgrad_award_letters_pre",
-                partition_by="student__external_student_id",
+                partition_by="student__external_student_id, university__ipeds_id",
                 order_by="(award_letter__unmet_need is null) asc, updated_at desc",
             )
         }}
@@ -168,6 +169,7 @@ left join {{ ref("int_kippadb__enrollment_pivot") }} as ei on r.contact_id = ei.
 left join
     overgrad_award_letters as oa
     on r.contact_id = oa.student__external_student_id
+    and a.nces_id = cast(oa.university__ipeds_id as string)
 
 union all
 
@@ -256,6 +258,8 @@ left join
     on r.contact_id = a.applicant
     and a.rn_application_school = 1
 left join {{ ref("int_kippadb__enrollment_pivot") }} as ei on r.contact_id = ei.student
+left join {{ ref("stg_kippadb__account") }} as acct on a.school = acct.id
 left join
     overgrad_award_letters as oa
     on r.contact_id = oa.student__external_student_id
+    and acct.nces_id = cast(oa.university__ipeds_id as string)
