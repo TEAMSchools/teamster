@@ -46,12 +46,12 @@ school_calendars) go in `cubes/conformed/`.
     covered. `sql_table` still points at `kipptaf_marts.<warehouse_table>` — the
     warehouse table name (which retains `dim_`/`fct_`) is separate from the Cube
     cube name.
-- **Joins use cube-reference syntax** (`{dim_x.col} = {CUBE}.col`), not raw
+- **Joins use cube-reference syntax** (`{x.col} = {CUBE}.col`), not raw
   identifiers. Dim joins from facts set `relationship: many_to_one`.
 - **Avoid diamond paths.** Two join paths to the same dim → either a compound
-  join on the canonical path (see `attendance.yml` → `dim_school_calendars`) or
-  a degenerate FK with no declared join (see
-  `dim_student_enrollments.location_key`). Comment the choice.
+  join on the canonical path (see `student_attendance.yml` → `school_calendars`)
+  or a degenerate FK with no declared join (see
+  `student_enrollments.location_key`). Comment the choice.
 - **Time dimensions** must cast to `TIMESTAMP` in the dim's `sql:`; joins from
   facts cast through (`CAST({CUBE}.date_key AS TIMESTAMP)`).
 - **Hidden helper measures** prefix with `_` and set `public: false` (see
@@ -63,8 +63,7 @@ school_calendars) go in `cubes/conformed/`.
   don't list measures under `members:`.
 - **Folder member naming.** Bare for top-cube members; `<prefix>_<member>` for
   `prefix: true` joins, where `<prefix>` is the last `join_path` segment — so
-  `dim_regions_region_name` for the two-hop
-  `attendance.dim_locations.dim_regions`.
+  `regions_region_name` for the two-hop `student_attendance.locations.regions`.
 - **Branch schema validation is manual.** Cube Cloud Staging Environments don't
   auto-create from pushes. Open Cube Cloud → Data Model → Dev Mode → add branch
   by name to spin up a per-branch staging instance.
@@ -113,12 +112,11 @@ Default-deny, group-driven. Read [`cube.js`](cube.js) before modifying.
 - **`queryRewrite`** enforces three filters:
   - Strips dims/measures from student-domain cubes (via `isStudentMember`) for
     users without `cube-access-student-data`.
-  - Adds a `dim_locations` filter based on the highest-priority scope group:
-    network (no filter) → region (`region_key`) → school (`abbreviation`). No
-    scope group → empty `IN ()` filter (default deny).
+  - Adds a `locations` filter based on the highest-priority scope group: network
+    (no filter) → region (`region_key`) → school (`abbreviation`). No scope
+    group → empty `IN ()` filter (default deny).
   - For queries touching staff-domain cubes (via `isStaffMember`), injects the
-    `dim_staff.reporting_chain` segment unless the user has
-    `cube-access-staff-all`.
+    `staff.reporting_chain` segment unless the user has `cube-access-staff-all`.
 - **`isStudentMember` / `isStaffMember`.** Match via `startsWith("student")` /
   `startsWith("staff")` — no maintenance required when new cubes follow the
   naming convention above.

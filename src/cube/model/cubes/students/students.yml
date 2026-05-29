@@ -30,7 +30,7 @@ cubes:
       - name: full_name
         description: >-
           Student's full name in "Last, First, Mi." format. Matches
-          dim_staff.full_name naming.
+          staff.full_name naming.
         sql: full_name
         type: string
         public: true
@@ -91,7 +91,7 @@ cubes:
           Racial category for the student. Decoded from PowerSchool ethnicity
           code to a full category label (e.g., Black/African American, Hispanic
           or Latino, Not Hispanic or Latino, Two or More Races, White).
-          Cross-model consistency with dim_staff.race.
+          Cross-model consistency with staff.race.
         sql: race
         type: string
         public: true
