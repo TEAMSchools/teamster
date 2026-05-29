@@ -20,9 +20,6 @@ with
             s.is_replacement,
             s.student_assessment_id,
             s.canonical_assessment_id,
-            s.canonical_title,
-            s.canonical_administered_at,
-            s.canonical_grade_level_id,
 
             asr.response_type,
             asr.response_type_id,
@@ -35,6 +32,14 @@ with
 
             pb.canonical_performance_band_set_id,
 
+            if(s.is_internal_assessment, c.title, s.title) as canonical_title,
+            if(
+                s.is_internal_assessment, c.administered_date, s.administered_at
+            ) as canonical_administered_at,
+            if(
+                s.is_internal_assessment, c.grade_level_id, s.grade_level_id
+            ) as canonical_grade_level_id,
+
             if(s.date_taken < date '2000-01-01', null, s.date_taken) as date_taken,
         from {{ ref("int_assessments__scaffold") }} as s
         left join
@@ -45,6 +50,9 @@ with
             on s.assessment_id = pb.assessment_id
             and asr.response_type = pb.response_type
             and asr.response_type_id = pb.response_type_id
+        left join
+            {{ ref("int_assessments__assessments_canonical") }} as c
+            on s.canonical_assessment_id = c.canonical_assessment_id
     ),
 
     -- Per-partition tiebreak for location columns. NOT a canonical attribute —

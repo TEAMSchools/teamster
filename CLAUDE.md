@@ -78,6 +78,12 @@ file; domain specifics live in the nearest subdirectory CLAUDE.md.
   hook, `git add -A` can stage unrelated files. Subagents must name specific
   files in `git add` — never `-u`, `-A`, or `.`.
 
+- **Refactor regex sweeps include `*.md`**: a model/column rename's
+  `grep -rl --include='*.sql' --include='*.yml'` misses CLAUDE.md
+  hash-derivation examples, plan/spec docs, and inline doc cross-refs. Use
+  `--include='*.{sql,yml,md}'` (or drop `--include` entirely) for any rename
+  that changes a model or column name.
+
 - **Dispatching subagents**: Subagents do not auto-invoke skills. In the
   dispatch prompt, name the exact `Skill` tool calls the subagent must run
   before starting work (e.g. `Skill` with
@@ -119,10 +125,21 @@ file; domain specifics live in the nearest subdirectory CLAUDE.md.
 - **PR project linkage**: PRs auto-appear on project boards via issue refs
   (`Refs #N`, `Closes #N`) in the body. Do NOT `gh project item-add` a PR.
 
+- **`not_planned` closure with a "Tracked in Asana: <url>" comment = handoff to
+  Ops, not rejection.** The `TODO(#NNNN)` pointer is still live. Reopen the GH
+  issue and apply the `ops-tracked` label; it stays open until the linked Asana
+  task completes.
+
 - **Check dbt Cloud CI state before pushing fixes**: pushing cancels an
   in-progress dbt run and restarts it. Before pushing a CI-fix commit, confirm
   dbt Cloud is in terminal state; if it's still running, wait or ask the user.
   Bundle multiple CI-fix commits into one push.
+
+- **After dbt Cloud CI passes on a PR**: fetch warnings with
+  `mcp__dbt__get_job_run_error(run_id=<ci_run>, warning_only=true)` before
+  declaring done. Local relationships warnings absent from CI are stale-dev
+  `--defer` drift; ignore. CI warnings unchanged from main are pre-existing —
+  `gh search issues` for a tracker before filing.
 
 - **Python**: Always `uv run` — never bare `python`, `python3`, or
   venv-installed tools (`dbt`, `dagster`, etc.).
@@ -327,6 +344,11 @@ subcommand not on it is forbidden via Bash. Before any GitHub operation, first
 identify the `mcp__github__*` tool that handles it; only if none exists, check
 the allowlist.
 
+- **GitHub MCP write tools HTML-sanitize body text**: `issue_write`,
+  `add_issue_comment`, and `update_pull_request` silently strip `<...>` tokens
+  (e.g. `<role>`, `<col>`) — **even inside inline backticks**. Use
+  `{placeholder}` braces or a fenced code block (fenced blocks preserve `<`,
+  `<=`, `>=`). Read the stored body back and verify after writing.
 - `gh issue develop` — linked branch creation; `mcp__github__create_branch` does
   not link branches to issues.
 - `gh project item-edit --id <ITEM_ID> --project-id <PROJECT_ID> --field-id <FIELD_ID> --single-select-option-id <OPTION_ID>`
@@ -352,6 +374,13 @@ the allowlist.
   `mcp__github__add_issue_comment` posts top-level PR comments only, not thread
   replies. Use
   `gh api -X POST repos/<owner>/<repo>/pulls/<pr>/comments/<id>/replies -f body='...'`.
+- `gh api -X POST repos/<owner>/<repo>/labels -f name=... -f color=... -f description=...`
+  — no `mcp__github__*` label-create tool.
+- `gh api -X POST repos/<owner>/<repo>/issues/<n>/labels -f 'labels[]=<name>'` —
+  additive label add. `mcp__github__issue_write` with `labels` REPLACES the full
+  set; passing one label drops the rest.
+- GitHub Search API caps at 5 OR/AND/NOT operators per query (422 otherwise).
+  Loop per-term via `gh api search/issues -f q='...'` for larger searches.
 
 ### Dagster asset diagnosis
 

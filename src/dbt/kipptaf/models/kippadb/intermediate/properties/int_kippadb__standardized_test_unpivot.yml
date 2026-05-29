@@ -9,6 +9,16 @@ models:
               `date` is null or `date` >= '2000-01-01'
           config:
             severity: warn
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns:
+              - contact
+              - test_type
+              - score_type
+              - ap_course_name
+              - date
+          config:
+            severity: warn
     columns:
       - name: id
         data_type: string

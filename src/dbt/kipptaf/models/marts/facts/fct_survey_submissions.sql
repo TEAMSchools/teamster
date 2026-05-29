@@ -86,7 +86,7 @@ with
             {{ ref("int_extracts__student_enrollments") }} as enr
             on sg.respondent_email = enr.student_email
             and enr.entrydate <= date(sg.date_submitted)
-            and enr.exitdate > date(sg.date_submitted)
+            and enr.exitdate >= date(sg.date_submitted)
         where sg.survey_title = 'School Community Diagnostic Student Survey'
     ),
 
@@ -210,16 +210,7 @@ with
 
             'staff' as respondent_type,
 
-            coalesce(
-                ms.survey_response_id,
-                concat(
-                    ms.respondent_df_employee_number,
-                    '_',
-                    ms.subject_df_employee_number,
-                    '_',
-                    ms.campaign_reporting_term
-                )
-            ) as survey_response_id,
+            ms.effective_survey_response_id as survey_response_id,
         from {{ ref("int_surveys__manager_survey_details") }} as ms
         inner join
             {{ ref("stg_google_sheets__reporting__terms") }} as rt

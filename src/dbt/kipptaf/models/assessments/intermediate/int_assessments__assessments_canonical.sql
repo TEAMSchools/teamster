@@ -20,19 +20,19 @@ with
 
 select
     p.canonical_assessment_id,
-    p.canonical_title as title,
-    p.canonical_administered_at as administered_date,
+    p.title,
+    p.administered_at as administered_date,
     p.subject_area,
     p.scope,
     p.module_code,
     p.academic_year,
     p.academic_year_clean,
-    p.canonical_grade_level_id as grade_level_id,
+    p.grade_level_id,
 
-    r.regions_array,
+    coalesce(r.regions_array, []) as regions_array,
 
-    p.canonical_grade_level_id - 1 as grade_level,
+    p.grade_level_id - 1 as grade_level,
 from canonical_picks as p
-inner join
+left join
     canonical_regions as r on p.canonical_assessment_id = r.canonical_assessment_id
 where p.is_internal_assessment

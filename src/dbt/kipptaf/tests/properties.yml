@@ -1,4 +1,18 @@
 data_tests:
+  - name: test_int_surveys__manager_survey_details__terms_coverage
+    description: >-
+      Warns when int_surveys__manager_survey_details has a
+      (campaign_academic_year, campaign_reporting_term) tuple with no matching
+      (name='Manager Survey', type='SURVEY') row in
+      stg_google_sheets__reporting__terms. Surfaces Manager Survey admin-tuple
+      coverage gaps that would otherwise drop archive rows at the
+      fct_survey_submissions terms join.
+    config:
+      meta:
+        dagster:
+          ref:
+            name: int_surveys__manager_survey_details
+
   - name: test_base_powerschool__course_enrollments_no_studyear_course_overlap
     description: >-
       Within a (student, year, course) — `cc_studyear` is PowerSchool's
@@ -13,6 +27,23 @@ data_tests:
         dagster:
           ref:
             name: base_powerschool__course_enrollments
+
+  - name: dim_work_assignment_primary__no_overlapping_primary_spans
+    description: >-
+      Within a `staff_key` partition, the primary-position spans (joined from
+      `dim_work_assignment_primary` to `dim_staff_work_assignments`, filtered to
+      `is_primary_position`) must not overlap. A `lead(effective_start_date)`
+      value less than or equal to the current row's `effective_end_date` means a
+      staff member had two simultaneously-primary work assignments — which would
+      fan out any point-in-time lookup that resolves a single primary assignment
+      per staff at a date (e.g. the Cube `staff_reporting_relationships` manager
+      resolver). Guards the primary-exclusivity invariant that resolver's grain
+      depends on.
+    config:
+      meta:
+        dagster:
+          ref:
+            name: dim_work_assignment_primary
 
   - name: dim_student_iep_status__no_overlapping_spans
     description: >-
@@ -115,3 +146,18 @@ data_tests:
         dagster:
           ref:
             name: stg_kippadb__contact_note
+
+  - name: int_collegeboard__ap_unpivot__crosswalk_resolves
+    description: >-
+      Returns one row per `stg_collegeboard__ap.ap_number_ap_id` that has no
+      matching `college_board_id` in
+      `stg_google_sheets__collegeboard__ap_id_crosswalk`. Each row is an
+      unresolved CB-file student whose AP scores are dropped from
+      `int_assessments__ap_assessments`. Ops signal to add the missing IDs to
+      the crosswalk; failure rows persist in `kipptaf_dbt_test__audit` for
+      direct query.
+    config:
+      meta:
+        dagster:
+          ref:
+            name: int_collegeboard__ap_unpivot

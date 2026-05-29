@@ -113,6 +113,38 @@ select
     ca.running_max_scale_score,
 
     cast(null as string) as proficiency_level,
+
+    -- TODO(#4045): extract College Board benchmarks to a lookup table.
+    -- Section benchmarks (EBRW/Math) and Combined College-Ready totals per
+    -- rpt_tableau__college_assessment_dashboard_benchmark_calcs. ACT and
+    -- subscore rows (Math Test / Reading Test) have no benchmark; leave NULL.
+    case
+        ca.score_type
+        when 'sat_ebrw'
+        then ca.scale_score >= 480
+        when 'sat_math'
+        then ca.scale_score >= 530
+        when 'sat_total_score'
+        then ca.scale_score >= 1010
+        when 'psat10_ebrw'
+        then ca.scale_score >= 430
+        when 'psat10_math_section'
+        then ca.scale_score >= 480
+        when 'psat10_total'
+        then ca.scale_score >= 910
+        when 'psatnmsqt_ebrw'
+        then ca.scale_score >= 430
+        when 'psatnmsqt_math_section'
+        then ca.scale_score >= 480
+        when 'psatnmsqt_total'
+        then ca.scale_score >= 910
+        when 'psat89_ebrw'
+        then ca.scale_score >= 410
+        when 'psat89_math_section'
+        then ca.scale_score >= 450
+        when 'psat89_total'
+        then ca.scale_score >= 860
+    end as is_mastery,
 from college_assessments as ca
 
 union all
@@ -163,6 +195,13 @@ select
     cast(null as numeric) as running_max_scale_score,
 
     cast(null as string) as proficiency_level,
+
+    case
+        when pa.scope = 'SAT' and pa.subject_area = 'Math'
+        then pa.scale_score >= 530
+        when pa.scope = 'SAT' and pa.subject_area = 'Combined'
+        then pa.scale_score >= 1010
+    end as is_mastery,
 from practice_assessments as pa
 
 union all
@@ -214,4 +253,6 @@ select
     case
         when ap.exam_score >= 3 then 'Qualified' else 'Not Qualified'
     end as proficiency_level,
+
+    ap.exam_score >= 3 as is_mastery,
 from ap_assessments as ap
