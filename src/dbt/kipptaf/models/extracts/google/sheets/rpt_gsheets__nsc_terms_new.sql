@@ -1,49 +1,76 @@
 with
+    -- trunk-ignore(sqlfluff/ST03): referenced via dbt_utils.deduplicate below
     nsc_with_account as (
         select
             n.contact_id,
             n.enrollment_begin,
             n.enrollment_end,
             n.enrollment_status,
-            n.graduated,
-            n.two_year_four_year,
+            n.search_date,
 
             x.account_id,
-
-            /* deduplicate in case NSC sends multiple rows for the same semester */
-            row_number() over (
-                partition by n.contact_id, x.account_id, n.enrollment_begin
-                order by n.search_date desc
-            ) as rn_semester,
-
         from {{ ref("stg_nsc__student_tracker") }} as n
         inner join
             {{ ref("stg_google_sheets__kippadb__nsc_crosswalk") }} as x
             on n.college_code_branch = x.college_code_nsc
             and x.rn_college_code_nsc = 1
-        where n.record_found_y_n = 'Y'
+        where n.record_found_y_n = 'Y' and n.enrollment_begin is not null
     ),
 
-    nsc_semesters as (
+    /* NSC repeats the same term across successive search_date pulls. */
+    nsc_terms_deduped as (
+        {{
+            dbt_utils.deduplicate(
+                relation="nsc_with_account",
+                partition_by="contact_id, account_id, enrollment_begin",
+                order_by="search_date desc",
+            )
+        }}
+    ),
+
+    /* Term -> parent enrollment via date overlap. When multiple existing
+       enrollments overlap one NSC term (split stints), pick the parent with
+       the latest start_date (the most recent active enrollment at term
+       start). */
+    -- trunk-ignore(sqlfluff/ST03): referenced via dbt_utils.deduplicate below
+    term_enrollment_match as (
         select
-            contact_id,
-            account_id,
-            enrollment_begin,
-            enrollment_end,
-            enrollment_status,
-            graduated,
-            two_year_four_year,
-        from nsc_with_account
-        where rn_semester = 1
+            n.contact_id,
+            n.account_id,
+            n.enrollment_begin,
+            n.enrollment_end,
+            n.enrollment_status,
+
+            e.id as enrollment_id,
+            e.`start_date` as enrollment_start_date,
+        from nsc_terms_deduped as n
+        inner join
+            {{ ref("stg_kippadb__enrollment") }} as e
+            on n.contact_id = e.student
+            and n.account_id = e.school
+            and n.enrollment_begin
+            between e.`start_date` and coalesce(e.actual_end_date, date(9999, 12, 31))
+    ),
+
+    term_with_parent as (
+        {{
+            dbt_utils.deduplicate(
+                relation="term_enrollment_match",
+                partition_by="contact_id, account_id, enrollment_begin",
+                order_by="enrollment_start_date desc, enrollment_id",
+            )
+        }}
     )
 
 select
-    e.id as enrollment__c,
+    n.enrollment_id as enrollment__c,
     n.enrollment_begin as term_start_date__c,
     n.enrollment_end as term_end_date__c,
     /* NSC term data has a single status field; Salesforce stores it in both */
     n.enrollment_status as term_enrollment_status__c,
     n.enrollment_status as term_attending_status__c,
+
+    true as verified_by_nsc__c,
 
     case
         when extract(month from n.enrollment_begin) between 8 and 12
@@ -58,19 +85,9 @@ select
             date_field="n.enrollment_begin", start_month=7, year_source="start"
         )
     }} as year__c,
-
-    true as verified_by_nsc__c,
-
-from nsc_semesters as n
-inner join
-    {{ ref("stg_kippadb__enrollment") }} as e
-    on n.contact_id = e.student
-    and n.account_id = e.school
-    /* enrollment_begin must fall within the enrollment's active date range */
-    and n.enrollment_begin
-    between e.start_date and coalesce(e.actual_end_date, date(9999, 12, 31))
+from term_with_parent as n
 left join
     {{ ref("stg_kippadb__term") }} as t
-    on e.id = t.enrollment
+    on n.enrollment_id = t.enrollment
     and n.enrollment_begin = t.term_start_date
 where t.id is null

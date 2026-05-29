@@ -18,20 +18,25 @@ models:
         description: Salesforce Account ID of the college or university.
       - name: start_date__c
         data_type: date
-        description: Date the enrollment began (first day of the academic year).
+        description: >
+          Earliest NSC enrollment_begin in the stint (first term at the college
+          in this continuous attendance period).
       - name: actual_end_date__c
         data_type: date
-        description: Date the enrollment ended per NSC data.
+        description: >
+          Latest NSC enrollment_end in the stint (last term so far at the
+          college in this continuous attendance period).
       - name: attending_status__c
         data_type: string
         description: >
-          Current NSC enrollment status code for the most recent term of this
-          enrollment year (e.g. F = Full-time, H = Half-time).
+          NSC enrollment status code from the most recent term in the stint
+          (e.g. F = Full-time, H = Half-time).
       - name: status__c
         data_type: string
         description: >
-          Derived enrollment outcome: Graduated (any term shows graduation),
-          Withdrew (any term shows withdrawal), or Attending.
+          Stint-level outcome: Graduated (NSC reports graduation at this school
+          and this is the latest stint there), Withdrew (any term in the stint
+          shows withdrawal), or Attending.
       - name: pursuing_degree_type__c
         data_type: string
         description: >
