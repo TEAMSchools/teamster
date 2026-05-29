@@ -242,11 +242,128 @@ Included in the `staff_work_history` period intersection when primary-position
 filtering is needed at a point in time. See Pattern 3 for the optional LEFT JOIN
 pattern.
 
+**Note on point-in-time manager resolver — `staff_reporting_relationships` +
+`staff_manager`:**
+
+"Who was the manager of this teacher/observer/subject on this date?" is a
+three-table period intersection — not a single join. `staff_key` is not unique
+in `dim_staff_work_assignments` (a person can hold multiple assignments), so the
+primary assignment at date D must be resolved before the manager lookup; the
+primary flag is itself SCD2, making this a genuine period intersection:
+
+```text
+primary assignment @ D          (dim_work_assignment_primary, SCD2)
+  -> reporting relationship @ D (dim_work_assignment_reporting_relationships, SCD2)
+    -> manager_staff_key         (role FK -> dim_staff via staff_manager alias)
+```
+
+Resolver cube is `staff_reporting_relationships` (`public: false`). The `staff_`
+prefix keeps it under `queryRewrite`'s `startsWith("staff")` gate. Reference SQL
+(validated against prod, 2026-05-28 — see full design spec
+`docs/superpowers/specs/2026-05-28-staff-reporting-relationships-dim-design.md`):
+
+```yaml
+cubes:
+  - name: staff_reporting_relationships
+    public: false
+    sql: |
+      SELECT
+        swa.staff_key,
+        rr.manager_staff_key,
+        GREATEST(wap.effective_start_date, rr.effective_start_date) AS effective_start_date,
+        LEAST(wap.effective_end_date,      rr.effective_end_date)   AS effective_end_date
+      FROM kipptaf_marts.dim_work_assignment_primary wap
+      JOIN kipptaf_marts.dim_staff_work_assignments swa
+        ON wap.work_assignment_key = swa.work_assignment_key
+        AND swa.staff_key IS NOT NULL
+      JOIN kipptaf_marts.dim_work_assignment_reporting_relationships rr
+        ON rr.work_assignment_key = wap.work_assignment_key
+        AND wap.effective_start_date <= rr.effective_end_date
+        AND wap.effective_end_date   >= rr.effective_start_date
+      WHERE wap.is_primary_position
+
+    dimensions:
+      - name: staff_reporting_relationship_key
+        sql: >
+          CONCAT(
+            CAST({CUBE}.staff_key AS STRING), '|',
+            CAST({CUBE}.effective_start_date AS STRING)
+          )
+        type: string
+        primary_key: true
+
+      - name: staff_key
+        sql: staff_key
+        type: string
+        public: true
+
+      - name: manager_staff_key
+        sql: manager_staff_key
+        type: string
+        public: true
+
+      - name: effective_start_date
+        sql: CAST(effective_start_date AS TIMESTAMP)
+        type: time
+        public: true
+```
+
+**`staff_manager` role alias** inherits all `staff` dimensions; `staff_` prefix
+keeps it in the `isStaffMember` gate (see Design Decision: role-playing FK
+dimensions):
+
+```yaml
+cubes:
+  - name: staff_manager
+    extends: staff
+    public: false
+```
+
+**Per-fact join** — each staff-keyed fact joins the resolver via an inclusive
+`BETWEEN`. Substitute the fact's person FK (`teacher_staff_key`,
+`observer_staff_key`, `subject_staff_key`) and date FK (`date_key`,
+`observed_date_key`, `submitted_date_key`) as appropriate:
+
+```yaml
+joins:
+  - name: staff_reporting_relationships
+    relationship: many_to_one
+    sql: >
+      {staff_reporting_relationships.staff_key} = {CUBE}.<person_staff_key> AND
+      CAST({CUBE}.<date_key> AS TIMESTAMP)
+          BETWEEN CAST({staff_reporting_relationships.effective_start_date} AS
+      TIMESTAMP)
+          AND     CAST({staff_reporting_relationships.effective_end_date}   AS
+      TIMESTAMP)
+
+  - name: staff_manager
+    sql:
+      "{staff_manager.staff_key} =
+      {staff_reporting_relationships.manager_staff_key}"
+    relationship: many_to_one
+```
+
+`BETWEEN` is inclusive. These spans are end-dated to day-before-next-start, so
+each record date matches exactly one span. Prod-validated: zero fan-out across
+47,585 `fct_staff_observations` rows; 48 observations pre-date the teacher's
+primary/reporting span and correctly resolve to NULL manager via LEFT JOIN.
+
+**dbt guard test:**
+`tests/dim_work_assignment_primary__no_overlapping_primary_spans.sql` (merged PR
+#4067) asserts no staff has two overlapping primary spans — the invariant the
+resolver grain depends on.
+
+**Access policy note:** Views that expose `staff_manager` through the resolver
+need both `staff_*` and `staff_manager_*` prefixed PII fields in the `excludes:`
+list. `staff_reporting_relationships` adds no extra PII; `manager_staff_key` is
+a surrogate.
+
 **Note on gradebook — teacher and manager info:** Inlining
 `bridge_course_section_teachers` surfaces `teacher_staff_key` on the gradebook
-cube, enabling a join to `staff` for teacher name. Manager name is reached via a
-`staff_manager` cube (`extends: staff`) joined on `manager_staff_key` — no dbt
-model changes required. #3838 is superseded by this approach.
+cube, enabling a join to `staff` for teacher name. Manager-at-date is resolved
+via the `staff_reporting_relationships` point-in-time resolver + `staff_manager`
+alias — see the manager resolver note above. #3838 is closed; this resolver
+design supersedes the earlier direct-join approach.
 
 **Note on observations — eligible teacher denominator:** `pct_evaluated` and
 `pct_assigned_goals` require a count of eligible teachers as the denominator.
