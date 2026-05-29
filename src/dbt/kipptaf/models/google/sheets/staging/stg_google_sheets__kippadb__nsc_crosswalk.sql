@@ -4,7 +4,6 @@ with
             /* Crosswalk Google Sheet has a stale row with a leading space in
                account_id; trim defensively so overlap joins match. Source
                cleanup tracked separately. */
-            trim(account_id) as account_id,
             college_name_nsc,
             college_state_nsc,
             college_code_nsc,
@@ -12,6 +11,8 @@ with
             is_strong_oos_option,
             nces_id,
             overgrad_urm_grad_rate,
+
+            trim(account_id) as account_id,
         from {{ source("google_sheets", "src_google_sheets__kippadb__nsc_crosswalk") }}
     )
 
