@@ -166,16 +166,25 @@ only. Counts/aggregates are fine; identifiers are not.
 ## Open decisions & gates (do not block writing/implementation planning)
 
 1. **★ Go-forward number minting.** Who assigns the 10-digit `student_id` for a
-   brand-new enrollee. Options:
-   - **(a) Finalsite mints it** via an auto-generating **ID Field**
-     (`ctype: IdField`, `id_field_autogenerate: true`, `id_field_template` +
-     `id_field_counter`); the value surfaces in the contact's `id_attributes`,
-     we read it and push to Focus. Cleanest fit since Finalsite is SoR — no
-     minting logic in our pipeline. Confirm with Finalsite: counter
-     scope/uniqueness, template tokens, and whether it matches the existing
-     10-digit format.
-   - **(b) Focus auto-increments** — create without an id, capture the assigned
-     number. Unknown whether Focus can be configured to do this for our scheme.
+   brand-new enrollee. Per Finalsite's
+   [ID Generation & Sync to Third-Party Systems](https://schooladmin.zendesk.com/hc/en-us/articles/6219105734925-ID-Generation-Sync-to-Third-Party-Systems)
+   doc, Finalsite supports rule-based ID generation (incrementing numbers or
+   composite values like `LAST + FIRST + DOB`, with formatting such as leading
+   zeros), and its native API integrations use a "the SIS generates an ID and
+   sends it back to Finalsite" round-trip. Options:
+   - **(a) Finalsite mints it** via rule-based ID generation (the API exposes
+     this read-only on the `Field` object: `ctype: IdField`,
+     `id_field_autogenerate`, `id_field_template`, `id_field_counter`;
+     per-contact value in `id_attributes`). We read it and push to Focus.
+     Cleanest fit since Finalsite is SoR — no minting logic in our pipeline.
+     Confirm with Finalsite: counter scope/uniqueness, template tokens, whether
+     it matches the existing 10-digit format, and that ID-field setup is a
+     UI/admin task.
+   - **(b) Focus mints, we return it to Finalsite** — mirrors Finalsite's native
+     pattern (SIS generates the id, sends it back). But that round-trip is
+     pre-built only for Blackbaud/Veracross, **not Focus**, and it's unknown
+     whether Focus auto-increments our scheme — so we'd implement the
+     capture-and-write-back ourselves.
    - **(c) We mint** the next number in the pipeline (needs an allocation
      authority / sequence).
 
