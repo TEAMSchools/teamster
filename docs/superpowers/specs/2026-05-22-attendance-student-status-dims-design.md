@@ -12,8 +12,8 @@ dimension models that landed in dbt (PR #3985).
 ## Goals
 
 - Expose `is_ell`, `is_iep`, `iep_classification`, NJ sped codes,
-  `is_meal_eligible`, and `meal_eligibility` in both `attendance_detail` and
-  `attendance_summary` views
+  `is_meal_eligible`, and `meal_eligibility` in both `student_attendance_detail`
+  and `student_attendance_summary` views
 - Status reflects the student's classification on the specific attendance date,
   not their current status today
 - Follow existing Cube patterns: private cubes, public views, `prefix: true`
@@ -75,6 +75,6 @@ them behind `cube-access-student-data`.
 | `cubes/students/student_iep_status.yml`              | New                                                                     |
 | `cubes/students/student_meal_eligibility_status.yml` | New                                                                     |
 | `cubes/attendance/attendance.yml`                    | 3 new joins                                                             |
-| `views/attendance/attendance_detail.yml`             | Remove `dim_students.is_ell`; add 3 join paths + `meta.folders` entries |
-| `views/attendance/attendance_summary.yml`            | Same                                                                    |
+| `views/attendance/student_attendance_detail.yml`     | Remove `dim_students.is_ell`; add 3 join paths + `meta.folders` entries |
+| `views/attendance/student_attendance_summary.yml`    | Same                                                                    |
 | `cube.js`                                            | `STUDENT_CUBES` += 3 new cube names                                     |

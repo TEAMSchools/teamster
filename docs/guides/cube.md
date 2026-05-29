@@ -220,10 +220,10 @@ old name after dashboards are updated.
 
 **Option 2 — Views as the stable interface (structural mitigation)** This is the
 strongest argument for the two-view pattern. Analysts connect BI tools to
-`attendance_detail` / `attendance_summary` views, not directly to cubes. A
-`name:` change inside the cube can be remapped in the view without touching the
-field name the BI tool sees — the view `name:` stays stable even if the
-underlying cube dimension is reorganized.
+`student_attendance_detail` / `student_attendance_summary` views, not directly
+to cubes. A `name:` change inside the cube can be remapped in the view without
+touching the field name the BI tool sees — the view `name:` stays stable even if
+the underlying cube dimension is reorganized.
 
 **Option 3 — Cube aliases** Cube does not have a native field deprecation
 mechanism today. Until it does, Option 1 or Option 2 are the available paths.

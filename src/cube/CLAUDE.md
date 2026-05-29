@@ -36,9 +36,12 @@ school_calendars) go in `cubes/conformed/`.
     `staff_attrition`, `staff_observations`, `staff_work_history`).
   - **Conformed shared dims** — bare business name: `dates`, `locations`,
     `regions`, `terms`, `school_calendars`.
-  - **View names** — `<domain>_<grain>`: `attendance_detail`,
-    `attendance_summary`. The naming convention drives `queryRewrite` security
-    automatically — no `STUDENT_CUBES`/`STAFF_CUBES` lists to maintain. Adding a
+  - **View names** — student-domain views use `student_<domain>_<grain>` (e.g.
+    `student_attendance_detail`, `student_attendance_summary`); staff views use
+    `staff_<grain>` (e.g. `staff_detail`, `staff_summary`). The
+    `student_`/`staff_` prefix is required — `isStudentMember`/`isStaffMember`
+    in `queryRewrite` match on `startsWith`, so view names must mirror cube
+    naming convention for the security gate to fire at the view level. Adding a
     new student cube named `student_*` is sufficient; it is automatically
     covered. `sql_table` still points at `kipptaf_marts.<warehouse_table>` — the
     warehouse table name (which retains `dim_`/`fct_`) is separate from the Cube

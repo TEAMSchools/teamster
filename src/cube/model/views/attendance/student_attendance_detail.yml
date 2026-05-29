@@ -1,14 +1,20 @@
 views:
-  - name: attendance_summary
+  - name: student_attendance_detail
     description: >-
-      Aggregated student attendance for ADA, tardy rate, and truancy breakdowns.
-      One row per filter slice — never per student-day. ADA is always
-      SUM(attendance_value) / SUM(membership_value); never average a per-row
-      ratio. attendance_category is the coarse rollup (Present, Absent, Tardy,
-      In-School Suspension, Out-of-School Suspension); use it for GROUP BY
-      breakdowns instead of attempting to sum the boolean is_* flags. No direct
-      student identifiers — demographic dimensions are aggregate breakdowns
-      only.
+      Row-level student attendance. One row per student × school day with
+      attendance recorded. Use for drill-down, individual investigations, or
+      breakdowns that need raw codes; for ADA / truancy roll-ups, use
+      attendance_summary instead. ADA is always SUM(attendance_value) /
+      SUM(membership_value); never average a per-row ratio. attendance_value
+      (0.0–1.0) is the fractional attendance contribution; membership_value
+      (0.0–1.0) is the school's claim on the student that day (split across
+      schools if dual-enrolled); present_weight equals attendance_value but
+      tardies count 0.67. attendance_category is the coarse rollup (Present,
+      Absent, Tardy, In-School Suspension, Out-of-School Suspension);
+      attendance_code is the raw SIS code for specific drill-down. is_in_session
+      and is_membership_day come from school_calendars and are joined on
+      (date_key, student_enrollments.location_key). Contains direct student
+      identifiers — see access_policy for PII gating.
 
       Chronic absence query patterns — always use exactly one of the two: (1)
       Year-end / year-over-year: filter is_latest_record = true and group by
@@ -19,10 +25,9 @@ views:
       Omitting both overcounts; combining both is valid only when the date is
       today.
 
-      For point-in-time truancy or count-of-students snapshots, also filter to a
-      single date_day. Truancy criteria are regional: Miami uses 15+ absences in
-      a 90-day rolling window; NJ regions use projected 50+ absences for the
-      year.
+      For point-in-time truancy queries, also filter to a single date_day.
+      Truancy criteria are regional: Miami uses 15+ absences in a 90-day rolling
+      window; NJ regions use projected 50+ absences for the year.
 
     cubes:
       - join_path: student_attendance
@@ -38,8 +43,19 @@ views:
           - pct_chronically_absent
           - pct_tier_1_2
           - pct_tier_3
+          - attendance_date
+          - attendance_code
           - attendance_category
           - ada_tier
+          - attendance_value
+          - membership_value
+          - present_weight
+          - is_absent
+          - is_tardy
+          - is_ontime
+          - is_oss
+          - is_iss
+          - is_suspended
           - is_truant
           - is_chronically_absent
           - is_latest_record
@@ -52,6 +68,8 @@ views:
           - month_name
           - quarter_number
           - school_week_start_date
+          - day_of_week_name
+          - is_weekday
 
       - join_path: student_attendance.student_enrollments.locations
         prefix: true
@@ -71,15 +89,26 @@ views:
       - join_path: student_attendance.student_enrollments
         prefix: true
         includes:
+          - student_enrollment_key
           - grade_level
           - graduation_year
+          - entry_date
+          - exit_date
           - is_retained_year
 
       - join_path: student_attendance.student_enrollments.students
         prefix: true
         includes:
+          - student_key
+          - full_name
+          - birth_date
+          - lea_student_identifier
+          - state_student_identifier
+          - district_student_identifier
+          - salesforce_contact_id
           - gender_identity
           - race
+          - enrollment_status
           - is_gifted
 
       - join_path: student_attendance.student_ell_status
@@ -121,17 +150,30 @@ views:
       folders:
         - name: Attendance
           members:
+            - attendance_code
             - attendance_category
             - ada_tier
+            - attendance_value
+            - membership_value
+            - present_weight
+            - is_absent
+            - is_tardy
+            - is_ontime
+            - is_oss
+            - is_iss
+            - is_suspended
             - is_truant
             - is_chronically_absent
         - name: Date
           members:
+            - attendance_date
             - dates_date_day
             - dates_month_number
             - dates_month_name
             - dates_quarter_number
             - dates_school_week_start_date
+            - dates_day_of_week_name
+            - dates_is_weekday
         - name: Term
           members:
             - terms_academic_year
@@ -150,8 +192,16 @@ views:
             - regions_state
         - name: Student
           members:
+            - students_student_key
+            - students_full_name
+            - students_birth_date
+            - students_lea_student_identifier
+            - students_state_student_identifier
+            - students_district_student_identifier
+            - students_salesforce_contact_id
             - students_gender_identity
             - students_race
+            - students_enrollment_status
             - students_is_gifted
             - student_ell_status_is_ell
             - student_iep_status_is_iep
@@ -163,8 +213,11 @@ views:
             - student_meal_eligibility_status_meal_eligibility
         - name: Enrollment
           members:
+            - student_enrollments_student_enrollment_key
             - student_enrollments_grade_level
             - student_enrollments_graduation_year
+            - student_enrollments_entry_date
+            - student_enrollments_exit_date
             - student_enrollments_is_retained_year
         - name: Calendar
           members:
@@ -175,9 +228,16 @@ views:
             - is_latest_record
 
     access_policy:
-      # No PII tier — view contains no direct student identifiers.
-      # Demographic dimensions (race, gender_identity, etc.) are
-      # aggregate breakdowns only.
-      - group: summary-access
+      - group: detail-access
+        member_level:
+          includes: "*"
+          excludes:
+            - students_full_name
+            - students_birth_date
+            - students_lea_student_identifier
+            - students_state_student_identifier
+            - students_district_student_identifier
+            - students_salesforce_contact_id
+      - group: cube-access-student-pii
         member_level:
           includes: "*"

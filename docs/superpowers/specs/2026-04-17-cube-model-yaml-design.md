@@ -201,7 +201,7 @@ querying — without one, each employment period fans out to one row per day.
 | Student dim/fact | `students` (base), `student_<name>` (all others) | `students`, `student_enrollments`, `student_attendance`, `student_ell_status` |
 | Staff dim/fact   | `staff` (base), `staff_<name>` (all others)      | `staff`, `staff_attrition`, `staff_observations`, `staff_work_history`        |
 | Conformed dims   | bare business name                               | `dates`, `locations`, `regions`, `terms`, `school_calendars`                  |
-| Views            | `<domain>_<grain>`                               | `attendance_detail`, `attendance_summary`                                     |
+| Views            | `student_<domain>_<grain>` / `staff_<grain>`     | `student_attendance_detail`, `student_attendance_summary`, `staff_detail`     |
 
 `queryRewrite` in `cube.js` uses `isStudentMember` (`startsWith("student")`) and
 `isStaffMember` (`startsWith("staff")`) to enforce access controls. Following
