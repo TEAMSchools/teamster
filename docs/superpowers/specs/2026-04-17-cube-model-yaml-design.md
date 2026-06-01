@@ -214,16 +214,50 @@ prefix. The cube name and the table name are independent.
 ## Domain Notes
 
 **Note on student status dims (added 2026-05):** Three point-in-time SCD2 status
-dims were added to the students domain: `dim_student_ell_status`,
-`dim_student_iep_status`, and `dim_student_meal_eligibility_status`. All three
-start with `student_` and are automatically covered by `isStudentMember` in
-`cube.js`, requiring `cube-access-student-data`. Each is a plain `sql_table:`
-cube joined FROM `student_attendance` via a compound condition on
-`student_enrollment_key` and `date_key` BETWEEN `effective_date_start_key` /
-`effective_date_end_key` — `relationship: many_to_one` (many attendance rows map
-to one status span covering that date). No GREATEST/LEAST; each status dim is
-independent. They are surfaced via the attendance views where
-ELL/IEP/meal-eligibility breakdowns are a primary consumer need.
+dims expose `is_ell`, `is_iep`, `iep_classification`, NJ sped codes,
+`is_meal_eligible`, and `meal_eligibility` in both attendance views. Status
+reflects the student's classification on the specific attendance date, not their
+current status today.
+
+Cube names: `student_ell_status`, `student_iep_status`,
+`student_meal_eligibility_status` — all start with `student_` and are
+automatically covered by `isStudentMember` in `cube.js`, requiring
+`cube-access-student-data`. No `STUDENT_CUBES` entry needed.
+
+Pattern 3 (SCD2 period intersection) was considered and rejected: it applies
+when multiple SCD2 children can drift to different effective periods. The
+attendance fact has one event date per row; all three status joins anchor to the
+same `date_key`, so no period intersection is needed. Instead, three direct
+`many_to_one` joins from `student_attendance`:
+
+```yaml
+sql: >
+  {student_ell_status.student_enrollment_key} = {CUBE}.student_enrollment_key
+  AND {CUBE}.date_key >= {student_ell_status.effective_date_start_key} AND
+  {CUBE}.date_key <= {student_ell_status.effective_date_end_key}
+relationship: many_to_one
+```
+
+`many_to_one` is safe because the dbt non-overlapping-spans uniqueness tests
+guarantee at most one status row per enrollment per date. LEFT JOIN means dates
+with no matching span return NULL — treated as not ELL / not IEP / not
+meal-eligible in BI tools.
+
+New dimensions are categorical status attributes (same tier as `race`,
+`gender_identity`, `is_gifted`). No `access_policy` changes needed — they
+inherit `*` under `cube-access-student-data` and are not direct identifiers
+under FERPA.
+
+Files:
+
+| File                                                 | Change                                                                  |
+| ---------------------------------------------------- | ----------------------------------------------------------------------- |
+| `cubes/students/student_ell_status.yml`              | New                                                                     |
+| `cubes/students/student_iep_status.yml`              | New                                                                     |
+| `cubes/students/student_meal_eligibility_status.yml` | New                                                                     |
+| `cubes/attendance/student_attendance.yml`            | 3 new joins                                                             |
+| `views/attendance/student_attendance_detail.yml`     | Remove `dim_students.is_ell`; add 3 join paths + `meta.folders` entries |
+| `views/attendance/student_attendance_summary.yml`    | Same                                                                    |
 
 **Note on staffing:** `dim_staffing_positions` has no joinable ID to
 `dim_staff_work_assignments` (SmartRecruiters and ADP/Seat Tracker have no
@@ -1234,3 +1268,143 @@ access_policy:
 Row-level school scoping is enforced in `cube.js` via `queryRewrite` — not in
 the access policy. The access policy controls column visibility; `queryRewrite`
 controls row visibility for users who pass the column gate.
+
+## cube.js Changes
+
+The following changes to `src/cube/cube.js` are required alongside the YAML
+implementation. Apply them exactly as shown.
+
+### Replace STUDENT_CUBES / STAFF_CUBES lists with prefix helpers
+
+Remove the static cube name lists and replace with naming-convention-driven
+helpers. Add `withSyntheticGroups` for detail/summary view gating.
+
+Replace this block (after `nextMidnightEastern`):
+
+```javascript
+// STUDENT_CUBES: cubes that require cube-access-student-data.
+// Add cube name: here when adding a new student-data cube.
+const STUDENT_CUBES = [
+  "attendance",
+  "dim_student_ell_status",
+  "dim_student_iep_status",
+  "dim_student_meal_eligibility_status",
+];
+
+const STAFF_CUBES = [
+  "dim_staff",
+  "fct_staff_attrition",
+  "fct_staff_observations",
+];
+```
+
+With:
+
+```javascript
+// Naming convention drives security — no lists to maintain.
+// student cubes: name starts with "student" (students, student_attendance, etc.)
+// staff cubes:   name starts with "staff"   (staff, staff_attrition, etc.)
+// conformed dims: bare business name (dates, locations, regions, terms, school_calendars)
+function isStudentMember(m) {
+  return m.startsWith("student");
+}
+function isStaffMember(m) {
+  return m.startsWith("staff");
+}
+
+// Emit synthetic access groups so view access_policy blocks can gate on
+// detail vs summary independently of the specific school/region group.
+// These are NOT cached — derived fresh from the cached real groups on each
+// contextToGroups call so the cache stays clean for queryRewrite lookups.
+//
+// Tier is derived from the SAME effective scope group that queryRewrite uses
+// (network > region > school). A lower-priority detail group cannot escalate
+// access beyond what the effective scope grants.
+function withSyntheticGroups(cubeGroups) {
+  const result = [...cubeGroups];
+  const effectiveScope =
+    cubeGroups.find((g) => g.startsWith("cube-network-")) ??
+    cubeGroups.find((g) =>
+      /^cube-region-[a-z0-9][a-z0-9-]*-(?:detail|summary)$/.test(g),
+    ) ??
+    cubeGroups.find((g) =>
+      /^cube-school-[a-z0-9][a-z0-9-]*-(?:detail|summary)$/.test(g),
+    );
+  if (effectiveScope?.endsWith("-detail")) result.push("detail-access");
+  if (
+    effectiveScope?.endsWith("-detail") ||
+    effectiveScope?.endsWith("-summary")
+  )
+    result.push("summary-access");
+  return result;
+}
+```
+
+### Wrap all three `contextToGroups` return sites with `withSyntheticGroups`
+
+Three places return groups — each needs the wrapper:
+
+```javascript
+// CUBE_GROUP_MAP branch (local dev)
+return withSyntheticGroups(groups);
+
+// Cache hit branch
+return withSyntheticGroups(cached.groups);
+
+// API branch (after storing to cache)
+return withSyntheticGroups(cubeGroups);
+```
+
+### Update `queryRewrite` to use helpers instead of list iteration
+
+Replace:
+
+```javascript
+dimensions: (query.dimensions ?? []).filter(
+  (d) => !STUDENT_CUBES.some((c) => d.startsWith(c)),
+),
+measures: (query.measures ?? []).filter(
+  (m) => !STUDENT_CUBES.some((c) => m.startsWith(c)),
+),
+```
+
+With:
+
+```javascript
+dimensions: (query.dimensions ?? []).filter((d) => !isStudentMember(d)),
+measures: (query.measures ?? []).filter((m) => !isStudentMember(m)),
+```
+
+And replace:
+
+```javascript
+].some((m) => STAFF_CUBES.some((c) => m.startsWith(c)));
+```
+
+With:
+
+```javascript
+].some((m) => isStaffMember(m));
+```
+
+### Update location filter member references
+
+Three `member:` strings in `queryRewrite` reference the old `dim_` cube names.
+Update each to the unprefixed cube name:
+
+```javascript
+// region filter
+member: "locations.region_key",
+
+// school filter
+member: "locations.abbreviation",
+
+// default-deny filter
+member: "locations.abbreviation",
+```
+
+### Update `reporting_chain` segment reference
+
+```javascript
+segments: [...(query.segments ?? []), "staff.reporting_chain"],
+```
