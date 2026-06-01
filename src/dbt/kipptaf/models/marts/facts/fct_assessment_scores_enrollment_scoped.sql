@@ -1,6 +1,6 @@
 with
     -- Per `src/dbt/CLAUDE.md` hash-derivation rule: fact must re-join
-    -- int_assessments__assessments to read raw `academic_year`, since
+    -- int_assessments__assessments_members to read raw `academic_year`, since
     -- response_rollup propagates `academic_year_clean as academic_year`
     -- (+1 offset) while dim_assessment_administrations hashes the raw value.
     internal_assessments as (
@@ -24,7 +24,8 @@ with
 
             a.academic_year,
             a.module_code,
-            a.administered_date,
+
+            c.administered_date,
 
             cast(null as numeric) as scale_score,
 
@@ -32,9 +33,12 @@ with
 
             'internal' as score_source,
         from {{ ref("int_assessments__response_rollup") }} as rr
-        left join
-            {{ ref("int_assessments__assessments") }} as a
+        inner join
+            {{ ref("int_assessments__assessments_members") }} as a
             on rr.assessment_id = a.assessment_id
+        inner join
+            {{ ref("int_assessments__assessments_canonical") }} as c
+            on a.canonical_assessment_id = c.canonical_assessment_id
         where rr.is_internal_assessment
     ),
 

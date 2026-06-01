@@ -1,4 +1,16 @@
 {
+  "autoMemoryEnabled": false,
+  "enabledMcpjsonServers": ["dagster", "bigquery", "dbt"],
+  "enabledPlugins": {
+    "claude-md-management@claude-plugins-official": true,
+    "commit-commands@claude-plugins-official": true,
+    "dagster-expert@dagster": true,
+    "dbt@dbt-agent-marketplace": true,
+    "dignified-python@dagster": true,
+    "pyright-lsp@claude-plugins-official": true,
+    "security-guidance@claude-plugins-official": true,
+    "superpowers@claude-plugins-official": true
+  },
   "permissions": {
     "allow": [
       "Bash(//workspaces/teamster/.trunk/tools/trunk check --ci)",
@@ -20,6 +32,8 @@
       "mcp__bigquery__list_dataset_ids",
       "mcp__bigquery__list_table_ids",
       "mcp__bigquery__search_catalog",
+      "mcp__claude_ai_Cube__meta",
+      "mcp__cloud-run__list_services",
       "mcp__context7__query-docs",
       "mcp__context7__resolve-library-id",
       "mcp__dagster__get_asset_check_executions",
@@ -103,9 +117,7 @@
       "Skill(commit-commands:commit:*)",
       "Skill(dbt:using-dbt-for-analytics-engineering:*)",
       "Write(//workspaces/teamster/.claude/scratch/**)",
-      "Write(//workspaces/teamster/.worktrees/**)",
-      "mcp__claude_ai_Cube__meta",
-      "mcp__cloud-run__list_services"
+      "Write(//workspaces/teamster/.worktrees/**)"
     ],
     "deny": [
       "Bash(gcloud *)",
@@ -153,13 +165,8 @@
       "Read(//home/vscode/.ssh/**)",
       "Read(//proc/**)",
       "Read(/env/**)"
-    ],
-    "additionalDirectories": [
-      "/workspaces/teamster/.worktrees/**",
-      "/workspaces/teamster/.claude/scratch/**"
     ]
   },
-  "enabledMcpjsonServers": ["dagster", "bigquery", "dbt"],
   "hooks": {
     "SessionStart": [
       {
@@ -196,17 +203,6 @@
       }
     ]
   },
-  "enabledPlugins": {
-    "claude-md-management@claude-plugins-official": true,
-    "code-simplifier@claude-plugins-official": true,
-    "commit-commands@claude-plugins-official": true,
-    "dagster-expert@dagster": true,
-    "dbt@dbt-agent-marketplace": true,
-    "dignified-python@dagster": true,
-    "pyright-lsp@claude-plugins-official": true,
-    "security-guidance@claude-plugins-official": true,
-    "superpowers@claude-plugins-official": true
-  },
   "extraKnownMarketplaces": {
     "claude-plugins-official": {
       "source": {
@@ -226,6 +222,5 @@
         "repo": "dbt-labs/dbt-agent-skills"
       }
     }
-  },
-  "autoMemoryEnabled": false
+  }
 }

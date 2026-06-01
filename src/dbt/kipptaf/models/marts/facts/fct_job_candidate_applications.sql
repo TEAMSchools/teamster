@@ -58,7 +58,7 @@ select
     app.time_in_application_status_interview_phone_screen_requested,
     app.time_in_application_status_interview_phone_screen_complete,
 
-    app.application_field_phone_interview_score as phone_interview_score,
+    app.phone_interview_score,
     app.application_url as url,
 
     safe_cast(

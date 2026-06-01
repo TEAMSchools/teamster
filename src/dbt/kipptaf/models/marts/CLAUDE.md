@@ -75,6 +75,10 @@ CI warning triage), add it to project board
 and `Driver`. Commands and `GITHUB_TOKEN=` prefix: see root CLAUDE.md → MCP
 Servers `gh project` bullets. `Status` auto-sets to Todo on add — skip.
 
+**Ops-tracked grouping**: file ONE `ops-tracked` issue per underlying source
+(one Google Sheet, one config file) — bullets per orphan bucket inside. Don't
+split per-bucket when the action is one sheet-editing session.
+
 ## Pre-merge checklist (marts PRs)
 
 Run before posting the final PR comment on any marts PR (spec, bugfix,
@@ -129,6 +133,14 @@ avoid a join, the chain is probably already there — use it instead.
   (see `src/dbt/CLAUDE.md` → "Nullable surrogate keys") — otherwise
   relationships tests fail against the placeholder hash.
 
+## Hash-input joins: INNER over LEFT when scope guarantees membership
+
+When a fact/bridge joins a parent (members, canonical, dim) purely to read
+hash-input columns, and the `where` filter (`is_internal_assessment`, etc.)
+guarantees the parent row exists, use INNER JOIN. LEFT JOIN silently produces
+null hash inputs that surrogate-key into placeholder hashes — orphans surface
+only at `relationships` test runtime, not at compile.
+
 ## BigQuery reserved identifiers
 
 Columns named `name`, `type`, `text`, `order`, `role`, `rank`, `timestamp`, etc.
@@ -157,8 +169,8 @@ Pure output-alias renames don't change hashes.
 Hash inputs must be derived identically across producer and consumer.
 Intermediates may rename or transform columns (e.g. scaffold's
 `academic_year_clean` aliased as `academic_year` is +1 vs
-`int_assessments__assessments.academic_year`); the consumer must re-join the
-source-of-truth model rather than trust the matching column name.
+`int_assessments__assessments_members.academic_year`); the consumer must re-join
+the source-of-truth model rather than trust the matching column name.
 
 Before swapping the input list of any `generate_surrogate_key()` on a dim/fact,
 grep every consumer that hashes the same composition and migrate producer + all

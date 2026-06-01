@@ -56,3 +56,4 @@ select
     ) as rn_highest,
 
 from scores
+where powerschool_student_number is not null

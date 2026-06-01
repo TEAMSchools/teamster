@@ -33,6 +33,6 @@ models:
         description: >-
           For internal assessments, the `performance_band_set_id` of the row
           whose `assessment_id` equals
-          `int_assessments__assessments.canonical_assessment_id` for the same
-          (response_type, response_type_id). For non-internal assessments,
+          `int_assessments__assessments_members.canonical_assessment_id` for the
+          same (response_type, response_type_id). For non-internal assessments,
           equals `performance_band_set_id`.

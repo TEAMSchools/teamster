@@ -227,7 +227,10 @@ project.
 `Clone - Staging (Modified)` clones only `state:modified` models, not their
 parents. When CI fails on a stale staging defer table for an unmodified upstream
 (column missing after a recent merge), trigger the full `Clone - Staging` job —
-or `dbt clone --select <upstream>` against staging.
+or `dbt clone --select <upstream>` against staging. Trigger via
+`mcp__dbt__trigger_job_run` with the `Clone - Staging (On-Demand)` job ID from
+`mcp__dbt__list_jobs` (~5 min run); after success, empty-commit + push
+re-triggers Build - CI.
 
 ## Single-PR cross-project workflow
 

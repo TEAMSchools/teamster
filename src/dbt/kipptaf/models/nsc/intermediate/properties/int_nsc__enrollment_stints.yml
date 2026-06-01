@@ -1,0 +1,63 @@
+models:
+  - name: int_nsc__enrollment_stints
+    description: >
+      NSC term rows chained into one row per continuous stint at a single
+      college for a single alum. A "stint" is a sequence of NSC terms at the
+      same (contact, school) with no gap longer than 6 months between the
+      previous term's end and the next term's begin. Summer breaks (~3 months)
+      bridge; a full gap year breaks the stint.
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns:
+              - contact_id
+              - account_id
+              - stint_num
+          config:
+            severity: error
+    columns:
+      - name: contact_id
+        data_type: string
+        description: Salesforce Contact ID of the KIPP alum.
+      - name: account_id
+        data_type: string
+        description: Salesforce Account ID of the college or university.
+      - name: stint_num
+        data_type: int64
+        description: >
+          1-indexed ordinal of the stint within (contact, school), assigned in
+          chronological order. Increments when an NSC term-to-term gap exceeds 6
+          months.
+      - name: stint_begin
+        data_type: date
+        description: Earliest enrollment_begin across the stint's NSC term rows.
+      - name: stint_end
+        data_type: date
+        description: Latest enrollment_end across the stint's NSC term rows.
+      - name: any_withdrawn
+        data_type: boolean
+        description:
+          True if any NSC term in this stint has enrollment_status = 'W'.
+      - name: any_graduated
+        data_type: boolean
+        description: >
+          True when NSC reports graduation (graduated = 'Y') for this contact at
+          this school AND this stint contains the NSC graduation_date. When
+          graduation_date does not fall within any stint at the school (e.g.
+          pre-dates the NSC-tracked terms), the flag falls back to the latest
+          stint.
+      - name: current_enrollment_status
+        data_type: string
+        description: >
+          NSC enrollment_status from the most recent term in the stint (e.g. F =
+          Full-time, H = Half-time, W = Withdrew).
+      - name: current_two_year_four_year
+        data_type: string
+        description: >
+          NSC two_year_four_year classification from the most recent term in the
+          stint ('2-year' or '4-year').
+      - name: derived_status
+        data_type: string
+        description: >
+          Stint-level outcome label: 'Graduated', 'Withdrew', or 'Attending'.
+          Graduated overrides Withdrew; both override Attending.
