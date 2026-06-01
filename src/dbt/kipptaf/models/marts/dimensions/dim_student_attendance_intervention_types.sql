@@ -1,7 +1,7 @@
 with
     intervention_scaffold as (
         select
-            'Miami' as region_name,
+            'kippmiami' as _dbt_source_project,
             family_communication_reason,
 
             safe_cast(
@@ -21,7 +21,7 @@ with
         union all
 
         select
-            region_name,
+            _dbt_source_project,
             family_communication_reason,
 
             safe_cast(
@@ -39,7 +39,7 @@ with
                     'Chronic Absence: 40'
                 ]
             ) as family_communication_reason
-        cross join unnest(['Newark', 'Camden']) as region_name
+        cross join unnest(['kippnewark', 'kippcamden']) as _dbt_source_project
     ),
 
     with_business_unit as (
@@ -47,14 +47,14 @@ with
             *,
 
             case
-                region_name
-                when 'Newark'
+                _dbt_source_project
+                when 'kippnewark'
                 then 'TEAM'
-                when 'Camden'
+                when 'kippcamden'
                 then 'KCNA'
-                when 'Miami'
+                when 'kippmiami'
                 then 'KIPP_MIAMI'
-                when 'Paterson'
+                when 'kipppaterson'
                 then 'KPAT'
                 else 'KIPP_TAF'
             end as business_unit_code,
@@ -64,7 +64,7 @@ with
 select
     {{
         dbt_utils.generate_surrogate_key(
-            ["region_name", "family_communication_reason"]
+            ["_dbt_source_project", "family_communication_reason"]
         )
     }} as intervention_type_key,
 

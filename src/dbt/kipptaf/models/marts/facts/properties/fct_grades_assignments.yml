@@ -12,7 +12,7 @@ models:
       - name: grades_assignment_key
         data_type: string
         description: >-
-          Surrogate key derived from assignmentsectionid, _dbt_source_relation,
+          Surrogate key derived from assignmentsectionid, _dbt_source_project,
           and students_dcid. Primary key for this fact.
         constraints:
           - type: primary_key

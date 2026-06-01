@@ -24,6 +24,8 @@ with
             coalesce(s.isexempt, 0) as is_exempt,
             coalesce(s.ismissing, 0) as is_missing,
 
+            {{ extract_code_location("a") }} as _dbt_source_project,
+
             initcap(regexp_extract(s._dbt_source_relation, r'kipp(\w+)_')) as region,
 
             case
@@ -90,6 +92,7 @@ with
 
 select
     _dbt_source_relation,
+    _dbt_source_project,
     assignmentsectionid,
     sectionsdcid,
     assignmentid,

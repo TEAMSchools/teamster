@@ -1,7 +1,12 @@
 import json
+import logging
 import pathlib
+import types
 
+import pytest
 from dagster import build_resources
+from requests.exceptions import HTTPError
+from tenacity import wait_none
 
 from teamster.libraries.adp.workforce_now.api.resources import AdpWorkforceNowResource
 
@@ -111,3 +116,76 @@ def test_get_talent_associate_memberships():
     filepath.parent.mkdir(parents=True, exist_ok=True)
 
     json.dump(obj=data, fp=filepath.open(mode="w"))
+
+
+class _FakeResponse:
+    def __init__(self, status_code: int, json_body: dict) -> None:
+        self.status_code = status_code
+        self._json_body = json_body
+
+    def json(self) -> dict:
+        return self._json_body
+
+    def raise_for_status(self) -> None:
+        if self.status_code >= 400:
+            raise HTTPError(f"{self.status_code} Server Error", response=self)  # pyright: ignore[reportArgumentType]
+
+
+def _build_offline_resource(request_fn) -> AdpWorkforceNowResource:
+    """Instantiate the resource without the network setup_for_execution path."""
+    adp_wfn = AdpWorkforceNowResource(
+        client_id="x", client_secret="x", cert_filepath="x", key_filepath="x"
+    )
+
+    object.__setattr__(adp_wfn, "_session", types.SimpleNamespace(request=request_fn))
+    object.__setattr__(adp_wfn, "_log", logging.getLogger("test_adp_wfn"))
+
+    return adp_wfn
+
+
+def test_request_retries_on_server_error(monkeypatch: pytest.MonkeyPatch):
+    """A 5xx response is transient and must be retried.
+
+    Regression: non-429 errors were re-raised as a bare ``Exception``, which the
+    tenacity ``retry_if_exception_type`` predicate did not match, so 500s failed
+    on the first attempt instead of being retried.
+    """
+    # make tenacity backoff instant for the test
+    monkeypatch.setattr(AdpWorkforceNowResource._request.retry, "wait", wait_none())  # pyright: ignore[reportFunctionMemberAccess]
+
+    calls = {"n": 0}
+
+    def request_fn(method: str, url: str, **kwargs) -> _FakeResponse:
+        calls["n"] += 1
+        if calls["n"] < 3:
+            return _FakeResponse(500, {"status": 500, "error": "Internal Server Error"})
+        return _FakeResponse(200, {"ok": True})
+
+    adp_wfn = _build_offline_resource(request_fn)
+
+    response = adp_wfn._request(method="GET", url="https://api.adp.com/hr/v2/workers")
+
+    assert response.status_code == 200
+    assert calls["n"] == 3
+
+
+def test_request_does_not_retry_on_client_error(monkeypatch: pytest.MonkeyPatch):
+    """A non-429 4xx is deterministic: raise a specific error without retrying."""
+    from teamster.libraries.adp.workforce_now.api.resources import (
+        AdpWorkforceNowError,
+    )
+
+    monkeypatch.setattr(AdpWorkforceNowResource._request.retry, "wait", wait_none())  # pyright: ignore[reportFunctionMemberAccess]
+
+    calls = {"n": 0}
+
+    def request_fn(method: str, url: str, **kwargs) -> _FakeResponse:
+        calls["n"] += 1
+        return _FakeResponse(400, {"status": 400, "error": "Bad Request"})
+
+    adp_wfn = _build_offline_resource(request_fn)
+
+    with pytest.raises(AdpWorkforceNowError):
+        adp_wfn._request(method="GET", url="https://api.adp.com/hr/v2/workers")
+
+    assert calls["n"] == 1
