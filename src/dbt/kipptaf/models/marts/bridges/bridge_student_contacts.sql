@@ -1,5 +1,5 @@
 with
-    contacts_union as (
+    contacts_relations as (
         {{
             dbt_utils.union_relations(
                 relations=[
@@ -12,6 +12,11 @@ with
         }}
     ),
 
+    contacts_union as (
+        select ur.*, {{ extract_code_location("ur") }} as _dbt_source_project,
+        from contacts_relations as ur
+    ),
+
     students_union as (
         select _dbt_source_relation, dcid, student_number,
         from {{ ref("stg_powerschool__students") }}
@@ -20,7 +25,7 @@ with
 select
     {{ dbt_utils.generate_surrogate_key(["s.student_number"]) }} as student_key,
 
-    {{ dbt_utils.generate_surrogate_key(["c._dbt_source_relation", "c.personid"]) }}
+    {{ dbt_utils.generate_surrogate_key(["c._dbt_source_project", "c.personid"]) }}
     as student_contact_person_key,
 
     c.relationship_type,

@@ -10,18 +10,15 @@ models:
       - name: student_attendance_streak_key
         data_type: string
         description: >-
-          Surrogate key derived from streak_id and _dbt_source_relation. Primary
+          Surrogate key derived from streak_id and _dbt_source_project. Primary
           key for this fact.
         constraints:
           - type: primary_key
             warn_unsupported: false
         data_tests:
-          # TODO(#3923): restore to severity:error once Dagster has materialized
-          # the namespace-fixed int_powerschool__attendance_streak in every
-          # district prod dataset. The kipptaf mart source()s district data,
-          # which resolves to prod in dbt Cloud CI — until district prod is
-          # refreshed, CI still sees the 305 Paterson cross-branch collisions.
-          - unique
+          - unique:
+              config:
+                severity: error
           - not_null
 
       - name: student_enrollment_key

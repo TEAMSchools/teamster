@@ -12,7 +12,7 @@ with
     )
 
 select
-    {{ dbt_utils.generate_surrogate_key(["st.streak_id", "st._dbt_source_relation"]) }}
+    {{ dbt_utils.generate_surrogate_key(["st.streak_id", "st._dbt_source_project"]) }}
     as student_attendance_streak_key,
 
     {{

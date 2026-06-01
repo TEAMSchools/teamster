@@ -15,7 +15,7 @@ with
     )
 
 select
-    {{ dbt_utils.generate_surrogate_key(["c.record_id", "c._dbt_source_relation"]) }}
+    {{ dbt_utils.generate_surrogate_key(["c.record_id", "c._dbt_source_project"]) }}
     as family_communication_key,
 
     {{

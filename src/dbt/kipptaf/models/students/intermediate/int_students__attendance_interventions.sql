@@ -69,6 +69,7 @@ with
 
 select
     ada._dbt_source_relation,
+    ada._dbt_source_project,
     ada.studentid,
     ada.student_number,
     ada.academic_year,

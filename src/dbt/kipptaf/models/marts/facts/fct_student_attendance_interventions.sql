@@ -1,5 +1,5 @@
 with
-    comm_log as (
+    comm_log_deduped as (
         {{
             dbt_utils.deduplicate(
                 relation=ref("int_deanslist__comm_log"),
@@ -10,6 +10,14 @@ with
                 order_by="call_date desc",
             )
         }}
+    ),
+
+    comm_log as (
+        select
+            *,
+            {{ dbt_utils.generate_surrogate_key(["record_id", "_dbt_source_project"]) }}
+            as family_communication_key,
+        from comm_log_deduped
     )
 
 select
@@ -37,20 +45,14 @@ select
     {{
         dbt_utils.generate_surrogate_key(
             [
-                "initcap(regexp_extract(ai._dbt_source_relation, r'kipp(\\w+)_'))",
+                "ai._dbt_source_project",
                 "ai.commlog_reason",
             ]
         )
     }} as intervention_type_key,
 
     if(
-        c.record_id is not null,
-        {{
-            dbt_utils.generate_surrogate_key(
-                ["c.record_id", "c._dbt_source_relation"]
-            )
-        }},
-        cast(null as string)
+        c.record_id is not null, c.family_communication_key, cast(null as string)
     ) as family_communication_key,
 
     ai.commlog_date as date_key,
