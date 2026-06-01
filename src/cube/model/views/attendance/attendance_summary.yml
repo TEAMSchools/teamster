@@ -10,17 +10,11 @@ views:
       student identifiers — demographic dimensions are aggregate breakdowns
       only.
 
-      Chronic absence query patterns — always use exactly one of the two: (1)
-      Year-end / year-over-year: filter is_latest_record = true and group by
-      academic_year. Returns the final CA snapshot per year. Use for "CA rate in
-      2023 vs 2024 vs 2025." (2) Point-in-time: filter to a single date_day.
-      Returns CA accumulated from the start of the year through that date. Use
-      for same-point-in-year comparisons like "CA as of November 1 each year."
-      Omitting both overcounts; combining both is valid only when the date is
-      today.
-
-      For point-in-time truancy or count-of-students snapshots, also filter to a
-      single date_day. Truancy criteria are regional: Miami uses 15+ absences in
+      CA and truancy base measures default to year-end snapshots when queried
+      without an anchor — no filter required for year-over-year comparisons. For
+      a point-in-time result, add a single date_day equality filter. For
+      month-over-month or week-over-week trends, use the _month_end or _week_end
+      named measures. Truancy criteria are regional: Miami uses 15+ absences in
       a 90-day rolling window; NJ regions use projected 50+ absences for the
       year.
 
@@ -33,21 +27,44 @@ views:
           - pct_ontime
           - count_truants
           - pct_truant
+          - count_truants_year_end
+          - pct_truant_year_end
+          - count_truants_month_end
+          - pct_truant_month_end
+          - count_truants_week_end
+          - pct_truant_week_end
           - count_absent_days
           - count_chronically_absent
           - pct_chronically_absent
           - pct_tier_1_2
           - pct_tier_3
+          - count_chronically_absent_year_end
+          - pct_chronically_absent_year_end
+          - pct_tier_1_2_year_end
+          - pct_tier_3_year_end
+          - count_chronically_absent_month_end
+          - pct_chronically_absent_month_end
+          - pct_tier_1_2_month_end
+          - pct_tier_3_month_end
+          - count_chronically_absent_week_end
+          - pct_chronically_absent_week_end
+          - pct_tier_1_2_week_end
+          - pct_tier_3_week_end
           - attendance_category
           - ada_tier
           - is_truant
           - is_chronically_absent
           - is_latest_record
+          - is_month_end_record
+          - is_week_end_record
 
       - join_path: attendance.dim_dates
         prefix: true
         includes:
           - date_day
+          - academic_year
+          - academic_year_label
+          - is_current_academic_year
           - month_number
           - month_name
           - quarter_number
@@ -105,7 +122,6 @@ views:
       - join_path: attendance.dim_terms
         prefix: true
         includes:
-          - academic_year
           - semester
           - term_name
           - term_code
@@ -122,13 +138,15 @@ views:
         - name: Date
           members:
             - dim_dates_date_day
+            - dim_dates_academic_year
+            - dim_dates_academic_year_label
+            - dim_dates_is_current_academic_year
             - dim_dates_month_number
             - dim_dates_month_name
             - dim_dates_quarter_number
             - dim_dates_school_week_start_date
         - name: Term
           members:
-            - dim_terms_academic_year
             - dim_terms_semester
             - dim_terms_term_name
             - dim_terms_term_code
@@ -163,6 +181,8 @@ views:
         - name: Filter
           members:
             - is_latest_record
+            - is_month_end_record
+            - is_week_end_record
 
     access_policy:
       # No PII tier — view contains no direct student identifiers.

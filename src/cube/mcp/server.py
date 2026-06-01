@@ -234,30 +234,12 @@ mcp = FastMCP(
         "range or when you need `granularity` (day/week/month/etc.), use "
         "`timeDimensions` with `dateRange`. Putting a date in the wrong place "
         "either fails or silently drops the granularity.\n\n"
-        "Academic year convention: an academic_year value of 2025 means the "
-        "2025–26 school year (July 2025 – June 2026), not the year ending in "
-        "2025. This is the opposite of typical fiscal-year conventions where "
-        "FY2025 ends in 2025. When a user says 'this year' or 'current year', "
-        "use the academic_year value whose start year matches the current "
-        "calendar year (e.g. if today is May 2026, current academic_year = "
-        "2025). In attendance views, the academic year is exposed as "
-        "dim_terms_academic_year (sourced from the term dimension, not the "
-        "fact).\n\n"
-        "Chronic absence (CA) query patterns: count_chronically_absent and "
-        "pct_chronically_absent require exactly one of two filters — never "
-        "omit both:\n"
-        "(1) Year-end / year-over-year: filter is_latest_record = true "
-        "(operator 'equals', value true) and group by dim_terms_academic_year. "
-        "Returns "
-        "the final CA snapshot per year — last day of school for completed "
-        "years, today for the current year. Use for 'CA rate in 2023 vs 2024 "
-        "vs 2025.'\n"
-        "(2) Point-in-time: filter date_day to a single date (operator "
-        "'equals'). Returns CA accumulated from the start of that academic "
-        "year through that date. Use for same-point-in-year comparisons like "
-        "'CA as of November 1 each year.'\n"
-        "Omitting both overcounts (a student CA on 30 days is counted 30 "
-        "times). Combining both is valid only when the date equals today.\n\n"
+        "Academic year: prefer dim_dates_academic_year_label (e.g. '2025-26') "
+        "over the raw integer dim_dates_academic_year when filtering — the "
+        "label is unambiguous. Use dim_dates_is_current_academic_year = true "
+        "for 'this year' queries. The raw integer uses a start-year convention "
+        "(2025 = the 2025-26 school year) which is the opposite of typical "
+        "fiscal-year conventions.\n\n"
         "Numeric values come back as strings — cast to numeric before "
         "comparing or arithmetic. Raw `==` / `<` compare lexicographically "
         "(`'10' < '9'`).\n\n"
@@ -317,36 +299,6 @@ _meta_memory_cache: dict[str, tuple[int, dict[str, Any]]] = {}
 
 # ── Query validation ─────────────────────────────────────────────────────────
 
-_AY_MEMBERS = {
-    "attendance_summary.dim_terms_academic_year",
-    "attendance_detail.dim_terms_academic_year",
-}
-
-_CA_MEASURES = {
-    "attendance_summary.pct_chronically_absent",
-    "attendance_summary.count_chronically_absent",
-    "attendance_summary.pct_tier_1_2",
-    "attendance_summary.pct_tier_3",
-    "attendance_detail.pct_chronically_absent",
-    "attendance_detail.count_chronically_absent",
-    "attendance_detail.pct_tier_1_2",
-    "attendance_detail.pct_tier_3",
-}
-
-_DATE_DAY_MEMBERS = {
-    "attendance_summary.dim_dates_date_day",
-    "attendance_detail.dim_dates_date_day",
-}
-
-_LATEST_RECORD_MEMBERS = {
-    "attendance_summary.is_latest_record",
-    "attendance_detail.is_latest_record",
-}
-
-_AY_STRING_RE = re.compile(r"^[Aa][Yy](\d{4})$")  # "AY2025", "ay2025"
-_AY_RANGE_RE = re.compile(
-    r"^(\d{4})[–\-]\d{2,3}$"
-)  # "2025-26", "2025-026"; NOT "2025-2026"
 _AY_RANGE_4_RE = re.compile(r"^(\d{4})[–\-](\d{4})$")  # "2025-2026", "2023-2025"
 
 _QUERY_ERROR_SENTINEL = "__query_validation_error__"
@@ -361,17 +313,6 @@ def _query_error(
     return result
 
 
-def _normalise_ay_value(raw: str) -> str:
-    s = str(raw).strip()
-    m = _AY_STRING_RE.match(s)
-    if m:
-        return m.group(1)
-    m = _AY_RANGE_RE.match(s)
-    if m:
-        return m.group(1)
-    return s
-
-
 def _expand_ay_range(value: str) -> list[str] | None:
     """If value looks like 'YYYY-YYYY', return the inclusive year list. Else None."""
     m = _AY_RANGE_4_RE.match(value.strip())
@@ -383,46 +324,24 @@ def _expand_ay_range(value: str) -> list[str] | None:
     return [str(y) for y in range(start, end + 1)]
 
 
-def _rewrite_ay_filters(query: dict) -> dict:
-    """Normalise academic-year filter values ("AY2025" / "2025-26" → "2025")."""
-    filters = query.get("filters")
-    if not filters:
-        return query
-    rewritten = []
-    changed = False
-    for f in filters:
-        if f.get("member") in _AY_MEMBERS and f.get("operator") == "equals":
-            new_values = [_normalise_ay_value(v) for v in (f.get("values") or [])]
-            if new_values != (f.get("values") or []):
-                f = {**f, "values": new_values}
-                changed = True
-        rewritten.append(f)
-    if changed:
-        query = {**query, "filters": rewritten}
-    return query
-
-
 def _validate_query(query: dict[str, Any]) -> dict[str, Any]:
-    """Validate and lightly rewrite a Cube query before sending to Cube Cloud.
+    """Validate a Cube query before sending to Cube Cloud.
 
-    Returns the (possibly rewritten) query on success, or a sentinel error dict
-    that `load`/`sql` return directly to the LLM so it can fix and retry.
+    Returns the query on success, or a sentinel error dict that `load`/`sql`
+    return directly to the LLM so it can fix and retry.
 
-    Checks:
-      1. Academic-year filter values are normalised ("AY2025" → "2025", etc.).
-      2. CA measures require exactly one anchor filter — either a single
-         date_day equality filter (point-in-time) or is_latest_record = true
-         (year-end snapshot). Omitting both overcounts; more than one date pin
-         also overcounts.
+    Non-numeric AY values ("AY2024", "2025-26") are left for Cube's type
+    coercion to reject — no normalization heuristics. The one case caught here
+    is a multi-year range string ("2023-2025") which would produce a confusing
+    FLOAT64 cast error; instead we return a suggested_fix that expands it.
     """
-    query = _rewrite_ay_filters(query)
-
     # Check for accidental multi-year range in a single AY filter value, e.g.
-    # "2023-2025" instead of ["2023", "2024", "2025"]. The 4-digit suffix isn't
-    # normalised by _rewrite_ay_filters so it would reach Cube as-is and cause
-    # a BigQuery FLOAT64 cast error with no useful message.
+    # "2023-2025" instead of ["2023", "2024", "2025"].
     for f in query.get("filters", []):
-        if f.get("member") not in _AY_MEMBERS or f.get("operator") != "equals":
+        if (
+            not str(f.get("member", "")).endswith(".dim_dates_academic_year")
+            or f.get("operator") != "equals"
+        ):
             continue
         for v in f.get("values") or []:
             expanded = _expand_ay_range(str(v))
@@ -442,73 +361,6 @@ def _validate_query(query: dict[str, Any]) -> dict[str, Any]:
                 "field expands it automatically.",
                 suggested_fix=suggested,
             )
-
-    measures = set(query.get("measures", []))
-    if not (measures & _CA_MEASURES):
-        return query
-
-    filters = query.get("filters", [])
-
-    date_day_pins = [
-        f
-        for f in filters
-        if f.get("member") in _DATE_DAY_MEMBERS
-        and f.get("operator") == "equals"
-        and isinstance(f.get("values"), list)
-        and len(f["values"]) == 1
-    ]
-
-    latest_record_pins = [
-        f
-        for f in filters
-        if f.get("member") in _LATEST_RECORD_MEMBERS
-        and f.get("operator") == "equals"
-        and f.get("values") in ([True], ["true"], ["1"])
-    ]
-
-    if not date_day_pins and not latest_record_pins:
-        ca_measure = next(iter(measures & _CA_MEASURES))
-        date_day_member = ca_measure.rsplit(".", 1)[0] + ".dim_dates_date_day"
-        suggested = {
-            **query,
-            "filters": list(filters)
-            + [
-                {
-                    "member": date_day_member,
-                    "operator": "equals",
-                    "values": ["YYYY-MM-DD"],
-                },
-            ],
-        }
-        return _query_error(
-            "This query includes a chronic-absence measure "
-            "(pct_chronically_absent, count_chronically_absent, pct_tier_1_2, "
-            "or pct_tier_3) but has no CA anchor filter. Without one, a student "
-            "who is chronically absent on N days is counted N times.\n\n"
-            "Add exactly ONE of the following filters before retrying:\n\n"
-            f"  Option A — point-in-time snapshot (CA accumulated as of one date):\n"
-            f'    {{"member": "{date_day_member}",\n'
-            '     "operator": "equals", "values": ["2026-01-30"]}}\n\n'
-            "  Option B — year-end / year-over-year snapshot:\n"
-            f'    {{"member": "{ca_measure.rsplit(".", 1)[0]}.is_latest_record",\n'
-            '     "operator": "equals", "values": [true]}}\n\n'
-            "The suggested_fix field adds an Option A stub — fill in the real date.",
-            suggested_fix=suggested,
-        )
-
-    if len(date_day_pins) > 1:
-        sorted_pins = sorted(date_day_pins, key=lambda f: f["values"][0])
-        dates = [f["values"][0] for f in sorted_pins]
-        other_filters = [f for f in filters if f not in date_day_pins]
-        suggested = {**query, "filters": other_filters + [sorted_pins[-1]]}
-        return _query_error(
-            f"Found {len(date_day_pins)} date_day equality filters "
-            f"({', '.join(dates)}). CA point-in-time requires exactly ONE date "
-            "— multiple dates overcount across the window.\n\n"
-            f"The suggested_fix retains the most recent date ({sorted_pins[-1]['values'][0]}) and "
-            "drops the others — adjust if a different date is intended.",
-            suggested_fix=suggested,
-        )
 
     return query
 

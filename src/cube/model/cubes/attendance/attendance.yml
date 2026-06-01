@@ -187,6 +187,27 @@ cubes:
         type: string
         public: true
 
+      - name: is_month_end_record
+        description: >-
+          TRUE on the last full membership day of each calendar month per
+          student enrollment. Use with timeDimensions granularity "month" for
+          month-over-month CA trends. Prefer count_chronically_absent_month_end
+          over the base measure when trending by month.
+        sql: is_month_end_record
+        type: boolean
+        public: true
+
+      - name: is_week_end_record
+        description: >-
+          TRUE on the last full membership day of each calendar week
+          (Monday–Sunday) per student enrollment. Use with timeDimensions
+          granularity "week" for week-over-week CA trends. Correctly handles
+          shortened weeks. Prefer count_chronically_absent_week_end over the
+          base measure when trending by week.
+        sql: is_week_end_record
+        type: boolean
+        public: true
+
       - name: is_latest_record
         description: >-
           TRUE on the most recent attendance row per student enrollment
@@ -429,6 +450,375 @@ cubes:
           year-end / year-over-year, or filter to a single date_key for
           point-in-time. Omitting both overcounts.
         sql: "1.0 * {_count_tier_3} / NULLIF({_count_ca_eligible_students}, 0)"
+        type: number
+        format: percent
+        public: true
+
+      # ── Year-end named measures ───────────────────────────────────────────
+      # is_latest_record baked in — safe for year-over-year without an anchor
+      # filter. No queryRewrite injection needed.
+
+      - name: _count_ca_eligible_students_year_end
+        sql: student_enrollment_key
+        type: count_distinct
+        public: false
+        filters:
+          - sql: "{CUBE}.membership_value = 1"
+          - sql: "{CUBE}.is_latest_record = true"
+          - sql: >-
+              {dim_students.enrollment_status} != 'Transferred Out' OR NOT
+              {dim_dates.is_current_academic_year}
+
+      - name: _count_tier_1_2_year_end
+        sql: student_enrollment_key
+        type: count_distinct
+        public: false
+        filters:
+          - sql: "{CUBE}.ada_tier IN ('Tier 1', 'Tier 2')"
+          - sql: "{CUBE}.membership_value = 1"
+          - sql: "{CUBE}.is_latest_record = true"
+          - sql: >-
+              {dim_students.enrollment_status} != 'Transferred Out' OR NOT
+              {dim_dates.is_current_academic_year}
+
+      - name: _count_tier_3_year_end
+        sql: student_enrollment_key
+        type: count_distinct
+        public: false
+        filters:
+          - sql: "{CUBE}.ada_tier = 'Tier 3'"
+          - sql: "{CUBE}.membership_value = 1"
+          - sql: "{CUBE}.is_latest_record = true"
+          - sql: >-
+              {dim_students.enrollment_status} != 'Transferred Out' OR NOT
+              {dim_dates.is_current_academic_year}
+
+      - name: count_chronically_absent_year_end
+        description: >-
+          Year-end chronic absence count — students with cumulative ADA < 90% at
+          the final snapshot of each academic year (last school day for
+          completed years, today for the current year). Safe for year-over-year
+          comparisons without an anchor filter.
+        sql: student_enrollment_key
+        type: count_distinct
+        public: true
+        filters:
+          - sql: "{CUBE}.is_chronically_absent = true"
+          - sql: "{CUBE}.membership_value = 1"
+          - sql: "{CUBE}.is_latest_record = true"
+          - sql: >-
+              {dim_students.enrollment_status} != 'Transferred Out' OR NOT
+              {dim_dates.is_current_academic_year}
+
+      - name: pct_chronically_absent_year_end
+        description: >-
+          Year-end chronic absence rate — count_chronically_absent_year_end /
+          eligible students at year-end. Safe for year-over-year comparisons
+          without an anchor filter.
+        sql: >-
+          1.0 * {count_chronically_absent_year_end} /
+          NULLIF({_count_ca_eligible_students_year_end}, 0)
+        type: number
+        format: percent
+        public: true
+
+      - name: pct_tier_1_2_year_end
+        description: >-
+          Year-end percentage of CA-eligible students with cumulative ADA ≥ 90%
+          (Tier 1 or Tier 2). Safe for year-over-year comparisons without an
+          anchor filter.
+        sql: >-
+          1.0 * {_count_tier_1_2_year_end} /
+          NULLIF({_count_ca_eligible_students_year_end}, 0)
+        type: number
+        format: percent
+        public: true
+
+      - name: pct_tier_3_year_end
+        description: >-
+          Year-end percentage of CA-eligible students with cumulative ADA 80–89%
+          (Tier 3). Safe for year-over-year comparisons without an anchor
+          filter.
+        sql: >-
+          1.0 * {_count_tier_3_year_end} /
+          NULLIF({_count_ca_eligible_students_year_end}, 0)
+        type: number
+        format: percent
+        public: true
+
+      # ── Month-end named measures ──────────────────────────────────────────
+      # is_month_end_record baked in — use with timeDimensions granularity
+      # "month" for month-over-month CA trends.
+
+      - name: _count_ca_eligible_students_month_end
+        sql: student_enrollment_key
+        type: count_distinct
+        public: false
+        filters:
+          - sql: "{CUBE}.membership_value = 1"
+          - sql: "{CUBE}.is_month_end_record = true"
+          - sql: >-
+              {dim_students.enrollment_status} != 'Transferred Out' OR NOT
+              {dim_dates.is_current_academic_year}
+
+      - name: _count_tier_1_2_month_end
+        sql: student_enrollment_key
+        type: count_distinct
+        public: false
+        filters:
+          - sql: "{CUBE}.ada_tier IN ('Tier 1', 'Tier 2')"
+          - sql: "{CUBE}.membership_value = 1"
+          - sql: "{CUBE}.is_month_end_record = true"
+          - sql: >-
+              {dim_students.enrollment_status} != 'Transferred Out' OR NOT
+              {dim_dates.is_current_academic_year}
+
+      - name: _count_tier_3_month_end
+        sql: student_enrollment_key
+        type: count_distinct
+        public: false
+        filters:
+          - sql: "{CUBE}.ada_tier = 'Tier 3'"
+          - sql: "{CUBE}.membership_value = 1"
+          - sql: "{CUBE}.is_month_end_record = true"
+          - sql: >-
+              {dim_students.enrollment_status} != 'Transferred Out' OR NOT
+              {dim_dates.is_current_academic_year}
+
+      - name: count_chronically_absent_month_end
+        description: >-
+          Month-end chronic absence count — students with cumulative ADA < 90%
+          as of the last school day of each calendar month. Use with
+          timeDimensions granularity "month" for month-over-month CA trends.
+        sql: student_enrollment_key
+        type: count_distinct
+        public: true
+        filters:
+          - sql: "{CUBE}.is_chronically_absent = true"
+          - sql: "{CUBE}.membership_value = 1"
+          - sql: "{CUBE}.is_month_end_record = true"
+          - sql: >-
+              {dim_students.enrollment_status} != 'Transferred Out' OR NOT
+              {dim_dates.is_current_academic_year}
+
+      - name: pct_chronically_absent_month_end
+        description: >-
+          Month-end chronic absence rate — count_chronically_absent_month_end /
+          eligible students at month-end. Use with timeDimensions granularity
+          "month" for month-over-month CA trends.
+        sql: >-
+          1.0 * {count_chronically_absent_month_end} /
+          NULLIF({_count_ca_eligible_students_month_end}, 0)
+        type: number
+        format: percent
+        public: true
+
+      - name: pct_tier_1_2_month_end
+        description: >-
+          Month-end percentage of CA-eligible students with cumulative ADA ≥ 90%
+          (Tier 1 or Tier 2). Use with timeDimensions granularity "month".
+        sql: >-
+          1.0 * {_count_tier_1_2_month_end} /
+          NULLIF({_count_ca_eligible_students_month_end}, 0)
+        type: number
+        format: percent
+        public: true
+
+      - name: pct_tier_3_month_end
+        description: >-
+          Month-end percentage of CA-eligible students with cumulative ADA
+          80–89% (Tier 3). Use with timeDimensions granularity "month".
+        sql: >-
+          1.0 * {_count_tier_3_month_end} /
+          NULLIF({_count_ca_eligible_students_month_end}, 0)
+        type: number
+        format: percent
+        public: true
+
+      # ── Week-end named measures ───────────────────────────────────────────
+      # is_week_end_record baked in — use with timeDimensions granularity
+      # "week" for week-over-week CA trends.
+
+      - name: _count_ca_eligible_students_week_end
+        sql: student_enrollment_key
+        type: count_distinct
+        public: false
+        filters:
+          - sql: "{CUBE}.membership_value = 1"
+          - sql: "{CUBE}.is_week_end_record = true"
+          - sql: >-
+              {dim_students.enrollment_status} != 'Transferred Out' OR NOT
+              {dim_dates.is_current_academic_year}
+
+      - name: _count_tier_1_2_week_end
+        sql: student_enrollment_key
+        type: count_distinct
+        public: false
+        filters:
+          - sql: "{CUBE}.ada_tier IN ('Tier 1', 'Tier 2')"
+          - sql: "{CUBE}.membership_value = 1"
+          - sql: "{CUBE}.is_week_end_record = true"
+          - sql: >-
+              {dim_students.enrollment_status} != 'Transferred Out' OR NOT
+              {dim_dates.is_current_academic_year}
+
+      - name: _count_tier_3_week_end
+        sql: student_enrollment_key
+        type: count_distinct
+        public: false
+        filters:
+          - sql: "{CUBE}.ada_tier = 'Tier 3'"
+          - sql: "{CUBE}.membership_value = 1"
+          - sql: "{CUBE}.is_week_end_record = true"
+          - sql: >-
+              {dim_students.enrollment_status} != 'Transferred Out' OR NOT
+              {dim_dates.is_current_academic_year}
+
+      - name: count_chronically_absent_week_end
+        description: >-
+          Week-end chronic absence count — students with cumulative ADA < 90% as
+          of the last school day of each calendar week. Use with timeDimensions
+          granularity "week" for week-over-week CA trends. Handles shortened
+          weeks (e.g. last school day is Wednesday).
+        sql: student_enrollment_key
+        type: count_distinct
+        public: true
+        filters:
+          - sql: "{CUBE}.is_chronically_absent = true"
+          - sql: "{CUBE}.membership_value = 1"
+          - sql: "{CUBE}.is_week_end_record = true"
+          - sql: >-
+              {dim_students.enrollment_status} != 'Transferred Out' OR NOT
+              {dim_dates.is_current_academic_year}
+
+      - name: pct_chronically_absent_week_end
+        description: >-
+          Week-end chronic absence rate — count_chronically_absent_week_end /
+          eligible students at week-end. Use with timeDimensions granularity
+          "week" for week-over-week CA trends.
+        sql: >-
+          1.0 * {count_chronically_absent_week_end} /
+          NULLIF({_count_ca_eligible_students_week_end}, 0)
+        type: number
+        format: percent
+        public: true
+
+      - name: pct_tier_1_2_week_end
+        description: >-
+          Week-end percentage of CA-eligible students with cumulative ADA ≥ 90%
+          (Tier 1 or Tier 2). Use with timeDimensions granularity "week".
+        sql: >-
+          1.0 * {_count_tier_1_2_week_end} /
+          NULLIF({_count_ca_eligible_students_week_end}, 0)
+        type: number
+        format: percent
+        public: true
+
+      - name: pct_tier_3_week_end
+        description: >-
+          Week-end percentage of CA-eligible students with cumulative ADA 80–89%
+          (Tier 3). Use with timeDimensions granularity "week".
+        sql: >-
+          1.0 * {_count_tier_3_week_end} /
+          NULLIF({_count_ca_eligible_students_week_end}, 0)
+        type: number
+        format: percent
+        public: true
+
+      # ── Truancy named measures ────────────────────────────────────────────
+      # is_truant is a daily cumulative flag — same grain as is_chronically_absent.
+      # Named variants bake in the anchor so no explicit filter is required.
+
+      - name: _count_students_year_end
+        sql: student_enrollment_key
+        type: count_distinct
+        public: false
+        filters:
+          - sql: "{CUBE}.membership_value > 0"
+          - sql: "{CUBE}.is_latest_record = true"
+
+      - name: count_truants_year_end
+        description: >-
+          Year-end truancy count — students meeting truancy criteria at the
+          final snapshot of each academic year. Safe for year-over-year
+          comparisons without an anchor filter.
+        sql: student_enrollment_key
+        type: count_distinct
+        public: true
+        filters:
+          - sql: "{CUBE}.is_truant = true"
+          - sql: "{CUBE}.membership_value > 0"
+          - sql: "{CUBE}.is_latest_record = true"
+
+      - name: pct_truant_year_end
+        description: >-
+          Year-end truancy rate — count_truants_year_end / eligible students at
+          year-end.
+        sql: >-
+          1.0 * {count_truants_year_end} / NULLIF({_count_students_year_end}, 0)
+        type: number
+        format: percent
+        public: true
+
+      - name: _count_students_month_end
+        sql: student_enrollment_key
+        type: count_distinct
+        public: false
+        filters:
+          - sql: "{CUBE}.membership_value > 0"
+          - sql: "{CUBE}.is_month_end_record = true"
+
+      - name: count_truants_month_end
+        description: >-
+          Month-end truancy count — students meeting truancy criteria as of the
+          last school day of each calendar month. Use with timeDimensions
+          granularity "month" for month-over-month truancy trends.
+        sql: student_enrollment_key
+        type: count_distinct
+        public: true
+        filters:
+          - sql: "{CUBE}.is_truant = true"
+          - sql: "{CUBE}.membership_value > 0"
+          - sql: "{CUBE}.is_month_end_record = true"
+
+      - name: pct_truant_month_end
+        description: >-
+          Month-end truancy rate — count_truants_month_end / eligible students
+          at month-end. Use with timeDimensions granularity "month".
+        sql: >-
+          1.0 * {count_truants_month_end} / NULLIF({_count_students_month_end},
+          0)
+        type: number
+        format: percent
+        public: true
+
+      - name: _count_students_week_end
+        sql: student_enrollment_key
+        type: count_distinct
+        public: false
+        filters:
+          - sql: "{CUBE}.membership_value > 0"
+          - sql: "{CUBE}.is_week_end_record = true"
+
+      - name: count_truants_week_end
+        description: >-
+          Week-end truancy count — students meeting truancy criteria as of the
+          last school day of each calendar week. Use with timeDimensions
+          granularity "week" for week-over-week truancy trends.
+        sql: student_enrollment_key
+        type: count_distinct
+        public: true
+        filters:
+          - sql: "{CUBE}.is_truant = true"
+          - sql: "{CUBE}.membership_value > 0"
+          - sql: "{CUBE}.is_week_end_record = true"
+
+      - name: pct_truant_week_end
+        description: >-
+          Week-end truancy rate — count_truants_week_end / eligible students at
+          week-end. Use with timeDimensions granularity "week".
+        sql: >-
+          1.0 * {count_truants_week_end} / NULLIF({_count_students_week_end}, 0)
         type: number
         format: percent
         public: true

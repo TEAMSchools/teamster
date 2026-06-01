@@ -42,6 +42,22 @@ select
         )
     }} = {{ var("current_academic_year") }} as is_current_academic_year,
 
+    format(
+        '%d-%02d',
+        {{
+            date_to_fiscal_year(
+                date_field="date_value", start_month=7, year_source="start"
+            )
+        }},
+        mod(
+            {{
+                date_to_fiscal_year(
+                    date_field="date_value", start_month=7, year_source="start"
+                )
+            }} + 1, 100
+        )
+    ) as academic_year_label,
+
     date_trunc(date_value, week) as calendar_week_start_date,
     -- date_add can overflow for dates in the last week of 9999; cap days added
     date_add(
