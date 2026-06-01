@@ -148,17 +148,19 @@ with
             end as njsla_performance_band_group_label,
 
             case
-                when u.testperformancelevel_text = 'Did Not Yet Meet'
+                when u.testperformancelevel_text = 'Did Not Yet Meet Expectations'
                 then 'Lvl 1'
-                when u.testperformancelevel_text = 'Partially Met'
+                when u.testperformancelevel_text = 'Partially Met Expectations'
                 then 'Lvl 2'
                 when
                     u.testperformancelevel_text
-                    in ('Approached', 'Not Yet Graduation Ready')
+                    in ('Approached Expectations', 'Not Yet Graduation Ready')
                 then 'Lvl 3'
-                when u.testperformancelevel_text in ('Met', 'Graduation Ready')
+                when
+                    u.testperformancelevel_text
+                    in ('Met Expectations', 'Graduation Ready')
                 then 'Lvl 4'
-                when u.testperformancelevel_text = 'Exceeded'
+                when u.testperformancelevel_text = 'Exceeded Expectations'
                 then 'Lvl 5'
             end as aligned_performance_band_group,
 

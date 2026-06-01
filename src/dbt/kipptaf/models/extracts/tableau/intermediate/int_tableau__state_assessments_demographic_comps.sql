@@ -56,13 +56,13 @@ with
 
     test_code_metadata as (
         select
-            aligned_level_test_code,
-            any_value(school_level) as school_level,
+            aligned_test_code,
+            school_level,
             any_value(grade_range_band) as grade_range_band,
             any_value(discipline) as discipline,
 
         from {{ ref("stg_google_sheets__state_test_comparison_demographics") }}
-        group by aligned_level_test_code
+        group by aligned_test_code, school_level
     ),
 
     scores as (
@@ -82,6 +82,8 @@ with
 
             a.aligned_aggregate_ethnicity as aggregate_ethnicity,
             a.aligned_iep_status as iep_status,
+
+            e.school_level,
 
             if(
                 e.lunch_status in ('F', 'R'),
@@ -144,6 +146,8 @@ with
                 'Students With Disabilities',
                 'Students Without Disabilities'
             ) as iep_status,
+
+            e.school_level,
 
             if(
                 e.lunch_status in ('F', 'R'),
@@ -212,6 +216,8 @@ with
                 'Students With Disabilities',
                 'Students Without Disabilities'
             ) as iep_status,
+
+            e.school_level,
 
             if(
                 e.lunch_status in ('F', 'R'),
@@ -301,7 +307,10 @@ select
     any_value(m.discipline) as discipline,
 
 from scores as s
-left join test_code_metadata as m on s.test_code = m.aligned_level_test_code
+left join
+    test_code_metadata as m
+    on s.test_code = m.aligned_test_code
+    and s.school_level = m.school_level
 group by
     grouping sets (
         {# Total (all focus dims rolled up) — with and without region #}

@@ -88,15 +88,16 @@ select
     end as njsla_performance_band_group_label,
 
     case
-        when performance_level = 'Did Not Yet Meet'
+        when performance_level = 'Did Not Yet Meet Expectations'
         then 'Lvl 1'
-        when performance_level = 'Partially Met'
+        when performance_level = 'Partially Met Expectations'
         then 'Lvl 2'
-        when performance_level in ('Approached', 'Not Yet Graduation Ready')
+        when
+            performance_level in ('Approached Expectations', 'Not Yet Graduation Ready')
         then 'Lvl 3'
-        when performance_level in ('Met', 'Graduation Ready')
+        when performance_level in ('Met Expectations', 'Graduation Ready')
         then 'Lvl 4'
-        when performance_level = 'Exceeded'
+        when performance_level = 'Exceeded Expectations'
         then 'Lvl 5'
     end as aligned_performance_band_group,
 

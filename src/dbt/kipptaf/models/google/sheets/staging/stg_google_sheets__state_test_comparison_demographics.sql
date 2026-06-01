@@ -57,6 +57,7 @@ with
             safe_divide(
                 sum(percent_proficient * total_students), sum(total_students)
             ) as percent_proficient,
+
             sum(total_students) as total_students,
 
         from
