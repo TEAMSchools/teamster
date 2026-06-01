@@ -602,7 +602,8 @@ inner join
     on a.academic_year = e.academic_year
     and a.state_id = e.state_studentnumber
     and {{ union_dataset_join_clause(left_alias="a", right_alias="e") }}
-    and a.academic_year = {{ var("current_academic_year") - 1 }}
+    -- 2024: first year we track preliminary scores for comparison
+    and a.academic_year >= 2024
     and a.results_type = 'Preliminary'
     and e.rn_year = 1
     and e.grade_level > 2
