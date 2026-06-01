@@ -4,8 +4,7 @@ with
             dbt_utils.deduplicate(
                 relation=ref("int_deanslist__comm_log"),
                 partition_by=(
-                    "student_school_id, academic_year, reason,"
-                    " _dbt_source_relation"
+                    "student_school_id, academic_year, reason," " _dbt_source_project"
                 ),
                 order_by="call_date desc",
             )
@@ -71,11 +70,11 @@ inner join
     {{ ref("int_powerschool__student_enrollment_union") }} as enr
     on ai.student_number = enr.student_number
     and ai.academic_year = enr.academic_year
-    and {{ union_dataset_join_clause(left_alias="ai", right_alias="enr") }}
+    and ai._dbt_source_project = enr._dbt_source_project
     and enr.rn_year = 1
 left join
     comm_log as c
     on ai.student_number = c.student_school_id
     and ai.academic_year = c.academic_year
     and ai.commlog_reason = c.reason
-    and {{ union_dataset_join_clause(left_alias="ai", right_alias="c") }}
+    and ai._dbt_source_project = c._dbt_source_project

@@ -24,7 +24,7 @@ with
         {{
             dbt_utils.deduplicate(
                 relation=ref("int_powerschool__contacts"),
-                partition_by="_dbt_source_relation, personid",
+                partition_by="_dbt_source_project, personid",
                 order_by="contactpriorityorder asc",
             )
         }}
