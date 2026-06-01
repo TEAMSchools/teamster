@@ -1,15 +1,22 @@
 with
-    comm_log as (
+    comm_log_deduped as (
         {{
             dbt_utils.deduplicate(
                 relation=ref("int_deanslist__comm_log"),
                 partition_by=(
-                    "student_school_id, academic_year, reason,"
-                    " _dbt_source_relation"
+                    "student_school_id, academic_year, reason," " _dbt_source_project"
                 ),
                 order_by="call_date desc",
             )
         }}
+    ),
+
+    comm_log as (
+        select
+            *,
+            {{ dbt_utils.generate_surrogate_key(["record_id", "_dbt_source_project"]) }}
+            as family_communication_key,
+        from comm_log_deduped
     )
 
 select
@@ -37,20 +44,14 @@ select
     {{
         dbt_utils.generate_surrogate_key(
             [
-                "initcap(regexp_extract(ai._dbt_source_relation, r'kipp(\\w+)_'))",
+                "ai._dbt_source_project",
                 "ai.commlog_reason",
             ]
         )
     }} as intervention_type_key,
 
     if(
-        c.record_id is not null,
-        {{
-            dbt_utils.generate_surrogate_key(
-                ["c.record_id", "c._dbt_source_relation"]
-            )
-        }},
-        cast(null as string)
+        c.record_id is not null, c.family_communication_key, cast(null as string)
     ) as family_communication_key,
 
     ai.commlog_date as date_key,
@@ -69,11 +70,11 @@ inner join
     {{ ref("int_powerschool__student_enrollment_union") }} as enr
     on ai.student_number = enr.student_number
     and ai.academic_year = enr.academic_year
-    and {{ union_dataset_join_clause(left_alias="ai", right_alias="enr") }}
+    and ai._dbt_source_project = enr._dbt_source_project
     and enr.rn_year = 1
 left join
     comm_log as c
     on ai.student_number = c.student_school_id
     and ai.academic_year = c.academic_year
     and ai.commlog_reason = c.reason
-    and {{ union_dataset_join_clause(left_alias="ai", right_alias="c") }}
+    and ai._dbt_source_project = c._dbt_source_project
