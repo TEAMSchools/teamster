@@ -104,17 +104,15 @@ models:
       - name: award_letter__unmet_need
         data_type: float64
         description: >
-          Overgrad award letter unmet need matched to the school on this row
-          via IPEDS/NCES ID. When multiple Overgrad records exist for the same
-          student-school pair, the non-null unmet need record is preferred,
-          then most recently updated. Null when no matching Overgrad record
-          exists.
+          Overgrad award letter unmet need matched to the school on this row via
+          IPEDS/NCES ID. When multiple Overgrad records exist for the same
+          student-school pair, the non-null unmet need record is preferred, then
+          most recently updated. Null when no matching Overgrad record exists.
       - name: award_letter__out_of_pocket
         data_type: float64
         description: >
-          Overgrad award letter out-of-pocket cost matched to the school on
-          this row via IPEDS/NCES ID. Null when no matching Overgrad record
-          exists.
+          Overgrad award letter out-of-pocket cost matched to the school on this
+          row via IPEDS/NCES ID. Null when no matching Overgrad record exists.
       - name: award_letter__unmet_need_with_max_family_contribution
         data_type: float64
         description: >
