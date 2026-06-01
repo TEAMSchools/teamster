@@ -3,7 +3,6 @@
   "enabledMcpjsonServers": ["dagster", "bigquery", "dbt"],
   "enabledPlugins": {
     "claude-md-management@claude-plugins-official": true,
-    "code-simplifier@claude-plugins-official": true,
     "commit-commands@claude-plugins-official": true,
     "dagster-expert@dagster": true,
     "dbt@dbt-agent-marketplace": true,
