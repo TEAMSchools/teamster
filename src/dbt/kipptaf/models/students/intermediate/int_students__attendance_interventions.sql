@@ -1,7 +1,7 @@
 with
     intervention_scaffold as (
         select
-            'kippmiami_deanslist' as _dbt_source_relation,
+            'kippmiami' as _dbt_source_project,
 
             commlog_reason,
 
@@ -22,7 +22,7 @@ with
         union all
 
         select
-            _dbt_source_relation,
+            _dbt_source_project,
             commlog_reason,
 
             safe_cast(
@@ -40,10 +40,7 @@ with
                     'Chronic Absence: 40'
                 ]
             ) as commlog_reason
-        cross join
-            unnest(
-                ['kippnewark_deanslist', 'kippcamden_deanslist']
-            ) as _dbt_source_relation
+        cross join unnest(['kippnewark', 'kippcamden']) as _dbt_source_project
     ),
 
     comm_log as (
@@ -98,20 +95,20 @@ select
 from {{ ref("int_powerschool__ada") }} as ada
 inner join
     intervention_scaffold as sc
-    on {{ union_dataset_join_clause(left_alias="ada", right_alias="sc") }}
+    on ada._dbt_source_project = sc._dbt_source_project
     and ada.days_absent_unexcused >= sc.absence_threshold
 left join
     comm_log as c
     on ada.student_number = c.student_school_id
     and ada.academic_year = c.academic_year
     and (c.call_status = 'Completed' or c.call_type = 'IP')
-    and {{ union_dataset_join_clause(left_alias="ada", right_alias="c") }}
+    and ada._dbt_source_project = c._dbt_source_project
     and sc.commlog_reason = c.reason
-    and {{ union_dataset_join_clause(left_alias="sc", right_alias="c") }}
+    and sc._dbt_source_project = c._dbt_source_project
 left join schoolid_crosswalk as lc on c.dl_school_id = lc.deanslist_school_id
 left join
     {{ ref("int_powerschool__spenrollments") }} as ae
     on ada.studentid = ae.studentid
     and ada.academic_year = ae.academic_year
     and ae.specprog_name = 'Attendance Exceptions'
-    and {{ union_dataset_join_clause(left_alias="ada", right_alias="ae") }}
+    and ada._dbt_source_project = ae._dbt_source_project
