@@ -1,2 +1,5 @@
 models:
   - name: stg_powerschool__u_expectations
+    description:
+      Union of per-district U_EXPECTATIONS staging tables across all regions
+      that have the Gradebook Audit plugin installed.
