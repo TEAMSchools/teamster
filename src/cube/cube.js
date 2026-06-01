@@ -52,6 +52,19 @@ const SNAPSHOT_SELF_ANCHORED_SUFFIXES = [
 // / is_week_end_record and its measures need the anchor guard.
 const SNAPSHOT_CUBES = ["attendance"];
 
+// Measure-name stems that mark a snapshot (cumulative-daily-flag) measure
+// family — chronic absence, ADA tiers, and truancy. Only these need the
+// period-end anchor guard. Additive measures on the same cube
+// (avg_daily_attendance, count_students, pct_tardy, pct_ontime,
+// count_absent_days) are point-in-time safe and must be left untouched, so the
+// guard must NOT match every measure that starts with a snapshot cube name.
+const SNAPSHOT_MEASURE_STEMS = [
+  "chronically_absent",
+  "tier_1_2",
+  "tier_3",
+  "truant",
+];
+
 module.exports = {
   driverFactory: () => ({
     type: "bigquery",
@@ -197,8 +210,10 @@ module.exports = {
     // but require matching granularity — _month_end without grouping by month
     // returns "CA at any month-end during the range," which is meaningless.
     for (const cubePrefix of SNAPSHOT_CUBES) {
-      const measures = (query.measures ?? []).filter((m) =>
-        m.startsWith(cubePrefix),
+      const measures = (query.measures ?? []).filter(
+        (m) =>
+          m.startsWith(cubePrefix) &&
+          SNAPSHOT_MEASURE_STEMS.some((stem) => m.includes(stem)),
       );
       if (!measures.length) continue;
 
@@ -266,7 +281,22 @@ module.exports = {
             Array.isArray(f.values) &&
             f.values.length === 1,
         ) ||
-        (query.dimensions ?? []).some((d) => d.endsWith("dim_dates_date_day"));
+        (query.dimensions ?? []).some((d) =>
+          d.endsWith("dim_dates_date_day"),
+        ) ||
+        // A point-in-time pin expressed via timeDimensions counts as anchored
+        // only when it is a single day — a single-element dateRange or
+        // granularity "day". A wider dateRange with null granularity is NOT
+        // anchored (injecting the period-end snapshot is correct there;
+        // treating it as anchored would re-open the "ever-CA-in-range"
+        // overcount).
+        (query.timeDimensions ?? []).some(
+          (td) =>
+            td.dimension?.endsWith("dim_dates_date_day") &&
+            ((Array.isArray(td.dateRange) &&
+              td.dateRange[0] === td.dateRange[1]) ||
+              td.granularity === "day"),
+        );
 
       if (!alreadyAnchored) {
         filters.push({

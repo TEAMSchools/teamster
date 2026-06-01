@@ -30,7 +30,6 @@ import asyncio
 import hashlib
 import json
 import os
-import re
 import time
 from pathlib import Path
 from typing import Any
@@ -234,12 +233,15 @@ mcp = FastMCP(
         "range or when you need `granularity` (day/week/month/etc.), use "
         "`timeDimensions` with `dateRange`. Putting a date in the wrong place "
         "either fails or silently drops the granularity.\n\n"
-        "Academic year: prefer dim_dates_academic_year_label (e.g. '2025-26') "
-        "over the raw integer dim_dates_academic_year when filtering — the "
-        "label is unambiguous. Use dim_dates_is_current_academic_year = true "
-        "for 'this year' queries. The raw integer uses a start-year convention "
-        "(2025 = the 2025-26 school year) which is the opposite of typical "
-        "fiscal-year conventions.\n\n"
+        "Academic year convention: an academic_year value of 2025 means the "
+        "2025–26 school year (July 2025 – June 2026), not the year ending in "
+        "2025. This is the opposite of typical fiscal-year conventions where "
+        "FY2025 ends in 2025. When a user says 'this year' or 'current year', "
+        "use the academic_year value whose start year matches the current "
+        "calendar year (e.g. if today is May 2026, current academic_year = "
+        "2025). In attendance views, the academic year is exposed as "
+        "dim_terms_academic_year (sourced from the term dimension, not the "
+        "fact).\n\n"
         "Numeric values come back as strings — cast to numeric before "
         "comparing or arithmetic. Raw `==` / `<` compare lexicographically "
         "(`'10' < '9'`).\n\n"
@@ -296,73 +298,6 @@ def _meta_cache_path(email: str) -> Path:
 
 
 _meta_memory_cache: dict[str, tuple[int, dict[str, Any]]] = {}
-
-# ── Query validation ─────────────────────────────────────────────────────────
-
-_AY_RANGE_4_RE = re.compile(r"^(\d{4})[–\-](\d{4})$")  # "2025-2026", "2023-2025"
-
-_QUERY_ERROR_SENTINEL = "__query_validation_error__"
-
-
-def _query_error(
-    message: str, suggested_fix: dict[str, Any] | None = None
-) -> dict[str, Any]:
-    result: dict[str, Any] = {_QUERY_ERROR_SENTINEL: True, "error": message}
-    if suggested_fix is not None:
-        result["suggested_fix"] = suggested_fix
-    return result
-
-
-def _expand_ay_range(value: str) -> list[str] | None:
-    """If value looks like 'YYYY-YYYY', return the inclusive year list. Else None."""
-    m = _AY_RANGE_4_RE.match(value.strip())
-    if not m:
-        return None
-    start, end = int(m.group(1)), int(m.group(2))
-    if start > end or end - start > 10:
-        return None
-    return [str(y) for y in range(start, end + 1)]
-
-
-def _validate_query(query: dict[str, Any]) -> dict[str, Any]:
-    """Validate a Cube query before sending to Cube Cloud.
-
-    Returns the query on success, or a sentinel error dict that `load`/`sql`
-    return directly to the LLM so it can fix and retry.
-
-    Non-numeric AY values ("AY2024", "2025-26") are left for Cube's type
-    coercion to reject — no normalization heuristics. The one case caught here
-    is a multi-year range string ("2023-2025") which would produce a confusing
-    FLOAT64 cast error; instead we return a suggested_fix that expands it.
-    """
-    # Check for accidental multi-year range in a single AY filter value, e.g.
-    # "2023-2025" instead of ["2023", "2024", "2025"].
-    for f in query.get("filters", []):
-        if (
-            not str(f.get("member", "")).endswith(".dim_dates_academic_year")
-            or f.get("operator") != "equals"
-        ):
-            continue
-        for v in f.get("values") or []:
-            expanded = _expand_ay_range(str(v))
-            if expanded is None:
-                continue
-            suggested = {
-                **query,
-                "filters": [
-                    {**f, "values": expanded} if filt is f else filt
-                    for filt in query["filters"]
-                ],
-            }
-            return _query_error(
-                f"Filter value {v!r} looks like a multi-year range. For "
-                "year-over-year queries, send each academic year as a separate "
-                f"value in the same filter (e.g. {expanded}). The suggested_fix "
-                "field expands it automatically.",
-                suggested_fix=suggested,
-            )
-
-    return query
 
 
 @mcp.tool()
@@ -422,9 +357,6 @@ async def load(ctx: Context, query: dict[str, Any]) -> dict[str, Any]:
     PII: `*_detail` view results carry row-level student identifiers — keep
     those values in the local conversation only.
     """
-    query = _validate_query(query)
-    if query.get(_QUERY_ERROR_SENTINEL):
-        return query
     email = await _get_user_email(ctx)
     return await _request(
         "POST", "/load", json={"query": query}, email=email, poll=True
@@ -439,9 +371,6 @@ async def sql(ctx: Context, query: dict[str, Any]) -> dict[str, Any]:
 
     Response is wrapped: {"sql": {"status", "sql": [query-string, [params]], "query_type"}}.
     """
-    query = _validate_query(query)
-    if query.get(_QUERY_ERROR_SENTINEL):
-        return query
     email = await _get_user_email(ctx)
     return await _request(
         "GET", "/sql", params={"query": json.dumps(query)}, email=email

@@ -79,9 +79,6 @@ views:
         prefix: true
         includes:
           - date_day
-          - academic_year
-          - academic_year_label
-          - is_current_academic_year
           - month_number
           - month_name
           - quarter_number
@@ -150,6 +147,7 @@ views:
       - join_path: attendance.dim_terms
         prefix: true
         includes:
+          - academic_year
           - semester
           - term_name
           - term_code
@@ -183,9 +181,6 @@ views:
           members:
             - attendance_date
             - dim_dates_date_day
-            - dim_dates_academic_year
-            - dim_dates_academic_year_label
-            - dim_dates_is_current_academic_year
             - dim_dates_month_number
             - dim_dates_month_name
             - dim_dates_quarter_number
@@ -194,6 +189,7 @@ views:
             - dim_dates_is_weekday
         - name: Term
           members:
+            - dim_terms_academic_year
             - dim_terms_semester
             - dim_terms_term_name
             - dim_terms_term_code

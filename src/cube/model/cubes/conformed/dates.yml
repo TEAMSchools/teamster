@@ -43,16 +43,6 @@ cubes:
         type: boolean
         public: true
 
-      - name: academic_year_label
-        description: >-
-          Human-readable academic year label (e.g. "2025-26" for the 2025–26
-          school year). Prefer this over the raw academic_year integer when
-          filtering by year — the string form is unambiguous and avoids the
-          off-by-one risk of the start-year convention.
-        sql: academic_year_label
-        type: string
-        public: true
-
       - name: year_number
         description: Calendar year.
         sql: year_number
