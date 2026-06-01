@@ -142,6 +142,7 @@ select
     and membership_value = 1 as is_month_end_record,
 
     row_number() over (
+        -- trunk-ignore(sqlfluff/LT01): week(monday) requires special formatting
         partition by student_enrollment_key, date_trunc(date_key, week(monday))
         order by if(membership_value = 1, date_key, null) desc nulls last
     )
