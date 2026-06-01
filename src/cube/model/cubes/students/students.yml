@@ -1,5 +1,5 @@
 cubes:
-  - name: students
+  - name: dim_students
     public: false
     sql_table: kipptaf_marts.dim_students
 
@@ -13,6 +13,7 @@ cubes:
         primary_key: true
         public: true
 
+      # PII — excluded from detail views without cube-access-student-pii
       - name: lea_student_identifier
         description: >-
           KIPP's own SIS identifier for the student. KIPP is a charter Local
@@ -24,25 +25,19 @@ cubes:
         sql: lea_student_identifier
         type: number
         public: true
-        meta:
-          pii: true
 
       - name: full_name
         description: >-
           Student's full name in "Last, First, Mi." format. Matches
-          staff.full_name naming.
+          dim_staff.full_name naming.
         sql: full_name
         type: string
         public: true
-        meta:
-          pii: true
 
       - name: birth_date
         sql: CAST(birth_date AS TIMESTAMP)
         type: time
         public: true
-        meta:
-          pii: true
 
       - name: state_student_identifier
         description: >-
@@ -51,8 +46,6 @@ cubes:
         sql: state_student_identifier
         type: string
         public: true
-        meta:
-          pii: true
 
       - name: district_student_identifier
         description: >-
@@ -63,9 +56,6 @@ cubes:
           District-assigned number from the host district's perspective.
         sql: district_student_identifier
         type: string
-        public: true
-        meta:
-          pii: true
 
       - name: salesforce_contact_id
         description: >-
@@ -74,9 +64,6 @@ cubes:
           KIPPADB consumer tools (Overgrad, alumni tracking, etc.).
         sql: salesforce_contact_id
         type: string
-        public: true
-        meta:
-          pii: true
 
       - name: gender_identity
         description: >-
@@ -91,7 +78,7 @@ cubes:
           Racial category for the student. Decoded from PowerSchool ethnicity
           code to a full category label (e.g., Black/African American, Hispanic
           or Latino, Not Hispanic or Latino, Two or More Races, White).
-          Cross-model consistency with staff.race.
+          Cross-model consistency with dim_staff.race.
         sql: race
         type: string
         public: true

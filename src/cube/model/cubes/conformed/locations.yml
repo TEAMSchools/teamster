@@ -1,11 +1,11 @@
 cubes:
-  - name: locations
+  - name: dim_locations
     public: false
     sql_table: kipptaf_marts.dim_locations
 
     joins:
-      - name: regions
-        sql: "{regions.region_key} = {CUBE}.region_key"
+      - name: dim_regions
+        sql: "{dim_regions.region_key} = {CUBE}.region_key"
         relationship: many_to_one
 
     dimensions:
@@ -17,10 +17,10 @@ cubes:
 
       - name: region_key
         description: >-
-          Foreign key to regions. Surrogate key derived from
+          Foreign key to dim_regions. Surrogate key derived from
           `business_unit_code` so this column hashes exactly the keys produced
-          by `regions.region_key`. Network-level locations (e.g., KIPP NJ) map
-          to KIPP_TAF.
+          by `dim_regions.region_key`. Network-level locations (e.g., KIPP NJ)
+          map to KIPP_TAF.
         sql: region_key
         type: string
 

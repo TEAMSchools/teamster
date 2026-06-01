@@ -1,5 +1,5 @@
 cubes:
-  - name: student_iep_status
+  - name: dim_student_iep_status
     public: false
     sql_table: kipptaf_marts.dim_student_iep_status
 

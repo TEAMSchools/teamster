@@ -169,71 +169,6 @@ Do **not** use the Cube Playground **Models** tab in dev mode. It overwrites
 YAML files in `model/cubes/` and `model/views/` with auto-generated content,
 discarding hand-authored definitions.
 
-## Maintenance
-
-### Keeping Cube in sync when dbt column names change
-
-There is no automatic cross-tool check out of the box. Three layers of
-protection cover it:
-
-**Layer 1 — dbt contracts (already enforced)** All `dim_*` and `fct_*` models
-have `contract: enforced: true`. Renaming a column requires updating the
-properties YAML or the dbt build fails in CI. That required edit is the natural
-moment to check whether any Cube YAML in `src/cube/model/` references the old
-column name. Treat the contract YAML diff in PR review as the signal: if a
-column name changes there, grep `src/cube/model/` for it.
-
-**Layer 2 — Cube query-time errors (reactive)** With explicit column references
-in every `sql:` field, a broken reference produces a clear BigQuery error the
-first time someone queries that dimension — not a silent wrong result. It points
-directly to the broken field.
-
-**Layer 3 — `cube validate` in CI (target state)** Cube's `cube validate`
-command parses all YAML and dry-runs the SQL against the warehouse. Adding this
-step to the CI pipeline catches broken column references at merge time, before
-they reach production. This should be wired up as part of the infrastructure
-work — it is the right long-term answer and removes the manual grep step from PR
-review.
-
-**Analyst-facing name vs. source column name** The Cube `name:` field (what
-analysts see in the UI and API) and the `sql:` field (the BigQuery column
-reference) are independent. A dbt column rename requires updating `sql:` only —
-the analyst-facing `name:` is stable. Renaming a field in the UI requires
-updating `name:` only — no BigQuery query changes. Keep these two concerns
-separate when reviewing rename PRs.
-
-### Renaming `name:` fields when BI tools are connected
-
-Once a BI tool (Tableau, Superset, Streamlit, etc.) is connected to a Cube view,
-the `name:` field is a public API. Renaming it breaks any saved report,
-dashboard, or query that references the old name — the field silently drops or
-returns "not found".
-
-**Rule: treat view `name:` fields as stable contracts once a BI tool is
-connected. Do not rename without coordinating with BI consumers first.**
-
-Three options when a rename is unavoidable:
-
-**Option 1 — Deprecation window** Keep the old `name:` in the view alongside the
-new one temporarily. Communicate the cutover date to BI consumers, remove the
-old name after dashboards are updated.
-
-**Option 2 — Views as the stable interface (structural mitigation)** This is the
-strongest argument for the two-view pattern. Analysts connect BI tools to
-`student_attendance_detail` / `student_attendance_summary` views, not directly
-to cubes. A `name:` change inside the cube can be remapped in the view without
-touching the field name the BI tool sees — the view `name:` stays stable even if
-the underlying cube dimension is reorganized.
-
-**Option 3 — Cube aliases** Cube does not have a native field deprecation
-mechanism today. Until it does, Option 1 or Option 2 are the available paths.
-
-**Internal vs. external `name:` fields** Cube `name:` fields are internal — safe
-to rename freely before any BI tool connects. View `name:` fields are external
-once a downstream consumer exists — coordinate before changing. Document which
-views have active BI connections in the exposure YAML (`models/exposures/`) so
-the boundary is visible in PR review.
-
 ## Using Cube with Claude
 
 The Cube MCP server lets Claude query your organization's data using plain
@@ -243,12 +178,10 @@ English — no SQL required. Once connected, you can ask questions like:
 - "Show me ADA by school for this year"
 - "What are the available dimensions in the student cube?"
 
-Claude uses the Cube semantic layer to find and return the right data.
+Claude uses the Cube semantic layer to find and return the right data. You'll
+need a Cube API key from the data team before getting started.
 
 ### Claude Desktop
-
-The Cube MCP uses OAuth. You authenticate with your `@apps.teamschools.org`
-Google Workspace account on first use.
 
 1. **Install Node.js** if you don't have it:
 
@@ -262,9 +195,13 @@ Google Workspace account on first use.
    brew install node
    ```
 
-2. **Get the Cube MCP service URL** from the data team.
+   Then find the full path to `npx` — you'll need it below:
 
-3. **Open the config file.** In Claude Desktop, go to **Settings → Developer →
+   ```bash
+   which npx
+   ```
+
+2. **Open the config file.** In Claude Desktop, go to **Settings → Developer →
    Edit Config**. Or navigate directly in Finder:
 
    ```text
@@ -273,15 +210,24 @@ Google Workspace account on first use.
 
    If the file doesn't exist yet, create it with an empty `{}`.
 
-4. **Add the Cube MCP server.** Replace `<CUBE_MCP_URL>` with the URL from step
-   2:
+3. **Add the Cube MCP server.** Replace `[YOUR-API-KEY]` with your key, and
+   update the `command` path if your `npx` location differs:
 
    ```json
    {
      "mcpServers": {
-       "cube": {
-         "command": "npx",
-         "args": ["-y", "mcp-remote", "<CUBE_MCP_URL>"]
+       "cube-mcp-server": {
+         "command": "/opt/homebrew/bin/npx",
+         "args": [
+           "-y",
+           "mcp-remote",
+           "https://ai.gcp-us-central1.cubecloud.dev/api/mcp",
+           "--transport",
+           "http"
+         ],
+         "env": {
+           "CUBE_TOKEN": "[YOUR-API-KEY]"
+         }
        }
      }
    }
@@ -290,14 +236,12 @@ Google Workspace account on first use.
    If your config already has content, add `mcpServers` alongside the existing
    keys — don't replace anything.
 
-5. **Restart Claude Desktop.** Press `Cmd+Q` to fully quit (don't just close the
-   window), then reopen.
+4. **Restart Claude Desktop.** Press `Cmd+Q` to fully quit (don't just close the
+   window), then reopen. A tools/hammer icon in the bottom-right of the chat
+   input confirms the server is connected.
 
-6. **Authenticate.** The first time Claude uses the Cube tool, a browser tab
-   opens to a Google sign-in prompt. Sign in with your `@apps.teamschools.org`
-   account. After approving, you're redirected back to Claude Desktop and the
-   connection is live. Subsequent sessions authenticate silently via refresh
-   token.
+!!! warning "Keep your API key private." Treat it like a password — don't share
+your config file with anyone outside the pilot group.
 
 ### Claude Code (VS Code)
 

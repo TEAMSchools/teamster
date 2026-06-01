@@ -1,5 +1,5 @@
 cubes:
-  - name: school_calendars
+  - name: dim_school_calendars
     public: false
     sql_table: kipptaf_marts.dim_school_calendars
 
@@ -17,7 +17,7 @@ cubes:
         type: string
 
       - name: location_key
-        description: Surrogate key for the school. FK to locations.
+        description: Surrogate key for the school. FK to dim_locations.
         sql: location_key
         type: string
 

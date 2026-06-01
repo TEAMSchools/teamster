@@ -1,5 +1,5 @@
 views:
-  - name: student_attendance_summary
+  - name: attendance_summary
     description: >-
       Aggregated student attendance for ADA, tardy rate, and truancy breakdowns.
       One row per filter slice — never per student-day. ADA is always
@@ -25,7 +25,7 @@ views:
       year.
 
     cubes:
-      - join_path: student_attendance
+      - join_path: attendance
         includes:
           - count_students
           - avg_daily_attendance
@@ -44,7 +44,7 @@ views:
           - is_chronically_absent
           - is_latest_record
 
-      - join_path: student_attendance.dates
+      - join_path: attendance.dim_dates
         prefix: true
         includes:
           - date_day
@@ -53,7 +53,7 @@ views:
           - quarter_number
           - school_week_start_date
 
-      - join_path: student_attendance.student_enrollments.locations
+      - join_path: attendance.dim_student_enrollments.dim_locations
         prefix: true
         includes:
           - location_name
@@ -62,32 +62,32 @@ views:
           - campus
           - city
 
-      - join_path: student_attendance.student_enrollments.locations.regions
+      - join_path: attendance.dim_student_enrollments.dim_locations.dim_regions
         prefix: true
         includes:
           - region_name
           - state
 
-      - join_path: student_attendance.student_enrollments
+      - join_path: attendance.dim_student_enrollments
         prefix: true
         includes:
           - grade_level
           - graduation_year
           - is_retained_year
 
-      - join_path: student_attendance.student_enrollments.students
+      - join_path: attendance.dim_student_enrollments.dim_students
         prefix: true
         includes:
           - gender_identity
           - race
           - is_gifted
 
-      - join_path: student_attendance.student_ell_status
+      - join_path: attendance.dim_student_ell_status
         prefix: true
         includes:
           - is_ell
 
-      - join_path: student_attendance.student_iep_status
+      - join_path: attendance.dim_student_iep_status
         prefix: true
         includes:
           - is_iep
@@ -96,13 +96,13 @@ views:
           - special_education_name
           - special_education_placement
 
-      - join_path: student_attendance.student_meal_eligibility_status
+      - join_path: attendance.dim_student_meal_eligibility_status
         prefix: true
         includes:
           - is_meal_eligible
           - meal_eligibility
 
-      - join_path: student_attendance.terms
+      - join_path: attendance.dim_terms
         prefix: true
         includes:
           - academic_year
@@ -110,12 +110,6 @@ views:
           - term_name
           - term_code
           - term_type
-
-      - join_path: student_attendance.school_calendars
-        prefix: true
-        includes:
-          - is_in_session
-          - is_membership_day
 
     meta:
       folders:
@@ -127,49 +121,45 @@ views:
             - is_chronically_absent
         - name: Date
           members:
-            - dates_date_day
-            - dates_month_number
-            - dates_month_name
-            - dates_quarter_number
-            - dates_school_week_start_date
+            - dim_dates_date_day
+            - dim_dates_month_number
+            - dim_dates_month_name
+            - dim_dates_quarter_number
+            - dim_dates_school_week_start_date
         - name: Term
           members:
-            - terms_academic_year
-            - terms_semester
-            - terms_term_name
-            - terms_term_code
-            - terms_term_type
+            - dim_terms_academic_year
+            - dim_terms_semester
+            - dim_terms_term_name
+            - dim_terms_term_code
+            - dim_terms_term_type
         - name: Location
           members:
-            - locations_location_name
-            - locations_abbreviation
-            - locations_grade_band
-            - locations_campus
-            - locations_city
-            - regions_region_name
-            - regions_state
+            - dim_locations_location_name
+            - dim_locations_abbreviation
+            - dim_locations_grade_band
+            - dim_locations_campus
+            - dim_locations_city
+            - dim_regions_region_name
+            - dim_regions_state
         - name: Student
           members:
-            - students_gender_identity
-            - students_race
-            - students_is_gifted
-            - student_ell_status_is_ell
-            - student_iep_status_is_iep
-            - student_iep_status_iep_classification
-            - student_iep_status_special_education_code
-            - student_iep_status_special_education_name
-            - student_iep_status_special_education_placement
-            - student_meal_eligibility_status_is_meal_eligible
-            - student_meal_eligibility_status_meal_eligibility
+            - dim_students_gender_identity
+            - dim_students_race
+            - dim_students_is_gifted
+            - dim_student_ell_status_is_ell
+            - dim_student_iep_status_is_iep
+            - dim_student_iep_status_iep_classification
+            - dim_student_iep_status_special_education_code
+            - dim_student_iep_status_special_education_name
+            - dim_student_iep_status_special_education_placement
+            - dim_student_meal_eligibility_status_is_meal_eligible
+            - dim_student_meal_eligibility_status_meal_eligibility
         - name: Enrollment
           members:
-            - student_enrollments_grade_level
-            - student_enrollments_graduation_year
-            - student_enrollments_is_retained_year
-        - name: Calendar
-          members:
-            - school_calendars_is_in_session
-            - school_calendars_is_membership_day
+            - dim_student_enrollments_grade_level
+            - dim_student_enrollments_graduation_year
+            - dim_student_enrollments_is_retained_year
         - name: Filter
           members:
             - is_latest_record
@@ -178,6 +168,6 @@ views:
       # No PII tier — view contains no direct student identifiers.
       # Demographic dimensions (race, gender_identity, etc.) are
       # aggregate breakdowns only.
-      - group: summary-access
+      - group: cube-access-student-data
         member_level:
           includes: "*"

@@ -1,54 +1,55 @@
 cubes:
-  - name: student_attendance
+  - name: attendance
     public: false
     sql_table: kipptaf_marts.fct_student_attendance_daily
 
     joins:
-      - name: dates
-        sql: "{dates.date_day} = CAST({CUBE}.date_key AS TIMESTAMP)"
+      - name: dim_dates
+        sql: "{dim_dates.date_day} = CAST({CUBE}.date_key AS TIMESTAMP)"
         relationship: many_to_one
 
-      - name: student_enrollments
+      - name: dim_student_enrollments
         sql: >
-          {student_enrollments.student_enrollment_key} =
+          {dim_student_enrollments.student_enrollment_key} =
           {CUBE}.student_enrollment_key
         relationship: many_to_one
 
-      # location reached via student_enrollments.location_key; calendar
+      # location reached via dim_student_enrollments.location_key; calendar
       # joined on (date_key, enrollment's location_key)
-      - name: school_calendars
+      - name: dim_school_calendars
         sql: >
-          {school_calendars.date_key} = {CUBE}.date_key AND
-          {school_calendars.location_key} = {student_enrollments.location_key}
+          {dim_school_calendars.date_key} = {CUBE}.date_key AND
+          {dim_school_calendars.location_key} =
+          {dim_student_enrollments.location_key}
         relationship: many_to_one
 
-      - name: terms
-        sql: "{terms.term_key} = {CUBE}.term_key"
+      - name: dim_terms
+        sql: "{dim_terms.term_key} = {CUBE}.term_key"
         relationship: many_to_one
 
-      - name: student_ell_status
+      - name: dim_student_ell_status
         sql: >
-          {student_ell_status.student_enrollment_key} =
+          {dim_student_ell_status.student_enrollment_key} =
           {CUBE}.student_enrollment_key AND {CUBE}.date_key >=
-          {student_ell_status.effective_date_start_key} AND {CUBE}.date_key <=
-          {student_ell_status.effective_date_end_key}
+          {dim_student_ell_status.effective_date_start_key} AND {CUBE}.date_key
+          <= {dim_student_ell_status.effective_date_end_key}
         relationship: many_to_one
 
-      - name: student_iep_status
+      - name: dim_student_iep_status
         sql: >
-          {student_iep_status.student_enrollment_key} =
+          {dim_student_iep_status.student_enrollment_key} =
           {CUBE}.student_enrollment_key AND {CUBE}.date_key >=
-          {student_iep_status.effective_date_start_key} AND {CUBE}.date_key <=
-          {student_iep_status.effective_date_end_key}
+          {dim_student_iep_status.effective_date_start_key} AND {CUBE}.date_key
+          <= {dim_student_iep_status.effective_date_end_key}
         relationship: many_to_one
 
-      - name: student_meal_eligibility_status
+      - name: dim_student_meal_eligibility_status
         sql: >
-          {student_meal_eligibility_status.student_enrollment_key} =
+          {dim_student_meal_eligibility_status.student_enrollment_key} =
           {CUBE}.student_enrollment_key AND {CUBE}.date_key >=
-          {student_meal_eligibility_status.effective_date_start_key} AND
+          {dim_student_meal_eligibility_status.effective_date_start_key} AND
           {CUBE}.date_key <=
-          {student_meal_eligibility_status.effective_date_end_key}
+          {dim_student_meal_eligibility_status.effective_date_end_key}
         relationship: many_to_one
 
     dimensions:
@@ -193,9 +194,9 @@ cubes:
           completed academic years this is the last instructional day on record;
           for the current year it is the most recent day with data.
 
-          Use as a filter (is_latest_record = true) with terms.academic_year to
-          get year-end CA status for year-over-year comparisons — one terminal
-          snapshot per enrollment, no date filter required.
+          Use as a filter (is_latest_record = true) with dim_terms.academic_year
+          to get year-end CA status for year-over-year comparisons — one
+          terminal snapshot per enrollment, no date filter required.
 
           Do not combine with a date_key filter — use exactly one or the other.
 
@@ -330,8 +331,8 @@ cubes:
         filters:
           - sql: "{CUBE}.membership_value = 1"
           - sql: >-
-              {students.enrollment_status} != 'Transferred Out' OR NOT
-              {dates.is_current_academic_year}
+              {dim_students.enrollment_status} != 'Transferred Out' OR NOT
+              {dim_dates.is_current_academic_year}
 
       - name: count_chronically_absent
         description: >-
@@ -357,8 +358,8 @@ cubes:
           - sql: "{CUBE}.is_chronically_absent = true"
           - sql: "{CUBE}.membership_value = 1"
           - sql: >-
-              {students.enrollment_status} != 'Transferred Out' OR NOT
-              {dates.is_current_academic_year}
+              {dim_students.enrollment_status} != 'Transferred Out' OR NOT
+              {dim_dates.is_current_academic_year}
 
       - name: pct_chronically_absent
         description: >-
@@ -386,8 +387,8 @@ cubes:
           - sql: "{CUBE}.ada_tier IN ('Tier 1', 'Tier 2')"
           - sql: "{CUBE}.membership_value = 1"
           - sql: >-
-              {students.enrollment_status} != 'Transferred Out' OR NOT
-              {dates.is_current_academic_year}
+              {dim_students.enrollment_status} != 'Transferred Out' OR NOT
+              {dim_dates.is_current_academic_year}
 
       - name: pct_tier_1_2
         description: >-
@@ -416,8 +417,8 @@ cubes:
           - sql: "{CUBE}.ada_tier = 'Tier 3'"
           - sql: "{CUBE}.membership_value = 1"
           - sql: >-
-              {students.enrollment_status} != 'Transferred Out' OR NOT
-              {dates.is_current_academic_year}
+              {dim_students.enrollment_status} != 'Transferred Out' OR NOT
+              {dim_dates.is_current_academic_year}
 
       - name: pct_tier_3
         description: >-
