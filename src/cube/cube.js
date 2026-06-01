@@ -49,7 +49,9 @@ const SNAPSHOT_SELF_ANCHORED_SUFFIXES = [
 ];
 
 // Add a cube name here when it exposes is_latest_record / is_month_end_record
-// / is_week_end_record and its measures need the anchor guard.
+// / is_week_end_record and its measures need the anchor guard. Also add the
+// cube's snapshot measure stems to SNAPSHOT_MEASURE_STEMS below — both arrays
+// must stay in sync or the guard won't match the new cube's measures.
 const SNAPSHOT_CUBES = ["attendance"];
 
 // Measure-name stems that mark a snapshot (cumulative-daily-flag) measure
@@ -258,11 +260,8 @@ module.exports = {
       if (granularity === "day") continue;
 
       const anchorDimension =
-        granularity === "month"
-          ? SNAPSHOT_ANCHOR_DIMENSIONS.month
-          : granularity === "week"
-            ? SNAPSHOT_ANCHOR_DIMENSIONS.week
-            : SNAPSHOT_ANCHOR_DIMENSIONS.default;
+        SNAPSHOT_ANCHOR_DIMENSIONS[granularity] ??
+        SNAPSHOT_ANCHOR_DIMENSIONS.default;
       const anchorMember = `${cubePrefix}.${anchorDimension}`;
 
       const alreadyAnchored =
@@ -289,14 +288,14 @@ module.exports = {
         // granularity "day". A wider dateRange with null granularity is NOT
         // anchored (injecting the period-end snapshot is correct there;
         // treating it as anchored would re-open the "ever-CA-in-range"
-        // overcount).
-        (query.timeDimensions ?? []).some(
-          (td) =>
-            td.dimension?.endsWith("dim_dates_date_day") &&
-            ((Array.isArray(td.dateRange) &&
-              td.dateRange[0] === td.dateRange[1]) ||
-              td.granularity === "day"),
-        );
+        // overcount). Reuse dateDayTd found above rather than re-scanning.
+        // A single-day dateRange is either one element (["2025-01-15"], which
+        // Cube treats as start === end) or two equal elements.
+        (dateDayTd &&
+          ((Array.isArray(dateDayTd.dateRange) &&
+            (dateDayTd.dateRange.length === 1 ||
+              dateDayTd.dateRange[0] === dateDayTd.dateRange[1])) ||
+            dateDayTd.granularity === "day"));
 
       if (!alreadyAnchored) {
         filters.push({
