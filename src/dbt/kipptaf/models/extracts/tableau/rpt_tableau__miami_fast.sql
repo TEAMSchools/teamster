@@ -134,6 +134,8 @@ select
     ft.achievement_level,
     ft.scale_score,
     ft.scale_score_prev,
+    ft.assessment_name,
+    ft.test_code,
     ft.sublevel_name as fast_sublevel_name,
     ft.sublevel_number as fast_sublevel_number,
     ft.scale_for_growth as fast_scale_for_growth,
