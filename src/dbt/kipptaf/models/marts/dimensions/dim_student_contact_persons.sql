@@ -1,23 +1,4 @@
 with
-    contacts_relations as (
-        {{
-            dbt_utils.union_relations(
-                relations=[
-                    source("kippnewark_powerschool", "int_powerschool__contacts"),
-                    source("kippcamden_powerschool", "int_powerschool__contacts"),
-                    source("kippmiami_powerschool", "int_powerschool__contacts"),
-                    source("kipppaterson_powerschool", "int_powerschool__contacts"),
-                ]
-            )
-        }}
-    ),
-
-    -- trunk-ignore(sqlfluff/ST03): referenced by string in dbt_utils.deduplicate
-    contacts_union as (
-        select ur.*, {{ extract_code_location("ur") }} as _dbt_source_project,
-        from contacts_relations as ur
-    ),
-
     person_contacts_union as (
         {{
             dbt_utils.union_relations(
@@ -42,7 +23,7 @@ with
     contacts_deduped as (
         {{
             dbt_utils.deduplicate(
-                relation="contacts_union",
+                relation=ref("int_powerschool__contacts"),
                 partition_by="_dbt_source_relation, personid",
                 order_by="contactpriorityorder asc",
             )
