@@ -1,0 +1,39 @@
+models:
+  - name: int_powerschool__contacts
+    description: >-
+      Network-wide union of the per-district int_powerschool__contacts
+      intermediates (Newark, Camden, Miami, Paterson). Materializes
+      _dbt_source_project (the kippX region prefix) so downstream marts hash and
+      join on a stable code-location column instead of re-deriving it from
+      _dbt_source_relation per call.
+    columns:
+      - name: _dbt_source_relation
+        data_type: string
+      - name: _dbt_source_project
+        data_type: string
+      - name: studentid
+        data_type: int64
+      - name: student_number
+        data_type: int64
+      - name: family_ident
+        data_type: string
+      - name: personid
+        data_type: int64
+      - name: contactpriorityorder
+        data_type: int64
+      - name: firstname
+        data_type: string
+      - name: lastname
+        data_type: string
+      - name: isemergency
+        data_type: int64
+      - name: iscustodial
+        data_type: int64
+      - name: liveswithflg
+        data_type: int64
+      - name: schoolpickupflg
+        data_type: int64
+      - name: relationship_type
+        data_type: string
+      - name: person_type
+        data_type: string

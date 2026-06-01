@@ -1,17 +1,4 @@
 with
-    contacts_union as (
-        {{
-            dbt_utils.union_relations(
-                relations=[
-                    source("kippnewark_powerschool", "int_powerschool__contacts"),
-                    source("kippcamden_powerschool", "int_powerschool__contacts"),
-                    source("kippmiami_powerschool", "int_powerschool__contacts"),
-                    source("kipppaterson_powerschool", "int_powerschool__contacts"),
-                ]
-            )
-        }}
-    ),
-
     person_contacts_union as (
         {{
             dbt_utils.union_relations(
@@ -36,8 +23,8 @@ with
     contacts_deduped as (
         {{
             dbt_utils.deduplicate(
-                relation="contacts_union",
-                partition_by="_dbt_source_relation, personid",
+                relation=ref("int_powerschool__contacts"),
+                partition_by="_dbt_source_project, personid",
                 order_by="contactpriorityorder asc",
             )
         }}
@@ -115,7 +102,7 @@ with
     )
 
 select
-    {{ dbt_utils.generate_surrogate_key(["c._dbt_source_relation", "c.personid"]) }}
+    {{ dbt_utils.generate_surrogate_key(["c._dbt_source_project", "c.personid"]) }}
     as student_contact_person_key,
 
     c.contact_name as full_name,
