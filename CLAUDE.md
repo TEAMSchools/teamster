@@ -263,21 +263,15 @@ alone may be safe; combinations may not. When unsure, consult the
 - **Continuous execution exceptions**: `superpowers:subagent-driven-development`
   and `superpowers:executing-plans` say "do not pause between tasks." Pause
   anyway to ask the user before (a) opening a tracking issue, (b) creating a
-  branch or worktree, (c) editing any CLAUDE.md file, (d) modifying protected
-  files (hook scripts, `.devcontainer/scripts/`, `.claude/settings*.json`).
+  branch or worktree, (c) modifying protected files (hook scripts,
+  `.devcontainer/scripts/`, `.claude/settings*.json`).
 
 ## CLAUDE.md Editing Rules
 
-- **Before editing any CLAUDE.md file**: present the proposed change as a quote
-  block. Do not apply it until the user approves.
-
-- **CLAUDE.md is for Claude, not humans**: cut motivation, rationale, and
-  history written to explain the project to a human reader. Keep them only when
-  they measurably change Claude's behavior.
-
-- **Before adding to any CLAUDE.md file**: answer the question: "what specific
-  decision or action will Claude make differently because of this line?" If you
-  can't name one, cut it.
+- **Before adding to any CLAUDE.md file**: beyond the skill's
+  brevity/avoid-list, apply the necessity test — name the specific decision or
+  action Claude will make differently because of the line. If you can't name
+  one, cut it, even when the line is concise and non-obvious.
 
 ## MCP Servers
 
