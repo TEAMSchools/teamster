@@ -233,7 +233,6 @@ left join
     and co.academic_year = ft.academic_year
     and co.fast_subject = ft.assessment_subject
     and administration_window = ft.administration_window
-    and ft.assessment_name = 'FAST'
 left join
     {{ ref("int_assessments__fast_previous_year") }} as p
     on co.student_number = p.student_number
