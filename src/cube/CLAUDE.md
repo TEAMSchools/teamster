@@ -158,6 +158,23 @@ auto-resolve; don't add redundant intermediate-hop joins. "Column not found" in
 a filter usually means the dimension SQL references a bare column on the
 filtering cube — route through `{joined_cube.col}` instead.
 
+## Testing Cube measures backed by new dbt columns
+
+When a cube YAML references a column added in this branch (not yet in
+`kipptaf_marts`), the playground errors: "Name X not found inside Y". To test
+before merge:
+
+1. Build in your dev schema:
+   `uv run dbt run --select <model> --project-dir src/dbt/kipptaf --target dev`
+   → creates `zz_<username>_kipptaf_marts.<model>`
+2. Temporarily change `sql_table` in the cube YAML to
+   `zz_<username>_kipptaf_marts.<table>`, commit, push
+3. Test in Dev Mode playground (or local `npm run dev` from `src/cube/`)
+4. Revert `sql_table` to `kipptaf_marts.<table>`, commit, push before merging
+
+The security hook flags `zz_*` schemas as an access-control regression —
+expected for the temporary test commit; acknowledge and revert.
+
 ## Operational notes
 
 - **Never use the Cube Playground Models tab.** It overwrites YAML in
