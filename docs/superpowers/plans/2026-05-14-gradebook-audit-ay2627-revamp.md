@@ -71,11 +71,13 @@ No SQL changes. These are operational sheet edits. Verify with dbt build.
 
 - [ ] **Step 1.2: Add Paterson rows to `stg_google_sheets__gradebook_flags`**
 
-  > ⚠️ **Blocked on T&L confirmation.** Do not add rows until Teaching &
-  > Learning provides the list of which flags apply to Paterson MS and HS for
-  > AY 2027. Once confirmed, add one row per
-  > `region=Paterson / school_level / code / audit_flag_name` combination
-  > (matching the column schema of existing Camden/Newark rows for AY 2027).
+  Paterson configuration confirmed:
+  - **Paterson MS:** use the same flags as Newark MS. Copy all Newark MS rows
+    for AY 2027, change `region` to `Paterson`.
+  - **Paterson ES:** EOQ comments only — `qt_es_comment_missing` only, same as
+    CamdenES/NewarkES. Add one row per applicable quarter code (`Q3`, `Q4`).
+
+  No Paterson HS rows needed (no HS schools in Paterson).
 
 - [ ] **Step 1.3: Remove Miami rows from
       `stg_google_sheets__gradebook_expectations_assignments`**
@@ -83,13 +85,20 @@ No SQL changes. These are operational sheet edits. Verify with dbt build.
   Open the sheet. Delete all rows where `region = 'Miami'` for
   `academic_year = 2027`.
 
-- [ ] **Step 1.4: Add Paterson rows to
+- [ ] **Step 1.4: Add Paterson MS rows to
       `stg_google_sheets__gradebook_expectations_assignments`**
 
-  > ⚠️ **Blocked on T&L confirmation** (or PS-native source migration). Once
-  > confirmed, add rows for all
-  > `Paterson / school_level / quarter / week_number / W,H,F,S` combinations
-  > with the expected assignment counts per category/week.
+  **Paterson ES:** no rows needed — ES is EOQ-only (comments flag), no
+  assignment tracking.
+
+  **Paterson MS:** add rows matching Newark MS for AY 2027. Copy all Newark MS
+  rows, change `region` to `Paterson`.
+
+  > ⚠️ **Blocked on PS instance access.** Paterson's PowerSchool instance does
+  > not yet have the U_EXPECTATIONS plugin deployed (pending PS instance
+  > access). Until then, use the same values as Newark MS in the Google Sheet.
+  > Once PS access is available, deploy the plugin and migrate Paterson to the
+  > PS-native source (see PR #4077 for the Camden integration pattern).
 
 - [ ] **Step 1.5: Stage the modified external tables**
 
