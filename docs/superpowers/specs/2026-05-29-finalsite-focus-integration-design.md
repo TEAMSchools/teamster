@@ -166,23 +166,26 @@ config, or a Finalsite custom/track field (not a base column) · ✗ no source.
   instructional day of `school_year`, or the API `contract_submit_date` proxy).
 - **Which Focus `SCHOOL` a student enrolls in is in no base source** — derivable
   (region/grade → school) or a Finalsite custom field.
-- **Race/ethnicity is a base column only in the SFTP export.** The Finalsite API
-  base `Contact` has gender + birth_date but **no race/ethnicity/language** —
-  reachable only as `custom_attributes` (unconfirmed they're configured).
+- **Race/ethnicity/language/school live in the API as custom fields — confirmed
+  populated** (Newark live profile: `race_ms`, `preferred_language_txt`,
+  `kipp_school_*`/`assigned_school_ss`). The base `Contact` exposes gender +
+  birth_date; the rest are `custom_attributes`/`track_attributes`. So both
+  sources carry race — the API is in fact the broader source. Miami's exact
+  custom-field names are per-tenant (confirm when Miami creds land).
 
 ### Headline — can we complete the target?
 
 |                             | → Focus SFTP templates                                                        | → Focus API (`POST /student`)                                                                      |
 | --------------------------- | ----------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------- |
 | **Finalsite SFTP export →** | Demographics ✅ · Address ✅ · Contacts ✅¹ · Linked ✅² · **Enrollment ❌³** | student+demographics ✅ · address ✅ · 2 guardians ⚠️⁴ · **placement ⚠️³**                         |
-| **Finalsite API →**         | Demographics ⚠️⁵ · Address ✅ · Contacts ✅ · Linked ✅ · **Enrollment ⚠️³**  | demographics ⚠️⁵ · address ✅ · 2 guardians ⚠️⁴ · placement ⚠️³ + **status-driven eligibility ✅** |
+| **Finalsite API →**         | Demographics ✅⁵ · Address ✅ · Contacts ✅ · Linked ✅ · **Enrollment ⚠️³**  | demographics ✅⁵ · address ✅ · 2 guardians ⚠️⁴ · placement ⚠️³ + **status-driven eligibility ✅** |
 
 ¹ `RESIDES_WITH_STUD` not in source → default. ² via shared-parent inference. ³
 `SCHOOL` + `START_DATE` not in source (derive); Focus enrollment-code setup
 required; **the API cannot write the `enrollments` table at all** — placement
 only via `accepting_*`. ⁴ Focus API caps guardians at 2 → violates the
-all-guardians decision (data loss). ⁵ API base schema lacks race/ethnicity/
-language (custom-field only).
+all-guardians decision (data loss). ⁵ race/ethnicity/language/school are API
+custom fields, confirmed populated in Newark (per-tenant names — confirm Miami).
 
 ### Target A — Focus SFTP templates: required-field coverage
 
@@ -197,22 +200,22 @@ language (custom-field only).
 Required count is ~14/17 either way. The API doesn't raise the _count_ but
 improves provenance: `SYEAR` and sibling links become direct, and — critically —
 `status`/`enrollment_type` (absent from the export entirely) arrive to drive
-eligibility and the create / transfer-out / re-enroll classification. The export
-wins on race/ethnicity.
+eligibility and the create / transfer-out / re-enroll classification (both
+sources carry race).
 
 ### Target B — Focus API `POST /student`: field-group coverage
 
-| Group (47-field flat body)                                                                 | from Finalsite SFTP             | from Finalsite API                            |
-| ------------------------------------------------------------------------------------------ | ------------------------------- | --------------------------------------------- |
-| Match key (`student`/`uuid`/`focus_id`)                                                    | ◐ pipeline                      | ◐ pipeline; minted number via `id_attributes` |
-| Names, `birthdate`, `gender`                                                               | ✓                               | ✓                                             |
-| Race flags + `ethnicity`                                                                   | ✓ (Race + Latino/Hispanic cols) | ✗ (custom-field only)                         |
-| `accepting_grade`/`current_grade`                                                          | ✓                               | ✓ (`grade.canonical_name`)                    |
-| `school_year`                                                                              | ◐ config                        | ✓ (`school_year.start_year`)                  |
-| `accepting_school`                                                                         | ◐ derive                        | ◐ derive/custom                               |
-| `accepting_program`, `ese_status`, `preferred_language`, student `email`, `current_school` | ✗ (mostly)                      | ◐/✓ (`email`✓; language/program/ese custom)   |
-| `guardian_1/2` (2 only)                                                                    | ✓ but **2 of up to 4**          | ✓ but **2 of up to 4**                        |
-| Address (`address`,`city`,`state`,`zipcode`)                                               | ✓; `address2` ✗                 | ✓; `address2` ✓ (`households`)                |
+| Group (47-field flat body)                                                                 | from Finalsite SFTP             | from Finalsite API                               |
+| ------------------------------------------------------------------------------------------ | ------------------------------- | ------------------------------------------------ |
+| Match key (`student`/`uuid`/`focus_id`)                                                    | ◐ pipeline                      | ◐ pipeline; minted number via `id_attributes`    |
+| Names, `birthdate`, `gender`                                                               | ✓                               | ✓                                                |
+| Race flags + `ethnicity`                                                                   | ✓ (Race + Latino/Hispanic cols) | ✓ (`race_ms` custom, confirmed Newark)           |
+| `accepting_grade`/`current_grade`                                                          | ✓                               | ✓ (`grade.canonical_name`)                       |
+| `school_year`                                                                              | ◐ config                        | ✓ (`school_year.start_year`)                     |
+| `accepting_school`                                                                         | ◐ derive                        | ✓ (`assigned_school_ss`/`kipp_school_*`, Newark) |
+| `accepting_program`, `ese_status`, `preferred_language`, student `email`, `current_school` | ✗ (mostly)                      | ◐/✓ (`email`✓; language/program/ese custom)      |
+| `guardian_1/2` (2 only)                                                                    | ✓ but **2 of up to 4**          | ✓ but **2 of up to 4**                           |
+| Address (`address`,`city`,`state`,`zipcode`)                                               | ✓; `address2` ✗                 | ✓; `address2` ✓ (`households`)                   |
 
 Both source paths fill the demographic + address + two-guardian core. Neither
 cleanly fills placement (`accepting_school`, start date), and **both lose
@@ -224,20 +227,54 @@ contacts.
 1. **No single corner is complete.** Every path needs the identity/minting gate,
    a `START_DATE` derivation, and a `SCHOOL` rule; the Focus API additionally
    can't write the enrollment table and caps guardians at 2.
-2. **The export lacks only the lifecycle drivers** — `status`,
-   `enrollment_type`, `school_year`, and sibling `relationships` — all of which
-   the Finalsite **API** carries natively. A hybrid source would close the gap,
-   but **the chosen direction is to enrich the single SFTP export** rather than
-   operate two sources (simpler, and the export already beats the API on
-   race/ethnicity). Hybrid is the fallback only if those columns cannot be added
-   to the export. See the _enrollment-data gate_.
+2. **The export is a thin slice of the API.** Beyond the lifecycle drivers it
+   lacks (`status`, `enrollment_type`, `school_year`, sibling `relationships`),
+   the live profile shows the API also carries race, school, language, medical,
+   IEP, and four emergency contacts (see _Finalsite API live profile_) — so an
+   API/hybrid source could fill every gap. The chosen direction stays **enrich
+   the single SFTP export**: the profile confirms every field to add already
+   exists in Finalsite, so it's a Swiss-Army-Export config change, not a
+   data-availability problem. Hybrid/API-source is the fallback. See the
+   _enrollment-data gate_.
 3. **Focus SFTP target dominates the Focus API target** for this use case: it is
    the only path that creates an actual enrollment record and the only one that
    preserves all guardians. The Focus API is viable for student/demographic
    upserts, never the enrollment.
-4. **`status` is the missing eligibility key** and it comes only from the
-   Finalsite API (`contact_statuses`: accepted/enrolled/…). The SFTP export
-   can't drive the eligibility predicate at all.
+4. **`status` is the eligibility key** — the active accepted→enrolled set
+   (`accepted` / `enrollment_in_progress` / `assigned_school` / `enrolled` /
+   `retained`) is "send to Focus", confirmed against the 25-status catalog. The
+   current SFTP export omits it, so enriching the export **must add `status`**
+   (and `enrollment_type`) — not optional.
+
+## Finalsite API live profile (Newark proxy, n=300)
+
+Profiled the **live** Finalsite Enrollment API for **Newark** (same product as
+Miami; aggregates only, no PII) to ground the API-source assumptions. Newark is
+a **proxy**: status stages, the `IdField` mechanism, grades, and relationship
+types should transfer, but the specific **custom-field names** and which
+`IdField` holds the canonical number are per-tenant — Miami needs its own pass
+once Miami API creds exist (Newark's IdFields are
+PowerSchool/FACTS/Blackbaud/Veracross — no Focus field).
+
+- **The API is far richer than the export** (599 fields). Populated custom/track
+  fields include `race_ms`, **`kipp_school_2025_2026_ss` +
+  `assigned_school_ss`** (school-of-enrollment), `media_release_yn`,
+  `preferred_language_txt`, a full medical set, IEP/504/SpEd, **four emergency
+  contacts** (`emrg_1..4_*`), and `us_school_entry_date`. Everything the export
+  would need to add already exists.
+- **No autogen `IdField` today** — all 7 are `autogen=False` passthroughs
+  (`powerschool_student_number`, `facts_sis_student_id` = `STU…pad_zeroes:12`):
+  SIS-minted values written back, not Finalsite-generated. The formatting engine
+  is present, so an autogen field is feasible (see _minting gate_).
+- **Identity populated only for returning students** — `id_attributes` carries
+  the SIS number for **205/205 returning** and **0/44 new** (by status:
+  `enrolled` 182/203, `not_enrolling` 13/14, all inquiry/waitlist/applicant 0).
+- **Eligibility predicate** — 25-status catalog; active accepted→enrolled
+  (`accepted`/`enrollment_in_progress`/`assigned_school`/`enrolled`/`retained`)
+  = in-scope; `enrollment_type` (returning 205 / new 44) drives re-enroll vs
+  create.
+- **Siblings direct** — `relationships`: parent 382, **sibling 183**,
+  grandparent 41 → `Linked_Students` from the API, no inference.
 
 ## Sync operations (lifecycle)
 
@@ -300,6 +337,11 @@ Implications:
   intended Focus write-back targets (mislabeled), vestigial PowerSchool-template
   columns, or real PowerSchool IDs is the _SIS-ID column gate_ — it determines
   what the crosswalk anchors on from the source side and where write-back lands.
+- **Match-vs-mint is empirically clean (Newark live profile).** The SIS number
+  is present for **100% of returning** students (205/205) and **0% of new**
+  (0/44) — so resolution is binary: returning → match the number already in
+  Finalsite's `id_attributes`; new → mint + write back. That write-back is the
+  manual step the integration replaces.
 
 ## Components
 
@@ -369,6 +411,17 @@ them.
      capture-and-write-back ourselves.
    - **(c) We mint** the next number in the pipeline (needs an allocation
      authority / sequence).
+
+   **Live evidence (Newark profile).** No `IdField` uses `autogen=True` today
+   (all 7 are passthrough), and `id_attributes` is populated only for
+   **returning** students (205/205), **0/44 new** — the number is written back
+   **manually today** and undone for new enrollees. **KTAF is in active
+   discussion with Finalsite about adding an autogen `IdField`** (option **a**);
+   the formatting engine is confirmed present (e.g.
+   `STU{{ value | … | pad_zeroes: 12 }}`), so 1a is viable pending Finalsite's
+   answers on counter scope/uniqueness, template tokens, 10-digit match, and
+   admin setup. Under 1a the integration just **reads** the generated id and
+   pushes to Focus — no pipeline minting and no number write-back.
 
    Identity-resolution absorbs whichever via one config flag. Formal ownership
    sign-off: Miami ops / central data.
