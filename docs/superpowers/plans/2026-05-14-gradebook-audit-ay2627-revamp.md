@@ -367,8 +367,8 @@ branches.
 | `w_grade_inflation`                              | FYI flag — excluded from health score, not actionable                     |
 | `assign_s_hs_score_not_conversion_chart_options` | FYI flag                                                                  |
 | `assign_s_ms_score_not_conversion_chart_options` | FYI flag                                                                  |
-| `qt_teacher_s_total_greater_200`                 | Summative 200 policy no longer enforced                                   |
-| `qt_teacher_s_total_less_200`                    | Summative 200 policy no longer enforced                                   |
+| `qt_teacher_s_total_greater_200`                 | Makeup work policy causes false positives                                 |
+| `qt_teacher_s_total_less_200`                    | Makeup work policy causes false positives                                 |
 | `qt_student_is_ada_80_plus_gpa_less_2`           | Moving to `int_extracts__student_enrollments` for use in other dashboards |
 | `qt_teacher_s_total_greater_100`                 | Miami-only dead code                                                      |
 | `qt_teacher_s_total_less_100`                    | Miami-only dead code                                                      |
@@ -475,6 +475,11 @@ branches.
   - `intermediate/properties/int_tableau__gradebook_audit_flags.yml`
 
 ### 3c: Remove Summative 200 flags
+
+These flags check whether total summative point values for the quarter are above
+or below 200. The makeup work policy means teachers legitimately exceed or fall
+short of the 200-point target without it indicating a compliance problem — the
+flags produce false positives and are being removed.
 
 - [ ] **Step 3c.1: Remove `qt_teacher_s_total_greater/less_200` from
       `categories_teacher.sql`**
