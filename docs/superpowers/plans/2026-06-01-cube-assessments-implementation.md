@@ -257,46 +257,6 @@ cubes:
         sql: is_mastery
         type: boolean
         public: true
-
-      - name: count_mastery
-        description: >-
-          Number of score records where the student met the mastery or
-          proficiency threshold.
-        sql: assessment_score_key
-        type: count_distinct
-        public: true
-        filters:
-          - sql: "{CUBE}.is_mastery = true"
-
-      - name: pct_mastery
-        description: >-
-          Mastery rate — count_mastery / count_scores. Excludes NULL is_mastery
-          rows (no defined threshold) from both numerator and denominator.
-        sql:
-          "1.0 * {count_mastery} / NULLIF({_count_scores_with_mastery_defined},
-          0)"
-        type: number
-        format: percent
-        public: true
-
-      - name: _count_scores_with_mastery_defined
-        description: >-
-          Denominator for pct_mastery — score records where is_mastery is not
-          NULL (i.e., a mastery threshold is defined for this assessment).
-        sql: assessment_score_key
-        type: count_distinct
-        public: false
-        filters:
-          - sql: "{CUBE}.is_mastery IS NOT NULL"
-
-      - name: count_expected
-        description: >-
-          Number of expected assessment takers (records in
-          bridge_assessment_expectations_enrollment_scoped). NULL for state
-          assessments and any administration not covered by the bridge.
-        sql: assessment_expectation_key
-        type: count_distinct
-        public: true
 ```
 
 - [ ] **Step 2: Verify the YAML parses**
@@ -310,7 +270,7 @@ cube = data['cubes'][0]
 print('cube name:', cube['name'])
 print('public:', cube.get('public'))
 print('join names:', [j['name'] for j in cube['joins']])
-print('measure names:', [m['name'] for m in cube['measures']])
+print('dimension count:', len(cube['dimensions']))
 "
 ```
 
@@ -320,7 +280,7 @@ Expected output:
 cube name: student_assessments_enrollment_scoped
 public: False
 join names: ['dates', 'assessment_administrations', 'students']
-measure names: ['count_scores', 'count_mastery', 'pct_mastery', '_count_scores_with_mastery_defined', 'count_expected']
+dimension count: 6
 ```
 
 - [ ] **Step 3: Commit**
@@ -454,59 +414,6 @@ cubes:
         sql: is_mastery
         type: boolean
         public: true
-
-      - name: count_mastery
-        description: >-
-          Number of score records where the student met the mastery or
-          proficiency threshold. College Board section benchmarks (EBRW, Math)
-          and AP exam_score >= 3.
-        sql: assessment_score_key
-        type: count_distinct
-        public: true
-        filters:
-          - sql: "{CUBE}.is_mastery = true"
-
-      - name: pct_mastery
-        description: >-
-          Mastery rate — count_mastery / count_scores. Excludes NULL is_mastery
-          rows (ACT, sub-section scores, practice rows with no defined
-          benchmark) from both numerator and denominator.
-        sql:
-          "1.0 * {count_mastery} / NULLIF({_count_scores_with_mastery_defined},
-          0)"
-        type: number
-        format: percent
-        public: true
-
-      - name: _count_scores_with_mastery_defined
-        description: >-
-          Denominator for pct_mastery — score records where is_mastery is not
-          NULL.
-        sql: assessment_score_key
-        type: count_distinct
-        public: false
-        filters:
-          - sql: "{CUBE}.is_mastery IS NOT NULL"
-
-      - name: count_expected
-        description: >-
-          Number of expected assessment takers (records in
-          bridge_assessment_expectations_student_scoped). Populated only for K-8
-          replacement-curriculum assessments; NULL for college-entrance and AP
-          administrations not covered by the bridge.
-        sql: assessment_expectation_key
-        type: count_distinct
-        public: true
-
-      - name: avg_scale_score
-        description: >-
-          Average scale score across all score records in the filtered set. For
-          college-entrance assessments, use a filter on
-          assessment_administrations.test_type or score sub-type to avoid
-          averaging across incompatible score scales.
-        sql: scale_score
-        type: avg
-        public: true
 ```
 
 - [ ] **Step 2: Verify the YAML parses**
@@ -521,7 +428,7 @@ print('cube name:', cube['name'])
 print('public:', cube.get('public'))
 print('join names:', [j['name'] for j in cube['joins']])
 print('dimension names:', [d['name'] for d in cube['dimensions'] if not d.get('primary_key')])
-print('measure names:', [m['name'] for m in cube['measures']])
+print('dimension count:', len(cube['dimensions']))
 "
 ```
 
@@ -532,7 +439,7 @@ cube name: student_assessments_student_scoped
 public: False
 join names: ['dates', 'assessment_administrations', 'students', 'terms']
 dimension names: ['test_date', 'scale_score', 'rank', 'max_scale_score', 'superscore', 'running_max_scale_score', 'proficiency_level', 'is_mastery']
-measure names: ['count_scores', 'count_mastery', 'pct_mastery', '_count_scores_with_mastery_defined', 'count_expected', 'avg_scale_score']
+dimension count: 9
 ```
 
 - [ ] **Step 3: Commit**
@@ -607,10 +514,6 @@ views:
     cubes:
       - join_path: student_assessments_enrollment_scoped
         includes:
-          - count_scores
-          - count_mastery
-          - pct_mastery
-          - count_expected
           - test_date
           - scale_score
           - percent_correct
@@ -775,10 +678,6 @@ views:
     cubes:
       - join_path: student_assessments_enrollment_scoped
         includes:
-          - count_scores
-          - count_mastery
-          - pct_mastery
-          - count_expected
           - proficiency_level
           - is_mastery
 
@@ -932,11 +831,6 @@ views:
     cubes:
       - join_path: student_assessments_student_scoped
         includes:
-          - count_scores
-          - count_mastery
-          - pct_mastery
-          - count_expected
-          - avg_scale_score
           - test_date
           - scale_score
           - rank
@@ -1117,11 +1011,6 @@ views:
     cubes:
       - join_path: student_assessments_student_scoped
         includes:
-          - count_scores
-          - count_mastery
-          - pct_mastery
-          - count_expected
-          - avg_scale_score
           - proficiency_level
           - is_mastery
 
