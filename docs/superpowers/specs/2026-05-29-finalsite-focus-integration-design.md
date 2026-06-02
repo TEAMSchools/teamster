@@ -1,12 +1,16 @@
 # Finalsite → Focus enrollment integration (KIPP Miami) — design
 
 - **Issue:** [#4073](https://github.com/TEAMSchools/teamster/issues/4073)
-- **Status:** Design / brainstorming output (no implementation yet)
+- **Status:** Design / brainstorming output (no implementation yet); updated
+  2026-06-02 after the Finalsite SFTP export sample landed (see _Fork 1_).
 - **Scope:** KIPP Miami only (`kippmiami` code location)
 - **Related:** inbound Focus-load spec
   `2026-04-03-focus-sis-integration-design.md` (distinct pipeline — that loads
   Focus → warehouse; this pushes Finalsite → Focus)
 - **API reference:** `references/focus-api-spec.md` (+ `.json`)
+- **Source sample:** Finalsite Swiss Army Export "Focus Student Export" SFTP CSV
+  (`kippmiami_SwissArmyExport_Focus_Student_Export…_SFTP_…`, 2026-06-02). PII —
+  held in Drive, **not committed** to the repo. Schema documented in _Fork 1_.
 
 ## Goal
 
@@ -43,21 +47,56 @@ Finalsite  [FORK 1: REST API  OR  new SFTP export]
   -> reconciliation: Finalsite eligible roster vs Focus students
 ```
 
-### Fork 1 — Finalsite source (decide when the export file lands)
+### Fork 1 — Finalsite source (SFTP export sample has landed)
 
 Not sequential ("API now, SFTP later" was a mischaracterization). The source
-will be **either** the Finalsite REST API **or** the promised all-in-one SFTP
-export. Decide which is better once the export exists and can be compared on
-contents, completeness, freshness, and effort. The dbt **staging layer
-normalizes whichever source into one shape**, so the rest of the pipeline is
-source-independent. The existing Finalsite warehouse assets serve a different
-purpose and are not reused as-is.
+will be **either** the Finalsite REST API **or** the all-in-one SFTP export. The
+dbt **staging layer normalizes whichever source into one shape**, so the rest of
+the pipeline is source-independent. The existing Finalsite warehouse assets
+serve a different purpose and are not reused as-is.
+
+**The SFTP export now exists** (sample dated 2026-06-02), so the comparison has
+real data on one side. It is a Finalsite "Swiss Army Export" configured as a
+"Focus Student Export," delivered via SFTP: **one flat, denormalized row per
+student**, with the address, medical fields, and up to **four** guardians
+embedded inline. This is the _source_ shape — distinct from Focus's five
+_import_ templates in Fork 2; do not conflate them.
+
+Documented columns (sample):
+
+| Group        | Columns                                                                                                                          |
+| ------------ | -------------------------------------------------------------------------------------------------------------------------------- |
+| Identity     | `Finalsite ID`; SIS-ID slots `PowerSchool DCID`, `PowerSchool Student Number` (see gate)                                         |
+| Student      | First / Middle / Last Name, `Grade`, `Gender`, `Birth Date`, `Latino/Hispanic` (bool), `Race - Multi-Racial` (single value)      |
+| Address      | `Household 1 Address / City / State / Zip` (single household only)                                                               |
+| Medical      | Student Doctor Name / Phone, `Media Release`, Preference of Hospital, Hospital/Doctor Phone (see gate)                           |
+| Guardians ×4 | per parent: `Finalsite ID`, `PowerSchool Contact ID`, Title, First / Last Name, Relationship, Primary Phone Type / Number, Email |
+
+Findings that reshape the design:
+
+1. **No enrollment data.** The export carries no enrollment status, school,
+   entry date, school year, or withdrawal/drop code — only `Grade`. As
+   configured it **cannot drive the eligibility predicate or the lifecycle ops**
+   (transfer-out, re-enroll); it only feeds demographics / address / contacts.
+   See the _enrollment-data gate_.
+2. **SIS-ID slots are PowerSchool-named on a Focus region** — mostly empty, a
+   few guardian rows carry a populated contact ID. See the _SIS-ID column gate_.
+3. **Up to four guardians** — the source over-supplies relative to the Focus API
+   (max 2). With the all-guardians decision (below), this tilts Fork 2 to SFTP.
+4. **Medical fields present** — see the _medical-destination gate_.
+5. **Single household** — no second address modeled.
+
+If the SFTP export is chosen as the source, the enrollment-data gate must
+resolve first: either enrollment columns are added to the export config, or
+enrollment data is sourced from the API (a Fork-1 hybrid), or the export is
+treated as a pre-filtered eligible roster with school/year derived downstream.
 
 ### Fork 2 — Focus transport (decide after vendor confirmation)
 
-**Either** is viable; the choice is **neutral on identity grounds** (we supply
-the student number on both paths — see Identity). Decide on the other factors
-below.
+Both are **neutral on identity grounds** (we supply the student number on either
+path — see Identity). For **contacts**, the choice is already made — SFTP, per
+the all-guardians decision below (API caps at 2). For the **student/enrollment**
+records either remains viable; decide on the factors below.
 
 |                   | Focus SFTP templates                                                                                         | Focus REST API                                                                                                                                    |
 | ----------------- | ------------------------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -67,6 +106,14 @@ below.
 | Guardians         | Many (Contacts + SORT_ORDER)                                                                                 | Exactly 2                                                                                                                                         |
 | Error feedback    | After Focus processes batch; mismatches land in manual "Match Students" queue                                | Per-record, synchronous                                                                                                                           |
 | Repo precedent    | Reuses `build_bigquery_query_sftp_asset`                                                                     | Net-new outbound OAuth2 POST resource                                                                                                             |
+
+**Decision (2026-06-02): preserve all guardians.** Miami wants every guardian
+the source supplies (the export carries up to four). The Focus API caps at
+`guardian_1`/`guardian_2`, so an **API-only path would silently drop guardians**
+— it is ruled out for contacts. The SFTP `Contacts` template (+ `SORT_ORDER`)
+handles many, so Fork 2 tilts to SFTP; an API path would have to be paired with
+SFTP for the `Contacts` file. This does not by itself resolve Fork 2 for the
+student/enrollment records — only the contacts portion.
 
 Possible hybrid: API for the student record + SFTP `STUDENT_ENROLLMENT` for the
 enrollment, if the API can't create enrollments.
@@ -125,6 +172,13 @@ Implications:
 - Focus's manual **"Match Students"** tool is the fallback our resolution exists
   to minimize — the cleaner we resolve identity before sending, the fewer
   duplicates and less manual pairing in Focus.
+- **The SFTP export already reserves SIS-ID slots** (`PowerSchool DCID` /
+  `Student Number` at student level, `PowerSchool Contact ID` per guardian) —
+  mostly empty, but a few guardian rows carry a value, evidence the write-back
+  target field exists and is partially populated. Whether these slots are the
+  intended Focus write-back targets (mislabeled), vestigial PowerSchool-template
+  columns, or real PowerSchool IDs is the _SIS-ID column gate_ — it determines
+  what the crosswalk anchors on from the source side and where write-back lands.
 
 ## Components
 
@@ -161,7 +215,14 @@ Implications:
 
 Student/guardian PII stays in the warehouse and local artifacts. Any external
 surface (PR, issue, Asana, logs) uses redacted labels or column-name references
-only. Counts/aggregates are fine; identifiers are not.
+only. Counts/aggregates are fine; identifiers are not. The SFTP export sample is
+held in Drive and is **not committed** to the repo.
+
+The export adds **medical PII** (student doctor name/phone, preferred hospital,
+hospital phone) on top of names, DOB, address, and guardian contacts. If the
+medical-destination gate resolves to "out of scope," drop these columns at
+staging so they never enter the warehouse rather than carrying and ignoring
+them.
 
 ## Open decisions & gates (do not block writing/implementation planning)
 
@@ -191,9 +252,31 @@ only. Counts/aggregates are fine; identifiers are not.
    Identity-resolution absorbs whichever via one config flag. Formal ownership
    sign-off: Miami ops / central data.
 
-2. **Fork 1** — Finalsite source (API vs new SFTP export); decide when the
-   export lands.
-3. **Fork 2** — Focus transport (SFTP vs API); decide after vendor confirmation.
+2. **Fork 1** — Finalsite source (API vs SFTP export). The export sample has
+   landed (see _Fork 1_); choosing it is gated on the **enrollment-data gate**.
+3. **Fork 2** — Focus transport (SFTP vs API). The all-guardians decision rules
+   out API-only for contacts; remaining choice is for the student/enrollment
+   records, gated on the API vendor-confirm items below.
+
+   **★ Enrollment-data gate** — _confirm with:_ the Finalsite export owner /
+   Miami ops. _Question:_ the export carries no enrollment status / school /
+   entry date / school year / withdrawal — do enrollment columns get added to
+   the export config, does enrollment data stay with the API, or is the export a
+   pre-filtered eligible roster? _Decides:_ whether Fork 1 is SFTP-only, a
+   SFTP+API hybrid, or whether the eligibility predicate is implicit; gates the
+   lifecycle ops (transfer-out, re-enroll).
+
+   **★ SIS-ID column gate** — _confirm with:_ the Finalsite export owner.
+   _Question:_ are the PowerSchool-named SIS-ID slots a cloned PowerSchool
+   template (vestigial for Focus), the intended Focus write-back targets, or
+   real PowerSchool IDs? _Decides:_ source-side crosswalk anchor and the
+   write-back target field.
+
+   **Medical-destination gate** — _confirm with:_ Miami ops. _Question:_ is
+   Focus the home for doctor/hospital/media-release data? _Decides:_ whether to
+   map the medical columns into Focus or drop them at staging (preferred default
+   if unconfirmed, to limit medical PII).
+
 4. **API vendor-confirm items** — create-vs-update match key field on re-POST;
    and the **enrollment-write gap**: whether the API can create/end enrollments
    (transfers-out, re-enrollment) or the SFTP `STUDENT_ENROLLMENT` template is
@@ -205,8 +288,9 @@ only. Counts/aggregates are fine; identifiers are not.
    column. Doesn't change the design.
 7. **Prereqs** — Focus admin provisions a Third Party System integration (Focus
    dialect, write scope, Client ID/Secret) for the API path; required Focus
-   codes (grades, enrollment codes, calendars) exist; guardian cardinality (API
-   = 2, SFTP = many).
+   codes (grades, enrollment codes, calendars) exist. Guardian cardinality is
+   **decided** — preserve all (source supplies up to 4), so contacts go via the
+   SFTP `Contacts` template (API caps at 2).
 
 ## Out of scope
 
