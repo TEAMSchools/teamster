@@ -107,12 +107,196 @@ uv run dbt build \
 All changes are in the `stg_google_sheets__gradebook_flags` Google Sheet. No SQL
 changes.
 
-**How the rollover works:** Copy existing rows for each active region and school
-level from `academic_year = 2025`, paste as new rows, and change the year to
-`2026`. Skip any rows for flags that are being deprecated this year. Miami is
-being removed entirely — do not create any 2026 Miami rows.
+**How the rollover works:** The AY 2026 rows have been pre-generated from AY
+2025 data with deprecated flags excluded and Paterson rows derived from Newark.
+Copy the table in step 1.0 and paste directly into the Google Sheet — do not
+manually copy rows. The query that produced this table is documented in the
+[Start-of-year procedure](../../reference/gradebook-audit-data-model.md) section
+of the reference doc for future years.
 
 **Files:** Google Sheets only (external — not in git)
+
+- [ ] **Step 1.0: Paste the pre-generated AY 2026 rows into the sheet**
+
+  Copy everything in the code block below (including the header row) and paste
+  into the first empty row of `stg_google_sheets__gradebook_flags`. Google
+  Sheets will split the tabs into columns automatically. Column order matches
+  the sheet: A=academic_year, B=region, C=school_level, D=grade_level (blank),
+  E=code_type, F=code, G=audit_category, H=audit_flag_name, I=cte_grouping.
+
+  ```text
+  academic_year	region	school_level	grade_level	code_type	code	audit_category	audit_flag_name	cte_grouping
+  2026	Camden	ES		Quarter	Q1	Comments	qt_es_comment_missing	student_course
+  2026	Camden	ES		Quarter	Q2	Comments	qt_es_comment_missing	student_course
+  2026	Camden	ES		Quarter	Q3	Comments	qt_es_comment_missing	student_course
+  2026	Camden	ES		Quarter	Q4	Comments	qt_es_comment_missing	student_course
+  2026	Camden	HS		Gradebook Category	F	Data Entry	assign_f_missing_score_not_0	assignment_student
+  2026	Camden	HS		Gradebook Category	F	Data Entry	assign_f_score_less_5	assignment_student
+  2026	Camden	HS		Gradebook Category	F	Data Entry	assign_null_score	assignment_student
+  2026	Camden	HS		Gradebook Category	F	Data Entry	assign_score_above_max	assignment_student
+  2026	Camden	HS		Gradebook Category	F	Setup	f_assign_max_score_not_10	class_category_assignment
+  2026	Camden	HS		Gradebook Category	F	Updated	f_expected_assign_count_not_met	class_category
+  2026	Camden	HS		Gradebook Category	F	Data Entry	f_percent_graded_min_not_met	class_category
+  2026	Camden	HS		Gradebook Category	H	Data Entry	assign_h_missing_score_not_0	assignment_student
+  2026	Camden	HS		Gradebook Category	H	Data Entry	assign_h_score_less_5	assignment_student
+  2026	Camden	HS		Gradebook Category	H	Data Entry	assign_null_score	assignment_student
+  2026	Camden	HS		Gradebook Category	H	Data Entry	assign_score_above_max	assignment_student
+  2026	Camden	HS		Gradebook Category	H	Setup	h_assign_max_score_not_10	class_category_assignment
+  2026	Camden	HS		Gradebook Category	H	Updated	h_expected_assign_count_not_met	class_category
+  2026	Camden	HS		Gradebook Category	H	Data Entry	h_percent_graded_min_not_met	class_category
+  2026	Camden	HS		Gradebook Category	S	Data Entry	assign_null_score	assignment_student
+  2026	Camden	HS		Gradebook Category	S	Data Entry	assign_s_hs_score_less_50p	assignment_student
+  2026	Camden	HS		Gradebook Category	S	Data Entry	assign_s_missing_score_not_0	assignment_student
+  2026	Camden	HS		Gradebook Category	S	Data Entry	assign_score_above_max	assignment_student
+  2026	Camden	HS		Gradebook Category	S	Updated	s_expected_assign_count_not_met	class_category
+  2026	Camden	HS		Gradebook Category	S	Data Entry	s_percent_graded_min_not_met	class_category
+  2026	Camden	HS		Gradebook Category	W	Data Entry	assign_null_score	assignment_student
+  2026	Camden	HS		Gradebook Category	W	Data Entry	assign_score_above_max	assignment_student
+  2026	Camden	HS		Gradebook Category	W	Data Entry	assign_w_missing_score_not_0	assignment_student
+  2026	Camden	HS		Gradebook Category	W	Data Entry	assign_w_score_less_5	assignment_student
+  2026	Camden	HS		Gradebook Category	W	Setup	w_assign_max_score_not_10	class_category_assignment
+  2026	Camden	HS		Gradebook Category	W	Updated	w_expected_assign_count_not_met	class_category
+  2026	Camden	HS		Gradebook Category	W	Data Entry	w_percent_graded_min_not_met	class_category
+  2026	Camden	HS		Quarter	Q1	EOQ	qt_grade_70_comment_missing	student_course
+  2026	Camden	HS		Quarter	Q1	Data Entry	qt_percent_grade_greater_100	student_course
+  2026	Camden	HS		Quarter	Q2	EOQ	qt_grade_70_comment_missing	student_course
+  2026	Camden	HS		Quarter	Q2	Data Entry	qt_percent_grade_greater_100	student_course
+  2026	Camden	HS		Quarter	Q3	EOQ	qt_grade_70_comment_missing	student_course
+  2026	Camden	HS		Quarter	Q3	Data Entry	qt_percent_grade_greater_100	student_course
+  2026	Camden	HS		Quarter	Q4	EOQ	qt_grade_70_comment_missing	student_course
+  2026	Camden	HS		Quarter	Q4	Data Entry	qt_percent_grade_greater_100	student_course
+  2026	Camden	MS		Gradebook Category	F	Data Entry	assign_f_missing_score_not_5	assignment_student
+  2026	Camden	MS		Gradebook Category	F	Data Entry	assign_f_score_less_5	assignment_student
+  2026	Camden	MS		Gradebook Category	F	Data Entry	assign_null_score	assignment_student
+  2026	Camden	MS		Gradebook Category	F	Data Entry	assign_score_above_max	assignment_student
+  2026	Camden	MS		Gradebook Category	F	Setup	f_assign_max_score_not_10	class_category_assignment
+  2026	Camden	MS		Gradebook Category	F	Updated	f_expected_assign_count_not_met	class_category
+  2026	Camden	MS		Gradebook Category	F	Data Entry	f_percent_graded_min_not_met	class_category
+  2026	Camden	MS		Gradebook Category	H	Data Entry	assign_h_missing_score_not_5	assignment_student
+  2026	Camden	MS		Gradebook Category	H	Data Entry	assign_h_score_less_5	assignment_student
+  2026	Camden	MS		Gradebook Category	H	Data Entry	assign_null_score	assignment_student
+  2026	Camden	MS		Gradebook Category	H	Data Entry	assign_score_above_max	assignment_student
+  2026	Camden	MS		Gradebook Category	H	Setup	h_assign_max_score_not_10	class_category_assignment
+  2026	Camden	MS		Gradebook Category	H	Updated	h_expected_assign_count_not_met	class_category
+  2026	Camden	MS		Gradebook Category	H	Data Entry	h_percent_graded_min_not_met	class_category
+  2026	Camden	MS		Gradebook Category	S	Data Entry	assign_null_score	assignment_student
+  2026	Camden	MS		Gradebook Category	S	Data Entry	assign_s_score_less_50p	assignment_student
+  2026	Camden	MS		Gradebook Category	S	Data Entry	assign_score_above_max	assignment_student
+  2026	Camden	MS		Gradebook Category	S	Updated	s_expected_assign_count_not_met	class_category
+  2026	Camden	MS		Gradebook Category	S	Data Entry	s_percent_graded_min_not_met	class_category
+  2026	Camden	MS		Gradebook Category	W	Data Entry	assign_null_score	assignment_student
+  2026	Camden	MS		Gradebook Category	W	Data Entry	assign_score_above_max	assignment_student
+  2026	Camden	MS		Gradebook Category	W	Data Entry	assign_w_missing_score_not_5	assignment_student
+  2026	Camden	MS		Gradebook Category	W	Data Entry	assign_w_score_less_5	assignment_student
+  2026	Camden	MS		Gradebook Category	W	Setup	w_assign_max_score_not_10	class_category_assignment
+  2026	Camden	MS		Gradebook Category	W	Updated	w_expected_assign_count_not_met	class_category
+  2026	Camden	MS		Gradebook Category	W	Data Entry	w_percent_graded_min_not_met	class_category
+  2026	Camden	MS		Quarter	Q1	EOQ	qt_grade_70_comment_missing	student_course
+  2026	Camden	MS		Quarter	Q1	Data Entry	qt_percent_grade_greater_100	student_course
+  2026	Camden	MS		Quarter	Q2	EOQ	qt_grade_70_comment_missing	student_course
+  2026	Camden	MS		Quarter	Q2	Data Entry	qt_percent_grade_greater_100	student_course
+  2026	Camden	MS		Quarter	Q3	EOQ	qt_grade_70_comment_missing	student_course
+  2026	Camden	MS		Quarter	Q3	Data Entry	qt_percent_grade_greater_100	student_course
+  2026	Camden	MS		Quarter	Q4	EOQ	qt_grade_70_comment_missing	student_course
+  2026	Camden	MS		Quarter	Q4	Data Entry	qt_percent_grade_greater_100	student_course
+  2026	Newark	ES		Quarter	Q1	Comments	qt_es_comment_missing	student_course
+  2026	Newark	ES		Quarter	Q2	Comments	qt_es_comment_missing	student_course
+  2026	Newark	ES		Quarter	Q3	Comments	qt_es_comment_missing	student_course
+  2026	Newark	ES		Quarter	Q4	Comments	qt_es_comment_missing	student_course
+  2026	Newark	HS		Gradebook Category	F	Data Entry	assign_f_missing_score_not_0	assignment_student
+  2026	Newark	HS		Gradebook Category	F	Data Entry	assign_f_score_less_5	assignment_student
+  2026	Newark	HS		Gradebook Category	F	Data Entry	assign_null_score	assignment_student
+  2026	Newark	HS		Gradebook Category	F	Data Entry	assign_score_above_max	assignment_student
+  2026	Newark	HS		Gradebook Category	F	Setup	f_assign_max_score_not_10	class_category_assignment
+  2026	Newark	HS		Gradebook Category	F	Updated	f_expected_assign_count_not_met	class_category
+  2026	Newark	HS		Gradebook Category	F	Data Entry	f_percent_graded_min_not_met	class_category
+  2026	Newark	HS		Gradebook Category	H	Data Entry	assign_h_missing_score_not_0	assignment_student
+  2026	Newark	HS		Gradebook Category	H	Data Entry	assign_h_score_less_5	assignment_student
+  2026	Newark	HS		Gradebook Category	H	Data Entry	assign_null_score	assignment_student
+  2026	Newark	HS		Gradebook Category	H	Data Entry	assign_score_above_max	assignment_student
+  2026	Newark	HS		Gradebook Category	H	Setup	h_assign_max_score_not_10	class_category_assignment
+  2026	Newark	HS		Gradebook Category	H	Updated	h_expected_assign_count_not_met	class_category
+  2026	Newark	HS		Gradebook Category	H	Data Entry	h_percent_graded_min_not_met	class_category
+  2026	Newark	HS		Gradebook Category	S	Data Entry	assign_null_score	assignment_student
+  2026	Newark	HS		Gradebook Category	S	Data Entry	assign_s_hs_score_less_50p	assignment_student
+  2026	Newark	HS		Gradebook Category	S	Data Entry	assign_s_missing_score_not_0	assignment_student
+  2026	Newark	HS		Gradebook Category	S	Data Entry	assign_score_above_max	assignment_student
+  2026	Newark	HS		Gradebook Category	S	Updated	s_expected_assign_count_not_met	class_category
+  2026	Newark	HS		Gradebook Category	S	Data Entry	s_percent_graded_min_not_met	class_category
+  2026	Newark	HS		Gradebook Category	W	Data Entry	assign_null_score	assignment_student
+  2026	Newark	HS		Gradebook Category	W	Data Entry	assign_score_above_max	assignment_student
+  2026	Newark	HS		Gradebook Category	W	Data Entry	assign_w_missing_score_not_0	assignment_student
+  2026	Newark	HS		Gradebook Category	W	Data Entry	assign_w_score_less_5	assignment_student
+  2026	Newark	HS		Gradebook Category	W	Setup	w_assign_max_score_not_10	class_category_assignment
+  2026	Newark	HS		Gradebook Category	W	Updated	w_expected_assign_count_not_met	class_category
+  2026	Newark	HS		Gradebook Category	W	Data Entry	w_percent_graded_min_not_met	class_category
+  2026	Newark	HS		Quarter	Q1	EOQ	qt_grade_70_comment_missing	student_course
+  2026	Newark	HS		Quarter	Q2	EOQ	qt_grade_70_comment_missing	student_course
+  2026	Newark	HS		Quarter	Q3	EOQ	qt_grade_70_comment_missing	student_course
+  2026	Newark	HS		Quarter	Q4	EOQ	qt_grade_70_comment_missing	student_course
+  2026	Newark	MS		Gradebook Category	F	Data Entry	assign_f_missing_score_not_5	assignment_student
+  2026	Newark	MS		Gradebook Category	F	Data Entry	assign_f_score_less_5	assignment_student
+  2026	Newark	MS		Gradebook Category	F	Data Entry	assign_null_score	assignment_student
+  2026	Newark	MS		Gradebook Category	F	Data Entry	assign_score_above_max	assignment_student
+  2026	Newark	MS		Gradebook Category	F	Setup	f_assign_max_score_not_10	class_category_assignment
+  2026	Newark	MS		Gradebook Category	F	Updated	f_expected_assign_count_not_met	class_category
+  2026	Newark	MS		Gradebook Category	F	Data Entry	f_percent_graded_min_not_met	class_category
+  2026	Newark	MS		Gradebook Category	H	Data Entry	assign_h_missing_score_not_5	assignment_student
+  2026	Newark	MS		Gradebook Category	H	Data Entry	assign_h_score_less_5	assignment_student
+  2026	Newark	MS		Gradebook Category	H	Data Entry	assign_null_score	assignment_student
+  2026	Newark	MS		Gradebook Category	H	Data Entry	assign_score_above_max	assignment_student
+  2026	Newark	MS		Gradebook Category	H	Setup	h_assign_max_score_not_10	class_category_assignment
+  2026	Newark	MS		Gradebook Category	H	Updated	h_expected_assign_count_not_met	class_category
+  2026	Newark	MS		Gradebook Category	H	Data Entry	h_percent_graded_min_not_met	class_category
+  2026	Newark	MS		Gradebook Category	S	Data Entry	assign_null_score	assignment_student
+  2026	Newark	MS		Gradebook Category	S	Data Entry	assign_s_score_less_50p	assignment_student
+  2026	Newark	MS		Gradebook Category	S	Data Entry	assign_score_above_max	assignment_student
+  2026	Newark	MS		Gradebook Category	S	Updated	s_expected_assign_count_not_met	class_category
+  2026	Newark	MS		Gradebook Category	S	Data Entry	s_percent_graded_min_not_met	class_category
+  2026	Newark	MS		Gradebook Category	W	Data Entry	assign_null_score	assignment_student
+  2026	Newark	MS		Gradebook Category	W	Data Entry	assign_score_above_max	assignment_student
+  2026	Newark	MS		Gradebook Category	W	Data Entry	assign_w_missing_score_not_5	assignment_student
+  2026	Newark	MS		Gradebook Category	W	Data Entry	assign_w_score_less_5	assignment_student
+  2026	Newark	MS		Gradebook Category	W	Setup	w_assign_max_score_not_10	class_category_assignment
+  2026	Newark	MS		Gradebook Category	W	Updated	w_expected_assign_count_not_met	class_category
+  2026	Newark	MS		Gradebook Category	W	Data Entry	w_percent_graded_min_not_met	class_category
+  2026	Newark	MS		Quarter	Q1	EOQ	qt_grade_70_comment_missing	student_course
+  2026	Newark	MS		Quarter	Q2	EOQ	qt_grade_70_comment_missing	student_course
+  2026	Newark	MS		Quarter	Q3	EOQ	qt_grade_70_comment_missing	student_course
+  2026	Newark	MS		Quarter	Q4	EOQ	qt_grade_70_comment_missing	student_course
+  2026	Paterson	ES		Quarter	Q3	Comments	qt_es_comment_missing	student_course
+  2026	Paterson	ES		Quarter	Q4	Comments	qt_es_comment_missing	student_course
+  2026	Paterson	MS		Gradebook Category	F	Data Entry	assign_f_missing_score_not_5	assignment_student
+  2026	Paterson	MS		Gradebook Category	F	Data Entry	assign_f_score_less_5	assignment_student
+  2026	Paterson	MS		Gradebook Category	F	Data Entry	assign_null_score	assignment_student
+  2026	Paterson	MS		Gradebook Category	F	Data Entry	assign_score_above_max	assignment_student
+  2026	Paterson	MS		Gradebook Category	F	Setup	f_assign_max_score_not_10	class_category_assignment
+  2026	Paterson	MS		Gradebook Category	F	Updated	f_expected_assign_count_not_met	class_category
+  2026	Paterson	MS		Gradebook Category	F	Data Entry	f_percent_graded_min_not_met	class_category
+  2026	Paterson	MS		Gradebook Category	H	Data Entry	assign_h_missing_score_not_5	assignment_student
+  2026	Paterson	MS		Gradebook Category	H	Data Entry	assign_h_score_less_5	assignment_student
+  2026	Paterson	MS		Gradebook Category	H	Data Entry	assign_null_score	assignment_student
+  2026	Paterson	MS		Gradebook Category	H	Data Entry	assign_score_above_max	assignment_student
+  2026	Paterson	MS		Gradebook Category	H	Setup	h_assign_max_score_not_10	class_category_assignment
+  2026	Paterson	MS		Gradebook Category	H	Updated	h_expected_assign_count_not_met	class_category
+  2026	Paterson	MS		Gradebook Category	H	Data Entry	h_percent_graded_min_not_met	class_category
+  2026	Paterson	MS		Gradebook Category	S	Data Entry	assign_null_score	assignment_student
+  2026	Paterson	MS		Gradebook Category	S	Data Entry	assign_s_score_less_50p	assignment_student
+  2026	Paterson	MS		Gradebook Category	S	Data Entry	assign_score_above_max	assignment_student
+  2026	Paterson	MS		Gradebook Category	S	Updated	s_expected_assign_count_not_met	class_category
+  2026	Paterson	MS		Gradebook Category	S	Data Entry	s_percent_graded_min_not_met	class_category
+  2026	Paterson	MS		Gradebook Category	W	Data Entry	assign_null_score	assignment_student
+  2026	Paterson	MS		Gradebook Category	W	Data Entry	assign_score_above_max	assignment_student
+  2026	Paterson	MS		Gradebook Category	W	Data Entry	assign_w_missing_score_not_5	assignment_student
+  2026	Paterson	MS		Gradebook Category	W	Data Entry	assign_w_score_less_5	assignment_student
+  2026	Paterson	MS		Gradebook Category	W	Setup	w_assign_max_score_not_10	class_category_assignment
+  2026	Paterson	MS		Gradebook Category	W	Updated	w_expected_assign_count_not_met	class_category
+  2026	Paterson	MS		Gradebook Category	W	Data Entry	w_percent_graded_min_not_met	class_category
+  2026	Paterson	MS		Quarter	Q1	EOQ	qt_grade_70_comment_missing	student_course
+  2026	Paterson	MS		Quarter	Q2	EOQ	qt_grade_70_comment_missing	student_course
+  2026	Paterson	MS		Quarter	Q3	EOQ	qt_grade_70_comment_missing	student_course
+  2026	Paterson	MS		Quarter	Q4	EOQ	qt_grade_70_comment_missing	student_course
+  ```
 
 - [ ] **Step 1.1: Roll over Newark rows (ES, MS, HS)**
 
