@@ -8,7 +8,8 @@ data-team Codespaces via `npx mcp-remote`.
 
 - `server.py` — FastMCP server (PEP 723 inline deps). Tools: `meta`, `load`,
   `sql`.
-- `Dockerfile` — Python 3.13-slim, `uv run` entrypoint.
+- `Dockerfile` — Python 3.13-slim; bare `python` entrypoint (uv installs PEP 723
+  deps at build time).
 
 ## Transport modes
 

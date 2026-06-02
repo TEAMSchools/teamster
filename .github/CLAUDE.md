@@ -12,6 +12,8 @@
   Does not prevent multiple locations deploying simultaneously from one commit.
 - `trunk-check.yaml` — runs Trunk linter on PRs (excludes `requirements.txt`).
 - `mkdocs-gh-deploy.yaml` — deploys docs site on push to `main`.
+- `deploy-cube-mcp.yaml` — builds and deploys the Cube MCP server to Cloud Run
+  (`teamster-mcp`) on push to `main` when `src/cube/mcp/**` changes.
 
 ## Editing Workflows
 

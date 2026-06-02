@@ -49,8 +49,8 @@ school_calendars) go in `cubes/conformed/`.
   don't list measures under `members:`.
 - **Folder member naming.** Bare for top-cube members; `<prefix>_<member>` for
   `prefix: true` joins, where `<prefix>` is the last `join_path` segment — so
-  `dim_regions_region_name` for the two-hop
-  `attendance.dim_locations.dim_regions`.
+  `dim_regions_region_name` for
+  `attendance.dim_student_enrollments.dim_locations.dim_regions`.
 - **Branch schema validation is manual.** Cube Cloud Staging Environments don't
   auto-create from pushes. Open Cube Cloud → Data Model → Dev Mode → add branch
   by name to spin up a per-branch staging instance.
@@ -117,7 +117,7 @@ Default-deny, group-driven. Read [`cube.js`](cube.js) before modifying.
 
 The `cube` MCP wraps Cube Cloud's REST API. Auth path that works:
 
-- Mint HS256 JWT locally per request from `CUBEJS_API_SECRET` (1P:
+- Mint HS256 JWT locally per request from `CUBE_API_SECRET` (1P:
   `op://Data Team/Cube Cloud REST API/credential`).
 - The **entire JWT payload is `securityContext`** — top-level `email` claim
   flows into `cube.js`'s `contextToGroups`. Not nested under
