@@ -100,6 +100,15 @@ Default-deny, group-driven. Read [`cube.js`](cube.js) before modifying.
   `name:` field — `queryRewrite` matches via `startsWith` on
   `<cube_name>.<member>` query members. When adding a new student-data or
   staff-data cube, append its `name:` to the matching array.
+- **`SNAPSHOT_CUBES` / `SNAPSHOT_MEASURE_STEMS` arrays.** For cubes built on
+  fact tables with cumulative daily-status flags (values re-stamped on every row
+  — overcounts without a point-in-time anchor). `queryRewrite` auto-injects
+  `is_latest_record`, `is_month_end_record`, or `is_week_end_record` depending
+  on query granularity. To add a new domain: append the cube `name:` to
+  `SNAPSHOT_CUBES` and its snapshot measure name stems (e.g.
+  `"chronically_absent"`) to `SNAPSHOT_MEASURE_STEMS`. The cube must expose
+  `is_latest_record`, `is_month_end_record`, and `is_week_end_record`
+  dimensions.
 - **`canSwitchSqlUser`** only allows the SQL super-user to impersonate
   `@apps.teamschools.org` accounts (Superset integration). Do not broaden the
   suffix check.
