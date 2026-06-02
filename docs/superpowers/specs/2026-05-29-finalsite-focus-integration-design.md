@@ -87,9 +87,10 @@ Findings that reshape the design:
 5. **Single household** — no second address modeled.
 
 If the SFTP export is chosen as the source, the enrollment-data gate must
-resolve first: either enrollment columns are added to the export config, or
-enrollment data is sourced from the API (a Fork-1 hybrid), or the export is
-treated as a pre-filtered eligible roster with school/year derived downstream.
+resolve first. **Preferred:** add the missing enrollment columns to the export
+config so it stays a single source. A SFTP+API hybrid is the fallback (not the
+default), and a pre-filtered eligible roster with school/year derived downstream
+is the third option.
 
 ### Fork 2 — Focus transport (decide after vendor confirmation)
 
@@ -200,10 +201,13 @@ contacts.
 1. **No single corner is complete.** Every path needs the identity/minting gate,
    a `START_DATE` derivation, and a `SCHOOL` rule; the Focus API additionally
    can't write the enrollment table and caps guardians at 2.
-2. **The cleanest split is a hybrid Finalsite source:** SFTP export for the
-   race/ethnicity-rich **demographics**, Finalsite **API** for **status /
-   enrollment_type / school_year / sibling relationships** (the lifecycle
-   drivers the export lacks). Strongest argument yet for the _Fork-1 hybrid_.
+2. **The export lacks only the lifecycle drivers** — `status`,
+   `enrollment_type`, `school_year`, and sibling `relationships` — all of which
+   the Finalsite **API** carries natively. A hybrid source would close the gap,
+   but **the chosen direction is to enrich the single SFTP export** rather than
+   operate two sources (simpler, and the export already beats the API on
+   race/ethnicity). Hybrid is the fallback only if those columns cannot be added
+   to the export. See the _enrollment-data gate_.
 3. **Focus SFTP target dominates the Focus API target** for this use case: it is
    the only path that creates an actual enrollment record and the only one that
    preserves all guardians. The Focus API is viable for student/demographic
@@ -354,11 +358,18 @@ them.
 
    **★ Enrollment-data gate** — _confirm with:_ the Finalsite export owner /
    Miami ops. _Question:_ the export carries no enrollment status / school /
-   entry date / school year / withdrawal — do enrollment columns get added to
-   the export config, does enrollment data stay with the API, or is the export a
-   pre-filtered eligible roster? _Decides:_ whether Fork 1 is SFTP-only, a
-   SFTP+API hybrid, or whether the eligibility predicate is implicit; gates the
-   lifecycle ops (transfer-out, re-enroll).
+   entry date / school year / withdrawal — can these columns be added to the
+   Swiss Army Export config? _Research (coverage matrix):_ the Finalsite **API**
+   natively exposes `status`, `enrollment_type`, `grade`, `school_year`, and
+   `relationships` — the lifecycle drivers the export lacks — so a SFTP+API
+   hybrid _would_ close the gap. **Preferred resolution: enrich the single SFTP
+   export, not a hybrid** — one source is simpler to operate, and the export is
+   already demographically richer than the API (it carries race/ethnicity, which
+   the API base `Contact` lacks). `START_DATE` and `SCHOOL` need a derivation
+   rule either way. _Decides:_ confirms Fork 1 as SFTP-only (export
+   reconfigured); hybrid is the **fallback** only if the export cannot carry
+   enrollment fields; gates the eligibility predicate and lifecycle ops
+   (transfer-out, re-enroll).
 
    **★ SIS-ID column gate** — _confirm with:_ the Finalsite export owner.
    _Question:_ are the PowerSchool-named SIS-ID slots a cloned PowerSchool
