@@ -554,10 +554,10 @@ based on which approach produces cleaner scaffold code — and rename accordingl
               and s.sections_no_of_students != 0
       )
 
-  -- `school_level_alt` and raw `school_level` are excluded from s.* and
-  -- replaced with the coalesced value. `region_school_level` and
-  -- `section_or_period` are derived here so the if() expression is only
-  -- written once (in the CTE as `school_level_alt`).
+  /* `school_level_alt` and raw `school_level` are excluded from s.* and
+     replaced with the coalesced value. `region_school_level` and
+     `section_or_period` are derived here so the if() expression is only
+     written once (in the CTE as `school_level_alt`). */
   select
       s.* EXCEPT (school_level, school_level_alt),
       coalesce(s.school_level_alt, s.school_level) as school_level,
