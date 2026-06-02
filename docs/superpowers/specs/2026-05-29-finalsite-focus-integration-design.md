@@ -86,6 +86,29 @@ Findings that reshape the design:
 4. **Medical fields present** — see the _medical-destination gate_.
 5. **Single household** — no second address modeled.
 
+**Empirical profile** (sample export, n=167 students, 56 columns, 2026-06-02 —
+aggregates only):
+
+- **No enrollment fields, confirmed** — 0 of 56 columns carry status / school /
+  entry date / year / program; the only date column is `Birth Date`. Validates
+  the _enrollment-data gate_.
+- **Identity slots near-empty** — `PowerSchool DCID` / `Student Number`
+  populated in ~1.2% of rows; a per-guardian `PowerSchool Contact ID` is present
+  on **19.6%** of guardians (returning families partially pre-keyed — bears on
+  the _SIS-ID column gate_ and the crosswalk).
+- **Guardian distribution** (supports all-guardians → SFTP Contacts): 1 → 51, 2
+  → 87, **3 → 23, 4 → 3**; **26 students (15.6%) have ≥3** — the Focus API's
+  2-cap would drop guardians for ~1 in 6.
+- **Sibling-inference yield** (for `Linked_Students` via shared parent ID): **64
+  students (38.3%)** link to ≥1 sibling; 50 distinct pairs.
+- **`Race - Multi-Racial` is pipe-delimited multi-select** (8 rows carry
+  multiple values) → maps to Focus `RACE_*` Y/N booleans, not just
+  `SINGLE_ETHNIC`.
+- **`Relationship` is coarse** — generic `parent` dominates (172/306);
+  `RESIDES_WITH_STUD` has no source (default required).
+- **Data quality:** 3 students (1.8%) have no guardian and no address —
+  quarantine rather than push.
+
 If the SFTP export is chosen as the source, the enrollment-data gate must
 resolve first. **Preferred:** add the missing enrollment columns to the export
 config so it stays a single source. A SFTP+API hybrid is the fallback (not the
