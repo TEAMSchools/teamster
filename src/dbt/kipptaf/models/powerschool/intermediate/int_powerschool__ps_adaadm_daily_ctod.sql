@@ -155,4 +155,5 @@ select
         then true
         else false
     end as is_truant,
+
 from running_calcs

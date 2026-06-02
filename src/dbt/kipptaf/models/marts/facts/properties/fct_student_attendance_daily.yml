@@ -214,3 +214,23 @@ models:
           (is_chronically_absent, ada_tier) without requiring a date filter —
           equivalent to Tableau's MAX(calendardate) LOD approach. Future dates
           are excluded at the mart level (calendardate <= current_date).
+
+      - name: is_month_end_record
+        data_type: boolean
+        description: >-
+          TRUE on the last full membership day (membership_value = 1) of each
+          calendar month per student enrollment. FALSE on all other rows,
+          including non-membership days. Use with a month-granularity date
+          dimension for month-over-month CA trends — gives one snapshot per
+          student per month at the last school day of that month.
+
+      - name: is_week_end_record
+        data_type: boolean
+        description: >-
+          TRUE on the last full membership day (membership_value = 1) of each
+          calendar week (Monday–Sunday) per student enrollment. FALSE on all
+          other rows, including non-membership days. Use with a week-granularity
+          date dimension for week-over-week CA trends — gives one snapshot per
+          student per week at the last school day of that week. Correctly
+          handles shortened weeks (e.g. Wednesday is last school day before a
+          holiday).

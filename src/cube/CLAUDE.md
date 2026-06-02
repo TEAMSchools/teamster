@@ -100,6 +100,15 @@ Default-deny, group-driven. Read [`cube.js`](cube.js) before modifying.
   `name:` field — `queryRewrite` matches via `startsWith` on
   `<cube_name>.<member>` query members. When adding a new student-data or
   staff-data cube, append its `name:` to the matching array.
+- **`SNAPSHOT_CUBES` / `SNAPSHOT_MEASURE_STEMS` arrays.** For cubes built on
+  fact tables with cumulative daily-status flags (values re-stamped on every row
+  — overcounts without a point-in-time anchor). `queryRewrite` auto-injects
+  `is_latest_record`, `is_month_end_record`, or `is_week_end_record` depending
+  on query granularity. To add a new domain: append the cube `name:` to
+  `SNAPSHOT_CUBES` and its snapshot measure name stems (e.g.
+  `"chronically_absent"`) to `SNAPSHOT_MEASURE_STEMS`. The cube must expose
+  `is_latest_record`, `is_month_end_record`, and `is_week_end_record`
+  dimensions.
 - **`canSwitchSqlUser`** only allows the SQL super-user to impersonate
   `@apps.teamschools.org` accounts (Superset integration). Do not broaden the
   suffix check.
@@ -157,6 +166,23 @@ including `{other_cube.member}` references to joined cubes. Transitive joins
 auto-resolve; don't add redundant intermediate-hop joins. "Column not found" in
 a filter usually means the dimension SQL references a bare column on the
 filtering cube — route through `{joined_cube.col}` instead.
+
+## Testing Cube measures backed by new dbt columns
+
+When a cube YAML references a column added in this branch (not yet in
+`kipptaf_marts`), the playground errors: "Name X not found inside Y". To test
+before merge:
+
+1. Build in your dev schema:
+   `uv run dbt run --select <model> --project-dir src/dbt/kipptaf --target dev`
+   → creates `zz_<username>_kipptaf_marts.<model>`
+2. Temporarily change `sql_table` in the cube YAML to
+   `zz_<username>_kipptaf_marts.<table>`, commit, push
+3. Test in Dev Mode playground (or local `npm run dev` from `src/cube/`)
+4. Revert `sql_table` to `kipptaf_marts.<table>`, commit, push before merging
+
+The security hook flags `zz_*` schemas as an access-control regression —
+expected for the temporary test commit; acknowledge and revert.
 
 ## Operational notes
 
