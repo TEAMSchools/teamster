@@ -1088,89 +1088,250 @@ based on which approach produces cleaner scaffold code — and rename accordingl
 
 ---
 
-## Task 3: SQL — flag removals and Miami dead code cleanup
+## Task 3: SQL — flag removals and model updates
 
-Removes deprecated flags and all Miami-only dead-code SQL branches. The sheet
-already deactivated these flags in Task 1 — this task removes the dead SQL.
-After this task, the `student_course_category` and `eoq_items_conduct_code` CTEs
-in `flags.sql` become empty and are deleted; `rpt.sql` shrinks from 5 to 4 UNION
-branches.
+Organized **by model**. Build each model individually — do not cascade
+downstream.
 
-**Flags being removed:**
+> **Note:** `int_tableau__gradebook_audit_teacher_scaffold` and
+> `int_tableau__gradebook_audit_student_scaffold` are fully redesigned in steps
+> 2.3 and 2.4. They are not repeated here.
 
-| Flag                                             | Reason                                                                    |
-| ------------------------------------------------ | ------------------------------------------------------------------------- |
-| `w_grade_inflation`                              | FYI flag — excluded from health score, not actionable                     |
-| `assign_s_hs_score_not_conversion_chart_options` | FYI flag                                                                  |
-| `assign_s_ms_score_not_conversion_chart_options` | FYI flag                                                                  |
-| `qt_teacher_s_total_greater_200`                 | Makeup work policy causes false positives                                 |
-| `qt_teacher_s_total_less_200`                    | Makeup work policy causes false positives                                 |
-| `qt_student_is_ada_80_plus_gpa_less_2`           | Moving to `int_extracts__student_enrollments` for use in other dashboards |
-| `qt_teacher_s_total_greater_100`                 | Miami-only dead code                                                      |
-| `qt_teacher_s_total_less_100`                    | Miami-only dead code                                                      |
-| `s_max_score_greater_100`                        | Miami-only dead code                                                      |
-| `qt_comment_missing`                             | Miami-only dead code                                                      |
-| `qt_g1_g8_conduct_code_missing`                  | Miami-only dead code                                                      |
-| `qt_g1_g8_conduct_code_incorrect`                | Miami-only dead code                                                      |
-| `qt_kg_conduct_code_missing`                     | Miami-only dead code                                                      |
-| `qt_kg_conduct_code_incorrect`                   | Miami-only dead code                                                      |
-| `qt_kg_conduct_code_not_hr`                      | Miami-only dead code                                                      |
-| `qt_effort_grade_missing`                        | Miami-only dead code                                                      |
-| `qt_formative_grade_missing`                     | Miami-only dead code                                                      |
-| `qt_summative_grade_missing`                     | Miami-only dead code                                                      |
+**Flag reference table** — use this as your checklist when working through each
+model. Every flag in this table must be removed from its source model, its YAML,
+and the UNPIVOT list in `int_tableau__gradebook_audit_flags.sql`.
 
-### 3a: Remove FYI flag `w_grade_inflation`
+| Flag                                             | Lives in model                                     | Reason                             |
+| ------------------------------------------------ | -------------------------------------------------- | ---------------------------------- |
+| `w_grade_inflation`                              | `int_tableau__gradebook_audit_student_scaffold`    | FYI flag — in 2.4                  |
+| `assign_s_hs_score_not_conversion_chart_options` | `int_tableau__gradebook_audit_assignments_student` | FYI flag                           |
+| `assign_s_ms_score_not_conversion_chart_options` | `int_tableau__gradebook_audit_assignments_student` | FYI flag                           |
+| `qt_teacher_s_total_greater_200`                 | `int_tableau__gradebook_audit_categories_teacher`  | Makeup work policy false positives |
+| `qt_teacher_s_total_less_200`                    | `int_tableau__gradebook_audit_categories_teacher`  | Makeup work policy false positives |
+| `qt_student_is_ada_80_plus_gpa_less_2`           | `int_tableau__gradebook_audit_student_scaffold`    | Migrated — in 2.4                  |
+| `qt_teacher_s_total_greater_100`                 | `int_tableau__gradebook_audit_categories_teacher`  | Miami-only dead code               |
+| `qt_teacher_s_total_less_100`                    | `int_tableau__gradebook_audit_categories_teacher`  | Miami-only dead code               |
+| `s_max_score_greater_100`                        | `int_tableau__gradebook_audit_assignments_teacher` | Miami-only dead code               |
+| `qt_comment_missing`                             | `int_tableau__gradebook_audit_student_scaffold`    | Miami-only dead code — in 2.4      |
+| `qt_g1_g8_conduct_code_missing`                  | `int_tableau__gradebook_audit_student_scaffold`    | Miami-only dead code — in 2.4      |
+| `qt_g1_g8_conduct_code_incorrect`                | `int_tableau__gradebook_audit_student_scaffold`    | Miami-only dead code — in 2.4      |
+| `qt_kg_conduct_code_missing`                     | `int_tableau__gradebook_audit_student_scaffold`    | Miami-only dead code — in 2.4      |
+| `qt_kg_conduct_code_incorrect`                   | `int_tableau__gradebook_audit_student_scaffold`    | Miami-only dead code — in 2.4      |
+| `qt_kg_conduct_code_not_hr`                      | `int_tableau__gradebook_audit_student_scaffold`    | Miami-only dead code — in 2.4      |
+| `qt_effort_grade_missing`                        | `int_tableau__gradebook_audit_student_scaffold`    | Miami-only dead code — in 2.4      |
+| `qt_formative_grade_missing`                     | `int_tableau__gradebook_audit_student_scaffold`    | Miami-only dead code — in 2.4      |
+| `qt_summative_grade_missing`                     | `int_tableau__gradebook_audit_student_scaffold`    | Miami-only dead code — in 2.4      |
 
-- [ ] **Step 3a.1: Remove from `student_scaffold.sql`**
+---
 
-  File:
-  `src/dbt/kipptaf/models/extracts/tableau/intermediate/int_tableau__gradebook_audit_student_scaffold.sql`
+### 3a: `base_powerschool__sections` — add `school_abbreviation` and `school_level` (prerequisite)
 
-  In the **`student_scaffold` branch** (first UNION branch), delete:
+Must land before the teacher scaffold is built in step 2.3.
+
+**File:** `src/dbt/powerschool/models/sis/base/base_powerschool__sections.sql`
+
+- [ ] **Step 3a.1: Add both columns to the SELECT list**
+
+  Find `sch.name as school_name,` and add immediately after:
 
   ```sql
-  null as w_grade_inflation,
+  sch.abbreviation as school_abbreviation,
+  sch.school_level,
   ```
 
-  In the **`student_category_scaffold` branch** (second UNION branch), delete:
+- [ ] **Step 3a.2: Add columns to the properties YAML**
+
+  File:
+  `src/dbt/powerschool/models/sis/base/properties/base_powerschool__sections.yml`
+
+  ```yaml
+  - name: school_abbreviation
+    description:
+      Short school name abbreviation from stg_powerschool__schools, used as the
+      display name in Tableau dashboards.
+    data_type: string
+  - name: school_level
+    description: School level (ES, MS, or HS) from stg_powerschool__schools.
+    data_type: string
+  ```
+
+- [ ] **Step 3a.3: Build and verify**
+
+  ```bash
+  uv run dbt build \
+    --select base_powerschool__sections \
+    --project-dir src/dbt/kipptaf \
+    --defer \
+    --state src/dbt/kipptaf/target/prod
+  ```
+
+---
+
+### 3b: `stg_google_sheets__gradebook_flags` — drop `grade_level`
+
+`grade_level` was only used by Miami KG/G1-G8 conduct code flags (now gone).
+Drop it using BigQuery `SELECT * EXCEPT`.
+
+**File:**
+`src/dbt/kipptaf/models/google/sheets/staging/stg_google_sheets__gradebook_flags.sql`
+
+- [ ] **Step 3b.1: Update the SELECT**
+
+  Change:
+
+  ```sql
+  select
+      *,
+      case ... end as alt_code,
+  from {{ source("google_sheets", "src_google_sheets__gradebook_flags") }}
+  ```
+
+  to:
+
+  ```sql
+  select
+      * except (grade_level),
+      case ... end as alt_code,
+  from {{ source("google_sheets", "src_google_sheets__gradebook_flags") }}
+  ```
+
+- [ ] **Step 3b.2: Remove `grade_level` from the YAML**
+
+  File:
+  `src/dbt/kipptaf/models/google/sheets/staging/properties/stg_google_sheets__gradebook_flags.yml`
+
+  Delete the `grade_level` column entry.
+
+- [ ] **Step 3b.3: Build and verify**
+
+  ```bash
+  uv run dbt build \
+    --select stg_google_sheets__gradebook_flags \
+    --project-dir src/dbt/kipptaf
+  ```
+
+---
+
+### 3c: `int_extracts__student_enrollments` — add ADA/GPA cumulative boolean
+
+> ⚠️ **Open question for T&L (see issue #3908 comment):** use `< 2.0` until
+> threshold is confirmed.
+
+**File:**
+`src/dbt/kipptaf/models/students/intermediate/int_extracts__student_enrollments.sql`
+
+- [ ] **Step 3c.1: Add boolean column**
+
+  In the final `select`, after `ada_above_or_at_80` and GPA columns (ST06
+  ordering — logicals after plain refs):
 
   ```sql
   if(
-      ge.assignment_category_code = 'W'
-      and s.school_level_alt != 'ES'
-      and abs(
-          round(cg.category_quarter_average_all_courses, 2)
-          - round(cg.category_quarter_percent_grade, 2)
-      )
-      >= 30,
+      ada_above_or_at_80 and cumulative_y1_gpa < 2.0,
       true,
       false
-  ) as w_grade_inflation,
+  ) as is_ada_above_or_at_80_cum_gpa_less_2,
   ```
 
-- [ ] **Step 3a.2: Remove from `student_course_category` UNPIVOT in
-      `flags.sql`**
+- [ ] **Step 3c.2: Add column to YAML**
 
   File:
-  `src/dbt/kipptaf/models/extracts/tableau/intermediate/int_tableau__gradebook_audit_flags.sql`
+  `src/dbt/kipptaf/models/students/intermediate/properties/int_extracts__student_enrollments.yml`
 
-  In the `student_course_category` CTE UNPIVOT list, delete
-  `w_grade_inflation,`.
+  ```yaml
+  - name: is_ada_above_or_at_80_cum_gpa_less_2
+    description: >
+      True when the student's ADA is at or above 80% and their cumulative
+      year-to-date GPA (cumulative_y1_gpa) is below 2.0.
+    data_type: boolean
+  ```
 
-- [ ] **Step 3a.3: Update YAMLs**
+- [ ] **Step 3c.3: Build and verify**
 
-  Remove `w_grade_inflation` column entry from:
-  - `intermediate/properties/int_tableau__gradebook_audit_student_scaffold.yml`
-  - `intermediate/properties/int_tableau__gradebook_audit_flags.yml`
+  ```bash
+  uv run dbt build \
+    --select int_extracts__student_enrollments \
+    --project-dir src/dbt/kipptaf \
+    --defer \
+    --state src/dbt/kipptaf/target/prod
+  ```
 
-### 3b: Remove FYI flags `assign_s_hs/ms_score_not_conversion_chart_options`
+---
 
-- [ ] **Step 3b.1: Remove from `assignments_student.sql`**
+### 3d: `rpt_tableau__gradebook_gpa` — add per-course boolean, remove Paterson filter
+
+**File:**
+`src/dbt/kipptaf/models/extracts/tableau/rpt_tableau__gradebook_gpa.sql`
+
+- [ ] **Step 3d.1: Add per-course GPA boolean**
+
+  In the final `select`, after `ada_above_or_at_80`:
+
+  ```sql
+  if(
+      s.ada_above_or_at_80 and s.gpa_y1 < 2.0,
+      true,
+      false
+  ) as is_ada_above_or_at_80_gpa_y1_less_2,
+  ```
+
+- [ ] **Step 3d.2: Remove Paterson exclusion**
+
+  In the `student_roster` CTE WHERE clause, remove
+  `and enr.region != 'Paterson'`. The full WHERE becomes:
+
+  ```sql
+  where
+      enr.rn_year = 1
+      and not enr.is_out_of_district
+      and enr.enroll_status != -1
+  ```
+
+- [ ] **Step 3d.3: Add column to YAML**
 
   File:
-  `src/dbt/kipptaf/models/extracts/tableau/intermediate/int_tableau__gradebook_audit_assignments_student.sql`
+  `src/dbt/kipptaf/models/extracts/tableau/properties/rpt_tableau__gradebook_gpa.yml`
 
-  Delete these two `if(...)` expressions from the final `select`:
+  ```yaml
+  - name: is_ada_above_or_at_80_gpa_y1_less_2
+    description: >
+      True when the student's ADA is at or above 80% and their year-to-date
+      course GPA (gpa_y1) is below 2.0. Per-course grain.
+    data_type: boolean
+  ```
+
+- [ ] **Step 3d.4: Build and verify**
+
+  ```bash
+  uv run dbt build \
+    --select rpt_tableau__gradebook_gpa \
+    --project-dir src/dbt/kipptaf \
+    --defer \
+    --state src/dbt/kipptaf/target/prod
+  ```
+
+  Verify Paterson now appears:
+
+  ```sql
+  SELECT DISTINCT region, school_level
+  FROM `teamster-332318.dbt_grangel_tableau.rpt_tableau__gradebook_gpa`
+  WHERE academic_year = 2026
+  ORDER BY 1, 2
+  ```
+
+---
+
+### 3e: `int_tableau__gradebook_audit_assignments_student`
+
+Remove two FYI flags from the final SELECT. Also update the assignment date
+window from week grain to quarter grain — details TBD during model review.
+
+**File:**
+`src/dbt/kipptaf/models/extracts/tableau/intermediate/int_tableau__gradebook_audit_assignments_student.sql`
+
+- [ ] **Step 3e.1: Remove FYI flag expressions from the final SELECT**
+
+  Delete:
 
   ```sql
   if(
@@ -1195,35 +1356,87 @@ branches.
   ) as assign_s_hs_score_not_conversion_chart_options,
   ```
 
-- [ ] **Step 3b.2: Remove from `student_unpivot` UNPIVOT in `flags.sql`**
+- [ ] **Step 3e.2: Update assignment date window (TBD)**
 
-  Delete from the `student_unpivot` CTE UNPIVOT list:
+  Change the join condition from week grain to quarter grain. Details will be
+  added when `int_tableau__gradebook_audit_assignments_student` is reviewed in
+  the CTE-by-CTE session.
 
-  ```sql
-  assign_s_ms_score_not_conversion_chart_options,
-  assign_s_hs_score_not_conversion_chart_options
+- [ ] **Step 3e.3: Update YAML**
+
+  Remove `assign_s_ms_score_not_conversion_chart_options` and
+  `assign_s_hs_score_not_conversion_chart_options` from
+  `intermediate/properties/int_tableau__gradebook_audit_assignments_student.yml`.
+
+- [ ] **Step 3e.4: Build and verify**
+
+  ```bash
+  uv run dbt build \
+    --select int_tableau__gradebook_audit_assignments_student \
+    --project-dir src/dbt/kipptaf \
+    --defer \
+    --state src/dbt/kipptaf/target/prod
   ```
 
-- [ ] **Step 3b.3: Update YAMLs**
+---
 
-  Remove both column entries from:
-  - `intermediate/properties/int_tableau__gradebook_audit_assignments_student.yml`
-  - `intermediate/properties/int_tableau__gradebook_audit_flags.yml`
+### 3f: `int_tableau__gradebook_audit_assignments_teacher`
 
-### 3c: Remove Summative 200 flags
+Remove one Miami dead-code flag. Also update the assignment date window — TBD
+during model review.
 
-These flags check whether total summative point values for the quarter are above
-or below 200. The makeup work policy means teachers legitimately exceed or fall
-short of the 200-point target without it indicating a compliance problem — the
-flags produce false positives and are being removed.
+**File:**
+`src/dbt/kipptaf/models/extracts/tableau/intermediate/int_tableau__gradebook_audit_assignments_teacher.sql`
 
-- [ ] **Step 3c.1: Remove `qt_teacher_s_total_greater/less_200` from
-      `categories_teacher.sql`**
+- [ ] **Step 3f.1: Remove `s_max_score_greater_100` from the final SELECT**
 
-  File:
-  `src/dbt/kipptaf/models/extracts/tableau/intermediate/int_tableau__gradebook_audit_categories_teacher.sql`
+  Delete:
 
-  Delete from the final `select`:
+  ```sql
+  if(
+      sec.region = 'Miami'
+      and sec.assignment_category_code = 'S'
+      and a.totalpointvalue > 100,
+      true,
+      false
+  ) as s_max_score_greater_100,
+  ```
+
+- [ ] **Step 3f.2: Update assignment date window (TBD)**
+
+  Change the join condition from week grain to quarter grain. Details will be
+  added when `int_tableau__gradebook_audit_assignments_teacher` is reviewed in
+  the CTE-by-CTE session.
+
+- [ ] **Step 3f.3: Update YAML**
+
+  Remove `s_max_score_greater_100` from
+  `intermediate/properties/int_tableau__gradebook_audit_assignments_teacher.yml`.
+
+- [ ] **Step 3f.4: Build and verify**
+
+  ```bash
+  uv run dbt build \
+    --select int_tableau__gradebook_audit_assignments_teacher \
+    --project-dir src/dbt/kipptaf \
+    --defer \
+    --state src/dbt/kipptaf/target/prod
+  ```
+
+---
+
+### 3g: `int_tableau__gradebook_audit_categories_teacher`
+
+Remove Summative 200 flags (both Camden/Newark 200-pt and Miami 100-pt variants)
+from the final SELECT. The 7-day grace period change (Task 4) and exceptions
+removal (Task 6) happen later.
+
+**File:**
+`src/dbt/kipptaf/models/extracts/tableau/intermediate/int_tableau__gradebook_audit_categories_teacher.sql`
+
+- [ ] **Step 3g.1: Remove four S-total flag expressions from the final SELECT**
+
+  Delete:
 
   ```sql
   if(
@@ -1241,186 +1454,7 @@ flags produce false positives and are being removed.
       true,
       false
   ) as qt_teacher_s_total_less_200,
-  ```
 
-- [ ] **Step 3c.2: Remove from `teacher_unpivot_cc` UNPIVOT in `flags.sql`**
-
-  Delete:
-
-  ```sql
-  qt_teacher_s_total_greater_200,
-  qt_teacher_s_total_less_200,
-  ```
-
-- [ ] **Step 3c.3: Update YAMLs**
-
-  Remove both column entries from:
-  - `intermediate/properties/int_tableau__gradebook_audit_categories_teacher.yml`
-  - `intermediate/properties/int_tableau__gradebook_audit_flags.yml`
-
-### 3d: Migrate `qt_student_is_ada_80_plus_gpa_less_2` out of the gradebook audit
-
-This flag is being split into two new booleans and removed from the gradebook
-audit:
-
-- A **cumulative GPA** version added to `int_extracts__student_enrollments`
-  (student-level, for use in any dashboard)
-- A **per-course year-to-date GPA** version added to
-  `rpt_tableau__gradebook_gpa`
-
-> ⚠️ **Open question for T&L (see issue #3908 comment):** current logic uses
-> `< 2.0` (strictly less than). Confirm whether threshold should be `<= 2.0`.
-> Use `< 2.0` until confirmed otherwise.
-
-- [ ] **Step 3d.1: Remove from `student_scaffold.sql`**
-
-  File:
-  `src/dbt/kipptaf/models/extracts/tableau/intermediate/int_tableau__gradebook_audit_student_scaffold.sql`
-
-  In the **`student_scaffold` branch**, delete:
-
-  ```sql
-  if(
-      s.school_level_alt != 'ES'
-      and s.ada_above_or_at_80
-      and qg.quarter_course_grade_points < 2.0,
-      true,
-      false
-  ) as qt_student_is_ada_80_plus_gpa_less_2,
-  ```
-
-  In the **`student_category_scaffold` branch**, delete:
-
-  ```sql
-  null as qt_student_is_ada_80_plus_gpa_less_2,
-  ```
-
-- [ ] **Step 3d.2: Remove from `eoq_items` UNPIVOT in `flags.sql`**
-
-  Delete from the `eoq_items` CTE UNPIVOT list:
-
-  ```sql
-  qt_student_is_ada_80_plus_gpa_less_2
-  ```
-
-- [ ] **Step 3d.3: Update gradebook audit YAMLs**
-
-  Remove `qt_student_is_ada_80_plus_gpa_less_2` from:
-  - `intermediate/properties/int_tableau__gradebook_audit_student_scaffold.yml`
-  - `intermediate/properties/int_tableau__gradebook_audit_flags.yml`
-
-- [ ] **Step 3d.4: Add cumulative GPA boolean to
-      `int_extracts__student_enrollments`**
-
-  File:
-  `src/dbt/kipptaf/models/students/intermediate/int_extracts__student_enrollments.sql`
-
-  Add this column to the final `select` list (after the existing
-  `ada_above_or_at_80` and GPA columns — follow ST06 column ordering: plain refs
-  first, then logicals):
-
-  ```sql
-  if(
-      ada_above_or_at_80 and cumulative_y1_gpa < 2.0,
-      true,
-      false
-  ) as is_ada_above_or_at_80_cum_gpa_less_2,
-  ```
-
-  Then add the column to the properties YAML at
-  `src/dbt/kipptaf/models/students/intermediate/properties/int_extracts__student_enrollments.yml`:
-
-  ```yaml
-  - name: is_ada_above_or_at_80_cum_gpa_less_2
-    description: >
-      True when the student's ADA is at or above 80% and their cumulative
-      year-to-date GPA (cumulative_y1_gpa) is below 2.0.
-    data_type: boolean
-  ```
-
-- [ ] **Step 3d.5: Build and verify `int_extracts__student_enrollments`**
-
-  ```bash
-  uv run dbt build \
-    --select int_extracts__student_enrollments \
-    --project-dir src/dbt/kipptaf \
-    --defer \
-    --state src/dbt/kipptaf/target/prod
-  ```
-
-- [ ] **Step 3d.6: Add per-course GPA boolean to `rpt_tableau__gradebook_gpa`**
-
-  File: `src/dbt/kipptaf/models/extracts/tableau/rpt_tableau__gradebook_gpa.sql`
-
-  Add this column to the final `select` list (after the existing
-  `ada_above_or_at_80` column — follow ST06 ordering):
-
-  ```sql
-  if(
-      s.ada_above_or_at_80 and s.gpa_y1 < 2.0,
-      true,
-      false
-  ) as is_ada_above_or_at_80_gpa_y1_less_2,
-  ```
-
-  Then add the column to the properties YAML at
-  `src/dbt/kipptaf/models/extracts/tableau/properties/rpt_tableau__gradebook_gpa.yml`:
-
-  ```yaml
-  - name: is_ada_above_or_at_80_gpa_y1_less_2
-    description: >
-      True when the student's ADA is at or above 80% and their year-to-date
-      course GPA (gpa_y1) is below 2.0. Per-course grain.
-    data_type: boolean
-  ```
-
-- [ ] **Step 3d.7: Remove the Paterson exclusion from
-      `rpt_tableau__gradebook_gpa`**
-
-  In the `student_roster` CTE WHERE clause (line 128–133), remove:
-
-  ```sql
-  and enr.region != 'Paterson'
-  ```
-
-  The full WHERE becomes:
-
-  ```sql
-  where
-      enr.rn_year = 1
-      and not enr.is_out_of_district
-      and enr.enroll_status != -1
-  ```
-
-- [ ] **Step 3d.8: Build and verify `rpt_tableau__gradebook_gpa`**
-
-  ```bash
-  uv run dbt build \
-    --select rpt_tableau__gradebook_gpa \
-    --project-dir src/dbt/kipptaf \
-    --defer \
-    --state src/dbt/kipptaf/target/prod
-  ```
-
-  Verify Paterson now appears:
-
-  ```sql
-  SELECT DISTINCT region, school_level
-  FROM `teamster-332318.dbt_grangel_tableau.rpt_tableau__gradebook_gpa`
-  WHERE academic_year = 2026
-  ORDER BY 1, 2
-  ```
-
-### 3e: Remove Miami dead-code flags from `categories_teacher.sql` and
-
-`assignments_teacher.sql`
-
-- [ ] **Step 3e.1: Remove `qt_teacher_s_total_greater/less_100` from
-      `categories_teacher.sql`**
-
-  Delete from the final `select`:
-
-  ```sql
   if(
       f.assignment_category_code = 'S'
       and f.region_school_level = 'MiamiES'
@@ -1438,207 +1472,70 @@ audit:
   ) as qt_teacher_s_total_less_100,
   ```
 
-- [ ] **Step 3e.2: Remove `s_max_score_greater_100` from
-      `assignments_teacher.sql`**
+- [ ] **Step 3g.2: Update YAML**
 
-  File:
-  `src/dbt/kipptaf/models/extracts/tableau/intermediate/int_tableau__gradebook_audit_assignments_teacher.sql`
+  Remove all four column entries from
+  `intermediate/properties/int_tableau__gradebook_audit_categories_teacher.yml`.
+
+- [ ] **Step 3g.3: Build and verify**
+
+  ```bash
+  uv run dbt build \
+    --select int_tableau__gradebook_audit_categories_teacher \
+    --project-dir src/dbt/kipptaf \
+    --defer \
+    --state src/dbt/kipptaf/target/prod
+  ```
+
+---
+
+### 3h: `int_tableau__gradebook_audit_flags.sql` — consolidated UNPIVOT updates and CTE deletions
+
+All UNPIVOT list changes and CTE deletions in one step.
+
+**File:**
+`src/dbt/kipptaf/models/extracts/tableau/intermediate/int_tableau__gradebook_audit_flags.sql`
+
+- [ ] **Step 3h.1: Update `student_unpivot` UNPIVOT list**
+
+  Delete from the UNPIVOT list:
+
+  ```sql
+  assign_s_ms_score_not_conversion_chart_options,
+  assign_s_hs_score_not_conversion_chart_options
+  ```
+
+- [ ] **Step 3h.2: Update `teacher_unpivot_cca` UNPIVOT list**
 
   Delete:
-
-  ```sql
-  if(
-      sec.region = 'Miami'
-      and sec.assignment_category_code = 'S'
-      and a.totalpointvalue > 100,
-      true,
-      false
-  ) as s_max_score_greater_100,
-  ```
-
-- [ ] **Step 3e.3: Remove from UNPIVOT lists in `flags.sql`**
-
-  From `teacher_unpivot_cc` UNPIVOT, delete:
-
-  ```sql
-  qt_teacher_s_total_greater_100,
-  qt_teacher_s_total_less_100,
-  ```
-
-  From `teacher_unpivot_cca` UNPIVOT, delete:
 
   ```sql
   s_max_score_greater_100
   ```
 
-- [ ] **Step 3e.4: Update YAMLs**
-  - `intermediate/properties/int_tableau__gradebook_audit_categories_teacher.yml`:
-    delete `qt_teacher_s_total_greater_100` and `qt_teacher_s_total_less_100`.
-  - `intermediate/properties/int_tableau__gradebook_audit_assignments_teacher.yml`:
-    delete `s_max_score_greater_100`.
-  - `intermediate/properties/int_tableau__gradebook_audit_flags.yml`: delete all
-    three.
+- [ ] **Step 3h.3: Update `teacher_unpivot_cc` UNPIVOT list**
 
-### 3f: Remove Miami dead-code flags from `student_scaffold.sql`
-
-- [ ] **Step 3f.1: Remove Miami flags from `student_scaffold` branch
-      (branch 1)**
-
-  File:
-  `src/dbt/kipptaf/models/extracts/tableau/intermediate/int_tableau__gradebook_audit_student_scaffold.sql`
-
-  Delete these six `if(...)` expressions:
+  Delete:
 
   ```sql
-  if(
-      sec.region_school_level = 'MiamiES'
-      and sec.is_quarter_end_date_range
-      and qg.quarter_comment_value is null,
-      true,
-      false
-  ) as qt_comment_missing,
-
-  if(
-      s.region = 'Miami'
-      and s.grade_level != 0
-      and sec.is_quarter_end_date_range
-      and ce.courses_course_name != 'HR'
-      and qg.quarter_conduct is null,
-      true,
-      false
-  ) as qt_g1_g8_conduct_code_missing,
-
-  if(
-      s.region = 'Miami'
-      and s.grade_level != 0
-      and sec.is_quarter_end_date_range
-      and ce.courses_course_name != 'HR'
-      and qg.quarter_conduct not in ('A', 'B', 'C', 'D', 'E', 'F'),
-      true,
-      false
-  ) as qt_g1_g8_conduct_code_incorrect,
-
-  if(
-      sec.region_school_level = 'MiamiES'
-      and s.grade_level = 0
-      and sec.is_quarter_end_date_range
-      and ce.courses_course_name = 'HR'
-      and qg.quarter_conduct is null,
-      true,
-      false
-  ) as qt_kg_conduct_code_missing,
-
-  if(
-      sec.region_school_level = 'MiamiES'
-      and s.grade_level = 0
-      and sec.is_quarter_end_date_range
-      and ce.courses_course_name = 'HR'
-      and qg.quarter_conduct not in ('E', 'G', 'S', 'M'),
-      true,
-      false
-  ) as qt_kg_conduct_code_incorrect,
-
-  if(
-      sec.region_school_level = 'MiamiES'
-      and s.grade_level = 0
-      and sec.is_quarter_end_date_range
-      and ce.courses_course_name != 'HR'
-      and qg.quarter_conduct is not null,
-      true,
-      false
-  ) as qt_kg_conduct_code_not_hr,
+  qt_teacher_s_total_greater_200,
+  qt_teacher_s_total_less_200,
+  qt_teacher_s_total_greater_100,
+  qt_teacher_s_total_less_100,
   ```
 
-  Also delete these null placeholders from branch 1:
+- [ ] **Step 3h.4: Delete the `student_course_category` CTE**
 
-  ```sql
-  null as qt_effort_grade_missing,
-  null as qt_formative_grade_missing,
-  null as qt_summative_grade_missing,
-  ```
+  Delete the entire CTE — from the `/* w_grade_inflation... */` comment through
+  `from student_course_category`.
 
-- [ ] **Step 3f.2: Remove Miami null placeholders and flags from
-      `student_category_scaffold` branch (branch 2)**
-
-  Delete these null placeholders:
-
-  ```sql
-  null as qt_comment_missing,
-  null as qt_g1_g8_conduct_code_missing,
-  null as qt_g1_g8_conduct_code_incorrect,
-  null as qt_kg_conduct_code_missing,
-  null as qt_kg_conduct_code_incorrect,
-  null as qt_kg_conduct_code_not_hr,
-  ```
-
-  Delete these three Miami-only `if(...)` expressions:
-
-  ```sql
-  if(
-      s.region = 'Miami'
-      and ge.assignment_category_code = 'W'
-      and cg.category_quarter_percent_grade is null
-      and sec.is_quarter_end_date_range,
-      true,
-      false
-  ) as qt_effort_grade_missing,
-
-  if(
-      s.region_school_level = 'MiamiES'
-      and ge.assignment_category_code = 'F'
-      and cg.category_quarter_percent_grade is null
-      and sec.is_quarter_end_date_range,
-      true,
-      false
-  ) as qt_formative_grade_missing,
-
-  if(
-      s.region_school_level = 'MiamiES'
-      and sec.credit_type not in ('ENG', 'MATH')
-      and ge.assignment_category_code = 'S'
-      and cg.category_quarter_percent_grade is null
-      and sec.is_quarter_end_date_range,
-      true,
-      false
-  ) as qt_summative_grade_missing,
-  ```
-
-- [ ] **Step 3f.3: Update student_scaffold YAML**
-
-  Delete column entries for: `qt_comment_missing`,
-  `qt_g1_g8_conduct_code_missing`, `qt_g1_g8_conduct_code_incorrect`,
-  `qt_kg_conduct_code_missing`, `qt_kg_conduct_code_incorrect`,
-  `qt_kg_conduct_code_not_hr`, `qt_effort_grade_missing`,
-  `qt_formative_grade_missing`, `qt_summative_grade_missing`.
-
-### 3g: Remove empty CTEs from `flags.sql` and their UNION branches from
-
-`rpt.sql`
-
-After steps 3a–3f, two CTEs have no flags left:
-
-- `student_course_category` (had: `w_grade_inflation`,
-  `qt_effort_grade_missing`, `qt_formative_grade_missing`,
-  `qt_summative_grade_missing`)
-- `eoq_items_conduct_code` (had: `qt_kg_conduct_code_missing`,
-  `qt_kg_conduct_code_incorrect`, `qt_kg_conduct_code_not_hr`,
-  `qt_g1_g8_conduct_code_missing`, `qt_g1_g8_conduct_code_incorrect`)
-
-And `eoq_items` loses 4 of its 7 flags, keeping only: `qt_es_comment_missing`,
-`qt_grade_70_comment_missing`, `qt_percent_grade_greater_100`.
-
-- [ ] **Step 3g.1: Remove `student_course_category` CTE from `flags.sql`**
-
-  Delete the entire `student_course_category` CTE — from the
-  `/* w_grade_inflation... */` comment through `from student_course_category`.
-
-- [ ] **Step 3g.2: Remove `eoq_items_conduct_code` CTE from `flags.sql`**
+- [ ] **Step 3h.5: Delete the `eoq_items_conduct_code` CTE**
 
   Delete the entire `eoq_items_conduct_code` CTE.
 
-- [ ] **Step 3g.3: Remove departed flags from `eoq_items` UNPIVOT**
+- [ ] **Step 3h.6: Update `eoq_items` UNPIVOT list**
 
-  Delete from the `eoq_items` CTE UNPIVOT list:
+  Delete from the `eoq_items` UNPIVOT:
 
   ```sql
   qt_comment_missing,
@@ -1647,258 +1544,75 @@ And `eoq_items` loses 4 of its 7 flags, keeping only: `qt_es_comment_missing`,
   qt_student_is_ada_80_plus_gpa_less_2
   ```
 
-- [ ] **Step 3g.4: Remove `student_course_category` UNION branch from
-      `rpt.sql`**
+  Remaining in `eoq_items`: `qt_es_comment_missing`,
+  `qt_grade_70_comment_missing`, `qt_percent_grade_greater_100`.
 
-  File:
-  `src/dbt/kipptaf/models/extracts/tableau/rpt_tableau__gradebook_audit.sql`
+- [ ] **Step 3h.7: Update YAML**
+
+  Remove all deleted flag column entries from
+  `intermediate/properties/int_tableau__gradebook_audit_flags.yml`.
+
+- [ ] **Step 3h.8: Build and verify**
+
+  ```bash
+  uv run dbt build \
+    --select int_tableau__gradebook_audit_flags \
+    --project-dir src/dbt/kipptaf \
+    --defer \
+    --state src/dbt/kipptaf/target/prod
+  ```
+
+---
+
+### 3i: `rpt_tableau__gradebook_audit.sql` — remove empty UNION branch
+
+**File:**
+`src/dbt/kipptaf/models/extracts/tableau/rpt_tableau__gradebook_audit.sql`
+
+- [ ] **Step 3i.1: Remove the `student_course_category` UNION branch**
 
   Delete the UNION ALL block with
   `where t.cte_grouping = 'student_course_category'` including its leading
   `union all` separator. The report shrinks from 5 to 4 UNION branches.
 
-### 3h: Add `school_abbreviation` and `school_level` to `base_powerschool__sections`
-
-`base_powerschool__sections` already joins `stg_powerschool__schools` and
-selects `sch.name as school_name`. Adding `school_abbreviation` (short name for
-Tableau dashboard real estate) and `school_level` (ES/MS/HS, needed for the
-teacher scaffold quarter-grain refactor that eliminates the `term_weeks` CTE).
-
-`region` does NOT need to be added here — it is derived inline from
-`_dbt_source_relation` using
-`initcap(regexp_extract(_dbt_source_relation, r'kipp(\w+)_'))`, the same pattern
-used by `int_powerschool__calendar_week`.
-
-**File:** `src/dbt/powerschool/models/sis/base/base_powerschool__sections.sql`
-
-- [ ] **Step 3h.1: Add both columns to the SELECT list**
-
-  In `base_powerschool__sections.sql`, find the line:
-
-  ```sql
-  sch.name as school_name,
-  ```
-
-  Add immediately after it:
-
-  ```sql
-  sch.abbreviation as school_abbreviation,
-  sch.school_level,
-  ```
-
-- [ ] **Step 3h.2: Add the columns to the properties YAML**
-
-  File:
-  `src/dbt/powerschool/models/sis/base/properties/base_powerschool__sections.yml`
-
-  ```yaml
-  - name: school_abbreviation
-    description:
-      Short school name abbreviation from stg_powerschool__schools, used as the
-      display name in Tableau dashboards.
-    data_type: string
-  - name: school_level
-    description: School level (ES, MS, or HS) from stg_powerschool__schools.
-    data_type: string
-  ```
-
-- [ ] **Step 3h.3: Build and verify**
+- [ ] **Step 3i.2: Build and verify**
 
   ```bash
   uv run dbt build \
-    --select base_powerschool__sections \
+    --select rpt_tableau__gradebook_audit \
     --project-dir src/dbt/kipptaf \
     --defer \
     --state src/dbt/kipptaf/target/prod
   ```
 
-### 3i: Simplify the Miami EOQ window in `teacher_scaffold.sql`
+---
 
-- [ ] **Step 3h.1: Remove the Miami clause from `is_quarter_end_date_range`**
+### 3j: Spot-check and commit Task 3
 
-  File:
-  `src/dbt/kipptaf/models/extracts/tableau/intermediate/int_tableau__gradebook_audit_teacher_scaffold.sql`
+- [ ] **Step 3j.1: Spot-check removed flags**
 
-  In the `school_level_mod` CTE, replace the entire CASE expression with:
-
-  ```sql
-  case
-      when
-          tw.school_level = 'HS'
-          and tw.`quarter` = 'Q3'
-          and current_date(
-              '{{ var("local_timezone") }}'
-          ) between (tw.quarter_end_date_insession + interval 9 day) and (
-              tw.quarter_end_date_insession + interval 20 day
-          )
-      then true
-      when tw.school_level = 'HS' and tw.`quarter` = 'Q3'
-      then false
-      when
-          current_date(
-              '{{ var("local_timezone") }}'
-          ) between (tw.quarter_end_date_insession - interval 5 day) and (
-              tw.quarter_end_date_insession + interval 14 day
-          )
-      then true
-      else false
-  end as is_quarter_end_date_range,
-  ```
-
-### 3j: Drop `grade_level` from `stg_google_sheets__gradebook_flags`
-
-`grade_level` was only used in the `eoq_items_conduct_code` CTE (now deleted in
-step 3g) to distinguish Miami KG from G1-G8 conduct code flags. With Miami
-removed and that CTE gone, the column is permanently unused. Drop it from the
-staging model using BigQuery's `SELECT * EXCEPT` syntax.
-
-- [ ] **Step 3j.1: Update `stg_google_sheets__gradebook_flags.sql`**
-
-  File:
-  `src/dbt/kipptaf/models/google/sheets/staging/stg_google_sheets__gradebook_flags.sql`
-
-  Change:
+  Via BigQuery MCP — query each modified model directly (not
+  `rpt_tableau__gradebook_audit` until the full chain is valid):
 
   ```sql
-  select
-      *,
-
-      case
-          ...
-      end as alt_code,
-
-  from {{ source("google_sheets", "src_google_sheets__gradebook_flags") }}
+  /* Verify flags are gone from categories_teacher */
+  SELECT DISTINCT
+  FROM `teamster-332318.dbt_grangel_tableau.int_tableau__gradebook_audit_categories_teacher`
+  WHERE qt_teacher_s_total_greater_200 IS NOT NULL
+    OR qt_teacher_s_total_less_200 IS NOT NULL
+  LIMIT 1
   ```
 
-  to:
+  Expected: 0 rows for each deprecated flag column.
 
-  ```sql
-  select
-      * except (grade_level),
-
-      case
-          ...
-      end as alt_code,
-
-  from {{ source("google_sheets", "src_google_sheets__gradebook_flags") }}
-  ```
-
-- [ ] **Step 3j.2: Remove `grade_level` from the staging model YAML**
-
-  File:
-  `src/dbt/kipptaf/models/google/sheets/staging/properties/stg_google_sheets__gradebook_flags.yml`
-
-  Delete the `grade_level` column entry.
-
-### 3k: Add manager columns to `teacher_scaffold.sql` — `sections` CTE
-
-New requirement: surface the teacher's direct manager (number, name, Tableau
-username) on every scaffold row. All three columns are already on
-`int_people__staff_roster` via the existing `r` alias — no additional join
-needed.
-
-- [ ] **Step 3k.1: Add manager columns to the `sections` CTE SELECT list**
-
-  File:
-  `src/dbt/kipptaf/models/extracts/tableau/intermediate/int_tableau__gradebook_audit_teacher_scaffold.sql`
-
-  In the `sections` CTE, add these three columns after
-  `r.sam_account_name as teacher_tableau_username`:
-
-  ```sql
-  r.reports_to_employee_number as manager_employee_number,
-  r.reports_to_formatted_name as manager_name,
-  r.reports_to_sam_account_name as manager_tableau_username,
-  ```
-
-- [ ] **Step 3k.2: Add the columns to the `sections` CTE YAML**
-
-  File:
-  `intermediate/properties/int_tableau__gradebook_audit_teacher_scaffold.yml`
-
-  Add three column entries after `teacher_tableau_username`:
-
-  ```yaml
-  - name: manager_employee_number
-    description: ADP employee number of the teacher's direct manager.
-    data_type: string
-  - name: manager_name
-    description: >
-      Full name (Last, First) of the teacher's direct manager, from
-      int_people__staff_roster.reports_to_formatted_name.
-    data_type: string
-  - name: manager_tableau_username
-    description:
-      SAM account name of the teacher's direct manager, used as their Tableau
-      username.
-    data_type: string
-  ```
-
-  These columns pass through to every downstream model that selects `sec.*` from
-  the scaffold. Verify the downstream YAML contracts don't need updating
-  (intermediate models don't enforce contracts, but
-  `rpt_tableau__gradebook_audit` does — add the columns there too if the
-  contract requires it).
-
-### 3l: Build, verify, and commit Task 3
-
-- [ ] **Step 3l.1: Run dbt build — Task 3 models only**
-
-  The scaffolds are now quarter-grain but the assignment models still reference
-  week columns — do not cascade downstream. Build only the models modified in
-  Task 3:
-
-  ```bash
-  uv run dbt build \
-    --select \
-      base_powerschool__sections \
-      stg_google_sheets__gradebook_flags \
-      int_tableau__gradebook_audit_teacher_scaffold \
-      int_tableau__gradebook_audit_student_scaffold \
-      int_tableau__gradebook_audit_assignments_student \
-      int_tableau__gradebook_audit_assignments_teacher \
-      int_tableau__gradebook_audit_categories_teacher \
-      int_extracts__student_enrollments \
-      rpt_tableau__gradebook_gpa \
-    --project-dir src/dbt/kipptaf \
-    --defer \
-    --state src/dbt/kipptaf/target/prod
-  ```
-
-  If a contract error fires (`column not found`), find the corresponding YAML
-  and remove the deleted column.
-
-- [ ] **Step 3l.2: Spot-check removed flags are absent and manager columns
-      present**
-
-  Via BigQuery MCP:
-
-  ```sql
-  SELECT DISTINCT audit_flag_name
-  FROM `teamster-332318.dbt_grangel_tableau.rpt_tableau__gradebook_audit`
-  WHERE academic_year = 2026
-  ORDER BY 1
-  ```
-
-  Expected absent: all 18 flags listed in the Task 3 flag table above.
-
-  ```sql
-  SELECT manager_employee_number, manager_name, manager_tableau_username
-  FROM `teamster-332318.dbt_grangel_tableau.rpt_tableau__gradebook_audit`
-  WHERE academic_year = 2026
-    AND manager_name IS NOT NULL
-  LIMIT 5
-  ```
-
-  Expected: manager columns populated for sections where the teacher has a
-  manager in the staff roster.
-
-- [ ] **Step 3l.3: Commit**
+- [ ] **Step 3j.2: Commit**
 
   ```bash
   git add -u
-  git commit -m "feat(dbt): remove deprecated flags and Miami dead code; add manager columns — gradebook audit AY 2026-2027"
+  git commit -m "feat(dbt): Task 3 — flag removals, model updates, and prerequisites"
   ```
+
+---
 
 ---
 
