@@ -16,7 +16,7 @@ touching SQL. Task 2 replaces the deprecated Google Sheet expectations source
 with a PS-native intermediate model (Newark only to start). Tasks 3–6 are SQL
 cleanup and logic changes. Task 5 (QTD) is blocked on PR #4077 (PS plugin
 integration) landing. Task 7 is the post-merge doc/skill update. Task 8
-(anchor-row redesign) is a separate future effort.
+(anchor-row redesign) is in scope but implementation details are TBD.
 
 **Tech Stack:** dbt (BigQuery dialect), Google Sheets external tables, BigQuery
 MCP for spot-checks, `uv run dbt` CLI, branch
@@ -74,6 +74,7 @@ pending any new operational decisions taking effect July 1st.
 
 | File                                           | Task | Change                                                      |
 | ---------------------------------------------- | ---- | ----------------------------------------------------------- |
+| `rpt_tableau__gradebook_audit.sql`             | 8    | Anchor-row redesign (TBD)                                   |
 | `docs/reference/gradebook-audit-data-model.md` | 7    | Add AY 2026-2027 section at top; archive AY 2025-2026 below |
 
 **SQL paths:**
@@ -1864,7 +1865,19 @@ development-time references that are no longer current.
 
 ---
 
-## Task 8 (out of scope): Anchor-row / "in the clear" redesign
+## Task 8: Anchor-row / "in the clear" redesign
 
-Major structural change to `rpt_tableau__gradebook_audit.sql`. Required for the
-school-level classroom percentage summary view. Needs a separate spec and plan.
+Replace the current design in `rpt_tableau__gradebook_audit.sql` — which
+generates one row per possible flag slot per section × quarter with
+`flag_value = 0` for non-fired flags — with a leaner pattern: one anchor row per
+section × quarter plus rows only where flags actually fired. A fully compliant
+teacher has only the anchor row. The anchor row provides the classroom
+denominator for the school-level summary view.
+
+Also required: school-level summary view in Tableau showing the number or
+percentage of classrooms with at least one active flag, with click-through to a
+filtered teacher list.
+
+> ⚠️ **Implementation details TBD.** Anchor row structure (sentinel flag name vs
+> null, what columns it carries) and the updated Tableau health score formula
+> will be designed when this task is reached.
