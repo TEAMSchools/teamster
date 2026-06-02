@@ -695,7 +695,6 @@ based on which approach produces cleaner scaffold code — and rename accordingl
               termbin_start_date,
               term_percent_grade_adjusted as quarter_course_percent_grade,
               term_grade_points as quarter_course_grade_points,
-              citizenship as quarter_conduct,
               comment_value as quarter_comment_value,
               'current_year' as grades_type,
           from {{ ref("base_powerschool__final_grades") }}
@@ -712,7 +711,6 @@ based on which approach produces cleaner scaffold code — and rename accordingl
               null as termbin_start_date,
               `percent` as quarter_course_percent_grade,
               gpa_points as quarter_course_grade_points,
-              behavior as quarter_conduct,
               comment_value as quarter_comment_value,
               'last_year' as grades_type,
           from {{ ref("stg_powerschool__storedgrades") }}
@@ -1000,8 +998,9 @@ based on which approach produces cleaner scaffold code — and rename accordingl
     come from `sec` instead
   - `category_grades` join updated from `ge.assignment_category_term` to
     `sec.assignment_category_term`
-  - `qg.quarter_conduct` removed from both SELECT lists — only referenced by
-    Miami conduct code flags (being removed)
+  - `quarter_conduct` removed entirely — from both SELECT lists and from the
+    `quarter_course_grades` CTE (`citizenship` / `behavior` aliases dropped).
+    Only referenced by Miami conduct code flags, which are being removed.
 
 - [ ] **Step 2.4b: Build and verify the student scaffold**
 
