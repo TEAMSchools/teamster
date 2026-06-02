@@ -1,5 +1,5 @@
 views:
-  - name: attendance_detail
+  - name: student_attendance_detail
     description: >-
       Row-level student attendance. One row per student × school day with
       attendance recorded. Use for drill-down, individual investigations, or
@@ -25,7 +25,7 @@ views:
       for the year.
 
     cubes:
-      - join_path: attendance
+      - join_path: student_attendance
         includes:
           - count_students
           - avg_daily_attendance
@@ -75,7 +75,7 @@ views:
           - is_month_end_record
           - is_week_end_record
 
-      - join_path: attendance.dim_dates
+      - join_path: student_attendance.dates
         prefix: true
         includes:
           - date_day
@@ -86,7 +86,7 @@ views:
           - day_of_week_name
           - is_weekday
 
-      - join_path: attendance.dim_student_enrollments.dim_locations
+      - join_path: student_attendance.student_enrollments.locations
         prefix: true
         includes:
           - location_name
@@ -95,13 +95,13 @@ views:
           - campus
           - city
 
-      - join_path: attendance.dim_student_enrollments.dim_locations.dim_regions
+      - join_path: student_attendance.student_enrollments.locations.regions
         prefix: true
         includes:
           - region_name
           - state
 
-      - join_path: attendance.dim_student_enrollments
+      - join_path: student_attendance.student_enrollments
         prefix: true
         includes:
           - student_enrollment_key
@@ -111,7 +111,7 @@ views:
           - exit_date
           - is_retained_year
 
-      - join_path: attendance.dim_student_enrollments.dim_students
+      - join_path: student_attendance.student_enrollments.students
         prefix: true
         includes:
           - student_key
@@ -124,12 +124,12 @@ views:
           - enrollment_status
           - is_gifted
 
-      - join_path: attendance.dim_student_ell_status
+      - join_path: student_attendance.student_ell_status
         prefix: true
         includes:
           - is_ell
 
-      - join_path: attendance.dim_student_iep_status
+      - join_path: student_attendance.student_iep_status
         prefix: true
         includes:
           - is_iep
@@ -138,13 +138,13 @@ views:
           - special_education_name
           - special_education_placement
 
-      - join_path: attendance.dim_student_meal_eligibility_status
+      - join_path: student_attendance.student_meal_eligibility_status
         prefix: true
         includes:
           - is_meal_eligible
           - meal_eligibility
 
-      - join_path: attendance.dim_terms
+      - join_path: student_attendance.terms
         prefix: true
         includes:
           - academic_year
@@ -153,7 +153,7 @@ views:
           - term_code
           - term_type
 
-      - join_path: attendance.dim_school_calendars
+      - join_path: student_attendance.school_calendars
         prefix: true
         includes:
           - is_in_session
@@ -180,60 +180,60 @@ views:
         - name: Date
           members:
             - attendance_date
-            - dim_dates_date_day
-            - dim_dates_month_number
-            - dim_dates_month_name
-            - dim_dates_quarter_number
-            - dim_dates_school_week_start_date
-            - dim_dates_day_of_week_name
-            - dim_dates_is_weekday
+            - dates_date_day
+            - dates_month_number
+            - dates_month_name
+            - dates_quarter_number
+            - dates_school_week_start_date
+            - dates_day_of_week_name
+            - dates_is_weekday
         - name: Term
           members:
-            - dim_terms_academic_year
-            - dim_terms_semester
-            - dim_terms_term_name
-            - dim_terms_term_code
-            - dim_terms_term_type
+            - terms_academic_year
+            - terms_semester
+            - terms_term_name
+            - terms_term_code
+            - terms_term_type
         - name: Location
           members:
-            - dim_locations_location_name
-            - dim_locations_abbreviation
-            - dim_locations_grade_band
-            - dim_locations_campus
-            - dim_locations_city
-            - dim_regions_region_name
-            - dim_regions_state
+            - locations_location_name
+            - locations_abbreviation
+            - locations_grade_band
+            - locations_campus
+            - locations_city
+            - regions_region_name
+            - regions_state
         - name: Student
           members:
-            - dim_students_student_key
-            - dim_students_full_name
-            - dim_students_birth_date
-            - dim_students_lea_student_identifier
-            - dim_students_state_student_identifier
-            - dim_students_gender_identity
-            - dim_students_race
-            - dim_students_enrollment_status
-            - dim_students_is_gifted
-            - dim_student_ell_status_is_ell
-            - dim_student_iep_status_is_iep
-            - dim_student_iep_status_iep_classification
-            - dim_student_iep_status_special_education_code
-            - dim_student_iep_status_special_education_name
-            - dim_student_iep_status_special_education_placement
-            - dim_student_meal_eligibility_status_is_meal_eligible
-            - dim_student_meal_eligibility_status_meal_eligibility
+            - students_student_key
+            - students_full_name
+            - students_birth_date
+            - students_lea_student_identifier
+            - students_state_student_identifier
+            - students_gender_identity
+            - students_race
+            - students_enrollment_status
+            - students_is_gifted
+            - student_ell_status_is_ell
+            - student_iep_status_is_iep
+            - student_iep_status_iep_classification
+            - student_iep_status_special_education_code
+            - student_iep_status_special_education_name
+            - student_iep_status_special_education_placement
+            - student_meal_eligibility_status_is_meal_eligible
+            - student_meal_eligibility_status_meal_eligibility
         - name: Enrollment
           members:
-            - dim_student_enrollments_student_enrollment_key
-            - dim_student_enrollments_grade_level
-            - dim_student_enrollments_graduation_year
-            - dim_student_enrollments_entry_date
-            - dim_student_enrollments_exit_date
-            - dim_student_enrollments_is_retained_year
+            - student_enrollments_student_enrollment_key
+            - student_enrollments_grade_level
+            - student_enrollments_graduation_year
+            - student_enrollments_entry_date
+            - student_enrollments_exit_date
+            - student_enrollments_is_retained_year
         - name: Calendar
           members:
-            - dim_school_calendars_is_in_session
-            - dim_school_calendars_is_membership_day
+            - school_calendars_is_in_session
+            - school_calendars_is_membership_day
         - name: Filter
           members:
             - is_latest_record
@@ -241,16 +241,16 @@ views:
             - is_week_end_record
 
     access_policy:
-      - group: cube-access-student-data
+      - group: detail-access
         member_level:
           includes: "*"
           excludes:
-            - dim_students_full_name
-            - dim_students_birth_date
-            - dim_students_lea_student_identifier
-            - dim_students_state_student_identifier
-            - dim_students_salesforce_contact_id
-            - dim_students_district_student_identifier
+            - students_full_name
+            - students_birth_date
+            - students_lea_student_identifier
+            - students_state_student_identifier
+            - students_salesforce_contact_id
+            - students_district_student_identifier
       - group: cube-access-student-pii
         member_level:
           includes: "*"
