@@ -266,42 +266,150 @@ based on which approach produces cleaner scaffold code — and rename accordingl
   `src/dbt/kipptaf/models/powerschool/intermediate/properties/int_powerschool__u_expectations[_unpivot].yml`.
   Add a model description and a column entry for each output column. Add a
   `dbt_utils.unique_combination_of_columns` test on
-  `(region, school_level, academic_year, quarter, week_number, assignment_category_code)`.
+  `(region, school_level, academic_year, quarter, assignment_category_code)`. No
+  `week_number` — the model is quarter-grain.
 
-- [ ] **Step 2.3: Update `int_tableau__gradebook_audit_teacher_scaffold.sql`**
+- [ ] **Step 2.3: Redesign `int_tableau__gradebook_audit_teacher_scaffold.sql`**
 
-  In the `final` CTE's `teacher_category_scaffold` branch, change the INNER JOIN
-  from:
+  This step replaces the entire scaffold with the quarter-grain design. The
+  current four-CTE model (`sections`, `term_weeks`, `school_level_mod`, `final`)
+  - outer SELECT becomes a single `sections` CTE + a direct two-branch UNION ALL
+    SELECT.
 
-  ```sql
-  inner join
-      {{ ref("stg_google_sheets__gradebook_expectations_assignments") }} as ge
-      on tw.region = ge.region
-      and tw.school_level = ge.school_level
-      and tw.academic_year = ge.academic_year
-      and tw.quarter = ge.quarter
-      and tw.week_number_quarter = ge.week_number
-  ```
-
-  to:
+  **The new structure:**
 
   ```sql
+  with
+      sections as (
+          select
+              s._dbt_source_relation,
+              s.terms_yearid,
+              s.terms_academic_year as academic_year,
+              s.sections_dcid,
+              s.sections_id as sectionid,
+              s.sections_schoolid as schoolid,
+              s.sections_course_number as course_number,
+              s.sections_section_number as section_number,
+              s.sections_external_expression as external_expression,
+              s.courses_course_name as course_name,
+              s.courses_credittype as credit_type,
+              s.courses_excludefromgpa as exclude_from_gpa,
+              s.is_ap_course,
+              s.teachernumber as teacher_number,
+              s.teacher_lastfirst as teacher_name,
+              s.school_abbreviation as school,
+              r.sam_account_name as teacher_tableau_username,
+              r.reports_to_employee_number as manager_employee_number,
+              r.reports_to_formatted_name as manager_name,
+              r.reports_to_sam_account_name as manager_tableau_username,
+              l.head_of_school_preferred_name_lastfirst as hos,
+              l.school_leader_preferred_name_lastfirst as school_leader,
+              l.school_leader_sam_account_name as school_leader_tableau_username,
+              t.yearid,
+              t.term as `quarter`,
+              t.semester,
+              t.term_start_date as quarter_start_date,
+              t.term_end_date as quarter_end_date,
+              t.is_current_term,
+              initcap(
+                  regexp_extract(s._dbt_source_relation, r'kipp(\w+)_')
+              ) as region,
+              coalesce(
+                  if(
+                      s.school_name = 'KIPP Sumner Elementary'
+                      and s.sections_grade_level = 5,
+                      'MS',
+                      null
+                  ),
+                  s.school_level
+              ) as school_level,
+              concat(
+                  initcap(regexp_extract(s._dbt_source_relation, r'kipp(\w+)_')),
+                  coalesce(
+                      if(
+                          s.school_name = 'KIPP Sumner Elementary'
+                          and s.sections_grade_level = 5,
+                          'MS',
+                          null
+                      ),
+                      s.school_level
+                  )
+              ) as region_school_level,
+              cast(s.terms_academic_year as string)
+              || '-'
+              || right(cast(s.terms_academic_year + 1 as string), 2)
+                  as academic_year_display,
+              if(
+                  s.school_level = 'HS',
+                  s.sections_external_expression,
+                  s.sections_section_number
+              ) as section_or_period,
+          from {{ ref("base_powerschool__sections") }} as s
+          left join
+              {{ ref("int_people__staff_roster") }} as r
+              on s.teachernumber = r.powerschool_teacher_number
+          left join
+              {{ ref("int_people__leadership_crosswalk") }} as l
+              on s.sections_schoolid = l.home_work_location_powerschool_school_id
+          inner join
+              {{ ref("int_powerschool__terms") }} as t
+              on s.sections_schoolid = t.schoolid
+              and s.terms_yearid = t.yearid
+              and {{ union_dataset_join_clause(left_alias="s", right_alias="t") }}
+          where
+              s.terms_academic_year = {{ var("current_academic_year") }}
+              and s.sections_no_of_students != 0
+      )
+
+  select
+      s.*,
+      null as assignment_category_code,
+      null as assignment_category_name,
+      null as assignment_category_term,
+      null as expectation,
+      null as notes,
+      'teacher_scaffold' as scaffold_name,
+  from sections as s
+
+  union all
+
+  select
+      s.*,
+      ge.assignment_category_code,
+      ge.assignment_category_name,
+      ge.assignment_category_term,
+      ge.expectation,
+      ge.notes,
+      'teacher_category_scaffold' as scaffold_name,
+  from sections as s
   inner join
       {{ ref("int_powerschool__u_expectations[_unpivot]") }} as ge
-      on tw.region = ge.region
-      and tw.school_level = ge.school_level
-      and tw.academic_year = ge.academic_year
-      and tw.quarter = ge.quarter
-      and tw.week_number_quarter = ge.week_number
+      on s.region = ge.region
+      and s.school_level = ge.school_level
+      and s.academic_year = ge.academic_year
+      and s.quarter = ge.quarter
   ```
+
+  Key differences from the old model:
+  - No `week_number` in the join — quarter grain only
+  - No `final` CTE — UNION ALL is the SELECT
+  - No `is_quarter_end_date_range`, `quarter_end_date_insession`,
+    `is_current_week`
+  - No week columns
+  - Manager columns added
+  - `region` derived inline from `_dbt_source_relation`
+  - `school_level` and `school_abbreviation` from `base_powerschool__sections`
+    (requires step 3h to land first)
 
   _(Replace `[_unpivot]` with the actual model name decided in step 2.1.)_
 
 - [ ] **Step 2.4: Update `int_tableau__gradebook_audit_student_scaffold.sql`**
 
-  In the `student_category_scaffold` branch, change the same INNER JOIN from
+  In the `student_category_scaffold` branch, change the INNER JOIN from
   `stg_google_sheets__gradebook_expectations_assignments` to the new INT model.
-  The join key is identical.
+  The new join key is `region + school_level + academic_year + quarter` only —
+  no `week_number`. Also remove any references to `week_number_quarter` from the
+  join condition.
 
 - [ ] **Step 2.5: Build and verify**
 
