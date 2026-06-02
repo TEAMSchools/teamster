@@ -118,6 +118,100 @@ student/enrollment records — only the contacts portion.
 Possible hybrid: API for the student record + SFTP `STUDENT_ENROLLMENT` for the
 enrollment, if the API can't create enrollments.
 
+## Source × transport coverage matrix
+
+How completely each **Finalsite source** (SFTP export vs REST API) can populate
+each **Focus target** (the 5 SFTP import templates vs the `POST /student` API).
+Authoritative field lists: Finalsite API = `references/finalsite-api-spec.yml`;
+Focus API = `references/focus-api-spec.json`; Focus SFTP = the FL K-12 import
+workbook; Finalsite SFTP = the landed export (_Fork 1_).
+
+**Legend:** ✓ direct field in the source · ◐ obtainable by pipeline derivation,
+config, or a Finalsite custom/track field (not a base column) · ✗ no source.
+
+**Caveats that apply to every cell:**
+
+- `STUDENT_ID` / the Focus key is **pipeline-resolved** (identity/minting gate)
+  on all paths — counted ◐, never ✓-from-source.
+- The Focus **API marks no field required** (its route registry carries no
+  `required` flags). "Required" there = the functional minimum to create + place
+  a student: a match key, name, `accepting_school`, `accepting_grade`,
+  `school_year`.
+- **`START_DATE`/entry date exists in no source** — neither the export nor the
+  API `Contact` carries an enrollment start date; it must be derived (first
+  instructional day of `school_year`, or the API `contract_submit_date` proxy).
+- **Which Focus `SCHOOL` a student enrolls in is in no base source** — derivable
+  (region/grade → school) or a Finalsite custom field.
+- **Race/ethnicity is a base column only in the SFTP export.** The Finalsite API
+  base `Contact` has gender + birth_date but **no race/ethnicity/language** —
+  reachable only as `custom_attributes` (unconfirmed they're configured).
+
+### Headline — can we complete the target?
+
+|                             | → Focus SFTP templates                                                        | → Focus API (`POST /student`)                                                                      |
+| --------------------------- | ----------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------- |
+| **Finalsite SFTP export →** | Demographics ✅ · Address ✅ · Contacts ✅¹ · Linked ✅² · **Enrollment ❌³** | student+demographics ✅ · address ✅ · 2 guardians ⚠️⁴ · **placement ⚠️³**                         |
+| **Finalsite API →**         | Demographics ⚠️⁵ · Address ✅ · Contacts ✅ · Linked ✅ · **Enrollment ⚠️³**  | demographics ⚠️⁵ · address ✅ · 2 guardians ⚠️⁴ · placement ⚠️³ + **status-driven eligibility ✅** |
+
+¹ `RESIDES_WITH_STUD` not in source → default. ² via shared-parent inference. ³
+`SCHOOL` + `START_DATE` not in source (derive); Focus enrollment-code setup
+required; **the API cannot write the `enrollments` table at all** — placement
+only via `accepting_*`. ⁴ Focus API caps guardians at 2 → violates the
+all-guardians decision (data loss). ⁵ API base schema lacks race/ethnicity/
+language (custom-field only).
+
+### Target A — Focus SFTP templates: required-field coverage
+
+| Focus file (req)       | from Finalsite SFTP                                                              | from Finalsite API                                                       |
+| ---------------------- | -------------------------------------------------------------------------------- | ------------------------------------------------------------------------ |
+| Demographics (3)       | 3/3 ✓✓◐                                                                          | 3/3 ✓✓◐                                                                  |
+| Student_Enrollment (5) | 3/5 — `GRADE_ID`✓ `STUDENT_ID`◐ `SYEAR`◐(config); **`SCHOOL_ID`◐ `START_DATE`✗** | 3/5 — `GRADE_ID`✓ `SYEAR`✓ `STUDENT_ID`◐; **`SCHOOL_ID`◐ `START_DATE`✗** |
+| Addresses (1)          | 1/1 ◐                                                                            | 1/1 ◐                                                                    |
+| Contacts (5)           | 4/5 — names✓ `SORT_ORDER`◐ `STUDENT_ID`◐; `RESIDES_WITH_STUD`✗(default)          | 4/5 — same                                                               |
+| Linked_Students (3)    | 3/3 ◐ (shared-parent inference)                                                  | 3/3 ✓ (`relationships.rel_type`)                                         |
+
+Required count is ~14/17 either way. The API doesn't raise the _count_ but
+improves provenance: `SYEAR` and sibling links become direct, and — critically —
+`status`/`enrollment_type` (absent from the export entirely) arrive to drive
+eligibility and the create / transfer-out / re-enroll classification. The export
+wins on race/ethnicity.
+
+### Target B — Focus API `POST /student`: field-group coverage
+
+| Group (47-field flat body)                                                                 | from Finalsite SFTP             | from Finalsite API                            |
+| ------------------------------------------------------------------------------------------ | ------------------------------- | --------------------------------------------- |
+| Match key (`student`/`uuid`/`focus_id`)                                                    | ◐ pipeline                      | ◐ pipeline; minted number via `id_attributes` |
+| Names, `birthdate`, `gender`                                                               | ✓                               | ✓                                             |
+| Race flags + `ethnicity`                                                                   | ✓ (Race + Latino/Hispanic cols) | ✗ (custom-field only)                         |
+| `accepting_grade`/`current_grade`                                                          | ✓                               | ✓ (`grade.canonical_name`)                    |
+| `school_year`                                                                              | ◐ config                        | ✓ (`school_year.start_year`)                  |
+| `accepting_school`                                                                         | ◐ derive                        | ◐ derive/custom                               |
+| `accepting_program`, `ese_status`, `preferred_language`, student `email`, `current_school` | ✗ (mostly)                      | ◐/✓ (`email`✓; language/program/ese custom)   |
+| `guardian_1/2` (2 only)                                                                    | ✓ but **2 of up to 4**          | ✓ but **2 of up to 4**                        |
+| Address (`address`,`city`,`state`,`zipcode`)                                               | ✓; `address2` ✗                 | ✓; `address2` ✓ (`households`)                |
+
+Both source paths fill the demographic + address + two-guardian core. Neither
+cleanly fills placement (`accepting_school`, start date), and **both lose
+guardians 3–4** to the API's 2-cap — the reason Fork 2 already tilts to SFTP for
+contacts.
+
+### What the matrix decides
+
+1. **No single corner is complete.** Every path needs the identity/minting gate,
+   a `START_DATE` derivation, and a `SCHOOL` rule; the Focus API additionally
+   can't write the enrollment table and caps guardians at 2.
+2. **The cleanest split is a hybrid Finalsite source:** SFTP export for the
+   race/ethnicity-rich **demographics**, Finalsite **API** for **status /
+   enrollment_type / school_year / sibling relationships** (the lifecycle
+   drivers the export lacks). Strongest argument yet for the _Fork-1 hybrid_.
+3. **Focus SFTP target dominates the Focus API target** for this use case: it is
+   the only path that creates an actual enrollment record and the only one that
+   preserves all guardians. The Focus API is viable for student/demographic
+   upserts, never the enrollment.
+4. **`status` is the missing eligibility key** and it comes only from the
+   Finalsite API (`contact_statuses`: accepted/enrolled/…). The SFTP export
+   can't drive the eligibility predicate at all.
+
 ## Sync operations (lifecycle)
 
 Finalsite is SoR for the full student lifecycle. The integration applies each of
