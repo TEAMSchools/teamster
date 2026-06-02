@@ -25,23 +25,47 @@ MCP for spot-checks, `uv run dbt` CLI, branch
 
 ## File map
 
-| File                                                          | Task(s)      | Change type                         |
-| ------------------------------------------------------------- | ------------ | ----------------------------------- |
-| `stg_google_sheets__gradebook_flags` (Google Sheet, not repo) | 1            | Sheet edits                         |
-| `int_powerschool__u_expectations[_unpivot].sql` (new model)   | 2            | Create                              |
-| `int_tableau__gradebook_audit_teacher_scaffold.sql`           | 2, 3, 6      | SQL                                 |
-| `int_tableau__gradebook_audit_student_scaffold.sql`           | 2, 3         | SQL                                 |
-| `int_tableau__gradebook_audit_assignments_teacher.sql`        | 3, 6         | SQL                                 |
-| `int_tableau__gradebook_audit_assignments_student.sql`        | 3            | SQL                                 |
-| `int_tableau__gradebook_audit_categories_teacher.sql`         | 3, 4, 6      | SQL                                 |
-| `int_tableau__gradebook_audit_flags.sql`                      | 3, 6         | SQL                                 |
-| `rpt_tableau__gradebook_audit.sql`                            | 3, 6         | SQL                                 |
-| `int_extracts__student_enrollments.sql`                       | 3            | Add boolean column                  |
-| `rpt_tableau__gradebook_gpa.sql`                              | 3            | Add boolean, remove Paterson filter |
-| `stg_google_sheets__gradebook_exceptions.sql`                 | 6            | Delete                              |
-| `stg_google_sheets__gradebook_exceptions.yml`                 | 6            | Delete                              |
-| `sources-external.yml`                                        | 6            | Remove source entry                 |
-| YAML properties for each modified model                       | per SQL task | Column removals                     |
+### Google Sheets (external — not in git)
+
+| File                                 | Task | Change      |
+| ------------------------------------ | ---- | ----------- |
+| `stg_google_sheets__gradebook_flags` | 1    | Sheet edits |
+
+### SQL — new models
+
+| File                                            | Task | Change |
+| ----------------------------------------------- | ---- | ------ |
+| `int_powerschool__u_expectations[_unpivot].sql` | 2    | Create |
+| `int_powerschool__u_expectations[_unpivot].yml` | 2    | Create |
+
+### SQL — modified models
+
+| File                                                   | Task(s)  | Change                              |
+| ------------------------------------------------------ | -------- | ----------------------------------- |
+| `int_tableau__gradebook_audit_teacher_scaffold.sql`    | 2, 3, 6  | SQL                                 |
+| `int_tableau__gradebook_audit_student_scaffold.sql`    | 2, 3     | SQL                                 |
+| `int_tableau__gradebook_audit_assignments_teacher.sql` | 3, 6     | SQL                                 |
+| `int_tableau__gradebook_audit_assignments_student.sql` | 3        | SQL                                 |
+| `int_tableau__gradebook_audit_categories_teacher.sql`  | 3, 4, 6  | SQL                                 |
+| `int_tableau__gradebook_audit_flags.sql`               | 3, 6     | SQL                                 |
+| `rpt_tableau__gradebook_audit.sql`                     | 3, 6     | SQL                                 |
+| `int_extracts__student_enrollments.sql`                | 3        | Add boolean column                  |
+| `rpt_tableau__gradebook_gpa.sql`                       | 3        | Add boolean, remove Paterson filter |
+| YAML properties for each modified model                | per task | Column additions / removals         |
+
+### SQL — deleted models
+
+| File                                          | Task | Change              |
+| --------------------------------------------- | ---- | ------------------- |
+| `stg_google_sheets__gradebook_exceptions.sql` | 6    | Delete              |
+| `stg_google_sheets__gradebook_exceptions.yml` | 6    | Delete              |
+| `sources-external.yml`                        | 6    | Remove source entry |
+
+### Documentation
+
+| File                                           | Task | Change                                                      |
+| ---------------------------------------------- | ---- | ----------------------------------------------------------- |
+| `docs/reference/gradebook-audit-data-model.md` | 7    | Add AY 2026-2027 section at top; archive AY 2025-2026 below |
 
 **SQL paths:**
 `src/dbt/kipptaf/models/extracts/tableau/intermediate/<model>.sql`
