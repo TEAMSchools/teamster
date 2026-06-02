@@ -13,6 +13,7 @@ this order:
 ```text
 0. cube-model-yaml-implementation                    ← this plan (run first)
    ├── cube-attendance-extension-implementation
+   ├── cube-student-enrollments-implementation
    ├── cube-student-section-enrollments-implementation  (staff join requires staff-core)
    ├── cube-assessments-implementation
    ├── cube-family-communications-implementation
