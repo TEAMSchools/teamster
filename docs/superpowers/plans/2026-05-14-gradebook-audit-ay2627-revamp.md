@@ -83,11 +83,18 @@ pending any new operational decisions taking effect July 1st.
 and
 `src/dbt/kipptaf/models/extracts/tableau/properties/rpt_tableau__gradebook_audit.yml`
 
-**Build command for all SQL tasks (run after every meaningful SQL change):**
+**Build strategy: one model at a time.**
+
+After each model change, build and verify only the model just modified — never
+the downstream chain. Downstream models reference columns that may not yet exist
+in the refactored upstream, so cascading builds will fail mid-refactor. The full
+downstream chain is only valid after every model in the lineage has been
+updated.
 
 ```bash
+# Standard per-model build (substitute <model_name> at each step):
 uv run dbt build \
-  --select int_tableau__gradebook_audit_teacher_scaffold+ \
+  --select <model_name> \
   --project-dir src/dbt/kipptaf \
   --defer \
   --state src/dbt/kipptaf/target/prod
@@ -174,7 +181,18 @@ being removed entirely — do not create any 2026 Miami rows.
 
 - [ ] **Step 1.8: Build full audit pipeline and spot-check**
 
-  Run the full build command from the file map header. Then:
+  Task 1 has no SQL changes — the old week-grain pipeline is intact. Safe to
+  build the full downstream chain here to verify the sheet config is correct:
+
+  ```bash
+  uv run dbt build \
+    --select int_tableau__gradebook_audit_teacher_scaffold+ \
+    --project-dir src/dbt/kipptaf \
+    --defer \
+    --state src/dbt/kipptaf/target/prod
+  ```
+
+  Then spot-check:
 
   ```sql
   SELECT DISTINCT region, school_level, audit_flag_name
@@ -234,15 +252,14 @@ based on which approach produces cleaner scaffold code — and rename accordingl
   `src/dbt/kipptaf/models/powerschool/intermediate/int_powerschool__u_expectations[_unpivot].sql`.
 
   The model must produce one row per
-  `region / school_level / academic_year / quarter / week_number / assignment_category_code`
-  to match the grain the teacher scaffold joins on. Source columns from
-  `stg_powerschool__u_expectations`: `school_level`, `quarter`, `week_number`,
-  `cnt_w`, `cnt_h`, `cnt_f`, `cnt_s`. Region comes from joining
-  `int_powerschool__calendar_week` (same pattern as
-  `int_powerschool__u_expectations_qtd` on the pending PR). Academic year is
+  `region / school_level / academic_year / quarter / assignment_category_code`
+  (quarter grain — no `week_number`). The scaffold joins on this key exactly.
+  Source: `stg_powerschool__u_expectations` (`school_level`, `quarter`, `cnt_w`,
+  `cnt_h`, `cnt_f`, `cnt_s`). Region comes from joining
+  `int_powerschool__calendar_week` on `school_level + quarter`. Academic year is
   injected via `{{ var("current_academic_year") }}`.
 
-  The output columns must match the existing scaffold join key exactly:
+  Output columns:
 
   | Column                     | Source / derivation                                                    |
   | -------------------------- | ---------------------------------------------------------------------- |
@@ -250,15 +267,24 @@ based on which approach produces cleaner scaffold code — and rename accordingl
   | `region`                   | from `int_powerschool__calendar_week`                                  |
   | `school_level`             | from `stg_powerschool__u_expectations`                                 |
   | `quarter`                  | from `stg_powerschool__u_expectations`                                 |
-  | `week_number`              | from `stg_powerschool__u_expectations`                                 |
   | `assignment_category_code` | `W`, `H`, `F`, or `S` (from unpivot of `cnt_*`)                        |
-  | `expectation`              | the count value for that category and week                             |
+  | `expectation`              | the count value for that category and quarter                          |
   | `assignment_category_term` | `concat(code, right(quarter, 1))` e.g. `W3`                            |
   | `assignment_category_name` | `Work Habits` / `Homework` / `Formative Mastery` / `Summative Mastery` |
   | `notes`                    | `null` (not available in PS plugin source)                             |
 
   Whether the UNPIVOT happens inside this model or in the scaffold is a decision
   to make at implementation time (see naming note above).
+
+- [ ] **Step 2.1b: Build and verify the INT model**
+
+  ```bash
+  uv run dbt build \
+    --select int_powerschool__u_expectations[_unpivot] \
+    --project-dir src/dbt/kipptaf \
+    --defer \
+    --state src/dbt/kipptaf/target/prod
+  ```
 
 - [ ] **Step 2.2: Create the YAML for the new INT model**
 
@@ -403,38 +429,46 @@ based on which approach produces cleaner scaffold code — and rename accordingl
 
   _(Replace `[_unpivot]` with the actual model name decided in step 2.1.)_
 
-- [ ] **Step 2.4: Update `int_tableau__gradebook_audit_student_scaffold.sql`**
-
-  In the `student_category_scaffold` branch, change the INNER JOIN from
-  `stg_google_sheets__gradebook_expectations_assignments` to the new INT model.
-  The new join key is `region + school_level + academic_year + quarter` only —
-  no `week_number`. Also remove any references to `week_number_quarter` from the
-  join condition.
-
-- [ ] **Step 2.5: Build and verify**
+- [ ] **Step 2.3b: Build and verify the teacher scaffold**
 
   ```bash
   uv run dbt build \
-    --select int_powerschool__u_expectations[_unpivot]+ \
+    --select int_tableau__gradebook_audit_teacher_scaffold \
     --project-dir src/dbt/kipptaf \
     --defer \
     --state src/dbt/kipptaf/target/prod
   ```
 
-  Verify Newark has category-level rows; Camden and Paterson do not (expected
-  until their PS data is available):
+  Verify quarter grain, Q1–Q4 present, Newark has category rows:
 
   ```sql
-  SELECT DISTINCT region, school_level
-  FROM `teamster-332318.dbt_grangel_tableau.rpt_tableau__gradebook_audit`
+  SELECT DISTINCT region, school_level, scaffold_name, quarter
+  FROM `teamster-332318.dbt_grangel_tableau.int_tableau__gradebook_audit_teacher_scaffold`
   WHERE academic_year = 2026
-    AND cte_grouping = 'class_category'
-  ORDER BY 1, 2
+  ORDER BY 1, 2, 3, 4
   ```
 
-  Expected: Newark only. Camden and Paterson absent for category-level rows.
+  Expected: Newark with both scaffold variants, Q1–Q4. Camden/Paterson have
+  `teacher_scaffold` rows only (no PS expectations data yet).
 
-- [ ] **Step 2.6: Disable the deprecated staging model**
+- [ ] **Step 2.4: Update `int_tableau__gradebook_audit_student_scaffold.sql`**
+
+  In the `student_category_scaffold` branch, change the INNER JOIN from
+  `stg_google_sheets__gradebook_expectations_assignments` to the new INT model.
+  Join key: `region + school_level + academic_year + quarter` — no
+  `week_number`.
+
+- [ ] **Step 2.4b: Build and verify the student scaffold**
+
+  ```bash
+  uv run dbt build \
+    --select int_tableau__gradebook_audit_student_scaffold \
+    --project-dir src/dbt/kipptaf \
+    --defer \
+    --state src/dbt/kipptaf/target/prod
+  ```
+
+- [ ] **Step 2.5: Disable the deprecated staging model**
 
   Nothing references `stg_google_sheets__gradebook_expectations_assignments`
   after steps 2.3–2.4. Disable it rather than deleting, in case operational
@@ -1220,11 +1254,31 @@ needed.
 
 ### 3l: Build, verify, and commit Task 3
 
-- [ ] **Step 3l.1: Run dbt build**
+- [ ] **Step 3l.1: Run dbt build — Task 3 models only**
 
-  Run the full build command from the file map header. If a contract error fires
-  (`column not found`), find the corresponding YAML and remove the deleted
-  column.
+  The scaffolds are now quarter-grain but the assignment models still reference
+  week columns — do not cascade downstream. Build only the models modified in
+  Task 3:
+
+  ```bash
+  uv run dbt build \
+    --select \
+      base_powerschool__sections \
+      stg_google_sheets__gradebook_flags \
+      int_tableau__gradebook_audit_teacher_scaffold \
+      int_tableau__gradebook_audit_student_scaffold \
+      int_tableau__gradebook_audit_assignments_student \
+      int_tableau__gradebook_audit_assignments_teacher \
+      int_tableau__gradebook_audit_categories_teacher \
+      int_extracts__student_enrollments \
+      rpt_tableau__gradebook_gpa \
+    --project-dir src/dbt/kipptaf \
+    --defer \
+    --state src/dbt/kipptaf/target/prod
+  ```
+
+  If a contract error fires (`column not found`), find the corresponding YAML
+  and remove the deleted column.
 
 - [ ] **Step 3l.2: Spot-check removed flags are absent and manager columns
       present**
@@ -1279,18 +1333,16 @@ all assignments in the week window regardless of how recently they were due.
           sec._dbt_source_relation,
           sec.sectionid,
           sec.quarter,
-          sec.week_number_quarter,
           sec.assignment_category_code
-  ) as total_expected_section_quarter_week_category,
+  ) as total_expected_section_quarter_category,
 
   sum(asg.n_expected_scored) over (
       partition by
           sec._dbt_source_relation,
           sec.sectionid,
           sec.quarter,
-          sec.week_number_quarter,
           sec.assignment_category_code
-  ) as total_expected_scored_section_quarter_week_category,
+  ) as total_expected_scored_section_quarter_category,
   ```
 
   with:
@@ -1308,9 +1360,8 @@ all assignments in the week window regardless of how recently they were due.
           sec._dbt_source_relation,
           sec.sectionid,
           sec.quarter,
-          sec.week_number_quarter,
           sec.assignment_category_code
-  ) as total_expected_section_quarter_week_category,
+  ) as total_expected_section_quarter_category,
 
   sum(
       if(
@@ -1324,19 +1375,28 @@ all assignments in the week window regardless of how recently they were due.
           sec._dbt_source_relation,
           sec.sectionid,
           sec.quarter,
-          sec.week_number_quarter,
           sec.assignment_category_code
-  ) as total_expected_scored_section_quarter_week_category,
+  ) as total_expected_scored_section_quarter_category,
   ```
 
-- [ ] **Step 4.2: Run dbt build**
+  Note: column names updated from `*_week_category` to `*_quarter_category` — no
+  `week_number_quarter` in the partition at quarter grain.
 
-  Run the full build command from the file map header.
+- [ ] **Step 4.2: Build `categories_teacher` only**
 
-- [ ] **Step 4.3: Spot-check**
+  ```bash
+  uv run dbt build \
+    --select int_tableau__gradebook_audit_categories_teacher \
+    --project-dir src/dbt/kipptaf \
+    --defer \
+    --state src/dbt/kipptaf/target/prod
+  ```
 
-  Via BigQuery MCP — confirm `w_percent_graded_min_not_met` only fires for weeks
-  where assignments were due more than 7 days ago:
+- [ ] **Step 4.3: Spot-check `categories_teacher` directly**
+
+  Query the model directly — do not use `rpt_tableau__gradebook_audit`
+  (downstream chain not yet valid mid-refactor). Confirm the grace-period flag
+  columns exist and the percent-graded values look reasonable:
 
   ```sql
   SELECT
@@ -1344,13 +1404,14 @@ all assignments in the week window regardless of how recently they were due.
     school,
     teacher_name,
     assignment_category_code,
-    audit_qt_week_number,
-    percent_graded_for_quarter_week_class,
-    flag_value,
-  FROM `teamster-332318.dbt_grangel_tableau.rpt_tableau__gradebook_audit`
-  WHERE audit_flag_name = 'w_percent_graded_min_not_met'
-    AND flag_value = 1
-    AND academic_year = 2026
+    quarter,
+    total_expected_section_quarter_category,
+    total_expected_scored_section_quarter_category,
+    percent_graded_for_quarter_class,
+    w_percent_graded_min_not_met,
+  FROM `teamster-332318.dbt_grangel_tableau.int_tableau__gradebook_audit_categories_teacher`
+  WHERE academic_year = 2026
+    AND w_percent_graded_min_not_met
   LIMIT 20
   ```
 
@@ -1504,10 +1565,30 @@ intermediate models.
 
 ### 6f: Build, verify, and commit Task 6
 
-- [ ] **Step 6f.1: Run dbt build**
+- [ ] **Step 6f.1: Run dbt build — full downstream chain**
 
-  Run the full build command from the file map header. Then confirm no remaining
-  references:
+  Task 6 is the last structural change. By this point all models in the lineage
+  should be updated (including the assignment models' quarter-grain date window
+  changes — see plan gap note below). If all prior tasks are complete, the full
+  chain is now valid:
+
+  ```bash
+  uv run dbt build \
+    --select int_tableau__gradebook_audit_teacher_scaffold+ \
+    --project-dir src/dbt/kipptaf \
+    --defer \
+    --state src/dbt/kipptaf/target/prod
+  ```
+
+  > ⚠️ **Plan gap:** `int_tableau__gradebook_audit_assignments_teacher`,
+  > `int_tableau__gradebook_audit_assignments_student`, and
+  > `int_tableau__gradebook_audit_categories_teacher` still join on
+  > `week_start_monday / week_end_sunday` from the scaffold. These joins must be
+  > updated to `quarter_start_date / quarter_end_date` before the full chain
+  > will build. Steps for those changes will be added when those models are
+  > reviewed.
+
+  Then confirm no remaining references:
 
   ```bash
   grep -rn "gradebook_exceptions" src/dbt/kipptaf/models/ --include="*.sql"
