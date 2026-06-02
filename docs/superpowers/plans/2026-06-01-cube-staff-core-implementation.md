@@ -858,8 +858,8 @@ views:
         prefix: true
         includes:
           - location_name
-          - location_abbreviation
-          - location_grade_band
+          - abbreviation
+          - grade_band
 
       - join_path: staff_work_history.locations.regions
         prefix: true
@@ -899,8 +899,8 @@ views:
         - name: Location
           members:
             - locations_location_name
-            - locations_location_abbreviation
-            - locations_location_grade_band
+            - locations_abbreviation
+            - locations_grade_band
             - regions_region_name
         - name: Staff
           members:
@@ -1095,8 +1095,8 @@ views:
         prefix: true
         includes:
           - location_name
-          - location_abbreviation
-          - location_grade_band
+          - abbreviation
+          - grade_band
 
       - join_path: staff_work_history.locations.regions
         prefix: true
@@ -1125,8 +1125,8 @@ views:
         - name: Location
           members:
             - locations_location_name
-            - locations_location_abbreviation
-            - locations_location_grade_band
+            - locations_abbreviation
+            - locations_grade_band
             - regions_region_name
         - name: Staff
           members:
