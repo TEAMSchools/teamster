@@ -954,15 +954,66 @@ And `eoq_items` loses 4 of its 7 flags, keeping only: `qt_es_comment_missing`,
   end as is_quarter_end_date_range,
   ```
 
-### 3i: Build, verify, and commit Task 3
+### 3i: Add manager columns to `teacher_scaffold.sql` — `sections` CTE
 
-- [ ] **Step 3i.1: Run dbt build**
+New requirement: surface the teacher's direct manager (number, name, Tableau
+username) on every scaffold row. All three columns are already on
+`int_people__staff_roster` via the existing `r` alias — no additional join
+needed.
+
+- [ ] **Step 3i.1: Add manager columns to the `sections` CTE SELECT list**
+
+  File:
+  `src/dbt/kipptaf/models/extracts/tableau/intermediate/int_tableau__gradebook_audit_teacher_scaffold.sql`
+
+  In the `sections` CTE, add these three columns after
+  `r.sam_account_name as teacher_tableau_username`:
+
+  ```sql
+  r.reports_to_employee_number as manager_employee_number,
+  r.reports_to_formatted_name as manager_name,
+  r.reports_to_sam_account_name as manager_tableau_username,
+  ```
+
+- [ ] **Step 3i.2: Add the columns to the `sections` CTE YAML**
+
+  File:
+  `intermediate/properties/int_tableau__gradebook_audit_teacher_scaffold.yml`
+
+  Add three column entries after `teacher_tableau_username`:
+
+  ```yaml
+  - name: manager_employee_number
+    description: ADP employee number of the teacher's direct manager.
+    data_type: string
+  - name: manager_name
+    description: >
+      Full name (Last, First) of the teacher's direct manager, from
+      int_people__staff_roster.reports_to_formatted_name.
+    data_type: string
+  - name: manager_tableau_username
+    description:
+      SAM account name of the teacher's direct manager, used as their Tableau
+      username.
+    data_type: string
+  ```
+
+  These columns pass through to every downstream model that selects `sec.*` from
+  the scaffold. Verify the downstream YAML contracts don't need updating
+  (intermediate models don't enforce contracts, but
+  `rpt_tableau__gradebook_audit` does — add the columns there too if the
+  contract requires it).
+
+### 3j: Build, verify, and commit Task 3
+
+- [ ] **Step 3j.1: Run dbt build**
 
   Run the full build command from the file map header. If a contract error fires
   (`column not found`), find the corresponding YAML and remove the deleted
   column.
 
-- [ ] **Step 3i.2: Spot-check removed flags are absent**
+- [ ] **Step 3j.2: Spot-check removed flags are absent and manager columns
+      present**
 
   Via BigQuery MCP:
 
@@ -975,11 +1026,22 @@ And `eoq_items` loses 4 of its 7 flags, keeping only: `qt_es_comment_missing`,
 
   Expected absent: all 18 flags listed in the Task 3 flag table above.
 
-- [ ] **Step 3i.3: Commit**
+  ```sql
+  SELECT manager_employee_number, manager_name, manager_tableau_username
+  FROM `teamster-332318.dbt_grangel_tableau.rpt_tableau__gradebook_audit`
+  WHERE academic_year = 2026
+    AND manager_name IS NOT NULL
+  LIMIT 5
+  ```
+
+  Expected: manager columns populated for sections where the teacher has a
+  manager in the staff roster.
+
+- [ ] **Step 3j.3: Commit**
 
   ```bash
   git add -u
-  git commit -m "feat(dbt): remove deprecated flags and Miami dead code — gradebook audit AY 2026-2027"
+  git commit -m "feat(dbt): remove deprecated flags and Miami dead code; add manager columns — gradebook audit AY 2026-2027"
   ```
 
 ---
