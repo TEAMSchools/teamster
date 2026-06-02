@@ -1,0 +1,64 @@
+cubes:
+  - name: student_attendance_streaks
+    public: false
+    sql_table: kipptaf_marts.fct_student_attendance_streaks
+
+    joins:
+      # Join on streak_start_date_key — the primary time dimension.
+      # streak_end_date_key is exposed as a raw dimension (CAST to TIMESTAMP)
+      # rather than a second dates join — Cube does not allow two joins to the
+      # same cube name.
+      - name: dates
+        sql:
+          "{dates.date_day} = CAST({CUBE}.streak_start_date_key AS TIMESTAMP)"
+        relationship: many_to_one
+
+      - name: student_enrollments
+        sql: >
+          {student_enrollments.student_enrollment_key} =
+          {CUBE}.student_enrollment_key
+        relationship: many_to_one
+
+    dimensions:
+      - name: student_attendance_streak_key
+        sql: student_attendance_streak_key
+        type: string
+        primary_key: true
+
+      - name: streak_start_date
+        description: First date of the streak.
+        sql: CAST(streak_start_date_key AS TIMESTAMP)
+        type: time
+        public: true
+
+      - name: streak_end_date
+        description: Last date of the streak.
+        sql: CAST(streak_end_date_key AS TIMESTAMP)
+        type: time
+        public: true
+
+      - name: academic_year
+        description: KIPP academic year (July start) derived from yearid + 1990.
+        sql: academic_year
+        type: number
+        public: true
+
+      - name: attendance_code
+        description: Attendance code repeated across all days of this streak.
+        sql: attendance_code
+        type: string
+        public: true
+
+      - name: streak_length_membership
+        description: Number of membership days (school days) in the streak.
+        sql: streak_length_membership
+        type: number
+        public: true
+
+      - name: streak_length_calendar
+        description: >-
+          Number of calendar days in the streak (end_date - start_date + 1),
+          including weekends and holidays.
+        sql: streak_length_calendar
+        type: number
+        public: true
