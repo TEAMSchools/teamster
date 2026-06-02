@@ -1,0 +1,1880 @@
+---
+openapi: 3.0.1
+paths:
+  "/api/external/contact_statuses":
+    get:
+      summary: Returns all ContactStatuses
+      parameters:
+        - name: X-Api-Version
+          in: header
+          required: true
+          schema:
+            "$ref": "#components/schemas/XApiVersionHeader"
+      responses:
+        "401":
+          description: rejects missing auth token
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/ErrorResponse"
+        "200":
+          description: All ContactStatuses
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  contact_statuses:
+                    type: array
+                    items:
+                      "$ref": "#/components/schemas/ContactStatus"
+  "/api/external/contact_statuses/{name}":
+    get:
+      summary: Returns a ContactStatus
+      parameters:
+        - name: name
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: X-Api-Version
+          in: header
+          required: true
+          schema:
+            "$ref": "#components/schemas/XApiVersionHeader"
+      responses:
+        "401":
+          description: rejects missing auth token
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/ErrorResponse"
+        "200":
+          description: A ContactStatus
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  contact_status:
+                    "$ref": "#/components/schemas/ContactStatus"
+  "/api/external/contacts":
+    get:
+      summary: List Contacts
+      parameters:
+        - name: X-Api-Version
+          in: header
+          required: true
+          schema:
+            "$ref": "#components/schemas/XApiVersionHeader"
+        - name: cursor
+          in: query
+          required: false
+          description: Pagination value for next page of results
+          schema:
+            type: string
+        - name: count
+          in: query
+          required: false
+          description: "The number of results to return per page. Maximum: 25"
+          schema:
+            type: number
+        - name: includes
+          in: query
+          required: false
+          style: form
+          explode: true
+          schema:
+            type: array
+            items:
+              type: string
+              enum:
+          description:
+            Comma-separated list of properties that should be expanded in the
+            response.
+        - name: excludes
+          in: query
+          required: false
+          style: form
+          explode: true
+          schema:
+            type: array
+            items:
+              type: string
+              enum:
+          description:
+            Comma-separated list of properties that should not be expanded in
+            the response.
+        - name: since
+          in: query
+          required: false
+          description:
+            Filter results to contacts updated on or after the given date
+          schema:
+            type: date
+        - name: since_includes_expanded
+          in: query
+          required: false
+          description: |
+            By default since only includes contacts that have been updated since the date. If true, contacts
+            will be included if any records being expanded have been updated on or after the since date as well
+          schema:
+            type: boolean
+        - name: school_year_id
+          in: query
+          format: uuid
+          required: false
+          description: |
+            Filters to contacts with workflow status in the given year, and track silos to this year. This means
+            that track-based fields like status, enrollment_type and grade will reflect their values for this year.
+          schema:
+            type: string
+        - name: grade_id
+          in: query
+          schema:
+            type: array
+            items:
+              type: string
+              format: uuid
+          explode: false
+          required: false
+          description: "Filter contacts by grade id. Enter a comma-separated
+            list. school_year_id is required to use this parameter.
+
+            "
+        - name: contact_status
+          in: query
+          schema:
+            type: array
+            items:
+              type: string
+          explode: false
+          required: false
+          description: "Filter contacts by status. Enter a comma-separated list.
+            school_year_id is required to use this parameter.
+
+            "
+        - name: enrollment_type
+          in: query
+          schema:
+            type: array
+            items:
+              type: string
+          explode: false
+          required: false
+          description: "Filter contacts by enrollment_type. Enter a
+            comma-separated list. school_year_id is required to use this
+            parameter.
+
+            "
+        - name: active_only
+          in: query
+          required: false
+          description: |
+            If true, filters to contacts whose active year is specified by school_year_id. The active year for
+            a contact is the latest year a contact has workflow status in.
+          schema:
+            type: boolean
+      responses:
+        "401":
+          description: Requires Authorization
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/ErrorResponse"
+        "200":
+          description: List Contacts
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  contacts:
+                    type: array
+                    items:
+                      "$ref": "#/components/schemas/Contact"
+                  meta:
+                    "$ref": "#/components/schemas/Pagination"
+  "/api/external/contacts/{id}":
+    parameters:
+      - name: id
+        in: path
+        required: true
+        format: uuid
+        schema:
+          type: string
+    get:
+      summary: Get Contact
+      parameters:
+        - name: X-Api-Version
+          in: header
+          required: true
+          schema:
+            "$ref": "#components/schemas/XApiVersionHeader"
+        - name: includes
+          in: query
+          required: false
+          style: form
+          explode: true
+          schema:
+            type: array
+            items:
+              type: string
+              enum:
+          description:
+            Comma-separated list of properties that should be expanded in the
+            response.
+        - name: excludes
+          in: query
+          required: false
+          style: form
+          explode: true
+          schema:
+            type: array
+            items:
+              type: string
+              enum:
+          description:
+            Comma-separated list of properties that should not be expanded in
+            the response.
+        - name: school_year_id
+          in: query
+          format: uuid
+          required: false
+          description: |
+            Track silos to this year. This means that track-based fields like status, enrollment_type and grade
+            will reflect their values for this year.
+          schema:
+            type: string
+      responses:
+        "401":
+          description: Requires Authorization
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/ErrorResponse"
+        "200":
+          description: Get Contact
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  contact:
+                    "$ref": "#/components/schemas/Contact"
+        "404":
+          description: Not Found
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/ErrorResponse"
+  "/api/external/contacts/{id}/fields":
+    post:
+      summary: Update Contact Fields
+      parameters:
+        - name: X-Api-Version
+          in: header
+          required: true
+          schema:
+            "$ref": "#components/schemas/XApiVersionHeader"
+        - name: id
+          in: path
+          required: true
+          format: uuid
+          schema:
+            type: string
+      responses:
+        "401":
+          description: Requires Authorization
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/ErrorResponse"
+        "200":
+          description: Update Contact Fields
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                required:
+                  - success
+        "400":
+          description: Field Validation Failed
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  errors:
+                    type: array
+                    items:
+                      type: string
+                required:
+                  - errors
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                field_name:
+                  type: string
+                  example:
+                    "Canonical name for the field you wish to update. Tip: Use
+                    the /api/external/contacts/{id} GET endpoint to see field
+                    names."
+                value:
+                  oneOf:
+                    - type: string
+                    - type: number
+                    - type: boolean
+                    - type: "null"
+                  example: string or number or boolean or null
+                school_year_id:
+                  type: string
+                  nullable: true
+                  example:
+                    Optional. For track-siloed fields, specify the uuid of the
+                    school year to which this field value applies. Please only
+                    include school_year_id OR start_year.
+                start_year:
+                  type: integer
+                  nullable: true
+                  example:
+                    Optional. For track-siloed fields, specify the start_year of
+                    the school year to which this field value applies. Please
+                    only include school_year_id OR start_year.
+              required:
+                - field_name
+                - value
+        required: true
+  "/api/external/contacts/bulk_update_fields":
+    post:
+      summary: Bulk Update Contact Fields
+      parameters:
+        - name: X-Api-Version
+          in: header
+          required: true
+          schema:
+            "$ref": "#components/schemas/XApiVersionHeader"
+      responses:
+        "401":
+          description: Requires Authorization
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/ErrorResponse"
+        "200":
+          description: Bulk Update Contact Fields
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                required:
+                  - success
+        "400":
+          description: Field Validation Failed
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  errors:
+                    type: object
+                    items:
+                      type: object
+                required:
+                  - errors
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - contacts
+              properties:
+                contacts:
+                  type: array
+                  items:
+                    type: object
+                    properties:
+                      id:
+                        type: string
+                        format: uuid
+                        required: true
+                      fields:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            field_name:
+                              type: string
+                              example:
+                                "Canonical name for the field you wish to
+                                update. Tip: Use the /api/external/contacts/{id}
+                                GET endpoint to see field names."
+                            value:
+                              oneOf:
+                                - type: string
+                                - type: number
+                                - type: boolean
+                                - type: "null"
+                              example: string or number or boolean or null
+                            school_year_id:
+                              type: string
+                              nullable: true
+                              example:
+                                Optional. For track-siloed fields, specify the
+                                uuid of the school year to which this field
+                                value applies. Please only include
+                                school_year_id OR start_year.
+                            start_year:
+                              type: integer
+                              nullable: true
+                              example:
+                                Optional. For track-siloed fields, specify the
+                                start_year of the school year to which this
+                                field value applies. Please only include
+                                school_year_id OR start_year.
+                          required:
+                            - field_name
+                            - value
+        required: true
+  "/api/external/customer":
+    get:
+      summary: Returns current customer
+      parameters:
+        - name: X-Api-Version
+          in: header
+          required: true
+          schema:
+            "$ref": "#components/schemas/XApiVersionHeader"
+      responses:
+        "401":
+          description: rejects missing auth token
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/ErrorResponse"
+        "200":
+          description: The Current Customer
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  customer:
+                    "$ref": "#/components/schemas/Customer"
+  "/api/external/fields":
+    get:
+      summary: Returns all Fields
+      parameters:
+        - name: X-Api-Version
+          in: header
+          required: true
+          schema:
+            "$ref": "#components/schemas/XApiVersionHeader"
+      responses:
+        "401":
+          description: rejects missing auth token
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/ErrorResponse"
+        "200":
+          description: All Fields
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  fields:
+                    type: array
+                    items:
+                      "$ref": "#/components/schemas/Field"
+  "/api/external/fields/{id}":
+    get:
+      summary: Returns a Field
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: X-Api-Version
+          in: header
+          required: true
+          schema:
+            "$ref": "#components/schemas/XApiVersionHeader"
+      responses:
+        "401":
+          description: rejects missing auth token
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/ErrorResponse"
+        "200":
+          description: A Field
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  field:
+                    "$ref": "#/components/schemas/Field"
+  "/api/external/grades":
+    get:
+      summary: Returns all Grades
+      parameters:
+        - name: X-Api-Version
+          in: header
+          required: true
+          schema:
+            "$ref": "#components/schemas/XApiVersionHeader"
+      responses:
+        "401":
+          description: rejects missing auth token
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/ErrorResponse"
+        "200":
+          description: All Grades
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  grades:
+                    type: array
+                    items:
+                      "$ref": "#/components/schemas/Grade"
+  "/api/external/grades/{id}":
+    get:
+      summary: Returns a Grade
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: X-Api-Version
+          in: header
+          required: true
+          schema:
+            "$ref": "#components/schemas/XApiVersionHeader"
+      responses:
+        "401":
+          description: rejects missing auth token
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/ErrorResponse"
+        "200":
+          description: A Grade
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  grade:
+                    "$ref": "#/components/schemas/Grade"
+  "/api/external/leads":
+    post:
+      summary: Create a lead
+      tags:
+        - Leads
+      parameters: []
+      responses:
+        "201":
+          description: lead created
+        "422":
+          description: unprocessable entity
+        "401":
+          description: lead management not enabled
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                lead:
+                  type: object
+                  properties:
+                    first_name:
+                      type: string
+                    last_name:
+                      type: string
+                    name_title:
+                      type: string
+                    name_suffix:
+                      type: string
+                    preferred_name:
+                      type: string
+                    email:
+                      type: string
+                      format: email
+                    lead_source:
+                      type: string
+                    cms_form_id:
+                      type: string
+                    cms_form_name:
+                      type: string
+                    cms_form_submission_id:
+                      type: string
+                    cms_referrer:
+                      type: string
+                prospect:
+                  type: object
+                  properties:
+                    first_name:
+                      type: string
+                    last_name:
+                      type: string
+                    name_title:
+                      type: string
+                    name_suffix:
+                      type: string
+                    preferred_name:
+                      type: string
+                    entry_grade_name:
+                      type: string
+                    entry_year_name:
+                      type: string
+        required: true
+  "/api/external/ping":
+    get:
+      summary: Answers ping
+      parameters:
+        - name: X-Api-Version
+          in: header
+          required: true
+          schema:
+            "$ref": "#components/schemas/XApiVersionHeader"
+      responses:
+        "401":
+          description: rejects missing auth token
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/ErrorResponse"
+        "200":
+          description: pong
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  ping:
+                    "$ref": "#/components/schemas/Ping"
+  "/api/external/school_years":
+    get:
+      summary: Returns all SchoolYears
+      parameters:
+        - name: X-Api-Version
+          in: header
+          required: true
+          schema:
+            "$ref": "#components/schemas/XApiVersionHeader"
+      responses:
+        "401":
+          description: rejects missing auth token
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/ErrorResponse"
+        "200":
+          description: All SchoolYears
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  school_years:
+                    type: array
+                    items:
+                      "$ref": "#/components/schemas/SchoolYear"
+  "/api/external/school_years/{id}":
+    get:
+      summary: Returns a SchoolYear
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: X-Api-Version
+          in: header
+          required: true
+          schema:
+            "$ref": "#components/schemas/XApiVersionHeader"
+      responses:
+        "401":
+          description: rejects missing auth token
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/ErrorResponse"
+        "200":
+          description: A SchoolYear
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  school_year:
+                    "$ref": "#/components/schemas/SchoolYear"
+  "/api/external/users":
+    get:
+      summary: Returns a list of users
+      parameters:
+        - name: since
+          in: query
+          format: date
+          required: false
+          description:
+            Date - Filters to results updated on or after the given date
+          schema:
+            type: string
+        - name: count
+          in: query
+          required: false
+          description: "Number of records to return. Default: 25"
+          schema:
+            type: integer
+        - name: cursor
+          in: query
+          required: false
+          description: Cursor to get the next set of users
+          schema:
+            type: string
+        - name: X-Api-Version
+          in: header
+          required: true
+          schema:
+            "$ref": "#components/schemas/XApiVersionHeader"
+      responses:
+        "401":
+          description: rejects missing auth token
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/ErrorResponse"
+        "200":
+          description: A list of users
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  users:
+                    type: array
+                    items:
+                      "$ref": "#/components/schemas/User"
+                  meta:
+                    "$ref": "#/components/schemas/Pagination"
+  "/api/external/users/{id}":
+    parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+    get:
+      summary: Returns specific user
+      parameters:
+        - name: X-Api-Version
+          in: header
+          required: true
+          schema:
+            "$ref": "#components/schemas/XApiVersionHeader"
+      responses:
+        "401":
+          description: rejects missing auth token
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/ErrorResponse"
+        "200":
+          description: A specific user
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  user:
+                    "$ref": "#/components/schemas/User"
+        "404":
+          description: A missing user
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/ErrorResponse"
+info:
+  title: API V1
+  version: v1
+servers:
+  - url: https://kippnewark.fsenrollment.com
+components:
+  schemas:
+    User:
+      type: object
+      properties:
+        id:
+          description: Unique ID for this user
+          type: string
+          format: uuid
+          example: 00000000-0000-0000-0000-000000acb123
+        first_name:
+          description: The first name of this user
+          type: string
+          example: John
+        last_name:
+          description: The surname of this user
+          type: string
+          example: Smith
+        email:
+          description: The email address for this user
+          type: string
+          example: john.smith@fakedomain.com
+        updated_at:
+          description: Last time this user was updated
+          type: string
+          format: date-time
+          example: "2021-11-02T19:53:54.000Z"
+        type:
+          description:
+            One of User or Admin. User indicates a parent system user, while
+            Admin indicates an employee of the school
+          type: string
+          example: User
+    Ping:
+      type: object
+      properties:
+        message:
+          description: Pong v1
+          type: string
+    Field:
+      type: object
+      properties:
+        id:
+          description: Unique ID for this Field
+          type: string
+          format: uuid
+          example: 00000000-0000-0000-0000-000000acb123
+        name:
+          description: Name of the Field
+          type: string
+          example: email
+        display_name:
+          description: Display name of the Field
+          type: string
+          example: Email
+        internal_description:
+          description: The description text for the Field
+          type:
+            - "null"
+            - string
+          example: A user's email address.
+        searchable:
+          description:
+            True if the Field is available in Search in Finalsite Enrollment
+          type: boolean
+          example: true
+        options:
+          description:
+            An array of strings representing the options for this field, if
+            applicable
+          type: array
+          example:
+            - Option1
+            - Option2
+            - Option3
+        grouping:
+          description: The grouping of this Field in Search
+          type: string
+          enum:
+            - activities
+            - alumni
+            - application
+            - billing
+            - calendar
+            - checklist items
+            - children
+            - citizenship & international
+            - contact
+            - contact information
+            - contract
+            - decision
+            - education
+            - emergency contact
+            - enrollment
+            - events
+            - general information
+            - hidden
+            - household
+            - id field
+            - inquiry
+            - interests
+            - interview
+            - medical
+            - parent
+            - personal information
+            - primary household
+            - programs
+            - prospect
+            - review
+            - scheduled appointments
+            - scholarship
+            - secondary household
+            - secure
+            - testing
+            - title
+            - tuition & fees
+            - tuition assistance
+            - type
+            - work information
+          example: personal information
+        parent_id:
+          description: The id of the Field's parent Field, if any
+          type:
+            - "null"
+            - string
+          format: uuid
+          example: 00000000-0000-0000-0000-000000acb123
+        ctype:
+          description: The ctype of the Field
+          type: string
+          enum:
+            - AddressField
+            - AppointmentField
+            - ApplyGradeField
+            - ApplyYearField
+            - BirthField
+            - BooleanField
+            - BooleanlistField
+            - CommentField
+            - CounterSignatureField
+            - CurrencyField
+            - CurrentGradeField
+            - DateField
+            - EmailField
+            - EnrollGradeField
+            - GenderField
+            - IdField
+            - LikertDefinitionField
+            - LikertField
+            - NameField
+            - NumberField
+            - OptionalFeeField
+            - PhoneField
+            - RelationshipField
+            - RequiredFeeField
+            - ScholarshipField
+            - SectionField
+            - SignatureField
+            - AdditionalSignatureField
+            - SingleSelectField
+            - StudentGradeField
+            - SubsectionField
+            - TextField
+            - TextAreaField
+            - SsnField
+            - TestScoreField
+            - UploadField
+            - PaymentMethodField
+          example: TextField
+        id_field_counter:
+          description: For ID Fields, the counter value for the Field
+          type: integer
+          example: 17
+        id_field_template:
+          description: Format for generating id values
+          type:
+            - "null"
+            - string
+          example: "{{value}}"
+        id_field_autogenerate:
+          description:
+            Whether or not id values for the Field should be automatically
+            generated
+          type: boolean
+          example: false
+        is_track_siloed:
+          description: Whether or not the Field is track siloed
+          type: boolean
+          example: false
+        created_at:
+          description:
+            Timestamp denoting the creation date and time of this object
+          type: string
+          example: "2021-11-01T17:00:39.000Z"
+    Customer:
+      type: object
+      properties:
+        id:
+          description: Unique ID for this customer
+          type: string
+          format: uuid
+          example: 00000000-0000-0000-0000-000000acb123
+        name:
+          description: Name of the school
+          type: string
+          example: Midvale
+        long_name:
+          description: Long official name for the school.
+          type: string
+          example: Midvale School For The Gifted
+        customer_type:
+          description:
+            Indicates whether the customer is a live production customer, a demo
+            customer, etc.
+          type: string
+          enum:
+            - production
+            - suspended
+            - implementation
+            - demo
+            - test
+            - retired
+        subdomain:
+          description: Subdomain used to access this customer
+          type: string
+          example: midvale
+        domain:
+          description: Domain used to access this customer
+          type: string
+          example: midvale.schooladminonline.com
+        time_zone:
+          description:
+            The customer's time zone, in [IANA Time Zone Database identifier
+            format](https://en.wikipedia.org/wiki/List_of_tz_database_time_zones)
+          type: string
+          example: America/Chicago
+        locale:
+          description: The customer's preferred locale
+          type: string
+          example: en-US
+    CustomAttribute:
+      type: object
+      properties:
+        field_id:
+          type: string
+          format: uuid
+          description:
+            The field's ID. The complete Field details can be obtained from the
+            Fields resource
+          example: 00000000-0000-0000-0000-000000acb123
+        field_name:
+          type: string
+          description: The field's canonical name
+          example: preferred_activity
+        field_display_name:
+          type: string
+          description: The field's display name
+          example: Preferred Activity
+        value:
+          type: string
+          description: The custom field value
+          example: badminton
+          nullable: true
+    CreateLeadResponse:
+      type: object
+      properties:
+        lead:
+          description: The lead contact
+          type: object
+          "$ref": "#components/schemas/Contact"
+        prospect:
+          description: The prospect contact
+          type: object
+          nullable: true
+          "$ref": "#components/schemas/Contact"
+    ContactStatus:
+      type: object
+      properties:
+        name:
+          description: Name of the ContactStatus
+          type: string
+          example: deferred
+        stage:
+          description:
+            Denotes with which stage the custom status should be grouped
+          type: string
+          enum:
+            - inquiry
+            - applicant
+            - application_complete
+            - accepted
+            - enrollment
+            - enrolled
+            - not_in_workflow
+          example: inquiry
+        status_type:
+          description: Denotes to which status type the custom status belongs
+          type: string
+          enum:
+            - active
+            - inactive
+            - waitlist
+            - hold
+          example: active
+    Household:
+      type: object
+      properties:
+        id:
+          description: Unique ID for this household
+          type: string
+          format: uuid
+          example: 00000000-0000-0000-0000-000000acb123
+        address_1:
+          description: Address line 1
+          type: string
+          example: 123 Main Street
+          nullable: true
+        address_2:
+          description: Address line 2
+          type: string
+          nullable: true
+        city:
+          description: City
+          type: string
+          example: Austin
+          nullable: true
+        state:
+          description: State/Region/Province
+          type: string
+          example: TX
+          nullable: true
+        zip:
+          description: ZIP or Postal Code
+          type: string
+          example: "78701"
+          nullable: true
+        country:
+          description: Country
+          type: string
+          example: United States
+          nullable: true
+    Contact:
+      type: object
+      properties:
+        id:
+          description: Unique ID for this contact
+          type: string
+          format: uuid
+          example: 00000000-0000-0000-0000-000000acb123
+        first_name:
+          description: The contact's first name
+          type: string
+          example: Alice
+        middle_name:
+          description: The contact's middle name
+          type: string
+          example: Ingrid
+          nullable: true
+        last_name:
+          description: The contact's last name
+          type: string
+          example: Lewis
+        full_name:
+          description: The contact's full name
+          type: string
+          example: Alice Ingrid Lewis
+        preferred_name:
+          description: The contact's preferred name
+          type: string
+          example: AL
+          nullable: true
+        email:
+          description: The contact's email address
+          type: string
+          example: student123@school.example.com
+          nullable: true
+        birth_date:
+          description: The contact's birth date as YYYY-MM-DD
+          type: string
+          format: date
+          example: "2010-06-01"
+          nullable: true
+        gender:
+          description:
+            Canonical representation of the contact's gender as a single letter
+            code (Female, Male, Non-Binary, Self-Identify or Prefer Not To
+            Answer)
+          type: string
+          enum:
+            - F
+            - M
+            - N
+            - O
+            - P
+          example: F
+          nullable: true
+        gender_display:
+          description: Optional/extended gender display text (user-defined)
+          type: string
+          example: ""
+          nullable: true
+        gender_full_text:
+          description: Gender display text
+          type: string
+          example: Female
+          nullable: true
+        grade:
+          nullable: true
+          anyOf:
+            - "$ref": "#/components/schemas/Grade"
+            - type: "null"
+        status:
+          description:
+            Current workflow status. The list of Contact workflow statuses can
+            be obtained from /api/external/contact_statuses.
+          type: string
+          example: enrolled
+        previous_school_1:
+          description: Previous school contact attended.
+          type: string
+          example: Bishop Garriga Middle School
+          nullable: true
+        phone_1:
+          type: object
+          properties:
+            phone_type:
+              description: The phone number type
+              type: string
+              example: Home
+              nullable: true
+            number:
+              description: The phone number
+              type: string
+              example: "5555551234"
+              nullable: true
+        phone_2:
+          type: object
+          properties:
+            phone_type:
+              description: The phone number type
+              type: string
+              example: Cell
+              nullable: true
+            number:
+              description: The phone number
+              type: string
+              example: "5555551234"
+              nullable: true
+        phone_3:
+          type: object
+          properties:
+            phone_type:
+              description: The phone number type
+              type: string
+              example: Work
+              nullable: true
+            number:
+              description: The phone number
+              type: string
+              example: "5555551234"
+              nullable: true
+        inquiry_submit_date:
+          type: string
+          format: date
+          description: The date the student submitted an inquiry
+          example: "2020-03-15"
+          nullable: true
+        application_submit_date:
+          type: string
+          format: date
+          description: The date the student submitted an application
+          example: "2020-03-15"
+          nullable: true
+        contract_submit_date:
+          type: string
+          format: date
+          description: The date the student submitted their last contract
+          example: "2020-03-15"
+          nullable: true
+        financial_aid_requested:
+          type: boolean
+          description: Whether financial aid has been requested
+          example: false
+          nullable: true
+        financial_aid_amount_requested:
+          type: string
+          description: The amount of financial aid requested
+          example: "0.00"
+          nullable: true
+        financial_aid_amount:
+          type: string
+          description: The amount of financial aid granted
+          example: "0.00"
+          nullable: true
+        financial_aid_status:
+          type: string
+          description: The student's financial aid status
+          enum:
+            - Requested
+            - Granted
+            - Accepted
+            - Denied
+            - Parent Declined
+            -
+          example:
+          nullable: true
+        scholarship_amount:
+          type: string
+          description: The scholarship amount granted
+          example: "0.00"
+          nullable: true
+        scholarship_status:
+          type: string
+          description: The student's scholarship status
+          enum:
+            - Requested
+            - Granted
+            - Accepted
+            - Denied
+            - Parent Declined
+            -
+          example:
+          nullable: true
+        deposit_amount_paid:
+          type: string
+          description: Deposit amount paid on last contract
+          example: "500.00"
+          nullable: true
+        tuition_override:
+          type: string
+          description:
+            If provided, a tuition amount that overrides the "standard" tuition
+            amount
+          example: "5000.00"
+          nullable: true
+        deposit_override:
+          type: string
+          description:
+            If provided, a deposit amount that overrides the "standard" deposit
+            amount
+          example: "500.00"
+          nullable: true
+        enrollment_type:
+          type: string
+          description: Whether the student is a new student or returning student
+          enum:
+            - new
+            - returning
+            -
+          example: new
+          nullable: true
+        is_alumni:
+          type: boolean
+          description: Whether this contact is an alum of the school
+          example: false
+          nullable: true
+        review_decision:
+          type: string
+          description: Final review decision
+          enum:
+            - Accept
+            - Waitlist
+            - Decline
+            -
+          example:
+          nullable: true
+        billing_autopay_enabled:
+          type: boolean
+          description:
+            If the contact's associated billing account has enabled autopay
+          example: false
+          nullable: true
+        billing_contact_overdue:
+          type: boolean
+          description: If the associated billing contact has an overdue amount
+          example: false
+          nullable: true
+        billing_overdue:
+          type: boolean
+          description: If the associated billing account has an overdue amount
+          example: false
+          nullable: true
+        billing_overdue_at:
+          type: string
+          format: date
+          description: When the billing account became overdue
+          example:
+          nullable: true
+        billing_payment_method:
+          type: string
+          description: The current payment method
+          example: credit card
+          nullable: true
+        billing_payment_plan:
+          type: string
+          description: The current payment plan
+          example: 3 Payment Plan
+          nullable: true
+        current_account_balance:
+          type: string
+          description: The current account balance
+          example: "5678.90"
+          nullable: true
+        current_contact_balance:
+          type: string
+          description: The current contact balance amount
+          example: "2345.60"
+          nullable: true
+        next_account_balance:
+          type: string
+          description: The upcoming account balance
+          example: "1892.96"
+          nullable: true
+        next_account_billing_date:
+          type: string
+          format: date
+          description: The upcoming billing date for the account
+          example: "2021-12-01"
+          nullable: true
+        next_billing_date:
+          type: string
+          format: date
+          description: The upcoming billing date for the contact
+          example: "2021-12-01"
+          nullable: true
+        next_contact_balance:
+          type: string
+          description: The upcoming contact balance
+          example: "781.86"
+          nullable: true
+        total_account_balance:
+          type: string
+          description: The total balance for the account
+          example: "9999.99"
+          nullable: true
+        total_contact_balance:
+          type: string
+          description: The total balance for the contact
+          example: "3333.33"
+          nullable: true
+        households:
+          description: List of households associated with this contact
+          type: array
+          items:
+            "$ref": "#components/schemas/Household"
+        relationships:
+          description: List of relationships for this contact
+          type: array
+          x-expandable: true
+          items:
+            "$ref": "#components/schemas/Relationship"
+        custom_attributes:
+          description: List of custom field values for this contact
+          type: array
+          items:
+            "$ref": "#/components/schemas/CustomAttribute"
+        track_attributes:
+          description: List of custom track field values for this contact
+          type: array
+          items:
+            "$ref": "#/components/schemas/TrackAttribute"
+        id_attributes:
+          description: List of custom ID field values for this contact
+          type: array
+          items:
+            "$ref": "#/components/schemas/CustomAttribute"
+        school_year:
+          description: The current school year for this contact
+          type: object
+          "$ref": "#/components/schemas/SchoolYear"
+        prospect_entry_grade:
+          description: For prospect contacts, the grade they are interested in
+          anyOf:
+            - "$ref": "#/components/schemas/Grade"
+            - type: "null"
+          nullable: true
+        prospect_entry_year:
+          description:
+            For prospect contacts, the school year they are interested in
+          anyOf:
+            - "$ref": "#/components/schemas/SchoolYear"
+            - type: "null"
+          nullable: true
+    Relationship:
+      type: object
+      properties:
+        id:
+          description: Unique ID for this Relationship
+          type: string
+          format: uuid
+          example: 00000000-0000-0000-0000-000000acb123
+        contact:
+          description:
+            The full related contact (if requested by `include` parameter)
+          type: object
+          x-expandable: true
+          "$ref": "#components/schemas/Contact"
+        rel_id:
+          description: Unique ID for the related contact
+          type: string
+          format: uuid
+          example: 00000000-0000-0000-0000-000000acb123
+        rel_name:
+          description: Name of related contact
+          type: string
+          example: Robert Smith
+        rel_type:
+          description: Type of relationship
+          type: string
+          enum:
+            - parent
+            - child
+            - sibling
+            - guardian
+            - grandparent
+            - grandchild
+            - stepchild
+            - stepparent
+            - stepsibling
+            - half-sibling
+            - aunt/uncle
+            - niece/nephew
+            - cousin
+            - relative
+            - spouse
+            - consultant
+            - consultee
+            - other
+        primary:
+          description: True if related contact is the primary parent or guardian
+          type: boolean
+          nullable: true
+        financial:
+          description: True if related contact has financial responsibility
+          type: boolean
+          nullable: true
+        portal_access:
+          description:
+            True if the related contact has portal access for this contact
+          type: boolean
+          nullable: true
+    Contract:
+      type: object
+      properties:
+        id:
+          description: Unique ID for this Contract
+          type: string
+          format: uuid
+          example: 00000000-0000-0000-0000-000000acb123
+        form_name:
+          description: Name of the Contract
+          type: string
+          example: contract_2025
+        tuition:
+          description: The total base tuition amount of the student's contract
+          type: integer
+          example: 10000
+          nullable: true
+        discounts_list:
+          description:
+            Discount names and amounts applied to the student's latest contract
+          type: object
+          example:
+            Early Payment Discount: 500
+            Sibling Discount: 1000
+          nullable: true
+        fees_list:
+          description:
+            Fee names and amounts included in the student's latest contract
+          type: object
+          example:
+            Activity Fee: 200
+            Technology Fee: 150
+          nullable: true
+        payment_plan_name:
+          description: Name of the Contract Payment Plan
+          type: string
+          example: 2 Payments
+        payment_plan_schedule:
+          type: object
+          description: The full schedule for the student's Contract Payment Plan
+          example:
+            - - due_date_text: false
+                due_date: "2026-02-01"
+                percent: "50.0"
+                position: 0
+              - "4530.0"
+              - faba0c2a-c700-11f0-8c58-8781ca59923e: "4530.0"
+            - - due_date_text: false
+                due_date: "2026-06-01"
+                percent: "50.0"
+                position: 1
+              - "4530.0"
+              - faba0c2a-c700-11f0-8c58-8781ca59923e: "4530.0"
+          nullable: true
+    Grade:
+      type: object
+      properties:
+        id:
+          description: Unique ID for this Grade
+          type: string
+          format: uuid
+          example: 00000000-0000-0000-0000-000000acb123
+        name:
+          description: Name of the Grade
+          type: string
+          example: 1st
+        long_name:
+          description: Long form name of the Grade
+          type: string
+          example: 1st Grade
+        canonical_name:
+          description: Canonical name of the Grade
+          type:
+            - "null"
+            - string
+          enum:
+            -
+            - pre_k
+            - k
+            - 1st
+            - 2nd
+            - 3rd
+            - 4th
+            - 5th
+            - 6th
+            - 7th
+            - 8th
+            - 9th
+            - 10th
+            - 11th
+            - 12th
+          example: 1st
+        school_level:
+          description: School level of the Grade
+          type: string
+          example: LOWER
+          nullable: true
+        promote_to:
+          description:
+            Denotes whether or not this grade should be automatically promoted
+            to another
+          type: string
+          enum:
+            - grade
+            - do_not_promote
+            - graduate
+          example: grade
+          nullable: true
+        promote_grade_id:
+          description: The id of the Grade that this Grade promotes to, if any
+          type: string
+          format: uuid
+          example: 00000000-0000-0000-0000-000000acb123
+          nullable: true
+        created_at:
+          description:
+            Timestamp denoting the creation date and time of this object
+          type: string
+          example: "2021-11-01T17:00:39.000Z"
+    SchoolYear:
+      type: object
+      properties:
+        id:
+          description: Unique ID for this SchoolYear
+          type: string
+          format: uuid
+          example: 00000000-0000-0000-0000-000000acb123
+        name:
+          description: Name of the SchoolYear
+          type: string
+          example: 2021-2022
+        start_year:
+          description: The calendar year in which the school year starts
+          type: integer
+          example: 2021
+        created_at:
+          description:
+            Timestamp denoting the creation date and time of this object
+          type: string
+          example: "2021-11-01T17:00:39.000Z"
+    ClarityContact:
+      type: object
+      properties:
+        id:
+          description: Unique ID for this contact
+          type: string
+          format: uuid
+          example: 00000000-0000-0000-0000-000000acb123
+        first_name:
+          description: The contact's first name
+          type: string
+          example: Alice
+        last_name:
+          description: The contact's last name
+          type: string
+          example: Lewis
+        email:
+          description: The contact's email address
+          type: string
+          example: student123@school.example.com
+          nullable: true
+        birth_date:
+          description: The contact's birth date as YYYY-MM-DD
+          type: string
+          format: date
+          example: "2010-06-01"
+          nullable: true
+        gender:
+          description:
+            Canonical representation of the contact's gender as a single letter
+            code (Female, Male, Non-Binary, Self-Identify or Prefer Not To
+            Answer)
+          type: string
+          enum:
+            - F
+            - M
+            - N
+            - O
+            - P
+          example: F
+          nullable: true
+        gender_display:
+          description: Optional/extended gender display text (user-defined)
+          type: string
+          example: ""
+          nullable: true
+        gender_full_text:
+          description: Gender display text
+          type: string
+          example: Female
+          nullable: true
+        grade:
+          nullable: true
+          anyOf:
+            - "$ref": "#/components/schemas/Grade"
+            - type: "null"
+        status:
+          description:
+            Current workflow status. The list of Contact workflow statuses can
+            be obtained from /api/external/contact_statuses.
+          type: string
+          example: enrolled
+        contract:
+          nullable: true
+          anyOf:
+            - "$ref": "#/components/schemas/Contract"
+            - type: "null"
+        deposit_amount:
+          description: The full deposit amount on the student's contract
+          type: integer
+          example: 10000
+          nullable: true
+        deposit_amount_outstanding:
+          description:
+            The amount remaining to be paid on the student's deposit (Deposit
+            Amount - Deposit Paid)
+          type: integer
+          example: 9500
+          nullable: true
+        enrollment_type:
+          type: string
+          description: Whether the student is a new student or returning student
+          enum:
+            - new
+            - returning
+            -
+          example: new
+          nullable: true
+        households:
+          description: List of households associated with this contact
+          type: array
+          items:
+            "$ref": "#components/schemas/Household"
+        relationships:
+          description: List of relationships for this contact
+          type: array
+          x-expandable: true
+          items:
+            "$ref": "#components/schemas/Relationship"
+        custom_attributes:
+          description: List of custom field values for this contact
+          type: array
+          items:
+            "$ref": "#/components/schemas/CustomAttribute"
+        track_attributes:
+          description: List of custom track field values for this contact
+          type: array
+          items:
+            "$ref": "#/components/schemas/TrackAttribute"
+        id_attributes:
+          description: List of custom ID field values for this contact
+          type: array
+          items:
+            "$ref": "#/components/schemas/CustomAttribute"
+        school_year:
+          description: The current school year for this contact
+          type: object
+          "$ref": "#/components/schemas/SchoolYear"
+    TrackAttribute:
+      type: object
+      properties:
+        field_id:
+          type: string
+          format: uuid
+          description:
+            The field's ID. The complete Field details can be obtained from the
+            Fields resource
+          example: 00000000-0000-0000-0000-000000acb123
+        field_name:
+          type: string
+          description: The field's canonical name
+          example: preferred_activity
+        field_display_name:
+          type: string
+          description: The field's display name
+          example: Preferred Activity
+        value:
+          type: string
+          description: The custom field value
+          example: badminton
+          nullable: true
+        school_year:
+          "$ref": "#/components/schemas/SchoolYear"
+    XApiVersionHeader:
+      type: string
+      default: "1"
+    ErrorResponse:
+      type: object
+      properties:
+        error_type:
+          type: string
+          description: The type of error
+        message:
+          type: string
+          description: Detailed error message
+      required:
+        - error_type
+        - message
+    Pagination:
+      type: object
+      properties:
+        next_cursor:
+          type: string
+          description:
+            The cursor value to user for the next page of results. Value is null
+            when no more results
+          example: MDAwMDAwMDAtMDAwMC0wMDAwLTAwMDAtMDAwMDAwYWNiMTIz
+          nullable: true
+  securitySchemes:
+    Bearer:
+      description: JWT Token
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+security:
+  - Bearer: []
