@@ -53,16 +53,15 @@ MCP for spot-checks, `uv run dbt` CLI, branch
 | `rpt_tableau__gradebook_gpa.sql`                       | 3        | Add boolean, remove Paterson filter |
 | YAML properties for each modified model                | per task | Column additions / removals         |
 
-### SQL — deleted models
+### SQL — disabled models
 
-| File                                                        | Task | Change              |
-| ----------------------------------------------------------- | ---- | ------------------- |
-| `stg_google_sheets__gradebook_expectations_assignments.sql` | 2    | Delete              |
-| `stg_google_sheets__gradebook_expectations_assignments.yml` | 2    | Delete              |
-| `sources-external.yml` (expectations entry)                 | 2    | Remove source entry |
-| `stg_google_sheets__gradebook_exceptions.sql`               | 6    | Delete              |
-| `stg_google_sheets__gradebook_exceptions.yml`               | 6    | Delete              |
-| `sources-external.yml` (exceptions entry)                   | 6    | Remove source entry |
+Deprecated sources are disabled (`config: enabled: false`) rather than deleted,
+pending any new operational decisions taking effect July 1st.
+
+| File                                                        | Task | Change                       |
+| ----------------------------------------------------------- | ---- | ---------------------------- |
+| `stg_google_sheets__gradebook_expectations_assignments.yml` | 2    | Set `config: enabled: false` |
+| `stg_google_sheets__gradebook_exceptions.yml`               | 6    | Set `config: enabled: false` |
 
 ### Documentation
 
@@ -321,26 +320,28 @@ based on which approach produces cleaner scaffold code — and rename accordingl
 
   Expected: Newark only. Camden and Paterson absent for category-level rows.
 
-- [ ] **Step 2.6: Delete the deprecated staging model**
+- [ ] **Step 2.6: Disable the deprecated staging model**
 
   Nothing references `stg_google_sheets__gradebook_expectations_assignments`
-  after steps 2.3–2.4. Delete the model and its source entry:
+  after steps 2.3–2.4. Disable it rather than deleting, in case operational
+  decisions after July 1st affect the final approach.
 
-  ```bash
-  rm src/dbt/kipptaf/models/google/sheets/staging/stg_google_sheets__gradebook_expectations_assignments.sql
-  rm src/dbt/kipptaf/models/google/sheets/staging/properties/stg_google_sheets__gradebook_expectations_assignments.yml
+  In
+  `src/dbt/kipptaf/models/google/sheets/staging/properties/stg_google_sheets__gradebook_expectations_assignments.yml`,
+  add at the top of the model config:
+
+  ```yaml
+  config:
+    enabled: false
   ```
 
-  In `src/dbt/kipptaf/models/google/sheets/sources-external.yml`, remove the
-  `src_google_sheets__gradebook_expectations_assignments` source block.
-
-  Verify no remaining references:
+  Verify no remaining active references:
 
   ```bash
   grep -rn "gradebook_expectations_assignments" src/dbt/kipptaf/models/ --include="*.sql"
   ```
 
-  Expected: zero results.
+  Expected: zero results (the disabled model's own SQL file is fine to stay).
 
 - [ ] **Step 2.7: Commit**
 
@@ -1204,20 +1205,21 @@ intermediate models.
 
   Delete the `e1` LEFT JOIN and the WHERE clause.
 
-### 6e: Delete the exceptions staging model and source entry
+### 6e: Disable the exceptions staging model
 
-- [ ] **Step 6e.1: Delete the staging model files**
+- [ ] **Step 6e.1: Disable the staging model**
 
-  ```bash
-  rm src/dbt/kipptaf/models/google/sheets/staging/stg_google_sheets__gradebook_exceptions.sql
-  rm src/dbt/kipptaf/models/google/sheets/staging/properties/stg_google_sheets__gradebook_exceptions.yml
+  In
+  `src/dbt/kipptaf/models/google/sheets/staging/properties/stg_google_sheets__gradebook_exceptions.yml`,
+  add at the top of the model config:
+
+  ```yaml
+  config:
+    enabled: false
   ```
 
-- [ ] **Step 6e.2: Remove the source entry from `sources-external.yml`**
-
-  File: `src/dbt/kipptaf/models/google/sheets/sources-external.yml`
-
-  Delete the entire `src_google_sheets__gradebook_exceptions` source block.
+  The SQL file and source entry stay in place. This preserves the model for
+  reference pending any operational decisions after July 1st.
 
 ### 6f: Build, verify, and commit Task 6
 
