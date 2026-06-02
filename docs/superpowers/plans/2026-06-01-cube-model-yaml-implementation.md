@@ -268,14 +268,7 @@ member: "locations.abbreviation",
 member: "locations.abbreviation",
 ```
 
-- [ ] **Step 5: Update `reporting_chain` segment**
-
-```javascript
-// was: "dim_staff.reporting_chain"
-segments: [...(query.segments ?? []), "staff.reporting_chain"],
-```
-
-- [ ] **Step 6: Verify the file parses**
+- [ ] **Step 5: Verify the file parses**
 
 ```bash
 node -e "require('./src/cube/cube.js')" 2>&1 | head -5
@@ -284,7 +277,7 @@ node -e "require('./src/cube/cube.js')" 2>&1 | head -5
 Expected: no output (clean parse, `module.exports` is an object literal, no
 top-level side effects).
 
-- [ ] **Step 7: Commit**
+- [ ] **Step 6: Commit**
 
 ```bash
 git add src/cube/cube.js
@@ -387,7 +380,7 @@ To:
 - name: school_calendars
 ```
 
-- [ ] **Step 6: Run schema test — should show fewer failures**
+- [ ] **Step 5: Run schema test — should show fewer failures**
 
 ```bash
 uv run pytest tests/cube/test_cube_schema.py -v
@@ -396,7 +389,7 @@ uv run pytest tests/cube/test_cube_schema.py -v
 Expected: conformed cube tests now PASS; student and attendance cube tests still
 FAIL.
 
-- [ ] **Step 7: Commit**
+- [ ] **Step 6: Commit**
 
 ```bash
 git add src/cube/model/cubes/conformed/
@@ -503,7 +496,7 @@ To:
 - name: student_meal_eligibility_status
 ```
 
-- [ ] **Step 6: Run schema test — only attendance cube should still fail**
+- [ ] **Step 5: Run schema test — only attendance cube should still fail**
 
 ```bash
 uv run pytest tests/cube/test_cube_schema.py -v
@@ -512,7 +505,7 @@ uv run pytest tests/cube/test_cube_schema.py -v
 Expected: conformed + student cube tests PASS; `attendance/attendance.yml` still
 FAILS.
 
-- [ ] **Step 7: Commit**
+- [ ] **Step 6: Commit**
 
 ```bash
 git add src/cube/model/cubes/students/
@@ -629,7 +622,7 @@ const SNAPSHOT_CUBES = ["attendance"];
 const SNAPSHOT_CUBES = ["student_attendance"];
 ```
 
-- [ ] **Step 6: Run schema test — all cube tests should now pass**
+- [ ] **Step 5: Run schema test — all cube tests should now pass**
 
 ```bash
 uv run pytest tests/cube/test_cube_schema.py -v
@@ -637,7 +630,7 @@ uv run pytest tests/cube/test_cube_schema.py -v
 
 Expected: all PASS.
 
-- [ ] **Step 7: Commit**
+- [ ] **Step 6: Commit**
 
 ```bash
 git add src/cube/model/cubes/attendance/ src/cube/cube.js

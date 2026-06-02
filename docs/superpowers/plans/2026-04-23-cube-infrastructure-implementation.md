@@ -173,7 +173,6 @@ contextToGroups: async ({ securityContext }) => {
 ### 5c. `queryRewrite`
 
 Location filter priority: network → region → school → deny. Org-hierarchy filter
-applied to staff cubes unless user has `cube-access-staff-all`.
 
 ```javascript
 queryRewrite: (query, { securityContext }) => {
@@ -240,8 +239,6 @@ queryRewrite: (query, { securityContext }) => {
   const touchesStaffCube = [...(query.dimensions ?? []), ...(query.measures ?? [])].some(
     (m) => STAFF_CUBES.some((c) => m.startsWith(c)),
   );
-  if (touchesStaffCube && !groups.includes("cube-access-staff-all")) {
-    query = { ...query, segments: [...(query.segments ?? []), "dim_staff.reporting_chain"] };
   }
 
   return { ...query, filters };
@@ -249,14 +246,12 @@ queryRewrite: (query, { securityContext }) => {
 ```
 
 !!! note "Staff cube list and segment" The full list of staff cubes and the
-`reporting_chain` segment definition are populated during YAML implementation
 (follow-up spec). The segment uses `SECURITY_CONTEXT.email` directly in its SQL
 so BigQuery executes the subquery — Cube's REST API filter operators do not
 support SQL subqueries. Example segment YAML:
 
     ```yaml
     segments:
-      - name: reporting_chain
         sql: >
           {staff_key} IN (
             SELECT h.descendant_staff_key
@@ -328,7 +323,6 @@ Tracked separately:
 - `bridge_staff_hierarchy` model + exposure update to be added in a follow-on PR
   after #3729 is resolved
 
-Staff cubes (`dim_staff`, `fct_staff_attrition`, etc.) and the `reporting_chain`
 segment must wait for both of those before they can be added to the Cube
 semantic layer.
 

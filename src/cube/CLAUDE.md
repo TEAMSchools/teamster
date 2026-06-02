@@ -112,8 +112,7 @@ Default-deny, group-driven. Read [`cube.js`](cube.js) before modifying.
 - **Group membership is direct-only.** Admin Directory API's
   `groups.list({userKey})` returns direct memberships; nested `cube-*` groups
   don't transitively resolve. Flat-enroll users in every `cube-*` group they
-  need (scope tier + `cube-access-student-data`, plus `cube-access-staff-all`
-  for staff cubes).
+  need (scope tier + `cube-access-student-data` + `cube-access-staff-data`).
 - **Cloud Identity `searchTransitiveGroups` is edition-gated** (Workspace
   Enterprise / Education Plus / Cloud Identity Premium). On lower editions it
   returns `INVALID_ARGUMENT`, not `PERMISSION_DENIED` — don't propose it as a
@@ -125,16 +124,15 @@ Default-deny, group-driven. Read [`cube.js`](cube.js) before modifying.
   - Adds a `locations` filter based on the highest-priority scope group: network
     (no filter) → region (`region_key`) → school (`abbreviation`). No scope
     group → empty `IN ()` filter (default deny).
-  - For queries touching staff-domain cubes, injects the `staff.reporting_chain`
-    segment unless the user has `cube-access-staff-all` — via `isStaffMember`
-    (`startsWith("staff")`).
+  - Strips dims/measures from staff-domain cubes for users without
+    `cube-access-staff-data` — via `isStaffMember` (`startsWith("staff")`).
 - **Naming convention drives security — no static arrays to maintain.** The
   `student_` and `staff_` prefixes automatically route cubes through the correct
   `queryRewrite` gates. Do NOT add new cubes to a `STUDENT_CUBES` or
   `STAFF_CUBES` array — those arrays were removed when Plan 0 ran.
-- **`cube-access-staff-data`** is required to see any staff-domain member
-  (dimensions and measures), identical to `cube-access-student-data` for
-  students. Without it, all `staff_`-prefixed members are stripped from queries.
+- **`cube-access-staff-data`** is required to see any staff-domain member,
+  identical to `cube-access-student-data` for students. Without it, all
+  `staff_`-prefixed members are stripped from queries.
 - **`SNAPSHOT_CUBES` / `SNAPSHOT_MEASURE_STEMS` arrays.** For cubes built on
   fact tables with cumulative daily-status flags (values re-stamped on every row
   — overcounts without a point-in-time anchor). `queryRewrite` auto-injects

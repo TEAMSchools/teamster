@@ -332,30 +332,6 @@ module.exports = {
       }
     }
 
-    // Org-hierarchy filter — inject reporting_chain segment for region/school
-    // users to limit rows to their direct reports. Network-scoped users skip
-    // injection (network scope already means all staff). cube-access-staff-all
-    // bypasses injection for region/school users who need cross-hierarchy
-    // visibility (e.g. HR analysts scoped to a region).
-    //
-    // TODO: segment not yet implemented — throws for non-network users without
-    // cube-access-staff-all until staff.reporting_chain is defined.
-    const touchesStaffCube = [
-      ...(query.dimensions ?? []),
-      ...(query.measures ?? []),
-    ].some((m) => isStaffMember(m));
-    if (
-      touchesStaffCube &&
-      !networkGroup &&
-      !groups.includes("cube-access-staff-all")
-    ) {
-      throw new Error(
-        "Access denied: org-hierarchy scoping (reporting_chain) is not yet " +
-          "implemented for region/school-scoped users. Use a network scope group " +
-          "or cube-access-staff-all for cross-hierarchy staff access.",
-      );
-    }
-
     return { ...query, filters };
   },
 

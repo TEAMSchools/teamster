@@ -1508,9 +1508,3 @@ member: "locations.abbreviation",
 // default-deny filter
 member: "locations.abbreviation",
 ```
-
-### Update `reporting_chain` segment reference
-
-```javascript
-segments: [...(query.segments ?? []), "staff.reporting_chain"],
-```
