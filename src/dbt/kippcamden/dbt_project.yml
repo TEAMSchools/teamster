@@ -98,8 +98,6 @@ models:
             +enabled: false
           stg_powerschool__u_def_ext_students:
             +enabled: false
-          stg_powerschool__u_expectations:
-            +enabled: true
   titan:
     +materialized: table
     staging:
@@ -144,8 +142,6 @@ sources:
               +enabled: false
             src_powerschool__u_def_ext_students:
               +enabled: false
-            src_powerschool__u_expectations:
-              +enabled: true
   titan:
     titan:
       src_titan__income_form_data:
