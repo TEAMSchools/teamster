@@ -882,16 +882,18 @@ Add rows for the new `academic_year`. The process is:
 SELECT * FROM (
 
   -- Camden and Newark: copy prior year, bump academic_year
+  -- Column order matches the sheet: academic_year, region, school_level,
+  -- grade_level, code_type, code, audit_category, audit_flag_name, cte_grouping
   SELECT
     2026 AS academic_year,
     region,
     school_level,
+    grade_level,
     code_type,
     code,
     audit_category,
     audit_flag_name,
     cte_grouping,
-    grade_level,
   FROM `teamster-332318.kipptaf_google_sheets.stg_google_sheets__gradebook_flags`
   WHERE region IN ('Newark', 'Camden')
     AND academic_year = 2025
@@ -912,12 +914,12 @@ SELECT * FROM (
     2026 AS academic_year,
     'Paterson' AS region,
     school_level,
+    grade_level,
     code_type,
     code,
     audit_category,
     audit_flag_name,
     cte_grouping,
-    grade_level,
   FROM `teamster-332318.kipptaf_google_sheets.stg_google_sheets__gradebook_flags`
   WHERE region = 'Newark'
     AND school_level = 'MS'
@@ -938,12 +940,12 @@ SELECT * FROM (
     2026 AS academic_year,
     'Paterson' AS region,
     'ES' AS school_level,
+    grade_level,
     code_type,
     code,
     audit_category,
     audit_flag_name,
     cte_grouping,
-    grade_level,
   FROM `teamster-332318.kipptaf_google_sheets.stg_google_sheets__gradebook_flags`
   WHERE region = 'Newark'
     AND school_level = 'ES'
