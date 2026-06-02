@@ -640,12 +640,368 @@ based on which approach produces cleaner scaffold code — and rename accordingl
   Expected: Newark with both scaffold variants, Q1–Q4. Camden/Paterson have
   `teacher_scaffold` rows only (no PS expectations data yet).
 
-- [ ] **Step 2.4: Update `int_tableau__gradebook_audit_student_scaffold.sql`**
+- [ ] **Step 2.4: Redesign `int_tableau__gradebook_audit_student_scaffold.sql`**
 
-  In the `student_category_scaffold` branch, change the INNER JOIN from
-  `stg_google_sheets__gradebook_expectations_assignments` to the new INT model.
-  Join key: `region + school_level + academic_year + quarter` — no
-  `week_number`.
+  This step applies all changes to the student scaffold: replace the
+  expectations join, remove all week/EOQ columns, remove deprecated flags, add
+  manager columns, add PatersonES to the ES comment flag. This is the complete
+  target state of the model.
+
+  **Key simplification:** the `student_category_scaffold` branch previously had
+  its own INNER JOIN to `stg_google_sheets__gradebook_expectations_assignments`
+  to get `assignment_category_name`, `assignment_category_term`, etc. Since
+  `sec` (teacher_category_scaffold) already carries all those fields from its
+  own expectations join, that join is redundant. **Remove it entirely** and
+  reference `sec.*` for expectation fields.
+
+  **Summer toggle:** both `category_grades` and the `quarter_course_grades` join
+  have a seasonal toggle. See the `gradebook-audit` skill procedure "Recover
+  category grades after academic year rollover" for when and how to flip these.
+
+  ```sql
+  with
+      category_grades as (
+          select
+              _dbt_source_relation,
+              yearid,
+              studentid,
+              sectionid,
+              storecode,
+              percent_grade as category_quarter_percent_grade,
+
+              round(
+                  avg(percent_grade) over (
+                      partition by _dbt_source_relation, studentid, yearid, storecode
+                  ),
+                  2
+              ) as category_quarter_average_all_courses,
+
+          from {{ ref("int_powerschool__category_grades") }}
+          where
+              /* summer toggle: change -1990 to -1991 after PS academic year rollover
+                 in July until new-year grade data is available; revert when ready */
+              yearid = {{ var("current_academic_year") - 1990 }}
+              and termbin_start_date <= current_date('{{ var("local_timezone") }}')
+      ),
+
+      quarter_course_grades as (
+          select
+              _dbt_source_relation,
+              academic_year,
+              yearid,
+              studentid,
+              sectionid,
+              storecode,
+              termbin_start_date,
+              term_percent_grade_adjusted as quarter_course_percent_grade,
+              term_grade_points as quarter_course_grade_points,
+              citizenship as quarter_conduct,
+              comment_value as quarter_comment_value,
+              'current_year' as grades_type,
+          from {{ ref("base_powerschool__final_grades") }}
+
+          union all
+
+          select
+              _dbt_source_relation,
+              academic_year,
+              yearid,
+              studentid,
+              sectionid,
+              storecode,
+              null as termbin_start_date,
+              `percent` as quarter_course_percent_grade,
+              gpa_points as quarter_course_grade_points,
+              behavior as quarter_conduct,
+              comment_value as quarter_comment_value,
+              'last_year' as grades_type,
+          from {{ ref("stg_powerschool__storedgrades") }}
+          where
+              academic_year = {{ var("current_academic_year") - 1 }}
+              and storecode_type = 'Q'
+              and not is_transfer_grade
+      )
+
+  /* student_scaffold: one row per student × section × quarter
+     student_category_scaffold: one row per student × section × quarter × category */
+
+  select
+      s._dbt_source_relation,
+      s.academic_year,
+      s.academic_year_display,
+      s.yearid,
+      s.region,
+      s.school_level_alt as school_level,
+      s.schoolid,
+      s.school,
+      s.students_dcid,
+      s.studentid,
+      s.student_number,
+      s.student_name,
+      s.grade_level,
+      s.salesforce_id,
+      s.ktc_cohort,
+      s.enroll_status,
+      s.cohort,
+      s.gender,
+      s.ethnicity,
+      s.advisory,
+      s.hos,
+      s.year_in_school,
+      s.year_in_network,
+      s.rn_undergrad,
+      s.is_out_of_district,
+      s.is_self_contained,
+      s.is_retained_year,
+      s.is_retained_ever,
+      s.lunch_status,
+      s.gifted_and_talented,
+      s.iep_status,
+      s.lep_status,
+      s.is_504,
+      s.is_counseling_services,
+      s.is_student_athlete,
+      s.`ada`,
+      s.ada_above_or_at_80,
+
+      ce.cc_sectionid as sectionid,
+      ce.cc_course_number as course_number,
+      ce.cc_dateenrolled as date_enrolled,
+      ce.sections_dcid,
+      ce.sections_section_number as section_number,
+      ce.sections_external_expression as external_expression,
+      ce.sections_termid as termid,
+      ce.courses_credittype as credit_type,
+      ce.courses_course_name as course_name,
+      ce.courses_excludefromgpa as exclude_from_gpa,
+      ce.teachernumber as teacher_number,
+      ce.teacher_lastfirst as teacher_name,
+      ce.is_ap_course,
+
+      sec.teacher_tableau_username,
+      sec.manager_employee_number,
+      sec.manager_name,
+      sec.manager_tableau_username,
+      sec.school_leader,
+      sec.school_leader_tableau_username,
+      sec.region_school_level,
+      sec.quarter,
+      sec.semester,
+      sec.quarter_start_date,
+      sec.quarter_end_date,
+      sec.is_current_term,
+      sec.section_or_period,
+
+      qg.quarter_course_percent_grade,
+      qg.quarter_course_grade_points,
+      qg.quarter_conduct,
+      qg.quarter_comment_value,
+
+      'student_scaffold' as scaffold_name,
+
+      null as assignment_category_name,
+      null as assignment_category_code,
+      null as assignment_category_term,
+      null as expectation,
+      null as notes,
+
+      null as category_quarter_percent_grade,
+      null as category_quarter_average_all_courses,
+
+      if(
+          qg.quarter_course_percent_grade > 100, true, false
+      ) as qt_percent_grade_greater_100,
+
+      if(
+          s.school_level_alt != 'ES'
+          and qg.quarter_course_percent_grade < 70
+          and qg.quarter_comment_value is null,
+          true,
+          false
+      ) as qt_grade_70_comment_missing,
+
+      if(
+          sec.region_school_level in ('CamdenES', 'NewarkES', 'PatersonES')
+          and ce.courses_credittype in ('HR', 'MATH', 'ENG', 'RHET')
+          and qg.quarter_comment_value is null,
+          true,
+          false
+      ) as qt_es_comment_missing,
+
+  from {{ ref("int_extracts__student_enrollments") }} as s
+  inner join
+      {{ ref("base_powerschool__course_enrollments") }} as ce
+      on s.studentid = ce.cc_studentid
+      and s.yearid = ce.terms_yearid
+      and {{ union_dataset_join_clause(left_alias="s", right_alias="ce") }}
+      and not ce.is_dropped_section
+      and ce.sections_no_of_students != 0
+  inner join
+      {{ ref("int_tableau__gradebook_audit_teacher_scaffold") }} as sec
+      on ce.terms_yearid = sec.yearid
+      and ce.cc_sectionid = sec.sectionid
+      and {{ union_dataset_join_clause(left_alias="ce", right_alias="sec") }}
+      and sec.scaffold_name = 'teacher_scaffold'
+  left join
+      quarter_course_grades as qg
+      on ce.terms_yearid = qg.yearid
+      and ce.cc_studentid = qg.studentid
+      and ce.cc_sectionid = qg.sectionid
+      and {{ union_dataset_join_clause(left_alias="ce", right_alias="qg") }}
+      and sec.quarter = qg.storecode
+      and {{ union_dataset_join_clause(left_alias="sec", right_alias="qg") }}
+      and qg.termbin_start_date <= current_date('{{ var("local_timezone") }}')
+      and qg.grades_type = 'current_year' /* summer toggle: see skill */
+  where
+      s.academic_year = {{ var("current_academic_year") }}
+      and s.rn_year = 1
+      and s.enroll_status = 0
+      and not s.is_out_of_district
+
+  union all
+
+  select
+      s._dbt_source_relation,
+      s.academic_year,
+      s.academic_year_display,
+      s.yearid,
+      s.region,
+      s.school_level_alt as school_level,
+      s.schoolid,
+      s.school,
+      s.students_dcid,
+      s.studentid,
+      s.student_number,
+      s.student_name,
+      s.grade_level,
+      s.salesforce_id,
+      s.ktc_cohort,
+      s.enroll_status,
+      s.cohort,
+      s.gender,
+      s.ethnicity,
+      s.advisory,
+      s.hos,
+      s.year_in_school,
+      s.year_in_network,
+      s.rn_undergrad,
+      s.is_out_of_district,
+      s.is_self_contained,
+      s.is_retained_year,
+      s.is_retained_ever,
+      s.lunch_status,
+      s.gifted_and_talented,
+      s.iep_status,
+      s.lep_status,
+      s.is_504,
+      s.is_counseling_services,
+      s.is_student_athlete,
+      s.`ada`,
+      s.ada_above_or_at_80,
+
+      ce.cc_sectionid as sectionid,
+      ce.cc_course_number as course_number,
+      ce.cc_dateenrolled as date_enrolled,
+      ce.sections_dcid,
+      ce.sections_section_number as section_number,
+      ce.sections_external_expression as external_expression,
+      ce.sections_termid as termid,
+      ce.courses_credittype as credit_type,
+      ce.courses_course_name as course_name,
+      ce.courses_excludefromgpa as exclude_from_gpa,
+      ce.teachernumber as teacher_number,
+      ce.teacher_lastfirst as teacher_name,
+      ce.is_ap_course,
+
+      sec.teacher_tableau_username,
+      sec.manager_employee_number,
+      sec.manager_name,
+      sec.manager_tableau_username,
+      sec.school_leader,
+      sec.school_leader_tableau_username,
+      sec.region_school_level,
+      sec.quarter,
+      sec.semester,
+      sec.quarter_start_date,
+      sec.quarter_end_date,
+      sec.is_current_term,
+      sec.section_or_period,
+      qg.quarter_course_percent_grade,
+      qg.quarter_course_grade_points,
+      qg.quarter_conduct,
+      qg.quarter_comment_value,
+
+      'student_category_scaffold' as scaffold_name,
+
+      /* expectation fields come from sec (teacher_category_scaffold already
+         carries them from its own expectations join — no separate ge join needed) */
+      sec.assignment_category_name,
+      sec.assignment_category_code,
+      sec.assignment_category_term,
+      sec.expectation,
+      sec.notes,
+
+      cg.category_quarter_percent_grade,
+      cg.category_quarter_average_all_courses,
+
+      null as qt_percent_grade_greater_100,
+      null as qt_grade_70_comment_missing,
+      null as qt_es_comment_missing,
+
+  from {{ ref("int_extracts__student_enrollments") }} as s
+  inner join
+      {{ ref("base_powerschool__course_enrollments") }} as ce
+      on s.studentid = ce.cc_studentid
+      and s.yearid = ce.terms_yearid
+      and {{ union_dataset_join_clause(left_alias="s", right_alias="ce") }}
+      and not ce.is_dropped_section
+      and ce.sections_no_of_students != 0
+  inner join
+      {{ ref("int_tableau__gradebook_audit_teacher_scaffold") }} as sec
+      on ce.terms_yearid = sec.yearid
+      and ce.cc_sectionid = sec.sectionid
+      and {{ union_dataset_join_clause(left_alias="ce", right_alias="sec") }}
+      and sec.scaffold_name = 'teacher_category_scaffold'
+  left join
+      quarter_course_grades as qg
+      on ce.terms_yearid = qg.yearid
+      and ce.cc_studentid = qg.studentid
+      and ce.cc_sectionid = qg.sectionid
+      and {{ union_dataset_join_clause(left_alias="ce", right_alias="qg") }}
+      and sec.quarter = qg.storecode
+      and {{ union_dataset_join_clause(left_alias="sec", right_alias="qg") }}
+      and qg.termbin_start_date <= current_date('{{ var("local_timezone") }}')
+      and qg.grades_type = 'current_year' /* summer toggle: see skill */
+  left join
+      category_grades as cg
+      on ce.terms_yearid = cg.yearid
+      and ce.cc_studentid = cg.studentid
+      and ce.cc_sectionid = cg.sectionid
+      and {{ union_dataset_join_clause(left_alias="ce", right_alias="cg") }}
+      and sec.assignment_category_term = cg.storecode
+  where
+      s.academic_year = {{ var("current_academic_year") }}
+      and s.rn_year = 1
+      and s.enroll_status = 0
+      and not s.is_out_of_district
+  ```
+
+  Key changes from the old model:
+  - All week columns removed (`week_start_date`, `week_start_monday`, etc.)
+  - `is_quarter_end_date_range`, `quarter_end_date_insession`, `is_current_week`
+    removed
+  - Manager columns added from `sec`
+  - Deprecated flags removed (Miami conduct codes, `w_grade_inflation`,
+    effort/formative/summative)
+  - `qt_es_comment_missing` updated: removed `is_quarter_end_date_range`
+    condition, added `PatersonES`
+  - `qt_grade_70_comment_missing` updated: removed `is_quarter_end_date_range`
+    condition
+  - `qt_student_is_ada_80_plus_gpa_less_2` removed (migrated to `int_extracts`)
+  - Expectations join removed from `student_category_scaffold` branch — fields
+    come from `sec` instead
+  - `category_grades` join updated from `ge.assignment_category_term` to
+    `sec.assignment_category_term`
 
 - [ ] **Step 2.4b: Build and verify the student scaffold**
 
