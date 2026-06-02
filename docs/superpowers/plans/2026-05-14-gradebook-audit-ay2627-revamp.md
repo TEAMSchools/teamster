@@ -33,9 +33,9 @@ MCP for spot-checks, `uv run dbt` CLI, branch
 
 ### SQL — prerequisite models (powerschool package)
 
-| File                             | Task | Change                          |
-| -------------------------------- | ---- | ------------------------------- |
-| `base_powerschool__sections.sql` | 3    | Add `school_abbreviation` field |
+| File                             | Task | Change                                              |
+| -------------------------------- | ---- | --------------------------------------------------- |
+| `base_powerschool__sections.sql` | 3    | Add `school_abbreviation` and `school_level` fields |
 
 ### SQL — new models
 
@@ -927,17 +927,21 @@ And `eoq_items` loses 4 of its 7 flags, keeping only: `qt_es_comment_missing`,
   `where t.cte_grouping = 'student_course_category'` including its leading
   `union all` separator. The report shrinks from 5 to 4 UNION branches.
 
-### 3h: Add `school_abbreviation` to `base_powerschool__sections`
+### 3h: Add `school_abbreviation` and `school_level` to `base_powerschool__sections`
 
 `base_powerschool__sections` already joins `stg_powerschool__schools` and
-selects `sch.name as school_name`. Adding `school_abbreviation` (the short name
-used in Tableau for dashboard real estate) alongside it. This is a prerequisite
-for the teacher scaffold quarter-grain refactor, which replaces `term_weeks` and
-brings school info directly into the `sections` CTE.
+selects `sch.name as school_name`. Adding `school_abbreviation` (short name for
+Tableau dashboard real estate) and `school_level` (ES/MS/HS, needed for the
+teacher scaffold quarter-grain refactor that eliminates the `term_weeks` CTE).
+
+`region` does NOT need to be added here — it is derived inline from
+`_dbt_source_relation` using
+`initcap(regexp_extract(_dbt_source_relation, r'kipp(\w+)_'))`, the same pattern
+used by `int_powerschool__calendar_week`.
 
 **File:** `src/dbt/powerschool/models/sis/base/base_powerschool__sections.sql`
 
-- [ ] **Step 3h.1: Add `school_abbreviation` to the SELECT list**
+- [ ] **Step 3h.1: Add both columns to the SELECT list**
 
   In `base_powerschool__sections.sql`, find the line:
 
@@ -949,20 +953,22 @@ brings school info directly into the `sections` CTE.
 
   ```sql
   sch.abbreviation as school_abbreviation,
+  sch.school_level,
   ```
 
-- [ ] **Step 3h.2: Add the column to the properties YAML**
+- [ ] **Step 3h.2: Add the columns to the properties YAML**
 
   File:
   `src/dbt/powerschool/models/sis/base/properties/base_powerschool__sections.yml`
-
-  Add a column entry for `school_abbreviation`:
 
   ```yaml
   - name: school_abbreviation
     description:
       Short school name abbreviation from stg_powerschool__schools, used as the
       display name in Tableau dashboards.
+    data_type: string
+  - name: school_level
+    description: School level (ES, MS, or HS) from stg_powerschool__schools.
     data_type: string
   ```
 
