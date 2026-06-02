@@ -1,0 +1,37 @@
+models:
+  - name: stg_kippadb__kipp_aid
+    columns:
+      - name: id
+        data_type: string
+        data_tests:
+          - unique:
+              config:
+                severity: error
+      - name: name
+        data_type: string
+      - name: created_by_id
+        data_type: string
+      - name: created_date
+        data_type: timestamp
+      - name: last_activity_date
+        data_type: date
+      - name: last_modified_by_id
+        data_type: string
+      - name: last_modified_date
+        data_type: timestamp
+      - name: system_modstamp
+        data_type: timestamp
+      - name: amount
+        data_type: numeric
+      - name: date
+        data_type: date
+      - name: kipp_aid_count
+        data_type: numeric
+      - name: notes
+        data_type: string
+      - name: status
+        data_type: string
+      - name: student
+        data_type: string
+      - name: type
+        data_type: string
