@@ -6,13 +6,17 @@
 > checkbox (`- [ ]`) syntax for tracking.
 
 **Goal:** Implement all AY 2026-2027 changes to the gradebook audit pipeline:
-remove Miami, add Paterson, remove FYI and Summative 200 flags, add a 7-day
-grading grace period, and remove the exceptions suppression mechanism entirely.
+annual config rollover for Newark, Camden, and Paterson; remove Miami; remove
+FYI, Summative 200, and ADA/GPA flags; add a 7-day grading grace period; add QTD
+cumulative assignment count; and remove the exceptions suppression mechanism.
 
-**Architecture:** Six sequential tasks on a single feature branch. Each task
-produces a working, committable state. Step 5 (QTD cumulative assignment count)
-is blocked on an open format question (issue #3908) and is explicitly excluded.
-Step 6 (anchor-row / "in the clear" redesign) is a separate future effort.
+**Architecture:** Two phases. Phase 1 (Tasks 1–2) is Google Sheets config only —
+no SQL changes. The sheet is the on/off switch for every flag in the dashboard;
+creating new year rows while omitting deprecated flags deactivates those flags
+immediately without touching SQL. Phase 2 (Tasks 3–6) is SQL cleanup and logic
+changes — safe to make because Phase 1 already controls what fires. Task 5 (QTD)
+is blocked on PR #4077 (PS plugin integration) landing. Task 7 (anchor-row
+redesign) is a separate future effort.
 
 **Tech Stack:** dbt (BigQuery dialect), Google Sheets external tables, BigQuery
 MCP for spot-checks, `uv run dbt` CLI, branch
@@ -22,30 +26,31 @@ MCP for spot-checks, `uv run dbt` CLI, branch
 
 ## File map
 
-| File                                                                   | Task(s)  | Change type         |
-| ---------------------------------------------------------------------- | -------- | ------------------- |
-| `stg_google_sheets__gradebook_flags` (Google Sheet, not repo)          | 1, 2     | Sheet edits         |
-| `stg_google_sheets__gradebook_expectations_assignments` (Google Sheet) | 1        | Sheet edits         |
-| `int_tableau__gradebook_audit_teacher_scaffold.sql`                    | 2, 4     | SQL                 |
-| `int_tableau__gradebook_audit_student_scaffold.sql`                    | 2        | SQL                 |
-| `int_tableau__gradebook_audit_assignments_teacher.sql`                 | 2, 4     | SQL                 |
-| `int_tableau__gradebook_audit_assignments_student.sql`                 | 2        | SQL                 |
-| `int_tableau__gradebook_audit_categories_teacher.sql`                  | 2, 3, 4  | SQL                 |
-| `int_tableau__gradebook_audit_flags.sql`                               | 2, 4     | SQL                 |
-| `rpt_tableau__gradebook_audit.sql`                                     | 2, 4     | SQL                 |
-| `stg_google_sheets__gradebook_exceptions.sql`                          | 4        | Delete              |
-| `stg_google_sheets__gradebook_exceptions.yml`                          | 4        | Delete              |
-| `sources-external.yml`                                                 | 4        | Remove source entry |
-| YAML properties for each modified model                                | per task | Column removals     |
+| File                                                                   | Task(s)      | Change type         |
+| ---------------------------------------------------------------------- | ------------ | ------------------- |
+| `stg_google_sheets__gradebook_flags` (Google Sheet, not repo)          | 1            | Sheet edits         |
+| `stg_google_sheets__gradebook_expectations_assignments` (Google Sheet) | 2            | Sheet edits         |
+| `int_tableau__gradebook_audit_teacher_scaffold.sql`                    | 3, 6         | SQL                 |
+| `int_tableau__gradebook_audit_student_scaffold.sql`                    | 3            | SQL                 |
+| `int_tableau__gradebook_audit_assignments_teacher.sql`                 | 3, 6         | SQL                 |
+| `int_tableau__gradebook_audit_assignments_student.sql`                 | 3            | SQL                 |
+| `int_tableau__gradebook_audit_categories_teacher.sql`                  | 3, 4, 6      | SQL                 |
+| `int_tableau__gradebook_audit_flags.sql`                               | 3, 6         | SQL                 |
+| `rpt_tableau__gradebook_audit.sql`                                     | 3, 6         | SQL                 |
+| `stg_google_sheets__gradebook_exceptions.sql`                          | 6            | Delete              |
+| `stg_google_sheets__gradebook_exceptions.yml`                          | 6            | Delete              |
+| `sources-external.yml`                                                 | 6            | Remove source entry |
+| YAML properties for each modified model                                | per SQL task | Column removals     |
 
 **SQL paths:**
-`src/dbt/kipptaf/models/extracts/tableau/intermediate/<model>.sql` **YAML
-paths:**
+`src/dbt/kipptaf/models/extracts/tableau/intermediate/<model>.sql`
+
+**YAML paths:**
 `src/dbt/kipptaf/models/extracts/tableau/intermediate/properties/<model>.yml`
 and
 `src/dbt/kipptaf/models/extracts/tableau/properties/rpt_tableau__gradebook_audit.yml`
 
-**Build command for all tasks (run after every meaningful SQL change):**
+**Build command for all SQL tasks (run after every meaningful SQL change):**
 
 ```bash
 uv run dbt build \
@@ -57,118 +62,230 @@ uv run dbt build \
 
 ---
 
-## Task 1: Remove Miami + add Paterson (Google Sheets config only)
+## Task 1: Google Sheets — gradebook_flags annual rollover
 
-No SQL changes. These are operational sheet edits. Verify with dbt build.
+All changes are in the `stg_google_sheets__gradebook_flags` Google Sheet. No SQL
+changes.
+
+**How the rollover works:** Copy existing rows for each active region and school
+level from `academic_year = 2025`, paste as new rows, and change the year to
+`2026`. Skip any rows for flags that are being deprecated this year. Miami is
+being removed entirely — do not create any 2026 Miami rows.
 
 **Files:** Google Sheets only (external — not in git)
 
-- [ ] **Step 1.1: Remove Miami rows from `stg_google_sheets__gradebook_flags`**
+- [ ] **Step 1.1: Roll over Newark rows (ES, MS, HS)**
 
-  Open the `stg_google_sheets__gradebook_flags` Google Sheet. Delete all rows
-  where `region = 'Miami'` for `academic_year = 2027` (and 2026 if any Miami
-  2026 rows exist).
+  Copy all Newark rows where `academic_year = 2025`. Paste as new rows. Set
+  `academic_year = 2026`. Delete any rows for these deprecated flags before
+  saving:
+  - `w_grade_inflation`
+  - `assign_s_hs_score_not_conversion_chart_options`
+  - `assign_s_ms_score_not_conversion_chart_options`
+  - `qt_teacher_s_total_greater_200`
+  - `qt_teacher_s_total_less_200`
+  - `qt_student_is_ada_80_plus_gpa_less_2`
 
-- [ ] **Step 1.2: Add Paterson rows to `stg_google_sheets__gradebook_flags`**
+- [ ] **Step 1.2: Roll over Camden rows (ES, MS, HS)**
 
-  Paterson configuration confirmed:
-  - **Paterson MS:** use the same flags as Newark MS. Copy all Newark MS rows
-    for AY 2027, change `region` to `Paterson`.
-  - **Paterson ES:** EOQ comments only — `qt_es_comment_missing` only, same as
-    CamdenES/NewarkES. Add one row per applicable quarter code (`Q3`, `Q4`).
+  Same process as step 1.1 for Camden. Copy Camden `academic_year = 2025` rows,
+  paste, set `academic_year = 2026`, delete the same deprecated flag rows listed
+  above.
 
-  No Paterson HS rows needed (no HS schools in Paterson).
+- [ ] **Step 1.3: Add Paterson MS rows**
 
-- [ ] **Step 1.3: Remove Miami rows from
-      `stg_google_sheets__gradebook_expectations_assignments`**
+  Copy all Newark MS rows for `academic_year = 2026` (just created in step 1.1).
+  Paste as new rows. Change `region` to `Paterson`. Paterson MS uses the same
+  flags as Newark MS.
 
-  Open the sheet. Delete all rows where `region = 'Miami'` for
-  `academic_year = 2027`.
+- [ ] **Step 1.4: Add Paterson ES rows**
 
-- [ ] **Step 1.4: Add Paterson MS rows to
-      `stg_google_sheets__gradebook_expectations_assignments`**
+  Paterson ES gets EOQ comments only — same pattern as Camden ES and Newark ES.
+  Add one row per applicable quarter (`Q3`, `Q4`) for
+  `audit_flag_name = qt_es_comment_missing`, `region = Paterson`,
+  `school_level = ES`, `academic_year = 2026`. Match the column values of an
+  existing Camden ES or Newark ES row for that flag.
 
-  **Paterson ES:** no rows needed — ES is EOQ-only (comments flag), no
-  assignment tracking.
+- [ ] **Step 1.5: Do not add Miami rows**
 
-  **Paterson MS:** add rows matching Newark MS for AY 2027. Copy all Newark MS
-  rows, change `region` to `Paterson`.
+  Miami is being removed. Do not create any `academic_year = 2026` rows for
+  Miami.
 
-  > ⚠️ **Blocked on PS instance access.** Paterson's PowerSchool instance does
-  > not yet have the U_EXPECTATIONS plugin deployed (pending PS instance
-  > access). Until then, use the same values as Newark MS in the Google Sheet.
-  > Once PS access is available, deploy the plugin and migrate Paterson to the
-  > PS-native source (see PR #4077 for the Camden integration pattern).
-
-- [ ] **Step 1.5: Stage the modified external tables**
-
-  After sheet edits, refresh the BigQuery external table definitions:
+- [ ] **Step 1.6: Stage the external table**
 
   ```bash
   uv run dbt run-operation stage_external_sources \
     --args '{"select": "google_sheets.src_google_sheets__gradebook_flags"}' \
     --project-dir src/dbt/kipptaf
+  ```
 
+- [ ] **Step 1.7: Rebuild staging and verify**
+
+  ```bash
+  uv run dbt build \
+    --select stg_google_sheets__gradebook_flags \
+    --project-dir src/dbt/kipptaf
+  ```
+
+  Verify via BigQuery MCP:
+
+  ```sql
+  SELECT DISTINCT region, school_level, academic_year
+  FROM `teamster-332318.dbt_grangel_tableau.stg_google_sheets__gradebook_flags`
+  WHERE academic_year = 2026
+  ORDER BY 1, 2
+  ```
+
+  Expected: Camden, Newark, Paterson present for 2026. No Miami. Paterson has ES
+  and MS only.
+
+- [ ] **Step 1.8: Build full audit pipeline and spot-check**
+
+  Run the full build command from the file map header. Then:
+
+  ```sql
+  SELECT DISTINCT region, school_level, audit_flag_name
+  FROM `teamster-332318.dbt_grangel_tableau.rpt_tableau__gradebook_audit`
+  WHERE academic_year = 2026
+  ORDER BY 1, 2, 3
+  ```
+
+  Check: no Miami rows, none of the deprecated flags listed in step 1.1 appear,
+  Paterson ES and MS present.
+
+- [ ] **Step 1.9: Commit**
+
+  ```bash
+  git add -u
+  git commit -m "feat(dbt): gradebook flags rollover to AY 2026-2027"
+  ```
+
+---
+
+## Task 2: Google Sheets — expectations_assignments annual rollover
+
+All changes are in the `stg_google_sheets__gradebook_expectations_assignments`
+Google Sheet. No SQL changes. This defines how many assignments per category per
+week are expected for each region and school level.
+
+**Files:** Google Sheets only (external — not in git)
+
+- [ ] **Step 2.1: Roll over Newark rows (all levels)**
+
+  Copy all Newark rows where `academic_year = 2025`. Paste as new rows. Set
+  `academic_year = 2026`.
+
+- [ ] **Step 2.2: Roll over Camden rows (all levels)**
+
+  Same process for Camden. Copy Camden `academic_year = 2025` rows, paste, set
+  `academic_year = 2026`.
+
+- [ ] **Step 2.3: Add Paterson MS rows**
+
+  Copy Newark MS rows for `academic_year = 2026` (just created in step 2.1).
+  Paste as new rows. Change `region` to `Paterson`.
+
+  > ⚠️ **Blocked on PS instance access.** Paterson's PowerSchool instance does
+  > not yet have the U_EXPECTATIONS plugin deployed. Once deployed, migrate
+  > Paterson to the PS-native source following the same pattern as PR #4077
+  > (Camden integration).
+
+- [ ] **Step 2.4: Paterson ES — no rows needed**
+
+  Paterson ES is EOQ comments only and does not track assignment counts. Do not
+  add rows.
+
+- [ ] **Step 2.5: Do not add Miami rows**
+
+  Miami is being removed. Do not create any `academic_year = 2026` rows.
+
+- [ ] **Step 2.6: Stage the external table**
+
+  ```bash
   uv run dbt run-operation stage_external_sources \
     --args '{"select": "google_sheets.src_google_sheets__gradebook_expectations_assignments"}' \
     --project-dir src/dbt/kipptaf
   ```
 
-- [ ] **Step 1.6: Rebuild staging models**
+- [ ] **Step 2.7: Rebuild staging and verify**
 
   ```bash
   uv run dbt build \
-    --select stg_google_sheets__gradebook_flags \
-              stg_google_sheets__gradebook_expectations_assignments \
+    --select stg_google_sheets__gradebook_expectations_assignments \
     --project-dir src/dbt/kipptaf
   ```
 
-- [ ] **Step 1.7: Build full audit pipeline and verify no Miami output**
-
-  Run the full build command from the file map header. Then verify via BigQuery
-  MCP:
+  Verify via BigQuery MCP:
 
   ```sql
-  SELECT DISTINCT region, academic_year
-  FROM `teamster-332318.dbt_grangel_tableau.rpt_tableau__gradebook_audit`
+  SELECT DISTINCT region, school_level, academic_year
+  FROM `teamster-332318.dbt_grangel_tableau.stg_google_sheets__gradebook_expectations_assignments`
+  WHERE academic_year = 2026
   ORDER BY 1, 2
   ```
 
-  Expected: `Miami` absent; `Camden`, `Newark` present for 2027; `Paterson` if
-  configured.
+  Expected: Camden, Newark, Paterson MS present for 2026. No Miami, no Paterson
+  ES.
 
-- [ ] **Step 1.8: Commit**
+- [ ] **Step 2.8: Build full audit pipeline and verify**
+
+  Run the full build command from the file map header. Confirm Paterson MS
+  sections appear in the output with category-level rows.
+
+- [ ] **Step 2.9: Commit**
 
   ```bash
   git add -u
-  git commit -m "feat(dbt): remove Miami, add Paterson config — gradebook audit AY 2026-2027"
+  git commit -m "feat(dbt): gradebook expectations rollover to AY 2026-2027"
   ```
-
-  _(No SQL files changed — this is a config-only state checkpoint.)_
 
 ---
 
-## Task 2: Flag removals and Miami dead code cleanup
+## Task 3: SQL — flag removals and Miami dead code cleanup
 
-Removes FYI flags, Summative 200 flags, and all Miami-only dead-code SQL
-branches. After this task the `student_course_category` and
-`eoq_items_conduct_code` CTEs in `flags.sql` become empty and are deleted
-entirely; `rpt.sql` shrinks from 5 to 4 UNION branches.
+Removes deprecated flags and all Miami-only dead-code SQL branches. The sheet
+already deactivated these flags in Task 1 — this task removes the dead SQL.
+After this task, the `student_course_category` and `eoq_items_conduct_code` CTEs
+in `flags.sql` become empty and are deleted; `rpt.sql` shrinks from 5 to 4 UNION
+branches.
 
-### 2a: Remove FYI flag `w_grade_inflation`
+**Flags being removed:**
 
-- [ ] **Step 2a.1: Remove `w_grade_inflation` from `student_scaffold.sql`**
+| Flag                                             | Reason                                                                    |
+| ------------------------------------------------ | ------------------------------------------------------------------------- |
+| `w_grade_inflation`                              | FYI flag — excluded from health score, not actionable                     |
+| `assign_s_hs_score_not_conversion_chart_options` | FYI flag                                                                  |
+| `assign_s_ms_score_not_conversion_chart_options` | FYI flag                                                                  |
+| `qt_teacher_s_total_greater_200`                 | Summative 200 policy no longer enforced                                   |
+| `qt_teacher_s_total_less_200`                    | Summative 200 policy no longer enforced                                   |
+| `qt_student_is_ada_80_plus_gpa_less_2`           | Moving to `int_extracts__student_enrollments` for use in other dashboards |
+| `qt_teacher_s_total_greater_100`                 | Miami-only dead code                                                      |
+| `qt_teacher_s_total_less_100`                    | Miami-only dead code                                                      |
+| `s_max_score_greater_100`                        | Miami-only dead code                                                      |
+| `qt_comment_missing`                             | Miami-only dead code                                                      |
+| `qt_g1_g8_conduct_code_missing`                  | Miami-only dead code                                                      |
+| `qt_g1_g8_conduct_code_incorrect`                | Miami-only dead code                                                      |
+| `qt_kg_conduct_code_missing`                     | Miami-only dead code                                                      |
+| `qt_kg_conduct_code_incorrect`                   | Miami-only dead code                                                      |
+| `qt_kg_conduct_code_not_hr`                      | Miami-only dead code                                                      |
+| `qt_effort_grade_missing`                        | Miami-only dead code                                                      |
+| `qt_formative_grade_missing`                     | Miami-only dead code                                                      |
+| `qt_summative_grade_missing`                     | Miami-only dead code                                                      |
 
-  File: `int_tableau__gradebook_audit_student_scaffold.sql`
+### 3a: Remove FYI flag `w_grade_inflation`
 
-  In the **`student_scaffold` branch** (first UNION branch), delete this line
-  (line 249):
+- [ ] **Step 3a.1: Remove from `student_scaffold.sql`**
+
+  File:
+  `src/dbt/kipptaf/models/extracts/tableau/intermediate/int_tableau__gradebook_audit_student_scaffold.sql`
+
+  In the **`student_scaffold` branch** (first UNION branch), delete:
 
   ```sql
   null as w_grade_inflation,
   ```
 
-  In the **`student_category_scaffold` branch** (second UNION branch), replace:
+  In the **`student_category_scaffold` branch** (second UNION branch), delete:
 
   ```sql
   if(
@@ -184,35 +301,29 @@ entirely; `rpt.sql` shrinks from 5 to 4 UNION branches.
   ) as w_grade_inflation,
   ```
 
-  with nothing (delete it).
+- [ ] **Step 3a.2: Remove from `student_course_category` UNPIVOT in
+      `flags.sql`**
 
-- [ ] **Step 2a.2: Remove `w_grade_inflation` from `flags.sql`
-      (student_course_category CTE)**
-
-  File: `int_tableau__gradebook_audit_flags.sql`
+  File:
+  `src/dbt/kipptaf/models/extracts/tableau/intermediate/int_tableau__gradebook_audit_flags.sql`
 
   In the `student_course_category` CTE UNPIVOT list, delete
   `w_grade_inflation,`.
 
-  _(The CTE will be fully removed in step 2f once all 4 of its flags are gone.)_
+- [ ] **Step 3a.3: Update YAMLs**
 
-- [ ] **Step 2a.3: Remove `w_grade_inflation` column from YAML**
+  Remove `w_grade_inflation` column entry from:
+  - `intermediate/properties/int_tableau__gradebook_audit_student_scaffold.yml`
+  - `intermediate/properties/int_tableau__gradebook_audit_flags.yml`
+
+### 3b: Remove FYI flags `assign_s_hs/ms_score_not_conversion_chart_options`
+
+- [ ] **Step 3b.1: Remove from `assignments_student.sql`**
 
   File:
-  `intermediate/properties/int_tableau__gradebook_audit_student_scaffold.yml`
+  `src/dbt/kipptaf/models/extracts/tableau/intermediate/int_tableau__gradebook_audit_assignments_student.sql`
 
-  Find and delete the `w_grade_inflation` column entry. Repeat for
-  `intermediate/properties/int_tableau__gradebook_audit_flags.yml`.
-
-### 2b: Remove FYI flags `assign_s_hs/ms_score_not_conversion_chart_options`
-
-- [ ] **Step 2b.1: Remove the two conversion-chart flag columns from
-      `assignments_student.sql`**
-
-  File: `int_tableau__gradebook_audit_assignments_student.sql`
-
-  Find and delete these two `if(...)` expressions (they are in the final
-  `select`):
+  Delete these two `if(...)` expressions from the final `select`:
 
   ```sql
   if(
@@ -237,34 +348,30 @@ entirely; `rpt.sql` shrinks from 5 to 4 UNION branches.
   ) as assign_s_hs_score_not_conversion_chart_options,
   ```
 
-- [ ] **Step 2b.2: Remove the two flags from the `student_unpivot` UNPIVOT in
-      `flags.sql`**
+- [ ] **Step 3b.2: Remove from `student_unpivot` UNPIVOT in `flags.sql`**
 
-  File: `int_tableau__gradebook_audit_flags.sql`, `student_unpivot` CTE (lines
-  6–24).
-
-  Delete these two lines from the UNPIVOT list:
+  Delete from the `student_unpivot` CTE UNPIVOT list:
 
   ```sql
   assign_s_ms_score_not_conversion_chart_options,
   assign_s_hs_score_not_conversion_chart_options
   ```
 
-- [ ] **Step 2b.3: Remove columns from YAMLs**
-  - `intermediate/properties/int_tableau__gradebook_audit_assignments_student.yml`:
-    delete `assign_s_ms_score_not_conversion_chart_options` and
-    `assign_s_hs_score_not_conversion_chart_options` column entries.
-  - `intermediate/properties/int_tableau__gradebook_audit_flags.yml`: same two
-    entries.
+- [ ] **Step 3b.3: Update YAMLs**
 
-### 2c: Remove Summative 200 flags (`qt_teacher_s_total_greater/less_200`)
+  Remove both column entries from:
+  - `intermediate/properties/int_tableau__gradebook_audit_assignments_student.yml`
+  - `intermediate/properties/int_tableau__gradebook_audit_flags.yml`
 
-- [ ] **Step 2c.1: Remove the two S-total flags from `categories_teacher.sql`**
+### 3c: Remove Summative 200 flags
 
-  File: `int_tableau__gradebook_audit_categories_teacher.sql`
+- [ ] **Step 3c.1: Remove `qt_teacher_s_total_greater/less_200` from
+      `categories_teacher.sql`**
 
-  In the final `select ... from final as f`, delete these two `if(...)`
-  expressions (lines 264–278):
+  File:
+  `src/dbt/kipptaf/models/extracts/tableau/intermediate/int_tableau__gradebook_audit_categories_teacher.sql`
+
+  Delete from the final `select`:
 
   ```sql
   if(
@@ -284,11 +391,7 @@ entirely; `rpt.sql` shrinks from 5 to 4 UNION branches.
   ) as qt_teacher_s_total_less_200,
   ```
 
-- [ ] **Step 2c.2: Remove them from the `teacher_unpivot_cc` UNPIVOT in
-      `flags.sql`**
-
-  File: `int_tableau__gradebook_audit_flags.sql`, `teacher_unpivot_cc` CTE
-  (lines 121–135).
+- [ ] **Step 3c.2: Remove from `teacher_unpivot_cc` UNPIVOT in `flags.sql`**
 
   Delete:
 
@@ -297,20 +400,60 @@ entirely; `rpt.sql` shrinks from 5 to 4 UNION branches.
   qt_teacher_s_total_less_200,
   ```
 
-- [ ] **Step 2c.3: Remove columns from YAMLs**
-  - `intermediate/properties/int_tableau__gradebook_audit_categories_teacher.yml`:
-    delete `qt_teacher_s_total_greater_200` and `qt_teacher_s_total_less_200`
-    entries.
-  - `intermediate/properties/int_tableau__gradebook_audit_flags.yml`: same.
+- [ ] **Step 3c.3: Update YAMLs**
 
-### 2d: Remove Miami dead-code flags from `categories_teacher.sql`
+  Remove both column entries from:
+  - `intermediate/properties/int_tableau__gradebook_audit_categories_teacher.yml`
+  - `intermediate/properties/int_tableau__gradebook_audit_flags.yml`
 
-- [ ] **Step 2d.1: Remove `qt_teacher_s_total_greater/less_100` (MiamiES) from
+### 3d: Remove `qt_student_is_ada_80_plus_gpa_less_2`
+
+This flag is being moved to `int_extracts__student_enrollments` so it can be
+used in other dashboards. The work to add it there is a separate task outside
+this plan. Here we only remove it from the gradebook audit.
+
+- [ ] **Step 3d.1: Remove from `student_scaffold.sql`**
+
+  In the **`student_scaffold` branch**, delete:
+
+  ```sql
+  if(
+      s.school_level_alt != 'ES'
+      and s.ada_above_or_at_80
+      and qg.quarter_course_grade_points < 2.0,
+      true,
+      false
+  ) as qt_student_is_ada_80_plus_gpa_less_2,
+  ```
+
+  In the **`student_category_scaffold` branch**, delete:
+
+  ```sql
+  null as qt_student_is_ada_80_plus_gpa_less_2,
+  ```
+
+- [ ] **Step 3d.2: Remove from `eoq_items` UNPIVOT in `flags.sql`**
+
+  Delete from the `eoq_items` CTE UNPIVOT list:
+
+  ```sql
+  qt_student_is_ada_80_plus_gpa_less_2
+  ```
+
+- [ ] **Step 3d.3: Update YAMLs**
+
+  Remove `qt_student_is_ada_80_plus_gpa_less_2` from:
+  - `intermediate/properties/int_tableau__gradebook_audit_student_scaffold.yml`
+  - `intermediate/properties/int_tableau__gradebook_audit_flags.yml`
+
+### 3e: Remove Miami dead-code flags from `categories_teacher.sql` and
+
+`assignments_teacher.sql`
+
+- [ ] **Step 3e.1: Remove `qt_teacher_s_total_greater/less_100` from
       `categories_teacher.sql`**
 
-  File: `int_tableau__gradebook_audit_categories_teacher.sql`
-
-  Delete these two `if(...)` expressions (lines 281–294):
+  Delete from the final `select`:
 
   ```sql
   if(
@@ -330,22 +473,13 @@ entirely; `rpt.sql` shrinks from 5 to 4 UNION branches.
   ) as qt_teacher_s_total_less_100,
   ```
 
-- [ ] **Step 2d.2: Remove them from the `teacher_unpivot_cc` UNPIVOT in
-      `flags.sql`**
-
-  Delete from the UNPIVOT list:
-
-  ```sql
-  qt_teacher_s_total_greater_100,
-  qt_teacher_s_total_less_100,
-  ```
-
-- [ ] **Step 2d.3: Remove `s_max_score_greater_100` (Miami) from
+- [ ] **Step 3e.2: Remove `s_max_score_greater_100` from
       `assignments_teacher.sql`**
 
-  File: `int_tableau__gradebook_audit_assignments_teacher.sql`
+  File:
+  `src/dbt/kipptaf/models/extracts/tableau/intermediate/int_tableau__gradebook_audit_assignments_teacher.sql`
 
-  Delete lines 76–83:
+  Delete:
 
   ```sql
   if(
@@ -357,54 +491,36 @@ entirely; `rpt.sql` shrinks from 5 to 4 UNION branches.
   ) as s_max_score_greater_100,
   ```
 
-- [ ] **Step 2d.4: Remove `s_max_score_greater_100` from the
-      `teacher_unpivot_cca` UNPIVOT in `flags.sql`**
+- [ ] **Step 3e.3: Remove from UNPIVOT lists in `flags.sql`**
 
-  Delete from the UNPIVOT list:
+  From `teacher_unpivot_cc` UNPIVOT, delete:
+
+  ```sql
+  qt_teacher_s_total_greater_100,
+  qt_teacher_s_total_less_100,
+  ```
+
+  From `teacher_unpivot_cca` UNPIVOT, delete:
 
   ```sql
   s_max_score_greater_100
   ```
 
-- [ ] **Step 2d.5: Remove dead-code columns from YAMLs**
+- [ ] **Step 3e.4: Update YAMLs**
   - `intermediate/properties/int_tableau__gradebook_audit_categories_teacher.yml`:
     delete `qt_teacher_s_total_greater_100` and `qt_teacher_s_total_less_100`.
   - `intermediate/properties/int_tableau__gradebook_audit_assignments_teacher.yml`:
     delete `s_max_score_greater_100`.
   - `intermediate/properties/int_tableau__gradebook_audit_flags.yml`: delete all
-    four S-total flags and `s_max_score_greater_100`.
+    three.
 
-### 2e: Remove Miami dead-code flags from `student_scaffold.sql`
+### 3f: Remove Miami dead-code flags from `student_scaffold.sql`
 
-The flags below are defined only for Miami students. Once Miami is gone from the
-flags sheet they silently produce no rows, but the dead boolean columns remain.
-Remove them.
+- [ ] **Step 3f.1: Remove Miami flags from `student_scaffold` branch
+      (branch 1)**
 
-Flags to remove from the **`student_scaffold` branch** (branch 1):
-`qt_comment_missing`, `qt_g1_g8_conduct_code_missing`,
-`qt_g1_g8_conduct_code_incorrect`, `qt_kg_conduct_code_missing`,
-`qt_kg_conduct_code_incorrect`, `qt_kg_conduct_code_not_hr`.
-
-Null placeholders to remove from the **`student_category_scaffold` branch**
-(branch 2): `null as qt_comment_missing`,
-`null as qt_g1_g8_conduct_code_missing`,
-`null as qt_g1_g8_conduct_code_incorrect`, `null as qt_kg_conduct_code_missing`,
-`null as qt_kg_conduct_code_incorrect`, `null as qt_kg_conduct_code_not_hr`.
-
-Flags to remove from the **`student_category_scaffold` branch** (branch 2):
-`qt_effort_grade_missing`, `qt_formative_grade_missing`,
-`qt_summative_grade_missing`.
-
-Null placeholders to remove from the **`student_scaffold` branch** (branch 1):
-`null as qt_effort_grade_missing`, `null as qt_formative_grade_missing`,
-`null as qt_summative_grade_missing`.
-
-_(Already removed `null as w_grade_inflation` in step 2a.1.)_
-
-- [ ] **Step 2e.1: Remove Miami boolean flags from `student_scaffold` branch**
-
-  File: `int_tableau__gradebook_audit_student_scaffold.sql` — first UNION branch
-  (lines 186–252).
+  File:
+  `src/dbt/kipptaf/models/extracts/tableau/intermediate/int_tableau__gradebook_audit_student_scaffold.sql`
 
   Delete these six `if(...)` expressions:
 
@@ -468,7 +584,7 @@ _(Already removed `null as w_grade_inflation` in step 2a.1.)_
   ) as qt_kg_conduct_code_not_hr,
   ```
 
-  Also delete these null placeholders at lines 249–252:
+  Also delete these null placeholders from branch 1:
 
   ```sql
   null as qt_effort_grade_missing,
@@ -476,10 +592,8 @@ _(Already removed `null as w_grade_inflation` in step 2a.1.)_
   null as qt_summative_grade_missing,
   ```
 
-- [ ] **Step 2e.2: Remove Miami null placeholders + flags from
-      `student_category_scaffold` branch**
-
-  File: same — second UNION branch (lines 375–424).
+- [ ] **Step 3f.2: Remove Miami null placeholders and flags from
+      `student_category_scaffold` branch (branch 2)**
 
   Delete these null placeholders:
 
@@ -524,10 +638,7 @@ _(Already removed `null as w_grade_inflation` in step 2a.1.)_
   ) as qt_summative_grade_missing,
   ```
 
-- [ ] **Step 2e.3: Remove dead-code columns from student_scaffold YAML**
-
-  File:
-  `intermediate/properties/int_tableau__gradebook_audit_student_scaffold.yml`
+- [ ] **Step 3f.3: Update student_scaffold YAML**
 
   Delete column entries for: `qt_comment_missing`,
   `qt_g1_g8_conduct_code_missing`, `qt_g1_g8_conduct_code_incorrect`,
@@ -535,68 +646,60 @@ _(Already removed `null as w_grade_inflation` in step 2a.1.)_
   `qt_kg_conduct_code_not_hr`, `qt_effort_grade_missing`,
   `qt_formative_grade_missing`, `qt_summative_grade_missing`.
 
-### 2f: Remove empty CTEs from `flags.sql` and their UNION branches from `rpt.sql`
+### 3g: Remove empty CTEs from `flags.sql` and their UNION branches from
 
-After steps 2a–2e:
+`rpt.sql`
 
-- `student_course_category` CTE UNPIVOT has zero flags left → remove the entire
-  CTE and its UNION branch.
-- `eoq_items_conduct_code` CTE UNPIVOT has zero flags left → remove the entire
-  CTE and its UNION branch.
+After steps 3a–3f, two CTEs have no flags left:
 
-- [ ] **Step 2f.1: Remove `student_course_category` CTE from `flags.sql`**
+- `student_course_category` (had: `w_grade_inflation`,
+  `qt_effort_grade_missing`, `qt_formative_grade_missing`,
+  `qt_summative_grade_missing`)
+- `eoq_items_conduct_code` (had: `qt_kg_conduct_code_missing`,
+  `qt_kg_conduct_code_incorrect`, `qt_kg_conduct_code_not_hr`,
+  `qt_g1_g8_conduct_code_missing`, `qt_g1_g8_conduct_code_incorrect`)
 
-  File: `int_tableau__gradebook_audit_flags.sql`
+And `eoq_items` loses 4 of its 7 flags, keeping only: `qt_es_comment_missing`,
+`qt_grade_70_comment_missing`, `qt_percent_grade_greater_100`.
 
-  Delete the entire `student_course_category` CTE (lines 248–284 in the original
-  — after the `/* w_grade_inflation... */` comment block through
-  `from student_course_category`).
+- [ ] **Step 3g.1: Remove `student_course_category` CTE from `flags.sql`**
 
-- [ ] **Step 2f.2: Remove `eoq_items_conduct_code` CTE from `flags.sql`**
+  Delete the entire `student_course_category` CTE — from the
+  `/* w_grade_inflation... */` comment through `from student_course_category`.
 
-  Delete the entire `eoq_items_conduct_code` CTE (lines 197–245 in the
-  original).
+- [ ] **Step 3g.2: Remove `eoq_items_conduct_code` CTE from `flags.sql`**
 
-- [ ] **Step 2f.3: Remove the removed flags from the other UNPIVOT lists in
-      `flags.sql`**
+  Delete the entire `eoq_items_conduct_code` CTE.
 
-  In `eoq_items` UNPIVOT list, delete:
+- [ ] **Step 3g.3: Remove departed flags from `eoq_items` UNPIVOT**
+
+  Delete from the `eoq_items` CTE UNPIVOT list:
 
   ```sql
   qt_comment_missing,
   qt_g1_g8_conduct_code_missing,
   qt_g1_g8_conduct_code_incorrect,
+  qt_student_is_ada_80_plus_gpa_less_2
   ```
 
-  Remaining in `eoq_items` UNPIVOT: `qt_es_comment_missing`,
-  `qt_grade_70_comment_missing`, `qt_percent_grade_greater_100`,
-  `qt_student_is_ada_80_plus_gpa_less_2`.
-
-- [ ] **Step 2f.4: Remove `student_course_category` UNION branch from
+- [ ] **Step 3g.4: Remove `student_course_category` UNION branch from
       `rpt.sql`**
 
-  File: `rpt_tableau__gradebook_audit.sql`
+  File:
+  `src/dbt/kipptaf/models/extracts/tableau/rpt_tableau__gradebook_audit.sql`
 
-  Delete the second UNION ALL block — the one with
-  `where t.cte_grouping = 'student_course_category'`. This is the full block
-  from `union all` (after branch 1) through `not t.is_current_week` including
-  the following `union all` separator.
+  Delete the UNION ALL block with
+  `where t.cte_grouping = 'student_course_category'` including its leading
+  `union all` separator. The report shrinks from 5 to 4 UNION branches.
 
-- [ ] **Step 2f.5: Remove corresponding YAML entries from flags and rpt YAMLs**
+### 3h: Simplify the Miami EOQ window in `teacher_scaffold.sql`
 
-  The flags.sql and rpt.sql YAMLs may describe columns that carried
-  `student_course_category` data. Remove any column description that exclusively
-  references this CTE grouping, if any are present in the YAML.
+- [ ] **Step 3h.1: Remove the Miami clause from `is_quarter_end_date_range`**
 
-### 2g: Simplify the Miami EOQ window in `teacher_scaffold.sql`
+  File:
+  `src/dbt/kipptaf/models/extracts/tableau/intermediate/int_tableau__gradebook_audit_teacher_scaffold.sql`
 
-- [ ] **Step 2g.1: Remove the Miami-specific `is_quarter_end_date_range`
-      clause**
-
-  File: `int_tableau__gradebook_audit_teacher_scaffold.sql`, `school_level_mod`
-  CTE (lines 164–193).
-
-  Replace the entire CASE expression with:
+  In the `school_level_mod` CTE, replace the entire CASE expression with:
 
   ```sql
   case
@@ -622,77 +725,48 @@ After steps 2a–2e:
   end as is_quarter_end_date_range,
   ```
 
-  _(Removed the first `when tw.region = 'Miami' ...` clause and the
-  `and tw.region != 'Miami'` guard on the last `when`.)_
+### 3i: Build, verify, and commit Task 3
 
-### 2h: Build and verify Task 2 changes
+- [ ] **Step 3i.1: Run dbt build**
 
-- [ ] **Step 2h.1: Run dbt build**
-
-  Run the full build command from the file map header.
-
-  Expected: all models build cleanly. If a contract enforcement error fires
+  Run the full build command from the file map header. If a contract error fires
   (`column not found`), find the corresponding YAML and remove the deleted
-  column there too.
+  column.
 
-- [ ] **Step 2h.2: Spot-check removed flags are gone**
+- [ ] **Step 3i.2: Spot-check removed flags are absent**
 
   Via BigQuery MCP:
 
   ```sql
   SELECT DISTINCT audit_flag_name
   FROM `teamster-332318.dbt_grangel_tableau.rpt_tableau__gradebook_audit`
+  WHERE academic_year = 2026
   ORDER BY 1
   ```
 
-  Expected absent: `w_grade_inflation`,
-  `assign_s_hs_score_not_conversion_chart_options`,
-  `assign_s_ms_score_not_conversion_chart_options`,
-  `qt_teacher_s_total_greater_200`, `qt_teacher_s_total_less_200`,
-  `qt_teacher_s_total_greater_100`, `qt_teacher_s_total_less_100`,
-  `s_max_score_greater_100`, `qt_comment_missing`,
-  `qt_g1_g8_conduct_code_missing`, `qt_g1_g8_conduct_code_incorrect`,
-  `qt_kg_conduct_code_missing`, `qt_kg_conduct_code_incorrect`,
-  `qt_kg_conduct_code_not_hr`, `qt_effort_grade_missing`,
-  `qt_formative_grade_missing`, `qt_summative_grade_missing`.
+  Expected absent: all 18 flags listed in the Task 3 flag table above.
 
-- [ ] **Step 2h.3: Remove deactivated rows from
-      `stg_google_sheets__gradebook_flags`**
-
-  Open the sheet. Delete any remaining rows for the flags listed in step 2h.2.
-  These flags are no longer in the SQL so any rows for them are dead config.
-
-- [ ] **Step 2h.4: Commit**
+- [ ] **Step 3i.3: Commit**
 
   ```bash
   git add -u
-  git commit -m "feat(dbt): remove FYI flags, Summative 200, and Miami dead code — gradebook audit AY 2026-2027"
+  git commit -m "feat(dbt): remove deprecated flags and Miami dead code — gradebook audit AY 2026-2027"
   ```
 
 ---
 
-## Task 3: 7-day grace period for percent-graded flags
+## Task 4: SQL — 7-day grace period for percent-graded flags
 
 `w/h/f/s_percent_graded_min_not_met` should only fire for assignments that have
 been due for at least 7 days. Currently the percent-graded calculation includes
 all assignments in the week window regardless of how recently they were due.
 
-**File:** `int_tableau__gradebook_audit_categories_teacher.sql`
+**File:**
+`src/dbt/kipptaf/models/extracts/tableau/intermediate/int_tableau__gradebook_audit_categories_teacher.sql`
 
-The `total_expected_section_quarter_week_category` and
-`total_expected_scored_section_quarter_week_category` window sums in the
-`assignments` CTE are fed by `asg.n_expected` / `asg.n_expected_scored` (from
-`assignment_score_rollup`). `a.duedate` is available in the `assignments` CTE
-via the `int_powerschool__gradebook_assignments` join. Use conditional
-aggregation to exclude assignments due within the last 7 days.
+- [ ] **Step 4.1: Add grace-period filter to the two window sums**
 
-- [ ] **Step 3.1: Add grace-period filter to the two window sums in the
-      `assignments` CTE**
-
-  File: `int_tableau__gradebook_audit_categories_teacher.sql`, `assignments` CTE
-  (lines 44–61).
-
-  Replace:
+  In the `assignments` CTE, replace:
 
   ```sql
   sum(asg.n_expected) over (
@@ -750,22 +824,14 @@ aggregation to exclude assignments due within the last 7 days.
   ) as total_expected_scored_section_quarter_week_category,
   ```
 
-  **Note:** When `a` is null (no assignment matched the week window),
-  `a.duedate` is null, the `if` condition is null, and `if(null, ...)` returns
-  null — this is correct. When all assignments in a week are within the 7-day
-  grace period, `total_expected_section_quarter_week_category` sums to null,
-  `safe_divide(null, null) = null`, and the percent-graded flag evaluates to
-  false. That is the intended behavior.
-
-- [ ] **Step 3.2: Run dbt build**
+- [ ] **Step 4.2: Run dbt build**
 
   Run the full build command from the file map header.
 
-- [ ] **Step 3.3: Spot-check the grace period is working**
+- [ ] **Step 4.3: Spot-check**
 
-  Via BigQuery MCP — find any class where `w_percent_graded_min_not_met` fired
-  and check that the flagged assignment's `duedate` is more than 7 days in the
-  past:
+  Via BigQuery MCP — confirm `w_percent_graded_min_not_met` only fires for weeks
+  where assignments were due more than 7 days ago:
 
   ```sql
   SELECT
@@ -779,10 +845,11 @@ aggregation to exclude assignments due within the last 7 days.
   FROM `teamster-332318.dbt_grangel_tableau.rpt_tableau__gradebook_audit`
   WHERE audit_flag_name = 'w_percent_graded_min_not_met'
     AND flag_value = 1
+    AND academic_year = 2026
   LIMIT 20
   ```
 
-- [ ] **Step 3.4: Commit**
+- [ ] **Step 4.4: Commit**
 
   ```bash
   git commit -m "feat(dbt): add 7-day grace period for percent-graded flags"
@@ -790,28 +857,32 @@ aggregation to exclude assignments due within the last 7 days.
 
 ---
 
-## Task 4: Remove the exceptions mechanism entirely
+## Task 5: SQL — QTD cumulative assignment count
 
-T&L has decided to eliminate the exceptions suppression table. Remove
-`stg_google_sheets__gradebook_exceptions` and all 15+ LEFT JOINs to it across
-five intermediate models.
+> ⚠️ **Blocked on PR #4077.** This task uses the intermediate model created by
+> the PS plugin integration (Camden/Paterson U_EXPECTATIONS). PR #4077 must be
+> merged and Dagster must have materialized the new model in prod before this
+> task can be executed. Details will be added once PR #4077 is complete.
 
-### 4a: `int_tableau__gradebook_audit_teacher_scaffold.sql`
+---
 
-Three sets of exception joins to remove: two in `sections`, three in the
-`teacher_category_scaffold` branch of `final`, two in the outer `select`.
+## Task 6: SQL — Remove the exceptions mechanism entirely
 
-- [ ] **Step 4a.1: Remove exception joins from the `sections` CTE**
+T&L has decided to eliminate the suppression table. Remove
+`stg_google_sheets__gradebook_exceptions` and all 15+ LEFT JOINs across five
+intermediate models.
 
-  File: `int_tableau__gradebook_audit_teacher_scaffold.sql`, `sections` CTE
-  (lines 36–57).
+### 6a: `int_tableau__gradebook_audit_teacher_scaffold.sql`
 
-  Delete both LEFT JOINs to `stg_google_sheets__gradebook_exceptions` (`e1` and
-  `e2`) and the two `and e1.include_row is null and e2.include_row is null`
-  conditions from the WHERE clause:
+- [ ] **Step 6a.1: Remove exception joins from the `sections` CTE**
+
+  File:
+  `src/dbt/kipptaf/models/extracts/tableau/intermediate/int_tableau__gradebook_audit_teacher_scaffold.sql`
+
+  Delete both LEFT JOINs (`e1`, `e2`) and their two conditions from the WHERE
+  clause:
 
   ```sql
-  -- DELETE from lines 36–57:
   left join
       {{ ref("stg_google_sheets__gradebook_exceptions") }} as e1
       on s.terms_academic_year = e1.academic_year
@@ -828,70 +899,39 @@ Three sets of exception joins to remove: two in `sections`, three in the
       and e2.cte = 'sections'
       and e2.school_id is not null
 
-  -- DELETE from WHERE (lines 56–57):
+  -- also delete from WHERE:
   and e1.include_row is null
   and e2.include_row is null
   ```
 
-- [ ] **Step 4a.2: Remove exception joins from the `teacher_category_scaffold`
+- [ ] **Step 6a.2: Remove exception joins from the `teacher_category_scaffold`
       branch of `final`**
 
-  Delete all three LEFT JOINs (`e1`, `e2`, `e3`) and the WHERE condition they
-  feed (lines 250–280):
+  Delete all three LEFT JOINs (`e1`, `e2`, `e3`) and:
 
   ```sql
-  -- DELETE three left join blocks (e1, e2, e3) and:
   where
       e1.include_row is null and e2.include_row is null and e3.include_row is null
   ```
 
-- [ ] **Step 4a.3: Remove exception joins from the outer `select`**
+- [ ] **Step 6a.3: Remove exception joins from the outer `select`**
 
-  Delete the two LEFT JOINs at the end of the file (lines 295–316) and the WHERE
-  clause they feed:
+  Delete the two LEFT JOINs at the end of the file and:
 
   ```sql
-  -- DELETE:
-  left join
-      {{ ref("stg_google_sheets__gradebook_exceptions") }} as e1
-      on f.academic_year = e1.academic_year
-      ...
-      and e1.view_name = 'teacher_scaffold'
-      and e1.cte is null
-  left join
-      {{ ref("stg_google_sheets__gradebook_exceptions") }} as e2
-      on f.academic_year = e2.academic_year
-      ...
-      and e2.view_name = 'teacher_scaffold'
-      and e2.cte is null
   where e1.include_row is null and e2.include_row is null
   ```
 
-### 4b: `int_tableau__gradebook_audit_assignments_teacher.sql`
+### 6b: `int_tableau__gradebook_audit_assignments_teacher.sql`
 
-- [ ] **Step 4b.1: Remove exception join and simplify conditional columns**
+- [ ] **Step 6b.1: Remove exception join and unwrap conditional columns**
 
-  File: `int_tableau__gradebook_audit_assignments_teacher.sql`
+  File:
+  `src/dbt/kipptaf/models/extracts/tableau/intermediate/int_tableau__gradebook_audit_assignments_teacher.sql`
 
-  Delete the LEFT JOIN to `stg_google_sheets__gradebook_exceptions` (lines
-  110–120):
-
-  ```sql
-  -- DELETE:
-  left join
-      {{ ref("stg_google_sheets__gradebook_exceptions") }} as e
-      on sec.academic_year = e.academic_year
-      and sec.region = e.region
-      and sec.course_number = e.course_number
-      and sec.is_quarter_end_date_range = e.is_quarter_end_date_range
-      and e.view_name = 'assignments_teacher'
-      and e.cte is null
-      and e.course_number is not null
-      and e.is_quarter_end_date_range is not null
-  ```
-
-  Then replace every `if(e.include_row is null, asg.<col>, null) as <col>` with
-  the plain column. Lines 44–58 become:
+  Delete the LEFT JOIN to `stg_google_sheets__gradebook_exceptions`. Replace
+  every `if(e.include_row is null, asg.<col>, null) as <col>` with the plain
+  column:
 
   ```sql
   asg.n_students,
@@ -907,159 +947,61 @@ Three sets of exception joins to remove: two in `sections`, three in the
   asg.teacher_avg_score_for_assign_per_class_section_and_assign_id,
   ```
 
-### 4c: `int_tableau__gradebook_audit_categories_teacher.sql`
+### 6c: `int_tableau__gradebook_audit_categories_teacher.sql`
 
-- [ ] **Step 4c.1: Remove exception join from `assignment_score_rollup` CTE**
+- [ ] **Step 6c.1: Remove exception join from `assignment_score_rollup` CTE**
 
-  File: `int_tableau__gradebook_audit_categories_teacher.sql`,
-  `assignment_score_rollup` CTE (lines 11–22).
+  File:
+  `src/dbt/kipptaf/models/extracts/tableau/intermediate/int_tableau__gradebook_audit_categories_teacher.sql`
 
-  Delete the LEFT JOIN to `stg_google_sheets__gradebook_exceptions` (`e1`) and
-  the `where e1.include_row is null` condition:
+  Delete the LEFT JOIN (`e1`) and the `where e1.include_row is null` condition.
 
-  ```sql
-  -- DELETE:
-  left join
-      {{ ref("stg_google_sheets__gradebook_exceptions") }} as e1
-      on s.academic_year = e1.academic_year
-      and s.region = e1.region
-      and s.school_level = e1.school_level
-      and s.credit_type = e1.credit_type
-      and e1.view_name = 'categories_teacher'
-      and e1.cte = 'assignment_score_rollup'
-      and e1.credit_type is not null
-  where e1.include_row is null
-  ```
+- [ ] **Step 6c.2: Remove the final-level exception join**
 
-- [ ] **Step 4c.2: Remove the final-level exception join**
+  Delete the LEFT JOIN at the bottom of the file and
+  `where e.include_row is null`.
 
-  Delete the LEFT JOIN at the bottom of the file (lines 298–306) and the
-  `where e.include_row is null` clause:
+### 6d: `int_tableau__gradebook_audit_flags.sql`
 
-  ```sql
-  -- DELETE:
-  left join
-      {{ ref("stg_google_sheets__gradebook_exceptions") }} as e
-      on f.academic_year = e.academic_year
-      and f.region = e.region
-      and f.course_number = e.course_number
-      and f.is_quarter_end_date_range = e.is_quarter_end_date_range
-      and e.view_name = 'categories_teacher'
-      and e.cte is null
-      and e.is_quarter_end_date_range is not null
-  where e.include_row is null
-  ```
+- [ ] **Step 6d.1: Remove three exception joins from `student_unpivot` CTE**
 
-### 4d: `int_tableau__gradebook_audit_flags.sql`
+  Delete LEFT JOINs `e1`, `e2`, `e3` and remove the entire WHERE clause. The
+  UNPIVOT + INNER JOIN to `stg_google_sheets__gradebook_flags` is the correct
+  filter; no WHERE is needed.
 
-Remove exception joins from the four remaining CTEs (`student_unpivot`,
-`teacher_unpivot_cca`, `teacher_unpivot_cc`, `eoq_items`). The
-`student_course_category` and `eoq_items_conduct_code` CTEs were already deleted
-in Task 2.
+- [ ] **Step 6d.2: Remove two exception joins from `teacher_unpivot_cca` CTE**
 
-- [ ] **Step 4d.1: Remove three exception joins from `student_unpivot` CTE**
+  Delete `e1` and `e2` LEFT JOINs and the WHERE clause.
 
-  Delete the three LEFT JOINs (`e1`, `e2`, `e3`) and update the WHERE to remove
-  the three `e*.include_row is null` conditions. The WHERE should just be:
+- [ ] **Step 6d.3: Remove one exception join from `teacher_unpivot_cc` CTE**
 
-  ```sql
-  where
-      audit_flag_value = true
-  ```
+  Delete the `e` LEFT JOIN and the WHERE clause.
 
-  Wait — actually look at the original `student_unpivot` WHERE (line 68–69):
-  `where e1.include_row is null and e2.include_row is null and e3.include_row is null`
+- [ ] **Step 6d.4: Remove one exception join from `eoq_items` CTE**
 
-  This was the ONLY filter. UNPIVOT produces rows where `audit_flag_value` is
-  any value (both true and false). After removing the exceptions, the CTE should
-  still only surface rows where the flag is true, which happens via the INNER
-  JOIN to `stg_google_sheets__gradebook_flags` (which is an allowlist, not a
-  suppressor). The `audit_flag_value = 1` filter is applied later in `rpt.sql`'s
-  `valid_flags` CTE, not here. So after removing the exception joins, the WHERE
-  clause can be removed entirely (or changed to just remove the exception
-  conditions). The UNPIVOT + INNER JOIN to flags is the correct filter.
+  Delete the `e1` LEFT JOIN and the WHERE clause.
 
-  Final `student_unpivot` CTE structure after this step:
+### 6e: Delete the exceptions staging model and source entry
 
-  ```sql
-  student_unpivot as (
-      select u.*, f.cte_grouping, f.audit_category, f.code_type,
-
-      from
-          {{ ref("int_tableau__gradebook_audit_assignments_student") }} unpivot (
-              audit_flag_value for audit_flag_name in (
-                  assign_null_score,
-                  assign_score_above_max,
-                  assign_w_score_less_5,
-                  assign_h_score_less_5,
-                  assign_f_score_less_5,
-                  assign_w_missing_score_not_5,
-                  assign_f_missing_score_not_5,
-                  assign_h_missing_score_not_5,
-                  assign_w_missing_score_not_0,
-                  assign_f_missing_score_not_0,
-                  assign_h_missing_score_not_0,
-                  assign_s_missing_score_not_0,
-                  assign_s_score_less_50p,
-                  assign_s_hs_score_less_50p
-              )
-          ) as u
-      inner join
-          {{ ref("stg_google_sheets__gradebook_flags") }} as f
-          on u.academic_year = f.academic_year
-          and u.region = f.region
-          and u.school_level = f.school_level
-          and u.assignment_category_code = f.code
-          and u.audit_flag_name = f.audit_flag_name
-          and f.cte_grouping = 'assignment_student'
-  ),
-  ```
-
-- [ ] **Step 4d.2: Remove two exception joins from `teacher_unpivot_cca` CTE**
-
-  Delete `e1` and `e2` LEFT JOINs and the
-  `where e1.include_row is null and e2.include_row is null` clause entirely.
-
-- [ ] **Step 4d.3: Remove one exception join from `teacher_unpivot_cc` CTE**
-
-  Delete the `e` LEFT JOIN and the `where e.include_row is null` clause.
-
-- [ ] **Step 4d.4: Remove one exception join from `eoq_items` CTE**
-
-  Delete the `e1` LEFT JOIN and the `where e1.include_row is null` clause.
-
-### 4e: Delete the exceptions staging model and source entry
-
-- [ ] **Step 4e.1: Delete the staging model SQL and YAML**
+- [ ] **Step 6e.1: Delete the staging model files**
 
   ```bash
   rm src/dbt/kipptaf/models/google/sheets/staging/stg_google_sheets__gradebook_exceptions.sql
   rm src/dbt/kipptaf/models/google/sheets/staging/properties/stg_google_sheets__gradebook_exceptions.yml
   ```
 
-- [ ] **Step 4e.2: Remove the source entry from `sources-external.yml`**
+- [ ] **Step 6e.2: Remove the source entry from `sources-external.yml`**
 
-  File: `src/dbt/kipptaf/models/google/sheets/sources-external.yml` (lines
-  277–292 approx.)
+  File: `src/dbt/kipptaf/models/google/sheets/sources-external.yml`
 
-  Delete the entire `src_google_sheets__gradebook_exceptions` source entry:
+  Delete the entire `src_google_sheets__gradebook_exceptions` source block.
 
-  ```yaml
-  # DELETE this block:
-  - name: src_google_sheets__gradebook_exceptions
-    external: ...
-    columns: ...
-  ```
+### 6f: Build, verify, and commit Task 6
 
-### 4f: Build and verify Task 4 changes
+- [ ] **Step 6f.1: Run dbt build**
 
-- [ ] **Step 4f.1: Run dbt build**
-
-  Run the full build command from the file map header.
-
-  If the build references `stg_google_sheets__gradebook_exceptions` anywhere
-  (compile error or "node not found"), you missed a join site. Search for
-  remaining refs:
+  Run the full build command from the file map header. Then confirm no remaining
+  references:
 
   ```bash
   grep -rn "gradebook_exceptions" src/dbt/kipptaf/models/ --include="*.sql"
@@ -1067,8 +1009,7 @@ in Task 2.
 
   Expected: zero results.
 
-- [ ] **Step 4f.2: Spot-check output row counts are similar to
-      pre-exceptions-removal**
+- [ ] **Step 6f.2: Spot-check row counts**
 
   Via BigQuery MCP:
 
@@ -1080,15 +1021,16 @@ in Task 2.
     count(*) as n_rows,
   FROM `teamster-332318.dbt_grangel_tableau.rpt_tableau__gradebook_audit`
   WHERE flag_value = 1
+    AND academic_year = 2026
   GROUP BY 1, 2, 3
   ORDER BY 1, 2, 3
   ```
 
-  Row counts should be similar to (or slightly higher than) pre-exceptions
-  results — removing suppressions means some previously-suppressed rows now
-  appear. Verify with T&L before merging if any unexpected spikes appear.
+  Counts may be slightly higher than before — removing suppressions means some
+  previously-suppressed rows now appear. Verify with T&L if unexpected spikes
+  appear before merging.
 
-- [ ] **Step 4f.3: Commit**
+- [ ] **Step 6f.3: Commit**
 
   ```bash
   git commit -m "feat(dbt): remove gradebook exceptions mechanism — AY 2026-2027"
@@ -1096,26 +1038,7 @@ in Task 2.
 
 ---
 
-## Tasks 5 and 6 (out of scope for this plan)
+## Task 7 (out of scope): Anchor-row / "in the clear" redesign
 
-**Task 5 — QTD cumulative assignment count:** Blocked on open format question in
-issue #3908. Must resolve whether
-`stg_google_sheets__gradebook_expectations_assignments` stores cumulative or
-per-week targets before implementation can be specced.
-
-**Task 6 — Anchor-row / "in the clear" redesign:** Major structural change to
-`rpt_tableau__gradebook_audit.sql`. Needs separate spec and plan.
-
----
-
-## Self-review checklist
-
-- [x] Spec coverage: all items from the "Scope of work" section of issue #3908
-      that are in scope for this plan have a corresponding task (Miami removal,
-      Paterson config, FYI flags, Summative 200, Miami dead code, grace period,
-      exceptions removal).
-- [x] Placeholder scan: no TBD steps. Tasks 1.2 and 1.4 are explicitly blocked
-      on T&L confirmation — that is a real external dependency, not a plan gap.
-- [x] Type consistency: all SQL changes are additive deletes (removing
-      columns/CTEs); no new columns or type changes introduced.
-- [x] Steps 5 and 6 are explicitly excluded with documented reasons.
+Major structural change to `rpt_tableau__gradebook_audit.sql`. Required for the
+school-level classroom percentage summary view. Needs a separate spec and plan.
