@@ -1,0 +1,4 @@
+cubes:
+  - name: staff_manager
+    extends: staff
+    public: false
