@@ -10,13 +10,12 @@ annual config rollover for Newark, Camden, and Paterson; remove Miami; remove
 FYI, Summative 200, and ADA/GPA flags; add a 7-day grading grace period; add QTD
 cumulative assignment count; and remove the exceptions suppression mechanism.
 
-**Architecture:** Two phases. Phase 1 (Tasks 1–2) is Google Sheets config only —
-no SQL changes. The sheet is the on/off switch for every flag in the dashboard;
-creating new year rows while omitting deprecated flags deactivates those flags
-immediately without touching SQL. Phase 2 (Tasks 3–6) is SQL cleanup and logic
-changes — safe to make because Phase 1 already controls what fires. Task 5 (QTD)
-is blocked on PR #4077 (PS plugin integration) landing. Task 7 (anchor-row
-redesign) is a separate future effort.
+**Architecture:** Task 1 is Google Sheets config only — creating AY 2026 flag
+rows while omitting deprecated ones deactivates those flags immediately without
+touching SQL. Task 2 replaces the deprecated Google Sheet expectations source
+with a PS-native intermediate model (Newark only to start). Tasks 3–6 are SQL
+cleanup and logic changes. Task 5 (QTD) is blocked on PR #4077 (PS plugin
+integration) landing. Task 7 (anchor-row redesign) is a separate future effort.
 
 **Tech Stack:** dbt (BigQuery dialect), Google Sheets external tables, BigQuery
 MCP for spot-checks, `uv run dbt` CLI, branch
