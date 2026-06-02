@@ -10,81 +10,46 @@ description: >-
 
 # Gradebook Audit Data Model
 
-## Overview
+## Always read first
 
-The gradebook audit Tableau dashboard monitors teacher gradebook compliance with
-KIPP TAF grading policy. It is powered by `rpt_tableau__gradebook_audit` and
-covers the current academic year.
-
-**Always read first:**
+Before answering any question or making any change, read the reference doc. It
+is the authoritative source for lineage, flag definitions, scaffold structure,
+and configuration behavior. The spec covers AY 2026-2027 design decisions.
 
 - Reference doc:
   [`docs/reference/gradebook-audit-data-model.md`](../../docs/reference/gradebook-audit-data-model.md)
-- Design spec (AY 2026-2027):
+- Design spec:
   [`docs/superpowers/specs/2026-05-14-gradebook-audit-ay2627-design.md`](../../docs/superpowers/specs/2026-05-14-gradebook-audit-ay2627-design.md)
+- Implementation plan:
+  [`docs/superpowers/plans/2026-05-14-gradebook-audit-ay2627-revamp.md`](../../docs/superpowers/plans/2026-05-14-gradebook-audit-ay2627-revamp.md)
 
-Before answering any question or making any change, read the reference doc. It
-is the authoritative source for lineage, flag definitions, and configuration
-behavior.
-
-## Quick reference
-
-**Coverage (AY 2026-2027 after current implementation):**
-
-| Region   | School level | Coverage                               |
-| -------- | ------------ | -------------------------------------- |
-| Camden   | MS, HS       | Full audit                             |
-| Camden   | ES           | EOQ comments (`qt_es_comment_missing`) |
-| Newark   | MS, HS       | Full audit                             |
-| Newark   | ES           | EOQ comments (`qt_es_comment_missing`) |
-| Paterson | MS           | Full audit                             |
-| Paterson | ES           | EOQ comments (`qt_es_comment_missing`) |
-
-**Three Google Sheets control behavior (no SQL change needed to toggle):**
-
-| Sheet                                     | Purpose                                                                                      |
-| ----------------------------------------- | -------------------------------------------------------------------------------------------- |
-| `stg_google_sheets__gradebook_flags`      | Allowlist — a flag only fires if a row exists here                                           |
-| `stg_google_sheets__gradebook_exceptions` | Suppression — permanently or temporarily removes specific rows (being disabled AY 2026-2027) |
-
-The expectations source is migrating from
-`stg_google_sheets__gradebook_expectations_assignments` (deprecated) to a
-PS-native intermediate model (`int_powerschool__u_expectations[_unpivot]`).
-
-**`academic_year` convention:** stores the STARTING year. AY 2026-2027 =
-`academic_year = 2026`. Always confirm this with the user before generating
-data.
+**Key gotcha:** `academic_year` stores the STARTING year. AY 2026-2027 =
+`academic_year = 2026`. Confirm this with the user before generating any data.
 
 ---
 
 ## Procedure: Explain the data model
 
-Read `docs/reference/gradebook-audit-data-model.md` before answering. Use it to
-answer questions about lineage, flag definitions, scaffold structure, health
-score formula, or configuration. If the user asks about AY 2026-2027 changes,
-also read the spec doc.
+Read the reference doc and answer from it. For AY 2026-2027 changes, also read
+the spec doc.
 
 ---
 
 ## Procedure: Annual flags rollover
 
-Ask these questions before generating anything:
+Ask before generating anything:
 
-1. **What is the new academic year?** (e.g. "AY 2027-2028" →
-   `academic_year = 2027`)
-2. **Are any flags being deprecated this year?** List them, or say none.
-3. **Are any regions being added or removed?** Confirm coverage changes.
-4. **Are any school levels changing for existing regions?** (e.g. adding HS to a
-   region that only had MS before)
+1. What is the new academic year? (e.g. "AY 2027-2028" → `academic_year = 2027`)
+2. Are any flags being deprecated this year?
+3. Are any regions being added or removed?
+4. Are any school levels changing for existing regions?
 
-Once confirmed, run the following query against BigQuery (substitute
-`<prior_year>` and `<new_year>`) and display the result as a tab-separated table
-that the user can paste directly into the Google Sheet:
+Then run this query (substitute `<prior_year>`, `<new_year>`, deprecated flag
+list, and active region list based on the answers):
 
 ```sql
 SELECT * FROM (
 
-  -- Active regions: copy prior year, bump academic_year, exclude deprecated flags
   SELECT
     <new_year> AS academic_year,
     region,
@@ -96,11 +61,9 @@ SELECT * FROM (
     audit_flag_name,
     cte_grouping,
   FROM `teamster-332318.kipptaf_google_sheets.stg_google_sheets__gradebook_flags`
-  WHERE region IN ('Newark', 'Camden')  -- update list if regions changed
+  WHERE region IN ('Newark', 'Camden')
     AND academic_year = <prior_year>
-    AND audit_flag_name NOT IN (
-      -- paste deprecated flag names here, or omit block if none
-    )
+    AND audit_flag_name NOT IN ( /* deprecated flags, or omit if none */ )
 
   UNION ALL
 
@@ -119,9 +82,7 @@ SELECT * FROM (
   WHERE region = 'Newark'
     AND school_level = 'MS'
     AND academic_year = <prior_year>
-    AND audit_flag_name NOT IN (
-      -- same deprecated list
-    )
+    AND audit_flag_name NOT IN ( /* same deprecated list */ )
 
   UNION ALL
 
@@ -146,11 +107,12 @@ SELECT * FROM (
 ORDER BY region, school_level, code_type, code, audit_flag_name
 ```
 
-Column order in the output must match the sheet:
+Display the result as a tab-separated table in the chat — the user copies it and
+pastes directly into the sheet. Column order must be:
 `academic_year, region, school_level, grade_level, code_type, code, audit_category, audit_flag_name, cte_grouping`.
-The `grade_level` column will be blank for all rows — that is correct.
+`grade_level` will be blank for all rows — that is correct.
 
-After pasting, the user must stage the external table and rebuild staging:
+After the user pastes, they stage and rebuild:
 
 ```bash
 uv run dbt run-operation stage_external_sources \
@@ -166,83 +128,67 @@ uv run dbt build \
 
 ## Procedure: Add a new flag
 
-1. **Sheet first:** add a row to `stg_google_sheets__gradebook_flags` with the
-   flag name, region, school_level, code, code_type, audit_category, and
-   cte_grouping. Stage and rebuild the staging model. Verify the flag appears in
-   staging data before touching SQL.
-2. **SQL second:** add the boolean column to the appropriate model in the
-   lineage (see reference doc for which model owns each flag type). Add it to
-   the UNPIVOT list in `int_tableau__gradebook_audit_flags.sql`. Update the
-   properties YAML.
-3. Build only the modified model, then verify the flag appears in
+1. **Sheet first:** add the row to `stg_google_sheets__gradebook_flags`. Stage
+   and rebuild staging. Verify the flag appears in the staging table before
+   writing any SQL.
+2. **SQL second:** add the boolean column to the source model (see reference doc
+   flag inventory for which model owns each flag type), add it to the UNPIVOT
+   list in `int_tableau__gradebook_audit_flags.sql`, and update the properties
+   YAML.
+3. Build only the modified model. Verify the flag appears in
    `rpt_tableau__gradebook_audit`.
 
 ---
 
 ## Procedure: Remove a flag
 
-1. **Sheet first:** delete the row(s) for the flag from
-   `stg_google_sheets__gradebook_flags`. Stage and rebuild staging. The flag
-   will stop firing immediately — no SQL change needed for the dashboard.
-2. **SQL cleanup (separate step):** once the sheet row is gone, remove the
-   boolean column from the source model, remove it from the UNPIVOT list in
-   `int_tableau__gradebook_audit_flags.sql`, and update the properties YAML. Do
-   this as a separate commit so the sheet change is reviewable independently.
+1. **Sheet first:** delete the row from `stg_google_sheets__gradebook_flags`.
+   Stage and rebuild. The flag stops firing immediately — no SQL needed yet.
+2. **SQL cleanup (separate commit):** remove the boolean column from the source
+   model, remove it from the UNPIVOT list in
+   `int_tableau__gradebook_audit_flags.sql`, and update the YAML.
 
 ---
 
 ## Procedure: Add a new region
 
-1. Add rows to `stg_google_sheets__gradebook_flags` for the new region (mirror
-   an existing region at the same school level). Stage and rebuild.
-2. If the region needs expectations data, add rows to
-   `stg_google_sheets__gradebook_expectations_assignments` OR ensure the
-   PS-native `int_powerschool__u_expectations[_unpivot]` model covers the region
+1. Add rows to `stg_google_sheets__gradebook_flags` mirroring an existing region
+   at the same school level. Stage and rebuild.
+2. For expectations data: add rows to
+   `stg_google_sheets__gradebook_expectations_assignments` (legacy) OR ensure
+   the PS-native `int_powerschool__u_expectations[_unpivot]` covers the region
    (requires the U_EXPECTATIONS plugin deployed to that PS instance).
-3. No SQL changes needed in the scaffold if the region's PS data already flows
-   through `base_powerschool__sections` — verify by checking that new sections
-   appear in the teacher scaffold after the sheet changes.
+3. No SQL changes needed if the region's PS data flows through
+   `base_powerschool__sections` — verify by checking sections appear in the
+   teacher scaffold after the sheet changes.
 
 ---
 
 ## Procedure: Debug a flag that isn't firing
 
-Ask the user which flag, which region/school level, and which quarter.
+Ask: which flag, region, school level, and quarter.
 
-Check in this order:
+Check in order:
 
-1. **Is there a row in `stg_google_sheets__gradebook_flags`?** A flag only fires
-   if a matching allowlist row exists. Query:
-
-   ```sql
-   SELECT * FROM `teamster-332318.kipptaf_google_sheets.stg_google_sheets__gradebook_flags`
-   WHERE audit_flag_name = '<flag_name>'
-     AND region = '<region>'
-     AND academic_year = <year>
-   ```
-
-2. **Is the boolean `true` in the source model?** Find which model computes the
-   flag (reference doc flag inventory) and query it directly.
-
-3. **Is the section in the scaffold?** Check
+1. **Row in `stg_google_sheets__gradebook_flags`?** A flag only fires if a
+   matching allowlist row exists.
+2. **Boolean `true` in the source model?** Find which model computes the flag
+   (reference doc flag inventory) and query it directly.
+3. **Section in the scaffold?** Check
    `int_tableau__gradebook_audit_teacher_scaffold` for the section/quarter
    combination.
-
-4. **Is there an active exception row suppressing it?** Check
-   `stg_google_sheets__gradebook_exceptions` for matching `view_name` / `cte` /
-   `audit_flag_name` keys.
+4. **Active exception row?** Check `stg_google_sheets__gradebook_exceptions` for
+   a matching `view_name` / `cte` / `audit_flag_name` key.
 
 ---
 
 ## Procedure: Work on a model in the lineage
 
-Before modifying any model, read the reference doc section for that model to
-understand its grain, joins, and downstream consumers. Key rules:
+Read the reference doc section for the specific model before touching it. Key
+rules from the implementation plan:
 
-- **Build one model at a time** — never cascade downstream during a structural
-  refactor. Downstream models may reference columns being removed.
+- **Build one model at a time** — never cascade downstream mid-refactor.
 - **Sheet changes deactivate flags immediately** — SQL cleanup is a separate
   later step.
-- The scaffolds are the base; everything downstream inherits their grain. A
-  grain change in the scaffold (e.g. week → quarter) cascades to all downstream
-  join conditions.
+- A grain change in the scaffolds cascades to all downstream join conditions.
+  Downstream models must be updated before a full chain build is valid.
