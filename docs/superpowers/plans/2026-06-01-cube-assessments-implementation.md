@@ -107,6 +107,16 @@ cubes:
         sql: test_type
         type: string
         public: true
+
+      # Derived directly on the cube — avoids a two-hop .dates join that would
+      # produce dates_academic_year (same prefix as the fact's direct dates path,
+      # causing a member name collision in views that include both).
+      - name: academic_year
+        sql: >
+          EXTRACT(YEAR FROM administered_date_key) + IF(EXTRACT(MONTH FROM
+          administered_date_key) >= 7, 0, -1)
+        type: number
+        public: true
 ```
 
 - [ ] **Step 2: Verify the YAML parses**
@@ -632,15 +642,16 @@ views:
         prefix: true
         includes:
           - administered_date
+          - academic_year
           - source_project
           - administration_period
           - source_assessment_id
           - test_type
 
-      - join_path: student_assessments_enrollment_scoped.assessment_administrations.dates
-        prefix: true
-        includes:
-          - academic_year
+      # assessment_administrations.academic_year is exposed directly on the cube
+      # (derived from administered_date_key) — no two-hop .dates join needed here.
+      # A .dates join path ending in "dates" would produce the same dates_* prefix
+      # as the fact's direct dates join, causing a member name collision.
 
       - join_path: student_assessments_enrollment_scoped.students
         prefix: true
@@ -673,6 +684,8 @@ views:
         - name: Administration
           members:
             - assessment_administrations_administered_date
+            - assessment_administrations_academic_year
+            - assessment_administrations_academic_year
             - assessment_administrations_source_project
             - assessment_administrations_administration_period
             - assessment_administrations_source_assessment_id
@@ -798,10 +811,10 @@ views:
           - source_assessment_id
           - test_type
 
-      - join_path: student_assessments_enrollment_scoped.assessment_administrations.dates
-        prefix: true
-        includes:
-          - academic_year
+      # assessment_administrations.academic_year is exposed directly on the cube
+      # (derived from administered_date_key) — no two-hop .dates join needed here.
+      # A .dates join path ending in "dates" would produce the same dates_* prefix
+      # as the fact's direct dates join, causing a member name collision.
 
       - join_path: student_assessments_enrollment_scoped.students
         prefix: true
@@ -825,6 +838,7 @@ views:
             - dates_month_name
         - name: Administration
           members:
+            - assessment_administrations_academic_year
             - assessment_administrations_source_project
             - assessment_administrations_administration_period
             - assessment_administrations_source_assessment_id
@@ -957,6 +971,7 @@ views:
         prefix: true
         includes:
           - administered_date
+          - academic_year
           - source_project
           - administration_period
           - source_assessment_id
@@ -1015,6 +1030,8 @@ views:
         - name: Administration
           members:
             - assessment_administrations_administered_date
+            - assessment_administrations_academic_year
+            - assessment_administrations_academic_year
             - assessment_administrations_source_project
             - assessment_administrations_administration_period
             - assessment_administrations_source_assessment_id
@@ -1178,6 +1195,7 @@ views:
             - terms_term_code
         - name: Administration
           members:
+            - assessment_administrations_academic_year
             - assessment_administrations_source_project
             - assessment_administrations_administration_period
             - assessment_administrations_source_assessment_id
@@ -1291,20 +1309,22 @@ The column `rank` on `fct_assessment_scores_student_scoped` has `quote: true` in
 the dbt YAML (confirmed by the dbt properties file). The Cube dimension SQL
 references it as `` `rank` `` (backtick-quoted) to avoid BigQuery parse errors.
 
-### Two-hop `assessment_administrations.dates` join path
+### Administered-date `academic_year` on `assessment_administrations` cube
 
-Both fact cubes join `assessment_administrations` which itself joins `dates` on
-`administered_date_key`. This two-hop path
-(`fact.assessment_administrations.dates`) exposes the administration date's
-academic year independently from the test date's academic year — useful for
-state assessments where `test_date_key` is NULL but `administered_date_key`
-carries the administration month. The `academic_year` from this path is aliased
-as `dates_academic_year` in the view (prefix from the last segment, `dates`).
-Analysts should be aware that two `academic_year` dimensions appear in views
-where both the `dates` and `assessment_administrations.dates` paths are included
-— the direct `dates_academic_year` is the test-date academic year; the
-administration-date academic year comes from the same prefix but via a different
-join path.
+The administered-date academic year is derived directly on the
+`assessment_administrations` cube (`academic_year` dimension, July-start
+convention) rather than through a two-hop `assessment_administrations.dates`
+join path. The reason: both the fact's direct `.dates` join path and any
+`assessment_administrations.dates` two-hop path end in the segment `dates`, so
+`prefix: true` on both would produce `dates_academic_year` — a member name
+collision that Cube rejects at schema load.
+
+By computing it on the cube itself, it is exposed as
+`assessment_administrations_academic_year` (prefixed by the last join path
+segment, `assessment_administrations`), which is distinct from the test-date
+`dates_academic_year`. Analysts querying state assessments where `test_date_key`
+is NULL should use `assessment_administrations_academic_year` for temporal
+context.
 
 ---
 

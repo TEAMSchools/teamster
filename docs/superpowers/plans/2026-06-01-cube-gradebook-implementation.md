@@ -1557,9 +1557,6 @@ views:
             - students_birth_date
             - students_lea_student_identifier
             - students_state_student_identifier
-      - group: cube-access-student-pii
-        member_level:
-          includes: "*"
 ```
 
 - [ ] **Step 2: Verify the YAML parses**
@@ -1583,7 +1580,7 @@ Expected:
 ```text
 view name: student_grades_detail
 cube join paths: ['student_grades_term', 'student_grades_term.terms', 'student_grades_term.student_enrollments', 'student_grades_term.student_enrollments.students', 'student_grades_term.student_enrollments.locations', 'student_grades_term.student_enrollments.locations.regions', 'student_grades_term.staff', 'student_grades_term.staff_manager', 'student_grades_category', 'student_grades_assignments', 'student_grades_gpa']
-access groups: ['detail-access', 'cube-access-student-pii', 'cube-access-staff-pii', 'cube-access-student-pii']
+access groups: ['detail-access', 'cube-access-student-pii', 'cube-access-staff-pii']
 ```
 
 - [ ] **Step 3: Commit**
@@ -1842,6 +1839,65 @@ Expected: all tests PASS.
 git add src/cube/model/views/gradebook/student_grades_summary.yml
 git commit -m "feat(cube): add student_grades_summary view — all four gradebook grains, no PII, summary-access only"
 ```
+
+---
+
+## Implementation Notes
+
+### Location filter dependency in multi-cube views
+
+`student_grades_detail` and `student_grades_summary` expose location and region
+context only through the `student_grades_term` join path:
+
+```yaml
+- join_path: student_grades_term.student_enrollments.locations
+- join_path: student_grades_term.student_enrollments.locations.regions
+```
+
+`queryRewrite` injects a `locations.abbreviation` or `locations.region_key`
+filter based on the user's scope group. **If an analyst queries only members
+from `student_grades_category`, `student_grades_assignments`, or
+`student_grades_gpa` join paths without including any `student_grades_term`
+member, Cube cannot resolve the location join and the `queryRewrite` filter will
+error or be silently skipped.**
+
+In practice this is unlikely — most gradebook queries include at least one
+term-grain dimension (academic_year, term_name, letter_grade). But queries that
+request only GPA dimensions without any term context should always add
+`student_grades_term.student_enrollments.locations` members (even just
+`locations_abbreviation`) to anchor the location filter.
+
+This is a structural constraint of the multi-cube view pattern. Resolving it
+would require adding a `locations` join directly on `student_grades_gpa`,
+`student_grades_category`, and `student_grades_assignments` — a scope increase
+that is deferred to a follow-up once the usage pattern is clear.
+
+### `student_grades_gpa` — snapshot aggregation risk
+
+`gpa_ytd` and `cumulative_gpa` are **cumulative running snapshots** — one row
+per student per term, restamped with the YTD value through that term. They are
+NOT additive. `avg_gpa_ytd` and `avg_cumulative_gpa` average across all
+snapshots in scope, so querying without filtering to a single term (or
+`is_current = true`) averages redundant snapshots for students with multiple
+terms.
+
+The correct usage pattern depends on the question:
+
+- **"What is each student's current GPA?"** → filter `is_current = true`
+- **"What was average GPA at the end of Fall 2024?"** → filter
+  `terms_term_code = 'F24'` (or equivalent)
+- **"How has average GPA trended by term?"** → group by `terms_term_name`, no
+  `is_current` filter — each term is a distinct snapshot
+
+Querying `avg_gpa_ytd` with no term filter and no `is_current` filter will
+average across ALL snapshots for ALL terms in scope, producing a meaningless
+weighted mean across periods.
+
+`student_grades_gpa` is a candidate for the `SNAPSHOT_CUBES` / snapshot anchor
+pattern (`is_current` as the year-end flag). However, the gradebook snapshot
+grain is per-term, not per-day, so the daily auto-injection mechanism does not
+apply. The `is_current` filter serves the same purpose but must be applied
+manually. Document this in the view description when implementing.
 
 ---
 

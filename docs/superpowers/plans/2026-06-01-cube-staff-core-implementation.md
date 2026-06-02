@@ -312,19 +312,25 @@ cubes:
         wo.business_unit_name,
         wl.location_key                AS work_location_key,
         wp.is_primary_position,
+        comp.annual_wage,
+        comp.hourly_wage,
+        comp.daily_rate,
+        comp.period_rate,
         GREATEST(
           ss.effective_start_date,
           wj.effective_start_date,
           wt.effective_start_date,
           wo.effective_start_date,
-          wl.effective_start_date
+          wl.effective_start_date,
+          COALESCE(comp.effective_start_date_key, DATE '1900-01-01')
         ) AS effective_start_date,
         LEAST(
           ss.effective_end_date,
           wj.effective_end_date,
           wt.effective_end_date,
           wo.effective_end_date,
-          wl.effective_end_date
+          wl.effective_end_date,
+          COALESCE(comp.effective_end_date_key, DATE '9999-12-31')
         ) AS effective_end_date
       FROM kipptaf_marts.dim_staff_work_assignments swa
       JOIN kipptaf_marts.dim_staff_status ss
@@ -350,6 +356,15 @@ cubes:
         ON wp.work_assignment_key = swa.work_assignment_key
         AND ss.effective_start_date < wp.effective_end_date
         AND ss.effective_end_date   > wp.effective_start_date
+      -- Compensation is LEFT JOIN — some assignments have no comp record
+      -- (contractors, volunteers). COALESCE in GREATEST/LEAST above ensures
+      -- null comp dates don't collapse the intersection for uncompensated rows.
+      -- One comp row per assignment per period (no earning_item_id in PK), so
+      -- no fan-out risk from this join.
+      LEFT JOIN kipptaf_marts.fct_work_assignment_compensation comp
+        ON comp.work_assignment_key = swa.work_assignment_key
+        AND ss.effective_start_date < comp.effective_end_date_key
+        AND ss.effective_end_date   > comp.effective_start_date_key
 
     joins:
       - name: dates
@@ -431,6 +446,36 @@ cubes:
         type: time
         public: true
 
+      # Compensation fields — gated by cube-access-staff-compensation in views.
+      # Null for uncompensated assignments (contractors, volunteers).
+      - name: annual_wage
+        sql: annual_wage
+        type: number
+        public: true
+        meta:
+          pii: true
+
+      - name: hourly_wage
+        sql: hourly_wage
+        type: number
+        public: true
+        meta:
+          pii: true
+
+      - name: daily_rate
+        sql: daily_rate
+        type: number
+        public: true
+        meta:
+          pii: true
+
+      - name: period_rate
+        sql: period_rate
+        type: number
+        public: true
+        meta:
+          pii: true
+
     measures:
       - name: count_headcount
         description: Distinct active employees
@@ -447,6 +492,18 @@ cubes:
         public: true
         filters:
           - sql: "{CUBE}.status_name = 'Active'"
+
+      - name: avg_annual_wage
+        description: Average annual wage across assignments in scope
+        sql: annual_wage
+        type: avg
+        public: true
+
+      - name: avg_hourly_wage
+        description: Average hourly wage — null for salaried assignments
+        sql: hourly_wage
+        type: avg
+        public: true
 ```
 
 - [ ] **Step 2: Verify the YAML parses**
@@ -476,8 +533,8 @@ Expected output:
 cube name: staff_work_history
 public: False
 joins: ['dates', 'staff', 'locations']
-dimensions: ['staff_work_history_key', 'status_name', 'position_title', 'job_code', 'worker_type', 'department_name', 'business_unit_name', 'work_location_key', 'is_primary_position', 'is_management_position', 'full_time_equivalency', 'effective_start_date']
-measures: ['count_headcount', 'sum_fte']
+dimensions: ['staff_work_history_key', 'status_name', 'position_title', 'job_code', 'worker_type', 'department_name', 'business_unit_name', 'work_location_key', 'is_primary_position', 'is_management_position', 'full_time_equivalency', 'effective_start_date', 'annual_wage', 'hourly_wage', 'daily_rate', 'period_rate']
+measures: ['count_headcount', 'sum_fte', 'avg_annual_wage', 'avg_hourly_wage']
 dates relationship: one_to_many
 ```
 
@@ -563,6 +620,17 @@ cubes:
         sql: CAST(effective_start_date AS TIMESTAMP)
         type: time
         public: true
+
+      # effective_end_date is required by the per-fact BETWEEN join condition
+      # used in staff_observations and other fact cubes that resolve
+      # point-in-time manager:
+      #   CAST({CUBE}.date_key AS TIMESTAMP)
+      #     BETWEEN {staff_reporting_relationships.effective_start_date}
+      #     AND     {staff_reporting_relationships.effective_end_date}
+      - name: effective_end_date
+        sql: CAST(effective_end_date AS TIMESTAMP)
+        type: time
+        public: true
 ```
 
 - [ ] **Step 2: Verify the YAML parses**
@@ -589,7 +657,7 @@ Expected output:
 cube name: staff_reporting_relationships
 public: False
 has joins: False
-dimensions: ['staff_reporting_relationship_key', 'staff_key', 'manager_staff_key', 'effective_start_date']
+dimensions: ['staff_reporting_relationship_key', 'staff_key', 'manager_staff_key', 'effective_start_date', 'effective_end_date']
 primary key: staff_reporting_relationship_key
 ```
 
@@ -723,6 +791,8 @@ views:
         includes:
           - count_headcount
           - sum_fte
+          - avg_annual_wage
+          - avg_hourly_wage
           - status_name
           - position_title
           - job_code
@@ -733,6 +803,10 @@ views:
           - is_management_position
           - full_time_equivalency
           - effective_start_date
+          - annual_wage
+          - hourly_wage
+          - daily_rate
+          - period_rate
 
       - join_path: staff_work_history.dates
         prefix: true
@@ -822,6 +896,10 @@ views:
             - staff_rehire_date
 
     access_policy:
+      # detail-access: excludes both staff PII and compensation fields.
+      # cube-access-staff-pii: full access except compensation.
+      # cube-access-staff-compensation: full access except staff PII.
+      # A user with both groups sees everything.
       - group: detail-access
         member_level:
           includes: "*"
@@ -836,9 +914,36 @@ views:
             - staff_personal_cell_phone
             - staff_active_directory_username
             - staff_staff_unique_id
+            - annual_wage
+            - hourly_wage
+            - daily_rate
+            - period_rate
+            - avg_annual_wage
+            - avg_hourly_wage
       - group: cube-access-staff-pii
         member_level:
           includes: "*"
+          excludes:
+            - annual_wage
+            - hourly_wage
+            - daily_rate
+            - period_rate
+            - avg_annual_wage
+            - avg_hourly_wage
+      - group: cube-access-staff-compensation
+        member_level:
+          includes: "*"
+          excludes:
+            - staff_full_name
+            - staff_first_name
+            - staff_last_name
+            - staff_birth_date
+            - staff_work_email
+            - staff_google_email
+            - staff_personal_email
+            - staff_personal_cell_phone
+            - staff_active_directory_username
+            - staff_staff_unique_id
 ```
 
 - [ ] **Step 3: Verify the YAML parses**
@@ -864,8 +969,8 @@ Expected output:
 ```text
 view name: staff_detail
 join paths: ['staff_work_history', 'staff_work_history.dates', 'staff_work_history.staff', 'staff_work_history.locations', 'staff_work_history.locations.regions']
-access groups: ['detail-access', 'cube-access-staff-pii']
-excluded fields: ['staff_full_name', 'staff_first_name', 'staff_last_name', 'staff_birth_date', 'staff_work_email', 'staff_google_email', 'staff_personal_email', 'staff_personal_cell_phone', 'staff_active_directory_username', 'staff_staff_unique_id']
+access groups: ['detail-access', 'cube-access-staff-pii', 'cube-access-staff-compensation']
+excluded fields: ['staff_full_name', 'staff_first_name', 'staff_last_name', 'staff_birth_date', 'staff_work_email', 'staff_google_email', 'staff_personal_email', 'staff_personal_cell_phone', 'staff_active_directory_username', 'staff_staff_unique_id', 'annual_wage', 'hourly_wage', 'daily_rate', 'period_rate', 'avg_annual_wage', 'avg_hourly_wage']
 ```
 
 - [ ] **Step 4: Run the full cube test suite**
@@ -918,6 +1023,8 @@ views:
         includes:
           - count_headcount
           - sum_fte
+          - avg_annual_wage
+          - avg_hourly_wage
           - status_name
           - position_title
           - job_code
@@ -987,7 +1094,15 @@ views:
             - staff_is_hispanic
 
     access_policy:
+      # summary-access: base gate — excludes compensation fields.
+      # cube-access-staff-compensation: unlocks wage averages.
       - group: summary-access
+        member_level:
+          includes: "*"
+          excludes:
+            - avg_annual_wage
+            - avg_hourly_wage
+      - group: cube-access-staff-compensation
         member_level:
           includes: "*"
 ```

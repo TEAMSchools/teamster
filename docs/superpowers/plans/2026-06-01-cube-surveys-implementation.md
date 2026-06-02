@@ -52,6 +52,8 @@ EXPECTED_CUBE_FILES = {
     "surveys.yml",
     "survey_expectations.yml",
     "staff_survey_subject.yml",
+    "survey_administrations.yml",
+    "student_contact_persons.yml",
 }
 
 EXPECTED_VIEW_FILES = {

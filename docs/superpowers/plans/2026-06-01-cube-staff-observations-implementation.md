@@ -135,84 +135,18 @@ git commit -m "feat(cube): add staff_observer role alias cube (extends staff)"
 
 ---
 
-## Task 3: `staff_reporting_relationships.yml` and `staff_manager.yml` — point-in-time manager resolver
+## Task 3: `staff_reporting_relationships.yml` and `staff_manager.yml` — verify exist from staff-core plan
 
-Two files required by the manager-at-date resolver pattern.
-`staff_reporting_relationships` is a subquery cube that computes the
-point-in-time overlap window of primary work assignment and reporting
-relationship spans. `staff_manager` is another `extends: staff` alias joined via
-`manager_staff_key`. Both files follow the exact reference SQL from the spec
-Domain Notes (validated against prod, 2026-05-28 — 47,585
-`fct_staff_observations` rows, zero fan-out).
+> **These files are created by the Staff Core plan (Tasks 4 and 5) — do NOT
+> recreate them here.** The staff-core plan is a prerequisite; both files must
+> already be on disk before this task runs.
 
 **Files:**
 
-- Create: `src/cube/model/cubes/staff/staff_reporting_relationships.yml`
-- Create: `src/cube/model/cubes/staff/staff_manager.yml`
+- Verify exists: `src/cube/model/cubes/staff/staff_reporting_relationships.yml`
+- Verify exists: `src/cube/model/cubes/staff/staff_manager.yml`
 
-- [ ] **Step 1: Write `staff_reporting_relationships.yml`**
-
-```yaml
-cubes:
-  - name: staff_reporting_relationships
-    public: false
-    sql: |
-      SELECT
-        swa.staff_key,
-        rr.manager_staff_key,
-        GREATEST(wap.effective_start_date, rr.effective_start_date) AS effective_start_date,
-        LEAST(wap.effective_end_date,      rr.effective_end_date)   AS effective_end_date
-      FROM kipptaf_marts.dim_work_assignment_primary wap
-      JOIN kipptaf_marts.dim_staff_work_assignments swa
-        ON wap.work_assignment_key = swa.work_assignment_key
-        AND swa.staff_key IS NOT NULL
-      JOIN kipptaf_marts.dim_work_assignment_reporting_relationships rr
-        ON rr.work_assignment_key = wap.work_assignment_key
-        AND wap.effective_start_date <= rr.effective_end_date
-        AND wap.effective_end_date   >= rr.effective_start_date
-      WHERE wap.is_primary_position
-
-    dimensions:
-      - name: staff_reporting_relationship_key
-        sql: >
-          CONCAT(
-            CAST({CUBE}.staff_key AS STRING), '|',
-            CAST({CUBE}.effective_start_date AS STRING)
-          )
-        type: string
-        primary_key: true
-
-      - name: staff_key
-        sql: staff_key
-        type: string
-        public: true
-
-      - name: manager_staff_key
-        sql: manager_staff_key
-        type: string
-        public: true
-
-      - name: effective_start_date
-        sql: CAST(effective_start_date AS TIMESTAMP)
-        type: time
-        public: true
-
-      - name: effective_end_date
-        sql: CAST(effective_end_date AS TIMESTAMP)
-        type: time
-        public: true
-```
-
-- [ ] **Step 2: Write `staff_manager.yml`**
-
-```yaml
-cubes:
-  - name: staff_manager
-    extends: staff
-    public: false
-```
-
-- [ ] **Step 3: Verify both files parse**
+- [ ] **Step 1: Confirm both files exist with correct content**
 
 ```bash
 uv run python -c "
@@ -231,27 +165,15 @@ for fname in ['staff_reporting_relationships.yml', 'staff_manager.yml']:
 "
 ```
 
-Expected output:
+Expected output (matches staff-core plan Tasks 4 & 5):
 
 ```text
 staff_reporting_relationships.yml: name=staff_reporting_relationships, dimensions=['staff_reporting_relationship_key', 'staff_key', 'manager_staff_key', 'effective_start_date', 'effective_end_date']
 staff_manager.yml: name=staff_manager, extends=staff
 ```
 
-- [ ] **Step 4: Run schema test on new files**
-
-```bash
-uv run pytest tests/cube/test_cube_schema.py -v -k "staff_reporting_relationships or staff_manager"
-```
-
-Expected: both PASS.
-
-- [ ] **Step 5: Commit**
-
-```bash
-git add src/cube/model/cubes/staff/staff_reporting_relationships.yml src/cube/model/cubes/staff/staff_manager.yml
-git commit -m "feat(cube): add staff_reporting_relationships resolver and staff_manager role alias"
-```
+If either file is missing, the staff-core plan has not been run — stop and
+complete it first.
 
 ---
 

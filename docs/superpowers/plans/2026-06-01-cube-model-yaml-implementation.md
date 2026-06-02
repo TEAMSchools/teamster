@@ -5,6 +5,30 @@
 > superpowers:executing-plans to implement this plan task-by-task. Steps use
 > checkbox (`- [ ]`) syntax for tracking.
 
+## Execution Order
+
+This is **Plan 0** — all other domain implementation plans depend on it. Run in
+this order:
+
+```text
+0. cube-model-yaml-implementation       ← this plan (run first)
+   ├── cube-attendance-extension-implementation
+   ├── cube-assessments-implementation
+   ├── cube-family-communications-implementation
+   ├── cube-gradebook-implementation
+   ├── cube-postsecondary-implementation
+   ├── cube-surveys-implementation
+   └── cube-staff-core-implementation
+          ├── cube-staff-hr-implementation
+          └── cube-staff-observations-implementation
+```
+
+Plans at the same indent level are independent and can run in parallel once
+their parent completes. Plans 0 → staff-core → staff-hr/observations must run in
+sequence.
+
+---
+
 **Goal:** Rename all existing cube and view files to follow the spec's naming
 convention, apply the `cube.js` security helper changes, and update the
 attendance views' access policies — making `queryRewrite` enforce access
@@ -18,6 +42,22 @@ replace the static allowlists. Attendance views are renamed to
 
 **Tech Stack:** Cube YAML (`src/cube/model/`), JavaScript (`cube.js`), Python
 tests (`pytest`, `pyyaml`)
+
+**PII tagging (applies to all domain plans):** Before writing each cube's
+dimensions, grep the source dbt model's property YAML for `contains_pii: true`
+and add `meta: {pii: true}` to every matching Cube dimension. Only
+`dim_students` has these flags in dbt. `dim_staff` does NOT — use the spec's
+explicit list instead: name fields, `birth_date`, emails, phone, AD username,
+`staff_unique_id`, compensation fields. See `src/cube/CLAUDE.md` for the full
+staff PII list.
+
+**Dimension descriptions (applies to all domain plans):** Metadata sync (#3764)
+is not yet live. When writing each cube's dimensions, copy the `description:`
+from the source dbt model's property YAML. If a column has no description in
+dbt, omit the field rather than writing a placeholder. When sync ships it will
+populate missing descriptions and overwrite anything written here — so exact
+wording matters less than coverage. Measure descriptions have no dbt equivalent
+and must always be hand-authored.
 
 **Spec:** `docs/superpowers/specs/2026-04-17-cube-model-yaml-design.md`
 
@@ -101,8 +141,13 @@ the full rationale — apply exactly as shown there.
 
 - [ ] **Step 1: Replace the static arrays with helpers**
 
+> **⚠️ Updated (PR #4010):** `SNAPSHOT_CUBES` and `SNAPSHOT_MEASURE_STEMS`
+> arrays now exist in `cube.js` immediately after `STAFF_CUBES`. When replacing
+> the block below, stop at the end of `STAFF_CUBES` — do **not** remove
+> `SNAPSHOT_CUBES` or `SNAPSHOT_MEASURE_STEMS`.
+
 In `src/cube/cube.js`, replace this block (immediately after
-`nextMidnightEastern`):
+`nextMidnightEastern`), stopping before `SNAPSHOT_CUBES`:
 
 ```javascript
 // STUDENT_CUBES: cubes that require cube-access-student-data.
@@ -510,56 +555,47 @@ To:
 
 - [ ] **Step 3: Update all join names and SQL references**
 
-Replace the entire `joins:` block with:
+> **⚠️ Updated (PR #4010):** The attendance cube now has all 7 joins already
+> declared. Do NOT replace the entire block — only rename the `dim_*` prefixes.
+
+For each join in `student_attendance.yml`, rename:
+
+| Old join `name:`                      | New join `name:`                  |
+| ------------------------------------- | --------------------------------- |
+| `dim_dates`                           | `dates`                           |
+| `dim_student_enrollments`             | `student_enrollments`             |
+| `dim_school_calendars`                | `school_calendars`                |
+| `dim_terms`                           | `terms`                           |
+| `dim_student_ell_status`              | `student_ell_status`              |
+| `dim_student_iep_status`              | `student_iep_status`              |
+| `dim_student_meal_eligibility_status` | `student_meal_eligibility_status` |
+
+Update every `{dim_*.*}` reference in join `sql:` fields to match the new names.
+For example:
 
 ```yaml
-joins:
-  - name: dates
-    sql: "{dates.date_day} = CAST({CUBE}.date_key AS TIMESTAMP)"
-    relationship: many_to_one
+# was:
+- name: dim_dates
+  sql: "{dim_dates.date_day} = CAST({CUBE}.date_key AS TIMESTAMP)"
 
-  - name: student_enrollments
-    sql: >
-      {student_enrollments.student_enrollment_key} =
-      {CUBE}.student_enrollment_key
-    relationship: many_to_one
+# becomes:
+- name: dates
+  sql: "{dates.date_day} = CAST({CUBE}.date_key AS TIMESTAMP)"
+```
 
-  # location reached via student_enrollments.location_key; calendar
-  # joined on (date_key, enrollment's location_key)
-  - name: school_calendars
-    sql: >
-      {school_calendars.date_key} = {CUBE}.date_key AND
-      {school_calendars.location_key} = {student_enrollments.location_key}
-    relationship: many_to_one
+The `dim_school_calendars` join also references
+`{dim_student_enrollments.location_key}` — update that reference too:
 
-  - name: terms
-    sql: "{terms.term_key} = {CUBE}.term_key"
-    relationship: many_to_one
+```yaml
+# was:
+  sql: >
+    {dim_school_calendars.date_key} = {CUBE}.date_key AND
+    {dim_school_calendars.location_key} = {dim_student_enrollments.location_key}
 
-  - name: student_ell_status
-    sql: >
-      {student_ell_status.student_enrollment_key} =
-      {CUBE}.student_enrollment_key AND {CUBE}.date_key >=
-      {student_ell_status.effective_date_start_key} AND {CUBE}.date_key <=
-      {student_ell_status.effective_date_end_key}
-    relationship: many_to_one
-
-  - name: student_iep_status
-    sql: >
-      {student_iep_status.student_enrollment_key} =
-      {CUBE}.student_enrollment_key AND {CUBE}.date_key >=
-      {student_iep_status.effective_date_start_key} AND {CUBE}.date_key <=
-      {student_iep_status.effective_date_end_key}
-    relationship: many_to_one
-
-  - name: student_meal_eligibility_status
-    sql: >
-      {student_meal_eligibility_status.student_enrollment_key} =
-      {CUBE}.student_enrollment_key AND {CUBE}.date_key >=
-      {student_meal_eligibility_status.effective_date_start_key} AND
-      {CUBE}.date_key <=
-      {student_meal_eligibility_status.effective_date_end_key}
-    relationship: many_to_one
+# becomes:
+  sql: >
+    {school_calendars.date_key} = {CUBE}.date_key AND
+    {school_calendars.location_key} = {student_enrollments.location_key}
 ```
 
 - [ ] **Step 4: Update cross-cube measure filter references**
@@ -579,7 +615,20 @@ file and replace:
 These appear in the `_count_ca_eligible_students`, `count_chronically_absent`,
 `_count_tier_1_2`, and `_count_tier_3` measures.
 
-- [ ] **Step 5: Run schema test — all cube tests should now pass**
+- [ ] **Step 5: Update `SNAPSHOT_CUBES` in `cube.js`**
+
+`SNAPSHOT_CUBES` still contains `"attendance"` (the old cube name). Update it to
+match the renamed cube:
+
+```javascript
+// was:
+const SNAPSHOT_CUBES = ["attendance"];
+
+// becomes:
+const SNAPSHOT_CUBES = ["student_attendance"];
+```
+
+- [ ] **Step 6: Run schema test — all cube tests should now pass**
 
 ```bash
 uv run pytest tests/cube/test_cube_schema.py -v
@@ -587,10 +636,10 @@ uv run pytest tests/cube/test_cube_schema.py -v
 
 Expected: all PASS.
 
-- [ ] **Step 6: Commit**
+- [ ] **Step 7: Commit**
 
 ```bash
-git add src/cube/model/cubes/attendance/
+git add src/cube/model/cubes/attendance/ src/cube/cube.js
 git commit -m "refactor(cube): rename attendance cube to student_attendance; update all join references"
 ```
 
@@ -644,18 +693,36 @@ views:
       (date_key, student_enrollments.location_key). Contains direct student
       identifiers — see access_policy for PII gating.
 
-      Chronic absence query patterns — always use exactly one of the two: (1)
-      Year-end / year-over-year: filter is_latest_record = true and group by
-      academic_year. Returns the final CA snapshot per year. Use for "CA rate in
-      2023 vs 2024 vs 2025." (2) Point-in-time: filter to a single date_day.
-      Returns CA accumulated from the start of the year through that date. Use
-      for same-point-in-year comparisons like "CA as of November 1 each year."
-      Omitting both overcounts; combining both is valid only when the date is
-      today.
+      Chronic absence and truancy query patterns. For unanchored CA or truancy
+      measures (count_chronically_absent, pct_tier_1_2, is_truant, etc.),
+      queryRewrite auto-injects the correct snapshot anchor based on query shape
+      — no manual filter required in most BI tools. For SQL API or Superset,
+      apply the anchor explicitly.
 
-      For point-in-time truancy queries, also filter to a single date_day.
-      Truancy criteria are regional: Miami uses 15+ absences in a 90-day rolling
-      window; NJ regions use projected 50+ absences for the year.
+      Named period-end measures (_year_end, _month_end, _week_end) have the
+      anchor baked into their SQL filters and bypass auto-injection. Use these
+      for period-specific trend analysis:
+
+      (1) Year-end / year-over-year: use pct_chronically_absent_year_end grouped
+      by academic_year. Returns the CA rate at the final snapshot of each year.
+      "CA rate in 2023 vs 2024 vs 2025."
+
+      (2) Month-over-month trend: use pct_chronically_absent_month_end with
+      timeDimensions granularity "month". Returns CA at each month-end snapshot.
+      Requires granularity: "month" — queryRewrite enforces this.
+
+      (3) Point-in-time (same date across years): filter to a single date_day
+      using filters (not timeDimensions). Returns CA accumulated from year start
+      through that date. "CA as of November 1 each year." queryRewrite
+      recognises a single-date filter and does not inject is_latest_record.
+
+      Omitting all anchors on unanchored measures will overcount — but
+      queryRewrite prevents this automatically for REST API consumers.
+
+      For truancy, the same three patterns apply using the _year_end /
+      _month_end / _week_end truancy measures. Truancy criteria are regional:
+      Miami uses 15+ absences in a 90-day rolling window; NJ regions use
+      projected 50+ absences for the year.
 
     cubes:
       - join_path: student_attendance
@@ -666,11 +733,29 @@ views:
           - pct_ontime
           - count_truants
           - pct_truant
+          - count_truants_year_end
+          - pct_truant_year_end
+          - count_truants_month_end
+          - pct_truant_month_end
+          - count_truants_week_end
+          - pct_truant_week_end
           - count_absent_days
           - count_chronically_absent
           - pct_chronically_absent
           - pct_tier_1_2
           - pct_tier_3
+          - count_chronically_absent_year_end
+          - pct_chronically_absent_year_end
+          - pct_tier_1_2_year_end
+          - pct_tier_3_year_end
+          - count_chronically_absent_month_end
+          - pct_chronically_absent_month_end
+          - pct_tier_1_2_month_end
+          - pct_tier_3_month_end
+          - count_chronically_absent_week_end
+          - pct_chronically_absent_week_end
+          - pct_tier_1_2_week_end
+          - pct_tier_3_week_end
           - attendance_date
           - attendance_code
           - attendance_category
@@ -687,6 +772,8 @@ views:
           - is_truant
           - is_chronically_absent
           - is_latest_record
+          - is_month_end_record
+          - is_week_end_record
 
       - join_path: student_attendance.dates
         prefix: true
@@ -850,6 +937,8 @@ views:
         - name: Filter
           members:
             - is_latest_record
+            - is_month_end_record
+            - is_week_end_record
 
     access_policy:
       - group: detail-access
@@ -930,19 +1019,27 @@ views:
       student identifiers — demographic dimensions are aggregate breakdowns
       only.
 
-      Chronic absence query patterns — always use exactly one of the two: (1)
-      Year-end / year-over-year: filter is_latest_record = true and group by
-      academic_year. Returns the final CA snapshot per year. Use for "CA rate in
-      2023 vs 2024 vs 2025." (2) Point-in-time: filter to a single date_day.
-      Returns CA accumulated from the start of the year through that date. Use
-      for same-point-in-year comparisons like "CA as of November 1 each year."
-      Omitting both overcounts; combining both is valid only when the date is
-      today.
+      Chronic absence and truancy query patterns. For unanchored CA or truancy
+      measures, queryRewrite auto-injects the correct snapshot anchor — no
+      manual filter required in most BI tools. Named period-end measures
+      (_year_end, _month_end, _week_end) have anchors baked in and bypass
+      injection.
 
-      For point-in-time truancy or count-of-students snapshots, also filter to a
-      single date_day. Truancy criteria are regional: Miami uses 15+ absences in
-      a 90-day rolling window; NJ regions use projected 50+ absences for the
-      year.
+      (1) Year-end / year-over-year: use pct_chronically_absent_year_end grouped
+      by academic_year. "CA rate in 2023 vs 2024 vs 2025."
+
+      (2) Month-over-month trend: use pct_chronically_absent_month_end with
+      timeDimensions granularity "month". Requires granularity: "month" —
+      queryRewrite enforces this and throws if missing.
+
+      (3) Point-in-time (same date across years): filter to a single date_day
+      using filters (not timeDimensions). queryRewrite recognises a single-date
+      filter and does not inject is_latest_record.
+
+      For truancy, the same three patterns apply using the _year_end /
+      _month_end / _week_end truancy measures. Truancy criteria are regional:
+      Miami uses 15+ absences in a 90-day rolling window; NJ regions use
+      projected 50+ absences for the year.
 
     cubes:
       - join_path: student_attendance
@@ -953,16 +1050,36 @@ views:
           - pct_ontime
           - count_truants
           - pct_truant
+          - count_truants_year_end
+          - pct_truant_year_end
+          - count_truants_month_end
+          - pct_truant_month_end
+          - count_truants_week_end
+          - pct_truant_week_end
           - count_absent_days
           - count_chronically_absent
           - pct_chronically_absent
           - pct_tier_1_2
           - pct_tier_3
+          - count_chronically_absent_year_end
+          - pct_chronically_absent_year_end
+          - pct_tier_1_2_year_end
+          - pct_tier_3_year_end
+          - count_chronically_absent_month_end
+          - pct_chronically_absent_month_end
+          - pct_tier_1_2_month_end
+          - pct_tier_3_month_end
+          - count_chronically_absent_week_end
+          - pct_chronically_absent_week_end
+          - pct_tier_1_2_week_end
+          - pct_tier_3_week_end
           - attendance_category
           - ada_tier
           - is_truant
           - is_chronically_absent
           - is_latest_record
+          - is_month_end_record
+          - is_week_end_record
 
       - join_path: student_attendance.dates
         prefix: true
@@ -1083,6 +1200,8 @@ views:
         - name: Filter
           members:
             - is_latest_record
+            - is_month_end_record
+            - is_week_end_record
 
     access_policy:
       # No PII tier — view contains no direct student identifiers.

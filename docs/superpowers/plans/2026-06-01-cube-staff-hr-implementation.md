@@ -18,10 +18,11 @@ prefix on every cube name ensures automatic `isStaffMember` gate in
 (`cube-access-staff-benefits`); staff PII fields (names, contact, identifiers)
 by Pattern 1 (`cube-access-staff-pii`).
 
-**Prerequisite:** The Staff Core plan (`2026-04-14-staff-domain.md`) must be
-fully merged before this plan runs. `staff.yml` (the `staff` cube backed by
-`dim_staff`) and `staff_work_history.yml` (the period-intersection cube backed
-by `dim_staff_work_assignments` + SCD2 children) must already exist for the
+**Prerequisite:** The Staff Core plan
+(`2026-06-01-cube-staff-core-implementation.md`) must be fully merged before
+this plan runs. `staff.yml` (the `staff` cube backed by `dim_staff`) and
+`staff_work_history.yml` (the period-intersection cube backed by
+`dim_staff_work_assignments` + SCD2 children) must already exist for the
 `staff_attrition` cube's `staff` join and for the views' `staff_work_history`
 join paths. Verify before starting:
 
@@ -347,11 +348,9 @@ views:
             - staff_first_name
             - staff_last_name
             - staff_work_email
-            - staff_google_email
-            - staff_personal_email
-            - staff_personal_cell_phone
-            - staff_active_directory_username
-            - staff_staff_unique_id
+            # google_email, personal_email, personal_cell_phone,
+            # active_directory_username, staff_unique_id are not in this view's
+            # staff includes — no excludes needed for fields not exposed.
       - group: cube-access-staff-pii
         member_level:
           includes: "*"
@@ -437,446 +436,30 @@ git commit -m "feat(cube): add staff_attrition detail and summary views"
 
 ---
 
-## Task 4: `staff_compensation` cube
+## ~~Task 4: `staff_compensation` cube~~ — moved to staff-core plan
 
-Maps to `fct_work_assignment_compensation`. Grain: one row per
-`(work_assignment_key, effective_start_date_key)` — a Type 2 SCD on base
-remuneration. FKs: `work_assignment_key` → `dim_staff_work_assignments` (joined
-via `staff_work_history` path in views); `effective_start_date_key` /
-`effective_end_date_key` → `dim_dates` (role-playing dates).
-
-**SCD2 note:** Like `staff_work_history`, this cube has date-range rows. The
-cube joins `dates` via a BETWEEN on `effective_start_date_key` /
-`effective_end_date_key` with `relationship: one_to_many`. BI consumers must
-apply a date filter; without one each compensation version fans out to one row
-per day in its effective range.
-
-**Compensation fields** (`annual_wage`, `hourly_wage`, `daily_rate`,
-`period_rate`) are gated by Pattern 2 (`cube-access-staff-compensation`). All
-carry `meta: {pii: true}`.
-
-**No `staff_work_history` join is declared in the cube** — the cube FKs directly
-to `dim_staff_work_assignments` via `work_assignment_key`. Views reach staff
-context via `staff_compensation.staff_work_history.staff` (traversal through the
-work assignments cube).
-
-**Files:**
-
-- Create: `src/cube/model/cubes/staff/staff_compensation.yml`
-
-- [ ] **Step 1: Write the cube file**
-
-```yaml
-cubes:
-  - name: staff_compensation
-    public: false
-    sql_table: kipptaf_marts.fct_work_assignment_compensation
-
-    joins:
-      - name: dates
-        sql: >
-          {dates.date_day} BETWEEN CAST({CUBE}.effective_start_date_key AS
-          TIMESTAMP) AND CAST({CUBE}.effective_end_date_key AS TIMESTAMP)
-        relationship: one_to_many
-
-      - name: staff_work_history
-        sql: >
-          {staff_work_history.work_assignment_key} = {CUBE}.work_assignment_key
-        relationship: many_to_one
-
-    dimensions:
-      - name: work_assignment_compensation_key
-        sql: work_assignment_compensation_key
-        type: string
-        primary_key: true
-
-      - name: work_assignment_key
-        sql: work_assignment_key
-        type: string
-        public: true
-
-      - name: effective_start_date
-        sql: CAST(effective_start_date_key AS TIMESTAMP)
-        type: time
-        public: true
-
-      - name: effective_end_date
-        sql: CAST(effective_end_date_key AS TIMESTAMP)
-        type: time
-        public: true
-
-      - name: is_current
-        sql: is_current
-        type: boolean
-        public: true
-
-      - name: annual_wage
-        sql: annual_wage
-        type: number
-        public: true
-        meta:
-          pii: true
-
-      - name: hourly_wage
-        sql: hourly_wage
-        type: number
-        public: true
-        meta:
-          pii: true
-
-      - name: daily_rate
-        sql: daily_rate
-        type: number
-        public: true
-        meta:
-          pii: true
-
-      - name: period_rate
-        sql: period_rate
-        type: number
-        public: true
-        meta:
-          pii: true
-
-    measures:
-      - name: count_assignments
-        description: Distinct work assignments with a compensation record
-        sql: work_assignment_key
-        type: count_distinct
-        public: true
-
-      - name: avg_annual_wage
-        description: Average annual wage across compensation versions in scope
-        sql: annual_wage
-        type: avg
-        public: true
-
-      - name: avg_hourly_wage
-        description: >
-          Average hourly wage across compensation versions in scope. Null for
-          salaried assignments.
-        sql: hourly_wage
-        type: avg
-        public: true
-```
-
-- [ ] **Step 2: Verify YAML parses**
-
-```bash
-uv run python -c "
-import yaml
-from pathlib import Path
-data = yaml.safe_load(Path('src/cube/model/cubes/staff/staff_compensation.yml').read_text())
-cube = data['cubes'][0]
-print('name:', cube['name'])
-print('public:', cube['public'])
-print('joins:', [j['name'] for j in cube['joins']])
-print('dimensions:', [d['name'] for d in cube['dimensions']])
-print('measures:', [m['name'] for m in cube['measures']])
-"
-```
-
-Expected output:
-
-```text
-name: staff_compensation
-public: False
-joins: ['dates', 'staff_work_history']
-dimensions: ['work_assignment_compensation_key', 'work_assignment_key', 'effective_start_date', 'effective_end_date', 'is_current', 'annual_wage', 'hourly_wage', 'daily_rate', 'period_rate']
-measures: ['count_assignments', 'avg_annual_wage', 'avg_hourly_wage']
-```
-
-- [ ] **Step 3: Run schema tests**
-
-```bash
-uv run pytest tests/cube/test_cube_schema.py -v
-```
-
-Expected: all PASS.
-
-- [ ] **Step 4: Commit**
-
-```bash
-git add src/cube/model/cubes/staff/staff_compensation.yml
-git commit -m "feat(cube): add staff_compensation cube (fct_work_assignment_compensation)"
-```
+> **Architectural change:** `fct_work_assignment_compensation` has one row per
+> work assignment per compensation period (no `earning_item_id` in PK), making
+> it safe to add to `staff_work_history`'s GREATEST/LEAST period intersection as
+> another SCD2 LEFT JOIN child. Compensation fields (`annual_wage`,
+> `hourly_wage`, `daily_rate`, `period_rate`) are now dimensions on
+> `staff_work_history` itself, exposed through the existing `staff_detail` and
+> `staff_summary` views with `cube-access-staff-compensation` gating.
+>
+> **No `staff_compensation.yml` cube file is created.** All compensation work is
+> in `2026-06-01-cube-staff-core-implementation.md` Task 3.
 
 ---
 
-## Task 5: `staff_compensation` views
+## ~~Task 5: `staff_compensation` views~~ — superseded
 
-Pattern 2 applies — compensation fields excluded by default, unlocked by
-`cube-access-staff-compensation`. Detail view also applies Pattern 1 for staff
-PII fields reached via the `staff_work_history.staff` join path. Summary view
-exposes no individual identifiers and no compensation amounts — only counts and
-averages that aggregate over roles/departments.
-
-**SCD2 filter note:** Include `is_current` in both views so consumers can filter
-to current compensation without needing a date filter. Both views include
-`effective_start_date` so `cube-access-staff-compensation` holders can do
-point-in-time analysis.
-
-**Files:**
-
-- Create: `src/cube/model/views/staff/staff_compensation_detail.yml`
-- Create: `src/cube/model/views/staff/staff_compensation_summary.yml`
-
-- [ ] **Step 1: Write the detail view**
-
-```yaml
-views:
-  - name: staff_compensation_detail
-    description: >-
-      Row-level work assignment compensation. One row per work assignment x
-      compensation version (Type 2 SCD). Each version represents a distinct pay
-      rate set effective on effective_start_date. Filter is_current = true for
-      current pay rates; filter to a single effective_start_date for a point-in-
-      time snapshot. Without a date filter, each compensation version fans out
-      to one row per calendar day in its effective range.
-
-      Compensation amounts (annual_wage, hourly_wage, daily_rate, period_rate)
-      require cube-access-staff-compensation. Staff name and contact fields
-      require cube-access-staff-pii.
-
-    cubes:
-      - join_path: staff_compensation
-        includes:
-          - count_assignments
-          - avg_annual_wage
-          - avg_hourly_wage
-          - work_assignment_key
-          - effective_start_date
-          - effective_end_date
-          - is_current
-          - annual_wage
-          - hourly_wage
-          - daily_rate
-          - period_rate
-
-      - join_path: staff_compensation.dates
-        prefix: true
-        includes:
-          - date_day
-          - academic_year
-          - month_name
-
-      - join_path: staff_compensation.staff_work_history
-        prefix: true
-        includes:
-          - status_name
-          - position_title
-          - worker_type
-          - department_name
-          - business_unit_name
-          - is_primary_position
-
-      - join_path: staff_compensation.staff_work_history.staff
-        prefix: true
-        includes:
-          - staff_key
-          - full_name
-          - first_name
-          - last_name
-          - work_email
-          - gender_identity
-          - race
-          - is_hispanic
-
-    meta:
-      folders:
-        - name: Compensation
-          members:
-            - effective_start_date
-            - effective_end_date
-            - is_current
-            - annual_wage
-            - hourly_wage
-            - daily_rate
-            - period_rate
-        - name: Assignment
-          members:
-            - work_assignment_key
-            - staff_work_history_status_name
-            - staff_work_history_position_title
-            - staff_work_history_worker_type
-            - staff_work_history_department_name
-            - staff_work_history_business_unit_name
-            - staff_work_history_is_primary_position
-        - name: Staff
-          members:
-            - staff_staff_key
-            - staff_full_name
-            - staff_first_name
-            - staff_last_name
-            - staff_work_email
-            - staff_gender_identity
-            - staff_race
-            - staff_is_hispanic
-        - name: Date
-          members:
-            - dates_date_day
-            - dates_academic_year
-            - dates_month_name
-
-    access_policy:
-      - group: detail-access
-        member_level:
-          includes: "*"
-          excludes:
-            - annual_wage
-            - hourly_wage
-            - daily_rate
-            - period_rate
-            - staff_full_name
-            - staff_first_name
-            - staff_last_name
-            - staff_work_email
-            - staff_google_email
-            - staff_personal_email
-            - staff_personal_cell_phone
-            - staff_active_directory_username
-            - staff_staff_unique_id
-      - group: cube-access-staff-compensation
-        member_level:
-          includes: "*"
-          excludes:
-            - staff_full_name
-            - staff_first_name
-            - staff_last_name
-            - staff_work_email
-            - staff_google_email
-            - staff_personal_email
-            - staff_personal_cell_phone
-            - staff_active_directory_username
-            - staff_staff_unique_id
-      - group: cube-access-staff-pii
-        member_level:
-          includes: "*"
-```
-
-- [ ] **Step 2: Write the summary view**
-
-```yaml
-views:
-  - name: staff_compensation_summary
-    description: >-
-      Aggregated compensation for trend and equity analysis. No direct staff
-      identifiers. Filter is_current = true for current compensation; filter to
-      a single date for point-in-time. Without a date filter, each version fans
-      out per day.
-
-      avg_annual_wage and avg_hourly_wage require
-      cube-access-staff-compensation. Demographic breakdowns (gender_identity,
-      race, is_hispanic) are aggregate-safe.
-
-    cubes:
-      - join_path: staff_compensation
-        includes:
-          - count_assignments
-          - avg_annual_wage
-          - avg_hourly_wage
-          - is_current
-          - effective_start_date
-
-      - join_path: staff_compensation.dates
-        prefix: true
-        includes:
-          - date_day
-          - academic_year
-          - month_name
-
-      - join_path: staff_compensation.staff_work_history
-        prefix: true
-        includes:
-          - status_name
-          - position_title
-          - worker_type
-          - department_name
-          - business_unit_name
-
-      - join_path: staff_compensation.staff_work_history.staff
-        prefix: true
-        includes:
-          - gender_identity
-          - race
-          - is_hispanic
-
-    meta:
-      folders:
-        - name: Compensation
-          members:
-            - effective_start_date
-            - is_current
-        - name: Assignment
-          members:
-            - staff_work_history_status_name
-            - staff_work_history_position_title
-            - staff_work_history_worker_type
-            - staff_work_history_department_name
-            - staff_work_history_business_unit_name
-        - name: Staff Demographics
-          members:
-            - staff_gender_identity
-            - staff_race
-            - staff_is_hispanic
-        - name: Date
-          members:
-            - dates_date_day
-            - dates_academic_year
-            - dates_month_name
-
-    access_policy:
-      - group: summary-access
-        member_level:
-          includes: "*"
-          excludes:
-            - avg_annual_wage
-            - avg_hourly_wage
-      - group: cube-access-staff-compensation
-        member_level:
-          includes: "*"
-```
-
-- [ ] **Step 3: Verify both YAML files parse**
-
-```bash
-uv run python -c "
-import yaml
-from pathlib import Path
-
-for name in ['staff_compensation_detail', 'staff_compensation_summary']:
-    data = yaml.safe_load(Path(f'src/cube/model/views/staff/{name}.yml').read_text())
-    view = data['views'][0]
-    groups = [p['group'] for p in view['access_policy']]
-    paths = [c['join_path'] for c in view['cubes']]
-    print(f'{name}:')
-    print(f'  access groups = {groups}')
-    print(f'  join paths = {paths}')
-"
-```
-
-Expected output:
-
-```text
-staff_compensation_detail:
-  access groups = ['detail-access', 'cube-access-staff-compensation', 'cube-access-staff-pii']
-  join paths = ['staff_compensation', 'staff_compensation.dates', 'staff_compensation.staff_work_history', 'staff_compensation.staff_work_history.staff']
-staff_compensation_summary:
-  access groups = ['summary-access', 'cube-access-staff-compensation']
-  join paths = ['staff_compensation', 'staff_compensation.dates', 'staff_compensation.staff_work_history', 'staff_compensation.staff_work_history.staff']
-```
-
-- [ ] **Step 4: Commit**
-
-```bash
-git add src/cube/model/views/staff/staff_compensation_detail.yml \
-        src/cube/model/views/staff/staff_compensation_summary.yml
-git commit -m "feat(cube): add staff_compensation detail and summary views"
-```
+> Compensation fields are exposed through the core `staff_detail` /
+> `staff_summary` views. No standalone `staff_compensation_detail.yml` or
+> `staff_compensation_summary.yml` is created.
 
 ---
 
-## Task 6: `staff_benefits` cube
+## Task 6 (renumbered from original Task 6): `staff_benefits` cube
 
 Maps to `fct_staff_benefits_enrollments`. Grain: one row per
 `(employee_number, plan_type, plan_name, enrollment_start_date)`. FK:
@@ -1114,11 +697,9 @@ views:
             - staff_first_name
             - staff_last_name
             - staff_work_email
-            - staff_google_email
-            - staff_personal_email
-            - staff_personal_cell_phone
-            - staff_active_directory_username
-            - staff_staff_unique_id
+            # google_email, personal_email, personal_cell_phone,
+            # active_directory_username, staff_unique_id are not in this view's
+            # staff includes — no excludes needed for fields not exposed.
       - group: cube-access-staff-benefits
         member_level:
           includes: "*"
@@ -1127,11 +708,9 @@ views:
             - staff_first_name
             - staff_last_name
             - staff_work_email
-            - staff_google_email
-            - staff_personal_email
-            - staff_personal_cell_phone
-            - staff_active_directory_username
-            - staff_staff_unique_id
+            # google_email, personal_email, personal_cell_phone,
+            # active_directory_username, staff_unique_id are not in this view's
+            # staff includes — no excludes needed for fields not exposed.
       - group: cube-access-staff-pii
         member_level:
           includes: "*"
@@ -1279,9 +858,17 @@ cubes:
           TIMESTAMP) AND CAST({CUBE}.effective_end_date_key AS TIMESTAMP)
         relationship: one_to_many
 
+      # Point-in-time lookup: each earnings row (keyed by work_assignment_key +
+      # earning_item_id + effective_start_date_key) resolves to exactly one
+      # staff_work_history period. Multiple earnings on the same date (e.g.
+      # bonus + stipend) each independently hit the same work_history period —
+      # no fan-out. many_to_one is correct.
       - name: staff_work_history
         sql: >
           {staff_work_history.work_assignment_key} = {CUBE}.work_assignment_key
+          AND CAST({CUBE}.effective_start_date_key AS TIMESTAMP)
+            BETWEEN {staff_work_history.effective_start_date}
+            AND {staff_work_history.effective_end_date}
         relationship: many_to_one
 
     dimensions:
@@ -1344,9 +931,14 @@ cubes:
         type: count_distinct
         public: true
 
+      - name: sum_rate_amount
+        description: Total additional earnings paid in scope
+        sql: rate_amount
+        type: sum
+        public: true
+
       - name: avg_rate_amount
-        description:
-          Average additional earning rate amount across versions in scope
+        description: Average additional earning amount per record in scope
         sql: rate_amount
         type: avg
         public: true
@@ -1375,7 +967,7 @@ name: staff_additional_earnings
 public: False
 joins: ['dates', 'staff_work_history']
 dimensions: ['work_assignment_additional_earnings_key', 'work_assignment_key', 'effective_start_date', 'effective_end_date', 'is_current', 'earning_code', 'earning_description', 'rate_amount']
-measures: ['count_earning_lines', 'count_assignments', 'avg_rate_amount']
+measures: ['count_earning_lines', 'count_assignments', 'sum_rate_amount', 'avg_rate_amount']
 ```
 
 - [ ] **Step 3: Run schema tests**
@@ -1513,11 +1105,9 @@ views:
             - staff_first_name
             - staff_last_name
             - staff_work_email
-            - staff_google_email
-            - staff_personal_email
-            - staff_personal_cell_phone
-            - staff_active_directory_username
-            - staff_staff_unique_id
+            # google_email, personal_email, personal_cell_phone,
+            # active_directory_username, staff_unique_id are not in this view's
+            # staff includes — no excludes needed for fields not exposed.
       - group: cube-access-staff-compensation
         member_level:
           includes: "*"
@@ -1526,11 +1116,9 @@ views:
             - staff_first_name
             - staff_last_name
             - staff_work_email
-            - staff_google_email
-            - staff_personal_email
-            - staff_personal_cell_phone
-            - staff_active_directory_username
-            - staff_staff_unique_id
+            # google_email, personal_email, personal_cell_phone,
+            # active_directory_username, staff_unique_id are not in this view's
+            # staff includes — no excludes needed for fields not exposed.
       - group: cube-access-staff-pii
         member_level:
           includes: "*"
@@ -1983,11 +1571,9 @@ views:
             - staff_first_name
             - staff_last_name
             - staff_work_email
-            - staff_google_email
-            - staff_personal_email
-            - staff_personal_cell_phone
-            - staff_active_directory_username
-            - staff_staff_unique_id
+            # google_email, personal_email, personal_cell_phone,
+            # active_directory_username, staff_unique_id are not in this view's
+            # staff includes — no excludes needed for fields not exposed.
       - group: cube-access-staff-pii
         member_level:
           includes: "*"

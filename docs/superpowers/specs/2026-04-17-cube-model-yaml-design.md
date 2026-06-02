@@ -141,10 +141,13 @@ pass — do not defer it. Automation via #3727 (open) will eventually generate
 these flags and access policy annotations from the dbt manifest, but until that
 lands the tagging is manual.
 
-**Descriptions — first pass:** Do not hand-author `description:` fields on Cube
-dimensions. Metadata sync (#3764, live) populates them automatically from dbt
-column descriptions. Any description written in Cube YAML will be overwritten by
-sync.
+**Descriptions — first pass:** Metadata sync (#3764) is not yet live. Copy
+`description:` from the source dbt model's property YAML when writing each
+dimension. If the dbt column has no description in dbt, omit the field rather
+than inventing one. When sync ships it will populate missing descriptions and
+may overwrite hand-authored values — so exact wording matters less than
+coverage. Measure descriptions have no dbt equivalent and must always be
+hand-authored.
 
 **dbt `config.meta` example (source of truth):**
 
@@ -895,6 +898,108 @@ child model's property YAML before writing the SELECT list. The
 GREATEST/LEAST shown above since NULL from a LEFT JOIN would collapse the entire
 result in BigQuery. Add them to the GREATEST/LEAST only when the join is
 converted to INNER.
+
+### Pattern 4 — Snapshot cubes (cumulative daily-status flags)
+
+Some fact tables have one row per entity per day where key columns are
+**cumulative running statuses** — re-stamped on every row with the entity's
+status as of that day. A canonical example: `is_chronically_absent` on
+`fct_student_attendance_daily` is `true` on every day a student's YTD ADA is
+below 90%, not just the day they crossed the threshold. Without a point-in-time
+anchor, `count_distinct` on any such flag across a date range **overcounts** — a
+student flagged on 30 days is counted 30 times.
+
+**Two complementary mechanisms** guard against this class of error.
+
+#### `queryRewrite` auto-injection (`SNAPSHOT_CUBES` / `SNAPSHOT_MEASURE_STEMS`)
+
+`cube.js` maintains two arrays:
+
+- `SNAPSHOT_CUBES` — list of cube `name:` values that have cumulative
+  daily-status flags
+- `SNAPSHOT_MEASURE_STEMS` — list of measure name stems (e.g.
+  `"chronically_absent"`, `"truant"`) that are snapshot measures on those cubes
+
+For any unanchored query against a snapshot measure, `queryRewrite` injects the
+appropriate anchor automatically:
+
+| Query shape                              | Anchor injected                                     |
+| ---------------------------------------- | --------------------------------------------------- |
+| No granularity, or `granularity: "year"` | `is_latest_record = true`                           |
+| `granularity: "month"`                   | `is_month_end_record = true`                        |
+| `granularity: "week"`                    | `is_week_end_record = true`                         |
+| `granularity: "day"`                     | No injection — daily grain is already point-in-time |
+
+Named `_year_end` / `_month_end` / `_week_end` measures bypass injection —
+anchors are baked into their SQL `filters:`. Unsupported granularities (quarter)
+and named period-end measures used without matching granularity both throw a
+descriptive error.
+
+**Cube requirements:** Any cube registered in `SNAPSHOT_CUBES` must expose three
+boolean dimensions:
+
+- `is_latest_record` — `true` on the entity's final membership day (year-end
+  snapshot)
+- `is_month_end_record` — `true` on the last full membership day per calendar
+  month per enrollment
+- `is_week_end_record` — `true` on the last full membership day per calendar
+  week per enrollment
+
+These are dbt-computed window function columns on the underlying fact table.
+
+**To add a new domain with snapshot measures:**
+
+1. Add the cube `name:` to `SNAPSHOT_CUBES` in `cube.js`
+2. Add the snapshot measure name stems to `SNAPSHOT_MEASURE_STEMS`
+3. Ensure the underlying dbt fact table provides `is_latest_record`,
+   `is_month_end_record`, and `is_week_end_record`
+4. Add the three dimensions to the cube YAML
+5. Add named `_year_end`, `_month_end`, and `_week_end` measure variants with
+   their denominators anchored to the same period (see `attendance.yml` as the
+   reference implementation)
+
+#### Named period-end measures
+
+In addition to auto-injection, each snapshot measure family exposes three named
+variants that bypass injection entirely (the anchor is in the measure SQL
+`filters:`):
+
+```yaml
+- name: count_chronically_absent_year_end
+  # ... filters: is_latest_record = true
+- name: count_chronically_absent_month_end
+  # ... filters: is_month_end_record = true
+- name: count_chronically_absent_week_end
+  # ... filters: is_week_end_record = true
+```
+
+Named variants are the correct choice for BI tool usage where `timeDimensions`
+granularity is set to `"month"` or `"week"` — the BI tool controls the anchor
+implicitly through its granularity choice, and named measures make that coupling
+explicit.
+
+**Granularity enforcement:** `_month_end` measures throw an error if used
+without `timeDimensions` granularity `"month"`; `_week_end` requires `"week"`.
+Without this guard, an unanchored `count_chronically_absent_month_end` over a
+date range returns "CA at any month-end during the range" — a meaningful-looking
+but wrong number.
+
+#### Filter dimensions in views
+
+Both `is_month_end_record` and `is_week_end_record` must be included in view
+`includes:` lists (in addition to `is_latest_record`) and placed in a `Filter`
+folder in `meta.folders`. This enables direct use as explicit filters in
+contexts where `queryRewrite` injection is not active (e.g., SQL API, Superset
+native queries).
+
+#### Reference implementation
+
+`src/cube/model/cubes/attendance/attendance.yml` is the first domain that
+implements this pattern. It covers CA (`is_chronically_absent`, `pct_tier_1_2`,
+`pct_tier_3`) and truancy (`is_truant`) measure families. Consult it as the
+template when adding the pattern to a new domain.
+
+---
 
 ### Member visibility
 
