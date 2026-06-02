@@ -1,3 +1,8 @@
+> **Measures: not implemented in this pass.** Skip all `measures:` sections when
+> writing cube files — dimensions, joins, and `public: false` only. Remove
+> measure names from view `includes:` lists (keep dimension names only). Add
+> measures on demand as analysts request specific aggregations.
+
 # Cube Attendance Extension Implementation Plan
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use
@@ -212,13 +217,6 @@ cubes:
         type: string
         public: true
 
-    measures:
-      - name: count_interventions
-        description: Total number of intervention records.
-        sql: student_attendance_intervention_key
-        type: count_distinct
-        public: true
-
       - name: count_completed_interventions
         description: Interventions where a matching communication log was found.
         sql: student_attendance_intervention_key
@@ -384,13 +382,6 @@ cubes:
           including weekends and holidays.
         sql: streak_length_calendar
         type: number
-        public: true
-
-    measures:
-      - name: count_streaks
-        description: Total number of streak records.
-        sql: student_attendance_streak_key
-        type: count_distinct
         public: true
 
       - name: count_students_with_streaks

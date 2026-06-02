@@ -1,3 +1,8 @@
+> **Measures: not implemented in this pass.** Skip all `measures:` sections when
+> writing cube files — dimensions, joins, and `public: false` only. Remove
+> measure names from view `includes:` lists (keep dimension names only). Add
+> measures on demand as analysts request specific aggregations.
+
 # Cube Postsecondary (College) Domain Implementation Plan
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use
@@ -195,14 +200,6 @@ cubes:
       - name: is_withdrawn
         sql: is_withdrawn
         type: boolean
-        public: true
-
-    measures:
-      - name: count_college_enrollments
-        description:
-          Distinct student × college combinations with any NSC record.
-        sql: college_enrollment_key
-        type: count_distinct
         public: true
 
       - name: count_graduates

@@ -1,3 +1,8 @@
+> **Measures: not implemented in this pass.** Skip all `measures:` sections when
+> writing cube files — dimensions, joins, and `public: false` only. Remove
+> measure names from view `includes:` lists (keep dimension names only). Add
+> measures on demand as analysts request specific aggregations.
+
 # Cube Family Communications Implementation Plan
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use
@@ -246,13 +251,6 @@ cubes:
       - name: communicator_staff_key
         sql: communicator_staff_key
         type: string
-        public: true
-
-    measures:
-      - name: count_communications
-        description: Total number of family communication events logged.
-        sql: family_communication_key
-        type: count_distinct
         public: true
 
       - name: count_students_contacted

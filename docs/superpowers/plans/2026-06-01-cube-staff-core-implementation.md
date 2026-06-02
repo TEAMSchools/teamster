@@ -1,3 +1,8 @@
+> **Measures: not implemented in this pass.** Skip all `measures:` sections when
+> writing cube files — dimensions, joins, and `public: false` only. Remove
+> measure names from view `includes:` lists (keep dimension names only). Add
+> measures on demand as analysts request specific aggregations.
+
 # Cube Staff Core Implementation Plan
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use
@@ -475,15 +480,6 @@ cubes:
         public: true
         meta:
           pii: true
-
-    measures:
-      - name: count_headcount
-        description: Distinct active employees
-        sql: staff_key
-        type: count_distinct
-        public: true
-        filters:
-          - sql: "{CUBE}.status_name = 'Active'"
 
       - name: sum_fte
         description: Total FTE of active assignments

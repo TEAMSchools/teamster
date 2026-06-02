@@ -1,3 +1,8 @@
+> **Measures: not implemented in this pass.** Skip all `measures:` sections when
+> writing cube files — dimensions, joins, and `public: false` only. Remove
+> measure names from view `includes:` lists (keep dimension names only). Add
+> measures on demand as analysts request specific aggregations.
+
 # Cube Staff HR Implementation Plan
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use
@@ -182,13 +187,6 @@ cubes:
         public: true
         meta:
           pii: true
-
-    measures:
-      - name: count_staff
-        description: Distinct staff members in the attrition cohort
-        sql: staff_key
-        type: count_distinct
-        public: true
 
       - name: count_attrited
         description: Distinct staff members who attrited (is_attrition = true)
@@ -537,13 +535,6 @@ cubes:
       - name: enrollment_end_date
         sql: CAST(end_date AS TIMESTAMP)
         type: time
-        public: true
-
-    measures:
-      - name: count_enrolled
-        description: Distinct staff members with a benefits enrollment record
-        sql: staff_key
-        type: count_distinct
         public: true
 
       - name: count_enrollments
@@ -917,13 +908,6 @@ cubes:
         public: true
         meta:
           pii: true
-
-    measures:
-      - name: count_earning_lines
-        description: Total additional earnings records in scope
-        sql: work_assignment_additional_earnings_key
-        type: count
-        public: true
 
       - name: count_assignments
         description: Distinct work assignments with an additional earning record
@@ -1367,13 +1351,6 @@ cubes:
       - name: effective_end_date
         sql: CAST(effective_end_date AS TIMESTAMP)
         type: time
-        public: true
-
-    measures:
-      - name: count_positions
-        description: Total staffing position versions in scope
-        sql: staffing_position_key
-        type: count
         public: true
 
       - name: count_open_positions

@@ -1,3 +1,8 @@
+> **Measures: not implemented in this pass.** Skip all `measures:` sections when
+> writing cube files — dimensions, joins, and `public: false` only. Remove
+> measure names from view `includes:` lists (keep dimension names only). Add
+> measures on demand as analysts request specific aggregations.
+
 # Cube Surveys Domain Implementation Plan
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use
@@ -392,13 +397,6 @@ cubes:
         type: string
         public: true
 
-    measures:
-      - name: count_submissions
-        description: Count of distinct survey submissions.
-        sql: survey_submission_key
-        type: count_distinct
-        public: true
-
       - name: count_staff_respondents
         description: Count of distinct staff respondents.
         sql: staff_key
@@ -662,13 +660,6 @@ cubes:
         public: true
         meta:
           pii: true
-
-    measures:
-      - name: count_expected
-        description: Total number of expected survey respondents.
-        sql: survey_expectation_key
-        type: count_distinct
-        public: true
 
       - name: count_completed
         description: >-

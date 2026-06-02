@@ -1,3 +1,8 @@
+> **Measures: not implemented in this pass.** Skip all `measures:` sections when
+> writing cube files — dimensions, joins, and `public: false` only. Remove
+> measure names from view `includes:` lists (keep dimension names only). Add
+> measures on demand as analysts request specific aggregations.
+
 # Cube Staff Observations Implementation Plan
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use
@@ -335,13 +340,6 @@ cubes:
       - name: is_locked
         sql: is_locked
         type: boolean
-        public: true
-
-    measures:
-      - name: count_observations
-        description: Total number of observations.
-        sql: staff_observation_key
-        type: count_distinct
         public: true
 
       - name: _sum_score

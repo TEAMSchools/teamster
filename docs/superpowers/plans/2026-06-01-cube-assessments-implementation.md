@@ -1,3 +1,8 @@
+> **Measures: not implemented in this pass.** Skip all `measures:` sections when
+> writing cube files — dimensions, joins, and `public: false` only. Remove
+> measure names from view `includes:` lists (keep dimension names only). Add
+> measures on demand as analysts request specific aggregations.
+
 # Cube Assessments Domain Implementation Plan
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use
@@ -253,15 +258,6 @@ cubes:
         type: boolean
         public: true
 
-    measures:
-      - name: count_scores
-        description: >-
-          Total number of assessment score records (one per student x assessment
-          administration).
-        sql: assessment_score_key
-        type: count_distinct
-        public: true
-
       - name: count_mastery
         description: >-
           Number of score records where the student met the mastery or
@@ -457,15 +453,6 @@ cubes:
       - name: is_mastery
         sql: is_mastery
         type: boolean
-        public: true
-
-    measures:
-      - name: count_scores
-        description: >-
-          Total number of assessment score records (one per student x assessment
-          administration x score type).
-        sql: assessment_score_key
-        type: count_distinct
         public: true
 
       - name: count_mastery

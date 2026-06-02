@@ -1,3 +1,8 @@
+> **Measures: not implemented in this pass.** Skip all `measures:` sections when
+> writing cube files — dimensions, joins, and `public: false` only. Remove
+> measure names from view `includes:` lists (keep dimension names only). Add
+> measures on demand as analysts request specific aggregations.
+
 # Cube Gradebook Domain Implementation Plan
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use
@@ -303,13 +308,6 @@ cubes:
         type: boolean
         public: true
 
-    measures:
-      - name: count_students
-        description: Distinct students with a term grade record
-        sql: student_enrollment_key
-        type: count_distinct
-        public: true
-
       - name: _sum_percent_grade
         sql: percent_grade
         type: sum
@@ -565,13 +563,6 @@ cubes:
       - name: is_current
         sql: is_current
         type: boolean
-        public: true
-
-    measures:
-      - name: count_students
-        description: Distinct students with a category grade record
-        sql: student_enrollment_key
-        type: count_distinct
         public: true
 
       - name: _sum_percent_grade
@@ -848,13 +839,6 @@ cubes:
         type: boolean
         public: true
 
-    measures:
-      - name: count_students
-        description: Distinct students with at least one assignment record
-        sql: student_enrollment_key
-        type: count_distinct
-        public: true
-
       - name: count_assignments
         description: Total expected assignment records
         sql: grades_assignment_key
@@ -1058,13 +1042,6 @@ cubes:
       - name: is_current
         sql: is_current
         type: boolean
-        public: true
-
-    measures:
-      - name: count_students
-        description: Distinct students with a GPA snapshot record
-        sql: student_enrollment_key
-        type: count_distinct
         public: true
 
       - name: _sum_gpa_ytd
