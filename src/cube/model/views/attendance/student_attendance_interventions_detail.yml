@@ -1,0 +1,121 @@
+views:
+  - name: student_attendance_interventions_detail
+    description: >-
+      Row-level student attendance intervention records. One row per student x
+      intervention type x academic year. Tracks whether each required
+      communication intervention was completed based on the student's unexcused
+      absence count exceeding the regional threshold. Intervention types are
+      inlined — family_communication_reason identifies the specific threshold
+      bucket. intervention_date is null when no matching communication log
+      exists (has_communication_log = false). Filter by absence_threshold to
+      focus on a specific intervention tier.
+
+    cubes:
+      - join_path: student_attendance_interventions
+        includes:
+          - intervention_date
+          - academic_year
+          - absence_threshold
+          - days_absent_unexcused
+          - has_communication_log
+          - is_chronic_absence_exception
+          - family_communication_reason
+
+      - join_path: student_attendance_interventions.dates
+        prefix: true
+        includes:
+          - date_day
+          - month_number
+          - month_name
+          - academic_year
+
+      - join_path: student_attendance_interventions.student_enrollments.locations
+        prefix: true
+        includes:
+          - location_name
+          - abbreviation
+          - grade_band
+          - campus
+          - city
+
+      - join_path: >-
+          student_attendance_interventions.student_enrollments.locations.regions
+        prefix: true
+        includes:
+          - region_name
+          - state
+
+      - join_path: student_attendance_interventions.student_enrollments
+        prefix: true
+        includes:
+          - student_enrollment_key
+          - grade_level
+          - graduation_year
+
+      - join_path: >-
+          student_attendance_interventions.student_enrollments.students
+        prefix: true
+        includes:
+          - student_key
+          - full_name
+          - birth_date
+          - lea_student_identifier
+          - state_student_identifier
+          - gender_identity
+          - race
+          - enrollment_status
+
+    meta:
+      folders:
+        - name: Intervention
+          members:
+            - intervention_date
+            - academic_year
+            - absence_threshold
+            - days_absent_unexcused
+            - has_communication_log
+            - is_chronic_absence_exception
+            - family_communication_reason
+        - name: Date
+          members:
+            - dates_date_day
+            - dates_month_number
+            - dates_month_name
+            - dates_academic_year
+        - name: Location
+          members:
+            - locations_location_name
+            - locations_abbreviation
+            - locations_grade_band
+            - locations_campus
+            - locations_city
+            - regions_region_name
+            - regions_state
+        - name: Student
+          members:
+            - students_student_key
+            - students_full_name
+            - students_birth_date
+            - students_lea_student_identifier
+            - students_state_student_identifier
+            - students_gender_identity
+            - students_race
+            - students_enrollment_status
+        - name: Enrollment
+          members:
+            - student_enrollments_student_enrollment_key
+            - student_enrollments_grade_level
+            - student_enrollments_graduation_year
+
+    access_policy:
+      - group: detail-access
+        member_level:
+          includes: "*"
+          excludes:
+            - students_full_name
+            - students_birth_date
+            - students_lea_student_identifier
+            - students_state_student_identifier
+      - group: cube-access-student-pii
+        member_level:
+          includes: "*"

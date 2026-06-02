@@ -1,0 +1,93 @@
+views:
+  - name: student_attendance_interventions_summary
+    description: >-
+      Aggregated student attendance intervention records. No individual student
+      identifiers. Filter by has_communication_log and group by
+      family_communication_reason or absence_threshold to analyze completion by
+      intervention type.
+
+    cubes:
+      - join_path: student_attendance_interventions
+        includes:
+          - academic_year
+          - absence_threshold
+          - has_communication_log
+          - is_chronic_absence_exception
+          - family_communication_reason
+
+      - join_path: student_attendance_interventions.dates
+        prefix: true
+        includes:
+          - date_day
+          - month_number
+          - month_name
+          - academic_year
+
+      - join_path: student_attendance_interventions.student_enrollments.locations
+        prefix: true
+        includes:
+          - location_name
+          - abbreviation
+          - grade_band
+          - campus
+          - city
+
+      - join_path: >-
+          student_attendance_interventions.student_enrollments.locations.regions
+        prefix: true
+        includes:
+          - region_name
+          - state
+
+      - join_path: student_attendance_interventions.student_enrollments
+        prefix: true
+        includes:
+          - grade_level
+          - graduation_year
+
+      - join_path: >-
+          student_attendance_interventions.student_enrollments.students
+        prefix: true
+        includes:
+          - gender_identity
+          - race
+
+    meta:
+      folders:
+        - name: Intervention
+          members:
+            - academic_year
+            - absence_threshold
+            - has_communication_log
+            - is_chronic_absence_exception
+            - family_communication_reason
+        - name: Date
+          members:
+            - dates_date_day
+            - dates_month_number
+            - dates_month_name
+            - dates_academic_year
+        - name: Location
+          members:
+            - locations_location_name
+            - locations_abbreviation
+            - locations_grade_band
+            - locations_campus
+            - locations_city
+            - regions_region_name
+            - regions_state
+        - name: Student
+          members:
+            - students_gender_identity
+            - students_race
+        - name: Enrollment
+          members:
+            - student_enrollments_grade_level
+            - student_enrollments_graduation_year
+
+    access_policy:
+      # No direct student identifiers — demographic dimensions are aggregate
+      # breakdowns only.
+      - group: summary-access
+        member_level:
+          includes: "*"

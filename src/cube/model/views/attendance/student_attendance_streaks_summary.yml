@@ -1,0 +1,86 @@
+views:
+  - name: student_attendance_streaks_summary
+    description: >-
+      Aggregated student attendance streak analysis. No individual student
+      identifiers. Date filters anchor on streak_start_date (joined to dates
+      cube). Filter by attendance_code to focus on a specific streak type (e.g.,
+      absences only).
+
+    cubes:
+      - join_path: student_attendance_streaks
+        includes:
+          - academic_year
+          - attendance_code
+
+      - join_path: student_attendance_streaks.dates
+        prefix: true
+        includes:
+          - date_day
+          - month_number
+          - month_name
+          - academic_year
+
+      - join_path: student_attendance_streaks.student_enrollments.locations
+        prefix: true
+        includes:
+          - location_name
+          - abbreviation
+          - grade_band
+          - campus
+          - city
+
+      - join_path: >-
+          student_attendance_streaks.student_enrollments.locations.regions
+        prefix: true
+        includes:
+          - region_name
+          - state
+
+      - join_path: student_attendance_streaks.student_enrollments
+        prefix: true
+        includes:
+          - grade_level
+          - graduation_year
+
+      - join_path: student_attendance_streaks.student_enrollments.students
+        prefix: true
+        includes:
+          - gender_identity
+          - race
+
+    meta:
+      folders:
+        - name: Streak
+          members:
+            - academic_year
+            - attendance_code
+        - name: Date
+          members:
+            - dates_date_day
+            - dates_month_number
+            - dates_month_name
+            - dates_academic_year
+        - name: Location
+          members:
+            - locations_location_name
+            - locations_abbreviation
+            - locations_grade_band
+            - locations_campus
+            - locations_city
+            - regions_region_name
+            - regions_state
+        - name: Student
+          members:
+            - students_gender_identity
+            - students_race
+        - name: Enrollment
+          members:
+            - student_enrollments_grade_level
+            - student_enrollments_graduation_year
+
+    access_policy:
+      # No direct student identifiers — demographic dimensions are aggregate
+      # breakdowns only.
+      - group: summary-access
+        member_level:
+          includes: "*"

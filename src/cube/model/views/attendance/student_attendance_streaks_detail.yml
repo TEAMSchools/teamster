@@ -1,0 +1,117 @@
+views:
+  - name: student_attendance_streaks_detail
+    description: >-
+      Row-level student attendance streak records. One row per student x
+      consecutive run of the same attendance code. streak_start_date anchors the
+      Cube time dimension — apply date filters here to slice by streak start.
+      streak_end_date is a raw dimension (not joined to dates). attendance_code
+      is the code repeated across all days of the streak.
+      streak_length_membership counts school days; streak_length_calendar counts
+      calendar days including weekends and holidays.
+
+    cubes:
+      - join_path: student_attendance_streaks
+        includes:
+          - streak_start_date
+          - streak_end_date
+          - academic_year
+          - attendance_code
+          - streak_length_membership
+          - streak_length_calendar
+
+      - join_path: student_attendance_streaks.dates
+        prefix: true
+        includes:
+          - date_day
+          - month_number
+          - month_name
+          - academic_year
+
+      - join_path: student_attendance_streaks.student_enrollments.locations
+        prefix: true
+        includes:
+          - location_name
+          - abbreviation
+          - grade_band
+          - campus
+          - city
+
+      - join_path: >-
+          student_attendance_streaks.student_enrollments.locations.regions
+        prefix: true
+        includes:
+          - region_name
+          - state
+
+      - join_path: student_attendance_streaks.student_enrollments
+        prefix: true
+        includes:
+          - student_enrollment_key
+          - grade_level
+          - graduation_year
+
+      - join_path: student_attendance_streaks.student_enrollments.students
+        prefix: true
+        includes:
+          - student_key
+          - full_name
+          - birth_date
+          - lea_student_identifier
+          - state_student_identifier
+          - gender_identity
+          - race
+          - enrollment_status
+
+    meta:
+      folders:
+        - name: Streak
+          members:
+            - streak_start_date
+            - streak_end_date
+            - academic_year
+            - attendance_code
+            - streak_length_membership
+            - streak_length_calendar
+        - name: Date
+          members:
+            - dates_date_day
+            - dates_month_number
+            - dates_month_name
+            - dates_academic_year
+        - name: Location
+          members:
+            - locations_location_name
+            - locations_abbreviation
+            - locations_grade_band
+            - locations_campus
+            - locations_city
+            - regions_region_name
+            - regions_state
+        - name: Student
+          members:
+            - students_student_key
+            - students_full_name
+            - students_birth_date
+            - students_lea_student_identifier
+            - students_state_student_identifier
+            - students_gender_identity
+            - students_race
+            - students_enrollment_status
+        - name: Enrollment
+          members:
+            - student_enrollments_student_enrollment_key
+            - student_enrollments_grade_level
+            - student_enrollments_graduation_year
+
+    access_policy:
+      - group: detail-access
+        member_level:
+          includes: "*"
+          excludes:
+            - students_full_name
+            - students_birth_date
+            - students_lea_student_identifier
+            - students_state_student_identifier
+      - group: cube-access-student-pii
+        member_level:
+          includes: "*"
