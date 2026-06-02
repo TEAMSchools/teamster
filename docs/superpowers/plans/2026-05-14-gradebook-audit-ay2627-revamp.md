@@ -26,23 +26,23 @@ MCP for spot-checks, `uv run dbt` CLI, branch
 
 ## File map
 
-| File                                                                   | Task(s)      | Change type                         |
-| ---------------------------------------------------------------------- | ------------ | ----------------------------------- |
-| `stg_google_sheets__gradebook_flags` (Google Sheet, not repo)          | 1            | Sheet edits                         |
-| `stg_google_sheets__gradebook_expectations_assignments` (Google Sheet) | 2            | Sheet edits                         |
-| `int_tableau__gradebook_audit_teacher_scaffold.sql`                    | 3, 6         | SQL                                 |
-| `int_tableau__gradebook_audit_student_scaffold.sql`                    | 3            | SQL                                 |
-| `int_tableau__gradebook_audit_assignments_teacher.sql`                 | 3, 6         | SQL                                 |
-| `int_tableau__gradebook_audit_assignments_student.sql`                 | 3            | SQL                                 |
-| `int_tableau__gradebook_audit_categories_teacher.sql`                  | 3, 4, 6      | SQL                                 |
-| `int_tableau__gradebook_audit_flags.sql`                               | 3, 6         | SQL                                 |
-| `rpt_tableau__gradebook_audit.sql`                                     | 3, 6         | SQL                                 |
-| `int_extracts__student_enrollments.sql`                                | 3            | Add boolean column                  |
-| `rpt_tableau__gradebook_gpa.sql`                                       | 3            | Add boolean, remove Paterson filter |
-| `stg_google_sheets__gradebook_exceptions.sql`                          | 6            | Delete                              |
-| `stg_google_sheets__gradebook_exceptions.yml`                          | 6            | Delete                              |
-| `sources-external.yml`                                                 | 6            | Remove source entry                 |
-| YAML properties for each modified model                                | per SQL task | Column removals                     |
+| File                                                          | Task(s)      | Change type                         |
+| ------------------------------------------------------------- | ------------ | ----------------------------------- |
+| `stg_google_sheets__gradebook_flags` (Google Sheet, not repo) | 1            | Sheet edits                         |
+| `int_powerschool__u_expectations[_unpivot].sql` (new model)   | 2            | Create                              |
+| `int_tableau__gradebook_audit_teacher_scaffold.sql`           | 2, 3, 6      | SQL                                 |
+| `int_tableau__gradebook_audit_student_scaffold.sql`           | 2, 3         | SQL                                 |
+| `int_tableau__gradebook_audit_assignments_teacher.sql`        | 3, 6         | SQL                                 |
+| `int_tableau__gradebook_audit_assignments_student.sql`        | 3            | SQL                                 |
+| `int_tableau__gradebook_audit_categories_teacher.sql`         | 3, 4, 6      | SQL                                 |
+| `int_tableau__gradebook_audit_flags.sql`                      | 3, 6         | SQL                                 |
+| `rpt_tableau__gradebook_audit.sql`                            | 3, 6         | SQL                                 |
+| `int_extracts__student_enrollments.sql`                       | 3            | Add boolean column                  |
+| `rpt_tableau__gradebook_gpa.sql`                              | 3            | Add boolean, remove Paterson filter |
+| `stg_google_sheets__gradebook_exceptions.sql`                 | 6            | Delete                              |
+| `stg_google_sheets__gradebook_exceptions.yml`                 | 6            | Delete                              |
+| `sources-external.yml`                                        | 6            | Remove source entry                 |
+| YAML properties for each modified model                       | per SQL task | Column removals                     |
 
 **SQL paths:**
 `src/dbt/kipptaf/models/extracts/tableau/intermediate/<model>.sql`
@@ -164,81 +164,142 @@ being removed entirely — do not create any 2026 Miami rows.
 
 ---
 
-## Task 2: Google Sheets — expectations_assignments annual rollover
+## Task 2: SQL — Create PS-native expectations model and update scaffolds
 
-All changes are in the `stg_google_sheets__gradebook_expectations_assignments`
-Google Sheet. No SQL changes. This defines how many assignments per category per
-week are expected for each region and school level.
+`stg_google_sheets__gradebook_expectations_assignments` is being deprecated and
+replaced by a PS-native intermediate model sourced from
+`stg_powerschool__u_expectations` (the U_EXPECTATIONS PowerSchool plugin). This
+task creates that model for Newark (the only region with PS plugin data today)
+and updates both scaffolds to join it instead of the Google Sheet.
 
-**Files:** Google Sheets only (external — not in git)
+**Newark only for now.** Camden is blocked on PR #4077 (Bini's integration work)
+landing in prod. Paterson is blocked on PS instance access. Until each region's
+PS data is available, the INNER JOIN in the teacher scaffold will find no
+matching rows for that region — category-level audit rows (assignment count
+flags, percent-graded flags) will be silent for Camden and Paterson until their
+data lands. EOQ and student-level flags in Task 1 are unaffected.
 
-- [ ] **Step 2.1: Roll over Newark rows (all levels)**
+**Naming convention note:** If the INT model unpivots the wide-format category
+counts (`cnt_w/h/f/s`) to long format inside the model itself, it must be named
+`int_powerschool__u_expectations_unpivot` (Charlie's convention: model name must
+include `unpivot` when the model performs an UNPIVOT). If the unpivot is
+deferred to the scaffold instead, the plain name
+`int_powerschool__u_expectations` is correct. Decide at implementation time
+based on which approach produces cleaner scaffold code — and rename accordingly.
 
-  Copy all Newark rows where `academic_year = 2025`. Paste as new rows. Set
-  `academic_year = 2026`.
+**Files:**
 
-- [ ] **Step 2.2: Roll over Camden rows (all levels)**
+- Create:
+  `src/dbt/kipptaf/models/powerschool/intermediate/int_powerschool__u_expectations[_unpivot].sql`
+  and its YAML
+- Modify:
+  `src/dbt/kipptaf/models/extracts/tableau/intermediate/int_tableau__gradebook_audit_teacher_scaffold.sql`
+- Modify:
+  `src/dbt/kipptaf/models/extracts/tableau/intermediate/int_tableau__gradebook_audit_student_scaffold.sql`
 
-  Same process for Camden. Copy Camden `academic_year = 2025` rows, paste, set
-  `academic_year = 2026`.
+- [ ] **Step 2.1: Create the INT expectations model**
 
-- [ ] **Step 2.3: Add Paterson MS rows**
+  Create
+  `src/dbt/kipptaf/models/powerschool/intermediate/int_powerschool__u_expectations[_unpivot].sql`.
 
-  Copy Newark MS rows for `academic_year = 2026` (just created in step 2.1).
-  Paste as new rows. Change `region` to `Paterson`.
+  The model must produce one row per
+  `region / school_level / academic_year / quarter / week_number / assignment_category_code`
+  to match the grain the teacher scaffold joins on. Source columns from
+  `stg_powerschool__u_expectations`: `school_level`, `quarter`, `week_number`,
+  `cnt_w`, `cnt_h`, `cnt_f`, `cnt_s`. Region comes from joining
+  `int_powerschool__calendar_week` (same pattern as
+  `int_powerschool__u_expectations_qtd` on the pending PR). Academic year is
+  injected via `{{ var("current_academic_year") }}`.
 
-  > ⚠️ **Blocked on PS instance access.** Paterson's PowerSchool instance does
-  > not yet have the U_EXPECTATIONS plugin deployed. Once deployed, migrate
-  > Paterson to the PS-native source following the same pattern as PR #4077
-  > (Camden integration).
+  The output columns must match the existing scaffold join key exactly:
 
-- [ ] **Step 2.4: Paterson ES — no rows needed**
+  | Column                     | Source / derivation                                                    |
+  | -------------------------- | ---------------------------------------------------------------------- |
+  | `academic_year`            | `{{ var("current_academic_year") }}`                                   |
+  | `region`                   | from `int_powerschool__calendar_week`                                  |
+  | `school_level`             | from `stg_powerschool__u_expectations`                                 |
+  | `quarter`                  | from `stg_powerschool__u_expectations`                                 |
+  | `week_number`              | from `stg_powerschool__u_expectations`                                 |
+  | `assignment_category_code` | `W`, `H`, `F`, or `S` (from unpivot of `cnt_*`)                        |
+  | `expectation`              | the count value for that category and week                             |
+  | `assignment_category_term` | `concat(code, right(quarter, 1))` e.g. `W3`                            |
+  | `assignment_category_name` | `Work Habits` / `Homework` / `Formative Mastery` / `Summative Mastery` |
+  | `notes`                    | `null` (not available in PS plugin source)                             |
 
-  Paterson ES is EOQ comments only and does not track assignment counts. Do not
-  add rows.
+  Whether the UNPIVOT happens inside this model or in the scaffold is a decision
+  to make at implementation time (see naming note above).
 
-- [ ] **Step 2.5: Do not add Miami rows**
+- [ ] **Step 2.2: Create the YAML for the new INT model**
 
-  Miami is being removed. Do not create any `academic_year = 2026` rows.
+  Create the properties file at
+  `src/dbt/kipptaf/models/powerschool/intermediate/properties/int_powerschool__u_expectations[_unpivot].yml`.
+  Add a model description and a column entry for each output column. Add a
+  `dbt_utils.unique_combination_of_columns` test on
+  `(region, school_level, academic_year, quarter, week_number, assignment_category_code)`.
 
-- [ ] **Step 2.6: Stage the external table**
+- [ ] **Step 2.3: Update `int_tableau__gradebook_audit_teacher_scaffold.sql`**
 
-  ```bash
-  uv run dbt run-operation stage_external_sources \
-    --args '{"select": "google_sheets.src_google_sheets__gradebook_expectations_assignments"}' \
-    --project-dir src/dbt/kipptaf
+  In the `final` CTE's `teacher_category_scaffold` branch, change the INNER JOIN
+  from:
+
+  ```sql
+  inner join
+      {{ ref("stg_google_sheets__gradebook_expectations_assignments") }} as ge
+      on tw.region = ge.region
+      and tw.school_level = ge.school_level
+      and tw.academic_year = ge.academic_year
+      and tw.quarter = ge.quarter
+      and tw.week_number_quarter = ge.week_number
   ```
 
-- [ ] **Step 2.7: Rebuild staging and verify**
+  to:
+
+  ```sql
+  inner join
+      {{ ref("int_powerschool__u_expectations[_unpivot]") }} as ge
+      on tw.region = ge.region
+      and tw.school_level = ge.school_level
+      and tw.academic_year = ge.academic_year
+      and tw.quarter = ge.quarter
+      and tw.week_number_quarter = ge.week_number
+  ```
+
+  _(Replace `[_unpivot]` with the actual model name decided in step 2.1.)_
+
+- [ ] **Step 2.4: Update `int_tableau__gradebook_audit_student_scaffold.sql`**
+
+  In the `student_category_scaffold` branch, change the same INNER JOIN from
+  `stg_google_sheets__gradebook_expectations_assignments` to the new INT model.
+  The join key is identical.
+
+- [ ] **Step 2.5: Build and verify**
 
   ```bash
   uv run dbt build \
-    --select stg_google_sheets__gradebook_expectations_assignments \
-    --project-dir src/dbt/kipptaf
+    --select int_powerschool__u_expectations[_unpivot]+ \
+    --project-dir src/dbt/kipptaf \
+    --defer \
+    --state src/dbt/kipptaf/target/prod
   ```
 
-  Verify via BigQuery MCP:
+  Verify Newark has category-level rows; Camden and Paterson do not (expected
+  until their PS data is available):
 
   ```sql
-  SELECT DISTINCT region, school_level, academic_year
-  FROM `teamster-332318.dbt_grangel_tableau.stg_google_sheets__gradebook_expectations_assignments`
+  SELECT DISTINCT region, school_level
+  FROM `teamster-332318.dbt_grangel_tableau.rpt_tableau__gradebook_audit`
   WHERE academic_year = 2026
+    AND cte_grouping = 'class_category'
   ORDER BY 1, 2
   ```
 
-  Expected: Camden, Newark, Paterson MS present for 2026. No Miami, no Paterson
-  ES.
+  Expected: Newark only. Camden and Paterson absent for category-level rows.
 
-- [ ] **Step 2.8: Build full audit pipeline and verify**
-
-  Run the full build command from the file map header. Confirm Paterson MS
-  sections appear in the output with category-level rows.
-
-- [ ] **Step 2.9: Commit**
+- [ ] **Step 2.6: Commit**
 
   ```bash
   git add -u
-  git commit -m "feat(dbt): gradebook expectations rollover to AY 2026-2027"
+  git commit -m "feat(dbt): replace Google Sheet expectations with PS-native INT model (Newark)"
   ```
 
 ---
