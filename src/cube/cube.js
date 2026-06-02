@@ -20,20 +20,43 @@ function nextMidnightEastern() {
   return now.getTime() + (24 * 60 * 60 * 1000 - msElapsedToday);
 }
 
-// STUDENT_CUBES: cubes that require cube-access-student-data.
-// Add cube name: here when adding a new student-data cube.
-const STUDENT_CUBES = [
-  "attendance",
-  "dim_student_ell_status",
-  "dim_student_iep_status",
-  "dim_student_meal_eligibility_status",
-];
+// Naming convention drives security — no static lists to maintain.
+// student cubes: name starts with "student" (students, student_attendance, etc.)
+// staff cubes:   name starts with "staff"   (staff, staff_attrition, etc.)
+// conformed dims: bare business name (dates, locations, regions, terms, school_calendars)
+function isStudentMember(m) {
+  return m.startsWith("student");
+}
+function isStaffMember(m) {
+  return m.startsWith("staff");
+}
 
-const STAFF_CUBES = [
-  "dim_staff",
-  "fct_staff_attrition",
-  "fct_staff_observations",
-];
+// Emit synthetic access groups so view access_policy blocks can gate on
+// detail vs summary independently of the specific school/region group.
+// These are NOT cached — derived fresh from the cached real groups on each
+// contextToGroups call so the cache stays clean for queryRewrite lookups.
+//
+// Tier is derived from the SAME effective scope group that queryRewrite uses
+// (network > region > school). A lower-priority detail group cannot escalate
+// access beyond what the effective scope grants.
+function withSyntheticGroups(cubeGroups) {
+  const result = [...cubeGroups];
+  const effectiveScope =
+    cubeGroups.find((g) => g.startsWith("cube-network-")) ??
+    cubeGroups.find((g) =>
+      /^cube-region-[a-z0-9][a-z0-9-]*-(?:detail|summary)$/.test(g),
+    ) ??
+    cubeGroups.find((g) =>
+      /^cube-school-[a-z0-9][a-z0-9-]*-(?:detail|summary)$/.test(g),
+    );
+  if (effectiveScope?.endsWith("-detail")) result.push("detail-access");
+  if (
+    effectiveScope?.endsWith("-detail") ||
+    effectiveScope?.endsWith("-summary")
+  )
+    result.push("summary-access");
+  return result;
+}
 
 // Convention for snapshot cubes: cumulative daily flags that overcount without
 // a point-in-time anchor. All snapshot cubes expose these three dimensions.
@@ -86,7 +109,7 @@ module.exports = {
         const map = JSON.parse(process.env.CUBE_GROUP_MAP);
         const groups = (map[email] ?? []).filter((g) => g.startsWith("cube-"));
         groupCache.set(email, { groups, expiresAt: nextMidnightEastern() });
-        return groups;
+        return withSyntheticGroups(groups);
       } catch (err) {
         console.error("CUBE_GROUP_MAP is not valid JSON:", err.message);
         return [];
@@ -95,7 +118,8 @@ module.exports = {
 
     // Check cache
     const cached = groupCache.get(email);
-    if (cached && cached.expiresAt > Date.now()) return cached.groups;
+    if (cached && cached.expiresAt > Date.now())
+      return withSyntheticGroups(cached.groups);
 
     // Call Admin Directory API.
     // GOOGLE_DIRECTORY_SA_KEY: base64-encoded service account JSON with
@@ -132,7 +156,7 @@ module.exports = {
         groups: cubeGroups,
         expiresAt: nextMidnightEastern(),
       });
-      return cubeGroups;
+      return withSyntheticGroups(cubeGroups);
     } catch (err) {
       console.error(`contextToGroups failed for ${email}:`, err);
       return []; // default deny on API failure
@@ -149,12 +173,8 @@ module.exports = {
     if (!groups.includes("cube-access-student-data")) {
       query = {
         ...query,
-        dimensions: (query.dimensions ?? []).filter(
-          (d) => !STUDENT_CUBES.some((c) => d.startsWith(c)),
-        ),
-        measures: (query.measures ?? []).filter(
-          (m) => !STUDENT_CUBES.some((c) => m.startsWith(c)),
-        ),
+        dimensions: (query.dimensions ?? []).filter((d) => !isStudentMember(d)),
+        measures: (query.measures ?? []).filter((m) => !isStudentMember(m)),
       };
     }
 
@@ -176,7 +196,7 @@ module.exports = {
         .replace(/^cube-region-/, "")
         .replace(/-(?:detail|summary)$/, "");
       locationFilter = {
-        member: "dim_locations.region_key",
+        member: "locations.region_key",
         operator: "equals",
         values: [region],
       };
@@ -185,7 +205,7 @@ module.exports = {
         .replace(/^cube-school-/, "")
         .replace(/-(?:detail|summary)$/, "");
       locationFilter = {
-        member: "dim_locations.abbreviation",
+        member: "locations.abbreviation",
         operator: "equals",
         values: [slug],
       };
@@ -195,7 +215,7 @@ module.exports = {
         ...query,
         filters: [
           {
-            member: "dim_locations.abbreviation",
+            member: "locations.abbreviation",
             operator: "equals",
             values: [],
           },
@@ -220,7 +240,7 @@ module.exports = {
       if (!measures.length) continue;
 
       const dateDayTd = (query.timeDimensions ?? []).find((td) =>
-        td.dimension?.endsWith("dim_dates_date_day"),
+        td.dimension?.endsWith("dates_date_day"),
       );
       const granularity = dateDayTd?.granularity ?? null;
 
@@ -275,14 +295,12 @@ module.exports = {
         ) ||
         filters.some(
           (f) =>
-            f.member?.endsWith("dim_dates_date_day") &&
+            f.member?.endsWith("dates_date_day") &&
             f.operator === "equals" &&
             Array.isArray(f.values) &&
             f.values.length === 1,
         ) ||
-        (query.dimensions ?? []).some((d) =>
-          d.endsWith("dim_dates_date_day"),
-        ) ||
+        (query.dimensions ?? []).some((d) => d.endsWith("dates_date_day")) ||
         // A point-in-time pin expressed via timeDimensions counts as anchored
         // only when it is a single day — a single-element dateRange or
         // granularity "day". A wider dateRange with null granularity is NOT
@@ -312,11 +330,11 @@ module.exports = {
     const touchesStaffCube = [
       ...(query.dimensions ?? []),
       ...(query.measures ?? []),
-    ].some((m) => STAFF_CUBES.some((c) => m.startsWith(c)));
+    ].some((m) => isStaffMember(m));
     if (touchesStaffCube && !groups.includes("cube-access-staff-all")) {
       query = {
         ...query,
-        segments: [...(query.segments ?? []), "dim_staff.reporting_chain"],
+        segments: [...(query.segments ?? []), "staff.reporting_chain"],
       };
     }
 
