@@ -16,13 +16,13 @@ views:
       (date_key, dim_student_enrollments.location_key). Contains direct student
       identifiers — see access_policy for PII gating.
 
-      CA and truancy base measures default to year-end snapshots when queried
-      without an anchor — no filter required for year-over-year comparisons. For
-      a point-in-time result, add a single date_day equality filter. For
-      month-over-month or week-over-week trends, use the _month_end or _week_end
-      named measures. Truancy criteria are regional: Miami uses 15+ absences in
-      a 90-day rolling window; NJ regions use projected 50+ absences for the
-      year.
+      CA, tier, and truancy base measures default to year-end snapshots when
+      queried without an anchor — no filter required for year-over-year
+      comparisons. For a point-in-time result, add a single date_day equality
+      filter. For month-over-month or week-over-week trends, use the _month_end
+      or _week_end named measures. Truancy criteria are regional: Miami uses 15+
+      absences in a 90-day rolling window; NJ regions use projected 50+ absences
+      for the year.
 
     cubes:
       - join_path: attendance
