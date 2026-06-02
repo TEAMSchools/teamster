@@ -954,14 +954,59 @@ And `eoq_items` loses 4 of its 7 flags, keeping only: `qt_es_comment_missing`,
   end as is_quarter_end_date_range,
   ```
 
-### 3i: Add manager columns to `teacher_scaffold.sql` — `sections` CTE
+### 3i: Drop `grade_level` from `stg_google_sheets__gradebook_flags`
+
+`grade_level` was only used in the `eoq_items_conduct_code` CTE (now deleted in
+step 3g) to distinguish Miami KG from G1-G8 conduct code flags. With Miami
+removed and that CTE gone, the column is permanently unused. Drop it from the
+staging model using BigQuery's `SELECT * EXCEPT` syntax.
+
+- [ ] **Step 3i.1: Update `stg_google_sheets__gradebook_flags.sql`**
+
+  File:
+  `src/dbt/kipptaf/models/google/sheets/staging/stg_google_sheets__gradebook_flags.sql`
+
+  Change:
+
+  ```sql
+  select
+      *,
+
+      case
+          ...
+      end as alt_code,
+
+  from {{ source("google_sheets", "src_google_sheets__gradebook_flags") }}
+  ```
+
+  to:
+
+  ```sql
+  select
+      * except (grade_level),
+
+      case
+          ...
+      end as alt_code,
+
+  from {{ source("google_sheets", "src_google_sheets__gradebook_flags") }}
+  ```
+
+- [ ] **Step 3i.2: Remove `grade_level` from the staging model YAML**
+
+  File:
+  `src/dbt/kipptaf/models/google/sheets/staging/properties/stg_google_sheets__gradebook_flags.yml`
+
+  Delete the `grade_level` column entry.
+
+### 3k: Add manager columns to `teacher_scaffold.sql` — `sections` CTE
 
 New requirement: surface the teacher's direct manager (number, name, Tableau
 username) on every scaffold row. All three columns are already on
 `int_people__staff_roster` via the existing `r` alias — no additional join
 needed.
 
-- [ ] **Step 3i.1: Add manager columns to the `sections` CTE SELECT list**
+- [ ] **Step 3k.1: Add manager columns to the `sections` CTE SELECT list**
 
   File:
   `src/dbt/kipptaf/models/extracts/tableau/intermediate/int_tableau__gradebook_audit_teacher_scaffold.sql`
@@ -975,7 +1020,7 @@ needed.
   r.reports_to_sam_account_name as manager_tableau_username,
   ```
 
-- [ ] **Step 3i.2: Add the columns to the `sections` CTE YAML**
+- [ ] **Step 3k.2: Add the columns to the `sections` CTE YAML**
 
   File:
   `intermediate/properties/int_tableau__gradebook_audit_teacher_scaffold.yml`
@@ -1004,15 +1049,15 @@ needed.
   `rpt_tableau__gradebook_audit` does — add the columns there too if the
   contract requires it).
 
-### 3j: Build, verify, and commit Task 3
+### 3l: Build, verify, and commit Task 3
 
-- [ ] **Step 3j.1: Run dbt build**
+- [ ] **Step 3l.1: Run dbt build**
 
   Run the full build command from the file map header. If a contract error fires
   (`column not found`), find the corresponding YAML and remove the deleted
   column.
 
-- [ ] **Step 3j.2: Spot-check removed flags are absent and manager columns
+- [ ] **Step 3l.2: Spot-check removed flags are absent and manager columns
       present**
 
   Via BigQuery MCP:
@@ -1037,7 +1082,7 @@ needed.
   Expected: manager columns populated for sections where the teacher has a
   manager in the staff roster.
 
-- [ ] **Step 3j.3: Commit**
+- [ ] **Step 3l.3: Commit**
 
   ```bash
   git add -u
