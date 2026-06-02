@@ -134,6 +134,8 @@ select
     ft.achievement_level,
     ft.scale_score,
     ft.scale_score_prev,
+    ft.assessment_name,
+    ft.test_code,
     ft.sublevel_name as fast_sublevel_name,
     ft.sublevel_number as fast_sublevel_number,
     ft.scale_for_growth as fast_scale_for_growth,
@@ -231,7 +233,7 @@ left join
     {{ ref("int_fldoe__all_assessments") }} as ft
     on co.fleid = ft.student_id
     and co.academic_year = ft.academic_year
-    and co.fast_subject = ft.assessment_subject
+    and co.discipline = ft.discipline
     and administration_window = ft.administration_window
 left join
     {{ ref("int_assessments__fast_previous_year") }} as p
