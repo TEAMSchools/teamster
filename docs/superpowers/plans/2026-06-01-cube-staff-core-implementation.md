@@ -386,6 +386,26 @@ cubes:
         sql: "{locations.location_key} = {CUBE}.work_location_key"
         relationship: many_to_one
 
+      # Point-in-time manager resolver. many_to_one is safe only when a date
+      # filter is applied — without one, multiple work-history periods per
+      # person each match their contemporaneous reporting relationship row,
+      # which is correct. Without a date filter, the join is effectively
+      # many_to_many. Always apply a date filter on staff_work_history queries.
+      - name: staff_reporting_relationships
+        sql: >
+          {staff_reporting_relationships.staff_key} = {CUBE}.staff_key AND
+          CAST({CUBE}.effective_start_date AS TIMESTAMP)
+            <= {staff_reporting_relationships.effective_end_date} AND
+          CAST({CUBE}.effective_end_date AS TIMESTAMP)
+            >= {staff_reporting_relationships.effective_start_date}
+        relationship: many_to_one
+
+      - name: staff_manager
+        sql: >
+          {staff_manager.staff_key} =
+          {staff_reporting_relationships.manager_staff_key}
+        relationship: many_to_one
+
     dimensions:
       - name: staff_work_history_key
         sql: >
@@ -845,6 +865,15 @@ views:
         includes:
           - region_name
 
+      - join_path: staff_work_history.staff_manager
+        prefix: true
+        includes:
+          - staff_key
+          - full_name
+          - first_name
+          - last_name
+          - work_email
+
     meta:
       folders:
         - name: Employment
@@ -890,9 +919,16 @@ views:
             - staff_is_hispanic
             - staff_original_hire_date
             - staff_rehire_date
+        - name: Manager
+          members:
+            - staff_manager_staff_key
+            - staff_manager_full_name
+            - staff_manager_first_name
+            - staff_manager_last_name
+            - staff_manager_work_email
 
     access_policy:
-      # detail-access: excludes both staff PII and compensation fields.
+      # detail-access: excludes staff PII (employee + manager) and compensation.
       # cube-access-staff-pii: full access except compensation.
       # cube-access-staff-compensation: full access except staff PII.
       # A user with both groups sees everything.
@@ -910,6 +946,10 @@ views:
             - staff_personal_cell_phone
             - staff_active_directory_username
             - staff_staff_unique_id
+            - staff_manager_full_name
+            - staff_manager_first_name
+            - staff_manager_last_name
+            - staff_manager_work_email
             - annual_wage
             - hourly_wage
             - daily_rate
@@ -940,6 +980,10 @@ views:
             - staff_personal_cell_phone
             - staff_active_directory_username
             - staff_staff_unique_id
+            - staff_manager_full_name
+            - staff_manager_first_name
+            - staff_manager_last_name
+            - staff_manager_work_email
 ```
 
 - [ ] **Step 3: Verify the YAML parses**
@@ -964,9 +1008,9 @@ Expected output:
 
 ```text
 view name: staff_detail
-join paths: ['staff_work_history', 'staff_work_history.dates', 'staff_work_history.staff', 'staff_work_history.locations', 'staff_work_history.locations.regions']
+join paths: ['staff_work_history', 'staff_work_history.dates', 'staff_work_history.staff', 'staff_work_history.locations', 'staff_work_history.locations.regions', 'staff_work_history.staff_manager']
 access groups: ['detail-access', 'cube-access-staff-pii', 'cube-access-staff-compensation']
-excluded fields: ['staff_full_name', 'staff_first_name', 'staff_last_name', 'staff_birth_date', 'staff_work_email', 'staff_google_email', 'staff_personal_email', 'staff_personal_cell_phone', 'staff_active_directory_username', 'staff_staff_unique_id', 'annual_wage', 'hourly_wage', 'daily_rate', 'period_rate', 'avg_annual_wage', 'avg_hourly_wage']
+excluded fields: ['staff_full_name', 'staff_first_name', 'staff_last_name', 'staff_birth_date', 'staff_work_email', 'staff_google_email', 'staff_personal_email', 'staff_personal_cell_phone', 'staff_active_directory_username', 'staff_staff_unique_id', 'staff_manager_full_name', 'staff_manager_first_name', 'staff_manager_last_name', 'staff_manager_work_email', 'annual_wage', 'hourly_wage', 'daily_rate', 'period_rate', 'avg_annual_wage', 'avg_hourly_wage']
 ```
 
 - [ ] **Step 4: Run the full cube test suite**
