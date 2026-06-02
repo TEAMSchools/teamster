@@ -15,7 +15,8 @@ rows while omitting deprecated ones deactivates those flags immediately without
 touching SQL. Task 2 replaces the deprecated Google Sheet expectations source
 with a PS-native intermediate model (Newark only to start). Tasks 3–6 are SQL
 cleanup and logic changes. Task 5 (QTD) is blocked on PR #4077 (PS plugin
-integration) landing. Task 7 (anchor-row redesign) is a separate future effort.
+integration) landing. Task 7 is the post-merge doc/skill update. Task 8
+(anchor-row redesign) is a separate future effort.
 
 **Tech Stack:** dbt (BigQuery dialect), Google Sheets external tables, BigQuery
 MCP for spot-checks, `uv run dbt` CLI, branch
