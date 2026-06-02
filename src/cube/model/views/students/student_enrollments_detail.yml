@@ -1,0 +1,98 @@
+views:
+  - name: student_enrollments_detail
+    description: >-
+      Row-level student enrollment records. One row per enrollment stint — a
+      student who transfers mid-year has two rows; a student enrolled across
+      multiple years has one row per year.
+
+      Double-counting warning: count_students counts distinct enrollment
+      records, not distinct students. Always filter to a specific academic_year
+      for per-year headcount. For unique student counts across multiple years,
+      use count_distinct(student_key) from the students join path.
+
+      Contains direct student identifiers — see access_policy for PII gating.
+
+    cubes:
+      - join_path: student_enrollments
+        includes:
+          - count_students
+          - student_enrollment_key
+          - academic_year
+          - grade_level
+          - graduation_year
+          - entry_date
+          - exit_date
+          - is_retained_year
+
+      - join_path: student_enrollments.locations
+        prefix: true
+        includes:
+          - location_name
+          - abbreviation
+          - grade_band
+          - campus
+          - city
+
+      - join_path: student_enrollments.locations.regions
+        prefix: true
+        includes:
+          - region_name
+          - state
+
+      - join_path: student_enrollments.students
+        prefix: true
+        includes:
+          - student_key
+          - full_name
+          - birth_date
+          - lea_student_identifier
+          - state_student_identifier
+          - gender_identity
+          - race
+          - is_gifted
+          - enrollment_status
+
+    meta:
+      folders:
+        - name: Enrollment
+          members:
+            - student_enrollment_key
+            - academic_year
+            - grade_level
+            - graduation_year
+            - entry_date
+            - exit_date
+            - is_retained_year
+        - name: Location
+          members:
+            - locations_location_name
+            - locations_abbreviation
+            - locations_grade_band
+            - locations_campus
+            - locations_city
+            - regions_region_name
+            - regions_state
+        - name: Student
+          members:
+            - students_student_key
+            - students_full_name
+            - students_birth_date
+            - students_lea_student_identifier
+            - students_state_student_identifier
+            - students_gender_identity
+            - students_race
+            - students_is_gifted
+            - students_enrollment_status
+
+    access_policy:
+      - group: detail-access
+        member_level:
+          includes: "*"
+          excludes:
+            - students_full_name
+            - students_birth_date
+            - students_lea_student_identifier
+            - students_state_student_identifier
+      - group: cube-access-student-pii
+        member_level:
+          includes: "*"

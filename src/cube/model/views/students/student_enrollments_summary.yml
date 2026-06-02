@@ -1,0 +1,74 @@
+views:
+  - name: student_enrollments_summary
+    description: >-
+      Aggregated student enrollment for headcount and demographic breakdowns. No
+      direct student identifiers — demographic dimensions (race,
+      gender_identity, is_gifted) are aggregate breakdowns only.
+
+      Double-counting warning: count_students counts distinct enrollment records
+      per filter slice. Filter to a single academic_year for per-year headcount.
+      Omitting academic_year sums across all years in scope, producing
+      enrollment-years not student count.
+
+    cubes:
+      - join_path: student_enrollments
+        includes:
+          - count_students
+          - academic_year
+          - grade_level
+          - graduation_year
+          - is_retained_year
+
+      - join_path: student_enrollments.locations
+        prefix: true
+        includes:
+          - location_name
+          - abbreviation
+          - grade_band
+          - campus
+          - city
+
+      - join_path: student_enrollments.locations.regions
+        prefix: true
+        includes:
+          - region_name
+          - state
+
+      - join_path: student_enrollments.students
+        prefix: true
+        includes:
+          - gender_identity
+          - race
+          - is_gifted
+          - enrollment_status
+
+    meta:
+      folders:
+        - name: Enrollment
+          members:
+            - academic_year
+            - grade_level
+            - graduation_year
+            - is_retained_year
+        - name: Location
+          members:
+            - locations_location_name
+            - locations_abbreviation
+            - locations_grade_band
+            - locations_campus
+            - locations_city
+            - regions_region_name
+            - regions_state
+        - name: Student
+          members:
+            - students_gender_identity
+            - students_race
+            - students_is_gifted
+            - students_enrollment_status
+
+    access_policy:
+      # No direct student identifiers — demographic dimensions are aggregate
+      # breakdowns only.
+      - group: summary-access
+        member_level:
+          includes: "*"
