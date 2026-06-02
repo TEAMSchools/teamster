@@ -1809,7 +1809,58 @@ intermediate models.
 
 ---
 
-## Task 7 (out of scope): Anchor-row / "in the clear" redesign
+## Task 7: Update reference documentation and skill
+
+Once all SQL changes are merged and the model is stable, update the reference
+doc to reflect the new state of the pipeline and trim the skill to remove
+development-time references that are no longer current.
+
+- [ ] **Step 7.1: Add AY 2026-2027 section to the reference doc**
+
+  File: `docs/reference/gradebook-audit-data-model.md`
+
+  At the top of the file, add an "AY 2026-2027 Model (current)" section with:
+  - Updated coverage table (Newark, Camden, Paterson — no Miami)
+  - Updated lineage diagram (quarter-grain scaffold, no `term_weeks`, PS-native
+    expectations model, no exceptions table)
+  - Updated layer summary and key data flows
+  - Updated scaffold section (no week columns, new sections CTE structure)
+
+  Rename the existing content to "AY 2025-2026 Model (archived)" and preserve it
+  below the new section.
+
+- [ ] **Step 7.2: Update the start-of-year procedure in the reference doc**
+
+  The start-of-year procedure already has the flag row generation query. Verify
+  it reflects the current region configuration (Newark, Camden, Paterson) and
+  that the deprecated flags list is up to date.
+
+- [ ] **Step 7.3: Trim the gradebook-audit skill**
+
+  File: `.claude/skills/gradebook-audit/SKILL.md`
+
+  Remove the spec and plan doc references from the "Always read first" section.
+  Those are development-time documents; after merge they become historical
+  artifacts. The skill should only reference the reference doc:
+
+  ```markdown
+  - Reference doc:
+    [`docs/reference/gradebook-audit-data-model.md`](../../docs/reference/gradebook-audit-data-model.md)
+  ```
+
+  The spec (`docs/superpowers/specs/`) and plan (`docs/superpowers/plans/`) stay
+  in git as historical context but are not needed for ongoing operations.
+
+- [ ] **Step 7.4: Commit**
+
+  ```bash
+  git add -u
+  git commit -m "docs: update gradebook audit reference doc for AY 2026-2027; trim skill"
+  ```
+
+---
+
+## Task 8 (out of scope): Anchor-row / "in the clear" redesign
 
 Major structural change to `rpt_tableau__gradebook_audit.sql`. Required for the
 school-level classroom percentage summary view. Needs a separate spec and plan.
