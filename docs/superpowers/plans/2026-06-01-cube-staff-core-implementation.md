@@ -790,17 +790,18 @@ views:
   - name: staff_detail
     description: >-
       Row-level staff employment history. One row per employee x employment
-      period — each row represents a contiguous window when all five SCD2
-      attributes (status, job, worker type, org unit, location) held
-      simultaneously. Use for drill-down, headcount-over-time, and individual
-      employee investigations. Always apply a date filter before querying —
-      without one, each employment period fans out to one row per calendar day
-      in its effective range.
+      period — each row represents a contiguous window when all time-varying
+      attributes (status, job, worker type, org unit, location, compensation)
+      held simultaneously, with point-in-time manager context via
+      staff_reporting_relationships. Use for drill-down, headcount-over-time,
+      and individual employee investigations. Always apply a date filter before
+      querying — without one, each employment period fans out to one row per
+      calendar day in its effective range.
 
       Primary-position filtering: use is_primary_position = true to isolate the
       employee's primary assignment at a point in time. status_name = 'Active'
-      filters to active employees only. Contains direct staff identifiers — see
-      access_policy for PII gating.
+      filters to active employees only. Contains direct staff and manager
+      identifiers — see access_policy for PII gating.
 
     cubes:
       - join_path: staff_work_history
