@@ -793,7 +793,10 @@ git commit -m "feat(cube): add student_attendance_interventions_summary view"
 Detail view for streaks. The `dates` join anchors on `streak_start_date_key` —
 that join path provides month/year breakdown for trend analysis.
 `streak_end_date` is included directly from the streaks cube (not from a dates
-join). No student PII columns in scope — no PII tier needed.
+join). Student PII fields (name, identifiers) are included and gated by
+`cube-access-student-pii` — staff investigating long absence streaks need to
+identify which student they're looking at. Access policy follows student
+Pattern 1.
 
 **Note on `dates_academic_year`:** The `dates` cube exposes `academic_year` as a
 member. With `prefix: true`, it becomes `dates_academic_year`. The streaks cube
@@ -873,6 +876,10 @@ views:
         prefix: true
         includes:
           - student_key
+          - full_name
+          - birth_date
+          - lea_student_identifier
+          - state_student_identifier
           - gender_identity
           - race
           - enrollment_status
@@ -905,6 +912,10 @@ views:
         - name: Student
           members:
             - students_student_key
+            - students_full_name
+            - students_birth_date
+            - students_lea_student_identifier
+            - students_state_student_identifier
             - students_gender_identity
             - students_race
             - students_enrollment_status
@@ -915,9 +926,15 @@ views:
             - student_enrollments_graduation_year
 
     access_policy:
-      # No student PII fields (name, DOB, identifiers) are exposed.
-      # student_enrollment_key and student_key are surrogates, not direct identifiers.
       - group: detail-access
+        member_level:
+          includes: "*"
+          excludes:
+            - students_full_name
+            - students_birth_date
+            - students_lea_student_identifier
+            - students_state_student_identifier
+      - group: cube-access-student-pii
         member_level:
           includes: "*"
 ```
@@ -943,7 +960,7 @@ Expected output:
 ```text
 view name: student_attendance_streaks_detail
 join paths: ['student_attendance_streaks', 'student_attendance_streaks.dates', 'student_attendance_streaks.student_enrollments.locations', 'student_attendance_streaks.student_enrollments.locations.regions', 'student_attendance_streaks.student_enrollments', 'student_attendance_streaks.student_enrollments.students']
-access groups: ['detail-access']
+access groups: ['detail-access', 'cube-access-student-pii']
 folders: ['Streak', 'Date', 'Location', 'Student', 'Enrollment']
 ```
 
