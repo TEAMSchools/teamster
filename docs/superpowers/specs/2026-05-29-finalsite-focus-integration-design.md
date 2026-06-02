@@ -180,12 +180,11 @@ config, or a Finalsite custom/track field (not a base column) · ✗ no source.
 | **Finalsite SFTP export →** | Demographics ✅ · Address ✅ · Contacts ✅¹ · Linked ✅² · **Enrollment ❌³** | student+demographics ✅ · address ✅ · 2 guardians ⚠️⁴ · **placement ⚠️³**                         |
 | **Finalsite API →**         | Demographics ✅⁵ · Address ✅ · Contacts ✅ · Linked ✅ · **Enrollment ⚠️³**  | demographics ✅⁵ · address ✅ · 2 guardians ⚠️⁴ · placement ⚠️³ + **status-driven eligibility ✅** |
 
-¹ `RESIDES_WITH_STUD` not in source → default. ² via shared-parent inference. ³
-`SCHOOL` + `START_DATE` not in source (derive); Focus enrollment-code setup
-required; **the API cannot write the `enrollments` table at all** — placement
-only via `accepting_*`. ⁴ Focus API caps guardians at 2 → violates the
-all-guardians decision (data loss). ⁵ race/ethnicity/language/school are API
-custom fields, confirmed populated in Newark (per-tenant names — confirm Miami).
+¹ `RESIDES_WITH_STUD` not in source → default.
+² via shared-parent inference.
+³ `SCHOOL` + `START_DATE` not in source (derive); Focus enrollment-code setup required; **the API cannot write the `enrollments` table at all** — placement only via `accepting_*`.
+⁴ Focus API caps guardians at 2 → violates the all-guardians decision (data loss).
+⁵ race/ethnicity/language/school are API custom fields, confirmed populated in Newark (per-tenant names — confirm Miami).
 
 ### Target A — Focus SFTP templates: required-field coverage
 
