@@ -399,7 +399,200 @@ of the reference doc for future years.
 
 ---
 
-## Task 2: SQL — Create PS-native expectations model and update scaffolds
+## Task 2: SQL — Remove the exceptions mechanism entirely
+
+T&L has decided to eliminate the suppression table. Remove
+`stg_google_sheets__gradebook_exceptions` and all 15+ LEFT JOINs across five
+intermediate models.
+
+### 6a: `int_tableau__gradebook_audit_teacher_scaffold.sql`
+
+- [ ] **Step 6a.1: Remove exception joins from the `sections` CTE**
+
+  File:
+  `src/dbt/kipptaf/models/extracts/tableau/intermediate/int_tableau__gradebook_audit_teacher_scaffold.sql`
+
+  Delete both LEFT JOINs (`e1`, `e2`) and their two conditions from the WHERE
+  clause:
+
+  ```sql
+  left join
+      {{ ref("stg_google_sheets__gradebook_exceptions") }} as e1
+      on s.terms_academic_year = e1.academic_year
+      and s.sections_course_number = e1.course_number
+      and e1.view_name = 'teacher_scaffold'
+      and e1.cte = 'sections'
+      and e1.school_id is null
+  left join
+      {{ ref("stg_google_sheets__gradebook_exceptions") }} as e2
+      on s.terms_academic_year = e2.academic_year
+      and s.sections_schoolid = e2.school_id
+      and s.sections_course_number = e2.course_number
+      and e2.view_name = 'teacher_scaffold'
+      and e2.cte = 'sections'
+      and e2.school_id is not null
+
+  -- also delete from WHERE:
+  and e1.include_row is null
+  and e2.include_row is null
+  ```
+
+- [ ] **Step 6a.2: Remove exception joins from the `teacher_category_scaffold`
+      branch of `final`**
+
+  Delete all three LEFT JOINs (`e1`, `e2`, `e3`) and:
+
+  ```sql
+  where
+      e1.include_row is null and e2.include_row is null and e3.include_row is null
+  ```
+
+- [ ] **Step 6a.3: Remove exception joins from the outer `select`**
+
+  Delete the two LEFT JOINs at the end of the file and:
+
+  ```sql
+  where e1.include_row is null and e2.include_row is null
+  ```
+
+### 6b: `int_tableau__gradebook_audit_assignments_teacher.sql`
+
+- [ ] **Step 6b.1: Remove exception join and unwrap conditional columns**
+
+  File:
+  `src/dbt/kipptaf/models/extracts/tableau/intermediate/int_tableau__gradebook_audit_assignments_teacher.sql`
+
+  Delete the LEFT JOIN to `stg_google_sheets__gradebook_exceptions`. Replace
+  every `if(e.include_row is null, asg.<col>, null) as <col>` with the plain
+  column:
+
+  ```sql
+  asg.n_students,
+  asg.n_late,
+  asg.n_exempt,
+  asg.n_missing,
+  asg.n_academic_dishonesty,
+  asg.n_null,
+  asg.n_is_null_missing,
+  asg.n_is_null_not_missing,
+  asg.n_expected,
+  asg.n_expected_scored,
+  asg.teacher_avg_score_for_assign_per_class_section_and_assign_id,
+  ```
+
+### 6c: `int_tableau__gradebook_audit_categories_teacher.sql`
+
+- [ ] **Step 6c.1: Remove exception join from `assignment_score_rollup` CTE**
+
+  File:
+  `src/dbt/kipptaf/models/extracts/tableau/intermediate/int_tableau__gradebook_audit_categories_teacher.sql`
+
+  Delete the LEFT JOIN (`e1`) and the `where e1.include_row is null` condition.
+
+- [ ] **Step 6c.2: Remove the final-level exception join**
+
+  Delete the LEFT JOIN at the bottom of the file and
+  `where e.include_row is null`.
+
+### 6d: `int_tableau__gradebook_audit_flags.sql`
+
+- [ ] **Step 6d.1: Remove three exception joins from `student_unpivot` CTE**
+
+  Delete LEFT JOINs `e1`, `e2`, `e3` and remove the entire WHERE clause. The
+  UNPIVOT + INNER JOIN to `stg_google_sheets__gradebook_flags` is the correct
+  filter; no WHERE is needed.
+
+- [ ] **Step 6d.2: Remove two exception joins from `teacher_unpivot_cca` CTE**
+
+  Delete `e1` and `e2` LEFT JOINs and the WHERE clause.
+
+- [ ] **Step 6d.3: Remove one exception join from `teacher_unpivot_cc` CTE**
+
+  Delete the `e` LEFT JOIN and the WHERE clause.
+
+- [ ] **Step 6d.4: Remove one exception join from `eoq_items` CTE**
+
+  Delete the `e1` LEFT JOIN and the WHERE clause.
+
+### 6e: Disable the exceptions staging model
+
+- [ ] **Step 6e.1: Disable the staging model**
+
+  In
+  `src/dbt/kipptaf/models/google/sheets/staging/properties/stg_google_sheets__gradebook_exceptions.yml`,
+  add at the top of the model config:
+
+  ```yaml
+  config:
+    enabled: false
+  ```
+
+  The SQL file and source entry stay in place. This preserves the model for
+  reference pending any operational decisions after July 1st.
+
+### 6f: Build, verify, and commit Task 6
+
+- [ ] **Step 6f.1: Run dbt build — full downstream chain**
+
+  Task 6 is the last structural change. By this point all models in the lineage
+  should be updated (including the assignment models' quarter-grain date window
+  changes — see plan gap note below). If all prior tasks are complete, the full
+  chain is now valid:
+
+  ```bash
+  uv run dbt build \
+    --select int_tableau__gradebook_audit_teacher_scaffold+ \
+    --project-dir src/dbt/kipptaf \
+    --defer \
+    --state src/dbt/kipptaf/target/prod
+  ```
+
+  > ⚠️ **Plan gap:** `int_tableau__gradebook_audit_assignments_teacher`,
+  > `int_tableau__gradebook_audit_assignments_student`, and
+  > `int_tableau__gradebook_audit_categories_teacher` still join on
+  > `week_start_monday / week_end_sunday` from the scaffold. These joins must be
+  > updated to `quarter_start_date / quarter_end_date` before the full chain
+  > will build. Steps for those changes will be added when those models are
+  > reviewed.
+
+  Then confirm no remaining references:
+
+  ```bash
+  grep -rn "gradebook_exceptions" src/dbt/kipptaf/models/ --include="*.sql"
+  ```
+
+  Expected: zero results.
+
+- [ ] **Step 6f.2: Spot-check row counts**
+
+  Via BigQuery MCP:
+
+  ```sql
+  SELECT
+    region,
+    school_level,
+    audit_flag_name,
+    count(*) as n_rows,
+  FROM `teamster-332318.dbt_grangel_tableau.rpt_tableau__gradebook_audit`
+  WHERE flag_value = 1
+    AND academic_year = 2026
+  GROUP BY 1, 2, 3
+  ORDER BY 1, 2, 3
+  ```
+
+  Counts may be slightly higher than before — removing suppressions means some
+  previously-suppressed rows now appear. Verify with T&L if unexpected spikes
+  appear before merging.
+
+- [ ] **Step 6f.3: Commit**
+
+  ```bash
+  git commit -m "feat(dbt): remove gradebook exceptions mechanism — AY 2026-2027"
+  ```
+
+---
+
+## Task 3: SQL — PS-native expectations model and QTD
 
 `stg_google_sheets__gradebook_expectations_assignments` is being deprecated and
 replaced by a PS-native intermediate model sourced from
@@ -482,6 +675,220 @@ based on which approach produces cleaner scaffold code — and rename accordingl
   `dbt_utils.unique_combination_of_columns` test on
   `(region, school_level, academic_year, quarter, assignment_category_code)`. No
   `week_number` — the model is quarter-grain.
+
+> ⚠️ **Blocked on PR #4077.** This task uses the intermediate model created by
+> the PS plugin integration (Camden/Paterson U_EXPECTATIONS). PR #4077 must be
+> merged and Dagster must have materialized the new model in prod before this
+> task can be executed. Details will be added once PR #4077 is complete.
+
+---
+
+## Task 4: SQL — Update base views and tables
+
+### 3a: `base_powerschool__sections` — add `school_abbreviation` and `school_level` (prerequisite)
+
+Must land before the teacher scaffold is built in step 2.3.
+
+**File:** `src/dbt/powerschool/models/sis/base/base_powerschool__sections.sql`
+
+- [ ] **Step 3a.1: Add both columns to the SELECT list**
+
+  Find `sch.name as school_name,` and add immediately after:
+
+  ```sql
+  sch.abbreviation as school_abbreviation,
+  sch.school_level,
+  ```
+
+- [ ] **Step 3a.2: Add columns to the properties YAML**
+
+  File:
+  `src/dbt/powerschool/models/sis/base/properties/base_powerschool__sections.yml`
+
+  ```yaml
+  - name: school_abbreviation
+    description:
+      Short school name abbreviation from stg_powerschool__schools, used as the
+      display name in Tableau dashboards.
+    data_type: string
+  - name: school_level
+    description: School level (ES, MS, or HS) from stg_powerschool__schools.
+    data_type: string
+  ```
+
+- [ ] **Step 3a.3: Build and verify**
+
+  ```bash
+  uv run dbt build \
+    --select base_powerschool__sections \
+    --project-dir src/dbt/kipptaf \
+    --defer \
+    --state src/dbt/kipptaf/target/prod
+  ```
+
+---
+
+### 3b: `stg_google_sheets__gradebook_flags` — drop `grade_level`
+
+`grade_level` was only used by Miami KG/G1-G8 conduct code flags (now gone).
+Drop it using BigQuery `SELECT * EXCEPT`.
+
+**File:**
+`src/dbt/kipptaf/models/google/sheets/staging/stg_google_sheets__gradebook_flags.sql`
+
+- [ ] **Step 3b.1: Update the SELECT**
+
+  Change:
+
+  ```sql
+  select
+      *,
+      case ... end as alt_code,
+  from {{ source("google_sheets", "src_google_sheets__gradebook_flags") }}
+  ```
+
+  to:
+
+  ```sql
+  select
+      * except (grade_level),
+      case ... end as alt_code,
+  from {{ source("google_sheets", "src_google_sheets__gradebook_flags") }}
+  ```
+
+- [ ] **Step 3b.2: Remove `grade_level` from the YAML**
+
+  File:
+  `src/dbt/kipptaf/models/google/sheets/staging/properties/stg_google_sheets__gradebook_flags.yml`
+
+  Delete the `grade_level` column entry.
+
+- [ ] **Step 3b.3: Build and verify**
+
+  ```bash
+  uv run dbt build \
+    --select stg_google_sheets__gradebook_flags \
+    --project-dir src/dbt/kipptaf
+  ```
+
+---
+
+### 3c: `int_extracts__student_enrollments` — add ADA/GPA cumulative boolean
+
+> ⚠️ **Open question for T&L (see issue #3908 comment):** use `< 2.0` until
+> threshold is confirmed.
+
+**File:**
+`src/dbt/kipptaf/models/students/intermediate/int_extracts__student_enrollments.sql`
+
+- [ ] **Step 3c.1: Add boolean column**
+
+  In the final `select`, after `ada_above_or_at_80` and GPA columns (ST06
+  ordering — logicals after plain refs):
+
+  ```sql
+  if(
+      ada_above_or_at_80 and cumulative_y1_gpa < 2.0,
+      true,
+      false
+  ) as is_ada_above_or_at_80_cum_gpa_less_2,
+  ```
+
+- [ ] **Step 3c.2: Add column to YAML**
+
+  File:
+  `src/dbt/kipptaf/models/students/intermediate/properties/int_extracts__student_enrollments.yml`
+
+  ```yaml
+  - name: is_ada_above_or_at_80_cum_gpa_less_2
+    description: >
+      True when the student's ADA is at or above 80% and their cumulative
+      year-to-date GPA (cumulative_y1_gpa) is below 2.0.
+    data_type: boolean
+  ```
+
+- [ ] **Step 3c.3: Build and verify**
+
+  ```bash
+  uv run dbt build \
+    --select int_extracts__student_enrollments \
+    --project-dir src/dbt/kipptaf \
+    --defer \
+    --state src/dbt/kipptaf/target/prod
+  ```
+
+---
+
+---
+
+## Task 5: SQL — `rpt_tableau__gradebook_gpa` updates
+
+### 3d: `rpt_tableau__gradebook_gpa` — add per-course boolean, remove Paterson filter
+
+**File:**
+`src/dbt/kipptaf/models/extracts/tableau/rpt_tableau__gradebook_gpa.sql`
+
+- [ ] **Step 3d.1: Add per-course GPA boolean**
+
+  In the final `select`, after `ada_above_or_at_80`:
+
+  ```sql
+  if(
+      s.ada_above_or_at_80 and s.gpa_y1 < 2.0,
+      true,
+      false
+  ) as is_ada_above_or_at_80_gpa_y1_less_2,
+  ```
+
+- [ ] **Step 3d.2: Remove Paterson exclusion**
+
+  In the `student_roster` CTE WHERE clause, remove
+  `and enr.region != 'Paterson'`. The full WHERE becomes:
+
+  ```sql
+  where
+      enr.rn_year = 1
+      and not enr.is_out_of_district
+      and enr.enroll_status != -1
+  ```
+
+- [ ] **Step 3d.3: Add column to YAML**
+
+  File:
+  `src/dbt/kipptaf/models/extracts/tableau/properties/rpt_tableau__gradebook_gpa.yml`
+
+  ```yaml
+  - name: is_ada_above_or_at_80_gpa_y1_less_2
+    description: >
+      True when the student's ADA is at or above 80% and their year-to-date
+      course GPA (gpa_y1) is below 2.0. Per-course grain.
+    data_type: boolean
+  ```
+
+- [ ] **Step 3d.4: Build and verify**
+
+  ```bash
+  uv run dbt build \
+    --select rpt_tableau__gradebook_gpa \
+    --project-dir src/dbt/kipptaf \
+    --defer \
+    --state src/dbt/kipptaf/target/prod
+  ```
+
+  Verify Paterson now appears:
+
+  ```sql
+  SELECT DISTINCT region, school_level
+  FROM `teamster-332318.dbt_grangel_tableau.rpt_tableau__gradebook_gpa`
+  WHERE academic_year = 2026
+  ORDER BY 1, 2
+  ```
+
+---
+
+---
+
+## Task 6: SQL — Quarter-grain scaffold and model updates
 
 - [ ] **Step 2.3: Redesign `int_tableau__gradebook_audit_teacher_scaffold.sql`**
 
@@ -1086,17 +1493,6 @@ based on which approach produces cleaner scaffold code — and rename accordingl
   git commit -m "feat(dbt): replace Google Sheet expectations with PS-native INT model (Newark)"
   ```
 
----
-
-## Task 3: SQL — flag removals and model updates
-
-Organized **by model**. Build each model individually — do not cascade
-downstream.
-
-> **Note:** `int_tableau__gradebook_audit_teacher_scaffold` and
-> `int_tableau__gradebook_audit_student_scaffold` are fully redesigned in steps
-> 2.3 and 2.4. They are not repeated here.
-
 **Flag reference table** — use this as your checklist when working through each
 model. Every flag in this table must be removed from its source model, its YAML,
 and the UNPIVOT list in `int_tableau__gradebook_audit_flags.sql`.
@@ -1121,203 +1517,6 @@ and the UNPIVOT list in `int_tableau__gradebook_audit_flags.sql`.
 | `qt_effort_grade_missing`                        | `int_tableau__gradebook_audit_student_scaffold`    | Miami-only dead code — in 2.4      |
 | `qt_formative_grade_missing`                     | `int_tableau__gradebook_audit_student_scaffold`    | Miami-only dead code — in 2.4      |
 | `qt_summative_grade_missing`                     | `int_tableau__gradebook_audit_student_scaffold`    | Miami-only dead code — in 2.4      |
-
----
-
-### 3a: `base_powerschool__sections` — add `school_abbreviation` and `school_level` (prerequisite)
-
-Must land before the teacher scaffold is built in step 2.3.
-
-**File:** `src/dbt/powerschool/models/sis/base/base_powerschool__sections.sql`
-
-- [ ] **Step 3a.1: Add both columns to the SELECT list**
-
-  Find `sch.name as school_name,` and add immediately after:
-
-  ```sql
-  sch.abbreviation as school_abbreviation,
-  sch.school_level,
-  ```
-
-- [ ] **Step 3a.2: Add columns to the properties YAML**
-
-  File:
-  `src/dbt/powerschool/models/sis/base/properties/base_powerschool__sections.yml`
-
-  ```yaml
-  - name: school_abbreviation
-    description:
-      Short school name abbreviation from stg_powerschool__schools, used as the
-      display name in Tableau dashboards.
-    data_type: string
-  - name: school_level
-    description: School level (ES, MS, or HS) from stg_powerschool__schools.
-    data_type: string
-  ```
-
-- [ ] **Step 3a.3: Build and verify**
-
-  ```bash
-  uv run dbt build \
-    --select base_powerschool__sections \
-    --project-dir src/dbt/kipptaf \
-    --defer \
-    --state src/dbt/kipptaf/target/prod
-  ```
-
----
-
-### 3b: `stg_google_sheets__gradebook_flags` — drop `grade_level`
-
-`grade_level` was only used by Miami KG/G1-G8 conduct code flags (now gone).
-Drop it using BigQuery `SELECT * EXCEPT`.
-
-**File:**
-`src/dbt/kipptaf/models/google/sheets/staging/stg_google_sheets__gradebook_flags.sql`
-
-- [ ] **Step 3b.1: Update the SELECT**
-
-  Change:
-
-  ```sql
-  select
-      *,
-      case ... end as alt_code,
-  from {{ source("google_sheets", "src_google_sheets__gradebook_flags") }}
-  ```
-
-  to:
-
-  ```sql
-  select
-      * except (grade_level),
-      case ... end as alt_code,
-  from {{ source("google_sheets", "src_google_sheets__gradebook_flags") }}
-  ```
-
-- [ ] **Step 3b.2: Remove `grade_level` from the YAML**
-
-  File:
-  `src/dbt/kipptaf/models/google/sheets/staging/properties/stg_google_sheets__gradebook_flags.yml`
-
-  Delete the `grade_level` column entry.
-
-- [ ] **Step 3b.3: Build and verify**
-
-  ```bash
-  uv run dbt build \
-    --select stg_google_sheets__gradebook_flags \
-    --project-dir src/dbt/kipptaf
-  ```
-
----
-
-### 3c: `int_extracts__student_enrollments` — add ADA/GPA cumulative boolean
-
-> ⚠️ **Open question for T&L (see issue #3908 comment):** use `< 2.0` until
-> threshold is confirmed.
-
-**File:**
-`src/dbt/kipptaf/models/students/intermediate/int_extracts__student_enrollments.sql`
-
-- [ ] **Step 3c.1: Add boolean column**
-
-  In the final `select`, after `ada_above_or_at_80` and GPA columns (ST06
-  ordering — logicals after plain refs):
-
-  ```sql
-  if(
-      ada_above_or_at_80 and cumulative_y1_gpa < 2.0,
-      true,
-      false
-  ) as is_ada_above_or_at_80_cum_gpa_less_2,
-  ```
-
-- [ ] **Step 3c.2: Add column to YAML**
-
-  File:
-  `src/dbt/kipptaf/models/students/intermediate/properties/int_extracts__student_enrollments.yml`
-
-  ```yaml
-  - name: is_ada_above_or_at_80_cum_gpa_less_2
-    description: >
-      True when the student's ADA is at or above 80% and their cumulative
-      year-to-date GPA (cumulative_y1_gpa) is below 2.0.
-    data_type: boolean
-  ```
-
-- [ ] **Step 3c.3: Build and verify**
-
-  ```bash
-  uv run dbt build \
-    --select int_extracts__student_enrollments \
-    --project-dir src/dbt/kipptaf \
-    --defer \
-    --state src/dbt/kipptaf/target/prod
-  ```
-
----
-
-### 3d: `rpt_tableau__gradebook_gpa` — add per-course boolean, remove Paterson filter
-
-**File:**
-`src/dbt/kipptaf/models/extracts/tableau/rpt_tableau__gradebook_gpa.sql`
-
-- [ ] **Step 3d.1: Add per-course GPA boolean**
-
-  In the final `select`, after `ada_above_or_at_80`:
-
-  ```sql
-  if(
-      s.ada_above_or_at_80 and s.gpa_y1 < 2.0,
-      true,
-      false
-  ) as is_ada_above_or_at_80_gpa_y1_less_2,
-  ```
-
-- [ ] **Step 3d.2: Remove Paterson exclusion**
-
-  In the `student_roster` CTE WHERE clause, remove
-  `and enr.region != 'Paterson'`. The full WHERE becomes:
-
-  ```sql
-  where
-      enr.rn_year = 1
-      and not enr.is_out_of_district
-      and enr.enroll_status != -1
-  ```
-
-- [ ] **Step 3d.3: Add column to YAML**
-
-  File:
-  `src/dbt/kipptaf/models/extracts/tableau/properties/rpt_tableau__gradebook_gpa.yml`
-
-  ```yaml
-  - name: is_ada_above_or_at_80_gpa_y1_less_2
-    description: >
-      True when the student's ADA is at or above 80% and their year-to-date
-      course GPA (gpa_y1) is below 2.0. Per-course grain.
-    data_type: boolean
-  ```
-
-- [ ] **Step 3d.4: Build and verify**
-
-  ```bash
-  uv run dbt build \
-    --select rpt_tableau__gradebook_gpa \
-    --project-dir src/dbt/kipptaf \
-    --defer \
-    --state src/dbt/kipptaf/target/prod
-  ```
-
-  Verify Paterson now appears:
-
-  ```sql
-  SELECT DISTINCT region, school_level
-  FROM `teamster-332318.dbt_grangel_tableau.rpt_tableau__gradebook_gpa`
-  WHERE academic_year = 2026
-  ORDER BY 1, 2
-  ```
 
 ---
 
@@ -1616,7 +1815,7 @@ All UNPIVOT list changes and CTE deletions in one step.
 
 ---
 
-## Task 4: SQL — 7-day grace period for percent-graded flags
+## Task 7: SQL — 7-day grace period for percent-graded flags
 
 `w/h/f/s_percent_graded_min_not_met` should only fire for assignments that have
 been due for at least 7 days. Currently the percent-graded calculation includes
@@ -1725,209 +1924,7 @@ all assignments in the week window regardless of how recently they were due.
 
 ---
 
-## Task 5: SQL — QTD cumulative assignment count
-
-> ⚠️ **Blocked on PR #4077.** This task uses the intermediate model created by
-> the PS plugin integration (Camden/Paterson U_EXPECTATIONS). PR #4077 must be
-> merged and Dagster must have materialized the new model in prod before this
-> task can be executed. Details will be added once PR #4077 is complete.
-
----
-
-## Task 6: SQL — Remove the exceptions mechanism entirely
-
-T&L has decided to eliminate the suppression table. Remove
-`stg_google_sheets__gradebook_exceptions` and all 15+ LEFT JOINs across five
-intermediate models.
-
-### 6a: `int_tableau__gradebook_audit_teacher_scaffold.sql`
-
-- [ ] **Step 6a.1: Remove exception joins from the `sections` CTE**
-
-  File:
-  `src/dbt/kipptaf/models/extracts/tableau/intermediate/int_tableau__gradebook_audit_teacher_scaffold.sql`
-
-  Delete both LEFT JOINs (`e1`, `e2`) and their two conditions from the WHERE
-  clause:
-
-  ```sql
-  left join
-      {{ ref("stg_google_sheets__gradebook_exceptions") }} as e1
-      on s.terms_academic_year = e1.academic_year
-      and s.sections_course_number = e1.course_number
-      and e1.view_name = 'teacher_scaffold'
-      and e1.cte = 'sections'
-      and e1.school_id is null
-  left join
-      {{ ref("stg_google_sheets__gradebook_exceptions") }} as e2
-      on s.terms_academic_year = e2.academic_year
-      and s.sections_schoolid = e2.school_id
-      and s.sections_course_number = e2.course_number
-      and e2.view_name = 'teacher_scaffold'
-      and e2.cte = 'sections'
-      and e2.school_id is not null
-
-  -- also delete from WHERE:
-  and e1.include_row is null
-  and e2.include_row is null
-  ```
-
-- [ ] **Step 6a.2: Remove exception joins from the `teacher_category_scaffold`
-      branch of `final`**
-
-  Delete all three LEFT JOINs (`e1`, `e2`, `e3`) and:
-
-  ```sql
-  where
-      e1.include_row is null and e2.include_row is null and e3.include_row is null
-  ```
-
-- [ ] **Step 6a.3: Remove exception joins from the outer `select`**
-
-  Delete the two LEFT JOINs at the end of the file and:
-
-  ```sql
-  where e1.include_row is null and e2.include_row is null
-  ```
-
-### 6b: `int_tableau__gradebook_audit_assignments_teacher.sql`
-
-- [ ] **Step 6b.1: Remove exception join and unwrap conditional columns**
-
-  File:
-  `src/dbt/kipptaf/models/extracts/tableau/intermediate/int_tableau__gradebook_audit_assignments_teacher.sql`
-
-  Delete the LEFT JOIN to `stg_google_sheets__gradebook_exceptions`. Replace
-  every `if(e.include_row is null, asg.<col>, null) as <col>` with the plain
-  column:
-
-  ```sql
-  asg.n_students,
-  asg.n_late,
-  asg.n_exempt,
-  asg.n_missing,
-  asg.n_academic_dishonesty,
-  asg.n_null,
-  asg.n_is_null_missing,
-  asg.n_is_null_not_missing,
-  asg.n_expected,
-  asg.n_expected_scored,
-  asg.teacher_avg_score_for_assign_per_class_section_and_assign_id,
-  ```
-
-### 6c: `int_tableau__gradebook_audit_categories_teacher.sql`
-
-- [ ] **Step 6c.1: Remove exception join from `assignment_score_rollup` CTE**
-
-  File:
-  `src/dbt/kipptaf/models/extracts/tableau/intermediate/int_tableau__gradebook_audit_categories_teacher.sql`
-
-  Delete the LEFT JOIN (`e1`) and the `where e1.include_row is null` condition.
-
-- [ ] **Step 6c.2: Remove the final-level exception join**
-
-  Delete the LEFT JOIN at the bottom of the file and
-  `where e.include_row is null`.
-
-### 6d: `int_tableau__gradebook_audit_flags.sql`
-
-- [ ] **Step 6d.1: Remove three exception joins from `student_unpivot` CTE**
-
-  Delete LEFT JOINs `e1`, `e2`, `e3` and remove the entire WHERE clause. The
-  UNPIVOT + INNER JOIN to `stg_google_sheets__gradebook_flags` is the correct
-  filter; no WHERE is needed.
-
-- [ ] **Step 6d.2: Remove two exception joins from `teacher_unpivot_cca` CTE**
-
-  Delete `e1` and `e2` LEFT JOINs and the WHERE clause.
-
-- [ ] **Step 6d.3: Remove one exception join from `teacher_unpivot_cc` CTE**
-
-  Delete the `e` LEFT JOIN and the WHERE clause.
-
-- [ ] **Step 6d.4: Remove one exception join from `eoq_items` CTE**
-
-  Delete the `e1` LEFT JOIN and the WHERE clause.
-
-### 6e: Disable the exceptions staging model
-
-- [ ] **Step 6e.1: Disable the staging model**
-
-  In
-  `src/dbt/kipptaf/models/google/sheets/staging/properties/stg_google_sheets__gradebook_exceptions.yml`,
-  add at the top of the model config:
-
-  ```yaml
-  config:
-    enabled: false
-  ```
-
-  The SQL file and source entry stay in place. This preserves the model for
-  reference pending any operational decisions after July 1st.
-
-### 6f: Build, verify, and commit Task 6
-
-- [ ] **Step 6f.1: Run dbt build — full downstream chain**
-
-  Task 6 is the last structural change. By this point all models in the lineage
-  should be updated (including the assignment models' quarter-grain date window
-  changes — see plan gap note below). If all prior tasks are complete, the full
-  chain is now valid:
-
-  ```bash
-  uv run dbt build \
-    --select int_tableau__gradebook_audit_teacher_scaffold+ \
-    --project-dir src/dbt/kipptaf \
-    --defer \
-    --state src/dbt/kipptaf/target/prod
-  ```
-
-  > ⚠️ **Plan gap:** `int_tableau__gradebook_audit_assignments_teacher`,
-  > `int_tableau__gradebook_audit_assignments_student`, and
-  > `int_tableau__gradebook_audit_categories_teacher` still join on
-  > `week_start_monday / week_end_sunday` from the scaffold. These joins must be
-  > updated to `quarter_start_date / quarter_end_date` before the full chain
-  > will build. Steps for those changes will be added when those models are
-  > reviewed.
-
-  Then confirm no remaining references:
-
-  ```bash
-  grep -rn "gradebook_exceptions" src/dbt/kipptaf/models/ --include="*.sql"
-  ```
-
-  Expected: zero results.
-
-- [ ] **Step 6f.2: Spot-check row counts**
-
-  Via BigQuery MCP:
-
-  ```sql
-  SELECT
-    region,
-    school_level,
-    audit_flag_name,
-    count(*) as n_rows,
-  FROM `teamster-332318.dbt_grangel_tableau.rpt_tableau__gradebook_audit`
-  WHERE flag_value = 1
-    AND academic_year = 2026
-  GROUP BY 1, 2, 3
-  ORDER BY 1, 2, 3
-  ```
-
-  Counts may be slightly higher than before — removing suppressions means some
-  previously-suppressed rows now appear. Verify with T&L if unexpected spikes
-  appear before merging.
-
-- [ ] **Step 6f.3: Commit**
-
-  ```bash
-  git commit -m "feat(dbt): remove gradebook exceptions mechanism — AY 2026-2027"
-  ```
-
----
-
-## Task 7: Update reference documentation and skill
+## Task 8: Update reference documentation and skill
 
 Once all SQL changes are merged and the model is stable, update the reference
 doc to reflect the new state of the pipeline and trim the skill to remove
@@ -1978,7 +1975,7 @@ development-time references that are no longer current.
 
 ---
 
-## Task 8: Anchor-row / "in the clear" redesign
+## Task 9: Anchor-row / "in the clear" redesign
 
 Replace the current design in `rpt_tableau__gradebook_audit.sql` — which
 generates one row per possible flag slot per section × quarter with
