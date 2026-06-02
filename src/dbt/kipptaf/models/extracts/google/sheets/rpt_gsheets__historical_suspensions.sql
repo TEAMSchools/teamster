@@ -96,7 +96,7 @@ select
         avg(if(iep_status = 'Has IEP', is_suspended_all_y1_int, null)), 3
     ) as pct_suspended_iep_y1,
     round(
-        avg(if(iep_status = 'No IEP', is_suspended_all_y1_int, null)), 3
+        avg(if(iep_status is null, is_suspended_all_y1_int, null)), 3
     ) as pct_suspended_no_iep_y1,
     round(
         avg(if(lep_status, is_suspended_all_y1_int, null)), 3
@@ -118,7 +118,7 @@ select
         avg(if(iep_status = 'Has IEP', is_suspended_all_y1_int, null)), 3
     ) as pct_suspended_iep_y1,
     round(
-        avg(if(iep_status = 'No IEP', is_suspended_all_y1_int, null)), 3
+        avg(if(iep_status is null, is_suspended_all_y1_int, null)), 3
     ) as pct_suspended_no_iep_y1,
     round(
         avg(if(lep_status, is_suspended_all_y1_int, null)), 3
@@ -140,7 +140,7 @@ select
         avg(if(iep_status = 'Has IEP', is_suspended_all_y1_int, null)), 3
     ) as pct_suspended_iep_y1,
     round(
-        avg(if(iep_status = 'No IEP', is_suspended_all_y1_int, null)), 3
+        avg(if(iep_status is null, is_suspended_all_y1_int, null)), 3
     ) as pct_suspended_no_iep_y1,
     round(
         avg(if(lep_status, is_suspended_all_y1_int, null)), 3
@@ -162,7 +162,7 @@ select
         avg(if(iep_status = 'Has IEP', is_suspended_all_y1_int, null)), 3
     ) as pct_suspended_iep_y1,
     round(
-        avg(if(iep_status = 'No IEP', is_suspended_all_y1_int, null)), 3
+        avg(if(iep_status is null, is_suspended_all_y1_int, null)), 3
     ) as pct_suspended_no_iep_y1,
     round(
         avg(if(lep_status, is_suspended_all_y1_int, null)), 3
