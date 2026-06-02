@@ -35,6 +35,38 @@ const STAFF_CUBES = [
   "fct_staff_observations",
 ];
 
+// Convention for snapshot cubes: cumulative daily flags that overcount without
+// a point-in-time anchor. All snapshot cubes expose these three dimensions.
+const SNAPSHOT_ANCHOR_DIMENSIONS = {
+  default: "is_latest_record",
+  month: "is_month_end_record",
+  week: "is_week_end_record",
+};
+const SNAPSHOT_SELF_ANCHORED_SUFFIXES = [
+  "_year_end",
+  "_month_end",
+  "_week_end",
+];
+
+// Add a cube name here when it exposes is_latest_record / is_month_end_record
+// / is_week_end_record and its measures need the anchor guard. Also add the
+// cube's snapshot measure stems to SNAPSHOT_MEASURE_STEMS below — both arrays
+// must stay in sync or the guard won't match the new cube's measures.
+const SNAPSHOT_CUBES = ["attendance"];
+
+// Measure-name stems that mark a snapshot (cumulative-daily-flag) measure
+// family — chronic absence, ADA tiers, and truancy. Only these need the
+// period-end anchor guard. Additive measures on the same cube
+// (avg_daily_attendance, count_students, pct_tardy, pct_ontime,
+// count_absent_days) are point-in-time safe and must be left untouched, so the
+// guard must NOT match every measure that starts with a snapshot cube name.
+const SNAPSHOT_MEASURE_STEMS = [
+  "chronically_absent",
+  "tier_1_2",
+  "tier_3",
+  "truant",
+];
+
 module.exports = {
   driverFactory: () => ({
     type: "bigquery",
@@ -173,6 +205,106 @@ module.exports = {
 
     const filters = [...(query.filters ?? [])];
     if (locationFilter) filters.push(locationFilter);
+
+    // Snapshot anchor guard: for cubes with cumulative daily flags, inject
+    // the appropriate period-end anchor when the query has none.
+    // Named measures (_year_end, _month_end, _week_end) have anchors baked in
+    // but require matching granularity — _month_end without grouping by month
+    // returns "CA at any month-end during the range," which is meaningless.
+    for (const cubePrefix of SNAPSHOT_CUBES) {
+      const measures = (query.measures ?? []).filter(
+        (m) =>
+          m.startsWith(cubePrefix) &&
+          SNAPSHOT_MEASURE_STEMS.some((stem) => m.includes(stem)),
+      );
+      if (!measures.length) continue;
+
+      const dateDayTd = (query.timeDimensions ?? []).find((td) =>
+        td.dimension?.endsWith("dim_dates_date_day"),
+      );
+      const granularity = dateDayTd?.granularity ?? null;
+
+      // Named period-end measures must be grouped by the matching granularity.
+      // Without it, the result is "CA at any period-end during the range."
+      for (const [suffix, required] of [
+        ["_month_end", "month"],
+        ["_week_end", "week"],
+      ]) {
+        if (
+          measures.some((m) => m.endsWith(suffix)) &&
+          granularity !== required
+        ) {
+          throw new Error(
+            `${suffix} measures must be grouped by ${required} — add ` +
+              `timeDimensions with granularity: "${required}". Without it, ` +
+              `the result counts students across all ${required}-ends in the ` +
+              `date range, not a per-${required} breakdown.`,
+          );
+        }
+      }
+
+      const hasUnanchoredMeasure = measures.some(
+        (m) => !SNAPSHOT_SELF_ANCHORED_SUFFIXES.some((s) => m.endsWith(s)),
+      );
+      if (!hasUnanchoredMeasure) continue;
+
+      if (granularity && !["day", "week", "month"].includes(granularity)) {
+        throw new Error(
+          `Snapshot measures (e.g. pct_chronically_absent) do not support ` +
+            `"${granularity}" granularity. Use the day-level base measure, ` +
+            `or the _week_end / _month_end named measures for week/month ` +
+            `trends, or omit timeDimensions for a year-end snapshot.`,
+        );
+      }
+
+      if (granularity === "day") continue;
+
+      const anchorDimension =
+        SNAPSHOT_ANCHOR_DIMENSIONS[granularity] ??
+        SNAPSHOT_ANCHOR_DIMENSIONS.default;
+      const anchorMember = `${cubePrefix}.${anchorDimension}`;
+
+      const alreadyAnchored =
+        filters.some(
+          (f) =>
+            Object.values(SNAPSHOT_ANCHOR_DIMENSIONS).some((d) =>
+              f.member?.endsWith(d),
+            ) &&
+            f.operator === "equals" &&
+            [true, "true", "1"].includes(f.values?.[0]),
+        ) ||
+        filters.some(
+          (f) =>
+            f.member?.endsWith("dim_dates_date_day") &&
+            f.operator === "equals" &&
+            Array.isArray(f.values) &&
+            f.values.length === 1,
+        ) ||
+        (query.dimensions ?? []).some((d) =>
+          d.endsWith("dim_dates_date_day"),
+        ) ||
+        // A point-in-time pin expressed via timeDimensions counts as anchored
+        // only when it is a single day — a single-element dateRange or
+        // granularity "day". A wider dateRange with null granularity is NOT
+        // anchored (injecting the period-end snapshot is correct there;
+        // treating it as anchored would re-open the "ever-CA-in-range"
+        // overcount). Reuse dateDayTd found above rather than re-scanning.
+        // A single-day dateRange is either one element (["2025-01-15"], which
+        // Cube treats as start === end) or two equal elements.
+        (dateDayTd &&
+          ((Array.isArray(dateDayTd.dateRange) &&
+            (dateDayTd.dateRange.length === 1 ||
+              dateDayTd.dateRange[0] === dateDayTd.dateRange[1])) ||
+            dateDayTd.granularity === "day"));
+
+      if (!alreadyAnchored) {
+        filters.push({
+          member: anchorMember,
+          operator: "equals",
+          values: [true],
+        });
+      }
+    }
 
     // Org-hierarchy filter: inject segment defined in staff cube YAML.
     // Staff cubes and the reporting_chain segment are added in the follow-up
