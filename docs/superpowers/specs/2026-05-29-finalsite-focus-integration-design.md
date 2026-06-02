@@ -64,13 +64,13 @@ _import_ templates in Fork 2; do not conflate them.
 
 Documented columns (sample):
 
-| Group        | Columns                                                                                                                          |
-| ------------ | -------------------------------------------------------------------------------------------------------------------------------- |
-| Identity     | `Finalsite ID`; SIS-ID slots `PowerSchool DCID`, `PowerSchool Student Number` (see gate)                                         |
-| Student      | First / Middle / Last Name, `Grade`, `Gender`, `Birth Date`, `Latino/Hispanic` (bool), `Race - Multi-Racial` (single value)      |
-| Address      | `Household 1 Address / City / State / Zip` (single household only)                                                               |
-| Medical      | Student Doctor Name / Phone, `Media Release`, Preference of Hospital, Hospital/Doctor Phone (see gate)                           |
-| Guardians ×4 | per parent: `Finalsite ID`, `PowerSchool Contact ID`, Title, First / Last Name, Relationship, Primary Phone Type / Number, Email |
+| Group        | Columns                                                                                                                                    |
+| ------------ | ------------------------------------------------------------------------------------------------------------------------------------------ |
+| Identity     | `Finalsite ID`; SIS-ID slots `PowerSchool DCID`, `PowerSchool Student Number` (see gate)                                                   |
+| Student      | First / Middle / Last Name, `Grade`, `Gender`, `Birth Date`, `Latino/Hispanic` (bool), `Race - Multi-Racial` (pipe-delimited multi-select) |
+| Address      | `Household 1 Address / City / State / Zip` (single household only)                                                                         |
+| Medical      | Student Doctor Name / Phone, `Media Release`, Preference of Hospital, Hospital/Doctor Phone (see gate)                                     |
+| Guardians ×4 | per parent: `Finalsite ID`, `PowerSchool Contact ID`, Title, First / Last Name, Relationship, Primary Phone Type / Number, Email           |
 
 Findings that reshape the design:
 
