@@ -460,14 +460,11 @@ git commit -m "feat(cube): add student_attendance_streaks cube; role-playing end
 ## Task 3: `student_attendance_interventions_detail` view
 
 Detail view: exposes individual intervention records with enrollment-level
-context. No student PII columns (names, DOB, identifiers) are included in this
-view — the interventions fact has no direct student PII at the fact grain. The
-student's identity is reached only through `student_enrollments`, which carries
-`student_enrollment_key` (a surrogate, not a direct identifier). Access policy:
-`group: detail-access` with no `excludes` (no PII tier needed), plus a second
-`group: cube-access-student-pii` block with `includes: "*"` is omitted — since
-there are no PII fields to gate, only the base `detail-access` block is
-required.
+context and student identity. Student PII fields (full name, identifiers) are
+included but gated by `cube-access-student-pii` — intervention coordinators
+doing follow-up need to see which student they're acting on. Access policy
+follows the standard student Pattern 1: `detail-access` excludes PII fields;
+`cube-access-student-pii` restores full access.
 
 **Note on `prefix: true`:** `join_path: student_attendance_interventions.dates`
 with `prefix: true` produces member names prefixed `dates_*`. The
@@ -546,6 +543,10 @@ views:
         prefix: true
         includes:
           - student_key
+          - full_name
+          - birth_date
+          - lea_student_identifier
+          - state_student_identifier
           - gender_identity
           - race
           - enrollment_status
@@ -579,6 +580,10 @@ views:
         - name: Student
           members:
             - students_student_key
+            - students_full_name
+            - students_birth_date
+            - students_lea_student_identifier
+            - students_state_student_identifier
             - students_gender_identity
             - students_race
             - students_enrollment_status
@@ -589,9 +594,15 @@ views:
             - student_enrollments_graduation_year
 
     access_policy:
-      # No student PII fields (name, DOB, identifiers) are exposed in this view.
-      # student_enrollment_key is a surrogate — not a direct identifier.
       - group: detail-access
+        member_level:
+          includes: "*"
+          excludes:
+            - students_full_name
+            - students_birth_date
+            - students_lea_student_identifier
+            - students_state_student_identifier
+      - group: cube-access-student-pii
         member_level:
           includes: "*"
 ```
@@ -617,7 +628,7 @@ Expected output:
 ```text
 view name: student_attendance_interventions_detail
 join paths: ['student_attendance_interventions', 'student_attendance_interventions.dates', 'student_attendance_interventions.student_enrollments.locations', 'student_attendance_interventions.student_enrollments.locations.regions', 'student_attendance_interventions.student_enrollments', 'student_attendance_interventions.student_enrollments.students']
-access groups: ['detail-access']
+access groups: ['detail-access', 'cube-access-student-pii']
 folders: ['Intervention', 'Date', 'Location', 'Student', 'Enrollment']
 ```
 
