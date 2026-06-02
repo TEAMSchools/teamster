@@ -31,6 +31,12 @@ MCP for spot-checks, `uv run dbt` CLI, branch
 | ------------------------------------ | ---- | ----------- |
 | `stg_google_sheets__gradebook_flags` | 1    | Sheet edits |
 
+### SQL — prerequisite models (powerschool package)
+
+| File                             | Task | Change                          |
+| -------------------------------- | ---- | ------------------------------- |
+| `base_powerschool__sections.sql` | 3    | Add `school_abbreviation` field |
+
 ### SQL — new models
 
 | File                                            | Task | Change |
@@ -921,7 +927,56 @@ And `eoq_items` loses 4 of its 7 flags, keeping only: `qt_es_comment_missing`,
   `where t.cte_grouping = 'student_course_category'` including its leading
   `union all` separator. The report shrinks from 5 to 4 UNION branches.
 
-### 3h: Simplify the Miami EOQ window in `teacher_scaffold.sql`
+### 3h: Add `school_abbreviation` to `base_powerschool__sections`
+
+`base_powerschool__sections` already joins `stg_powerschool__schools` and
+selects `sch.name as school_name`. Adding `school_abbreviation` (the short name
+used in Tableau for dashboard real estate) alongside it. This is a prerequisite
+for the teacher scaffold quarter-grain refactor, which replaces `term_weeks` and
+brings school info directly into the `sections` CTE.
+
+**File:** `src/dbt/powerschool/models/sis/base/base_powerschool__sections.sql`
+
+- [ ] **Step 3h.1: Add `school_abbreviation` to the SELECT list**
+
+  In `base_powerschool__sections.sql`, find the line:
+
+  ```sql
+  sch.name as school_name,
+  ```
+
+  Add immediately after it:
+
+  ```sql
+  sch.abbreviation as school_abbreviation,
+  ```
+
+- [ ] **Step 3h.2: Add the column to the properties YAML**
+
+  File:
+  `src/dbt/powerschool/models/sis/base/properties/base_powerschool__sections.yml`
+
+  Add a column entry for `school_abbreviation`:
+
+  ```yaml
+  - name: school_abbreviation
+    description:
+      Short school name abbreviation from stg_powerschool__schools, used as the
+      display name in Tableau dashboards.
+    data_type: string
+  ```
+
+- [ ] **Step 3h.3: Build and verify**
+
+  ```bash
+  uv run dbt build \
+    --select base_powerschool__sections \
+    --project-dir src/dbt/kipptaf \
+    --defer \
+    --state src/dbt/kipptaf/target/prod
+  ```
+
+### 3i: Simplify the Miami EOQ window in `teacher_scaffold.sql`
 
 - [ ] **Step 3h.1: Remove the Miami clause from `is_quarter_end_date_range`**
 
@@ -954,14 +1009,14 @@ And `eoq_items` loses 4 of its 7 flags, keeping only: `qt_es_comment_missing`,
   end as is_quarter_end_date_range,
   ```
 
-### 3i: Drop `grade_level` from `stg_google_sheets__gradebook_flags`
+### 3j: Drop `grade_level` from `stg_google_sheets__gradebook_flags`
 
 `grade_level` was only used in the `eoq_items_conduct_code` CTE (now deleted in
 step 3g) to distinguish Miami KG from G1-G8 conduct code flags. With Miami
 removed and that CTE gone, the column is permanently unused. Drop it from the
 staging model using BigQuery's `SELECT * EXCEPT` syntax.
 
-- [ ] **Step 3i.1: Update `stg_google_sheets__gradebook_flags.sql`**
+- [ ] **Step 3j.1: Update `stg_google_sheets__gradebook_flags.sql`**
 
   File:
   `src/dbt/kipptaf/models/google/sheets/staging/stg_google_sheets__gradebook_flags.sql`
@@ -992,7 +1047,7 @@ staging model using BigQuery's `SELECT * EXCEPT` syntax.
   from {{ source("google_sheets", "src_google_sheets__gradebook_flags") }}
   ```
 
-- [ ] **Step 3i.2: Remove `grade_level` from the staging model YAML**
+- [ ] **Step 3j.2: Remove `grade_level` from the staging model YAML**
 
   File:
   `src/dbt/kipptaf/models/google/sheets/staging/properties/stg_google_sheets__gradebook_flags.yml`
