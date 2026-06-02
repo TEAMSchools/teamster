@@ -794,7 +794,6 @@ based on which approach produces cleaner scaffold code — and rename accordingl
 
       qg.quarter_course_percent_grade,
       qg.quarter_course_grade_points,
-      qg.quarter_conduct,
       qg.quarter_comment_value,
 
       'student_scaffold' as scaffold_name,
@@ -928,7 +927,6 @@ based on which approach produces cleaner scaffold code — and rename accordingl
       sec.section_or_period,
       qg.quarter_course_percent_grade,
       qg.quarter_course_grade_points,
-      qg.quarter_conduct,
       qg.quarter_comment_value,
 
       'student_category_scaffold' as scaffold_name,
@@ -1002,6 +1000,8 @@ based on which approach produces cleaner scaffold code — and rename accordingl
     come from `sec` instead
   - `category_grades` join updated from `ge.assignment_category_term` to
     `sec.assignment_category_term`
+  - `qg.quarter_conduct` removed from both SELECT lists — only referenced by
+    Miami conduct code flags (being removed)
 
 - [ ] **Step 2.4b: Build and verify the student scaffold**
 
