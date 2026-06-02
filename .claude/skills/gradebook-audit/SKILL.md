@@ -157,7 +157,8 @@ uv run dbt build \
 2. For expectations data: add rows to
    `stg_google_sheets__gradebook_expectations_assignments` (legacy) OR ensure
    the PS-native `int_powerschool__u_expectations[_unpivot]` covers the region
-   (requires the U_EXPECTATIONS plugin deployed to that PS instance).
+   (requires the U_EXPECTATIONS plugin deployed to that PS instance — scripts at
+   [TEAMSchools/ps-plugins](https://github.com/TEAMSchools/ps-plugins)).
 3. No SQL changes needed if the region's PS data flows through
    `base_powerschool__sections` — verify by checking sections appear in the
    teacher scaffold after the sheet changes.

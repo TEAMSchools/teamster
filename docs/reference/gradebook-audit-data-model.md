@@ -4,6 +4,12 @@ Reference document for `rpt_tableau__gradebook_audit` — the Tableau extract th
 powers the gradebook audit dashboard used by school leaders to monitor teacher
 gradebook compliance with KIPP TAF grading policy.
 
+!!! tip "Claude Code skill available" The `gradebook-audit` skill in
+`.claude/skills/gradebook-audit/` provides guided procedures for common tasks:
+annual flags rollover, adding/removing a flag, adding a region, and debugging a
+flag that isn't firing. Invoke it by describing what you need to do with the
+gradebook audit.
+
 ## What is the gradebook audit?
 
 KIPP TAF schools require teachers to maintain PowerSchool gradebooks that follow

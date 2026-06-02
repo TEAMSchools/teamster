@@ -407,11 +407,13 @@ task creates that model for Newark (the only region with PS plugin data today)
 and updates both scaffolds to join it instead of the Google Sheet.
 
 **Newark only for now.** Camden is blocked on PR #4077 (Bini's integration work)
-landing in prod. Paterson is blocked on PS instance access. Until each region's
-PS data is available, the INNER JOIN in the teacher scaffold will find no
-matching rows for that region — category-level audit rows (assignment count
-flags, percent-graded flags) will be silent for Camden and Paterson until their
-data lands. EOQ and student-level flags in Task 1 are unaffected.
+landing in prod. Paterson is blocked on PS instance access — deploy the plugin
+from [TEAMSchools/ps-plugins](https://github.com/TEAMSchools/ps-plugins) once
+access is available. Until each region's PS data is available, the INNER JOIN in
+the teacher scaffold will find no matching rows for that region — category-level
+audit rows (assignment count flags, percent-graded flags) will be silent for
+Camden and Paterson until their data lands. EOQ and student-level flags in Task
+1 are unaffected.
 
 **Naming convention note:** If the INT model unpivots the wide-format category
 counts (`cnt_w/h/f/s`) to long format inside the model itself, it must be named
@@ -525,36 +527,16 @@ based on which approach produces cleaner scaffold code — and rename accordingl
               initcap(
                   regexp_extract(s._dbt_source_relation, r'kipp(\w+)_')
               ) as region,
-              coalesce(
-                  if(
-                      s.school_name = 'KIPP Sumner Elementary'
-                      and s.sections_grade_level = 5,
-                      'MS',
-                      null
-                  ),
-                  s.school_level
-              ) as school_level,
-              concat(
-                  initcap(regexp_extract(s._dbt_source_relation, r'kipp(\w+)_')),
-                  coalesce(
-                      if(
-                          s.school_name = 'KIPP Sumner Elementary'
-                          and s.sections_grade_level = 5,
-                          'MS',
-                          null
-                      ),
-                      s.school_level
-                  )
-              ) as region_school_level,
+              if(
+                  s.school_name = 'KIPP Sumner Elementary'
+                  and s.sections_grade_level = 5,
+                  'MS',
+                  null
+              ) as school_level_alt,
               cast(s.terms_academic_year as string)
               || '-'
               || right(cast(s.terms_academic_year + 1 as string), 2)
                   as academic_year_display,
-              if(
-                  s.school_level = 'HS',
-                  s.sections_external_expression,
-                  s.sections_section_number
-              ) as section_or_period,
           from {{ ref("base_powerschool__sections") }} as s
           left join
               {{ ref("int_people__staff_roster") }} as r
@@ -572,8 +554,19 @@ based on which approach produces cleaner scaffold code — and rename accordingl
               and s.sections_no_of_students != 0
       )
 
+  -- `school_level_alt` and raw `school_level` are excluded from s.* and
+  -- replaced with the coalesced value. `region_school_level` and
+  -- `section_or_period` are derived here so the if() expression is only
+  -- written once (in the CTE as `school_level_alt`).
   select
-      s.*,
+      s.* EXCEPT (school_level, school_level_alt),
+      coalesce(s.school_level_alt, s.school_level) as school_level,
+      concat(s.region, coalesce(s.school_level_alt, s.school_level)) as region_school_level,
+      if(
+          coalesce(s.school_level_alt, s.school_level) = 'HS',
+          s.external_expression,
+          s.section_number
+      ) as section_or_period,
       null as assignment_category_code,
       null as assignment_category_name,
       null as assignment_category_term,
@@ -585,7 +578,14 @@ based on which approach produces cleaner scaffold code — and rename accordingl
   union all
 
   select
-      s.*,
+      s.* EXCEPT (school_level, school_level_alt),
+      coalesce(s.school_level_alt, s.school_level) as school_level,
+      concat(s.region, coalesce(s.school_level_alt, s.school_level)) as region_school_level,
+      if(
+          coalesce(s.school_level_alt, s.school_level) = 'HS',
+          s.external_expression,
+          s.section_number
+      ) as section_or_period,
       ge.assignment_category_code,
       ge.assignment_category_name,
       ge.assignment_category_term,
@@ -602,6 +602,9 @@ based on which approach produces cleaner scaffold code — and rename accordingl
   ```
 
   Key differences from the old model:
+  - `school_level_alt` defined once in CTE; `school_level`,
+    `region_school_level`, and `section_or_period` derived in the main SELECT
+    using it — no repeated `if(school_name = ...)` expression
   - No `week_number` in the join — quarter grain only
   - No `final` CTE — UNION ALL is the SELECT
   - No `is_quarter_end_date_range`, `quarter_end_date_insession`,
