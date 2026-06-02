@@ -718,23 +718,6 @@ based on which approach produces cleaner scaffold code — and rename accordingl
 
   ```sql
   with
-      category_grades as (
-          select
-              _dbt_source_relation,
-              yearid,
-              studentid,
-              sectionid,
-              storecode,
-              percent_grade as category_quarter_percent_grade,
-
-          from {{ ref("int_powerschool__category_grades") }}
-          where
-              /* summer toggle: change -1990 to -1991 after PS academic year rollover
-                 in July until new-year grade data is available; revert when ready */
-              yearid = {{ var("current_academic_year") - 1990 }}
-              and termbin_start_date <= current_date('{{ var("local_timezone") }}')
-      ),
-
       quarter_course_grades as (
           select
               _dbt_source_relation,
@@ -987,7 +970,7 @@ based on which approach produces cleaner scaffold code — and rename accordingl
       sec.expectation,
       sec.notes,
 
-      cg.category_quarter_percent_grade,
+      cg.percent_grade as category_quarter_percent_grade,
 
       null as qt_percent_grade_greater_100,
       null as qt_grade_70_comment_missing,
@@ -1018,12 +1001,16 @@ based on which approach produces cleaner scaffold code — and rename accordingl
       and qg.termbin_start_date <= current_date('{{ var("local_timezone") }}')
       and qg.grades_type = 'current_year' /* summer toggle: see skill */
   left join
-      category_grades as cg
+      {{ ref("int_powerschool__category_grades") }} as cg
       on ce.terms_yearid = cg.yearid
       and ce.cc_studentid = cg.studentid
       and ce.cc_sectionid = cg.sectionid
       and {{ union_dataset_join_clause(left_alias="ce", right_alias="cg") }}
       and sec.assignment_category_term = cg.storecode
+      and cg.termbin_start_date <= current_date('{{ var("local_timezone") }}')
+      /* summer toggle: change -1990 to -1991 after PS academic year rollover
+         in July until new-year grade data is available; revert when ready */
+      and cg.yearid = {{ var("current_academic_year") - 1990 }}
   where
       s.academic_year = {{ var("current_academic_year") }}
       and s.rn_year = 1
@@ -1050,9 +1037,12 @@ based on which approach produces cleaner scaffold code — and rename accordingl
   - `quarter_conduct` removed entirely — from both SELECT lists and from the
     `quarter_course_grades` CTE (`citizenship` / `behavior` aliases dropped).
     Only referenced by Miami conduct code flags, which are being removed.
-  - `category_quarter_average_all_courses` removed entirely — from the
-    `category_grades` CTE window function and both SELECT lists. Was only used
-    to compute `w_grade_inflation`, which is being removed.
+  - `category_quarter_average_all_courses` removed entirely — was only used to
+    compute `w_grade_inflation`, which is being removed.
+  - `category_grades` CTE eliminated — without the window function it was just a
+    filtered read; inlined as a direct LEFT JOIN to
+    `int_powerschool__category_grades`. Summer toggle moves from CTE WHERE to
+    the JOIN condition.
   - All column listings are explicit per Bini's requirement for tableau schema
     models (no `SELECT *` or `SELECT * EXCEPT`).
 

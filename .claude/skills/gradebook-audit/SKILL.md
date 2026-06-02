@@ -181,14 +181,14 @@ exist and the dashboard goes blank.
 
 **Two flips to recover (switch to prior-year data):**
 
-1. `category_grades` CTE — change the `yearid` filter from current year to prior
-   year:
+1. Direct JOIN to `int_powerschool__category_grades` in the
+   `student_category_scaffold` branch — change the yearid join condition:
 
    ```sql
    -- change this:
-   yearid = {{ var("current_academic_year") - 1990 }}
+   and cg.yearid = {{ var("current_academic_year") - 1990 }}
    -- to this:
-   yearid = {{ var("current_academic_year") - 1991 }}
+   and cg.yearid = {{ var("current_academic_year") - 1991 }}
    ```
 
 2. Both UNION branches — change the `quarter_course_grades` join filter from
