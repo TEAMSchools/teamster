@@ -246,6 +246,36 @@ contacts.
    current SFTP export omits it, so enriching the export **must add `status`**
    (and `enrollment_type`) — not optional.
 
+### Student_Enrollment field resolution (Finalsite API → Focus SFTP)
+
+This permutation **sidesteps the API enrollment-write gap** — the Focus SFTP
+`STUDENT_ENROLLMENT` template does the enrollment write, so the API's GET-only
+`enrollments` doesn't matter here. Field-by-field from the Finalsite API source:
+
+| Focus field                     | From Finalsite API                            | Remaining                                                                                                      |
+| ------------------------------- | --------------------------------------------- | -------------------------------------------------------------------------------------------------------------- |
+| `SYEAR` (req)                   | `school_year.start_year` ✓                    | none — solved                                                                                                  |
+| `STUDENT_ID` (req)              | `id_attributes` (returning) / mint (new)      | minting authority (★ gate)                                                                                     |
+| `GRADE_ID` (req)                | `grade.canonical_name` ✓                      | Finalsite-grade → Focus Short-Name map (case-sensitive); Focus grade levels set up                             |
+| `SCHOOL_ID` (req)               | `assigned_school_ss`/`kipp_school_*` (Newark) | confirm Miami carries the field (per-tenant); Finalsite-school → Focus `SCH_ID` crosswalk; Focus Schools exist |
+| `START_DATE` (req)              | **none**                                      | **derivation rule** — first instructional day of `SYEAR` (Focus calendar) or a designated Finalsite date       |
+| `ENROLLMENT_CODE` (opt, needed) | derive from `status`/`enrollment_type`        | `new`/`returning` → Focus Add-code (`EA1`/`RA1`) map; codes set up in Focus                                    |
+| `END_DATE` + `DROP_CODE` (xfer) | withdrawal date + reason                      | whether Miami exposes a withdrawal-date field; reason → Focus `DROP_CODE` map (create-only: N/A)               |
+| `CALENDAR_ID` (opt)             | blank = school default                        | only if non-default calendars                                                                                  |
+
+Three buckets:
+
+1. **One genuine data gap — `START_DATE`.** No source field; it's a
+   derivation-rule decision (likely the first instructional day of `SYEAR` from
+   the Focus calendar).
+2. **Mapping + Focus code-setup** (data is available): grade→Short-Name,
+   school→`SCH_ID`, status→`ENROLLMENT_CODE` — all depend on Focus-side setup
+   (Grade Levels, Enrollment Codes Add+Drop, Calendars, Schools) existing and
+   matching by case-sensitive short name.
+3. **Already-tracked gates:** `STUDENT_ID` minting, and Miami-tenant
+   confirmation that an `assigned_school`/equivalent field exists (needs Miami
+   profiling).
+
 ## Finalsite API live profile (Newark proxy, n=300)
 
 Profiled the **live** Finalsite Enrollment API for **Newark** (same product as
