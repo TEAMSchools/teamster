@@ -324,10 +324,21 @@ module.exports = {
       }
     }
 
-    // TODO: Org-hierarchy filter via reporting_chain segment.
-    // Requires defining a reporting_chain segment on the staff_work_history
-    // cube that limits rows to the querying user's direct reports.
-    // Deferred — segment not yet implemented.
+    // Org-hierarchy filter — fail closed until reporting_chain segment is
+    // implemented on staff_work_history. Once the segment exists and is
+    // verified to scope rows to the requesting user's direct reports,
+    // replace this block with the segment injection.
+    const touchesStaffCube = [
+      ...(query.dimensions ?? []),
+      ...(query.measures ?? []),
+    ].some((m) => isStaffMember(m));
+    if (touchesStaffCube && !groups.includes("cube-access-staff-all")) {
+      throw new Error(
+        "Access denied: org-hierarchy scoping (reporting_chain) is not yet " +
+          "implemented. Staff cube access is currently restricted to " +
+          "cube-access-staff-all. Contact the Data Team to be granted access.",
+      );
+    }
 
     return { ...query, filters };
   },
