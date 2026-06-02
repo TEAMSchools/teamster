@@ -1,15 +1,15 @@
 cubes:
-  - name: dim_student_enrollments
+  - name: student_enrollments
     public: false
     sql_table: kipptaf_marts.dim_student_enrollments
 
     joins:
-      - name: dim_students
-        sql: "{dim_students.student_key} = {CUBE}.student_key"
+      - name: students
+        sql: "{students.student_key} = {CUBE}.student_key"
         relationship: many_to_one
 
-      - name: dim_locations
-        sql: "{dim_locations.location_key} = {CUBE}.location_key"
+      - name: locations
+        sql: "{locations.location_key} = {CUBE}.location_key"
         relationship: many_to_one
 
     dimensions:
