@@ -324,19 +324,10 @@ module.exports = {
       }
     }
 
-    // Org-hierarchy filter: inject segment defined in staff cube YAML.
-    // Staff cubes and the reporting_chain segment are added in the follow-up
-    // spec (blocked on #3729 — dim_staff_work_assignments.staff_key fix).
-    const touchesStaffCube = [
-      ...(query.dimensions ?? []),
-      ...(query.measures ?? []),
-    ].some((m) => isStaffMember(m));
-    if (touchesStaffCube && !groups.includes("cube-access-staff-all")) {
-      query = {
-        ...query,
-        segments: [...(query.segments ?? []), "staff.reporting_chain"],
-      };
-    }
+    // TODO: Org-hierarchy filter via reporting_chain segment.
+    // Requires defining a reporting_chain segment on the staff_work_history
+    // cube that limits rows to the querying user's direct reports.
+    // Deferred — segment not yet implemented.
 
     return { ...query, filters };
   },
