@@ -26,21 +26,23 @@ MCP for spot-checks, `uv run dbt` CLI, branch
 
 ## File map
 
-| File                                                                   | Task(s)      | Change type         |
-| ---------------------------------------------------------------------- | ------------ | ------------------- |
-| `stg_google_sheets__gradebook_flags` (Google Sheet, not repo)          | 1            | Sheet edits         |
-| `stg_google_sheets__gradebook_expectations_assignments` (Google Sheet) | 2            | Sheet edits         |
-| `int_tableau__gradebook_audit_teacher_scaffold.sql`                    | 3, 6         | SQL                 |
-| `int_tableau__gradebook_audit_student_scaffold.sql`                    | 3            | SQL                 |
-| `int_tableau__gradebook_audit_assignments_teacher.sql`                 | 3, 6         | SQL                 |
-| `int_tableau__gradebook_audit_assignments_student.sql`                 | 3            | SQL                 |
-| `int_tableau__gradebook_audit_categories_teacher.sql`                  | 3, 4, 6      | SQL                 |
-| `int_tableau__gradebook_audit_flags.sql`                               | 3, 6         | SQL                 |
-| `rpt_tableau__gradebook_audit.sql`                                     | 3, 6         | SQL                 |
-| `stg_google_sheets__gradebook_exceptions.sql`                          | 6            | Delete              |
-| `stg_google_sheets__gradebook_exceptions.yml`                          | 6            | Delete              |
-| `sources-external.yml`                                                 | 6            | Remove source entry |
-| YAML properties for each modified model                                | per SQL task | Column removals     |
+| File                                                                   | Task(s)      | Change type                         |
+| ---------------------------------------------------------------------- | ------------ | ----------------------------------- |
+| `stg_google_sheets__gradebook_flags` (Google Sheet, not repo)          | 1            | Sheet edits                         |
+| `stg_google_sheets__gradebook_expectations_assignments` (Google Sheet) | 2            | Sheet edits                         |
+| `int_tableau__gradebook_audit_teacher_scaffold.sql`                    | 3, 6         | SQL                                 |
+| `int_tableau__gradebook_audit_student_scaffold.sql`                    | 3            | SQL                                 |
+| `int_tableau__gradebook_audit_assignments_teacher.sql`                 | 3, 6         | SQL                                 |
+| `int_tableau__gradebook_audit_assignments_student.sql`                 | 3            | SQL                                 |
+| `int_tableau__gradebook_audit_categories_teacher.sql`                  | 3, 4, 6      | SQL                                 |
+| `int_tableau__gradebook_audit_flags.sql`                               | 3, 6         | SQL                                 |
+| `rpt_tableau__gradebook_audit.sql`                                     | 3, 6         | SQL                                 |
+| `int_extracts__student_enrollments.sql`                                | 3            | Add boolean column                  |
+| `rpt_tableau__gradebook_gpa.sql`                                       | 3            | Add boolean, remove Paterson filter |
+| `stg_google_sheets__gradebook_exceptions.sql`                          | 6            | Delete                              |
+| `stg_google_sheets__gradebook_exceptions.yml`                          | 6            | Delete                              |
+| `sources-external.yml`                                                 | 6            | Remove source entry                 |
+| YAML properties for each modified model                                | per SQL task | Column removals                     |
 
 **SQL paths:**
 `src/dbt/kipptaf/models/extracts/tableau/intermediate/<model>.sql`
@@ -406,13 +408,24 @@ branches.
   - `intermediate/properties/int_tableau__gradebook_audit_categories_teacher.yml`
   - `intermediate/properties/int_tableau__gradebook_audit_flags.yml`
 
-### 3d: Remove `qt_student_is_ada_80_plus_gpa_less_2`
+### 3d: Migrate `qt_student_is_ada_80_plus_gpa_less_2` out of the gradebook audit
 
-This flag is being moved to `int_extracts__student_enrollments` so it can be
-used in other dashboards. The work to add it there is a separate task outside
-this plan. Here we only remove it from the gradebook audit.
+This flag is being split into two new booleans and removed from the gradebook
+audit:
+
+- A **cumulative GPA** version added to `int_extracts__student_enrollments`
+  (student-level, for use in any dashboard)
+- A **per-course year-to-date GPA** version added to
+  `rpt_tableau__gradebook_gpa`
+
+> ⚠️ **Open question for T&L (see issue #3908 comment):** current logic uses
+> `< 2.0` (strictly less than). Confirm whether threshold should be `<= 2.0`.
+> Use `< 2.0` until confirmed otherwise.
 
 - [ ] **Step 3d.1: Remove from `student_scaffold.sql`**
+
+  File:
+  `src/dbt/kipptaf/models/extracts/tableau/intermediate/int_tableau__gradebook_audit_student_scaffold.sql`
 
   In the **`student_scaffold` branch**, delete:
 
@@ -440,11 +453,113 @@ this plan. Here we only remove it from the gradebook audit.
   qt_student_is_ada_80_plus_gpa_less_2
   ```
 
-- [ ] **Step 3d.3: Update YAMLs**
+- [ ] **Step 3d.3: Update gradebook audit YAMLs**
 
   Remove `qt_student_is_ada_80_plus_gpa_less_2` from:
   - `intermediate/properties/int_tableau__gradebook_audit_student_scaffold.yml`
   - `intermediate/properties/int_tableau__gradebook_audit_flags.yml`
+
+- [ ] **Step 3d.4: Add cumulative GPA boolean to
+      `int_extracts__student_enrollments`**
+
+  File:
+  `src/dbt/kipptaf/models/students/intermediate/int_extracts__student_enrollments.sql`
+
+  Add this column to the final `select` list (after the existing
+  `ada_above_or_at_80` and GPA columns — follow ST06 column ordering: plain refs
+  first, then logicals):
+
+  ```sql
+  if(
+      ada_above_or_at_80 and cumulative_y1_gpa < 2.0,
+      true,
+      false
+  ) as is_ada_above_or_at_80_cum_gpa_less_2,
+  ```
+
+  Then add the column to the properties YAML at
+  `src/dbt/kipptaf/models/students/intermediate/properties/int_extracts__student_enrollments.yml`:
+
+  ```yaml
+  - name: is_ada_above_or_at_80_cum_gpa_less_2
+    description: >
+      True when the student's ADA is at or above 80% and their cumulative
+      year-to-date GPA (cumulative_y1_gpa) is below 2.0.
+    data_type: boolean
+  ```
+
+- [ ] **Step 3d.5: Build and verify `int_extracts__student_enrollments`**
+
+  ```bash
+  uv run dbt build \
+    --select int_extracts__student_enrollments \
+    --project-dir src/dbt/kipptaf \
+    --defer \
+    --state src/dbt/kipptaf/target/prod
+  ```
+
+- [ ] **Step 3d.6: Add per-course GPA boolean to `rpt_tableau__gradebook_gpa`**
+
+  File: `src/dbt/kipptaf/models/extracts/tableau/rpt_tableau__gradebook_gpa.sql`
+
+  Add this column to the final `select` list (after the existing
+  `ada_above_or_at_80` column — follow ST06 ordering):
+
+  ```sql
+  if(
+      s.ada_above_or_at_80 and s.gpa_y1 < 2.0,
+      true,
+      false
+  ) as is_ada_above_or_at_80_gpa_y1_less_2,
+  ```
+
+  Then add the column to the properties YAML at
+  `src/dbt/kipptaf/models/extracts/tableau/properties/rpt_tableau__gradebook_gpa.yml`:
+
+  ```yaml
+  - name: is_ada_above_or_at_80_gpa_y1_less_2
+    description: >
+      True when the student's ADA is at or above 80% and their year-to-date
+      course GPA (gpa_y1) is below 2.0. Per-course grain.
+    data_type: boolean
+  ```
+
+- [ ] **Step 3d.7: Remove the Paterson exclusion from
+      `rpt_tableau__gradebook_gpa`**
+
+  In the `student_roster` CTE WHERE clause (line 128–133), remove:
+
+  ```sql
+  and enr.region != 'Paterson'
+  ```
+
+  The full WHERE becomes:
+
+  ```sql
+  where
+      enr.rn_year = 1
+      and not enr.is_out_of_district
+      and enr.enroll_status != -1
+  ```
+
+- [ ] **Step 3d.8: Build and verify `rpt_tableau__gradebook_gpa`**
+
+  ```bash
+  uv run dbt build \
+    --select rpt_tableau__gradebook_gpa \
+    --project-dir src/dbt/kipptaf \
+    --defer \
+    --state src/dbt/kipptaf/target/prod
+  ```
+
+  Verify Paterson now appears:
+
+  ```sql
+  SELECT DISTINCT region, school_level
+  FROM `teamster-332318.dbt_grangel_tableau.rpt_tableau__gradebook_gpa`
+  WHERE academic_year = 2026
+  ORDER BY 1, 2
+  ```
 
 ### 3e: Remove Miami dead-code flags from `categories_teacher.sql` and
 
