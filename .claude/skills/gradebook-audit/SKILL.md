@@ -165,6 +165,58 @@ uv run dbt build \
 
 ---
 
+## Procedure: Recover category grades or course grades after academic year rollover
+
+**Trigger phrases:** "we lost category grades", "dashboard is blank after
+summer", "no grades showing", "category grades disappeared", "current year
+rolled over but data isn't there yet"
+
+**What happens:** In July, the dbt `current_academic_year` variable is bumped
+(e.g., 2025 → 2026). PowerSchool has no grade records for the new year yet.
+`int_tableau__gradebook_audit_student_scaffold` then looks for data that doesn't
+exist and the dashboard goes blank.
+
+**File:**
+`src/dbt/kipptaf/models/extracts/tableau/intermediate/int_tableau__gradebook_audit_student_scaffold.sql`
+
+**Two flips to recover (switch to prior-year data):**
+
+1. `category_grades` CTE — change the `yearid` filter from current year to prior
+   year:
+
+   ```sql
+   -- change this:
+   yearid = {{ var("current_academic_year") - 1990 }}
+   -- to this:
+   yearid = {{ var("current_academic_year") - 1991 }}
+   ```
+
+2. Both UNION branches — change the `quarter_course_grades` join filter from
+   current year to prior year:
+
+   ```sql
+   -- change this:
+   and qg.grades_type = 'current_year'
+   -- to this:
+   and qg.grades_type = 'last_year'
+   ```
+
+**When to flip back:** once the new academic year's grade data starts appearing
+in PowerSchool (typically when teachers start entering grades in Q1), revert
+both changes: `- 1991` → `- 1990` and `'last_year'` → `'current_year'`.
+
+Build and verify after each flip:
+
+```bash
+uv run dbt build \
+  --select int_tableau__gradebook_audit_student_scaffold \
+  --project-dir src/dbt/kipptaf \
+  --defer \
+  --state src/dbt/kipptaf/target/prod
+```
+
+---
+
 ## Procedure: Debug a flag that isn't firing
 
 Ask: which flag, region, school level, and quarter.
