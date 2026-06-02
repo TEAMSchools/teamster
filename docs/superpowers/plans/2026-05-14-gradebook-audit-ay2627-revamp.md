@@ -55,11 +55,14 @@ MCP for spot-checks, `uv run dbt` CLI, branch
 
 ### SQL — deleted models
 
-| File                                          | Task | Change              |
-| --------------------------------------------- | ---- | ------------------- |
-| `stg_google_sheets__gradebook_exceptions.sql` | 6    | Delete              |
-| `stg_google_sheets__gradebook_exceptions.yml` | 6    | Delete              |
-| `sources-external.yml`                        | 6    | Remove source entry |
+| File                                                        | Task | Change              |
+| ----------------------------------------------------------- | ---- | ------------------- |
+| `stg_google_sheets__gradebook_expectations_assignments.sql` | 2    | Delete              |
+| `stg_google_sheets__gradebook_expectations_assignments.yml` | 2    | Delete              |
+| `sources-external.yml` (expectations entry)                 | 2    | Remove source entry |
+| `stg_google_sheets__gradebook_exceptions.sql`               | 6    | Delete              |
+| `stg_google_sheets__gradebook_exceptions.yml`               | 6    | Delete              |
+| `sources-external.yml` (exceptions entry)                   | 6    | Remove source entry |
 
 ### Documentation
 
@@ -318,7 +321,28 @@ based on which approach produces cleaner scaffold code — and rename accordingl
 
   Expected: Newark only. Camden and Paterson absent for category-level rows.
 
-- [ ] **Step 2.6: Commit**
+- [ ] **Step 2.6: Delete the deprecated staging model**
+
+  Nothing references `stg_google_sheets__gradebook_expectations_assignments`
+  after steps 2.3–2.4. Delete the model and its source entry:
+
+  ```bash
+  rm src/dbt/kipptaf/models/google/sheets/staging/stg_google_sheets__gradebook_expectations_assignments.sql
+  rm src/dbt/kipptaf/models/google/sheets/staging/properties/stg_google_sheets__gradebook_expectations_assignments.yml
+  ```
+
+  In `src/dbt/kipptaf/models/google/sheets/sources-external.yml`, remove the
+  `src_google_sheets__gradebook_expectations_assignments` source block.
+
+  Verify no remaining references:
+
+  ```bash
+  grep -rn "gradebook_expectations_assignments" src/dbt/kipptaf/models/ --include="*.sql"
+  ```
+
+  Expected: zero results.
+
+- [ ] **Step 2.7: Commit**
 
   ```bash
   git add -u
