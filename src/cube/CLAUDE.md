@@ -132,6 +132,9 @@ Default-deny, group-driven. Read [`cube.js`](cube.js) before modifying.
   `student_` and `staff_` prefixes automatically route cubes through the correct
   `queryRewrite` gates. Do NOT add new cubes to a `STUDENT_CUBES` or
   `STAFF_CUBES` array — those arrays were removed when Plan 0 ran.
+- **`cube-access-staff-data`** is required to see any staff-domain member
+  (dimensions and measures), identical to `cube-access-student-data` for
+  students. Without it, all `staff_`-prefixed members are stripped from queries.
 - **`SNAPSHOT_CUBES` / `SNAPSHOT_MEASURE_STEMS` arrays.** For cubes built on
   fact tables with cumulative daily-status flags (values re-stamped on every row
   — overcounts without a point-in-time anchor). `queryRewrite` auto-injects

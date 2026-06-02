@@ -178,6 +178,14 @@ module.exports = {
       };
     }
 
+    if (!groups.includes("cube-access-staff-data")) {
+      query = {
+        ...query,
+        dimensions: (query.dimensions ?? []).filter((d) => !isStaffMember(d)),
+        measures: (query.measures ?? []).filter((m) => !isStaffMember(m)),
+      };
+    }
+
     // Location scope — evaluate in priority order
     const networkGroup = groups.find((g) => g.startsWith("cube-network-"));
     const regionGroup = groups.find((g) =>
