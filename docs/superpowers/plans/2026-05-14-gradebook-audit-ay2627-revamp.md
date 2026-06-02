@@ -525,6 +525,7 @@ based on which approach produces cleaner scaffold code — and rename accordingl
               t.term_start_date as quarter_start_date,
               t.term_end_date as quarter_end_date,
               t.is_current_term,
+              s.school_level,
               initcap(
                   regexp_extract(s._dbt_source_relation, r'kipp(\w+)_')
               ) as region,
@@ -555,19 +556,47 @@ based on which approach produces cleaner scaffold code — and rename accordingl
               and s.sections_no_of_students != 0
       )
 
-  /* `school_level_alt` and raw `school_level` are excluded from s.* and
-     replaced with the coalesced value. `region_school_level` and
-     `section_or_period` are derived here so the if() expression is only
-     written once (in the CTE as `school_level_alt`). */
+  /* Explicit column listing required for all models under the tableau schema.
+     school_level and region_school_level are derived here using school_level_alt
+     so the if() expression appears only once (in the CTE). */
   select
-      s.* EXCEPT (school_level, school_level_alt),
+      s._dbt_source_relation,
+      s.academic_year,
+      s.academic_year_display,
+      s.yearid,
+      s.schoolid,
+      s.school,
+      s.region,
       coalesce(s.school_level_alt, s.school_level) as school_level,
       concat(s.region, coalesce(s.school_level_alt, s.school_level)) as region_school_level,
+      s.sections_dcid,
+      s.sectionid,
+      s.section_number,
+      s.external_expression,
       if(
           coalesce(s.school_level_alt, s.school_level) = 'HS',
           s.external_expression,
           s.section_number
       ) as section_or_period,
+      s.course_number,
+      s.course_name,
+      s.credit_type,
+      s.exclude_from_gpa,
+      s.is_ap_course,
+      s.teacher_number,
+      s.teacher_name,
+      s.teacher_tableau_username,
+      s.manager_employee_number,
+      s.manager_name,
+      s.manager_tableau_username,
+      s.hos,
+      s.school_leader,
+      s.school_leader_tableau_username,
+      s.quarter,
+      s.semester,
+      s.quarter_start_date,
+      s.quarter_end_date,
+      s.is_current_term,
       null as assignment_category_code,
       null as assignment_category_name,
       null as assignment_category_term,
@@ -579,14 +608,43 @@ based on which approach produces cleaner scaffold code — and rename accordingl
   union all
 
   select
-      s.* EXCEPT (school_level, school_level_alt),
+      s._dbt_source_relation,
+      s.academic_year,
+      s.academic_year_display,
+      s.yearid,
+      s.schoolid,
+      s.school,
+      s.region,
       coalesce(s.school_level_alt, s.school_level) as school_level,
       concat(s.region, coalesce(s.school_level_alt, s.school_level)) as region_school_level,
+      s.sections_dcid,
+      s.sectionid,
+      s.section_number,
+      s.external_expression,
       if(
           coalesce(s.school_level_alt, s.school_level) = 'HS',
           s.external_expression,
           s.section_number
       ) as section_or_period,
+      s.course_number,
+      s.course_name,
+      s.credit_type,
+      s.exclude_from_gpa,
+      s.is_ap_course,
+      s.teacher_number,
+      s.teacher_name,
+      s.teacher_tableau_username,
+      s.manager_employee_number,
+      s.manager_name,
+      s.manager_tableau_username,
+      s.hos,
+      s.school_leader,
+      s.school_leader_tableau_username,
+      s.quarter,
+      s.semester,
+      s.quarter_start_date,
+      s.quarter_end_date,
+      s.is_current_term,
       ge.assignment_category_code,
       ge.assignment_category_name,
       ge.assignment_category_term,
@@ -668,13 +726,6 @@ based on which approach produces cleaner scaffold code — and rename accordingl
               sectionid,
               storecode,
               percent_grade as category_quarter_percent_grade,
-
-              round(
-                  avg(percent_grade) over (
-                      partition by _dbt_source_relation, studentid, yearid, storecode
-                  ),
-                  2
-              ) as category_quarter_average_all_courses,
 
           from {{ ref("int_powerschool__category_grades") }}
           where
@@ -803,7 +854,6 @@ based on which approach produces cleaner scaffold code — and rename accordingl
       null as notes,
 
       null as category_quarter_percent_grade,
-      null as category_quarter_average_all_courses,
 
       if(
           qg.quarter_course_percent_grade > 100, true, false
@@ -938,7 +988,6 @@ based on which approach produces cleaner scaffold code — and rename accordingl
       sec.notes,
 
       cg.category_quarter_percent_grade,
-      cg.category_quarter_average_all_courses,
 
       null as qt_percent_grade_greater_100,
       null as qt_grade_70_comment_missing,
@@ -1001,6 +1050,11 @@ based on which approach produces cleaner scaffold code — and rename accordingl
   - `quarter_conduct` removed entirely — from both SELECT lists and from the
     `quarter_course_grades` CTE (`citizenship` / `behavior` aliases dropped).
     Only referenced by Miami conduct code flags, which are being removed.
+  - `category_quarter_average_all_courses` removed entirely — from the
+    `category_grades` CTE window function and both SELECT lists. Was only used
+    to compute `w_grade_inflation`, which is being removed.
+  - All column listings are explicit per Bini's requirement for tableau schema
+    models (no `SELECT *` or `SELECT * EXCEPT`).
 
 - [ ] **Step 2.4b: Build and verify the student scaffold**
 
