@@ -44,6 +44,7 @@ cubes:
           2025-26 school year).
         sql: academic_year
         type: number
+        public: true
 
       - name: grade_level
         description: >-
