@@ -864,9 +864,98 @@ required counts with Teaching & Learning before copying prior-year values.
 
 ### Step 2 — Update `stg_google_sheets__gradebook_flags`
 
-Add rows for the new `academic_year`. Flag configuration (which flags are active
-per region and school level) may change — confirm with T&L before replicating
-prior-year values.
+Add rows for the new `academic_year`. The process is:
+
+1. **Generate the new rows** by running the query below against the current prod
+   staging table. It copies all prior-year rows for active regions, bumps
+   `academic_year` to the new year, and excludes any flags that were deprecated
+   for the new year. It also generates Paterson rows from the Newark template.
+   The query output can be pasted directly into the Google Sheet as
+   tab-separated values.
+
+2. **Verify with T&L** that no flags should be added or removed before pasting.
+
+3. **Paste** the output into the sheet starting at the first empty row.
+
+```sql
+-- Generate AY 2026 flag rows (adjust the academic_year values each rollover)
+SELECT * FROM (
+
+  -- Camden and Newark: copy prior year, bump academic_year
+  SELECT
+    2026 AS academic_year,
+    region,
+    school_level,
+    code_type,
+    code,
+    audit_category,
+    audit_flag_name,
+    cte_grouping,
+    grade_level,
+  FROM `teamster-332318.kipptaf_google_sheets.stg_google_sheets__gradebook_flags`
+  WHERE region IN ('Newark', 'Camden')
+    AND academic_year = 2025
+    AND audit_flag_name NOT IN (
+      -- list any flags being deprecated for the new year here
+      'w_grade_inflation',
+      'assign_s_hs_score_not_conversion_chart_options',
+      'assign_s_ms_score_not_conversion_chart_options',
+      'qt_teacher_s_total_greater_200',
+      'qt_teacher_s_total_less_200',
+      'qt_student_is_ada_80_plus_gpa_less_2'
+    )
+
+  UNION ALL
+
+  -- Paterson MS: mirror Newark MS
+  SELECT
+    2026 AS academic_year,
+    'Paterson' AS region,
+    school_level,
+    code_type,
+    code,
+    audit_category,
+    audit_flag_name,
+    cte_grouping,
+    grade_level,
+  FROM `teamster-332318.kipptaf_google_sheets.stg_google_sheets__gradebook_flags`
+  WHERE region = 'Newark'
+    AND school_level = 'MS'
+    AND academic_year = 2025
+    AND audit_flag_name NOT IN (
+      'w_grade_inflation',
+      'assign_s_hs_score_not_conversion_chart_options',
+      'assign_s_ms_score_not_conversion_chart_options',
+      'qt_teacher_s_total_greater_200',
+      'qt_teacher_s_total_less_200',
+      'qt_student_is_ada_80_plus_gpa_less_2'
+    )
+
+  UNION ALL
+
+  -- Paterson ES: EOQ comments only (Q3 and Q4)
+  SELECT
+    2026 AS academic_year,
+    'Paterson' AS region,
+    'ES' AS school_level,
+    code_type,
+    code,
+    audit_category,
+    audit_flag_name,
+    cte_grouping,
+    grade_level,
+  FROM `teamster-332318.kipptaf_google_sheets.stg_google_sheets__gradebook_flags`
+  WHERE region = 'Newark'
+    AND school_level = 'ES'
+    AND academic_year = 2025
+    AND code IN ('Q3', 'Q4')
+
+)
+ORDER BY region, school_level, code_type, code, audit_flag_name
+```
+
+The `grade_level` column will be blank for all rows unless grade-level-specific
+flags (e.g., conduct code flags) are active. That is expected.
 
 ### Step 3 — Review `stg_google_sheets__gradebook_exceptions`
 

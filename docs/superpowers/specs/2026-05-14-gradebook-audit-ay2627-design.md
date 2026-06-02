@@ -36,7 +36,8 @@ Paterson joins the dashboard for AY 2026-2027.
 **Paterson MS:** same flags and expectations as Newark MS.
 
 **Paterson ES:** EOQ comments only — `qt_es_comment_missing` flag only, same
-pattern as Camden ES and Newark ES.
+pattern as Camden ES and Newark ES. Only Q3 and Q4 rows needed (Q1/Q2 excluded
+from the audit).
 
 **Paterson HS:** no HS schools in Paterson, no rows needed.
 
@@ -44,6 +45,14 @@ pattern as Camden ES and Newark ES.
 (copying Newark MS values) until PS instance access is available to deploy the
 U_EXPECTATIONS plugin. Once deployed, migrate to the PS-native source following
 the same pattern as PR #4077 (Camden integration).
+
+**How to generate the flag rows for the sheet:** run the query documented in the
+[Start-of-year procedure](../reference/gradebook-audit-data-model.md) section of
+the reference doc. The query copies prior-year rows for all active regions,
+bumps `academic_year` to the new year, excludes deprecated flags, and derives
+Paterson rows from the Newark template. Paste the tab-separated output directly
+into `stg_google_sheets__gradebook_flags`. The `grade_level` column will be
+blank for all rows unless grade-level-specific conduct code flags are active.
 
 ### Remove FYI flags
 
