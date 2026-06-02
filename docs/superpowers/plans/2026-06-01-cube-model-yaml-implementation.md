@@ -11,8 +11,9 @@ This is **Plan 0** — all other domain implementation plans depend on it. Run i
 this order:
 
 ```text
-0. cube-model-yaml-implementation       ← this plan (run first)
+0. cube-model-yaml-implementation                    ← this plan (run first)
    ├── cube-attendance-extension-implementation
+   ├── cube-student-section-enrollments-implementation  (staff join requires staff-core)
    ├── cube-assessments-implementation
    ├── cube-family-communications-implementation
    ├── cube-gradebook-implementation
