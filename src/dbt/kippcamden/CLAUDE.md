@@ -25,6 +25,7 @@ All materialized as tables via cross-project `ref()`:
 - `powerschool` (ODBC)
 - `deanslist`
 - `edplan`
+- `finalsite`
 - `overgrad`
 - `pearson`
 - `titan`

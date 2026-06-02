@@ -1,8 +1,8 @@
 # CLAUDE.md — `dbt/focus/`
 
-Source-system staging project for **Focus SIS** data (PostgreSQL). Produces
-clean, contract-enforced staging models consumed by district-specific dbt
-projects (currently `kippmiami`).
+Source-system staging project for **Focus SIS** data (PostgreSQL). Provides the
+BigQuery source definitions for Focus dlt loads, consumed by district-specific
+dbt projects (currently `kippmiami`).
 
 ## Data Flow
 
@@ -15,17 +15,13 @@ dbt staging models → dbt intermediate models
 models/
   staging/
     sources-bigquery.yml   # BQ-native sources (dlt-loaded, not external tables)
-    stg_focus__*.sql       # one per source table
-    properties/
-      stg_focus__*.yml     # column contracts + tests
-  intermediate/
-    int_focus__*.sql       # domain-specific joins
-    properties/
-      int_focus__*.yml
 ```
 
-All staging models have `contract: enforced: true`. Data comes from dlt (not
-external tables), so sources use `sources-bigquery.yml` with a plain schema var.
+Staging/intermediate SQL models are not yet implemented — only the source
+definitions exist. When added, staging models will be contract-enforced
+(`contract: enforced: true`, set at directory level in `dbt_project.yml`). Data
+comes from dlt (not external tables), so sources use `sources-bigquery.yml` with
+a plain schema var.
 
 ## Key Variables
 
