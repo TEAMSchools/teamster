@@ -75,7 +75,7 @@ const SNAPSHOT_SELF_ANCHORED_SUFFIXES = [
 // / is_week_end_record and its measures need the anchor guard. Also add the
 // cube's snapshot measure stems to SNAPSHOT_MEASURE_STEMS below — both arrays
 // must stay in sync or the guard won't match the new cube's measures.
-const SNAPSHOT_CUBES = ["attendance"];
+const SNAPSHOT_CUBES = ["student_attendance"];
 
 // Measure-name stems that mark a snapshot (cumulative-daily-flag) measure
 // family — chronic absence, ADA tiers, and truancy. Only these need the
