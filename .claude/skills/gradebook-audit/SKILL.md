@@ -126,6 +126,103 @@ uv run dbt build \
 
 ---
 
+## Procedure: Validate flags after rollover
+
+Run this after the user has added new rows to the sheet. First confirm the rows
+have landed in the prod staging table, then tell the user to stage and rebuild
+in their dev environment, then run the consistency checks.
+
+**Step 1 — Check if new rows are in prod** (substitute `<new_year>`):
+
+```sql
+SELECT DISTINCT region, school_level, academic_year,
+    COUNT(*) AS row_count
+FROM `teamster-332318.kipptaf_google_sheets.stg_google_sheets__gradebook_flags`
+WHERE academic_year = <new_year>
+GROUP BY 1, 2, 3
+ORDER BY 1, 2
+```
+
+If the expected regions and row counts appear, the rows are in prod. Tell the
+user: **"Rows are in prod — time to stage and rebuild in your dev
+environment:"**
+
+```bash
+uv run dbt run-operation stage_external_sources \
+  --args '{"select": "google_sheets.src_google_sheets__gradebook_flags"}' \
+  --project-dir src/dbt/kipptaf
+
+uv run dbt build \
+  --select stg_google_sheets__gradebook_flags \
+  --project-dir src/dbt/kipptaf
+```
+
+**Step 2 — Flag consistency check** — run this query and report any rows where
+not all active regions have the flag at the same school level. Flags that exist
+in Camden or Newark but not the other (for the same school level) are suspect.
+Flags in Newark MS but not Paterson MS are also suspect (Paterson MS mirrors
+Newark MS). HS gaps for Paterson are expected (no HS schools).
+
+```sql
+WITH flags AS (
+    SELECT region, school_level, audit_flag_name
+    FROM `teamster-332318.kipptaf_google_sheets.stg_google_sheets__gradebook_flags`
+    WHERE academic_year = <new_year>
+    GROUP BY 1, 2, 3
+),
+newark  AS (SELECT school_level, audit_flag_name FROM flags WHERE region = 'Newark'),
+camden  AS (SELECT school_level, audit_flag_name FROM flags WHERE region = 'Camden'),
+paterson AS (SELECT school_level, audit_flag_name FROM flags WHERE region = 'Paterson')
+
+SELECT
+    COALESCE(n.school_level, c.school_level, p.school_level) AS school_level,
+    COALESCE(n.audit_flag_name, c.audit_flag_name, p.audit_flag_name) AS audit_flag_name,
+    IF(n.audit_flag_name IS NOT NULL, 'Y', '-') AS newark,
+    IF(c.audit_flag_name IS NOT NULL, 'Y', '-') AS camden,
+    IF(p.audit_flag_name IS NOT NULL, 'Y', '-') AS paterson,
+FROM newark n
+FULL OUTER JOIN camden c USING (school_level, audit_flag_name)
+FULL OUTER JOIN paterson p USING (school_level, audit_flag_name)
+WHERE NOT (
+    n.audit_flag_name IS NOT NULL
+    AND c.audit_flag_name IS NOT NULL
+    AND (
+        COALESCE(n.school_level, c.school_level) = 'HS'
+        OR p.audit_flag_name IS NOT NULL
+    )
+)
+ORDER BY school_level, audit_flag_name
+```
+
+**What to look for in the results:**
+
+- Any MS flag missing from one of Newark/Camden/Paterson MS → missing row, add
+  it
+- Any flag present in only one region → possible typo or intentional difference,
+  ask the user
+- HS flags missing from Paterson → expected, ignore
+- ES flags: only `qt_es_comment_missing` should be present for all three regions
+
+**Step 3 — Typo check** — flags that appear for only one region/school level are
+the most likely typos:
+
+```sql
+SELECT audit_flag_name, school_level,
+    STRING_AGG(region ORDER BY region) AS regions,
+    COUNT(DISTINCT region) AS region_count
+FROM `teamster-332318.kipptaf_google_sheets.stg_google_sheets__gradebook_flags`
+WHERE academic_year = <new_year>
+GROUP BY 1, 2
+HAVING COUNT(DISTINCT region) = 1
+ORDER BY school_level, audit_flag_name
+```
+
+Any row returned here is suspicious — a valid flag should appear in at least two
+regions. Report all results to the user and ask them to confirm each one is
+intentional or a typo.
+
+---
+
 ## Procedure: Add a new flag
 
 1. **Sheet first:** add the row to `stg_google_sheets__gradebook_flags`. Stage
