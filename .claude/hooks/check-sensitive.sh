@@ -194,13 +194,48 @@ fi
 # Section 3: BigQuery MCP — read-only enforcement
 # ═══════════════════════════════════════════════════════════════════
 
-# 8. Block BigQuery non-read operations (whitelist: only SELECT/SHOW/DESCRIBE allowed)
-if [[ ${tool_name} == mcp__bigquery__execute_sql || ${tool_name} == mcp__bigquery__analyze_contribution ]]; then
-  if ! echo "${sanitized}" | grep -qiE '^\s*(SELECT|SHOW|DESCRIBE|WITH)\b'; then
-    deny
-  fi
-  # Also deny if read-looking queries contain embedded write statements
-  if echo "${sanitized}" | grep -qiE '\bINSERT[[:space:]]+INTO\b|\bUPDATE[[:space:]]+[a-zA-Z`_].*[[:space:]]+SET\b|\bDELETE[[:space:]]+FROM\b|\bMERGE[[:space:]]+INTO\b|\bEXPORT[[:space:]]+DATA\b|\bCREATE\b|\bDROP\b|\bALTER\b|\bGRANT\b|\bREVOKE\b|\bCALL\b'; then
-    deny
-  fi
+# 8. BigQuery MCP read-only enforcement, gated on the mcp__bigquery__* prefix so
+#    every SQL-capable tool is covered (execute_sql, forecast,
+#    analyze_contribution, and any future tool), not just two named ones.
+if [[ ${tool_name} == mcp__bigquery__* ]]; then
+  # Write-statement denylist. Newlines flattened so UPDATE..SET split across
+  # lines is caught (#12); INSERT no longer requires INTO (#11); TRUNCATE and
+  # LOAD DATA added (#10). Verbs require a trailing space so column names like
+  # delete_flag / merge_count do not false-positive.
+  _bq_has_write() {
+    echo "$1" | tr '\n' ' ' | grep -qiE '\bINSERT[[:space:]]|\bUPDATE[[:space:]]+.*[[:space:]]+SET\b|\bDELETE[[:space:]]+FROM\b|\bMERGE[[:space:]]+INTO\b|\bEXPORT[[:space:]]+DATA\b|\bLOAD[[:space:]]+DATA\b|\bTRUNCATE[[:space:]]|\bCREATE[[:space:]]|\bDROP[[:space:]]|\bALTER[[:space:]]|\bGRANT[[:space:]]|\bREVOKE[[:space:]]|\bCALL[[:space:]]'
+  }
+  case ${tool_name} in
+  mcp__bigquery__execute_sql)
+    # Whole arg is SQL: require a read statement at the start (allowlist) ...
+    if ! echo "${sanitized}" | grep -qiE '^[[:space:]]*(SELECT|SHOW|DESCRIBE|WITH)\b'; then
+      deny
+    fi
+    # ... and reject any embedded write statement.
+    if _bq_has_write "${sanitized}"; then
+      deny
+    fi
+    ;;
+  mcp__bigquery__forecast | mcp__bigquery__analyze_contribution)
+    # history_data / input_data accept a bare table-id OR a query, so requiring
+    # a read prefix would wrongly deny a legitimate table-id (#28); reject only
+    # embedded write statements.
+    if _bq_has_write "${sanitized}"; then
+      deny
+    fi
+    ;;
+  mcp__bigquery__ask_data_insights)
+    # Natural-language question + structured table refs; no raw-SQL field for a
+    # caller to inject (server performs read-only NL->SQL). Intentionally not
+    # SQL-gated — a denylist on prose would block words like "drop"/"deleted".
+    : # no-op
+    ;;
+  *)
+    # Unknown bigquery tool: conservatively reject obvious write statements
+    # anywhere in its arguments.
+    if _bq_has_write "${sanitized}"; then
+      deny
+    fi
+    ;;
+  esac
 fi
