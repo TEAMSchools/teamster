@@ -401,120 +401,19 @@ of the reference doc for future years.
 
 ## Task 2: SQL — Remove the exceptions mechanism entirely
 
-T&L has decided to eliminate the suppression table. Remove
-`stg_google_sheets__gradebook_exceptions` and all 15+ LEFT JOINs across five
-intermediate models.
+T&L has decided to eliminate the suppression table
+(`stg_google_sheets__gradebook_exceptions`). The exception LEFT JOINs are
+removed from each model as part of its individual rewrite in Task 6. This task
+only handles disabling the staging model itself.
 
-### 6a: `int_tableau__gradebook_audit_teacher_scaffold.sql`
+> **Note:** The 15+ exception LEFT JOINs across five intermediate models
+> (`int_tableau__gradebook_audit_teacher_scaffold`,
+> `int_tableau__gradebook_audit_assignments_teacher`,
+> `int_tableau__gradebook_audit_categories_teacher`,
+> `int_tableau__gradebook_audit_flags`, and the student scaffold) are not
+> repeated here — they are removed when each model is rewritten in Task 6.
 
-- [ ] **Step 6a.1: Remove exception joins from the `sections` CTE**
-
-  File:
-  `src/dbt/kipptaf/models/extracts/tableau/intermediate/int_tableau__gradebook_audit_teacher_scaffold.sql`
-
-  Delete both LEFT JOINs (`e1`, `e2`) and their two conditions from the WHERE
-  clause:
-
-  ```sql
-  left join
-      {{ ref("stg_google_sheets__gradebook_exceptions") }} as e1
-      on s.terms_academic_year = e1.academic_year
-      and s.sections_course_number = e1.course_number
-      and e1.view_name = 'teacher_scaffold'
-      and e1.cte = 'sections'
-      and e1.school_id is null
-  left join
-      {{ ref("stg_google_sheets__gradebook_exceptions") }} as e2
-      on s.terms_academic_year = e2.academic_year
-      and s.sections_schoolid = e2.school_id
-      and s.sections_course_number = e2.course_number
-      and e2.view_name = 'teacher_scaffold'
-      and e2.cte = 'sections'
-      and e2.school_id is not null
-
-  -- also delete from WHERE:
-  and e1.include_row is null
-  and e2.include_row is null
-  ```
-
-- [ ] **Step 6a.2: Remove exception joins from the `teacher_category_scaffold`
-      branch of `final`**
-
-  Delete all three LEFT JOINs (`e1`, `e2`, `e3`) and:
-
-  ```sql
-  where
-      e1.include_row is null and e2.include_row is null and e3.include_row is null
-  ```
-
-- [ ] **Step 6a.3: Remove exception joins from the outer `select`**
-
-  Delete the two LEFT JOINs at the end of the file and:
-
-  ```sql
-  where e1.include_row is null and e2.include_row is null
-  ```
-
-### 6b: `int_tableau__gradebook_audit_assignments_teacher.sql`
-
-- [ ] **Step 6b.1: Remove exception join and unwrap conditional columns**
-
-  File:
-  `src/dbt/kipptaf/models/extracts/tableau/intermediate/int_tableau__gradebook_audit_assignments_teacher.sql`
-
-  Delete the LEFT JOIN to `stg_google_sheets__gradebook_exceptions`. Replace
-  every `if(e.include_row is null, asg.<col>, null) as <col>` with the plain
-  column:
-
-  ```sql
-  asg.n_students,
-  asg.n_late,
-  asg.n_exempt,
-  asg.n_missing,
-  asg.n_academic_dishonesty,
-  asg.n_null,
-  asg.n_is_null_missing,
-  asg.n_is_null_not_missing,
-  asg.n_expected,
-  asg.n_expected_scored,
-  asg.teacher_avg_score_for_assign_per_class_section_and_assign_id,
-  ```
-
-### 6c: `int_tableau__gradebook_audit_categories_teacher.sql`
-
-- [ ] **Step 6c.1: Remove exception join from `assignment_score_rollup` CTE**
-
-  File:
-  `src/dbt/kipptaf/models/extracts/tableau/intermediate/int_tableau__gradebook_audit_categories_teacher.sql`
-
-  Delete the LEFT JOIN (`e1`) and the `where e1.include_row is null` condition.
-
-- [ ] **Step 6c.2: Remove the final-level exception join**
-
-  Delete the LEFT JOIN at the bottom of the file and
-  `where e.include_row is null`.
-
-### 6d: `int_tableau__gradebook_audit_flags.sql`
-
-- [ ] **Step 6d.1: Remove three exception joins from `student_unpivot` CTE**
-
-  Delete LEFT JOINs `e1`, `e2`, `e3` and remove the entire WHERE clause. The
-  UNPIVOT + INNER JOIN to `stg_google_sheets__gradebook_flags` is the correct
-  filter; no WHERE is needed.
-
-- [ ] **Step 6d.2: Remove two exception joins from `teacher_unpivot_cca` CTE**
-
-  Delete `e1` and `e2` LEFT JOINs and the WHERE clause.
-
-- [ ] **Step 6d.3: Remove one exception join from `teacher_unpivot_cc` CTE**
-
-  Delete the `e` LEFT JOIN and the WHERE clause.
-
-- [ ] **Step 6d.4: Remove one exception join from `eoq_items` CTE**
-
-  Delete the `e1` LEFT JOIN and the WHERE clause.
-
-### 6e: Disable the exceptions staging model
+### Disable the exceptions staging model
 
 - [ ] **Step 6e.1: Disable the staging model**
 
@@ -530,9 +429,9 @@ intermediate models.
   The SQL file and source entry stay in place. This preserves the model for
   reference pending any operational decisions after July 1st.
 
-### 6f: Build, verify, and commit Task 6
+### Build, verify, and commit Task 2
 
-- [ ] **Step 6f.1: Run dbt build — full downstream chain**
+- [ ] **Step 2.1: Run dbt build — full downstream chain**
 
   Task 6 is the last structural change. By this point all models in the lineage
   should be updated (including the assignment models' quarter-grain date window
@@ -563,7 +462,7 @@ intermediate models.
 
   Expected: zero results.
 
-- [ ] **Step 6f.2: Spot-check row counts**
+- [ ] **Step 2.2: Spot-check row counts**
 
   Via BigQuery MCP:
 
@@ -584,7 +483,7 @@ intermediate models.
   previously-suppressed rows now appear. Verify with T&L if unexpected spikes
   appear before merging.
 
-- [ ] **Step 6f.3: Commit**
+- [ ] **Step 2.3: Commit**
 
   ```bash
   git commit -m "feat(dbt): remove gradebook exceptions mechanism — AY 2026-2027"
