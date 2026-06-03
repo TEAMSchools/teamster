@@ -45,6 +45,10 @@ check_output "prose: token expires" clean "The session token expires after 60 mi
 check_output "prose: password reset" clean "Click the link to reset your password if you forgot it."
 check_output "yaml key with short value" clean "api_key: changeme
 log_level: debug"
+# documentation placeholders with a 16+ char value (review #3 boundary case)
+check_output "doc placeholder: password" clean "password: enter-your-password-here"
+check_output "doc placeholder: api_key caps" clean "api_key: YOUR_API_KEY_GOES_HERE"
+check_output "doc placeholder: example token" clean "access_token: replace-with-your-token"
 check_output "env-var name mention" clean "Set GITHUB_TOKEN in CI; the secret is injected at deploy time."
 
 print_summary "FP corpus"

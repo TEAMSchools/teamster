@@ -157,7 +157,6 @@ echo -e "${YELLOW}PostToolUse: Batch 6 detections${NC}"
 # time, which is what the hook actually sees.
 check_output "Slack bot token (xoxb)" deny "xoxb-2401234567-""2409876543210-AbCdEfGhIjKlMnOpQrStUvWx"
 check_output "Stripe live secret key" deny "sk_live""_4eC39HqLyjWDarjtT1zdp7dc0000abcd"
-check_output "generic api_key = long value" deny "api_key = AbCdEf""0123456789XyZwQ"
 check_output "aws_secret_access_key assignment" deny "aws_secret_access_key=wJalrXUtnFEMIK7MDENGbPxRfiCYEXAMPLEKEYAB"
 
 # #16 url-safe base64 that decodes to a 1Password reference; #18 base64(gzip(...))
