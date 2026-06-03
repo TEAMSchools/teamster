@@ -2152,8 +2152,10 @@ Complete replacement. Changes from the old model:
   `quarter_end_date_insession`, `quarter_conduct`,
   `category_quarter_average_all_courses`, `assign_expected_to_be_scored`,
   `assign_expected_with_score`
-- Add `manager_employee_number`, `manager_name`, `manager_tableau_username`
-  (real in teacher branches, `null` in student branches)
+- Add `manager_employee_number`, `manager_name`, `manager_tableau_username` —
+  real in all branches (student scaffold and assignments_student both carry
+  manager columns; nulling them while teacher name is populated would be
+  incorrect)
 - Remove `total_expected_section_quarter_week_category` and
   `total_expected_scored_section_quarter_week_category` null placeholders —
   superseded by `n_expected`/`n_expected_scored` already in the output
@@ -2332,9 +2334,9 @@ Complete replacement. Changes from the old model:
       r.teacher_name,
       r.is_ap_course,
       r.teacher_tableau_username,
-      null as manager_employee_number,
-      null as manager_name,
-      null as manager_tableau_username,
+      r.manager_employee_number,
+      r.manager_name,
+      r.manager_tableau_username,
       r.school_leader,
       r.school_leader_tableau_username,
       r.quarter,
@@ -2455,9 +2457,9 @@ Complete replacement. Changes from the old model:
       teacher_name,
       is_ap_course,
       teacher_tableau_username,
-      null as manager_employee_number,
-      null as manager_name,
-      null as manager_tableau_username,
+      manager_employee_number,
+      manager_name,
+      manager_tableau_username,
       school_leader,
       school_leader_tableau_username,
       `quarter`,
