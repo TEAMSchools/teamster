@@ -151,4 +151,23 @@ expect_allow 'echo $LC_ALL (real locale var)' Bash command 'echo $LC_ALL'
 expect_allow 'echo $LC_CTYPE (real locale var)' Bash command 'echo $LC_CTYPE'
 # trunk-ignore-end(shellcheck/SC2016)
 
+# ─── Pattern 4 (#14): 1Password credential-minting verbs ─────────────────────
+echo ""
+echo -e "${YELLOW}Pattern 4 (#14): 1Password CLI verbs${NC}"
+
+expect_deny "op signin" Bash command "op signin my.1password.com"
+expect_deny "op account get" Bash command "op account get"
+expect_deny "op user list" Bash command "op user list"
+expect_deny "op service-account create" Bash command "op service-account create ci"
+expect_deny "op connect token create" Bash command "op connect token create"
+expect_deny "op items (plural)" Bash command "op items list"
+# existing verbs still blocked
+expect_deny "op vault list" Bash command "op vault list"
+expect_deny "op read uri" Bash command "op read op-uri/vault/item/field"
+
+# controls — op without an escalation verb, and non-op commands
+expect_allow "op --version (no verb)" Bash command "op --version"
+expect_allow "non-op command mentioning account" Bash command "echo monthly account summary"
+expect_allow "cp (not the op word)" Bash command "cp user_data.csv /tmp/dest"
+
 print_summary "Env Protection"
