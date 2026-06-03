@@ -132,4 +132,19 @@ expect_deny_exit0 "scans .tool_response stderr (bash -x trace path)" "${OUTPUT_H
     '{tool_name: "Bash", tool_response: {stdout: "", stderr: $c}}')"
 # trunk-ignore-end(shellcheck/SC2312)
 
+# ─── Schema fallback (#6e/#20): payload under a non-tool_response key ────────
+# A scanned tool whose payload arrives under a key other than .tool_response
+# must still be scanned (otherwise a payload-key drift re-opens full passthrough).
+echo ""
+echo -e "${YELLOW}PostToolUse: payload-key drift fallback (#20)${NC}"
+
+# trunk-ignore-begin(shellcheck/SC2312)
+expect_deny_exit0 "secret under .output (not .tool_response)" "${OUTPUT_HOOK}" \
+  "$(jq -n '{tool_name:"Bash", output:{stdout:"leaked op://vault/item/field"}}')"
+expect_deny_exit0 "secret at top level (no tool_response)" "${OUTPUT_HOOK}" \
+  "$(jq -n '{tool_name:"mcp__github__issue_read", result:"op://vault/item/field"}')"
+# trunk-ignore-end(shellcheck/SC2312)
+# control: clean .tool_response output still passes (fallback no overreach)
+check_output "clean .tool_response still clean" clean "rows: 5"
+
 print_summary "Output Scanner"
