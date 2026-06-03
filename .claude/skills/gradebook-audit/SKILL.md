@@ -126,6 +126,11 @@ in their dev environment, then run the consistency checks.
 
 **Step 1 — Check if new rows are in prod** (substitute `<new_year>`):
 
+> **Note on timing:** BigQuery caches Google Sheets external tables and the
+> cache can take anywhere from a few seconds to a few minutes to refresh after
+> the sheet is edited. If the new rows don't appear yet, wait 1–2 minutes and
+> re-run the query. Do not proceed to staging until the rows are visible here.
+
 ```sql
 SELECT DISTINCT region, school_level, academic_year,
     COUNT(*) AS row_count
