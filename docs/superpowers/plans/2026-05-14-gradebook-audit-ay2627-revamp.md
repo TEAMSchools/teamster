@@ -447,7 +447,7 @@ based on which approach produces cleaner scaffold code — and rename accordingl
 - Modify:
   `src/dbt/kipptaf/models/extracts/tableau/intermediate/int_tableau__gradebook_audit_student_scaffold.sql`
 
-- [ ] **Step 2.1: Create the INT expectations model**
+- [ ] **Step 3.1: Create the INT expectations model**
 
   Create
   `src/dbt/kipptaf/models/powerschool/intermediate/int_powerschool__u_expectations[_unpivot].sql`.
@@ -477,7 +477,7 @@ based on which approach produces cleaner scaffold code — and rename accordingl
   Whether the UNPIVOT happens inside this model or in the scaffold is a decision
   to make at implementation time (see naming note above).
 
-- [ ] **Step 2.1b: Build and verify the INT model**
+- [ ] **Step 3.1b: Build and verify the INT model**
 
   ```bash
   uv run dbt build \
@@ -487,7 +487,7 @@ based on which approach produces cleaner scaffold code — and rename accordingl
     --state src/dbt/kipptaf/target/prod
   ```
 
-- [ ] **Step 2.2: Create the YAML for the new INT model**
+- [ ] **Step 3.2: Create the YAML for the new INT model**
 
   Create the properties file at
   `src/dbt/kipptaf/models/powerschool/intermediate/properties/int_powerschool__u_expectations[_unpivot].yml`.
@@ -505,13 +505,13 @@ based on which approach produces cleaner scaffold code — and rename accordingl
 
 ## Task 4: SQL — Update base views and tables
 
-### 3a: `base_powerschool__sections` — add `school_abbreviation` and `school_level` (prerequisite)
+### 4a: `base_powerschool__sections` — add `school_abbreviation` and `school_level` (prerequisite)
 
 Must land before the teacher scaffold is built in step 2.3.
 
 **File:** `src/dbt/powerschool/models/sis/base/base_powerschool__sections.sql`
 
-- [ ] **Step 3a.1: Add both columns to the SELECT list**
+- [ ] **Step 4a.1: Add both columns to the SELECT list**
 
   Find `sch.name as school_name,` and add immediately after:
 
@@ -520,7 +520,7 @@ Must land before the teacher scaffold is built in step 2.3.
   sch.school_level,
   ```
 
-- [ ] **Step 3a.2: Add columns to the properties YAML**
+- [ ] **Step 4a.2: Add columns to the properties YAML**
 
   File:
   `src/dbt/powerschool/models/sis/base/properties/base_powerschool__sections.yml`
@@ -536,7 +536,7 @@ Must land before the teacher scaffold is built in step 2.3.
     data_type: string
   ```
 
-- [ ] **Step 3a.3: Build and verify**
+- [ ] **Step 4a.3: Build and verify**
 
   ```bash
   uv run dbt build \
@@ -548,7 +548,7 @@ Must land before the teacher scaffold is built in step 2.3.
 
 ---
 
-### 3b: `stg_google_sheets__gradebook_flags` — drop `grade_level`
+### 4b: `stg_google_sheets__gradebook_flags` — drop `grade_level`
 
 `grade_level` was only used by Miami KG/G1-G8 conduct code flags (now gone).
 Drop it using BigQuery `SELECT * EXCEPT`.
@@ -556,7 +556,7 @@ Drop it using BigQuery `SELECT * EXCEPT`.
 **File:**
 `src/dbt/kipptaf/models/google/sheets/staging/stg_google_sheets__gradebook_flags.sql`
 
-- [ ] **Step 3b.1: Update the SELECT**
+- [ ] **Step 4b.1: Update the SELECT**
 
   Change:
 
@@ -576,14 +576,14 @@ Drop it using BigQuery `SELECT * EXCEPT`.
   from {{ source("google_sheets", "src_google_sheets__gradebook_flags") }}
   ```
 
-- [ ] **Step 3b.2: Remove `grade_level` from the YAML**
+- [ ] **Step 4b.2: Remove `grade_level` from the YAML**
 
   File:
   `src/dbt/kipptaf/models/google/sheets/staging/properties/stg_google_sheets__gradebook_flags.yml`
 
   Delete the `grade_level` column entry.
 
-- [ ] **Step 3b.3: Build and verify**
+- [ ] **Step 4b.3: Build and verify**
 
   ```bash
   uv run dbt build \
@@ -593,7 +593,7 @@ Drop it using BigQuery `SELECT * EXCEPT`.
 
 ---
 
-### 3c: `int_extracts__student_enrollments` — add ADA/GPA cumulative boolean
+### 4c: `int_extracts__student_enrollments` — add ADA/GPA cumulative boolean
 
 > ⚠️ **Open question for T&L (see issue #3908 comment):** use `< 2.0` until
 > threshold is confirmed.
@@ -601,7 +601,7 @@ Drop it using BigQuery `SELECT * EXCEPT`.
 **File:**
 `src/dbt/kipptaf/models/students/intermediate/int_extracts__student_enrollments.sql`
 
-- [ ] **Step 3c.1: Add boolean column**
+- [ ] **Step 4c.1: Add boolean column**
 
   In the final `select`, after `ada_above_or_at_80` and GPA columns (ST06
   ordering — logicals after plain refs):
@@ -614,7 +614,7 @@ Drop it using BigQuery `SELECT * EXCEPT`.
   ) as is_ada_above_or_at_80_cum_gpa_less_2,
   ```
 
-- [ ] **Step 3c.2: Add column to YAML**
+- [ ] **Step 4c.2: Add column to YAML**
 
   File:
   `src/dbt/kipptaf/models/students/intermediate/properties/int_extracts__student_enrollments.yml`
@@ -627,7 +627,7 @@ Drop it using BigQuery `SELECT * EXCEPT`.
     data_type: boolean
   ```
 
-- [ ] **Step 3c.3: Build and verify**
+- [ ] **Step 4c.3: Build and verify**
 
   ```bash
   uv run dbt build \
@@ -643,12 +643,12 @@ Drop it using BigQuery `SELECT * EXCEPT`.
 
 ## Task 5: SQL — `rpt_tableau__gradebook_gpa` updates
 
-### 3d: `rpt_tableau__gradebook_gpa` — add per-course boolean, remove Paterson filter
+### 5a: `rpt_tableau__gradebook_gpa` — add per-course boolean, remove Paterson filter
 
 **File:**
 `src/dbt/kipptaf/models/extracts/tableau/rpt_tableau__gradebook_gpa.sql`
 
-- [ ] **Step 3d.1: Add per-course GPA boolean**
+- [ ] **Step 5.1: Add per-course GPA boolean**
 
   In the final `select`, after `ada_above_or_at_80`:
 
@@ -660,7 +660,7 @@ Drop it using BigQuery `SELECT * EXCEPT`.
   ) as is_ada_above_or_at_80_gpa_y1_less_2,
   ```
 
-- [ ] **Step 3d.2: Remove Paterson exclusion**
+- [ ] **Step 5.2: Remove Paterson exclusion**
 
   In the `student_roster` CTE WHERE clause, remove
   `and enr.region != 'Paterson'`. The full WHERE becomes:
@@ -672,7 +672,7 @@ Drop it using BigQuery `SELECT * EXCEPT`.
       and enr.enroll_status != -1
   ```
 
-- [ ] **Step 3d.3: Add column to YAML**
+- [ ] **Step 5.3: Add column to YAML**
 
   File:
   `src/dbt/kipptaf/models/extracts/tableau/properties/rpt_tableau__gradebook_gpa.yml`
@@ -685,7 +685,7 @@ Drop it using BigQuery `SELECT * EXCEPT`.
     data_type: boolean
   ```
 
-- [ ] **Step 3d.4: Build and verify**
+- [ ] **Step 5.4: Build and verify**
 
   ```bash
   uv run dbt build \
@@ -710,7 +710,7 @@ Drop it using BigQuery `SELECT * EXCEPT`.
 
 ## Task 6: SQL — Quarter-grain scaffold and model updates
 
-- [ ] **Step 2.3: Redesign `int_tableau__gradebook_audit_teacher_scaffold.sql`**
+- [ ] **Step 6.1: Redesign `int_tableau__gradebook_audit_teacher_scaffold.sql`**
 
   This step replaces the entire scaffold with the quarter-grain design. The
   current four-CTE model (`sections`, `term_weeks`, `school_level_mod`, `final`)
@@ -910,7 +910,7 @@ Drop it using BigQuery `SELECT * EXCEPT`.
 
   _(Replace `[_unpivot]` with the actual model name decided in step 2.1.)_
 
-- [ ] **Step 2.3b: Build and verify the teacher scaffold**
+- [ ] **Step 6.1b: Build and verify the teacher scaffold**
 
   ```bash
   uv run dbt build \
@@ -932,7 +932,7 @@ Drop it using BigQuery `SELECT * EXCEPT`.
   Expected: Newark with both scaffold variants, Q1–Q4. Camden/Paterson have
   `teacher_scaffold` rows only (no PS expectations data yet).
 
-- [ ] **Step 2.4: Redesign `int_tableau__gradebook_audit_student_scaffold.sql`**
+- [ ] **Step 6.2: Redesign `int_tableau__gradebook_audit_student_scaffold.sql`**
 
   This step applies all changes to the student scaffold: replace the
   expectations join, remove all week/EOQ columns, remove deprecated flags, add
@@ -1280,7 +1280,7 @@ Drop it using BigQuery `SELECT * EXCEPT`.
   - All column listings are explicit per Bini's requirement for tableau schema
     models (no `SELECT *` or `SELECT * EXCEPT`).
 
-- [ ] **Step 2.4b: Build and verify the student scaffold**
+- [ ] **Step 6.2b: Build and verify the student scaffold**
 
   ```bash
   uv run dbt build \
@@ -1290,7 +1290,7 @@ Drop it using BigQuery `SELECT * EXCEPT`.
     --state src/dbt/kipptaf/target/prod
   ```
 
-- [ ] **Step 2.5: Disable the deprecated staging model**
+- [ ] **Step 6.3: Disable the deprecated staging model**
 
   Nothing references `stg_google_sheets__gradebook_expectations_assignments`
   after steps 2.3–2.4. Disable it rather than deleting, in case operational
@@ -1313,7 +1313,7 @@ Drop it using BigQuery `SELECT * EXCEPT`.
 
   Expected: zero results (the disabled model's own SQL file is fine to stay).
 
-- [ ] **Step 2.7: Commit**
+- [ ] **Step 6.4: Commit**
 
   ```bash
   git add -u
@@ -1347,7 +1347,7 @@ and the UNPIVOT list in `int_tableau__gradebook_audit_flags.sql`.
 
 ---
 
-### 3e: `int_tableau__gradebook_audit_assignments_student`
+### 6a: `int_tableau__gradebook_audit_assignments_student`
 
 Remove two FYI flags from the final SELECT. Also update the assignment date
 window from week grain to quarter grain — details TBD during model review.
@@ -1355,7 +1355,7 @@ window from week grain to quarter grain — details TBD during model review.
 **File:**
 `src/dbt/kipptaf/models/extracts/tableau/intermediate/int_tableau__gradebook_audit_assignments_student.sql`
 
-- [ ] **Step 3e.1: Remove FYI flag expressions from the final SELECT**
+- [ ] **Step 6a.1: Remove FYI flag expressions from the final SELECT**
 
   Delete:
 
@@ -1382,19 +1382,19 @@ window from week grain to quarter grain — details TBD during model review.
   ) as assign_s_hs_score_not_conversion_chart_options,
   ```
 
-- [ ] **Step 3e.2: Update assignment date window (TBD)**
+- [ ] **Step 6a.2: Update assignment date window (TBD)**
 
   Change the join condition from week grain to quarter grain. Details will be
   added when `int_tableau__gradebook_audit_assignments_student` is reviewed in
   the CTE-by-CTE session.
 
-- [ ] **Step 3e.3: Update YAML**
+- [ ] **Step 6a.3: Update YAML**
 
   Remove `assign_s_ms_score_not_conversion_chart_options` and
   `assign_s_hs_score_not_conversion_chart_options` from
   `intermediate/properties/int_tableau__gradebook_audit_assignments_student.yml`.
 
-- [ ] **Step 3e.4: Build and verify**
+- [ ] **Step 6a.4: Build and verify**
 
   ```bash
   uv run dbt build \
@@ -1406,7 +1406,7 @@ window from week grain to quarter grain — details TBD during model review.
 
 ---
 
-### 3f: `int_tableau__gradebook_audit_assignments_teacher`
+### 6b: `int_tableau__gradebook_audit_assignments_teacher`
 
 Remove one Miami dead-code flag. Also update the assignment date window — TBD
 during model review.
@@ -1414,7 +1414,7 @@ during model review.
 **File:**
 `src/dbt/kipptaf/models/extracts/tableau/intermediate/int_tableau__gradebook_audit_assignments_teacher.sql`
 
-- [ ] **Step 3f.1: Remove `s_max_score_greater_100` from the final SELECT**
+- [ ] **Step 6b.1: Remove `s_max_score_greater_100` from the final SELECT**
 
   Delete:
 
@@ -1428,18 +1428,18 @@ during model review.
   ) as s_max_score_greater_100,
   ```
 
-- [ ] **Step 3f.2: Update assignment date window (TBD)**
+- [ ] **Step 6b.2: Update assignment date window (TBD)**
 
   Change the join condition from week grain to quarter grain. Details will be
   added when `int_tableau__gradebook_audit_assignments_teacher` is reviewed in
   the CTE-by-CTE session.
 
-- [ ] **Step 3f.3: Update YAML**
+- [ ] **Step 6b.3: Update YAML**
 
   Remove `s_max_score_greater_100` from
   `intermediate/properties/int_tableau__gradebook_audit_assignments_teacher.yml`.
 
-- [ ] **Step 3f.4: Build and verify**
+- [ ] **Step 6b.4: Build and verify**
 
   ```bash
   uv run dbt build \
@@ -1451,7 +1451,7 @@ during model review.
 
 ---
 
-### 3g: `int_tableau__gradebook_audit_categories_teacher`
+### 6c: `int_tableau__gradebook_audit_categories_teacher`
 
 Remove Summative 200 flags (both Camden/Newark 200-pt and Miami 100-pt variants)
 from the final SELECT. The 7-day grace period change (Task 4) and exceptions
@@ -1460,7 +1460,7 @@ removal (Task 6) happen later.
 **File:**
 `src/dbt/kipptaf/models/extracts/tableau/intermediate/int_tableau__gradebook_audit_categories_teacher.sql`
 
-- [ ] **Step 3g.1: Remove four S-total flag expressions from the final SELECT**
+- [ ] **Step 6c.1: Remove four S-total flag expressions from the final SELECT**
 
   Delete:
 
@@ -1498,12 +1498,12 @@ removal (Task 6) happen later.
   ) as qt_teacher_s_total_less_100,
   ```
 
-- [ ] **Step 3g.2: Update YAML**
+- [ ] **Step 6c.2: Update YAML**
 
   Remove all four column entries from
   `intermediate/properties/int_tableau__gradebook_audit_categories_teacher.yml`.
 
-- [ ] **Step 3g.3: Build and verify**
+- [ ] **Step 6c.3: Build and verify**
 
   ```bash
   uv run dbt build \
@@ -1515,14 +1515,14 @@ removal (Task 6) happen later.
 
 ---
 
-### 3h: `int_tableau__gradebook_audit_flags.sql` — consolidated UNPIVOT updates and CTE deletions
+### 6d: `int_tableau__gradebook_audit_flags.sql` — consolidated UNPIVOT updates and CTE deletions
 
 All UNPIVOT list changes and CTE deletions in one step.
 
 **File:**
 `src/dbt/kipptaf/models/extracts/tableau/intermediate/int_tableau__gradebook_audit_flags.sql`
 
-- [ ] **Step 3h.1: Update `student_unpivot` UNPIVOT list**
+- [ ] **Step 6d.1: Update `student_unpivot` UNPIVOT list**
 
   Delete from the UNPIVOT list:
 
@@ -1531,7 +1531,7 @@ All UNPIVOT list changes and CTE deletions in one step.
   assign_s_hs_score_not_conversion_chart_options
   ```
 
-- [ ] **Step 3h.2: Update `teacher_unpivot_cca` UNPIVOT list**
+- [ ] **Step 6d.2: Update `teacher_unpivot_cca` UNPIVOT list**
 
   Delete:
 
@@ -1539,7 +1539,7 @@ All UNPIVOT list changes and CTE deletions in one step.
   s_max_score_greater_100
   ```
 
-- [ ] **Step 3h.3: Update `teacher_unpivot_cc` UNPIVOT list**
+- [ ] **Step 6d.3: Update `teacher_unpivot_cc` UNPIVOT list**
 
   Delete:
 
@@ -1550,16 +1550,16 @@ All UNPIVOT list changes and CTE deletions in one step.
   qt_teacher_s_total_less_100,
   ```
 
-- [ ] **Step 3h.4: Delete the `student_course_category` CTE**
+- [ ] **Step 6d.4: Delete the `student_course_category` CTE**
 
   Delete the entire CTE — from the `/* w_grade_inflation... */` comment through
   `from student_course_category`.
 
-- [ ] **Step 3h.5: Delete the `eoq_items_conduct_code` CTE**
+- [ ] **Step 6d.5: Delete the `eoq_items_conduct_code` CTE**
 
   Delete the entire `eoq_items_conduct_code` CTE.
 
-- [ ] **Step 3h.6: Update `eoq_items` UNPIVOT list**
+- [ ] **Step 6d.6: Update `eoq_items` UNPIVOT list**
 
   Delete from the `eoq_items` UNPIVOT:
 
@@ -1573,12 +1573,12 @@ All UNPIVOT list changes and CTE deletions in one step.
   Remaining in `eoq_items`: `qt_es_comment_missing`,
   `qt_grade_70_comment_missing`, `qt_percent_grade_greater_100`.
 
-- [ ] **Step 3h.7: Update YAML**
+- [ ] **Step 6d.7: Update YAML**
 
   Remove all deleted flag column entries from
   `intermediate/properties/int_tableau__gradebook_audit_flags.yml`.
 
-- [ ] **Step 3h.8: Build and verify**
+- [ ] **Step 6d.8: Build and verify**
 
   ```bash
   uv run dbt build \
@@ -1590,18 +1590,18 @@ All UNPIVOT list changes and CTE deletions in one step.
 
 ---
 
-### 3i: `rpt_tableau__gradebook_audit.sql` — remove empty UNION branch
+### 6e: `rpt_tableau__gradebook_audit.sql` — remove empty UNION branch
 
 **File:**
 `src/dbt/kipptaf/models/extracts/tableau/rpt_tableau__gradebook_audit.sql`
 
-- [ ] **Step 3i.1: Remove the `student_course_category` UNION branch**
+- [ ] **Step 6e.1: Remove the `student_course_category` UNION branch**
 
   Delete the UNION ALL block with
   `where t.cte_grouping = 'student_course_category'` including its leading
   `union all` separator. The report shrinks from 5 to 4 UNION branches.
 
-- [ ] **Step 3i.2: Build and verify**
+- [ ] **Step 6e.2: Build and verify**
 
   ```bash
   uv run dbt build \
@@ -1613,9 +1613,9 @@ All UNPIVOT list changes and CTE deletions in one step.
 
 ---
 
-### 3j: Spot-check and commit Task 3
+### 6f: Spot-check and commit Task 3
 
-- [ ] **Step 3j.1: Spot-check removed flags**
+- [ ] **Step 6f.1: Spot-check removed flags**
 
   Via BigQuery MCP — query each modified model directly (not
   `rpt_tableau__gradebook_audit` until the full chain is valid):
@@ -1631,7 +1631,7 @@ All UNPIVOT list changes and CTE deletions in one step.
 
   Expected: 0 rows for each deprecated flag column.
 
-- [ ] **Step 3j.2: Commit**
+- [ ] **Step 6f.2: Commit**
 
   ```bash
   git add -u
@@ -1651,7 +1651,7 @@ all assignments in the week window regardless of how recently they were due.
 **File:**
 `src/dbt/kipptaf/models/extracts/tableau/intermediate/int_tableau__gradebook_audit_categories_teacher.sql`
 
-- [ ] **Step 4.1: Add grace-period filter to the two window sums**
+- [ ] **Step 7.1: Add grace-period filter to the two window sums**
 
   In the `assignments` CTE, replace:
 
@@ -1710,7 +1710,7 @@ all assignments in the week window regardless of how recently they were due.
   Note: column names updated from `*_week_category` to `*_quarter_category` — no
   `week_number_quarter` in the partition at quarter grain.
 
-- [ ] **Step 4.2: Build `categories_teacher` only**
+- [ ] **Step 7.2: Build `categories_teacher` only**
 
   ```bash
   uv run dbt build \
@@ -1720,7 +1720,7 @@ all assignments in the week window regardless of how recently they were due.
     --state src/dbt/kipptaf/target/prod
   ```
 
-- [ ] **Step 4.3: Spot-check `categories_teacher` directly**
+- [ ] **Step 7.3: Spot-check `categories_teacher` directly**
 
   Query the model directly — do not use `rpt_tableau__gradebook_audit`
   (downstream chain not yet valid mid-refactor). Confirm the grace-period flag
@@ -1743,7 +1743,7 @@ all assignments in the week window regardless of how recently they were due.
   LIMIT 20
   ```
 
-- [ ] **Step 4.4: Commit**
+- [ ] **Step 7.4: Commit**
 
   ```bash
   git commit -m "feat(dbt): add 7-day grace period for percent-graded flags"
@@ -1757,7 +1757,7 @@ Once all SQL changes are merged and the model is stable, update the reference
 doc to reflect the new state of the pipeline and trim the skill to remove
 development-time references that are no longer current.
 
-- [ ] **Step 7.1: Add AY 2026-2027 section to the reference doc**
+- [ ] **Step 8.1: Add AY 2026-2027 section to the reference doc**
 
   File: `docs/reference/gradebook-audit-data-model.md`
 
@@ -1771,13 +1771,13 @@ development-time references that are no longer current.
   Rename the existing content to "AY 2025-2026 Model (archived)" and preserve it
   below the new section.
 
-- [ ] **Step 7.2: Update the start-of-year procedure in the reference doc**
+- [ ] **Step 8.2: Update the start-of-year procedure in the reference doc**
 
   The start-of-year procedure already has the flag row generation query. Verify
   it reflects the current region configuration (Newark, Camden, Paterson) and
   that the deprecated flags list is up to date.
 
-- [ ] **Step 7.3: Trim the gradebook-audit skill**
+- [ ] **Step 8.3: Trim the gradebook-audit skill**
 
   File: `.claude/skills/gradebook-audit/SKILL.md`
 
@@ -1793,7 +1793,7 @@ development-time references that are no longer current.
   The spec (`docs/superpowers/specs/`) and plan (`docs/superpowers/plans/`) stay
   in git as historical context but are not needed for ongoing operations.
 
-- [ ] **Step 7.4: Commit**
+- [ ] **Step 8.4: Commit**
 
   ```bash
   git add -u
