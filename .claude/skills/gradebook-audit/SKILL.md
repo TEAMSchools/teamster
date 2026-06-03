@@ -112,17 +112,9 @@ pastes directly into the sheet. Column order must be:
 `academic_year, region, school_level, grade_level, code_type, code, audit_category, audit_flag_name, cte_grouping`.
 `grade_level` will be blank for all rows — that is correct.
 
-After the user pastes, they stage and rebuild:
-
-```bash
-uv run dbt run-operation stage_external_sources \
-  --args '{"select": "google_sheets.src_google_sheets__gradebook_flags"}' \
-  --project-dir src/dbt/kipptaf
-
-uv run dbt build \
-  --select stg_google_sheets__gradebook_flags \
-  --project-dir src/dbt/kipptaf
-```
+After the user confirms they have pasted the rows into the sheet, immediately
+run the **Validate flags after rollover** procedure below — do not wait to be
+asked. The validation is always the next step after a rollover.
 
 ---
 
