@@ -27,8 +27,10 @@ fi
 # Scan output from tools that can return sensitive content (names normalized)
 [[ ! ${tool_name} =~ ^(bash|read|grep|notebookedit|webfetch|websearch|mcp__.*)$ ]] && exit 0
 
-# Extract all string values from tool_response (Claude Code's PostToolUse payload key)
-combined=$(jq -r '[.tool_response | .. | strings] | join(" ")' <<<"${input}")
+# Extract all string values from tool_response (Claude Code's PostToolUse payload
+# key). Fall back to the whole payload when .tool_response is absent so a
+# payload-key drift (content under a different key) can't skip scanning (#20).
+combined=$(jq -r '[(.tool_response // .) | .. | strings] | join(" ")' <<<"${input}")
 
 # Attempt to decode and re-scan long base64 strings (catches encoded secrets)
 blobs=$(echo "${combined}" | grep -oE '[A-Za-z0-9+/]{40,}={0,2}' || true)
