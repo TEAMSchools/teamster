@@ -415,7 +415,7 @@ only handles disabling the staging model itself.
 
 ### Disable the exceptions staging model
 
-- [ ] **Step 6e.1: Disable the staging model**
+- [ ] **Step 2.1: Disable the staging model**
 
   In
   `src/dbt/kipptaf/models/google/sheets/staging/properties/stg_google_sheets__gradebook_exceptions.yml`,
@@ -429,64 +429,10 @@ only handles disabling the staging model itself.
   The SQL file and source entry stay in place. This preserves the model for
   reference pending any operational decisions after July 1st.
 
-### Build, verify, and commit Task 2
-
-- [ ] **Step 2.1: Run dbt build — full downstream chain**
-
-  Task 6 is the last structural change. By this point all models in the lineage
-  should be updated (including the assignment models' quarter-grain date window
-  changes — see plan gap note below). If all prior tasks are complete, the full
-  chain is now valid:
+- [ ] **Step 2.2: Commit**
 
   ```bash
-  uv run dbt build \
-    --select int_tableau__gradebook_audit_teacher_scaffold+ \
-    --project-dir src/dbt/kipptaf \
-    --defer \
-    --state src/dbt/kipptaf/target/prod
-  ```
-
-  > ⚠️ **Plan gap:** `int_tableau__gradebook_audit_assignments_teacher`,
-  > `int_tableau__gradebook_audit_assignments_student`, and
-  > `int_tableau__gradebook_audit_categories_teacher` still join on
-  > `week_start_monday / week_end_sunday` from the scaffold. These joins must be
-  > updated to `quarter_start_date / quarter_end_date` before the full chain
-  > will build. Steps for those changes will be added when those models are
-  > reviewed.
-
-  Then confirm no remaining references:
-
-  ```bash
-  grep -rn "gradebook_exceptions" src/dbt/kipptaf/models/ --include="*.sql"
-  ```
-
-  Expected: zero results.
-
-- [ ] **Step 2.2: Spot-check row counts**
-
-  Via BigQuery MCP:
-
-  ```sql
-  SELECT
-    region,
-    school_level,
-    audit_flag_name,
-    count(*) as n_rows,
-  FROM `teamster-332318.dbt_grangel_tableau.rpt_tableau__gradebook_audit`
-  WHERE flag_value = 1
-    AND academic_year = 2026
-  GROUP BY 1, 2, 3
-  ORDER BY 1, 2, 3
-  ```
-
-  Counts may be slightly higher than before — removing suppressions means some
-  previously-suppressed rows now appear. Verify with T&L if unexpected spikes
-  appear before merging.
-
-- [ ] **Step 2.3: Commit**
-
-  ```bash
-  git commit -m "feat(dbt): remove gradebook exceptions mechanism — AY 2026-2027"
+  git commit -m "feat(dbt): disable stg_google_sheets__gradebook_exceptions — refs removed in Task 6"
   ```
 
 ---
