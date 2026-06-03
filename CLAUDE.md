@@ -154,7 +154,10 @@ file; domain specifics live in the nearest subdirectory CLAUDE.md.
 
 - **Built-in tools over Bash**: Use dedicated tools for file I/O (Read, Grep,
   Glob, Edit, Write). Bash is only for commands with no dedicated tool (`git`,
-  `uv run`, `gh`, `docker`, `trunk`, `ls`).
+  `uv run`, `gh`, `docker`, `trunk`, `ls`). On the VSCode-extension (native)
+  build of Claude Code ≥2.1.117, Grep/Glob are folded into Bash and absent as
+  standalone tools (`Grep` → "No such tool available") — search with `rg`/`grep`
+  via Bash instead.
 
 - **Don't pipe `Bash(run_in_background=true)` output through
   `head`/`tail`/`grep`**. The pipe truncates what reaches the output file —
@@ -303,10 +306,11 @@ access policies and PII defaults; raw-warehouse paths bypass them. See
 [src/cube/CLAUDE.md](src/cube/CLAUDE.md) for query shape.
 
 **`cube` MCP path**: The `cube` MCP is served from Cloud Run (`teamster-mcp`
-project) and reached via `npx mcp-remote` per the repo `.mcp.json` entry. OAuth
-identity is verified by WorkOS AuthKit federating to Google Workspace; no
-`CUBE_USER_EMAIL` env var is needed. First use opens a browser tab for the OAuth
-flow; subsequent sessions use the refresh token silently.
+project) and reached as a `claude.ai` Custom Connector (and by data-team
+Codespaces via `npx mcp-remote`) — there is no `cube` entry in the repo
+`.mcp.json`. OAuth identity is verified by WorkOS AuthKit federating to Google
+Workspace; no `CUBE_USER_EMAIL` env var is needed. First use opens a browser tab
+for the OAuth flow; subsequent sessions use the refresh token silently.
 
 Stdio dev mode (`scripts/cube-rest-mcp-launch.sh`) is retained for iterating on
 `src/cube/mcp/server.py` itself. Dev-mode email resolution: `CUBE_USER_EMAIL`

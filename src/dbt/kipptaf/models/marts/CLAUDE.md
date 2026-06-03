@@ -105,8 +105,8 @@ row.
 - **No diamond paths.** A fact should never have two FK routes to the same
   ultimate dim. If a fact needs attributes of a deep dim (e.g. `dim_regions`
   from a staff observation), traversal goes through the chain
-  (`fct_staff_observations → dim_staff_work_assignments → dim_work_assignment_locations → dim_locations → dim_regions`),
-  not via a direct `region_key` on the fact.
+  (`fct_staff_observations → dim_locations → dim_regions`), not via a direct
+  `region_key` on the fact.
 - **Parent-fact inheritance.** A child fact that FKs to a parent fact inherits
   the parent's dimensional context and does not repeat it. Example:
   `fct_behavioral_consequences` carries `behavioral_incident_key` only; student
@@ -309,9 +309,12 @@ Treat ≥99% NULL as a broken join, not a sparse FK.
 
 ## Spec authoring context
 
-No production consumers yet — column renames, removals, restructures, and
-surrogate-key hash churn are free. Don't add backwards-compat shims or flag hash
-churn as a concern.
+Cube and Tableau consume these marts directly — 11 cubes read `kipptaf_marts.*`
+tables (see `src/cube/CLAUDE.md` and `cube.yml`'s
+`cube_semantic_layer.depends_on`). Treat column renames, removals, restructures,
+and surrogate-key hash churn as breaking changes: grep `src/cube/model/` for the
+column (see "Exposures are the consumer contract" above) and ship the Cube
+update in the same change — don't assume hash churn is free.
 
 Mart-focused PRs may edit upstream files (`staging/`, `intermediate/`, source
 packages) but those edits must be **additive only**. Wider upstream refactors

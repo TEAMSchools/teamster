@@ -145,6 +145,7 @@ class User(DirectoryBaseModel):
     agreedToTerms: bool | None = None
     suspended: bool | None = None
     suspensionReason: str | None = None
+    suspensionTime: str | None = None
     archived: bool | None = None
     changePasswordAtNextLogin: bool | None = None
     ipWhitelisted: bool | None = None

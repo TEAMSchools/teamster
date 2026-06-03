@@ -4,8 +4,10 @@
 
 set -uo pipefail
 
-HOOK=".claude/hooks/check-sensitive.sh"
-OUTPUT_HOOK=".claude/hooks/check-output.sh"
+# Default to the real hooks; allow override via env so a candidate patch can be
+# validated against the whole suite before it is applied to the protected files.
+HOOK="${HOOK:-.claude/hooks/check-sensitive.sh}"
+OUTPUT_HOOK="${OUTPUT_HOOK:-.claude/hooks/check-output.sh}"
 PASS=0
 FAIL=0
 ERRORS=""
@@ -27,11 +29,13 @@ _is_deny() {
 # Usage: expect_deny_exit0 <description> <hook_script> <json_input>
 expect_deny_exit0() {
   local desc="$1" hook="$2" input="$3"
-  local stdout stderr exit_code
-  stdout=$(echo "${input}" | bash "${hook}" 2>/tmp/_hook_stderr)
+  local stdout stderr exit_code tmpfile
+  # Per-invocation temp file (mktemp) — a fixed /tmp path races under parallel runs.
+  tmpfile=$(mktemp)
+  stdout=$(printf '%s' "${input}" | bash "${hook}" 2>"${tmpfile}")
   exit_code=$?
-  stderr=$(cat /tmp/_hook_stderr)
-  rm -f /tmp/_hook_stderr
+  stderr=$(cat "${tmpfile}")
+  rm -f "${tmpfile}"
   local ok=true
   if [[ ${exit_code} -ne 0 ]]; then
     ok=false
@@ -76,15 +80,8 @@ make_input2() {
 # expect_deny_json <description> <json>
 expect_deny_json() {
   local desc="$1" input="$2"
-  local output
-  output=$(echo "${input}" | bash "${HOOK}" 2>/dev/null)
-  if _is_deny "${output}"; then
-    PASS=$((PASS + 1))
-    echo -e "  ${GREEN}PASS${NC} [deny]: ${desc}"
-  else
-    FAIL=$((FAIL + 1))
-    ERRORS+="\n  ${RED}FAIL${NC} [should deny]: ${desc}"
-  fi
+  # Validate the full protocol (exit 0 + deny on stdout + not on stderr).
+  expect_deny_exit0 "${desc}" "${HOOK}" "${input}"
 }
 
 expect_allow_json() {
@@ -100,19 +97,36 @@ expect_allow_json() {
   fi
 }
 
+# Pipe an arbitrary raw string to a named hook and assert it denies.
+# Used for fail-closed cases (empty/malformed/non-object/missing tool_name)
+# and tool_name normalization that the JSON-builder helpers can't express.
+# Usage: expect_deny_raw <description> <hook_script> <raw_input>
+expect_deny_raw() {
+  local desc="$1" hook="$2" input="$3"
+  expect_deny_exit0 "${desc}" "${hook}" "${input}"
+}
+
+# Pipe an arbitrary raw string to a named hook and assert it allows.
+# Usage: expect_allow_raw <description> <hook_script> <raw_input>
+expect_allow_raw() {
+  local desc="$1" hook="$2" input="$3"
+  local output
+  output=$(printf '%s' "${input}" | bash "${hook}" 2>/dev/null)
+  if _is_deny "${output}"; then
+    FAIL=$((FAIL + 1))
+    ERRORS+="\n  ${RED}FAIL${NC} [should allow]: ${desc}"
+  else
+    PASS=$((PASS + 1))
+    echo -e "  ${GREEN}PASS${NC} [allow]: ${desc}"
+  fi
+}
+
 # Run hook with two-field input and check result
 expect_deny2() {
   local desc="$1" tool="$2" f1="$3" v1="$4" f2="$5" v2="$6"
-  local input output
+  local input
   input=$(make_input2 "${tool}" "${f1}" "${v1}" "${f2}" "${v2}")
-  output=$(echo "${input}" | bash "${HOOK}" 2>/dev/null)
-  if _is_deny "${output}"; then
-    PASS=$((PASS + 1))
-    echo -e "  ${GREEN}PASS${NC} [deny]: ${desc}"
-  else
-    FAIL=$((FAIL + 1))
-    ERRORS+="\n  ${RED}FAIL${NC} [should deny]: ${desc}"
-  fi
+  expect_deny_exit0 "${desc}" "${HOOK}" "${input}"
 }
 
 expect_allow2() {
@@ -133,17 +147,9 @@ expect_allow2() {
 # expect_deny <description> <tool_name> <field> <value>
 expect_deny() {
   local desc="$1" tool="$2" field="$3" value="$4"
-  local input output
+  local input
   input=$(make_input "${tool}" "${field}" "${value}")
-  output=$(echo "${input}" | bash "${HOOK}" 2>/dev/null)
-  if _is_deny "${output}"; then
-    PASS=$((PASS + 1))
-    echo -e "  ${GREEN}PASS${NC} [deny]: ${desc}"
-  else
-    FAIL=$((FAIL + 1))
-    ERRORS+="\n  ${RED}FAIL${NC} [should deny]: ${desc}"
-    ERRORS+="\n       tool=${tool} ${field}=$(echo "${value}" | head -c 80)"
-  fi
+  expect_deny_exit0 "${desc}" "${HOOK}" "${input}"
 }
 
 expect_allow() {
@@ -174,21 +180,23 @@ check_output() {
     tool="$3"
     content_val="$4"
   fi
-  local input output
+  local input
   input=$(jq -n --arg tn "${tool}" --arg c "${content_val}" \
     '{tool_name: $tn, tool_response: {content: $c, stdout: $c, stderr: ""}}')
 
-  output=$(echo "${input}" | bash "${OUTPUT_HOOK}" 2>/dev/null)
-
-  if [[ ${expect} == "deny" ]] && _is_deny "${output}"; then
-    PASS=$((PASS + 1))
-    echo -e "  ${GREEN}PASS${NC} [deny]: ${desc}"
-  elif [[ ${expect} == "clean" ]] && ! _is_deny "${output}"; then
-    PASS=$((PASS + 1))
-    echo -e "  ${GREEN}PASS${NC} [clean]: ${desc}"
+  if [[ ${expect} == "deny" ]]; then
+    # Full protocol: exit 0 + deny on stdout + not on stderr.
+    expect_deny_exit0 "${desc}" "${OUTPUT_HOOK}" "${input}"
   else
-    FAIL=$((FAIL + 1))
-    ERRORS+="\n  ${RED}FAIL${NC} [expected ${expect}]: ${desc}"
+    local output
+    output=$(printf '%s' "${input}" | bash "${OUTPUT_HOOK}" 2>/dev/null)
+    if _is_deny "${output}"; then
+      FAIL=$((FAIL + 1))
+      ERRORS+="\n  ${RED}FAIL${NC} [expected clean]: ${desc}"
+    else
+      PASS=$((PASS + 1))
+      echo -e "  ${GREEN}PASS${NC} [clean]: ${desc}"
+    fi
   fi
 }
 

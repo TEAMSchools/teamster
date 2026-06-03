@@ -22,10 +22,16 @@ docs/
     claude-code-security-hooks.md  # Not in nav
   guides/                  # Task-focused walkthroughs
     index.md               # Account setup + guide routing table (section landing)
+    adp-location-renames.md
+    claude-cube-connector.md
     codespaces.md
-    local-development.md
+    cube.md
     dagster.md
+    dbt-development.md
     google-sheets.md
+    local-development.md
+    sftp-integration.md
+    superpowers.md
   troubleshooting/         # Diagnostic guides for common failures
     dagster.md
     dbt.md

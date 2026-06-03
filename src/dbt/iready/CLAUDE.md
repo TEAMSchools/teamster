@@ -9,11 +9,12 @@ platform for reading and math). Produces staging and intermediate models.
 models/
   staging/
   intermediate/
-  sources.yml
+  sources-external.yml
 ```
 
 ## Cross-Project Usage
 
-Referenced by `kippnewark` and `kipptaf`. The `kippnewark` project uses the
+Referenced as a dbt package by `kippnewark` and `kippmiami`; `kipptaf` consumes
+the resulting tables via `source()`. The `kippnewark` project uses the
 `iready_schema` var (`kippnj_iready`) to point to the correct BigQuery dataset.
 The model `stg_iready__instructional_usage_data` is disabled in `kippnewark`.

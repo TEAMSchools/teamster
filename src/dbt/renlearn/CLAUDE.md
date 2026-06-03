@@ -8,12 +8,13 @@ and STAR assessments). Staging-only project.
 ```text
 models/
   staging/
-  sources.yml
+  sources-external.yml
 ```
 
 ## Cross-Project Usage
 
-Referenced by `kippnewark` and `kipptaf`. The `kippnewark` project uses the
+Referenced as a dbt package by `kippnewark` and `kippmiami`; `kipptaf` consumes
+the resulting tables via `source()`. The `kippnewark` project uses the
 `renlearn_schema` var (`kippnj_renlearn`) to target the correct BigQuery
 dataset. Several models (Accelerated Reader, STAR fast/dashboard/skill) are
 disabled in `kippnewark`.
