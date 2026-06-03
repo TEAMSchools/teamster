@@ -10,7 +10,7 @@ views:
       for per-year headcount. For unique student counts across multiple years,
       use count_distinct(student_key) from the students join path.
 
-      Contains direct student identifiers.
+      Contains direct student identifiers — see access_policy for PII gating.
 
     cubes:
       - join_path: student_enrollments
@@ -83,3 +83,16 @@ views:
             - students_race
             - students_is_gifted
             - students_enrollment_status
+
+    access_policy:
+      - group: detail-access
+        member_level:
+          includes: "*"
+          excludes:
+            - students_full_name
+            - students_birth_date
+            - students_lea_student_identifier
+            - students_state_student_identifier
+      - group: cube-access-student-pii
+        member_level:
+          includes: "*"

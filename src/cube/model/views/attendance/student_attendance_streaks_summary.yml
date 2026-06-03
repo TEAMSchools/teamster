@@ -77,3 +77,10 @@ views:
           members:
             - student_enrollments_grade_level
             - student_enrollments_graduation_year
+
+    access_policy:
+      # No direct student identifiers — demographic dimensions are aggregate
+      # breakdowns only.
+      - group: summary-access
+        member_level:
+          includes: "*"

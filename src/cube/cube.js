@@ -102,18 +102,13 @@ module.exports = {
       securityContext?.cubeCloud?.userAttributes?.email;
     if (!email) return [];
 
-    // Local dev only: CUBE_GROUP_MAP bypasses BigQuery lookup.
+    // Local dev only: CUBE_GROUP_MAP bypasses Directory API.
     // Must never be set in Cube Cloud — see docs/guides/cube.md.
     if (process.env.NODE_ENV !== "production" && process.env.CUBE_GROUP_MAP) {
       try {
         const map = JSON.parse(process.env.CUBE_GROUP_MAP);
         const groups = (map[email] ?? []).filter((g) => g.startsWith("cube-"));
-        groupCache.set(email, {
-          groups,
-          location_scope: "network",
-          location_scope_key: null,
-          expiresAt: nextMidnightEastern(),
-        });
+        groupCache.set(email, { groups, expiresAt: nextMidnightEastern() });
         return withSyntheticGroups(groups);
       } catch (err) {
         console.error("CUBE_GROUP_MAP is not valid JSON:", err.message);
@@ -126,62 +121,45 @@ module.exports = {
     if (cached && cached.expiresAt > Date.now())
       return withSyntheticGroups(cached.groups);
 
-    // Query BigQuery for access config from dim_staff_cube_access.
-    // Replaces Google Admin Directory API — see spec 2026-06-03-cube-security-redesign.
+    // Call Admin Directory API.
+    // GOOGLE_DIRECTORY_SA_KEY: base64-encoded service account JSON with
+    //   domain-wide delegation granted by GOOGLE_DIRECTORY_SA_SUBJECT.
+    // GOOGLE_DIRECTORY_SA_SUBJECT: email of the Workspace admin that granted
+    //   delegation (must be a super-admin in apps.teamschools.org).
     try {
-      const { BigQuery } = require("@google-cloud/bigquery");
-      const bq = new BigQuery();
-      const [rows] = await bq.query({
-        query: `
-          SELECT
-            student_access_level,
-            staff_access_level,
-            student_pii,
-            staff_pii,
-            staff_compensation,
-            staff_benefits,
-            location_scope,
-            location_scope_key
-          FROM kipptaf_marts.dim_staff_cube_access
-          WHERE staff_google_email = @email
-          LIMIT 1
-        `,
-        params: { email },
-        types: { email: "STRING" },
+      const { google } = require("googleapis");
+      const auth = new google.auth.GoogleAuth({
+        credentials: JSON.parse(
+          Buffer.from(process.env.GOOGLE_DIRECTORY_SA_KEY, "base64").toString(),
+        ),
+        scopes: [
+          "https://www.googleapis.com/auth/admin.directory.group.readonly",
+        ],
+        clientOptions: {
+          subject: process.env.GOOGLE_DIRECTORY_SA_SUBJECT,
+        },
       });
+      const admin = google.admin({ version: "directory_v1", auth });
 
-      const row = rows[0] ?? null;
-      const groups = [];
+      let groups = [];
+      let pageToken;
+      do {
+        const res = await admin.groups.list({ userKey: email, pageToken });
+        groups = groups.concat(
+          (res.data.groups ?? []).map((g) => (g.email ?? "").split("@")[0]),
+        );
+        pageToken = res.data.nextPageToken;
+      } while (pageToken);
 
-      if (row) {
-        if (row.student_access_level === "detail")
-          groups.push("cube-access-student-detail");
-        else if (row.student_access_level === "summary")
-          groups.push("cube-access-student-summary");
-
-        if (row.staff_access_level === "detail")
-          groups.push("cube-access-staff-detail");
-        else if (row.staff_access_level === "summary")
-          groups.push("cube-access-staff-summary");
-
-        if (row.student_pii) groups.push("cube-access-student-pii");
-        if (row.staff_pii) groups.push("cube-access-staff-pii");
-        if (row.staff_compensation)
-          groups.push("cube-access-staff-compensation");
-        if (row.staff_benefits) groups.push("cube-access-staff-benefits");
-      }
-
+      const cubeGroups = groups.filter((g) => g.startsWith("cube-"));
       groupCache.set(email, {
-        groups,
-        location_scope: row?.location_scope ?? null,
-        location_scope_key: row?.location_scope_key ?? null,
+        groups: cubeGroups,
         expiresAt: nextMidnightEastern(),
       });
-
-      return withSyntheticGroups(groups);
+      return withSyntheticGroups(cubeGroups);
     } catch (err) {
       console.error(`contextToGroups failed for ${email}:`, err);
-      return []; // default deny on lookup failure
+      return []; // default deny on API failure
     }
   },
 
@@ -191,16 +169,8 @@ module.exports = {
       securityContext?.cubeCloud?.userAttributes?.email;
     const cached = email ? groupCache.get(email) : null;
     const groups = cached?.expiresAt > Date.now() ? cached.groups : [];
-    const locationScope =
-      cached?.expiresAt > Date.now() ? cached.location_scope : null;
-    const locationKey =
-      cached?.expiresAt > Date.now() ? cached.location_scope_key : null;
 
-    // Student domain gate — strip student members for users without student access.
-    if (
-      !groups.includes("cube-access-student-detail") &&
-      !groups.includes("cube-access-student-summary")
-    ) {
+    if (!groups.includes("cube-access-student-data")) {
       query = {
         ...query,
         dimensions: (query.dimensions ?? []).filter((d) => !isStudentMember(d)),
@@ -208,11 +178,7 @@ module.exports = {
       };
     }
 
-    // Staff domain gate — strip staff members for users without staff access.
-    if (
-      !groups.includes("cube-access-staff-detail") &&
-      !groups.includes("cube-access-staff-summary")
-    ) {
+    if (!groups.includes("cube-access-staff-data")) {
       query = {
         ...query,
         dimensions: (query.dimensions ?? []).filter((d) => !isStaffMember(d)),
@@ -220,11 +186,39 @@ module.exports = {
       };
     }
 
-    // Location scope — read from cache populated by contextToGroups.
+    // Location scope — evaluate in priority order
+    const networkGroup = groups.find((g) => g.startsWith("cube-network-"));
+    const regionGroup = groups.find((g) =>
+      /^cube-region-[a-z0-9][a-z0-9-]*-(?:detail|summary)$/.test(g),
+    );
+    const schoolGroup = groups.find((g) =>
+      /^cube-school-[a-z0-9][a-z0-9-]*-(?:detail|summary)$/.test(g),
+    );
+
     let locationFilter = null;
 
-    if (!locationScope) {
-      // User not in dim_staff_cube_access — default deny.
+    if (networkGroup) {
+      // No location filter
+    } else if (regionGroup) {
+      const region = regionGroup
+        .replace(/^cube-region-/, "")
+        .replace(/-(?:detail|summary)$/, "");
+      locationFilter = {
+        member: "locations.region_key",
+        operator: "equals",
+        values: [region],
+      };
+    } else if (schoolGroup) {
+      const slug = schoolGroup
+        .replace(/^cube-school-/, "")
+        .replace(/-(?:detail|summary)$/, "");
+      locationFilter = {
+        member: "locations.abbreviation",
+        operator: "equals",
+        values: [slug],
+      };
+    } else {
+      // Default deny — no scope group
       return {
         ...query,
         filters: [
@@ -235,20 +229,7 @@ module.exports = {
           },
         ],
       };
-    } else if (locationScope === "region") {
-      locationFilter = {
-        member: "locations.region_key",
-        operator: "equals",
-        values: [locationKey],
-      };
-    } else if (locationScope === "school") {
-      locationFilter = {
-        member: "locations.abbreviation",
-        operator: "equals",
-        values: [locationKey],
-      };
     }
-    // locationScope === 'network' → no filter
 
     const filters = [...(query.filters ?? [])];
     if (locationFilter) filters.push(locationFilter);

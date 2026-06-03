@@ -14,7 +14,7 @@ views:
       attendance_code is the raw SIS code for specific drill-down. is_in_session
       and is_membership_day come from dim_school_calendars and are joined on
       (date_key, dim_student_enrollments.location_key). Contains direct student
-      identifiers.
+      identifiers — see access_policy for PII gating.
 
       CA, tier, and truancy base measures default to year-end snapshots when
       queried without an anchor — no filter required for year-over-year
@@ -239,3 +239,18 @@ views:
             - is_latest_record
             - is_month_end_record
             - is_week_end_record
+
+    access_policy:
+      - group: detail-access
+        member_level:
+          includes: "*"
+          excludes:
+            - students_full_name
+            - students_birth_date
+            - students_lea_student_identifier
+            - students_state_student_identifier
+            - students_salesforce_contact_id
+            - students_district_student_identifier
+      - group: cube-access-student-pii
+        member_level:
+          includes: "*"

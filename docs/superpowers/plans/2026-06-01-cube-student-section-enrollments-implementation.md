@@ -510,6 +510,36 @@ views:
             - staff_first_name
             - staff_last_name
             - staff_work_email
+
+    access_policy:
+      - group: detail-access
+        member_level:
+          includes: "*"
+          excludes:
+            - students_full_name
+            - students_birth_date
+            - students_lea_student_identifier
+            - students_state_student_identifier
+            - staff_full_name
+            - staff_first_name
+            - staff_last_name
+            - staff_work_email
+      - group: cube-access-student-pii
+        member_level:
+          includes: "*"
+          excludes:
+            - staff_full_name
+            - staff_first_name
+            - staff_last_name
+            - staff_work_email
+      - group: cube-access-staff-pii
+        member_level:
+          includes: "*"
+          excludes:
+            - students_full_name
+            - students_birth_date
+            - students_lea_student_identifier
+            - students_state_student_identifier
 ```
 
 - [ ] **Step 3: Verify the YAML parses**
@@ -524,6 +554,7 @@ data = yaml.safe_load(
 view = data['views'][0]
 print('view name:', view['name'])
 print('join paths:', [c['join_path'] for c in view['cubes']])
+print('access groups:', [p['group'] for p in view['access_policy']])
 "
 ```
 
@@ -532,6 +563,7 @@ Expected output:
 ```text
 view name: student_section_enrollments_detail
 join paths: ['student_section_enrollments', 'student_section_enrollments.terms', 'student_section_enrollments.student_enrollments.locations', 'student_section_enrollments.student_enrollments.locations.regions', 'student_section_enrollments.student_enrollments', 'student_section_enrollments.student_enrollments.students', 'student_section_enrollments.staff']
+access groups: ['detail-access', 'cube-access-student-pii', 'cube-access-staff-pii']
 ```
 
 - [ ] **Step 4: Commit**
@@ -669,6 +701,12 @@ views:
           members:
             - student_enrollments_grade_level
             - student_enrollments_graduation_year
+
+    access_policy:
+      # No direct student or staff identifiers.
+      - group: summary-access
+        member_level:
+          includes: "*"
 ```
 
 - [ ] **Step 2: Verify the YAML parses**
@@ -682,6 +720,7 @@ data = yaml.safe_load(
 )
 view = data['views'][0]
 print('view name:', view['name'])
+print('access groups:', [p['group'] for p in view['access_policy']])
 "
 ```
 
@@ -689,6 +728,7 @@ Expected output:
 
 ```text
 view name: student_section_enrollments_summary
+access groups: ['summary-access']
 ```
 
 - [ ] **Step 3: Run full cube test suite**
