@@ -128,8 +128,12 @@ in their dev environment, then run the consistency checks.
 
 > **Note on timing:** BigQuery caches Google Sheets external tables and the
 > cache can take anywhere from a few seconds to a few minutes to refresh after
-> the sheet is edited. If the new rows don't appear yet, wait 1–2 minutes and
-> re-run the query. Do not proceed to staging until the rows are visible here.
+> the sheet is edited. Before running the check, ask the user: **"Would you like
+> me to set up a loop to check automatically every 5 minutes until the rows
+> appear, or would you prefer to check manually?"** If they say yes, use the
+> `loop` skill to poll every 5 minutes. If the rows are not visible yet after
+> running manually, wait a few minutes and retry. Do not proceed to staging
+> until the rows are visible.
 
 ```sql
 SELECT DISTINCT region, school_level, academic_year,
