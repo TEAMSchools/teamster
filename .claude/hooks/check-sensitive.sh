@@ -66,9 +66,12 @@ done <<<"${_cands}"
 # Strip quotes and backslashes for keyword matching (defeats quote-splitting bypass)
 sanitized=${normalized//[\"\'\\]/}
 
-# Path-only fields for infrastructure-path rules (excludes content/new_string/old_string)
+# Path-bearing fields for infrastructure-path rules: named path keys collected
+# recursively (any nesting depth) so MCP path keys (uri/url/localPath/source) are
+# covered, while free-text fields like a SQL `sql` parameter are NOT — a dotted
+# attribute such as record.key must not be mistaken for a cert/key file (Rule 1b).
 path_only=$(jq -r '
-  [.tool_input.file_path, .tool_input.command, .tool_input.path, .tool_input.pattern] | map(select(. != null)) | join(" ")
+  [.tool_input | .. | objects | (.file_path?, .command?, .path?, .pattern?, .uri?, .url?, .localPath?, .source?) | strings] | join(" ")
 ' <<<"${input}")
 path_only=$(echo "${path_only}" | _normalize)
 [[ -n ${resolved} ]] && path_only="${path_only} ${resolved}"
@@ -96,11 +99,11 @@ if echo "${no_content}" | grep -qiE '\.env[.a-z]*|(^|[ /])(\.ssh|\.kube|\.pem|\.
   deny
 fi
 
-# 1b. File-extension patterns scoped to no_content (all leaves except Write/Edit
-#     body) — catches cert/key files under MCP keys (uri, localPath, source, ...)
-#     while still exempting Python attribute access (e.g. asset.key) in written
-#     code/doc content.
-if echo "${no_content}" | grep -qiE '\*?\.(cer|key|pem)([ /]|$)'; then
+# 1b. File-extension patterns scoped to path_only (named path keys incl. MCP
+#     uri/url/localPath/source, recursive) — catches cert/key files under those
+#     keys without scanning free-text fields like a SQL `sql` parameter, where a
+#     dot-attribute such as record.key would otherwise false-positive.
+if echo "${path_only}" | grep -qiE '\*?\.(cer|key|pem)([ /]|$)'; then
   deny
 fi
 

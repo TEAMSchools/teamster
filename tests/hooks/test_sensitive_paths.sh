@@ -113,6 +113,12 @@ expect_allow_json "Write content asset.key (attr, not a file)" \
   "$(jq -n '{tool_name:"Write", tool_input:{file_path:"/tmp/x.py", content:"v = asset.key"}}')"
 expect_allow_json "Edit new_string mentioning cert.pem" \
   "$(jq -n '{tool_name:"Edit", tool_input:{file_path:"/tmp/x.py", new_string:"# see cert.pem docs"}}')"
+# free-text SQL fields are NOT path-scanned: a dotted column ref must not be
+# mistaken for a cert/key file (Rule 1b scans named path keys, not `sql`)
+expect_allow_json "BQ sql dot-attr record.key (not a cert file)" \
+  "$(jq -n '{tool_name:"mcp__bigquery__execute_sql", tool_input:{sql:"SELECT record.key FROM t"}}')"
+expect_allow_json "BQ sql dot-attr a.pem (not a cert file)" \
+  "$(jq -n '{tool_name:"mcp__bigquery__execute_sql", tool_input:{sql:"SELECT a.pem FROM t"}}')"
 # trunk-ignore-end(shellcheck/SC2312)
 
 # ─── #2: symlink resolution for every path field (not just file_path) ─────────
