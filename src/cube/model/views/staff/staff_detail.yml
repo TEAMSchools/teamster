@@ -13,7 +13,7 @@ views:
       Primary-position filtering: use is_primary_position = true to isolate the
       employee's primary assignment at a point in time. status_name = 'Active'
       filters to active employees only. Contains direct staff and manager
-      identifiers — see access_policy for PII gating.
+      identifiers.
 
     cubes:
       - join_path: staff_work_history
@@ -131,60 +131,6 @@ views:
         - name: Manager
           members:
             - staff_manager_staff_key
-            - staff_manager_full_name
-            - staff_manager_first_name
-            - staff_manager_last_name
-            - staff_manager_work_email
-
-    access_policy:
-      # detail-access: excludes staff PII (employee + manager) and compensation.
-      # cube-access-staff-pii: full access except compensation.
-      # cube-access-staff-compensation: full access except staff PII.
-      # A user with both groups sees everything.
-      - group: detail-access
-        member_level:
-          includes: "*"
-          excludes:
-            - staff_full_name
-            - staff_first_name
-            - staff_last_name
-            - staff_birth_date
-            - staff_work_email
-            - staff_google_email
-            - staff_personal_email
-            - staff_personal_cell_phone
-            - staff_active_directory_username
-            - staff_staff_unique_id
-            - staff_manager_full_name
-            - staff_manager_first_name
-            - staff_manager_last_name
-            - staff_manager_work_email
-            - annual_wage
-            - hourly_wage
-            - daily_rate
-            - period_rate
-      - group: cube-access-staff-pii
-        member_level:
-          includes: "*"
-          excludes:
-            - annual_wage
-            - hourly_wage
-            - daily_rate
-            - period_rate
-      - group: cube-access-staff-compensation
-        member_level:
-          includes: "*"
-          excludes:
-            - staff_full_name
-            - staff_first_name
-            - staff_last_name
-            - staff_birth_date
-            - staff_work_email
-            - staff_google_email
-            - staff_personal_email
-            - staff_personal_cell_phone
-            - staff_active_directory_username
-            - staff_staff_unique_id
             - staff_manager_full_name
             - staff_manager_first_name
             - staff_manager_last_name
