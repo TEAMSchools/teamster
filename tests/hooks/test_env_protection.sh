@@ -98,4 +98,37 @@ expect_allow '$CODESPACES (safe var)' Bash command 'echo $CODESPACES'
 expect_allow '${HOME} braced syntax (safe)' Bash command 'echo ${HOME}'
 # trunk-ignore-end(shellcheck/SC2016)
 
+# ─── Pattern 3 (#5): declare dump forms ──────────────────────────────────────
+echo ""
+echo -e "${YELLOW}Pattern 3 (#5): declare dump forms${NC}"
+
+expect_deny "declare -p (dump all)" Bash command "declare -p"
+expect_deny "declare bare (dump all)" Bash command "declare"
+expect_deny "declare -px (export dump)" Bash command "declare -px"
+expect_deny "declare -xp (flag order)" Bash command "declare -xp"
+expect_deny "declare -p piped" Bash command "declare -p | grep SECRET"
+expect_deny "declare after semicolon" Bash command "cd /tmp; declare"
+
+expect_allow "declare assignment" Bash command "declare foo=bar"
+expect_allow "declare -a array" Bash command "declare -a my_array"
+expect_allow "declare -r readonly assign" Bash command "declare -r CONST=1"
+
+# ─── Pattern 7 (#4): safe-var prefix must not strip longer names ─────────────
+echo ""
+echo -e "${YELLOW}Pattern 7 (#4): anchored safe-var strip${NC}"
+
+# test fixtures: $() must not expand — values are literal command strings
+# trunk-ignore-begin(shellcheck/SC2016)
+expect_deny 'echo $CI_SECRET (CI prefix)' Bash command 'echo $CI_SECRET'
+expect_deny 'echo $USER_PASSWORD (USER prefix)' Bash command 'echo $USER_PASSWORD'
+expect_deny 'echo $PATH_TO_SECRET (PATH prefix)' Bash command 'echo $PATH_TO_SECRET'
+expect_deny 'echo $HOME_TOKEN (HOME prefix)' Bash command 'echo $HOME_TOKEN'
+expect_deny 'echo ${TERM_SECRET} (braced, TERM prefix)' Bash command 'echo ${TERM_SECRET}'
+
+expect_allow 'echo $CI (exact safe var still allowed)' Bash command 'echo $CI'
+expect_allow 'echo $USER (exact safe var still allowed)' Bash command 'echo $USER'
+expect_allow 'echo $HOME/sub (safe var then delimiter)' Bash command 'echo $HOME/sub'
+expect_allow 'echo ${PATH} (braced safe var)' Bash command 'echo ${PATH}'
+# trunk-ignore-end(shellcheck/SC2016)
+
 print_summary "Env Protection"

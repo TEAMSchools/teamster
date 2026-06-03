@@ -110,7 +110,15 @@ if [[ ${tool_name} == "bash" ]]; then
   fi
 
   # 3. Environment variable / process memory leakage
-  if echo "${sanitized}" | grep -qiE '\bprintenv\b|\bdeclare -x\b|\bexport -p\b|\bcompgen\b|\btypeset([[:space:]]+-x|\b)|/proc/[^[:space:]]*/environ|/proc/[^[:space:]]*/cmdline|OP_SERVICE_ACCOUNT_TOKEN|OP_CONNECT_TOKEN|OP_SERVICE|ACCOUNT_TOKEN|\benviron\b|\bgetenv\b'; then
+  # declare: -x already listed; also block any -flag cluster containing p
+  # (-p/-px/-xp dump variable definitions, equivalent to printenv/set)
+  if echo "${sanitized}" | grep -qiE '\bprintenv\b|\bdeclare -x\b|\bdeclare[[:space:]]+-[a-zA-Z]*p[a-zA-Z]*\b|\bexport -p\b|\bcompgen\b|\btypeset([[:space:]]+-x|\b)|/proc/[^[:space:]]*/environ|/proc/[^[:space:]]*/cmdline|OP_SERVICE_ACCOUNT_TOKEN|OP_CONNECT_TOKEN|OP_SERVICE|ACCOUNT_TOKEN|\benviron\b|\bgetenv\b'; then
+    deny
+  fi
+
+  # 3d. Catch bare `declare` (dumps all vars), but not `declare VAR=val` or `declare -flags`
+  # trunk-ignore(shellcheck/SC2016): regex contains literal $\( for matching $(declare), not a command substitution
+  if echo "${sanitized}" | grep -qE '(^|[;&|(`][[:space:]]*)declare([[:space:]]*$|[[:space:]]*[|>&;)`])|\$\(declare([[:space:]]|$|\))'; then
     deny
   fi
 
@@ -172,7 +180,10 @@ if [[ ${tool_name} == "bash" ]]; then
   safe+='|JAVA_HOME|GOPATH|GOROOT|CARGO_HOME|RUSTUP_HOME|NODE_PATH'
   safe+='|CI|GITHUB_WORKSPACE|GITHUB_REPOSITORY|GITHUB_REF|GITHUB_SHA|GITHUB_ACTIONS|GITHUB_ACTOR|GITHUB_OUTPUT|GITHUB_EVENT_NAME'
   safe+='|CODESPACES|CODESPACE_NAME|REMOTE_CONTAINERS'
-  stripped=$(echo "${sanitized}" | sed -E "s/\\$\\{?(${safe})\\}?//g")
+  # Anchor the strip with a captured-and-re-emitted trailing non-identifier
+  # boundary so a safe PREFIX cannot consume a longer secret var name
+  # (e.g. $CI must strip, but $CI_SECRET / $USER_PASSWORD must not).
+  stripped=$(echo "${sanitized}" | sed -E "s/\\$\\{?(${safe})\\}?([^A-Z0-9_]|\$)/\\2/g")
   if echo "${stripped}" | grep -qE '\$\{?[A-Z_][A-Z0-9_]+\}?'; then
     deny
   fi
