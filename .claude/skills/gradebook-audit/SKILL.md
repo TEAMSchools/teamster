@@ -2,9 +2,10 @@
 name: gradebook-audit
 description: >-
   Use when any question or task touches the gradebook audit data model or its
-  lineage. Triggers: explaining the model, adding flag rows for a new year,
-  adding/removing a flag, adding a region, debugging a flag that isn't firing,
-  or working on any model from int_tableau__gradebook_audit_* through
+  lineage. Triggers: explaining the model, listing refs/lineage/sources for the
+  gradebook audit dashboard, adding flag rows for a new year, adding/removing a
+  flag, adding a region, debugging a flag that isn't firing, or working on any
+  model from int_tableau__gradebook_audit_* through
   rpt_tableau__gradebook_audit.
 ---
 
@@ -25,6 +26,27 @@ and configuration behavior. The spec covers AY 2026-2027 design decisions.
 
 **Key gotcha:** `academic_year` stores the STARTING year. AY 2026-2027 =
 `academic_year = 2026`. Confirm this with the user before generating any data.
+
+---
+
+## Procedure: List refs, lineage, or sources for the gradebook audit dashboard
+
+Do NOT search the codebase. Go directly to the exposure file:
+
+`src/dbt/kipptaf/models/exposures/tableau.yml`
+
+Find the `gradebook_and_gpa_dashboard` exposure (the active one). Its
+`depends_on` list is the authoritative answer:
+
+- `rpt_tableau__assignment_checks`
+- `rpt_tableau__gradebook_audit`
+- `rpt_tableau__gradebook_gpa`
+- `rpt_tableau__gradebook_gpa_cumulative`
+- `rpt_tableau__gradebook_es_comments`
+- `rpt_tableau__gradebook_ms_hs_comments`
+
+There is also a disabled exposure `gradebook_audit_teacher_report` — mention it
+only if the user asks about disabled or archived workbooks.
 
 ---
 
