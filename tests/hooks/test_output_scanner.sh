@@ -158,6 +158,7 @@ echo -e "${YELLOW}PostToolUse: Batch 6 detections${NC}"
 check_output "Slack bot token (xoxb)" deny "xoxb-2401234567-""2409876543210-AbCdEfGhIjKlMnOpQrStUvWx"
 check_output "Stripe live secret key" deny "sk_live""_4eC39HqLyjWDarjtT1zdp7dc0000abcd"
 check_output "aws_secret_access_key assignment" deny "aws_secret_access_key=wJalrXUtnFEMIK7MDENGbPxRfiCYEXAMPLEKEYAB"
+check_output "Slack webhook URL" deny "https://hooks.slack.com/services/""T00000000/B00000000/XXXXXXXXXXXXXXXXXXXXXXXX"
 
 # #16 url-safe base64 that decodes to a 1Password reference; #18 base64(gzip(...))
 b64url=$(printf 'see op://vault/item/field for it' | base64 | tr '+/' '-_' | tr -d '\n')
