@@ -96,6 +96,11 @@ evidence in `.claude/scratch/` and reference it. For non-Bash tools only Section
 1 path rules scan the body; Bash-only and `path_only` rules do not. (Edit/Write
 `content`/`new_string` is content-exempt, so editing docs is unaffected.)
 
+**Your own ad-hoc Bash self-blocks on `$UPPER_CASE`:** Rule 7 denies any Bash
+command expanding a non-allowlisted uppercase var — including one you define in
+that same command (`sc=$(...); echo "${SC}"`). Use lowercase names
+(`sc=...; echo "${sc}"`) in throwaway commands.
+
 **BigQuery MCP** — queries must start with SELECT/SHOW/DESCRIBE/WITH; embedded
 DML/DDL (INSERT, UPDATE, DELETE, CREATE, DROP, etc.) is blocked.
 
@@ -190,6 +195,11 @@ blocked (Rule 2), and trigger tokens placed in the command self-block. To test a
 rule, `Write` a harness into `.claude/scratch/` (Write `content` is exempt from
 scanning) that pipes fixtures into the hook by absolute path, then run
 `bash .claude/scratch/<name>.sh` (the command string carries no triggers).
+
+The same trick `cp`s or `diff`s the protected hooks (Bash can't name
+`.claude/hooks/*.sh`): put the hook paths inside the scratch script (snapshot a
+hook into scratch for patching, or `diff` scratch-vs-committed before hand-off)
+and run it by its scratch path.
 
 ## Editing the hooks — recurring gotchas
 
