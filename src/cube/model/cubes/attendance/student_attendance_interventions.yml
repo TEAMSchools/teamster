@@ -26,9 +26,14 @@ cubes:
         relationship: many_to_one
 
       - name: student_enrollments
+        # date_key is nullable for pending interventions — COALESCE to entry_date
+        # so pending rows still resolve to the first status period of the enrollment.
         sql: >
           {student_enrollments.student_enrollment_key} =
-          {CUBE}.student_enrollment_key
+          {CUBE}.student_enrollment_key AND COALESCE(CAST({CUBE}.date_key AS
+          TIMESTAMP), {student_enrollments.entry_date}) BETWEEN
+          {student_enrollments.effective_start_date} AND
+          {student_enrollments.effective_end_date}
         relationship: many_to_one
 
     dimensions:

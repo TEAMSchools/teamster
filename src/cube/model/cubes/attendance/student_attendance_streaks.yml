@@ -16,7 +16,9 @@ cubes:
       - name: student_enrollments
         sql: >
           {student_enrollments.student_enrollment_key} =
-          {CUBE}.student_enrollment_key
+          {CUBE}.student_enrollment_key AND CAST({CUBE}.streak_start_date_key AS
+          TIMESTAMP) BETWEEN {student_enrollments.effective_start_date} AND
+          {student_enrollments.effective_end_date}
         relationship: many_to_one
 
     dimensions:
