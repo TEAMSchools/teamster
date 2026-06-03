@@ -1,0 +1,138 @@
+views:
+  - name: student_enrollment_status_detail
+    description: >-
+      Row-level student enrollment with ELL, IEP, and meal eligibility status
+      inlined. Use for headcount breakdowns by status, grade level, school, and
+      demographics.
+
+      Grain: one row per enrollment stint per status-span intersection. A
+      student whose ELL, IEP, or meal eligibility changes mid-enrollment
+      produces multiple rows. Always use count_students (count_distinct on
+      student_enrollment_key) for enrollment headcounts — never bare count(*).
+
+      Point-in-time queries: filter ell_effective_date_start ≤ date AND
+      ell_effective_date_end ≥ date (and/or the IEP or meal equivalents) to
+      collapse to one row per enrollment at a specific date. Without a date
+      filter, use count_students and group by is_ell / is_iep / is_meal_eligible
+      to get current-or-ever-status breakdowns.
+
+      Contains direct student identifiers — see access_policy for PII gating.
+
+    cubes:
+      - join_path: student_enrollment_status
+        includes:
+          - count_students
+          - student_enrollment_key
+          - academic_year
+          - grade_level
+          - graduation_year
+          - entry_date
+          - exit_date
+          - is_retained_year
+          - is_ell
+          - ell_effective_date_start
+          - ell_effective_date_end
+          - is_iep
+          - iep_classification
+          - special_education_code
+          - special_education_name
+          - special_education_placement
+          - iep_effective_date_start
+          - iep_effective_date_end
+          - is_meal_eligible
+          - meal_eligibility
+          - meal_effective_date_start
+          - meal_effective_date_end
+
+      - join_path: student_enrollment_status.locations
+        prefix: true
+        includes:
+          - location_name
+          - abbreviation
+          - grade_band
+          - campus
+          - city
+
+      - join_path: student_enrollment_status.locations.regions
+        prefix: true
+        includes:
+          - region_name
+          - state
+
+      - join_path: student_enrollment_status.students
+        prefix: true
+        includes:
+          - student_key
+          - full_name
+          - birth_date
+          - lea_student_identifier
+          - state_student_identifier
+          - gender_identity
+          - race
+          - is_gifted
+          - enrollment_status
+
+    meta:
+      folders:
+        - name: Enrollment
+          members:
+            - student_enrollment_key
+            - academic_year
+            - grade_level
+            - graduation_year
+            - entry_date
+            - exit_date
+            - is_retained_year
+        - name: ELL Status
+          members:
+            - is_ell
+            - ell_effective_date_start
+            - ell_effective_date_end
+        - name: IEP Status
+          members:
+            - is_iep
+            - iep_classification
+            - special_education_code
+            - special_education_name
+            - special_education_placement
+            - iep_effective_date_start
+            - iep_effective_date_end
+        - name: Meal Eligibility
+          members:
+            - is_meal_eligible
+            - meal_eligibility
+            - meal_effective_date_start
+            - meal_effective_date_end
+        - name: Location
+          members:
+            - locations_location_name
+            - locations_abbreviation
+            - locations_grade_band
+            - locations_campus
+            - locations_city
+            - regions_region_name
+            - regions_state
+        - name: Student
+          members:
+            - students_student_key
+            - students_full_name
+            - students_birth_date
+            - students_lea_student_identifier
+            - students_state_student_identifier
+            - students_gender_identity
+            - students_race
+            - students_is_gifted
+            - students_enrollment_status
+
+    access_policy:
+      - group: detail-access
+        member_level:
+          includes: "*"
+          excludes:
+            - students_full_name
+            - students_birth_date
+            - students_lea_student_identifier
+            - students_state_student_identifier
+      - group: cube-access-student-pii
+        member_level:
+          includes: "*"
