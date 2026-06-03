@@ -47,21 +47,31 @@ fi
 
 normalized=$(echo "${path}" | _normalize)
 
-# Resolve symlinks on file_path to prevent symlink-based bypass — cache result for reuse below
-file_path=$(jq -r '.tool_input.file_path // ""' <<<"${input}")
-if [[ -n ${file_path} && -e ${file_path} ]]; then
-  resolved=$(readlink -f "${file_path}" 2>/dev/null || echo "${file_path}")
-else
-  resolved=""
-fi
+# Resolve symlinks for EVERY path-bearing string leaf that exists on disk (not
+# just file_path) so a symlink to a sensitive target is caught regardless of
+# which key holds it — path (Grep), pattern (Glob), MCP uri/localPath/source,
+# nested objects, etc. Body content (content/new_string/old_string) is excluded:
+# that is doc/code text, not a path the tool will open.
+resolved=""
+_cands=$(jq -r '
+  [.tool_input | to_entries[] | select(.key | test("^(content|new_string|old_string)$") | not) | .value | .. | strings] | .[]
+' <<<"${input}")
+while IFS= read -r _cand; do
+  [[ -n ${_cand} && -e ${_cand} ]] || continue
+  _r=$(readlink -f "${_cand}" 2>/dev/null) || continue
+  [[ -n ${_r} ]] && resolved+=" ${_r}"
+done <<<"${_cands}"
 [[ -n ${resolved} ]] && normalized="${normalized} ${resolved}"
 
 # Strip quotes and backslashes for keyword matching (defeats quote-splitting bypass)
 sanitized=${normalized//[\"\'\\]/}
 
-# Path-only fields for infrastructure-path rules (excludes content/new_string/old_string)
+# Path-bearing fields for infrastructure-path rules: named path keys collected
+# recursively (any nesting depth) so MCP path keys (uri/url/localPath/source) are
+# covered, while free-text fields like a SQL `sql` parameter are NOT — a dotted
+# attribute such as record.key must not be mistaken for a cert/key file (Rule 1b).
 path_only=$(jq -r '
-  [.tool_input.file_path, .tool_input.command, .tool_input.path, .tool_input.pattern] | map(select(. != null)) | join(" ")
+  [.tool_input | .. | objects | (.file_path?, .command?, .path?, .pattern?, .uri?, .url?, .localPath?, .source?) | strings] | join(" ")
 ' <<<"${input}")
 path_only=$(echo "${path_only}" | _normalize)
 [[ -n ${resolved} ]] && path_only="${path_only} ${resolved}"
@@ -89,8 +99,10 @@ if echo "${no_content}" | grep -qiE '\.env[.a-z]*|(^|[ /])(\.ssh|\.kube|\.pem|\.
   deny
 fi
 
-# 1b. File-extension patterns scoped to paths/commands only — avoids false-positives on
-#     Python attribute access (e.g. asset.key) in code content written via Edit/Write
+# 1b. File-extension patterns scoped to path_only (named path keys incl. MCP
+#     uri/url/localPath/source, recursive) — catches cert/key files under those
+#     keys without scanning free-text fields like a SQL `sql` parameter, where a
+#     dot-attribute such as record.key would otherwise false-positive.
 if echo "${path_only}" | grep -qiE '\*?\.(cer|key|pem)([ /]|$)'; then
   deny
 fi
