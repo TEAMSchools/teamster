@@ -154,7 +154,10 @@ file; domain specifics live in the nearest subdirectory CLAUDE.md.
 
 - **Built-in tools over Bash**: Use dedicated tools for file I/O (Read, Grep,
   Glob, Edit, Write). Bash is only for commands with no dedicated tool (`git`,
-  `uv run`, `gh`, `docker`, `trunk`, `ls`).
+  `uv run`, `gh`, `docker`, `trunk`, `ls`). On the VSCode-extension (native)
+  build of Claude Code ≥2.1.117, Grep/Glob are folded into Bash and absent as
+  standalone tools (`Grep` → "No such tool available") — search with `rg`/`grep`
+  via Bash instead.
 
 - **Don't pipe `Bash(run_in_background=true)` output through
   `head`/`tail`/`grep`**. The pipe truncates what reaches the output file —
