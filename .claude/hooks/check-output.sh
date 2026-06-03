@@ -3,10 +3,28 @@
 # Defense-in-depth — catches secrets that slip past the PreToolUse hook.
 
 input=$(cat)
-tool_name=$(jq -r '.tool_name' <<<"${input}")
 
-# Scan output from tools that can return sensitive content
-[[ ! ${tool_name} =~ ^(Bash|Read|Grep|NotebookEdit|WebFetch|WebSearch|mcp__.*)$ ]] && exit 0
+deny_output() {
+  echo '{"hookSpecificOutput": {"hookEventName": "PostToolUse", "permissionDecision": "deny", "permissionDecisionReason": "⛔ Output blocked — unscannable input or secret material"}}'
+  exit 0
+}
+
+# Fail closed on input this hook cannot understand (empty stdin, unparseable
+# JSON, non-object frame, or missing/empty tool_name) — otherwise a nonstandard
+# envelope skips scanning entirely and re-opens full passthrough.
+if [[ -z ${input} ]] || ! jq -e 'type == "object"' >/dev/null 2>&1 <<<"${input}"; then
+  deny_output
+fi
+tool_name=$(jq -r '.tool_name // ""' <<<"${input}")
+# Normalize once: lowercase + strip all whitespace so a re-cased name cannot
+# skip the scan gate below.
+tool_name=$(printf '%s' "${tool_name}" | tr '[:upper:]' '[:lower:]' | tr -d '[:space:]')
+if [[ -z ${tool_name} ]]; then
+  deny_output
+fi
+
+# Scan output from tools that can return sensitive content (names normalized)
+[[ ! ${tool_name} =~ ^(bash|read|grep|notebookedit|webfetch|websearch|mcp__.*)$ ]] && exit 0
 
 # Extract all string values from tool_response (Claude Code's PostToolUse payload key)
 combined=$(jq -r '[.tool_response | .. | strings] | join(" ")' <<<"${input}")

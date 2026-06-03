@@ -4,8 +4,10 @@
 
 set -uo pipefail
 
-HOOK=".claude/hooks/check-sensitive.sh"
-OUTPUT_HOOK=".claude/hooks/check-output.sh"
+# Default to the real hooks; allow override via env so a candidate patch can be
+# validated against the whole suite before it is applied to the protected files.
+HOOK="${HOOK:-.claude/hooks/check-sensitive.sh}"
+OUTPUT_HOOK="${OUTPUT_HOOK:-.claude/hooks/check-output.sh}"
 PASS=0
 FAIL=0
 ERRORS=""
@@ -91,6 +93,38 @@ expect_allow_json() {
   local desc="$1" input="$2"
   local output
   output=$(echo "${input}" | bash "${HOOK}" 2>/dev/null)
+  if _is_deny "${output}"; then
+    FAIL=$((FAIL + 1))
+    ERRORS+="\n  ${RED}FAIL${NC} [should allow]: ${desc}"
+  else
+    PASS=$((PASS + 1))
+    echo -e "  ${GREEN}PASS${NC} [allow]: ${desc}"
+  fi
+}
+
+# Pipe an arbitrary raw string to a named hook and assert it denies.
+# Used for fail-closed cases (empty/malformed/non-object/missing tool_name)
+# and tool_name normalization that the JSON-builder helpers can't express.
+# Usage: expect_deny_raw <description> <hook_script> <raw_input>
+expect_deny_raw() {
+  local desc="$1" hook="$2" input="$3"
+  local output
+  output=$(printf '%s' "${input}" | bash "${hook}" 2>/dev/null)
+  if _is_deny "${output}"; then
+    PASS=$((PASS + 1))
+    echo -e "  ${GREEN}PASS${NC} [deny]: ${desc}"
+  else
+    FAIL=$((FAIL + 1))
+    ERRORS+="\n  ${RED}FAIL${NC} [should deny]: ${desc}"
+  fi
+}
+
+# Pipe an arbitrary raw string to a named hook and assert it allows.
+# Usage: expect_allow_raw <description> <hook_script> <raw_input>
+expect_allow_raw() {
+  local desc="$1" hook="$2" input="$3"
+  local output
+  output=$(printf '%s' "${input}" | bash "${hook}" 2>/dev/null)
   if _is_deny "${output}"; then
     FAIL=$((FAIL + 1))
     ERRORS+="\n  ${RED}FAIL${NC} [should allow]: ${desc}"

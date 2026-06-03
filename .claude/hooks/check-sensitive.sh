@@ -14,13 +14,26 @@ deny() {
 }
 
 input=$(cat)
-tool_name=$(jq -r '.tool_name' <<<"${input}")
+
+# Fail closed: a hook that is the sole enforcement layer must DENY anything it
+# cannot understand rather than silently allow. Empty stdin, unparseable JSON,
+# a non-object frame, or a missing/empty tool_name all fall through to deny.
+if [[ -z ${input} ]] || ! jq -e 'type == "object"' >/dev/null 2>&1 <<<"${input}"; then
+  deny
+fi
+tool_name=$(jq -r '.tool_name // ""' <<<"${input}")
+# Normalize once: lowercase + strip all whitespace so a re-cased or padded
+# tool_name cannot skip the case-sensitive gates below.
+tool_name=$(printf '%s' "${tool_name}" | tr '[:upper:]' '[:lower:]' | tr -d '[:space:]')
+if [[ -z ${tool_name} ]]; then
+  deny
+fi
 
 # Normalize path strings: collapse //, /./, resolve ../
 _normalize() { sed -E ':a; s#//+#/#g; s#/\./#/#g; s#/[^/]+/\.\./#/#g; ta'; }
 
 # Collect ALL string values from tool_input (covers MCP, NotebookEdit, any tool schema)
-if [[ ${tool_name} == "Agent" ]]; then
+if [[ ${tool_name} == "agent" ]]; then
   path=$(jq -r '
     [.tool_input | to_entries[] | select(.key != "description") | .value | .. | strings] | join(" ")
   ' <<<"${input}")
@@ -54,7 +67,7 @@ path_only=${path_only//[\"\'\\]/}
 
 # All fields except Write/Edit body content (content, new_string, old_string)
 # Used by Rules 1/1c: catches MCP sql/nested fields but skips doc content
-if [[ ${tool_name} == "Write" || ${tool_name} == "Edit" ]]; then
+if [[ ${tool_name} == "write" || ${tool_name} == "edit" ]]; then
   no_content=$(jq -r '
     [.tool_input | to_entries[] | select(.key | test("^(content|new_string|old_string)$") | not) | .value | .. | strings] | join(" ")
   ' <<<"${input}")
@@ -89,7 +102,7 @@ fi
 # ═══════════════════════════════════════════════════════════════════
 # Section 2: Bash only — command-pattern protection
 # ═══════════════════════════════════════════════════════════════════
-if [[ ${tool_name} == "Bash" ]]; then
+if [[ ${tool_name} == "bash" ]]; then
 
   # 2. Protected paths — Edit/Write handled by permissions.deny; Bash blocked here
   if echo "${path_only}" | grep -qE '\.claude/(settings\.json|settings\.local\.json|hooks/[^[:space:]]*\.sh|shell-snapshots/)|\.devcontainer/scripts/|\.git/hooks/|\.trunk/(trunk\.yaml|config/)'; then
