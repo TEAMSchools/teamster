@@ -2884,6 +2884,74 @@ Complete replacement. Changes from the old model:
   git commit -m "feat(dbt): Task 3 — flag removals, model updates, and prerequisites"
   ```
 
+### 6h.5: `rpt_tableau__assignment_checks.sql` — deprecate
+
+This model is being deprecated. Disable it and archive per the standard pattern.
+
+**File:**
+`src/dbt/kipptaf/models/extracts/tableau/rpt_tableau__assignment_checks.sql`
+
+- [ ] **Step 6h.5.1: Disable the model**
+
+  Add `config(enabled=false)` and update the exposure in `tableau.yml` to remove
+  the `ref("rpt_tableau__assignment_checks")` entry from `gradebook_audit`.
+
+- [ ] **Step 6h.5.2: Build and verify**
+
+  ```bash
+  uv run dbt build \
+    --select rpt_tableau__assignment_checks \
+    --project-dir src/dbt/kipptaf \
+    --defer \
+    --state src/dbt/kipptaf/target/prod
+  ```
+
+---
+
+### 6h.6: `rpt_tableau__gradebook_ms_hs_comments.sql` — remove Miami
+
+**File:**
+`src/dbt/kipptaf/models/extracts/tableau/rpt_tableau__gradebook_ms_hs_comments.sql`
+
+- [ ] **Step 6h.6.1: Review and update**
+
+  > ⚠️ Full SQL TBD — review the model next session. Change: remove Miami from
+  > all filters/joins.
+
+- [ ] **Step 6h.6.2: Build and verify**
+
+  ```bash
+  uv run dbt build \
+    --select rpt_tableau__gradebook_ms_hs_comments \
+    --project-dir src/dbt/kipptaf \
+    --defer \
+    --state src/dbt/kipptaf/target/prod
+  ```
+
+---
+
+### 6h.7: `rpt_tableau__gradebook_es_comments.sql` — remove Miami, add Paterson
+
+**File:**
+`src/dbt/kipptaf/models/extracts/tableau/rpt_tableau__gradebook_es_comments.sql`
+
+- [ ] **Step 6h.7.1: Review and update**
+
+  > ⚠️ Full SQL TBD — review the model next session. Changes: remove Miami from
+  > all filters/joins; add Paterson ES.
+
+- [ ] **Step 6h.7.2: Build and verify**
+
+  ```bash
+  uv run dbt build \
+    --select rpt_tableau__gradebook_es_comments \
+    --project-dir src/dbt/kipptaf \
+    --defer \
+    --state src/dbt/kipptaf/target/prod
+  ```
+
+---
+
 ### 6i: Anchor-row / "in the clear" redesign
 
 Replace the current design in `rpt_tableau__gradebook_audit.sql` — which
