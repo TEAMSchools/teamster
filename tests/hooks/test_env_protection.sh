@@ -106,6 +106,7 @@ expect_deny "declare -p (dump all)" Bash command "declare -p"
 expect_deny "declare bare (dump all)" Bash command "declare"
 expect_deny "declare -px (export dump)" Bash command "declare -px"
 expect_deny "declare -xp (flag order)" Bash command "declare -xp"
+expect_deny "declare -fp (function dump)" Bash command "declare -fp"
 expect_deny "declare -p piped" Bash command "declare -p | grep SECRET"
 expect_deny "declare after semicolon" Bash command "cd /tmp; declare"
 
@@ -129,6 +130,25 @@ expect_allow 'echo $CI (exact safe var still allowed)' Bash command 'echo $CI'
 expect_allow 'echo $USER (exact safe var still allowed)' Bash command 'echo $USER'
 expect_allow 'echo $HOME/sub (safe var then delimiter)' Bash command 'echo $HOME/sub'
 expect_allow 'echo ${PATH} (braced safe var)' Bash command 'echo ${PATH}'
+# trunk-ignore-end(shellcheck/SC2016)
+
+# ─── Pattern 7 (Finding 1): wildcard safe-var must not swallow secret names ───
+echo ""
+echo -e "${YELLOW}Pattern 7 (Finding 1): wildcard safe-var prefixes${NC}"
+
+# trunk-ignore-begin(shellcheck/SC2016)
+expect_deny 'echo $COMP_TOKEN (COMP wildcard)' Bash command 'echo $COMP_TOKEN'
+expect_deny 'echo $COMP_API_SECRET' Bash command 'echo $COMP_API_SECRET'
+expect_deny 'echo $XDG_SESSION_SECRET' Bash command 'echo $XDG_SESSION_SECRET'
+expect_deny 'echo $LC_SECRET (single segment)' Bash command 'echo $LC_SECRET'
+expect_deny 'echo $LC_CREDENTIALS' Bash command 'echo $LC_CREDENTIALS'
+
+expect_allow 'echo $COMPREPLY (real completion var)' Bash command 'echo $COMPREPLY'
+expect_allow 'echo $COMP_WORDS (real completion var)' Bash command 'echo $COMP_WORDS'
+expect_allow 'echo $XDG_RUNTIME_DIR (real XDG var)' Bash command 'echo $XDG_RUNTIME_DIR'
+expect_allow 'echo $XDG_CONFIG_HOME (real XDG var)' Bash command 'echo $XDG_CONFIG_HOME'
+expect_allow 'echo $LC_ALL (real locale var)' Bash command 'echo $LC_ALL'
+expect_allow 'echo $LC_CTYPE (real locale var)' Bash command 'echo $LC_CTYPE'
 # trunk-ignore-end(shellcheck/SC2016)
 
 print_summary "Env Protection"
