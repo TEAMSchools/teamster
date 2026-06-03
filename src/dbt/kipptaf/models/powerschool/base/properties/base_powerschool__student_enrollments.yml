@@ -681,5 +681,6 @@ models:
       - name: pearson_local_student_identifier
         data_type: int64
         description:
-          Student previous student ID number. Conditional on academic_year,
-          prevstudentid, region, student_number.
+          The student's KIPP `student_number`, used to join NJ Pearson
+          state-assessment records, where it is reported as the
+          LocalStudentIdentifier.
