@@ -61,7 +61,7 @@ expect_deny ".env still blocked" Read file_path "/workspaces/teamster/.env"
 expect_deny ".env.local still blocked" Read file_path "/workspaces/teamster/.env.local"
 expect_deny ".env.examplexyz (no boundary, still blocked)" Read file_path "/workspaces/teamster/.env.examplexyz"
 
-# ─── Pattern 1b: Write/Edit content scanning to Pattern 1b: Content is not scanned by Rule 1 (path_only scoping) ────────────────────────────────
+# ─── Pattern 1b: Write/Edit content scanning ────────────────────────────────
 echo ""
 echo -e "${YELLOW}Pattern 1b: Write/Edit content scanning${NC}"
 
