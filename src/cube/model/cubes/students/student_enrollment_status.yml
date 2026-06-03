@@ -47,6 +47,12 @@ cubes:
         ON mel.student_enrollment_key = se.student_enrollment_key
 
     joins:
+      - name: dates
+        sql: >
+          {dates.date_day} BETWEEN CAST({CUBE}.entry_date_key AS TIMESTAMP) AND
+          CAST({CUBE}.exit_date_key AS TIMESTAMP)
+        relationship: one_to_many
+
       - name: students
         sql: "{students.student_key} = {CUBE}.student_key"
         relationship: many_to_one
@@ -87,7 +93,7 @@ cubes:
         public: true
 
       - name: grade_level
-        description: "Grade level. 0 = Kindergarten, -2 = Preschool."
+        description: Grade level. 0 = Kindergarten, -2 = Preschool.
         sql: grade_level
         type: number
         public: true

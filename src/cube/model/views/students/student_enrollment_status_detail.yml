@@ -44,6 +44,15 @@ views:
           - meal_effective_date_start
           - meal_effective_date_end
 
+      - join_path: student_enrollment_status.dates
+        prefix: true
+        includes:
+          - date_day
+          - academic_year
+          - month_name
+          - month_number
+          - year_number
+
       - join_path: student_enrollment_status.locations
         prefix: true
         includes:
@@ -103,6 +112,13 @@ views:
             - meal_eligibility
             - meal_effective_date_start
             - meal_effective_date_end
+        - name: Date
+          members:
+            - dates_date_day
+            - dates_academic_year
+            - dates_month_name
+            - dates_month_number
+            - dates_year_number
         - name: Location
           members:
             - locations_location_name
