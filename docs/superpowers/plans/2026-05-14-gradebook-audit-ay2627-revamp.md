@@ -677,7 +677,26 @@ override for all years from 2025 onwards.
   ) as school_level,
   ```
 
-- [ ] **Step 4d.2: Build and verify**
+- [ ] **Step 4d.2: Add `n_expected` and `n_expected_scored` window functions**
+
+  Since the exception suppression filter is being removed from
+  `categories_teacher`, these two counts can live directly on the scores model
+  instead of in a CTE. Add them to the final `select` in
+  `src/dbt/kipptaf/models/powerschool/intermediate/int_powerschool__gradebook_assignments_scores.sql`:
+
+  ```sql
+  countif(is_expected) over (
+      partition by _dbt_source_relation, assignmentsectionid
+  ) as n_expected,
+
+  countif(is_expected_scored) over (
+      partition by _dbt_source_relation, assignmentsectionid
+  ) as n_expected_scored,
+  ```
+
+  Add both column entries to the properties YAML.
+
+- [ ] **Step 4d.3: Build and verify**
 
   ```bash
   uv run dbt build \
@@ -1864,7 +1883,10 @@ Complete replacement. Changes from the old model:
 
 Complete replacement. Changes from the old model:
 
-- Exception JOINs removed from `assignment_score_rollup` CTE and final SELECT
+- `assignment_score_rollup` CTE eliminated — `n_expected` and
+  `n_expected_scored` are now window functions on
+  `int_powerschool__gradebook_assignments_scores` (step 4d.2);
+  categories_teacher joins that model directly
 - Date window: `week_start_monday/week_end_sunday` →
   `quarter_start_date/quarter_end_date`
 - `week_number_quarter` removed from running count `ORDER BY` and from
@@ -1884,18 +1906,6 @@ Complete replacement. Changes from the old model:
 
   ```sql
   with
-      assignment_score_rollup as (
-          select
-              _dbt_source_relation,
-              assignmentsectionid,
-
-              countif(is_expected) as n_expected,
-              countif(is_expected_scored) as n_expected_scored,
-
-          from {{ ref("int_powerschool__gradebook_assignments_scores") }}
-          group by _dbt_source_relation, assignmentsectionid
-      ),
-
       assignments as (
           select
               sec.*,
@@ -1939,7 +1949,7 @@ Complete replacement. Changes from the old model:
               and a.duedate between sec.quarter_start_date and sec.quarter_end_date
               and {{ union_dataset_join_clause(left_alias="sec", right_alias="a") }}
           left join
-              assignment_score_rollup as asg
+              {{ ref("int_powerschool__gradebook_assignments_scores") }} as asg
               on a.assignmentsectionid = asg.assignmentsectionid
               and {{ union_dataset_join_clause(left_alias="a", right_alias="asg") }}
           where sec.scaffold_name = 'teacher_category_scaffold'
