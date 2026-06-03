@@ -34,9 +34,10 @@ MCP for spot-checks, `uv run dbt` CLI, branch
 
 ### SQL — prerequisite models (powerschool package)
 
-| File                             | Task | Change                                              |
-| -------------------------------- | ---- | --------------------------------------------------- |
-| `base_powerschool__sections.sql` | 3    | Add `school_abbreviation` and `school_level` fields |
+| File                                                          | Task | Change                                                       |
+| ------------------------------------------------------------- | ---- | ------------------------------------------------------------ |
+| `base_powerschool__sections.sql`                              | 3    | Add `school_abbreviation` and `school_level` fields          |
+| `int_powerschool__gradebook_assignments_scores.sql` (kipptaf) | 4    | Fix Sumner G5 `school_level` override — `= 2025` → `>= 2025` |
 
 ### SQL — new models
 
@@ -638,6 +639,53 @@ Drop it using BigQuery `SELECT * EXCEPT`.
   ```
 
 ---
+
+### 4d: `int_powerschool__gradebook_assignments_scores` — fix Sumner G5 `school_level` override
+
+This model has the Sumner Elementary G5 → MS override hardcoded to
+`cc_academic_year = 2025`. Since the underlying assignment data is multi-year,
+this condition is false for AY 2026 and Sumner G5 students silently get
+`school_level = 'ES'` instead of `'MS'`. Changing to `>= 2025` applies the
+override for all years from 2025 onwards.
+
+**File:**
+`src/dbt/kipptaf/models/powerschool/intermediate/int_powerschool__gradebook_assignments_scores.sql`
+
+- [ ] **Step 4d.1: Update the year condition**
+
+  Find (line ~40):
+
+  ```sql
+  if(
+      e.cc_academic_year = 2025
+      and e.cc_schoolid = 179905
+      and e.sections_grade_level = 5,
+      'MS',
+      d.school_level
+  ) as school_level,
+  ```
+
+  Change `= 2025` to `>= 2025`:
+
+  ```sql
+  if(
+      e.cc_academic_year >= 2025
+      and e.cc_schoolid = 179905
+      and e.sections_grade_level = 5,
+      'MS',
+      d.school_level
+  ) as school_level,
+  ```
+
+- [ ] **Step 4d.2: Build and verify**
+
+  ```bash
+  uv run dbt build \
+    --select int_powerschool__gradebook_assignments_scores \
+    --project-dir src/dbt/kipptaf \
+    --defer \
+    --state src/dbt/kipptaf/target/prod
+  ```
 
 ---
 
