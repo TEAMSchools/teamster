@@ -1,0 +1,196 @@
+models:
+  - name: int_assessments__resolved_section_enrollments
+    description: >-
+      Resolves one PowerSchool course-section enrollment per (student, canonical
+      assessment) for internal scored assessments, mirroring the scope of
+      bridge_assessment_expectations_enrollment_scoped. When a student maps to
+      more than one section for a canonical assessment, the section active on
+      the date the test was given (coalesce of the earliest member date_taken
+      and the canonical administration date) is selected; this also excludes
+      cross-year phantom enrollments from the #3801 canonicalization defect.
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns:
+              - powerschool_student_number
+              - canonical_assessment_id
+              - _dbt_source_project
+    columns:
+      - name: powerschool_student_number
+        data_type: int64
+      - name: canonical_assessment_id
+        data_type: int64
+      - name: cc_dcid
+        data_type: int64
+      - name: _dbt_source_project
+        data_type: string
+      - name: cc_source_project
+        data_type: string
+      - name: student_section_enrollment_key
+        data_type: string
+        description: >-
+          Surrogate key (cc_dcid + cc_source_project), matching
+          dim_student_section_enrollments.student_section_enrollment_key.
+
+unit_tests:
+  - name: test_resolved_section_picks_in_window_over_phantom
+    description: >
+      Two candidate sections for one canonical assessment (a #3801 cross-year
+      case): the section whose enrollment window contains the anchor date is
+      picked, not the more-recent out-of-window phantom.
+    model: int_assessments__resolved_section_enrollments
+    given:
+      - input: ref('int_assessments__scaffold')
+        rows:
+          - {
+              powerschool_student_number: 1,
+              canonical_assessment_id: 100,
+              _dbt_source_project: "kippnewark",
+              cc_dcid: 111,
+              cc_source_project: "kippnewark",
+              cc_dateenrolled: "2017-09-01",
+              cc_dateleft: "2018-06-15",
+              date_taken: "2018-03-09",
+              is_internal_assessment: true,
+              is_replacement: false,
+            }
+          - {
+              powerschool_student_number: 1,
+              canonical_assessment_id: 100,
+              _dbt_source_project: "kippnewark",
+              cc_dcid: 222,
+              cc_source_project: "kippnewark",
+              cc_dateenrolled: "2018-08-23",
+              cc_dateleft: "2019-06-29",
+              date_taken: null,
+              is_internal_assessment: true,
+              is_replacement: false,
+            }
+      - input: ref('int_assessments__assessments_canonical')
+        rows:
+          - { canonical_assessment_id: 100, administered_date: "2018-03-04" }
+    expect:
+      rows:
+        - {
+            powerschool_student_number: 1,
+            canonical_assessment_id: 100,
+            cc_dcid: 111,
+          }
+
+  - name: test_resolved_section_single_candidate_always_resolves
+    description: >
+      With only one candidate section, it is selected even if the anchor date
+      falls outside its enrollment window.
+    model: int_assessments__resolved_section_enrollments
+    given:
+      - input: ref('int_assessments__scaffold')
+        rows:
+          - {
+              powerschool_student_number: 2,
+              canonical_assessment_id: 200,
+              _dbt_source_project: "kippmiami",
+              cc_dcid: 333,
+              cc_source_project: "kippmiami",
+              cc_dateenrolled: "2025-09-01",
+              cc_dateleft: "2026-06-15",
+              date_taken: null,
+              is_internal_assessment: true,
+              is_replacement: false,
+            }
+      - input: ref('int_assessments__assessments_canonical')
+        rows:
+          - { canonical_assessment_id: 200, administered_date: "2099-01-01" }
+    expect:
+      rows:
+        - {
+            powerschool_student_number: 2,
+            canonical_assessment_id: 200,
+            cc_dcid: 333,
+          }
+
+  - name: test_resolved_section_none_in_window_falls_back_to_latest
+    description: >
+      When no candidate window contains the anchor, the most recently ended
+      enrollment (latest cc_dateleft) is selected.
+    model: int_assessments__resolved_section_enrollments
+    given:
+      - input: ref('int_assessments__scaffold')
+        rows:
+          - {
+              powerschool_student_number: 3,
+              canonical_assessment_id: 300,
+              _dbt_source_project: "kippcamden",
+              cc_dcid: 444,
+              cc_source_project: "kippcamden",
+              cc_dateenrolled: "2020-09-01",
+              cc_dateleft: "2021-06-15",
+              date_taken: null,
+              is_internal_assessment: true,
+              is_replacement: false,
+            }
+          - {
+              powerschool_student_number: 3,
+              canonical_assessment_id: 300,
+              _dbt_source_project: "kippcamden",
+              cc_dcid: 555,
+              cc_source_project: "kippcamden",
+              cc_dateenrolled: "2021-09-01",
+              cc_dateleft: "2022-06-15",
+              date_taken: null,
+              is_internal_assessment: true,
+              is_replacement: false,
+            }
+      - input: ref('int_assessments__assessments_canonical')
+        rows:
+          - { canonical_assessment_id: 300, administered_date: "2030-01-01" }
+    expect:
+      rows:
+        - {
+            powerschool_student_number: 3,
+            canonical_assessment_id: 300,
+            cc_dcid: 555,
+          }
+
+  - name: test_resolved_section_anchor_falls_back_to_admin_date
+    description: >
+      With no recorded date_taken, the anchor falls back to the canonical
+      administration date; the section whose window contains that date is
+      selected (not the more-recent out-of-window section).
+    model: int_assessments__resolved_section_enrollments
+    given:
+      - input: ref('int_assessments__scaffold')
+        rows:
+          - {
+              powerschool_student_number: 4,
+              canonical_assessment_id: 400,
+              _dbt_source_project: "kippnewark",
+              cc_dcid: 666,
+              cc_source_project: "kippnewark",
+              cc_dateenrolled: "2024-09-01",
+              cc_dateleft: "2025-06-15",
+              date_taken: null,
+              is_internal_assessment: true,
+              is_replacement: false,
+            }
+          - {
+              powerschool_student_number: 4,
+              canonical_assessment_id: 400,
+              _dbt_source_project: "kippnewark",
+              cc_dcid: 777,
+              cc_source_project: "kippnewark",
+              cc_dateenrolled: "2025-09-01",
+              cc_dateleft: "2026-06-15",
+              date_taken: null,
+              is_internal_assessment: true,
+              is_replacement: false,
+            }
+      - input: ref('int_assessments__assessments_canonical')
+        rows:
+          - { canonical_assessment_id: 400, administered_date: "2024-11-01" }
+    expect:
+      rows:
+        - {
+            powerschool_student_number: 4,
+            canonical_assessment_id: 400,
+            cc_dcid: 666,
+          }
