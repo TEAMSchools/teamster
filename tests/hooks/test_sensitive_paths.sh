@@ -177,4 +177,19 @@ expect_deny_exit0 "PreToolUse bash printenv deny exits 0" "${HOOK}" \
   "$(make_input Bash command printenv)"
 # trunk-ignore-end(shellcheck/SC2312)
 
+# ─── #23: additional credential files ───────────────────────────────────────
+echo ""
+echo -e "${YELLOW}#23: credential files${NC}"
+
+expect_deny "gcloud ADC json" Read file_path "/home/vscode/.config/gcloud/application_default_credentials.json"
+expect_deny ".git-credentials" Read file_path "/home/vscode/.git-credentials"
+expect_deny ".netrc" Read file_path "/home/vscode/.netrc"
+expect_deny "1Password config dir" Read file_path "/home/vscode/.config/op/config"
+expect_deny "git-credentials via Bash" Bash command "cat ~/.git-credentials"
+expect_deny2 "ADC via Grep" Grep pattern "token" path "/home/vscode/.config/gcloud/application_default_credentials.json"
+
+# controls — lookalike non-credential files stay allowed
+expect_allow "normal data.json" Read file_path "/workspaces/teamster/data.json"
+expect_allow "netrc substring in a normal name" Read file_path "/workspaces/teamster/src/netrcutils.py"
+
 print_summary "Sensitive Paths"

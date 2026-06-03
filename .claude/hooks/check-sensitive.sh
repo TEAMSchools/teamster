@@ -94,8 +94,10 @@ fi
 # Section 1: All tools — path-based protection
 # ═══════════════════════════════════════════════════════════════════
 
-# 1. Sensitive file/directory patterns (case-insensitive)
-if echo "${no_content}" | grep -qiE '\.env[.a-z]*|(^|[ /])(\.ssh|\.kube|\.pem|\.key|\.cer|secrets\.json|credentials\.json|secret-volume)([ /]|$)|(^|[ /])(\.?/)?env(/|[ ]|$)|\.devcontainer/tpl/'; then
+# 1. Sensitive file/directory patterns (case-insensitive). Credential files added
+#    (#23): gcloud ADC application_default_credentials.json, git-credentials,
+#    netrc, and the 1Password CLI config dir (.config/op).
+if echo "${no_content}" | grep -qiE '\.env[.a-z]*|(^|[ /])(\.ssh|\.kube|\.pem|\.key|\.cer|secrets\.json|credentials\.json|application_default_credentials\.json|\.git-credentials|\.netrc|secret-volume)([ /]|$)|(^|[ /])(\.?/)?env(/|[ ]|$)|\.config/op([ /]|$)|\.devcontainer/tpl/'; then
   deny
 fi
 
@@ -147,8 +149,10 @@ if [[ ${tool_name} == "bash" ]]; then
     deny
   fi
 
-  # 4. 1Password CLI escalation — prevent using a leaked token to access vault
-  if echo "${sanitized}" | grep -qE '\bop\b.*\b(vault|item|read|run|document|inject)\b'; then
+  # 4. 1Password CLI escalation — prevent using a leaked token to access the vault
+  #    or mint new credentials. Verbs extended (#14): signin/account/user/
+  #    service-account/connect and plural items.
+  if echo "${sanitized}" | grep -qE '\bop\b.*\b(vault|item|items|read|run|document|inject|signin|account|user|service-account|connect)\b'; then
     deny
   fi
 
@@ -272,7 +276,8 @@ fi
 # URL, which would otherwise exfiltrate unscanned. Gated by a write-verb name
 # pattern so read-only MCP tools (bigquery/dagster/dbt get_/list_/search_) are
 # untouched. Scans the raw value corpus (${path}, before quote-strip/normalize)
-# so op:// and "service_account" JSON survive. Regex mirrors check-output.sh.
+# so op:// and "service_account" JSON survive. Regex mirrors check-output.sh —
+# update BOTH if adding a token type.
 if [[ ${tool_name} == webfetch ]] ||
   [[ ${tool_name} =~ ^mcp__.*(create|update|write|add|comment|upload|send|post|put|delete|append|insert|merge|push|reply) ]]; then
   if echo "${path}" | grep -qiE 'op://|-----BEGIN (RSA |EC |OPENSSH )?PRIVATE KEY|PRIVATE KEY-----|AIza[0-9A-Za-z_-]{35}|ya29\.[0-9A-Za-z_-]+|goog_[a-zA-Z0-9_-]+|eyJ[A-Za-z0-9_-]{10,}\.eyJ[A-Za-z0-9_-]{10,}|ops_eyJ[A-Za-z0-9_-]{50,}|AKIA[0-9A-Z]{16}|(postgres(ql)?|mysql|mongodb(\+srv)?)://[^[:space:]]+:[^[:space:]]+@|"type"[[:space:]]*:[[:space:]]*"service_account"|gh[pusor]_[A-Za-z0-9_]{36,}|github_pat_[A-Za-z0-9_]{22,}'; then
