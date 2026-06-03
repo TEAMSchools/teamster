@@ -982,7 +982,9 @@ Drop it using BigQuery `SELECT * EXCEPT`.
               term_percent_grade_adjusted as quarter_course_percent_grade,
               term_grade_points as quarter_course_grade_points,
               comment_value as quarter_comment_value,
+
               'current_year' as grades_type,
+
           from {{ ref("base_powerschool__final_grades") }}
 
           union all
@@ -998,7 +1000,9 @@ Drop it using BigQuery `SELECT * EXCEPT`.
               `percent` as quarter_course_percent_grade,
               gpa_points as quarter_course_grade_points,
               comment_value as quarter_comment_value,
+
               'last_year' as grades_type,
+
           from {{ ref("stg_powerschool__storedgrades") }}
           where
               academic_year = {{ var("current_academic_year") - 1 }}
@@ -1208,14 +1212,13 @@ Drop it using BigQuery `SELECT * EXCEPT`.
       sec.quarter_end_date,
       sec.is_current_term,
       sec.section_or_period,
+
       qg.quarter_course_percent_grade,
       qg.quarter_course_grade_points,
       qg.quarter_comment_value,
 
       'student_category_scaffold' as scaffold_name,
 
-      /* expectation fields come from sec (teacher_category_scaffold already
-         carries them from its own expectations join — no separate ge join needed) */
       sec.assignment_category_name,
       sec.assignment_category_code,
       sec.assignment_category_term,
