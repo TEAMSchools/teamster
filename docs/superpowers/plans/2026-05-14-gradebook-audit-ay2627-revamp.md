@@ -691,6 +691,18 @@ override for all years from 2025 onwards.
 
 ## Task 5: SQL — `rpt_tableau__gradebook_gpa` updates
 
+> ⚠️ **Pending decision:**
+> `teacher_avg_score_for_assign_per_class_section_and_assign_id` currently lives
+> in `int_tableau__gradebook_audit_assignments_teacher` but is used by the GPA
+> Tableau workbook, not the audit workbook. Plan is to extract the
+> `assignment_score_rollup` CTE into its own intermediate model
+> (`int_powerschool__gradebook_assignment_score_rollup`) so
+> `rpt_tableau__gradebook_gpa` can reference it directly. **Grain question
+> unresolved:** `rpt_gpa` operates at student × section × quarter grain; the
+> rollup is at `assignmentsectionid` grain (per individual assignment). Need to
+> decide what aggregation level `rpt_gpa` needs before implementing. Step to be
+> added here once decided.
+
 ### 5a: `rpt_tableau__gradebook_gpa` — add per-course boolean, remove Paterson filter
 
 **File:**
@@ -1829,6 +1841,12 @@ Complete replacement. Changes from the old model:
 
   Remove `s_max_score_greater_100` from
   `intermediate/properties/int_tableau__gradebook_audit_assignments_teacher.yml`.
+
+> ⚠️ **Future step (TBD):** Extract the `assignment_score_rollup` CTE into its
+> own intermediate model (`int_powerschool__gradebook_assignment_score_rollup`)
+> once the grain question for `rpt_tableau__gradebook_gpa` is resolved. Without
+> exceptions, there is no longer a reason to keep the rollup inline. See Task 5
+> note.
 
 - [ ] **Step 6d.3: Build and verify**
 
