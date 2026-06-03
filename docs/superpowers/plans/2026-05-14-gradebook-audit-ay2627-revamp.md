@@ -1862,55 +1862,302 @@ Complete replacement. Changes from the old model:
 
 ### 6e: `int_tableau__gradebook_audit_categories_teacher`
 
-Remove Summative 200 flags (both Camden/Newark 200-pt and Miami 100-pt variants)
-from the final SELECT. The 7-day grace period change (Task 4) and exceptions
-removal (Task 6) happen later.
+Complete replacement. Changes from the old model:
+
+- Exception JOINs removed from `assignment_score_rollup` CTE and final SELECT
+- Date window: `week_start_monday/week_end_sunday` →
+  `quarter_start_date/quarter_end_date`
+- `week_number_quarter` removed from running count `ORDER BY` and from
+  `total_expected` partition BYs
+- All week columns removed from `final` CTE SELECT and GROUP BY
+- Manager columns added to `final` CTE SELECT and GROUP BY
+- `is_quarter_end_date_range`, `quarter_end_date_insession` removed
+- Four S-total flags removed from final SELECT:
+  `qt_teacher_s_total_greater/less_200/100`
+- `f.*` → explicit column listing in final SELECT
+- Note: grace period filter on `total_expected` window sums is added in Task 7
 
 **File:**
 `src/dbt/kipptaf/models/extracts/tableau/intermediate/int_tableau__gradebook_audit_categories_teacher.sql`
 
-- [ ] **Step 6e.1: Remove four S-total flag expressions from the final SELECT**
-
-  Delete:
+- [ ] **Step 6e.1: Rewrite the model**
 
   ```sql
-  if(
-      f.assignment_category_code = 'S'
-      and f.region_school_level != 'MiamiES'
-      and f.sum_totalpointvalue_section_quarter_category > 200,
-      true,
-      false
-  ) as qt_teacher_s_total_greater_200,
+  with
+      assignment_score_rollup as (
+          select
+              _dbt_source_relation,
+              assignmentsectionid,
 
-  if(
-      f.assignment_category_code = 'S'
-      and f.region_school_level != 'MiamiES'
-      and f.sum_totalpointvalue_section_quarter_category < 200,
-      true,
-      false
-  ) as qt_teacher_s_total_less_200,
+              countif(is_expected) as n_expected,
+              countif(is_expected_scored) as n_expected_scored,
 
-  if(
-      f.assignment_category_code = 'S'
-      and f.region_school_level = 'MiamiES'
-      and f.sum_totalpointvalue_section_quarter_category > 100,
-      true,
-      false
-  ) as qt_teacher_s_total_greater_100,
+          from {{ ref("int_powerschool__gradebook_assignments_scores") }}
+          group by _dbt_source_relation, assignmentsectionid
+      ),
 
-  if(
-      f.assignment_category_code = 'S'
-      and f.region_school_level = 'MiamiES'
-      and f.sum_totalpointvalue_section_quarter_category < 100,
-      true,
-      false
-  ) as qt_teacher_s_total_less_100,
+      assignments as (
+          select
+              sec.*,
+
+              count(a.assignmentid) over (
+                  partition by
+                      sec._dbt_source_relation,
+                      sec.sectionid,
+                      sec.assignment_category_term
+              ) as teacher_running_total_assign_by_cat,
+
+              sum(a.totalpointvalue) over (
+                  partition by
+                      sec._dbt_source_relation,
+                      sec.quarter,
+                      sec.sectionid,
+                      sec.assignment_category_code
+              ) as sum_totalpointvalue_section_quarter_category,
+
+              sum(asg.n_expected) over (
+                  partition by
+                      sec._dbt_source_relation,
+                      sec.sectionid,
+                      sec.quarter,
+                      sec.assignment_category_code
+              ) as total_expected_section_quarter_category,
+
+              sum(asg.n_expected_scored) over (
+                  partition by
+                      sec._dbt_source_relation,
+                      sec.sectionid,
+                      sec.quarter,
+                      sec.assignment_category_code
+              ) as total_expected_scored_section_quarter_category,
+
+          from {{ ref("int_tableau__gradebook_audit_teacher_scaffold") }} as sec
+          left join
+              {{ ref("int_powerschool__gradebook_assignments") }} as a
+              on sec.sections_dcid = a.sectionsdcid
+              and sec.assignment_category_name = a.category_name
+              and a.duedate between sec.quarter_start_date and sec.quarter_end_date
+              and {{ union_dataset_join_clause(left_alias="sec", right_alias="a") }}
+          left join
+              assignment_score_rollup as asg
+              on a.assignmentsectionid = asg.assignmentsectionid
+              and {{ union_dataset_join_clause(left_alias="a", right_alias="asg") }}
+          where sec.scaffold_name = 'teacher_category_scaffold'
+      ),
+
+      percent_graded as (
+          select
+              *,
+
+              safe_divide(
+                  total_expected_scored_section_quarter_category,
+                  total_expected_section_quarter_category
+              ) as percent_graded_for_quarter_class,
+
+          from assignments
+      ),
+
+      final as (
+          select
+              _dbt_source_relation,
+              schoolid,
+              yearid,
+              academic_year,
+              `quarter`,
+              semester,
+              quarter_start_date,
+              quarter_end_date,
+              is_current_term,
+              school,
+              region,
+              school_level,
+              region_school_level,
+              academic_year_display,
+              sections_dcid,
+              sectionid,
+              section_number,
+              external_expression,
+              course_number,
+              course_name,
+              credit_type,
+              exclude_from_gpa,
+              is_ap_course,
+              teacher_number,
+              teacher_name,
+              teacher_tableau_username,
+              manager_employee_number,
+              manager_name,
+              manager_tableau_username,
+              hos,
+              school_leader,
+              school_leader_tableau_username,
+              section_or_period,
+              assignment_category_code,
+              assignment_category_name,
+              assignment_category_term,
+              notes,
+
+              avg(expectation) as expectation,
+              avg(teacher_running_total_assign_by_cat) as teacher_running_total_assign_by_cat,
+              avg(sum_totalpointvalue_section_quarter_category) as sum_totalpointvalue_section_quarter_category,
+              avg(total_expected_section_quarter_category) as total_expected_section_quarter_category,
+              avg(total_expected_scored_section_quarter_category) as total_expected_scored_section_quarter_category,
+              avg(percent_graded_for_quarter_class) as percent_graded_for_quarter_class,
+
+          from percent_graded
+          group by
+              _dbt_source_relation,
+              schoolid,
+              yearid,
+              academic_year,
+              `quarter`,
+              semester,
+              quarter_start_date,
+              quarter_end_date,
+              is_current_term,
+              school,
+              region,
+              school_level,
+              region_school_level,
+              academic_year_display,
+              sections_dcid,
+              sectionid,
+              section_number,
+              external_expression,
+              course_number,
+              course_name,
+              credit_type,
+              exclude_from_gpa,
+              is_ap_course,
+              teacher_number,
+              teacher_name,
+              teacher_tableau_username,
+              manager_employee_number,
+              manager_name,
+              manager_tableau_username,
+              hos,
+              school_leader,
+              school_leader_tableau_username,
+              section_or_period,
+              assignment_category_code,
+              assignment_category_name,
+              assignment_category_term,
+              notes
+      )
+
+  select
+      f._dbt_source_relation,
+      f.schoolid,
+      f.yearid,
+      f.academic_year,
+      f.quarter,
+      f.semester,
+      f.quarter_start_date,
+      f.quarter_end_date,
+      f.is_current_term,
+      f.school,
+      f.region,
+      f.school_level,
+      f.region_school_level,
+      f.academic_year_display,
+      f.sections_dcid,
+      f.sectionid,
+      f.section_number,
+      f.external_expression,
+      f.course_number,
+      f.course_name,
+      f.credit_type,
+      f.exclude_from_gpa,
+      f.is_ap_course,
+      f.teacher_number,
+      f.teacher_name,
+      f.teacher_tableau_username,
+      f.manager_employee_number,
+      f.manager_name,
+      f.manager_tableau_username,
+      f.hos,
+      f.school_leader,
+      f.school_leader_tableau_username,
+      f.section_or_period,
+      f.assignment_category_code,
+      f.assignment_category_name,
+      f.assignment_category_term,
+      f.notes,
+      f.expectation,
+      f.teacher_running_total_assign_by_cat,
+      f.sum_totalpointvalue_section_quarter_category,
+      f.total_expected_section_quarter_category,
+      f.total_expected_scored_section_quarter_category,
+      f.percent_graded_for_quarter_class,
+
+      -- flags
+      if(
+          f.assignment_category_code = 'W'
+          and f.percent_graded_for_quarter_class < .7,
+          true,
+          false
+      ) as w_percent_graded_min_not_met,
+
+      if(
+          f.assignment_category_code = 'H'
+          and f.percent_graded_for_quarter_class < .7,
+          true,
+          false
+      ) as h_percent_graded_min_not_met,
+
+      if(
+          f.assignment_category_code = 'F'
+          and f.percent_graded_for_quarter_class < .7,
+          true,
+          false
+      ) as f_percent_graded_min_not_met,
+
+      if(
+          f.assignment_category_code = 'S'
+          and f.percent_graded_for_quarter_class < .7,
+          true,
+          false
+      ) as s_percent_graded_min_not_met,
+
+      if(
+          f.assignment_category_code = 'W'
+          and f.teacher_running_total_assign_by_cat < f.expectation,
+          true,
+          false
+      ) as w_expected_assign_count_not_met,
+
+      if(
+          f.assignment_category_code = 'H'
+          and f.teacher_running_total_assign_by_cat < f.expectation,
+          true,
+          false
+      ) as h_expected_assign_count_not_met,
+
+      if(
+          f.assignment_category_code = 'F'
+          and f.teacher_running_total_assign_by_cat < f.expectation,
+          true,
+          false
+      ) as f_expected_assign_count_not_met,
+
+      if(
+          f.assignment_category_code = 'S'
+          and f.teacher_running_total_assign_by_cat < f.expectation,
+          true,
+          false
+      ) as s_expected_assign_count_not_met,
+
+  from final as f
   ```
 
 - [ ] **Step 6e.2: Update YAML**
 
-  Remove all four column entries from
+  Remove all four S-total column entries from
   `intermediate/properties/int_tableau__gradebook_audit_categories_teacher.yml`.
+  Update column names: `total_expected_section_quarter_week_category` →
+  `total_expected_section_quarter_category`,
+  `percent_graded_for_quarter_week_class` → `percent_graded_for_quarter_class`.
+  Add manager columns.
 
 - [ ] **Step 6e.3: Build and verify**
 
