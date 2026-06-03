@@ -28,11 +28,17 @@ regression test suite (`expect_deny_exit0`) enforces both invariants.
 
 ## What is blocked
 
-**WebFetch / MCP input scanning** — PreToolUse scans URLs and query strings for
-sensitive keywords (e.g., `/auth` in URL paths, `JWT` / `secret` / `credential`
-/ `signing key` in context7 query strings). Symptom: "Cannot access sensitive
-path" with no further detail. Rephrase the URL or query (generic terms like
-"user context", "header format") to get past it.
+**Outbound secret-value egress scan** (PreToolUse, Section 4) — write-capable
+MCP tools (tool name contains
+`create`/`update`/`write`/`add`/`comment`/`upload`/
+`send`/`post`/`put`/`delete`/`append`/`insert`/`merge`/`push`/`reply`) and
+WebFetch URLs are scanned for secret VALUES (`op://` refs, private-key headers,
+cloud tokens, connection strings — the same pattern set as `check-output.sh`). A
+match is blocked to stop exfiltration. Practical effect: a GitHub issue/PR write
+or an Asana/Drive write whose body contains a real-looking secret is denied —
+redact it (e.g. `op://…` → `op-uri`). Read-only MCP tools (bigquery / dagster /
+dbt `get_`/`list_`/`search_`) are not scanned. There is no keyword-based URL
+scanner — only secret-value shapes match.
 
 **Secret paths** (all tools blocked) — dotenv files, private key/cert files, SSH
 directory, secret-volume, credentials JSON files, devcontainer template

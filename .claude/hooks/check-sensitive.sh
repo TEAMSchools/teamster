@@ -263,3 +263,19 @@ if [[ ${tool_name} == mcp__bigquery__* ]]; then
     ;;
   esac
 fi
+
+# ═══════════════════════════════════════════════════════════════════
+# Section 4: Outbound egress — secret-VALUE scan
+# ═══════════════════════════════════════════════════════════════════
+# Section 1 matches sensitive PATHS; this catches secret VALUES being SENT to a
+# write-capable MCP tool (GitHub/Drive/Asana/Slack/... writes) or in a WebFetch
+# URL, which would otherwise exfiltrate unscanned. Gated by a write-verb name
+# pattern so read-only MCP tools (bigquery/dagster/dbt get_/list_/search_) are
+# untouched. Scans the raw value corpus (${path}, before quote-strip/normalize)
+# so op:// and "service_account" JSON survive. Regex mirrors check-output.sh.
+if [[ ${tool_name} == webfetch ]] ||
+  [[ ${tool_name} =~ ^mcp__.*(create|update|write|add|comment|upload|send|post|put|delete|append|insert|merge|push|reply) ]]; then
+  if echo "${path}" | grep -qiE 'op://|-----BEGIN (RSA |EC |OPENSSH )?PRIVATE KEY|PRIVATE KEY-----|AIza[0-9A-Za-z_-]{35}|ya29\.[0-9A-Za-z_-]+|goog_[a-zA-Z0-9_-]+|eyJ[A-Za-z0-9_-]{10,}\.eyJ[A-Za-z0-9_-]{10,}|ops_eyJ[A-Za-z0-9_-]{50,}|AKIA[0-9A-Z]{16}|(postgres(ql)?|mysql|mongodb(\+srv)?)://[^[:space:]]+:[^[:space:]]+@|"type"[[:space:]]*:[[:space:]]*"service_account"|gh[pusor]_[A-Za-z0-9_]{36,}|github_pat_[A-Za-z0-9_]{22,}'; then
+    deny
+  fi
+fi
