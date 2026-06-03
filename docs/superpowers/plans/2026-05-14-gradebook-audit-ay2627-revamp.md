@@ -507,7 +507,7 @@ based on which approach produces cleaner scaffold code — and rename accordingl
 
 ### 4a: `base_powerschool__sections` — add `school_abbreviation` and `school_level` (prerequisite)
 
-Must land before the teacher scaffold is built in step 2.3.
+Must land before the teacher scaffold is built in step 6.1.
 
 **File:** `src/dbt/powerschool/models/sis/base/base_powerschool__sections.sql`
 
@@ -906,9 +906,9 @@ Drop it using BigQuery `SELECT * EXCEPT`.
   - Manager columns added
   - `region` derived inline from `_dbt_source_relation`
   - `school_level` and `school_abbreviation` from `base_powerschool__sections`
-    (requires step 3h to land first)
+    (requires step 4a to land first)
 
-  _(Replace `[_unpivot]` with the actual model name decided in step 2.1.)_
+  _(Replace `[_unpivot]` with the actual model name decided in step 3.1.)_
 
 - [ ] **Step 6.1b: Build and verify the teacher scaffold**
 
@@ -1293,7 +1293,7 @@ Drop it using BigQuery `SELECT * EXCEPT`.
 - [ ] **Step 6.3: Disable the deprecated staging model**
 
   Nothing references `stg_google_sheets__gradebook_expectations_assignments`
-  after steps 2.3–2.4. Disable it rather than deleting, in case operational
+  after steps 6.1–6.2. Disable it rather than deleting, in case operational
   decisions after July 1st affect the final approach.
 
   In
