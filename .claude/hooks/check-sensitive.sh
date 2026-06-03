@@ -23,8 +23,10 @@ if [[ -z ${input} ]] || ! jq -e 'type == "object"' >/dev/null 2>&1 <<<"${input}"
 fi
 tool_name=$(jq -r '.tool_name // ""' <<<"${input}")
 # Normalize once: lowercase + strip all whitespace so a re-cased or padded
-# tool_name cannot skip the case-sensitive gates below.
-tool_name=$(printf '%s' "${tool_name}" | tr '[:upper:]' '[:lower:]' | tr -d '[:space:]')
+# tool_name cannot skip the case-sensitive gates below (pure parameter
+# expansion — no subshell/pipeline).
+tool_name=${tool_name,,}
+tool_name=${tool_name//[[:space:]]/}
 if [[ -z ${tool_name} ]]; then
   deny
 fi
@@ -203,7 +205,8 @@ if [[ ${tool_name} == mcp__bigquery__* ]]; then
   # LOAD DATA added (#10). Verbs require a trailing space so column names like
   # delete_flag / merge_count do not false-positive.
   _bq_has_write() {
-    echo "$1" | tr '\n' ' ' | grep -qiE '\bINSERT[[:space:]]|\bUPDATE[[:space:]]+.*[[:space:]]+SET\b|\bDELETE[[:space:]]+FROM\b|\bMERGE[[:space:]]+INTO\b|\bEXPORT[[:space:]]+DATA\b|\bLOAD[[:space:]]+DATA\b|\bTRUNCATE[[:space:]]|\bCREATE[[:space:]]|\bDROP[[:space:]]|\bALTER[[:space:]]|\bGRANT[[:space:]]|\bREVOKE[[:space:]]|\bCALL[[:space:]]'
+    # Newlines flattened to spaces via parameter expansion (no tr subshell)
+    echo "${1//$'\n'/ }" | grep -qiE '\bINSERT[[:space:]]|\bUPDATE[[:space:]]+.*[[:space:]]+SET\b|\bDELETE[[:space:]]+FROM\b|\bMERGE[[:space:]]+INTO\b|\bEXPORT[[:space:]]+DATA\b|\bLOAD[[:space:]]+DATA\b|\bTRUNCATE[[:space:]]|\bCREATE[[:space:]]|\bDROP[[:space:]]|\bALTER[[:space:]]|\bGRANT[[:space:]]|\bREVOKE[[:space:]]|\bCALL[[:space:]]'
   }
   case ${tool_name} in
   mcp__bigquery__execute_sql)

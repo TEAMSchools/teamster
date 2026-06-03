@@ -17,8 +17,9 @@ if [[ -z ${input} ]] || ! jq -e 'type == "object"' >/dev/null 2>&1 <<<"${input}"
 fi
 tool_name=$(jq -r '.tool_name // ""' <<<"${input}")
 # Normalize once: lowercase + strip all whitespace so a re-cased name cannot
-# skip the scan gate below.
-tool_name=$(printf '%s' "${tool_name}" | tr '[:upper:]' '[:lower:]' | tr -d '[:space:]')
+# skip the scan gate below (pure parameter expansion — no subshell/pipeline).
+tool_name=${tool_name,,}
+tool_name=${tool_name//[[:space:]]/}
 if [[ -z ${tool_name} ]]; then
   deny_output
 fi
