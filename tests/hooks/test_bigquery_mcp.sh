@@ -61,4 +61,57 @@ expect_allow "MCP BQ WITH (CTE)" "mcp__bigquery__execute_sql" sql "WITH cte AS (
 expect_allow "MCP BQ SHOW" "mcp__bigquery__execute_sql" sql "SHOW TABLES IN dataset"
 expect_deny "MCP BQ non-SELECT" "mcp__bigquery__execute_sql" sql "TRUNCATE TABLE dataset.table"
 
+# ─── #10/#11/#12: denylist gaps on execute_sql ───────────────────────────────
+echo ""
+echo -e "${YELLOW}execute_sql denylist gaps (#10/#11/#12)${NC}"
+
+expect_deny "BQ INSERT without INTO" "mcp__bigquery__execute_sql" sql "INSERT dataset.t VALUES (1)"
+expect_deny "BQ embedded INSERT no INTO" "mcp__bigquery__execute_sql" sql "SELECT 1; INSERT dataset.t VALUES (1)"
+expect_deny "BQ embedded TRUNCATE" "mcp__bigquery__execute_sql" sql "SELECT 1; TRUNCATE TABLE dataset.t"
+expect_deny "BQ LOAD DATA" "mcp__bigquery__execute_sql" sql "LOAD DATA OVERWRITE dataset.t FROM FILES(format='CSV')"
+# trunk-ignore-begin(shellcheck/SC2312): jq -n produces static JSON, return value irrelevant
+expect_deny_json "BQ multiline UPDATE..SET (#12)" \
+  "$(jq -n --arg q "$(printf 'SELECT 1;\nUPDATE dataset.t\nSET col = 1')" \
+    '{tool_name: "mcp__bigquery__execute_sql", tool_input: {sql: $q}}')"
+expect_allow_json "BQ string literal mentioning deleted (no FP)" \
+  "$(jq -n '{tool_name: "mcp__bigquery__execute_sql", tool_input: {sql: "SELECT * FROM t WHERE status = '\''deleted'\''"}}')"
+
+# ─── #3: forecast / analyze_contribution gated on prefix ──────────────────────
+echo ""
+echo -e "${YELLOW}#3: forecast & analyze_contribution gating${NC}"
+
+expect_deny_json "forecast history_data DROP" \
+  "$(jq -n '{tool_name: "mcp__bigquery__forecast", tool_input: {history_data: "DROP TABLE dataset.t", timestamp_col: "ts", data_col: "y"}}')"
+expect_deny_json "forecast history_data DELETE" \
+  "$(jq -n '{tool_name: "mcp__bigquery__forecast", tool_input: {history_data: "DELETE FROM dataset.t WHERE 1=1", timestamp_col: "ts", data_col: "y"}}')"
+expect_allow_json "forecast bare table-id history_data" \
+  "$(jq -n '{tool_name: "mcp__bigquery__forecast", tool_input: {history_data: "my_project.my_dataset.my_table", timestamp_col: "ts", data_col: "y"}}')"
+expect_allow_json "forecast SELECT history_data" \
+  "$(jq -n '{tool_name: "mcp__bigquery__forecast", tool_input: {history_data: "SELECT ts, val FROM my_dataset.t", timestamp_col: "ts", data_col: "val"}}')"
+
+expect_allow_json "analyze_contribution bare table-id (#28)" \
+  "$(jq -n '{tool_name: "mcp__bigquery__analyze_contribution", tool_input: {input_data: "my_project.my_dataset.my_table", contribution_metric: "SUM(revenue)", is_test_col: "is_test"}}')"
+expect_deny_json "analyze_contribution input_data DROP" \
+  "$(jq -n '{tool_name: "mcp__bigquery__analyze_contribution", tool_input: {input_data: "DROP TABLE dataset.t", contribution_metric: "SUM(revenue)", is_test_col: "is_test"}}')"
+
+# ─── ask_data_insights: NL tool, not SQL-gated (no raw-SQL field) ─────────────
+echo ""
+echo -e "${YELLOW}ask_data_insights not SQL-gated (NL questions)${NC}"
+
+expect_allow_json "ask_data_insights NL with words drop/deleted" \
+  "$(jq -n '{tool_name: "mcp__bigquery__ask_data_insights", tool_input: {user_query_with_context: "Explain the drop in attendance and any deleted records", table_references: "[{\"projectId\":\"p\",\"datasetId\":\"d\",\"tableId\":\"t\"}]"}}')"
+# SQL-looking prose is not executed verbatim (server does read-only NL->SQL)
+expect_allow_json "ask_data_insights SQL-looking prose allowed" \
+  "$(jq -n '{tool_name: "mcp__bigquery__ask_data_insights", tool_input: {user_query_with_context: "DELETE FROM students", table_references: "[{\"projectId\":\"p\",\"datasetId\":\"d\",\"tableId\":\"t\"}]"}}')"
+
+# ─── Unknown mcp__bigquery__* tool: denylist on full corpus ───────────────────
+echo ""
+echo -e "${YELLOW}Unknown bigquery tool: corpus denylist${NC}"
+
+expect_deny_json "unknown bigquery tool with DROP" \
+  "$(jq -n '{tool_name: "mcp__bigquery__some_future_tool", tool_input: {arg: "DROP TABLE dataset.t"}}')"
+expect_allow_json "unknown bigquery tool read-only" \
+  "$(jq -n '{tool_name: "mcp__bigquery__some_future_tool", tool_input: {arg: "SELECT * FROM dataset.t"}}')"
+# trunk-ignore-end(shellcheck/SC2312)
+
 print_summary "BigQuery & MCP"

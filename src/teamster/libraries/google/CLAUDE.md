@@ -5,8 +5,8 @@ responsibilities:
 
 ## `bigquery/`
 
-Single `ops.py` with a `bigquery_query_op` that runs a BigQuery query and
-returns row dicts. Used in extract pipelines.
+`ops.py` with `bigquery_get_table_op` and `bigquery_query_op`, which run
+BigQuery operations and return row dicts. Used in extract pipelines.
 
 ## `directory/`
 

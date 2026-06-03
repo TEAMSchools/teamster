@@ -17,5 +17,5 @@ structure.
 ## Freshness Policies
 
 Code locations attach `FreshnessPolicy.cron` to `titan/person_data` and
-`stg_titan__person_data` — deadline 11:30pm, 30-minute window (kippcamden,
+`stg_titan__person_data` — deadline 1:00am, 1-hour window (kippcamden,
 kippnewark).

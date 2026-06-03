@@ -61,10 +61,11 @@ on GKE Autopilot.
   `safe-to-evict: "false"`. Code-server spot reclaim triggers full agent
   reconciliation cascade (cold start + ClusterIP churn) — factor into cost
   analysis.
-- **Agent topology spread** uses `ScheduleAnyway` across
-  `topology.kubernetes.io/zone` via `additionalPodSpecConfig` — prefers
+- **Code server topology spread** uses `ScheduleAnyway` across
+  `topology.kubernetes.io/zone` via `serverK8sConfig.podSpecConfig` — prefers
   cross-zone but allows same-zone during capacity exhaustion (do not switch to
-  `DoNotSchedule`, which would block agent rollouts when one zone is full).
+  `DoNotSchedule`, which would block code-server rollouts when one zone is
+  full).
 
 ## 1Password Connect secret keys
 
