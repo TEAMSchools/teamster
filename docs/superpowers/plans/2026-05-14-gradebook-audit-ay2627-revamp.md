@@ -640,13 +640,15 @@ Drop it using BigQuery `SELECT * EXCEPT`.
 
 ---
 
-### 4d: `int_powerschool__gradebook_assignments_scores` — fix Sumner G5 `school_level` override
+### 4d: `int_powerschool__gradebook_assignments_scores` — Sumner G5 fix + `is_expected` grace period
 
-This model has the Sumner Elementary G5 → MS override hardcoded to
-`cc_academic_year = 2025`. Since the underlying assignment data is multi-year,
-this condition is false for AY 2026 and Sumner G5 students silently get
-`school_level = 'ES'` instead of `'MS'`. Changing to `>= 2025` applies the
-override for all years from 2025 onwards.
+Two changes to this model: fix the Sumner Elementary G5 → MS override hardcoded
+to `cc_academic_year = 2025`, and add a 7-day post-due grace period to
+`is_expected`. The grace period applies universally — all `is_expected_*`
+derived columns inherit it automatically, covering null, zero, missing, late,
+academic-dishonesty, and scored checks across every downstream consumer
+(`categories_teacher`, `assignments_teacher`, `assignments_student`,
+`fct_grades_assignments`).
 
 **File:**
 `src/dbt/kipptaf/models/powerschool/intermediate/int_powerschool__gradebook_assignments_scores.sql`
@@ -677,7 +679,42 @@ override for all years from 2025 onwards.
   ) as school_level,
   ```
 
-- [ ] **Step 4d.2: Build and verify**
+- [ ] **Step 4d.2: Add 7-day grace period to `is_expected`**
+
+  In the `scores` CTE (line ~29), add a third `when` branch:
+
+  Find:
+
+  ```sql
+  case
+      when coalesce(s.isexempt, 0) = 1
+      then false
+      when a.iscountedinfinalgrade = 0
+      then false
+      else true
+  end as is_expected,
+  ```
+
+  Replace:
+
+  ```sql
+  case
+      when coalesce(s.isexempt, 0) = 1
+      then false
+      when a.iscountedinfinalgrade = 0
+      then false
+      when current_date('{{ var("local_timezone") }}') <= date_add(a.duedate, interval 7 day)
+      then false
+      else true
+  end as is_expected,
+  ```
+
+  `a.duedate` is already in scope (line 9). All `is_expected_*` derived columns
+  (lines 130–144) AND with `is_expected`, so they inherit the grace period
+  without further changes. Update the `is_expected` column description in the
+  properties YAML to document the 7-day rule.
+
+- [ ] **Step 4d.3: Build and verify**
 
   ```bash
   uv run dbt build \
@@ -1865,20 +1902,26 @@ Complete replacement. Changes from the old model:
 Complete replacement. Changes from the old model:
 
 - `assignment_score_rollup` CTE simplified — exception filter removed,
-  `GROUP BY` preserved to avoid fan-out
-  (`int_powerschool__gradebook_assignments_scores` is at student grain; joining
-  directly would multiply `n_expected` by student count)
+  `GROUP BY` preserved (joining `int_powerschool__gradebook_assignments_scores`
+  directly would fan out by student count)
 - Date window: `week_start_monday/week_end_sunday` →
   `quarter_start_date/quarter_end_date`
-- `week_number_quarter` removed from running count `ORDER BY` and from
-  `total_expected` partition BYs
+- `week_number_quarter` removed from running count `ORDER BY`
 - All week columns removed from `final` CTE SELECT and GROUP BY
 - Manager columns added to `final` CTE SELECT and GROUP BY
 - `is_quarter_end_date_range`, `quarter_end_date_insession` removed
 - Four S-total flags removed from final SELECT:
   `qt_teacher_s_total_greater/less_200/100`
 - `f.*` → explicit column listing in final SELECT
-- Note: grace period filter on `total_expected` window sums is added in Task 7
+- **Per-assignment grain** — `a.assignmentid` and `a.duedate` added to
+  `assignments` CTE SELECT; `asg.n_expected` / `asg.n_expected_scored` carried
+  directly (no window sum); `final` groups by `assignmentid` + `duedate`; output
+  grain is `(section, quarter, category, assignment)`
+- `total_expected_section_quarter_category` → `n_expected`;
+  `total_expected_scored_section_quarter_category` → `n_expected_scored`;
+  `percent_graded_for_quarter_class` → `percent_graded_for_assignment`
+- 7-day grace period handled upstream in step 4d.2 (`is_expected` on the scores
+  model); no date check needed in flag conditions here
 
 **File:**
 `src/dbt/kipptaf/models/extracts/tableau/intermediate/int_tableau__gradebook_audit_categories_teacher.sql`
@@ -1903,6 +1946,12 @@ Complete replacement. Changes from the old model:
           select
               sec.*,
 
+              a.assignmentid,
+              a.duedate,
+
+              asg.n_expected,
+              asg.n_expected_scored,
+
               count(a.assignmentid) over (
                   partition by
                       sec._dbt_source_relation,
@@ -1917,22 +1966,6 @@ Complete replacement. Changes from the old model:
                       sec.sectionid,
                       sec.assignment_category_code
               ) as sum_totalpointvalue_section_quarter_category,
-
-              sum(asg.n_expected) over (
-                  partition by
-                      sec._dbt_source_relation,
-                      sec.sectionid,
-                      sec.quarter,
-                      sec.assignment_category_code
-              ) as total_expected_section_quarter_category,
-
-              sum(asg.n_expected_scored) over (
-                  partition by
-                      sec._dbt_source_relation,
-                      sec.sectionid,
-                      sec.quarter,
-                      sec.assignment_category_code
-              ) as total_expected_scored_section_quarter_category,
 
           from {{ ref("int_tableau__gradebook_audit_teacher_scaffold") }} as sec
           left join
@@ -1953,9 +1986,9 @@ Complete replacement. Changes from the old model:
               *,
 
               safe_divide(
-                  total_expected_scored_section_quarter_category,
-                  total_expected_section_quarter_category
-              ) as percent_graded_for_quarter_class,
+                  n_expected_scored,
+                  n_expected
+              ) as percent_graded_for_assignment,
 
           from assignments
       ),
@@ -1999,13 +2032,15 @@ Complete replacement. Changes from the old model:
               assignment_category_name,
               assignment_category_term,
               notes,
+              assignmentid,
+              duedate,
 
               avg(expectation) as expectation,
               avg(teacher_running_total_assign_by_cat) as teacher_running_total_assign_by_cat,
               avg(sum_totalpointvalue_section_quarter_category) as sum_totalpointvalue_section_quarter_category,
-              avg(total_expected_section_quarter_category) as total_expected_section_quarter_category,
-              avg(total_expected_scored_section_quarter_category) as total_expected_scored_section_quarter_category,
-              avg(percent_graded_for_quarter_class) as percent_graded_for_quarter_class,
+              avg(n_expected) as n_expected,
+              avg(n_expected_scored) as n_expected_scored,
+              avg(percent_graded_for_assignment) as percent_graded_for_assignment,
 
           from percent_graded
           group by
@@ -2045,7 +2080,9 @@ Complete replacement. Changes from the old model:
               assignment_category_code,
               assignment_category_name,
               assignment_category_term,
-              notes
+              notes,
+              assignmentid,
+              duedate
       )
 
   select
@@ -2086,38 +2123,40 @@ Complete replacement. Changes from the old model:
       f.assignment_category_name,
       f.assignment_category_term,
       f.notes,
+      f.assignmentid,
+      f.duedate,
       f.expectation,
       f.teacher_running_total_assign_by_cat,
       f.sum_totalpointvalue_section_quarter_category,
-      f.total_expected_section_quarter_category,
-      f.total_expected_scored_section_quarter_category,
-      f.percent_graded_for_quarter_class,
+      f.n_expected,
+      f.n_expected_scored,
+      f.percent_graded_for_assignment,
 
       -- flags
       if(
           f.assignment_category_code = 'W'
-          and f.percent_graded_for_quarter_class < .7,
+          and f.percent_graded_for_assignment < .7,
           true,
           false
       ) as w_percent_graded_min_not_met,
 
       if(
           f.assignment_category_code = 'H'
-          and f.percent_graded_for_quarter_class < .7,
+          and f.percent_graded_for_assignment < .7,
           true,
           false
       ) as h_percent_graded_min_not_met,
 
       if(
           f.assignment_category_code = 'F'
-          and f.percent_graded_for_quarter_class < .7,
+          and f.percent_graded_for_assignment < .7,
           true,
           false
       ) as f_percent_graded_min_not_met,
 
       if(
           f.assignment_category_code = 'S'
-          and f.percent_graded_for_quarter_class < .7,
+          and f.percent_graded_for_assignment < .7,
           true,
           false
       ) as s_percent_graded_min_not_met,
@@ -2158,9 +2197,10 @@ Complete replacement. Changes from the old model:
   Remove all four S-total column entries from
   `intermediate/properties/int_tableau__gradebook_audit_categories_teacher.yml`.
   Update column names: `total_expected_section_quarter_week_category` →
-  `total_expected_section_quarter_category`,
-  `percent_graded_for_quarter_week_class` → `percent_graded_for_quarter_class`.
-  Add manager columns.
+  `n_expected`, `total_expected_scored_section_quarter_week_category` →
+  `n_expected_scored`, `percent_graded_for_quarter_week_class` →
+  `percent_graded_for_assignment`. Add `assignmentid`, `duedate`, and manager
+  columns.
 
 - [ ] **Step 6e.3: Build and verify**
 
@@ -2301,112 +2341,21 @@ All UNPIVOT list changes and CTE deletions in one step.
 
 ---
 
-## Task 7: SQL — 7-day grace period for percent-graded flags
+## Task 7: ~~SQL — 7-day grace period for percent-graded flags~~
 
-`w/h/f/s_percent_graded_min_not_met` should only fire for assignments that have
-been due for at least 7 days. Currently the percent-graded calculation includes
-all assignments in the week window regardless of how recently they were due.
-
-**File:**
-`src/dbt/kipptaf/models/extracts/tableau/intermediate/int_tableau__gradebook_audit_categories_teacher.sql`
-
-- [ ] **Step 7.1: Add grace-period filter to the two window sums**
-
-  In the `assignments` CTE, replace:
-
-  ```sql
-  sum(asg.n_expected) over (
-      partition by
-          sec._dbt_source_relation,
-          sec.sectionid,
-          sec.quarter,
-          sec.assignment_category_code
-  ) as total_expected_section_quarter_category,
-
-  sum(asg.n_expected_scored) over (
-      partition by
-          sec._dbt_source_relation,
-          sec.sectionid,
-          sec.quarter,
-          sec.assignment_category_code
-  ) as total_expected_scored_section_quarter_category,
-  ```
-
-  with:
-
-  ```sql
-  sum(
-      if(
-          a.duedate
-          <= date_sub(current_date('{{ var("local_timezone") }}'), interval 7 day),
-          asg.n_expected,
-          null
-      )
-  ) over (
-      partition by
-          sec._dbt_source_relation,
-          sec.sectionid,
-          sec.quarter,
-          sec.assignment_category_code
-  ) as total_expected_section_quarter_category,
-
-  sum(
-      if(
-          a.duedate
-          <= date_sub(current_date('{{ var("local_timezone") }}'), interval 7 day),
-          asg.n_expected_scored,
-          null
-      )
-  ) over (
-      partition by
-          sec._dbt_source_relation,
-          sec.sectionid,
-          sec.quarter,
-          sec.assignment_category_code
-  ) as total_expected_scored_section_quarter_category,
-  ```
-
-  Note: column names updated from `*_week_category` to `*_quarter_category` — no
-  `week_number_quarter` in the partition at quarter grain.
-
-- [ ] **Step 7.2: Build `categories_teacher` only**
-
-  ```bash
-  uv run dbt build \
-    --select int_tableau__gradebook_audit_categories_teacher \
-    --project-dir src/dbt/kipptaf \
-    --defer \
-    --state src/dbt/kipptaf/target/prod
-  ```
-
-- [ ] **Step 7.3: Spot-check `categories_teacher` directly**
-
-  Query the model directly — do not use `rpt_tableau__gradebook_audit`
-  (downstream chain not yet valid mid-refactor). Confirm the grace-period flag
-  columns exist and the percent-graded values look reasonable:
-
-  ```sql
-  SELECT
-    region,
-    school,
-    teacher_name,
-    assignment_category_code,
-    quarter,
-    total_expected_section_quarter_category,
-    total_expected_scored_section_quarter_category,
-    percent_graded_for_quarter_class,
-    w_percent_graded_min_not_met,
-  FROM `teamster-332318.dbt_grangel_tableau.int_tableau__gradebook_audit_categories_teacher`
-  WHERE academic_year = 2026
-    AND w_percent_graded_min_not_met
-  LIMIT 20
-  ```
-
-- [ ] **Step 7.4: Commit**
-
-  ```bash
-  git commit -m "feat(dbt): add 7-day grace period for percent-graded flags"
-  ```
+> **Superseded.** The grace period and per-assignment grain are both handled in
+> steps 4d.2 and 6e:
+>
+> - **Grace period** — moved upstream to `is_expected` in
+>   `int_powerschool__gradebook_assignments_scores` (step 4d.2). All
+>   `is_expected_*` columns inherit it; no changes needed in
+>   `categories_teacher`.
+> - **Per-assignment grain** — `categories_teacher` now outputs one row per
+>   `(section, quarter, category, assignment)` using direct `n_expected` /
+>   `n_expected_scored` values from the rollup CTE; window sums across the
+>   category are gone. See step 6e.
+>
+> Nothing to do in this task.
 
 ---
 
