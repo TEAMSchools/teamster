@@ -35,3 +35,25 @@ models:
         data_type: string
       - name: type
         data_type: string
+      - name: is_maher
+        data_type: boolean
+        description:
+          True when the note carries the appended MAHER_FUND marker tag
+          identifying the record as a Maher Fund award; false otherwise,
+          including when the note is null or empty.
+      - name: fund_type
+        data_type: string
+        description:
+          Funding classification parsed from the MAHER_FUND tag's type field
+          (Emergency, Enrichment, or Unclassified); null when the note is
+          untagged.
+      - name: doc_type
+        data_type: string
+        description:
+          Source purchase-order or expense-report reference parsed from the
+          MAHER_FUND tag's doc field; null when the note is untagged.
+      - name: notes_clean
+        data_type: string
+        description:
+          The note with the MAHER_FUND tag and its surrounding whitespace
+          removed; equals the original note when untagged.
