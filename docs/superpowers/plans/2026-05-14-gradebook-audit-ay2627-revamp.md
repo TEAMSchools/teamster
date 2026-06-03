@@ -2952,6 +2952,35 @@ This model is being deprecated. Disable it and archive per the standard pattern.
 
 ---
 
+### 6h.8: `exposures/tableau.yml` — split gradebook audit from GPA
+
+The `gradebook_and_gpa_dashboard` exposure currently covers both the gradebook
+audit and GPA views, which are being split into two separate Tableau reports.
+
+**File:** `src/dbt/kipptaf/models/exposures/tableau.yml`
+
+- [ ] **Step 6h.8.1: Split the exposure**
+
+  Replace `gradebook_and_gpa_dashboard` with two separate exposures:
+  1. **`gradebook_audit`** — gradebook audit models only:
+     - `rpt_tableau__gradebook_audit`
+     - `rpt_tableau__gradebook_es_comments`
+     - `rpt_tableau__gradebook_ms_hs_comments`
+
+  2. **`gradebook_gpa`** (or keep existing name) — GPA models only:
+     - `rpt_tableau__gradebook_gpa`
+     - `rpt_tableau__gradebook_gpa_cumulative`
+
+  Carry over the existing Tableau LSID (`id`) and `cron_schedule` to whichever
+  exposure maps to the original workbook. Assign the new workbook's LSID once it
+  exists in Tableau.
+
+  > ⚠️ Confirm LSID assignments with the user before editing — the original
+  > workbook ID (`5046a976-ed0e-4c77-93fe-78b732cb5548`) must stay on the
+  > correct exposure.
+
+---
+
 ### 6i: Anchor-row / "in the clear" redesign
 
 Replace the current design in `rpt_tableau__gradebook_audit.sql` — which
