@@ -137,10 +137,11 @@ views:
             - staff_manager_work_email
 
     access_policy:
-      # detail-access: excludes staff PII (employee + manager) and compensation.
-      # cube-access-staff-pii: full access except compensation.
-      # cube-access-staff-compensation: full access except staff PII.
-      # A user with both groups sees everything.
+      # Additive design: each group grants only its specific fields so that
+      # having multiple groups always adds access, never blocks it.
+      # detail-access: base employment + demographic fields (no PII, no comp).
+      # cube-access-staff-pii: adds direct staff and manager identifiers.
+      # cube-access-staff-compensation: adds wage/rate fields.
       - group: detail-access
         member_level:
           includes: "*"
@@ -165,16 +166,7 @@ views:
             - period_rate
       - group: cube-access-staff-pii
         member_level:
-          includes: "*"
-          excludes:
-            - annual_wage
-            - hourly_wage
-            - daily_rate
-            - period_rate
-      - group: cube-access-staff-compensation
-        member_level:
-          includes: "*"
-          excludes:
+          includes:
             - staff_full_name
             - staff_first_name
             - staff_last_name
@@ -189,3 +181,10 @@ views:
             - staff_manager_first_name
             - staff_manager_last_name
             - staff_manager_work_email
+      - group: cube-access-staff-compensation
+        member_level:
+          includes:
+            - annual_wage
+            - hourly_wage
+            - daily_rate
+            - period_rate
