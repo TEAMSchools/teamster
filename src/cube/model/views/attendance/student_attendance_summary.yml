@@ -88,6 +88,14 @@ views:
           - grade_level
           - graduation_year
           - is_retained_year
+          - is_ell
+          - is_iep
+          - iep_classification
+          - special_education_code
+          - special_education_name
+          - special_education_placement
+          - is_meal_eligible
+          - meal_eligibility
 
       - join_path: student_attendance.student_enrollments.students
         prefix: true
@@ -95,26 +103,6 @@ views:
           - gender_identity
           - race
           - is_gifted
-
-      - join_path: student_attendance.student_ell_status
-        prefix: true
-        includes:
-          - is_ell
-
-      - join_path: student_attendance.student_iep_status
-        prefix: true
-        includes:
-          - is_iep
-          - iep_classification
-          - special_education_code
-          - special_education_name
-          - special_education_placement
-
-      - join_path: student_attendance.student_meal_eligibility_status
-        prefix: true
-        includes:
-          - is_meal_eligible
-          - meal_eligibility
 
       - join_path: student_attendance.terms
         prefix: true
@@ -161,14 +149,16 @@ views:
             - students_gender_identity
             - students_race
             - students_is_gifted
-            - student_ell_status_is_ell
-            - student_iep_status_is_iep
-            - student_iep_status_iep_classification
-            - student_iep_status_special_education_code
-            - student_iep_status_special_education_name
-            - student_iep_status_special_education_placement
-            - student_meal_eligibility_status_is_meal_eligible
-            - student_meal_eligibility_status_meal_eligibility
+        - name: Status
+          members:
+            - student_enrollments_is_ell
+            - student_enrollments_is_iep
+            - student_enrollments_iep_classification
+            - student_enrollments_special_education_code
+            - student_enrollments_special_education_name
+            - student_enrollments_special_education_placement
+            - student_enrollments_is_meal_eligible
+            - student_enrollments_meal_eligibility
         - name: Enrollment
           members:
             - student_enrollments_grade_level

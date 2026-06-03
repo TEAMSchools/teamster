@@ -1,14 +1,14 @@
 views:
   - name: student_enrollments_summary
     description: >-
-      Aggregated student enrollment for headcount and demographic breakdowns. No
-      direct student identifiers — demographic dimensions (race,
-      gender_identity, is_gifted) are aggregate breakdowns only.
+      Aggregated student enrollment with ELL, IEP, and meal eligibility status.
+      No direct student identifiers. Use for population-level headcounts by
+      status, grade level, school, and demographics.
 
-      Double-counting warning: count_students counts distinct enrollment records
-      per filter slice. Filter to a single academic_year for per-year headcount.
-      Omitting academic_year sums across all years in scope, producing
-      enrollment-years not student count.
+      Grain: one row per status-period intersection. Always use count_students
+      (count_distinct on student_enrollment_key) for enrollment headcounts. For
+      point-in-time queries, use student_enrollments_detail and filter
+      dates.date_day.
 
     cubes:
       - join_path: student_enrollments
@@ -18,6 +18,11 @@ views:
           - grade_level
           - graduation_year
           - is_retained_year
+          - is_ell
+          - is_iep
+          - iep_classification
+          - is_meal_eligible
+          - meal_eligibility
 
       - join_path: student_enrollments.locations
         prefix: true
@@ -50,6 +55,13 @@ views:
             - grade_level
             - graduation_year
             - is_retained_year
+        - name: Status
+          members:
+            - is_ell
+            - is_iep
+            - iep_classification
+            - is_meal_eligible
+            - meal_eligibility
         - name: Location
           members:
             - locations_location_name
