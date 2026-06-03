@@ -151,6 +151,21 @@ expect_allow 'echo $LC_ALL (real locale var)' Bash command 'echo $LC_ALL'
 expect_allow 'echo $LC_CTYPE (real locale var)' Bash command 'echo $LC_CTYPE'
 # trunk-ignore-end(shellcheck/SC2016)
 
+# ─── Pattern 7 (#27): single-char uppercase vars ─────────────────────────────
+echo ""
+echo -e "${YELLOW}Pattern 7 (#27): single-char uppercase vars${NC}"
+
+# trunk-ignore-begin(shellcheck/SC2016): $VAR must not expand — literal strings
+expect_deny 'echo $X (single-char uppercase)' Bash command 'echo $X'
+expect_deny 'echo ${Q} (braced single-char)' Bash command 'echo ${Q}'
+
+# lowercase + special single-char vars stay allowed (env-secret names are uppercase)
+expect_allow 'echo $x (lowercase ignored)' Bash command 'echo $x'
+expect_allow 'echo $i (loop var)' Bash command 'echo $i'
+expect_allow 'echo $file (lowercase word)' Bash command 'echo $file'
+expect_allow 'echo $_ (last-arg special)' Bash command 'echo $_'
+# trunk-ignore-end(shellcheck/SC2016)
+
 # ─── Pattern 4 (#14): 1Password credential-minting verbs ─────────────────────
 echo ""
 echo -e "${YELLOW}Pattern 4 (#14): 1Password CLI verbs${NC}"
