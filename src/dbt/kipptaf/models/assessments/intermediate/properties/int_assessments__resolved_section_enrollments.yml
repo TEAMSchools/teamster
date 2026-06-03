@@ -45,30 +45,30 @@ unit_tests:
           - {
               powerschool_student_number: 1,
               canonical_assessment_id: 100,
-              _dbt_source_project: "kippnewark",
+              _dbt_source_project: kippnewark,
               cc_dcid: 111,
-              cc_source_project: "kippnewark",
-              cc_dateenrolled: "2017-09-01",
-              cc_dateleft: "2018-06-15",
-              date_taken: "2018-03-09",
+              cc_source_project: kippnewark,
+              cc_dateenrolled: 2017-09-01,
+              cc_dateleft: 2018-06-15,
+              date_taken: 2018-03-09,
               is_internal_assessment: true,
               is_replacement: false,
             }
           - {
               powerschool_student_number: 1,
               canonical_assessment_id: 100,
-              _dbt_source_project: "kippnewark",
+              _dbt_source_project: kippnewark,
               cc_dcid: 222,
-              cc_source_project: "kippnewark",
-              cc_dateenrolled: "2018-08-23",
-              cc_dateleft: "2019-06-29",
+              cc_source_project: kippnewark,
+              cc_dateenrolled: 2018-08-23,
+              cc_dateleft: 2019-06-29,
               date_taken: null,
               is_internal_assessment: true,
               is_replacement: false,
             }
       - input: ref('int_assessments__assessments_canonical')
         rows:
-          - { canonical_assessment_id: 100, administered_date: "2018-03-04" }
+          - { canonical_assessment_id: 100, administered_date: 2018-03-04 }
     expect:
       rows:
         - {
@@ -88,18 +88,18 @@ unit_tests:
           - {
               powerschool_student_number: 2,
               canonical_assessment_id: 200,
-              _dbt_source_project: "kippmiami",
+              _dbt_source_project: kippmiami,
               cc_dcid: 333,
-              cc_source_project: "kippmiami",
-              cc_dateenrolled: "2025-09-01",
-              cc_dateleft: "2026-06-15",
+              cc_source_project: kippmiami,
+              cc_dateenrolled: 2025-09-01,
+              cc_dateleft: 2026-06-15,
               date_taken: null,
               is_internal_assessment: true,
               is_replacement: false,
             }
       - input: ref('int_assessments__assessments_canonical')
         rows:
-          - { canonical_assessment_id: 200, administered_date: "2099-01-01" }
+          - { canonical_assessment_id: 200, administered_date: 2099-01-01 }
     expect:
       rows:
         - {
@@ -119,11 +119,11 @@ unit_tests:
           - {
               powerschool_student_number: 3,
               canonical_assessment_id: 300,
-              _dbt_source_project: "kippcamden",
+              _dbt_source_project: kippcamden,
               cc_dcid: 444,
-              cc_source_project: "kippcamden",
-              cc_dateenrolled: "2020-09-01",
-              cc_dateleft: "2021-06-15",
+              cc_source_project: kippcamden,
+              cc_dateenrolled: 2020-09-01,
+              cc_dateleft: 2021-06-15,
               date_taken: null,
               is_internal_assessment: true,
               is_replacement: false,
@@ -131,18 +131,18 @@ unit_tests:
           - {
               powerschool_student_number: 3,
               canonical_assessment_id: 300,
-              _dbt_source_project: "kippcamden",
+              _dbt_source_project: kippcamden,
               cc_dcid: 555,
-              cc_source_project: "kippcamden",
-              cc_dateenrolled: "2021-09-01",
-              cc_dateleft: "2022-06-15",
+              cc_source_project: kippcamden,
+              cc_dateenrolled: 2021-09-01,
+              cc_dateleft: 2022-06-15,
               date_taken: null,
               is_internal_assessment: true,
               is_replacement: false,
             }
       - input: ref('int_assessments__assessments_canonical')
         rows:
-          - { canonical_assessment_id: 300, administered_date: "2030-01-01" }
+          - { canonical_assessment_id: 300, administered_date: 2030-01-01 }
     expect:
       rows:
         - {
@@ -163,11 +163,11 @@ unit_tests:
           - {
               powerschool_student_number: 4,
               canonical_assessment_id: 400,
-              _dbt_source_project: "kippnewark",
+              _dbt_source_project: kippnewark,
               cc_dcid: 666,
-              cc_source_project: "kippnewark",
-              cc_dateenrolled: "2024-09-01",
-              cc_dateleft: "2025-06-15",
+              cc_source_project: kippnewark,
+              cc_dateenrolled: 2024-09-01,
+              cc_dateleft: 2025-06-15,
               date_taken: null,
               is_internal_assessment: true,
               is_replacement: false,
@@ -175,18 +175,18 @@ unit_tests:
           - {
               powerschool_student_number: 4,
               canonical_assessment_id: 400,
-              _dbt_source_project: "kippnewark",
+              _dbt_source_project: kippnewark,
               cc_dcid: 777,
-              cc_source_project: "kippnewark",
-              cc_dateenrolled: "2025-09-01",
-              cc_dateleft: "2026-06-15",
+              cc_source_project: kippnewark,
+              cc_dateenrolled: 2025-09-01,
+              cc_dateleft: 2026-06-15,
               date_taken: null,
               is_internal_assessment: true,
               is_replacement: false,
             }
       - input: ref('int_assessments__assessments_canonical')
         rows:
-          - { canonical_assessment_id: 400, administered_date: "2024-11-01" }
+          - { canonical_assessment_id: 400, administered_date: 2024-11-01 }
     expect:
       rows:
         - {
