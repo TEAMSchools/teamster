@@ -35,13 +35,14 @@ Do NOT search the codebase. Go directly to the exposure file:
 
 `src/dbt/kipptaf/models/exposures/tableau.yml`
 
-Find the `gradebook_and_gpa_dashboard` exposure (the active one). Its
-`depends_on` list is the authoritative answer:
+Find the exposure named `gradebook_audit` and read its `depends_on` list — that
+is the authoritative answer. If no `gradebook_audit` exposure exists yet, fall
+back to `gradebook_and_gpa_dashboard` and note the rename is pending.
+
+Current `depends_on` list (update if the exposure changes):
 
 - `rpt_tableau__assignment_checks`
 - `rpt_tableau__gradebook_audit`
-- `rpt_tableau__gradebook_gpa`
-- `rpt_tableau__gradebook_gpa_cumulative`
 - `rpt_tableau__gradebook_es_comments`
 - `rpt_tableau__gradebook_ms_hs_comments`
 
