@@ -14,7 +14,6 @@ views:
       - join_path: student_attendance_interventions
         includes:
           - intervention_date
-          - academic_year
           - absence_threshold
           - days_absent_unexcused
           - has_communication_log
@@ -70,7 +69,7 @@ views:
         - name: Intervention
           members:
             - intervention_date
-            - academic_year
+            - dates_academic_year
             - absence_threshold
             - days_absent_unexcused
             - has_communication_log

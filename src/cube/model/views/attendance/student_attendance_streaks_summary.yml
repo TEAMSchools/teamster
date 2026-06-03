@@ -9,7 +9,6 @@ views:
     cubes:
       - join_path: student_attendance_streaks
         includes:
-          - academic_year
           - attendance_code
 
       - join_path: student_attendance_streaks.dates
@@ -52,7 +51,6 @@ views:
       folders:
         - name: Streak
           members:
-            - academic_year
             - attendance_code
         - name: Date
           members:

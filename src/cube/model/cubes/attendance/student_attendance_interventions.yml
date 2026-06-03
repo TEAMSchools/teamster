@@ -9,7 +9,6 @@ cubes:
         f.student_enrollment_key,
         f.family_communication_key,
         f.date_key,
-        f.academic_year,
         f.absence_threshold,
         f.days_absent_unexcused,
         f.has_communication_log,
@@ -44,13 +43,6 @@ cubes:
           yet been completed (has_communication_log = false).
         sql: CAST(date_key AS TIMESTAMP)
         type: time
-        public: true
-
-      - name: academic_year
-        description:
-          KIPP academic year (July start) for this intervention record.
-        sql: academic_year
-        type: number
         public: true
 
       - name: absence_threshold

@@ -14,7 +14,6 @@ views:
         includes:
           - streak_start_date
           - streak_end_date
-          - academic_year
           - attendance_code
           - streak_length_membership
           - streak_length_calendar
@@ -68,7 +67,6 @@ views:
           members:
             - streak_start_date
             - streak_end_date
-            - academic_year
             - attendance_code
             - streak_length_membership
             - streak_length_calendar

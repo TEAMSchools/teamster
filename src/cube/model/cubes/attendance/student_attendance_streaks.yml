@@ -37,12 +37,6 @@ cubes:
         type: time
         public: true
 
-      - name: academic_year
-        description: KIPP academic year (July start) derived from yearid + 1990.
-        sql: academic_year
-        type: number
-        public: true
-
       - name: attendance_code
         description: Attendance code repeated across all days of this streak.
         sql: attendance_code

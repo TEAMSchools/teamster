@@ -9,7 +9,6 @@ views:
     cubes:
       - join_path: student_attendance_interventions
         includes:
-          - academic_year
           - absence_threshold
           - has_communication_log
           - is_chronic_absence_exception
@@ -56,7 +55,7 @@ views:
       folders:
         - name: Intervention
           members:
-            - academic_year
+            - dates_academic_year
             - absence_threshold
             - has_communication_log
             - is_chronic_absence_exception
