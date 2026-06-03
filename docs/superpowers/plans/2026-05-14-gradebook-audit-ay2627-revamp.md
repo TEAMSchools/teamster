@@ -1921,7 +1921,10 @@ Complete replacement. Changes from the old model:
   `total_expected_scored_section_quarter_category` → `n_expected_scored`;
   `percent_graded_for_quarter_class` → `percent_graded_for_assignment`
 - 7-day grace period handled upstream in step 4d.2 (`is_expected` on the scores
-  model); no date check needed in flag conditions here
+  model)
+- `final` CTE eliminated — per-assignment grain means each group has exactly one
+  row; `avg()` wrappers and `GROUP BY` removed; outer SELECT reads directly
+  `from percent_graded as f`
 
 **File:**
 `src/dbt/kipptaf/models/extracts/tableau/intermediate/int_tableau__gradebook_audit_categories_teacher.sql`
@@ -1992,98 +1995,6 @@ Complete replacement. Changes from the old model:
 
           from assignments
       ),
-
-      final as (
-          select
-              _dbt_source_relation,
-              schoolid,
-              yearid,
-              academic_year,
-              `quarter`,
-              semester,
-              quarter_start_date,
-              quarter_end_date,
-              is_current_term,
-              school,
-              region,
-              school_level,
-              region_school_level,
-              academic_year_display,
-              sections_dcid,
-              sectionid,
-              section_number,
-              external_expression,
-              course_number,
-              course_name,
-              credit_type,
-              exclude_from_gpa,
-              is_ap_course,
-              teacher_number,
-              teacher_name,
-              teacher_tableau_username,
-              manager_employee_number,
-              manager_name,
-              manager_tableau_username,
-              hos,
-              school_leader,
-              school_leader_tableau_username,
-              section_or_period,
-              assignment_category_code,
-              assignment_category_name,
-              assignment_category_term,
-              notes,
-              assignmentid,
-              duedate,
-
-              avg(expectation) as expectation,
-              avg(teacher_running_total_assign_by_cat) as teacher_running_total_assign_by_cat,
-              avg(sum_totalpointvalue_section_quarter_category) as sum_totalpointvalue_section_quarter_category,
-              avg(n_expected) as n_expected,
-              avg(n_expected_scored) as n_expected_scored,
-              avg(percent_graded_for_assignment) as percent_graded_for_assignment,
-
-          from percent_graded
-          group by
-              _dbt_source_relation,
-              schoolid,
-              yearid,
-              academic_year,
-              `quarter`,
-              semester,
-              quarter_start_date,
-              quarter_end_date,
-              is_current_term,
-              school,
-              region,
-              school_level,
-              region_school_level,
-              academic_year_display,
-              sections_dcid,
-              sectionid,
-              section_number,
-              external_expression,
-              course_number,
-              course_name,
-              credit_type,
-              exclude_from_gpa,
-              is_ap_course,
-              teacher_number,
-              teacher_name,
-              teacher_tableau_username,
-              manager_employee_number,
-              manager_name,
-              manager_tableau_username,
-              hos,
-              school_leader,
-              school_leader_tableau_username,
-              section_or_period,
-              assignment_category_code,
-              assignment_category_name,
-              assignment_category_term,
-              notes,
-              assignmentid,
-              duedate
-      )
 
   select
       f._dbt_source_relation,
@@ -2189,7 +2100,7 @@ Complete replacement. Changes from the old model:
           false
       ) as s_expected_assign_count_not_met,
 
-  from final as f
+  from percent_graded as f
   ```
 
 - [ ] **Step 6e.2: Update YAML**
@@ -2341,25 +2252,7 @@ All UNPIVOT list changes and CTE deletions in one step.
 
 ---
 
-## Task 7: ~~SQL — 7-day grace period for percent-graded flags~~
-
-> **Superseded.** The grace period and per-assignment grain are both handled in
-> steps 4d.2 and 6e:
->
-> - **Grace period** — moved upstream to `is_expected` in
->   `int_powerschool__gradebook_assignments_scores` (step 4d.2). All
->   `is_expected_*` columns inherit it; no changes needed in
->   `categories_teacher`.
-> - **Per-assignment grain** — `categories_teacher` now outputs one row per
->   `(section, quarter, category, assignment)` using direct `n_expected` /
->   `n_expected_scored` values from the rollup CTE; window sums across the
->   category are gone. See step 6e.
->
-> Nothing to do in this task.
-
----
-
-## Task 8: Update reference documentation and skill
+## Task 7: Update reference documentation and skill
 
 Once all SQL changes are merged and the model is stable, update the reference
 doc to reflect the new state of the pipeline and trim the skill to remove
