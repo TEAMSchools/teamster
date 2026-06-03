@@ -56,9 +56,13 @@ This mirrors the domain's two-bridge split — `*_enrollment_scoped` (has an
 enrollment, no `student_key`) vs `*_student_scoped` (no enrollment, carries
 `student_key`).
 
-## Resolver (CTE inside the fact)
+## Resolver (dedicated intermediate model)
 
-A `section_resolver` CTE in `fct_assessment_scores_enrollment_scoped.sql`:
+A new model `int_assessments__resolved_section_enrollments` resolves one section
+enrollment per `(student, canonical assessment, source)` for internal scored
+assessments. Extracting it (rather than a CTE in the fact) keeps the tiebreak
+logic in a single-purpose, independently unit-testable model with its own grain
+invariant — see _Tests_.
 
 - **Source:** `int_assessments__scaffold`, filtered to the coverage scope above
   (identical to the enrollment bridge → guarantees the picked section is one of
@@ -69,13 +73,19 @@ A `section_resolver` CTE in `fct_assessment_scores_enrollment_scoped.sql`:
   `coalesce(min(date_taken) per (student, canonical, source), canonical_administered_date)`
   — the actual sitting date when present, else the scheduled administration
   date.
-- **Pick rule:**
+- **Pick rule** (via `dbt_utils.deduplicate`, ordered
+  `is_anchor_in_window desc, cc_dateleft desc`):
   1. exactly one candidate `cc_dcid` → use it (anchor irrelevant);
   2. multiple candidates → the one whose `[cc_dateenrolled, cc_dateleft]` window
      contains the anchor;
   3. still tied → latest `cc_dateleft`.
-- **Resolver grain:** one row per
-  `(powerschool_student_number, canonical_assessment_id, _dbt_source_project)`.
+- **Grain / output:** one row per
+  `(powerschool_student_number, canonical_assessment_id, _dbt_source_project)`;
+  emits those keys plus `cc_dcid`, `cc_source_project`, and the computed
+  `student_section_enrollment_key`. Hash composition is **identical to
+  `dim_student_section_enrollments` and the enrollment bridge** — `cc_dcid` +
+  `cc_source_project` (the course-enrollment source project, **not** the
+  region-derived `_dbt_source_project`).
 
 The pick rule self-cleans the dominant ambiguity source: ~0.5% of
 `(student, canonical)` pairs map to multiple sections, and ~71% of those are
@@ -86,21 +96,13 @@ excluded by construction.
 
 ## Wiring into the fact
 
-The **internal branch** LEFT JOINs `section_resolver` on
-`(student_number, canonical_assessment_id, _dbt_source_project)` and emits:
-
-```sql
-if(
-    cc_dcid is not null,
-    {{ dbt_utils.generate_surrogate_key(["cc_dcid", "cc_source_project"]) }},
-    cast(null as string)
-) as student_section_enrollment_key
-```
-
-Hash composition is **identical to `dim_student_section_enrollments` and the
-bridge** — `cc_dcid` + `cc_source_project` (the course-enrollment source
-project, **not** the region-derived `_dbt_source_project`). The **state branch**
-selects `cast(null as string) as student_section_enrollment_key`.
+The **internal branch** LEFT JOINs
+`int_assessments__resolved_section_enrollments` on
+`(student_number, canonical_assessment_id, _dbt_source_project)` and selects its
+`student_section_enrollment_key` directly — the LEFT-JOIN miss yields NULL for
+unresolved rows, so no `if(...)` wrap is needed in the fact (the hash and its
+nullability are owned by the intermediate). The **state branch** selects
+`cast(null as string) as student_section_enrollment_key`.
 
 ## Additive upstream edit
 
@@ -112,9 +114,10 @@ tests, one extract).
 
 ## Grain safety and diamond analysis
 
-- **Grain:** the resolver is unique on its join key, so the LEFT JOIN cannot fan
-  the fact. The existing `assessment_score_key` unique test is the backstop;
-  validate populated/null counts in the PR-branch schema after build.
+- **Grain:** the intermediate is unique on its join key (enforced by its own
+  `unique_combination_of_columns` test), so the LEFT JOIN cannot fan the fact.
+  The existing `assessment_score_key` unique test is the backstop; validate
+  populated/null counts in the PR-branch schema after build.
 - **Direct FKs — no diamond:** `student_key`, `assessment_administration_key`,
   `test_date_key`, and the new `student_section_enrollment_key` point at four
   distinct dims, none reachable from another. `dim_student_section_enrollments`
@@ -135,11 +138,21 @@ tests, one extract).
 
 ## Tests and YAML
 
-- New column in `properties/fct_assessment_scores_enrollment_scoped.yml`:
-  source-agnostic `description`, `foreign_key` constraint
+- **Intermediate** (`int_assessments__resolved_section_enrollments`):
+  `dbt_utils.unique_combination_of_columns` on
+  `(powerschool_student_number, canonical_assessment_id, _dbt_source_project)`
+  (the grain invariant), plus a **dbt unit test** locking the tiebreak —
+  scenarios: single candidate (resolves regardless of window), multiple
+  candidates with one in-window (the #3801 phantom-exclusion case), multiple
+  candidates none in-window (falls back to latest `cc_dateleft`), and null
+  `date_taken` (anchor falls back to the administration date). This is the
+  repo's first dbt unit test; it gates materialization and is the deterministic
+  regression guard the prod-data validation queries can't promise.
+- **Fact** (`properties/fct_assessment_scores_enrollment_scoped.yml`): new
+  column with source-agnostic `description`, `foreign_key` constraint
   (`warn_unsupported: false`) to `dim_student_section_enrollments`, and a
-  nullable `relationships` test (no `not_null` — the FK is nullable).
-- Update the model `description` to note the new FK.
+  nullable `relationships` test (no `not_null` — the FK is nullable). Update the
+  model `description` to note the new FK.
 - No #3801 warn test in scope — #3801 monitoring stays where it lives.
 
 ## Hash discipline
@@ -163,9 +176,12 @@ hash-change rules.
   workaround slated for removal) — wrong selection rule, would pick the phantom
   section, couples a permanent FK to a temporary workaround, and rides along to
   ~10 unrelated consumers.
-- **Dedicated resolver intermediate model:** viable and more isolated, but the
-  CTE-in-fact keeps this interim change small; the fact PK unique test already
-  guards the grain.
+- **Resolver as a CTE inside the fact:** keeps the change to one file, but the
+  tiebreak logic can only be unit-tested _through_ the fact (mocking ~4
+  populated inputs with consistent join keys), and the grain invariant has no
+  home of its own. Rejected in favor of the dedicated intermediate once a unit
+  test entered scope — testability and a self-contained grain test outweigh the
+  smaller footprint.
 - **Drop `student_key`, reach student via the enrollment chain:** orphans every
   row without a section enrollment (all state assessments, replacement, ES
   Writing) from the student dimension. Non-starter.
