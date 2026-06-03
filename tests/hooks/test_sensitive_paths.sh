@@ -97,6 +97,45 @@ else
   echo -e "  ${YELLOW}SKIP${NC}: could not create test symlink"
 fi
 
+# ─── #1: cert/key files under non-path / MCP keys (Rule 1b scans all leaves) ──
+echo ""
+echo -e "${YELLOW}#1: cert/key under non-path keys${NC}"
+
+# trunk-ignore-begin(shellcheck/SC2312)
+expect_deny_json "MCP uri = .key file" \
+  "$(jq -n '{tool_name:"mcp__example__tool", tool_input:{uri:"/tmp/server.key"}}')"
+expect_deny_json "MCP nested localPath = .pem file" \
+  "$(jq -n '{tool_name:"mcp__example__tool", tool_input:{obj:{localPath:"/home/u/id_rsa.pem"}}}')"
+expect_deny_json "MCP source = .cer file" \
+  "$(jq -n '{tool_name:"mcp__example__tool", tool_input:{source:"/tmp/chain.cer"}}')"
+# content exemption preserved: .key as a code attribute in a Write body allows
+expect_allow_json "Write content asset.key (attr, not a file)" \
+  "$(jq -n '{tool_name:"Write", tool_input:{file_path:"/tmp/x.py", content:"v = asset.key"}}')"
+expect_allow_json "Edit new_string mentioning cert.pem" \
+  "$(jq -n '{tool_name:"Edit", tool_input:{file_path:"/tmp/x.py", new_string:"# see cert.pem docs"}}')"
+# trunk-ignore-end(shellcheck/SC2312)
+
+# ─── #2: symlink resolution for every path field (not just file_path) ─────────
+echo ""
+echo -e "${YELLOW}#2: symlink resolution beyond file_path${NC}"
+
+TMPLINK2="/tmp/test_hook_slink_grep_$$"
+TMPLINK3="/tmp/test_hook_slink_mcp_$$"
+TMPLINK4="/tmp/test_hook_slink_ok_$$"
+if ln -s /etc/secret-volume "${TMPLINK2}" 2>/dev/null &&
+  ln -s /etc/secret-volume "${TMPLINK3}" 2>/dev/null &&
+  ln -s /tmp "${TMPLINK4}" 2>/dev/null; then
+  expect_deny2 "Grep path symlink to secret-volume" Grep pattern "x" path "${TMPLINK2}"
+  # trunk-ignore-begin(shellcheck/SC2312)
+  expect_deny_json "MCP uri symlink to secret-volume" \
+    "$(jq -n --arg p "${TMPLINK3}" '{tool_name:"mcp__example__tool", tool_input:{uri:$p}}')"
+  # trunk-ignore-end(shellcheck/SC2312)
+  expect_allow2 "Grep path symlink to benign /tmp" Grep pattern "x" path "${TMPLINK4}"
+  rm -f "${TMPLINK2}" "${TMPLINK3}" "${TMPLINK4}"
+else
+  echo -e "  ${YELLOW}SKIP${NC}: could not create test symlinks"
+fi
+
 # ─── Description field scoping (Agent-only exclusion) ─────────────────────────
 echo ""
 echo -e "${YELLOW}Description field scoping${NC}"

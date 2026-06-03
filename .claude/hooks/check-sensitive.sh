@@ -47,13 +47,20 @@ fi
 
 normalized=$(echo "${path}" | _normalize)
 
-# Resolve symlinks on file_path to prevent symlink-based bypass — cache result for reuse below
-file_path=$(jq -r '.tool_input.file_path // ""' <<<"${input}")
-if [[ -n ${file_path} && -e ${file_path} ]]; then
-  resolved=$(readlink -f "${file_path}" 2>/dev/null || echo "${file_path}")
-else
-  resolved=""
-fi
+# Resolve symlinks for EVERY path-bearing string leaf that exists on disk (not
+# just file_path) so a symlink to a sensitive target is caught regardless of
+# which key holds it — path (Grep), pattern (Glob), MCP uri/localPath/source,
+# nested objects, etc. Body content (content/new_string/old_string) is excluded:
+# that is doc/code text, not a path the tool will open.
+resolved=""
+_cands=$(jq -r '
+  [.tool_input | to_entries[] | select(.key | test("^(content|new_string|old_string)$") | not) | .value | .. | strings] | .[]
+' <<<"${input}")
+while IFS= read -r _cand; do
+  [[ -n ${_cand} && -e ${_cand} ]] || continue
+  _r=$(readlink -f "${_cand}" 2>/dev/null) || continue
+  [[ -n ${_r} ]] && resolved+=" ${_r}"
+done <<<"${_cands}"
 [[ -n ${resolved} ]] && normalized="${normalized} ${resolved}"
 
 # Strip quotes and backslashes for keyword matching (defeats quote-splitting bypass)
@@ -89,9 +96,11 @@ if echo "${no_content}" | grep -qiE '\.env[.a-z]*|(^|[ /])(\.ssh|\.kube|\.pem|\.
   deny
 fi
 
-# 1b. File-extension patterns scoped to paths/commands only — avoids false-positives on
-#     Python attribute access (e.g. asset.key) in code content written via Edit/Write
-if echo "${path_only}" | grep -qiE '\*?\.(cer|key|pem)([ /]|$)'; then
+# 1b. File-extension patterns scoped to no_content (all leaves except Write/Edit
+#     body) — catches cert/key files under MCP keys (uri, localPath, source, ...)
+#     while still exempting Python attribute access (e.g. asset.key) in written
+#     code/doc content.
+if echo "${no_content}" | grep -qiE '\*?\.(cer|key|pem)([ /]|$)'; then
   deny
 fi
 
