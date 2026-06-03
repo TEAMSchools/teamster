@@ -710,6 +710,33 @@ Drop it using BigQuery `SELECT * EXCEPT`.
 
 ## Task 6: SQL — Quarter-grain scaffold and model updates
 
+**Flag reference table** — use this as your checklist when working through each
+model. Every flag in this table must be removed from its source model, its YAML,
+and the UNPIVOT list in `int_tableau__gradebook_audit_flags.sql`.
+
+| Flag                                             | Lives in model                                     | Reason                             |
+| ------------------------------------------------ | -------------------------------------------------- | ---------------------------------- |
+| `w_grade_inflation`                              | `int_tableau__gradebook_audit_student_scaffold`    | FYI flag — in 2.4                  |
+| `assign_s_hs_score_not_conversion_chart_options` | `int_tableau__gradebook_audit_assignments_student` | FYI flag                           |
+| `assign_s_ms_score_not_conversion_chart_options` | `int_tableau__gradebook_audit_assignments_student` | FYI flag                           |
+| `qt_teacher_s_total_greater_200`                 | `int_tableau__gradebook_audit_categories_teacher`  | Makeup work policy false positives |
+| `qt_teacher_s_total_less_200`                    | `int_tableau__gradebook_audit_categories_teacher`  | Makeup work policy false positives |
+| `qt_student_is_ada_80_plus_gpa_less_2`           | `int_tableau__gradebook_audit_student_scaffold`    | Migrated — in 2.4                  |
+| `qt_teacher_s_total_greater_100`                 | `int_tableau__gradebook_audit_categories_teacher`  | Miami-only dead code               |
+| `qt_teacher_s_total_less_100`                    | `int_tableau__gradebook_audit_categories_teacher`  | Miami-only dead code               |
+| `s_max_score_greater_100`                        | `int_tableau__gradebook_audit_assignments_teacher` | Miami-only dead code               |
+| `qt_comment_missing`                             | `int_tableau__gradebook_audit_student_scaffold`    | Miami-only dead code — in 2.4      |
+| `qt_g1_g8_conduct_code_missing`                  | `int_tableau__gradebook_audit_student_scaffold`    | Miami-only dead code — in 2.4      |
+| `qt_g1_g8_conduct_code_incorrect`                | `int_tableau__gradebook_audit_student_scaffold`    | Miami-only dead code — in 2.4      |
+| `qt_kg_conduct_code_missing`                     | `int_tableau__gradebook_audit_student_scaffold`    | Miami-only dead code — in 2.4      |
+| `qt_kg_conduct_code_incorrect`                   | `int_tableau__gradebook_audit_student_scaffold`    | Miami-only dead code — in 2.4      |
+| `qt_kg_conduct_code_not_hr`                      | `int_tableau__gradebook_audit_student_scaffold`    | Miami-only dead code — in 2.4      |
+| `qt_effort_grade_missing`                        | `int_tableau__gradebook_audit_student_scaffold`    | Miami-only dead code — in 2.4      |
+| `qt_formative_grade_missing`                     | `int_tableau__gradebook_audit_student_scaffold`    | Miami-only dead code — in 2.4      |
+| `qt_summative_grade_missing`                     | `int_tableau__gradebook_audit_student_scaffold`    | Miami-only dead code — in 2.4      |
+
+---
+
 ### 6a: `int_tableau__gradebook_audit_teacher_scaffold.sql` — quarter-grain redesign
 
 - [ ] **Step 6a.1: Redesign
@@ -1340,33 +1367,6 @@ Drop it using BigQuery `SELECT * EXCEPT`.
   git add -u
   git commit -m "feat(dbt): replace Google Sheet expectations with PS-native INT model (Newark)"
   ```
-
-**Flag reference table** — use this as your checklist when working through each
-model. Every flag in this table must be removed from its source model, its YAML,
-and the UNPIVOT list in `int_tableau__gradebook_audit_flags.sql`.
-
-| Flag                                             | Lives in model                                     | Reason                             |
-| ------------------------------------------------ | -------------------------------------------------- | ---------------------------------- |
-| `w_grade_inflation`                              | `int_tableau__gradebook_audit_student_scaffold`    | FYI flag — in 2.4                  |
-| `assign_s_hs_score_not_conversion_chart_options` | `int_tableau__gradebook_audit_assignments_student` | FYI flag                           |
-| `assign_s_ms_score_not_conversion_chart_options` | `int_tableau__gradebook_audit_assignments_student` | FYI flag                           |
-| `qt_teacher_s_total_greater_200`                 | `int_tableau__gradebook_audit_categories_teacher`  | Makeup work policy false positives |
-| `qt_teacher_s_total_less_200`                    | `int_tableau__gradebook_audit_categories_teacher`  | Makeup work policy false positives |
-| `qt_student_is_ada_80_plus_gpa_less_2`           | `int_tableau__gradebook_audit_student_scaffold`    | Migrated — in 2.4                  |
-| `qt_teacher_s_total_greater_100`                 | `int_tableau__gradebook_audit_categories_teacher`  | Miami-only dead code               |
-| `qt_teacher_s_total_less_100`                    | `int_tableau__gradebook_audit_categories_teacher`  | Miami-only dead code               |
-| `s_max_score_greater_100`                        | `int_tableau__gradebook_audit_assignments_teacher` | Miami-only dead code               |
-| `qt_comment_missing`                             | `int_tableau__gradebook_audit_student_scaffold`    | Miami-only dead code — in 2.4      |
-| `qt_g1_g8_conduct_code_missing`                  | `int_tableau__gradebook_audit_student_scaffold`    | Miami-only dead code — in 2.4      |
-| `qt_g1_g8_conduct_code_incorrect`                | `int_tableau__gradebook_audit_student_scaffold`    | Miami-only dead code — in 2.4      |
-| `qt_kg_conduct_code_missing`                     | `int_tableau__gradebook_audit_student_scaffold`    | Miami-only dead code — in 2.4      |
-| `qt_kg_conduct_code_incorrect`                   | `int_tableau__gradebook_audit_student_scaffold`    | Miami-only dead code — in 2.4      |
-| `qt_kg_conduct_code_not_hr`                      | `int_tableau__gradebook_audit_student_scaffold`    | Miami-only dead code — in 2.4      |
-| `qt_effort_grade_missing`                        | `int_tableau__gradebook_audit_student_scaffold`    | Miami-only dead code — in 2.4      |
-| `qt_formative_grade_missing`                     | `int_tableau__gradebook_audit_student_scaffold`    | Miami-only dead code — in 2.4      |
-| `qt_summative_grade_missing`                     | `int_tableau__gradebook_audit_student_scaffold`    | Miami-only dead code — in 2.4      |
-
----
 
 ### 6c: `int_tableau__gradebook_audit_assignments_student`
 
