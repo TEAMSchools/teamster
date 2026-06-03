@@ -83,6 +83,26 @@ models:
         config:
           meta:
             source_column: int_assessments__course_enrollments._dbt_source_project
+      - name: cc_dateenrolled
+        data_type: date
+        description: >-
+          Date the student enrolled in the matched PowerSchool course section.
+          Populated only for the internal-assessment branch
+          (is_internal_assessment=true and is_replacement=false); null for K-8
+          replacement curriculum and external-assessment rows.
+        config:
+          meta:
+            source_column: int_assessments__course_enrollments.cc_dateenrolled
+      - name: cc_dateleft
+        data_type: date
+        description: >-
+          Date the student left the matched PowerSchool course section.
+          Populated only for the internal-assessment branch
+          (is_internal_assessment=true and is_replacement=false); null for K-8
+          replacement curriculum and external-assessment rows.
+        config:
+          meta:
+            source_column: int_assessments__course_enrollments.cc_dateleft
       - name: _dbt_source_project
         data_type: string
         description: >-
