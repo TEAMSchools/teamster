@@ -95,7 +95,22 @@ for v1 — handled by assigning the broadest applicable scope in
 
 ## Changes required
 
-### 1. dbt: new model `dim_staff_cube_access`
+### 1. dbt: new model `dim_staff_reporting_chain`
+
+Pre-computed transitive closure of the org hierarchy. One row per (manager,
+reportee) pair — every staff member who reports up through a given manager, at
+any depth.
+
+| Column           | Type   | Description                                   |
+| ---------------- | ------ | --------------------------------------------- |
+| `manager_email`  | STRING | Google email of the manager                   |
+| `reportee_email` | STRING | Google email of the direct or indirect report |
+
+Built from the existing staff roster by iterating the reporting hierarchy
+(recursive CTE or iterative self-join). Rebuilt nightly with the rest of the
+mart — role changes propagate automatically.
+
+### 2. dbt: new model `dim_staff_cube_access`
 
 One row per staff email. Built on top of the existing staff roster view (which
 already carries location), extended with manually-curated boolean columns for
@@ -137,9 +152,10 @@ pipeline owner (open question 1), but the shape is:
 
 ### 3. `cube.js`: revise `contextToGroups`
 
-Replace the Google Admin Directory API call with a BigQuery query against
-`dim_staff_cube_access`. Return access-level group names; inject location scope
-key into the security context.
+Replace the Google Admin Directory API call with two BigQuery queries: one
+against `dim_staff_cube_access` for access level and location, one against
+`dim_staff_reporting_chain` for the reporting chain. Both results are stored in
+the cache.
 
 ```javascript
 contextToGroups: async ({ securityContext }) => {
@@ -154,44 +170,54 @@ contextToGroups: async ({ securityContext }) => {
 
   const { BigQuery } = require('@google-cloud/bigquery');
   const bq = new BigQuery();
-  const [rows] = await bq.query({
-    query: `
-      SELECT student_access_level, can_access_pii, can_access_staff_all,
-             location_scope, location_scope_key
-      FROM kipptaf_marts.dim_staff_cube_access
-      WHERE staff_email = @email
-      LIMIT 1
-    `,
-    params: { email },
-  });
+
+  const [[accessRows], [reporteeRows]] = await Promise.all([
+    bq.query({
+      query: `
+        SELECT student_access_level, staff_access_level,
+               student_pii, staff_pii, staff_compensation, staff_benefits,
+               location_scope, location_scope_key
+        FROM kipptaf_marts.dim_staff_cube_access
+        WHERE staff_google_email = @email
+        LIMIT 1
+      `,
+      params: { email },
+    }),
+    bq.query({
+      query: `
+        SELECT reportee_email
+        FROM kipptaf_marts.dim_staff_reporting_chain
+        WHERE manager_email = @email
+      `,
+      params: { email },
+    }),
+  ]);
 
   const groups = [];
+  const row = accessRows[0] ?? null;
 
-  if (rows.length) {
-    const { student_access_level, can_access_pii, can_access_staff_all } = rows[0];
+  if (row) {
+    if (row.student_access_level === 'detail') groups.push('cube-access-student-detail');
+    else if (row.student_access_level === 'summary') groups.push('cube-access-student-summary');
 
-    if (student_access_level === 'detail') {
-      groups.push('cube-access-student-detail');
-    } else if (student_access_level === 'summary') {
-      groups.push('cube-access-student-summary');
-    }
+    if (row.staff_access_level === 'detail') groups.push('cube-access-staff-detail');
+    else if (row.staff_access_level === 'summary') groups.push('cube-access-staff-summary');
 
-    if (can_access_pii) groups.push('cube-access-student-pii');
-    if (can_access_staff_all) groups.push('cube-access-staff-all');
+    if (row.student_pii) groups.push('cube-access-student-pii');
+    if (row.staff_pii) groups.push('cube-access-staff-pii');
+    if (row.staff_compensation) groups.push('cube-access-staff-compensation');
+    if (row.staff_benefits) groups.push('cube-access-staff-benefits');
   }
 
-  // Store location scope fields in cache alongside groups
-  if (rows.length) {
-    const { location_scope, location_scope_key } = rows[0];
-    groupCache.set(email, {
-      groups,
-      location_scope: location_scope ?? null,
-      location_scope_key: location_scope_key ?? null,
-      expiresAt: nextMidnightEastern(),
-    });
-  } else {
-    groupCache.set(email, { groups, expiresAt: nextMidnightEastern() });
-  }
+  const reporteeEmails = reporteeRows.map(r => r.reportee_email);
+
+  groupCache.set(email, {
+    groups,
+    location_scope: row?.location_scope ?? null,
+    location_scope_key: row?.location_scope_key ?? null,
+    reporteeEmails,
+    expiresAt: nextMidnightEastern(),
+  });
 
   return groups;
 },
@@ -277,9 +303,26 @@ Retain:
 - `STUDENT_CUBES` member-stripping (unchanged — still enforced in `queryRewrite`
   as a defense-in-depth layer alongside `access_policy` group gating)
 - Snapshot anchor injection (unchanged)
-- Staff reporting chain segment injection (unchanged)
 - Default-deny empty `IN ()` filter (unchanged behavior, now triggered by null
   cache fields rather than absence of scope group)
+
+Replace the `dim_staff.reporting_chain` segment injection with a direct filter
+using `reporteeEmails` from the cache:
+
+```javascript
+if (touchesStaffCube && !groups.includes("cube-access-staff-all")) {
+  filters.push({
+    member: "dim_staff.staff_google_email",
+    operator: "equals",
+    values: cached.reporteeEmails ?? [], // IN (...) — empty = deny
+  });
+}
+```
+
+`equals` with multiple values compiles to `IN (...)` in SQL. An empty array
+(user has no reportees, or no matching row) compiles to `IN ()` — default deny.
+This supersedes the `dim_staff.reporting_chain` segment approach and unblocks
+the staff cube implementation.
 
 ### 5. Google Workspace group cleanup
 
@@ -297,8 +340,6 @@ Google groups are needed after cutover.
 - Cache TTL (midnight ET) — now covers the BigQuery row only; Google Admin API
   call is eliminated entirely
 - `canSwitchSqlUser` — unchanged
-- Staff reporting chain via `queryRewrite` segment — unchanged until
-  `manager_email_path` is available on `dim_staff`
 
 ---
 
@@ -324,13 +365,15 @@ Google groups are needed after cutover.
 
 ## Implementation sequence
 
-1. Build `dim_staff_cube_access` dbt model (confirm role logic per open question
+1. Build `dim_staff_reporting_chain` dbt model
+2. Build `dim_staff_cube_access` dbt model (confirm role logic per open question
    1 first)
-2. Add `cube-access-student-summary` to summary view `access_policy` blocks —
+3. Add `cube-access-student-summary` to summary view `access_policy` blocks —
    additive, safe to deploy independently
-3. Update `cube.js`: revise `contextToGroups` to query BigQuery; revise
-   `queryRewrite` to read location from cache fields instead of group names
-4. Validate in Dev Mode with test emails at each scope tier (network, region,
-   school, summary-only, no access)
-5. Deploy to production; confirm access spot-checks for each tier
-6. Retire all `cube-*` Google Workspace groups
+4. Update `cube.js`: revise `contextToGroups` to query both BigQuery models;
+   revise `queryRewrite` to read location from cache and inject reporting chain
+   filter from `reporteeEmails`
+5. Validate in Dev Mode with test emails at each scope tier (network, region,
+   school, summary-only, manager with reportees, no access)
+6. Deploy to production; confirm access spot-checks for each tier
+7. Retire all `cube-*` Google Workspace groups
