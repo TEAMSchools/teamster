@@ -2248,7 +2248,22 @@ All UNPIVOT list changes and CTE deletions in one step.
   git commit -m "feat(dbt): Task 3 — flag removals, model updates, and prerequisites"
   ```
 
----
+### 6i: Anchor-row / "in the clear" redesign
+
+Replace the current design in `rpt_tableau__gradebook_audit.sql` — which
+generates one row per possible flag slot per section × quarter with
+`flag_value = 0` for non-fired flags — with a leaner pattern: one anchor row per
+section × quarter plus rows only where flags actually fired. A fully compliant
+teacher has only the anchor row. The anchor row provides the classroom
+denominator for the school-level summary view.
+
+Also required: school-level summary view in Tableau showing the number or
+percentage of classrooms with at least one active flag, with click-through to a
+filtered teacher list.
+
+> ⚠️ **Implementation details TBD.** Anchor row structure (sentinel flag name vs
+> null, what columns it carries) and the updated Tableau health score formula
+> will be designed when this task is reached.
 
 ---
 
@@ -2300,22 +2315,3 @@ development-time references that are no longer current.
   git add -u
   git commit -m "docs: update gradebook audit reference doc for AY 2026-2027; trim skill"
   ```
-
----
-
-## Task 9: Anchor-row / "in the clear" redesign
-
-Replace the current design in `rpt_tableau__gradebook_audit.sql` — which
-generates one row per possible flag slot per section × quarter with
-`flag_value = 0` for non-fired flags — with a leaner pattern: one anchor row per
-section × quarter plus rows only where flags actually fired. A fully compliant
-teacher has only the anchor row. The anchor row provides the classroom
-denominator for the school-level summary view.
-
-Also required: school-level summary view in Tableau showing the number or
-percentage of classrooms with at least one active flag, with click-through to a
-filtered teacher list.
-
-> ⚠️ **Implementation details TBD.** Anchor row structure (sentinel flag name vs
-> null, what columns it carries) and the updated Tableau health score formula
-> will be designed when this task is reached.
