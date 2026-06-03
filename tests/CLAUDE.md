@@ -55,3 +55,24 @@ uv run pytest tests/assets/test_assets_dbt.py                         # requires
   fetched on demand by the root `conftest.py` during test runs. Outside of
   pytest, run commands in the VS Code terminal where the token is available.
   Claude sessions cannot access secrets — this is expected, not a code issue.
+
+## Hook security tests (`tests/hooks/`)
+
+Shell suites for the two `.claude/hooks/` scripts. `bash tests/hooks/run_all.sh`
+runs all of them; each `test_*.sh` covers one rule area; `helpers.sh` provides
+`expect_deny`/`expect_allow`/`expect_deny_exit0`.
+
+- **Validate a candidate patch to a protected hook BEFORE handing it off** (the
+  `.sh` hooks can't be edited in place): write the patched copy to
+  `.claude/scratch/`, then run the suite against it — `helpers.sh` honors `HOOK`
+  / `OUTPUT_HOOK` env overrides:
+  `HOOK=/abs/scratch/check-sensitive-x.sh OUTPUT_HOOK=/abs/scratch/check-output-x.sh bash tests/hooks/run_all.sh`.
+- Reading a `test_*.sh` range that contains secret-shaped fixtures (`op://`, key
+  headers, cloud tokens) trips `check-output.sh` on the Read result. Read clean
+  ranges only, or anchor Edits on a non-fixture line (e.g. `print_summary`).
+- Synthetic secret fixtures: split the literal (`"sk_live""_..."`,
+  `'-----BEGIN ''PRIVATE KEY-----'`) so gitleaks' source scan misses it but bash
+  rebuilds the value at run time — cleaner than a `trunk-ignore`, which trips
+  `trunk/ignore-does-nothing` when gitleaks wouldn't have flagged it anyway.
+- New detection rules: add benign outputs to `test_fp_corpus.sh` and measure
+  against it — it is the false-positive back-out gauge.
