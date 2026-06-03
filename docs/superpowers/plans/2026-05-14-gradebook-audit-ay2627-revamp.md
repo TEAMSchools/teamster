@@ -2806,16 +2806,46 @@ Complete replacement. Changes from the old model:
 
 ---
 
-### 6g: `rpt_tableau__gradebook_audit.sql` — remove empty UNION branch
+### 6g: `rpt_tableau__gradebook_audit.sql` — complete rewrite
+
+Complete replacement. Changes from the old model:
+
+**`teacher_aggs` CTE:**
+
+- Remove: `week_number_quarter as audit_qt_week_number`,
+  `is_quarter_end_date_range`, `week_start_monday as audit_start_date`,
+  `week_end_sunday as audit_end_date`,
+  `school_week_start_date_lead as audit_due_date`, computed `is_current_week`
+  expression
+- Remove: `total_expected_scored_section_quarter_week_category`,
+  `total_expected_section_quarter_week_category` (renamed to `n_expected*` in
+  flags)
+- Rename: `percent_graded_for_quarter_week_class` →
+  `percent_graded_for_assignment`
+- Add: `manager_employee_number`, `manager_name`, `manager_tableau_username`
+
+**`valid_flags` CTE:**
+
+- Remove: `week_number_quarter as audit_qt_week_number`,
+  `category_quarter_average_all_courses`, `quarter_conduct`
+
+**UNION branches:**
+
+- Delete second branch (`cte_grouping = 'student_course_category'`) — that CTE
+  no longer exists in flags; shrinks from 5 to 4 branches
+- All 4 remaining join conditions: remove
+  `t.audit_qt_week_number = v.audit_qt_week_number`
+- All 4 WHERE clauses: remove `t.audit_start_date <= current_date(...)` and
+  `not t.is_current_week` (week dimension gone; grace period handled upstream)
+- Branch 3 WHERE: remove `cte_grouping != 'student_course_category'` (vacuously
+  true now)
 
 **File:**
 `src/dbt/kipptaf/models/extracts/tableau/rpt_tableau__gradebook_audit.sql`
 
-- [ ] **Step 6g.1: Remove the `student_course_category` UNION branch**
+- [ ] **Step 6g.1: Rewrite the model**
 
-  Delete the UNION ALL block with
-  `where t.cte_grouping = 'student_course_category'` including its leading
-  `union all` separator. The report shrinks from 5 to 4 UNION branches.
+  > ⚠️ SQL TBD — review continued next session.
 
 - [ ] **Step 6g.2: Build and verify**
 
