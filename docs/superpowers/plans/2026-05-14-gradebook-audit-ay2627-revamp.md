@@ -1425,7 +1425,7 @@ Complete replacement. Changes from the old model:
   `quarter_start_date/quarter_end_date`
 - Two FYI flags removed: `assign_s_ms_score_not_conversion_chart_options`,
   `assign_s_hs_score_not_conversion_chart_options`
-- Block comments `/* */` replacing `--` per style convention
+- Single-line comments use `--`; multi-line use `/* */`
 
 - [ ] **Step 6c.1: Rewrite the model**
 
@@ -1434,7 +1434,6 @@ Complete replacement. Changes from the old model:
 
   ```sql
   select
-      /* student enrollment fields */
       ce._dbt_source_relation,
       ce.academic_year,
       ce.academic_year_display,
@@ -1473,7 +1472,6 @@ Complete replacement. Changes from the old model:
       ce.`ada`,
       ce.ada_above_or_at_80,
 
-      /* course enrollment fields */
       ce.sectionid,
       ce.course_number,
       ce.date_enrolled,
@@ -1488,7 +1486,6 @@ Complete replacement. Changes from the old model:
       ce.teacher_name,
       ce.is_ap_course,
 
-      /* scaffold fields */
       ce.teacher_tableau_username,
       ce.manager_employee_number,
       ce.manager_name,
@@ -1508,13 +1505,11 @@ Complete replacement. Changes from the old model:
       ce.expectation,
       ce.notes,
 
-      /* grade fields */
       ce.quarter_course_percent_grade,
       ce.quarter_course_grade_points,
       ce.quarter_comment_value,
       ce.category_quarter_percent_grade,
 
-      /* assignment fields */
       a.assignmentid,
       a.assignment_name,
       a.duedate,
@@ -1534,7 +1529,6 @@ Complete replacement. Changes from the old model:
       a.is_expected as assign_expected_to_be_scored,
       a.is_expected_scored as assign_expected_with_score,
 
-      /* flags */
       if(a.is_expected_null = 1, true, false) as assign_null_score,
 
       if(a.score_entered > a.totalpointvalue, true, false) as assign_score_above_max,
