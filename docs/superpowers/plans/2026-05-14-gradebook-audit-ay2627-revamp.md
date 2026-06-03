@@ -365,32 +365,7 @@ of the reference doc for future years.
   Expected: Camden, Newark, Paterson present for 2026. No Miami. Paterson has ES
   and MS only.
 
-- [ ] **Step 1.8: Build full audit pipeline and spot-check**
-
-  Task 1 has no SQL changes — the old week-grain pipeline is intact. Safe to
-  build the full downstream chain here to verify the sheet config is correct:
-
-  ```bash
-  uv run dbt build \
-    --select int_tableau__gradebook_audit_teacher_scaffold+ \
-    --project-dir src/dbt/kipptaf \
-    --defer \
-    --state src/dbt/kipptaf/target/prod
-  ```
-
-  Then spot-check:
-
-  ```sql
-  SELECT DISTINCT region, school_level, audit_flag_name
-  FROM `teamster-332318.dbt_grangel_tableau.rpt_tableau__gradebook_audit`
-  WHERE academic_year = 2026
-  ORDER BY 1, 2, 3
-  ```
-
-  Check: no Miami rows, none of the deprecated flags listed in step 1.1 appear,
-  Paterson ES and MS present.
-
-- [ ] **Step 1.9: Commit**
+- [ ] **Step 1.8: Commit**
 
   ```bash
   git add -u
