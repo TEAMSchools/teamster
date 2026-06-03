@@ -190,3 +190,17 @@ blocked (Rule 2), and trigger tokens placed in the command self-block. To test a
 rule, `Write` a harness into `.claude/scratch/` (Write `content` is exempt from
 scanning) that pipes fixtures into the hook by absolute path, then run
 `bash .claude/scratch/<name>.sh` (the command string carries no triggers).
+
+## Editing the hooks — recurring gotchas
+
+- **The CI `claude-review` bot recurringly reports a phantom unstaged
+  "working-tree revert"** of an edited hook (e.g. ` M check-sensitive.sh`, with
+  the new patterns "missing"). It's a CI-checkout artifact, not the PR — the
+  committed blob is correct. Confirm `git status` is clean and dismiss; do NOT
+  `git checkout` to "fix" a clean tree.
+- **trunk's shellcheck enables `SC2312` (masked-return) on pipelines**:
+  `echo`/`printf` are exempt, but `tr` / `base64` / `gunzip` / `jq` inside a
+  `$(...)` are flagged. Prefer bash parameter expansion (`${v,,}`, `${v//x/y}`,
+  `${v//$'\n'/ }`) over a `tr` subshell, or put a
+  `# trunk-ignore(shellcheck/SC2312)` on the line immediately before the
+  substitution. (Raw `shellcheck` won't show it; trunk's config does.)

@@ -67,6 +67,10 @@ check_output "Read with op:// in content" deny Read "config: op://vault/item/fie
 check_output "Grep with private key match" deny Grep "-----BEGIN RSA PRIVATE KEY-----"
 check_output "Read normal file content" clean Read "def hello():\n    return 42"
 check_output "Grep normal match" clean Grep "import dagster"
+# #31: Glob output is now scanned too (narrow — Glob returns paths, but a path
+# could carry a token-shaped string)
+check_output "Glob result with op:// (gate includes glob)" deny Glob "/repo/op://vault/item/field"
+check_output "Glob normal paths" clean Glob "/src/a.py\n/src/b.py"
 
 # ─── MCP tool output scanning ────────────────────────────────────────────────
 echo ""

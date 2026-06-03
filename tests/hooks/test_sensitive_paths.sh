@@ -47,7 +47,21 @@ expect_allow "normal YAML file" Read file_path "/workspaces/teamster/dbt_project
 expect_allow "glob *.py" Glob pattern "*.py"
 expect_deny ".environment (matches .env regex)" Read file_path "/workspaces/teamster/.environment"
 
-# ─── Pattern 1b: Write/Edit content scanning to Pattern 1b: Content is not scanned by Rule 1 (path_only scoping) ────────────────────────────────
+# #32: dotenv templates are placeholder files, not secrets — allowed
+expect_allow ".env.example template" Read file_path "/workspaces/teamster/.env.example"
+expect_allow ".env.sample template" Read file_path "/workspaces/teamster/.env.sample"
+expect_allow ".env.template template" Read file_path "/workspaces/teamster/.env.template"
+expect_allow ".env.dist template" Read file_path "/workspaces/teamster/.env.dist"
+# Carve-out is for path access (Read/Grep/Glob/MCP). A Bash `cat .env.example`
+# stays blocked by the standalone-`env` word rule (Rule 3c) — intentional
+# asymmetry; read templates with Read, not Bash.
+expect_deny ".env.example via Bash still blocked (Rule 3c env-word)" Bash command "cat .env.example"
+# real dotenv variants still blocked (carve-out is template-suffix-only)
+expect_deny ".env still blocked" Read file_path "/workspaces/teamster/.env"
+expect_deny ".env.local still blocked" Read file_path "/workspaces/teamster/.env.local"
+expect_deny ".env.examplexyz (no boundary, still blocked)" Read file_path "/workspaces/teamster/.env.examplexyz"
+
+# ─── Pattern 1b: Write/Edit content scanning ────────────────────────────────
 echo ""
 echo -e "${YELLOW}Pattern 1b: Write/Edit content scanning${NC}"
 

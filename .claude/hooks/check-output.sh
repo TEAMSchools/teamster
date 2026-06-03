@@ -25,7 +25,7 @@ if [[ -z ${tool_name} ]]; then
 fi
 
 # Scan output from tools that can return sensitive content (names normalized)
-[[ ! ${tool_name} =~ ^(bash|read|grep|notebookedit|webfetch|websearch|mcp__.*)$ ]] && exit 0
+[[ ! ${tool_name} =~ ^(bash|read|grep|glob|notebookedit|webfetch|websearch|mcp__.*)$ ]] && exit 0
 
 # Extract all string values from tool_response (Claude Code's PostToolUse payload
 # key). Fall back to the whole payload when .tool_response is absent so a
