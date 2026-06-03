@@ -794,17 +794,10 @@ Drop it using BigQuery `SELECT * EXCEPT`.
       s.schoolid,
       s.school,
       s.region,
-      coalesce(s.school_level_alt, s.school_level) as school_level,
-      concat(s.region, coalesce(s.school_level_alt, s.school_level)) as region_school_level,
       s.sections_dcid,
       s.sectionid,
       s.section_number,
       s.external_expression,
-      if(
-          coalesce(s.school_level_alt, s.school_level) = 'HS',
-          s.external_expression,
-          s.section_number
-      ) as section_or_period,
       s.course_number,
       s.course_name,
       s.credit_type,
@@ -824,12 +817,22 @@ Drop it using BigQuery `SELECT * EXCEPT`.
       s.quarter_start_date,
       s.quarter_end_date,
       s.is_current_term,
+
+      coalesce(s.school_level_alt, s.school_level) as school_level,
+      concat(s.region, coalesce(s.school_level_alt, s.school_level)) as region_school_level,
+      if(
+          coalesce(s.school_level_alt, s.school_level) = 'HS',
+          s.external_expression,
+          s.section_number
+      ) as section_or_period,
+
       null as assignment_category_code,
       null as assignment_category_name,
       null as assignment_category_term,
       null as expectation,
       null as notes,
       'teacher_scaffold' as scaffold_name,
+
   from sections as s
 
   union all
@@ -842,17 +845,10 @@ Drop it using BigQuery `SELECT * EXCEPT`.
       s.schoolid,
       s.school,
       s.region,
-      coalesce(s.school_level_alt, s.school_level) as school_level,
-      concat(s.region, coalesce(s.school_level_alt, s.school_level)) as region_school_level,
       s.sections_dcid,
       s.sectionid,
       s.section_number,
       s.external_expression,
-      if(
-          coalesce(s.school_level_alt, s.school_level) = 'HS',
-          s.external_expression,
-          s.section_number
-      ) as section_or_period,
       s.course_number,
       s.course_name,
       s.credit_type,
@@ -872,12 +868,23 @@ Drop it using BigQuery `SELECT * EXCEPT`.
       s.quarter_start_date,
       s.quarter_end_date,
       s.is_current_term,
+
       ge.assignment_category_code,
       ge.assignment_category_name,
       ge.assignment_category_term,
       ge.expectation,
       ge.notes,
+
+      coalesce(s.school_level_alt, s.school_level) as school_level,
+      concat(s.region, coalesce(s.school_level_alt, s.school_level)) as region_school_level,
+      if(
+          coalesce(s.school_level_alt, s.school_level) = 'HS',
+          s.external_expression,
+          s.section_number
+      ) as section_or_period,
+
       'teacher_category_scaffold' as scaffold_name,
+
   from sections as s
   inner join
       {{ ref("int_powerschool__u_expectations[_unpivot]") }} as ge
