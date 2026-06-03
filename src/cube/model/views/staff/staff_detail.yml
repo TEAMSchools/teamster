@@ -183,8 +183,19 @@ views:
             - staff_manager_work_email
       - group: cube-access-staff-compensation
         member_level:
-          includes:
-            - annual_wage
-            - hourly_wage
-            - daily_rate
-            - period_rate
+          includes: "*"
+          excludes:
+            - staff_full_name
+            - staff_first_name
+            - staff_last_name
+            - staff_birth_date
+            - staff_work_email
+            - staff_google_email
+            - staff_personal_email
+            - staff_personal_cell_phone
+            - staff_active_directory_username
+            - staff_staff_unique_id
+            - staff_manager_full_name
+            - staff_manager_first_name
+            - staff_manager_last_name
+            - staff_manager_work_email
