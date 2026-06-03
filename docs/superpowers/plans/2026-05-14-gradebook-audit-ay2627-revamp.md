@@ -739,13 +739,16 @@ Drop it using BigQuery `SELECT * EXCEPT`.
               s.teachernumber as teacher_number,
               s.teacher_lastfirst as teacher_name,
               s.school_abbreviation as school,
+
               r.sam_account_name as teacher_tableau_username,
               r.reports_to_employee_number as manager_employee_number,
               r.reports_to_formatted_name as manager_name,
               r.reports_to_sam_account_name as manager_tableau_username,
+
               l.head_of_school_preferred_name_lastfirst as hos,
               l.school_leader_preferred_name_lastfirst as school_leader,
               l.school_leader_sam_account_name as school_leader_tableau_username,
+
               t.yearid,
               t.term as `quarter`,
               t.semester,
@@ -753,19 +756,23 @@ Drop it using BigQuery `SELECT * EXCEPT`.
               t.term_end_date as quarter_end_date,
               t.is_current_term,
               s.school_level,
+
               initcap(
                   regexp_extract(s._dbt_source_relation, r'kipp(\w+)_')
               ) as region,
+
               if(
                   s.school_name = 'KIPP Sumner Elementary'
                   and s.sections_grade_level = 5,
                   'MS',
                   null
               ) as school_level_alt,
+
               cast(s.terms_academic_year as string)
               || '-'
               || right(cast(s.terms_academic_year + 1 as string), 2)
                   as academic_year_display,
+
           from {{ ref("base_powerschool__sections") }} as s
           left join
               {{ ref("int_people__staff_roster") }} as r
@@ -784,7 +791,7 @@ Drop it using BigQuery `SELECT * EXCEPT`.
       )
 
   /* Explicit column listing required for all models under the tableau schema.
-     school_level and region_school_level are derived here using school_level_alt
+     school_level and region_school_level are derived using school_level_alt
      so the if() expression appears only once (in the CTE). */
   select
       s._dbt_source_relation,
@@ -818,19 +825,22 @@ Drop it using BigQuery `SELECT * EXCEPT`.
       s.quarter_end_date,
       s.is_current_term,
 
+      null as assignment_category_code,
+      null as assignment_category_name,
+      null as assignment_category_term,
+      null as expectation,
+      null as notes,
+
       coalesce(s.school_level_alt, s.school_level) as school_level,
+
       concat(s.region, coalesce(s.school_level_alt, s.school_level)) as region_school_level,
+
       if(
           coalesce(s.school_level_alt, s.school_level) = 'HS',
           s.external_expression,
           s.section_number
       ) as section_or_period,
 
-      null as assignment_category_code,
-      null as assignment_category_name,
-      null as assignment_category_term,
-      null as expectation,
-      null as notes,
       'teacher_scaffold' as scaffold_name,
 
   from sections as s
@@ -876,7 +886,9 @@ Drop it using BigQuery `SELECT * EXCEPT`.
       ge.notes,
 
       coalesce(s.school_level_alt, s.school_level) as school_level,
+
       concat(s.region, coalesce(s.school_level_alt, s.school_level)) as region_school_level,
+
       if(
           coalesce(s.school_level_alt, s.school_level) = 'HS',
           s.external_expression,
