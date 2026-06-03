@@ -80,6 +80,16 @@ for dbt Cloud `trigger_job_run` specifically, fall back to
 `git commit --allow-empty && git push` — the GitHub webhook fires CI with the
 correct schema override.)
 
+**Writing about the hooks self-blocks:** an issue/PR/commit/comment body
+containing the tokens the hooks deny gets your own `mcp__*`/Bash write denied.
+Beyond bare `env`: `.env`/`.environment` (Rule 1 `\.env[.a-z]*` is unanchored —
+matches anywhere, even mid-word in prose), bounded dotfile/cert paths,
+`/proc/*/environ`, and secret-shaped fixtures (`op://`, key headers — these also
+trip `check-output.sh` on the _response_). Reword/backtick them, or keep literal
+evidence in `.claude/scratch/` and reference it. For non-Bash tools only Section
+1 path rules scan the body; Bash-only and `path_only` rules do not. (Edit/Write
+`content`/`new_string` is content-exempt, so editing docs is unaffected.)
+
 **BigQuery MCP** — queries must start with SELECT/SHOW/DESCRIBE/WITH; embedded
 DML/DDL (INSERT, UPDATE, DELETE, CREATE, DROP, etc.) is blocked.
 
@@ -168,3 +178,9 @@ Individual suites are in `tests/hooks/test_*.sh`. Test files contain sensitive
 fixture strings (gitleaks ignores are required). The `expect_deny_exit0` helper
 in `helpers.sh` guards against the exit-code and stderr regressions described
 above.
+
+**Ad-hoc rule probing:** a Bash command that names `.claude/hooks/*.sh` is
+blocked (Rule 2), and trigger tokens placed in the command self-block. To test a
+rule, `Write` a harness into `.claude/scratch/` (Write `content` is exempt from
+scanning) that pipes fixtures into the hook by absolute path, then run
+`bash .claude/scratch/<name>.sh` (the command string carries no triggers).
