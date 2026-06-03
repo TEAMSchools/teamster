@@ -170,23 +170,9 @@ module.exports = {
     const cached = email ? groupCache.get(email) : null;
     const groups = cached?.expiresAt > Date.now() ? cached.groups : [];
 
-    if (!groups.includes("cube-access-student-data")) {
-      query = {
-        ...query,
-        dimensions: (query.dimensions ?? []).filter((d) => !isStudentMember(d)),
-        measures: (query.measures ?? []).filter((m) => !isStudentMember(m)),
-      };
-    }
-
-    if (!groups.includes("cube-access-staff-data")) {
-      query = {
-        ...query,
-        dimensions: (query.dimensions ?? []).filter((d) => !isStaffMember(d)),
-        measures: (query.measures ?? []).filter((m) => !isStaffMember(m)),
-      };
-    }
-
-    // Location scope — evaluate in priority order
+    // Location scope — evaluate in priority order.
+    // Default: network (no filter) — security redesign (#4102) will restore
+    // group-based scoping via dim_staff_cube_access.
     const networkGroup = groups.find((g) => g.startsWith("cube-network-"));
     const regionGroup = groups.find((g) =>
       /^cube-region-[a-z0-9][a-z0-9-]*-(?:detail|summary)$/.test(g),
@@ -197,9 +183,7 @@ module.exports = {
 
     let locationFilter = null;
 
-    if (networkGroup) {
-      // No location filter
-    } else if (regionGroup) {
+    if (regionGroup) {
       const region = regionGroup
         .replace(/^cube-region-/, "")
         .replace(/-(?:detail|summary)$/, "");
@@ -217,19 +201,8 @@ module.exports = {
         operator: "equals",
         values: [slug],
       };
-    } else {
-      // Default deny — no scope group
-      return {
-        ...query,
-        filters: [
-          {
-            member: "locations.abbreviation",
-            operator: "equals",
-            values: [],
-          },
-        ],
-      };
     }
+    // networkGroup or no scope group → no location filter (network-wide access)
 
     const filters = [...(query.filters ?? [])];
     if (locationFilter) filters.push(locationFilter);
