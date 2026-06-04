@@ -317,6 +317,14 @@ def test_resolve_academic_year(
     assert ("note" in result) == has_note
 
 
+def test_resolve_academic_year_raises_on_out_of_range(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    server = _load_server(monkeypatch)
+    with pytest.raises(ValueError, match="outside the supported range"):
+        server._resolve_academic_year("SY00")  # resolves to 1999, out of range
+
+
 def test_resolve_academic_year_raises_on_unparseable(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:

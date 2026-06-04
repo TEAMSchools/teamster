@@ -245,7 +245,7 @@ mcp = FastMCP(
         "(string, e.g. '2025-2026'), both sourced from the date dimension.\n\n"
         "REQUIRED: Before building any Cube query that involves a year value "
         "from the user's request, call resolve_academic_year with the raw year "
-        "string the user provided (e.g. 'SY26', '2025-26', '2026'). Use the "
+        "string the user provided (e.g. 'SY26', '2025-26', '25-26', '2026'). Use the "
         "returned academic_year integer for numeric filters/grouping, or "
         "academic_year_label for the label dimension. Emit the interpreted_as "
         "value as a brief inline statement (e.g. 'Interpreting as the 2025-2026 "
@@ -343,6 +343,11 @@ def _resolve_academic_year(raw: str) -> dict[str, int | str]:
 
     if start is None:
         raise ValueError(f"Cannot parse year from {raw!r}")
+
+    if not (2000 <= start <= 2100):
+        raise ValueError(
+            f"Resolved year {start} is outside the supported range for {raw!r}"
+        )
 
     end = start + 1
     label = f"{start}-{end}"
