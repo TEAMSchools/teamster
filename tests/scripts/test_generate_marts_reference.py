@@ -25,6 +25,21 @@ def _load_module() -> ModuleType:
 gen = _load_module()
 
 
+def test_parse_fk_edges_reads_model_level_constraints() -> None:
+    edges = gen.parse_fk_edges(FIXTURE_DIR / "sample_dim_model_level.yml")
+
+    # model-level foreign_key constraints use `expression:` + `columns:`;
+    # primary_key constraints (column- and model-level) are ignored.
+    assert edges == [
+        gen.FkEdge("dim_sample_status", "student_key", "dim_students"),
+        gen.FkEdge(
+            "dim_sample_status",
+            "student_enrollment_key",
+            "dim_student_enrollments",
+        ),
+    ]
+
+
 def test_parse_fk_edges_reads_foreign_key_constraints() -> None:
     edges = gen.parse_fk_edges(FIXTURE_DIR / "sample_fct_reference.yml")
 
