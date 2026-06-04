@@ -9,160 +9,276 @@ models:
       - name: id
         data_type: string
         data_tests:
+          - not_null:
+              config:
+                severity: error
           - unique:
               config:
                 severity: error
+        description:
+          KIPP Aid award record ID (Salesforce); the grain of this model.
       - name: aid_name
         data_type: string
+        description: KIPP Aid record name / auto-number (e.g. KA-016473).
       - name: sf_contact_id
         data_type: string
+        description: Salesforce Contact ID of the student the award is tied to.
       - name: amount
         data_type: numeric
+        description: Award amount in dollars.
       - name: award_date
         data_type: date
+        description: Date the aid award was recorded.
       - name: created_date
         data_type: timestamp
+        description: Timestamp the aid record was created in Salesforce.
       - name: kipp_aid_count
         data_type: numeric
+        description: KIPP Aid count value from the source record.
       - name: notes
         data_type: string
+        description:
+          Raw award note, including any appended MAHER_FUND marker tag.
       - name: notes_clean
         data_type: string
+        description:
+          Award note with the MAHER_FUND tag and surrounding whitespace removed;
+          null when the note is null.
       - name: fund_type
         data_type: string
+        description:
+          Maher funding type parsed from the MAHER_FUND tag (Emergency,
+          Enrichment, or Unclassified); null when untagged.
       - name: doc_type
         data_type: string
+        description:
+          Source PO/expense reference parsed from the MAHER_FUND tag's doc
+          field; null when untagged.
       - name: academic_year
         data_type: int64
+        description:
+          Academic year (July-June) of the award date, expressed as the start
+          year.
       - name: is_maher
         data_type: boolean
+        description:
+          True when the note carries the MAHER_FUND tag identifying a Maher Fund
+          award; false otherwise.
       - name: aid_type
         data_type: string
+        description:
+          KIPP Aid type from the source record (e.g. Other, College Book Stipend
+          Program).
       - name: aid_status
         data_type: string
+        description: KIPP Aid status from the source record (e.g. Approved).
       - name: student_number
         data_type: int64
+        description: PowerSchool student number for the matched student.
       - name: student_name
         data_type: string
+        description: Student name, last-first, from the roster.
       - name: student_first_name
         data_type: string
+        description: Student first name from the roster.
       - name: student_last_name
         data_type: string
+        description: Student last name from the roster.
       - name: ktc_cohort
         data_type: int64
+        description: KIPP Through College cohort (high school graduation year).
       - name: record_type_name
         data_type: string
+        description: Salesforce contact record type name.
       - name: es_graduated
         data_type: string
+        description: Elementary-school graduation indicator from the roster.
       - name: kipp_region_name
         data_type: string
+        description: KIPP region associated with the student.
       - name: counselor_name
         data_type: string
+        description: KTC/advising counselor (contact owner) name.
       - name: ethnicity
         data_type: string
+        description: Student ethnicity from the Salesforce contact.
       - name: gender
         data_type: string
+        description: Student gender from the Salesforce contact.
       - name: current_kipp_student
         data_type: string
+        description:
+          Whether the student is a current KIPP student ('Missing from
+          Salesforce' when unset).
       - name: postsecondary_status
         data_type: string
+        description: Contact postsecondary status from Salesforce.
       - name: high_school_graduated_from
         data_type: string
+        description: High school the student graduated from.
       - name: college_graduated_from
         data_type: string
+        description: College the student graduated from, if any.
       - name: currently_enrolled_school
         data_type: string
+        description:
+          School the student is currently enrolled in, per Salesforce.
       - name: actual_hs_graduation_date
         data_type: date
+        description: Actual high school graduation date.
       - name: actual_college_graduation_date
         data_type: date
+        description: Actual college graduation date, if graduated.
       - name: expected_college_graduation_date
         data_type: date
+        description: Expected college graduation date.
       - name: college_match_display_gpa
         data_type: numeric
+        description: College-match display GPA from Salesforce.
       - name: current_college_cumulative_gpa
         data_type: numeric
+        description: Current cumulative college GPA from Salesforce.
       - name: is_kipp_ms_graduate
         data_type: boolean
+        description: Whether the student is a KIPP middle school graduate.
       - name: is_kipp_hs_graduate
         data_type: boolean
+        description: Whether the student is a KIPP high school graduate.
       - name: ba_pursuing_degree_type
         data_type: string
+        description: Most recent ba (4-year) enrollment pursuing degree type.
       - name: ba_status
         data_type: string
+        description: Most recent ba (4-year) enrollment status.
       - name: ba_start_date
         data_type: date
+        description: Most recent ba (4-year) enrollment start date.
       - name: ba_actual_end_date
         data_type: date
+        description: Most recent ba (4-year) enrollment actual end date.
       - name: ba_anticipated_graduation
         data_type: date
+        description:
+          Most recent ba (4-year) enrollment anticipated graduation date.
       - name: ba_account_type
         data_type: string
+        description:
+          Most recent ba (4-year) enrollment institution account type.
       - name: ba_account_name
         data_type: string
+        description: Most recent ba (4-year) enrollment institution name.
       - name: ba_adjusted_6_year_minority_graduation_rate
         data_type: numeric
+        description:
+          Most recent ba (4-year) enrollment institution adjusted six-year
+          minority graduation rate.
       - name: aa_pursuing_degree_type
         data_type: string
+        description: Most recent aa (2-year) enrollment pursuing degree type.
       - name: aa_status
         data_type: string
+        description: Most recent aa (2-year) enrollment status.
       - name: aa_start_date
         data_type: date
+        description: Most recent aa (2-year) enrollment start date.
       - name: aa_actual_end_date
         data_type: date
+        description: Most recent aa (2-year) enrollment actual end date.
       - name: aa_anticipated_graduation
         data_type: date
+        description:
+          Most recent aa (2-year) enrollment anticipated graduation date.
       - name: aa_account_type
         data_type: string
+        description:
+          Most recent aa (2-year) enrollment institution account type.
       - name: aa_account_name
         data_type: string
+        description: Most recent aa (2-year) enrollment institution name.
       - name: aa_adjusted_6_year_minority_graduation_rate
         data_type: numeric
+        description:
+          Most recent aa (2-year) enrollment institution adjusted six-year
+          minority graduation rate.
       - name: cur_pursuing_degree_type
         data_type: string
+        description: Current enrollment pursuing degree type.
       - name: cur_status
         data_type: string
+        description: Current enrollment status.
       - name: cur_start_date
         data_type: date
+        description: Current enrollment start date.
       - name: cur_actual_end_date
         data_type: date
+        description: Current enrollment actual end date.
       - name: cur_anticipated_graduation
         data_type: date
+        description: Current enrollment anticipated graduation date.
       - name: cur_account_type
         data_type: string
+        description: Current enrollment institution account type.
       - name: cur_account_name
         data_type: string
+        description: Current enrollment institution name.
       - name: cur_adjusted_6_year_minority_graduation_rate
         data_type: numeric
+        description:
+          Current enrollment institution adjusted six-year minority graduation
+          rate.
       - name: cte_pursuing_degree_type
         data_type: string
+        description: Most recent cte/vocational enrollment pursuing degree type.
       - name: cte_status
         data_type: string
+        description: Most recent cte/vocational enrollment status.
       - name: cte_start_date
         data_type: date
+        description: Most recent cte/vocational enrollment start date.
       - name: cte_actual_end_date
         data_type: date
+        description: Most recent cte/vocational enrollment actual end date.
       - name: cte_anticipated_graduation
         data_type: date
+        description:
+          Most recent cte/vocational enrollment anticipated graduation date.
       - name: cte_account_type
         data_type: string
+        description:
+          Most recent cte/vocational enrollment institution account type.
       - name: cte_account_name
         data_type: string
+        description: Most recent cte/vocational enrollment institution name.
       - name: ugrad_pursuing_degree_type
         data_type: string
+        description: Undergraduate (ba or aa) enrollment pursuing degree type.
       - name: ugrad_status
         data_type: string
+        description: Undergraduate (ba or aa) enrollment status.
       - name: ugrad_start_date
         data_type: date
+        description: Undergraduate (ba or aa) enrollment start date.
       - name: ugrad_actual_end_date
         data_type: date
+        description: Undergraduate (ba or aa) enrollment actual end date.
       - name: ugrad_anticipated_graduation
         data_type: date
+        description:
+          Undergraduate (ba or aa) enrollment anticipated graduation date.
       - name: ugrad_account_type
         data_type: string
+        description:
+          Undergraduate (ba or aa) enrollment institution account type.
       - name: ugrad_account_name
         data_type: string
+        description: Undergraduate (ba or aa) enrollment institution name.
       - name: ugrad_adjusted_6_year_minority_graduation_rate
         data_type: numeric
+        description:
+          Undergraduate (ba or aa) enrollment institution adjusted six-year
+          minority graduation rate.
       - name: is_iep
         data_type: boolean
+        description:
+          True when the student has a most-recent IEP date on the Salesforce
+          contact.

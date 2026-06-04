@@ -79,7 +79,7 @@ select
     e.ugrad_account_name,
     e.ugrad_adjusted_6_year_minority_graduation_rate,
 
-    if(r.contact_most_recent_iep_date is not null, true, false) as is_iep,
+    r.contact_most_recent_iep_date is not null as is_iep,
 from {{ ref("stg_kippadb__kipp_aid") }} as a
 left join {{ ref("int_kippadb__roster") }} as r on a.student = r.contact_id
 left join {{ ref("int_kippadb__enrollment_pivot") }} as e on a.student = e.student
