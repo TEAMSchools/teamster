@@ -61,6 +61,8 @@ views:
       - join_path: attendance.dim_dates
         prefix: true
         includes:
+          - academic_year
+          - academic_year_label
           - date_day
           - month_number
           - month_name
@@ -119,7 +121,6 @@ views:
       - join_path: attendance.dim_terms
         prefix: true
         includes:
-          - academic_year
           - semester
           - term_name
           - term_code
@@ -135,6 +136,8 @@ views:
             - is_chronically_absent
         - name: Date
           members:
+            - dim_dates_academic_year
+            - dim_dates_academic_year_label
             - dim_dates_date_day
             - dim_dates_month_number
             - dim_dates_month_name
@@ -142,7 +145,6 @@ views:
             - dim_dates_school_week_start_date
         - name: Term
           members:
-            - dim_terms_academic_year
             - dim_terms_semester
             - dim_terms_term_name
             - dim_terms_term_code
