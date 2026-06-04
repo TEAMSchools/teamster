@@ -57,3 +57,5 @@ models:
         description:
           The note with the MAHER_FUND tag and its surrounding whitespace
           removed; equals the original note when untagged.
+      - name: academic_year
+        data_type: int64

@@ -20,5 +20,8 @@ select
     regexp_extract(notes__c, r'\[MAHER_FUND\|[^\]]*?type=([A-Za-z]+)') as fund_type,
     regexp_extract(notes__c, r'\[MAHER_FUND\|[^\]]*?doc=([^\|\]]*)') as doc_type,
     trim(regexp_replace(notes__c, r'\s*\[MAHER_FUND\|[^\]]*\]\s*', '')) as notes_clean,
+
+    {{ date_to_fiscal_year(date_field="date__c", start_month=7, year_source="start") }}
+    as academic_year,
 from {{ source("kippadb", "kipp_aid") }}
 where not isdeleted
