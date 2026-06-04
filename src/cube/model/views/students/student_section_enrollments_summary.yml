@@ -1,0 +1,116 @@
+views:
+  - name: student_section_enrollments_summary
+    description: >-
+      Aggregated student section enrollment roster. No direct student or staff
+      identifiers. Use for section-level breakdowns: enrollment counts by
+      course, subject area, grade level, or school.
+
+      Fan-out warning: sections with co-teachers produce multiple rows per
+      student. Filter is_lead_teacher = true for deduplicated student counts, or
+      use count_distinct(student_enrollment_key) for aggregates.
+
+    cubes:
+      - join_path: student_section_enrollments
+        includes:
+          - academic_year
+          - is_dropped_section
+          - is_dropped_course
+          - section_identifier
+          - section_period
+          - course_code
+          - course_title
+          - credit_type
+          - academic_subject
+          - course_credits
+          - teacher_role
+          - is_lead_teacher
+
+      - join_path: student_section_enrollments.terms
+        prefix: true
+        includes:
+          - academic_year
+          - semester
+          - term_name
+          - term_code
+          - term_type
+
+      - join_path: student_section_enrollments.student_enrollments.locations
+        prefix: true
+        includes:
+          - location_name
+          - abbreviation
+          - grade_band
+          - campus
+          - city
+
+      - join_path: >-
+          student_section_enrollments.student_enrollments.locations.regions
+        prefix: true
+        includes:
+          - region_name
+          - state
+
+      - join_path: student_section_enrollments.student_enrollments
+        prefix: true
+        includes:
+          - grade_level
+          - graduation_year
+
+      - join_path: student_section_enrollments.student_enrollments.students
+        prefix: true
+        includes:
+          - gender_identity
+          - race
+          - is_gifted
+
+    meta:
+      folders:
+        - name: Section
+          members:
+            - academic_year
+            - is_dropped_section
+            - is_dropped_course
+            - section_identifier
+            - section_period
+        - name: Course
+          members:
+            - course_code
+            - course_title
+            - credit_type
+            - academic_subject
+            - course_credits
+        - name: Teacher
+          members:
+            - teacher_role
+            - is_lead_teacher
+        - name: Term
+          members:
+            - terms_academic_year
+            - terms_semester
+            - terms_term_name
+            - terms_term_code
+            - terms_term_type
+        - name: Location
+          members:
+            - locations_location_name
+            - locations_abbreviation
+            - locations_grade_band
+            - locations_campus
+            - locations_city
+            - regions_region_name
+            - regions_state
+        - name: Student
+          members:
+            - students_gender_identity
+            - students_race
+            - students_is_gifted
+        - name: Enrollment
+          members:
+            - student_enrollments_grade_level
+            - student_enrollments_graduation_year
+
+    access_policy:
+      # No direct student or staff identifiers.
+      - group: summary-access
+        member_level:
+          includes: "*"
