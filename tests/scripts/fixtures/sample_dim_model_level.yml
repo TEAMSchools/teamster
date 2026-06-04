@@ -1,0 +1,17 @@
+models:
+  - name: dim_sample_status
+    constraints:
+      - type: primary_key
+        columns: [sample_status_key]
+      - type: foreign_key
+        columns: [student_key]
+        to: ref('dim_students')
+        to_columns: [student_key]
+      - type: foreign_key
+        columns: [student_enrollment_key]
+        to: ref('dim_student_enrollments')
+        to_columns: [student_enrollment_key]
+    columns:
+      - name: sample_status_key
+        constraints:
+          - type: primary_key
