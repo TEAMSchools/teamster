@@ -18,7 +18,7 @@ cubes:
         FROM kipptaf_marts.dim_student_enrollments
         UNION DISTINCT
         SELECT student_enrollment_key,
-               DATE_ADD(IFNULL(exit_date_key, '9999-12-30'), INTERVAL 1 DAY)
+               DATE_ADD(IFNULL(exit_date_key, '2099-12-31'), INTERVAL 1 DAY)
         FROM kipptaf_marts.dim_student_enrollments
         UNION DISTINCT
         SELECT student_enrollment_key, effective_date_start_key
