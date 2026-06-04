@@ -359,7 +359,7 @@ def _resolve_academic_year(raw: str) -> dict[str, int | str]:
 
 
 @mcp.tool()
-async def resolve_academic_year(ctx: Context, raw: str) -> dict[str, int | str]:
+async def resolve_academic_year(raw: str) -> dict[str, int | str]:
     """Translate any year phrasing to the canonical Cube academic_year integer
     and label.
 
