@@ -16,7 +16,7 @@ select
     type__c as `type`,
 
     /* parsed from the appended [MAHER_FUND|v1|type=...|doc=...] marker tag */
-    coalesce(regexp_contains(notes__c, r'\[MAHER_FUND\|'), false) as is_maher,
+    coalesce(regexp_contains(notes__c, r'\[MAHER_FUND\|[^\]]*\]'), false) as is_maher,
     regexp_extract(notes__c, r'\[MAHER_FUND\|[^\]]*?type=([A-Za-z]+)') as fund_type,
     regexp_extract(notes__c, r'\[MAHER_FUND\|[^\]]*?doc=([^\|\]]*)') as doc_type,
     trim(regexp_replace(notes__c, r'\s*\[MAHER_FUND\|[^\]]*\]\s*', '')) as notes_clean,
