@@ -12,6 +12,13 @@ on GKE Autopilot.
 
 ## Helm
 
+- **`.k8s/setup.sh` is the prerequisite bootstrap for
+  `.k8s/dagster/install.sh`** — it installs the
+  helm/kubectl/gke-gcloud-auth-plugin toolchain to `~/.local/bin` (no root;
+  checksum-verified), runs `gcloud auth login`, fetches cluster credentials, and
+  creates the `dagster-cloud` namespace. install.sh is deploy-only;
+  `helm: command not found` or `cluster unreachable` means setup.sh wasn't run —
+  don't add bootstrap logic to install.sh.
 - `values.yaml` is auto-downloaded from Helm — never edit. All customizations go
   in `values-override.yaml`.
 - **Helm deploy is manual** — editing `values-override.yaml` is fine, but

@@ -125,6 +125,10 @@ avoid a join, the chain is probably already there — use it instead.
   multiple FKs to the same target coexist (e.g. `submitter_staff_key` +
   `assignee_staff_key` on `fct_support_tickets`). Never expose the raw natural
   key alongside its surrogate (R9).
+- **FK constraint form**: declare foreign keys with the ref-aware
+  `to: ref(...)` + `to_columns:` form (dbt 1.9+) at the **column** level for
+  single-column FKs — not model-level `expression: ref(...)`, which is free text
+  that doesn't capture the ref dependency.
 - **Date FK** (`_date_key`): raw DATE value matching `dim_dates.date_key`,
   **not** a hash. Never also expose the same date as a degenerate `_date` column
   next to its `_date_key` (R9).
