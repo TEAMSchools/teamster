@@ -23,6 +23,7 @@ scripts: `bash scripts/<name>.sh`.
 | `extract_edfi_schema.py`                            | Extract Ed-Fi attribute names from OpenAPI spec                                                                                                                                                   |
 | `extract_pdf_dictionary.py`                         | Extract column descriptions from source-system PDFs                                                                                                                                               |
 | `gen-automations-doc.py`                            | Regenerate `docs/reference/automations.md`                                                                                                                                                        |
+| `generate_marts_reference.py`                       | Regenerate `docs/reference/marts-data-models.md` from marts FK constraints (parses marts properties YAML; no dbt build or warehouse access needed)                                                |
 | `gen_column_naming_audit_inventory.py`              | Generate mart column naming audit inventory CSV                                                                                                                                                   |
 | `propagate_mart_descriptions.py`                    | Propagate staging descriptions into downstream YAML                                                                                                                                               |
 | `init_sftp_integration.py`                          | Inspect SFTP servers and scaffold new integrations                                                                                                                                                |
@@ -57,6 +58,12 @@ uv run dbt run-operation stage_external_sources \
 - `dbt-manifest.py` — requires `dbt parse` to have run first (reads
   `target/manifest.json`)
 - `gen-automations-doc.py` — requires dbt manifests to be parsed
+- `generate_marts_reference.py` — no prerequisites; run after adding/removing a
+  fact table or changing FK constraints:
+  `uv run scripts/generate_marts_reference.py`. Like `automations.md`, commit
+  the output in its prettier-formatted form — the generator emits compact tables
+  that the pre-commit formatter pads, so the working tree shows table-padding
+  churn between run and commit; that is expected.
 
 ## Caveats
 

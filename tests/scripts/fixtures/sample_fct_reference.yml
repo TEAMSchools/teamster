@@ -1,0 +1,23 @@
+models:
+  - name: fct_sample
+    columns:
+      - name: sample_key
+        constraints:
+          - type: primary_key
+      - name: student_enrollment_key
+        constraints:
+          - type: foreign_key
+            to: ref('dim_student_enrollments')
+        data_tests:
+          - relationships:
+              arguments:
+                to: ref('dim_student_enrollments')
+                field: student_enrollment_key
+      - name: created_date_key
+        constraints:
+          - type: foreign_key
+            to: ref('dim_dates')
+      - name: solved_date_key
+        constraints:
+          - type: foreign_key
+            to: ref('dim_dates')
