@@ -25,6 +25,7 @@ from __future__ import annotations
 import argparse
 import dataclasses
 import re
+import sys
 from collections import defaultdict, deque
 from collections.abc import Iterable, Mapping
 from pathlib import Path
@@ -59,8 +60,26 @@ def _constraint_target(constraint: Mapping[str, object]) -> str | None:
     column-level and model-level foreign_key constraints.  Returns ``None`` when
     the field is absent or does not contain a ``ref('...')`` call.
     """
-    raw = constraint.get("to") or ""
+    raw = constraint.get("to", "")
     return _extract_target(str(raw))
+
+
+def _warn_if_legacy_expression(constraint: Mapping[str, object], source: str) -> None:
+    """Warn when a foreign_key constraint uses the legacy ``expression:`` form.
+
+    The generator reads only the ref-aware ``to:`` field, so a constraint written
+    with the legacy free-text ``expression: "ref('...')"`` form (instead of
+    ``to: ref('...')``) is silently skipped — dropping the FK from the diagram.
+    Surface it at generation time so the regression is caught, not lost.
+    """
+    expression = constraint.get("expression")
+    if expression is not None:
+        print(
+            f"WARNING: {source}: foreign_key constraint uses legacy "
+            f"'expression: {expression!r}' instead of 'to: ref(...)' — FK "
+            "skipped. Migrate it to the to: form.",
+            file=sys.stderr,
+        )
 
 
 def parse_fk_edges(yaml_path: Path) -> list[FkEdge]:
@@ -88,8 +107,10 @@ def parse_fk_edges(yaml_path: Path) -> list[FkEdge]:
                 if constraint.get("type") != "foreign_key":
                     continue
                 target = _constraint_target(constraint)
-                if target is not None:
-                    edges.append(FkEdge(source, column["name"], target))
+                if target is None:
+                    _warn_if_legacy_expression(constraint, source)
+                    continue
+                edges.append(FkEdge(source, column["name"], target))
 
         # Model-level FK constraints.
         for constraint in model.get("constraints", []):
@@ -97,6 +118,7 @@ def parse_fk_edges(yaml_path: Path) -> list[FkEdge]:
                 continue
             target = _constraint_target(constraint)
             if target is None:
+                _warn_if_legacy_expression(constraint, source)
                 continue
             for fk_col in constraint.get("columns", []):
                 edges.append(FkEdge(source, str(fk_col), target))
@@ -233,7 +255,7 @@ def main(argv: list[str] | None = None) -> int:
     adjacency = build_adjacency(edges)
     facts = collect_fact_names(args.marts_dir)
     page = render_page(adjacency, facts)
-    args.output.write_text(page)
+    args.output.write_text(page, encoding="utf-8")
     print(f"wrote {len(facts)} fact sections to {args.output}")
     return 0
 

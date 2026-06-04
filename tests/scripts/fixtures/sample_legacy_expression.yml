@@ -1,0 +1,8 @@
+models:
+  - name: dim_legacy_sample
+    columns:
+      - name: student_key
+        constraints:
+          - type: foreign_key
+            expression: ref('dim_students')
+            to_columns: [student_key]

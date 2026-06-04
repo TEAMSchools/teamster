@@ -52,6 +52,17 @@ def test_parse_fk_edges_reads_foreign_key_constraints() -> None:
     ]
 
 
+def test_parse_fk_edges_warns_and_skips_legacy_expression(capsys) -> None:
+    # An FK constraint using the legacy free-text expression: form (no to:) is
+    # skipped, and a warning is emitted so the dropped FK is not silent.
+    edges = gen.parse_fk_edges(FIXTURE_DIR / "sample_legacy_expression.yml")
+
+    assert edges == []
+    stderr = capsys.readouterr().err
+    assert "legacy" in stderr
+    assert "dim_legacy_sample" in stderr
+
+
 def _sample_edges() -> list:
     return [
         gen.FkEdge("fct_x", "enrollment_key", "dim_enrollments"),
