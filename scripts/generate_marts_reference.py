@@ -232,7 +232,7 @@ def render_fact_section(adjacency: Mapping[str, list[FkEdge]], fact: str) -> str
             "",
             render_erdiagram(sub, fact),
             "",
-            "**Foreign keys**",
+            "### Foreign keys",
             "",
             render_fk_table(adjacency, fact),
         ]
