@@ -22,19 +22,27 @@ with
             and sc.cc_source_project is not null
     ),
 
+    -- earliest date the student actually sat any member of this canonical
+    -- assessment; null when rostered but with no recorded sitting
+    earliest_taken as (
+        select
+            *,
+            min(date_taken) over (
+                partition by
+                    powerschool_student_number,
+                    canonical_assessment_id,
+                    _dbt_source_project
+            ) as earliest_date_taken,
+        from candidates
+    ),
+
+    -- anchor = the sitting date when present, else the scheduled administration
+    -- date; the date each candidate enrollment window is tested against
     anchored as (
         select
             *,
-            coalesce(
-                min(date_taken) over (
-                    partition by
-                        powerschool_student_number,
-                        canonical_assessment_id,
-                        _dbt_source_project
-                ),
-                canonical_administered_date
-            ) as anchor_date,
-        from candidates
+            coalesce(earliest_date_taken, canonical_administered_date) as anchor_date,
+        from earliest_taken
     ),
 
     -- trunk-ignore(sqlfluff/ST03): referenced via dbt_utils.deduplicate below
