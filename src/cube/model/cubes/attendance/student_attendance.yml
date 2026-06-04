@@ -31,6 +31,16 @@ cubes:
         sql: "{terms.term_key} = {CUBE}.term_key"
         relationship: many_to_one
 
+      # Joins to section enrollment roster for teacher and manager dimensions.
+      # one_to_many: one attendance row fans to N rows when a student has N
+      # teachers (co-taught sections). Fan-out only materialises when a teacher
+      # dimension is included in the query.
+      - name: student_section_enrollments
+        sql: >
+          {student_section_enrollments.student_enrollment_key} =
+          {student_enrollments.student_enrollment_key}
+        relationship: one_to_many
+
     dimensions:
       - name: student_attendance_daily_key
         description: >-

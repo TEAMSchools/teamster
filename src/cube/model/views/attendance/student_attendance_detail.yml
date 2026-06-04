@@ -147,6 +147,40 @@ views:
           - is_in_session
           - is_membership_day
 
+      # Teacher dimensions — requires student_section_enrollments cube and
+      # staff-core plan. Fan-out: one attendance row per teacher in co-taught
+      # sections. Filter is_lead_teacher = true for one row per day.
+      - join_path: student_attendance.student_section_enrollments
+        prefix: true
+        includes:
+          - course_code
+          - course_title
+          - academic_subject
+          - section_identifier
+          - section_period
+          - teacher_role
+          - is_lead_teacher
+          - is_dropped_section
+
+      - join_path: student_attendance.student_section_enrollments.staff
+        prefix: true
+        includes:
+          - staff_key
+          - full_name
+          - first_name
+          - last_name
+          - work_email
+
+      - join_path: >-
+          student_attendance.student_section_enrollments.staff_reporting_relationships.staff_manager
+        prefix: true
+        includes:
+          - staff_key
+          - full_name
+          - first_name
+          - last_name
+          - work_email
+
     meta:
       folders:
         - name: Attendance
@@ -224,6 +258,26 @@ views:
           members:
             - school_calendars_is_in_session
             - school_calendars_is_membership_day
+        - name: Teacher
+          members:
+            - student_section_enrollments_course_code
+            - student_section_enrollments_course_title
+            - student_section_enrollments_academic_subject
+            - student_section_enrollments_section_identifier
+            - student_section_enrollments_section_period
+            - student_section_enrollments_teacher_role
+            - student_section_enrollments_is_lead_teacher
+            - student_section_enrollments_is_dropped_section
+            - student_section_enrollments_staff_staff_key
+            - student_section_enrollments_staff_full_name
+            - student_section_enrollments_staff_first_name
+            - student_section_enrollments_staff_last_name
+        - name: Manager
+          members:
+            - student_section_enrollments_staff_manager_staff_key
+            - student_section_enrollments_staff_manager_full_name
+            - student_section_enrollments_staff_manager_first_name
+            - student_section_enrollments_staff_manager_last_name
         - name: Filter
           members:
             - is_latest_record
@@ -241,6 +295,25 @@ views:
             - students_state_student_identifier
             - students_salesforce_contact_id
             - students_district_student_identifier
+            - student_section_enrollments_staff_full_name
+            - student_section_enrollments_staff_first_name
+            - student_section_enrollments_staff_last_name
+            - student_section_enrollments_staff_work_email
+            - student_section_enrollments_staff_manager_full_name
+            - student_section_enrollments_staff_manager_first_name
+            - student_section_enrollments_staff_manager_last_name
+            - student_section_enrollments_staff_manager_work_email
       - group: cube-access-student-pii
         member_level:
           includes: "*"
+      - group: cube-access-staff-pii
+        member_level:
+          includes:
+            - student_section_enrollments_staff_full_name
+            - student_section_enrollments_staff_first_name
+            - student_section_enrollments_staff_last_name
+            - student_section_enrollments_staff_work_email
+            - student_section_enrollments_staff_manager_full_name
+            - student_section_enrollments_staff_manager_first_name
+            - student_section_enrollments_staff_manager_last_name
+            - student_section_enrollments_staff_manager_work_email

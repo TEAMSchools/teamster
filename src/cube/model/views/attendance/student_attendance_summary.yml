@@ -113,6 +113,28 @@ views:
           - term_code
           - term_type
 
+      # Teacher dimensions — no PII (names excluded). staff_key is a surrogate,
+      # not a direct identifier. Allows grouping by teacher or manager without
+      # exposing personal information.
+      - join_path: student_attendance.student_section_enrollments
+        prefix: true
+        includes:
+          - course_title
+          - academic_subject
+          - teacher_role
+          - is_lead_teacher
+
+      - join_path: student_attendance.student_section_enrollments.staff
+        prefix: true
+        includes:
+          - staff_key
+
+      - join_path: >-
+          student_attendance.student_section_enrollments.staff_reporting_relationships.staff_manager
+        prefix: true
+        includes:
+          - staff_key
+
     meta:
       folders:
         - name: Attendance
@@ -164,6 +186,16 @@ views:
             - student_enrollments_grade_level
             - student_enrollments_graduation_year
             - student_enrollments_is_retained_year
+        - name: Teacher
+          members:
+            - student_section_enrollments_course_title
+            - student_section_enrollments_academic_subject
+            - student_section_enrollments_teacher_role
+            - student_section_enrollments_is_lead_teacher
+            - student_section_enrollments_staff_staff_key
+        - name: Manager
+          members:
+            - student_section_enrollments_staff_manager_staff_key
         - name: Filter
           members:
             - is_latest_record
