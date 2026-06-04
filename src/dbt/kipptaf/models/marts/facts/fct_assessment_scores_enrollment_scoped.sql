@@ -200,6 +200,9 @@ select
     ia.proficiency_level,
     ia.is_mastery,
 from internal_assessments as ia
+-- ia.assessment_id is canonical-grain: int_assessments__response_rollup aliases
+-- canonical_assessment_id as assessment_id, so it matches the resolver's
+-- canonical_assessment_id join key.
 left join
     {{ ref("int_assessments__resolved_section_enrollments") }} as sr
     on ia.student_number = sr.powerschool_student_number

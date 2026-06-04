@@ -18,14 +18,43 @@ models:
     columns:
       - name: powerschool_student_number
         data_type: int64
+        description: >-
+          Student number for the scored student. Pass-through from
+          int_assessments__scaffold.
+        config:
+          meta:
+            source_column: int_assessments__scaffold.powerschool_student_number
       - name: canonical_assessment_id
         data_type: int64
+        description: >-
+          Canonical assessment identifier (groups member assessments into one
+          logical assessment). Pass-through from int_assessments__scaffold.
+        config:
+          meta:
+            source_column: int_assessments__scaffold.canonical_assessment_id
       - name: cc_dcid
         data_type: int64
+        description: >-
+          PowerSchool course-enrollment record id for the resolved section.
+        config:
+          meta:
+            source_column: int_assessments__scaffold.cc_dcid
       - name: _dbt_source_project
         data_type: string
+        description: >-
+          Region-derived dbt source project (kipp{region}) of the assessment;
+          the join key the fact uses to attach this section enrollment.
+        config:
+          meta:
+            source_column: int_assessments__scaffold._dbt_source_project
       - name: cc_source_project
         data_type: string
+        description: >-
+          dbt source project of the matched course enrollment; hashed with
+          cc_dcid into student_section_enrollment_key.
+        config:
+          meta:
+            source_column: int_assessments__scaffold.cc_source_project
       - name: student_section_enrollment_key
         data_type: string
         description: >-
