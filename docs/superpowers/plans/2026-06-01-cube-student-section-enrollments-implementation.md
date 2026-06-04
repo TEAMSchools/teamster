@@ -151,6 +151,24 @@ cubes:
         sql: "{staff.staff_key} = {CUBE}.teacher_staff_key"
         relationship: many_to_one
 
+      # Point-in-time manager resolver — mirrors the staff_work_history pattern.
+      # Overlaps teacher assignment effective dates against reporting relationship
+      # dates to find the manager active when the teacher was assigned.
+      - name: staff_reporting_relationships
+        sql: >
+          {staff_reporting_relationships.staff_key} = {CUBE}.teacher_staff_key
+          AND CAST({CUBE}.teacher_effective_start_date AS TIMESTAMP)
+            <= {staff_reporting_relationships.effective_end_date} AND
+          CAST({CUBE}.teacher_effective_end_date AS TIMESTAMP)
+            >= {staff_reporting_relationships.effective_start_date}
+        relationship: many_to_one
+
+      - name: staff_manager
+        sql: >
+          {staff_manager.staff_key} =
+          {staff_reporting_relationships.manager_staff_key}
+        relationship: many_to_one
+
     dimensions:
       - name: student_section_enrollment_key
         sql: student_section_enrollment_key
@@ -301,7 +319,7 @@ Expected output:
 ```text
 cube name: student_section_enrollments
 public: False
-joins: ['student_enrollments', 'terms', 'staff']
+joins: ['student_enrollments', 'terms', 'staff', 'staff_reporting_relationships', 'staff_manager']
 dimension count: 17
 dimensions: ['academic_year', 'entry_date', 'exit_date', 'is_dropped_section', 'is_dropped_course', 'section_identifier', 'section_period', 'section_room', 'course_code', 'course_title', 'credit_type', 'academic_subject', 'course_credits', 'teacher_staff_key', 'teacher_role', 'is_lead_teacher', 'teacher_effective_start_date', 'teacher_effective_end_date']
 ```
@@ -744,6 +762,249 @@ Expected: all PASS.
 ```bash
 git add src/cube/model/views/students/student_section_enrollments_summary.yml
 git commit -m "feat(cube): add student_section_enrollments_summary view"
+```
+
+---
+
+## Task 5: Embed teacher and manager dimensions into attendance views
+
+Add teacher, teacher manager, and course/section context to
+`student_attendance_detail` and `student_attendance_summary` by joining through
+the new `student_section_enrollments` cube. Also adds the required join from
+`student_attendance` cube to `student_section_enrollments`.
+
+**Prerequisites:** Task 2 (`student_section_enrollments` cube) must be complete.
+The `staff_reporting_relationships` and `staff_manager` cubes must exist (they
+are already in `src/cube/model/cubes/staff/`).
+
+**Fan-out note:** Joining attendance → student section enrollments produces
+multiple rows per attendance day for students in co-taught sections (one per
+teacher). This is expected — queries that group by teacher naturally scope to
+one teacher's students. Queries that do not use teacher dimensions do not
+traverse this join, so there is no fan-out cost for existing attendance queries.
+
+**Files:**
+
+- Modify: `src/cube/model/cubes/attendance/student_attendance.yml`
+- Modify: `src/cube/model/views/attendance/student_attendance_detail.yml`
+- Modify: `src/cube/model/views/attendance/student_attendance_summary.yml`
+
+- [ ] **Step 1: Add `student_section_enrollments` join to `student_attendance`
+      cube**
+
+In `src/cube/model/cubes/attendance/student_attendance.yml`, add the following
+join after the existing `terms` join:
+
+```yaml
+# Joins to section enrollment roster for teacher and manager dimensions.
+# one_to_many: one attendance row fans to N rows when a student has N
+# teachers (co-taught sections). Fan-out only materialises when a teacher
+# dimension is included in the query.
+- name: student_section_enrollments
+  sql: >
+    {student_section_enrollments.student_enrollment_key} =
+    {student_enrollments.student_enrollment_key}
+  relationship: one_to_many
+```
+
+- [ ] **Step 2: Verify the cube YAML parses**
+
+```bash
+uv run python -c "
+import yaml
+from pathlib import Path
+data = yaml.safe_load(
+    Path('src/cube/model/cubes/attendance/student_attendance.yml').read_text()
+)
+cube = data['cubes'][0]
+joins = [j['name'] for j in cube['joins']]
+print('joins:', joins)
+assert 'student_section_enrollments' in joins
+print('OK')
+"
+```
+
+- [ ] **Step 3: Add teacher/manager join paths to `student_attendance_detail`**
+
+In `src/cube/model/views/attendance/student_attendance_detail.yml`, append the
+following join paths after the existing `student_attendance.school_calendars`
+block:
+
+```yaml
+# Teacher dimensions — requires student_section_enrollments cube (Task 2)
+# and staff-core plan. Fan-out: one attendance row per teacher in
+# co-taught sections. Filter is_lead_teacher = true for one row per day.
+- join_path: student_attendance.student_section_enrollments
+  prefix: true
+  includes:
+    - course_code
+    - course_title
+    - academic_subject
+    - section_identifier
+    - section_period
+    - teacher_role
+    - is_lead_teacher
+    - is_dropped_section
+
+- join_path: student_attendance.student_section_enrollments.staff
+  prefix: true
+  includes:
+    - staff_key
+    - full_name
+    - first_name
+    - last_name
+    - work_email
+
+- join_path: >-
+    student_attendance.student_section_enrollments.staff_reporting_relationships.staff_manager
+  prefix: true
+  includes:
+    - staff_key
+    - full_name
+    - first_name
+    - last_name
+    - work_email
+```
+
+Also add a `Teacher` folder and a `Manager` folder to the `meta.folders` block:
+
+```yaml
+- name: Teacher
+  members:
+    - student_section_enrollments_course_code
+    - student_section_enrollments_course_title
+    - student_section_enrollments_academic_subject
+    - student_section_enrollments_section_identifier
+    - student_section_enrollments_section_period
+    - student_section_enrollments_teacher_role
+    - student_section_enrollments_is_lead_teacher
+    - student_section_enrollments_is_dropped_section
+    - student_section_enrollments_staff_staff_key
+    - student_section_enrollments_staff_full_name
+    - student_section_enrollments_staff_first_name
+    - student_section_enrollments_staff_last_name
+- name: Manager
+  members:
+    - student_section_enrollments_staff_manager_staff_key
+    - student_section_enrollments_staff_manager_full_name
+    - student_section_enrollments_staff_manager_first_name
+    - student_section_enrollments_staff_manager_last_name
+```
+
+And update the `access_policy` to add teacher/manager PII to the correct gates.
+The detail view uses additive includes — extend the two existing blocks:
+
+- In the `detail-access` block, add to `excludes:`:
+  - `student_section_enrollments_staff_full_name`
+  - `student_section_enrollments_staff_first_name`
+  - `student_section_enrollments_staff_last_name`
+  - `student_section_enrollments_staff_work_email`
+  - `student_section_enrollments_staff_manager_full_name`
+  - `student_section_enrollments_staff_manager_first_name`
+  - `student_section_enrollments_staff_manager_last_name`
+  - `student_section_enrollments_staff_manager_work_email`
+
+- In the `cube-access-student-pii` block, add to `includes:` (or keep
+  `includes: "*"` which already covers all fields that aren't in the
+  `detail-access` excludes list — verify the current shape before editing).
+
+- Add a new `cube-access-staff-pii` block:
+
+```yaml
+- group: cube-access-staff-pii
+  member_level:
+    includes:
+      - student_section_enrollments_staff_full_name
+      - student_section_enrollments_staff_first_name
+      - student_section_enrollments_staff_last_name
+      - student_section_enrollments_staff_work_email
+      - student_section_enrollments_staff_manager_full_name
+      - student_section_enrollments_staff_manager_first_name
+      - student_section_enrollments_staff_manager_last_name
+      - student_section_enrollments_staff_manager_work_email
+```
+
+- [ ] **Step 4: Add teacher/manager join paths to `student_attendance_summary`**
+
+In `src/cube/model/views/attendance/student_attendance_summary.yml`, append the
+following join paths after the existing `student_attendance.terms` block:
+
+```yaml
+# Teacher dimensions — no PII (names excluded). staff_key is a surrogate,
+# not a direct identifier. Allows grouping by teacher or manager without
+# exposing personal information.
+- join_path: student_attendance.student_section_enrollments
+  prefix: true
+  includes:
+    - course_title
+    - academic_subject
+    - teacher_role
+    - is_lead_teacher
+
+- join_path: student_attendance.student_section_enrollments.staff
+  prefix: true
+  includes:
+    - staff_key
+
+- join_path: >-
+    student_attendance.student_section_enrollments.staff_reporting_relationships.staff_manager
+  prefix: true
+  includes:
+    - staff_key
+```
+
+Also add a `Teacher` folder and a `Manager` folder to the `meta.folders` block:
+
+```yaml
+- name: Teacher
+  members:
+    - student_section_enrollments_course_title
+    - student_section_enrollments_academic_subject
+    - student_section_enrollments_teacher_role
+    - student_section_enrollments_is_lead_teacher
+    - student_section_enrollments_staff_staff_key
+- name: Manager
+  members:
+    - student_section_enrollments_staff_manager_staff_key
+```
+
+The summary view has a single `summary-access` block with `includes: "*"` — no
+changes needed to `access_policy` since no PII fields are added.
+
+- [ ] **Step 5: Verify both view YAMLs parse**
+
+```bash
+uv run python -c "
+import yaml
+from pathlib import Path
+for name in ['student_attendance_detail', 'student_attendance_summary']:
+    data = yaml.safe_load(
+        Path(f'src/cube/model/views/attendance/{name}.yml').read_text()
+    )
+    view = data['views'][0]
+    paths = [c['join_path'] for c in view['cubes']]
+    teacher_paths = [p for p in paths if 'section_enrollment' in str(p)]
+    print(f'{name}: teacher join paths = {teacher_paths}')
+    assert len(teacher_paths) >= 3, f'expected 3 teacher join paths in {name}'
+print('OK')
+"
+```
+
+- [ ] **Step 6: Run full cube test suite**
+
+```bash
+uv run pytest tests/cube/ -v
+```
+
+Expected: all PASS.
+
+- [ ] **Step 7: Commit**
+
+```bash
+git add src/cube/model/cubes/attendance/student_attendance.yml
+git add src/cube/model/views/attendance/student_attendance_detail.yml
+git add src/cube/model/views/attendance/student_attendance_summary.yml
+git commit -m "feat(cube): add teacher and manager dimensions to attendance views via student_section_enrollments"
 ```
 
 ---
