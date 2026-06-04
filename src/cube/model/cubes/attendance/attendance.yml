@@ -215,9 +215,10 @@ cubes:
           completed academic years this is the last instructional day on record;
           for the current year it is the most recent day with data.
 
-          Use as a filter (is_latest_record = true) with dim_terms.academic_year
-          to get year-end CA status for year-over-year comparisons — one
-          terminal snapshot per enrollment, no date filter required.
+          Use as a filter (is_latest_record = true) with dim_dates.academic_year
+          or dim_dates.academic_year_label to get year-end CA status for
+          year-over-year comparisons — one terminal snapshot per enrollment, no
+          date filter required.
 
           Do not combine with a date_key filter — use exactly one or the other.
 
