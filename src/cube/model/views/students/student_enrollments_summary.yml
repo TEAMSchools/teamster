@@ -1,0 +1,93 @@
+views:
+  - name: student_enrollments_summary
+    description: >-
+      Aggregated student enrollment for headcount and demographic breakdowns. No
+      direct student identifiers — demographic dimensions (race,
+      gender_identity, is_gifted) and status dimensions (ELL, IEP, meal) are
+      aggregate breakdowns only.
+
+      Always use count_students (count_distinct on student_enrollment_key) for
+      enrollment headcounts. Filter to a specific academic_year for per-year
+      counts — omitting it sums across all years and produces enrollment-years,
+      not student count.
+
+    cubes:
+      - join_path: dim_student_enrollments
+        includes:
+          - count_students
+          - academic_year
+          - grade_level
+          - graduation_year
+          - is_retained_year
+          - is_ell
+          - is_iep
+          - iep_classification
+          - special_education_code
+          - special_education_name
+          - special_education_placement
+          - is_meal_eligible
+          - meal_eligibility
+
+      - join_path: dim_student_enrollments.dim_locations
+        prefix: true
+        includes:
+          - location_name
+          - abbreviation
+          - grade_band
+          - campus
+          - city
+
+      - join_path: dim_student_enrollments.dim_locations.dim_regions
+        prefix: true
+        includes:
+          - region_name
+          - state
+
+      - join_path: dim_student_enrollments.dim_students
+        prefix: true
+        includes:
+          - gender_identity
+          - race
+          - is_gifted
+          - enrollment_status
+
+    meta:
+      folders:
+        - name: Enrollment
+          members:
+            - academic_year
+            - grade_level
+            - graduation_year
+            - is_retained_year
+        - name: Status
+          members:
+            - is_ell
+            - is_iep
+            - iep_classification
+            - special_education_code
+            - special_education_name
+            - special_education_placement
+            - is_meal_eligible
+            - meal_eligibility
+        - name: Location
+          members:
+            - dim_locations_location_name
+            - dim_locations_abbreviation
+            - dim_locations_grade_band
+            - dim_locations_campus
+            - dim_locations_city
+            - dim_regions_region_name
+            - dim_regions_state
+        - name: Student
+          members:
+            - dim_students_gender_identity
+            - dim_students_race
+            - dim_students_is_gifted
+            - dim_students_enrollment_status
+
+    access_policy:
+      # No direct student identifiers — demographic and status dimensions are
+      # aggregate breakdowns only.
+      - group: cube-access-student-data
+        member_level:
+          includes: "*"

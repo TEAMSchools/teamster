@@ -1,0 +1,118 @@
+views:
+  - name: student_enrollments_detail
+    description: >-
+      Row-level student enrollment with ELL, IEP, and meal eligibility status
+      inlined. One row per non-overlapping status interval within an enrollment
+      stint — computed via boundary-union of ELL, IEP, and meal status change
+      dates. Every enrollment date falls in exactly one interval.
+
+      For point-in-time queries: filter dates.date_day to any calendar date
+      within an enrollment to get the student's complete context (grade, school,
+      ELL/IEP/meal status) on that date. Always use count_students
+      (count_distinct on student_enrollment_key) for enrollment headcounts —
+      never bare count(*).
+
+      Contains direct student identifiers — see access_policy for PII gating.
+
+    cubes:
+      - join_path: dim_student_enrollments
+        includes:
+          - count_students
+          - student_enrollment_key
+          - academic_year
+          - grade_level
+          - graduation_year
+          - entry_date
+          - exit_date
+          - is_retained_year
+          - is_ell
+          - is_iep
+          - iep_classification
+          - special_education_code
+          - special_education_name
+          - special_education_placement
+          - is_meal_eligible
+          - meal_eligibility
+
+      - join_path: dim_student_enrollments.dim_locations
+        prefix: true
+        includes:
+          - location_name
+          - abbreviation
+          - grade_band
+          - campus
+          - city
+
+      - join_path: dim_student_enrollments.dim_locations.dim_regions
+        prefix: true
+        includes:
+          - region_name
+          - state
+
+      - join_path: dim_student_enrollments.dim_students
+        prefix: true
+        includes:
+          - student_key
+          - full_name
+          - birth_date
+          - lea_student_identifier
+          - state_student_identifier
+          - gender_identity
+          - race
+          - is_gifted
+          - enrollment_status
+
+    meta:
+      folders:
+        - name: Enrollment
+          members:
+            - student_enrollment_key
+            - academic_year
+            - grade_level
+            - graduation_year
+            - entry_date
+            - exit_date
+            - is_retained_year
+        - name: Status
+          members:
+            - is_ell
+            - is_iep
+            - iep_classification
+            - special_education_code
+            - special_education_name
+            - special_education_placement
+            - is_meal_eligible
+            - meal_eligibility
+        - name: Location
+          members:
+            - dim_locations_location_name
+            - dim_locations_abbreviation
+            - dim_locations_grade_band
+            - dim_locations_campus
+            - dim_locations_city
+            - dim_regions_region_name
+            - dim_regions_state
+        - name: Student
+          members:
+            - dim_students_student_key
+            - dim_students_full_name
+            - dim_students_birth_date
+            - dim_students_lea_student_identifier
+            - dim_students_state_student_identifier
+            - dim_students_gender_identity
+            - dim_students_race
+            - dim_students_is_gifted
+            - dim_students_enrollment_status
+
+    access_policy:
+      - group: cube-access-student-data
+        member_level:
+          includes: "*"
+          excludes:
+            - dim_students_full_name
+            - dim_students_birth_date
+            - dim_students_lea_student_identifier
+            - dim_students_state_student_identifier
+      - group: cube-access-student-pii
+        member_level:
+          includes: "*"
