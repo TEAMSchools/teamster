@@ -52,7 +52,7 @@ def test_parse_fk_edges_reads_foreign_key_constraints() -> None:
     ]
 
 
-def _sample_edges() -> list:
+def _sample_edges() -> list[gen.FkEdge]:
     return [
         gen.FkEdge("fct_x", "enrollment_key", "dim_enrollments"),
         gen.FkEdge("fct_x", "created_date_key", "dim_dates"),

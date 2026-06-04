@@ -117,7 +117,7 @@ def collect_fact_names(marts_dir: Path) -> list[str]:
     """Return the sorted list of fct_* model names from facts/properties."""
     names: list[str] = []
     for path in sorted((marts_dir / "facts" / "properties").glob("*.yml")):
-        doc = yaml.safe_load(path.read_text()) or {}
+        doc = yaml.safe_load(path.read_text(encoding="utf-8")) or {}
         names.extend(
             model["name"]
             for model in doc.get("models", [])
@@ -140,7 +140,9 @@ def snowflake_subgraph(
     """BFS from root, collecting every reachable FK edge (full snowflake chain).
 
     Each target node is enqueued once; role-qualified parallel edges to the same
-    target are all kept. Assumes a DAG (no diamonds, per the marts design).
+    target are all kept. Shared targets (a dim reached via two paths) are visited
+    once; the visited set also guards against cycles. The marts design is acyclic
+    by convention.
     """
     visited: set[str] = {root}
     queue: deque[str] = deque([root])
