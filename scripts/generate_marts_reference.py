@@ -221,3 +221,22 @@ def render_page(adjacency: Mapping[str, list[FkEdge]], facts: list[str]) -> str:
     sections = [render_fact_section(adjacency, fact) for fact in facts]
     body = "\n\n".join(["# Marts data models", BANNER, INTRO.rstrip(), *sections])
     return body + "\n"
+
+
+def main(argv: list[str] | None = None) -> int:
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--marts-dir", type=Path, default=MARTS_DIR)
+    parser.add_argument("--output", type=Path, default=DEFAULT_OUTPUT)
+    args = parser.parse_args(argv)
+
+    edges = collect_edges(args.marts_dir)
+    adjacency = build_adjacency(edges)
+    facts = collect_fact_names(args.marts_dir)
+    page = render_page(adjacency, facts)
+    args.output.write_text(page)
+    print(f"wrote {len(facts)} fact sections to {args.output}")
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())
