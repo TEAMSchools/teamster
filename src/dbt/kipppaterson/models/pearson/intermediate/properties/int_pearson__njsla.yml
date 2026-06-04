@@ -1,10 +1,11 @@
 models:
   - name: int_pearson__njsla
     description: |
-      Paterson NJSLA assessment rows, passed through from `stg_pearson__njsla`.
-      Pearson reports the canonical KIPP `student_number` in its
-      LocalStudentIdentifier field, so no district-level ID translation is
-      applied.
+      Paterson NJSLA assessment rows with `localstudentidentifier` translated
+      from the Paterson district SIS ID to the canonical KIPP
+      `student_number` via PowerSchool's `prevstudentid` lookup. Rows whose
+      `localstudentidentifier` does not match any Paterson PS record fall
+      through unchanged.
     columns:
       - name: studenttestuuid
         description: Pearson per-test-attempt UUID. Unique grain.
@@ -13,5 +14,6 @@ models:
           - not_null
       - name: localstudentidentifier
         description: |
-          Pearson's reported LocalStudentIdentifier, passed through unchanged.
-          For Paterson this is the KIPP `student_number`.
+          KIPP `student_number` for students matched via Paterson PowerSchool
+          `prevstudentid`; falls through to the original Paterson district SIS
+          ID for unmatched rows (orphans without a PS record).
