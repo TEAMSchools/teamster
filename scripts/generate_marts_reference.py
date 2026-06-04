@@ -102,3 +102,58 @@ def parse_fk_edges(yaml_path: Path) -> list[FkEdge]:
                 edges.append(FkEdge(source, str(fk_col), target))
 
     return edges
+
+
+def collect_edges(marts_dir: Path) -> list[FkEdge]:
+    """Parse FK edges from every facts/dimensions/bridges properties file."""
+    edges: list[FkEdge] = []
+    for subdir in ("facts", "dimensions", "bridges"):
+        for path in sorted((marts_dir / subdir / "properties").glob("*.yml")):
+            edges.extend(parse_fk_edges(path))
+    return edges
+
+
+def collect_fact_names(marts_dir: Path) -> list[str]:
+    """Return the sorted list of fct_* model names from facts/properties."""
+    names: list[str] = []
+    for path in sorted((marts_dir / "facts" / "properties").glob("*.yml")):
+        doc = yaml.safe_load(path.read_text()) or {}
+        names.extend(
+            model["name"]
+            for model in doc.get("models", [])
+            if model["name"].startswith("fct_")
+        )
+    return sorted(names)
+
+
+def build_adjacency(edges: Iterable[FkEdge]) -> dict[str, list[FkEdge]]:
+    """Group edges by source model into an adjacency map."""
+    adjacency: dict[str, list[FkEdge]] = defaultdict(list)
+    for edge in edges:
+        adjacency[edge.source].append(edge)
+    return adjacency
+
+
+def snowflake_subgraph(
+    adjacency: Mapping[str, list[FkEdge]], root: str
+) -> list[FkEdge]:
+    """BFS from root, collecting every reachable FK edge (full snowflake chain).
+
+    Each target node is enqueued once; role-qualified parallel edges to the same
+    target are all kept. Assumes a DAG (no diamonds, per the marts design).
+    """
+    visited: set[str] = {root}
+    queue: deque[str] = deque([root])
+    collected: list[FkEdge] = []
+    seen: set[tuple[str, str, str]] = set()
+    while queue:
+        node = queue.popleft()
+        for edge in adjacency.get(node, []):
+            key = (edge.source, edge.fk_column, edge.target)
+            if key not in seen:
+                seen.add(key)
+                collected.append(edge)
+            if edge.target not in visited:
+                visited.add(edge.target)
+                queue.append(edge.target)
+    return collected

@@ -50,3 +50,40 @@ def test_parse_fk_edges_reads_foreign_key_constraints() -> None:
         gen.FkEdge("fct_sample", "created_date_key", "dim_dates"),
         gen.FkEdge("fct_sample", "solved_date_key", "dim_dates"),
     ]
+
+
+def _sample_edges() -> list:
+    return [
+        gen.FkEdge("fct_x", "enrollment_key", "dim_enrollments"),
+        gen.FkEdge("fct_x", "created_date_key", "dim_dates"),
+        gen.FkEdge("fct_x", "solved_date_key", "dim_dates"),
+        gen.FkEdge("dim_enrollments", "student_key", "dim_students"),
+        gen.FkEdge("dim_enrollments", "location_key", "dim_locations"),
+        gen.FkEdge("dim_locations", "region_key", "dim_regions"),
+    ]
+
+
+def test_build_adjacency_groups_edges_by_source() -> None:
+    adjacency = gen.build_adjacency(_sample_edges())
+    assert {e.target for e in adjacency["fct_x"]} == {"dim_enrollments", "dim_dates"}
+    assert len(adjacency["fct_x"]) == 3  # two role-qualified date edges kept
+
+
+def test_snowflake_subgraph_walks_full_chain() -> None:
+    adjacency = gen.build_adjacency(_sample_edges())
+    sub = gen.snowflake_subgraph(adjacency, "fct_x")
+
+    # every reachable edge is collected (full snowflake chain), including both
+    # role-qualified edges to dim_dates and the dim->dim chain to dim_regions.
+    assert len(sub) == 6
+    assert gen.FkEdge("dim_locations", "region_key", "dim_regions") in sub
+    targets = {e.target for e in sub}
+    assert {"dim_regions", "dim_students", "dim_dates"} <= targets
+
+
+def test_collect_fact_names_sorted_from_facts_dir() -> None:
+    names = gen.collect_fact_names(gen.MARTS_DIR)
+    assert names == sorted(names)
+    assert all(n.startswith("fct_") for n in names)
+    assert "fct_student_attendance_daily" in names
+    assert len(names) >= 20
