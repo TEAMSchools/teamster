@@ -22,22 +22,22 @@ models:
         warn_unsupported: false
       - type: foreign_key
         columns: [student_key]
-        expression: ref('dim_students')
+        to: ref('dim_students')
         to_columns: [student_key]
         warn_unsupported: false
       - type: foreign_key
         columns: [student_enrollment_key]
-        expression: ref('dim_student_enrollments')
+        to: ref('dim_student_enrollments')
         to_columns: [student_enrollment_key]
         warn_unsupported: false
       - type: foreign_key
         columns: [effective_date_start_key]
-        expression: ref('dim_dates')
+        to: ref('dim_dates')
         to_columns: [date_key]
         warn_unsupported: false
       - type: foreign_key
         columns: [effective_date_end_key]
-        expression: ref('dim_dates')
+        to: ref('dim_dates')
         to_columns: [date_key]
         warn_unsupported: false
     columns:

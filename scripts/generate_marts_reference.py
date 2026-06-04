@@ -55,11 +55,11 @@ def _extract_target(to_value: str) -> str | None:
 def _constraint_target(constraint: Mapping[str, object]) -> str | None:
     """Return the target model name from a foreign_key constraint dict.
 
-    Checks ``expression`` first (model-level style), then falls back to ``to``
-    (column-level style).  Returns ``None`` when neither key is present or the
-    value does not contain a ``ref('...')`` call.
+    Reads the ref-aware ``to:`` field (dbt 1.9+), which all marts use for both
+    column-level and model-level foreign_key constraints.  Returns ``None`` when
+    the field is absent or does not contain a ``ref('...')`` call.
     """
-    raw = constraint.get("expression") or constraint.get("to") or ""
+    raw = constraint.get("to") or ""
     return _extract_target(str(raw))
 
 
@@ -67,10 +67,11 @@ def parse_fk_edges(yaml_path: Path) -> list[FkEdge]:
     """Return one FkEdge per foreign_key constraint in the file.
 
     Captures both column-level constraints (``columns[].constraints[].type =
-    foreign_key`` with a ``to:`` value) and model-level constraints
-    (``models[].constraints[].type = foreign_key`` with an ``expression:`` value
-    and a ``columns:`` list).  For model-level constraints, one edge is emitted
-    per column name in the constraint's ``columns`` list.
+    foreign_key`` with a ``to: ref(...)`` value) and model-level constraints
+    (``models[].constraints[].type = foreign_key`` with a ``to: ref(...)`` value
+    and a ``columns:`` list) — both via the ref-aware ``to:`` field (dbt 1.9+).
+    For model-level constraints, one edge is emitted per column name in the
+    constraint's ``columns`` list.
 
     Column-level edges are emitted first (in column order), followed by
     model-level edges (in constraint order, then column order within each
