@@ -74,8 +74,9 @@ Files: `src/cube/model/views/attendance/attendance_summary.yml`,
   `includes` (keep `semester`, `term_name`, `term_code`, `term_type`).
 - In the `join_path: attendance.dim_dates` block: add `academic_year` and
   `academic_year_label` to `includes`.
-- In `meta.folders`, `Term` folder: rename `dim_terms_academic_year` →
-  `dim_dates_academic_year`; add `dim_dates_academic_year_label`.
+- In `meta.folders`: remove `dim_terms_academic_year` from the `Term` folder;
+  add `dim_dates_academic_year` and `dim_dates_academic_year_label` to the
+  `Date` folder.
 
 ### 2b. `attendance.yml` cube — `is_latest_record` description
 
@@ -110,14 +111,17 @@ phrasing from the user's request. Returns a JSON object:
 
 **Parsing rules (in priority order):**
 
-| Input pattern                 | Example                  | Resolution                       |
-| ----------------------------- | ------------------------ | -------------------------------- |
-| `SY` + 2-digit year           | `SY26`                   | end year = 2026 → start = 2025   |
-| `SY` + 4-digit year           | `SY2026`                 | end year = 2026 → start = 2025   |
-| 4-digit + separator + 4-digit | `2025-2026`, `2025–2026` | start = first 4-digit            |
-| 4-digit + separator + 2-digit | `2025-26`, `2025–26`     | start = first 4-digit            |
-| 2-digit + separator + 2-digit | `25-26`                  | start = 2000 + first 2-digit     |
-| bare 4-digit integer          | `2026`                   | start year (default, note added) |
+| Input pattern                 | Example                  | Resolution                                 |
+| ----------------------------- | ------------------------ | ------------------------------------------ |
+| `SY` + 2-digit year           | `SY26`                   | end year = 2026 → start = 2025             |
+| `SY` + 4-digit year           | `SY2026`                 | end year = 2026 → start = 2025             |
+| `AY` + 4-digit year           | `AY2025`                 | start year = 2025                          |
+| `AY` + 2-digit year           | `AY25`                   | start = 2000 + digit                       |
+| 4-digit + separator + 4-digit | `2025-2026`, `2025–2026` | start = first 4-digit                      |
+| 4-digit + separator + 2-digit | `2025-26`, `2025–26`     | start = first 4-digit                      |
+| 2-digit + separator + 2-digit | `25-26`                  | start = 2000 + first 2-digit               |
+| bare 4-digit integer          | `2026`                   | start year (default, note added)           |
+| bare 2-digit integer          | `26`                     | start = 2000 + digit (default, note added) |
 
 ### 3b. Updated `instructions=` block
 
@@ -129,9 +133,11 @@ phrasing from the user's request. Returns a JSON object:
 - Add the mandatory resolver rule: "Before building any Cube query that involves
   a year value from the user's request, call `resolve_academic_year` with the
   raw year string the user provided. Use the returned `academic_year` integer
-  for filters and grouping, and echo `interpreted_as` back to the user so a
-  wrong year is visible before results are returned. Do not skip this step even
-  when the year seems unambiguous."
+  for filters and grouping, and emit the `interpreted_as` value as a brief
+  inline statement (e.g. 'Interpreting as the 2025–26 school year') before
+  showing results. Do not pause, ask for confirmation, or wait for a reply —
+  just state the interpretation and proceed. Do not skip this step even when the
+  year seems unambiguous."
 
 ---
 
@@ -150,6 +156,9 @@ Add test cases for `resolve_academic_year` (pure Python, no Cube mock needed):
 | `"25-26"`     | 2025                     | `"2025-2026"`                  | no              |
 | `"2026"`      | 2026                     | `"2026-2027"`                  | yes             |
 | `"2025"`      | 2025                     | `"2025-2026"`                  | yes             |
+| `"26"`        | 2026                     | `"2026-2027"`                  | yes             |
+| `"AY2025"`    | 2025                     | `"2025-2026"`                  | no              |
+| `"AY25"`      | 2025                     | `"2025-2026"`                  | no              |
 
 ---
 
