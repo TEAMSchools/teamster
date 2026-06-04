@@ -9,9 +9,13 @@ cubes:
         relationship: many_to_one
 
       - name: dim_student_enrollments
+        # Date-range join: picks the spine row whose status interval contains
+        # this attendance date — one row per attendance day after the spine fix.
         sql: >
           {dim_student_enrollments.student_enrollment_key} =
-          {CUBE}.student_enrollment_key
+          {CUBE}.student_enrollment_key AND CAST({CUBE}.date_key AS TIMESTAMP)
+          BETWEEN {dim_student_enrollments.effective_start_date} AND
+          {dim_student_enrollments.effective_end_date}
         relationship: many_to_one
 
       # location reached via dim_student_enrollments.location_key; calendar
@@ -25,31 +29,6 @@ cubes:
 
       - name: dim_terms
         sql: "{dim_terms.term_key} = {CUBE}.term_key"
-        relationship: many_to_one
-
-      - name: dim_student_ell_status
-        sql: >
-          {dim_student_ell_status.student_enrollment_key} =
-          {CUBE}.student_enrollment_key AND {CUBE}.date_key >=
-          {dim_student_ell_status.effective_date_start_key} AND {CUBE}.date_key
-          <= {dim_student_ell_status.effective_date_end_key}
-        relationship: many_to_one
-
-      - name: dim_student_iep_status
-        sql: >
-          {dim_student_iep_status.student_enrollment_key} =
-          {CUBE}.student_enrollment_key AND {CUBE}.date_key >=
-          {dim_student_iep_status.effective_date_start_key} AND {CUBE}.date_key
-          <= {dim_student_iep_status.effective_date_end_key}
-        relationship: many_to_one
-
-      - name: dim_student_meal_eligibility_status
-        sql: >
-          {dim_student_meal_eligibility_status.student_enrollment_key} =
-          {CUBE}.student_enrollment_key AND {CUBE}.date_key >=
-          {dim_student_meal_eligibility_status.effective_date_start_key} AND
-          {CUBE}.date_key <=
-          {dim_student_meal_eligibility_status.effective_date_end_key}
         relationship: many_to_one
 
     dimensions:
