@@ -2,9 +2,9 @@ views:
   - name: student_enrollments_detail
     description: >-
       Row-level student enrollment with ELL, IEP, and meal eligibility status
-      inlined. One row per period when all three status values hold
-      simultaneously — computed via GREATEST/LEAST intersection of all status
-      spans and the enrollment stint.
+      inlined. One row per non-overlapping status interval within an enrollment
+      stint — computed via boundary-union of ELL, IEP, and meal status change
+      dates. Every enrollment date falls in exactly one interval.
 
       For point-in-time queries: filter dates.date_day to any calendar date
       within an enrollment to get the student's complete context (grade, school,

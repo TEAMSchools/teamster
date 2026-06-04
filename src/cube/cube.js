@@ -41,8 +41,12 @@ function isStaffMember(m) {
 // access beyond what the effective scope grants.
 function withSyntheticGroups(cubeGroups) {
   const result = [...cubeGroups];
+  // Network-scope users get both tiers unconditionally — highest access level.
+  if (cubeGroups.some((g) => g.startsWith("cube-network-"))) {
+    result.push("detail-access", "summary-access");
+    return result;
+  }
   const effectiveScope =
-    cubeGroups.find((g) => g.startsWith("cube-network-")) ??
     cubeGroups.find((g) =>
       /^cube-region-[a-z0-9][a-z0-9-]*-(?:detail|summary)$/.test(g),
     ) ??

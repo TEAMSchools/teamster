@@ -11,7 +11,7 @@ cubes:
       - name: student_enrollments
         # Date-range join: picks the enrollment status row active on this
         # attendance date. Status (ELL/IEP/meal) is inlined into student_enrollments
-        # via GREATEST/LEAST — no separate status cube joins needed.
+        # via boundary-union spine — no separate status cube joins needed.
         sql: >
           {student_enrollments.student_enrollment_key} =
           {CUBE}.student_enrollment_key AND CAST({CUBE}.date_key AS TIMESTAMP)

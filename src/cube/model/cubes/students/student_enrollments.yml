@@ -69,7 +69,8 @@ cubes:
           i.student_enrollment_key,
           '|', COALESCE(ell.student_ell_status_key, ''),
           '|', COALESCE(iep.student_iep_status_key, ''),
-          '|', COALESCE(mel.student_meal_eligibility_status_key, '')
+          '|', COALESCE(mel.student_meal_eligibility_status_key, ''),
+          '|', CAST(i.effective_start_date AS STRING)
         )                                         AS student_enrollment_status_key,
         i.student_enrollment_key,
         i.student_key,
