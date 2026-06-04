@@ -1,0 +1,93 @@
+cubes:
+  - name: student_attendance_interventions
+    public: false
+    # dim_student_attendance_intervention_types is a lookup dim with no
+    # independent analytical grain — inlined here via sql: per spec convention.
+    sql: |
+      SELECT
+        f.student_attendance_intervention_key,
+        f.student_enrollment_key,
+        f.family_communication_key,
+        f.date_key,
+        f.absence_threshold,
+        f.days_absent_unexcused,
+        f.has_communication_log,
+        f.is_chronic_absence_exception,
+        it.family_communication_reason,
+        it.region_key AS intervention_region_key
+      FROM kipptaf_marts.fct_student_attendance_interventions f
+      LEFT JOIN kipptaf_marts.dim_student_attendance_intervention_types it
+        ON it.intervention_type_key = f.intervention_type_key
+
+    joins:
+      # date_key is nullable (null when intervention not yet completed) — LEFT JOIN
+      - name: dates
+        sql: "{dates.date_day} = CAST({CUBE}.date_key AS TIMESTAMP)"
+        relationship: many_to_one
+
+      - name: student_enrollments
+        # date_key is nullable for pending interventions — COALESCE to entry_date
+        # so pending rows still resolve to the first status period of the enrollment.
+        sql: >
+          {student_enrollments.student_enrollment_key} =
+          {CUBE}.student_enrollment_key AND COALESCE(CAST({CUBE}.date_key AS
+          TIMESTAMP), {student_enrollments.entry_date}) BETWEEN
+          {student_enrollments.effective_start_date} AND
+          {student_enrollments.effective_end_date}
+        relationship: many_to_one
+
+    dimensions:
+      - name: student_attendance_intervention_key
+        sql: student_attendance_intervention_key
+        type: string
+        primary_key: true
+
+      - name: intervention_date
+        description: >-
+          Date the communication was logged. Null when the intervention has not
+          yet been completed (has_communication_log = false).
+        sql: CAST(date_key AS TIMESTAMP)
+        type: time
+        public: true
+
+      - name: absence_threshold
+        description: >-
+          Number of unexcused absences that triggered this intervention type.
+          Thresholds differ by region — Miami: 3, 5, 8, 10, 15+; Newark/Camden:
+          4, 8, 12, 16, 20, 30, 40.
+        sql: absence_threshold
+        type: number
+        public: true
+
+      - name: days_absent_unexcused
+        description: >-
+          Student's year-to-date unexcused absence count at the time of
+          evaluation.
+        sql: days_absent_unexcused
+        type: number
+        public: true
+
+      - name: has_communication_log
+        description: >-
+          TRUE if the expected intervention was matched against a communication
+          log record, FALSE if no matching record was found.
+        sql: has_communication_log
+        type: boolean
+        public: true
+
+      - name: is_chronic_absence_exception
+        description: >-
+          TRUE if the student is enrolled in the Attendance Exceptions special
+          program, exempting them from chronic absence tracking.
+        sql: is_chronic_absence_exception
+        type: boolean
+        public: true
+
+      - name: family_communication_reason
+        description: >-
+          DeansList comm log reason value that identifies the intervention type
+          (e.g., 'Chronic Absence: 4'). Sourced from the inlined intervention
+          types dimension.
+        sql: family_communication_reason
+        type: string
+        public: true

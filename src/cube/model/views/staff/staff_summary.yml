@@ -1,0 +1,88 @@
+views:
+  - name: staff_summary
+    description: >-
+      Aggregated staff employment history for headcount and FTE breakdowns. One
+      row per filter slice — never per employee. No direct staff identifiers.
+      Demographic dimensions (gender_identity, race, is_hispanic) are aggregate
+      breakdowns only. Always apply a date filter before querying — without one,
+      each employment period fans out to one row per calendar day in its
+      effective range. Use is_primary_position = true to count each employee
+      once (their primary assignment); omit to include all assignments.
+
+    cubes:
+      - join_path: staff_work_history
+        includes:
+          - status_name
+          - position_title
+          - job_code
+          - worker_type
+          - department_name
+          - business_unit_name
+          - is_primary_position
+          - is_management_position
+
+      - join_path: staff_work_history.dates
+        prefix: true
+        includes:
+          - date_day
+          - academic_year
+          - month_name
+          - month_number
+          - year_number
+
+      - join_path: staff_work_history.staff
+        prefix: true
+        includes:
+          - gender_identity
+          - race
+          - is_hispanic
+
+      - join_path: staff_work_history.locations
+        prefix: true
+        includes:
+          - location_name
+          - abbreviation
+          - grade_band
+
+      - join_path: staff_work_history.locations.regions
+        prefix: true
+        includes:
+          - region_name
+
+    meta:
+      folders:
+        - name: Employment
+          members:
+            - status_name
+            - position_title
+            - job_code
+            - worker_type
+            - department_name
+            - business_unit_name
+            - is_primary_position
+            - is_management_position
+        - name: Date
+          members:
+            - dates_date_day
+            - dates_academic_year
+            - dates_month_name
+            - dates_month_number
+            - dates_year_number
+        - name: Location
+          members:
+            - locations_location_name
+            - locations_abbreviation
+            - locations_grade_band
+            - regions_region_name
+        - name: Staff
+          members:
+            - staff_gender_identity
+            - staff_race
+            - staff_is_hispanic
+
+    access_policy:
+      # No direct staff identifiers — demographic dimensions are aggregate
+      # breakdowns only. Compensation excluded from summary view.
+      - group: summary-access
+        member_level:
+          includes: "*"

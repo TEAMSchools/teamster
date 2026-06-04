@@ -1,11 +1,11 @@
 cubes:
-  - name: dim_locations
+  - name: locations
     public: false
     sql_table: kipptaf_marts.dim_locations
 
     joins:
-      - name: dim_regions
-        sql: "{dim_regions.region_key} = {CUBE}.region_key"
+      - name: regions
+        sql: "{regions.region_key} = {CUBE}.region_key"
         relationship: many_to_one
 
     dimensions:

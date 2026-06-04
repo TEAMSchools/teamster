@@ -86,26 +86,21 @@ cube-access-student-data         # student-domain cubes visible
 cube-access-student-pii          # PII fields on student cubes
 cube-access-staff-pii            # PII fields on staff cubes
 cube-access-staff-compensation   # salary and pay rate fields on staff cubes
-cube-access-staff-all            # bypass org-hierarchy filter — see all staff
-                                 #   records, not just your reporting chain
 ```
 
 **Groups are additive.** A user's effective permissions are the union of all
 their `cube-*` groups — there is no role hierarchy to configure. Assign whatever
 combination of scope and access groups matches what the person actually needs.
 For example, a Newark Head of Schools with `cube-region-newark-detail` and
-`cube-access-staff-all` sees all Newark staff (location scope from the first
 group, org-hierarchy filter removed by the second) — but not staff in other
 regions. Network-wide staff access requires `cube-network-detail`.
 
 **Examples:**
 
-| Role                     | Groups assigned                                                                  |
-| ------------------------ | -------------------------------------------------------------------------------- |
-| Newark AP (Bold Academy) | `cube-school-bold-detail`, `cube-region-newark-summary`                          |
-| Newark Head of Schools   | `cube-region-newark-detail`, `cube-access-staff-all`                             |
-| Network HR Director      | `cube-network-detail`, `cube-access-staff-compensation`, `cube-access-staff-all` |
-| Finance analyst          | `cube-network-summary` (no `cube-access-student-data` — student cubes hidden)    |
+| Role                     | Groups assigned                                                               |
+| ------------------------ | ----------------------------------------------------------------------------- |
+| Newark AP (Bold Academy) | `cube-school-bold-detail`, `cube-region-newark-summary`                       |
+| Finance analyst          | `cube-network-summary` (no `cube-access-student-data` — student cubes hidden) |
 
 ### Layer 1 — Identity resolution (`contextToGroups`)
 
@@ -134,8 +129,6 @@ enforced via `accessPolicy` on the views themselves (follow-up spec) — not by
 `queryRewrite`. `queryRewrite` handles row-level location filtering only.
 
 **Org-hierarchy filter (staff cubes only):** Applied in addition to location
-scope unless the user has `cube-access-staff-all`. Implemented as a
-`reporting_chain` segment on each staff cube (YAML implementation spec) —
 `queryRewrite` adds the segment name to the query.
 
 The segment approach is intentional: Cube's REST API filter operators (`equals`,
@@ -150,15 +143,14 @@ itself.
 
 ```yaml
 segments:
-  - name: reporting_chain
-    sql: >
-      {staff_key} IN (
-        SELECT h.descendant_staff_key
-        FROM kipptaf_marts.bridge_staff_hierarchy h
-        JOIN kipptaf_marts.dim_staff s
-          ON s.staff_key = h.ancestor_staff_key
-        WHERE s.google_email = '{SECURITY_CONTEXT.email}'
-      )
+  sql: >
+    {staff_key} IN (
+      SELECT h.descendant_staff_key
+      FROM kipptaf_marts.bridge_staff_hierarchy h
+      JOIN kipptaf_marts.dim_staff s
+        ON s.staff_key = h.ancestor_staff_key
+      WHERE s.google_email = '{SECURITY_CONTEXT.email}'
+    )
 ```
 
 ### Layer 3 — Column-level access policies (YAML)
@@ -217,7 +209,6 @@ established via SQL user switching on each query.
 | Hook              | How it uses email                                                           |
 | ----------------- | --------------------------------------------------------------------------- |
 | `contextToGroups` | Key for Google Directory API call; key for midnight-Eastern in-memory cache |
-| `queryRewrite`    | Passed to `SECURITY_CONTEXT.email` in the `reporting_chain` segment SQL     |
 
 ## `cube.js` Configuration
 
@@ -276,7 +267,6 @@ canSwitchSqlUser: (current_user, new_user) =>
 **Location:** `src/dbt/kipptaf/models/marts/bridges/bridge_staff_hierarchy.sql`
 
 **Purpose:** Transitive closure of the org chart. Used by `queryRewrite` to
-filter staff cube results to a manager's reporting chain.
 
 **Schema:**
 

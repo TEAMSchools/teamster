@@ -1,26 +1,87 @@
 cubes:
-  - name: dim_student_enrollments
+  - name: student_enrollments
     public: false
-    sql_table: kipptaf_marts.dim_student_enrollments
+    # Grain: enrollment stint × status-period intersection.
+    # GREATEST/LEAST across ELL, IEP, and meal spans computes a single effective
+    # period per row — the window when all status values hold simultaneously.
+    # Filter dates.date_day to get point-in-time context for any calendar date
+    # within an enrollment stint.
+    # count_students (count_distinct on student_enrollment_key) is always the
+    # correct enrollment headcount regardless of how many rows a given enrollment
+    # fans into.
+    sql: |
+      SELECT
+        CONCAT(
+          se.student_enrollment_key,
+          '|', COALESCE(ell.student_ell_status_key, ''),
+          '|', COALESCE(iep.student_iep_status_key, ''),
+          '|', COALESCE(mel.student_meal_eligibility_status_key, '')
+        )                                         AS student_enrollment_status_key,
+        se.student_enrollment_key,
+        se.student_key,
+        se.location_key,
+        se.academic_year,
+        se.grade_level,
+        se.graduation_year,
+        se.entry_date_key,
+        se.exit_date_key,
+        se.is_retained_year,
+        COALESCE(ell.is_ell, false)               AS is_ell,
+        COALESCE(iep.is_iep, false)               AS is_iep,
+        iep.iep_classification,
+        iep.special_education_code,
+        iep.special_education_name,
+        iep.special_education_placement,
+        COALESCE(mel.is_meal_eligible, false)     AS is_meal_eligible,
+        mel.meal_eligibility,
+        GREATEST(
+          se.entry_date_key,
+          COALESCE(ell.effective_date_start_key, se.entry_date_key),
+          COALESCE(iep.effective_date_start_key, se.entry_date_key),
+          COALESCE(mel.effective_date_start_key, se.entry_date_key)
+        )                                         AS effective_start_date,
+        LEAST(
+          se.exit_date_key,
+          COALESCE(ell.effective_date_end_key, se.exit_date_key),
+          COALESCE(iep.effective_date_end_key, se.exit_date_key),
+          COALESCE(mel.effective_date_end_key, se.exit_date_key)
+        )                                         AS effective_end_date,
+      FROM kipptaf_marts.dim_student_enrollments AS se
+      LEFT JOIN kipptaf_marts.dim_student_ell_status AS ell
+        ON ell.student_enrollment_key = se.student_enrollment_key
+      LEFT JOIN kipptaf_marts.dim_student_iep_status AS iep
+        ON iep.student_enrollment_key = se.student_enrollment_key
+      LEFT JOIN kipptaf_marts.dim_student_meal_eligibility_status AS mel
+        ON mel.student_enrollment_key = se.student_enrollment_key
 
     joins:
-      - name: dim_students
-        sql: "{dim_students.student_key} = {CUBE}.student_key"
+      - name: dates
+        sql: >
+          {dates.date_day} BETWEEN CAST({CUBE}.effective_start_date AS
+          TIMESTAMP) AND CAST({CUBE}.effective_end_date AS TIMESTAMP)
+        relationship: one_to_many
+
+      - name: students
+        sql: "{students.student_key} = {CUBE}.student_key"
         relationship: many_to_one
 
-      - name: dim_locations
-        sql: "{dim_locations.location_key} = {CUBE}.location_key"
+      - name: locations
+        sql: "{locations.location_key} = {CUBE}.location_key"
         relationship: many_to_one
 
     dimensions:
+      - name: student_enrollment_status_key
+        sql: student_enrollment_status_key
+        type: string
+        primary_key: true
+
       - name: student_enrollment_key
         description: >-
           Surrogate key derived from student_number, _dbt_source_relation,
-          academic_year, and entrydate. Primary key for this dimension — matches
-          the uniqueness grain on int_extracts__student_enrollments.
+          academic_year, and entrydate. Not unique in this cube when status
+          changes mid-enrollment — use count_students for headcounts.
         sql: student_enrollment_key
         type: string
-        primary_key: true
         public: true
 
       - name: student_key
@@ -32,8 +93,7 @@ cubes:
       - name: location_key
         description: >-
           Surrogate key derived from location_clean_name. FK to dim_locations.
-          Null when schoolid does not match any location in the crosswalk (e.g.,
-          grade_level 99 placeholder schools).
+          Null when schoolid does not match any location in the crosswalk.
         sql: location_key
         type: string
 
@@ -41,14 +101,14 @@ cubes:
         description: >-
           KIPP academic year (July start) in which this enrollment falls. The
           calendar year in which the academic year begins (e.g., 2025 for the
-          2025-26 school year).
+          2025–26 school year).
         sql: academic_year
         type: number
+        public: true
 
       - name: grade_level
         description: >-
-          The grade the student is in. Since this is an integer: 0=Kindergarten
-          1, -2=Preschool. Indexed.
+          The grade the student is in. 0 = Kindergarten, -2 = Preschool.
         sql: grade_level
         type: number
         public: true
@@ -60,11 +120,13 @@ cubes:
         public: true
 
       - name: entry_date
+        description: Date the student entered this enrollment stint.
         sql: CAST(entry_date_key AS TIMESTAMP)
         type: time
         public: true
 
       - name: exit_date
+        description: Date the student exited this enrollment stint.
         sql: CAST(exit_date_key AS TIMESTAMP)
         type: time
         public: true
@@ -77,7 +139,89 @@ cubes:
         type: boolean
         public: true
 
+      - name: effective_start_date
+        description: >-
+          Start of the period when all status values (ELL, IEP, meal) hold
+          simultaneously. GREATEST of enrollment entry date and all status span
+          starts. Use with dates.date_day for point-in-time queries.
+        sql: CAST(effective_start_date AS TIMESTAMP)
+        type: time
+        public: true
+
+      - name: effective_end_date
+        description: >-
+          End of the period when all status values hold simultaneously. LEAST of
+          enrollment exit date and all status span ends.
+        sql: CAST(effective_end_date AS TIMESTAMP)
+        type: time
+        public: true
+
+      - name: is_ell
+        description: >-
+          TRUE if the student was classified as an English Language Learner
+          during this status span. False (COALESCE) when no ELL record exists —
+          the student was not ELL, not that data is missing.
+        sql: is_ell
+        type: boolean
+        public: true
+
+      - name: is_iep
+        description: >-
+          TRUE if the student had an active IEP during this status span. False
+          (COALESCE) when no IEP record exists.
+        sql: is_iep
+        type: boolean
+        public: true
+
+      - name: iep_classification
+        description: >-
+          Special education program classification (e.g., Resource Center,
+          In-Class Resource, Self-Contained, No IEP).
+        sql: iep_classification
+        type: string
+        public: true
+
+      - name: special_education_code
+        description: >-
+          NJ state special education code. Newark and Camden only; null for
+          Paterson and Miami.
+        sql: special_education_code
+        type: string
+        public: true
+
+      - name: special_education_name
+        description:
+          Human-readable label for the NJ state special education code.
+        sql: special_education_name
+        type: string
+        public: true
+
+      - name: special_education_placement
+        description: NJ state special education placement category.
+        sql: special_education_placement
+        type: string
+        public: true
+
+      - name: is_meal_eligible
+        description: >-
+          TRUE if the student was Free, Reduced, or FDC eligible during this
+          status span. False (COALESCE) when no meal record exists (Paid).
+        sql: is_meal_eligible
+        type: boolean
+        public: true
+
+      - name: meal_eligibility
+        description: >-
+          Meal eligibility code: F (Free), R (Reduced), FDC (Free Direct
+          Certification), P (Paid), or Unknown.
+        sql: meal_eligibility
+        type: string
+        public: true
+
     measures:
       - name: count_students
+        description: >-
+          Count of distinct enrollment stints. Always correct — deduplicates on
+          student_enrollment_key regardless of status-span fan-out.
         sql: student_enrollment_key
         type: count_distinct

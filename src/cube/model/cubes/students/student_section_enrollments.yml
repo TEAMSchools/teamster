@@ -1,0 +1,201 @@
+cubes:
+  - name: student_section_enrollments
+    public: false
+    # Inlines dim_course_sections, dim_courses, and bridge_course_section_teachers
+    # (teaching roles only — "Gradebook Access (edit)" excluded).
+    # Grain: student_section_enrollment_key x teacher_assignment.
+    # Sections with co-teachers produce multiple rows per student.
+    sql: |
+      SELECT
+        sse.student_section_enrollment_key,
+        sse.student_enrollment_key,
+        sse.course_section_key,
+        sse.term_key,
+        sse.academic_year,
+        sse.entry_date,
+        sse.exit_date,
+        sse.is_dropped_section,
+        sse.is_dropped_course,
+        cs.course_key,
+        cs.identifier        AS section_identifier,
+        cs.period            AS section_period,
+        cs.room              AS section_room,
+        c.course_code,
+        c.course_title,
+        c.credit_type,
+        c.academic_subject,
+        c.credits            AS course_credits,
+        bct.staff_key        AS teacher_staff_key,
+        bct.role             AS teacher_role,
+        bct.role = 'Lead Teacher' AS is_lead_teacher,
+        bct.effective_start_date AS teacher_effective_start_date,
+        bct.effective_end_date   AS teacher_effective_end_date
+      FROM kipptaf_marts.dim_student_section_enrollments sse
+      JOIN kipptaf_marts.dim_course_sections cs
+        ON cs.course_section_key = sse.course_section_key
+      JOIN kipptaf_marts.dim_courses c
+        ON c.course_key = cs.course_key
+      -- Teaching roles only — "Gradebook Access (edit)" is an admin grant,
+      -- not a teaching relationship.
+      LEFT JOIN kipptaf_marts.bridge_course_section_teachers bct
+        ON bct.course_section_key = sse.course_section_key
+        AND bct.role != 'Gradebook Access (edit)'
+
+    joins:
+      - name: student_enrollments
+        sql: >
+          {student_enrollments.student_enrollment_key} =
+          {CUBE}.student_enrollment_key
+        relationship: many_to_one
+
+      - name: terms
+        sql: "{terms.term_key} = {CUBE}.term_key"
+        relationship: many_to_one
+
+      # Requires staff-core plan to be complete before this join resolves.
+      - name: staff
+        sql: "{staff.staff_key} = {CUBE}.teacher_staff_key"
+        relationship: many_to_one
+
+      # Point-in-time manager resolver — mirrors the staff_work_history pattern.
+      # Overlaps teacher assignment effective dates against reporting relationship
+      # dates to find the manager active when the teacher was assigned.
+      - name: staff_reporting_relationships
+        sql: >
+          {staff_reporting_relationships.staff_key} = {CUBE}.teacher_staff_key
+          AND CAST({CUBE}.teacher_effective_start_date AS TIMESTAMP)
+            <= {staff_reporting_relationships.effective_end_date} AND
+          CAST({CUBE}.teacher_effective_end_date AS TIMESTAMP)
+            >= {staff_reporting_relationships.effective_start_date}
+        relationship: many_to_one
+
+      - name: staff_manager
+        sql: >
+          {staff_manager.staff_key} =
+          {staff_reporting_relationships.manager_staff_key}
+        relationship: many_to_one
+
+    dimensions:
+      - name: student_section_enrollment_key
+        sql: student_section_enrollment_key
+        type: string
+        primary_key: true
+
+      - name: academic_year
+        description:
+          KIPP academic year (July start) for this section enrollment.
+        sql: academic_year
+        type: number
+        public: true
+
+      - name: entry_date
+        description: Date the student entered this section enrollment.
+        sql: CAST(entry_date AS TIMESTAMP)
+        type: time
+        public: true
+
+      - name: exit_date
+        description: Date the student exited this section enrollment.
+        sql: CAST(exit_date AS TIMESTAMP)
+        type: time
+        public: true
+
+      - name: is_dropped_section
+        description: TRUE if the student dropped this specific section.
+        sql: is_dropped_section
+        type: boolean
+        public: true
+
+      - name: is_dropped_course
+        description: TRUE if the student dropped the entire course.
+        sql: is_dropped_course
+        type: boolean
+        public: true
+
+      - name: section_identifier
+        description: Section identifier string (e.g. "1(A)").
+        sql: section_identifier
+        type: string
+        public: true
+
+      - name: section_period
+        description:
+          Period expression encoding days and periods when section meets.
+        sql: section_period
+        type: string
+        public: true
+
+      - name: section_room
+        description: Room number for this section.
+        sql: section_room
+        type: string
+        public: true
+
+      - name: course_code
+        description: Course code.
+        sql: course_code
+        type: string
+        public: true
+
+      - name: course_title
+        description: Course title.
+        sql: course_title
+        type: string
+        public: true
+
+      - name: credit_type
+        description: Credit type for this course.
+        sql: credit_type
+        type: string
+        public: true
+
+      - name: academic_subject
+        description:
+          Academic subject area (e.g. Mathematics, English Language Arts).
+        sql: academic_subject
+        type: string
+        public: true
+
+      - name: course_credits
+        description: Credit hours awarded for this course.
+        sql: course_credits
+        type: number
+        public: true
+
+      - name: teacher_staff_key
+        description:
+          Staff surrogate key for the teacher assigned to this section.
+        sql: teacher_staff_key
+        type: string
+        public: true
+
+      - name: teacher_role
+        description: >-
+          PowerSchool role for this teacher assignment. Teaching roles: Lead
+          Teacher, Co-teacher, Blended Learning, Job Share Teacher, PhysEd
+          Share. Filter to is_lead_teacher = true for one row per student per
+          section.
+        sql: teacher_role
+        type: string
+        public: true
+
+      - name: is_lead_teacher
+        description: >-
+          TRUE when teacher_role = 'Lead Teacher'. Use as a filter to get one
+          row per student per section (the primary teacher). Without this
+          filter, co-taught sections produce multiple rows per student.
+        sql: is_lead_teacher
+        type: boolean
+        public: true
+
+      - name: teacher_effective_start_date
+        description: Start date of this teacher's assignment to the section.
+        sql: CAST(teacher_effective_start_date AS TIMESTAMP)
+        type: time
+        public: true
+
+      - name: teacher_effective_end_date
+        description: End date of this teacher's assignment to the section.
+        sql: CAST(teacher_effective_end_date AS TIMESTAMP)
+        type: time
+        public: true

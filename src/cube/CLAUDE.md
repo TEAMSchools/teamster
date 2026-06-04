@@ -28,10 +28,13 @@ school_calendars) go in `cubes/conformed/`.
 - **Cubes private, views public.** Every cube YAML gets `public: false` at the
   cube level. Dimensions/measures use `public: true` only when meant to be
   exposed via a view. Never flip a cube to `public: true`.
-- **Naming.** Fact cubes unprefixed (`attendance`); dim cubes match the
-  warehouse table (`dim_students`). View names are `<domain>_<grain>`
-  (`attendance_detail`, `attendance_summary`). `sql_table` always points at
-  `kipptaf_marts.<table>` — cubes never read district datasets directly.
+- **Naming.** Cube names follow the convention in the model YAML spec: student
+  cubes start with `student_`, staff cubes with `staff_`, conformed dims use
+  bare business names (`dates`, `locations`, `regions`, `terms`,
+  `school_calendars`). View names are `<domain>_<grain>`
+  (`student_attendance_detail`, `student_attendance_summary`). `sql_table`
+  always points at `kipptaf_marts.<table>` — cubes never read district datasets
+  directly.
 - **Joins use cube-reference syntax** (`{dim_x.col} = {CUBE}.col`), not raw
   identifiers. Dim joins from facts set `relationship: many_to_one`.
 - **Avoid diamond paths.** Two join paths to the same dim → either a compound
@@ -57,19 +60,46 @@ school_calendars) go in `cubes/conformed/`.
 
 ## View access policies
 
-Views own access via `access_policy:`. Two patterns:
+Views own access via `access_policy:`. The base gate uses synthetic groups
+emitted by `withSyntheticGroups` in `cube.js` — `detail-access` (any user with a
+`*-detail` scope group) and `summary-access` (any user with a `*-detail` or
+`*-summary` scope group). PII is a second, independent layer.
 
-- **Detail views** (row-level, contain student identifiers): two policy blocks —
-  `cube-access-student-data` with `member_level.excludes` listing PII fields
-  (names, DOB, all `*_student_identifier`, `salesforce_contact_id`), and
-  `cube-access-student-pii` with `includes: "*"`.
+- **Detail views** (row-level, may contain identifiers): `detail-access` block
+  with PII fields in `excludes:`; then a PII-group block
+  (`cube-access-student-pii` or `cube-access-staff-pii`) with `includes: "*"` to
+  restore those fields.
 - **Summary views** (no direct identifiers, demographic breakdowns only): single
-  `cube-access-student-data` block with `includes: "*"`. Add a comment
-  explaining why no PII tier is needed.
+  `summary-access` block with `includes: "*"`. Add a comment explaining why no
+  PII tier is needed.
+- **Compensation fields**: gated by `cube-access-staff-compensation` — a third
+  block alongside `detail-access` and `cube-access-staff-pii` in staff views.
 
 When adding a field to a detail view, decide PII status per project CLAUDE.md
-FERPA guidance. If PII, add it to the `excludes` list under the
-`cube-access-student-data` policy block.
+FERPA guidance. If PII, add it to the `excludes` list under the `detail-access`
+block.
+
+## PII tagging and dimension descriptions
+
+**PII flags — first pass per cube:** Before writing any cube's dimensions, open
+the source dbt model's property YAML and grep for `contains_pii: true`. For
+every column flagged, add `meta: {pii: true}` to the Cube dimension. Do this on
+the first pass — do not defer it.
+
+**`dim_staff` gap:** `dim_staff` does NOT have `contains_pii: true` tags in dbt,
+despite carrying direct identifiers (name, DOB, emails, phone, AD username). Use
+the spec's explicit PII list for staff dimensions: `full_name`, `first_name`,
+`last_name`, `birth_date`, `work_email`, `google_email`, `personal_email`,
+`personal_cell_phone`, `active_directory_username`, `staff_unique_id`. All
+require `meta: {pii: true}`. Compensation fields (`annual_wage`, `hourly_wage`,
+`daily_rate`, `period_rate`) also carry `meta: {pii: true}`.
+
+**Dimension descriptions:** Metadata sync (#3764) is not yet live. Copy
+`description:` from the source dbt model's property YAML when writing each
+dimension. If the dbt column has no description, omit the field. When sync ships
+it will populate missing descriptions and may overwrite hand-authored values.
+Measure `description:` fields must always be hand-authored (no dbt equivalent).
+View-level `description:` is also hand-authored.
 
 ## `cube.js` security model
 
@@ -82,24 +112,27 @@ Default-deny, group-driven. Read [`cube.js`](cube.js) before modifying.
 - **Group membership is direct-only.** Admin Directory API's
   `groups.list({userKey})` returns direct memberships; nested `cube-*` groups
   don't transitively resolve. Flat-enroll users in every `cube-*` group they
-  need (scope tier + `cube-access-student-data`, plus `cube-access-staff-all`
-  for staff cubes).
+  need (scope tier + `cube-access-student-data` + `cube-access-staff-data`).
 - **Cloud Identity `searchTransitiveGroups` is edition-gated** (Workspace
   Enterprise / Education Plus / Cloud Identity Premium). On lower editions it
   returns `INVALID_ARGUMENT`, not `PERMISSION_DENIED` — don't propose it as a
   transitive-resolution fix without verifying the tenant's edition.
 - **`queryRewrite`** enforces three filters:
-  - Strips dims/measures from `STUDENT_CUBES` for users without
-    `cube-access-student-data`.
-  - Adds a `dim_locations` filter based on the highest-priority scope group:
-    network (no filter) → region (`region_key`) → school (`abbreviation`). No
-    scope group → empty `IN ()` filter (default deny).
-  - For queries touching `STAFF_CUBES`, injects the `dim_staff.reporting_chain`
-    segment unless the user has `cube-access-staff-all`.
-- **`STUDENT_CUBES` / `STAFF_CUBES` arrays.** Entries must match the cube
-  `name:` field — `queryRewrite` matches via `startsWith` on
-  `<cube_name>.<member>` query members. When adding a new student-data or
-  staff-data cube, append its `name:` to the matching array.
+  - Strips dims/measures from student-domain cubes for users without
+    `cube-access-student-data` — via `isStudentMember`
+    (`startsWith("student")`).
+  - Adds a `locations` filter based on the highest-priority scope group: network
+    (no filter) → region (`region_key`) → school (`abbreviation`). No scope
+    group → empty `IN ()` filter (default deny).
+  - Strips dims/measures from staff-domain cubes for users without
+    `cube-access-staff-data` — via `isStaffMember` (`startsWith("staff")`).
+- **Naming convention drives security — no static arrays to maintain.** The
+  `student_` and `staff_` prefixes automatically route cubes through the correct
+  `queryRewrite` gates. Do NOT add new cubes to a `STUDENT_CUBES` or
+  `STAFF_CUBES` array — those arrays were removed when Plan 0 ran.
+- **`cube-access-staff-data`** is required to see any staff-domain member,
+  identical to `cube-access-student-data` for students. Without it, all
+  `staff_`-prefixed members are stripped from queries.
 - **`SNAPSHOT_CUBES` / `SNAPSHOT_MEASURE_STEMS` arrays.** For cubes built on
   fact tables with cumulative daily-status flags (values re-stamped on every row
   — overcounts without a point-in-time anchor). `queryRewrite` auto-injects

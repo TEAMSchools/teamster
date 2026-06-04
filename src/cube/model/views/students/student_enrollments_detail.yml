@@ -1,0 +1,138 @@
+views:
+  - name: student_enrollments_detail
+    description: >-
+      Row-level student enrollment with ELL, IEP, and meal eligibility status
+      inlined. One row per period when all three status values hold
+      simultaneously — computed via GREATEST/LEAST intersection of all status
+      spans and the enrollment stint.
+
+      For point-in-time queries: filter dates.date_day to any calendar date
+      within an enrollment to get the student's complete context (grade, school,
+      ELL/IEP/meal status) on that date. Always use count_students
+      (count_distinct on student_enrollment_key) for enrollment headcounts —
+      never bare count(*).
+
+      Contains direct student identifiers — see access_policy for PII gating.
+
+    cubes:
+      - join_path: student_enrollments
+        includes:
+          - count_students
+          - student_enrollment_key
+          - academic_year
+          - grade_level
+          - graduation_year
+          - entry_date
+          - exit_date
+          - is_retained_year
+          - effective_start_date
+          - effective_end_date
+          - is_ell
+          - is_iep
+          - iep_classification
+          - special_education_code
+          - special_education_name
+          - special_education_placement
+          - is_meal_eligible
+          - meal_eligibility
+
+      - join_path: student_enrollments.dates
+        prefix: true
+        includes:
+          - date_day
+          - academic_year
+          - month_name
+          - month_number
+          - year_number
+
+      - join_path: student_enrollments.locations
+        prefix: true
+        includes:
+          - location_name
+          - abbreviation
+          - grade_band
+          - campus
+          - city
+
+      - join_path: student_enrollments.locations.regions
+        prefix: true
+        includes:
+          - region_name
+          - state
+
+      - join_path: student_enrollments.students
+        prefix: true
+        includes:
+          - student_key
+          - full_name
+          - birth_date
+          - lea_student_identifier
+          - state_student_identifier
+          - gender_identity
+          - race
+          - is_gifted
+          - enrollment_status
+
+    meta:
+      folders:
+        - name: Enrollment
+          members:
+            - student_enrollment_key
+            - academic_year
+            - grade_level
+            - graduation_year
+            - entry_date
+            - exit_date
+            - is_retained_year
+            - effective_start_date
+            - effective_end_date
+        - name: Status
+          members:
+            - is_ell
+            - is_iep
+            - iep_classification
+            - special_education_code
+            - special_education_name
+            - special_education_placement
+            - is_meal_eligible
+            - meal_eligibility
+        - name: Date
+          members:
+            - dates_date_day
+            - dates_academic_year
+            - dates_month_name
+            - dates_month_number
+            - dates_year_number
+        - name: Location
+          members:
+            - locations_location_name
+            - locations_abbreviation
+            - locations_grade_band
+            - locations_campus
+            - locations_city
+            - regions_region_name
+            - regions_state
+        - name: Student
+          members:
+            - students_student_key
+            - students_full_name
+            - students_birth_date
+            - students_lea_student_identifier
+            - students_state_student_identifier
+            - students_gender_identity
+            - students_race
+            - students_is_gifted
+            - students_enrollment_status
+
+    access_policy:
+      - group: detail-access
+        member_level:
+          includes: "*"
+          excludes:
+            - students_full_name
+            - students_birth_date
+            - students_lea_student_identifier
+            - students_state_student_identifier
+      - group: cube-access-student-pii
+        member_level:
+          includes: "*"

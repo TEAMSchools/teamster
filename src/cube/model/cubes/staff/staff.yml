@@ -1,0 +1,111 @@
+cubes:
+  - name: staff
+    public: false
+    sql_table: kipptaf_marts.dim_staff
+
+    dimensions:
+      - name: staff_key
+        sql: staff_key
+        type: string
+        primary_key: true
+
+      - name: staff_unique_id
+        sql: staff_unique_id
+        type: number
+        public: true
+        meta:
+          pii: true
+
+      - name: full_name
+        sql: full_name
+        type: string
+        public: true
+        meta:
+          pii: true
+
+      - name: first_name
+        sql: first_name
+        type: string
+        public: true
+        meta:
+          pii: true
+
+      - name: last_name
+        sql: last_name
+        type: string
+        public: true
+        meta:
+          pii: true
+
+      - name: birth_date
+        sql: CAST(birth_date AS TIMESTAMP)
+        type: time
+        public: true
+        meta:
+          pii: true
+
+      - name: gender_identity
+        sql: gender_identity
+        type: string
+        public: true
+        meta:
+          pii: true
+
+      - name: race
+        sql: race
+        type: string
+        public: true
+        meta:
+          pii: true
+
+      - name: is_hispanic
+        sql: is_hispanic
+        type: boolean
+        public: true
+        meta:
+          pii: true
+
+      - name: work_email
+        sql: work_email
+        type: string
+        public: true
+        meta:
+          pii: true
+
+      - name: personal_email
+        sql: personal_email
+        type: string
+        public: true
+        meta:
+          pii: true
+
+      - name: personal_cell_phone
+        sql: personal_cell_phone
+        type: string
+        public: true
+        meta:
+          pii: true
+
+      - name: active_directory_username
+        sql: active_directory_username
+        type: string
+        public: true
+        meta:
+          pii: true
+
+      - name: google_email
+        sql: google_email
+        type: string
+        public: true
+        meta:
+          pii: true
+
+      - name: original_hire_date
+        sql: CAST(original_hire_date AS TIMESTAMP)
+        type: time
+        public: true
+
+      - name: rehire_date
+        sql: CAST(rehire_date AS TIMESTAMP)
+        type: time
+        public: true

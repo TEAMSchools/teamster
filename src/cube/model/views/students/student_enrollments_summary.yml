@@ -1,0 +1,86 @@
+views:
+  - name: student_enrollments_summary
+    description: >-
+      Aggregated student enrollment with ELL, IEP, and meal eligibility status.
+      No direct student identifiers. Use for population-level headcounts by
+      status, grade level, school, and demographics.
+
+      Grain: one row per status-period intersection. Always use count_students
+      (count_distinct on student_enrollment_key) for enrollment headcounts. For
+      point-in-time queries, use student_enrollments_detail and filter
+      dates.date_day.
+
+    cubes:
+      - join_path: student_enrollments
+        includes:
+          - count_students
+          - academic_year
+          - grade_level
+          - graduation_year
+          - is_retained_year
+          - is_ell
+          - is_iep
+          - iep_classification
+          - is_meal_eligible
+          - meal_eligibility
+
+      - join_path: student_enrollments.locations
+        prefix: true
+        includes:
+          - location_name
+          - abbreviation
+          - grade_band
+          - campus
+          - city
+
+      - join_path: student_enrollments.locations.regions
+        prefix: true
+        includes:
+          - region_name
+          - state
+
+      - join_path: student_enrollments.students
+        prefix: true
+        includes:
+          - gender_identity
+          - race
+          - is_gifted
+          - enrollment_status
+
+    meta:
+      folders:
+        - name: Enrollment
+          members:
+            - academic_year
+            - grade_level
+            - graduation_year
+            - is_retained_year
+        - name: Status
+          members:
+            - is_ell
+            - is_iep
+            - iep_classification
+            - is_meal_eligible
+            - meal_eligibility
+        - name: Location
+          members:
+            - locations_location_name
+            - locations_abbreviation
+            - locations_grade_band
+            - locations_campus
+            - locations_city
+            - regions_region_name
+            - regions_state
+        - name: Student
+          members:
+            - students_gender_identity
+            - students_race
+            - students_is_gifted
+            - students_enrollment_status
+
+    access_policy:
+      # No direct student identifiers — demographic dimensions are aggregate
+      # breakdowns only.
+      - group: summary-access
+        member_level:
+          includes: "*"

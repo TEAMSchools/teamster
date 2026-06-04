@@ -1,0 +1,197 @@
+cubes:
+  - name: staff_work_history
+    public: false
+    sql: |
+      SELECT
+        swa.work_assignment_key,
+        swa.staff_key,
+        swa.full_time_equivalency,
+        swa.is_management_position,
+        ss.status_name,
+        wj.position_title,
+        wj.job_code,
+        wt.worker_type_name            AS worker_type,
+        wo.department_name,
+        wo.business_unit_name,
+        wl.location_key                AS work_location_key,
+        wp.is_primary_position,
+        comp.annual_wage,
+        comp.hourly_wage,
+        comp.daily_rate,
+        comp.period_rate,
+        GREATEST(
+          ss.effective_start_date,
+          wj.effective_start_date,
+          wt.effective_start_date,
+          wo.effective_start_date,
+          wl.effective_start_date,
+          COALESCE(comp.effective_start_date_key, DATE '1900-01-01')
+        ) AS effective_start_date,
+        LEAST(
+          ss.effective_end_date,
+          wj.effective_end_date,
+          wt.effective_end_date,
+          wo.effective_end_date,
+          wl.effective_end_date,
+          COALESCE(comp.effective_end_date_key, DATE '9999-12-31')
+        ) AS effective_end_date
+      FROM kipptaf_marts.dim_staff_work_assignments swa
+      JOIN kipptaf_marts.dim_staff_status ss
+        ON ss.staff_key = swa.staff_key
+      JOIN kipptaf_marts.dim_work_assignment_jobs wj
+        ON wj.work_assignment_key = swa.work_assignment_key
+        AND ss.effective_start_date < wj.effective_end_date
+        AND ss.effective_end_date   > wj.effective_start_date
+      JOIN kipptaf_marts.dim_work_assignment_types wt
+        ON wt.work_assignment_key = swa.work_assignment_key
+        AND ss.effective_start_date < wt.effective_end_date
+        AND ss.effective_end_date   > wt.effective_start_date
+      JOIN kipptaf_marts.dim_work_assignment_organizational_units wo
+        ON wo.work_assignment_key = swa.work_assignment_key
+        AND wo.assignment_type = 'home'
+        AND ss.effective_start_date < wo.effective_end_date
+        AND ss.effective_end_date   > wo.effective_start_date
+      JOIN kipptaf_marts.dim_work_assignment_locations wl
+        ON wl.work_assignment_key = swa.work_assignment_key
+        AND ss.effective_start_date < wl.effective_end_date
+        AND ss.effective_end_date   > wl.effective_start_date
+      LEFT JOIN kipptaf_marts.dim_work_assignment_primary wp
+        ON wp.work_assignment_key = swa.work_assignment_key
+        AND ss.effective_start_date < wp.effective_end_date
+        AND ss.effective_end_date   > wp.effective_start_date
+      -- Compensation is LEFT JOIN — some assignments have no comp record.
+      -- COALESCE in GREATEST/LEAST ensures null comp dates don't collapse
+      -- the intersection for uncompensated rows.
+      LEFT JOIN kipptaf_marts.fct_work_assignment_compensation comp
+        ON comp.work_assignment_key = swa.work_assignment_key
+        AND ss.effective_start_date < comp.effective_end_date_key
+        AND ss.effective_end_date   > comp.effective_start_date_key
+
+    joins:
+      - name: dates
+        sql: >
+          {dates.date_day} BETWEEN CAST({CUBE}.effective_start_date AS
+          TIMESTAMP) AND CAST({CUBE}.effective_end_date AS TIMESTAMP)
+        relationship: one_to_many
+
+      - name: staff
+        sql: "{staff.staff_key} = {CUBE}.staff_key"
+        relationship: many_to_one
+
+      - name: locations
+        sql: "{locations.location_key} = {CUBE}.work_location_key"
+        relationship: many_to_one
+
+      # Point-in-time manager resolver. many_to_one is safe only when a date
+      # filter is applied — without one, multiple work-history periods per
+      # person each match their contemporaneous reporting relationship row.
+      # Always apply a date filter on staff_work_history queries.
+      - name: staff_reporting_relationships
+        sql: >
+          {staff_reporting_relationships.staff_key} = {CUBE}.staff_key AND
+          CAST({CUBE}.effective_start_date AS TIMESTAMP)
+            <= {staff_reporting_relationships.effective_end_date} AND
+          CAST({CUBE}.effective_end_date AS TIMESTAMP)
+            >= {staff_reporting_relationships.effective_start_date}
+        relationship: many_to_one
+
+      - name: staff_manager
+        sql: >
+          {staff_manager.staff_key} =
+          {staff_reporting_relationships.manager_staff_key}
+        relationship: many_to_one
+
+    dimensions:
+      - name: staff_work_history_key
+        sql: >
+          CONCAT(
+            CAST({CUBE}.staff_key AS STRING), '|',
+            CAST({CUBE}.effective_start_date AS STRING)
+          )
+        type: string
+        primary_key: true
+
+      - name: status_name
+        sql: status_name
+        type: string
+        public: true
+
+      - name: position_title
+        sql: position_title
+        type: string
+        public: true
+
+      - name: job_code
+        sql: job_code
+        type: string
+        public: true
+
+      - name: worker_type
+        sql: worker_type
+        type: string
+        public: true
+
+      - name: department_name
+        sql: department_name
+        type: string
+        public: true
+
+      - name: business_unit_name
+        sql: business_unit_name
+        type: string
+        public: true
+
+      - name: work_location_key
+        sql: work_location_key
+        type: string
+        public: true
+
+      - name: is_primary_position
+        sql: is_primary_position
+        type: boolean
+        public: true
+
+      - name: is_management_position
+        sql: is_management_position
+        type: boolean
+        public: true
+
+      - name: full_time_equivalency
+        sql: full_time_equivalency
+        type: number
+        public: true
+
+      - name: effective_start_date
+        sql: CAST(effective_start_date AS TIMESTAMP)
+        type: time
+        public: true
+
+      # Compensation fields — gated by cube-access-staff-compensation in views.
+      # Null for uncompensated assignments (contractors, volunteers).
+      - name: annual_wage
+        sql: annual_wage
+        type: number
+        public: true
+        meta:
+          pii: true
+
+      - name: hourly_wage
+        sql: hourly_wage
+        type: number
+        public: true
+        meta:
+          pii: true
+
+      - name: daily_rate
+        sql: daily_rate
+        type: number
+        public: true
+        meta:
+          pii: true
+
+      - name: period_rate
+        sql: period_rate
+        type: number
+        public: true
+        meta:
+          pii: true
