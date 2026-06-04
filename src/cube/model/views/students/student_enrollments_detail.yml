@@ -6,11 +6,10 @@ views:
       stint — computed via boundary-union of ELL, IEP, and meal status change
       dates. Every enrollment date falls in exactly one interval.
 
-      For point-in-time queries: filter dates.date_day to any calendar date
-      within an enrollment to get the student's complete context (grade, school,
-      ELL/IEP/meal status) on that date. Always use count_students
-      (count_distinct on student_enrollment_key) for enrollment headcounts —
-      never bare count(*).
+      Status fields (is_ell, is_iep, meal_eligibility, etc.) reflect the value
+      active during each status interval — not a point-in-time snapshot. Always
+      use count_students (count_distinct on student_enrollment_key) for
+      enrollment headcounts — never bare count(*).
 
       Contains direct student identifiers — see access_policy for PII gating.
 

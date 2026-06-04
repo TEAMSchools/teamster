@@ -22,12 +22,7 @@ function nextMidnightEastern() {
 
 // STUDENT_CUBES: cubes that require cube-access-student-data.
 // Add cube name: here when adding a new student-data cube.
-const STUDENT_CUBES = [
-  "attendance",
-  "dim_student_ell_status",
-  "dim_student_iep_status",
-  "dim_student_meal_eligibility_status",
-];
+const STUDENT_CUBES = ["attendance", "dim_student_enrollments"];
 
 const STAFF_CUBES = [
   "dim_staff",

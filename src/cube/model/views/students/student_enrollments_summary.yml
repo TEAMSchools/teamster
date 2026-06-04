@@ -9,7 +9,8 @@ views:
       Always use count_students (count_distinct on student_enrollment_key) for
       enrollment headcounts. Filter to a specific academic_year for per-year
       counts — omitting it sums across all years and produces enrollment-years,
-      not student count.
+      not student count. For date-scoped headcounts, use
+      student_enrollments_detail which exposes entry_date and exit_date.
 
     cubes:
       - join_path: dim_student_enrollments
