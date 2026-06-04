@@ -87,3 +87,45 @@ def test_collect_fact_names_sorted_from_facts_dir() -> None:
     assert all(n.startswith("fct_") for n in names)
     assert "fct_student_attendance_daily" in names
     assert len(names) >= 20
+
+
+def test_render_erdiagram_emits_labeled_fk_edges() -> None:
+    adjacency = gen.build_adjacency(_sample_edges())
+    sub = gen.snowflake_subgraph(adjacency, "fct_x")
+    block = gen.render_erdiagram(sub, "fct_x")
+
+    assert block.startswith("```mermaid\nerDiagram\n")
+    assert block.rstrip().endswith("```")
+    assert 'fct_x }o--|| dim_dates : "created_date_key"' in block
+    assert 'fct_x }o--|| dim_dates : "solved_date_key"' in block
+    assert 'dim_locations }o--|| dim_regions : "region_key"' in block
+
+
+def test_render_erdiagram_handles_fact_with_no_fks() -> None:
+    block = gen.render_erdiagram([], "fct_lonely")
+    assert "erDiagram" in block
+    assert "fct_lonely {" in block
+
+
+def test_render_fk_table_lists_direct_fks_sorted() -> None:
+    adjacency = gen.build_adjacency(_sample_edges())
+    table = gen.render_fk_table(adjacency, "fct_x")
+
+    assert "| FK column | References |" in table
+    lines = [ln for ln in table.splitlines() if ln.startswith("| `")]
+    # direct FKs only, sorted by column name
+    assert lines == [
+        "| `created_date_key` | `dim_dates` |",
+        "| `enrollment_key` | `dim_enrollments` |",
+        "| `solved_date_key` | `dim_dates` |",
+    ]
+
+
+def test_render_page_has_one_h2_per_fact_and_banner() -> None:
+    adjacency = gen.build_adjacency(_sample_edges())
+    page = gen.render_page(adjacency, ["fct_x"])
+
+    assert page.startswith("# Marts data models\n")
+    assert gen.BANNER in page
+    assert page.count("\n## ") == 1
+    assert "## fct_x" in page
