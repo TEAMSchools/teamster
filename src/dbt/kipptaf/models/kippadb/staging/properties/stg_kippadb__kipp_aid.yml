@@ -7,6 +7,28 @@ models:
           - unique:
               config:
                 severity: error
+      - name: is_maher
+        data_type: boolean
+        data_tests:
+          - not_null:
+              config:
+                severity: error
+        description:
+          True when the note carries the appended MAHER_FUND marker tag
+          identifying the record as a Maher Fund award; false otherwise,
+          including when the note is null or empty.
+      - name: fund_type
+        data_type: string
+        data_tests:
+          - accepted_values:
+              arguments:
+                values: [Emergency, Enrichment, Unclassified]
+              config:
+                severity: warn
+        description:
+          Funding classification parsed from the MAHER_FUND tag's type field
+          (Emergency, Enrichment, or Unclassified); null when the note is
+          untagged.
       - name: name
         data_type: string
       - name: created_by_id
@@ -35,3 +57,19 @@ models:
         data_type: string
       - name: type
         data_type: string
+      - name: doc_type
+        data_type: string
+        description:
+          Source purchase-order or expense-report reference parsed from the
+          MAHER_FUND tag's doc field; null when the note is untagged.
+      - name: notes_clean
+        data_type: string
+        description:
+          The note with the MAHER_FUND tag and its surrounding whitespace
+          removed; equals the original note when untagged, and null when the
+          note is null.
+      - name: academic_year
+        data_type: int64
+        description:
+          Academic year (July-June) that the award's date falls in, expressed as
+          the start year.
