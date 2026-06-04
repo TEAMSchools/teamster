@@ -114,13 +114,13 @@ git commit -m "feat(cube): add SY crosswalk note to dim_terms academic_year desc
 In `src/cube/model/cubes/attendance/attendance.yml`, find the `is_latest_record`
 dimension (around line 211). Replace the sentence:
 
-```
+```text
 Use as a filter (is_latest_record = true) with dim_terms.academic_year
 ```
 
 with:
 
-```
+```text
 Use as a filter (is_latest_record = true) with dim_dates.academic_year or
 dim_dates.academic_year_label
 ```

@@ -248,7 +248,7 @@ mcp = FastMCP(
         "string the user provided (e.g. 'SY26', '2025-26', '2026'). Use the "
         "returned academic_year integer for numeric filters/grouping, or "
         "academic_year_label for the label dimension. Emit the interpreted_as "
-        "value as a brief inline statement (e.g. 'Interpreting as the 2025-26 "
+        "value as a brief inline statement (e.g. 'Interpreting as the 2025-2026 "
         "school year') before showing results — do not pause or ask for "
         "confirmation, just state it and proceed. Do not skip this step even "
         "when the year seems unambiguous.\n\n"
@@ -351,7 +351,7 @@ def _resolve_academic_year(raw: str) -> dict[str, int | str]:
         "academic_year": start,
         "academic_year_label": label,
         "school_year": sy,
-        "interpreted_as": f"{start}-{end % 100:02d} school year",
+        "interpreted_as": f"{start}-{end} school year",
     }
     if note is not None:
         result["note"] = note

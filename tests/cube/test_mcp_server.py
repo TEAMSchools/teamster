@@ -274,22 +274,29 @@ def test_meta_in_memory_cache_skips_disk_read_on_repeat_calls(
 
 
 @pytest.mark.parametrize(
-    ("raw", "expected_year", "expected_label", "expected_sy", "has_note"),
+    (
+        "raw",
+        "expected_year",
+        "expected_label",
+        "expected_sy",
+        "expected_interpreted_as",
+        "has_note",
+    ),
     [
-        ("SY26", 2025, "2025-2026", "SY26", False),
-        ("SY2026", 2025, "2025-2026", "SY26", False),
-        ("sy26", 2025, "2025-2026", "SY26", False),
-        ("AY2025", 2025, "2025-2026", "SY26", False),
-        ("AY25", 2025, "2025-2026", "SY26", False),
-        ("ay2025", 2025, "2025-2026", "SY26", False),
-        ("2025-2026", 2025, "2025-2026", "SY26", False),
-        ("2025–2026", 2025, "2025-2026", "SY26", False),
-        ("2025-26", 2025, "2025-2026", "SY26", False),
-        ("2025–26", 2025, "2025-2026", "SY26", False),
-        ("25-26", 2025, "2025-2026", "SY26", False),
-        ("2026", 2026, "2026-2027", "SY27", True),
-        ("2025", 2025, "2025-2026", "SY26", True),
-        ("26", 2026, "2026-2027", "SY27", True),
+        ("SY26", 2025, "2025-2026", "SY26", "2025-2026 school year", False),
+        ("SY2026", 2025, "2025-2026", "SY26", "2025-2026 school year", False),
+        ("sy26", 2025, "2025-2026", "SY26", "2025-2026 school year", False),
+        ("AY2025", 2025, "2025-2026", "SY26", "2025-2026 school year", False),
+        ("AY25", 2025, "2025-2026", "SY26", "2025-2026 school year", False),
+        ("ay2025", 2025, "2025-2026", "SY26", "2025-2026 school year", False),
+        ("2025-2026", 2025, "2025-2026", "SY26", "2025-2026 school year", False),
+        ("2025–2026", 2025, "2025-2026", "SY26", "2025-2026 school year", False),
+        ("2025-26", 2025, "2025-2026", "SY26", "2025-2026 school year", False),
+        ("2025–26", 2025, "2025-2026", "SY26", "2025-2026 school year", False),
+        ("25-26", 2025, "2025-2026", "SY26", "2025-2026 school year", False),
+        ("2026", 2026, "2026-2027", "SY27", "2026-2027 school year", True),
+        ("2025", 2025, "2025-2026", "SY26", "2025-2026 school year", True),
+        ("26", 2026, "2026-2027", "SY27", "2026-2027 school year", True),
     ],
 )
 def test_resolve_academic_year(
@@ -298,6 +305,7 @@ def test_resolve_academic_year(
     expected_year: int,
     expected_label: str,
     expected_sy: str,
+    expected_interpreted_as: str,
     has_note: bool,
 ) -> None:
     server = _load_server(monkeypatch)
@@ -305,6 +313,7 @@ def test_resolve_academic_year(
     assert result["academic_year"] == expected_year
     assert result["academic_year_label"] == expected_label
     assert result["school_year"] == expected_sy
+    assert result["interpreted_as"] == expected_interpreted_as
     assert ("note" in result) == has_note
 
 
