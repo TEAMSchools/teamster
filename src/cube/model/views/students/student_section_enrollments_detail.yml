@@ -1,0 +1,195 @@
+views:
+  - name: student_section_enrollments_detail
+    description: >-
+      Row-level student section enrollment roster with course and teacher
+      context. Grain: one row per student x section enrollment x teacher
+      assignment (teaching roles only — Gradebook Access excluded).
+
+      Fan-out warning: sections with co-teachers or job-share arrangements
+      produce multiple rows per student — one per instructional teacher. Use one
+      of the following anchors to avoid duplicates in row-level queries: (1)
+      filter is_lead_teacher = true for the primary teacher only; (2) filter by
+      teacher_staff_key to scope to one teacher's students; (3) filter by
+      teacher_role for a specific role. For aggregate student counts,
+      count_distinct(student_enrollment_key) is always correct.
+
+      Teacher dimensions (staff join path) require the staff-core plan to be
+      complete. Contains direct student identifiers — see access_policy for PII
+      gating.
+
+    cubes:
+      - join_path: student_section_enrollments
+        includes:
+          - academic_year
+          - entry_date
+          - exit_date
+          - is_dropped_section
+          - is_dropped_course
+          - section_identifier
+          - section_period
+          - section_room
+          - course_code
+          - course_title
+          - credit_type
+          - academic_subject
+          - course_credits
+          - teacher_staff_key
+          - teacher_role
+          - is_lead_teacher
+          - teacher_effective_start_date
+          - teacher_effective_end_date
+
+      - join_path: student_section_enrollments.terms
+        prefix: true
+        includes:
+          - academic_year
+          - semester
+          - term_name
+          - term_code
+          - term_type
+
+      - join_path: student_section_enrollments.student_enrollments.locations
+        prefix: true
+        includes:
+          - location_name
+          - abbreviation
+          - grade_band
+          - campus
+          - city
+
+      - join_path: >-
+          student_section_enrollments.student_enrollments.locations.regions
+        prefix: true
+        includes:
+          - region_name
+          - state
+
+      - join_path: student_section_enrollments.student_enrollments
+        prefix: true
+        includes:
+          - student_enrollment_key
+          - grade_level
+          - graduation_year
+          - entry_date
+          - exit_date
+
+      - join_path: student_section_enrollments.student_enrollments.students
+        prefix: true
+        includes:
+          - student_key
+          - full_name
+          - birth_date
+          - lea_student_identifier
+          - state_student_identifier
+          - gender_identity
+          - race
+          - enrollment_status
+          - is_gifted
+
+      # Requires staff-core plan. Teacher name and PII fields.
+      - join_path: student_section_enrollments.staff
+        prefix: true
+        includes:
+          - staff_key
+          - full_name
+          - first_name
+          - last_name
+          - work_email
+
+    meta:
+      folders:
+        - name: Section
+          members:
+            - academic_year
+            - entry_date
+            - exit_date
+            - is_dropped_section
+            - is_dropped_course
+            - section_identifier
+            - section_period
+            - section_room
+        - name: Course
+          members:
+            - course_code
+            - course_title
+            - credit_type
+            - academic_subject
+            - course_credits
+        - name: Teacher
+          members:
+            - teacher_staff_key
+            - teacher_role
+            - is_lead_teacher
+            - teacher_effective_start_date
+            - teacher_effective_end_date
+        - name: Term
+          members:
+            - terms_academic_year
+            - terms_semester
+            - terms_term_name
+            - terms_term_code
+            - terms_term_type
+        - name: Location
+          members:
+            - locations_location_name
+            - locations_abbreviation
+            - locations_grade_band
+            - locations_campus
+            - locations_city
+            - regions_region_name
+            - regions_state
+        - name: Student
+          members:
+            - students_student_key
+            - students_full_name
+            - students_birth_date
+            - students_lea_student_identifier
+            - students_state_student_identifier
+            - students_gender_identity
+            - students_race
+            - students_enrollment_status
+            - students_is_gifted
+        - name: Enrollment
+          members:
+            - student_enrollments_student_enrollment_key
+            - student_enrollments_grade_level
+            - student_enrollments_graduation_year
+            - student_enrollments_entry_date
+            - student_enrollments_exit_date
+        - name: Staff
+          members:
+            - staff_staff_key
+            - staff_full_name
+            - staff_first_name
+            - staff_last_name
+            - staff_work_email
+
+    access_policy:
+      - group: detail-access
+        member_level:
+          includes: "*"
+          excludes:
+            - students_full_name
+            - students_birth_date
+            - students_lea_student_identifier
+            - students_state_student_identifier
+            - staff_full_name
+            - staff_first_name
+            - staff_last_name
+            - staff_work_email
+      - group: cube-access-student-pii
+        member_level:
+          includes: "*"
+          excludes:
+            - staff_full_name
+            - staff_first_name
+            - staff_last_name
+            - staff_work_email
+      - group: cube-access-staff-pii
+        member_level:
+          includes: "*"
+          excludes:
+            - students_full_name
+            - students_birth_date
+            - students_lea_student_identifier
+            - students_state_student_identifier
