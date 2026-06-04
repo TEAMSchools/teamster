@@ -271,3 +271,46 @@ def test_meta_in_memory_cache_skips_disk_read_on_repeat_calls(
     third = asyncio.run(server.meta(ctx))
     assert third == {"cubes": [{"name": "x"}]}
     assert call_count == 1
+
+
+@pytest.mark.parametrize(
+    ("raw", "expected_year", "expected_label", "expected_sy", "has_note"),
+    [
+        ("SY26", 2025, "2025-2026", "SY26", False),
+        ("SY2026", 2025, "2025-2026", "SY26", False),
+        ("sy26", 2025, "2025-2026", "SY26", False),
+        ("AY2025", 2025, "2025-2026", "SY26", False),
+        ("AY25", 2025, "2025-2026", "SY26", False),
+        ("ay2025", 2025, "2025-2026", "SY26", False),
+        ("2025-2026", 2025, "2025-2026", "SY26", False),
+        ("2025–2026", 2025, "2025-2026", "SY26", False),
+        ("2025-26", 2025, "2025-2026", "SY26", False),
+        ("2025–26", 2025, "2025-2026", "SY26", False),
+        ("25-26", 2025, "2025-2026", "SY26", False),
+        ("2026", 2026, "2026-2027", "SY27", True),
+        ("2025", 2025, "2025-2026", "SY26", True),
+        ("26", 2026, "2026-2027", "SY27", True),
+    ],
+)
+def test_resolve_academic_year(
+    monkeypatch: pytest.MonkeyPatch,
+    raw: str,
+    expected_year: int,
+    expected_label: str,
+    expected_sy: str,
+    has_note: bool,
+) -> None:
+    server = _load_server(monkeypatch)
+    result = server._resolve_academic_year(raw)
+    assert result["academic_year"] == expected_year
+    assert result["academic_year_label"] == expected_label
+    assert result["school_year"] == expected_sy
+    assert ("note" in result) == has_note
+
+
+def test_resolve_academic_year_raises_on_unparseable(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    server = _load_server(monkeypatch)
+    with pytest.raises(ValueError, match="Cannot parse year"):
+        server._resolve_academic_year("not-a-year")
