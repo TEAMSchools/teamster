@@ -88,3 +88,8 @@ Load the script in tests via `importlib.util.spec_from_file_location` and
 register `sys.modules[name] = module` _before_ `exec_module` (the registration
 is required for `@dataclass` to resolve). Don't add `scripts/__init__.py` —
 scripts/ stays a directory of standalone executables.
+
+Don't annotate test helpers with a type from the loaded module (e.g.
+`-> list[mod.Class]`) — `mod` is a runtime variable, not a static module, so
+pyright flags `reportInvalidTypeForm`. Use a builtin/bare annotation
+(`-> list`).
