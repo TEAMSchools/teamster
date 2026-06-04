@@ -191,6 +191,8 @@ select
 
     {{ dbt_utils.generate_surrogate_key(["ia.student_number"]) }} as student_key,
 
+    sr.student_section_enrollment_key,
+
     ia.test_date as test_date_key,
 
     ia.scale_score,
@@ -198,6 +200,14 @@ select
     ia.proficiency_level,
     ia.is_mastery,
 from internal_assessments as ia
+-- ia.assessment_id is canonical-grain: int_assessments__response_rollup aliases
+-- canonical_assessment_id as assessment_id, so it matches the resolver's
+-- canonical_assessment_id join key.
+left join
+    {{ ref("int_assessments__resolved_section_enrollments") }} as sr
+    on ia.student_number = sr.powerschool_student_number
+    and ia.assessment_id = sr.canonical_assessment_id
+    and ia._dbt_source_project = sr._dbt_source_project
 
 union all
 
@@ -235,6 +245,8 @@ select
         {{ dbt_utils.generate_surrogate_key(["su.student_number"]) }},
         cast(null as string)
     ) as student_key,
+
+    cast(null as string) as student_section_enrollment_key,
 
     su.test_date as test_date_key,
 
