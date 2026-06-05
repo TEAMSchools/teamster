@@ -1,17 +1,14 @@
 views:
   - name: student_enrollments_detail
     description: >-
-      Row-level student enrollment with ELL, IEP, and meal eligibility status
-      inlined. One row per non-overlapping status interval within an enrollment
-      stint — computed via boundary-union of ELL, IEP, and meal status change
-      dates. Every enrollment date falls in exactly one interval.
+      Student enrollment detail with enrollment-grain ELL, IEP, and meal
+      eligibility status. One row per enrollment stint including graduate
+      placeholder stints.
 
-      Status fields (is_ell, is_iep, meal_eligibility, etc.) reflect the value
-      active during each status interval — not a point-in-time snapshot. Always
-      use count_students (count_distinct on student_enrollment_key) for
-      enrollment headcounts — never bare count(*).
-
-      Contains direct student identifiers — see access_policy for PII gating.
+      Use count_students (count_distinct on student_enrollment_key) for
+      enrollment headcounts. Status fields (is_ell, is_iep, is_meal_eligible,
+      etc.) reflect the enrollment-grain aggregate — not point-in-time within
+      the stint. Point-in-time status queries should use the attendance views.
 
     cubes:
       - join_path: dim_student_enrollments
@@ -24,8 +21,10 @@ views:
           - entry_date
           - exit_date
           - is_retained_year
-          - effective_start_date
-          - effective_end_date
+
+      - join_path: dim_student_enrollments.dim_student_enrollment_status
+        prefix: false
+        includes:
           - is_ell
           - is_iep
           - iep_classification
@@ -74,8 +73,6 @@ views:
             - entry_date
             - exit_date
             - is_retained_year
-            - effective_start_date
-            - effective_end_date
         - name: Status
           members:
             - is_ell

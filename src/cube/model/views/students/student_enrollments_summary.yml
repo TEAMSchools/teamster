@@ -9,8 +9,7 @@ views:
       Always use count_students (count_distinct on student_enrollment_key) for
       enrollment headcounts. Filter to a specific academic_year for per-year
       counts — omitting it sums across all years and produces enrollment-years,
-      not student count. For date-scoped headcounts, use
-      student_enrollments_detail which exposes entry_date and exit_date.
+      not student count.
 
     cubes:
       - join_path: dim_student_enrollments
@@ -20,6 +19,10 @@ views:
           - grade_level
           - graduation_year
           - is_retained_year
+
+      - join_path: dim_student_enrollments.dim_student_enrollment_status
+        prefix: false
+        includes:
           - is_ell
           - is_iep
           - iep_classification
@@ -87,8 +90,7 @@ views:
             - dim_students_enrollment_status
 
     access_policy:
-      # No direct student identifiers — demographic and status dimensions are
-      # aggregate breakdowns only.
+      # No direct student identifiers — demographic and status breakdowns only.
       - group: cube-access-student-data
         member_level:
           includes: "*"
