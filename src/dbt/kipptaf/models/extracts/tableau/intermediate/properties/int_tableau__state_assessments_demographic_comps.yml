@@ -39,9 +39,10 @@ models:
         description: >
           Subject-and-grade test code (e.g. ELA03, MAT08, ELAGP). ALG01 is not
           split by school level; the downstream rpt strips any suffix before
-          joining to benchmark data. ELA11 is excluded from NJ scores: it was
-          not a valid NJSLA test for Spring 2018-2019 and NJ published no
-          comparison benchmarks for it.
+          joining to benchmark data. ELA11 is excluded from NJ scores across all
+          years: it appeared in Spring 2019 (academic_year = 2018) data but was
+          not a recognized NJSLA test code and NJ published no comparison
+          benchmarks for it.
       - name: total_proficient_students
         data_type: float64
         description: Rounded count of students who scored proficient or above.
