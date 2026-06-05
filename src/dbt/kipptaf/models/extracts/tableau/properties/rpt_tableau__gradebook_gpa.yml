@@ -195,3 +195,8 @@ models:
         data_type: string
       - name: section_or_period
         data_type: string
+      - name: is_ada_above_or_at_80_gpa_y1_less_2
+        data_type: boolean
+        description: >
+          True when the student's ADA is at or above 80% and their year-to-date
+          course GPA (gpa_y1) is below 2.0. Per-course grain.

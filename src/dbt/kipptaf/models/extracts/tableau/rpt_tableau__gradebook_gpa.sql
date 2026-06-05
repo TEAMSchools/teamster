@@ -126,11 +126,7 @@ with
             and enr.schoolid = gty.schoolid
             and {{ union_dataset_join_clause(left_alias="enr", right_alias="gty") }}
             and gty.is_current
-        where
-            enr.rn_year = 1
-            and not enr.is_out_of_district
-            and enr.enroll_status != -1
-            and enr.region != 'Paterson'
+        where enr.rn_year = 1 and not enr.is_out_of_district and enr.enroll_status != -1
     ),
 
     course_enrollments as (
@@ -441,6 +437,10 @@ select
     if(
         s.grade_level < 9, ce.section_number, ce.external_expression
     ) as section_or_period,
+
+    if(
+        s.ada_above_or_at_80 and s.gpa_y1 < 2.0, true, false
+    ) as is_ada_above_or_at_80_gpa_y1_less_2,
 
 from student_roster as s
 left join
