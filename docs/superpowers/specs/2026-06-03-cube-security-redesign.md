@@ -10,13 +10,19 @@ from HR data. Two new dbt models become the source of truth for who can see
 what, replacing manual Google Workspace group enrollment and the Google Admin
 Directory API entirely:
 
-- `dim_staff_cube_access` — one row per staff email; resolves each person to a
-  scope tier, student/staff access levels, per-field visibility flags, and an
-  org-rank level. Derived from role (`job_function_code` × `entity` ×
-  `department_type`), with a department-level special-access override.
+- `dim_staff_cube_access` — one row per staff member (keyed on `staff_key`);
+  resolves each person to a scope tier, student/staff access levels, per-field
+  visibility flags, and an org-rank level. Derived from role
+  (`job_function_code` × `entity` × `department_type`), with a department-level
+  special-access override.
 - `dim_staff_reporting_chain` — the transitive closure of the org tree (manager
-  → every direct/indirect report), used to grant detail-level access to a
-  manager's own downline.
+  → every direct/indirect report), keyed on `staff_key`, used to grant
+  detail-level access to a manager's own downline.
+
+Identity keys on `staff_key` (a stable surrogate of `employee_number`)
+throughout. The JWT email claim is used in exactly one place — a boundary lookup
+that resolves email → `staff_key` — because Google emails are reused and are
+unsafe as a persistent identity key.
 
 `cube.js` is simplified: `contextToGroups` queries BigQuery (no Directory API),
 `queryRewrite` reads scope and reporting-chain from the cache instead of parsing
@@ -65,8 +71,9 @@ director sees their department group within their region only.
 viewer sees at **detail / PII** level. A staff row is shown at detail only if
 **both**:
 
-- it is in the viewer's downline (`reportee_email IN dim_staff_reporting_chain`
-  for the viewer as manager), **AND**
+- it is in the viewer's downline
+  (`reportee_staff_key IN dim_staff_reporting_chain` for the viewer as manager),
+  **AND**
 - its `job_function_level` is strictly below the viewer's (numerically greater —
   1 = Chief is highest, 6 = Teacher is lowest).
 
@@ -110,12 +117,16 @@ now so the column exists.
 
 ## Resolution order (`dim_staff_cube_access`)
 
-Each active staff email resolves to exactly one access row:
+The model has one row per active primary staff member, keyed on `staff_key`
+(`generate_surrogate_key([employee_number])`). `google_email` is carried as a
+populated lookup column so `contextToGroups` can resolve the JWT claim. Each row
+resolves as:
 
 ```text
-1. Look up the active, primary roster row by google_email
+1. Source the active, primary roster row
    (int_people__staff_roster, worker_status_code != 'Terminated',
-    primary_indicator = true, google_email is not null).
+    primary_indicator = true). Set staff_key from employee_number;
+    carry google_email for the boundary lookup.
 
 2. If assigned_department_name ∈ special-access list (8 departments):
      → emit the special-access row verbatim.
@@ -129,8 +140,9 @@ Each active staff email resolves to exactly one access row:
        scope_level / staff_access_level / tristate flags / job_function_level
        per the job-function mapping.
 
-4. No matching roster row, or null email:
-     → no output row → contextToGroups returns [] → queryRewrite default-denies.
+4. JWT email matches no row (terminated, recycled-to-nobody, contractor,
+   service account), or the row has a null email:
+     → no resolution → contextToGroups returns [] → queryRewrite default-denies.
 ```
 
 The department override **wins entirely** when it matches — it is uniformly
@@ -208,55 +220,70 @@ booleans → `all` / `none`.
 `src/dbt/kipptaf/models/marts/dimensions/dim_staff_reporting_chain.sql`
 
 Transitive closure of the org tree. Grain: one row per
-`(manager_email, reportee_email)`. Verified against current data: 7,005 pairs,
-maximum depth 7, no cycles, terminates cleanly (2 null-manager roots at the
+`(manager_staff_key, reportee_staff_key)`. Verified against current data: 7,005
+pairs, maximum depth 7, no cycles, terminates cleanly (org-root managers at the
 top).
 
-| Column           | Type   | Description                                          |
-| ---------------- | ------ | ---------------------------------------------------- |
-| `manager_email`  | STRING | A staff member at or above the reportee in the tree  |
-| `reportee_email` | STRING | The direct or indirect report                        |
-| `depth`          | INT64  | Hops from manager to reportee (0 = self, 1 = direct) |
+| Column               | Type   | Description                                          |
+| -------------------- | ------ | ---------------------------------------------------- |
+| `manager_staff_key`  | STRING | A staff member at or above the reportee in the tree  |
+| `reportee_staff_key` | STRING | The direct or indirect report                        |
+| `depth`              | INT64  | Hops from manager to reportee (0 = self, 1 = direct) |
 
+- **Key on `staff_key`, not email.** Google emails are reused (a departed
+  employee's address can be reassigned to a new hire), so email is unsafe as a
+  stable identity key. `staff_key` —
+  `generate_surrogate_key([employee_number])`, the same surrogate `dim_staff`
+  uses — is stable for the life of an employee record. Email is used in exactly
+  one place: the JWT-boundary lookup in `contextToGroups` (see §3).
 - **Edge source:** `int_people__staff_roster` self-reference,
-  `reports_to_google_email → google_email`. Email-to-email so it joins directly
-  to the JWT email claim — no surrogate-key round-trips. (Chosen over
-  `dim_work_assignment_reporting_relationships`, which is keyed on `staff_key`
-  and carries per-assignment SCD2 fan-out.)
-- **Filter:** active staff (`worker_status_code != 'Terminated'`), non-null
-  `google_email`, `primary_indicator = true`.
-- **Self-pair included** (`manager_email = reportee_email`, `depth = 0`) so a
-  single `reportee_email IN (...)` filter lets a manager see their own row too.
-- **PK:** composite `(manager_email, reportee_email)` — composite uniqueness
-  test. `depth` is the minimum hop count if multiple paths exist.
-- **Recursion:** recursive CTE with a `depth < 20` cycle backstop (data is a
-  clean tree; the cap is defensive only).
+  `reports_to_employee_number → employee_number`, each hashed to `staff_key` via
+  the single-input `generate_surrogate_key` matching `dim_staff`. (Chosen over
+  `dim_work_assignment_reporting_relationships`, which carries per-assignment
+  SCD2 fan-out.)
+- **Filter:** active staff (`worker_status_code != 'Terminated'`),
+  `primary_indicator = true`. `employee_number` is non-null and 1:1 for active
+  primary rows (verified: 1,490 rows, 1,490 distinct, 0 null).
+- **Self-pair included** (`manager_staff_key = reportee_staff_key`, `depth = 0`)
+  so a single `reportee_staff_key IN (...)` filter lets a manager see their own
+  row too.
+- **PK:** composite `(manager_staff_key, reportee_staff_key)` — composite
+  uniqueness test. `depth` is the minimum hop count if multiple paths exist.
+- **Recursion:** recursive CTE over the
+  `employee_number → reports_to_employee_number` edge with a `depth < 20` cycle
+  backstop (data is a clean tree; the cap is defensive only); hash to
+  `staff_key` after the closure.
+- **Hash discipline:** `staff_key` here must hash identically to
+  `dim_staff.staff_key` (single input `employee_number`). Per `marts/CLAUDE.md`,
+  any change to that composition must migrate producer and all consumers
+  together.
 
 ### 2. dbt model: `dim_staff_cube_access`
 
 **Path:** `src/dbt/kipptaf/models/marts/dimensions/dim_staff_cube_access.sql`
 
-One row per active staff `google_email`. Verified 1:1 on email for active,
-non-null-email staff (1,466 emails, exactly one primary assignment each).
+One row per active staff `staff_key`. Verified 1:1 on `employee_number` for
+active primary staff (1,490 rows, 1,490 distinct, 0 null).
 
-| Column                   | Type   | Description                                                                    |
-| ------------------------ | ------ | ------------------------------------------------------------------------------ |
-| `staff_google_email`     | STRING | PK — matches JWT email claim                                                   |
-| `job_function_code`      | STRING | From roster (CHIEF/EDHOS/SL/…)                                                 |
-| `job_function_level`     | INT64  | Org rank 1–6 (CASE on `job_function_code`)                                     |
-| `entity`                 | STRING | `KTAF` / `Region` (CASE)                                                       |
-| `department_type`        | STRING | `instructional` / `non-instructional` (CASE on department)                     |
-| `department_group`       | STRING | Rollup of `assigned_department_name` (CASE)                                    |
-| `scope_level`            | STRING | network / region / school / network+department_group / region+department_group |
-| `scope_key`              | STRING | region_key, school abbreviation, or NULL (network)                             |
-| `student_access_level`   | STRING | `detail` / `summary` / NULL                                                    |
-| `staff_access_level`     | STRING | `detail` / `summary_reporting_chain` / NULL                                    |
-| `has_student_pii`        | BOOL   | Student PII columns                                                            |
-| `has_staff_pii`          | STRING | tristate: all / reporting_chain / teaching_staff / none                        |
-| `has_staff_compensation` | STRING | tristate                                                                       |
-| `has_staff_benefits`     | STRING | tristate (all rows `none` today; column kept for forward-compat)               |
-| `has_staff_observations` | STRING | tristate                                                                       |
-| `survey_access_level`    | STRING | `detail` / `summary` / NULL                                                    |
+| Column                   | Type   | Description                                                                                                                             |
+| ------------------------ | ------ | --------------------------------------------------------------------------------------------------------------------------------------- |
+| `staff_key`              | STRING | PK — `generate_surrogate_key([employee_number])`, matches `dim_staff`                                                                   |
+| `google_email`           | STRING | Resolve-only lookup for the JWT boundary; populated from the active+primary row so a recycled address can't resolve to a stale identity |
+| `job_function_code`      | STRING | From roster (CHIEF/EDHOS/SL/…)                                                                                                          |
+| `job_function_level`     | INT64  | Org rank 1–6 (CASE on `job_function_code`)                                                                                              |
+| `entity`                 | STRING | `KTAF` / `Region` (CASE)                                                                                                                |
+| `department_type`        | STRING | `instructional` / `non-instructional` (CASE on department)                                                                              |
+| `department_group`       | STRING | Rollup of `assigned_department_name` (CASE)                                                                                             |
+| `scope_level`            | STRING | network / region / school / network+department_group / region+department_group                                                          |
+| `scope_key`              | STRING | region_key, school abbreviation, or NULL (network)                                                                                      |
+| `student_access_level`   | STRING | `detail` / `summary` / NULL                                                                                                             |
+| `staff_access_level`     | STRING | `detail` / `summary_reporting_chain` / NULL                                                                                             |
+| `has_student_pii`        | BOOL   | Student PII columns                                                                                                                     |
+| `has_staff_pii`          | STRING | tristate: all / reporting_chain / teaching_staff / none                                                                                 |
+| `has_staff_compensation` | STRING | tristate                                                                                                                                |
+| `has_staff_benefits`     | STRING | tristate (all rows `none` today; column kept for forward-compat)                                                                        |
+| `has_staff_observations` | STRING | tristate                                                                                                                                |
+| `survey_access_level`    | STRING | `detail` / `summary` / NULL                                                                                                             |
 
 - **Derivation:** department special-access override (CASE on
   `assigned_department_name`) takes precedence; otherwise the role-based CASE on
@@ -268,8 +295,11 @@ non-null-email staff (1,466 emails, exactly one primary assignment each).
 
 ### 3. `cube.js`: `contextToGroups`
 
-Replace the Google Admin Directory API call with two BigQuery reads (cached to
-midnight ET — BigQuery has cost, not just latency):
+Replace the Google Admin Directory API call with BigQuery reads (cached to
+midnight ET — BigQuery has cost, not just latency). **Email is used only here**,
+to resolve the JWT claim to a stable `staff_key`; everything downstream keys on
+`staff_key`. The access read is filtered to the active+primary row, so a
+recycled email cannot resolve to a departed employee's identity.
 
 ```javascript
 contextToGroups: async ({ securityContext }) => {
@@ -286,35 +316,41 @@ contextToGroups: async ({ securityContext }) => {
   const { BigQuery } = require("@google-cloud/bigquery");
   const bq = new BigQuery();
 
-  const [[accessRows], [reporteeRows]] = await Promise.all([
-    bq.query({
-      query: `
-        SELECT
-          student_access_level, staff_access_level, survey_access_level,
-          has_student_pii, has_staff_pii, has_staff_compensation,
-          has_staff_benefits, has_staff_observations,
-          scope_level, scope_key, department_group, job_function_level
-        FROM kipptaf_marts.dim_staff_cube_access
-        WHERE staff_google_email = @email
-        LIMIT 1`,
-      params: { email },
-    }),
-    bq.query({
-      query: `
-        SELECT reportee_email
-        FROM kipptaf_marts.dim_staff_reporting_chain
-        WHERE manager_email = @email`,
-      params: { email },
-    }),
-  ]);
-
+  // 1. Resolve email → staff_key + access row (active+primary row only).
+  const [accessRows] = await bq.query({
+    query: `
+      SELECT
+        staff_key,
+        student_access_level, staff_access_level, survey_access_level,
+        has_student_pii, has_staff_pii, has_staff_compensation,
+        has_staff_benefits, has_staff_observations,
+        scope_level, scope_key, department_group, job_function_level
+      FROM kipptaf_marts.dim_staff_cube_access
+      WHERE google_email = @email
+      LIMIT 1`,
+    params: { email },
+  });
   const row = accessRows[0] ?? null;
+
+  // 2. Reporting chain keyed on the resolved staff_key (not email).
+  let reporteeStaffKeys = [];
+  if (row?.staff_key) {
+    const [reporteeRows] = await bq.query({
+      query: `
+        SELECT reportee_staff_key
+        FROM kipptaf_marts.dim_staff_reporting_chain
+        WHERE manager_staff_key = @staffKey`,
+      params: { staffKey: row.staff_key },
+    });
+    reporteeStaffKeys = reporteeRows.map((r) => r.reportee_staff_key);
+  }
+
   const groups = buildGroups(row); // emits cube-access-* group names
 
   groupCache.set(email, {
     groups,
-    row, // full access row retained for queryRewrite
-    reporteeEmails: reporteeRows.map((r) => r.reportee_email),
+    row, // full access row retained for queryRewrite (carries staff_key)
+    reporteeStaffKeys,
     expiresAt: nextMidnightEastern(),
   });
 
@@ -322,7 +358,9 @@ contextToGroups: async ({ securityContext }) => {
 },
 ```
 
-`buildGroups(row)` emits the view-policy group names from the resolved row:
+The two reads are now sequential (the chain read needs the resolved
+`staff_key`), but both hit small tables on the cached path once per user per
+day. `buildGroups(row)` emits the view-policy group names from the resolved row:
 `cube-access-student-detail` / `-summary` / `-pii`, `cube-access-staff-detail` /
 `-summary` / `-pii` / `-compensation` / `-observations`, per the access levels
 and flags. No Google groups are read.
@@ -330,7 +368,7 @@ and flags. No Google groups are read.
 ### 4. `cube.js`: `queryRewrite`
 
 Replace group-name parsing with cache reads. The cached `row` and
-`reporteeEmails` drive every filter.
+`reporteeStaffKeys` drive every filter.
 
 - **Student cubes:** strip dims/measures unless `student_access_level` is set;
   inject the location filter from `scope_level` / `scope_key` (network = none,
@@ -339,9 +377,10 @@ Replace group-name parsing with cache reads. The cached `row` and
   the view `access_policy` groups.
 - **Staff cubes:** inject the **Layer-1 scope filter** (including
   `region + department_group` as an AND of two equals filters), then the
-  **Layer-2 detail filter** (`staff_google_email IN reporteeEmails` AND
+  **Layer-2 detail filter** (`staff.staff_key IN reporteeStaffKeys` AND
   `job_function_level > viewer.job_function_level`) that governs which rows
-  expose PII/comp/observation columns per the tristate flags.
+  expose PII/comp/observation columns per the tristate flags. The staff cube and
+  detail view expose `staff_key` for this filter.
 - **Snapshot anchor** logic and `canSwitchSqlUser` unchanged.
 
 ### 5. Cube renames, schema test, view policies (original issue scope)
@@ -409,7 +448,7 @@ per-row, restrict the **rows** so the column grant is correct for the whole set:
 - A viewer whose `has_staff_compensation = 'reporting_chain'` gets the
   `cube-access-staff-compensation` group (comp columns visible) **and** a
   `queryRewrite` row filter limiting the staff result to their Layer-2 set
-  (`staff_google_email IN reporteeEmails` AND level-below). Comp is then
+  (`staff.staff_key IN reporteeStaffKeys` AND level-below). Comp is then
   correctly visible for exactly the rows returned.
 - A viewer whose `has_staff_compensation = 'teaching_staff'` (ASL) gets the comp
   group plus a `queryRewrite` filter `job_function_code IN ('TEACH','TIR')`.
