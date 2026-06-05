@@ -223,8 +223,6 @@ with
             and e.academic_year >= 2018
             and e.grade_level > 2
             and e.school_level != 'OD'
-            -- ELA11 was not a valid NJSLA test for Spring 2018-2019
-            and a.aligned_test_code != 'ELA11'
 
         union all
 
