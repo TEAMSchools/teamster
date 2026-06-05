@@ -17,5 +17,3 @@ models:
         data_type: string
       - name: CTE_Grouping
         data_type: string
-      - name: alt_code
-        data_type: string

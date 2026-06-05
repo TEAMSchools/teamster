@@ -12,7 +12,7 @@ with
             {{ ref("stg_google_sheets__gradebook_exceptions") }} as e1
             on s.academic_year = e1.academic_year
             and s.region = e1.region
-            and s.school_level = e1.school_level
+            and s.school_level_alt = e1.school_level
             and s.credit_type = e1.credit_type
             and e1.view_name = 'categories_teacher'
             and e1.cte = 'assignment_score_rollup'

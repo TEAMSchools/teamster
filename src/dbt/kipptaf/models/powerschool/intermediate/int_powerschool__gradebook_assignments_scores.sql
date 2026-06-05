@@ -48,7 +48,7 @@ with
                 and e.sections_grade_level = 5,
                 'MS',
                 d.school_level
-            ) as school_level,
+            ) as school_level_alt,
 
             if(
                 a.scoretype = 'POINTS',
@@ -117,7 +117,7 @@ select
     is_missing,
     region,
     is_expected,
-    school_level,
+    school_level_alt,
     score_entered,
     points_earned,
     numeric_grade_earned,
@@ -127,7 +127,7 @@ select
     if(score_entered = 0, 1, 0) as is_zero,
 
     if(
-        score_entered = 0 and school_level = 'HS' and is_missing = 0, 1, 0
+        score_entered = 0 and school_level_alt = 'HS' and is_missing = 0, 1, 0
     ) as is_academic_dishonesty,
 
     if(score_entered is null, 1, 0) as is_null,
@@ -137,7 +137,10 @@ select
     if(is_expected and score_entered = 0, 1, 0) as is_expected_zero,
 
     if(
-        is_expected and score_entered = 0 and school_level = 'HS' and is_missing = 0,
+        is_expected
+        and score_entered = 0
+        and school_level_alt = 'HS'
+        and is_missing = 0,
         1,
         0
     ) as is_expected_academic_dishonesty,
