@@ -28,12 +28,21 @@ school_calendars) go in `cubes/conformed/`.
 - **Cubes private, views public.** Every cube YAML gets `public: false` at the
   cube level. Dimensions/measures use `public: true` only when meant to be
   exposed via a view. Never flip a cube to `public: true`.
+- **Transformation lives in dbt, not cube.** Multi-table joins, window
+  functions, and derived grains (SCD2 period-intersection / status spines)
+  belong in a dbt mart read via `sql_table` — not inline cube `sql:`, which is
+  for thin column/expression shaping only. (Cube's own dbt guidance and the
+  `original_sql` pre-agg confirm this.)
 - **Naming.** Fact cubes unprefixed (`attendance`); dim cubes match the
   warehouse table (`dim_students`). View names are `<domain>_<grain>`
   (`attendance_detail`, `attendance_summary`). `sql_table` always points at
   `kipptaf_marts.<table>` — cubes never read district datasets directly.
 - **Joins use cube-reference syntax** (`{dim_x.col} = {CUBE}.col`), not raw
   identifiers. Dim joins from facts set `relationship: many_to_one`.
+- **Range/non-equi join predicates** (`BETWEEN`, `>=`) are valid in a join
+  `sql:` (Cube custom-calendar recipe). `many_to_one` fan-trap protection trusts
+  your declared `relationship` + `primary_key`, so any non-overlap invariant the
+  join relies on must be test-enforced upstream in dbt.
 - **Avoid diamond paths.** Two join paths to the same dim → either a compound
   join on the canonical path (see `attendance.yml` → `dim_school_calendars`) or
   a degenerate FK with no declared join (see

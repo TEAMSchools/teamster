@@ -140,7 +140,9 @@ enrolled); `1` is inactive — never report against either.
 `enroll_status = 3` have NULL `entrydate` / `exitdate`, one row per
 `academic_year` per (student, district). `generate_surrogate_key` inputs that
 include `academic_year` hash uniquely; omitting `academic_year` collides.
-Date-range joins on `entrydate` silently drop these rows.
+Date-range joins on `entrydate` silently drop these rows. Retain them for KIPP
+Forward / kippadb alumni reporting — derived enrollment models must not drop
+them, and `dim_student_enrollments` stays alumni-inclusive.
 
 **`enroll_status` is student-level, not per-stint.** Sourced from
 `stg_powerschool__students` and copied identically to every row in
