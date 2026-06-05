@@ -106,12 +106,13 @@ scope. There is no reporting-chain concept for student data — a person with
 `student_access_level = 'detail'` and region scope sees all students in their
 region at detail.
 
-### Survey access
+### Survey access — out of scope
 
-`survey_access_level` (`detail`/`summary`/`none`) gates survey-domain views the
-same way `student_access_level` gates student-domain views. Deferred to
-whichever domain plan builds survey cubes; carried on `dim_staff_cube_access`
-now so the column exists.
+Survey results access is **deferred to a separate plan**. Unlike student access,
+surveys are scoped (some roles are limited by department), and that model needs
+its own design. `dim_staff_cube_access` does **not** carry a survey column in
+v1; the survey plan adds it when survey cubes are built. The
+`survey_access_level` column in the source CSV is ignored for now.
 
 ---
 
@@ -167,46 +168,46 @@ MGDIR differs by KTAF/Region and by instructional/non-instructional).
 
 <!-- markdownlint-disable MD013 -->
 
-| code  | entity | dept_type         | level | scope_level                | student | staff                   | stu_pii | staff_pii       | comp            | benefits | obs             | survey  |
-| ----- | ------ | ----------------- | ----- | -------------------------- | ------- | ----------------------- | ------- | --------------- | --------------- | -------- | --------------- | ------- |
-| CHIEF | —      | —                 | 1     | network                    | detail  | detail                  | TRUE    | all             | all             | none     | all             | detail  |
-| EDHOS | —      | —                 | 2     | region                     | detail  | detail                  | TRUE    | all             | all             | none     | all             | detail  |
-| SL    | —      | —                 | 4     | school                     | detail  | detail                  | TRUE    | all             | all             | none     | all             | detail  |
-| DSO   | —      | —                 | 4     | school                     | detail  | detail                  | TRUE    | all             | all             | none     | all             | detail  |
-| ASL   | —      | —                 | 5     | school                     | detail  | detail                  | TRUE    | teaching_staff  | teaching_staff  | none     | teaching_staff  | summary |
-| DEAN  | —      | —                 | 6     | school                     | detail  | summary_reporting_chain | TRUE    | reporting_chain | reporting_chain | none     | reporting_chain | summary |
-| SCOPS | —      | —                 | 6     | school                     | detail  | summary_reporting_chain | TRUE    | reporting_chain | reporting_chain | none     | reporting_chain | summary |
-| NINST | —      | —                 | 6     | school                     | detail  | summary_reporting_chain | TRUE    | reporting_chain | reporting_chain | none     | reporting_chain | summary |
-| TEACH | —      | —                 | 6     | school                     | detail  | summary_reporting_chain | TRUE    | reporting_chain | reporting_chain | none     | reporting_chain | summary |
-| TIR   | —      | —                 | 6     | school                     | detail  | summary_reporting_chain | TRUE    | reporting_chain | reporting_chain | none     | reporting_chain | summary |
-| MGDIR | KTAF   | instructional     | 3     | network                    | detail  | summary_reporting_chain | TRUE    | reporting_chain | reporting_chain | none     | reporting_chain | summary |
-| DIR   | KTAF   | instructional     | 4     | network + department_group | detail  | summary_reporting_chain | TRUE    | reporting_chain | reporting_chain | none     | reporting_chain | summary |
-| KTRGS | KTAF   | instructional     | 5     | network + department_group | detail  | summary_reporting_chain | TRUE    | reporting_chain | reporting_chain | none     | reporting_chain | summary |
-| MGDIR | KTAF   | non-instructional | 3     | network                    | summary | summary_reporting_chain | FALSE   | reporting_chain | reporting_chain | none     | reporting_chain | summary |
-| DIR   | KTAF   | non-instructional | 4     | network + department_group | summary | summary_reporting_chain | FALSE   | reporting_chain | reporting_chain | none     | reporting_chain | summary |
-| KTRGS | KTAF   | non-instructional | 5     | network + department_group | summary | summary_reporting_chain | FALSE   | reporting_chain | reporting_chain | none     | reporting_chain | summary |
-| MGDIR | Region | instructional     | 3     | region                     | detail  | summary_reporting_chain | TRUE    | reporting_chain | reporting_chain | none     | reporting_chain | summary |
-| DIR   | Region | instructional     | 4     | region + department_group  | detail  | summary_reporting_chain | TRUE    | reporting_chain | reporting_chain | none     | reporting_chain | summary |
-| KTRGS | Region | instructional     | 5     | region + department_group  | detail  | summary_reporting_chain | TRUE    | reporting_chain | reporting_chain | none     | reporting_chain | summary |
-| MGDIR | Region | non-instructional | 3     | region                     | summary | summary_reporting_chain | FALSE   | reporting_chain | reporting_chain | none     | reporting_chain | summary |
-| DIR   | Region | non-instructional | 4     | region + department_group  | summary | summary_reporting_chain | FALSE   | reporting_chain | reporting_chain | none     | reporting_chain | summary |
-| KTRGS | Region | non-instructional | 5     | region + department_group  | summary | summary_reporting_chain | FALSE   | reporting_chain | reporting_chain | none     | reporting_chain | summary |
+| code  | entity | dept_type         | level | scope_level                | student | staff                   | stu_pii | staff_pii       | comp            | benefits | obs             |
+| ----- | ------ | ----------------- | ----- | -------------------------- | ------- | ----------------------- | ------- | --------------- | --------------- | -------- | --------------- |
+| CHIEF | —      | —                 | 1     | network                    | detail  | detail                  | TRUE    | all             | all             | none     | all             |
+| EDHOS | —      | —                 | 2     | region                     | detail  | detail                  | TRUE    | all             | all             | none     | all             |
+| SL    | —      | —                 | 4     | school                     | detail  | detail                  | TRUE    | all             | all             | none     | all             |
+| DSO   | —      | —                 | 4     | school                     | detail  | detail                  | TRUE    | all             | all             | none     | all             |
+| ASL   | —      | —                 | 5     | school                     | detail  | detail                  | TRUE    | teaching_staff  | teaching_staff  | none     | teaching_staff  |
+| DEAN  | —      | —                 | 6     | school                     | detail  | summary_reporting_chain | TRUE    | reporting_chain | reporting_chain | none     | reporting_chain |
+| SCOPS | —      | —                 | 6     | school                     | detail  | summary_reporting_chain | TRUE    | reporting_chain | reporting_chain | none     | reporting_chain |
+| NINST | —      | —                 | 6     | school                     | detail  | summary_reporting_chain | TRUE    | reporting_chain | reporting_chain | none     | reporting_chain |
+| TEACH | —      | —                 | 6     | school                     | detail  | summary_reporting_chain | TRUE    | reporting_chain | reporting_chain | none     | reporting_chain |
+| TIR   | —      | —                 | 6     | school                     | detail  | summary_reporting_chain | TRUE    | reporting_chain | reporting_chain | none     | reporting_chain |
+| MGDIR | KTAF   | instructional     | 3     | network                    | detail  | summary_reporting_chain | TRUE    | reporting_chain | reporting_chain | none     | reporting_chain |
+| DIR   | KTAF   | instructional     | 4     | network + department_group | detail  | summary_reporting_chain | TRUE    | reporting_chain | reporting_chain | none     | reporting_chain |
+| KTRGS | KTAF   | instructional     | 5     | network + department_group | detail  | summary_reporting_chain | TRUE    | reporting_chain | reporting_chain | none     | reporting_chain |
+| MGDIR | KTAF   | non-instructional | 3     | network                    | summary | summary_reporting_chain | FALSE   | reporting_chain | reporting_chain | none     | reporting_chain |
+| DIR   | KTAF   | non-instructional | 4     | network + department_group | summary | summary_reporting_chain | FALSE   | reporting_chain | reporting_chain | none     | reporting_chain |
+| KTRGS | KTAF   | non-instructional | 5     | network + department_group | summary | summary_reporting_chain | FALSE   | reporting_chain | reporting_chain | none     | reporting_chain |
+| MGDIR | Region | instructional     | 3     | region                     | detail  | summary_reporting_chain | TRUE    | reporting_chain | reporting_chain | none     | reporting_chain |
+| DIR   | Region | instructional     | 4     | region + department_group  | detail  | summary_reporting_chain | TRUE    | reporting_chain | reporting_chain | none     | reporting_chain |
+| KTRGS | Region | instructional     | 5     | region + department_group  | detail  | summary_reporting_chain | TRUE    | reporting_chain | reporting_chain | none     | reporting_chain |
+| MGDIR | Region | non-instructional | 3     | region                     | summary | summary_reporting_chain | FALSE   | reporting_chain | reporting_chain | none     | reporting_chain |
+| DIR   | Region | non-instructional | 4     | region + department_group  | summary | summary_reporting_chain | FALSE   | reporting_chain | reporting_chain | none     | reporting_chain |
+| KTRGS | Region | non-instructional | 5     | region + department_group  | summary | summary_reporting_chain | FALSE   | reporting_chain | reporting_chain | none     | reporting_chain |
 
 ### Department special-access override
 
 Applies regardless of `job_function_code`; network scope; flags are plain
 booleans → `all` / `none`.
 
-| department             | student | staff  | stu_pii | staff_pii | comp | benefits | obs  | survey |
-| ---------------------- | ------- | ------ | ------- | --------- | ---- | -------- | ---- | ------ |
-| Executive              | detail  | detail | all     | all       | all  | all      | all  | detail |
-| Data                   | detail  | detail | all     | all       | all  | all      | all  | detail |
-| Human Resources        | summary | detail | none    | all       | all  | all      | all  | detail |
-| Leadership Development | summary | detail | none    | all       | all  | none     | all  | detail |
-| Teacher Development    | detail  | detail | none    | all       | none | none     | all  | detail |
-| Accounting             | detail  | detail | none    | all       | all  | all      | none | detail |
-| Finance                | detail  | detail | none    | all       | all  | all      | none | detail |
-| Compliance             | detail  | detail | none    | all       | all  | all      | none | detail |
+| department             | student | staff  | stu_pii | staff_pii | comp | benefits | obs  |
+| ---------------------- | ------- | ------ | ------- | --------- | ---- | -------- | ---- |
+| Executive              | detail  | detail | all     | all       | all  | all      | all  |
+| Data                   | detail  | detail | all     | all       | all  | all      | all  |
+| Human Resources        | summary | detail | none    | all       | all  | all      | all  |
+| Leadership Development | summary | detail | none    | all       | all  | none     | all  |
+| Teacher Development    | detail  | detail | none    | all       | none | none     | all  |
+| Accounting             | detail  | detail | none    | all       | all  | all      | none |
+| Finance                | detail  | detail | none    | all       | all  | all      | none |
+| Compliance             | detail  | detail | none    | all       | all  | all      | none |
 
 <!-- markdownlint-enable MD013 -->
 
@@ -283,7 +284,6 @@ active primary staff (1,490 rows, 1,490 distinct, 0 null).
 | `has_staff_compensation` | STRING | tristate                                                                                                                                |
 | `has_staff_benefits`     | STRING | tristate (all rows `none` today; column kept for forward-compat)                                                                        |
 | `has_staff_observations` | STRING | tristate                                                                                                                                |
-| `survey_access_level`    | STRING | `detail` / `summary` / `none`                                                                                                           |
 
 - **Derivation:** department special-access override (CASE on
   `assigned_department_name`) takes precedence; otherwise the role-based CASE on
@@ -326,7 +326,7 @@ contextToGroups: async ({ securityContext }) => {
     query: `
       SELECT
         staff_key,
-        student_access_level, staff_access_level, survey_access_level,
+        student_access_level, staff_access_level,
         has_student_pii, has_staff_pii, has_staff_compensation,
         has_staff_benefits, has_staff_observations,
         scope_level, scope_key, department_group, job_function_level
