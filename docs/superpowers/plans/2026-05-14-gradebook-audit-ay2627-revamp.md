@@ -119,7 +119,7 @@ of the reference doc for future years.
 
 **Files:** Google Sheets only (external — not in git)
 
-- [ ] **Step 1.0: Paste the pre-generated AY 2026 rows into the sheet**
+- [x] **Step 1.0: Paste the pre-generated AY 2026 rows into the sheet**
 
   Copy everything in the code block below (including the header row) and paste
   into the first empty row of `stg_google_sheets__gradebook_flags`. Google
@@ -301,7 +301,7 @@ of the reference doc for future years.
   2026	Paterson	MS		Quarter	Q4	EOQ	qt_grade_70_comment_missing	student_course
   ```
 
-- [ ] **Step 1.1: Roll over Newark rows (ES, MS, HS)**
+- [x] **Step 1.1: Roll over Newark rows (ES, MS, HS)**
 
   Copy all Newark rows where `academic_year = 2025`. Paste as new rows. Set
   `academic_year = 2026`. Delete any rows for these deprecated flags before
@@ -313,19 +313,19 @@ of the reference doc for future years.
   - `qt_teacher_s_total_less_200`
   - `qt_student_is_ada_80_plus_gpa_less_2`
 
-- [ ] **Step 1.2: Roll over Camden rows (ES, MS, HS)**
+- [x] **Step 1.2: Roll over Camden rows (ES, MS, HS)**
 
   Same process as step 1.1 for Camden. Copy Camden `academic_year = 2025` rows,
   paste, set `academic_year = 2026`, delete the same deprecated flag rows listed
   above.
 
-- [ ] **Step 1.3: Add Paterson MS rows**
+- [x] **Step 1.3: Add Paterson MS rows**
 
   Copy all Newark MS rows for `academic_year = 2026` (just created in step 1.1).
   Paste as new rows. Change `region` to `Paterson`. Paterson MS uses the same
   flags as Newark MS.
 
-- [ ] **Step 1.4: Add Paterson ES rows**
+- [x] **Step 1.4: Add Paterson ES rows**
 
   Paterson ES gets EOQ comments only — same pattern as Camden ES and Newark ES.
   Add one row per applicable quarter (`Q3`, `Q4`) for
@@ -333,12 +333,12 @@ of the reference doc for future years.
   `school_level = ES`, `academic_year = 2026`. Match the column values of an
   existing Camden ES or Newark ES row for that flag.
 
-- [ ] **Step 1.5: Do not add Miami rows**
+- [x] **Step 1.5: Do not add Miami rows**
 
   Miami is being removed. Do not create any `academic_year = 2026` rows for
   Miami.
 
-- [ ] **Step 1.6: Stage the external table**
+- [x] **Step 1.6: Stage the external table**
 
   ```bash
   uv run dbt run-operation stage_external_sources \
@@ -346,7 +346,7 @@ of the reference doc for future years.
     --project-dir src/dbt/kipptaf
   ```
 
-- [ ] **Step 1.7: Rebuild staging and verify**
+- [x] **Step 1.7: Rebuild staging and verify**
 
   ```bash
   uv run dbt build \
@@ -366,7 +366,7 @@ of the reference doc for future years.
   Expected: Camden, Newark, Paterson present for 2026. No Miami. Paterson has ES
   and MS only.
 
-- [ ] **Step 1.8: Commit**
+- [x] **Step 1.8: Commit**
 
   ```bash
   git add -u
@@ -624,7 +624,7 @@ academic-dishonesty, and scored checks across every downstream consumer
 **File:**
 `src/dbt/kipptaf/models/powerschool/intermediate/int_powerschool__gradebook_assignments_scores.sql`
 
-- [ ] **Step 4d.1: Update the year condition**
+- [x] **Step 4d.1: Update the year condition**
 
   Find (line ~40):
 
@@ -650,7 +650,7 @@ academic-dishonesty, and scored checks across every downstream consumer
   ) as school_level,
   ```
 
-- [ ] **Step 4d.2: Add 7-day grace period to `is_expected`**
+- [x] **Step 4d.2: Add 7-day grace period to `is_expected`**
 
   In the `scores` CTE (line ~29), add a third `when` branch:
 
@@ -716,7 +716,7 @@ academic-dishonesty, and scored checks across every downstream consumer
 **File:**
 `src/dbt/kipptaf/models/extracts/tableau/rpt_tableau__gradebook_gpa.sql`
 
-- [ ] **Step 5.1: Add per-course GPA boolean**
+- [x] **Step 5.1: Add per-course GPA boolean**
 
   In the final `select`, after `ada_above_or_at_80`:
 
@@ -728,7 +728,7 @@ academic-dishonesty, and scored checks across every downstream consumer
   ) as is_ada_above_or_at_80_gpa_y1_less_2,
   ```
 
-- [ ] **Step 5.2: Remove Paterson exclusion**
+- [x] **Step 5.2: Remove Paterson exclusion**
 
   In the `student_roster` CTE WHERE clause, remove
   `and enr.region != 'Paterson'`. The full WHERE becomes:
@@ -740,7 +740,7 @@ academic-dishonesty, and scored checks across every downstream consumer
       and enr.enroll_status != -1
   ```
 
-- [ ] **Step 5.3: Add column to YAML**
+- [x] **Step 5.3: Add column to YAML**
 
   File:
   `src/dbt/kipptaf/models/extracts/tableau/properties/rpt_tableau__gradebook_gpa.yml`
