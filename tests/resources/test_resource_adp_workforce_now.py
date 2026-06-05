@@ -8,7 +8,10 @@ from dagster import build_resources
 from requests.exceptions import HTTPError, JSONDecodeError
 from tenacity import RetryError, wait_none
 
-from teamster.libraries.adp.workforce_now.api.resources import AdpWorkforceNowResource
+from teamster.libraries.adp.workforce_now.api.resources import (
+    AdpWorkforceNowError,
+    AdpWorkforceNowResource,
+)
 
 
 def get_adp_wfn_resource() -> AdpWorkforceNowResource:
@@ -183,10 +186,6 @@ def test_request_retries_on_server_error(monkeypatch: pytest.MonkeyPatch):
 
 def test_request_does_not_retry_on_client_error(monkeypatch: pytest.MonkeyPatch):
     """A non-429 4xx is deterministic: raise a specific error without retrying."""
-    from teamster.libraries.adp.workforce_now.api.resources import (
-        AdpWorkforceNowError,
-    )
-
     monkeypatch.setattr(AdpWorkforceNowResource._request.retry, "wait", wait_none())  # pyright: ignore[reportFunctionMemberAccess]
 
     calls = {"n": 0}
@@ -265,10 +264,6 @@ def test_request_non_json_client_error_raises_adp_error(
     The deterministic-4xx branch must tolerate a non-JSON body instead of
     crashing on ``response.json()``.
     """
-    from teamster.libraries.adp.workforce_now.api.resources import (
-        AdpWorkforceNowError,
-    )
-
     monkeypatch.setattr(AdpWorkforceNowResource._request.retry, "wait", wait_none())  # pyright: ignore[reportFunctionMemberAccess]
 
     calls = {"n": 0}
