@@ -853,7 +853,6 @@ and the UNPIVOT list in `int_tableau__gradebook_audit_flags.sql`.
       teacher_master_schedule as (
           select
               s._dbt_source_relation,
-              s.terms_yearid,
               s.terms_academic_year as academic_year,
               s.sections_dcid,
               s.sections_id as sectionid,
@@ -1039,6 +1038,8 @@ and the UNPIVOT list in `int_tableau__gradebook_audit_flags.sql`.
   - `is_ap_course` removed — only used by
     `assign_s_hs_score_not_conversion_chart_options` (FYI flag, removed per
     issue #3908)
+  - `s.terms_yearid` removed — redundant with `t.yearid` (equal by join
+    condition); `yearid` is kept as the output column for downstream joins
   - `school_level_alt` defined once in CTE; `school_level`,
     `region_school_level`, and `section_or_period` derived in the main SELECT
     using it — no repeated `if(school_name = ...)` expression
