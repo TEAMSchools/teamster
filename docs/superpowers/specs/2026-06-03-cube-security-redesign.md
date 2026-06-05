@@ -459,40 +459,30 @@ from `dim_staff_cube_access` (`cube-access-student-detail` / `-summary` /
 `-pii`); the staff tiers add `cube-access-staff-detail` / `-summary` / `-pii` /
 `-compensation` / `-observations`.
 
-### What this pattern covers — and the one gap it does not
+### Column gating vs. row gating
 
-The attendance pattern gates **columns globally per group**: with
-`cube-access-student-pii`, a viewer sees the PII columns for **every** row the
-query returns; without it, for none. That is exactly right for the student PII
-scope (`student_pii_scope`) and for any **all-or-nothing** staff scope (`all` /
-`none`) — these are whole-column grants and map cleanly onto an `excludes:`
-tier.
+The `access_policy` group pattern gates **whole columns**: with
+`cube-access-student-pii`, a viewer sees the PII columns for every row, or for
+none. That covers the all-or-nothing scopes — `student_pii_scope` and any staff
+scope of `all` / `none` — which map cleanly onto an `excludes:` tier.
 
-The gap is the **`reporting_chain` and `teaching_staff` scope values**, which
-require a sensitive column visible **for some rows and not others in the same
-result set** (comp for downline rows only; comp/obs for TEACH/TIR rows only).
-`access_policy` `excludes:`/`includes:` is whole-column and cannot express this.
+The `reporting_chain` and `teaching_staff` scopes need a column visible for some
+rows but not others (comp for downline rows only; comp/obs for TEACH/TIR rows
+only), which a whole-column `access_policy` can't express. We handle that with a
+`queryRewrite` row filter — the same mechanism as location/region scope:
 
-**Resolution — row restriction, not column masking.** Rather than mask columns
-per-row, restrict the **rows** so the column grant is correct for the whole set:
+- `staff_compensation_scope = 'reporting_chain'` → grant the
+  `cube-access-staff-compensation` group and add a `queryRewrite` filter
+  restricting rows to the Layer-2 set (`staff.staff_key IN reporteeStaffKeys`
+  AND level-below). Comp is then visible for exactly the rows returned.
+- `staff_compensation_scope = 'teaching_staff'` (ASL) → grant the comp group
+  plus a `queryRewrite` filter `job_function_code IN ('TEACH','TIR')`.
 
-- A viewer whose `staff_compensation_scope = 'reporting_chain'` gets the
-  `cube-access-staff-compensation` group (comp columns visible) **and** a
-  `queryRewrite` row filter limiting the staff result to their Layer-2 set
-  (`staff.staff_key IN reporteeStaffKeys` AND level-below). Comp is then
-  correctly visible for exactly the rows returned.
-- A viewer whose `staff_compensation_scope = 'teaching_staff'` (ASL) gets the
-  comp group plus a `queryRewrite` filter
-  `job_function_code IN ('TEACH','TIR')`.
-
-This reuses the proven attendance mechanism (group → column grant) and adds the
-row filter in `queryRewrite` — the same place location scope is already
-injected. The tradeoff: a viewer cannot, in one query, see comp for their
-downline **and** non-comp summary rows for their wider scope — they get the
-row-restricted detail set when comp is requested. The plan must confirm this
-single-query restriction is acceptable to the data team (it matches how a
-manager would naturally query "my team's comp"), and that all three scope values
-reduce to a group + row-filter pair.
+Tradeoff: when a `reporting_chain` field is requested, the result is restricted
+to those rows for the whole query — a viewer gets their downline's comp, not
+comp columns spread across their wider summary scope. This matches how a manager
+would query "my team's comp." The plan should confirm this with the data team
+and that all scope values reduce to a group + row-filter pair.
 
 ---
 
