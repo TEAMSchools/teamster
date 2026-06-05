@@ -285,6 +285,11 @@ represent enrollment-context status:
 - Half-open exit:
   `enrollment_end = coalesce(date_sub(exitdate, interval 1 day), '9999-12-31')`
   to avoid boundary-share overlaps.
+- `student_enrollment_key` is **non-unique** here — within-stint status changes
+  emit multiple spans per stint (IEP ~26% of stints, up to 10; meal ~3%; ELL 1).
+  A consumer equi-join on it fans out by the span count; collapse to one row per
+  stint (a rollup model with an explicit per-attribute rule) before joining a
+  fact or the enrollment dim.
 
 ## "Is current X" flags on dim_dates
 

@@ -2,9 +2,9 @@ models:
   - name: stg_powerschool__u_expectations
     description:
       Per-school-level / quarter / week roll-up of expectations counts (W/H/F/S)
-      from the Newark Gradebook Audit plugin's U_EXPECTATIONS extension table.
-      Always scoped to the current academic year — the source has no academic
-      year column.
+      from the Gradebook Audit PowerSchool plugin's U_EXPECTATIONS extension
+      table. Always scoped to the current academic year — the source has no
+      academic year column.
     columns:
       - name: id
         data_type: int64
