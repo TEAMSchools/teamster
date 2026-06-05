@@ -7,6 +7,7 @@ with
         */
         select distinct
             _dbt_source_relation,
+            _dbt_source_project,
             region,
             school_level,
             `quarter`,
@@ -48,4 +49,4 @@ inner join
     on u.school_level = cw.school_level
     and u.`quarter` = cw.`quarter`
     and u.week_number = cw.week_number_quarter
-    and {{ union_dataset_join_clause(left_alias="u", right_alias="cw") }}
+    and u._dbt_source_project = cw._dbt_source_project
