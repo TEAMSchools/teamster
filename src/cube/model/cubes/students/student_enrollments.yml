@@ -1,112 +1,7 @@
 cubes:
   - name: dim_student_enrollments
     public: false
-    # Grain: one row per non-overlapping status interval within an enrollment.
-    # Built via boundary-union: collects every date where ELL, IEP, or meal
-    # status changes, derives non-overlapping intervals, then resolves each
-    # status point-in-time. Every enrollment date maps to exactly one row.
-    # count_students (count_distinct on student_enrollment_key) is always the
-    # correct enrollment headcount regardless of how many rows a given enrollment
-    # fans into.
-    sql: |
-      -- Boundary-union spine: collects every date where any status value changes
-      -- (enrollment entry/exit + each status table's start/end+1), builds
-      -- non-overlapping intervals, then resolves each status point-in-time.
-      -- Guarantees every enrollment date maps to exactly one row — no gaps.
-      WITH boundaries AS (
-        SELECT student_enrollment_key, entry_date_key         AS boundary_date
-        FROM kipptaf_marts.dim_student_enrollments
-        UNION DISTINCT
-        SELECT student_enrollment_key,
-               DATE_ADD(IFNULL(exit_date_key, '2099-12-31'), INTERVAL 1 DAY)
-        FROM kipptaf_marts.dim_student_enrollments
-        UNION DISTINCT
-        SELECT student_enrollment_key, effective_date_start_key
-        FROM kipptaf_marts.dim_student_iep_status
-        UNION DISTINCT
-        SELECT student_enrollment_key,
-               DATE_ADD(effective_date_end_key, INTERVAL 1 DAY)
-        FROM kipptaf_marts.dim_student_iep_status
-        UNION DISTINCT
-        SELECT student_enrollment_key, effective_date_start_key
-        FROM kipptaf_marts.dim_student_ell_status
-        UNION DISTINCT
-        SELECT student_enrollment_key,
-               DATE_ADD(effective_date_end_key, INTERVAL 1 DAY)
-        FROM kipptaf_marts.dim_student_ell_status
-        UNION DISTINCT
-        SELECT student_enrollment_key, effective_date_start_key
-        FROM kipptaf_marts.dim_student_meal_eligibility_status
-        UNION DISTINCT
-        SELECT student_enrollment_key,
-               DATE_ADD(effective_date_end_key, INTERVAL 1 DAY)
-        FROM kipptaf_marts.dim_student_meal_eligibility_status
-      ),
-      intervals AS (
-        SELECT
-          se.student_enrollment_key,
-          se.student_key,
-          se.location_key,
-          se.academic_year,
-          se.grade_level,
-          se.graduation_year,
-          se.entry_date_key,
-          se.exit_date_key,
-          se.is_retained_year,
-          b.boundary_date AS effective_start_date,
-          DATE_SUB(LEAD(b.boundary_date) OVER (
-            PARTITION BY b.student_enrollment_key
-            ORDER BY b.boundary_date
-          ), INTERVAL 1 DAY) AS effective_end_date
-        FROM boundaries AS b
-        JOIN kipptaf_marts.dim_student_enrollments AS se
-          ON se.student_enrollment_key = b.student_enrollment_key
-          AND b.boundary_date >= se.entry_date_key
-          AND b.boundary_date <= DATE_ADD(
-            IFNULL(se.exit_date_key, '2099-12-31'), INTERVAL 1 DAY
-          )
-      )
-      SELECT
-        CONCAT(
-          i.student_enrollment_key,
-          '|', COALESCE(ell.student_ell_status_key, ''),
-          '|', COALESCE(iep.student_iep_status_key, ''),
-          '|', COALESCE(mel.student_meal_eligibility_status_key, ''),
-          '|', CAST(i.effective_start_date AS STRING)
-        )                                         AS student_enrollment_status_key,
-        i.student_enrollment_key,
-        i.student_key,
-        i.location_key,
-        i.academic_year,
-        i.grade_level,
-        i.graduation_year,
-        i.entry_date_key,
-        i.exit_date_key,
-        i.is_retained_year,
-        COALESCE(ell.is_ell, false)               AS is_ell,
-        COALESCE(iep.is_iep, false)               AS is_iep,
-        iep.iep_classification,
-        iep.special_education_code,
-        iep.special_education_name,
-        iep.special_education_placement,
-        COALESCE(mel.is_meal_eligible, false)     AS is_meal_eligible,
-        mel.meal_eligibility,
-        i.effective_start_date,
-        i.effective_end_date
-      FROM intervals AS i
-      LEFT JOIN kipptaf_marts.dim_student_ell_status AS ell
-        ON ell.student_enrollment_key = i.student_enrollment_key
-        AND i.effective_start_date
-          BETWEEN ell.effective_date_start_key AND ell.effective_date_end_key
-      LEFT JOIN kipptaf_marts.dim_student_iep_status AS iep
-        ON iep.student_enrollment_key = i.student_enrollment_key
-        AND i.effective_start_date
-          BETWEEN iep.effective_date_start_key AND iep.effective_date_end_key
-      LEFT JOIN kipptaf_marts.dim_student_meal_eligibility_status AS mel
-        ON mel.student_enrollment_key = i.student_enrollment_key
-        AND i.effective_start_date
-          BETWEEN mel.effective_date_start_key AND mel.effective_date_end_key
-      WHERE i.effective_end_date IS NOT NULL
+    sql_table: kipptaf_marts.dim_student_enrollments
 
     joins:
       - name: dim_students
@@ -117,19 +12,21 @@ cubes:
         sql: "{dim_locations.location_key} = {CUBE}.location_key"
         relationship: many_to_one
 
-    dimensions:
-      - name: student_enrollment_status_key
-        sql: student_enrollment_status_key
-        type: string
-        primary_key: true
+      - name: dim_student_enrollment_status
+        sql: >
+          {dim_student_enrollment_status.student_enrollment_key} =
+          {CUBE}.student_enrollment_key
+        relationship: one_to_one
 
+    dimensions:
       - name: student_enrollment_key
         description: >-
-          Surrogate key derived from student_number, _dbt_source_relation,
-          academic_year, and entrydate. Not unique in this cube when status
-          changes mid-enrollment — use count_students for headcounts.
+          Surrogate key derived from student_number, _dbt_source_project,
+          academic_year, and entrydate. Primary key for this dimension — matches
+          the uniqueness grain on int_powerschool__student_enrollment_union.
         sql: student_enrollment_key
         type: string
+        primary_key: true
         public: true
 
       - name: student_key
@@ -170,13 +67,11 @@ cubes:
         public: true
 
       - name: entry_date
-        description: Date the student entered this enrollment stint.
         sql: CAST(entry_date_key AS TIMESTAMP)
         type: time
         public: true
 
       - name: exit_date
-        description: Date the student exited this enrollment stint.
         sql: CAST(exit_date_key AS TIMESTAMP)
         type: time
         public: true
@@ -189,86 +84,7 @@ cubes:
         type: boolean
         public: true
 
-      - name: effective_start_date
-        description: >-
-          Start of a non-overlapping status interval within this enrollment.
-          Every enrollment date falls in exactly one interval.
-        sql: CAST(effective_start_date AS TIMESTAMP)
-        type: time
-        public: true
-
-      - name: effective_end_date
-        description: >-
-          End of a non-overlapping status interval within this enrollment. Every
-          enrollment date falls in exactly one interval.
-        sql: CAST(effective_end_date AS TIMESTAMP)
-        type: time
-        public: true
-
-      - name: is_ell
-        description: >-
-          TRUE if the student was classified as an English Language Learner
-          during this status interval.
-        sql: is_ell
-        type: boolean
-        public: true
-
-      - name: is_iep
-        description: >-
-          TRUE if the student had an active IEP during this status interval.
-        sql: is_iep
-        type: boolean
-        public: true
-
-      - name: iep_classification
-        description: >-
-          Special education program classification (e.g., Resource Center,
-          In-Class Resource, Self-Contained, No IEP).
-        sql: iep_classification
-        type: string
-        public: true
-
-      - name: special_education_code
-        description: >-
-          NJ state special education code. Newark and Camden only; null for
-          Paterson and Miami.
-        sql: special_education_code
-        type: string
-        public: true
-
-      - name: special_education_name
-        description:
-          Human-readable label for the NJ state special education code.
-        sql: special_education_name
-        type: string
-        public: true
-
-      - name: special_education_placement
-        description: NJ state special education placement category.
-        sql: special_education_placement
-        type: string
-        public: true
-
-      - name: is_meal_eligible
-        description: >-
-          TRUE if the student was Free, Reduced, or FDC eligible during this
-          status interval.
-        sql: is_meal_eligible
-        type: boolean
-        public: true
-
-      - name: meal_eligibility
-        description: >-
-          Meal eligibility code: F (Free), R (Reduced), FDC (Free Direct
-          Certification), P (Paid), or Unknown.
-        sql: meal_eligibility
-        type: string
-        public: true
-
     measures:
       - name: count_students
-        description: >-
-          Count of distinct enrollment stints. Always correct — deduplicates on
-          student_enrollment_key regardless of status-span fan-out.
         sql: student_enrollment_key
         type: count_distinct
