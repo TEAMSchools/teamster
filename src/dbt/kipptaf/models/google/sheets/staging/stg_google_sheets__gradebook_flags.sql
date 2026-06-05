@@ -1,5 +1,5 @@
 select
-    *,
+    * except (grade_level),
 
     case
         when audit_flag_name in ('qt_effort_grade_missing', 'w_grade_inflation')
