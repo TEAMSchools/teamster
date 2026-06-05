@@ -99,8 +99,11 @@ with
         from meal_nj_fallback as fb
         where
             rn = 1
-            and fb.student_enrollment_key
-            not in (select student_enrollment_key from meal_nj_oct15 where rn = 1)
+            and fb.student_enrollment_key not in (
+                select meal_nj_oct15.student_enrollment_key,
+                from meal_nj_oct15
+                where meal_nj_oct15.rn = 1
+            )
 
         union all
 
@@ -111,17 +114,15 @@ with
 
 select
     enr.student_enrollment_key,
-
-    coalesce(ell.is_ell, false) as is_ell,
-
-    coalesce(iep.is_iep, false) as is_iep,
     iep.iep_classification,
     iep.special_education_code,
     iep.special_education_name,
     iep.special_education_placement,
-
-    coalesce(meal.is_meal_eligible, false) as is_meal_eligible,
     meal.meal_eligibility,
+
+    coalesce(ell.is_ell, false) as is_ell,
+    coalesce(iep.is_iep, false) as is_iep,
+    coalesce(meal.is_meal_eligible, false) as is_meal_eligible,
 
 from {{ ref("dim_student_enrollments") }} as enr
 left join ell on enr.student_enrollment_key = ell.student_enrollment_key

@@ -27,21 +27,6 @@ models:
                 to: ref('dim_student_enrollments')
                 field: student_enrollment_key
 
-      - name: is_ell
-        data_type: boolean
-        description: >-
-          TRUE if the student was classified as an English Language Learner
-          during this enrollment stint. FALSE when no ELL span exists for the
-          stint (absence of a row = not ELL). Derived from
-          dim_student_ell_status via LEFT JOIN; coalesced from NULL to false.
-
-      - name: is_iep
-        data_type: boolean
-        description: >-
-          TRUE if the student had an active Individualized Education Program
-          during this enrollment stint. Derived from the latest IEP span by
-          effective_date_start_key; coalesced from NULL to false.
-
       - name: iep_classification
         data_type: string
         description: >-
@@ -67,6 +52,28 @@ models:
           NJ special education placement category (Newark and Camden only; NULL
           for Miami and Paterson). From the latest IEP span.
 
+      - name: meal_eligibility
+        data_type: string
+        description: >-
+          Meal eligibility category for this enrollment stint. Values: F (Free),
+          R (Reduced), FDC (Free Direct Certification), P (Paid), Unknown. NULL
+          when no meal span exists for the stint.
+
+      - name: is_ell
+        data_type: boolean
+        description: >-
+          TRUE if the student was classified as an English Language Learner
+          during this enrollment stint. FALSE when no ELL span exists for the
+          stint (absence of a row = not ELL). Derived from
+          dim_student_ell_status via LEFT JOIN; coalesced from NULL to false.
+
+      - name: is_iep
+        data_type: boolean
+        description: >-
+          TRUE if the student had an active Individualized Education Program
+          during this enrollment stint. Derived from the latest IEP span by
+          effective_date_start_key; coalesced from NULL to false.
+
       - name: is_meal_eligible
         data_type: boolean
         description: >-
@@ -75,10 +82,3 @@ models:
           meal span covering Oct 15 of the academic year, or the earliest span
           if none covers Oct 15. Miami: derived from the latest span. Coalesced
           from NULL to false.
-
-      - name: meal_eligibility
-        data_type: string
-        description: >-
-          Meal eligibility category for this enrollment stint. Values: F (Free),
-          R (Reduced), FDC (Free Direct Certification), P (Paid), Unknown. NULL
-          when no meal span exists for the stint.
