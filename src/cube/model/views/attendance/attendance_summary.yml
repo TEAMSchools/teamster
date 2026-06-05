@@ -89,32 +89,24 @@ views:
           - graduation_year
           - is_retained_year
 
+      - join_path: attendance.dim_student_enrollments.dim_student_enrollment_status
+        prefix: true
+        includes:
+          - is_ell
+          - is_iep
+          - iep_classification
+          - special_education_code
+          - special_education_name
+          - special_education_placement
+          - is_meal_eligible
+          - meal_eligibility
+
       - join_path: attendance.dim_student_enrollments.dim_students
         prefix: true
         includes:
           - gender_identity
           - race
           - is_gifted
-
-      - join_path: attendance.dim_student_ell_status
-        prefix: true
-        includes:
-          - is_ell
-
-      - join_path: attendance.dim_student_iep_status
-        prefix: true
-        includes:
-          - is_iep
-          - iep_classification
-          - special_education_code
-          - special_education_name
-          - special_education_placement
-
-      - join_path: attendance.dim_student_meal_eligibility_status
-        prefix: true
-        includes:
-          - is_meal_eligible
-          - meal_eligibility
 
       - join_path: attendance.dim_terms
         prefix: true
@@ -161,14 +153,16 @@ views:
             - dim_students_gender_identity
             - dim_students_race
             - dim_students_is_gifted
-            - dim_student_ell_status_is_ell
-            - dim_student_iep_status_is_iep
-            - dim_student_iep_status_iep_classification
-            - dim_student_iep_status_special_education_code
-            - dim_student_iep_status_special_education_name
-            - dim_student_iep_status_special_education_placement
-            - dim_student_meal_eligibility_status_is_meal_eligible
-            - dim_student_meal_eligibility_status_meal_eligibility
+        - name: Status
+          members:
+            - dim_student_enrollment_status_is_ell
+            - dim_student_enrollment_status_is_iep
+            - dim_student_enrollment_status_iep_classification
+            - dim_student_enrollment_status_special_education_code
+            - dim_student_enrollment_status_special_education_name
+            - dim_student_enrollment_status_special_education_placement
+            - dim_student_enrollment_status_is_meal_eligible
+            - dim_student_enrollment_status_meal_eligibility
         - name: Enrollment
           members:
             - dim_student_enrollments_grade_level
