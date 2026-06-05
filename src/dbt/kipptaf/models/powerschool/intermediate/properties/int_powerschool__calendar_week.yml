@@ -55,3 +55,9 @@ models:
       - name: region
         data_type: string
         description: Derived from _dbt_source_relation.
+      - name: _dbt_source_project
+        data_type: string
+        description:
+          Source project extracted from _dbt_source_relation (e.g. 'kippnewark',
+          'kippcamden'). Materialized so downstream joins compare it directly
+          instead of re-deriving the regex per call.
