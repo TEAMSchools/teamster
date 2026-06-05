@@ -77,9 +77,10 @@ with
             enr.school_leader,
             enr.school_leader_tableau_username,
             enr.cumulative_y1_gpa,
-            enr.cumulative_y1_gpa_unweighted,
             enr.cumulative_y1_gpa_projected,
             enr.cumulative_y1_gpa_projected_s1,
+            enr.cumulative_y1_gpa_unweighted,
+            enr.cumulative_y1_gpa_projected_unweighted,
             enr.cumulative_y1_gpa_projected_s1_unweighted,
             enr.core_cumulative_y1_gpa,
             enr.ada,
@@ -383,9 +384,10 @@ select
     s.gpa_n_failing_y1,
 
     s.cumulative_y1_gpa,
-    s.cumulative_y1_gpa_unweighted,
     s.cumulative_y1_gpa_projected,
     s.cumulative_y1_gpa_projected_s1,
+    s.cumulative_y1_gpa_unweighted,
+    s.cumulative_y1_gpa_projected_unweighted,
     s.cumulative_y1_gpa_projected_s1_unweighted,
     s.core_cumulative_y1_gpa,
 

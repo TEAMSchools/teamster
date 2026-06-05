@@ -21,5 +21,5 @@ schemas:
     destination_tables: [table1, table2]
 ```
 
-**`sensors.py`**: Sensor that detects completed Fivetran syncs and emits asset
-materialization events.
+**`sensors.py`**: Prototype sensor (completed-sync detection → asset
+materialization events) — currently commented out / inactive.

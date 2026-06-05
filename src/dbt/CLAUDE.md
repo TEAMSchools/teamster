@@ -2,13 +2,13 @@
 
 ## Overview
 
-Fifteen dbt projects organized into three tiers:
+Sixteen dbt projects organized into three tiers:
 
-| Tier                  | Projects                                                                                                           | Purpose                                                       |
-| --------------------- | ------------------------------------------------------------------------------------------------------------------ | ------------------------------------------------------------- |
-| **Source-system**     | `amplify`, `deanslist`, `edplan`, `finalsite`, `iready`, `overgrad`, `pearson`, `powerschool`, `renlearn`, `titan` | Clean and contract-enforce raw data from one source system    |
-| **District-specific** | `kippnewark`, `kippcamden`, `kippmiami`, `kipppaterson`                                                            | Combine source packages for a single district                 |
-| **Network analytics** | `kipptaf`                                                                                                          | Cross-district marts, reporting, and extracts for the network |
+| Tier                  | Projects                                                                                                                    | Purpose                                                       |
+| --------------------- | --------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------- |
+| **Source-system**     | `amplify`, `deanslist`, `edplan`, `finalsite`, `focus`, `iready`, `overgrad`, `pearson`, `powerschool`, `renlearn`, `titan` | Clean and contract-enforce raw data from one source system    |
+| **District-specific** | `kippnewark`, `kippcamden`, `kippmiami`, `kipppaterson`                                                                     | Combine source packages for a single district                 |
+| **Network analytics** | `kipptaf`                                                                                                                   | Cross-district marts, reporting, and extracts for the network |
 
 ## Project Dependency Map
 
@@ -16,7 +16,8 @@ Fifteen dbt projects organized into three tiers:
 amplify ──────┐
 deanslist ────┤
 edplan ───────┤
-finalsite ────┤                ┌─ kippnewark ──┐
+finalsite ────┤
+focus ────────┤                ┌─ kippnewark ──┐
 iready ───────┼── (packages) ─┼─ kippcamden ───┼── (sources) ── kipptaf
 overgrad ─────┤                ├─ kippmiami ───┤
 pearson ──────┤                └─ kipppaterson ─┘
@@ -27,6 +28,11 @@ titan ────────┘
 
 Not every district uses every source package. See each district project's
 CLAUDE.md for its active packages.
+
+Authoritative consumer list for a source-system package:
+`grep -l 'local: ../<pkg>' src/dbt/*/packages.yml`. The district "Active Source
+Packages" prose drifts; `packages.yml` is ground truth. `kipptaf` consumes most
+source data via `source()`, not as a package.
 
 ## District Variable Defaults
 
@@ -41,8 +47,10 @@ All district projects share these variables (override via `dbt_project.yml`):
   `external.location` template)
 
 Exceptions: `kippnewark` adds `iready_schema: kippnj_iready` and
-`renlearn_schema: kippnj_renlearn`. `kipptaf` has
-`bigquery_external_connection_name` — see its CLAUDE.md.
+`renlearn_schema: kippnj_renlearn`. All five `kipp*` projects (the four
+districts plus `kipptaf`) set `bigquery_external_connection_name` to the
+`biglake-teamster-gcs` connection; source-system projects default it to `null`.
+See `kipptaf`'s CLAUDE.md.
 
 ## Variable Override Pattern
 
@@ -396,6 +404,13 @@ The flat form (without `arguments:`) triggers a deprecation warning:
     arguments:
       values: [a, b]
 ```
+
+### dbt unit-test fixtures
+
+`given`/`expect` dict scalars must be UNQUOTED — yamllint `quoted-strings` flags
+quoted dates/strings as redundant. It fires at pre-push/CI, NOT the pre-commit
+fmt hook, so a locally-clean commit fails CI. Unquoted `YYYY-MM-DD` parses
+correctly for date columns.
 
 ### Date-range joins
 

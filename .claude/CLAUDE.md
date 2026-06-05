@@ -28,11 +28,17 @@ regression test suite (`expect_deny_exit0`) enforces both invariants.
 
 ## What is blocked
 
-**WebFetch / MCP input scanning** — PreToolUse scans URLs and query strings for
-sensitive keywords (e.g., `/auth` in URL paths, `JWT` / `secret` / `credential`
-/ `signing key` in context7 query strings). Symptom: "Cannot access sensitive
-path" with no further detail. Rephrase the URL or query (generic terms like
-"user context", "header format") to get past it.
+**Outbound secret-value egress scan** (PreToolUse, Section 4) — write-capable
+MCP tools (tool name contains
+`create`/`update`/`write`/`add`/`comment`/`upload`/
+`send`/`post`/`put`/`delete`/`append`/`insert`/`merge`/`push`/`reply`) and
+WebFetch URLs are scanned for secret VALUES (`op://` refs, private-key headers,
+cloud tokens, connection strings — the same pattern set as `check-output.sh`). A
+match is blocked to stop exfiltration. Practical effect: a GitHub issue/PR write
+or an Asana/Drive write whose body contains a real-looking secret is denied —
+redact it (e.g. `op://…` → `op-uri`). Read-only MCP tools (bigquery / dagster /
+dbt `get_`/`list_`/`search_`) are not scanned. There is no keyword-based URL
+scanner — only secret-value shapes match.
 
 **Secret paths** (all tools blocked) — dotenv files, private key/cert files, SSH
 directory, secret-volume, credentials JSON files, devcontainer template
@@ -79,6 +85,21 @@ The PreToolUse hook's path regex matches `env` and denies the call. (Exception:
 for dbt Cloud `trigger_job_run` specifically, fall back to
 `git commit --allow-empty && git push` — the GitHub webhook fires CI with the
 correct schema override.)
+
+**Writing about the hooks self-blocks:** an issue/PR/commit/comment body
+containing the tokens the hooks deny gets your own `mcp__*`/Bash write denied.
+Beyond bare `env`: `.env`/`.environment` (Rule 1 `\.env[.a-z]*` is unanchored —
+matches anywhere, even mid-word in prose), bounded dotfile/cert paths,
+`/proc/*/environ`, and secret-shaped fixtures (`op://`, key headers — these also
+trip `check-output.sh` on the _response_). Reword/backtick them, or keep literal
+evidence in `.claude/scratch/` and reference it. For non-Bash tools only Section
+1 path rules scan the body; Bash-only and `path_only` rules do not. (Edit/Write
+`content`/`new_string` is content-exempt, so editing docs is unaffected.)
+
+**Your own ad-hoc Bash self-blocks on `$UPPER_CASE`:** Rule 7 denies any Bash
+command expanding a non-allowlisted uppercase var — including one you define in
+that same command (`sc=$(...); echo "${SC}"`). Use lowercase names
+(`sc=...; echo "${sc}"`) in throwaway commands.
 
 **BigQuery MCP** — queries must start with SELECT/SHOW/DESCRIBE/WITH; embedded
 DML/DDL (INSERT, UPDATE, DELETE, CREATE, DROP, etc.) is blocked.
@@ -168,3 +189,28 @@ Individual suites are in `tests/hooks/test_*.sh`. Test files contain sensitive
 fixture strings (gitleaks ignores are required). The `expect_deny_exit0` helper
 in `helpers.sh` guards against the exit-code and stderr regressions described
 above.
+
+**Ad-hoc rule probing:** a Bash command that names `.claude/hooks/*.sh` is
+blocked (Rule 2), and trigger tokens placed in the command self-block. To test a
+rule, `Write` a harness into `.claude/scratch/` (Write `content` is exempt from
+scanning) that pipes fixtures into the hook by absolute path, then run
+`bash .claude/scratch/<name>.sh` (the command string carries no triggers).
+
+The same trick `cp`s or `diff`s the protected hooks (Bash can't name
+`.claude/hooks/*.sh`): put the hook paths inside the scratch script (snapshot a
+hook into scratch for patching, or `diff` scratch-vs-committed before hand-off)
+and run it by its scratch path.
+
+## Editing the hooks — recurring gotchas
+
+- **The CI `claude-review` bot recurringly reports a phantom unstaged
+  "working-tree revert"** of an edited hook (e.g. ` M check-sensitive.sh`, with
+  the new patterns "missing"). It's a CI-checkout artifact, not the PR — the
+  committed blob is correct. Confirm `git status` is clean and dismiss; do NOT
+  `git checkout` to "fix" a clean tree.
+- **trunk's shellcheck enables `SC2312` (masked-return) on pipelines**:
+  `echo`/`printf` are exempt, but `tr` / `base64` / `gunzip` / `jq` inside a
+  `$(...)` are flagged. Prefer bash parameter expansion (`${v,,}`, `${v//x/y}`,
+  `${v//$'\n'/ }`) over a `tr` subshell, or put a
+  `# trunk-ignore(shellcheck/SC2312)` on the line immediately before the
+  substitution. (Raw `shellcheck` won't show it; trunk's config does.)

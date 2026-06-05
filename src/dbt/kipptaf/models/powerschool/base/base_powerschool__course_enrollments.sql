@@ -71,6 +71,8 @@ select
         else ur.courses_credittype
     end as courses_credittype,
 
+    if(csc.discipline = 'SOC', 'Civics', csc.discipline) as standardized_discipline,
+
     row_number() over (
         partition by
             ur._dbt_source_relation, ur.cc_studyear, csc.illuminate_subject_area

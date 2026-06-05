@@ -8,9 +8,7 @@ select
 
     rt.name as test_round,
 
-    case
-        when fl.is_proficient then 1 when not fl.is_proficient then 0
-    end as is_proficient_int,
+    fl.is_proficient_int,
 from {{ ref("int_extracts__student_enrollments_subjects_weeks") }} as cw
 inner join
     {{ ref("stg_google_sheets__reporting__terms") }} as rt
@@ -38,9 +36,7 @@ select
 
     'Spring' as test_round,
 
-    case
-        when p.is_proficient then 1 when not p.is_proficient then 0
-    end as is_proficient_int,
+    p.is_proficient_int,
 from {{ ref("int_extracts__student_enrollments_subjects_weeks") }} as cw
 inner join
     {{ ref("int_pearson__all_assessments") }} as p

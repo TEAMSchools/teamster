@@ -133,4 +133,19 @@ select
 
     row_number() over (partition by student_enrollment_key order by date_key desc)
     = 1 as is_latest_record,
+
+    row_number() over (
+        partition by student_enrollment_key, date_trunc(date_key, month)
+        order by if(membership_value = 1, date_key, null) desc nulls last
+    )
+    = 1
+    and membership_value = 1 as is_month_end_record,
+
+    row_number() over (
+        -- trunk-ignore(sqlfluff/LT01): week(monday) requires special formatting
+        partition by student_enrollment_key, date_trunc(date_key, week(monday))
+        order by if(membership_value = 1, date_key, null) desc nulls last
+    )
+    = 1
+    and membership_value = 1 as is_week_end_record,
 from running

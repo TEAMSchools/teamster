@@ -8,7 +8,7 @@ plugins:
       uri: https://github.com/trunk-io/plugins
 lint:
   enabled:
-    - grype@0.112.0
+    - grype@0.113.0
     - bandit@1.9.4
     - actionlint@1.7.12
     - git-diff-check
@@ -20,10 +20,10 @@ lint:
     - oxipng@10.1.1
     - prettier@3.8.3
     - pyright@1.1.410
-    - ruff@0.15.15
+    - ruff@0.15.16
     - shellcheck@0.11.0
     - shfmt@3.6.0
-    - sqlfluff@4.2.1
+    - sqlfluff@4.2.2
     - sqlfmt@0.30.0
     - svgo@4.0.1
     - taplo@0.10.0

@@ -7,7 +7,7 @@ with
         inner join
             {{ ref("stg_powerschool__studentcorefields") }} as scf
             on s.dcid = scf.studentsdcid
-        where s.enroll_status in (0, 2, 3) and scf.prevstudentid is not null
+        where scf.prevstudentid is not null
     )
 
 select
