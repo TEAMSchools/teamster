@@ -364,35 +364,64 @@ Access is then fully managed through the two dbt models.
 
 ---
 
-## Design risk: per-row column masking
+## View pattern: align with the existing detail/summary split
 
-The tristate flags require column visibility that **depends on which row** —
-e.g. compensation visible only for the viewer's reporting-chain rows, or PII
-visible only for teaching staff. Cube's view `access_policy` gates columns
-**globally per group**, not per-row. A group either includes a member for the
-whole result set or excludes it.
+The student domain already implements the detail/summary pattern this design
+relies on. Confirmed against
+[`attendance_detail.yml`](../../../src/cube/model/views/attendance/attendance_detail.yml)
+and
+[`attendance_summary.yml`](../../../src/cube/model/views/attendance/attendance_summary.yml):
 
-This cannot be expressed in `access_policy` alone. Options for the
-implementation plan to evaluate:
+- **`attendance_detail`** is a separate view that exposes row-level identifiers
+  (`student_key`, `full_name`, `birth_date`, `*_student_identifier`). Its
+  `access_policy` has **two tiers**: `cube-access-student-data` with
+  `member_level.excludes` listing the PII members, and `cube-access-student-pii`
+  with `includes: "*"`.
+- **`attendance_summary`** is a separate view that simply **omits** the
+  identifier columns (no `student_key` / `full_name`) and carries demographic
+  fields as aggregate breakdowns only. Single `cube-access-student-data` tier,
+  `includes: "*"`, no PII tier needed because the columns aren't present.
 
-1. **Split rows by tier in `queryRewrite`** — not possible in a single query;
-   rejected.
-2. **Mask sensitive columns to NULL in the mart/view SQL** based on a
-   request-time predicate. Cube cannot inject per-row SQL predicates into column
-   expressions, so this would require materializing the masking in dbt against a
-   viewer context — not feasible per-request. Rejected.
-3. **Two view variants per staff domain** — a summary view (no sensitive
-   columns) gated by Layer-1 scope, and a detail view (sensitive columns) whose
-   `queryRewrite` filter restricts rows to the Layer-2 set (chain ∩ level). A
-   viewer querying the detail view only ever gets their chain∩level rows, so the
-   "column visible only for those rows" requirement is satisfied structurally —
-   the columns live on a view that only returns the eligible rows. **Recommended
-   starting point.**
+The staff domain follows the same shape: a `staff_detail` view (row-level, with
+sensitive columns) and a `staff_summary` view (no row-level identifiers or
+sensitive HR columns). The student tiers map directly onto the new group names
+from `dim_staff_cube_access` (`cube-access-student-detail` / `-summary` /
+`-pii`); the staff tiers add `cube-access-staff-detail` / `-summary` / `-pii` /
+`-compensation` / `-observations`.
 
-The `teaching_staff` tier (ASL sees comp/obs for TEACH/TIR only) is a row
-predicate on `job_function_code`, expressible as a `queryRewrite` filter on the
-detail view. The plan must confirm option 3 covers all three tristate values
-before committing.
+### What this pattern covers — and the one gap it does not
+
+The attendance pattern gates **columns globally per group**: with
+`cube-access-student-pii`, a viewer sees the PII columns for **every** row the
+query returns; without it, for none. That is exactly right for the student PII
+flag (`has_student_pii`) and for any **all-or-nothing** staff flag (`all` /
+`none`) — these are whole-column grants and map cleanly onto an `excludes:`
+tier.
+
+The gap is the **`reporting_chain` and `teaching_staff` tristate values**, which
+require a sensitive column visible **for some rows and not others in the same
+result set** (comp for downline rows only; comp/obs for TEACH/TIR rows only).
+`access_policy` `excludes:`/`includes:` is whole-column and cannot express this.
+
+**Resolution — row restriction, not column masking.** Rather than mask columns
+per-row, restrict the **rows** so the column grant is correct for the whole set:
+
+- A viewer whose `has_staff_compensation = 'reporting_chain'` gets the
+  `cube-access-staff-compensation` group (comp columns visible) **and** a
+  `queryRewrite` row filter limiting the staff result to their Layer-2 set
+  (`staff_google_email IN reporteeEmails` AND level-below). Comp is then
+  correctly visible for exactly the rows returned.
+- A viewer whose `has_staff_compensation = 'teaching_staff'` (ASL) gets the comp
+  group plus a `queryRewrite` filter `job_function_code IN ('TEACH','TIR')`.
+
+This reuses the proven attendance mechanism (group → column grant) and adds the
+row filter in `queryRewrite` — the same place location scope is already
+injected. The tradeoff: a viewer cannot, in one query, see comp for their
+downline **and** non-comp summary rows for their wider scope — they get the
+row-restricted detail set when comp is requested. The plan must confirm this
+single-query restriction is acceptable to the data team (it matches how a
+manager would naturally query "my team's comp"), and that all three tristate
+values reduce to a group + row-filter pair.
 
 ---
 
@@ -410,8 +439,11 @@ before committing.
    (CHIEF/EDHOS/SL/DSO/ASL/DEAN/SCOPS/NINST/TEACH/TIR/MGDIR/DIR/KTRGS) before
    building.
 
-3. **Per-row column masking** — confirm the two-view approach (design risk
-   above) covers all tristate cases, or design an alternative, before
+3. **Tristate row restriction** — the resolution above (group + `queryRewrite`
+   row filter) restricts the staff result set when a `reporting_chain` /
+   `teaching_staff` sensitive field is requested. Confirm with the data team
+   that this single-query restriction is acceptable (a viewer gets their
+   chain∩level rows when querying comp, not their full scope) before
    implementing `cube.js` staff gating.
 
 4. **Multi-location / itinerant staff** — coaches covering multiple schools get
