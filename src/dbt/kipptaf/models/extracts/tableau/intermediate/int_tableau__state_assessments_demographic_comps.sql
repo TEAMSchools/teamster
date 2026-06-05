@@ -128,6 +128,9 @@ with
             and e.academic_year >= 2018
             and e.grade_level > 2
             and e.school_level != 'OD'
+            -- ELA11 was not a recognized NJSLA test code (Spring 2019, academic_year
+            -- = 2018)
+            and a.aligned_test_code != 'ELA11'
 
         union all
 
