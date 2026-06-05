@@ -59,9 +59,17 @@ all, at summary level. Derived from `scope_level` + `scope_key` +
 | `school`                     | staff whose `abbreviation` equals viewer's           |
 | `network + department_group` | staff whose `department_group` equals viewer's       |
 | `region + department_group`  | staff in viewer's region **AND** viewer's dept group |
+| `none`                       | nothing — default deny                               |
 
 The compound `region + department_group` case **intersects** (AND) — a regional
 director sees their department group within their region only.
+
+`network` is the broadest grant and is **only ever set intentionally** by the
+role/department mapping (e.g. CHIEF, special-access departments). A person who
+fails to match any region/school does **not** fall through to `network` — they
+resolve to `scope_level = 'none'` (or no row at all), which denies. This is the
+reason `scope_key` uses an explicit `'network'` sentinel rather than NULL: a
+NULL key must never be confusable with an unmatched fallthrough.
 
 **Layer 2 — Detail (reporting-chain ∩ level).** Which of the Layer-1 rows the
 viewer sees at **detail / PII** level. A staff row is shown at detail only if
@@ -292,8 +300,8 @@ active primary staff (1,490 rows, 1,490 distinct, 0 null).
 | `entity`                   | STRING | `KTAF` / `Region` (CASE)                                                                                                                |
 | `department_type`          | STRING | `instructional` / `non-instructional` (CASE on department)                                                                              |
 | `department_group`         | STRING | Rollup of `assigned_department_name` (CASE)                                                                                             |
-| `scope_level`              | STRING | network / region / school / network+department_group / region+department_group                                                          |
-| `scope_key`                | STRING | region_key, school abbreviation, or NULL (network)                                                                                      |
+| `scope_level`              | STRING | `network` / `region` / `school` / `network+department_group` / `region+department_group` / `none` (deny)                                |
+| `scope_key`                | STRING | sentinel `'network'`, a `region_key`, a school `abbreviation`, or `'none'` — never NULL                                                 |
 | `student_access_level`     | STRING | `detail` / `summary` / `none`                                                                                                           |
 | `staff_access_level`       | STRING | `detail` / `summary_reporting_chain` / `none`                                                                                           |
 | `student_pii_scope`        | STRING | enum: `all` / `none` (future `own_roster` deferred)                                                                                     |
@@ -392,11 +400,12 @@ and flags. No Google groups are read.
 Replace group-name parsing with cache reads. The cached `row` and
 `reporteeStaffKeys` drive every filter.
 
-- **Student cubes:** strip dims/measures unless `student_access_level` is set;
-  inject the location filter from `scope_level` / `scope_key` (network = none,
-  region = `region_key` equals, school = `abbreviation` equals); default-deny
-  empty `IN ()` when no row. Detail/summary + PII column gating is enforced by
-  the view `access_policy` groups.
+- **Student cubes:** strip dims/measures unless `student_access_level` is
+  `detail`/`summary`; inject the location filter by `scope_level` (`network` =
+  no filter, `region` = `region_key` equals `scope_key`, `school` =
+  `abbreviation` equals `scope_key`); default-deny empty `IN ()` when
+  `scope_level` is `none` or there is no row. Detail/summary + PII column gating
+  is enforced by the view `access_policy` groups.
 - **Staff cubes:** inject the **Layer-1 scope filter** (including
   `region + department_group` as an AND of two equals filters), then the
   **Layer-2 detail filter** (`staff.staff_key IN reporteeStaffKeys` AND
