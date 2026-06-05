@@ -848,8 +848,8 @@ and the UNPIVOT list in `int_tableau__gradebook_audit_flags.sql`.
 
   ```sql
   with
-      -- base_powerschool__sections is section-grain (one row per section), which is
-      -- correct here — the teacher scaffold is the master schedule, not student-level
+      /* base_powerschool__sections is section-grain (one row per section), which is
+         correct here — the teacher scaffold is the master schedule, not student-level */
       teacher_master_schedule as (
           select
               s._dbt_source_relation,
