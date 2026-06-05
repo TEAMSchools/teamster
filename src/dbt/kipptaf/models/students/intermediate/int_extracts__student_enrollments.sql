@@ -289,6 +289,20 @@ select
         false
     ) as student_slideback,
 
+    if(
+        (
+            (
+                e.school_level = 'HS'
+                and e.academic_year >= 2025
+                and ada.ada_weighted_year >= 0.80
+            )
+            or ada.ada_year >= 0.80
+        )
+        and gc.cumulative_y1_gpa < 2.0,
+        true,
+        false
+    ) as is_ada_above_or_at_80_cum_gpa_less_2,
+
     case
         e.gender when 'F' then 'Female' when 'M' then 'Male' when 'X' then 'Non-Binary'
     end as aligned_gender,

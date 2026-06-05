@@ -863,6 +863,12 @@ models:
           GPA band than their current unweighted GPA
           (cumulative_y1_gpa_unweighted). False if bands are equal, improving,
           or either GPA value is null.
+      - name: is_ada_above_or_at_80_cum_gpa_less_2
+        data_type: boolean
+        description: >
+          True when the student's ADA is at or above 80% (using weighted ADA for
+          HS starting AY 2025) and their cumulative year-to-date GPA
+          (cumulative_y1_gpa) is below 2.0. False otherwise.
       - name: aligned_gender
         data_type: string
         description: >
