@@ -88,6 +88,10 @@ views:
           - grade_level
           - graduation_year
           - is_retained_year
+
+      - join_path: attendance.dim_student_enrollments.dim_student_enrollment_status
+        prefix: true
+        includes:
           - is_ell
           - is_iep
           - iep_classification
@@ -151,14 +155,14 @@ views:
             - dim_students_is_gifted
         - name: Status
           members:
-            - dim_student_enrollments_is_ell
-            - dim_student_enrollments_is_iep
-            - dim_student_enrollments_iep_classification
-            - dim_student_enrollments_special_education_code
-            - dim_student_enrollments_special_education_name
-            - dim_student_enrollments_special_education_placement
-            - dim_student_enrollments_is_meal_eligible
-            - dim_student_enrollments_meal_eligibility
+            - dim_student_enrollment_status_is_ell
+            - dim_student_enrollment_status_is_iep
+            - dim_student_enrollment_status_iep_classification
+            - dim_student_enrollment_status_special_education_code
+            - dim_student_enrollment_status_special_education_name
+            - dim_student_enrollment_status_special_education_placement
+            - dim_student_enrollment_status_is_meal_eligible
+            - dim_student_enrollment_status_meal_eligibility
         - name: Enrollment
           members:
             - dim_student_enrollments_grade_level
