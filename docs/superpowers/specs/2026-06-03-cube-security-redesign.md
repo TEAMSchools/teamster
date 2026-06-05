@@ -240,6 +240,23 @@ column-header mapping as the role table above.
 
 ## Changes required
 
+### Source layer
+
+Both new mart models read `int_people__staff_roster` directly. The roster is the
+one place that already carries every input the access model needs — email,
+`employee_number`, `reports_to_employee_number`, job, location, department,
+status — pre-joined to a clean active-primary grain (verified 1,490 rows, 1:1 on
+`employee_number`). `dim_staff` deliberately omits all of these; assembling them
+from `dim_staff` + the work-assignment dims would re-derive the roster's joins
+and SCD2→primary collapse.
+
+This is a **deliberate exception** to the marts convention of not `ref()`-ing up
+into `int_*`. These are access-control infrastructure models, not analyst marts,
+and the roster is the correct single source. Document the exception inline in
+each model. `staff_key` is still derived as
+`generate_surrogate_key([employee_number])` to stay consistent with
+`dim_staff.staff_key`.
+
 ### 1. dbt model: `dim_staff_reporting_chain`
 
 **Path:**
