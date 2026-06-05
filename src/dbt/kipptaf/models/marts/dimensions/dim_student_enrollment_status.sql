@@ -120,10 +120,10 @@ select
     iep.special_education_name,
     iep.special_education_placement,
 
-    coalesce(mel.is_meal_eligible, false) as is_meal_eligible,
-    mel.meal_eligibility,
+    coalesce(meal.is_meal_eligible, false) as is_meal_eligible,
+    meal.meal_eligibility,
 
 from {{ ref("dim_student_enrollments") }} as enr
 left join ell on enr.student_enrollment_key = ell.student_enrollment_key
 left join iep on enr.student_enrollment_key = iep.student_enrollment_key
-left join mel on enr.student_enrollment_key = mel.student_enrollment_key
+left join meal on enr.student_enrollment_key = meal.student_enrollment_key
