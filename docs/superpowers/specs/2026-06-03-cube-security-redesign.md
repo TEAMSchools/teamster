@@ -101,14 +101,14 @@ against reporting-chain data gaps.
 ### Student access
 
 Independent of staff access. Governed by `student_access_level`
-(`detail`/`summary`/`null`), `has_student_pii`, and the same Layer-1 location
+(`detail`/`summary`/`none`), `has_student_pii`, and the same Layer-1 location
 scope. There is no reporting-chain concept for student data — a person with
 `student_access_level = 'detail'` and region scope sees all students in their
 region at detail.
 
 ### Survey access
 
-`survey_access_level` (`detail`/`summary`/`null`) gates survey-domain views the
+`survey_access_level` (`detail`/`summary`/`none`) gates survey-domain views the
 same way `student_access_level` gates student-domain views. Deferred to
 whichever domain plan builds survey cubes; carried on `dim_staff_cube_access`
 now so the column exists.
@@ -276,14 +276,14 @@ active primary staff (1,490 rows, 1,490 distinct, 0 null).
 | `department_group`       | STRING | Rollup of `assigned_department_name` (CASE)                                                                                             |
 | `scope_level`            | STRING | network / region / school / network+department_group / region+department_group                                                          |
 | `scope_key`              | STRING | region_key, school abbreviation, or NULL (network)                                                                                      |
-| `student_access_level`   | STRING | `detail` / `summary` / NULL                                                                                                             |
-| `staff_access_level`     | STRING | `detail` / `summary_reporting_chain` / NULL                                                                                             |
+| `student_access_level`   | STRING | `detail` / `summary` / `none`                                                                                                           |
+| `staff_access_level`     | STRING | `detail` / `summary_reporting_chain` / `none`                                                                                           |
 | `has_student_pii`        | BOOL   | Student PII columns                                                                                                                     |
 | `has_staff_pii`          | STRING | tristate: all / reporting_chain / teaching_staff / none                                                                                 |
 | `has_staff_compensation` | STRING | tristate                                                                                                                                |
 | `has_staff_benefits`     | STRING | tristate (all rows `none` today; column kept for forward-compat)                                                                        |
 | `has_staff_observations` | STRING | tristate                                                                                                                                |
-| `survey_access_level`    | STRING | `detail` / `summary` / NULL                                                                                                             |
+| `survey_access_level`    | STRING | `detail` / `summary` / `none`                                                                                                           |
 
 - **Derivation:** department special-access override (CASE on
   `assigned_department_name`) takes precedence; otherwise the role-based CASE on
@@ -292,6 +292,11 @@ active primary staff (1,490 rows, 1,490 distinct, 0 null).
 - **`department_group` and `department_type`** are CASE statements on
   `assigned_department_name`. The exact rollup is owned by the data team — see
   open question 1.
+- **No-access sentinel:** the three `*_access_level` columns emit the string
+  `'none'` (never NULL) when a role grants no access to that domain — `'none'`
+  reads as an intentional denial, NULL as missing data. Any CASE fall-through
+  must coalesce to `'none'`. A person with no resolvable row at all is a
+  different case: no row is emitted, and `contextToGroups` default-denies.
 
 ### 3. `cube.js`: `contextToGroups`
 
