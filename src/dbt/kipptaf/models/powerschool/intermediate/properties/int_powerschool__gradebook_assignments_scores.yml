@@ -112,6 +112,10 @@ models:
         data_type: int64
       - name: is_expected
         data_type: boolean
+        description: >
+          True when the student is expected to have a score for this assignment:
+          not exempt, counted in final grade, and at least 7 days have passed
+          since the assignment due date. False otherwise.
       - name: score_entered
         data_type: float64
       - name: points_earned

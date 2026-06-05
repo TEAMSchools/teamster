@@ -33,13 +33,17 @@ with
                 then false
                 when a.iscountedinfinalgrade = 0
                 then false
+                when
+                    current_date('{{ var("local_timezone") }}')
+                    <= date_add(a.duedate, interval 7 day)
+                then false
                 else true
             end as is_expected,
 
             /* hardcoding year while we look for a better solution to custom grade
                level vs school level */
             if(
-                e.cc_academic_year = 2025
+                e.cc_academic_year >= 2025
                 and e.cc_schoolid = 179905
                 and e.sections_grade_level = 5,
                 'MS',
