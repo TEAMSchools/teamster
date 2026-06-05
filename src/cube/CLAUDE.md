@@ -193,12 +193,17 @@ before merge:
    `uv run dbt run --select <model> --project-dir src/dbt/kipptaf --target dev`
    → creates `zz_<username>_kipptaf_marts.<model>`
 2. Temporarily change `sql_table` in the cube YAML to
-   `zz_<username>_kipptaf_marts.<table>`, commit, push
-3. Test in Dev Mode playground (or local `npm run dev` from `src/cube/`)
-4. Revert `sql_table` to `kipptaf_marts.<table>`, commit, push before merging
+   `zz_<username>_kipptaf_marts.<table>` — do NOT commit or push
+3. Test in local `npm run dev` from `src/cube/` (hot-reloads on file save, no
+   push required); or commit+push for Cube Cloud Dev Mode
+4. Revert `sql_table` to `kipptaf_marts.<table>` before committing
+
+For **snowflake sub-dims** (cubes joined one-to-one from a parent), swap
+`sql_table` on the sub-dim cube file, not the parent. The parent's `sql_table`
+stays pointed at prod; only the new sub-dim needs redirecting.
 
 The security hook flags `zz_*` schemas as an access-control regression —
-expected for the temporary test commit; acknowledge and revert.
+expected if you do commit the temporary change; acknowledge and revert.
 
 ## Operational notes
 

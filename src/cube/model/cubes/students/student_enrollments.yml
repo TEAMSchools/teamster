@@ -12,12 +12,18 @@ cubes:
         sql: "{dim_locations.location_key} = {CUBE}.location_key"
         relationship: many_to_one
 
+      - name: dim_student_enrollment_status
+        sql: >
+          {dim_student_enrollment_status.student_enrollment_key} =
+          {CUBE}.student_enrollment_key
+        relationship: one_to_one
+
     dimensions:
       - name: student_enrollment_key
         description: >-
-          Surrogate key derived from student_number, _dbt_source_relation,
+          Surrogate key derived from student_number, _dbt_source_project,
           academic_year, and entrydate. Primary key for this dimension — matches
-          the uniqueness grain on int_extracts__student_enrollments.
+          the uniqueness grain on int_powerschool__student_enrollment_union.
         sql: student_enrollment_key
         type: string
         primary_key: true
@@ -44,11 +50,12 @@ cubes:
           2025-26 school year).
         sql: academic_year
         type: number
+        public: true
 
       - name: grade_level
         description: >-
-          The grade the student is in. Since this is an integer: 0=Kindergarten
-          1, -2=Preschool. Indexed.
+          The grade the student is in. Since this is an integer: 0=Kindergarten,
+          -2=Preschool.
         sql: grade_level
         type: number
         public: true
