@@ -405,6 +405,13 @@ The flat form (without `arguments:`) triggers a deprecation warning:
       values: [a, b]
 ```
 
+### dbt unit-test fixtures
+
+`given`/`expect` dict scalars must be UNQUOTED — yamllint `quoted-strings` flags
+quoted dates/strings as redundant. It fires at pre-push/CI, NOT the pre-commit
+fmt hook, so a locally-clean commit fails CI. Unquoted `YYYY-MM-DD` parses
+correctly for date columns.
+
 ### Date-range joins
 
 Use half-open intervals for enrollment date-range joins — `BETWEEN` causes

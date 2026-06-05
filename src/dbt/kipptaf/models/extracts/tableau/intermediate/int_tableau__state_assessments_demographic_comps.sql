@@ -83,7 +83,30 @@ with
             a.aligned_aggregate_ethnicity as aggregate_ethnicity,
             a.aligned_iep_status as iep_status,
 
-            e.school_level,
+            /*
+                Use school_level_alt (not school_level) — carries PS-classification
+                overrides for schools whose high_grade maps to the wrong band (e.g.
+                Sumner reclassified to ES in 2025 but its Grade 5 remains MS band).
+
+                Hatch 2021-2023 Gr3/4: students were enrolled at an MS-classified
+                school due to historical PS data issues; Grade 3/4 assessment band
+                is ES and the Google Sheet only carries ES entries for ELA03/MAT03/
+                ELA04/MAT04.
+
+                PPES 2023 Gr5: Paterson Prep Elementary was growing grade-by-grade
+                (school_level = ES, high_grade = 5); Grade 5 assessment band is MS
+                and the Google Sheet only carries MS entries for ELA05/MAT05/SCI05.
+            */
+            case
+                when
+                    e.academic_year in (2021, 2022, 2023)
+                    and e.school = 'Hatch'
+                    and e.grade_level in (3, 4)
+                then 'ES'
+                when e.academic_year = 2023 and e.school = 'PPES' and e.grade_level = 5
+                then 'MS'
+                else e.school_level_alt
+            end as school_level,
 
             if(
                 e.lunch_status in ('F', 'R'),
@@ -147,7 +170,30 @@ with
                 'Students Without Disabilities'
             ) as iep_status,
 
-            e.school_level,
+            /*
+                Use school_level_alt (not school_level) — carries PS-classification
+                overrides for schools whose high_grade maps to the wrong band (e.g.
+                Sumner reclassified to ES in 2025 but its Grade 5 remains MS band).
+
+                Hatch 2021-2023 Gr3/4: students were enrolled at an MS-classified
+                school due to historical PS data issues; Grade 3/4 assessment band
+                is ES and the Google Sheet only carries ES entries for ELA03/MAT03/
+                ELA04/MAT04.
+
+                PPES 2023 Gr5: Paterson Prep Elementary was growing grade-by-grade
+                (school_level = ES, high_grade = 5); Grade 5 assessment band is MS
+                and the Google Sheet only carries MS entries for ELA05/MAT05/SCI05.
+            */
+            case
+                when
+                    e.academic_year in (2021, 2022, 2023)
+                    and e.school = 'Hatch'
+                    and e.grade_level in (3, 4)
+                then 'ES'
+                when e.academic_year = 2023 and e.school = 'PPES' and e.grade_level = 5
+                then 'MS'
+                else e.school_level_alt
+            end as school_level,
 
             if(
                 e.lunch_status in ('F', 'R'),

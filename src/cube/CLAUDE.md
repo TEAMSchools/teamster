@@ -167,6 +167,13 @@ auto-resolve; don't add redundant intermediate-hop joins. "Column not found" in
 a filter usually means the dimension SQL references a bare column on the
 filtering cube — route through `{joined_cube.col}` instead.
 
+## Cube can't classify an aggregate by a data-driven range
+
+Cube has no non-equi/range (BETWEEN) join, and a dimension can't reference a
+measure (only surface one via `sub_query`). Mapping an aggregated value to a
+band via per-row threshold rows (e.g. percent_correct → performance band) can't
+be expressed in Cube — materialize that classification upstream in dbt.
+
 ## Testing Cube measures backed by new dbt columns
 
 When a cube YAML references a column added in this branch (not yet in
