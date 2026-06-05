@@ -1,0 +1,118 @@
+models:
+  - name: fct_assessment_scores_student_scoped
+    description: >-
+      Student-scoped assessment score fact table. One row per student x
+      assessment x test date (or academic year for AP). Covers college-entrance
+      assessments (SAT, ACT, PSAT) and AP exams. These assessments follow the
+      student directly without enrollment context. FK to dim_students via
+      student_key, not to dim_student_section_enrollments.
+    columns:
+      - name: assessment_score_key
+        data_type: string
+        description: >-
+          Surrogate key. Primary key for this fact table.
+        constraints:
+          - type: primary_key
+            warn_unsupported: false
+        data_tests:
+          - unique
+          - not_null
+
+      - name: student_key
+        data_type: string
+        description: >-
+          FK to dim_students. Derived from student_number. Null when the
+          CollegeBoard ID has no entry in the corresponding crosswalk Google
+          Sheet (PSAT scores arrive keyed by cb_id via sat_id_crosswalk; AP
+          scores arrive keyed by ap_number_ap_id via ap_id_crosswalk). Unmatched
+          rows carry NULL student_number.
+
+        constraints:
+          - type: foreign_key
+            to: ref('dim_students')
+            to_columns: [student_key]
+            warn_unsupported: false
+        data_tests:
+          - relationships:
+              arguments:
+                to: ref('dim_students')
+                field: student_key
+      - name: assessment_administration_key
+        data_type: string
+        description: >-
+          FK to dim_assessment_administrations. Identifies the scheduled
+          administration (assessment definition + occurrence context: academic
+          year, test date, administration round) that this score belongs to.
+
+        constraints:
+          - type: foreign_key
+            to: ref('dim_assessment_administrations')
+            to_columns: [assessment_administration_key]
+            warn_unsupported: false
+        data_tests:
+          - relationships:
+              arguments:
+                to: ref('dim_assessment_administrations')
+                field: assessment_administration_key
+      - name: test_date_key
+        data_type: date
+        description: >-
+          FK to dim_dates. The date the assessment was taken. Null for AP exams
+          where only the academic year is recorded.
+
+        constraints:
+          - type: foreign_key
+            to: ref('dim_dates')
+            to_columns: [date_key]
+            warn_unsupported: false
+        data_tests:
+          - relationships:
+              arguments:
+                to: ref('dim_dates')
+                field: date_key
+
+      - name: scale_score
+        data_type: numeric
+        description: >-
+          Scale score achieved on this test section. For AP exams, the exam
+          grade (1-5).
+
+      - name: rank
+        quote: true
+        data_type: int64
+        description: >-
+          Rank by highest score within student x type (college) or student x AP
+          course (AP). 1 = best score.
+
+      - name: max_scale_score
+        data_type: numeric
+        description: >-
+          Highest scale score for this student x type across all
+          administrations. Null for AP.
+
+      - name: superscore
+        data_type: numeric
+        description: >-
+          Best combined score across test sections and administrations. Null for
+          AP.
+
+      - name: running_max_scale_score
+        data_type: numeric
+        description: >-
+          Running maximum scale score up to this test date. Null for AP.
+
+      - name: proficiency_level
+        data_type: string
+        description: >-
+          Proficiency classification. For AP: Qualified (score >= 3) or Not
+          Qualified. Null for college-entrance assessments.
+
+      - name: is_mastery
+        data_type: boolean
+        description: >-
+          TRUE if the student met the mastery / proficiency threshold for this
+          assessment. College Board section benchmarks (EBRW, Math) and Combined
+          College-Ready totals for SAT / PSAT 8/9 / PSAT10 / NMSQT; practice
+          (mock) SAT uses the official SAT cutoffs. AP: exam_score >= 3. NULL
+          for ACT, sub-section scores (Math Test / Reading Test), and practice
+          ACT or SAT Reading / Writing rows that have no defined benchmark.

@@ -1,0 +1,64 @@
+models:
+  - name: fct_survey_responses
+    description: >-
+      Survey response fact table. One row per submission x question. Contains
+      the actual response value and text for each question answered. FK to
+      fct_survey_submissions via survey_submission_key and to
+      dim_survey_questions via survey_question_key. Reaches dim_surveys only via
+      the chain: response -> submission -> administration -> survey.
+    columns:
+      - name: survey_response_key
+        data_type: string
+        description: >-
+          Surrogate key derived from survey_id, survey_response_id, and
+          survey_question_id. Primary key for this fact. Uses survey_question_id
+          rather than question_shortname because Alchemer surveys can reuse a
+          shortname across multiple internal question_ids.
+        constraints:
+          - type: primary_key
+            warn_unsupported: false
+        data_tests:
+          - unique
+
+      - name: survey_submission_key
+        data_type: string
+        description: >-
+          FK to fct_survey_submissions. Links this response to its parent
+          submission record.
+        constraints:
+          - type: foreign_key
+            to: ref('fct_survey_submissions')
+            to_columns: [survey_submission_key]
+            warn_unsupported: false
+        data_tests:
+          - relationships:
+              arguments:
+                to: ref('fct_survey_submissions')
+                field: survey_submission_key
+              config:
+                severity: error
+      - name: survey_question_key
+        data_type: string
+        description: >-
+          FK to dim_survey_questions. Identifies which question this response
+          answers.
+        constraints:
+          - type: foreign_key
+            to: ref('dim_survey_questions')
+            to_columns: [survey_question_key]
+            warn_unsupported: false
+        data_tests:
+          - relationships:
+              arguments:
+                to: ref('dim_survey_questions')
+                field: survey_question_key
+      - name: response_value
+        data_type: numeric
+        description: >-
+          Numeric value of the response, when applicable. Null for open-ended
+          text responses. Cast from the raw answer text.
+
+      - name: response_text
+        data_type: string
+        description: >-
+          Raw text of the response as submitted by the respondent.

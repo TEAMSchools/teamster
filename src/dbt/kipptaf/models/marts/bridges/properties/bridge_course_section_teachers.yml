@@ -1,0 +1,86 @@
+models:
+  - name: bridge_course_section_teachers
+    description: >-
+      Bridge table resolving the many-to-many relationship between course
+      sections and teachers. One row per section x teacher x assignment period.
+      A teacher may appear more than once per section when their effective dates
+      change. FKs to dim_course_sections via course_section_key and to dim_staff
+      via staff_key.
+
+    constraints:
+      - type: primary_key
+        columns: [course_section_key, staff_key, effective_start_date]
+        warn_unsupported: false
+    columns:
+      - name: course_section_key
+        data_type: string
+        description: >-
+          Surrogate key derived from sections_dcid and _dbt_source_project. FK
+          to dim_course_sections.
+        constraints:
+          - type: foreign_key
+            to: ref('dim_course_sections')
+            to_columns: [course_section_key]
+            warn_unsupported: false
+        data_tests:
+          - not_null
+
+          - relationships:
+              arguments:
+                to: ref('dim_course_sections')
+                field: course_section_key
+      - name: staff_key
+        data_type: string
+        description: >-
+          Surrogate key derived from employee_number. FK to dim_staff.
+        constraints:
+          - type: foreign_key
+            to: ref('dim_staff')
+            to_columns: [staff_key]
+            warn_unsupported: false
+        data_tests:
+          - not_null
+
+          - relationships:
+              arguments:
+                to: ref('dim_staff')
+                field: staff_key
+      - name: role
+        quote: true
+        data_type: string
+        description: >-
+          User configurable name uniquely identifying the role to the user
+          within a Role Module Required.
+
+        config:
+          meta:
+            source_system: PowerSchool
+            source_model: stg_powerschool__roledef
+            source_column: name
+      - name: effective_start_date
+        data_type: date
+        description: >-
+          The start date of the association of this teacher to this section.
+
+        config:
+          meta:
+            source_system: PowerSchool
+            source_model: stg_powerschool__sectionteacher
+            source_column: start_date
+      - name: effective_end_date
+        data_type: date
+        description: >-
+          The end date of the association of this teacher to this section.
+
+        config:
+          meta:
+            source_system: PowerSchool
+            source_model: stg_powerschool__sectionteacher
+            source_column: end_date
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns:
+              - course_section_key
+              - staff_key
+              - effective_start_date

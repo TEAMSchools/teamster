@@ -98,4 +98,91 @@ expect_allow '$CODESPACES (safe var)' Bash command 'echo $CODESPACES'
 expect_allow '${HOME} braced syntax (safe)' Bash command 'echo ${HOME}'
 # trunk-ignore-end(shellcheck/SC2016)
 
+# ─── Pattern 3 (#5): declare dump forms ──────────────────────────────────────
+echo ""
+echo -e "${YELLOW}Pattern 3 (#5): declare dump forms${NC}"
+
+expect_deny "declare -p (dump all)" Bash command "declare -p"
+expect_deny "declare bare (dump all)" Bash command "declare"
+expect_deny "declare -px (export dump)" Bash command "declare -px"
+expect_deny "declare -xp (flag order)" Bash command "declare -xp"
+expect_deny "declare -fp (function dump)" Bash command "declare -fp"
+expect_deny "declare -p piped" Bash command "declare -p | grep SECRET"
+expect_deny "declare after semicolon" Bash command "cd /tmp; declare"
+
+expect_allow "declare assignment" Bash command "declare foo=bar"
+expect_allow "declare -a array" Bash command "declare -a my_array"
+expect_allow "declare -r readonly assign" Bash command "declare -r CONST=1"
+
+# ─── Pattern 7 (#4): safe-var prefix must not strip longer names ─────────────
+echo ""
+echo -e "${YELLOW}Pattern 7 (#4): anchored safe-var strip${NC}"
+
+# test fixtures: $() must not expand — values are literal command strings
+# trunk-ignore-begin(shellcheck/SC2016)
+expect_deny 'echo $CI_SECRET (CI prefix)' Bash command 'echo $CI_SECRET'
+expect_deny 'echo $USER_PASSWORD (USER prefix)' Bash command 'echo $USER_PASSWORD'
+expect_deny 'echo $PATH_TO_SECRET (PATH prefix)' Bash command 'echo $PATH_TO_SECRET'
+expect_deny 'echo $HOME_TOKEN (HOME prefix)' Bash command 'echo $HOME_TOKEN'
+expect_deny 'echo ${TERM_SECRET} (braced, TERM prefix)' Bash command 'echo ${TERM_SECRET}'
+
+expect_allow 'echo $CI (exact safe var still allowed)' Bash command 'echo $CI'
+expect_allow 'echo $USER (exact safe var still allowed)' Bash command 'echo $USER'
+expect_allow 'echo $HOME/sub (safe var then delimiter)' Bash command 'echo $HOME/sub'
+expect_allow 'echo ${PATH} (braced safe var)' Bash command 'echo ${PATH}'
+# trunk-ignore-end(shellcheck/SC2016)
+
+# ─── Pattern 7 (Finding 1): wildcard safe-var must not swallow secret names ───
+echo ""
+echo -e "${YELLOW}Pattern 7 (Finding 1): wildcard safe-var prefixes${NC}"
+
+# trunk-ignore-begin(shellcheck/SC2016)
+expect_deny 'echo $COMP_TOKEN (COMP wildcard)' Bash command 'echo $COMP_TOKEN'
+expect_deny 'echo $COMP_API_SECRET' Bash command 'echo $COMP_API_SECRET'
+expect_deny 'echo $XDG_SESSION_SECRET' Bash command 'echo $XDG_SESSION_SECRET'
+expect_deny 'echo $LC_SECRET (single segment)' Bash command 'echo $LC_SECRET'
+expect_deny 'echo $LC_CREDENTIALS' Bash command 'echo $LC_CREDENTIALS'
+
+expect_allow 'echo $COMPREPLY (real completion var)' Bash command 'echo $COMPREPLY'
+expect_allow 'echo $COMP_WORDS (real completion var)' Bash command 'echo $COMP_WORDS'
+expect_allow 'echo $XDG_RUNTIME_DIR (real XDG var)' Bash command 'echo $XDG_RUNTIME_DIR'
+expect_allow 'echo $XDG_CONFIG_HOME (real XDG var)' Bash command 'echo $XDG_CONFIG_HOME'
+expect_allow 'echo $LC_ALL (real locale var)' Bash command 'echo $LC_ALL'
+expect_allow 'echo $LC_CTYPE (real locale var)' Bash command 'echo $LC_CTYPE'
+# trunk-ignore-end(shellcheck/SC2016)
+
+# ─── Pattern 7 (#27): single-char uppercase vars ─────────────────────────────
+echo ""
+echo -e "${YELLOW}Pattern 7 (#27): single-char uppercase vars${NC}"
+
+# trunk-ignore-begin(shellcheck/SC2016): $VAR must not expand — literal strings
+expect_deny 'echo $X (single-char uppercase)' Bash command 'echo $X'
+expect_deny 'echo ${Q} (braced single-char)' Bash command 'echo ${Q}'
+
+# lowercase + special single-char vars stay allowed (env-secret names are uppercase)
+expect_allow 'echo $x (lowercase ignored)' Bash command 'echo $x'
+expect_allow 'echo $i (loop var)' Bash command 'echo $i'
+expect_allow 'echo $file (lowercase word)' Bash command 'echo $file'
+expect_allow 'echo $_ (last-arg special)' Bash command 'echo $_'
+# trunk-ignore-end(shellcheck/SC2016)
+
+# ─── Pattern 4 (#14): 1Password credential-minting verbs ─────────────────────
+echo ""
+echo -e "${YELLOW}Pattern 4 (#14): 1Password CLI verbs${NC}"
+
+expect_deny "op signin" Bash command "op signin my.1password.com"
+expect_deny "op account get" Bash command "op account get"
+expect_deny "op user list" Bash command "op user list"
+expect_deny "op service-account create" Bash command "op service-account create ci"
+expect_deny "op connect token create" Bash command "op connect token create"
+expect_deny "op items (plural)" Bash command "op items list"
+# existing verbs still blocked
+expect_deny "op vault list" Bash command "op vault list"
+expect_deny "op read uri" Bash command "op read op-uri/vault/item/field"
+
+# controls — op without an escalation verb, and non-op commands
+expect_allow "op --version (no verb)" Bash command "op --version"
+expect_allow "non-op command mentioning account" Bash command "echo monthly account summary"
+expect_allow "cp (not the op word)" Bash command "cp user_data.csv /tmp/dest"
+
 print_summary "Env Protection"

@@ -1,0 +1,69 @@
+models:
+  - name: dim_school_calendars
+    description: >-
+      School calendar dimension. One row per date per school. Indicates whether
+      each date is an in-session day and a membership day. Conformed dimension
+      used by attendance (session validity) and assessments (school-day counts
+      for progress monitoring goals). FK to dim_dates and dim_locations.
+    constraints:
+      - type: primary_key
+        columns: [date_key, location_key]
+        warn_unsupported: false
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns:
+              - date_key
+              - location_key
+
+    columns:
+      - name: date_key
+        data_type: date
+        description: >-
+          Each day of the school year including holidays and weekends, such as
+          the school day. Indexed. Currently warns on 3 NULL rows (project-
+          default `not_null` severity) — junk pre-2000 source dates sanitized to
+          NULL upstream by PR #3809; the 3 rows themselves should be filtered
+          out of this dim. See follow-up note in #3719 thread.
+        constraints:
+          - type: foreign_key
+            to: ref('dim_dates')
+            to_columns: [date_key]
+            warn_unsupported: false
+        data_tests:
+          - not_null
+
+          - relationships:
+              arguments:
+                to: ref('dim_dates')
+                field: date_key
+        config:
+          meta:
+            source_system: PowerSchool
+            source_model: stg_powerschool__calendar_day
+            source_column: date_value
+      - name: location_key
+        data_type: string
+        description: >-
+          Surrogate key for the school. FK to dim_locations.
+        constraints:
+          - type: foreign_key
+            to: ref('dim_locations')
+            to_columns: [location_key]
+            warn_unsupported: false
+        data_tests:
+          - not_null
+
+          - relationships:
+              arguments:
+                to: ref('dim_locations')
+                field: location_key
+      - name: is_in_session
+        data_type: boolean
+        description: >-
+          TRUE if this date is an instructional day at this school.
+
+      - name: is_membership_day
+        data_type: boolean
+        description: >-
+          TRUE if this date counts toward student membership at this school.

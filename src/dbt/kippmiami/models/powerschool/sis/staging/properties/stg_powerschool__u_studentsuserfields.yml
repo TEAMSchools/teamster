@@ -19,5 +19,10 @@ models:
         data_type: boolean
       - name: fleid
         data_type: string
+        data_tests:
+          - unique:
+              config:
+                severity: warn
+                # TODO: #3887 — 14 FLEIDs map to multiple student_numbers in PS.
       - name: gifted_and_talented
         data_type: string

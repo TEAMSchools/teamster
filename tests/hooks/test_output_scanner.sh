@@ -46,6 +46,9 @@ check_output "GitHub server token (ghs_)" deny "ghs_ABCDEFGHIJKLMNOPQRSTUVWXYZab
 check_output "GitHub user-to-server (ghu_)" deny "ghu_ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmn"
 check_output "GitHub OAuth token (gho_)" deny "gho_ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmn"
 check_output "GitHub refresh token (ghr_)" deny "ghr_ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmn"
+# 1Password service-account token: ops_ + base64url JWT-style payload.
+check_output "1Password service-account token" deny "ops_eyJzaWduSW5BZGRyZXNzIjoiZXhhbXBsZS4xcGFzc3dvcmQuY29tIiwidXNlckF1dGgiOnsibWV0aG9kIjoiU1JQZy00MDk2In0sImVtYWlsIjoiZmFrZUBleGFtcGxlLmNvbSJ9"
+check_output "ops_ prefix without JWT shape" clean "ops_short"
 check_output "PostgreSQL (ql) conn string" deny "postgresql://admin:s3cret@db.example.com:5432/prod"
 check_output "MongoDB+SRV conn string" deny "mongodb+srv://admin:s3cret@cluster.example.com/prod"
 check_output "MySQL connection string" deny "mysql://admin:s3cret@db.example.com:3306/prod"
@@ -64,12 +67,17 @@ check_output "Read with op:// in content" deny Read "config: op://vault/item/fie
 check_output "Grep with private key match" deny Grep "-----BEGIN RSA PRIVATE KEY-----"
 check_output "Read normal file content" clean Read "def hello():\n    return 42"
 check_output "Grep normal match" clean Grep "import dagster"
+# #31: Glob output is now scanned too (narrow — Glob returns paths, but a path
+# could carry a token-shaped string)
+check_output "Glob result with op:// (gate includes glob)" deny Glob "/repo/op://vault/item/field"
+check_output "Glob normal paths" clean Glob "/src/a.py\n/src/b.py"
 
 # ─── MCP tool output scanning ────────────────────────────────────────────────
 echo ""
 echo -e "${YELLOW}PostToolUse: MCP tool output scanning${NC}"
 
 check_output "MCP tool with op://" deny "mcp__bigquery__execute_sql" "op://vault/item/field"
+# trunk-ignore(gitleaks/private-key): synthetic fixture, not a real key
 check_output "MCP tool with private key" deny "mcp__dagster__get_run" "-----BEGIN RSA PRIVATE KEY-----"
 check_output "MCP tool clean output" clean "mcp__bigquery__execute_sql" "rows_affected: 42"
 
@@ -77,9 +85,9 @@ check_output "MCP tool clean output" clean "mcp__bigquery__execute_sql" "rows_af
 echo ""
 echo -e "${YELLOW}PostToolUse: High-entropy string boundary (120 chars)${NC}"
 
-str_119=$(printf 'A%.0s' {1..119})
-str_120=$(printf 'A%.0s' {1..120})
-str_121=$(printf 'A%.0s' {1..121})
+str_119=$(printf 'g%.0s' {1..119})
+str_120=$(printf 'g%.0s' {1..120})
+str_121=$(printf 'g%.0s' {1..121})
 check_output "119-char string (under threshold)" clean "${str_119}"
 check_output "120-char string (at threshold)" deny "${str_120}"
 check_output "121-char string (over threshold)" deny "${str_121}"
@@ -99,13 +107,71 @@ echo -e "${YELLOW}PostToolUse: Exit code regression (must exit 0 on deny)${NC}"
 # trunk-ignore-begin(shellcheck/SC2312): command substitution in function args is intentional
 expect_deny_exit0 "PostToolUse JWT deny exits 0" "${OUTPUT_HOOK}" \
   "$(jq -n --arg c 'eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIn0' \
-    '{tool_name: "Read", tool_output: {content: $c, stdout: $c, stderr: ""}}')"
+    '{tool_name: "Read", tool_response: {content: $c, stdout: $c, stderr: ""}}')"
 expect_deny_exit0 "PostToolUse op:// deny exits 0" "${OUTPUT_HOOK}" \
   "$(jq -n --arg c 'config: op://vault/item/field' \
-    '{tool_name: "Bash", tool_output: {content: $c, stdout: $c, stderr: ""}}')"
+    '{tool_name: "Bash", tool_response: {content: $c, stdout: $c, stderr: ""}}')"
 expect_deny_exit0 "PostToolUse high-entropy deny exits 0" "${OUTPUT_HOOK}" \
-  "$(jq -n --arg c "$(printf 'A%.0s' {1..120})" \
-    '{tool_name: "Bash", tool_output: {content: $c, stdout: $c, stderr: ""}}')"
+  "$(jq -n --arg c "$(printf 'g%.0s' {1..120})" \
+    '{tool_name: "Bash", tool_response: {content: $c, stdout: $c, stderr: ""}}')"
 # trunk-ignore-end(shellcheck/SC2312)
+
+# ─── Schema regression: hook must read .tool_response (Claude Code's payload key) ──
+# Earlier the hook read .tool_output, which is empty in real payloads, so every
+# Bash output silently passed through unscanned. These cases assert the hook
+# scans .tool_response directly — independent of the helper's payload shape.
+echo ""
+echo -e "${YELLOW}PostToolUse: Schema regression (.tool_response is the real key)${NC}"
+
+# trunk-ignore-begin(shellcheck/SC2312)
+expect_deny_exit0 "scans .tool_response high-entropy string" "${OUTPUT_HOOK}" \
+  "$(jq -n --arg c "$(printf 'g%.0s' {1..200})" \
+    '{tool_name: "Bash", tool_response: {stdout: $c, stderr: ""}}')"
+expect_deny_exit0 "scans .tool_response named pattern (op://)" "${OUTPUT_HOOK}" \
+  "$(jq -n --arg c "leaked: op://vault/item/field" \
+    '{tool_name: "Bash", tool_response: {stdout: $c, stderr: ""}}')"
+# trunk-ignore(gitleaks/generic-api-key): synthetic ops_ token fixture
+_fake_op_trace='+ token=ops_eyJzaWduSW5BZGRyZXNzIjoiZXhhbXBsZS4xcGFzc3dvcmQuY29tIiwidXNlckF1dGgiOnsibWV0aG9kIjoiU1JQZy00MDk2In19'
+expect_deny_exit0 "scans .tool_response stderr (bash -x trace path)" "${OUTPUT_HOOK}" \
+  "$(jq -n --arg c "${_fake_op_trace}" \
+    '{tool_name: "Bash", tool_response: {stdout: "", stderr: $c}}')"
+# trunk-ignore-end(shellcheck/SC2312)
+
+# ─── Schema fallback (#6e/#20): payload under a non-tool_response key ────────
+# A scanned tool whose payload arrives under a key other than .tool_response
+# must still be scanned (otherwise a payload-key drift re-opens full passthrough).
+echo ""
+echo -e "${YELLOW}PostToolUse: payload-key drift fallback (#20)${NC}"
+
+# trunk-ignore-begin(shellcheck/SC2312)
+expect_deny_exit0 "secret under .output (not .tool_response)" "${OUTPUT_HOOK}" \
+  "$(jq -n '{tool_name:"Bash", output:{stdout:"leaked op://vault/item/field"}}')"
+expect_deny_exit0 "secret at top level (no tool_response)" "${OUTPUT_HOOK}" \
+  "$(jq -n '{tool_name:"mcp__github__issue_read", result:"op://vault/item/field"}')"
+# trunk-ignore-end(shellcheck/SC2312)
+# control: clean .tool_response output still passes (fallback no overreach)
+check_output "clean .tool_response still clean" clean "rows: 5"
+
+# ─── Batch 6: new detections (#16 base64url, #18 gzip, #19 patterns, #30 split) ─
+echo ""
+echo -e "${YELLOW}PostToolUse: Batch 6 detections${NC}"
+
+# #19 named patterns. Each literal is split with "" so gitleaks' source scan
+# doesn't flag the synthetic fixture; bash concatenates to the full token at run
+# time, which is what the hook actually sees.
+check_output "Slack bot token (xoxb)" deny "xoxb-2401234567-""2409876543210-AbCdEfGhIjKlMnOpQrStUvWx"
+check_output "Stripe live secret key" deny "sk_live""_4eC39HqLyjWDarjtT1zdp7dc0000abcd"
+check_output "aws_secret_access_key assignment" deny "aws_secret_access_key=wJalrXUtnFEMIK7MDENGbPxRfiCYEXAMPLEKEYAB"
+check_output "Slack webhook URL" deny "https://hooks.slack.com/services/""T00000000/B00000000/XXXXXXXXXXXXXXXXXXXXXXXX"
+
+# #16 url-safe base64 that decodes to a 1Password reference; #18 base64(gzip(...))
+b64url=$(printf 'see op://vault/item/field for it' | base64 | tr '+/' '-_' | tr -d '\n')
+gzb64=$(printf -- '-----BEGIN ''PRIVATE KEY-----' | gzip | base64 | tr -d '\n')
+check_output "#16 base64url blob decodes to op-ref" deny "blob ${b64url}"
+check_output "#18 gzip+base64 blob inflates to key header" deny "data ${gzb64}"
+
+# #30 JWT split across a newline — caught only via the whitespace-stripped copy
+check_output "#30 JWT split across newline" deny "header eyJhbGciOiJSUzI1NiJ9
+.eyJzdWIiOiIxMjM0NTY3ODkwIn0 footer"
 
 print_summary "Output Scanner"

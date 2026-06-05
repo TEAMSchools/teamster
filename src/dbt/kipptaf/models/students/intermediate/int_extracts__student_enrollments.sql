@@ -165,8 +165,8 @@ select
     e.salesforce_contact_college_match_gpa_band as college_match_gpa_bands,
     e.salesforce_contact_owner_name as contact_owner_name,
 
-    lc.region as region_official_name,
-    lc.deanslist_school_id,
+    lc.location_region as region_official_name,
+    lc.location_deanslist_school_id as deanslist_school_id,
 
     m.school_abbreviation as ms_attended,
 
@@ -290,6 +290,10 @@ select
     ) as student_slideback,
 
     case
+        e.gender when 'F' then 'Female' when 'M' then 'Male' when 'X' then 'Non-Binary'
+    end as aligned_gender,
+
+    case
         e.enroll_status
         when -2
         then 'Inactive'
@@ -359,8 +363,8 @@ select
 
 from {{ ref("base_powerschool__student_enrollments") }} as e
 left join
-    {{ ref("stg_google_sheets__people__location_crosswalk") }} as lc
-    on e.school_name = lc.name
+    {{ ref("int_people__location_crosswalk") }} as lc
+    on e.school_name = lc.location_name
 left join
     esms_attend as m
     on e.student_number = m.student_number

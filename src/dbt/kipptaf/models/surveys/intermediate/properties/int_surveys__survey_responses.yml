@@ -1,5 +1,37 @@
 models:
   - name: int_surveys__survey_responses
+    description: >-
+      Unioned raw response grain across Google Forms and Alchemer sources. One
+      row per (survey_id, survey_response_id, survey_question_id,
+      question_shortname, answer). Google Forms grid and check-all-that-apply
+      questions produce multiple rows per (response, question_id) — one per row
+      shortname or selected option — so the natural grain extends to shortname +
+      answer. File-upload questions emit one row per uploaded file with the
+      filename projected into `answer`. Marts that need per-shortname or
+      per-question rollups project to that grain themselves.
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns:
+              - survey_id
+              - survey_response_id
+              - survey_question_id
+              - question_shortname
+              - answer
+      - dbt_utils.expression_is_true:
+          arguments:
+            expression: |
+              survey_title not in (
+                  'School Community Diagnostic Staff Survey',
+                  'School Community Diagnostic Student Survey',
+                  'KIPP NJ & KIPP Miami Family Survey',
+                  'KIPP Miami Re-Commitment Form & Family School Community Diagnostic',
+                  'Engagement & Support Surveys',
+                  'Manager Survey'
+              )
+              or (academic_year is not null and term_code is not null)
+          config:
+            severity: warn
     columns:
       - name: survey_id
         data_type: string
@@ -15,9 +47,11 @@ models:
         data_type: string
       - name: question_shortname
         data_type: string
-      - name: rn
+      - name: round_rn
         data_type: int64
       - name: respondent_email
+        data_type: string
+      - name: respondent_identifier
         data_type: string
       - name: academic_year
         data_type: int64

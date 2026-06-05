@@ -1,0 +1,85 @@
+models:
+  - name: int_assessments__assessments_members
+    description: >-
+      Assessment-definition layer (member-grain). Joins Illuminate `assessments`
+      with the AppSheet `Illuminate Assessments Extension` overrides and an
+      `agl_dedup` CTE for `grade_level_id`. Exposes `canonical_assessment_id` as
+      the FK to `int_assessments__assessments_canonical` — computed via
+      `first_value(assessment_id) over (partition by is_internal_assessment,
+      academic_year, scope, subject_area, module_code, grade_level_id order by
+      assessment_id)`. Consumers needing canonical attrs (title, administered
+      date, grade level, etc.) join `int_assessments__assessments_canonical` on
+      that FK.
+    columns:
+      - name: assessment_id
+        data_tests:
+          - unique
+          - not_null
+        data_type: int64
+      - name: title
+        data_type: string
+      - name: academic_year
+        data_type: int64
+      - name: academic_year_clean
+        data_type: int64
+      - name: scope
+        data_type: string
+      - name: creator_first_name
+        data_type: string
+      - name: creator_last_name
+        data_type: string
+      - name: performance_band_set_id
+        data_type: int64
+      - name: assessment_type
+        data_type: string
+      - name: tags
+        data_type: string
+      - name: module_code
+        data_type: string
+      - name: module_type
+        data_type: string
+      - name: module_sequence
+        data_type: int64
+      - name: illuminate_grade_level_id
+        data_type: int64
+      - name: regions_assessed
+        data_type: string
+      - name: regions_report_card
+        data_type: string
+      - name: regions_progress_report
+        data_type: string
+      - name: regions_assessed_array
+        data_type: array<string>
+        description: >-
+          `regions_assessed` with all whitespace stripped, then split on comma.
+          Within-row duplicates and any empty-string elements (from leading or
+          trailing commas) are resolved by `illuminate_deduped` in
+          `dim_assessment_administrations`. Consumers can `cross join
+          unnest(regions_assessed_array)` to get one row per (assessment,
+          region).
+      - name: administered_at
+        data_type: date
+        description: First non-null of administered_at.
+      - name: subject_area
+        data_type: string
+        description: First non-null of subject, subject_area.
+      - name: grade_level_id
+        data_type: int64
+        description: >-
+          First non-null of `iae.illuminate_grade_level_id` (AppSheet override)
+          and the lowest `grade_level_id` from
+          `stg_illuminate__dna_assessments__assessment_grade_levels` for the
+          assessment.
+      - name: is_internal_assessment
+        data_type: boolean
+        description: Conditional on assessment_id.
+
+      - name: canonical_assessment_id
+        data_type: int64
+        description: >-
+          FK to `int_assessments__assessments_canonical`. The lowest
+          `assessment_id` within the partition `(academic_year, scope,
+          subject_area, module_code, grade_level_id)`. Multipart administrations
+          (e.g., the CRA + CRA-Essay halves of one logical Unit Quarterly
+          Assessment) share a `canonical_assessment_id`. Solo assessments equal
+          their own `assessment_id`.

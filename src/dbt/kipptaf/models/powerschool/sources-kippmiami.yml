@@ -2,7 +2,7 @@ sources:
   - name: kippmiami_powerschool
     schema:
       "{%- if target.name == 'dev' -%}zz_{{ env_var('GITHUB_USER', 'dev') }}_{%-
-      endif -%}kippmiami_powerschool"
+      elif target.name == 'staging' -%}zz_stg_{%- endif -%}kippmiami_powerschool"
     tables:
       - name: stg_powerschool__assignmentcategoryassoc
         config:
@@ -643,6 +643,15 @@ sources:
                 - kippmiami
                 - powerschool
                 - int_powerschool__student_contacts
+      - name: int_powerschool__student_enrollment_union
+        config:
+          meta:
+            dagster:
+              group: powerschool
+              asset_key:
+                - kippmiami
+                - powerschool
+                - int_powerschool__student_enrollment_union
       - name: int_powerschool__student_contacts_pivot
         config:
           meta:

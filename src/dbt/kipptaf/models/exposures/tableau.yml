@@ -3,7 +3,7 @@ exposures:
     label: CRDC Dashboard
     type: dashboard
     owner:
-      name: Data Team
+      name: Data Team - grangel
     depends_on:
       - ref("rpt_tableau__crdc_roster")
     url: https://drive.google.com/file/d/1aChpbS6v37hwIi1QrT1EmpzOHpXkXKaz
@@ -32,9 +32,10 @@ exposures:
     label: College Admission Readiness Assessments Tracker (CARAT)
     type: dashboard
     owner:
-      name: Data Team
+      name: Data Team - grangel
     depends_on:
       - ref("rpt_tableau__ap_assessment_dashboard")
+      - ref("rpt_tableau__college_assessment_dashboard_benchmark_calcs")
       - ref("rpt_tableau__college_assessment_dashboard_current")
       - ref("rpt_tableau__college_assessment_dashboard_de")
       - ref("rpt_tableau__college_assessment_dashboard_over_time")
@@ -104,11 +105,10 @@ exposures:
     label: High School Early Warning Dashboard
     type: dashboard
     owner:
-      name: Data Team
+      name: Data Team - grangel
     depends_on:
       - ref("rpt_tableau__community_service")
       - ref("rpt_tableau__graduation_requirements")
-      - ref("rpt_tableau__grad_plan_tracking")
       - ref("rpt_tableau__hs_early_warning_dashboard")
     config:
       meta:
@@ -301,7 +301,7 @@ exposures:
     label: Literacy Dashboard
     type: dashboard
     owner:
-      name: Data Team
+      name: Data Team - grangel
     depends_on:
       - ref("rpt_tableau__dibels_dashboard")
       - ref("rpt_tableau__sight_words_dashboard")
@@ -338,7 +338,7 @@ exposures:
     label: Gradebook and GPA Dashboard
     type: dashboard
     owner:
-      name: Data Team
+      name: Data Team - grangel
     depends_on:
       - ref("rpt_tableau__assignment_checks")
       - ref("rpt_tableau__gradebook_audit")
@@ -359,7 +359,7 @@ exposures:
     label: Gradebook Audit - Teacher Report
     type: dashboard
     owner:
-      name: Data Team
+      name: Data Team - grangel
     depends_on:
       - ref("rpt_tableau__gradebook_audit")
       - ref("rpt_tableau__gradebook_es_comments")
@@ -400,7 +400,7 @@ exposures:
     label: APM Dashboard
     type: dashboard
     owner:
-      name: Data Team
+      name: Data Team - grangel
     depends_on:
       - ref("rpt_tableau__iready_apm")
     config:
@@ -650,7 +650,7 @@ exposures:
     label: State Testing Analysis Tool
     type: dashboard
     owner:
-      name: Data Team
+      name: Data Team - grangel
     depends_on:
       - ref("rpt_tableau__state_assessments_dashboard")
       - ref("rpt_tableau__state_assessments_dashboard_comps")
@@ -742,7 +742,7 @@ exposures:
     label: FRESH Dashboard
     type: dashboard
     owner:
-      name: Data Team
+      name: Data Team - grangel
     depends_on:
       - ref("rpt_tableau__fresh_dashboard_aggregated")
       - ref("rpt_tableau__fresh_dashboard_progress_to_goals")

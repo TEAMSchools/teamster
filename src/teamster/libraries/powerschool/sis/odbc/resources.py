@@ -46,6 +46,19 @@ class PowerSchoolODBCResource(ConfigurableResource):
     retry_count: int = 0
     retry_delay: int = 1
     tcp_connect_timeout: float = 5.0
+    call_timeout: int = 60_000
+    """Per-round-trip timeout in milliseconds.
+
+    Limits each individual Oracle round-trip (execute, fetchmany, etc.).
+    Observed assignmentscore EXECUTE→first-fetch on kippnewark is 31–35s;
+    60s gives ~25s headroom. A hung round-trip raises DPI-1067 with the
+    in-flight SQL surfaced in the run log so the retry layer can recover,
+    rather than the 600s sensor tick cap surfacing an opaque
+    DagsterUserCodeUnreachableError.
+
+    Total tick budget = call_timeout × max_attempts + ~30s SSH × max_attempts.
+    At 60s × 5 + 30s × 5 ≈ 450s, under the 600s cap.
+    """
 
     _connect_params: ConnectParams = PrivateAttr()
     _log: DagsterLogManager = PrivateAttr()
@@ -88,7 +101,9 @@ class PowerSchoolODBCResource(ConfigurableResource):
             An open oracledb Connection object.
         """
         self._log.debug("Opening connection to database")
-        return connect(params=self._connect_params)
+        conn = connect(params=self._connect_params)
+        conn.call_timeout = self.call_timeout
+        return conn
 
     def execute_query(
         self,

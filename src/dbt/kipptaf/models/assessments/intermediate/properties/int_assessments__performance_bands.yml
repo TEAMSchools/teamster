@@ -1,0 +1,38 @@
+models:
+  - name: int_assessments__performance_bands
+    description: >-
+      Performance band set assignments at the response-level grain
+      (assessment_id × response_type × response_type_id). Unions overall
+      assessment-level bands with per-standard and per-reporting-group bands so
+      every response in `int_illuminate__agg_student_responses` has a single
+      authoritative `performance_band_set_id` to look up. Adds
+      `canonical_performance_band_set_id` so multipart members of a logical
+      internal assessment share the same band assignment per response_type.
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns:
+              - assessment_id
+              - response_type
+              - response_type_id
+    columns:
+      - name: assessment_id
+        data_type: int64
+      - name: response_type
+        data_type: string
+        description: One of `overall`, `standard`, or `group`.
+      - name: response_type_id
+        data_type: int64
+        description: >-
+          `-1` sentinel for `overall`; `standard_id` for `standard`;
+          `reporting_group_id` for `group`.
+      - name: performance_band_set_id
+        data_type: int64
+      - name: canonical_performance_band_set_id
+        data_type: int64
+        description: >-
+          For internal assessments, the `performance_band_set_id` of the row
+          whose `assessment_id` equals
+          `int_assessments__assessments_members.canonical_assessment_id` for the
+          same (response_type, response_type_id). For non-internal assessments,
+          equals `performance_band_set_id`.

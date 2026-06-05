@@ -1,0 +1,157 @@
+models:
+  - name: fct_survey_submissions
+    description: >-
+      Survey submission fact table. One row per respondent x
+      survey_administration. Records survey completion events across all
+      populations (staff, student, family). The respondent_type discriminator
+      determines which respondent FK is populated (exactly one per row). For
+      student submissions, student_enrollment_key resolves to the enrollment row
+      whose [entrydate, exitdate] window contains date_submitted (closed on both
+      ends — a submission on the exit day attributes to that stint). staff_key
+      and student_enrollment_key are nullable for respondents whose identity
+      cannot be resolved (e.g. staff respondents whose employee_number was never
+      linked, or student respondents whose email is not present in
+      int_extracts__student_enrollments). Nullable subject_staff_key is
+      populated only for Manager Survey submissions (role-playing FK to
+      dim_staff for the manager being evaluated). FK to
+      dim_survey_administrations and dim_dates.
+    columns:
+      - name: survey_submission_key
+        data_type: string
+        description: >-
+          Surrogate key derived from survey_id and survey_response_id. Primary
+          key for this fact.
+        constraints:
+          - type: primary_key
+            warn_unsupported: false
+        data_tests:
+          - unique
+
+      - name: survey_administration_key
+        data_type: string
+        description: >-
+          FK to dim_survey_administrations. Identifies which survey
+          administration this submission belongs to.
+        constraints:
+          - type: foreign_key
+            to: ref('dim_survey_administrations')
+            to_columns: [survey_administration_key]
+            warn_unsupported: false
+        data_tests:
+          - relationships:
+              arguments:
+                to: ref('dim_survey_administrations')
+                field: survey_administration_key
+      - name: date_submitted_key
+        data_type: date
+        description: >-
+          FK to dim_dates (role-playing as submission date). The local date the
+          survey was submitted.
+
+        constraints:
+          - type: foreign_key
+            to: ref('dim_dates')
+            to_columns: [date_key]
+            warn_unsupported: false
+        data_tests:
+          - relationships:
+              arguments:
+                to: ref('dim_dates')
+                field: date_key
+      - name: respondent_type
+        data_type: string
+        description: >-
+          Discriminator for respondent type: staff, student, or family.
+          Determines which respondent FK is populated.
+        data_tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values:
+                  - staff
+                  - student
+                  - family
+
+      - name: staff_key
+        data_type: string
+        description: >-
+          FK to dim_staff for the respondent. Populated when respondent_type is
+          staff AND the upstream respondent_employee_number resolves. Null for
+          student / family respondents AND for staff respondents whose identity
+          cannot be resolved upstream.
+
+        constraints:
+          - type: foreign_key
+            to: ref('dim_staff')
+            to_columns: [staff_key]
+            warn_unsupported: false
+        data_tests:
+          - relationships:
+              arguments:
+                to: ref('dim_staff')
+                field: staff_key
+      - name: student_enrollment_key
+        data_type: string
+        description: >-
+          FK to dim_student_enrollments for the respondent, resolved by matching
+          respondent_email to an enrollment row whose [entrydate, exitdate]
+          window contains date_submitted (closed on both ends). Populated when
+          respondent_type is student AND such an enrollment exists. Null for
+          staff / family respondents AND for student respondents whose email is
+          not present in int_extracts__student_enrollments or has no enrollment
+          row covering date_submitted.
+
+        constraints:
+          - type: foreign_key
+            to: ref('dim_student_enrollments')
+            to_columns: [student_enrollment_key]
+            warn_unsupported: false
+        data_tests:
+          - relationships:
+              arguments:
+                to: ref('dim_student_enrollments')
+                field: student_enrollment_key
+      - name: student_contact_person_key
+        data_type: string
+        description: >-
+          FK to dim_student_contact_persons for the respondent. Populated when
+          respondent_type is family. Null for staff and student.
+
+        constraints:
+          - type: foreign_key
+            to: ref('dim_student_contact_persons')
+            to_columns: [student_contact_person_key]
+            warn_unsupported: false
+        data_tests:
+          - relationships:
+              arguments:
+                to: ref('dim_student_contact_persons')
+                field: student_contact_person_key
+      - name: subject_staff_key
+        data_type: string
+        description: >-
+          Role-playing FK to dim_staff for the subject being evaluated.
+          Populated only for Manager Survey submissions where the respondent
+          (direct report) evaluates their manager (subject). Null for all other
+          survey types.
+
+        constraints:
+          - type: foreign_key
+            to: ref('dim_staff')
+            to_columns: [staff_key]
+            warn_unsupported: false
+        data_tests:
+          - relationships:
+              arguments:
+                to: ref('dim_staff')
+                field: staff_key
+      - name: academic_year
+        data_type: int64
+        description: >-
+          Academic year this submission falls within.
+
+      - name: timestamp
+        quote: true
+        data_type: timestamp
+        description: >-
+          UTC timestamp when the survey response was submitted.

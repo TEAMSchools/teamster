@@ -792,6 +792,102 @@ def test_view_code_version_change_blocked_by_missing_deps_then_unblocked():
     assert result.get_num_requested(AssetKey("my_view")) == 1
 
 
+def test_view_not_blocked_by_parent_pending_code_version():
+    """A view must recompile on its own code_version change even when a
+    direct parent has a pending code-version change.
+    """
+
+    @asset(key="upstream_table", tags=_TABLE_TAG, code_version="1")
+    def upstream_table_v1():
+        return 1
+
+    @asset(
+        key="my_view",
+        deps=[upstream_table_v1],
+        automation_condition=_get_view_condition(),
+        code_version="1",
+        tags=_VIEW_TAG,
+    )
+    def my_view_v1():
+        return 2
+
+    instance = DagsterInstance.ephemeral()
+    defs_v1 = Definitions(assets=[upstream_table_v1, my_view_v1])
+    materialize(assets=[upstream_table_v1, my_view_v1], instance=instance)
+    result = evaluate_automation_conditions(defs=defs_v1, instance=instance)
+    assert result.get_num_requested(AssetKey("my_view")) == 0
+
+    @asset(key="upstream_table", tags=_TABLE_TAG, code_version="2")
+    def upstream_table_v2():
+        return 1
+
+    @asset(
+        key="my_view",
+        deps=[upstream_table_v2],
+        automation_condition=_get_view_condition(),
+        code_version="2",
+        tags=_VIEW_TAG,
+    )
+    def my_view_v2():
+        return 2
+
+    defs_v2 = Definitions(assets=[upstream_table_v2, my_view_v2])
+    result = evaluate_automation_conditions(
+        defs=defs_v2, instance=instance, cursor=result.cursor
+    )
+    assert result.get_num_requested(AssetKey("my_view")) == 1
+
+
+def test_table_not_blocked_by_parent_pending_code_version():
+    """A table must re-materialize on its own code_version change even when
+    a direct parent has a pending code-version change. The previous
+    dep-code-version gate captured phantom SINCE memory and produced
+    permanent deadlocks on FRESH deps; intra-build dbt DAG ordering plus
+    ``any_deps_in_progress`` / ``any_deps_missing`` already cover the
+    in-CL race.
+    """
+
+    @asset(key="upstream_table", tags=_TABLE_TAG, code_version="1")
+    def upstream_table_v1():
+        return 1
+
+    @asset(
+        key="my_table",
+        deps=[upstream_table_v1],
+        automation_condition=_get_table_condition(),
+        code_version="1",
+        tags=_TABLE_TAG,
+    )
+    def my_table_v1():
+        return 2
+
+    instance = DagsterInstance.ephemeral()
+    defs_v1 = Definitions(assets=[upstream_table_v1, my_table_v1])
+    materialize(assets=[upstream_table_v1, my_table_v1], instance=instance)
+    result = evaluate_automation_conditions(defs=defs_v1, instance=instance)
+    assert result.get_num_requested(AssetKey("my_table")) == 0
+
+    @asset(key="upstream_table", tags=_TABLE_TAG, code_version="2")
+    def upstream_table_v2():
+        return 1
+
+    @asset(
+        key="my_table",
+        deps=[upstream_table_v2],
+        automation_condition=_get_table_condition(),
+        code_version="2",
+        tags=_TABLE_TAG,
+    )
+    def my_table_v2():
+        return 2
+
+    defs_v2 = Definitions(assets=[upstream_table_v2, my_table_v2])
+    result = evaluate_automation_conditions(
+        defs=defs_v2, instance=instance, cursor=result.cursor
+    )
+    assert result.get_num_requested(AssetKey("my_table")) == 1
+
+
 class TestKipptafDbtAssets:
     """Integration tests using the real kipptaf dbt manifest.
 

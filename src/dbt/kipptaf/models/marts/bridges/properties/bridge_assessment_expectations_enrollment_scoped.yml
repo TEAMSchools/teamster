@@ -1,0 +1,49 @@
+models:
+  - name: bridge_assessment_expectations_enrollment_scoped
+    description: |
+      Bridges internal assessment expectations whose section enrollment can
+      be resolved (a PowerSchool course-enrollment row exists for the
+      assessed subject) to their student section enrollment and assessment
+      administration. Expectations without a resolvable section enrollment
+      — replacement assessments and ES Writing in grades K-4 Newark/Camden
+      — live in `bridge_assessment_expectations_student_scoped`.
+    columns:
+      - name: assessment_expectation_key
+        data_type: string
+        description: Surrogate key. Primary key.
+        constraints:
+          - type: primary_key
+            warn_unsupported: false
+        data_tests:
+          - unique
+          - not_null
+
+      - name: student_section_enrollment_key
+        data_type: string
+        description: >-
+          FK to dim_student_section_enrollments.
+        constraints:
+          - type: foreign_key
+            to: ref('dim_student_section_enrollments')
+            to_columns: [student_section_enrollment_key]
+            warn_unsupported: false
+        data_tests:
+          - relationships:
+              arguments:
+                to: ref('dim_student_section_enrollments')
+                field: student_section_enrollment_key
+
+      - name: assessment_administration_key
+        data_type: string
+        description: >-
+          FK to dim_assessment_administrations.
+        constraints:
+          - type: foreign_key
+            to: ref('dim_assessment_administrations')
+            to_columns: [assessment_administration_key]
+            warn_unsupported: false
+        data_tests:
+          - relationships:
+              arguments:
+                to: ref('dim_assessment_administrations')
+                field: assessment_administration_key

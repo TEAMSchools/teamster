@@ -14,16 +14,18 @@ with
         select
             dr.* except (_dbt_source_relation),
 
-            lc.region,
-            lc.abbreviation as school_abbreviation,
-            lc.powerschool_school_id as schoolid,
+            lc.location_region as region,
+            lc.location_abbreviation as school_abbreviation,
+            lc.location_powerschool_school_id as schoolid,
 
             regexp_replace(
-                dr._dbt_source_relation, r'kipp[a-z]+_', lc.dagster_code_location || '_'
+                dr._dbt_source_relation,
+                r'kipp[a-z]+_',
+                lc.location_dagster_code_location || '_'
             ) as _dbt_source_relation,
 
             case
-                lc.dagster_code_location
+                lc.location_dagster_code_location
                 when 'kippnewark'
                 then 'NJSLA'
                 when 'kippcamden'
@@ -35,8 +37,8 @@ with
             end as state_assessment_type,
         from union_relations as dr
         left join
-            {{ ref("stg_google_sheets__people__location_crosswalk") }} as lc
-            on dr.school = lc.name
+            {{ ref("int_people__location_crosswalk") }} as lc
+            on dr.school = lc.location_name
     ),
 
     window_calcs as (
@@ -125,6 +127,21 @@ select
 
     right(rt.code, 1) as round_number,
 
+    case
+        when wc.overall_relative_placement_int <= 2
+        then 'Below/Far Below'
+        when wc.overall_relative_placement_int = 3
+        then 'Approaching'
+        when wc.overall_relative_placement_int >= 4
+        then 'At/Above'
+    end as iready_proficiency,
+
+    if(
+        cwp.scale_low - wc.most_recent_overall_scale_score <= 0,
+        0,
+        cwp.scale_low - wc.most_recent_overall_scale_score
+    ) as scale_points_to_proficiency,
+
     round(
         wc.most_recent_diagnostic_gain / wc.annual_typical_growth_measure, 2
     ) as progress_to_typical,
@@ -132,12 +149,6 @@ select
     round(
         wc.most_recent_diagnostic_gain / wc.annual_stretch_growth_measure, 2
     ) as progress_to_stretch,
-
-    if(
-        cwp.scale_low - wc.most_recent_overall_scale_score <= 0,
-        0,
-        cwp.scale_low - wc.most_recent_overall_scale_score
-    ) as scale_points_to_proficiency,
 
     row_number() over (
         partition by
@@ -148,6 +159,7 @@ select
             rt.name
         order by wc.completion_date desc
     ) as rn_subj_round,
+
 from window_calcs as wc
 left join
     {{ ref("stg_google_sheets__reporting__terms") }} as rt

@@ -459,4 +459,11 @@ select
         wage_law_coverage__wage_law_name_code__long_name,
         wage_law_coverage__wage_law_name_code__short_name
     ) as wage_law_coverage__wage_law_name_code__name,
+
+    loc.location_key,
 from work_assignments_parsed
+left join
+    {{ ref("stg_google_sheets__people__locations") }} as loc
+    on home_work_location__name_code__code_value = cast(loc.adp_location_code as string)
+    and not loc.is_pathways
+    and loc.location_name <> 'KIPP Whittier Elementary'

@@ -7,7 +7,11 @@ from teamster.libraries.ssh.resources import SSHResource
 def _test_listdir_attr_r(ssh: SSHResource, remote_dir: str = "~"):
     ssh.setup_for_execution(context=build_init_resource_context())
 
-    files = ssh.listdir_attr_r(remote_dir=remote_dir)
+    with (
+        ssh.get_connection() as connection,
+        connection.open_sftp() as sftp_client,
+    ):
+        files = ssh.listdir_attr_r(sftp_client=sftp_client, remote_dir=remote_dir)
 
     for f in files:
         print(f)

@@ -5,7 +5,7 @@ and staleness evaluation logic shared across assets, schedules, and sensors.
 """
 
 import logging
-from collections.abc import Generator, Sequence
+from collections.abc import Callable, Generator, Sequence
 from contextlib import contextmanager
 from dataclasses import dataclass
 from datetime import datetime
@@ -24,6 +24,12 @@ from dagster import (
 from dagster_shared import check
 from dateutil.relativedelta import relativedelta
 from sqlalchemy import TextClause, text
+from tenacity import (
+    Retrying,
+    before_sleep_log,
+    stop_after_attempt,
+    wait_exponential_jitter,
+)
 
 from teamster.core.utils.classes import FiscalYearPartitionsDefinition
 from teamster.libraries.powerschool.sis.odbc.resources import PowerSchoolODBCResource
@@ -41,9 +47,12 @@ def powerschool_connection(
     Opens the SSH tunnel first, then the database connection. On success,
     yields the connection. Cleans up both on exit.
 
-    If the connection fails, the tunnel is killed immediately. If an error
-    occurs during query execution, it is logged before re-raising. Connection
-    failures propagate without logging (Dagster handles them at the run level).
+    If the connection fails, the tunnel is killed immediately. All failures
+    (connection or query execution) propagate without logging — logging is
+    the caller's responsibility. ``with_powerschool_retry`` logs intermediate
+    attempts at WARNING; Dagster captures unrecovered failures at the run
+    level. Logging here at ERROR severity would file GCP Error Reporting
+    groups for transient issues that the retry layer recovers from.
 
     Args:
         ssh_resource: SSHResource with open_ssh_tunnel() method.
@@ -62,14 +71,48 @@ def powerschool_connection(
         raise
     try:
         yield connection
-    except Exception:
-        log.exception("PowerSchool ODBC error")
-        raise
     finally:
         try:
             connection.close()
         finally:
             ssh_tunnel.kill()
+
+
+def with_powerschool_retry[_T](
+    ssh_resource: SSHResource,
+    db_resource: PowerSchoolODBCResource,
+    log: logging.Logger,
+    work_fn: Callable[[oracledb.Connection], _T],
+    max_attempts: int = 5,
+) -> _T:
+    """Run a function with a PowerSchool connection, retrying on failure.
+
+    Opens a tunnel and connection via ``powerschool_connection``, calls
+    ``work_fn`` with the connection, and returns the result. If the
+    connection or work_fn raises, tears down the tunnel and retries up to
+    ``max_attempts`` times before re-raising.
+
+    Args:
+        ssh_resource: SSHResource with open_ssh_tunnel() method.
+        db_resource: PowerSchoolODBCResource with connect() method.
+        log: Dagster logger (context.log).
+        work_fn: Callable that receives an open connection and returns a result.
+        max_attempts: Total attempts (initial + retries). Defaults to 5.
+
+    Returns:
+        The return value of work_fn.
+    """
+    for attempt in Retrying(
+        stop=stop_after_attempt(max_attempts),
+        wait=wait_exponential_jitter(initial=10, max=60),
+        before_sleep=before_sleep_log(log, logging.WARNING),
+        reraise=True,
+    ):
+        with attempt:
+            with powerschool_connection(ssh_resource, db_resource, log) as conn:
+                return work_fn(conn)
+
+    raise AssertionError("unreachable: max_attempts must be >= 1")
 
 
 def format_oracle_timestamp(timestamp: float, tz: ZoneInfo) -> str:
@@ -460,6 +503,64 @@ def _evaluate_partitioned(
         )
         if result is not None:
             results.append(result)
+    return results
+
+
+def enumerate_partitions_for_schedule(
+    asset_selection: list[AssetsDefinition],
+    limit_monthly_partitions: int = 12,
+) -> list[StalenessResult]:
+    """Enumerate (asset, partition) pairs for a schedule run, without DB access.
+
+    Returns the same StalenessResult shape as evaluate_asset_staleness but
+    skips every COUNT-based staleness probe. Schedules run once per day and
+    already constrain the partition window, so the per-asset Oracle round-trips
+    add no signal — and they are a recurring source of DPY-4024 timeouts on
+    large tables (assignmentscore, pgfinalgrades). The first partition of each
+    TimeWindow definition is skipped to mirror the legacy staleness-walk
+    behaviour (pre-history boundary partition has no data).
+
+    Args:
+        asset_selection: List of Dagster asset definitions to enumerate.
+        limit_monthly_partitions: For MonthlyPartitionsDefinition assets, only
+            include the most recent N partition keys.
+
+    Returns:
+        List of StalenessResult, one per (asset, partition) pair.
+    """
+    results: list[StalenessResult] = []
+
+    for asset in asset_selection:
+        if asset.partitions_def is None:
+            results.append(
+                StalenessResult(
+                    asset_key=asset.key,
+                    partitions_def_identifier=None,
+                    partition_key=None,
+                )
+            )
+            continue
+
+        partitions_def = asset.partitions_def
+        partitions_def_id = partitions_def.get_serializable_unique_identifier()
+        partition_keys = list(partitions_def.get_partition_keys())
+
+        if isinstance(partitions_def, MonthlyPartitionsDefinition):
+            partition_keys = partition_keys[-limit_monthly_partitions:]
+
+        first_partition_key = partitions_def.get_first_partition_key()
+
+        for partition_key in partition_keys:
+            if partition_key == first_partition_key:
+                continue
+            results.append(
+                StalenessResult(
+                    asset_key=asset.key,
+                    partitions_def_identifier=partitions_def_id,
+                    partition_key=partition_key,
+                )
+            )
+
     return results
 
 

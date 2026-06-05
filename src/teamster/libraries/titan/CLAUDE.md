@@ -14,8 +14,8 @@ structure.
 
 **`schema.py`**: Avro schemas for Titan K12 SFTP file formats.
 
-## Asset Checks
+## Freshness Policies
 
-Code locations define freshness checks on `titan/person_data` and
-`stg_titan__person_data` — deadline 11:30pm, 30-minute window (kippcamden,
+Code locations attach `FreshnessPolicy.cron` to `titan/person_data` and
+`stg_titan__person_data` — deadline 1:00am, 1-hour window (kippcamden,
 kippnewark).

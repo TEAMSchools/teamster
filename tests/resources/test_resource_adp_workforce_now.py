@@ -1,9 +1,17 @@
 import json
+import logging
 import pathlib
+import types
 
+import pytest
 from dagster import build_resources
+from requests.exceptions import HTTPError, JSONDecodeError
+from tenacity import RetryError, wait_none
 
-from teamster.libraries.adp.workforce_now.api.resources import AdpWorkforceNowResource
+from teamster.libraries.adp.workforce_now.api.resources import (
+    AdpWorkforceNowError,
+    AdpWorkforceNowResource,
+)
 
 
 def get_adp_wfn_resource() -> AdpWorkforceNowResource:
@@ -111,3 +119,162 @@ def test_get_talent_associate_memberships():
     filepath.parent.mkdir(parents=True, exist_ok=True)
 
     json.dump(obj=data, fp=filepath.open(mode="w"))
+
+
+class _FakeResponse:
+    def __init__(
+        self,
+        status_code: int,
+        json_body: dict,
+        *,
+        text: str = "",
+        json_raises: bool = False,
+    ) -> None:
+        self.status_code = status_code
+        self._json_body = json_body
+        self.text = text
+        self._json_raises = json_raises
+
+    def json(self) -> dict:
+        if self._json_raises:
+            raise JSONDecodeError("Expecting value", "", 0)
+
+        return self._json_body
+
+    def raise_for_status(self) -> None:
+        if self.status_code >= 400:
+            raise HTTPError(f"{self.status_code} Server Error", response=self)  # pyright: ignore[reportArgumentType]
+
+
+def _build_offline_resource(request_fn) -> AdpWorkforceNowResource:
+    """Instantiate the resource without the network setup_for_execution path."""
+    adp_wfn = AdpWorkforceNowResource(
+        client_id="x", client_secret="x", cert_filepath="x", key_filepath="x"
+    )
+
+    object.__setattr__(adp_wfn, "_session", types.SimpleNamespace(request=request_fn))
+    object.__setattr__(adp_wfn, "_log", logging.getLogger("test_adp_wfn"))
+
+    return adp_wfn
+
+
+def test_request_retries_on_server_error(monkeypatch: pytest.MonkeyPatch):
+    """A 5xx response is transient and must be retried.
+
+    Regression: non-429 errors were re-raised as a bare ``Exception``, which the
+    tenacity ``retry_if_exception_type`` predicate did not match, so 500s failed
+    on the first attempt instead of being retried.
+    """
+    # make tenacity backoff instant for the test
+    monkeypatch.setattr(AdpWorkforceNowResource._request.retry, "wait", wait_none())  # pyright: ignore[reportFunctionMemberAccess]
+
+    calls = {"n": 0}
+
+    def request_fn(method: str, url: str, **kwargs) -> _FakeResponse:
+        calls["n"] += 1
+        if calls["n"] < 3:
+            return _FakeResponse(500, {"status": 500, "error": "Internal Server Error"})
+        return _FakeResponse(200, {"ok": True})
+
+    adp_wfn = _build_offline_resource(request_fn)
+
+    response = adp_wfn._request(method="GET", url="https://api.adp.com/hr/v2/workers")
+
+    assert response.status_code == 200
+    assert calls["n"] == 3
+
+
+def test_request_does_not_retry_on_client_error(monkeypatch: pytest.MonkeyPatch):
+    """A non-429 4xx is deterministic: raise a specific error without retrying."""
+    monkeypatch.setattr(AdpWorkforceNowResource._request.retry, "wait", wait_none())  # pyright: ignore[reportFunctionMemberAccess]
+
+    calls = {"n": 0}
+
+    def request_fn(method: str, url: str, **kwargs) -> _FakeResponse:
+        calls["n"] += 1
+        return _FakeResponse(400, {"status": 400, "error": "Bad Request"})
+
+    adp_wfn = _build_offline_resource(request_fn)
+
+    with pytest.raises(AdpWorkforceNowError):
+        adp_wfn._request(method="GET", url="https://api.adp.com/hr/v2/workers")
+
+    assert calls["n"] == 1
+
+
+def test_request_retries_server_error_with_non_json_body(
+    monkeypatch: pytest.MonkeyPatch,
+):
+    """A 5xx whose body is not JSON (a gateway 504 HTML page) must still retry.
+
+    Regression: the handler called ``response.json()`` before checking the
+    status code. A gateway 504 returns a non-JSON body, so ``.json()`` raised
+    ``JSONDecodeError`` — which the tenacity predicate does not match — and the
+    request failed on the first attempt instead of being retried as a 5xx.
+    """
+    monkeypatch.setattr(AdpWorkforceNowResource._request.retry, "wait", wait_none())  # pyright: ignore[reportFunctionMemberAccess]
+
+    calls = {"n": 0}
+
+    def request_fn(method: str, url: str, **kwargs) -> _FakeResponse:
+        calls["n"] += 1
+        if calls["n"] < 3:
+            return _FakeResponse(504, {}, json_raises=True, text="504 Gateway Time-out")
+        return _FakeResponse(200, {"ok": True})
+
+    adp_wfn = _build_offline_resource(request_fn)
+
+    response = adp_wfn._request(method="GET", url="https://api.adp.com/hr/v2/workers")
+
+    assert response.status_code == 200
+    assert calls["n"] == 3
+
+
+def test_request_non_json_server_error_retries_as_httperror(
+    monkeypatch: pytest.MonkeyPatch,
+):
+    """A persistent non-JSON 5xx is retried, then exhausts as a wrapped HTTPError.
+
+    The underlying cause across all attempts must be the retryable ``HTTPError``,
+    never the ``JSONDecodeError`` produced by parsing a non-JSON gateway body. On
+    exhaustion tenacity wraps the last failure in ``RetryError``.
+    """
+    monkeypatch.setattr(AdpWorkforceNowResource._request.retry, "wait", wait_none())  # pyright: ignore[reportFunctionMemberAccess]
+
+    calls = {"n": 0}
+
+    def request_fn(method: str, url: str, **kwargs) -> _FakeResponse:
+        calls["n"] += 1
+        return _FakeResponse(504, {}, json_raises=True, text="504 Gateway Time-out")
+
+    adp_wfn = _build_offline_resource(request_fn)
+
+    with pytest.raises(RetryError) as exc_info:
+        adp_wfn._request(method="GET", url="https://api.adp.com/hr/v2/workers")
+
+    assert calls["n"] == 5
+    assert isinstance(exc_info.value.last_attempt.exception(), HTTPError)
+
+
+def test_request_non_json_client_error_raises_adp_error(
+    monkeypatch: pytest.MonkeyPatch,
+):
+    """A non-JSON 4xx surfaces ``AdpWorkforceNowError`` without retrying.
+
+    The deterministic-4xx branch must tolerate a non-JSON body instead of
+    crashing on ``response.json()``.
+    """
+    monkeypatch.setattr(AdpWorkforceNowResource._request.retry, "wait", wait_none())  # pyright: ignore[reportFunctionMemberAccess]
+
+    calls = {"n": 0}
+
+    def request_fn(method: str, url: str, **kwargs) -> _FakeResponse:
+        calls["n"] += 1
+        return _FakeResponse(404, {}, json_raises=True, text="404 Not Found")
+
+    adp_wfn = _build_offline_resource(request_fn)
+
+    with pytest.raises(AdpWorkforceNowError):
+        adp_wfn._request(method="GET", url="https://api.adp.com/hr/v2/workers")
+
+    assert calls["n"] == 1

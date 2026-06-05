@@ -1,5 +1,13 @@
 models:
   - name: int_assessments__college_assessment
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns:
+              - student_number
+              - score_type
+              - test_date
+              - rn_highest
     columns:
       - name: student_number
         data_type: int64
@@ -27,6 +35,7 @@ models:
         data_type: int64
       - name: aligned_subject_area
         data_type: string
+        description: Conditional on subject_area.
       - name: strategy_case
         data_type: string
       - name: running_max_scale_score
@@ -45,9 +54,15 @@ models:
         data_type: numeric
       - name: test_type
         data_type: string
+        description: Computed expression.
       - name: aligned_subject
         data_type: string
+        description: Categorical mapping of score_type, subject_area.
       - name: test_month
         data_type: string
+        description: Derived from test_date.
       - name: runnning_superscore
         data_type: numeric
+        description:
+          Derived from avg_running_max_superscore, scope,
+          sum_running_max_superscore.

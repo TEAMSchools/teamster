@@ -71,14 +71,16 @@ with
             enr.ktc_cohort,
             enr.is_counseling_services,
             enr.is_student_athlete,
+            enr.graduation_year,
             enr.ada_above_or_at_80,
             enr.hos,
             enr.school_leader,
             enr.school_leader_tableau_username,
             enr.cumulative_y1_gpa,
-            enr.cumulative_y1_gpa_unweighted,
             enr.cumulative_y1_gpa_projected,
             enr.cumulative_y1_gpa_projected_s1,
+            enr.cumulative_y1_gpa_unweighted,
+            enr.cumulative_y1_gpa_projected_unweighted,
             enr.cumulative_y1_gpa_projected_s1_unweighted,
             enr.core_cumulative_y1_gpa,
             enr.ada,
@@ -91,11 +93,16 @@ with
             term.semester,
 
             gtq.gpa_semester,
-            gtq.gpa_y1_unweighted,
+
             gtq.total_credit_hours_y1 as gpa_total_credit_hours,
             gtq.n_failing_y1 as gpa_n_failing_y1,
 
+            if(
+                term.quarter = 'Y1', gty.gpa_y1_unweighted, gtq.gpa_y1_unweighted
+            ) as gpa_y1_unweighted,
+
             if(term.quarter = 'Y1', gty.gpa_y1, gtq.gpa_term) as gpa_for_quarter,
+
             if(term.quarter = 'Y1', gty.gpa_y1, gtq.gpa_y1) as gpa_y1,
 
         from {{ ref("int_extracts__student_enrollments") }} as enr
@@ -338,6 +345,7 @@ select
     s.ktc_cohort,
     s.enroll_status,
     s.cohort,
+    s.graduation_year,
     s.gender,
     s.ethnicity,
     s.advisory,
@@ -376,9 +384,10 @@ select
     s.gpa_n_failing_y1,
 
     s.cumulative_y1_gpa,
-    s.cumulative_y1_gpa_unweighted,
     s.cumulative_y1_gpa_projected,
     s.cumulative_y1_gpa_projected_s1,
+    s.cumulative_y1_gpa_unweighted,
+    s.cumulative_y1_gpa_projected_unweighted,
     s.cumulative_y1_gpa_projected_s1_unweighted,
     s.core_cumulative_y1_gpa,
 

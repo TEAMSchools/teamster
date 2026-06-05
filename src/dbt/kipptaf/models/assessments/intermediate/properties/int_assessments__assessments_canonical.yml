@@ -1,0 +1,87 @@
+models:
+  - name: int_assessments__assessments_canonical
+    description: >-
+      Canonical-grain projection of `int_assessments__assessments_members`. One
+      row per `canonical_assessment_id` — the logical assessment that may span
+      multiple regional members (e.g., the four regional copies of the same Q2
+      ELA module collapse to one canonical row). Canonical attrs (`title`,
+      `administered_date`, `grade_level_id`) are picked from the member with the
+      lowest `assessment_id` in the canonical group via
+      `dbt_utils.deduplicate(partition_by="canonical_assessment_id",
+      order_by="assessment_id")`, matching the `first_value(... order by
+      assessment_id) over canonical_w` window in the upstream model.
+      `regions_array` is the union of `regions_assessed_array` across all
+      internal members of the group. Internal assessments only
+      (`is_internal_assessment` filter applied upstream).
+    columns:
+      - name: canonical_assessment_id
+        data_tests:
+          - unique
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('int_assessments__assessments_members')
+                field: canonical_assessment_id
+        data_type: int64
+        description: >-
+          Primary key. The lowest `assessment_id` within the canonical partition
+          `(academic_year, scope, subject_area, module_code, grade_level_id)`.
+          Members of `int_assessments__assessments_members` FK here via their
+          own `canonical_assessment_id` column.
+      - name: regions_array
+        data_tests:
+          - not_null
+        data_type: array<string>
+        description: >-
+          Union of `regions_assessed_array` across all internal members of the
+          canonical group, computed via `array_agg(distinct region)` after
+          `unnest`. Consumers `cross join unnest(regions_array) as region` to
+          fan out to one row per (canonical assessment, region). Guaranteed
+          non-null by the INNER JOIN to `canonical_regions` in the model SQL —
+          canonical groups whose internal members all have empty
+          `regions_assessed_array` are dropped at the join.
+      - name: title
+        data_type: string
+        description: >-
+          `title` from the canonical member (lowest `assessment_id` in the
+          group). Equivalent to
+          `int_assessments__assessments_members.canonical_title`.
+      - name: administered_date
+        data_type: date
+        description: >-
+          `canonical_administered_at` from the canonical member. Already DATE
+          precision upstream — no cast applied.
+      - name: grade_level_id
+        data_type: int64
+        description: >-
+          `grade_level_id` from the canonical member. Equivalent to
+          `int_assessments__assessments_members.canonical_grade_level_id`.
+      - name: grade_level
+        data_type: int64
+        description: >-
+          `grade_level_id - 1` (upstream uses 1-indexed grade IDs).
+      - name: subject_area
+        data_type: string
+        description: >-
+          Constant within the canonical partition. Picked from the canonical
+          member.
+      - name: scope
+        data_type: string
+        description: >-
+          Constant within the canonical partition. Picked from the canonical
+          member.
+      - name: module_code
+        data_type: string
+        description: >-
+          Constant within the canonical partition. Picked from the canonical
+          member.
+      - name: academic_year
+        data_type: int64
+        description: >-
+          Constant within the canonical partition. Picked from the canonical
+          member.
+      - name: academic_year_clean
+        data_type: int64
+        description: >-
+          Constant within the canonical partition. Picked from the canonical
+          member.

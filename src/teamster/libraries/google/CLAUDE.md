@@ -5,8 +5,8 @@ responsibilities:
 
 ## `bigquery/`
 
-Single `ops.py` with a `bigquery_query_op` that runs a BigQuery query and
-returns row dicts. Used in extract pipelines.
+`ops.py` with `bigquery_get_table_op` and `bigquery_query_op`, which run
+BigQuery operations and return row dicts. Used in extract pipelines.
 
 ## `directory/`
 
@@ -63,6 +63,17 @@ for IO manager output.
 `couchdrop/sensors.py` to detect new files dropped in Couchdrop-managed Google
 Drive folders.
 
+**`new_batch_http_request` is only on the root service**, not on sub-resources
+like `.files()`. `googleapiclient/discovery.py` attaches it via
+`_set_dynamic_attr` only when `resourceDesc == rootDesc`. Keep both refs in
+`setup_for_execution`: `_drive = discovery.build(...)` for batching,
+`_service = self._drive.files()` for individual sub-requests.
+
+Drive API methods targeting a specific file (`files.get`, `files.list`,
+`files.create`, `files.update`, `files.copy`, `files.delete`) must pass
+`supportsAllDrives=True` — without it, files in shared drives 404 even when ACL
+grants access.
+
 ## `forms/`
 
 **`resources.py`** (`GoogleFormsResource`): Fetches Google Forms responses. Used
@@ -74,7 +85,9 @@ to ingest survey data as assets.
 (not a full asset) from a Google Sheets URL + range. The sheet ID is parsed from
 the URL and stored in metadata.
 
-**`sensors.py`** (`build_google_sheets_asset_sensor()`): Polls
-`spreadsheet.get_lastUpdateTime()` for each unique sheet ID, emits
-`AssetMaterialization` events when a sheet has been updated since the last
-cursor timestamp.
+**`sensors.py`** (`build_google_sheets_asset_sensor()`): Calls
+`GoogleDriveResource.get_modified_times()` once per tick to batch
+`files.get(fields=modifiedTime)` across all unique sheet IDs in a single Drive
+`/batch` HTTP request. Emits `AssetMaterialization` events when a sheet's
+modifiedTime has advanced past the last cursor value. Uses the `google_drive`
+resource key — `gspread` is not used.

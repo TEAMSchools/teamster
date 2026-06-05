@@ -1,29 +1,105 @@
 models:
   - name: int_fldoe__all_assessments
+    description: >-
+      Union of FLDOE state assessment results (EOC, FAST, Science, FSA) for KIPP
+      Miami, with assessment-grade and performance-level coalesced to single
+      canonical fields and assessment_name derived from the source relation.
+      Resolves student_number by joining stg_powerschool__u_studentsuserfields
+      on fleid. Adds standardized metadata columns (results_type,
+      district_state, illuminate_subject, fast_aggregated_proficiency) for use
+      in network-level reporting.
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns:
+              - student_id
+              - academic_year
+              - administration_window
+              - assessment_subject
     columns:
       - name: test_code
         data_type: string
+        description: State assessment test code (e.g. ELA03, ALG01, ELAGP).
       - name: academic_year
         data_type: int64
+        description: Academic year the assessment was administered.
       - name: administration_window
         data_type: string
+        description: Assessment administration window (PM1, PM2, or PM3).
       - name: season
         data_type: string
+        description: >
+          Testing season derived from administration window (Fall, Winter,
+          Spring). We only use Spring for official reporting.
       - name: discipline
         data_type: string
+        description: Subject discipline category (Math, ELA, Science, etc.).
       - name: assessment_subject
         data_type: string
+        description: Full assessment subject name as reported by FLDOE.
       - name: scale_score
         data_type: int64
+        description: Student's raw scale score on the assessment.
       - name: achievement_level
         data_type: string
+        description: >
+          Achievement level label as reported by FLDOE (e.g. 'Level 1', 'Level
+          3').
       - name: is_proficient
         data_type: boolean
+        description:
+          Whether the student scored at or above the proficiency threshold.
       - name: assessment_grade
         data_type: string
+        description: >
+          Grade level of the assessment. Ideally, it should match a student's
+          enrolled grade.
       - name: performance_level
         data_type: int64
+        description: >-
+          Numeric performance level coalesced from performance_level and
+          achievement_level_int source columns across FLDOE staging tables.
       - name: student_id
         data_type: string
+        description: >-
+          FLDOE student identifier (FLEID). Coalesced from student_id and fleid
+          source columns across FLDOE staging tables.
+      - name: student_number
+        data_type: int64
+        description: >-
+          PowerSchool student_number resolved by joining student_id (FLEID) to
+          stg_powerschool__u_studentsuserfields.fleid. Null for the small number
+          of FLDOE students with no matching PowerSchool record.
+      - name: results_type
+        data_type: string
+        description: Always 'Actual' for FLDOE results (no preliminary scores).
+      - name: district_state
+        data_type: string
+        description:
+          Network district/state identifier; always 'KTAF FL' for this model.
+      - name: admin
+        data_type: string
+        quote: true
+        description: >
+          Testing administration period (alias for administration_window);
+          reserved word alias for Tableau.
+      - name: subject
+        data_type: string
+        quote: true
+        description:
+          Full assessment subject name as reported by FLDOE (alias for
+          assessment_subject).
       - name: assessment_name
         data_type: string
+        description: Full assessment name (e.g. FAST, FSA, EOC).
+      - name: illuminate_subject
+        data_type: string
+        description: >
+          Standardized subject label for Illuminate/reporting — ELA subjects map
+          to 'Text Study'; Algebra I, Algebra II, and Geometry map to
+          'Mathematics'; all others pass through unchanged.
+      - name: fast_aggregated_proficiency
+        data_type: string
+        description: >
+          Aggregated proficiency band: level 1 = 'Below/Far Below', level 2 =
+          'Approaching', level 3+ = 'At/Above'.

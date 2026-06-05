@@ -27,8 +27,6 @@ models:
         data_type: string
       - name: module_sequence
         data_type: int64
-      - name: grade_level
-        data_type: int64
       - name: illuminate_grade_level_id
         data_type: int64
       - name: regions_assessed
@@ -43,3 +41,5 @@ models:
         data_type: string
       - name: is_internal_assessment
         data_type: boolean
+      - name: grade_level
+        data_type: int64

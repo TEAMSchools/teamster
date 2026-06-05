@@ -1,0 +1,53 @@
+models:
+  - name: dim_student_contact_persons
+    description: >-
+      Contact person dimension. One row per unique contact person, deduplicated
+      across students. A parent linked to multiple students (siblings) appears
+      once here and has multiple rows in bridge_student_contacts. Person
+      attributes (name, phone, email, address) are stable across student-contact
+      pairs and live on this dimension.
+
+    columns:
+      - name: student_contact_person_key
+        data_type: string
+        description:
+          Surrogate key for the contact person. Primary key for this dimension.
+        constraints:
+          - type: primary_key
+            warn_unsupported: false
+        data_tests:
+          - unique
+          - not_null
+
+        config:
+          meta:
+            source_system: PowerSchool
+            source_model: int_powerschool__contacts
+            source_column: personid
+            column_role: primary_key
+
+      - name: full_name
+        data_type: string
+        description: >-
+          Full name of the contact person (first + last, trimmed) as stored in
+          PowerSchool. Matches dim_staff.full_name and dim_students.full_name.
+
+      - name: phone
+        data_type: string
+        description: >-
+          Primary phone number for the contact person. Prefers Mobile over Home
+          over Daytime over Work. Formatted as (NXX) NXX-XXXX. NULL if no phone
+          is recorded.
+
+      - name: email
+        data_type: string
+        description: >-
+          Current email address for the contact person. NULL if no email is
+          recorded in PowerSchool.
+
+      - name: home_address
+        data_type: string
+        description: >-
+          Primary home address for the contact person. Single concatenated
+          address string from the PowerSchool Home contact type. NULL if no home
+          address is recorded.

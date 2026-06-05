@@ -26,7 +26,22 @@ with
 
     calcs as (
         select
-            mem.*,
+            mem._dbt_source_relation,
+            mem.studentid,
+            mem.student_number,
+            mem.schoolid,
+            mem.calendardate,
+            mem.fteid,
+            mem.attendance_conversion_id,
+            mem.grade_level,
+            mem.ontrack,
+            mem.offtrack,
+            mem.student_track,
+            mem.yearid,
+            mem.att_code,
+            mem.attendancevalue,
+            mem.potential_attendancevalue,
+            mem.membershipvalue,
 
             t.academic_year,
             t.semester,
@@ -40,7 +55,6 @@ with
                 mem._dbt_source_relation, r'(kipp\w+)_'
             ) as _dbt_source_project,
 
-            {# TODO: move calcs to powerschool package #}
             abs(mem.attendancevalue - 1) as is_absent,
 
             if(
@@ -53,6 +67,11 @@ with
             if(
                 mem.att_code in ('OS', 'OSS', 'OSSP', 'S', 'ISS', 'SHI'), 1.0, 0.0
             ) as is_suspended,
+            if(
+                mem.att_code not in ('ISS', 'OSS', 'OS', 'OSSP', 'SHI'),
+                abs(mem.attendancevalue - 1),
+                0.0
+            ) as is_absent_non_susp,
 
         from union_relations as mem
         inner join
@@ -120,6 +139,7 @@ select
     is_oss,
     is_iss,
     is_suspended,
+    is_absent_non_susp,
     n_absent_running_90,
     pct_absent_running_student_year,
     n_membership_student_year,
@@ -135,4 +155,5 @@ select
         then true
         else false
     end as is_truant,
+
 from running_calcs

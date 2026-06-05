@@ -1,27 +1,27 @@
 {
   "mcpServers": {
     "dagster": {
-      "command": "bash",
-      "args": ["mcp/dagster_plus/run.sh"],
-      "env": {
-        "DAGSTER_CLOUD_ORGANIZATION_ID": "kipptaf",
-        "DAGSTER_CLOUD_DEPLOYMENT": "prod"
-      }
+      "command": "/workspaces/teamster/scripts/dagster-mcp-launch.sh",
+      "args": []
     },
     "bigquery": {
-      "command": "/usr/local/bin/toolbox",
-      "args": ["--prebuilt", "bigquery", "--stdio"],
+      "command": "npx",
+      "args": ["-y", "@toolbox-sdk/server", "--prebuilt=bigquery", "--stdio"],
       "env": {
         "GOOGLE_APPLICATION_CREDENTIALS": "${HOME}/.config/gcloud/application_default_credentials.json",
         "BIGQUERY_PROJECT": "teamster-332318"
       }
     },
     "dbt": {
-      "command": "uvx",
-      "args": ["dbt-mcp"],
+      "command": "/workspaces/teamster/scripts/dbt-mcp-launch.sh",
+      "args": [],
       "env": {
-        "DBT_PROJECT_DIR": "/workspaces/teamster/src/dbt/kipptaf",
-        "DBT_PATH": "/workspaces/teamster/.venv/bin/dbt"
+        "DBT_HOST": "us1.dbt.com",
+        "DBT_HOST_PREFIX": "rn998",
+        "DBT_ACCOUNT_ID": "116510",
+        "DBT_PROD_ENV_ID": "70403104014899",
+        "DISABLE_DBT_CLI": "true",
+        "DISABLE_TOOLS": "text_to_sql,execute_sql,get_related_models,search,fusion.compile_sql,fusion.get_column_lineage"
       }
     },
     "gke": {
@@ -31,12 +31,23 @@
         "GOOGLE_APPLICATION_CREDENTIALS": "${HOME}/.config/gcloud/application_default_credentials.json"
       }
     },
-    "observability": {
+    "gcp-observability": {
       "command": "npx",
       "args": ["-y", "@google-cloud/observability-mcp"],
       "env": {
         "GOOGLE_APPLICATION_CREDENTIALS": "${HOME}/.config/gcloud/application_default_credentials.json"
       }
+    },
+    "github": {
+      "type": "http",
+      "url": "https://api.githubcopilot.com/mcp/",
+      "headers": {
+        "Authorization": "Bearer ${GITHUB_TOKEN}"
+      }
+    },
+    "context7": {
+      "command": "npx",
+      "args": ["-y", "@upstash/context7-mcp"]
     }
   }
 }

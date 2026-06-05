@@ -109,12 +109,13 @@ re-authenticate if credentials have expired.
 
 ### Secret Injection
 
-`inject-secrets.sh`: manually run to inject 1Password secrets into the
-environment. Required for Dagster development; not needed for SQL-only work. Run
-after container start if env vars or secrets are missing.
+Secrets are fetched on demand from 1Password by `tests/conftest.py` when pytest
+runs. The 1Password service account token is saved to
+`/etc/secret-volume/.op-token` during `postCreate` and revoked from interactive
+shells in `postStart`.
 
-- **Adding a new secret**: update **both** the symlink validation loop and the
-  injection `for` loop — omitting either silently skips the secret.
+- **Adding a new secret**: update `_FILE_SECRETS` in `tests/conftest.py` and the
+  `.env.tpl` template in `.devcontainer/tpl/`.
 
 ### 1Password CLI Commands
 
@@ -203,10 +204,9 @@ To grant a new developer access: add them to
   components, Helm) must go in `postCreate.sh`, not later. To add new
   components, update `postCreate.sh` and rebuild the container.
 - **`/etc/secret-volume` tmpfs permissions**: mounted `0777` (world-writable) so
-  `inject-secrets.sh` can write to it on every start without sudo. Individual
-  secret files are written `600` (owner-read-only), so only the `vscode` user
-  can read their contents. `uid`/`gid` mount options were not used — they are
-  not supported on all Codespaces hosts.
+  `postCreate.sh` can write the token file without sudo. File-based secrets are
+  written `600` (owner-read-only) by `tests/conftest.py` on demand. `uid`/`gid`
+  mount options were not used — they are not supported on all Codespaces hosts.
 - **`--cap-add` stripped**: Codespaces silently strips `--cap-add` from
   `runArgs` — namespace-based sandboxing (bwrap, unshare) will not work.
 - **dbt Core Tools extension**: activates on

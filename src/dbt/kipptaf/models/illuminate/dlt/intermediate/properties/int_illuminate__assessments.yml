@@ -1,5 +1,21 @@
 models:
   - name: int_illuminate__assessments
+    data_tests:
+      # Source `academic_year` (year of June end) sometimes disagrees with the
+      # AY derived from `administered_at`. Caused by "Copy of …" duplication in
+      # Illuminate carrying the prior year's tag. Downstream effect: wrong
+      # canonicalization → cross-school groups in response_rollup. Tracked in
+      # #3801 for academic ops cleanup; failures land in dbt_test__audit.
+      - dbt_utils.expression_is_true:
+          name: int_illuminate__assessments__academic_year_matches_administered_at
+          arguments:
+            expression: |-
+              administered_at is null
+              or academic_year = if(
+                  extract(month from administered_at) <= 6,
+                  extract(year from administered_at),
+                  extract(year from administered_at) + 1
+              )
     columns:
       - name: assessment_id
         data_type: int64
@@ -71,7 +87,9 @@ models:
         data_type: string
       - name: scope
         data_type: string
+        description: Conditional on code_translation, is_grade_k_1.
       - name: subject_area
         data_type: string
       - name: academic_year_clean
         data_type: int64
+        description: Derived from academic_year.

@@ -1,0 +1,101 @@
+cubes:
+  - name: dim_students
+    public: false
+    sql_table: kipptaf_marts.dim_students
+
+    dimensions:
+      - name: student_key
+        description: >-
+          Surrogate key derived from student_number. Primary key for the student
+          dimension.
+        sql: student_key
+        type: string
+        primary_key: true
+        public: true
+
+      # PII — excluded from detail views without cube-access-student-pii
+      - name: lea_student_identifier
+        description: >-
+          KIPP's own SIS identifier for the student. KIPP is a charter Local
+          Education Agency (LEA) operating within a host public school district;
+          this column is the identifier issued by KIPP as the LEA. Sourced from
+          the SIS student number for NJ regions (and Focus local ID for Miami
+          once Focus lands). Maps to Ed-Fi District / CEDS District-assigned
+          number from KIPP-as-LEA's perspective.
+        sql: lea_student_identifier
+        type: number
+        public: true
+
+      - name: full_name
+        description: >-
+          Student's full name in "Last, First, Mi." format. Matches
+          dim_staff.full_name naming.
+        sql: full_name
+        type: string
+        public: true
+
+      - name: birth_date
+        sql: CAST(birth_date AS TIMESTAMP)
+        type: time
+        public: true
+
+      - name: state_student_identifier
+        description: >-
+          The state-assigned student number for the student. In most cases, this
+          number should stay the same from school to school.
+        sql: state_student_identifier
+        type: string
+        public: true
+
+      - name: district_student_identifier
+        description: >-
+          Host public school district's identifier for the student. Populated
+          for Miami (MDCPS student ID) and null for NJ regions where the host
+          district's ID is not surfaced upstream. Generalizes the previously
+          Miami-only mdcps_student_identifier. Ed-Fi District / CEDS
+          District-assigned number from the host district's perspective.
+        sql: district_student_identifier
+        type: string
+
+      - name: salesforce_contact_id
+        description: >-
+          KIPPADB (Salesforce) contact identifier for the student. Populated
+          where the student has a KIPPADB record; null otherwise. Used across
+          KIPPADB consumer tools (Overgrad, alumni tracking, etc.).
+        sql: salesforce_contact_id
+        type: string
+
+      - name: gender_identity
+        description: >-
+          Self-identified gender for the student (e.g., M=Male F=Female).
+          Matches Ed-Fi's genderIdentity attribute (modern inclusive naming).
+        sql: gender_identity
+        type: string
+        public: true
+
+      - name: race
+        description: >-
+          Racial category for the student. Decoded from PowerSchool ethnicity
+          code to a full category label (e.g., Black/African American, Hispanic
+          or Latino, Not Hispanic or Latino, Two or More Races, White).
+          Cross-model consistency with dim_staff.race.
+        sql: race
+        type: string
+        public: true
+
+      - name: enrollment_status
+        description: >-
+          Current enrollment status of the student. Values: Currently Enrolled,
+          Pre-registered, Inactive, Transferred Out, Graduated, Imported as
+          Historical.
+        sql: enrollment_status
+        type: string
+        public: true
+
+      - name: is_gifted
+        description: >-
+          TRUE if the student has a gifted-and-talented identification on either
+          the PowerSchool NJ extension or Miami user-fields extension.
+        sql: is_gifted
+        type: boolean
+        public: true

@@ -1,2 +1,9 @@
 models:
   - name: stg_powerschool__calendar_day
+    data_tests:
+      - dbt_utils.expression_is_true:
+          arguments:
+            expression: |-
+              date_value is null or date_value >= '2000-01-01'
+          config:
+            severity: warn

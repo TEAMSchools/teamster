@@ -24,6 +24,8 @@ with
             coalesce(s.isexempt, 0) as is_exempt,
             coalesce(s.ismissing, 0) as is_missing,
 
+            {{ extract_code_location("a") }} as _dbt_source_project,
+
             initcap(regexp_extract(s._dbt_source_relation, r'kipp(\w+)_')) as region,
 
             case
@@ -49,6 +51,14 @@ with
                 s.scorepoints,
                 safe_cast(s.actualscoreentered as numeric)
             ) as score_entered,
+
+            if(a.scoretype = 'POINTS', s.scorepoints, null) as points_earned,
+
+            if(
+                a.scoretype in ('PERCENT', 'GRADESCALE', 'COLLECTED'),
+                safe_cast(s.actualscoreentered as float64),
+                null
+            ) as numeric_grade_earned,
 
             if(
                 a.scoretype = 'POINTS',
@@ -82,6 +92,7 @@ with
 
 select
     _dbt_source_relation,
+    _dbt_source_project,
     assignmentsectionid,
     sectionsdcid,
     assignmentid,
@@ -104,6 +115,8 @@ select
     is_expected,
     school_level,
     score_entered,
+    points_earned,
+    numeric_grade_earned,
     assign_final_score_percent,
     half_total_point_value,
 

@@ -1,0 +1,34 @@
+data_tests:
+  - name: test_int_powerschool__ps_enrollment_all__fteid_belongs_to_school_year
+    description: >-
+      Every enrollment row's `fteid` must point to an FTE record whose
+      `schoolid` and `yearid` match the enrollment's. PowerSchool defines each
+      FTE per `(schoolid, yearid)`; assigning a student an `fteid` from a
+      different school or year produces silent NULLs in
+      `int_powerschool__ps_adaadm_daily_ctod` because the `(fteid,
+      attendance_conversion_id)` join in that model resolves only when the FTE
+      matches the school's bell-schedule conversion config. Schools at sentinel
+      `schoolid = 999999` (graduated students) are included — they should
+      reference one of PowerSchool's 999999-scoped FTEs, not a real-school FTE
+      carried over from prior enrollment.
+    config:
+      meta:
+        dagster:
+          ref:
+            name: int_powerschool__ps_enrollment_all
+            package: powerschool
+
+  - name: int_powerschool__student_enrollment_union_no_shared_stint_boundary
+    description: >-
+      Within a `student_number` partition, consecutive enrollment stints must
+      not share a boundary date. A `lead(entrydate)` value equal to the current
+      row's `exitdate` indicates a same-day exit and re-entry that fans out
+      half-open date-range joins on the boundary day (e.g. survey attribution,
+      attendance windows). Source defect surfaced by issue #3902 — currently 78
+      violations across ~100k stints network-wide.
+    config:
+      meta:
+        dagster:
+          ref:
+            name: int_powerschool__student_enrollment_union
+            package: powerschool

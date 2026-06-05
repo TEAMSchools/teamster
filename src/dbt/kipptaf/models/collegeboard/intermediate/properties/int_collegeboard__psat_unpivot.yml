@@ -6,7 +6,7 @@ models:
       - dbt_utils.unique_combination_of_columns:
           arguments:
             combination_of_columns:
-              - powerschool_student_number
+              - cb_id
               - latest_psat_date
               - score_type
           config:
@@ -16,6 +16,10 @@ models:
         data_type: int64
       - name: powerschool_student_number
         data_type: int64
+        data_tests:
+          - not_null:
+              config:
+                severity: warn
       - name: academic_year
         data_type: int64
       - name: administration_round
@@ -34,5 +38,9 @@ models:
         data_type: numeric
       - name: discipline
         data_type: string
+        description: Categorical mapping of course_discipline.
       - name: rn_highest
         data_type: int64
+        description:
+          ROWNUMBER of value partitioned by powerschool_student_number,
+          test_type, score_type ordered by score.

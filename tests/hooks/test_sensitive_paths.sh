@@ -47,7 +47,21 @@ expect_allow "normal YAML file" Read file_path "/workspaces/teamster/dbt_project
 expect_allow "glob *.py" Glob pattern "*.py"
 expect_deny ".environment (matches .env regex)" Read file_path "/workspaces/teamster/.environment"
 
-# ─── Pattern 1b: Write/Edit content scanning to Pattern 1b: Content is not scanned by Rule 1 (path_only scoping) ────────────────────────────────
+# #32: dotenv templates are placeholder files, not secrets — allowed
+expect_allow ".env.example template" Read file_path "/workspaces/teamster/.env.example"
+expect_allow ".env.sample template" Read file_path "/workspaces/teamster/.env.sample"
+expect_allow ".env.template template" Read file_path "/workspaces/teamster/.env.template"
+expect_allow ".env.dist template" Read file_path "/workspaces/teamster/.env.dist"
+# Carve-out is for path access (Read/Grep/Glob/MCP). A Bash `cat .env.example`
+# stays blocked by the standalone-`env` word rule (Rule 3c) — intentional
+# asymmetry; read templates with Read, not Bash.
+expect_deny ".env.example via Bash still blocked (Rule 3c env-word)" Bash command "cat .env.example"
+# real dotenv variants still blocked (carve-out is template-suffix-only)
+expect_deny ".env still blocked" Read file_path "/workspaces/teamster/.env"
+expect_deny ".env.local still blocked" Read file_path "/workspaces/teamster/.env.local"
+expect_deny ".env.examplexyz (no boundary, still blocked)" Read file_path "/workspaces/teamster/.env.examplexyz"
+
+# ─── Pattern 1b: Write/Edit content scanning ────────────────────────────────
 echo ""
 echo -e "${YELLOW}Pattern 1b: Write/Edit content scanning${NC}"
 
@@ -90,11 +104,56 @@ echo -e "${YELLOW}Symlink resolution${NC}"
 
 # Create a temp symlink for testing (clean up after)
 TMPLINK="/tmp/test_hook_symlink_$$"
-if ln -s /workspaces/teamster/env/.env "${TMPLINK}" 2>/dev/null; then
-  expect_deny "symlink to env/.env" Read file_path "${TMPLINK}"
+if ln -s /etc/secret-volume "${TMPLINK}" 2>/dev/null; then
+  expect_deny "symlink to secret-volume" Read file_path "${TMPLINK}"
   rm -f "${TMPLINK}"
 else
   echo -e "  ${YELLOW}SKIP${NC}: could not create test symlink"
+fi
+
+# ─── #1: cert/key files under non-path / MCP keys (Rule 1b scans all leaves) ──
+echo ""
+echo -e "${YELLOW}#1: cert/key under non-path keys${NC}"
+
+# trunk-ignore-begin(shellcheck/SC2312)
+expect_deny_json "MCP uri = .key file" \
+  "$(jq -n '{tool_name:"mcp__example__tool", tool_input:{uri:"/tmp/server.key"}}')"
+expect_deny_json "MCP nested localPath = .pem file" \
+  "$(jq -n '{tool_name:"mcp__example__tool", tool_input:{obj:{localPath:"/home/u/id_rsa.pem"}}}')"
+expect_deny_json "MCP source = .cer file" \
+  "$(jq -n '{tool_name:"mcp__example__tool", tool_input:{source:"/tmp/chain.cer"}}')"
+# content exemption preserved: .key as a code attribute in a Write body allows
+expect_allow_json "Write content asset.key (attr, not a file)" \
+  "$(jq -n '{tool_name:"Write", tool_input:{file_path:"/tmp/x.py", content:"v = asset.key"}}')"
+expect_allow_json "Edit new_string mentioning cert.pem" \
+  "$(jq -n '{tool_name:"Edit", tool_input:{file_path:"/tmp/x.py", new_string:"# see cert.pem docs"}}')"
+# free-text SQL fields are NOT path-scanned: a dotted column ref must not be
+# mistaken for a cert/key file (Rule 1b scans named path keys, not `sql`)
+expect_allow_json "BQ sql dot-attr record.key (not a cert file)" \
+  "$(jq -n '{tool_name:"mcp__bigquery__execute_sql", tool_input:{sql:"SELECT record.key FROM t"}}')"
+expect_allow_json "BQ sql dot-attr a.pem (not a cert file)" \
+  "$(jq -n '{tool_name:"mcp__bigquery__execute_sql", tool_input:{sql:"SELECT a.pem FROM t"}}')"
+# trunk-ignore-end(shellcheck/SC2312)
+
+# ─── #2: symlink resolution for every path field (not just file_path) ─────────
+echo ""
+echo -e "${YELLOW}#2: symlink resolution beyond file_path${NC}"
+
+TMPLINK2="/tmp/test_hook_slink_grep_$$"
+TMPLINK3="/tmp/test_hook_slink_mcp_$$"
+TMPLINK4="/tmp/test_hook_slink_ok_$$"
+if ln -s /etc/secret-volume "${TMPLINK2}" 2>/dev/null &&
+  ln -s /etc/secret-volume "${TMPLINK3}" 2>/dev/null &&
+  ln -s /tmp "${TMPLINK4}" 2>/dev/null; then
+  expect_deny2 "Grep path symlink to secret-volume" Grep pattern "x" path "${TMPLINK2}"
+  # trunk-ignore-begin(shellcheck/SC2312)
+  expect_deny_json "MCP uri symlink to secret-volume" \
+    "$(jq -n --arg p "${TMPLINK3}" '{tool_name:"mcp__example__tool", tool_input:{uri:$p}}')"
+  # trunk-ignore-end(shellcheck/SC2312)
+  expect_allow2 "Grep path symlink to benign /tmp" Grep pattern "x" path "${TMPLINK4}"
+  rm -f "${TMPLINK2}" "${TMPLINK3}" "${TMPLINK4}"
+else
+  echo -e "  ${YELLOW}SKIP${NC}: could not create test symlinks"
 fi
 
 # ─── Description field scoping (Agent-only exclusion) ─────────────────────────
@@ -131,5 +190,20 @@ expect_deny_exit0 "PreToolUse secret-volume deny exits 0" "${HOOK}" \
 expect_deny_exit0 "PreToolUse bash printenv deny exits 0" "${HOOK}" \
   "$(make_input Bash command printenv)"
 # trunk-ignore-end(shellcheck/SC2312)
+
+# ─── #23: additional credential files ───────────────────────────────────────
+echo ""
+echo -e "${YELLOW}#23: credential files${NC}"
+
+expect_deny "gcloud ADC json" Read file_path "/home/vscode/.config/gcloud/application_default_credentials.json"
+expect_deny ".git-credentials" Read file_path "/home/vscode/.git-credentials"
+expect_deny ".netrc" Read file_path "/home/vscode/.netrc"
+expect_deny "1Password config dir" Read file_path "/home/vscode/.config/op/config"
+expect_deny "git-credentials via Bash" Bash command "cat ~/.git-credentials"
+expect_deny2 "ADC via Grep" Grep pattern "token" path "/home/vscode/.config/gcloud/application_default_credentials.json"
+
+# controls — lookalike non-credential files stay allowed
+expect_allow "normal data.json" Read file_path "/workspaces/teamster/data.json"
+expect_allow "netrc substring in a normal name" Read file_path "/workspaces/teamster/src/netrcutils.py"
 
 print_summary "Sensitive Paths"

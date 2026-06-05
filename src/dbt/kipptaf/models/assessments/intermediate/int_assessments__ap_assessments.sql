@@ -49,8 +49,11 @@ select
     irregularity_code_1,
     irregularity_code_2,
 
+    concat('AP ', test_subject) as title,
+
     row_number() over (
         partition by powerschool_student_number, ap_course_name order by exam_score desc
     ) as rn_highest,
 
 from scores
+where powerschool_student_number is not null

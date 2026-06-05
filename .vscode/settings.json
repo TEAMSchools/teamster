@@ -9,10 +9,12 @@
   "editor.wordWrap": "bounded",
   "editor.wordWrapColumn": 88,
   "git.confirmSync": false,
+  "git.detectWorktrees": true,
   "git.ignoreRebaseWarning": true,
+  "git.repositoryScanMaxDepth": -1,
+  "python.analysis.typeCheckingMode": "off",
   "python.createEnvironment.trigger": "off",
   "python.defaultInterpreterPath": "/workspaces/teamster/.venv/bin/python",
-  "python.envFile": "${workspaceFolder}/env/.env",
   "python.terminal.activateEnvironment": false,
   "python.terminal.useEnvFile": true,
   "python.testing.pytestArgs": ["tests", "--capture=no"],
@@ -24,6 +26,7 @@
   "trunk.showPreexistingIssues": true,
   "trunk.showWhatsNew": false,
   "trunk.trunkPath": "./trunk",
+  "yaml.validate": false,
   "files.associations": {
     "*.env": "shellscript",
     "*.toml": "toml"
@@ -46,7 +49,13 @@
     "**/dbt_packages/**": true,
     "**/target/**": true
   },
+  "[json]": {
+    "editor.defaultFormatter": "trunk.io"
+  },
   "[jsonc]": {
+    "editor.defaultFormatter": "trunk.io"
+  },
+  "[python]": {
     "editor.defaultFormatter": "trunk.io"
   },
   "terminal.integrated.env.linux": {
@@ -55,7 +64,6 @@
     "GOOGLE_CLOUD_PROJECT": "teamster-332318",
     "PYTHONDONTWRITEBYTECODE": "1",
     "TRUNK_TELEMETRY": "off",
-    "UV_ENV_FILE": "${workspaceFolder}/env/.env",
     "UV_LINK_MODE": "copy",
     "UV_RESOLUTION": "highest"
   },
@@ -63,11 +71,6 @@
     "tag:yaml.org,2002:python/name:material.extensions.emoji.twemoji scalar",
     "tag:yaml.org,2002:python/name:material.extensions.emoji.to_svg scalar"
   ],
-  "[python]": {
-    "editor.defaultFormatter": "trunk.io"
-  },
-  "claudeCode.preferredLocation": "sidebar",
-  "python.analysis.typeCheckingMode": "off",
   "dbtCoreTools.profilesDir": ".dbt",
   "dbtCoreTools.deferManifestPath": {
     "kipptaf": "src/dbt/kipptaf/target/prod",

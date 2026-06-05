@@ -18,6 +18,12 @@ with
 
             y.gpa_y1,
 
+            gc.cumulative_y1_gpa_unweighted,
+            gc.cumulative_y1_gpa_projected_unweighted,
+            gc.cumulative_y1_gpa_projected_s1_unweighted,
+            gc.cumulative_y1_gpa,
+            gc.cumulative_y1_gpa_projected,
+
             gpa.gpa_term,
         from {{ ref("int_extracts__student_enrollments") }} as co
         cross join unnest(['Q1', 'Q2', 'Q3', 'Q4']) as term
@@ -35,6 +41,11 @@ with
             and term = gpa.term_name
             and co.schoolid = gpa.schoolid
             and {{ union_dataset_join_clause(left_alias="co", right_alias="gpa") }}
+        left join
+            {{ ref("int_powerschool__gpa_cumulative") }} as gc
+            on co.studentid = gc.studentid
+            and co.schoolid = gc.schoolid
+            and {{ union_dataset_join_clause(left_alias="co", right_alias="gc") }}
         where
             co.academic_year = {{ var("current_academic_year") }}
             and co.rn_year = 1
@@ -62,4 +73,10 @@ select
     gpa_q4,
 
     gpa_y1,
+
+    cumulative_y1_gpa_unweighted,
+    cumulative_y1_gpa_projected_unweighted,
+    cumulative_y1_gpa_projected_s1_unweighted,
+    cumulative_y1_gpa,
+    cumulative_y1_gpa_projected,
 from roster pivot (max(gpa_term) as gpa for term in ('Q1', 'Q2', 'Q3', 'Q4'))

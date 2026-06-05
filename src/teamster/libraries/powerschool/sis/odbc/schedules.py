@@ -1,8 +1,11 @@
 """PowerSchool SIS ODBC asset schedule.
 
-Defines a Dagster schedule that evaluates PowerSchool assets for staleness
-and yields RunRequests for stale assets grouped by partition definition
-and partition key.
+Defines a Dagster schedule that yields RunRequests for every asset/partition
+in the configured selection (limited to the most recent N monthly partitions
+where applicable). Unlike the sensor, the schedule does not consult Oracle —
+it runs once per day, the partition window is already constrained, and the
+per-asset COUNT(*) probes were a recurring source of DPY-4024 timeouts on
+the largest PowerSchool tables.
 """
 
 from itertools import groupby
@@ -13,16 +16,12 @@ from dagster import (
     AssetsDefinition,
     RunRequest,
     ScheduleDefinition,
-    ScheduleEvaluationContext,
     schedule,
 )
 
-from teamster.libraries.powerschool.sis.odbc.resources import PowerSchoolODBCResource
 from teamster.libraries.powerschool.sis.odbc.utils import (
-    evaluate_asset_staleness,
-    powerschool_connection,
+    enumerate_partitions_for_schedule,
 )
-from teamster.libraries.ssh.resources import SSHResource
 
 
 def build_powerschool_sis_asset_schedule(
@@ -31,16 +30,16 @@ def build_powerschool_sis_asset_schedule(
     cron_schedule: str,
     asset_selection: list[AssetsDefinition],
 ) -> ScheduleDefinition:
-    """Build a Dagster schedule that detects and rematerializes stale assets.
+    """Build a Dagster schedule that materializes assets without staleness checks.
 
     Args:
         code_location: District code location identifier.
         execution_timezone: Timezone for schedule evaluation.
         cron_schedule: Cron expression for schedule frequency.
-        asset_selection: Assets to monitor for staleness.
+        asset_selection: Assets to materialize.
 
     Returns:
-        A Dagster schedule function.
+        A Dagster schedule.
     """
 
     @schedule(
@@ -49,23 +48,11 @@ def build_powerschool_sis_asset_schedule(
         execution_timezone=str(execution_timezone),
         target=asset_selection,
     )
-    def _schedule(
-        context: ScheduleEvaluationContext,
-        ssh_powerschool: SSHResource,
-        db_powerschool: PowerSchoolODBCResource,
-    ):
-        with powerschool_connection(
-            ssh_powerschool, db_powerschool, context.log
-        ) as connection:
-            results = evaluate_asset_staleness(
-                asset_selection=asset_selection,
-                execution_timezone=execution_timezone,
-                instance=context.instance,
-                connection=connection,
-                db_powerschool=db_powerschool,
-                log=context.log,
-                limit_monthly_partitions=12,
-            )
+    def _schedule():
+        results = enumerate_partitions_for_schedule(
+            asset_selection=asset_selection,
+            limit_monthly_partitions=12,
+        )
 
         kwargs = [
             {

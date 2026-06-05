@@ -7,6 +7,28 @@ from pydantic import PrivateAttr
 from requests import Response, Session
 from requests.exceptions import HTTPError
 from requests_oauthlib import OAuth2Session
+from tenacity import (
+    retry,
+    retry_if_exception_type,
+    stop_after_attempt,
+    wait_exponential_jitter,
+)
+
+
+class GrowIncompleteResponseError(Exception):
+    """Raised when the Grow API reports a non-zero count but returns no data,
+    or when the total returned data length doesn't match the reported count.
+
+    This is an upstream API flake (Grow occasionally reports records exist but
+    returns an empty page), not an application bug. Recoverable via retry.
+    """
+
+
+class GrowAPIError(Exception):
+    """Raised when the Grow API returns a non-2xx HTTP status.
+
+    Carries the response body in ``args[0]`` for downstream error reporting.
+    """
 
 
 class GrowResource(ConfigurableResource):
@@ -59,8 +81,14 @@ class GrowResource(ConfigurableResource):
             return response
         except HTTPError as e:
             self._log.error(msg=response.text)
-            raise Exception(response.text) from e
+            raise GrowAPIError(response.text) from e
 
+    @retry(
+        stop=stop_after_attempt(3),
+        wait=wait_exponential_jitter(initial=5, max=30),
+        retry=retry_if_exception_type(GrowIncompleteResponseError),
+        reraise=True,
+    )
     def get(self, endpoint: str, *args: str, **kwargs) -> dict:
         url = self._get_url(endpoint, *args)
         params = copy.deepcopy(self._default_params)
@@ -110,14 +138,16 @@ class GrowResource(ConfigurableResource):
                 if len_data >= count:
                     break
                 elif len_data == 0 and count > 0:
-                    raise Exception("API returned an incomplete response")
+                    raise GrowIncompleteResponseError(
+                        "API returned an incomplete response"
+                    )
                 else:
                     params["skip"] += params["limit"]
 
             response["count"] = count
 
             if len_data != count:
-                raise Exception("API returned an incomplete response")
+                raise GrowIncompleteResponseError("API returned an incomplete response")
             else:
                 return response
 

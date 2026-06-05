@@ -26,4 +26,3 @@ select
 from {{ source("schoolmint_grow", "src_schoolmint_grow__rubrics") }} as r
 left join unnest(r.measurementgroups) as mg
 left join unnest(mg.measurements) as m
-where r._dagster_partition_key = 'f'

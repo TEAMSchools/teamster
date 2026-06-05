@@ -18,6 +18,8 @@ with
         }}
     )
 
--- trunk-ignore(sqlfluff/AM04)
-select *, initcap(regexp_extract(_dbt_source_relation, r'kipp(\w+)_')) as region,
+select
+    *,
+    initcap(regexp_extract(_dbt_source_relation, r'kipp(\w+)_')) as region,
+    {{ extract_code_location("union_relations") }} as _dbt_source_project,
 from union_relations

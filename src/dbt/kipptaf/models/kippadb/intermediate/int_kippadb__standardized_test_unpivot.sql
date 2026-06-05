@@ -6,11 +6,11 @@ with
             school_specific_id,
             academic_year,
             administration_round,
-            `date`,
             test_type,
-
             score_type,
             score,
+
+            if(`date` < date '2000-01-01', null, `date`) as `date`,
 
             case
                 when

@@ -31,6 +31,10 @@ with
         select
             *,
 
+            -- materialized region-prefix discriminator for downstream surrogate-key
+            -- composition; replaces per-consumer extract_code_location() per #3142.
+            -- code_location is the prior name; both will collapse when #3142 ships.
+            regexp_extract(_dbt_source_relation, r'(kipp\w+)_') as _dbt_source_project,
             regexp_extract(_dbt_source_relation, r'(kipp\w+)_') as code_location,
 
             initcap(regexp_extract(_dbt_source_relation, r'kipp(\w+)_')) as region,
@@ -39,6 +43,11 @@ with
 
 select
     ar.* except (lep_status, lunchstatus, spedlep, prevstudentid),
+
+    -- Pearson reports the KIPP student_number as LocalStudentIdentifier for all
+    -- NJ regions, including Paterson (#4103); no legacy district-id translation
+    -- is needed. prevstudentid is the pre-KIPP Paterson SIS id and never matches.
+    ar.student_number as pearson_local_student_identifier,
 
     /* regional differences */
     suf.fleid,
@@ -189,12 +198,6 @@ select
         )
         + 1
     ) as salesforce_graduation_year,
-
-    if(
-        ar.region = 'Paterson' and ar.academic_year <= 2024,
-        ar.prevstudentid,
-        ar.student_number
-    ) as pearson_local_student_identifier,
 
 from with_region as ar
 left join

@@ -134,6 +134,8 @@ select
     ft.achievement_level,
     ft.scale_score,
     ft.scale_score_prev,
+    ft.assessment_name,
+    ft.test_code,
     ft.sublevel_name as fast_sublevel_name,
     ft.sublevel_number as fast_sublevel_number,
     ft.scale_for_growth as fast_scale_for_growth,
@@ -175,7 +177,7 @@ select
         0
     ) as gr3_retention_flag,
 
-    case ft.is_proficient when true then 1.0 when false then 0.0 end as is_proficient,
+    ft.is_proficient_int as is_proficient,
 
     case
         when
@@ -231,9 +233,8 @@ left join
     {{ ref("int_fldoe__all_assessments") }} as ft
     on co.fleid = ft.student_id
     and co.academic_year = ft.academic_year
-    and co.fast_subject = ft.assessment_subject
+    and co.discipline = ft.discipline
     and administration_window = ft.administration_window
-    and ft.assessment_name = 'FAST'
 left join
     {{ ref("int_assessments__fast_previous_year") }} as p
     on co.student_number = p.student_number

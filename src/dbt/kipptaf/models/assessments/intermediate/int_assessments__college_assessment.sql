@@ -99,6 +99,24 @@ with
         from scores
     ),
 
+    -- trunk-ignore(sqlfluff/ST03): referenced via dbt_utils.deduplicate below
+    growth_candidates as (
+        select
+            academic_year, student_number, scope, test_date, scale_score, surrogate_key,
+        from case_calcs
+        where subject_area in ('Composite', 'Combined') and test_date is not null
+    ),
+
+    growth_dedup as (
+        {{
+            dbt_utils.deduplicate(
+                relation="growth_candidates",
+                partition_by="student_number, scope, test_date",
+                order_by="surrogate_key",
+            )
+        }}
+    ),
+
     growth as (
         select
             academic_year,
@@ -111,8 +129,7 @@ with
                 partition by student_number, scope order by test_date asc
             ) as previous_total_score_change,
 
-        from case_calcs
-        where subject_area in ('Composite', 'Combined') and test_date is not null
+        from growth_dedup
     ),
 
     max_score as (
@@ -229,6 +246,7 @@ with
             max_total_score as d
             on s.student_number = d.student_number
             and s.scope = d.scope
+            and s.strategy_case = d.strategy_case
         left join
             alt_superscore as a
             on s.student_number = a.student_number

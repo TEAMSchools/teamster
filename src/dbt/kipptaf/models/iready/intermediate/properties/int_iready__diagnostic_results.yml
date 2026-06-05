@@ -242,8 +242,14 @@ models:
         data_type: int64
       - name: progress_to_stretch
         data_type: float64
+        description:
+          Derived from annual_stretch_growth_measure,
+          most_recent_diagnostic_gain.
       - name: progress_to_typical
         data_type: float64
+        description:
+          Derived from annual_typical_growth_measure,
+          most_recent_diagnostic_gain.
       - name: projected_is_proficient
         data_type: boolean
       - name: projected_is_proficient_recent
@@ -278,13 +284,24 @@ models:
         data_type: string
       - name: rn_subj_round
         data_type: int64
+        description:
+          ROWNUMBER of value partitioned by _dbt_source_relation, student_id,
+          academic_year, subject, name ordered by completion_date.
       - name: round_number
         data_type: string
+        description: Derived from code.
+      - name: iready_proficiency
+        data_type: string
+        description: >
+          Proficiency band derived from overall_relative_placement_int: values
+          1-2 = 'Below/Far Below', 3 = 'Approaching', 4+ = 'At/Above'.
       - name: scale_points_to_proficiency
         data_type: int64
+        description: Conditional on most_recent_overall_scale_score, scale_low.
       - name: sublevel_number_with_typical
         data_type: int64
       - name: sublevel_with_typical
         data_type: string
       - name: test_round
         data_type: string
+        description: First non-null of name.

@@ -1,0 +1,13 @@
+models:
+  - name: stg_powerschool__u_expectations
+    description:
+      Union of per-district U_EXPECTATIONS staging tables across all regions
+      that have the Gradebook Audit plugin installed.
+    columns:
+      - name: _dbt_source_project
+        data_type: string
+        description:
+          Source project extracted from `_dbt_source_relation` (e.g.
+          'kippnewark', 'kippcamden'). Materialized at the union model so
+          downstream joins compare it directly instead of re-deriving the regex
+          per call.
