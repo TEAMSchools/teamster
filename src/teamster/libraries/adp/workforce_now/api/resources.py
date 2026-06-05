@@ -7,7 +7,7 @@ from pydantic import PrivateAttr
 from requests import Response
 from requests.auth import HTTPBasicAuth
 from requests.exceptions import ConnectionError as RequestsConnectionError
-from requests.exceptions import HTTPError, Timeout
+from requests.exceptions import HTTPError, JSONDecodeError, Timeout
 from requests_oauthlib import OAuth2Session
 from tenacity import (
     retry,
@@ -84,18 +84,26 @@ class AdpWorkforceNowResource(ConfigurableResource):
 
             return response
         except HTTPError as e:
-            response_json = response.json()
-
             # 429 (rate limited) and 5xx (server-side) errors are transient;
-            # re-raise the HTTPError so tenacity retries with backoff.
+            # re-raise the HTTPError so tenacity retries with backoff. Check the
+            # status code *before* parsing the body: gateway 5xx responses (e.g.
+            # a 504 HTML page) are not JSON, and JSONDecodeError is not in the
+            # retry predicate, so parsing here would convert a retryable error
+            # into a non-retryable one.
             if response.status_code == 429 or response.status_code >= 500:
-                self._log.warning(msg=response_json)
+                self._log.warning(msg=response.text)
                 raise
 
             # other 4xx are deterministic client errors — surface a specific
-            # exception (never a bare Exception) and do not retry.
-            self._log.error(msg=response_json)
-            raise AdpWorkforceNowError(response_json) from e
+            # exception (never a bare Exception) and do not retry. Guard the JSON
+            # parse: a 4xx body may also be non-JSON.
+            try:
+                detail = response.json()
+            except JSONDecodeError:
+                detail = response.text
+
+            self._log.error(msg=detail)
+            raise AdpWorkforceNowError(detail) from e
 
     def post(
         self, endpoint: str, subresource: str, verb: str, payload: dict
