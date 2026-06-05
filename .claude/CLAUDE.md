@@ -78,6 +78,11 @@ Bash. Plugin and marketplace commands (`claude plugins install`,
 - Encoding bypass attempts (base64-to-shell pipes, Python exec/eval obfuscation)
 - Shell variable expansion (`$UPPER_CASE` vars not on the safe list)
 
+**Smoke-testing an ADC-auth tool from Bash:** setting
+`GOOGLE_APPLICATION_CREDENTIALS=<...credentials.json>` inline (to replicate an
+`.mcp.json` env) trips the credentials-JSON sensitive-path block. Omit it — the
+binary falls back to default ADC discovery, which resolves the same file.
+
 **MCP arg hygiene:** Never write the bare token `env` (with surrounding
 whitespace) in any string passed to `mcp__*` tools — comment bodies, PR
 descriptions, commit messages, issue bodies. Spell it `environment variable`.
