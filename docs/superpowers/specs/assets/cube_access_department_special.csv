@@ -1,9 +1,0 @@
-department,scope_level,student_access_level,staff_access_level,has_student_pii,has_staff_pii,has_staff_compensation,has_staff_benefits,has_staff_observations,survey_access_level
-Executive,network,detail,detail,TRUE,TRUE,TRUE,TRUE,TRUE,detail
-Data,network,detail,detail,TRUE,TRUE,TRUE,TRUE,TRUE,detail
-Human Resources,network,summary,detail,FALSE,TRUE,TRUE,TRUE,TRUE,detail
-Leadership Development,network,summary,detail,FALSE,TRUE,TRUE,FALSE,TRUE,detail
-Teacher Development,network,detail,detail,FALSE,TRUE,FALSE,FALSE,TRUE,detail
-Accounting,network,detail,detail,FALSE,TRUE,TRUE,TRUE,FALSE,detail
-Finance,network,detail,detail,FALSE,TRUE,TRUE,TRUE,FALSE,detail
-Compliance,network,detail,detail,FALSE,TRUE,TRUE,TRUE,FALSE,detail

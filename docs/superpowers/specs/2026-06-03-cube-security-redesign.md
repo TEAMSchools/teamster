@@ -29,13 +29,9 @@ unsafe as a persistent identity key.
 group names, and all access gating lives in the dbt models.
 
 This supersedes the boolean-only access model in the original draft of this
-spec. The driving criteria come from two source-of-truth CSVs committed
-alongside this spec:
-
-- [`assets/cube_access_job_function_levels.csv`](assets/cube_access_job_function_levels.csv)
-  — role-based mapping (22 rows)
-- [`assets/cube_access_department_special.csv`](assets/cube_access_department_special.csv)
-  — department special-access override (8 rows)
+spec. The driving criteria are the two mapping tables in
+[§ Source mappings](#source-mappings) below — the role-based mapping (22 rows)
+and the department special-access override (8 rows).
 
 ---
 
@@ -87,32 +83,41 @@ protects the dept-group and region scopes (where the viewer sees same- or
 higher-level peers at summary and must never see them at detail) and guards
 against reporting-chain data gaps.
 
-**Field flags gate columns on top of Layer 2.** `has_staff_pii`,
-`has_staff_compensation`, `has_staff_observations` are **tristate** (plus a
-`none` value):
+**Field-scope columns gate columns on top of Layer 2.** `staff_pii_scope`,
+`staff_compensation_scope`, `staff_observations_scope` are **enums** over a
+shared vocabulary:
 
-| Flag value        | Field is visible for…                                        |
+| Scope value       | Field is visible for…                                        |
 | ----------------- | ------------------------------------------------------------ |
 | `all`             | every staff row in scope (Layer 1)                           |
 | `reporting_chain` | only the viewer's Layer-2 rows (chain ∩ level)               |
 | `teaching_staff`  | only staff with `job_function_code IN ('TEACH','TIR')` (ASL) |
-| `none` / `FALSE`  | never                                                        |
+| `none`            | never                                                        |
+
+The `_scope` suffix (not `has_`) signals these are visibility tiers, not
+booleans. `all` / `none` are spelled identically across every `*_scope` column;
+`reporting_chain` / `teaching_staff` are staff-domain tiers.
 
 ### Student access
 
 Independent of staff access. Governed by `student_access_level`
-(`detail`/`summary`/`none`), `has_student_pii`, and the same Layer-1 location
+(`detail`/`summary`/`none`), `student_pii_scope`, and the same Layer-1 location
 scope. There is no reporting-chain concept for student data — a person with
 `student_access_level = 'detail'` and region scope sees all students in their
 region at detail.
+
+`student_pii_scope` is an enum (`all` / `none` in v1). It is modeled as a scope
+rather than a boolean to leave room for a future `own_roster` tier — limiting
+teachers to PII for their own students — which is deferred until student section
+enrollments are built out.
 
 ### Survey access — out of scope
 
 Survey results access is **deferred to a separate plan**. Unlike student access,
 surveys are scoped (some roles are limited by department), and that model needs
 its own design. `dim_staff_cube_access` does **not** carry a survey column in
-v1; the survey plan adds it when survey cubes are built. The
-`survey_access_level` column in the source CSV is ignored for now.
+v1; the survey plan adds it when survey cubes are built. The job groupings
+explorer carries a survey-access value per role — it is ignored for now.
 
 ---
 
@@ -131,14 +136,14 @@ resolves as:
 
 2. If assigned_department_name ∈ special-access list (8 departments):
      → emit the special-access row verbatim.
-       scope_level = network; all field flags are plain booleans → 'all' or 'none';
+       scope_level = network; every *_scope is unconditional 'all' or 'none';
        staff_access_level = detail (no reporting-chain narrowing — these
        departments see all staff at detail network-wide).
 
 3. Else:
      → emit the role-based row from the CASE on
        (job_function_code, entity, department_type).
-       scope_level / staff_access_level / tristate flags / job_function_level
+       scope_level / staff_access_level / *_scope columns / job_function_level
        per the job-function mapping.
 
 4. JWT email matches no row (terminated, recycled-to-nobody, contractor,
@@ -158,7 +163,12 @@ Development, Accounting, Finance, Compliance).
 
 ---
 
-## Source mappings (committed as CSVs)
+## Source mappings
+
+The canonical reference for job groupings and their org levels is the
+**[job groupings explorer](https://teamschools.github.io/job_groupings/website/explorer.html)**.
+The two tables below are the access criteria derived from it; when the explorer
+changes, update these tables (and the CASE statements) to match.
 
 ### Role-based mapping — `job_function_code` × `entity` × `department_type`
 
@@ -168,35 +178,42 @@ MGDIR differs by KTAF/Region and by instructional/non-instructional).
 
 <!-- markdownlint-disable MD013 -->
 
+Column headers map to model columns: `student` = `student_access_level`, `staff`
+= `staff_access_level`, `stu_pii` = `student_pii_scope`, `staff_pii` =
+`staff_pii_scope`, `comp` = `staff_compensation_scope`, `benefits` =
+`staff_benefits_scope`, `obs` = `staff_observations_scope`.
+
 | code  | entity | dept_type         | level | scope_level                | student | staff                   | stu_pii | staff_pii       | comp            | benefits | obs             |
 | ----- | ------ | ----------------- | ----- | -------------------------- | ------- | ----------------------- | ------- | --------------- | --------------- | -------- | --------------- |
-| CHIEF | —      | —                 | 1     | network                    | detail  | detail                  | TRUE    | all             | all             | none     | all             |
-| EDHOS | —      | —                 | 2     | region                     | detail  | detail                  | TRUE    | all             | all             | none     | all             |
-| SL    | —      | —                 | 4     | school                     | detail  | detail                  | TRUE    | all             | all             | none     | all             |
-| DSO   | —      | —                 | 4     | school                     | detail  | detail                  | TRUE    | all             | all             | none     | all             |
-| ASL   | —      | —                 | 5     | school                     | detail  | detail                  | TRUE    | teaching_staff  | teaching_staff  | none     | teaching_staff  |
-| DEAN  | —      | —                 | 6     | school                     | detail  | summary_reporting_chain | TRUE    | reporting_chain | reporting_chain | none     | reporting_chain |
-| SCOPS | —      | —                 | 6     | school                     | detail  | summary_reporting_chain | TRUE    | reporting_chain | reporting_chain | none     | reporting_chain |
-| NINST | —      | —                 | 6     | school                     | detail  | summary_reporting_chain | TRUE    | reporting_chain | reporting_chain | none     | reporting_chain |
-| TEACH | —      | —                 | 6     | school                     | detail  | summary_reporting_chain | TRUE    | reporting_chain | reporting_chain | none     | reporting_chain |
-| TIR   | —      | —                 | 6     | school                     | detail  | summary_reporting_chain | TRUE    | reporting_chain | reporting_chain | none     | reporting_chain |
-| MGDIR | KTAF   | instructional     | 3     | network                    | detail  | summary_reporting_chain | TRUE    | reporting_chain | reporting_chain | none     | reporting_chain |
-| DIR   | KTAF   | instructional     | 4     | network + department_group | detail  | summary_reporting_chain | TRUE    | reporting_chain | reporting_chain | none     | reporting_chain |
-| KTRGS | KTAF   | instructional     | 5     | network + department_group | detail  | summary_reporting_chain | TRUE    | reporting_chain | reporting_chain | none     | reporting_chain |
-| MGDIR | KTAF   | non-instructional | 3     | network                    | summary | summary_reporting_chain | FALSE   | reporting_chain | reporting_chain | none     | reporting_chain |
-| DIR   | KTAF   | non-instructional | 4     | network + department_group | summary | summary_reporting_chain | FALSE   | reporting_chain | reporting_chain | none     | reporting_chain |
-| KTRGS | KTAF   | non-instructional | 5     | network + department_group | summary | summary_reporting_chain | FALSE   | reporting_chain | reporting_chain | none     | reporting_chain |
-| MGDIR | Region | instructional     | 3     | region                     | detail  | summary_reporting_chain | TRUE    | reporting_chain | reporting_chain | none     | reporting_chain |
-| DIR   | Region | instructional     | 4     | region + department_group  | detail  | summary_reporting_chain | TRUE    | reporting_chain | reporting_chain | none     | reporting_chain |
-| KTRGS | Region | instructional     | 5     | region + department_group  | detail  | summary_reporting_chain | TRUE    | reporting_chain | reporting_chain | none     | reporting_chain |
-| MGDIR | Region | non-instructional | 3     | region                     | summary | summary_reporting_chain | FALSE   | reporting_chain | reporting_chain | none     | reporting_chain |
-| DIR   | Region | non-instructional | 4     | region + department_group  | summary | summary_reporting_chain | FALSE   | reporting_chain | reporting_chain | none     | reporting_chain |
-| KTRGS | Region | non-instructional | 5     | region + department_group  | summary | summary_reporting_chain | FALSE   | reporting_chain | reporting_chain | none     | reporting_chain |
+| CHIEF | —      | —                 | 1     | network                    | detail  | detail                  | all     | all             | all             | none     | all             |
+| EDHOS | —      | —                 | 2     | region                     | detail  | detail                  | all     | all             | all             | none     | all             |
+| SL    | —      | —                 | 4     | school                     | detail  | detail                  | all     | all             | all             | none     | all             |
+| DSO   | —      | —                 | 4     | school                     | detail  | detail                  | all     | all             | all             | none     | all             |
+| ASL   | —      | —                 | 5     | school                     | detail  | detail                  | all     | teaching_staff  | teaching_staff  | none     | teaching_staff  |
+| DEAN  | —      | —                 | 6     | school                     | detail  | summary_reporting_chain | all     | reporting_chain | reporting_chain | none     | reporting_chain |
+| SCOPS | —      | —                 | 6     | school                     | detail  | summary_reporting_chain | all     | reporting_chain | reporting_chain | none     | reporting_chain |
+| NINST | —      | —                 | 6     | school                     | detail  | summary_reporting_chain | all     | reporting_chain | reporting_chain | none     | reporting_chain |
+| TEACH | —      | —                 | 6     | school                     | detail  | summary_reporting_chain | all     | reporting_chain | reporting_chain | none     | reporting_chain |
+| TIR   | —      | —                 | 6     | school                     | detail  | summary_reporting_chain | all     | reporting_chain | reporting_chain | none     | reporting_chain |
+| MGDIR | KTAF   | instructional     | 3     | network                    | detail  | summary_reporting_chain | all     | reporting_chain | reporting_chain | none     | reporting_chain |
+| DIR   | KTAF   | instructional     | 4     | network + department_group | detail  | summary_reporting_chain | all     | reporting_chain | reporting_chain | none     | reporting_chain |
+| KTRGS | KTAF   | instructional     | 5     | network + department_group | detail  | summary_reporting_chain | all     | reporting_chain | reporting_chain | none     | reporting_chain |
+| MGDIR | KTAF   | non-instructional | 3     | network                    | summary | summary_reporting_chain | none    | reporting_chain | reporting_chain | none     | reporting_chain |
+| DIR   | KTAF   | non-instructional | 4     | network + department_group | summary | summary_reporting_chain | none    | reporting_chain | reporting_chain | none     | reporting_chain |
+| KTRGS | KTAF   | non-instructional | 5     | network + department_group | summary | summary_reporting_chain | none    | reporting_chain | reporting_chain | none     | reporting_chain |
+| MGDIR | Region | instructional     | 3     | region                     | detail  | summary_reporting_chain | all     | reporting_chain | reporting_chain | none     | reporting_chain |
+| DIR   | Region | instructional     | 4     | region + department_group  | detail  | summary_reporting_chain | all     | reporting_chain | reporting_chain | none     | reporting_chain |
+| KTRGS | Region | instructional     | 5     | region + department_group  | detail  | summary_reporting_chain | all     | reporting_chain | reporting_chain | none     | reporting_chain |
+| MGDIR | Region | non-instructional | 3     | region                     | summary | summary_reporting_chain | none    | reporting_chain | reporting_chain | none     | reporting_chain |
+| DIR   | Region | non-instructional | 4     | region + department_group  | summary | summary_reporting_chain | none    | reporting_chain | reporting_chain | none     | reporting_chain |
+| KTRGS | Region | non-instructional | 5     | region + department_group  | summary | summary_reporting_chain | none    | reporting_chain | reporting_chain | none     | reporting_chain |
 
 ### Department special-access override
 
-Applies regardless of `job_function_code`; network scope; flags are plain
-booleans → `all` / `none`.
+Applies regardless of `job_function_code`; network scope. Every `*_scope` value
+is the unconditional `all` / `none` (never `reporting_chain` / `teaching_staff`)
+— these departments see the field for all rows in scope or not at all. Same
+column-header mapping as the role table above.
 
 | department             | student | staff  | stu_pii | staff_pii | comp | benefits | obs  |
 | ---------------------- | ------- | ------ | ------- | --------- | ---- | -------- | ---- |
@@ -266,24 +283,24 @@ top).
 One row per active staff `staff_key`. Verified 1:1 on `employee_number` for
 active primary staff (1,490 rows, 1,490 distinct, 0 null).
 
-| Column                   | Type   | Description                                                                                                                             |
-| ------------------------ | ------ | --------------------------------------------------------------------------------------------------------------------------------------- |
-| `staff_key`              | STRING | PK — `generate_surrogate_key([employee_number])`, matches `dim_staff`                                                                   |
-| `google_email`           | STRING | Resolve-only lookup for the JWT boundary; populated from the active+primary row so a recycled address can't resolve to a stale identity |
-| `job_function_code`      | STRING | From roster (CHIEF/EDHOS/SL/…)                                                                                                          |
-| `job_function_level`     | INT64  | Org rank 1–6 (CASE on `job_function_code`)                                                                                              |
-| `entity`                 | STRING | `KTAF` / `Region` (CASE)                                                                                                                |
-| `department_type`        | STRING | `instructional` / `non-instructional` (CASE on department)                                                                              |
-| `department_group`       | STRING | Rollup of `assigned_department_name` (CASE)                                                                                             |
-| `scope_level`            | STRING | network / region / school / network+department_group / region+department_group                                                          |
-| `scope_key`              | STRING | region_key, school abbreviation, or NULL (network)                                                                                      |
-| `student_access_level`   | STRING | `detail` / `summary` / `none`                                                                                                           |
-| `staff_access_level`     | STRING | `detail` / `summary_reporting_chain` / `none`                                                                                           |
-| `has_student_pii`        | BOOL   | Student PII columns                                                                                                                     |
-| `has_staff_pii`          | STRING | tristate: all / reporting_chain / teaching_staff / none                                                                                 |
-| `has_staff_compensation` | STRING | tristate                                                                                                                                |
-| `has_staff_benefits`     | STRING | tristate (all rows `none` today; column kept for forward-compat)                                                                        |
-| `has_staff_observations` | STRING | tristate                                                                                                                                |
+| Column                     | Type   | Description                                                                                                                             |
+| -------------------------- | ------ | --------------------------------------------------------------------------------------------------------------------------------------- |
+| `staff_key`                | STRING | PK — `generate_surrogate_key([employee_number])`, matches `dim_staff`                                                                   |
+| `google_email`             | STRING | Resolve-only lookup for the JWT boundary; populated from the active+primary row so a recycled address can't resolve to a stale identity |
+| `job_function_code`        | STRING | From roster (CHIEF/EDHOS/SL/…)                                                                                                          |
+| `job_function_level`       | INT64  | Org rank 1–6 (CASE on `job_function_code`)                                                                                              |
+| `entity`                   | STRING | `KTAF` / `Region` (CASE)                                                                                                                |
+| `department_type`          | STRING | `instructional` / `non-instructional` (CASE on department)                                                                              |
+| `department_group`         | STRING | Rollup of `assigned_department_name` (CASE)                                                                                             |
+| `scope_level`              | STRING | network / region / school / network+department_group / region+department_group                                                          |
+| `scope_key`                | STRING | region_key, school abbreviation, or NULL (network)                                                                                      |
+| `student_access_level`     | STRING | `detail` / `summary` / `none`                                                                                                           |
+| `staff_access_level`       | STRING | `detail` / `summary_reporting_chain` / `none`                                                                                           |
+| `student_pii_scope`        | STRING | enum: `all` / `none` (future `own_roster` deferred)                                                                                     |
+| `staff_pii_scope`          | STRING | enum: `all` / `reporting_chain` / `teaching_staff` / `none`                                                                             |
+| `staff_compensation_scope` | STRING | enum (same vocabulary)                                                                                                                  |
+| `staff_benefits_scope`     | STRING | enum (all rows `none` today; column kept for forward-compat)                                                                            |
+| `staff_observations_scope` | STRING | enum (same vocabulary)                                                                                                                  |
 
 - **Derivation:** department special-access override (CASE on
   `assigned_department_name`) takes precedence; otherwise the role-based CASE on
@@ -327,8 +344,8 @@ contextToGroups: async ({ securityContext }) => {
       SELECT
         staff_key,
         student_access_level, staff_access_level,
-        has_student_pii, has_staff_pii, has_staff_compensation,
-        has_staff_benefits, has_staff_observations,
+        student_pii_scope, staff_pii_scope, staff_compensation_scope,
+        staff_benefits_scope, staff_observations_scope,
         scope_level, scope_key, department_group, job_function_level
       FROM kipptaf_marts.dim_staff_cube_access
       WHERE google_email = @email
@@ -384,8 +401,8 @@ Replace group-name parsing with cache reads. The cached `row` and
   `region + department_group` as an AND of two equals filters), then the
   **Layer-2 detail filter** (`staff.staff_key IN reporteeStaffKeys` AND
   `job_function_level > viewer.job_function_level`) that governs which rows
-  expose PII/comp/observation columns per the tristate flags. The staff cube and
-  detail view expose `staff_key` for this filter.
+  expose PII/comp/observation columns per the `*_scope` columns. The staff cube
+  and detail view expose `staff_key` for this filter.
 - **Snapshot anchor** logic and `canSwitchSqlUser` unchanged.
 
 ### 5. Cube renames, schema test, view policies (original issue scope)
@@ -438,11 +455,11 @@ from `dim_staff_cube_access` (`cube-access-student-detail` / `-summary` /
 The attendance pattern gates **columns globally per group**: with
 `cube-access-student-pii`, a viewer sees the PII columns for **every** row the
 query returns; without it, for none. That is exactly right for the student PII
-flag (`has_student_pii`) and for any **all-or-nothing** staff flag (`all` /
+scope (`student_pii_scope`) and for any **all-or-nothing** staff scope (`all` /
 `none`) — these are whole-column grants and map cleanly onto an `excludes:`
 tier.
 
-The gap is the **`reporting_chain` and `teaching_staff` tristate values**, which
+The gap is the **`reporting_chain` and `teaching_staff` scope values**, which
 require a sensitive column visible **for some rows and not others in the same
 result set** (comp for downline rows only; comp/obs for TEACH/TIR rows only).
 `access_policy` `excludes:`/`includes:` is whole-column and cannot express this.
@@ -450,13 +467,14 @@ result set** (comp for downline rows only; comp/obs for TEACH/TIR rows only).
 **Resolution — row restriction, not column masking.** Rather than mask columns
 per-row, restrict the **rows** so the column grant is correct for the whole set:
 
-- A viewer whose `has_staff_compensation = 'reporting_chain'` gets the
+- A viewer whose `staff_compensation_scope = 'reporting_chain'` gets the
   `cube-access-staff-compensation` group (comp columns visible) **and** a
   `queryRewrite` row filter limiting the staff result to their Layer-2 set
   (`staff.staff_key IN reporteeStaffKeys` AND level-below). Comp is then
   correctly visible for exactly the rows returned.
-- A viewer whose `has_staff_compensation = 'teaching_staff'` (ASL) gets the comp
-  group plus a `queryRewrite` filter `job_function_code IN ('TEACH','TIR')`.
+- A viewer whose `staff_compensation_scope = 'teaching_staff'` (ASL) gets the
+  comp group plus a `queryRewrite` filter
+  `job_function_code IN ('TEACH','TIR')`.
 
 This reuses the proven attendance mechanism (group → column grant) and adds the
 row filter in `queryRewrite` — the same place location scope is already
@@ -464,8 +482,8 @@ injected. The tradeoff: a viewer cannot, in one query, see comp for their
 downline **and** non-comp summary rows for their wider scope — they get the
 row-restricted detail set when comp is requested. The plan must confirm this
 single-query restriction is acceptable to the data team (it matches how a
-manager would naturally query "my team's comp"), and that all three tristate
-values reduce to a group + row-filter pair.
+manager would naturally query "my team's comp"), and that all three scope values
+reduce to a group + row-filter pair.
 
 ---
 
