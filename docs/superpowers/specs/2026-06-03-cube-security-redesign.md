@@ -1,161 +1,275 @@
-# Cube Security Redesign — Declarative Access Control with HR-Derived Groups
+# Cube Security Redesign — HR-Derived Access with Reporting-Chain and Org-Level Gating
 
 **Issue:** [#4102](https://github.com/TEAMSchools/teamster/issues/4102)
 **Branch:** `cristinabaldor/feat/claude-cube-security-redesign`
 
 ## Summary
 
-Move all Cube access control into Cube itself, with group membership derived
-automatically from HR data. A single dbt model — `dim_staff_cube_access` —
-becomes the source of truth for who can see what, replacing manual Google
-Workspace group enrollment entirely. The Google Admin Directory API is
-eliminated. `cube.js` is simplified: `contextToGroups` queries BigQuery,
-`queryRewrite` reads location scope from the cache instead of parsing group
-names, and all access-level gating (including PII and staff-all) lives in the
-dbt model as boolean columns.
+Move all Cube access control into Cube itself, with access derived automatically
+from HR data. Two new dbt models become the source of truth for who can see
+what, replacing manual Google Workspace group enrollment and the Google Admin
+Directory API entirely:
 
-## What we're changing from now
+- `dim_staff_cube_access` — one row per staff email; resolves each person to a
+  scope tier, student/staff access levels, per-field visibility flags, and an
+  org-rank level. Derived from role (`job_function_code` × `entity` ×
+  `department_type`), with a department-level special-access override.
+- `dim_staff_reporting_chain` — the transitive closure of the org tree (manager
+  → every direct/indirect report), used to grant detail-level access to a
+  manager's own downline.
 
-The current model has two issues this redesign addresses:
+`cube.js` is simplified: `contextToGroups` queries BigQuery (no Directory API),
+`queryRewrite` reads scope and reporting-chain from the cache instead of parsing
+group names, and all access gating lives in the dbt models.
 
-**1. Group names encode two things at once.** A name like
-`cube-region-newark-detail` conflates location scope (Newark) and access level
-(detail). These are independent dimensions managed by two separate mechanisms
-after this redesign.
+This supersedes the boolean-only access model in the original draft of this
+spec. The driving criteria come from two source-of-truth CSVs committed
+alongside this spec:
 
-**2. Group membership is maintained manually.** When someone becomes a regional
-director, someone in Tech manually enrolls them in a Google Workspace group. The
-Google Admin Directory API is called at query time to resolve memberships,
-adding a runtime dependency, caching complexity, and an IT bottleneck. PII and
-staff-all grants live in the same system, with no audit trail beyond group
-membership history.
-
-After this redesign: a dbt model derived from the existing staff roster view
-determines access level (summary/data/PII) and location scope (network/region/
-school) for every staff member. `contextToGroups` reads that model from
-BigQuery. `queryRewrite` location logic is unchanged in behavior — only its data
-source changes. All Google Workspace `cube-*` groups are retired.
+- [`assets/cube_access_job_function_levels.csv`](assets/cube_access_job_function_levels.csv)
+  — role-based mapping (22 rows)
+- [`assets/cube_access_department_special.csv`](assets/cube_access_department_special.csv)
+  — department special-access override (8 rows)
 
 ---
 
 ## Access model
 
-### Two independent dimensions
+### Two independent concerns
 
-| Dimension      | Controls                | Mechanism                                               |
-| -------------- | ----------------------- | ------------------------------------------------------- |
-| Access level   | Which views and columns | `access_policy` group membership                        |
-| Location scope | Which rows              | `access_policy` `row_level` filter via `userAttributes` |
+| Concern        | Controls                | Mechanism                                |
+| -------------- | ----------------------- | ---------------------------------------- |
+| Access level   | Which views and columns | view `access_policy` group membership    |
+| Row visibility | Which rows              | `queryRewrite` filters from cache fields |
 
-### Access level groups
+### The two-layer staff access model
 
-Three groups cover student data access. Staff access uses two existing groups
-unchanged.
+For any viewer querying **staff data**, two filters compose:
 
-| Group                         | Views                  | Columns                   |
-| ----------------------------- | ---------------------- | ------------------------- |
-| `cube-access-student-summary` | Summary views only     | All non-PII members       |
-| `cube-access-student-detail`  | Detail + summary views | All non-PII members       |
-| `cube-access-student-pii`     | Detail + summary views | All members including PII |
+**Layer 1 — Scope (summary breadth).** Which staff rows the viewer can see at
+all, at summary level. Derived from `scope_level` + `scope_key` +
+`department_group`:
 
-Summary views list all three groups in their `access_policy`. Detail views list
-only `cube-access-student-detail` and `cube-access-student-pii`. A user in
-`cube-access-student-summary` cannot query a detail view.
+| `scope_level`                | Visible staff rows                                   |
+| ---------------------------- | ---------------------------------------------------- |
+| `network`                    | all staff (no filter)                                |
+| `region`                     | staff whose `region_key` equals viewer's             |
+| `school`                     | staff whose `abbreviation` equals viewer's           |
+| `network + department_group` | staff whose `department_group` equals viewer's       |
+| `region + department_group`  | staff in viewer's region **AND** viewer's dept group |
 
-Multi-group OR semantics work correctly: a user with both
-`cube-access-student-detail` and `cube-access-student-pii` gets PII-level access
-(the union of both policies).
+The compound `region + department_group` case **intersects** (AND) — a regional
+director sees their department group within their region only.
 
-### Location scope
+**Layer 2 — Detail (reporting-chain ∩ level).** Which of the Layer-1 rows the
+viewer sees at **detail / PII** level. A staff row is shown at detail only if
+**both**:
 
-Location filtering stays in `queryRewrite`. Cube's `access_policy` `row_level`
-filter operators are all scalar — `equals`, `contains` (LIKE), date operators.
-There is no array-containment operator, so a `scope_keys` ARRAY column cannot be
-matched against a scalar user attribute in YAML. `queryRewrite` handles
-arbitrary JS logic and already implements the three-tier hierarchy correctly;
-the only change is that it reads location scope from the BigQuery-populated
-cache instead of parsing Google Group names.
+- it is in the viewer's downline (`reportee_email IN dim_staff_reporting_chain`
+  for the viewer as manager), **AND**
+- its `job_function_level` is strictly below the viewer's (numerically greater —
+  1 = Chief is highest, 6 = Teacher is lowest).
 
-The cache object is extended to carry location fields alongside groups:
+Rows in Layer 1 but not Layer 2 are visible at **summary** only. The
+`summary_reporting_chain` value of `staff_access_level` is exactly this pattern:
+summary across the viewer's scope, detail on the viewer's chain.
 
-| Cache field          | Type   | Value                                  |
-| -------------------- | ------ | -------------------------------------- |
-| `location_scope`     | STRING | `'network'`, `'region'`, or `'school'` |
-| `location_scope_key` | STRING | e.g. `'newark'` or `'NCA'`             |
+The level gate is belt-and-suspenders: in the pure reporting-chain case a
+downline report is already organizationally below the viewer, but the gate also
+protects the dept-group and region scopes (where the viewer sees same- or
+higher-level peers at summary and must never see them at detail) and guards
+against reporting-chain data gaps.
 
-`queryRewrite` reads these fields and injects the same WHERE clause filters it
-does today — network (no filter), region (`region_key` equals), school
-(`abbreviation` equals), or default deny when `location_scope` is null.
+**Field flags gate columns on top of Layer 2.** `has_staff_pii`,
+`has_staff_compensation`, `has_staff_observations` are **tristate** (plus a
+`none` value):
 
-Multi-location staff (e.g. coaches covering multiple schools) are out of scope
-for v1 — handled by assigning the broadest applicable scope in
-`dim_staff_cube_access`.
+| Flag value        | Field is visible for…                                        |
+| ----------------- | ------------------------------------------------------------ |
+| `all`             | every staff row in scope (Layer 1)                           |
+| `reporting_chain` | only the viewer's Layer-2 rows (chain ∩ level)               |
+| `teaching_staff`  | only staff with `job_function_code IN ('TEACH','TIR')` (ASL) |
+| `none` / `FALSE`  | never                                                        |
+
+### Student access
+
+Independent of staff access. Governed by `student_access_level`
+(`detail`/`summary`/`null`), `has_student_pii`, and the same Layer-1 location
+scope. There is no reporting-chain concept for student data — a person with
+`student_access_level = 'detail'` and region scope sees all students in their
+region at detail.
+
+### Survey access
+
+`survey_access_level` (`detail`/`summary`/`null`) gates survey-domain views the
+same way `student_access_level` gates student-domain views. Deferred to
+whichever domain plan builds survey cubes; carried on `dim_staff_cube_access`
+now so the column exists.
+
+---
+
+## Resolution order (`dim_staff_cube_access`)
+
+Each active staff email resolves to exactly one access row:
+
+```text
+1. Look up the active, primary roster row by google_email
+   (int_people__staff_roster, worker_status_code != 'Terminated',
+    primary_indicator = true, google_email is not null).
+
+2. If assigned_department_name ∈ special-access list (8 departments):
+     → emit the special-access row verbatim.
+       scope_level = network; all field flags are plain booleans → 'all' or 'none';
+       staff_access_level = detail (no reporting-chain narrowing — these
+       departments see all staff at detail network-wide).
+
+3. Else:
+     → emit the role-based row from the CASE on
+       (job_function_code, entity, department_type).
+       scope_level / staff_access_level / tristate flags / job_function_level
+       per the job-function mapping.
+
+4. No matching roster row, or null email:
+     → no output row → contextToGroups returns [] → queryRewrite default-denies.
+```
+
+The department override **wins entirely** when it matches — it is uniformly
+broader (network scope, mostly detail), so there is no field-by-field merge.
+
+### Department match
+
+Special-access `department` matches roster `assigned_department_name` by exact
+string equality. Verified against current data — all 8 names resolve to active
+staff (Executive, Data, Human Resources, Leadership Development, Teacher
+Development, Accounting, Finance, Compliance).
+
+---
+
+## Source mappings (committed as CSVs)
+
+### Role-based mapping — `job_function_code` × `entity` × `department_type`
+
+The CASE key is the **3-part tuple**, because access varies by all three (e.g.
+MGDIR differs by KTAF/Region and by instructional/non-instructional).
+`job_function_level` is the org rank (1 = highest).
+
+<!-- markdownlint-disable MD013 -->
+
+| code  | entity | dept_type         | level | scope_level                | student | staff                   | stu_pii | staff_pii       | comp            | benefits | obs             | survey  |
+| ----- | ------ | ----------------- | ----- | -------------------------- | ------- | ----------------------- | ------- | --------------- | --------------- | -------- | --------------- | ------- |
+| CHIEF | —      | —                 | 1     | network                    | detail  | detail                  | TRUE    | all             | all             | none     | all             | detail  |
+| EDHOS | —      | —                 | 2     | region                     | detail  | detail                  | TRUE    | all             | all             | none     | all             | detail  |
+| SL    | —      | —                 | 4     | school                     | detail  | detail                  | TRUE    | all             | all             | none     | all             | detail  |
+| DSO   | —      | —                 | 4     | school                     | detail  | detail                  | TRUE    | all             | all             | none     | all             | detail  |
+| ASL   | —      | —                 | 5     | school                     | detail  | detail                  | TRUE    | teaching_staff  | teaching_staff  | none     | teaching_staff  | summary |
+| DEAN  | —      | —                 | 6     | school                     | detail  | summary_reporting_chain | TRUE    | reporting_chain | reporting_chain | none     | reporting_chain | summary |
+| SCOPS | —      | —                 | 6     | school                     | detail  | summary_reporting_chain | TRUE    | reporting_chain | reporting_chain | none     | reporting_chain | summary |
+| NINST | —      | —                 | 6     | school                     | detail  | summary_reporting_chain | TRUE    | reporting_chain | reporting_chain | none     | reporting_chain | summary |
+| TEACH | —      | —                 | 6     | school                     | detail  | summary_reporting_chain | TRUE    | reporting_chain | reporting_chain | none     | reporting_chain | summary |
+| TIR   | —      | —                 | 6     | school                     | detail  | summary_reporting_chain | TRUE    | reporting_chain | reporting_chain | none     | reporting_chain | summary |
+| MGDIR | KTAF   | instructional     | 3     | network                    | detail  | summary_reporting_chain | TRUE    | reporting_chain | reporting_chain | none     | reporting_chain | summary |
+| DIR   | KTAF   | instructional     | 4     | network + department_group | detail  | summary_reporting_chain | TRUE    | reporting_chain | reporting_chain | none     | reporting_chain | summary |
+| KTRGS | KTAF   | instructional     | 5     | network + department_group | detail  | summary_reporting_chain | TRUE    | reporting_chain | reporting_chain | none     | reporting_chain | summary |
+| MGDIR | KTAF   | non-instructional | 3     | network                    | summary | summary_reporting_chain | FALSE   | reporting_chain | reporting_chain | none     | reporting_chain | summary |
+| DIR   | KTAF   | non-instructional | 4     | network + department_group | summary | summary_reporting_chain | FALSE   | reporting_chain | reporting_chain | none     | reporting_chain | summary |
+| KTRGS | KTAF   | non-instructional | 5     | network + department_group | summary | summary_reporting_chain | FALSE   | reporting_chain | reporting_chain | none     | reporting_chain | summary |
+| MGDIR | Region | instructional     | 3     | region                     | detail  | summary_reporting_chain | TRUE    | reporting_chain | reporting_chain | none     | reporting_chain | summary |
+| DIR   | Region | instructional     | 4     | region + department_group  | detail  | summary_reporting_chain | TRUE    | reporting_chain | reporting_chain | none     | reporting_chain | summary |
+| KTRGS | Region | instructional     | 5     | region + department_group  | detail  | summary_reporting_chain | TRUE    | reporting_chain | reporting_chain | none     | reporting_chain | summary |
+| MGDIR | Region | non-instructional | 3     | region                     | summary | summary_reporting_chain | FALSE   | reporting_chain | reporting_chain | none     | reporting_chain | summary |
+| DIR   | Region | non-instructional | 4     | region + department_group  | summary | summary_reporting_chain | FALSE   | reporting_chain | reporting_chain | none     | reporting_chain | summary |
+| KTRGS | Region | non-instructional | 5     | region + department_group  | summary | summary_reporting_chain | FALSE   | reporting_chain | reporting_chain | none     | reporting_chain | summary |
+
+### Department special-access override
+
+Applies regardless of `job_function_code`; network scope; flags are plain
+booleans → `all` / `none`.
+
+| department             | student | staff  | stu_pii | staff_pii | comp | benefits | obs  | survey |
+| ---------------------- | ------- | ------ | ------- | --------- | ---- | -------- | ---- | ------ |
+| Executive              | detail  | detail | all     | all       | all  | all      | all  | detail |
+| Data                   | detail  | detail | all     | all       | all  | all      | all  | detail |
+| Human Resources        | summary | detail | none    | all       | all  | all      | all  | detail |
+| Leadership Development | summary | detail | none    | all       | all  | none     | all  | detail |
+| Teacher Development    | detail  | detail | none    | all       | none | none     | all  | detail |
+| Accounting             | detail  | detail | none    | all       | all  | all      | none | detail |
+| Finance                | detail  | detail | none    | all       | all  | all      | none | detail |
+| Compliance             | detail  | detail | none    | all       | all  | all      | none | detail |
+
+<!-- markdownlint-enable MD013 -->
 
 ---
 
 ## Changes required
 
-### 1. dbt: new model `dim_staff_reporting_chain`
+### 1. dbt model: `dim_staff_reporting_chain`
 
-Pre-computed transitive closure of the org hierarchy. One row per (manager,
-reportee) pair — every staff member who reports up through a given manager, at
-any depth.
+**Path:**
+`src/dbt/kipptaf/models/marts/dimensions/dim_staff_reporting_chain.sql`
 
-| Column           | Type   | Description                                   |
-| ---------------- | ------ | --------------------------------------------- |
-| `manager_email`  | STRING | Google email of the manager                   |
-| `reportee_email` | STRING | Google email of the direct or indirect report |
+Transitive closure of the org tree. Grain: one row per
+`(manager_email, reportee_email)`. Verified against current data: 7,005 pairs,
+maximum depth 7, no cycles, terminates cleanly (2 null-manager roots at the
+top).
 
-Built from the existing staff roster by iterating the reporting hierarchy
-(recursive CTE or iterative self-join). Rebuilt nightly with the rest of the
-mart — role changes propagate automatically.
+| Column           | Type   | Description                                          |
+| ---------------- | ------ | ---------------------------------------------------- |
+| `manager_email`  | STRING | A staff member at or above the reportee in the tree  |
+| `reportee_email` | STRING | The direct or indirect report                        |
+| `depth`          | INT64  | Hops from manager to reportee (0 = self, 1 = direct) |
 
-### 2. dbt: new model `dim_staff_cube_access`
+- **Edge source:** `int_people__staff_roster` self-reference,
+  `reports_to_google_email → google_email`. Email-to-email so it joins directly
+  to the JWT email claim — no surrogate-key round-trips. (Chosen over
+  `dim_work_assignment_reporting_relationships`, which is keyed on `staff_key`
+  and carries per-assignment SCD2 fan-out.)
+- **Filter:** active staff (`worker_status_code != 'Terminated'`), non-null
+  `google_email`, `primary_indicator = true`.
+- **Self-pair included** (`manager_email = reportee_email`, `depth = 0`) so a
+  single `reportee_email IN (...)` filter lets a manager see their own row too.
+- **PK:** composite `(manager_email, reportee_email)` — composite uniqueness
+  test. `depth` is the minimum hop count if multiple paths exist.
+- **Recursion:** recursive CTE with a `depth < 20` cycle backstop (data is a
+  clean tree; the cap is defensive only).
 
-One row per staff email. Built on top of the existing staff roster view (which
-already carries location), extended with manually-curated boolean columns for
-access level and PII. This is the single source of truth for all Cube access —
-no Google Group lookup is needed at all.
+### 2. dbt model: `dim_staff_cube_access`
 
-All columns are derived from role — no manual grants or seed files needed.
+**Path:** `src/dbt/kipptaf/models/marts/dimensions/dim_staff_cube_access.sql`
 
-Columns:
+One row per active staff `google_email`. Verified 1:1 on email for active,
+non-null-email staff (1,466 emails, exactly one primary assignment each).
 
-| Column                 | Type    | Description                                                          |
-| ---------------------- | ------- | -------------------------------------------------------------------- |
-| `staff_google_email`   | STRING  | Primary key — matches the email claim in the JWT                     |
-| `student_access_level` | STRING  | `'detail'`, `'summary'`, or `null` — access to student data views    |
-| `staff_access_level`   | STRING  | `'detail'`, `'summary'`, or `null` — access to staff data views      |
-| `student_pii`          | BOOLEAN | Can see student PII columns (names, DOB, IDs) in detail views        |
-| `staff_pii`            | BOOLEAN | Can see staff PII columns (personal contact info, etc.)              |
-| `staff_compensation`   | BOOLEAN | Can see compensation data                                            |
-| `staff_benefits`       | BOOLEAN | Can see benefits data                                                |
-| `location_scope`       | STRING  | `'network'`, `'region'`, or `'school'` — derived from staff roster   |
-| `location_scope_key`   | STRING  | The specific key value (see table above) — derived from staff roster |
+| Column                   | Type   | Description                                                                    |
+| ------------------------ | ------ | ------------------------------------------------------------------------------ |
+| `staff_google_email`     | STRING | PK — matches JWT email claim                                                   |
+| `job_function_code`      | STRING | From roster (CHIEF/EDHOS/SL/…)                                                 |
+| `job_function_level`     | INT64  | Org rank 1–6 (CASE on `job_function_code`)                                     |
+| `entity`                 | STRING | `KTAF` / `Region` (CASE)                                                       |
+| `department_type`        | STRING | `instructional` / `non-instructional` (CASE on department)                     |
+| `department_group`       | STRING | Rollup of `assigned_department_name` (CASE)                                    |
+| `scope_level`            | STRING | network / region / school / network+department_group / region+department_group |
+| `scope_key`              | STRING | region_key, school abbreviation, or NULL (network)                             |
+| `student_access_level`   | STRING | `detail` / `summary` / NULL                                                    |
+| `staff_access_level`     | STRING | `detail` / `summary_reporting_chain` / NULL                                    |
+| `has_student_pii`        | BOOL   | Student PII columns                                                            |
+| `has_staff_pii`          | STRING | tristate: all / reporting_chain / teaching_staff / none                        |
+| `has_staff_compensation` | STRING | tristate                                                                       |
+| `has_staff_benefits`     | STRING | tristate (all rows `none` today; column kept for forward-compat)               |
+| `has_staff_observations` | STRING | tristate                                                                       |
+| `survey_access_level`    | STRING | `detail` / `summary` / NULL                                                    |
 
-Logic is derived entirely from the staff roster view (role, primary job code,
-location assignment). Exact derivation rules to be confirmed with the staff data
-pipeline owner (open question 1), but the shape is:
+- **Derivation:** department special-access override (CASE on
+  `assigned_department_name`) takes precedence; otherwise the role-based CASE on
+  `(job_function_code, entity, department_type)`. Both mappings live in-SQL as
+  CASE statements (not seeds), sourced from the committed CSVs.
+- **`department_group` and `department_type`** are CASE statements on
+  `assigned_department_name`. The exact rollup is owned by the data team — see
+  open question 1.
 
-- `student_access_level`: `'detail'` for principals, APs, regional leads,
-  central office analysts; `'summary'` for teachers and school-level
-  instructional staff; `null` for staff with no student data need
-- `staff_access_level`: `'detail'` for HR, talent, regional leads, network
-  leadership; `'summary'` for principals and school ops; `null` for most staff
-- `student_pii`: true for roles that need to identify individual students (e.g.
-  counselors, principals, data team)
-- `staff_pii`, `staff_compensation`, `staff_benefits`: true for HR, payroll, and
-  relevant leadership roles
-- `location_scope` / `location_scope_key`: derived from primary location
-  assignment — central office → network; regional role → region + key; school
-  role → school + abbreviation
+### 3. `cube.js`: `contextToGroups`
 
-### 3. `cube.js`: revise `contextToGroups`
-
-Replace the Google Admin Directory API call with two BigQuery queries: one
-against `dim_staff_cube_access` for access level and location, one against
-`dim_staff_reporting_chain` for the reporting chain. Both results are stored in
-the cache.
+Replace the Google Admin Directory API call with two BigQuery reads (cached to
+midnight ET — BigQuery has cost, not just latency):
 
 ```javascript
 contextToGroups: async ({ securityContext }) => {
@@ -164,58 +278,43 @@ contextToGroups: async ({ securityContext }) => {
     securityContext?.cubeCloud?.userAttributes?.email;
   if (!email) return [];
 
-  // Check cache (keep midnight-ET expiry — BigQuery has cost, not just latency)
+  // Local dev bypass unchanged (NODE_ENV !== "production" && CUBE_GROUP_MAP).
+
   const cached = groupCache.get(email);
   if (cached && cached.expiresAt > Date.now()) return cached.groups;
 
-  const { BigQuery } = require('@google-cloud/bigquery');
+  const { BigQuery } = require("@google-cloud/bigquery");
   const bq = new BigQuery();
 
   const [[accessRows], [reporteeRows]] = await Promise.all([
     bq.query({
       query: `
-        SELECT student_access_level, staff_access_level,
-               student_pii, staff_pii, staff_compensation, staff_benefits,
-               location_scope, location_scope_key
+        SELECT
+          student_access_level, staff_access_level, survey_access_level,
+          has_student_pii, has_staff_pii, has_staff_compensation,
+          has_staff_benefits, has_staff_observations,
+          scope_level, scope_key, department_group, job_function_level
         FROM kipptaf_marts.dim_staff_cube_access
         WHERE staff_google_email = @email
-        LIMIT 1
-      `,
+        LIMIT 1`,
       params: { email },
     }),
     bq.query({
       query: `
         SELECT reportee_email
         FROM kipptaf_marts.dim_staff_reporting_chain
-        WHERE manager_email = @email
-      `,
+        WHERE manager_email = @email`,
       params: { email },
     }),
   ]);
 
-  const groups = [];
   const row = accessRows[0] ?? null;
-
-  if (row) {
-    if (row.student_access_level === 'detail') groups.push('cube-access-student-detail');
-    else if (row.student_access_level === 'summary') groups.push('cube-access-student-summary');
-
-    if (row.staff_access_level === 'detail') groups.push('cube-access-staff-detail');
-    else if (row.staff_access_level === 'summary') groups.push('cube-access-staff-summary');
-
-    if (row.student_pii) groups.push('cube-access-student-pii');
-    if (row.staff_pii) groups.push('cube-access-staff-pii');
-    if (row.staff_compensation) groups.push('cube-access-staff-compensation');
-    if (row.staff_benefits) groups.push('cube-access-staff-benefits');
-  }
-
-  const reporteeEmails = reporteeRows.map(r => r.reportee_email);
+  const groups = buildGroups(row); // emits cube-access-* group names
 
   groupCache.set(email, {
     groups,
-    location_scope: row?.location_scope ?? null,
-    location_scope_key: row?.location_scope_key ?? null,
-    reporteeEmails,
+    row, // full access row retained for queryRewrite
+    reporteeEmails: reporteeRows.map((r) => r.reportee_email),
     expiresAt: nextMidnightEastern(),
   });
 
@@ -223,157 +322,115 @@ contextToGroups: async ({ securityContext }) => {
 },
 ```
 
-Default deny: if `location_scope_key` is null (no matching row in
-`dim_staff_cube_access`), `queryRewrite` injects the existing empty `IN ()`
-filter — same behavior as today.
+`buildGroups(row)` emits the view-policy group names from the resolved row:
+`cube-access-student-detail` / `-summary` / `-pii`, `cube-access-staff-detail` /
+`-summary` / `-pii` / `-compensation` / `-observations`, per the access levels
+and flags. No Google groups are read.
 
-### 2. `cube.js`: revise `queryRewrite` — read location from cache
+### 4. `cube.js`: `queryRewrite`
 
-Replace the `networkGroup` / `regionGroup` / `schoolGroup` group-name parsing
-with direct reads from the cache fields populated above:
+Replace group-name parsing with cache reads. The cached `row` and
+`reporteeEmails` drive every filter.
 
-```javascript
-queryRewrite: (query, { securityContext }) => {
-  const email = securityContext?.email ?? ...;
-  const cached = email ? groupCache.get(email) : null;
-  const groups = cached?.expiresAt > Date.now() ? cached.groups : [];
-  const locationScope = cached?.location_scope ?? null;
-  const locationKey = cached?.location_scope_key ?? null;
+- **Student cubes:** strip dims/measures unless `student_access_level` is set;
+  inject the location filter from `scope_level` / `scope_key` (network = none,
+  region = `region_key` equals, school = `abbreviation` equals); default-deny
+  empty `IN ()` when no row. Detail/summary + PII column gating is enforced by
+  the view `access_policy` groups.
+- **Staff cubes:** inject the **Layer-1 scope filter** (including
+  `region + department_group` as an AND of two equals filters), then the
+  **Layer-2 detail filter** (`staff_google_email IN reporteeEmails` AND
+  `job_function_level > viewer.job_function_level`) that governs which rows
+  expose PII/comp/observation columns per the tristate flags.
+- **Snapshot anchor** logic and `canSwitchSqlUser` unchanged.
 
-  // ... (student cube member-stripping — unchanged) ...
+### 5. Cube renames, schema test, view policies (original issue scope)
 
-  let locationFilter = null;
-  if (locationScope === 'network') {
-    // no filter
-  } else if (locationScope === 'region') {
-    locationFilter = {
-      member: 'dim_locations.region_key',
-      operator: 'equals',
-      values: [locationKey],
-    };
-  } else if (locationScope === 'school') {
-    locationFilter = {
-      member: 'dim_locations.abbreviation',
-      operator: 'equals',
-      values: [locationKey],
-    };
-  } else {
-    // default deny
-    return { ...query, filters: [{ member: 'dim_locations.abbreviation', operator: 'equals', values: [] }] };
-  }
-  // ... rest unchanged
-```
+Per [#4102](https://github.com/TEAMSchools/teamster/issues/4102):
 
-The logic is identical to today; only the source of `locationScope` /
-`locationKey` changes from group-name parsing to cache fields.
+- Drop `dim_` / `fct_` prefixes (`dim_staff` → `staff`, etc.); update all join
+  references in YAML.
+- Add `tests/cube/test_cube_schema.py` enforcing no `dim_` / `fct_` prefix on
+  cube names.
+- Split view `access_policy` into `-summary` / `-detail` / `-pii` group tiers.
+- Replace `STUDENT_CUBES` / `STAFF_CUBES` static arrays with `isStudentMember` /
+  `isStaffMember` prefix helpers.
 
-### 3. View YAMLs: add `cube-access-student-summary` group
+### 6. Google Workspace group cleanup
 
-Summary views gain a new `cube-access-student-summary` policy block (same
-`member_level` as `cube-access-student-detail`, no PII exclusions). Detail views
-are unchanged — `cube-access-student-summary` is not listed there, so summary-
-only users cannot query detail views.
-
-Updated summary view pattern:
-
-```yaml
-access_policy:
-  # No PII tier — view contains no direct student identifiers.
-  - group: cube-access-student-summary
-    member_level:
-      includes: "*"
-  - group: cube-access-student-detail
-    member_level:
-      includes: "*"
-  - group: cube-access-student-pii
-    member_level:
-      includes: "*"
-```
-
-### 4. `queryRewrite`: remove group-name parsing for location
-
-Remove:
-
-- `networkGroup` / `regionGroup` / `schoolGroup` regex resolution from group
-  names
-- `locationFilter` construction from parsed group names
-
-Retain:
-
-- `STUDENT_CUBES` member-stripping (unchanged — still enforced in `queryRewrite`
-  as a defense-in-depth layer alongside `access_policy` group gating)
-- Snapshot anchor injection (unchanged)
-- Default-deny empty `IN ()` filter (unchanged behavior, now triggered by null
-  cache fields rather than absence of scope group)
-
-Replace the `dim_staff.reporting_chain` segment injection with a direct filter
-using `reporteeEmails` from the cache:
-
-```javascript
-if (touchesStaffCube && !groups.includes("cube-access-staff-all")) {
-  filters.push({
-    member: "dim_staff.staff_google_email",
-    operator: "equals",
-    values: cached.reporteeEmails ?? [], // IN (...) — empty = deny
-  });
-}
-```
-
-`equals` with multiple values compiles to `IN (...)` in SQL. An empty array
-(user has no reportees, or no matching row) compiles to `IN ()` — default deny.
-This supersedes the `dim_staff.reporting_chain` segment approach and unblocks
-the staff cube implementation.
-
-### 5. Google Workspace group cleanup
-
-Once the redesign is live and validated, all `cube-*` Google Workspace groups
-can be retired — access is fully managed through `dim_staff_cube_access`. No
-Google groups are needed after cutover.
+After the redesign is live and validated (at least one full school day in
+production, spot-checked per tier), retire all `cube-*` Google Workspace groups.
+Access is then fully managed through the two dbt models.
 
 ---
 
-## What stays the same
+## Design risk: per-row column masking
 
-- `access_policy` in view YAMLs for column-level PII gating — same pattern, same
-  group names; only the source of group membership changes
-- Cubes remain `public: false`; views remain the only public surface
-- Cache TTL (midnight ET) — now covers the BigQuery row only; Google Admin API
-  call is eliminated entirely
-- `canSwitchSqlUser` — unchanged
+The tristate flags require column visibility that **depends on which row** —
+e.g. compensation visible only for the viewer's reporting-chain rows, or PII
+visible only for teaching staff. Cube's view `access_policy` gates columns
+**globally per group**, not per-row. A group either includes a member for the
+whole result set or excludes it.
+
+This cannot be expressed in `access_policy` alone. Options for the
+implementation plan to evaluate:
+
+1. **Split rows by tier in `queryRewrite`** — not possible in a single query;
+   rejected.
+2. **Mask sensitive columns to NULL in the mart/view SQL** based on a
+   request-time predicate. Cube cannot inject per-row SQL predicates into column
+   expressions, so this would require materializing the masking in dbt against a
+   viewer context — not feasible per-request. Rejected.
+3. **Two view variants per staff domain** — a summary view (no sensitive
+   columns) gated by Layer-1 scope, and a detail view (sensitive columns) whose
+   `queryRewrite` filter restricts rows to the Layer-2 set (chain ∩ level). A
+   viewer querying the detail view only ever gets their chain∩level rows, so the
+   "column visible only for those rows" requirement is satisfied structurally —
+   the columns live on a view that only returns the eligible rows. **Recommended
+   starting point.**
+
+The `teaching_staff` tier (ASL sees comp/obs for TEACH/TIR only) is a row
+predicate on `job_function_code`, expressible as a `queryRewrite` filter on the
+detail view. The plan must confirm option 3 covers all three tristate values
+before committing.
 
 ---
 
 ## Open questions
 
-1. **`dim_staff_cube_access` role logic** — confirm which column(s) on the staff
-   roster view best determine `student_access_level`. Job title,
-   primary_job_code, or a combination? The derived logic should be reviewed with
-   whoever owns the staff data pipeline before the model is built.
+1. **`department_group` and `department_type` rollup** — the exact CASE mapping
+   from the 43 `assigned_department_name` values into department groups and the
+   instructional/non-instructional split is owned by the data team. Draft the
+   CASE skeleton with the special-access departments handled; the data team
+   fills the remaining rollup before the model ships.
 
-2. **Multi-location staff** — coaches or itinerant staff who cover multiple
-   schools are out of scope for v1. `dim_staff_cube_access` assigns one
-   `location_scope_key` per person; multi-location support requires OR'd filters
-   in `queryRewrite` and is deferred to a follow-up.
+2. **`job_function_code` availability** — the column is being added to
+   `int_people__staff_roster` (expected end of day 2026-06-05). The models
+   assume it is present. Confirm the exact code values match the CSV
+   (CHIEF/EDHOS/SL/DSO/ASL/DEAN/SCOPS/NINST/TEACH/TIR/MGDIR/DIR/KTRGS) before
+   building.
 
-3. **Rollout safety** — `contextToGroups` and `queryRewrite` changes deploy
-   together as one Cube Cloud push. The `cube-access-student-summary` view YAML
-   addition is additive and safe to deploy independently beforehand. Google
-   Workspace group retirement should wait until the new system has been in
-   production for at least one full school day and confirmed via spot-checks.
+3. **Per-row column masking** — confirm the two-view approach (design risk
+   above) covers all tristate cases, or design an alternative, before
+   implementing `cube.js` staff gating.
+
+4. **Multi-location / itinerant staff** — coaches covering multiple schools get
+   one `scope_key`; multi-location support is deferred to a follow-up.
 
 ---
 
 ## Implementation sequence
 
-1. Build `dim_staff_reporting_chain` dbt model
-2. Build `dim_staff_cube_access` dbt model (confirm role logic per open question
-   1 first)
-3. Add `cube-access-student-summary` to summary view `access_policy` blocks —
-   additive, safe to deploy independently
-4. Update `cube.js`: revise `contextToGroups` to query both BigQuery models;
-   revise `queryRewrite` to read location from cache and inject reporting chain
-   filter from `reporteeEmails`
-5. Validate in Dev Mode with test emails at each scope tier (network, region,
-   school, summary-only, manager with reportees, no access)
-6. Deploy to production; confirm access spot-checks for each tier
-7. Retire all `cube-*` Google Workspace groups
+1. Build `dim_staff_reporting_chain` (recursive closure).
+2. Build `dim_staff_cube_access` (department override → role CASE; confirm
+   `job_function_code` values and department rollup first).
+3. Add `-summary` / `-detail` / `-pii` tiers to view `access_policy` blocks
+   (additive; safe to deploy independently).
+4. Rewrite `cube.js`: `contextToGroups` (two BigQuery reads) and `queryRewrite`
+   (scope + chain∩level filters); add `isStudentMember` / `isStaffMember`
+   helpers.
+5. Apply cube renames and add `tests/cube/test_cube_schema.py`.
+6. Validate in Dev Mode with test emails at each tier (network/region/school,
+   summary-only, manager with reportees, special-access department, no access).
+7. Deploy to production; spot-check each tier.
+8. Retire all `cube-*` Google Workspace groups.
