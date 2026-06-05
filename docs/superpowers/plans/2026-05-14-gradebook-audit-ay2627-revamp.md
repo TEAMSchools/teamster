@@ -848,7 +848,9 @@ and the UNPIVOT list in `int_tableau__gradebook_audit_flags.sql`.
 
   ```sql
   with
-      sections as (
+      -- base_powerschool__sections is section-grain (one row per section), which is
+      -- correct here — the teacher scaffold is the master schedule, not student-level
+      teacher_master_schedule as (
           select
               s._dbt_source_relation,
               s.terms_yearid,
@@ -862,7 +864,6 @@ and the UNPIVOT list in `int_tableau__gradebook_audit_flags.sql`.
               s.courses_course_name as course_name,
               s.courses_credittype as credit_type,
               s.courses_excludefromgpa as exclude_from_gpa,
-              s.is_ap_course,
               s.teachernumber as teacher_number,
               s.teacher_lastfirst as teacher_name,
               s.school_abbreviation as school,
@@ -936,7 +937,6 @@ and the UNPIVOT list in `int_tableau__gradebook_audit_flags.sql`.
       s.course_name,
       s.credit_type,
       s.exclude_from_gpa,
-      s.is_ap_course,
       s.teacher_number,
       s.teacher_name,
       s.teacher_tableau_username,
@@ -970,7 +970,7 @@ and the UNPIVOT list in `int_tableau__gradebook_audit_flags.sql`.
 
       'teacher_scaffold' as scaffold_name,
 
-  from sections as s
+  from teacher_master_schedule as s
 
   union all
 
@@ -990,7 +990,6 @@ and the UNPIVOT list in `int_tableau__gradebook_audit_flags.sql`.
       s.course_name,
       s.credit_type,
       s.exclude_from_gpa,
-      s.is_ap_course,
       s.teacher_number,
       s.teacher_name,
       s.teacher_tableau_username,
@@ -1024,7 +1023,7 @@ and the UNPIVOT list in `int_tableau__gradebook_audit_flags.sql`.
 
       'teacher_category_scaffold' as scaffold_name,
 
-  from sections as s
+  from teacher_master_schedule as s
   inner join
       {{ ref("int_powerschool__u_expectations[_unpivot]") }} as ge
       on s.region = ge.region
@@ -1034,6 +1033,12 @@ and the UNPIVOT list in `int_tableau__gradebook_audit_flags.sql`.
   ```
 
   Key differences from the old model:
+  - CTE renamed `sections` → `teacher_master_schedule` — this scaffold is the
+    teacher master schedule; `base_powerschool__sections` (section-grain) is the
+    correct source, not `base_powerschool__course_enrollments` (student-grain)
+  - `is_ap_course` removed — only used by
+    `assign_s_hs_score_not_conversion_chart_options` (FYI flag, removed per
+    issue #3908)
   - `school_level_alt` defined once in CTE; `school_level`,
     `region_school_level`, and `section_or_period` derived in the main SELECT
     using it — no repeated `if(school_name = ...)` expression
