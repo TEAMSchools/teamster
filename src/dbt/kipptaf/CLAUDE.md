@@ -234,6 +234,25 @@ or `dbt clone --select <upstream>` against staging. Trigger via
 `mcp__dbt__list_jobs` (~5 min run); after success, empty-commit + push
 re-triggers Build - CI.
 
+Distinct from stale staging defer — **stale per-PR shadow**: a model that was
+`state:modified` in an earlier run (e.g. before the branch merged `main`) but is
+now unmodified leaves a stale copy in the per-PR schema
+(`dbt_cloud_pr_<job>_<pr>_<schema>`, one dataset per dbt custom schema). dbt
+prefers an existing same-schema relation over the staging defer, so consumers
+fail `Name <col> not found` even when `zz_stg_*` has the column. Confirm via
+`INFORMATION_SCHEMA.COLUMNS` on the per-PR vs `zz_stg_*` schema, then drop the
+stale per-PR relation (match `drop view`/`drop table` to its type) — or
+`drop schema ... cascade` the whole `dbt_cloud_pr_<job>_<pr>_*` set to avoid
+model-by-model whack-a-mole — and re-run. Claude is DDL-blocked (BQ MCP / `bq`
+are SELECT-only), so hand the drops to the user.
+
+Re-triggering Build - CI: prefer `mcp__dbt__retry_job_run(run_id=<failed run>)`
+— it retries the _existing_ run, keeping the PR-schema override
+(`trigger_job_run` loses it; that's why the fallback is empty-commit + push).
+But `dbt retry` replays the prior run's compiled SQL and re-runs only
+errored/skipped nodes — so after changing external state (dropping PR schemas,
+refreshing staging) use a fresh build (empty-commit + push), not retry.
+
 ## Single-PR cross-project workflow
 
 CI only builds kipptaf; district staging schemas aren't auto-populated. For a PR
