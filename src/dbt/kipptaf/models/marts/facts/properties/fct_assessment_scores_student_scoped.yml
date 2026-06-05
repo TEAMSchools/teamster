@@ -21,7 +21,11 @@ models:
       - name: student_key
         data_type: string
         description: >-
-          FK to dim_students. Derived from student_number.
+          FK to dim_students. Derived from student_number. Null when the
+          CollegeBoard ID has no entry in the corresponding crosswalk Google
+          Sheet (PSAT scores arrive keyed by cb_id via sat_id_crosswalk; AP
+          scores arrive keyed by ap_number_ap_id via ap_id_crosswalk). Unmatched
+          rows carry NULL student_number.
 
         constraints:
           - type: foreign_key
@@ -102,3 +106,13 @@ models:
         description: >-
           Proficiency classification. For AP: Qualified (score >= 3) or Not
           Qualified. Null for college-entrance assessments.
+
+      - name: is_mastery
+        data_type: boolean
+        description: >-
+          TRUE if the student met the mastery / proficiency threshold for this
+          assessment. College Board section benchmarks (EBRW, Math) and Combined
+          College-Ready totals for SAT / PSAT 8/9 / PSAT10 / NMSQT; practice
+          (mock) SAT uses the official SAT cutoffs. AP: exam_score >= 3. NULL
+          for ACT, sub-section scores (Math Test / Reading Test), and practice
+          ACT or SAT Reading / Writing rows that have no defined benchmark.

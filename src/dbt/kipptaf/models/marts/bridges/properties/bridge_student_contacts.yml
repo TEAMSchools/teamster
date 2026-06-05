@@ -34,7 +34,7 @@ models:
         data_type: string
         description: >-
           Surrogate key for the contact person. Foreign key to
-          dim_student_contact_persons. Derived from _dbt_source_relation and
+          dim_student_contact_persons. Derived from _dbt_source_project and
           powerschool_person_id.
         constraints:
           - type: foreign_key

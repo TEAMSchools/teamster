@@ -1,4 +1,4 @@
-from dagster import ScheduleDefinition
+from dagster import MAX_RUNTIME_SECONDS_TAG, ScheduleDefinition
 
 from teamster.code_locations.kippnewark import CODE_LOCATION, LOCAL_TIMEZONE
 from teamster.code_locations.kippnewark.overgrad.assets import assets
@@ -8,6 +8,7 @@ overgrad_asset_schedule = ScheduleDefinition(
     target=assets,
     cron_schedule=["0 1 * * *", "0 15 * * *"],
     execution_timezone=str(LOCAL_TIMEZONE),
+    tags={MAX_RUNTIME_SECONDS_TAG: str(3600)},
 )
 
 schedules = [

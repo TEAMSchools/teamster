@@ -49,6 +49,8 @@ passed it. `chunk()` from `core/utils/functions` returns `Iterator[list]`, not
 **Docstrings**: Follow the
 [Google Python Style Guide](https://google.github.io/styleguide/pyguide.html#38-comments-and-docstrings).
 API reference URLs go in the extended description, never the summary line.
+Multi-line docstrings are permitted under Google style — this overrides Claude's
+default "one short line max" rule.
 
 `ScheduleEvaluationContext.log` and `SensorEvaluationContext.log` return
 `logging.Logger`; `AssetExecutionContext.log` returns `DagsterLogManager`. Use
@@ -144,7 +146,15 @@ with partition dimension values via `regex_pattern_replace()`.
 extract partition keys from named groups, emit `RunRequest`s grouped by
 `(job_name, partition_key)`. Sensor cursors should store max file mtime from
 matched files, not `now.timestamp()` — wall-clock cursors skip files with older
-mtimes.
+mtimes. `listdir_attr_r`'s `dir_mtimes` subtree-prune is only sound when the
+SFTP server advances parent-dir mtime on entry changes — Amplify mClass does
+not. Before opting a new sensor into `dir_mtimes=`, verify with
+`dir.st_mtime >= max(child.st_mtime)` across the watched tree.
+
+**Sensor cursor schema migration**: when removing a cursor key whose old value
+was non-scalar (dict, list), `cursor.pop("legacy_key", None)` before consuming
+`cursor.values()` — the persisted legacy value crashes `min`/`max`/`sum` on the
+first post-deploy tick.
 
 **Fiscal year**: July 1 start. `FiscalYear` class and
 `FiscalYearPartitionsDefinition` in `core/utils/classes.py`.
@@ -160,7 +170,11 @@ the request method. For network-call retries, the predicate must include
 `(RequestsConnectionError, Timeout, HTTPError)` — `HTTPError` alone misses
 `ConnectTimeout`. For runtime-parameterized retry loops (e.g.
 `with_powerschool_retry`), use `tenacity.Retrying` — a manual
-`for attempt in range(...)` has no backoff.
+`for attempt in range(...)` has no backoff. Avoid broad base classes whose
+subclasses include deterministic config errors (e.g.
+`paramiko.ssh_exception.SSHException` covers `IncompatiblePeer`,
+`BadHostKeyException`, `BadAuthenticationType`). List transient subclasses
+explicitly.
 
 **Don't `log.exception` inside retry-wrapped helpers**. GCP Error Reporting
 files groups at ERROR severity, so logging a traceback inside a context manager
@@ -168,6 +182,13 @@ files groups at ERROR severity, so logging a traceback inside a context manager
 transient failures the retry layer recovers from. Let the retry wrapper log
 intermediate attempts at WARNING; Dagster logs unrecovered failures at the run
 level.
+
+**BigQuery `Client.get_table()`**: defaults are `retry=DEFAULT_RETRY` (600s
+deadline) + `timeout=None`. In sensors, bound both:
+`retry=DEFAULT_RETRY.with_deadline(N), timeout=M`. `with_deadline()` returns a
+new Retry (DEFAULT_RETRY is immutable). `Client.list_tables()` items lack
+`modified` — the only batch-mtime path is `INFORMATION_SCHEMA.TABLES`, which is
+billed (10 MB min/query) while `tables.get` is free metadata.
 
 ## Development Commands
 
@@ -183,4 +204,6 @@ uv run dagster-dbt project prepare-and-package --file src/teamster/code_location
 ```
 
 `dagster definitions validate` may mislead locally — env vars unavailable in
-codespace cause false errors unrelated to production failures.
+codespace cause false errors unrelated to production failures. Fall back to
+`uv run python -c "import <module>"` for syntactic checks when validate fails on
+missing manifest or env vars.

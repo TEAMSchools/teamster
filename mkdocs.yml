@@ -44,6 +44,7 @@ nav:
       - SFTP Integration: guides/sftp-integration.md
       - Claude Code & Superpowers: guides/superpowers.md
       - Cube: guides/cube.md
+      - Claude + Cube Connector: guides/claude-cube-connector.md
   - Troubleshooting:
       - Dagster: troubleshooting/dagster.md
       - dbt: troubleshooting/dbt.md
@@ -54,6 +55,7 @@ nav:
       - IO Managers: reference/io-managers.md
       - Fiscal Year & Partitioning: reference/fiscal-year-partitioning.md
       - dbt Conventions: reference/dbt-conventions.md
+      - Marts Data Models: reference/marts-data-models.md
       - Automation Conditions: reference/automation-conditions.md
       - Gradebook Audit Data Model: reference/gradebook-audit-data-model.md
   - Automations: reference/automations.md
@@ -63,7 +65,11 @@ markdown_extensions:
   - attr_list
   - pymdownx.details
   - pymdownx.keys
-  - pymdownx.superfences
+  - pymdownx.superfences:
+      custom_fences:
+        - name: mermaid
+          class: mermaid
+          format: !!python/name:pymdownx.superfences.fence_code_format
   - pymdownx.emoji:
       emoji_index: !!python/name:material.extensions.emoji.twemoji
       emoji_generator: !!python/name:material.extensions.emoji.to_svg

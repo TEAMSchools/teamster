@@ -1,12 +1,11 @@
 with
     google_forms_questions as (
-        -- DISTINCT projects from response grain to question grain.
-        select distinct
-            fr.item_abbreviation as question_shortname,
-            fr.item_title as question_text,
-            fr.question_kind as question_type,
-        from {{ ref("int_google_forms__form_responses") }} as fr
-        where fr.item_abbreviation is not null and fr.item_title is not null
+        select
+            item_abbreviation as question_shortname,
+            item_title as question_text,
+            question_kind as question_type,
+        from {{ ref("int_google_forms__form__items") }}
+        where item_abbreviation is not null and item_title is not null
     ),
 
     scd_questions as (
@@ -19,25 +18,12 @@ with
     ),
 
     alchemer_questions as (
-        -- DISTINCT projects from response grain to question grain.
-        -- Sources Alchemer + Google Forms staff/student survey questions that
-        -- feed fct_survey_responses.general_responses.
-        select distinct
-            sr.question_shortname,
-            sr.question_title as question_text,
+        select
+            shortname as question_shortname,
+            title_english as question_text,
             cast(null as string) as question_type,
-        from {{ ref("int_surveys__survey_responses") }} as sr
-        where sr.question_shortname is not null
-    ),
-
-    manager_questions as (
-        -- DISTINCT projects from response grain to question grain.
-        select distinct
-            ms.question_shortname,
-            ms.question_title as question_text,
-            cast(null as string) as question_type,
-        from {{ ref("int_surveys__manager_survey_details") }} as ms
-        where ms.question_shortname is not null
+        from {{ source("alchemer", "stg_alchemer__survey_question") }}
+        where shortname is not null
     ),
 
     -- trunk-ignore(sqlfluff/ST03): referenced by string in dbt_utils.deduplicate
@@ -50,9 +36,6 @@ with
         union all
         select *,
         from alchemer_questions
-        union all
-        select *,
-        from manager_questions
     ),
 
     deduped as (

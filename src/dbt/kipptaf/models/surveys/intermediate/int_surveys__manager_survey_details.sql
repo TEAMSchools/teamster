@@ -1,3 +1,17 @@
+/*
+ * NOTE (post-#3899): This model is retained for two purposes only:
+ *  - The subject-of-evaluation overlay (subject_df_employee_number and
+ *    subject staff columns), joined onto submissions_grain in
+ *    fct_survey_submissions.
+ *  - The historic Alchemer Manager archive (survey_id =
+ *    'historic_alchemer_Manager_survey'), sourced directly by
+ *    fct_survey_submissions and dim_survey_administrations.
+ *
+ * Manager Survey respondent identity (live Google Forms) now flows through
+ * int_surveys__survey_responses, not this model. Do not extend the
+ * Google-Forms arm here; add new logic to int_surveys__survey_responses
+ * or wait for the int_surveys__survey_submissions extraction (#3918).
+ */
 with
     response_identifiers as (
         select
@@ -60,6 +74,7 @@ select
     ri.survey_id,
     ri.survey_title,
     ri.survey_response_id,
+    ri.survey_response_id as effective_survey_response_id,
     ri.date_started,
     ri.date_submitted,
     ri.campaign_academic_year,
@@ -120,6 +135,15 @@ select
     'historic_alchemer_Manager_survey' as survey_id,
     'Manager Survey' as survey_title,
     null as survey_response_id,
+
+    concat(
+        sda.respondent_df_employee_number,
+        '_',
+        sda.subject_df_employee_number,
+        '_',
+        sda.campaign_reporting_term
+    ) as effective_survey_response_id,
+
     null as date_started,
 
     timestamp(sda.date_submitted) as date_submitted,

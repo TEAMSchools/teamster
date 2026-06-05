@@ -175,26 +175,47 @@ def google_directory_user_create(
     if arrow.num_rows > 0:
         create_users = arrow.to_pylist()
 
-        create_errors = google_directory.batch_insert_users(create_users)
+        valid_users = []
+        for u in create_users:
+            if u.get("student_number") is None:
+                errors.append(
+                    {
+                        "primaryEmail": u["primaryEmail"],
+                        "error": "missing student_number; cannot set externalIds",
+                    }
+                )
+            else:
+                student_number = u.pop("student_number")
+                u["externalIds"] = [
+                    {
+                        "value": str(student_number),
+                        "type": "custom",
+                        "customType": "student_number",
+                    }
+                ]
+                valid_users.append(u)
 
-        for ce in create_errors:
-            context.log.error(msg=ce)
-            errors.append(ce)
+        if valid_users:
+            create_errors = google_directory.batch_insert_users(valid_users)
 
-        members_data = [
-            {
-                "groupKey": u["groupKey"],
-                "email": u["primaryEmail"],
-                "delivery_settings": "DISABLED",
-            }
-            for u in create_users
-        ]
+            for ce in create_errors:
+                context.log.error(msg=ce)
+                errors.append(ce)
 
-        members_errors = google_directory.batch_insert_members(members_data)
+            members_data = [
+                {
+                    "groupKey": u["groupKey"],
+                    "email": u["primaryEmail"],
+                    "delivery_settings": "DISABLED",
+                }
+                for u in valid_users
+            ]
 
-        for me in members_errors:
-            context.log.error(msg=me)
-            errors.append(me)
+            members_errors = google_directory.batch_insert_members(members_data)
+
+            for me in members_errors:
+                context.log.error(msg=me)
+                errors.append(me)
 
     yield Output(value=None)
     yield AssetCheckResult(
@@ -236,6 +257,9 @@ def google_directory_user_update(
 
     if arrow.num_rows > 0:
         update_users = arrow.to_pylist()
+
+        for u in update_users:
+            u.pop("student_number", None)
 
         errors = google_directory.batch_update_users(update_users)
 

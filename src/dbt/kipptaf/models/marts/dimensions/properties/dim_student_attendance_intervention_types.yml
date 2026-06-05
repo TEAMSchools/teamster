@@ -10,7 +10,7 @@ models:
       - name: intervention_type_key
         data_type: string
         description: >-
-          Surrogate key derived from region_name and
+          Surrogate key derived from _dbt_source_project and
           family_communication_reason. Primary key for this dimension.
         constraints:
           - type: primary_key
@@ -22,7 +22,8 @@ models:
       - name: region_key
         data_type: string
         description: >-
-          FK to dim_regions. Surrogate key derived from region_name.
+          FK to dim_regions. Surrogate key derived from business_unit_code
+          (mapped from _dbt_source_project).
         constraints:
           - type: foreign_key
             to: ref('dim_regions')

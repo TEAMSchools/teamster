@@ -12,14 +12,11 @@ with
             a.module_type,
             a.module_code,
             a.canonical_assessment_id,
-            a.canonical_title,
-            a.canonical_administered_at,
-            a.canonical_grade_level_id,
 
             region,
 
             coalesce(a.illuminate_grade_level_id, agl.grade_level_id) as grade_level_id,
-        from {{ ref("int_assessments__assessments") }} as a
+        from {{ ref("int_assessments__assessments_members") }} as a
         cross join unnest(a.regions_assessed_array) as region
         left join
             {{ ref("stg_illuminate__dna_assessments__assessment_grade_levels") }} as agl
@@ -57,9 +54,6 @@ with
             a.region,
             a.grade_level_id,
             a.canonical_assessment_id,
-            a.canonical_title,
-            a.canonical_administered_at,
-            a.canonical_grade_level_id,
 
             ssa.student_id as illuminate_student_id,
 
@@ -108,9 +102,6 @@ with
             ce.illuminate_grade_level_id as grade_level_id,
 
             a.canonical_assessment_id,
-            a.canonical_title,
-            a.canonical_administered_at,
-            a.canonical_grade_level_id,
 
             s.student_id as illuminate_student_id,
 
@@ -166,10 +157,11 @@ select
     ia.discipline,
     ia.cc_dcid,
     ia.cc_source_project,
+    ia.cc_dateenrolled,
+    ia.cc_dateleft,
+
+    concat('kipp', lower(ia.region)) as _dbt_source_project,
     ia.canonical_assessment_id,
-    ia.canonical_title,
-    ia.canonical_administered_at,
-    ia.canonical_grade_level_id,
 
     sa.student_assessment_id,
     sa.date_taken,
@@ -211,18 +203,19 @@ select
 
     cast(null as int64) as cc_dcid,
     cast(null as string) as cc_source_project,
+    cast(null as date) as cc_dateenrolled,
+    cast(null as date) as cc_dateleft,
+
+    concat('kipp', lower(str.region)) as _dbt_source_project,
 
     a.canonical_assessment_id,
-    a.canonical_title,
-    a.canonical_administered_at,
-    a.canonical_grade_level_id,
 
     sa.student_assessment_id,
     sa.date_taken,
 
     true as is_internal_assessment,
     true as is_replacement,
-from {{ ref("int_assessments__assessments") }} as a
+from {{ ref("int_assessments__assessments_members") }} as a
 inner join
     {{ ref("stg_illuminate__dna_assessments__students_assessments") }} as sa
     on a.assessment_id = sa.assessment_id
@@ -238,7 +231,8 @@ left join school_to_region as str on ssa.site_id = str.powerschool_school_id
 where
     a.is_internal_assessment
     and a.subject_area in ('Text Study', 'Mathematics', 'Social Studies', 'Science')
-    and a.grade_level <= 8
+    -- grade_level_id 9 = grade 8 (grade level = grade_level_id - 1)
+    and a.grade_level_id <= 9
 
 union all
 
@@ -269,18 +263,19 @@ select
 
     cast(null as int64) as cc_dcid,
     cast(null as string) as cc_source_project,
+    cast(null as date) as cc_dateenrolled,
+    cast(null as date) as cc_dateleft,
+
+    concat('kipp', lower(str.region)) as _dbt_source_project,
 
     a.canonical_assessment_id,
-    a.canonical_title,
-    a.canonical_administered_at,
-    a.canonical_grade_level_id,
 
     sa.student_assessment_id,
     sa.date_taken,
 
     false as is_internal_assessment,
     false as is_replacement,
-from {{ ref("int_assessments__assessments") }} as a
+from {{ ref("int_assessments__assessments_members") }} as a
 inner join
     {{ ref("stg_illuminate__dna_assessments__students_assessments") }} as sa
     on a.assessment_id = sa.assessment_id

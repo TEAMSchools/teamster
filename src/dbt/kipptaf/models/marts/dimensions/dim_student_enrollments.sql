@@ -3,7 +3,7 @@ select
         dbt_utils.generate_surrogate_key(
             [
                 "enr.student_number",
-                "enr._dbt_source_relation",
+                "enr._dbt_source_project",
                 "enr.academic_year",
                 "enr.entrydate",
             ]
@@ -22,8 +22,8 @@ select
     enr.cohort_primary as graduation_year,
     enr.is_retained_year,
 
-from {{ ref("base_powerschool__student_enrollments") }} as enr
+from {{ ref("int_powerschool__student_enrollment_union") }} as enr
 left join
     {{ ref("stg_powerschool__schools") }} as sch
     on enr.schoolid = sch.school_number
-    and {{ union_dataset_join_clause(left_alias="enr", right_alias="sch") }}
+    and enr._dbt_source_project = sch._dbt_source_project

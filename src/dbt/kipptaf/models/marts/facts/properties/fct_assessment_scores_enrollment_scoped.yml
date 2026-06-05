@@ -4,8 +4,10 @@ models:
       Enrollment-scoped assessment score fact table. One row per student x
       assessment x administration. Covers internal Illuminate assessments and
       state assessments (NJSLA, NJGPA, FAST). Scores are linked to a student
-      (via student_key) and an assessment administration (via
-      assessment_administration_key).
+      (via student_key), an assessment administration (via
+      assessment_administration_key), and — for internal assessments with a
+      resolvable course-section enrollment — to the student's section enrollment
+      (via student_section_enrollment_key).
     columns:
       - name: assessment_score_key
         data_type: string
@@ -41,9 +43,9 @@ models:
           FK to dim_students. Hashed on student_number (PowerSchool-sourced for
           internal Illuminate, NJ Pearson localstudentidentifier, and FL via
           FLEID lookup in int_fldoe__all_assessments). Null when the source
-          identifier does not resolve to a PowerSchool student (residual: ~12 FL
-          students missing FLEID in PS lookup, ~8 NJ Paterson Pearson identifier
-          mismatches — both tracked separately).
+          identifier does not resolve to a row in dim_students — for state
+          assessments, a left join validates that student_number exists in
+          dim_students before hashing.
 
         constraints:
           - type: foreign_key
@@ -55,6 +57,25 @@ models:
               arguments:
                 to: ref('dim_students')
                 field: student_key
+      - name: student_section_enrollment_key
+        data_type: string
+        description: >-
+          FK to dim_student_section_enrollments. The student's section
+          enrollment for the assessment's subject, resolved to the section
+          active on the date the assessment was taken (falling back to the
+          administration date). Populated only for internal assessments with a
+          resolvable course-section enrollment; null for state assessments,
+          replacement curriculum, ES Writing, and unresolved internal rows.
+        constraints:
+          - type: foreign_key
+            to: ref('dim_student_section_enrollments')
+            to_columns: [student_section_enrollment_key]
+            warn_unsupported: false
+        data_tests:
+          - relationships:
+              arguments:
+                to: ref('dim_student_section_enrollments')
+                field: student_section_enrollment_key
       - name: test_date_key
         data_type: date
         description: >-

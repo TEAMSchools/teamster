@@ -6,10 +6,15 @@ with
             a.module_code,
             a.academic_year,
 
-            cast(a.canonical_administered_at as date) as canonical_administered_date,
+            c.administered_date as canonical_administered_date,
 
             region,
-        from {{ ref("int_assessments__assessments") }} as a
+
+            concat('kipp', lower(region)) as _dbt_source_project,
+        from {{ ref("int_assessments__assessments_members") }} as a
+        inner join
+            {{ ref("int_assessments__assessments_canonical") }} as c
+            on a.canonical_assessment_id = c.canonical_assessment_id
         cross join unnest(a.regions_assessed_array) as region
         where a.is_internal_assessment
     )
@@ -22,10 +27,10 @@ select
                 "module_code",
                 "canonical_administered_date",
                 "academic_year",
-                "region",
-                "cast(null as string)",
+                "_dbt_source_project",
+                "null",
                 "canonical_assessment_id",
-                "cast(null as string)",
+                "null",
             ]
         )
     }} as assessment_administration_key,
@@ -36,7 +41,7 @@ select
                 "'illuminate'",
                 "module_code",
                 "member_assessment_id",
-                "cast(null as string)",
+                "null",
             ]
         )
     }} as assessment_key,

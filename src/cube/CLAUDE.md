@@ -49,8 +49,8 @@ school_calendars) go in `cubes/conformed/`.
   don't list measures under `members:`.
 - **Folder member naming.** Bare for top-cube members; `<prefix>_<member>` for
   `prefix: true` joins, where `<prefix>` is the last `join_path` segment — so
-  `dim_regions_region_name` for the two-hop
-  `attendance.dim_locations.dim_regions`.
+  `dim_regions_region_name` for
+  `attendance.dim_student_enrollments.dim_locations.dim_regions`.
 - **Branch schema validation is manual.** Cube Cloud Staging Environments don't
   auto-create from pushes. Open Cube Cloud → Data Model → Dev Mode → add branch
   by name to spin up a per-branch staging instance.
@@ -77,9 +77,17 @@ Default-deny, group-driven. Read [`cube.js`](cube.js) before modifying.
 
 - **`contextToGroups`** resolves the requester's email to `cube-*` Google
   Workspace groups via the Admin Directory API, cached until next midnight ET.
-  Two bypass paths (priority order):
-  - `CUBE_TESTING_USERS` — Cube Cloud testing/staging only, never production.
-  - `CUBE_GROUP_MAP` — local dev only, gated on `NODE_ENV !== "production"`.
+  `CUBE_GROUP_MAP` (local dev only, gated on `NODE_ENV !== "production"`) is the
+  sole bypass.
+- **Group membership is direct-only.** Admin Directory API's
+  `groups.list({userKey})` returns direct memberships; nested `cube-*` groups
+  don't transitively resolve. Flat-enroll users in every `cube-*` group they
+  need (scope tier + `cube-access-student-data`, plus `cube-access-staff-all`
+  for staff cubes).
+- **Cloud Identity `searchTransitiveGroups` is edition-gated** (Workspace
+  Enterprise / Education Plus / Cloud Identity Premium). On lower editions it
+  returns `INVALID_ARGUMENT`, not `PERMISSION_DENIED` — don't propose it as a
+  transitive-resolution fix without verifying the tenant's edition.
 - **`queryRewrite`** enforces three filters:
   - Strips dims/measures from `STUDENT_CUBES` for users without
     `cube-access-student-data`.
@@ -90,9 +98,17 @@ Default-deny, group-driven. Read [`cube.js`](cube.js) before modifying.
     segment unless the user has `cube-access-staff-all`.
 - **`STUDENT_CUBES` / `STAFF_CUBES` arrays.** Entries must match the cube
   `name:` field — `queryRewrite` matches via `startsWith` on
-  `<cube_name>.<member>` query members. Both arrays are currently placeholders
-  flagged TODO in `cube.js`; when adding a new student-data or staff-data cube,
-  append its `name:` to the matching array.
+  `<cube_name>.<member>` query members. When adding a new student-data or
+  staff-data cube, append its `name:` to the matching array.
+- **`SNAPSHOT_CUBES` / `SNAPSHOT_MEASURE_STEMS` arrays.** For cubes built on
+  fact tables with cumulative daily-status flags (values re-stamped on every row
+  — overcounts without a point-in-time anchor). `queryRewrite` auto-injects
+  `is_latest_record`, `is_month_end_record`, or `is_week_end_record` depending
+  on query granularity. To add a new domain: append the cube `name:` to
+  `SNAPSHOT_CUBES` and its snapshot measure name stems (e.g.
+  `"chronically_absent"`) to `SNAPSHOT_MEASURE_STEMS`. The cube must expose
+  `is_latest_record`, `is_month_end_record`, and `is_week_end_record`
+  dimensions.
 - **`canSwitchSqlUser`** only allows the SQL super-user to impersonate
   `@apps.teamschools.org` accounts (Superset integration). Do not broaden the
   suffix check.
@@ -101,7 +117,7 @@ Default-deny, group-driven. Read [`cube.js`](cube.js) before modifying.
 
 The `cube` MCP wraps Cube Cloud's REST API. Auth path that works:
 
-- Mint HS256 JWT locally per request from `CUBEJS_API_SECRET` (1P:
+- Mint HS256 JWT locally per request from `CUBE_API_SECRET` (1P:
   `op://Data Team/Cube Cloud REST API/credential`).
 - The **entire JWT payload is `securityContext`** — top-level `email` claim
   flows into `cube.js`'s `contextToGroups`. Not nested under
@@ -126,6 +142,54 @@ The `cube` MCP wraps Cube Cloud's REST API. Auth path that works:
   security-context delta, not a schema bug.
 - `queryRewrite` default-deny manifests as `WHERE (1 = 0)` plus
   `rlsAccessDenied` in `sortedDimensions` of `/sql` output.
+- **Branch endpoints**: `/staging/<branch>/cubejs-api/v1` is the per-branch
+  staging endpoint (stable, redeploys on push).
+  `/user/<urlencoded-email>/<id>/cubejs-api/v1` is the per-developer Dev Mode
+  endpoint. Only Dev Mode surfaces server `console.log` in the playground logs
+  panel — staging has no log UI. Debug `cube.js` code paths on Dev Mode.
+- **Branch staging configuration doesn't fully inherit from production.** Before
+  diagnosing API errors on a branch staging env, verify
+  `GOOGLE_DIRECTORY_SA_KEY` / `GOOGLE_DIRECTORY_SA_SUBJECT` (and any other
+  required secrets) are set on that environment.
+
+## Jinja in cube YAML
+
+Cube data models support Jinja macros and `{% set %}` variables for SQL snippet
+reuse. Before factoring with Jinja, check whether a dbt-derived dim column (e.g.
+`dim_dates.is_current_academic_year` from `{{ var("current_academic_year") }}`)
+is a better fit — keeps Cube and dbt in lockstep.
+
+## Measure filters and joined-cube references
+
+Measure `filters:` SQL substitutes dimension expressions at compile time,
+including `{other_cube.member}` references to joined cubes. Transitive joins
+auto-resolve; don't add redundant intermediate-hop joins. "Column not found" in
+a filter usually means the dimension SQL references a bare column on the
+filtering cube — route through `{joined_cube.col}` instead.
+
+## Cube can't classify an aggregate by a data-driven range
+
+Cube has no non-equi/range (BETWEEN) join, and a dimension can't reference a
+measure (only surface one via `sub_query`). Mapping an aggregated value to a
+band via per-row threshold rows (e.g. percent_correct → performance band) can't
+be expressed in Cube — materialize that classification upstream in dbt.
+
+## Testing Cube measures backed by new dbt columns
+
+When a cube YAML references a column added in this branch (not yet in
+`kipptaf_marts`), the playground errors: "Name X not found inside Y". To test
+before merge:
+
+1. Build in your dev schema:
+   `uv run dbt run --select <model> --project-dir src/dbt/kipptaf --target dev`
+   → creates `zz_<username>_kipptaf_marts.<model>`
+2. Temporarily change `sql_table` in the cube YAML to
+   `zz_<username>_kipptaf_marts.<table>`, commit, push
+3. Test in Dev Mode playground (or local `npm run dev` from `src/cube/`)
+4. Revert `sql_table` to `kipptaf_marts.<table>`, commit, push before merging
+
+The security hook flags `zz_*` schemas as an access-control regression —
+expected for the temporary test commit; acknowledge and revert.
 
 ## Operational notes
 

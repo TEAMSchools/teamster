@@ -863,6 +863,11 @@ models:
           GPA band than their current unweighted GPA
           (cumulative_y1_gpa_unweighted). False if bands are equal, improving,
           or either GPA value is null.
+      - name: aligned_gender
+        data_type: string
+        description: >
+          Full-word gender label derived from gender: 'F' = 'Female', 'M' =
+          'Male', 'X' = 'Non-Binary'.
       - name: enroll_status_string
         data_type: string
         description:

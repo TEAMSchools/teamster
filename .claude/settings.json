@@ -20,6 +20,8 @@
       "mcp__bigquery__list_dataset_ids",
       "mcp__bigquery__list_table_ids",
       "mcp__bigquery__search_catalog",
+      "mcp__claude_ai_Cube__meta",
+      "mcp__cloud-run__list_services",
       "mcp__context7__query-docs",
       "mcp__context7__resolve-library-id",
       "mcp__dagster__get_asset_check_executions",
@@ -151,10 +153,6 @@
       "Read(//home/vscode/.ssh/**)",
       "Read(//proc/**)",
       "Read(/env/**)"
-    ],
-    "additionalDirectories": [
-      "/workspaces/teamster/.worktrees/**",
-      "/workspaces/teamster/.claude/scratch/**"
     ]
   },
   "enabledMcpjsonServers": ["dagster", "bigquery", "dbt"],
@@ -196,7 +194,6 @@
   },
   "enabledPlugins": {
     "claude-md-management@claude-plugins-official": true,
-    "code-simplifier@claude-plugins-official": true,
     "commit-commands@claude-plugins-official": true,
     "dagster-expert@dagster": true,
     "dbt@dbt-agent-marketplace": true,

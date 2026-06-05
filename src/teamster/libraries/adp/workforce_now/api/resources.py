@@ -17,6 +17,10 @@ from tenacity import (
 )
 
 
+class AdpWorkforceNowError(Exception):
+    """Non-retryable ADP Workforce Now API error (deterministic 4xx response)."""
+
+
 class AdpWorkforceNowResource(ConfigurableResource):
     client_id: str
     client_secret: str
@@ -62,9 +66,10 @@ class AdpWorkforceNowResource(ConfigurableResource):
     @retry(
         stop=stop_after_attempt(5),
         wait=wait_exponential_jitter(initial=10, max=60),
-        retry=retry_if_exception_type(HTTPError),
+        retry=retry_if_exception_type((RequestsConnectionError, Timeout, HTTPError)),
     )
     def _request(self, method: str, url: str, **kwargs) -> Response:
+        kwargs.setdefault("timeout", (10, 60))
         response = self._session.request(method=method, url=url, **kwargs)
 
         try:
@@ -80,12 +85,17 @@ class AdpWorkforceNowResource(ConfigurableResource):
             return response
         except HTTPError as e:
             response_json = response.json()
+
+            # 429 (rate limited) and 5xx (server-side) errors are transient;
+            # re-raise the HTTPError so tenacity retries with backoff.
+            if response.status_code == 429 or response.status_code >= 500:
+                self._log.warning(msg=response_json)
+                raise
+
+            # other 4xx are deterministic client errors — surface a specific
+            # exception (never a bare Exception) and do not retry.
             self._log.error(msg=response_json)
-
-            if response.status_code == 429:
-                raise  # retryable via tenacity
-
-            raise Exception(response_json) from e
+            raise AdpWorkforceNowError(response_json) from e
 
     def post(
         self, endpoint: str, subresource: str, verb: str, payload: dict

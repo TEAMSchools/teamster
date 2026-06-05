@@ -13,11 +13,16 @@ views:
       Absent, Tardy, In-School Suspension, Out-of-School Suspension);
       attendance_code is the raw SIS code for specific drill-down. is_in_session
       and is_membership_day come from dim_school_calendars and are joined on
-      (date_key, location_key) to avoid a diamond path. For point-in-time
-      queries (e.g. is_truant on a specific date), filter to a single date_day.
-      Truancy criteria are regional: Miami uses 15+ absences in a 90-day rolling
-      window; NJ regions use projected 50+ absences for the year. Contains
-      direct student identifiers — see access_policy for PII gating.
+      (date_key, dim_student_enrollments.location_key). Contains direct student
+      identifiers — see access_policy for PII gating.
+
+      CA, tier, and truancy base measures default to year-end snapshots when
+      queried without an anchor — no filter required for year-over-year
+      comparisons. For a point-in-time result, add a single date_day equality
+      filter. For month-over-month or week-over-week trends, use the _month_end
+      or _week_end named measures. Truancy criteria are regional: Miami uses 15+
+      absences in a 90-day rolling window; NJ regions use projected 50+ absences
+      for the year.
 
     cubes:
       - join_path: attendance
@@ -25,13 +30,36 @@ views:
           - count_students
           - avg_daily_attendance
           - pct_tardy
+          - pct_ontime
           - count_truants
           - pct_truant
+          - count_truants_year_end
+          - pct_truant_year_end
+          - count_truants_month_end
+          - pct_truant_month_end
+          - count_truants_week_end
+          - pct_truant_week_end
+          - count_absent_days
+          - count_chronically_absent
+          - pct_chronically_absent
+          - pct_tier_1_2
+          - pct_tier_3
+          - count_chronically_absent_year_end
+          - pct_chronically_absent_year_end
+          - pct_tier_1_2_year_end
+          - pct_tier_3_year_end
+          - count_chronically_absent_month_end
+          - pct_chronically_absent_month_end
+          - pct_tier_1_2_month_end
+          - pct_tier_3_month_end
+          - count_chronically_absent_week_end
+          - pct_chronically_absent_week_end
+          - pct_tier_1_2_week_end
+          - pct_tier_3_week_end
           - attendance_date
-          - academic_year
-          - semester
           - attendance_code
           - attendance_category
+          - ada_tier
           - attendance_value
           - membership_value
           - present_weight
@@ -42,6 +70,10 @@ views:
           - is_iss
           - is_suspended
           - is_truant
+          - is_chronically_absent
+          - is_latest_record
+          - is_month_end_record
+          - is_week_end_record
 
       - join_path: attendance.dim_dates
         prefix: true
@@ -54,7 +86,7 @@ views:
           - day_of_week_name
           - is_weekday
 
-      - join_path: attendance.dim_locations
+      - join_path: attendance.dim_student_enrollments.dim_locations
         prefix: true
         includes:
           - location_name
@@ -63,7 +95,7 @@ views:
           - campus
           - city
 
-      - join_path: attendance.dim_locations.dim_regions
+      - join_path: attendance.dim_student_enrollments.dim_locations.dim_regions
         prefix: true
         includes:
           - region_name
@@ -91,11 +123,32 @@ views:
           - race
           - enrollment_status
           - is_gifted
+
+      - join_path: attendance.dim_student_ell_status
+        prefix: true
+        includes:
           - is_ell
+
+      - join_path: attendance.dim_student_iep_status
+        prefix: true
+        includes:
+          - is_iep
+          - iep_classification
+          - special_education_code
+          - special_education_name
+          - special_education_placement
+
+      - join_path: attendance.dim_student_meal_eligibility_status
+        prefix: true
+        includes:
+          - is_meal_eligible
+          - meal_eligibility
 
       - join_path: attendance.dim_terms
         prefix: true
         includes:
+          - academic_year
+          - semester
           - term_name
           - term_code
           - term_type
@@ -112,6 +165,7 @@ views:
           members:
             - attendance_code
             - attendance_category
+            - ada_tier
             - attendance_value
             - membership_value
             - present_weight
@@ -122,6 +176,7 @@ views:
             - is_iss
             - is_suspended
             - is_truant
+            - is_chronically_absent
         - name: Date
           members:
             - attendance_date
@@ -134,6 +189,8 @@ views:
             - dim_dates_is_weekday
         - name: Term
           members:
+            - dim_terms_academic_year
+            - dim_terms_semester
             - dim_terms_term_name
             - dim_terms_term_code
             - dim_terms_term_type
@@ -157,7 +214,14 @@ views:
             - dim_students_race
             - dim_students_enrollment_status
             - dim_students_is_gifted
-            - dim_students_is_ell
+            - dim_student_ell_status_is_ell
+            - dim_student_iep_status_is_iep
+            - dim_student_iep_status_iep_classification
+            - dim_student_iep_status_special_education_code
+            - dim_student_iep_status_special_education_name
+            - dim_student_iep_status_special_education_placement
+            - dim_student_meal_eligibility_status_is_meal_eligible
+            - dim_student_meal_eligibility_status_meal_eligibility
         - name: Enrollment
           members:
             - dim_student_enrollments_student_enrollment_key
@@ -172,8 +236,9 @@ views:
             - dim_school_calendars_is_membership_day
         - name: Filter
           members:
-            - academic_year
-            - semester
+            - is_latest_record
+            - is_month_end_record
+            - is_week_end_record
 
     access_policy:
       - group: cube-access-student-data

@@ -44,6 +44,11 @@ with
 select
     ar.* except (lep_status, lunchstatus, spedlep, prevstudentid),
 
+    -- Pearson reports the KIPP student_number as LocalStudentIdentifier for all
+    -- NJ regions, including Paterson (#4103); no legacy district-id translation
+    -- is needed. prevstudentid is the pre-KIPP Paterson SIS id and never matches.
+    ar.student_number as pearson_local_student_identifier,
+
     /* regional differences */
     suf.fleid,
     suf.newark_enrollment_number,
@@ -193,12 +198,6 @@ select
         )
         + 1
     ) as salesforce_graduation_year,
-
-    if(
-        ar.region = 'Paterson' and ar.academic_year <= 2024,
-        ar.prevstudentid,
-        ar.student_number
-    ) as pearson_local_student_identifier,
 
 from with_region as ar
 left join

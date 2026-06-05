@@ -275,7 +275,7 @@ models:
           status. Cast from source string at the mart layer.
 
       - name: phone_interview_score
-        data_type: string
+        data_type: int64
         description: Score assigned during the phone interview.
 
       - name: url
