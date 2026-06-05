@@ -1,35 +1,87 @@
 models:
   - name: rpt_tableau__state_assessments_dashboard_comps
+    description: >
+      Region-level KIPP proficiency rates joined to Google Sheets benchmark
+      comparisons, producing one row per assessment, test code, region,
+      comparison entity, and demographic subgroup. Includes flags for whether
+      KIPP matched or outperformed the comparison entity. Used in the state
+      assessments Tableau dashboard.
     columns:
       - name: academic_year
         data_type: int64
+        description: School year in which the assessment was administered.
       - name: school_level
         data_type: string
+        description: School level derived from test_code (ES, MS, HS).
       - name: grade_range_band
         data_type: string
+        description: Grade range derived from test_code (e.g. 3-5, 6-8).
       - name: assessment_name
         data_type: string
+        description:
+          Top-level assessment program name (e.g. NJSLA, NJGPA, FCAT).
       - name: discipline
         data_type: string
+        description: Subject discipline (ELA, Math, Science).
       - name: test_code
         data_type: string
+        description:
+          Subject-and-grade test code (e.g. ELA03, MAT08). ALG01 suffix
+          stripped.
       - name: region
         data_type: string
+        description: KTAF region (Camden, Newark, Paterson, Miami).
       - name: comparison_entity
         data_type: string
+        description: >
+          Entity being compared against (e.g. District, State, Region). Region
+          rows represent KTAF's own regional rate; other values are external
+          benchmarks from the Google Sheets comparison sheet.
       - name: comparison_demographic_group
         data_type: string
+        description: >
+          Broad demographic category for this row (Total, Gender, Aggregate
+          Ethnicity, Subgroup).
       - name: comparison_demographic_subgroup
         data_type: string
+        description: >
+          Specific demographic value within the group (e.g. All Students,
+          Female, Hispanic, Economically Disadvantaged, ML, Students With
+          Disabilities).
       - name: total_proficient_students
         data_type: float64
+        description: Count of students who scored proficient or above.
       - name: total_students
         data_type: int64
+        description: Total number of tested students in the aggregation group.
       - name: percent_proficient
         data_type: float64
+        description: Proportion of tested students scoring proficient or above.
       - name: region_matched
         data_type: boolean
+        description: >
+          True if KTAF's proficiency rate equals the comparison entity's rate
+          for the same assessment, test code, region, and demographic subgroup.
       - name: region_outperformed
         data_type: boolean
+        description: >
+          True if KTAF's proficiency rate exceeds the comparison entity's rate
+          for the same assessment, test code, region, and demographic subgroup.
       - name: region_matched_or_outperformed
         data_type: boolean
+        description: >
+          True if KTAF's proficiency rate meets or exceeds the comparison
+          entity's rate for the same assessment, test code, region, and
+          demographic subgroup.
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns:
+              - academic_year
+              - school_level
+              - assessment_name
+              - test_code
+              - region
+              - comparison_entity
+              - comparison_demographic_group
+              - comparison_demographic_subgroup

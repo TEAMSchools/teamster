@@ -290,6 +290,10 @@ select
     ) as student_slideback,
 
     case
+        e.gender when 'F' then 'Female' when 'M' then 'Male' when 'X' then 'Non-Binary'
+    end as aligned_gender,
+
+    case
         e.enroll_status
         when -2
         then 'Inactive'

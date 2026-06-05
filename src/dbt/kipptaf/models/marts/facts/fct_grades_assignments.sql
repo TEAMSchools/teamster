@@ -49,7 +49,7 @@ select
         dbt_utils.generate_surrogate_key(
             [
                 "asg.assignmentsectionid",
-                "asg._dbt_source_relation",
+                "asg._dbt_source_project",
                 "ce.students_dcid",
             ]
         )

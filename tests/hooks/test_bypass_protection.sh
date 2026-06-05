@@ -70,6 +70,27 @@ expect_deny "bash <<< base64 -d (unquoted)" Bash command 'bash <<< $(echo cHJpbn
 
 expect_allow "bash <(echo hello)" Bash command 'bash <(echo "echo hello")'
 
+# ─── Pattern 5/5a (#15): eval / dot-builtin / newline-split decode-to-shell ──
+echo ""
+echo -e "${YELLOW}Pattern 5/5a (#15): eval, dot-builtin, newline-split${NC}"
+
+# eval / source / dot builtin consuming a decode via $(...) or <(...)
+# trunk-ignore-begin(shellcheck/SC2016): $() must not expand — literal command strings
+expect_deny 'eval "$(base64 -d)"' Bash command 'eval "$(echo cHJpbnRlbnY= | base64 -d)"'
+expect_deny 'eval $(base64 --decode)' Bash command 'eval $(echo cHJpbnRlbnY= | base64 --decode)'
+# trunk-ignore-end(shellcheck/SC2016)
+expect_deny 'source <(base64 -d)' Bash command 'source <(echo cHJpbnRlbnY= | base64 -d)'
+expect_deny '. <(base64 -d) dot builtin' Bash command '. <(echo cHJpbnRlbnY= | base64 -d)'
+expect_deny 'eval <(xxd)' Bash command 'eval <(echo 7072696e74656e76 | xxd -r -p)'
+# decode and shell split across a newline (not a pipe/;) — flattened to ; (#15)
+expect_deny 'newline-split base64 -d then bash' Bash command $'base64 -d payload.b64 > /tmp/x.sh\nbash /tmp/x.sh'
+expect_deny 'newline-split xxd then sh' Bash command $'xxd -r -p p.hex > /tmp/x.sh\nsh /tmp/x.sh'
+
+# controls — eval/source/dot WITHOUT a decode must still pass
+expect_allow 'eval echo hello (no decode)' Bash command 'eval echo hello'
+expect_allow 'source script (no decode)' Bash command 'source ./scripts/setup.bash'
+expect_allow '. ./script.sh (dot, no decode)' Bash command '. ./scripts/setup.sh'
+
 # ─── Pattern 5b: Python runtime string construction ─────────────────────────
 echo ""
 echo -e "${YELLOW}Pattern 5b: Python runtime string construction${NC}"

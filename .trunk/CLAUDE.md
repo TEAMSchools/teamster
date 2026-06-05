@@ -15,18 +15,18 @@ subprocess.run(["git", "status"])
 
 ## Enabled Linters
 
-| Category | Linters                               |
-| -------- | ------------------------------------- |
-| Python   | ruff, pyright, bandit, isort          |
-| SQL      | sqlfluff, sqlfmt                      |
-| Shell    | shellcheck, shfmt                     |
-| YAML     | yamllint                              |
-| Markdown | markdownlint                          |
-| CI       | actionlint                            |
-| Docker   | hadolint                              |
-| Security | gitleaks, git-diff-check, osv-scanner |
-| Config   | prettier, taplo                       |
-| Images   | oxipng, svgo                          |
+| Category | Linters                                      |
+| -------- | -------------------------------------------- |
+| Python   | ruff, pyright, bandit, isort                 |
+| SQL      | sqlfluff, sqlfmt                             |
+| Shell    | shellcheck, shfmt                            |
+| YAML     | yamllint                                     |
+| Markdown | markdownlint                                 |
+| CI       | actionlint                                   |
+| Docker   | hadolint                                     |
+| Security | grype, gitleaks, git-diff-check, osv-scanner |
+| Config   | prettier, taplo                              |
+| Images   | oxipng, svgo                                 |
 
 ## Ignore Rules
 

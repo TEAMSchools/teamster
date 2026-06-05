@@ -258,6 +258,12 @@ Concretely: compare `stg_x.raw_col` (the staging input feeding the coalesce)
 against `int_x.override_col` (the override source), not `int_x.resolved_col`
 (the post-coalesce output).
 
+A source id can also be reported inconsistently across loads (e.g. Pearson
+`localstudentidentifier` arriving as either the legacy district id or the KIPP
+`student_number`), so a translation that looks like a no-op in today's data may
+be load-bearing for other loads. Verify across the value domain — not one
+snapshot — before removing it.
+
 ## Model Layer Distinctions
 
 - **`rpt_`** — analyst-built reporting views for external tools. Live in

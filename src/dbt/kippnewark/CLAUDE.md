@@ -24,8 +24,10 @@ PowerSchool data source: **ODBC** (`odbc.+enabled: true`,
 All of the following are materialized as tables via cross-project `ref()`:
 
 - `powerschool` (ODBC)
+- `amplify` — products selectively enabled per `dbt_project.yml`
 - `deanslist`
 - `edplan`
+- `finalsite`
 - `iready` — uses `iready_schema: kippnj_iready`
 - `overgrad`
 - `pearson`

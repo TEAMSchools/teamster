@@ -49,6 +49,12 @@ models:
           Proportion of students with an active IEP suspended at least once
           during the year. Null when no IEP students are present in the group.
         data_type: float64
+      - name: pct_suspended_no_iep_y1
+        description: >
+          Proportion of students with no active IEP suspended at least once
+          during the year. Null when no non-IEP students are present in the
+          group.
+        data_type: float64
       - name: pct_suspended_lep_y1
         description: >
           Proportion of English Language Learner students suspended at least
