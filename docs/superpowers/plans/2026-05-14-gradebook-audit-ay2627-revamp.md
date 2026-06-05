@@ -497,55 +497,26 @@ based on which approach produces cleaner scaffold code — and rename accordingl
   `(region, school_level, academic_year, quarter, assignment_category_code)`. No
   `week_number` — the model is quarter-grain.
 
-> ⚠️ **Blocked on PR #4077.** This task uses the intermediate model created by
-> the PS plugin integration (Camden/Paterson U_EXPECTATIONS). PR #4077 must be
-> merged and Dagster must have materialized the new model in prod before this
-> task can be executed. Details will be added once PR #4077 is complete.
+> ⚠️ **Pending merge of PR #4077.** PR #4077 (Camden U_EXPECTATIONS integration)
+> is approved. This task can proceed once #4077 is merged and Dagster has
+> materialized the new staging model in prod.
 
 ---
 
 ## Task 4: SQL — Update base views and tables
 
-### 4a: `base_powerschool__sections` — add `school_abbreviation` and `school_level` (prerequisite)
+### ~~4a: `base_powerschool__sections` — add `school_abbreviation` and `school_level`~~
 
-Must land before the teacher scaffold is built in step 6.1.
-
-**File:** `src/dbt/powerschool/models/sis/base/base_powerschool__sections.sql`
-
-- [ ] **Step 4a.1: Add both columns to the SELECT list**
-
-  Find `sch.name as school_name,` and add immediately after:
-
-  ```sql
-  sch.abbreviation as school_abbreviation,
-  sch.school_level,
-  ```
-
-- [ ] **Step 4a.2: Add columns to the properties YAML**
-
-  File:
-  `src/dbt/powerschool/models/sis/base/properties/base_powerschool__sections.yml`
-
-  ```yaml
-  - name: school_abbreviation
-    description:
-      Short school name abbreviation from stg_powerschool__schools, used as the
-      display name in Tableau dashboards.
-    data_type: string
-  - name: school_level
-    description: School level (ES, MS, or HS) from stg_powerschool__schools.
-    data_type: string
-  ```
-
-- [ ] **Step 4a.3: Build and verify**
-
-  ```bash
-  uv run dbt build \
-    --select base_powerschool__sections \
-    --project-dir src/dbt/kipptaf \
-    --defer \
-    --state src/dbt/kipptaf/target/prod
-  ```
+> **Superseded.** Originally planned to add `school_abbreviation` and
+> `school_level` to `base_powerschool__sections` in the `powerschool` package.
+> Reverted because the VSCode dbt extension cannot preview source-system package
+> models (the `star()` macro requires `--defer --state target/prod`, which the
+> extension does not pass). Per `src/dbt/CLAUDE.md`: _"For single-PR refactors,
+> add transformations at the kipptaf-level wrapper, not at package level."_
+>
+> These columns are sourced directly from `stg_powerschool__schools` via a new
+> join in the `teacher_master_schedule` CTE in **step 6a** instead. No changes
+> to the `powerschool` package are needed.
 
 ---
 
@@ -865,7 +836,7 @@ and the UNPIVOT list in `int_tableau__gradebook_audit_flags.sql`.
               s.courses_excludefromgpa as exclude_from_gpa,
               s.teachernumber as teacher_number,
               s.teacher_lastfirst as teacher_name,
-              s.school_abbreviation as school,
+              sch.abbreviation as school,
 
               r.sam_account_name as teacher_tableau_username,
               r.reports_to_employee_number as manager_employee_number,
@@ -882,7 +853,7 @@ and the UNPIVOT list in `int_tableau__gradebook_audit_flags.sql`.
               t.term_start_date as quarter_start_date,
               t.term_end_date as quarter_end_date,
               t.is_current_term,
-              s.school_level,
+              sch.school_level,
 
               initcap(
                   regexp_extract(s._dbt_source_relation, r'kipp(\w+)_')
@@ -901,6 +872,10 @@ and the UNPIVOT list in `int_tableau__gradebook_audit_flags.sql`.
                   as academic_year_display,
 
           from {{ ref("base_powerschool__sections") }} as s
+          left join
+              {{ ref("stg_powerschool__schools") }} as sch
+              on s.sections_schoolid = sch.school_number
+              and {{ union_dataset_join_clause(left_alias="s", right_alias="sch") }}
           left join
               {{ ref("int_people__staff_roster") }} as r
               on s.teachernumber = r.powerschool_teacher_number
@@ -1050,8 +1025,9 @@ and the UNPIVOT list in `int_tableau__gradebook_audit_flags.sql`.
   - No week columns
   - Manager columns added
   - `region` derived inline from `_dbt_source_relation`
-  - `school_level` and `school_abbreviation` from `base_powerschool__sections`
-    (requires step 4a to land first)
+  - `school_level` and `school_abbreviation` (`sch.school_level`,
+    `sch.abbreviation`) come from a `left join stg_powerschool__schools` — kept
+    at the kipptaf level per CLAUDE.md; step 4a was reverted
 
   _(Replace `[_unpivot]` with the actual model name decided in step 3.1.)_
 
