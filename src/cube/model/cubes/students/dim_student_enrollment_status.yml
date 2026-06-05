@@ -1,0 +1,79 @@
+cubes:
+  - name: dim_student_enrollment_status
+    public: false
+    sql_table: kipptaf_marts.dim_student_enrollment_status
+
+    dimensions:
+      - name: student_enrollment_key
+        sql: student_enrollment_key
+        type: string
+        primary_key: true
+
+      - name: is_ell
+        description: >-
+          TRUE if the student was classified as an English Language Learner
+          during this enrollment stint. FALSE when no ELL span exists for the
+          stint. Newark, Camden, and Paterson draw from historical LEP
+          entry/exit dates; Miami uses a single current-state span.
+        sql: is_ell
+        type: boolean
+        public: true
+
+      - name: is_iep
+        description: >-
+          TRUE if the student had an active Individualized Education Program
+          during this enrollment stint. Derived from the latest IEP span by
+          effective date.
+        sql: is_iep
+        type: boolean
+        public: true
+
+      - name: iep_classification
+        description: >-
+          IEP placement classification for this enrollment stint (latest span).
+          Examples: Resource Center, In-Class Resource, Self-Contained. NULL
+          when no IEP span exists.
+        sql: iep_classification
+        type: string
+        public: true
+
+      - name: special_education_code
+        description: >-
+          NJ state special education code (Newark and Camden only; NULL for
+          Miami and Paterson).
+        sql: special_education_code
+        type: string
+        public: true
+
+      - name: special_education_name
+        description: >-
+          Human-readable label for the NJ special education code (Newark and
+          Camden only; NULL for Miami and Paterson).
+        sql: special_education_name
+        type: string
+        public: true
+
+      - name: special_education_placement
+        description: >-
+          NJ special education placement category (Newark and Camden only; NULL
+          for Miami and Paterson).
+        sql: special_education_placement
+        type: string
+        public: true
+
+      - name: is_meal_eligible
+        description: >-
+          TRUE if the student was eligible for free, reduced-price, or direct
+          certification meals during this enrollment stint.
+        sql: is_meal_eligible
+        type: boolean
+        public: true
+
+      - name: meal_eligibility
+        description: >-
+          Meal eligibility category for this enrollment stint. Values: F (Free),
+          R (Reduced), FDC (Free Direct Certification), P (Paid), Unknown. NULL
+          when no meal span exists.
+        sql: meal_eligibility
+        type: string
+        public: true

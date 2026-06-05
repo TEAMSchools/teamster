@@ -96,8 +96,13 @@ fi
 
 # 1. Sensitive file/directory patterns (case-insensitive). Credential files added
 #    (#23): gcloud ADC application_default_credentials.json, git-credentials,
-#    netrc, and the 1Password CLI config dir (.config/op).
-if echo "${no_content}" | grep -qiE '\.env[.a-z]*|(^|[ /])(\.ssh|\.kube|\.pem|\.key|\.cer|secrets\.json|credentials\.json|application_default_credentials\.json|\.git-credentials|\.netrc|secret-volume)([ /]|$)|(^|[ /])(\.?/)?env(/|[ ]|$)|\.config/op([ /]|$)|\.devcontainer/tpl/'; then
+#    netrc, and the 1Password CLI config dir (.config/op). Dotenv templates
+#    (.env.example/.sample/.template/.dist) are placeholder files, not secrets —
+#    stripped from the dotenv branch only (#32); every other pattern still scans
+#    the full corpus.
+_env_scan=$(echo "${no_content}" | sed -E 's/\.env\.(example|sample|template|dist)([^a-zA-Z]|$)/\2/g')
+if echo "${_env_scan}" | grep -qiE '\.env[.a-z]*' ||
+  echo "${no_content}" | grep -qiE '(^|[ /])(\.ssh|\.kube|\.pem|\.key|\.cer|secrets\.json|credentials\.json|application_default_credentials\.json|\.git-credentials|\.netrc|secret-volume)([ /]|$)|(^|[ /])(\.?/)?env(/|[ ]|$)|\.config/op([ /]|$)|\.devcontainer/tpl/'; then
   deny
 fi
 
@@ -156,13 +161,21 @@ if [[ ${tool_name} == "bash" ]]; then
     deny
   fi
 
-  # 5. Encoding-based bypass detection (base64/hex piped, chained, or process-substituted)
-  if echo "${normalized}" | grep -qiE 'base64[[:space:]]+(-d|--decode).*(\||[;&]+).*(bash|sh|source)|\bxxd\b.*(\||[;&]+).*(bash|sh|source)|\bprintf[[:space:]]+.*\\x.*\|.*(bash|sh|source)'; then
+  # 5. Encoding-based bypass: a base64/hex decode feeding a shell interpreter.
+  #    Newlines flattened to ; so a decode and the consuming interpreter on
+  #    separate lines are caught (a pipe/`;` split across a newline previously
+  #    evaded the line-oriented grep). Consumers now include eval (#15).
+  _flat=${normalized//$'\n'/;}
+  if echo "${_flat}" | grep -qiE '(base64[[:space:]]+(-d|--decode)|\bxxd\b|\bprintf[[:space:]]+[^|;&]*\\x).*(\||[;&]+).*(bash|sh|source|eval)'; then
     deny
   fi
 
-  # 5a. Reverse order: bash/sh consuming process substitution or here-string with decode
-  if echo "${sanitized}" | grep -qiE '\b(bash|sh)\b.*<\(.*base64[[:space:]]+(-d|--decode)|\b(bash|sh)\b.*<<<.*base64[[:space:]]+(-d|--decode)|\b(bash|sh)\b.*<\(.*\bxxd\b'; then
+  # 5a. Reverse order: a shell interpreter (bash/sh/source/eval, or the `.` dot
+  #     builtin) consuming a process substitution <(...), here-string <<<, or
+  #     command substitution $(...) that runs a decode (#15). Scans `sanitized`
+  #     (quote/backslash-stripped) to keep the quote-split defense; these forms
+  #     are same-line, so the newline-flattening (Rule 5) is not needed here.
+  if echo "${sanitized}" | grep -qiE '\b(bash|sh|source|eval)\b.*(<\(|<<<|\$\().*(base64[[:space:]]+(-d|--decode)|\bxxd\b)|(^|[;&|][[:space:]]*)\.[[:space:]]+(<\(|\$\().*(base64[[:space:]]+(-d|--decode)|\bxxd\b)'; then
     deny
   fi
 
@@ -195,7 +208,7 @@ if [[ ${tool_name} == "bash" ]]; then
   # XDG_* enumerated explicitly (not XDG_[A-Z_]+) so $XDG_SESSION_SECRET et al.
   # are not swallowed by a wildcard (Finding 1).
   safe+='|XDG_CONFIG_HOME|XDG_DATA_HOME|XDG_CACHE_HOME|XDG_STATE_HOME|XDG_RUNTIME_DIR|XDG_CONFIG_DIRS|XDG_DATA_DIRS|XDG_SESSION_ID|XDG_SESSION_TYPE|XDG_SESSION_CLASS'
-  safe+='|PS[0-4]|IFS|PPID|UID|EUID|RANDOM|SECONDS|LINENO'
+  safe+='|PS[0-4]|IFS|PPID|UID|EUID|RANDOM|SECONDS|LINENO|_'
   safe+='|OSTYPE|MACHTYPE|HOSTTYPE|BASH_SOURCE|BASH_LINENO|BASH_REMATCH|BASHPID|BASH_VERSION|HISTSIZE|HISTCONTROL'
   # COMP_* enumerated explicitly (not COMP[A-Z_]*) so $COMP_TOKEN / $COMP_API_SECRET
   # are not swallowed by a wildcard (Finding 1).
@@ -211,7 +224,11 @@ if [[ ${tool_name} == "bash" ]]; then
   # boundary so a safe PREFIX cannot consume a longer secret var name
   # (e.g. $CI must strip, but $CI_SECRET / $USER_PASSWORD must not).
   stripped=$(echo "${sanitized}" | sed -E "s/\\$\\{?(${safe})\\}?([^A-Z0-9_]|\$)/\\2/g")
-  if echo "${stripped}" | grep -qE '\$\{?[A-Z_][A-Z0-9_]+\}?'; then
+  # Match single-char uppercase too ($X), not just multi-char ($AWS_SECRET) — the
+  # `*` quantifier instead of `+` (#27). Lowercase vars ($i / $file) stay ignored:
+  # env-secret names are uppercase by convention and matching loop vars would
+  # false-positive broadly. ($_ is on the safe list, so the `*` does not snag it.)
+  if echo "${stripped}" | grep -qE '\$\{?[A-Z_][A-Z0-9_]*\}?'; then
     deny
   fi
 
@@ -280,7 +297,7 @@ fi
 # update BOTH if adding a token type.
 if [[ ${tool_name} == webfetch ]] ||
   [[ ${tool_name} =~ ^mcp__.*(create|update|write|add|comment|upload|send|post|put|delete|append|insert|merge|push|reply) ]]; then
-  if echo "${path}" | grep -qiE 'op://|-----BEGIN (RSA |EC |OPENSSH )?PRIVATE KEY|PRIVATE KEY-----|AIza[0-9A-Za-z_-]{35}|ya29\.[0-9A-Za-z_-]+|goog_[a-zA-Z0-9_-]+|eyJ[A-Za-z0-9_-]{10,}\.eyJ[A-Za-z0-9_-]{10,}|ops_eyJ[A-Za-z0-9_-]{50,}|AKIA[0-9A-Z]{16}|(postgres(ql)?|mysql|mongodb(\+srv)?)://[^[:space:]]+:[^[:space:]]+@|"type"[[:space:]]*:[[:space:]]*"service_account"|gh[pusor]_[A-Za-z0-9_]{36,}|github_pat_[A-Za-z0-9_]{22,}'; then
+  if echo "${path}" | grep -qiE 'op://|-----BEGIN (RSA |EC |OPENSSH )?PRIVATE KEY|PRIVATE KEY-----|AIza[0-9A-Za-z_-]{35}|ya29\.[0-9A-Za-z_-]+|goog_[a-zA-Z0-9_-]+|eyJ[A-Za-z0-9_-]{10,}\.eyJ[A-Za-z0-9_-]{10,}|ops_eyJ[A-Za-z0-9_-]{50,}|AKIA[0-9A-Z]{16}|(postgres(ql)?|mysql|mongodb(\+srv)?)://[^[:space:]]+:[^[:space:]]+@|"type"[[:space:]]*:[[:space:]]*"service_account"|gh[pusor]_[A-Za-z0-9_]{36,}|github_pat_[A-Za-z0-9_]{22,}|xox[baprs]-[0-9A-Za-z-]{10,}|\b(sk|rk)_(live|test)_[0-9A-Za-z]{16,}|hooks\.slack\.com/services/[A-Za-z0-9/]+|aws_secret_access_key["[:space:]:=]+[A-Za-z0-9/+]{40}'; then
     deny
   fi
 fi

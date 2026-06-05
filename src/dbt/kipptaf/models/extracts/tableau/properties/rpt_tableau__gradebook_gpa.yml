@@ -103,11 +103,13 @@ models:
         data_type: int64
       - name: cumulative_y1_gpa
         data_type: float64
-      - name: cumulative_y1_gpa_unweighted
-        data_type: float64
       - name: cumulative_y1_gpa_projected
         data_type: float64
       - name: cumulative_y1_gpa_projected_s1
+        data_type: float64
+      - name: cumulative_y1_gpa_unweighted
+        data_type: float64
+      - name: cumulative_y1_gpa_projected_unweighted
         data_type: float64
       - name: cumulative_y1_gpa_projected_s1_unweighted
         data_type: float64

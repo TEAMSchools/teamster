@@ -5,8 +5,8 @@
       "args": []
     },
     "bigquery": {
-      "command": "/usr/local/bin/toolbox",
-      "args": ["--prebuilt", "bigquery", "--stdio"],
+      "command": "npx",
+      "args": ["-y", "@toolbox-sdk/server", "--prebuilt=bigquery", "--stdio"],
       "env": {
         "GOOGLE_APPLICATION_CREDENTIALS": "${HOME}/.config/gcloud/application_default_credentials.json",
         "BIGQUERY_PROJECT": "teamster-332318"

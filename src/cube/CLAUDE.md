@@ -28,12 +28,21 @@ school_calendars) go in `cubes/conformed/`.
 - **Cubes private, views public.** Every cube YAML gets `public: false` at the
   cube level. Dimensions/measures use `public: true` only when meant to be
   exposed via a view. Never flip a cube to `public: true`.
+- **Transformation lives in dbt, not cube.** Multi-table joins, window
+  functions, and derived grains (SCD2 period-intersection / status spines)
+  belong in a dbt mart read via `sql_table` — not inline cube `sql:`, which is
+  for thin column/expression shaping only. (Cube's own dbt guidance and the
+  `original_sql` pre-agg confirm this.)
 - **Naming.** Fact cubes unprefixed (`attendance`); dim cubes match the
   warehouse table (`dim_students`). View names are `<domain>_<grain>`
   (`attendance_detail`, `attendance_summary`). `sql_table` always points at
   `kipptaf_marts.<table>` — cubes never read district datasets directly.
 - **Joins use cube-reference syntax** (`{dim_x.col} = {CUBE}.col`), not raw
   identifiers. Dim joins from facts set `relationship: many_to_one`.
+- **Range/non-equi join predicates** (`BETWEEN`, `>=`) are valid in a join
+  `sql:` (Cube custom-calendar recipe). `many_to_one` fan-trap protection trusts
+  your declared `relationship` + `primary_key`, so any non-overlap invariant the
+  join relies on must be test-enforced upstream in dbt.
 - **Avoid diamond paths.** Two join paths to the same dim → either a compound
   join on the canonical path (see `attendance.yml` → `dim_school_calendars`) or
   a degenerate FK with no declared join (see
@@ -167,6 +176,13 @@ auto-resolve; don't add redundant intermediate-hop joins. "Column not found" in
 a filter usually means the dimension SQL references a bare column on the
 filtering cube — route through `{joined_cube.col}` instead.
 
+## Cube can't classify an aggregate by a data-driven range
+
+Cube has no non-equi/range (BETWEEN) join, and a dimension can't reference a
+measure (only surface one via `sub_query`). Mapping an aggregated value to a
+band via per-row threshold rows (e.g. percent_correct → performance band) can't
+be expressed in Cube — materialize that classification upstream in dbt.
+
 ## Testing Cube measures backed by new dbt columns
 
 When a cube YAML references a column added in this branch (not yet in
@@ -177,12 +193,17 @@ before merge:
    `uv run dbt run --select <model> --project-dir src/dbt/kipptaf --target dev`
    → creates `zz_<username>_kipptaf_marts.<model>`
 2. Temporarily change `sql_table` in the cube YAML to
-   `zz_<username>_kipptaf_marts.<table>`, commit, push
-3. Test in Dev Mode playground (or local `npm run dev` from `src/cube/`)
-4. Revert `sql_table` to `kipptaf_marts.<table>`, commit, push before merging
+   `zz_<username>_kipptaf_marts.<table>` — do NOT commit or push
+3. Test in local `npm run dev` from `src/cube/` (hot-reloads on file save, no
+   push required); or commit+push for Cube Cloud Dev Mode
+4. Revert `sql_table` to `kipptaf_marts.<table>` before committing
+
+For **snowflake sub-dims** (cubes joined one-to-one from a parent), swap
+`sql_table` on the sub-dim cube file, not the parent. The parent's `sql_table`
+stays pointed at prod; only the new sub-dim needs redirecting.
 
 The security hook flags `zz_*` schemas as an access-control regression —
-expected for the temporary test commit; acknowledge and revert.
+expected if you do commit the temporary change; acknowledge and revert.
 
 ## Operational notes
 

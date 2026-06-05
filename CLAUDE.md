@@ -154,7 +154,10 @@ file; domain specifics live in the nearest subdirectory CLAUDE.md.
 
 - **Built-in tools over Bash**: Use dedicated tools for file I/O (Read, Grep,
   Glob, Edit, Write). Bash is only for commands with no dedicated tool (`git`,
-  `uv run`, `gh`, `docker`, `trunk`, `ls`).
+  `uv run`, `gh`, `docker`, `trunk`, `ls`). On the VSCode-extension (native)
+  build of Claude Code ≥2.1.117, Grep/Glob are folded into Bash and absent as
+  standalone tools (`Grep` → "No such tool available") — search with `rg`/`grep`
+  via Bash instead.
 
 - **Don't pipe `Bash(run_in_background=true)` output through
   `head`/`tail`/`grep`**. The pipe truncates what reaches the output file —
@@ -483,6 +486,10 @@ To verify which SA a GKE pod authenticates as, query Cloud Audit logs with
 
 Truncates results at 50 rows. When querying `INFORMATION_SCHEMA.COLUMNS` for
 wide tables, paginate with `WHERE ordinal_position > N`.
+
+`<dataset>.__TABLES__` exposes `last_modified_time` and `type` (1=table, 2=view)
+— use it to check whether a model rebuilt or is a live view.
+`INFORMATION_SCHEMA.TABLES` has neither.
 
 Hyphenated identifiers in INFORMATION_SCHEMA paths need backticks — `region-us`
 as a bare token fails with "Syntax error: Expected end of input but got '-'".
