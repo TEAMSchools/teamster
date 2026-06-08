@@ -16,6 +16,7 @@ with
             wa.primaryindicator as primary_indicator,
             wa.managementpositionindicator as management_position_indicator,
             wa.voluntaryindicator as voluntary_indicator,
+            wa.rehireeligibleindicator as rehire_eligible_indicator,
             wa.fulltimeequivalenceratio as full_time_equivalence_ratio,
 
             wa.assignmentstatus.statuscode.codevalue
@@ -127,6 +128,10 @@ with
             wa.jobcode.codevalue as job_code__code_value,
             wa.jobcode.longname as job_code__long_name,
             wa.jobcode.shortname as job_code__short_name,
+
+            wa.jobfunctioncode.codevalue as job_function_code__code_value,
+            wa.jobfunctioncode.longname as job_function_code__long_name,
+            wa.jobfunctioncode.shortname as job_function_code__short_name,
 
             wa.paycyclecode.codevalue as pay_cycle_code__code_value,
             wa.paycyclecode.longname as pay_cycle_code__long_name,
@@ -267,6 +272,8 @@ with
 
             date(wa.jobcode.effectivedate) as job_code__effective_date,
 
+            date(wa.jobfunctioncode.effectivedate) as job_function_code__effective_date,
+
             date(wa.paycyclecode.effectivedate) as pay_cycle_code__effective_date,
 
             date(
@@ -303,6 +310,7 @@ select
     primary_indicator,
     management_position_indicator,
     voluntary_indicator,
+    rehire_eligible_indicator,
     full_time_equivalence_ratio,
     assignment_status__status_code__code_value,
     assignment_status__status_code__long_name,
@@ -356,6 +364,9 @@ select
     job_code__code_value,
     job_code__long_name,
     job_code__short_name,
+    job_function_code__code_value,
+    job_function_code__long_name,
+    job_function_code__short_name,
     pay_cycle_code__code_value,
     pay_cycle_code__long_name,
     pay_cycle_code__short_name,
@@ -419,6 +430,7 @@ select
     home_work_location__address__type_code__effective_date,
     home_work_location__name_code__effective_date,
     job_code__effective_date,
+    job_function_code__effective_date,
     pay_cycle_code__effective_date,
     standard_hours__unit_code__effective_date,
     wage_law_coverage__coverage_code__effective_date,
