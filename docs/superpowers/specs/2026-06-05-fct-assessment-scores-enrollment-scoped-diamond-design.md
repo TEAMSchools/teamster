@@ -146,27 +146,38 @@ course mapping fall through to Tier 2 (homeroom).
 
 ### 3. State test date — thread it through (do not bypass the intermediates)
 
-A real per-student test date exists in the raw state sources and is dropped at
-the staging projection:
+A real per-student test date exists in the raw state sources and is dropped
+before it reaches the fact. **Where it lives differs by source, and part of the
+threading is cross-project** (verified against prod `INFORMATION_SCHEMA`):
 
-- **Pearson (NJ):** `src_pearson__{parcc,njsla,njsla_science,njgpa}` carry
-  `unit{1..4}onlineteststartdatetime` / `...enddatetime` and
-  `paperattemptcreatedate` / `attemptcreatedate`. Derive one `test_date` (e.g.
-  earliest online unit start, coalesced with the paper attempt date) in the
-  `stg_pearson__*` models, which currently omit them.
-- **FLDOE (FL):** `src_fldoe__{fast,eoc,science}` carry `date_taken` and
-  `test_completion_date`; `stg_fldoe__fast` already casts `date_taken` to
-  `DATE`. Carry `date_taken` through (cast the `eoc` / `science` string
-  versions).
+- **NJSLA / NJSLA Science / PARCC:** kipptaf `stg_pearson__*` **already expose**
+  `unit{1..4}online{start,end}datetime` (9–10 cols each). Kipptaf-only: derive
+  one `test_date` (earliest online unit start, coalesced with the paper attempt
+  date) on the `stg_pearson__*` models and add it to the
+  `int_pearson__all_assessments` `union_relations` `include` list +
+  `transformations` select.
+- **NJGPA:** kipptaf `stg_pearson__njgpa` does **not** expose the unit datetimes
+  — they are dropped upstream (pearson package / `kipppaterson`
+  `int_pearson__njgpa` intersection). Threading NJGPA requires an upstream
+  (cross-project) change; scope/confirm during the plan.
+- **FLDOE (FAST / EOC / Science):** `kippmiami stg_fldoe__*` parse `date_taken`
+  (and `test_completion_date`) to `DATE`, but the **district**
+  `int_fldoe__all_assessments` (which kipptaf unions via
+  `source("kippmiami_fldoe", …)`) does not select it. Cross-project: add
+  `date_taken` to the **kippmiami** `int_fldoe__all_assessments`, then carry it
+  through the kipptaf one.
 
-Thread that `test_date` up through `int_pearson__all_assessments` and
-`int_fldoe__all_assessments` (additive column) so the fact and resolver get a
-real date. **We keep sourcing the `int_*__all_assessments` models** — they do
-the multi-test-type union + crosswalk + standardization the fact needs;
-bypassing them to read staging directly would duplicate that. The fix is to stop
-the intermediates from dropping the date, not to route around them. These are
-kipptaf-level staging/intermediate models reading raw district sources that
-already contain the columns, so the change is single-PR and additive.
+**We keep sourcing the `int_*__all_assessments` models** — they do the
+multi-test-type union + crosswalk + standardization the fact needs; bypassing
+them to read staging directly would duplicate that. The fix is to stop the
+intermediates from dropping the date.
+
+**Sequencing:** the FLDOE (and NJGPA) pieces touch district/package models
+consumed by kipptaf via `source()`, so per `src/dbt/CLAUDE.md` ("kipptaf source
+consumers of district columns") they need either a **two-PR district-first
+sequence** or the **single-PR cross-project clone workflow**
+(`src/dbt/kipptaf/CLAUDE.md`). The NJSLA/Science/PARCC slice and everything from
+the resolver down is kipptaf-only.
 
 ### 4. `fct_assessment_scores_enrollment_scoped` (the fact)
 
