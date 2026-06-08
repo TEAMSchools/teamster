@@ -32,7 +32,7 @@ with
             coalesce(student_id, fleid) as student_id,
 
             coalesce(
-                safe_cast(date_taken as date), parse_date('%m/%d/%Y', date_taken)
+                safe_cast(date_taken as date), safe.parse_date('%m/%d/%Y', date_taken)
             ) as test_date,
 
             regexp_extract(
