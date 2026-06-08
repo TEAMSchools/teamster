@@ -210,6 +210,10 @@ with
             person.racecode.identificationmethodcode.shortname
             as person__race_code__identification_method_code__short_name,
 
+            person.religioncode.codevalue as person__religion_code__code_value,
+            person.religioncode.longname as person__religion_code__long_name,
+            person.religioncode.shortname as person__religion_code__short_name,
+
             /* repeated records */
             photos,
             work_assignments,
@@ -239,6 +243,7 @@ with
             person.communication.emails as person__communication__emails,
             person.communication.landlines as person__communication__landlines,
             person.communication.mobiles as person__communication__mobiles,
+            person.communication.pagers as person__communication__pagers,
 
             person.customfieldgroup.codefields
             as person__custom_field_group__code_fields,
@@ -340,6 +345,10 @@ with
             date(
                 person.racecode.identificationmethodcode.effectivedate
             ) as person__race_code__identification_method_code__effective_date,
+
+            date(
+                person.religioncode.effectivedate
+            ) as person__religion_code__effective_date,
 
             /* year can be masked as 0000 */
             safe_cast(person.birthdate as date) as person__birth_date,
