@@ -448,7 +448,7 @@ based on which approach produces cleaner scaffold code — and rename accordingl
 - Modify:
   `src/dbt/kipptaf/models/extracts/tableau/intermediate/int_tableau__gradebook_audit_student_scaffold.sql`
 
-- [ ] **Step 3.1: Create the INT expectations model**
+- [x] **Step 3.1: Create the INT expectations model**
 
   Create
   `src/dbt/kipptaf/models/powerschool/intermediate/int_powerschool__u_expectations[_unpivot].sql`.
@@ -478,7 +478,7 @@ based on which approach produces cleaner scaffold code — and rename accordingl
   Whether the UNPIVOT happens inside this model or in the scaffold is a decision
   to make at implementation time (see naming note above).
 
-- [ ] **Step 3.1b: Build and verify the INT model**
+- [x] **Step 3.1b: Build and verify the INT model**
 
   ```bash
   uv run dbt build \
@@ -488,7 +488,7 @@ based on which approach produces cleaner scaffold code — and rename accordingl
     --state src/dbt/kipptaf/target/prod
   ```
 
-- [ ] **Step 3.2: Create the YAML for the new INT model**
+- [x] **Step 3.2: Create the YAML for the new INT model**
 
   Create the properties file at
   `src/dbt/kipptaf/models/powerschool/intermediate/properties/int_powerschool__u_expectations[_unpivot].yml`.
@@ -528,7 +528,7 @@ Drop it using BigQuery `SELECT * EXCEPT`.
 **File:**
 `src/dbt/kipptaf/models/google/sheets/staging/stg_google_sheets__gradebook_flags.sql`
 
-- [ ] **Step 4b.1: Update the SELECT**
+- [x] **Step 4b.1: Update the SELECT**
 
   Change:
 
@@ -548,14 +548,14 @@ Drop it using BigQuery `SELECT * EXCEPT`.
   from {{ source("google_sheets", "src_google_sheets__gradebook_flags") }}
   ```
 
-- [ ] **Step 4b.2: Remove `grade_level` from the YAML**
+- [x] **Step 4b.2: Remove `grade_level` from the YAML**
 
   File:
   `src/dbt/kipptaf/models/google/sheets/staging/properties/stg_google_sheets__gradebook_flags.yml`
 
   Delete the `grade_level` column entry.
 
-- [ ] **Step 4b.3: Build and verify**
+- [x] **Step 4b.3: Build and verify**
 
   ```bash
   uv run dbt build \
@@ -573,7 +573,7 @@ Drop it using BigQuery `SELECT * EXCEPT`.
 **File:**
 `src/dbt/kipptaf/models/students/intermediate/int_extracts__student_enrollments.sql`
 
-- [ ] **Step 4c.1: Add boolean column**
+- [x] **Step 4c.1: Add boolean column**
 
   In the final `select`, after `ada_above_or_at_80` and GPA columns (ST06
   ordering — logicals after plain refs):
@@ -586,7 +586,7 @@ Drop it using BigQuery `SELECT * EXCEPT`.
   ) as is_ada_above_or_at_80_cum_gpa_less_2,
   ```
 
-- [ ] **Step 4c.2: Add column to YAML**
+- [x] **Step 4c.2: Add column to YAML**
 
   File:
   `src/dbt/kipptaf/models/students/intermediate/properties/int_extracts__student_enrollments.yml`
@@ -599,7 +599,7 @@ Drop it using BigQuery `SELECT * EXCEPT`.
     data_type: boolean
   ```
 
-- [ ] **Step 4c.3: Build and verify**
+- [x] **Step 4c.3: Build and verify**
 
   ```bash
   uv run dbt build \

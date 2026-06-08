@@ -63,7 +63,10 @@ select
     week_end_sunday,
     notes,
 
+    assignment_category_code,
     expectation,
+
+    {{ var("current_academic_year") }} as academic_year,
 
     concat(assignment_category_code, right(`quarter`, 1)) as assignment_category_term,
 

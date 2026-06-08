@@ -31,30 +31,9 @@ with
         left join
             {{ ref("int_people__staff_roster") }} as r
             on s.teachernumber = r.powerschool_teacher_number
-        left join
-            /* permanently remove rows from the gradebook audit dash based on course
-            number */
-            {{ ref("stg_google_sheets__gradebook_exceptions") }} as e1
-            on s.terms_academic_year = e1.academic_year
-            and s.sections_course_number = e1.course_number
-            and e1.view_name = 'teacher_scaffold'
-            and e1.cte = 'sections'
-            and e1.school_id is null
-        left join
-            /* permanently remove rows from the gradebook audit dash based on course
-            number for certain schools only */
-            {{ ref("stg_google_sheets__gradebook_exceptions") }} as e2
-            on s.terms_academic_year = e2.academic_year
-            and s.sections_schoolid = e2.school_id
-            and s.sections_course_number = e2.course_number
-            and e2.view_name = 'teacher_scaffold'
-            and e2.cte = 'sections'
-            and e2.school_id is not null
         where
             s.terms_academic_year = {{ var("current_academic_year") }}
             and s.sections_no_of_students != 0
-            and e1.include_row is null
-            and e2.include_row is null
     ),
 
     term_weeks as (
@@ -246,38 +225,6 @@ with
             and tw.academic_year = ge.academic_year
             and tw.quarter = ge.quarter
             and tw.week_number_quarter = ge.week_number
-        /* permanently remove rows for certain gradebook category(s) from the entire
-           gradebook audit dash by course_number */
-        left join
-            {{ ref("stg_google_sheets__gradebook_exceptions") }} as e1
-            on tw.academic_year = e1.academic_year
-            and tw.course_number = e1.course_number
-            and ge.assignment_category_code = e1.gradebook_category
-            and e1.view_name = 'teacher_category_scaffold'
-            and e1.cte = 'final'
-        /* permanently remove rows for certain gradebook category(s) from the entire
-           gradebook audit dash by course_number for a region */
-        left join
-            {{ ref("stg_google_sheets__gradebook_exceptions") }} as e2
-            on tw.academic_year = e2.academic_year
-            and tw.course_number = e2.course_number
-            and tw.region = e2.region
-            and ge.assignment_category_code = e2.gradebook_category
-            and e2.view_name = 'teacher_category_scaffold'
-            and e2.cte = 'final'
-        /* permanently remove rows for certain gradebook category(s) from the entire
-           gradebook audit dash by credit type for a region/school level */
-        left join
-            {{ ref("stg_google_sheets__gradebook_exceptions") }} as e3
-            on tw.academic_year = e3.academic_year
-            and tw.credit_type = e3.credit_type
-            and tw.region = e3.region
-            and tw.school_level = e3.school_level
-            and ge.assignment_category_code = e3.gradebook_category
-            and e3.view_name = 'teacher_category_scaffold'
-            and e3.cte = 'final'
-        where
-            e1.include_row is null and e2.include_row is null and e3.include_row is null
     )
 
 select
@@ -291,26 +238,3 @@ select
     ) as is_current_week,
 
 from final as f
-/* temporarily remove rows from the entire gradebook audit dash when EOQ is false
-   by region/school level and credit type */
-left join
-    {{ ref("stg_google_sheets__gradebook_exceptions") }} as e1
-    on f.academic_year = e1.academic_year
-    and f.region = e1.region
-    and f.school_level = e1.school_level
-    and f.credit_type = e1.credit_type
-    and f.is_quarter_end_date_range = e1.is_quarter_end_date_range
-    and e1.view_name = 'teacher_scaffold'
-    and e1.cte is null
-/* temporarily remove rows from the entire gradebook audit dash when EOQ is false
-   by region/school level and course number */
-left join
-    {{ ref("stg_google_sheets__gradebook_exceptions") }} as e2
-    on f.academic_year = e2.academic_year
-    and f.region = e2.region
-    and f.school_level = e2.school_level
-    and f.course_number = e2.course_number
-    and f.is_quarter_end_date_range = e2.is_quarter_end_date_range
-    and e2.view_name = 'teacher_scaffold'
-    and e2.cte is null
-where e1.include_row is null and e2.include_row is null

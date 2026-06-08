@@ -41,21 +41,17 @@ select
     a.scoretype,
     a.totalpointvalue,
 
-    if(e.include_row is null, asg.n_students, null) as n_students,
-    if(e.include_row is null, asg.n_late, null) as n_late,
-    if(e.include_row is null, asg.n_exempt, null) as n_exempt,
-    if(e.include_row is null, asg.n_missing, null) as n_missing,
-    if(e.include_row is null, asg.n_academic_dishonesty, null) as n_academic_dishonesty,
-    if(e.include_row is null, asg.n_null, null) as n_null,
-    if(e.include_row is null, asg.n_is_null_missing, null) as n_is_null_missing,
-    if(e.include_row is null, asg.n_is_null_not_missing, null) as n_is_null_not_missing,
-    if(e.include_row is null, asg.n_expected, null) as n_expected,
-    if(e.include_row is null, asg.n_expected_scored, null) as n_expected_scored,
-    if(
-        e.include_row is null,
-        asg.teacher_avg_score_for_assign_per_class_section_and_assign_id,
-        null
-    ) as teacher_avg_score_for_assign_per_class_section_and_assign_id,
+    asg.n_students,
+    asg.n_late,
+    asg.n_exempt,
+    asg.n_missing,
+    asg.n_academic_dishonesty,
+    asg.n_null,
+    asg.n_is_null_missing,
+    asg.n_is_null_not_missing,
+    asg.n_expected,
+    asg.n_expected_scored,
+    asg.teacher_avg_score_for_assign_per_class_section_and_assign_id,
 
     if(
         sec.assignment_category_code = 'W' and a.totalpointvalue != 10, true, false
@@ -106,15 +102,4 @@ left join
     assignment_score_rollup as asg
     on a.assignmentsectionid = asg.assignmentsectionid
     and {{ union_dataset_join_clause(left_alias="a", right_alias="asg") }}
--- temporarily remove rows for assignmnent_rollup calcs during non-eoq times
-left join
-    {{ ref("stg_google_sheets__gradebook_exceptions") }} as e
-    on sec.academic_year = e.academic_year
-    and sec.region = e.region
-    and sec.course_number = e.course_number
-    and sec.is_quarter_end_date_range = e.is_quarter_end_date_range
-    and e.view_name = 'assignments_teacher'
-    and e.cte is null
-    and e.course_number is not null
-    and e.is_quarter_end_date_range is not null
 where sec.scaffold_name = 'teacher_category_scaffold'

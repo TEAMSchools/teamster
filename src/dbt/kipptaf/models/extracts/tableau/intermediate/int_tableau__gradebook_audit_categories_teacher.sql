@@ -8,16 +8,6 @@ with
             countif(s.is_expected_scored) as n_expected_scored,
 
         from {{ ref("int_powerschool__gradebook_assignments_scores") }} as s
-        left join
-            {{ ref("stg_google_sheets__gradebook_exceptions") }} as e1
-            on s.academic_year = e1.academic_year
-            and s.region = e1.region
-            and s.school_level_alt = e1.school_level
-            and s.credit_type = e1.credit_type
-            and e1.view_name = 'categories_teacher'
-            and e1.cte = 'assignment_score_rollup'
-            and e1.credit_type is not null
-        where e1.include_row is null
         group by s._dbt_source_relation, s.assignmentsectionid
     ),
 
@@ -294,13 +284,3 @@ select
     ) as qt_teacher_s_total_less_100,
 
 from final as f
-left join
-    {{ ref("stg_google_sheets__gradebook_exceptions") }} as e
-    on f.academic_year = e.academic_year
-    and f.region = e.region
-    and f.course_number = e.course_number
-    and f.is_quarter_end_date_range = e.is_quarter_end_date_range
-    and e.view_name = 'categories_teacher'
-    and e.cte is null
-    and e.is_quarter_end_date_range is not null
-where e.include_row is null

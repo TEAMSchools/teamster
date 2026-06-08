@@ -12,7 +12,7 @@ models:
               - region
               - school_level
               - quarter
-              - assignment_category_term
+              - assignment_category_code
     columns:
       - name: region
         data_type: string
@@ -36,10 +36,18 @@ models:
         description: Sunday of the school week represented by week_number_qtd.
       - name: notes
         data_type: string
+      - name: assignment_category_code
+        data_type: string
+        description: Single-letter category code (W, H, F, or S).
       - name: expectation
         data_type: int64
         description:
           Count of expected assignments for this category as of week_number_qtd.
+      - name: academic_year
+        data_type: int64
+        description: >
+          Academic year (starting year). Always current_academic_year — the
+          model filters to one year only.
       - name: assignment_category_term
         data_type: string
         description:
