@@ -46,6 +46,10 @@ select
             then
                 date(
                     least(
+                        -- safe_cast fails on no-seconds strings (e.g. '2022-05-10
+                        -- 09:26');
+                        -- safe.parse_datetime('%Y-%m-%d %H:%M', ...) is load-bearing
+                        -- for that format
                         coalesce(
                             safe_cast(unit1onlineteststartdatetime as timestamp),
                             cast(
