@@ -10,3 +10,6 @@ models:
               - id
           config:
             severity: error
+    columns:
+      - name: _dbt_source_project
+        data_type: string

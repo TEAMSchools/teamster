@@ -48,6 +48,7 @@ with
     mia_territory as (
         select
             _dbt_source_relation,
+            _dbt_source_project,
             roster_name as territory,
             student_school_id,
 
@@ -100,6 +101,7 @@ with
     gpa_bands as (
         select
             _dbt_source_relation,
+            _dbt_source_project,
             schoolid,
             studentid,
 
@@ -399,7 +401,7 @@ left join
 left join
     mia_territory as mt
     on e.student_number = mt.student_school_id
-    and {{ union_dataset_join_clause(left_alias="e", right_alias="mt") }}
+    and e._dbt_source_project = mt._dbt_source_project
     and mt.rn_territory = 1
 left join
     {{ ref("int_powerschool__spenrollments") }} as cs
@@ -435,22 +437,22 @@ left join
 left join
     {{ ref("int_overgrad__students") }} as ovg
     on e.salesforce_contact_id = ovg.external_student_id
-    and {{ union_dataset_join_clause(left_alias="e", right_alias="ovg") }}
+    and e._dbt_source_project = ovg._dbt_source_project
 left join
     {{ ref("int_powerschool__ada_term_pivot") }} as ada
     on e.studentid = ada.studentid
     and e.academic_year = ada.academic_year
-    and {{ union_dataset_join_clause(left_alias="e", right_alias="ada") }}
+    and e._dbt_source_project = ada._dbt_source_project
 left join
     {{ ref("int_powerschool__ada_term_pivot") }} as adapy
     on e.studentid = adapy.studentid
     and e.academic_year = (adapy.academic_year + 1)
-    and {{ union_dataset_join_clause(left_alias="e", right_alias="adapy") }}
+    and e._dbt_source_project = adapy._dbt_source_project
 left join
     gpa_bands as gc
     on e.studentid = gc.studentid
     and e.schoolid = gc.schoolid
-    and {{ union_dataset_join_clause(left_alias="e", right_alias="gc") }}
+    and e._dbt_source_project = gc._dbt_source_project
 left join
     next_year_school as ny
     on e.student_number = ny.student_number
@@ -468,7 +470,7 @@ left join
     {{ ref("base_powerschool__course_enrollments") }} as sip
     on e.student_number = sip.students_student_number
     and e.academic_year = sip.cc_academic_year
-    and {{ union_dataset_join_clause(left_alias="e", right_alias="sip") }}
+    and e._dbt_source_project = sip._dbt_source_project
     and sip.courses_course_number = 'SEM01099G1'
     and sip.rn_course_number_year = 1
     and not sip.is_dropped_section

@@ -1,5 +1,6 @@
 select
     _dbt_source_relation,
+    regexp_extract(_dbt_source_relation, r'(kipp\w+)_') as _dbt_source_project,
     studentid,
     academic_year,
 

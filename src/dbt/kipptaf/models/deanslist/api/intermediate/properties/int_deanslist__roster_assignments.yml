@@ -2,3 +2,6 @@ models:
   - name: int_deanslist__roster_assignments
     config:
       materialized: table
+    columns:
+      - name: _dbt_source_project
+        data_type: string
