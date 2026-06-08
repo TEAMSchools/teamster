@@ -13,15 +13,6 @@ sources:
                 - kippmiami
                 - fldoe
                 - stg_fldoe__fast
-      - name: stg_fldoe__fsa
-        config:
-          meta:
-            dagster:
-              group: fldoe
-              asset_key:
-                - kippmiami
-                - fldoe
-                - stg_fldoe__fsa
       - name: stg_fldoe__eoc
         config:
           meta:
