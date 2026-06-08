@@ -111,25 +111,43 @@ There is no `other_enrollment` / any-section tier (explicitly dropped). Output
 grain and uniqueness test cover internal and state keys; the resolver dedups to
 one section per score (M:1).
 
-**Date anchor differs by source.** Internal anchors on the sitting date (or
-scheduled administration date), as today. State scores have null `test_date` and
-only an academic year + administration window, so the state branch anchors on
-academic year + subject, picking the section active during the testing window.
-These are distinct branches, not a shared code path. Both branches match against
-the same inventory, so the state branch must reconcile the inventory's
-illuminate `+1` offset (`illuminate_academic_year = cc_academic_year + 1`)
-against the state score's `academic_year` before comparing — matching on the raw
-`cc_academic_year` to avoid an off-by-one section pick.
+**Selection rule: the section active on the assessment date wins.** Both
+branches resolve by picking the subject-matching enrollment whose
+`[entry_date, exit_date)` window contains an anchor date — this is the
+deterministic tiebreaker for mid-year section switches.
+
+- **Internal:** the anchor is the sitting date (`date_taken`), falling back to
+  the scheduled administration date — as today.
+- **State:** there is **no per-student test date** in source — only
+  `academic_year` plus a season/window _string_ (`administration_period` /
+  `season` / `administration_window`), verified against
+  `int_pearson__all_assessments` and `int_fldoe__all_assessments`. So the state
+  branch derives a **representative anchor date** from `academic_year` + season
+  (e.g. NJSLA spring → a spring date that year; FAST PM windows → their
+  respective months) and applies the same window-containment pick. The season →
+  anchor-month mapping rides along with the inline `CASE` in Component 2.
+
+Academic year still scopes the candidate set, so the state branch reconciles the
+inventory's illuminate `+1` offset
+(`illuminate_academic_year = cc_academic_year + 1`) against the state score's
+`academic_year` (match on raw `cc_academic_year`) before the date-containment
+pick.
 
 ### 2. State subject crosswalk (Component for Tier 1, state)
 
-`stg_google_sheets__assessments__course_subject_crosswalk` currently maps
-`powerschool_course_number → illuminate_subject_area`. State resolution needs
-the inverse: `(state subject_area / discipline) → course subject`, so the
-resolver knows which section type to look for. Add a mapping (new sheet tab or
-seed): NJSLA ELA → ELA, NJSLA Math → Math, NJSLA Science → Science, NJGPA → ELA
-/ Math, FAST → ELA / Math. State subjects with no clean course mapping fall
-through to Tier 2 (homeroom).
+State resolution needs to map
+`(state subject_area / discipline) → course subject` so the resolver knows which
+section type to look for: NJSLA ELA → ELA, NJSLA Math → Math, NJSLA Science →
+Science, NJGPA → ELA / Math, FAST → ELA / Math.
+
+**Start with an inline `CASE`.** Derive the mapping as a named column (e.g.
+`state_course_subject`) in a CTE inside the resolver — the state subject set is
+small and stable, and an inline `CASE` avoids a new external dependency for the
+first cut. (This is a plain derived column, not a `generate_surrogate_key`
+input, so the CLAUDE.md "no inline CASE in surrogate keys" rule does not apply.)
+Graduate to a dbt seed or a `course_subject_crosswalk` sheet tab later if Ops
+needs to edit the mapping without a code change. State subjects with no clean
+course mapping fall through to Tier 2 (homeroom).
 
 ### 3. `fct_assessment_scores_enrollment_scoped` (the fact)
 
@@ -200,10 +218,13 @@ column drop, not a hash migration.
 
 ## Risks
 
-- State anchor-by-academic-year may pick the wrong section when a student
-  switches sections within the tested subject mid-year; the dedup `order_by`
-  must define a deterministic pick (mirror the internal anchor logic where
-  possible).
+- Mid-year section switches are resolved deterministically by date-window
+  containment (the section active on the assessment date wins). For internal
+  this uses the real sitting date; for state it relies on a season-derived
+  **representative** anchor date, so a student who switched the tested subject's
+  section close to the testing window could be attributed to the adjacent
+  section. Acceptable given the season-window granularity; the
+  `enrollment_resolution` flag does not distinguish this from a clean pick.
 - Expanding the resolver to all scores increases its build cost; the fact's
   INNER join replaces a LEFT join, so verify no unexpected row loss beyond the
   documented residual.
