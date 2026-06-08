@@ -708,7 +708,3 @@ pre-merge checklist.
 - **Nonpositive-length sections** (#4146) are untouched; the ~47
   `fct_grades_term` rows on them may keep a NULL traversed enrollment until that
   issue lands.
-
-```
-
-```
