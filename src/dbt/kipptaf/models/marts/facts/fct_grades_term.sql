@@ -35,17 +35,6 @@ select
     {{ dbt_utils.generate_surrogate_key(["fg.cc_dcid", "fg._dbt_source_project"]) }}
     as student_section_enrollment_key,
 
-    {{
-        dbt_utils.generate_surrogate_key(
-            [
-                "enr.student_number",
-                "enr._dbt_source_project",
-                "fg.academic_year",
-                "enr.entrydate",
-            ]
-        )
-    }} as student_enrollment_key,
-
     if(
         rt.code is not null,
         {{
@@ -88,6 +77,9 @@ select
 
     cast(fg.exclude_from_gpa as bool) as is_excluded_from_gpa,
 from {{ ref("base_powerschool__final_grades") }} as fg
+-- retained as a row-population filter (term grade must fall within a covering
+-- school enrollment); enrollment linkage now flows via
+-- student_section_enrollment_key -> dim_student_section_enrollments
 inner join
     student_enrollments as enr
     on fg.studentid = enr.studentid
