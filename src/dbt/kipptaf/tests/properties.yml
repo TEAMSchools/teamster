@@ -150,6 +150,22 @@ data_tests:
           ref:
             name: stg_kippadb__contact_note
 
+  - name: int_assessments__resolved_section_enrollments__unique_per_score
+    description: >-
+      Asserts that int_assessments__resolved_section_enrollments contains one
+      row per score. The score grain spans all three source branches (internal,
+      state_nj, state_fl): (powerschool_student_number, _dbt_source_project,
+      source_type, canonical_assessment_id, academic_year,
+      administration_period, subject_area). NULL-safe via format("%T|...") so
+      NULL canonical_assessment_id on state rows and NULL
+      academic_year/administration_period on internal rows do not collapse the
+      distinct count.
+    config:
+      meta:
+        dagster:
+          ref:
+            name: int_assessments__resolved_section_enrollments
+
   - name: int_collegeboard__ap_unpivot__crosswalk_resolves
     description: >-
       Returns one row per `stg_collegeboard__ap.ap_number_ap_id` that has no
