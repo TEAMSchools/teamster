@@ -94,6 +94,7 @@ with
     )
 
 select
+    _dbt_source_relation,
     _dbt_source_project,
     assignmentsectionid,
     sectionsdcid,
