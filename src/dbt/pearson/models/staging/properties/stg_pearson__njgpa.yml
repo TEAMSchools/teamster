@@ -43,6 +43,20 @@ models:
         data_type: string
       - name: twoormoreraces
         data_type: string
+      - name: unit1onlineteststartdatetime
+        data_type: string
+      - name: unit1onlinetestenddatetime
+        data_type: string
+      - name: unit2onlineteststartdatetime
+        data_type: string
+      - name: unit2onlinetestenddatetime
+        data_type: string
+      - name: unit3onlineteststartdatetime
+        data_type: string
+      - name: unit3onlinetestenddatetime
+        data_type: string
+      - name: paperattemptcreatedate
+        data_type: string
       - name: assessment_name
         data_type: string
       - name: academic_year

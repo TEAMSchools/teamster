@@ -42,6 +42,14 @@ with
                 nullif(trim(testwritingscalescore), '') as numeric
             ) as testwritingscalescore,
 
+            unit1onlineteststartdatetime,
+            unit1onlinetestenddatetime,
+            unit2onlineteststartdatetime,
+            unit2onlinetestenddatetime,
+            unit3onlineteststartdatetime,
+            unit3onlinetestenddatetime,
+            paperattemptcreatedate,
+
             cast(left(assessmentyear, 4) as int) as academic_year,
 
             cast(regexp_extract(assessmentgrade, r'Grade\s(\d+)') as int) as test_grade,
