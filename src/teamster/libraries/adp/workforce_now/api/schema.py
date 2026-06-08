@@ -1,3 +1,15 @@
+"""Pydantic models for the ADP WFN ``/hr/v2/workers`` response.
+
+This models the **complete retrievable** worker representation (ADP's full
+default response). The asset's ``$select`` and the dbt staging model deliberately
+surface only the subset ADP returns for KTAF today; the remaining fields — e.g.
+``Person.deathDate``, ``WorkerDates.adjustedServiceDate`` / ``retirementDate``,
+``Communication.faxes``, ``Person.governmentIDs`` / ``identityDocuments`` — are
+declared for forward-compatibility so adding one later is a one-line ``$select``
+change rather than a schema/Avro change. Tests exercise model *parsing* of these
+fields, not warehouse capture.
+"""
+
 from pydantic import BaseModel, Field
 
 
@@ -203,6 +215,7 @@ class Rate(BaseModel):
 
 
 class PayGradeRate(BaseModel):
+    # pay-grade range bound — only amountValue (no currencyCode/nameCode, unlike Rate)
     amountValue: float | None = None
 
 

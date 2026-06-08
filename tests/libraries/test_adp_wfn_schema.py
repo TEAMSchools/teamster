@@ -91,8 +91,36 @@ def test_new_fields_parse():
     assert worker.person.communication.pagers[0].dialNumber == "5551234"
 
 
-def test_avro_schema_generates():
+def test_avro_schema_includes_new_fields():
     schema = _worker_avro_schema()
-    field_names = {f["name"] for f in schema["fields"]}
-    assert "workAssignments" in field_names
-    assert "person" in field_names
+
+    top_level = {f["name"] for f in schema["fields"]}
+    assert "workAssignments" in top_level
+    assert "person" in top_level
+
+    # every new field (including deeply-nested record fields) must survive
+    # py_avro_schema generation — otherwise it is silently dropped at write time
+    schema_json = json.dumps(schema)
+    for field in [
+        "religionCode",
+        "identityDocuments",
+        "deathDate",
+        "adjustedServiceDate",
+        "retirementDate",
+        "faxes",
+        "pagers",
+        "amountFields",
+        "percentFields",
+        "telephoneFields",
+        "deliveryPoint",
+        "jobFunctionCode",
+        "rehireEligibleIndicator",
+        "customCountryInputs",
+        "payGradeCode",
+        "payGradePayRange",
+        "laborUnion",
+        "workShiftCode",
+    ]:
+        assert f'"{field}"' in schema_json, (
+            f"{field} missing from generated Avro schema"
+        )
