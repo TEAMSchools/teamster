@@ -82,6 +82,25 @@ filters `is_internal_assessment`; that filter is removed and a state branch is
 added. Each score resolves to one section via an ordered tier cascade; the first
 tier that hits wins and stamps `resolution_type`.
 
+**Enrollment source — read the inventory directly.** The resolver stops sourcing
+its enrollments from `int_assessments__scaffold` and instead joins
+`int_assessments__course_enrollments` directly. The two assessment models are
+**inventory vs. selection**, not duplicates:
+`int_assessments__course_enrollments` is the enrollment inventory (one row per
+student course enrollment, carrying `cc_dcid`, `courses_credittype`,
+`illuminate_subject_area`, dates, region, and the illuminate year/grade offsets
+— including 88,467 `HR` rows, all with `cc_dcid`); the resolver is the selection
+(pick the one enrollment active at test time). Today resolution is routed
+through the scaffold, which has already inner-joined the inventory by
+`subject_area + administered_at` (and excluded advanced-math) — duplicating the
+subject+date matching, and, fatally, **internal-only**: the scaffold's state
+branches carry `cc_dcid = null`, so it can never yield a state→section mapping.
+Reading the inventory directly (a) unifies internal + state against one source,
+(b) removes the duplicated matching, and (c) gets the `HR` tier for free since
+the inventory already carries it. The scaffold is unchanged and keeps its own
+job (building the assessment×student grid for `response_rollup`); it is simply
+no longer the resolver's enrollment source.
+
 | Tier | `resolution_type` | How                                                                                                                                                                               |
 | ---- | ----------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | 1    | `subject_section` | Subject-matching course section active on the anchor date. Internal: existing `illuminate_subject_area` logic. State: new state-subject → course-subject crosswalk (Component 2). |
@@ -96,7 +115,11 @@ one section per score (M:1).
 scheduled administration date), as today. State scores have null `test_date` and
 only an academic year + administration window, so the state branch anchors on
 academic year + subject, picking the section active during the testing window.
-These are distinct branches, not a shared code path.
+These are distinct branches, not a shared code path. Both branches match against
+the same inventory, so the state branch must reconcile the inventory's
+illuminate `+1` offset (`illuminate_academic_year = cc_academic_year + 1`)
+against the state score's `academic_year` before comparing — matching on the raw
+`cc_academic_year` to avoid an off-by-one section pick.
 
 ### 2. State subject crosswalk (Component for Tier 1, state)
 
