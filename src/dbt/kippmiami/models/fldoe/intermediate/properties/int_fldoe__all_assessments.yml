@@ -64,6 +64,13 @@ models:
         description: >-
           FLDOE student identifier (FLEID). Coalesced from student_id and fleid
           source columns across FLDOE staging tables.
+      - name: test_date
+        data_type: date
+        description: >-
+          Date the student took the assessment. Parsed from date_taken across
+          source branches (FAST carries a pre-parsed DATE; EOC and Science carry
+          MM/DD/YYYY strings cast here). Null for legacy FSA records, which do
+          not include a per-test date.
       - name: student_number
         data_type: int64
         description: >-
