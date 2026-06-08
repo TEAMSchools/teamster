@@ -15,7 +15,9 @@ with
 select
     ur.*,
     {{ extract_code_location("ur") }} as _dbt_source_project,
+
     if(cx.ap_course_subject is not null, true, false) as is_ap_course,
+
 from union_relations as ur
 left join
     {{ ref("stg_powerschool__s_nj_crs_x") }} as cx

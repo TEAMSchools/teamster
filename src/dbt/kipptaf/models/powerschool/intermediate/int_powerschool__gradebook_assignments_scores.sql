@@ -1,7 +1,7 @@
 with
     scores as (
         select
-            a._dbt_source_relation,
+            a._dbt_source_project,
             a.assignmentsectionid,
             a.sectionsdcid,
             a.assignmentid,
@@ -23,8 +23,6 @@ with
             coalesce(s.islate, 0) as is_late,
             coalesce(s.isexempt, 0) as is_exempt,
             coalesce(s.ismissing, 0) as is_missing,
-
-            {{ extract_code_location("a") }} as _dbt_source_project,
 
             initcap(regexp_extract(s._dbt_source_relation, r'kipp(\w+)_')) as region,
 
@@ -80,22 +78,21 @@ with
             {{ ref("base_powerschool__course_enrollments") }} as e
             on a.sectionsdcid = e.sections_dcid
             and a.duedate between e.cc_dateenrolled and e.cc_dateleft
-            and {{ union_dataset_join_clause(left_alias="a", right_alias="e") }}
+            and a._dbt_source_project = e._dbt_source_project
             and not e.is_dropped_section
         left join
             {{ ref("stg_powerschool__schools") }} as d
             on e.cc_schoolid = d.school_number
-            and {{ union_dataset_join_clause(left_alias="e", right_alias="d") }}
+            and e._dbt_source_project = d._dbt_source_project
         left join
             {{ ref("stg_powerschool__assignmentscore") }} as s
             on a.assignmentsectionid = s.assignmentsectionid
-            and {{ union_dataset_join_clause(left_alias="a", right_alias="s") }}
+            and a._dbt_source_project = s._dbt_source_project
             and e.students_dcid = s.studentsdcid
-            and {{ union_dataset_join_clause(left_alias="e", right_alias="s") }}
+            and e._dbt_source_project = s._dbt_source_project
     )
 
 select
-    _dbt_source_relation,
     _dbt_source_project,
     assignmentsectionid,
     sectionsdcid,
