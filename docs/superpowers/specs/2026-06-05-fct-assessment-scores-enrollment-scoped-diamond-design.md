@@ -118,14 +118,9 @@ deterministic tiebreaker for mid-year section switches.
 
 - **Internal:** the anchor is the sitting date (`date_taken`), falling back to
   the scheduled administration date — as today.
-- **State:** there is **no per-student test date** in source — only
-  `academic_year` plus a season/window _string_ (`administration_period` /
-  `season` / `administration_window`), verified against
-  `int_pearson__all_assessments` and `int_fldoe__all_assessments`. So the state
-  branch derives a **representative anchor date** from `academic_year` + season
-  (e.g. NJSLA spring → a spring date that year; FAST PM windows → their
-  respective months) and applies the same window-containment pick. The season →
-  anchor-month mapping rides along with the inline `CASE` in Component 2.
+- **State:** a **real per-student test date** is available in source and must be
+  threaded through (Component 3); the state branch anchors on it, same
+  window-containment pick as internal. No season proxy.
 
 Academic year still scopes the candidate set, so the state branch reconciles the
 inventory's illuminate `+1` offset
@@ -149,11 +144,38 @@ Graduate to a dbt seed or a `course_subject_crosswalk` sheet tab later if Ops
 needs to edit the mapping without a code change. State subjects with no clean
 course mapping fall through to Tier 2 (homeroom).
 
-### 3. `fct_assessment_scores_enrollment_scoped` (the fact)
+### 3. State test date — thread it through (do not bypass the intermediates)
+
+A real per-student test date exists in the raw state sources and is dropped at
+the staging projection:
+
+- **Pearson (NJ):** `src_pearson__{parcc,njsla,njsla_science,njgpa}` carry
+  `unit{1..4}onlineteststartdatetime` / `...enddatetime` and
+  `paperattemptcreatedate` / `attemptcreatedate`. Derive one `test_date` (e.g.
+  earliest online unit start, coalesced with the paper attempt date) in the
+  `stg_pearson__*` models, which currently omit them.
+- **FLDOE (FL):** `src_fldoe__{fast,eoc,science}` carry `date_taken` and
+  `test_completion_date`; `stg_fldoe__fast` already casts `date_taken` to
+  `DATE`. Carry `date_taken` through (cast the `eoc` / `science` string
+  versions).
+
+Thread that `test_date` up through `int_pearson__all_assessments` and
+`int_fldoe__all_assessments` (additive column) so the fact and resolver get a
+real date. **We keep sourcing the `int_*__all_assessments` models** — they do
+the multi-test-type union + crosswalk + standardization the fact needs;
+bypassing them to read staging directly would duplicate that. The fix is to stop
+the intermediates from dropping the date, not to route around them. These are
+kipptaf-level staging/intermediate models reading raw district sources that
+already contain the columns, so the change is single-PR and additive.
+
+### 4. `fct_assessment_scores_enrollment_scoped` (the fact)
 
 - INNER joins the expanded resolver (unresolved rows drop → totality by
   construction).
 - Drops `student_key` and the entire state-branch `dim_students` join.
+- State `test_date_key` is now populated with the real threaded test date (today
+  the state branch sets it `null`) — the `dim_dates` FK becomes meaningful for
+  state rows, a bonus fix.
 - Adds `enrollment_resolution` as a degenerate dimension (the `resolution_type`
   above) so course-level rollups can filter to `subject_section` and exclude
   coarse `homeroom` rows.
@@ -164,7 +186,7 @@ course mapping fall through to Tier 2 (homeroom).
 Result: single FK to `dim_student_section_enrollments`, single chain to
 `dim_students`, diamond eliminated.
 
-### 4. YAML / contract / exposure
+### 5. YAML / contract / exposure
 
 - Remove the `student_key` column block (description, FK constraint,
   `relationships` test) from
@@ -219,12 +241,16 @@ column drop, not a hash migration.
 ## Risks
 
 - Mid-year section switches are resolved deterministically by date-window
-  containment (the section active on the assessment date wins). For internal
-  this uses the real sitting date; for state it relies on a season-derived
-  **representative** anchor date, so a student who switched the tested subject's
-  section close to the testing window could be attributed to the adjacent
-  section. Acceptable given the season-window granularity; the
-  `enrollment_resolution` flag does not distinguish this from a clean pick.
+  containment (the section active on the assessment date wins), using a real
+  test date for both internal and state. Pearson tests span multiple online
+  units across days, so the derived `test_date` must pick a deterministic unit
+  (e.g. earliest unit start); a switch landing mid-test could attribute to the
+  section active at the chosen unit. Acceptable; the `enrollment_resolution`
+  flag does not distinguish this from a clean pick.
+- Threading `test_date` touches `stg_pearson__*` and the
+  `int_*__all_assessments` models (additive). Verify no other consumer breaks on
+  the added column, and that `test_date` parses cleanly — the raw Pearson
+  datetimes are `STRING`.
 - Expanding the resolver to all scores increases its build cost; the fact's
   INNER join replaces a LEFT join, so verify no unexpected row loss beyond the
   documented residual.
