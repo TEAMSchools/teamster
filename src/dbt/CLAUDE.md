@@ -63,6 +63,31 @@ Consuming district projects override these in their own `dbt_project.yml`.
 When a PR adds or modifies an external source, flag that the developer must
 stage it with `--target staging` before the dbt Cloud CI job will pass.
 
+**AVRO external tables autodetect schema from the LAST ALPHABETICAL file.** To
+evolve an Avro source's schema, the new-schema file must sort last — materialize
+the MAX partition (latest hive `_dagster_partition_date=`). Mixed old/new files
+otherwise pick up the old (earlier-sorting) schema.
+
+dbt Cloud CI runs `dbt build` only (never `stage_external_sources`) → it reads
+the existing `zz_stg` external table as-is. To make CI see a new schema before
+prod Avro is updated: materialize the max partition locally (the Avro IO manager
+uploads to GCS even with `test=True` →
+`gs://teamster-test/dagster/<asset_key>/`), then
+`stage_external_sources --target staging --vars '{cloud_storage_uri_base: gs://teamster-test/dagster/<project>, ext_full_refresh: true}'`.
+Re-stage to the prod location only post-merge once the prod re-pull lands — a
+pre-merge re-stage reverts CI to the old (narrow) schema.
+`stage_external_sources` SKIPs an existing table unless
+`ext_full_refresh: true`.
+
+Contract enforcement matches columns by **name + type, not YAML order** — new
+contract columns may be added anywhere in `properties.yml`. Regenerate a large
+struct `data_type` by pulling it verbatim from `INFORMATION_SCHEMA.COLUMNS` of
+the staged table; don't hand-transcribe.
+
+dbt CLI runs locally for Claude: `DBT_PROFILES_DIR` (repo `.dbt`) + ADC →
+`dbt debug` / `build` / `run-operation --target staging` connect with no
+1Password (BigQuery uses ADC, not the 1Password bootstrap).
+
 `stage_external_sources --args "select: ..."` takes a
 `<source_name>.<table_name>` selector — not project-qualified. The
 project-prefix form (e.g. `kipptaf.google_sheets.<table>`) silently matches zero

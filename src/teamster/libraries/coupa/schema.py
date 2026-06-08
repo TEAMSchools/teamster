@@ -316,15 +316,6 @@ class LegalEntity(BaseModel):
 
 
 class User(UserBase):
-    id: int | None = None
-    login: str | None = None
-    email: str | None = None
-    firstname: str | None = None
-    lastname: str | None = None
-    fullname: str | None = None
-    employee_number: str | None = None
-    salesforce_id: str | None = None
-    avatar_thumb_url: str | None = None
     middlename: str | None = None
     active: bool | None = None
     created_at: str | None = None
@@ -356,6 +347,7 @@ class User(UserBase):
     allow_employee_payment_account_creation: bool | None = None
     category_planner_user: bool | None = None
     intake_user: bool | None = None
+    coupa_navi_ai_agent_user: bool | None = None
 
     custom_fields: UserCustomFields | None = None
     default_account: Account | None = None

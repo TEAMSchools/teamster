@@ -8,14 +8,19 @@ table holds foreign keys to its _direct_ parents only, and deeper context is
 reached by chaining one dimension to its parent dimension
 (`fct_student_attendance_daily` → `dim_student_enrollments` → `dim_students`).
 
-Each section below shows one fact table and the full snowflake chain reachable
-from it, followed by the fact's own foreign keys.
+Each section below shows one fact table and the snowflake chain reachable from
+it, followed by the fact's own foreign keys. **Conformed dimensions —
+`dim_dates`, `dim_terms`, `dim_locations`, and `dim_regions` — are omitted from
+the diagrams** to reduce clutter (they are referenced throughout and would
+otherwise appear in nearly every graph); each fact's foreign-key table below its
+diagram still lists them.
 
 > **Reading the diagrams.** Boxes are tables (`fct_*` facts, `dim_*`
 > dimensions). An edge `child }o--|| parent : "fk_column"` reads "many rows of
 > _child_ reference one row of _parent_ via _fk_column_." A fact with several
-> edges to the same dimension (e.g. `created_date_key` and `solved_date_key`
-> both to `dim_dates`) is showing role-qualified foreign keys.
+> edges to the same dimension (e.g. `submitter_staff_key` and
+> `assignee_staff_key` both to `dim_staff`) is showing role-qualified foreign
+> keys.
 
 ## fct_assessment_scores_enrollment_scoped
 
@@ -24,19 +29,10 @@ erDiagram
   fct_assessment_scores_enrollment_scoped }o--|| dim_assessment_administrations : "assessment_administration_key"
   fct_assessment_scores_enrollment_scoped }o--|| dim_students : "student_key"
   fct_assessment_scores_enrollment_scoped }o--|| dim_student_section_enrollments : "student_section_enrollment_key"
-  fct_assessment_scores_enrollment_scoped }o--|| dim_dates : "test_date_key"
-  dim_assessment_administrations }o--|| dim_dates : "administered_date_key"
   dim_student_section_enrollments }o--|| dim_student_enrollments : "student_enrollment_key"
   dim_student_section_enrollments }o--|| dim_course_sections : "course_section_key"
-  dim_student_section_enrollments }o--|| dim_terms : "term_key"
   dim_student_enrollments }o--|| dim_students : "student_key"
-  dim_student_enrollments }o--|| dim_locations : "location_key"
-  dim_student_enrollments }o--|| dim_dates : "entry_date_key"
-  dim_student_enrollments }o--|| dim_dates : "exit_date_key"
   dim_course_sections }o--|| dim_courses : "course_key"
-  dim_course_sections }o--|| dim_locations : "location_key"
-  dim_terms }o--|| dim_locations : "location_key"
-  dim_locations }o--|| dim_regions : "region_key"
 ```
 
 ### Foreign keys
@@ -54,8 +50,6 @@ erDiagram
 erDiagram
   fct_assessment_scores_student_scoped }o--|| dim_students : "student_key"
   fct_assessment_scores_student_scoped }o--|| dim_assessment_administrations : "assessment_administration_key"
-  fct_assessment_scores_student_scoped }o--|| dim_dates : "test_date_key"
-  dim_assessment_administrations }o--|| dim_dates : "administered_date_key"
 ```
 
 ### Foreign keys
@@ -71,19 +65,9 @@ erDiagram
 ```mermaid
 erDiagram
   fct_behavioral_consequences }o--|| fct_behavioral_incidents : "behavioral_incident_key"
-  fct_behavioral_consequences }o--|| dim_dates : "start_date_key"
-  fct_behavioral_consequences }o--|| dim_dates : "end_date_key"
   fct_behavioral_incidents }o--|| dim_student_enrollments : "student_enrollment_key"
   fct_behavioral_incidents }o--|| dim_staff : "referring_staff_key"
-  fct_behavioral_incidents }o--|| dim_locations : "location_key"
-  fct_behavioral_incidents }o--|| dim_dates : "creation_date_key"
-  fct_behavioral_incidents }o--|| dim_dates : "close_date_key"
-  fct_behavioral_incidents }o--|| dim_dates : "return_date_key"
   dim_student_enrollments }o--|| dim_students : "student_key"
-  dim_student_enrollments }o--|| dim_locations : "location_key"
-  dim_student_enrollments }o--|| dim_dates : "entry_date_key"
-  dim_student_enrollments }o--|| dim_dates : "exit_date_key"
-  dim_locations }o--|| dim_regions : "region_key"
 ```
 
 ### Foreign keys
@@ -100,15 +84,7 @@ erDiagram
 erDiagram
   fct_behavioral_incidents }o--|| dim_student_enrollments : "student_enrollment_key"
   fct_behavioral_incidents }o--|| dim_staff : "referring_staff_key"
-  fct_behavioral_incidents }o--|| dim_locations : "location_key"
-  fct_behavioral_incidents }o--|| dim_dates : "creation_date_key"
-  fct_behavioral_incidents }o--|| dim_dates : "close_date_key"
-  fct_behavioral_incidents }o--|| dim_dates : "return_date_key"
   dim_student_enrollments }o--|| dim_students : "student_key"
-  dim_student_enrollments }o--|| dim_locations : "location_key"
-  dim_student_enrollments }o--|| dim_dates : "entry_date_key"
-  dim_student_enrollments }o--|| dim_dates : "exit_date_key"
-  dim_locations }o--|| dim_regions : "region_key"
 ```
 
 ### Foreign keys
@@ -128,12 +104,7 @@ erDiagram
 erDiagram
   fct_family_communications }o--|| dim_student_enrollments : "student_enrollment_key"
   fct_family_communications }o--|| dim_staff : "communicator_staff_key"
-  fct_family_communications }o--|| dim_dates : "date_key"
   dim_student_enrollments }o--|| dim_students : "student_key"
-  dim_student_enrollments }o--|| dim_locations : "location_key"
-  dim_student_enrollments }o--|| dim_dates : "entry_date_key"
-  dim_student_enrollments }o--|| dim_dates : "exit_date_key"
-  dim_locations }o--|| dim_regions : "region_key"
 ```
 
 ### Foreign keys
@@ -150,19 +121,10 @@ erDiagram
 erDiagram
   fct_grades_assignments }o--|| dim_student_section_enrollments : "student_section_enrollment_key"
   fct_grades_assignments }o--|| dim_student_enrollments : "student_enrollment_key"
-  fct_grades_assignments }o--|| dim_terms : "term_key"
-  fct_grades_assignments }o--|| dim_dates : "due_date_key"
   dim_student_section_enrollments }o--|| dim_student_enrollments : "student_enrollment_key"
   dim_student_section_enrollments }o--|| dim_course_sections : "course_section_key"
-  dim_student_section_enrollments }o--|| dim_terms : "term_key"
   dim_student_enrollments }o--|| dim_students : "student_key"
-  dim_student_enrollments }o--|| dim_locations : "location_key"
-  dim_student_enrollments }o--|| dim_dates : "entry_date_key"
-  dim_student_enrollments }o--|| dim_dates : "exit_date_key"
-  dim_terms }o--|| dim_locations : "location_key"
   dim_course_sections }o--|| dim_courses : "course_key"
-  dim_course_sections }o--|| dim_locations : "location_key"
-  dim_locations }o--|| dim_regions : "region_key"
 ```
 
 ### Foreign keys
@@ -179,18 +141,10 @@ erDiagram
 ```mermaid
 erDiagram
   fct_grades_category }o--|| dim_student_section_enrollments : "student_section_enrollment_key"
-  fct_grades_category }o--|| dim_terms : "term_key"
   dim_student_section_enrollments }o--|| dim_student_enrollments : "student_enrollment_key"
   dim_student_section_enrollments }o--|| dim_course_sections : "course_section_key"
-  dim_student_section_enrollments }o--|| dim_terms : "term_key"
-  dim_terms }o--|| dim_locations : "location_key"
   dim_student_enrollments }o--|| dim_students : "student_key"
-  dim_student_enrollments }o--|| dim_locations : "location_key"
-  dim_student_enrollments }o--|| dim_dates : "entry_date_key"
-  dim_student_enrollments }o--|| dim_dates : "exit_date_key"
   dim_course_sections }o--|| dim_courses : "course_key"
-  dim_course_sections }o--|| dim_locations : "location_key"
-  dim_locations }o--|| dim_regions : "region_key"
 ```
 
 ### Foreign keys
@@ -205,13 +159,7 @@ erDiagram
 ```mermaid
 erDiagram
   fct_grades_gpa }o--|| dim_student_enrollments : "student_enrollment_key"
-  fct_grades_gpa }o--|| dim_terms : "term_key"
   dim_student_enrollments }o--|| dim_students : "student_key"
-  dim_student_enrollments }o--|| dim_locations : "location_key"
-  dim_student_enrollments }o--|| dim_dates : "entry_date_key"
-  dim_student_enrollments }o--|| dim_dates : "exit_date_key"
-  dim_terms }o--|| dim_locations : "location_key"
-  dim_locations }o--|| dim_regions : "region_key"
 ```
 
 ### Foreign keys
@@ -227,20 +175,10 @@ erDiagram
 erDiagram
   fct_grades_term }o--|| dim_student_section_enrollments : "student_section_enrollment_key"
   fct_grades_term }o--|| dim_student_enrollments : "student_enrollment_key"
-  fct_grades_term }o--|| dim_terms : "term_key"
-  fct_grades_term }o--|| dim_dates : "term_start_date_key"
-  fct_grades_term }o--|| dim_dates : "term_end_date_key"
   dim_student_section_enrollments }o--|| dim_student_enrollments : "student_enrollment_key"
   dim_student_section_enrollments }o--|| dim_course_sections : "course_section_key"
-  dim_student_section_enrollments }o--|| dim_terms : "term_key"
   dim_student_enrollments }o--|| dim_students : "student_key"
-  dim_student_enrollments }o--|| dim_locations : "location_key"
-  dim_student_enrollments }o--|| dim_dates : "entry_date_key"
-  dim_student_enrollments }o--|| dim_dates : "exit_date_key"
-  dim_terms }o--|| dim_locations : "location_key"
   dim_course_sections }o--|| dim_courses : "course_key"
-  dim_course_sections }o--|| dim_locations : "location_key"
-  dim_locations }o--|| dim_regions : "region_key"
 ```
 
 ### Foreign keys
@@ -258,10 +196,7 @@ erDiagram
 ```mermaid
 erDiagram
   fct_job_candidate_applications }o--|| dim_job_candidates : "job_candidate_key"
-  fct_job_candidate_applications }o--|| dim_locations : "shared_with_location_key"
   fct_job_candidate_applications }o--|| dim_job_postings : "job_posting_key"
-  fct_job_candidate_applications }o--|| dim_dates : "created_date_key"
-  dim_locations }o--|| dim_regions : "region_key"
 ```
 
 ### Foreign keys
@@ -340,12 +275,7 @@ erDiagram
   fct_staff_observations }o--|| dim_staff_observation_types : "staff_observation_type_key"
   fct_staff_observations }o--|| dim_staff_observation_rubrics : "staff_observation_rubric_key"
   fct_staff_observations }o--|| dim_staff : "observer_staff_key"
-  fct_staff_observations }o--|| dim_locations : "location_key"
-  fct_staff_observations }o--|| dim_terms : "term_key"
-  fct_staff_observations }o--|| dim_dates : "observed_date_key"
   dim_staff_observation_rubric_measurements }o--|| dim_staff_observation_rubrics : "staff_observation_rubric_key"
-  dim_locations }o--|| dim_regions : "region_key"
-  dim_terms }o--|| dim_locations : "location_key"
 ```
 
 ### Foreign keys
@@ -363,11 +293,6 @@ erDiagram
   fct_staff_observations }o--|| dim_staff_observation_types : "staff_observation_type_key"
   fct_staff_observations }o--|| dim_staff_observation_rubrics : "staff_observation_rubric_key"
   fct_staff_observations }o--|| dim_staff : "observer_staff_key"
-  fct_staff_observations }o--|| dim_locations : "location_key"
-  fct_staff_observations }o--|| dim_terms : "term_key"
-  fct_staff_observations }o--|| dim_dates : "observed_date_key"
-  dim_locations }o--|| dim_regions : "region_key"
-  dim_terms }o--|| dim_locations : "location_key"
 ```
 
 ### Foreign keys
@@ -387,14 +312,7 @@ erDiagram
 ```mermaid
 erDiagram
   fct_student_attendance_daily }o--|| dim_student_enrollments : "student_enrollment_key"
-  fct_student_attendance_daily }o--|| dim_dates : "date_key"
-  fct_student_attendance_daily }o--|| dim_terms : "term_key"
   dim_student_enrollments }o--|| dim_students : "student_key"
-  dim_student_enrollments }o--|| dim_locations : "location_key"
-  dim_student_enrollments }o--|| dim_dates : "entry_date_key"
-  dim_student_enrollments }o--|| dim_dates : "exit_date_key"
-  dim_terms }o--|| dim_locations : "location_key"
-  dim_locations }o--|| dim_regions : "region_key"
 ```
 
 ### Foreign keys
@@ -412,16 +330,9 @@ erDiagram
   fct_student_attendance_interventions }o--|| dim_student_enrollments : "student_enrollment_key"
   fct_student_attendance_interventions }o--|| dim_student_attendance_intervention_types : "intervention_type_key"
   fct_student_attendance_interventions }o--|| fct_family_communications : "family_communication_key"
-  fct_student_attendance_interventions }o--|| dim_dates : "date_key"
   dim_student_enrollments }o--|| dim_students : "student_key"
-  dim_student_enrollments }o--|| dim_locations : "location_key"
-  dim_student_enrollments }o--|| dim_dates : "entry_date_key"
-  dim_student_enrollments }o--|| dim_dates : "exit_date_key"
-  dim_student_attendance_intervention_types }o--|| dim_regions : "region_key"
   fct_family_communications }o--|| dim_student_enrollments : "student_enrollment_key"
   fct_family_communications }o--|| dim_staff : "communicator_staff_key"
-  fct_family_communications }o--|| dim_dates : "date_key"
-  dim_locations }o--|| dim_regions : "region_key"
 ```
 
 ### Foreign keys
@@ -438,13 +349,7 @@ erDiagram
 ```mermaid
 erDiagram
   fct_student_attendance_streaks }o--|| dim_student_enrollments : "student_enrollment_key"
-  fct_student_attendance_streaks }o--|| dim_dates : "streak_start_date_key"
-  fct_student_attendance_streaks }o--|| dim_dates : "streak_end_date_key"
   dim_student_enrollments }o--|| dim_students : "student_key"
-  dim_student_enrollments }o--|| dim_locations : "location_key"
-  dim_student_enrollments }o--|| dim_dates : "entry_date_key"
-  dim_student_enrollments }o--|| dim_dates : "exit_date_key"
-  dim_locations }o--|| dim_regions : "region_key"
 ```
 
 ### Foreign keys
@@ -462,10 +367,6 @@ erDiagram
   fct_support_tickets }o--|| dim_staff : "submitter_staff_key"
   fct_support_tickets }o--|| dim_staff : "assignee_staff_key"
   fct_support_tickets }o--|| dim_staff : "original_assignee_staff_key"
-  fct_support_tickets }o--|| dim_locations : "location_key"
-  fct_support_tickets }o--|| dim_dates : "created_date_key"
-  fct_support_tickets }o--|| dim_dates : "solved_date_key"
-  dim_locations }o--|| dim_regions : "region_key"
 ```
 
 ### Foreign keys
@@ -486,19 +387,12 @@ erDiagram
   fct_survey_responses }o--|| fct_survey_submissions : "survey_submission_key"
   fct_survey_responses }o--|| dim_survey_questions : "survey_question_key"
   fct_survey_submissions }o--|| dim_survey_administrations : "survey_administration_key"
-  fct_survey_submissions }o--|| dim_dates : "date_submitted_key"
   fct_survey_submissions }o--|| dim_staff : "staff_key"
   fct_survey_submissions }o--|| dim_student_enrollments : "student_enrollment_key"
   fct_survey_submissions }o--|| dim_student_contact_persons : "student_contact_person_key"
   fct_survey_submissions }o--|| dim_staff : "subject_staff_key"
   dim_survey_administrations }o--|| dim_surveys : "survey_key"
-  dim_survey_administrations }o--|| dim_terms : "term_key"
   dim_student_enrollments }o--|| dim_students : "student_key"
-  dim_student_enrollments }o--|| dim_locations : "location_key"
-  dim_student_enrollments }o--|| dim_dates : "entry_date_key"
-  dim_student_enrollments }o--|| dim_dates : "exit_date_key"
-  dim_terms }o--|| dim_locations : "location_key"
-  dim_locations }o--|| dim_regions : "region_key"
 ```
 
 ### Foreign keys
@@ -513,19 +407,12 @@ erDiagram
 ```mermaid
 erDiagram
   fct_survey_submissions }o--|| dim_survey_administrations : "survey_administration_key"
-  fct_survey_submissions }o--|| dim_dates : "date_submitted_key"
   fct_survey_submissions }o--|| dim_staff : "staff_key"
   fct_survey_submissions }o--|| dim_student_enrollments : "student_enrollment_key"
   fct_survey_submissions }o--|| dim_student_contact_persons : "student_contact_person_key"
   fct_survey_submissions }o--|| dim_staff : "subject_staff_key"
   dim_survey_administrations }o--|| dim_surveys : "survey_key"
-  dim_survey_administrations }o--|| dim_terms : "term_key"
   dim_student_enrollments }o--|| dim_students : "student_key"
-  dim_student_enrollments }o--|| dim_locations : "location_key"
-  dim_student_enrollments }o--|| dim_dates : "entry_date_key"
-  dim_student_enrollments }o--|| dim_dates : "exit_date_key"
-  dim_terms }o--|| dim_locations : "location_key"
-  dim_locations }o--|| dim_regions : "region_key"
 ```
 
 ### Foreign keys
@@ -544,8 +431,6 @@ erDiagram
 ```mermaid
 erDiagram
   fct_work_assignment_additional_earnings }o--|| dim_staff_work_assignments : "work_assignment_key"
-  fct_work_assignment_additional_earnings }o--|| dim_dates : "effective_start_date_key"
-  fct_work_assignment_additional_earnings }o--|| dim_dates : "effective_end_date_key"
   dim_staff_work_assignments }o--|| dim_staff : "staff_key"
   dim_staff_work_assignments }o--|| dim_staff : "time_approver_staff_key"
 ```
@@ -563,8 +448,6 @@ erDiagram
 ```mermaid
 erDiagram
   fct_work_assignment_compensation }o--|| dim_staff_work_assignments : "work_assignment_key"
-  fct_work_assignment_compensation }o--|| dim_dates : "effective_start_date_key"
-  fct_work_assignment_compensation }o--|| dim_dates : "effective_end_date_key"
   dim_staff_work_assignments }o--|| dim_staff : "staff_key"
   dim_staff_work_assignments }o--|| dim_staff : "time_approver_staff_key"
 ```
