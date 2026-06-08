@@ -180,3 +180,17 @@ data_tests:
         dagster:
           ref:
             name: int_collegeboard__ap_unpivot
+
+  - name: dim_student_section_enrollments__no_multi_stint_overlap
+    description: >-
+      Warns when a non-dropped course-enrollment (cc) record overlaps more than
+      one school enrollment stint. dim_student_section_enrollments resolves
+      these to a single stint (covering-first, else earliest), so a nonzero
+      count is a known, monitored condition (baseline ~147, almost all genuine
+      mid-year drop/re-enroll) rather than a failure. Growth signals new
+      boundary-spanning sections to review.
+    config:
+      meta:
+        dagster:
+          ref:
+            name: dim_student_section_enrollments

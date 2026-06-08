@@ -4,9 +4,10 @@ models:
       Term-level grade fact table. One row per student x section enrollment x
       term (storecode). Contains percent and letter grades for the term and
       running year-to-date (Y1) calculations, citizenship, grade points, and
-      credit hours. FK to dim_student_section_enrollments,
-      dim_student_enrollments, dim_terms, and dim_dates (role-playing via
-      term_start_date_key and term_end_date_key).
+      credit hours. FK to dim_student_section_enrollments, dim_terms, and
+      dim_dates (role-playing via term_start_date_key and term_end_date_key).
+      Reaches dim_student_enrollments by traversing
+      student_section_enrollment_key.
     columns:
       - name: grades_term_key
         data_type: string
@@ -37,23 +38,6 @@ models:
               arguments:
                 to: ref('dim_student_section_enrollments')
                 field: student_section_enrollment_key
-      - name: student_enrollment_key
-        data_type: string
-        description: >-
-          FK to dim_student_enrollments. Surrogate key derived from
-          student_number, _dbt_source_project, academic_year, and entrydate.
-        constraints:
-          - type: foreign_key
-            to: ref('dim_student_enrollments')
-            to_columns: [student_enrollment_key]
-            warn_unsupported: false
-        data_tests:
-          - not_null
-
-          - relationships:
-              arguments:
-                to: ref('dim_student_enrollments')
-                field: student_enrollment_key
       - name: term_key
         data_type: string
         description: >-
