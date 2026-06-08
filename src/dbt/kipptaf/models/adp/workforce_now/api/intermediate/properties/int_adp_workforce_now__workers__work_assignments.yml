@@ -50,6 +50,9 @@ models:
         data_type: boolean
       - name: voluntary_indicator
         data_type: boolean
+      - name: rehire_eligible_indicator
+        data_type: boolean
+        description: Whether a terminated worker is eligible for rehire.
       - name: full_time_equivalence_ratio
         data_type: float64
       - name: assignment_status__status_code__code_value
@@ -156,6 +159,13 @@ models:
         data_type: string
       - name: job_code__short_name
         data_type: string
+      - name: job_function_code__code_value
+        data_type: string
+        description: Job function classification code for the work assignment.
+      - name: job_function_code__long_name
+        data_type: string
+      - name: job_function_code__short_name
+        data_type: string
       - name: pay_cycle_code__code_value
         data_type: string
       - name: pay_cycle_code__long_name
@@ -235,6 +245,8 @@ models:
       - name: home_work_location__name_code__effective_date
         data_type: date
       - name: job_code__effective_date
+        data_type: date
+      - name: job_function_code__effective_date
         data_type: date
       - name: pay_cycle_code__effective_date
         data_type: date
