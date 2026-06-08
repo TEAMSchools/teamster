@@ -32,7 +32,44 @@ with
     )
 
 select
-    sec.*,
+    sec._dbt_source_relation,
+    sec.academic_year,
+    sec.academic_year_display,
+    sec.yearid,
+    sec.schoolid,
+    sec.school,
+    sec.region,
+    sec.school_level,
+    sec.region_school_level,
+    sec.sections_dcid,
+    sec.sectionid,
+    sec.section_number,
+    sec.external_expression,
+    sec.course_number,
+    sec.course_name,
+    sec.credit_type,
+    sec.exclude_from_gpa,
+    sec.teacher_number,
+    sec.teacher_name,
+    sec.teacher_tableau_username,
+    sec.manager_employee_number,
+    sec.manager_name,
+    sec.manager_tableau_username,
+    sec.hos,
+    sec.school_leader,
+    sec.school_leader_tableau_username,
+    sec.quarter,
+    sec.semester,
+    sec.quarter_start_date,
+    sec.quarter_end_date,
+    sec.is_current_term,
+    sec.section_or_period,
+    sec.assignment_category_code,
+    sec.assignment_category_name,
+    sec.assignment_category_term,
+    sec.expectation,
+    sec.notes,
+    sec.scaffold_name,
 
     a.assignmentsectionid,
     a.assignmentid,
@@ -69,14 +106,6 @@ select
         false
     ) as h_assign_max_score_not_10,
 
-    if(
-        sec.region = 'Miami'
-        and sec.assignment_category_code = 'S'
-        and a.totalpointvalue > 100,
-        true,
-        false
-    ) as s_max_score_greater_100,
-
     sum(a.totalpointvalue) over (
         partition by
             sec._dbt_source_relation,
@@ -88,7 +117,6 @@ select
     count(a.assignmentid) over (
         partition by
             sec._dbt_source_relation, sec.sectionid, sec.assignment_category_term
-        order by sec.week_number_quarter asc
     ) as teacher_running_total_assign_by_cat,
 
 from {{ ref("int_tableau__gradebook_audit_teacher_scaffold") }} as sec
@@ -96,7 +124,7 @@ left join
     {{ ref("int_powerschool__gradebook_assignments") }} as a
     on sec.sections_dcid = a.sectionsdcid
     and sec.assignment_category_name = a.category_name
-    and a.duedate between sec.week_start_monday and sec.week_end_sunday
+    and a.duedate between sec.quarter_start_date and sec.quarter_end_date
     and {{ union_dataset_join_clause(left_alias="sec", right_alias="a") }}
 left join
     assignment_score_rollup as asg

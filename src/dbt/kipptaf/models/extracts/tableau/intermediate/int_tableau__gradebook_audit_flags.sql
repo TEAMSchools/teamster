@@ -18,9 +18,7 @@ with
                     assign_h_missing_score_not_0,
                     assign_s_missing_score_not_0,
                     assign_s_score_less_50p,
-                    assign_s_hs_score_less_50p,
-                    assign_s_ms_score_not_conversion_chart_options,
-                    assign_s_hs_score_not_conversion_chart_options
+                    assign_s_hs_score_less_50p
                 )
             ) as u
         inner join
@@ -41,8 +39,7 @@ with
                 audit_flag_value for audit_flag_name in (
                     w_assign_max_score_not_10,
                     h_assign_max_score_not_10,
-                    f_assign_max_score_not_10,
-                    s_max_score_greater_100
+                    f_assign_max_score_not_10
                 )
             ) as r
         inner join
@@ -61,10 +58,6 @@ with
         from
             {{ ref("int_tableau__gradebook_audit_categories_teacher") }} unpivot (
                 audit_flag_value for audit_flag_name in (
-                    qt_teacher_s_total_greater_200,
-                    qt_teacher_s_total_less_200,
-                    qt_teacher_s_total_greater_100,
-                    qt_teacher_s_total_less_100,
                     w_expected_assign_count_not_met,
                     h_expected_assign_count_not_met,
                     f_expected_assign_count_not_met,
@@ -86,19 +79,14 @@ with
     ),
 
     eoq_items as (
-        select  -- All but Conduct Code
-            r.*, f.cte_grouping, f.audit_category, f.code_type,
+        select r.*, f.cte_grouping, f.audit_category, f.code_type,
 
         from
             {{ ref("int_tableau__gradebook_audit_student_scaffold") }} unpivot (
                 audit_flag_value for audit_flag_name in (
-                    qt_comment_missing,
-                    qt_es_comment_missing,
-                    qt_grade_70_comment_missing,
-                    qt_g1_g8_conduct_code_missing,
-                    qt_g1_g8_conduct_code_incorrect,
                     qt_percent_grade_greater_100,
-                    qt_student_is_ada_80_plus_gpa_less_2
+                    qt_grade_70_comment_missing,
+                    qt_es_comment_missing
                 )
             ) as r
         inner join
@@ -111,60 +99,6 @@ with
             and r.scaffold_name = 'student_scaffold'
             and f.cte_grouping in ('student_course', 'student')
             and f.audit_category != 'Conduct Code'
-    ),
-
-    eoq_items_conduct_code as (
-        select  -- Conduct Code for ES (requires grade level join)
-            r.*, f.cte_grouping, f.audit_category, f.code_type,
-
-        from
-            {{ ref("int_tableau__gradebook_audit_student_scaffold") }} unpivot (
-                audit_flag_value for audit_flag_name in (
-                    qt_kg_conduct_code_missing,
-                    qt_kg_conduct_code_incorrect,
-                    qt_kg_conduct_code_not_hr,
-                    qt_g1_g8_conduct_code_missing,
-                    qt_g1_g8_conduct_code_incorrect
-                )
-            ) as r
-        inner join
-            {{ ref("stg_google_sheets__gradebook_flags") }} as f
-            on r.academic_year = f.academic_year
-            and r.region = f.region
-            and r.school_level = f.school_level
-            and r.quarter = f.code
-            and r.grade_level = f.grade_level
-            and r.audit_flag_name = f.audit_flag_name
-            and r.scaffold_name = 'student_scaffold'
-            and f.cte_grouping = 'student_course'
-            and f.audit_category = 'Conduct Code'
-        where r.school_level = 'ES'
-    ),
-
-    /* w_grade_inflation, qt_effort_grade_missing, qt_formative_grade_missing,
-    qt_summative_grade_missing */
-    student_course_category as (
-        select r.*, f.cte_grouping, f.audit_category, f.code_type,
-
-        from
-            {{ ref("int_tableau__gradebook_audit_student_scaffold") }} unpivot (
-                audit_flag_value for audit_flag_name in (
-                    qt_effort_grade_missing,
-                    w_grade_inflation,
-                    qt_formative_grade_missing,
-                    qt_summative_grade_missing
-                )
-            ) as r
-        inner join
-            {{ ref("stg_google_sheets__gradebook_flags") }} as f
-            on r.academic_year = f.academic_year
-            and r.region = f.region
-            and r.school_level = f.school_level
-            and r.quarter = f.code
-            and r.assignment_category_code = f.alt_code
-            and r.audit_flag_name = f.audit_flag_name
-            and r.scaffold_name = 'student_category_scaffold'
-            and f.cte_grouping = 'student_course_category'
     )
 
 -- this captures all flags from assignment_student
@@ -221,6 +155,9 @@ select
     r.teacher_name,
     r.is_ap_course,
     r.teacher_tableau_username,
+    r.manager_employee_number,
+    r.manager_name,
+    r.manager_tableau_username,
     r.school_leader,
     r.school_leader_tableau_username,
     r.quarter,
@@ -228,19 +165,8 @@ select
     r.quarter_start_date,
     r.quarter_end_date,
     r.is_current_term,
-    r.is_quarter_end_date_range,
-    r.week_start_date,
-    r.week_end_date,
-    r.week_start_monday,
-    r.week_end_sunday,
-    r.school_week_start_date_lead,
-    r.quarter_end_date_insession,
-    r.week_number_academic_year,
-    r.week_number_quarter,
-    r.is_current_week,
     r.quarter_course_percent_grade,
     r.quarter_course_grade_points,
-    r.quarter_conduct,
     r.quarter_comment_value,
     r.section_or_period,
     r.assignment_category_name,
@@ -249,7 +175,6 @@ select
     r.expectation,
     r.notes,
     r.category_quarter_percent_grade,
-    r.category_quarter_average_all_courses,
     r.assignmentid,
     r.assignment_name,
     r.duedate,
@@ -263,6 +188,7 @@ select
     r.is_expected_academic_dishonesty,
     r.score_entered,
     r.assign_final_score_percent,
+    r.half_total_point_value,
     r.assign_expected_to_be_scored,
     r.assign_expected_with_score,
     r.cte_grouping,
@@ -279,9 +205,9 @@ select
     t.n_expected,
     t.n_expected_scored,
 
-    null as total_expected_scored_section_quarter_week_category,
-    null as total_expected_section_quarter_week_category,
-    null as percent_graded_for_quarter_week_class,
+    null as total_expected_scored_section_quarter_category,
+    null as total_expected_section_quarter_category,
+    null as percent_graded_for_quarter_class,
 
     t.sum_totalpointvalue_section_quarter_category,
     t.teacher_running_total_assign_by_cat,
@@ -298,15 +224,12 @@ left join
     on r.region = t.region
     and r.schoolid = t.schoolid
     and r.quarter = t.quarter
-    and r.week_number_quarter = t.week_number_quarter
     and r.sectionid = t.sectionid
     and r.assignmentid = t.assignmentid
 
 union all
 
-/* this captures all student_course_category: qt_effort_grade_missing,
-qt_formative_grade_missing, qt_summative_grade_missing, and
-w_grade_inflation */
+-- this captures all eoq items
 select
     _dbt_source_relation,
     academic_year,
@@ -360,6 +283,9 @@ select
     teacher_name,
     is_ap_course,
     teacher_tableau_username,
+    manager_employee_number,
+    manager_name,
+    manager_tableau_username,
     school_leader,
     school_leader_tableau_username,
     `quarter`,
@@ -367,148 +293,8 @@ select
     quarter_start_date,
     quarter_end_date,
     is_current_term,
-    is_quarter_end_date_range,
-    week_start_date,
-    week_end_date,
-    week_start_monday,
-    week_end_sunday,
-    school_week_start_date_lead,
-    quarter_end_date_insession,
-    week_number_academic_year,
-    week_number_quarter,
-    is_current_week,
     quarter_course_percent_grade,
     quarter_course_grade_points,
-    quarter_conduct,
-    quarter_comment_value,
-    section_or_period,
-    assignment_category_name,
-    assignment_category_code,
-    assignment_category_term,
-    expectation,
-    notes,
-    category_quarter_percent_grade,
-    category_quarter_average_all_courses,
-
-    null as assignmentid,
-    null as assignment_name,
-    null as duedate,
-    null as scoretype,
-    null as totalpointvalue,
-    null as scorepoints,
-    null as is_expected_late,
-    null as is_exempt,
-    null as is_expected_missing,
-    null as is_expected_zero,
-    null as is_expected_academic_dishonesty,
-    null as score_entered,
-    null as assign_final_score_percent,
-    null as assign_expected_to_be_scored,
-    null as assign_expected_with_score,
-
-    cte_grouping,
-    audit_flag_name,
-
-    null as n_students,
-    null as n_late,
-    null as n_exempt,
-    null as n_missing,
-    null as n_academic_dishonesty,
-    null as n_null,
-    null as n_is_null_missing,
-    null as n_is_null_not_missing,
-    null as n_expected,
-    null as n_expected_scored,
-    null as total_expected_scored_section_quarter_week_category,
-    null as total_expected_section_quarter_week_category,
-    null as percent_graded_for_quarter_week_class,
-    null as um_totalpointvalue_section_quarter_category,
-    null as teacher_running_total_assign_by_cat,
-    null as teacher_avg_score_for_assign_per_class_section_and_assign_id,
-
-    audit_category,
-    code_type,
-
-    if(audit_flag_value, 1, 0) as audit_flag_value,
-
-from student_course_category
-
-union all
-
--- this captures all eoq items except conduct_code
-select
-    _dbt_source_relation,
-    academic_year,
-    academic_year_display,
-    yearid,
-    region,
-    school_level,
-    schoolid,
-    school,
-    students_dcid,
-    studentid,
-    student_number,
-    student_name,
-    grade_level,
-    salesforce_id,
-    ktc_cohort,
-    enroll_status,
-    cohort,
-    gender,
-    ethnicity,
-    advisory,
-    hos,
-    region_school_level,
-    year_in_school,
-    year_in_network,
-    rn_undergrad,
-    is_out_of_district,
-    is_self_contained,
-    is_retained_year,
-    is_retained_ever,
-    lunch_status,
-    gifted_and_talented,
-    iep_status,
-    lep_status,
-    is_504,
-    is_counseling_services,
-    is_student_athlete,
-    ada,
-    ada_above_or_at_80,
-    sectionid,
-    course_number,
-    date_enrolled,
-    sections_dcid,
-    section_number,
-    external_expression,
-    termid,
-    credit_type,
-    course_name,
-    exclude_from_gpa,
-    teacher_number,
-    teacher_name,
-    is_ap_course,
-    teacher_tableau_username,
-    school_leader,
-    school_leader_tableau_username,
-    `quarter`,
-    semester,
-    quarter_start_date,
-    quarter_end_date,
-    is_current_term,
-    is_quarter_end_date_range,
-    week_start_date,
-    week_end_date,
-    week_start_monday,
-    week_end_sunday,
-    school_week_start_date_lead,
-    quarter_end_date_insession,
-    week_number_academic_year,
-    week_number_quarter,
-    is_current_week,
-    quarter_course_percent_grade,
-    quarter_course_grade_points,
-    quarter_conduct,
     quarter_comment_value,
     section_or_period,
 
@@ -518,7 +304,6 @@ select
     null as expectation,
     null as notes,
     null as category_quarter_percent_grade,
-    null as category_quarter_average_all_courses,
     null as assignmentid,
     null as assignment_name,
     null as duedate,
@@ -532,6 +317,7 @@ select
     null as is_expected_academic_dishonesty,
     null as score_entered,
     null as assign_final_score_percent,
+    null as half_total_point_value,
     null as assign_expected_to_be_scored,
     null as assign_expected_with_score,
 
@@ -548,9 +334,9 @@ select
     null as n_is_null_not_missing,
     null as n_expected,
     null as n_expected_scored,
-    null as total_expected_scored_section_quarter_week_category,
-    null as total_expected_section_quarter_week_category,
-    null as percent_graded_for_quarter_week_class,
+    null as total_expected_scored_section_quarter_category,
+    null as total_expected_section_quarter_category,
+    null as percent_graded_for_quarter_class,
     null as sum_totalpointvalue_section_quarter_category,
     null as teacher_running_total_assign_by_cat,
     null as teacher_avg_score_for_assign_per_class_section_and_assign_id,
@@ -563,138 +349,9 @@ select
 from eoq_items
 
 union all
--- this captures conduct_code
-select
-    _dbt_source_relation,
-    academic_year,
-    academic_year_display,
-    yearid,
-    region,
-    school_level,
-    schoolid,
-    school,
-    students_dcid,
-    studentid,
-    student_number,
-    student_name,
-    grade_level,
-    salesforce_id,
-    ktc_cohort,
-    enroll_status,
-    cohort,
-    gender,
-    ethnicity,
-    advisory,
-    hos,
-    region_school_level,
-    year_in_school,
-    year_in_network,
-    rn_undergrad,
-    is_out_of_district,
-    is_self_contained,
-    is_retained_year,
-    is_retained_ever,
-    lunch_status,
-    gifted_and_talented,
-    iep_status,
-    lep_status,
-    is_504,
-    is_counseling_services,
-    is_student_athlete,
-    ada,
-    ada_above_or_at_80,
-    sectionid,
-    course_number,
-    date_enrolled,
-    sections_dcid,
-    section_number,
-    external_expression,
 
-    null as termid,
-
-    credit_type,
-    course_name,
-    exclude_from_gpa,
-    teacher_number,
-    teacher_name,
-    is_ap_course,
-    teacher_tableau_username,
-    school_leader,
-    school_leader_tableau_username,
-    `quarter`,
-    semester,
-    quarter_start_date,
-    quarter_end_date,
-    is_current_term,
-    is_quarter_end_date_range,
-    week_start_date,
-    week_end_date,
-    week_start_monday,
-    week_end_sunday,
-    school_week_start_date_lead,
-    quarter_end_date_insession,
-    week_number_academic_year,
-    week_number_quarter,
-    is_current_week,
-    quarter_course_percent_grade,
-    quarter_course_grade_points,
-    quarter_conduct,
-    quarter_comment_value,
-    section_or_period,
-
-    null as assignment_category_name,
-    null as assignment_category_code,
-    null as assignment_category_term,
-    null as expectation,
-    null as notes,
-    null as category_quarter_percent_grade,
-    null as category_quarter_average_all_courses,
-    null as assignmentid,
-    null as assignment_name,
-    null as duedate,
-    null as scoretype,
-    null as totalpointvalue,
-    null as scorepoints,
-    null as expected_,
-    null as is_exempt,
-    null as is_expected_missing,
-    null as is_expected_zero,
-    null as is_expected_academic_dishonesty,
-    null as score_entered,
-    null as assign_final_score_percent,
-    null as assign_expected_to_be_scored,
-    null as assign_expected_with_score,
-
-    cte_grouping,
-    audit_flag_name,
-
-    null as n_students,
-    null as n_late,
-    null as n_exempt,
-    null as n_missing,
-    null as n_academic_dishonesty,
-    null as n_null,
-    null as n_is_null_missing,
-    null as n_is_null_not_missing,
-    null as n_expected,
-    null as n_expected_scored,
-    null as total_expected_scored_section_quarter_week_category,
-    null as total_expected_section_quarter_week_category,
-    null as percent_graded_for_quarter_week_class,
-    null as sum_totalpointvalue_section_quarter_category,
-    null as teacher_running_total_assign_by_cat,
-    null as teacher_avg_score_for_assign_per_class_section_and_assign_id,
-
-    audit_category,
-    code_type,
-
-    if(audit_flag_value, 1, 0) as audit_flag_value,
-
-from eoq_items_conduct_code
-
-union all
-/* this captures 'class_category_assignment': w_assign_max_score_not_10,
-   f_assign_max_score_not_10, h_assign_max_score_not_10, s_max_score_greater_100 */
+/* this captures 'class_category_assignment':
+   w_assign_max_score_not_10, f_assign_max_score_not_10, h_assign_max_score_not_10 */
 select
     r._dbt_source_relation,
     r.academic_year,
@@ -754,8 +411,13 @@ select
     r.exclude_from_gpa,
     r.teacher_number,
     r.teacher_name,
-    r.is_ap_course,
+
+    null as is_ap_course,
+
     r.teacher_tableau_username,
+    r.manager_employee_number,
+    r.manager_name,
+    r.manager_tableau_username,
     r.school_leader,
     r.school_leader_tableau_username,
     r.quarter,
@@ -763,20 +425,9 @@ select
     r.quarter_start_date,
     r.quarter_end_date,
     r.is_current_term,
-    r.is_quarter_end_date_range,
-    r.week_start_date,
-    r.week_end_date,
-    r.week_start_monday,
-    r.week_end_sunday,
-    r.school_week_start_date_lead,
-    r.quarter_end_date_insession,
-    r.week_number_academic_year,
-    r.week_number_quarter,
-    r.is_current_week,
 
     null as quarter_course_percent_grade,
     null as quarter_course_grade_points,
-    null as quarter_conduct,
     null as quarter_comment_value,
 
     r.section_or_period,
@@ -787,7 +438,6 @@ select
     r.notes,
 
     null as category_quarter_percent_grade,
-    null as category_quarter_average_all_courses,
 
     r.assignmentid,
     r.assignment_name,
@@ -803,6 +453,7 @@ select
     null as is_expected_academic_dishonesty,
     null as score_entered,
     null as assign_final_score_percent,
+    null as half_total_point_value,
     null as assign_expected_to_be_scored,
     null as assign_expected_with_score,
 
@@ -819,9 +470,9 @@ select
     r.n_expected,
     r.n_expected_scored,
 
-    null as total_expected_scored_section_quarter_week_category,
-    null as total_expected_section_quarter_week_category,
-    null as percent_graded_for_quarter_week_class,
+    null as total_expected_scored_section_quarter_category,
+    null as total_expected_section_quarter_category,
+    null as percent_graded_for_quarter_class,
     null as sum_totalpointvalue_section_quarter_category,
     null as teacher_running_total_assign_by_cat,
 
@@ -834,6 +485,7 @@ select
 from teacher_unpivot_cca as r
 
 union all
+
 -- this captures 'class_category'
 select
     r._dbt_source_relation,
@@ -894,8 +546,13 @@ select
     r.exclude_from_gpa,
     r.teacher_number,
     r.teacher_name,
-    r.is_ap_course,
+
+    null as is_ap_course,
+
     r.teacher_tableau_username,
+    r.manager_employee_number,
+    r.manager_name,
+    r.manager_tableau_username,
     r.school_leader,
     r.school_leader_tableau_username,
     r.quarter,
@@ -903,20 +560,9 @@ select
     r.quarter_start_date,
     r.quarter_end_date,
     r.is_current_term,
-    r.is_quarter_end_date_range,
-    r.week_start_date,
-    r.week_end_date,
-    r.week_start_monday,
-    r.week_end_sunday,
-    r.school_week_start_date_lead,
-    r.quarter_end_date_insession,
-    r.week_number_academic_year,
-    r.week_number_quarter,
-    r.is_current_week,
 
     null as quarter_course_percent_grade,
     null as quarter_course_grade_points,
-    null as quarter_conduct,
     null as quarter_comment_value,
 
     r.section_or_period,
@@ -927,12 +573,13 @@ select
     r.notes,
 
     null as category_quarter_percent_grade,
-    null as category_quarter_average_all_courses,
-    null as assignmentid,
-    null as assignment_name,
-    null as duedate,
-    null as scoretype,
-    null as totalpointvalue,
+
+    r.assignmentid,
+    r.assignment_name,
+    r.duedate,
+    r.scoretype,
+    r.totalpointvalue,
+
     null as scorepoints,
     null as is_expected_late,
     null as is_exempt,
@@ -941,6 +588,7 @@ select
     null as is_expected_academic_dishonesty,
     null as score_entered,
     null as assign_final_score_percent,
+    null as half_total_point_value,
     null as assign_expected_to_be_scored,
     null as assign_expected_with_score,
 
@@ -955,12 +603,12 @@ select
     null as n_null,
     null as n_is_null_missing,
     null as n_is_null_not_missing,
-    null as n_expected,
-    null as n_expected_scored,
+    r.n_expected,
+    r.n_expected_scored,
 
-    r.total_expected_scored_section_quarter_week_category,
-    r.total_expected_section_quarter_week_category,
-    r.percent_graded_for_quarter_week_class,
+    r.total_expected_scored_section_quarter_category,
+    r.total_expected_section_quarter_category,
+    r.percent_graded_for_quarter_class,
     r.sum_totalpointvalue_section_quarter_category,
     r.teacher_running_total_assign_by_cat,
 
