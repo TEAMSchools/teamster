@@ -1,7 +1,6 @@
 with
     esms_attend as (
         select
-            _dbt_source_relation,
             _dbt_source_project,
             student_number,
             school_level,
@@ -22,6 +21,7 @@ with
             row_number() over (
                 partition by student_number order by exitdate desc
             ) as rn,
+
         from {{ ref("base_powerschool__student_enrollments") }}
         where
             grade_level = 4
@@ -41,13 +41,13 @@ with
             lead(schoolid, 1) over (
                 partition by student_number order by academic_year asc
             ) as next_year_schoolid,
+
         from {{ ref("base_powerschool__student_enrollments") }}
         where rn_year = 1
     ),
 
     mia_territory as (
         select
-            _dbt_source_relation,
             _dbt_source_project,
             roster_name as territory,
             student_school_id,
@@ -62,7 +62,6 @@ with
 
     graduation_pathway_m as (
         select
-            _dbt_source_relation,
             _dbt_source_project,
             studentsdcid,
 
@@ -81,7 +80,6 @@ with
 
     finalsite_enrollment_type_calc as (
         select
-            _dbt_source_relation,
             _dbt_source_project,
             academic_year,
             student_number,
@@ -94,13 +92,11 @@ with
 
         from {{ ref("base_powerschool__student_enrollments") }}
         where grade_level != 99
-        group by
-            _dbt_source_relation, _dbt_source_project, academic_year, student_number
+        group by _dbt_source_project, academic_year, student_number
     ),
 
     gpa_bands as (
         select
-            _dbt_source_relation,
             _dbt_source_project,
             schoolid,
             studentid,
