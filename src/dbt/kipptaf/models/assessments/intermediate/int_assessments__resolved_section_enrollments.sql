@@ -258,7 +258,7 @@ with
             dbt_utils.deduplicate(
                 relation="all_candidates",
                 partition_by="score_grain_key",
-                order_by="tier asc, cc_dateleft desc",
+                order_by="tier asc, cc_dateleft desc, cc_dcid desc",
             )
         }}
     )
