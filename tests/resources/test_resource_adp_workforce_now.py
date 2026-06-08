@@ -278,3 +278,55 @@ def test_request_non_json_client_error_raises_adp_error(
         adp_wfn._request(method="GET", url="https://api.adp.com/hr/v2/workers")
 
     assert calls["n"] == 1
+
+
+def test_request_retries_on_transient_gateway_404(monkeypatch: pytest.MonkeyPatch):
+    """ADP's gateway returns a transient ``default backend - 404`` mid-pagination.
+
+    Regression: this load-balancer 404 was classified as a deterministic 4xx and
+    raised ``AdpWorkforceNowError`` without retrying. It must be re-raised as the
+    retryable ``HTTPError`` so tenacity retries with backoff (the genuine-404
+    case above must still fail fast).
+    """
+    monkeypatch.setattr(AdpWorkforceNowResource._request.retry, "wait", wait_none())  # pyright: ignore[reportFunctionMemberAccess]
+
+    calls = {"n": 0}
+
+    def request_fn(method: str, url: str, **kwargs) -> _FakeResponse:
+        calls["n"] += 1
+        if calls["n"] < 3:
+            return _FakeResponse(404, {}, text="default backend - 404")
+        return _FakeResponse(200, {"ok": True})
+
+    adp_wfn = _build_offline_resource(request_fn)
+
+    response = adp_wfn._request(method="GET", url="https://api.adp.com/hr/v2/workers")
+
+    assert response.status_code == 200
+    assert calls["n"] == 3
+
+
+def test_request_persistent_gateway_404_retries_as_httperror(
+    monkeypatch: pytest.MonkeyPatch,
+):
+    """A persistent gateway 404 is retried, then exhausts as a wrapped HTTPError.
+
+    Confirms the transient-gateway-404 branch routes through the retryable
+    ``HTTPError`` path end-to-end rather than the non-retryable
+    ``AdpWorkforceNowError`` path.
+    """
+    monkeypatch.setattr(AdpWorkforceNowResource._request.retry, "wait", wait_none())  # pyright: ignore[reportFunctionMemberAccess]
+
+    calls = {"n": 0}
+
+    def request_fn(method: str, url: str, **kwargs) -> _FakeResponse:
+        calls["n"] += 1
+        return _FakeResponse(404, {}, text="default backend - 404")
+
+    adp_wfn = _build_offline_resource(request_fn)
+
+    with pytest.raises(RetryError) as exc_info:
+        adp_wfn._request(method="GET", url="https://api.adp.com/hr/v2/workers")
+
+    assert calls["n"] == 5
+    assert isinstance(exc_info.value.last_attempt.exception(), HTTPError)
