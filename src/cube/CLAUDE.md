@@ -33,20 +33,22 @@ school_calendars) go in `cubes/conformed/`.
   belong in a dbt mart read via `sql_table` — not inline cube `sql:`, which is
   for thin column/expression shaping only. (Cube's own dbt guidance and the
   `original_sql` pre-agg confirm this.)
-- **Naming.** Fact cubes unprefixed (`attendance`); dim cubes match the
-  warehouse table (`dim_students`). View names are `<domain>_<grain>`
-  (`attendance_detail`, `attendance_summary`). `sql_table` always points at
-  `kipptaf_marts.<table>` — cubes never read district datasets directly.
-- **Joins use cube-reference syntax** (`{dim_x.col} = {CUBE}.col`), not raw
+- **Naming.** Cube `name:` always matches its filename, and neither carries the
+  warehouse `dim_` prefix — the file `conformed/dates.yml` defines `name: dates`
+  reading `sql_table: kipptaf_marts.dim_dates`. View names are
+  `<domain>_<grain>` (`attendance_detail`, `attendance_summary`). `sql_table`
+  always points at `kipptaf_marts.<table>` (the warehouse table keeps its `dim_`
+  prefix) — cubes never read district datasets directly.
+- **Joins use cube-reference syntax** (`{students.col} = {CUBE}.col`), not raw
   identifiers. Dim joins from facts set `relationship: many_to_one`.
 - **Range/non-equi join predicates** (`BETWEEN`, `>=`) are valid in a join
   `sql:` (Cube custom-calendar recipe). `many_to_one` fan-trap protection trusts
   your declared `relationship` + `primary_key`, so any non-overlap invariant the
   join relies on must be test-enforced upstream in dbt.
 - **Avoid diamond paths.** Two join paths to the same dim → either a compound
-  join on the canonical path (see `attendance.yml` → `dim_school_calendars`) or
-  a degenerate FK with no declared join (see
-  `dim_student_enrollments.location_key`). Comment the choice.
+  join on the canonical path (see `attendance.yml` → `school_calendars`) or a
+  degenerate FK with no declared join (see `student_enrollments.location_key`).
+  Comment the choice.
 - **Time dimensions** must cast to `TIMESTAMP` in the dim's `sql:`; joins from
   facts cast through (`CAST({CUBE}.date_key AS TIMESTAMP)`).
 - **Hidden helper measures** prefix with `_` and set `public: false` (see
@@ -58,8 +60,7 @@ school_calendars) go in `cubes/conformed/`.
   don't list measures under `members:`.
 - **Folder member naming.** Bare for top-cube members; `<prefix>_<member>` for
   `prefix: true` joins, where `<prefix>` is the last `join_path` segment — so
-  `dim_regions_region_name` for
-  `attendance.dim_student_enrollments.dim_locations.dim_regions`.
+  `regions_region_name` for `attendance.student_enrollments.locations.regions`.
 - **Branch schema validation is manual.** Cube Cloud Staging Environments don't
   auto-create from pushes. Open Cube Cloud → Data Model → Dev Mode → add branch
   by name to spin up a per-branch staging instance.
@@ -100,9 +101,9 @@ Default-deny, group-driven. Read [`cube.js`](cube.js) before modifying.
 - **`queryRewrite`** enforces three filters:
   - Strips dims/measures from `STUDENT_CUBES` for users without
     `cube-access-student-data`.
-  - Adds a `dim_locations` filter based on the highest-priority scope group:
-    network (no filter) → region (`region_key`) → school (`abbreviation`). No
-    scope group → empty `IN ()` filter (default deny).
+  - Adds a `locations` filter based on the highest-priority scope group: network
+    (no filter) → region (`region_key`) → school (`abbreviation`). No scope
+    group → empty `IN ()` filter (default deny).
   - For queries touching `STAFF_CUBES`, injects the `dim_staff.reporting_chain`
     segment unless the user has `cube-access-staff-all`.
 - **`STUDENT_CUBES` / `STAFF_CUBES` arrays.** Entries must match the cube
@@ -165,8 +166,8 @@ The `cube` MCP wraps Cube Cloud's REST API. Auth path that works:
 
 Cube data models support Jinja macros and `{% set %}` variables for SQL snippet
 reuse. Before factoring with Jinja, check whether a dbt-derived dim column (e.g.
-`dim_dates.is_current_academic_year` from `{{ var("current_academic_year") }}`)
-is a better fit — keeps Cube and dbt in lockstep.
+`dates.is_current_academic_year` from `{{ var("current_academic_year") }}`) is a
+better fit — keeps Cube and dbt in lockstep.
 
 ## Measure filters and joined-cube references
 

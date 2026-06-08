@@ -24,8 +24,8 @@ function nextMidnightEastern() {
 // Add cube name: here when adding a new student-data cube.
 const STUDENT_CUBES = [
   "attendance",
-  "dim_student_enrollment_status",
-  "dim_student_enrollments",
+  "student_enrollment_status",
+  "student_enrollments",
 ];
 
 const STAFF_CUBES = [
@@ -175,7 +175,7 @@ module.exports = {
         .replace(/^cube-region-/, "")
         .replace(/-(?:detail|summary)$/, "");
       locationFilter = {
-        member: "dim_locations.region_key",
+        member: "locations.region_key",
         operator: "equals",
         values: [region],
       };
@@ -184,7 +184,7 @@ module.exports = {
         .replace(/^cube-school-/, "")
         .replace(/-(?:detail|summary)$/, "");
       locationFilter = {
-        member: "dim_locations.abbreviation",
+        member: "locations.abbreviation",
         operator: "equals",
         values: [slug],
       };
@@ -194,7 +194,7 @@ module.exports = {
         ...query,
         filters: [
           {
-            member: "dim_locations.abbreviation",
+            member: "locations.abbreviation",
             operator: "equals",
             values: [],
           },
@@ -219,7 +219,7 @@ module.exports = {
       if (!measures.length) continue;
 
       const dateDayTd = (query.timeDimensions ?? []).find((td) =>
-        td.dimension?.endsWith("dim_dates_date_day"),
+        td.dimension?.endsWith("dates_date_day"),
       );
       const granularity = dateDayTd?.granularity ?? null;
 
@@ -274,14 +274,12 @@ module.exports = {
         ) ||
         filters.some(
           (f) =>
-            f.member?.endsWith("dim_dates_date_day") &&
+            f.member?.endsWith("dates_date_day") &&
             f.operator === "equals" &&
             Array.isArray(f.values) &&
             f.values.length === 1,
         ) ||
-        (query.dimensions ?? []).some((d) =>
-          d.endsWith("dim_dates_date_day"),
-        ) ||
+        (query.dimensions ?? []).some((d) => d.endsWith("dates_date_day")) ||
         // A point-in-time pin expressed via timeDimensions counts as anchored
         // only when it is a single day — a single-element dateRange or
         // granularity "day". A wider dateRange with null granularity is NOT

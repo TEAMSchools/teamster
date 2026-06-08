@@ -240,7 +240,7 @@ mcp = FastMCP(
         "use the academic_year value whose start year matches the current "
         "calendar year (e.g. if today is May 2026, current academic_year = "
         "2025). In attendance views, the academic year is exposed as "
-        "dim_terms_academic_year (sourced from the term dimension, not the "
+        "terms_academic_year (sourced from the term dimension, not the "
         "fact).\n\n"
         "Numeric values come back as strings — cast to numeric before "
         "comparing or arithmetic. Raw `==` / `<` compare lexicographically "
