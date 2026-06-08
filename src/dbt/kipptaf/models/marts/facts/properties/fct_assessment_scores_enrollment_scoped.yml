@@ -71,8 +71,9 @@ models:
       - name: test_date_key
         data_type: date
         description: >-
-          FK to dim_dates. The date the assessment was taken. Populated for all
-          rows including state assessments.
+          FK to dim_dates. The date the assessment was taken. Populated for
+          state assessments (now threaded from source); nullable for internal
+          rows that lack a recorded sitting date upstream.
         constraints:
           - type: foreign_key
             to: ref('dim_dates')
