@@ -83,6 +83,18 @@ Use `uv run dbt ... --project-dir <worktree>/src/dbt/<project>` and
 
 ## Phase 0 — CI wiring for the single-PR cross-project workflow
 
+> **Sequencing decision (2026-06-05):** Single-PR with **staged externals** (not
+> clone-from-prod). The NJGPA package columns (Task 3) and FLDOE district
+> `test_date` (Task 2) are _new_ columns absent from prod, so
+> `dbt clone --state target/prod` can't introduce them and
+> `dbt_utils.union_relations` intersects the prod schema. Instead: add the
+> `target=staging` source-schema branch (Task 0),
+> `stage_external_sources --target staging` for the pearson + fldoe GCS
+> externals, then **build** the modified district/package models into the
+> `zz_stg_<district>_*` schemas so kipptaf resolves the new columns. The
+> `stage_external_sources` + district-build commands are **run/confirmed by the
+> user** (env-touching) at the Task 9 pause.
+
 ### Task 0: Stage the cross-project sources
 
 Per `src/dbt/kipptaf/CLAUDE.md` → "Single-PR cross-project workflow": kipptaf CI
