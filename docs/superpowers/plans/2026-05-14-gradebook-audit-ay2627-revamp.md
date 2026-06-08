@@ -807,7 +807,7 @@ and the UNPIVOT list in `int_tableau__gradebook_audit_flags.sql`.
 
 ### 6a: `int_tableau__gradebook_audit_teacher_scaffold.sql` — quarter-grain redesign
 
-- [ ] **Step 6a.1: Redesign
+- [x] **Step 6a.1: Redesign
       `int_tableau__gradebook_audit_teacher_scaffold.sql`**
 
   This step replaces the entire scaffold with the quarter-grain design. The
@@ -1031,7 +1031,7 @@ and the UNPIVOT list in `int_tableau__gradebook_audit_flags.sql`.
 
   _(Replace `[_unpivot]` with the actual model name decided in step 3.1.)_
 
-- [ ] **Step 6a.2: Build and verify the teacher scaffold**
+- [x] **Step 6a.2: Build and verify the teacher scaffold**
 
   ```bash
   uv run dbt build \
@@ -1055,7 +1055,7 @@ and the UNPIVOT list in `int_tableau__gradebook_audit_flags.sql`.
 
 ### 6b: `int_tableau__gradebook_audit_student_scaffold.sql` — quarter-grain redesign
 
-- [ ] **Step 6b.1: Redesign
+- [x] **Step 6b.1: Redesign
       `int_tableau__gradebook_audit_student_scaffold.sql`**
 
   This step applies all changes to the student scaffold: replace the
@@ -1407,7 +1407,7 @@ and the UNPIVOT list in `int_tableau__gradebook_audit_flags.sql`.
   - All column listings are explicit per Bini's requirement for tableau schema
     models (no `SELECT *` or `SELECT * EXCEPT`).
 
-- [ ] **Step 6b.2: Build and verify the student scaffold**
+- [x] **Step 6b.2: Build and verify the student scaffold**
 
   ```bash
   uv run dbt build \
@@ -1440,7 +1440,7 @@ and the UNPIVOT list in `int_tableau__gradebook_audit_flags.sql`.
 
   Expected: zero results (the disabled model's own SQL file is fine to stay).
 
-- [ ] **Step 6b.4: Commit**
+- [x] **Step 6b.4: Commit**
 
   ```bash
   git add -u
@@ -1458,7 +1458,7 @@ Complete replacement. Changes from the old model:
   `assign_s_hs_score_not_conversion_chart_options`
 - Single-line comments use `--`; multi-line use `/* */`
 
-- [ ] **Step 6c.1: Rewrite the model**
+- [x] **Step 6c.1: Rewrite the model**
 
   **File:**
   `src/dbt/kipptaf/models/extracts/tableau/intermediate/int_tableau__gradebook_audit_assignments_student.sql`
@@ -1682,13 +1682,13 @@ Complete replacement. Changes from the old model:
   where ce.scaffold_name = 'student_category_scaffold'
   ```
 
-- [ ] **Step 6c.2: Update YAML**
+- [x] **Step 6c.2: Update YAML**
 
   Remove `assign_s_ms_score_not_conversion_chart_options` and
   `assign_s_hs_score_not_conversion_chart_options` from
   `intermediate/properties/int_tableau__gradebook_audit_assignments_student.yml`.
 
-- [ ] **Step 6c.3: Build and verify**
+- [x] **Step 6c.3: Build and verify**
 
   ```bash
   uv run dbt build \
@@ -1716,7 +1716,7 @@ Complete replacement. Changes from the old model:
 **File:**
 `src/dbt/kipptaf/models/extracts/tableau/intermediate/int_tableau__gradebook_audit_assignments_teacher.sql`
 
-- [ ] **Step 6d.1: Rewrite the model**
+- [x] **Step 6d.1: Rewrite the model**
 
   ```sql
   with
@@ -1856,7 +1856,7 @@ Complete replacement. Changes from the old model:
   where sec.scaffold_name = 'teacher_category_scaffold'
   ```
 
-- [ ] **Step 6d.2: Update YAML**
+- [x] **Step 6d.2: Update YAML**
 
   Remove `s_max_score_greater_100` from
   `intermediate/properties/int_tableau__gradebook_audit_assignments_teacher.yml`.
@@ -1867,7 +1867,7 @@ Complete replacement. Changes from the old model:
 > exceptions, there is no longer a reason to keep the rollup inline. See Task 5
 > note.
 
-- [ ] **Step 6d.3: Build and verify**
+- [x] **Step 6d.3: Build and verify**
 
   ```bash
   uv run dbt build \
@@ -1911,7 +1911,7 @@ Complete replacement. Changes from the old model:
 **File:**
 `src/dbt/kipptaf/models/extracts/tableau/intermediate/int_tableau__gradebook_audit_categories_teacher.sql`
 
-- [ ] **Step 6e.1: Rewrite the model**
+- [x] **Step 6e.1: Rewrite the model**
 
   ```sql
   with
@@ -2085,7 +2085,7 @@ Complete replacement. Changes from the old model:
   from percent_graded as f
   ```
 
-- [ ] **Step 6e.2: Update YAML**
+- [x] **Step 6e.2: Update YAML**
 
   Remove all four S-total column entries from
   `intermediate/properties/int_tableau__gradebook_audit_categories_teacher.yml`.
@@ -2095,7 +2095,7 @@ Complete replacement. Changes from the old model:
   `percent_graded_for_assignment`. Add `assignmentid`, `duedate`, and manager
   columns.
 
-- [ ] **Step 6e.3: Build and verify**
+- [x] **Step 6e.3: Build and verify**
 
   ```bash
   uv run dbt build \
@@ -2156,7 +2156,7 @@ Complete replacement. Changes from the old model:
 **File:**
 `src/dbt/kipptaf/models/extracts/tableau/intermediate/int_tableau__gradebook_audit_flags.sql`
 
-- [ ] **Step 6f.1: Rewrite the model**
+- [x] **Step 6f.1: Rewrite the model**
 
   ```sql
   with
@@ -2758,7 +2758,7 @@ Complete replacement. Changes from the old model:
   from teacher_unpivot_cc as r
   ```
 
-- [ ] **Step 6f.2: Update YAML**
+- [x] **Step 6f.2: Update YAML**
 
   In `intermediate/properties/int_tableau__gradebook_audit_flags.yml`:
   - Remove columns: all week columns, `is_quarter_end_date_range`,
@@ -2776,7 +2776,7 @@ Complete replacement. Changes from the old model:
     `percent_graded_for_assignment`
   - Add: `manager_employee_number`, `manager_name`, `manager_tableau_username`
 
-- [ ] **Step 6f.3: Build and verify**
+- [x] **Step 6f.3: Build and verify**
 
   ```bash
   uv run dbt build \
@@ -2825,7 +2825,7 @@ Complete replacement. Changes from the old model:
 **File:**
 `src/dbt/kipptaf/models/extracts/tableau/rpt_tableau__gradebook_audit.sql`
 
-- [ ] **Step 6g.1: Rewrite the model**
+- [x] **Step 6g.1: Rewrite the model**
 
   ```sql
   with
@@ -3617,7 +3617,7 @@ Complete replacement. Changes from the old model:
       and t.cte_grouping = 'class_category'
   ```
 
-- [ ] **Step 6g.2: Build and verify**
+- [x] **Step 6g.2: Build and verify**
 
   ```bash
   uv run dbt build \
