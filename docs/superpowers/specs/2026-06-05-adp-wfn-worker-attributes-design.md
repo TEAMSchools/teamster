@@ -239,7 +239,8 @@ diverges:
   PII/SPI, no consumer) — declared in the model so a future need is a one-line
   `$select` change.
 
-Update #4106's body to match before/at implementation.
+Leave #4106's body as-is; the PR description carries this divergence note (no
+issue-body edit).
 
 ## Open items to resolve during execution
 
