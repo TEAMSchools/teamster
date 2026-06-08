@@ -29,48 +29,58 @@ this:
 
 ## Decided approach
 
-Keep a **curated `$select`** (do **not** drop it) and expand it — plus the
-pydantic model — to capture everything retrievable **except** the sensitive PII
-we don't already sync.
+Model the **complete retrievable Worker representation** in the pydantic schema,
+and curate at **two points** — the `$select` (keeps PII off the wire) and the
+**staging contract** (keeps PII columns out of the warehouse). The model itself
+declares everything; only two sensitive PII fields are curated out at those two
+points. Surfacing an omitted field later is then a one-line `$select` change —
+no schema/Avro work.
 
-### Why keep `$select` rather than drop it
+### Why keep a curated `$select` (do not drop it)
 
-- Dropping `$select` captures nothing on its own — the pydantic model is the
-  real gate, so the model must be widened either way. Dropping `$select` saves
-  no modeling work.
 - **Minimum PII on the wire.** A curated `$select` means SSN / identity
-  documents never leave ADP. ADP's own guide recommends retrieving "the minimum
-  amount of worker information needed" (Worker Management API Guide, p.9).
-- **Clean checks.** A `$select` that mirrors the model keeps
-  `check_avro_schema_valid` meaningful instead of warning on dozens of
-  unrequested fields every run.
+  documents never leave ADP, even though the model can represent them. ADP's own
+  guide recommends retrieving "the minimum amount of worker information needed"
+  (Worker Management API Guide, p.9).
+- **Smaller payload.** No transferring (or holding in run memory) fields we
+  don't warehouse.
+- **Drop-in later.** Because the model is the complete representation, surfacing
+  an omitted field is a one-line `$select` addition. The model being a superset
+  of any response also keeps `check_avro_schema_valid` quiet (responses are
+  always a subset of the schema).
 - OData `$select` has no "all except" operator (inclusion-only; `$select=*` or
   omission are the only "everything" forms), so an inclusion list is the only
   way to express "everything except SSN."
 
 ### Minimal-curation rule
 
-Capture **every retrievable field** the enumeration confirms, **minus exactly
-two PII fields** we don't sync today:
+The pydantic model declares **every retrievable field** the enumeration
+confirms. Curation removes **exactly two PII fields** at the `$select` **and**
+staging layers (never requested, never warehoused); they stay declared in the
+model for future use:
 
 | Cut field                         | Basis                                                                                                                                 |
 | --------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------- |
 | `person/governmentIDs` (SSN/ITIN) | Direct identifier; in ADP's masked PII/SPI set (guide p.9); no warehouse consumer (`workers_sync` writes `employee_number`, not SSN). |
 | `person/identityDocuments`        | Work-authorization document numbers (passport/visa/etc.); in ADP's masked PII/SPI set (guide p.9); no consumer.                       |
 
-Everything else retrievable is captured — including `socialInsurancePrograms`,
-`deathDate`, `tobaccoUserIndicator` (none are in ADP's PII/SPI set) and
-`payGradePayRange` (in ADP's PII set, but **less** sensitive than
-`baseRemuneration`, which we already sync — cutting it would be incoherent).
+Everything else retrievable is requested **and** staged — including
+`socialInsurancePrograms`, `deathDate`, `tobaccoUserIndicator` (none are in
+ADP's PII/SPI set) and `payGradePayRange` (in ADP's PII set, but **less**
+sensitive than `baseRemuneration`, which we already sync — cutting it would be
+incoherent).
 
-Fields in the guide's **Appendix B (Not Supported for Data Retrieval)** —
-`Payroll Name`, `# of Dependents`, `Works from Home`, `Annual salary`,
-retirement-plan eligibility dates, etc. — are excluded automatically (the API
-won't return them).
+**Model scope boundary.** "Complete representation" means everything retrievable
+on **WFN Classic** (our platform): the guide's Appendix A minus two exclusions
+that are dead weight in the model because they never reach it —
 
-WFN **Next-Gen-only** fields (`workAgreementRef`, `bargainingUnit`, etc.) are
-omitted; KTAF is on WFN Classic and the enumeration's live-data leg confirms
-they don't return.
+- **Appendix B (Not Supported for Data Retrieval)** — `Payroll Name`,
+  `# of Dependents`, `Works from Home`, `Annual salary`, retirement-plan
+  eligibility dates, etc. The API won't return them.
+- **WFN Next-Gen-only** fields (`workAgreementRef`, `bargainingUnit`, etc.) —
+  KTAF is on WFN Classic and the enumeration's live-data leg confirms they don't
+  return. (A future WFN-NG migration is a separate, larger effort; modeling
+  these now is premature.)
 
 ## Components
 
@@ -102,9 +112,11 @@ effort, for discovery — the production asset keeps its curated `$select`.
 
 ### 2. Pydantic schema (`libraries/adp/workforce_now/api/schema.py`)
 
-Expand to the enumerated set. Anchored on the guide's Data Dictionary (the
-enumeration is authoritative for the final list, especially
-`customCountryInputs` whose shape is not documented):
+Model the **complete retrievable representation** (Appendix A minus Appendix B
+minus WFN-NG-only, per the model-scope boundary above). The enumeration is
+authoritative for the final list (especially `customCountryInputs`, whose shape
+is undocumented). The model declares the two cut PII fields too — only `$select`
+and staging omit them:
 
 - **`WorkAssignment`** (already requested whole — model-only additions):
   `jobFunctionCode`, `customCountryInputs` (shape per enumeration),
@@ -121,9 +133,10 @@ enumeration is authoritative for the final list, especially
   `disabilityTypeCodes`, `socialInsurancePrograms`, `tobaccoUserIndicator`,
   `militaryDischargeDate` are already declared — they only need the `$select`
   paths below to populate.)
-- **Remove** `Person.governmentIDs` (declared but cut) so `model = $select`.
-  `identityDocuments` is not declared today; do not add it. The `GovernmentID`
-  class can be removed if unused elsewhere.
+- **`Person` (cut PII — declared, not requested/staged):** keep `governmentIDs`;
+  **add** `identityDocuments` (new `IdentityDocument` model class). The model
+  represents them so a future need is a one-line `$select` change; `$select` and
+  staging omit them.
 
 ### 3. Asset `$select` (`code_locations/kipptaf/.../api/assets.py`)
 
@@ -168,8 +181,12 @@ columns exactly.
   once their `$select` paths are added (e.g. `person__marital_status_code__*`,
   `person__preferred_gender_pronoun_code__*`, `person__birth_name__*`,
   `person__social_insurance_programs`, `person__tobacco_user_indicator`) — no
-  schema change, just data. **No column drops** are required (the only cut
-  field, `governmentIDs`, is not staged today).
+  schema change, just data.
+- **Cut PII stays unstaged.** Because the model now declares `governmentIDs` /
+  `identityDocuments`, they surface as **always-null** columns in the external
+  table (the curated `$select` never populates them); the staging model does
+  **not** project them into the contract, keeping SSN / identity-doc columns out
+  of the warehouse. No column drops are needed.
 - **Descriptions** on every genuinely new column (per dbt conventions); profile
   values via BigQuery MCP after staging rebuilds.
 - **Surrogate key**: keep the whole-struct hash (`to_json_string(person)` /
@@ -201,7 +218,9 @@ separate follow-up driven by a concrete consumer.
 
 ## Out of scope
 
-- Cut PII: `governmentIDs` (SSN/ITIN), `identityDocuments`.
+- Requesting or warehousing the two cut PII fields (`governmentIDs`,
+  `identityDocuments`) — modeled for future use, but excluded from `$select` and
+  staging.
 - Jobs validation table (tracked in
   [#4071](https://github.com/TEAMSchools/teamster/issues/4071)).
 - The `workers_sync` (update) asset.
@@ -213,10 +232,12 @@ The issue's original "Decided approach" said **drop `$select`** and **capture
 everything including `governmentIDs` (SSN/ITIN)**. This design intentionally
 diverges:
 
-- **Keep a curated `$select`** (minimum PII on the wire; clean checks; same
-  modeling work).
-- **Exclude `governmentIDs` and `identityDocuments`** (ADP-classified masked
-  PII/SPI, no consumer).
+- **Keep a curated `$select`** (minimum PII on the wire) rather than dropping
+  it.
+- **Model the complete representation** but **exclude `governmentIDs` and
+  `identityDocuments`** from `$select` and staging (ADP-classified masked
+  PII/SPI, no consumer) — declared in the model so a future need is a one-line
+  `$select` change.
 
 Update #4106's body to match before/at implementation.
 
