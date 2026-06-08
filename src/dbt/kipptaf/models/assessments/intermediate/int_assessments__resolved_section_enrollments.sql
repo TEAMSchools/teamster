@@ -200,6 +200,8 @@ with
             and ce.cc_dcid is not null
     ),
 
+    -- grain projection: every selected column is functionally determined
+    -- by the partition key; not a mask for upstream duplicates
     resolved_subject_keys as (select distinct score_grain_key, from candidates_subject),
 
     -- scores that found no subject section, eligible for the homeroom tier
