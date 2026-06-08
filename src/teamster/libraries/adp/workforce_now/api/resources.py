@@ -90,8 +90,22 @@ class AdpWorkforceNowResource(ConfigurableResource):
             # a 504 HTML page) are not JSON, and JSONDecodeError is not in the
             # retry predicate, so parsing here would convert a retryable error
             # into a non-retryable one.
-            if response.status_code == 429 or response.status_code >= 500:
-                self._log.warning(msg=response.text)
+            #
+            # ADP's gateway also returns a transient "default backend - 404" when
+            # it briefly has no healthy backend (a load-balancer signature, seen
+            # mid-pagination). That is distinct from a genuine resource 404 —
+            # treat only the gateway variant as retryable so a real 404 still
+            # fails fast.
+            body = response.text
+            is_transient_gateway_404 = (
+                response.status_code == 404 and "default backend" in body.lower()
+            )
+            if (
+                response.status_code == 429
+                or response.status_code >= 500
+                or is_transient_gateway_404
+            ):
+                self._log.warning(msg=body)
                 raise
 
             # other 4xx are deterministic client errors — surface a specific
