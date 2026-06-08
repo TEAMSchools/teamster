@@ -57,6 +57,7 @@ select
     fl.student_id,
     fl.assessment_name,
     fl.performance_level as achievement_level_int,
+    fl.test_date,
     fl.student_number,
 
     {{ extract_code_location("fl") }} as _dbt_source_project,

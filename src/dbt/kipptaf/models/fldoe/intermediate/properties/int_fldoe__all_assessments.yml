@@ -97,6 +97,10 @@ models:
           to stg_powerschool__u_studentsuserfields.fleid. Null when no PS Miami
           student carries the matching FLEID.
 
+      - name: test_date
+        data_type: date
+        description: Date on which the assessment was administered.
+
       - name: sublevel_number
         data_type: int64
         description: >

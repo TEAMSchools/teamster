@@ -48,6 +48,10 @@ models:
         data_type: string
         description: Assessment year as reported by Pearson (string format).
 
+      - name: test_date
+        data_type: date
+        description: Date on which the assessment was administered.
+
       - name: blackorafricanamerican
         data_type: string
         description:
