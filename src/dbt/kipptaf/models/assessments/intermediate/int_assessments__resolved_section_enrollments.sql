@@ -32,6 +32,20 @@ with
         where sc.is_internal_assessment and not sc.is_replacement
     ),
 
+    internal_deduplicated as (
+        {{
+            dbt_utils.deduplicate(
+                relation="internal_anchored",
+                partition_by="""
+                    powerschool_student_number,
+                    canonical_assessment_id,
+                    _dbt_source_project
+                """,
+                order_by="anchor_date asc",
+            )
+        }}
+    ),
+
     internal_scores as (
         select
             powerschool_student_number,
@@ -44,20 +58,7 @@ with
             cast(null as string) as administration_period,
 
             'internal' as source_type,
-        from
-            (
-                {{
-                    dbt_utils.deduplicate(
-                        relation="internal_anchored",
-                        partition_by="""
-                            powerschool_student_number,
-                            canonical_assessment_id,
-                            _dbt_source_project
-                        """,
-                        order_by="anchor_date asc",
-                    )
-                }}
-            )
+        from internal_deduplicated
     ),
 
     -- NJ state scores (Pearson). illuminate_subject is the upstream state->course
