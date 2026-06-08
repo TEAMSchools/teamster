@@ -391,7 +391,7 @@ only handles disabling the staging model itself.
 
 ### Disable the exceptions staging model
 
-- [ ] **Step 2.1: Disable the staging model**
+- [x] **Step 2.1: Disable the staging model**
 
   In
   `src/dbt/kipptaf/models/google/sheets/staging/properties/stg_google_sheets__gradebook_exceptions.yml`,
@@ -405,7 +405,7 @@ only handles disabling the staging model itself.
   The SQL file and source entry stay in place. This preserves the model for
   reference pending any operational decisions after July 1st.
 
-- [ ] **Step 2.2: Commit**
+- [x] **Step 2.2: Commit**
 
   ```bash
   git commit -m "feat(dbt): disable stg_google_sheets__gradebook_exceptions — refs removed in Task 6"
