@@ -64,8 +64,10 @@ file; domain specifics live in the nearest subdirectory CLAUDE.md.
   the worktree root where `dbt_project.yml` doesn't exist). For Python execution
   from the main repo, prefix `VIRTUAL_ENV=` and use
   `uv --directory <worktree> run python ...` — bare `uv run --active` reads the
-  main repo's `.venv` and misses worktree-only changes. Otherwise prefer
-  absolute paths.
+  main repo's `.venv` and misses worktree-only changes. `uv --directory` also
+  resolves a relative _script_ path under the worktree, so a main-repo script
+  path breaks — pass an absolute script path or run it from the main repo.
+  Otherwise prefer absolute paths.
 
 - **Branch switch**: `gh issue develop <number> --name <branch> --checkout`.
 
@@ -179,7 +181,11 @@ file; domain specifics live in the nearest subdirectory CLAUDE.md.
   `.trunk/tools/trunk check --force <files>` to verify before claiming the
   change is lint-clean. Run from inside the worktree —
   `trunk check --force <abs-worktree-paths>` from the main repo silently returns
-  "no applicable linters".
+  "no applicable linters". The `trunk` binary lives only in the main repo
+  (`.trunk/tools/` is gitignored, absent in worktrees) — invoke the absolute
+  path `/workspaces/teamster/.trunk/tools/trunk` with cwd set to the worktree;
+  relative paths run from the main repo check the main-repo copies, not your
+  worktree edits.
 
 - **Linter**: Suppress with `trunk-ignore(linter/rule): reason` (e.g.
   `# trunk-ignore(bandit/B603): static argv, no shell`) on the line immediately
@@ -409,6 +415,14 @@ opaque token.
   prior call (`"[\"a\",\"b\"]"`), not a bare list.
 
 ### Dagster run failure diagnosis
+
+A step failure's real exception is the **bottom of the error chain**:
+`get_run_logs(filter_types=["ExecutionStepFailureEvent"])` →
+`error.errorChain[-1].error.message`. The top-level
+`DagsterExecutionStepExecutionError` and the day2 collector's
+`errorClass`/`errorDetail` only show the wrapper — read the chain bottom before
+theorizing about cause (e.g. ADP "Code error" was a transient gateway 404, not
+rate-limiting).
 
 Step pod stdout is filtered from `k8s_container` logs. For per-step execution
 logs, use Dagster's compute log manager:
