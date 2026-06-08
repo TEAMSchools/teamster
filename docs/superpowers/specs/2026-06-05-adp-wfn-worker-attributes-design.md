@@ -170,13 +170,16 @@ columns exactly.
   `customCountryInputs`, `rehireEligibleIndicator`, `payGradeCode`,
   `payGradePayRange`, `laborUnion`, `workShiftCode`) and the `workerDates`-
   derived fields.
-- **New columns** (preserve structs; flatten only where step 5 requires):
-  - New array columns: `business_communication__faxes` / `__pagers`,
-    `person__communication__faxes` / `__pagers`,
-    `(person__)?custom_field_group__amount_fields` / `__percent_fields` /
-    `__telephone_fields`.
-  - New scalar columns: `person__death_date`,
-    `person__legal_address__delivery_point`.
+- **Flatten every new worker-grain field** — scalars and single (non-repeated)
+  nested objects — following the model's existing flatten pattern (`Code` →
+  `__code_value` / `__long_name` / `__short_name` [+ `__effective_date`]). New
+  flattened scalar columns: `person__death_date`,
+  `person__legal_address__delivery_point`.
+- **Repeated records stay nested** (finer grain than the worker): the new
+  `business_communication__faxes` / `__pagers`, `person__communication__faxes` /
+  `__pagers`, and `(person__)?custom_field_group__amount_fields` /
+  `__percent_fields` / `__telephone_fields` land as `ARRAY<STRUCT<...>>` columns
+  alongside the existing array columns.
 - **Already-present, currently-empty flattened columns simply start populating**
   once their `$select` paths are added (e.g. `person__marital_status_code__*`,
   `person__preferred_gender_pronoun_code__*`, `person__birth_name__*`,
@@ -197,11 +200,24 @@ columns exactly.
 
 ### 5. Intermediate (`int_l__work_assignments` + properties YAML)
 
-Flatten **only** the issue's three motivating fields (preserve structs
-otherwise): `jobFunctionCode`, `customCountryInputs`, `rehireEligibleIndicator`.
-Add them to the parsed CTE and the final `SELECT`, with `description:` on each
-and the model's existing uniqueness test retained. Any further flattening is a
-separate follow-up driven by a concrete consumer.
+Flatten **every new work-assignment-grain field** into the model, matching its
+existing flatten pattern (scalar → one column; `Code` → `__code_value` /
+`__long_name` / `__short_name` [+ `__effective_date`]; single nested struct →
+its scalar leaves). New flattened columns:
+
+- `jobFunctionCode` (`Code`), `rehireEligibleIndicator` (bool), `payGradeCode`
+  (`Code`), `payGradePayRange` (→ `__minimum_rate__amount_value` /
+  `__median_rate__amount_value` / `__maximum_rate__amount_value`), `laborUnion`
+  (→ `labor_union_code__*`), `workShiftCode` (`Code`).
+- `customCountryInputs` — flatten if the enumeration shows it is a single
+  object; if it is a repeated record, keep it as an `ARRAY<STRUCT<...>>` column
+  (finer grain).
+
+Add each to the parsed CTE and the final `SELECT` with `description:`; retain
+the model's existing uniqueness test. **Repeated sub-records stay nested**
+(finer grain than the work assignment): `additionalRemunerations`,
+`assignedOrganizationalUnits`, `occupationalClassifications`, `workerGroups`,
+etc. remain `ARRAY` columns as today.
 
 ### 6. Rollout / sequencing
 
@@ -224,7 +240,8 @@ separate follow-up driven by a concrete consumer.
 - Jobs validation table (tracked in
   [#4071](https://github.com/TEAMSchools/teamster/issues/4071)).
 - The `workers_sync` (update) asset.
-- Flattening any captured field beyond the three named in step 5.
+- Flattening _repeated_ sub-records (arrays) into their own grain — they stay
+  nested as `ARRAY<STRUCT<...>>` columns in both staging and int.
 
 ## Divergence from issue #4106 (update the issue)
 
