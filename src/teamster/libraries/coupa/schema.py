@@ -316,15 +316,6 @@ class LegalEntity(BaseModel):
 
 
 class User(UserBase):
-    id: int | None = None
-    login: str | None = None
-    email: str | None = None
-    firstname: str | None = None
-    lastname: str | None = None
-    fullname: str | None = None
-    employee_number: str | None = None
-    salesforce_id: str | None = None
-    avatar_thumb_url: str | None = None
     middlename: str | None = None
     active: bool | None = None
     created_at: str | None = None
