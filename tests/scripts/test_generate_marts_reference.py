@@ -92,6 +92,23 @@ def test_snowflake_subgraph_walks_full_chain() -> None:
     assert {"dim_regions", "dim_students", "dim_dates"} <= targets
 
 
+def test_snowflake_subgraph_excludes_conformed() -> None:
+    adjacency = gen.build_adjacency(_sample_edges())
+    sub = gen.snowflake_subgraph(
+        adjacency, "fct_x", exclude=frozenset({"dim_dates", "dim_locations"})
+    )
+
+    targets = {e.target for e in sub}
+    # excluded targets drop out entirely (node + edges)...
+    assert "dim_dates" not in targets
+    assert "dim_locations" not in targets
+    # ...and the chain does not traverse through them: dim_regions was only
+    # reachable via the excluded dim_locations, so it disappears too.
+    assert "dim_regions" not in targets
+    # non-excluded structure is retained.
+    assert {"dim_enrollments", "dim_students"} <= targets
+
+
 def test_collect_fact_names_sorted_from_facts_dir() -> None:
     names = gen.collect_fact_names(gen.MARTS_DIR)
     assert names == sorted(names)
