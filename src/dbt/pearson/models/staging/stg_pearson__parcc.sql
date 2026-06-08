@@ -204,4 +204,55 @@ select
         then 'Did Not Yet Meet Expectations'
     end as testperformancelevel_text,
 
+    coalesce(
+        case
+            when
+                coalesce(
+                    unit1onlineteststartdatetime,
+                    unit2onlineteststartdatetime,
+                    unit3onlineteststartdatetime,
+                    unit4onlineteststartdatetime
+                )
+                is not null
+            then
+                date(
+                    least(
+                        coalesce(
+                            cast(
+                                safe.parse_datetime(
+                                    '%m/%d/%Y %H:%M', unit1onlineteststartdatetime
+                                ) as timestamp
+                            ),
+                            cast('9999-12-31' as timestamp)
+                        ),
+                        coalesce(
+                            cast(
+                                safe.parse_datetime(
+                                    '%m/%d/%Y %H:%M', unit2onlineteststartdatetime
+                                ) as timestamp
+                            ),
+                            cast('9999-12-31' as timestamp)
+                        ),
+                        coalesce(
+                            cast(
+                                safe.parse_datetime(
+                                    '%m/%d/%Y %H:%M', unit3onlineteststartdatetime
+                                ) as timestamp
+                            ),
+                            cast('9999-12-31' as timestamp)
+                        ),
+                        coalesce(
+                            cast(
+                                safe.parse_datetime(
+                                    '%m/%d/%Y %H:%M', unit4onlineteststartdatetime
+                                ) as timestamp
+                            ),
+                            cast('9999-12-31' as timestamp)
+                        )
+                    )
+                )
+        end,
+        date(safe.parse_datetime('%m/%d/%Y %H:%M', attemptcreatedate))
+    ) as test_date,
+
 from parcc

@@ -89,3 +89,9 @@ models:
         data_type: string
       - name: studenttestuuid
         data_type: string
+      - name: test_date
+        data_type: date
+        description:
+          Earliest online unit start date across all attempted units, or the
+          paper attempt create date when no online unit datetimes are present.
+          Null when no unit datetime or paper date is available.

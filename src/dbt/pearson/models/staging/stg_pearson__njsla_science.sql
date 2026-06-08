@@ -195,4 +195,63 @@ select
         then 'Did Not Yet Meet Expectations'
     end as testperformancelevel_text,
 
+    coalesce(
+        case
+            when
+                coalesce(
+                    unit1onlineteststartdatetime,
+                    unit2onlineteststartdatetime,
+                    unit3onlineteststartdatetime,
+                    unit4onlineteststartdatetime
+                )
+                is not null
+            then
+                date(
+                    least(
+                        -- safe_cast fails on no-seconds strings (e.g. '2022-05-10
+                        -- 09:26');
+                        -- safe.parse_datetime('%Y-%m-%d %H:%M', ...) is load-bearing
+                        -- for that format
+                        coalesce(
+                            safe_cast(unit1onlineteststartdatetime as timestamp),
+                            cast(
+                                safe.parse_datetime(
+                                    '%Y-%m-%d %H:%M', unit1onlineteststartdatetime
+                                ) as timestamp
+                            ),
+                            cast('9999-12-31' as timestamp)
+                        ),
+                        coalesce(
+                            safe_cast(unit2onlineteststartdatetime as timestamp),
+                            cast(
+                                safe.parse_datetime(
+                                    '%Y-%m-%d %H:%M', unit2onlineteststartdatetime
+                                ) as timestamp
+                            ),
+                            cast('9999-12-31' as timestamp)
+                        ),
+                        coalesce(
+                            safe_cast(unit3onlineteststartdatetime as timestamp),
+                            cast(
+                                safe.parse_datetime(
+                                    '%Y-%m-%d %H:%M', unit3onlineteststartdatetime
+                                ) as timestamp
+                            ),
+                            cast('9999-12-31' as timestamp)
+                        ),
+                        coalesce(
+                            safe_cast(unit4onlineteststartdatetime as timestamp),
+                            cast(
+                                safe.parse_datetime(
+                                    '%Y-%m-%d %H:%M', unit4onlineteststartdatetime
+                                ) as timestamp
+                            ),
+                            cast('9999-12-31' as timestamp)
+                        )
+                    )
+                )
+        end,
+        safe_cast(paperattemptcreatedate as date)
+    ) as test_date,
+
 from njsla_science

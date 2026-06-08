@@ -32,33 +32,4 @@ select
         else testcode
     end as module_code,
 
-    coalesce(
-        case
-            when
-                coalesce(
-                    unit1onlineteststartdatetime,
-                    unit2onlineteststartdatetime,
-                    unit3onlineteststartdatetime
-                )
-                is not null
-            then
-                date(
-                    least(
-                        coalesce(
-                            safe_cast(unit1onlineteststartdatetime as timestamp),
-                            cast('9999-12-31' as timestamp)
-                        ),
-                        coalesce(
-                            safe_cast(unit2onlineteststartdatetime as timestamp),
-                            cast('9999-12-31' as timestamp)
-                        ),
-                        coalesce(
-                            safe_cast(unit3onlineteststartdatetime as timestamp),
-                            cast('9999-12-31' as timestamp)
-                        )
-                    )
-                )
-        end,
-        safe_cast(paperattemptcreatedate as date)
-    ) as test_date,
 from union_relations
