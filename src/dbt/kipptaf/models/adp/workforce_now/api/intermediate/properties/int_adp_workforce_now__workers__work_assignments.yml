@@ -246,8 +246,6 @@ models:
         data_type: date
       - name: job_code__effective_date
         data_type: date
-      - name: job_function_code__effective_date
-        data_type: date
       - name: pay_cycle_code__effective_date
         data_type: date
       - name: standard_hours__unit_code__effective_date
