@@ -228,31 +228,57 @@ Columns:
 - `is_enrolled` — INT64 1 for every row (each row is an enrolled in-session day;
   per marts R3, a countable flag). Row marker, not the count base — measures use
   `count_distinct(student_key)`, not `sum(is_enrolled)` (see Component 2).
-- Anchor flags (INT64 0/1) — the same three `fct_student_attendance_daily`
-  exposes, computed with identical `row_number()` windows partitioned by
-  `student_enrollment_key`. **Critical: partition by `student_enrollment_key`,
-  which encodes `academic_year` in its hash — this makes `is_latest_record`
-  year-scoped by construction (the last in-session day of _this stint/year_),
-  not a global per-student latest.** Do NOT partition by `student_key` /
-  `student_number` alone: that would make `is_latest_record` the student's
-  global last day, so a past-year `_year_end` query would return only network
-  leavers-after-that-year (verified: AY2023 → 2,428 wrong vs 10,381 correct).
-  With the enrollment-key partition, `count_students_year_end` for any year —
-  current or past — equals that year's enrolled-as-of-last-day count (AY2023
-  10,381, AY2025 11,261; verified 2026-06-09).
-  - `is_latest_record` —
-    `row_number() over (partition by student_enrollment_key order by date_key desc) = 1`.
-    The most recent in-session day of the stint (hence of that academic year);
-    drives `_year_end` measures (attendance filters `_year_end` on
-    `is_latest_record`, not a separate flag — mirror that).
+- Anchor flags (INT64 0/1) — these are **calendar-derived, per-school
+  period-last-day markers**, NOT per-student `row_number()` windows. A row's
+  anchor is true when its `date_key` equals the school's last in-session day of
+  that period. They mark "is this the period's last day" (a calendar property,
+  same for every enrolled student at the school), so a student who withdrew
+  mid-period has no row on the period's last day and correctly drops from a
+  period-end count — that is the "still enrolled at period end" semantic. **All
+  anchors are per-school** (not network-global): verified 2026-06-09 that
+  schools share a month-end mid-year (Oct: all 22 schools → 2025-10-31) but
+  **diverge at year-end** (June: 4 distinct last days, Miami 2026-06-04 vs
+  others to 2026-06-29). A network-global "last day" would silently drop
+  early-ending schools (Miami) — the per-school anchor counts each as of its own
+  last day.
+  - `is_current_record` —
+    `date_key = least(<school's max in-session date for this academic_year>, current_date('America/New_York'))`.
+    The school's last in-session day that **has actually occurred**. For a
+    completed year this is the school's June last day; for the **current** year
+    it is today (the future June days don't exist as rows yet, so a static
+    "school year last day" anchor would return ~0 mid-year — this
+    `least(..., current_date)` cap is what makes the default work live).
+    **Build-time dependent**: like the upstream `is_current_week_mon_sun`, this
+    flag shifts as `current_date` advances, so the daily mart rebuild keeps it
+    current; it is non-deterministic across build dates for the in-progress year
+    (static for completed years). Drives the default `count_students` at year /
+    no-grouping (AY2025 → 10,374 as of each school's latest occurred day; AY2023
+    → 9,630 true year-end; verified 2026-06-09).
   - `is_month_end_record` —
-    `row_number() over (partition by student_enrollment_key, date_trunc(date_key, month) order by date_key desc) = 1`.
-    The last in-session day per student-month.
-  - `is_week_end_record` — same window with
-    `date_trunc(date_key, week(monday))`. The last in-session day per
-    student-week. **At day grain this is a real anchor** (the no-op concern that
-    dogged the weekly design is gone — a week now has multiple day-rows, exactly
-    one of which is the week-end).
+    `date_key = least(<school's last in-session day of the calendar month>, current_date)`.
+    Per `(school, month)`.
+  - `is_week_end_record` —
+    `date_key = least(<school's last in-session day of the ISO week>, current_date)`.
+    Per `(school, week)`. **At day grain this is a real anchor** (the no-op
+    concern that dogged the weekly design is gone — a week has multiple
+    day-rows, exactly one of which is the week-end).
+
+  **All three period anchors share one rule:**
+  `date_key = least(<school's last in-session day of the period>, current_date('America/New_York'))`,
+  where period ∈ {academic year (`is_current_record`), month, week}. Per-school,
+  capped at today. The current (in-progress) period anchors to today; completed
+  periods anchor to their true last day. Without the `current_date` cap, the
+  current week/month/year bucket would be empty (its last day is in the future —
+  verified 2026-06-09: today Jun 9, current week-end Jun 12, current month-end
+  Jun 29), so the cap is required for all three, not just the year. This mirrors
+  how the attendance snapshot guard treats the current period.
+  - `is_latest_record` — per-student last enrolled in-session day,
+    `row_number() over (partition by student_enrollment_key order by date_key desc) = 1`.
+    Partition by `student_enrollment_key` (which encodes `academic_year`), so it
+    is year-scoped. This is **NOT** a period-end marker — it is each student's
+    own last enrolled day, which exists for anyone ever enrolled, so it drives
+    the `count_students_served` measure (ever-enrolled), not the period-end
+    default. Keep it distinct from `is_current_record`.
 
 Materialization: `config: materialized: table` (in the properties yml) —
 overrides the marts `view` default. At ~18.9M rows with `row_number()` windows
@@ -286,47 +312,56 @@ invariants — exactly one `is_latest_record` per `student_enrollment_key`, one
   some point in the queried window," a real metric, not garbage. This matches
   the attendance CA measures, which are also `count_distinct`. `is_enrolled`
   stays on the fact as the row marker, but the measures count distinct students.
-- Measures follow the **named period-end pattern** that `student_attendance`
-  uses (`count_truants_year_end` / `_month_end` / `_week_end`) — base measure
-  unanchored, explicit variants carrying the anchor filter, rather than relying
-  on `SNAPSHOT_MEASURE_STEMS` substring injection:
-  - `count_students`: `count_distinct(student_key)`, no filter. Counts distinct
-    students enrolled **by enrollment dates** as of the latest date in the
-    queried scope (the stint cube's counter is renamed `count_enrollments` — see
-    "Measure naming" above — so `count_students` is unambiguous). **This matches
-    topline `Total Enrollment` exactly** — topline is
-    `if(is_enrolled_week, 1, 0)` (`week between entrydate and exitdate`) with
-    **no `enroll_status` filter**, and our row grain is the day-level equivalent
-    of the same date-range membership. Filtered to a single `date_key` it is the
-    exact point-in-time headcount (~10,637 on 2025-10-01); filtered to a year it
-    is enrolled-as-of-latest for that year (~11,261 for AY2025 — see the ladder
-    in Component 3). **Do not filter `enroll_status`** on this measure — it is
-    student-level (stamped on every row) and would drop a mid-year withdrawal
-    even from dates they were still enrolled, breaking both point-in-time
-    correctness and topline parity.
-  - `count_students_year_end`: `count_distinct(student_key)` with measure filter
-    `{CUBE}.is_latest_record = true`. Safe for year-over-year without a date
-    filter — mirrors `count_truants_year_end`. Because `is_latest_record` is
-    year-scoped (partitioned by the academic-year-encoding
-    `student_enrollment_key` — see Component 1), this is "enrolled as of the
-    last in-session day of the queried year" for **every** year, current or past
-    (AY2023 10,381, AY2025 11,261; verified 2026-06-09) — the same per-year
-    total as the unanchored base `count_students`. The anchor's job is to
-    collapse to a single point-in-time row when results roll up across years or
-    to month/quarter granularity, not to change the per-year total.
-  - `count_students_month_end`: filter `{CUBE}.is_month_end_record = true`. Use
-    with `timeDimensions` granularity `month`.
-  - `count_students_week_end`: filter `{CUBE}.is_week_end_record = true`. Use
-    with granularity `week`.
+  **Measure model — period-end-as-of-now is the default, "served" is the named
+  escape hatch.** The bare `count_students` is governed by the `cube.js`
+  snapshot guard (it goes _into_ `SNAPSHOT_MEASURE_STEMS`), so it is **always a
+  point-in-time snapshot as of the last active in-session day of whatever period
+  the query groups by, capped at today** — never an unanchored day-sum and never
+  an "ever-enrolled" count. The guard injects the matching anchor by
+  granularity, with the per-school, `current_date`-capped flags from Component
+  1:
+  `SNAPSHOT_ANCHOR_DIMENSIONS = {default: is_current_record, month: is_month_end_record, week: is_week_end_record}`.
+  (Note the `default` is `is_current_record`, **not** `is_latest_record` — the
+  period-end-as-of-now flag, not the per-student-last-day flag.) "How many
+  students in 2025" returns the headcount as of each school's last active day;
+  "by month" each month-end; a pinned date that day.
+  - `count_students`: `count_distinct(student_key)`. **In
+    `SNAPSHOT_MEASURE_STEMS`.** By granularity:
+    - no time grouping (e.g. `academic_year = 2025`) → `is_current_record` →
+      enrolled as of each school's last occurred in-session day (AY2025 →
+      10,374; AY2023 → 9,630).
+    - granularity `month` → `is_month_end_record`; `week` →
+      `is_week_end_record`.
+    - single `date_key` pin → that exact day (~10,637 on 2025-10-01).
+
+    All point-in-time, all `count_distinct(student_key)`. The stint cube's
+    counter is renamed `count_enrollments` (see "Measure naming"). **Do not
+    filter `enroll_status`** — it is student-level and would drop a mid-year
+    withdrawal from days they were still enrolled. Because the default IS
+    year-end-as-of-now at year grain, **no separate `count_students_year_end`
+    measure is needed** — `count_students` filtered to a completed year already
+    gives that year's year-end (per-school last day); for the current year it
+    gives as-of-today.
+
+  - `count_students_served`: `count_distinct(student_key)` with measure filter
+    `{CUBE}.is_latest_record = true`, **self-anchored suffix so the guard leaves
+    it alone**. Counts distinct students enrolled **at any point** in the
+    queried period — "ever enrolled" (AY2023 10,381, AY2025 11,261; verified
+    2026-06-09). `is_latest_record` is year-scoped (partitioned by the
+    academic-year-encoding `student_enrollment_key`), so each served student has
+    exactly one flagged row per year and the distinct count is exact. The
+    difference from the default (10,381 served vs 9,630 year-end for AY2023) is
+    the ~750 within-year leavers — the deliberate "students we served" question
+    vs "still enrolled at period end."
   - `count_students_active`: `count_distinct(student_key)` with measure filter
-    `{CUBE}.enroll_status = 0`. **Active-status** headcount (excludes mid-year
-    withdrawals / graduates: ~10,374 for AY2025 vs 11,261 by date-range). Needed
-    for a downstream use distinct from topline reconciliation; **by design it
-    does NOT match topline** (topline counts by dates, not status). Caveat to
-    document: `enroll_status` is student-level, so for a _past_ date this
-    measure reflects the student's _current_ status, not their status on that
-    date — only meaningful for current-state "active roster" questions, not
-    historical point-in-time.
+    `{CUBE}.enroll_status = 0`, self-anchored (guard leaves it alone).
+    Active-status headcount (~10,374 for AY2025 — note it ≈ the date-membership
+    default for the current year, an independent cross-check). Needed for a
+    downstream use; **by design does NOT match topline**. Caveat:
+    `enroll_status` is student-level, so for a _past_ date it reflects the
+    student's _current_ status, not status on that date — current-roster
+    questions only, not historical point-in-time.
+
 - **Named state-count-date measures — filter, do NOT add fact flags.** The
   regulatory count dates (`oct01`, `oct15`, `mar15`) are filterable date
   predicates at day grain, not row properties. Expose them as named measures
@@ -357,6 +392,43 @@ invariants — exactly one `is_latest_record` per `student_enrollment_key`, one
   on a specific date" — a single-date filter on `count_students` answers any
   arbitrary date (not just the named ones) and needs no anchor.
 
+#### Measure descriptions (paste into the cube YAML `description:` fields)
+
+Production-ready text — self-contained so an analyst reading only the BI field
+list understands the measure and its footguns. Use verbatim.
+
+- **`count_students`** — "Distinct students enrolled, point-in-time. Counts each
+  student once as of the most recent in-session school day in your query: the
+  exact date if you filter to one, otherwise each school's latest in-session day
+  in the period (today for the current year, the last day of school for
+  completed years). Matches the topline Total Enrollment methodology —
+  enrollment is by entry/exit dates, not status. Note: when no single date is
+  pinned, schools that end on different days are each counted as of their own
+  last day, so a network total can mix as-of dates within the final weeks of a
+  year. For 'how many students did we serve at any point' use
+  count_students_served; for active-status roster use count_students_active."
+
+- **`count_students_served`** — "Distinct students enrolled at any point during
+  the queried period. A student who enrolled and then withdrew mid-year is still
+  counted. Use for 'how many students did we serve this year.' This is higher
+  than count_students (point-in-time) by the number of mid-period
+  enrollments/withdrawals. Not a point-in-time headcount — for that use
+  count_students."
+
+- **`count_students_active`** — "Distinct students with an active enrollment
+  status (excludes withdrawn and graduated). Use for current active-roster
+  questions. WARNING: enrollment status is the student's current status, not
+  their status on a past date — do not use this for historical point-in-time
+  counts (use count_students with a date filter). Does not match topline Total
+  Enrollment, which counts by enrollment dates rather than status."
+
+- **`count_students_oct01` / `count_students_oct15` / `count_students_mar15`** —
+  "Distinct students enrolled on the [October 1 / October 15 / March 15] state
+  count date of the queried academic year. Point-in-time headcount for the
+  regulatory fall/spring enrollment count. Group by academic_year to compare
+  count dates across years. (March 15 falls in the spring of the academic year —
+  e.g. academic_year 2025 = March 15, 2026 — and is handled automatically.)"
+
 `cube.js` wiring:
 
 - **No domain-gating edit needed.** Access gating is prefix-derived
@@ -365,16 +437,56 @@ invariants — exactly one `is_latest_record` per `student_enrollment_key`, one
   `student_enrollment_daily` is gated automatically. The old `STUDENT_CUBES`
   array no longer exists.
 - Append `"student_enrollment_daily"` to `SNAPSHOT_CUBES`.
-- Leave the base `count_students` **out** of `SNAPSHOT_MEASURE_STEMS`: the named
-  `_year_end` / `_month_end` / `_week_end` measures carry their anchors
-  explicitly (the `SNAPSHOT_SELF_ANCHORED_SUFFIXES` convention in
-  [cube.js](../../../src/cube/cube.js) recognizes these suffixes and skips
-  re-injecting). The base `count_distinct(student_key)` is intentionally usable
-  unanchored — it returns "students served in the queried window" rather than a
-  meaningless day-sum (see the Component 3 ladder), so it needs no guard. This
-  matches how attendance leaves `avg_daily_attendance` unanchored.
-- The cube must expose all three `is_*_record` dimensions (the guard and the
-  named measures both require them).
+- Add the `count_students` stem to `SNAPSHOT_MEASURE_STEMS` so the guard governs
+  the base measure (this is the inversion from attendance, where the bare count
+  is unanchored). `count_students_served` and `count_students_active` carry a
+  `SNAPSHOT_SELF_ANCHORED_SUFFIXES` suffix (e.g. `_served`, `_active`) so the
+  guard leaves them alone — **add `_served` and `_active` to that array** (today
+  it holds `_year_end` / `_month_end` / `_week_end`).
+- **`cube.js` per-cube default anchor — small, isolated, additive change.** The
+  guard's `SNAPSHOT_ANCHOR_DIMENSIONS.default` is hardcoded `is_latest_record`;
+  this cube needs the no-granularity default to inject **`is_current_record`**
+  (per-school period-end-as-of-now), not `is_latest_record` (per-student last
+  day = served). Make the anchor map per-cube with fallback to the shared map,
+  so attendance's resolved map is byte-for-byte unchanged:
+
+  ```js
+  const SNAPSHOT_ANCHOR_OVERRIDES = {
+    student_enrollment_daily: { default: "is_current_record" },
+  };
+  // in the loop, per cubePrefix:
+  const anchorMap = {
+    ...SNAPSHOT_ANCHOR_DIMENSIONS,
+    ...(SNAPSHOT_ANCHOR_OVERRIDES[cubePrefix] ?? {}),
+  };
+  const anchorDimension = anchorMap[granularity] ?? anchorMap.default;
+  ```
+
+  Also change the `alreadyAnchored` check's
+  `Object.values(SNAPSHOT_ANCHOR_DIMENSIONS)` to `Object.values(anchorMap)` so a
+  manually-supplied `is_current_record` filter is recognized as
+  already-anchored. Scope: **3 lines, the anchor-_selection_ logic only — NOT
+  the access-control / location-scope path of `queryRewrite`, which is
+  untouched.** Add a hooks/cube regression check that attendance's injected
+  anchors are unchanged.
+
+- **Quarter granularity is unsupported by the guard**
+  ([cube.js](../../../src/cube/cube.js) rejects granularities outside
+  day/week/month) — same limit attendance has. Document that enrollment
+  quarter-trends aren't available; use month.
+- The cube must expose `is_current_record`, `is_month_end_record`,
+  `is_week_end_record`, and `is_latest_record` dimensions (the guard and the
+  named measures require them).
+- **Deliberate design note — config lives in `cube.js`, not the cube YAML.**
+  Per-cube anchor selection is resolved by cube-name lookup in
+  `SNAPSHOT_ANCHOR_OVERRIDES` (keyed off the `cubePrefix` loop variable, the
+  same pattern as the existing `SNAPSHOT_CUBES` / `SNAPSHOT_MEASURE_STEMS`
+  cube-name-keyed config). This means a cube's default-anchor behavior is
+  declared in `cube.js`, not in its own YAML — a mild separation-of-concerns
+  trade-off, chosen for consistency with the existing snapshot config rather
+  than a heavier metadata-driven refactor. Tracked in
+  [#4155](https://github.com/TEAMSchools/teamster/issues/4155) for a future move
+  to YAML so all of a cube's behavior is viewable in one place.
 
 ### Component 3 — view `student_enrollment_daily_summary`
 
@@ -384,32 +496,31 @@ pattern (no direct identifiers): single `cube-access-student-data` policy,
 [`student_attendance_summary.yml`](../../../src/cube/model/views/student_attendance/student_attendance_summary.yml)
 as the structural template:
 
-- Surfaces `count_students`, the three named period-end variants
-  (`count_students_year_end` / `_month_end` / `_week_end`), the three named
-  state-count-date variants (`count_students_oct01` / `_oct15` / `_mar15`),
-  `count_students_active`, and the three `is_*_record` anchors (under a `Filter`
+- Surfaces `count_students`, `count_students_served`, `count_students_active`,
+  the three named state-count-date variants (`count_students_oct01` / `_oct15` /
+  `_mar15`), and the four `is_*_record` anchor dimensions (under a `Filter`
   folder, as attendance does).
 - **The view description must spell out the measure ladder** (all
   `count_distinct(student_key)`, all alumni-free because the year/date filter
   selects on the calendar day's school year, not student status — a prior-year
-  graduate has no rows labeled the queried year). Verified 2026-06-09 for
-  academic_year 2025:
-  - `count_students` + year filter → **enrolled (by dates) as of that year's
-    last in-session day**. Matches topline `Total Enrollment` (no status
-    filter). Correct for **every** year, not just the current one — AY2023
-    10,381, AY2025 11,261 — and equals `count_students_year_end` for the same
-    year (the year-scoped anchor doesn't change the per-year total).
+  graduate has no rows labeled the queried year). Verified 2026-06-09:
+  - `count_students` + year filter → **enrolled as of each school's last
+    occurred in-session day** (period-end-as-of-now): AY2025 → 10,374, AY2023 →
+    9,630. Mixed as-of date across schools mid-year (Miami's last day Jun 4 vs
+    Newark's Jun 9) — by design; each school as of its own last real day.
   - `count_students` + single `date_key` (e.g. 2025-10-01) → **~10,637 =
-    enrolled _on that day_** (point-in-time).
+    enrolled _on that day_**, all schools as of the same calendar date.
+  - `count_students_served` + year → **ever enrolled that year**: AY2025 →
+    11,261, AY2023 → 10,381 (includes mid-year leavers). The topline
+    `Total Enrollment` analog.
   - `count_students_active` + year → **~10,374 = active-status students**
-    (status 0; excludes the ~887 mid-year withdrawals). Does **not** match
-    topline by design.
+    (status 0). Does **not** match topline by design; current-roster only.
 
-  These answer different questions; the description must steer analysts to a
-  single `date_key` or the `_*_end` / `_oct01` variants for point-in-time, use
-  bare `count_students` for topline-parity enrollment, and
-  `count_students_active` only for current active-roster questions (not
-  historical point-in-time — see the Component 2 caveat).
+  These answer different questions; the description must steer analysts to bare
+  `count_students` (or a `date_key` pin) for point-in-time enrollment,
+  `count_students_served` for "students we served," and `count_students_active`
+  only for current active-roster questions (not historical point-in-time — see
+  the Component 2 caveat).
 
 - Time dimension via `join_path: student_enrollment_daily.dates`, `prefix: true`
   → `dates_*` members (day/week/month/quarter granularity).
