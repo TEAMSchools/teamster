@@ -79,29 +79,47 @@ with
             ) as unit3_start_timestamp,
 
         from njgpa
+    ),
+
+    earliest_test_start as (
+        select
+            * except (
+                unit1_start_timestamp, unit2_start_timestamp, unit3_start_timestamp
+            ),
+
+            (
+                select min(s),
+                from
+                    unnest(
+                        [
+                            unit1_start_timestamp,
+                            unit2_start_timestamp,
+                            unit3_start_timestamp
+                        ]
+                    ) as s
+            ) as earliest_test_start_timestamp,
+
+        from unit_test_starts
+    ),
+
+    test_date_resolved as (
+        select
+            * except (earliest_test_start_timestamp),
+
+            coalesce(
+                date(earliest_test_start_timestamp),
+                safe_cast(paperattemptcreatedate as date)
+            ) as test_date,
+
+        from earliest_test_start
     )
 
 select
-    * except (unit1_start_timestamp, unit2_start_timestamp, unit3_start_timestamp),
+    *,
 
     'NJGPA' as assessment_name,
 
     if(testperformancelevel = 2, true, false) as is_proficient,
-
-    coalesce(
-        (
-            select date(min(unit_start)),
-            from
-                unnest(
-                    [
-                        unit1_start_timestamp,
-                        unit2_start_timestamp,
-                        unit3_start_timestamp
-                    ]
-                ) as unit_start
-        ),
-        safe_cast(paperattemptcreatedate as date)
-    ) as test_date,
 
     case
         testperformancelevel
@@ -111,4 +129,4 @@ select
         then 'Not Yet Graduation Ready'
     end as testperformancelevel_text,
 
-from unit_test_starts
+from test_date_resolved

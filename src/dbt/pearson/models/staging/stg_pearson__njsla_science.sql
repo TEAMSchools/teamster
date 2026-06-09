@@ -216,36 +216,52 @@ with
             ) as unit4_start_timestamp,
 
         from njsla_science
+    ),
+
+    earliest_test_start as (
+        select
+            * except (
+                unit1_start_timestamp,
+                unit2_start_timestamp,
+                unit3_start_timestamp,
+                unit4_start_timestamp
+            ),
+
+            (
+                select min(s),
+                from
+                    unnest(
+                        [
+                            unit1_start_timestamp,
+                            unit2_start_timestamp,
+                            unit3_start_timestamp,
+                            unit4_start_timestamp
+                        ]
+                    ) as s
+            ) as earliest_test_start_timestamp,
+
+        from unit_test_starts
+    ),
+
+    test_date_resolved as (
+        select
+            * except (earliest_test_start_timestamp),
+
+            coalesce(
+                date(earliest_test_start_timestamp),
+                safe_cast(paperattemptcreatedate as date)
+            ) as test_date,
+
+        from earliest_test_start
     )
 
 select
-    * except (
-        unit1_start_timestamp,
-        unit2_start_timestamp,
-        unit3_start_timestamp,
-        unit4_start_timestamp
-    ),
+    *,
 
     'NJSLA Science' as assessment_name,
     'Science' as discipline,
 
     if(testperformancelevel >= 3, true, false) as is_proficient,
-
-    coalesce(
-        (
-            select date(min(unit_start)),
-            from
-                unnest(
-                    [
-                        unit1_start_timestamp,
-                        unit2_start_timestamp,
-                        unit3_start_timestamp,
-                        unit4_start_timestamp
-                    ]
-                ) as unit_start
-        ),
-        safe_cast(paperattemptcreatedate as date)
-    ) as test_date,
 
     case
         testperformancelevel
@@ -259,4 +275,4 @@ select
         then 'Did Not Yet Meet Expectations'
     end as testperformancelevel_text,
 
-from unit_test_starts
+from test_date_resolved
