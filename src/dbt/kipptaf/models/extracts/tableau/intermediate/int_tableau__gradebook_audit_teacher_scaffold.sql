@@ -33,7 +33,7 @@ with
             t.term_end_date as quarter_end_date,
             t.is_current_term,
 
-            initcap(regexp_extract(s._dbt_source_relation, r'kipp(\w+)_')) as region,
+            initcap(regexp_extract(s._dbt_source_project, r'kipp(\w+)')) as region,
 
             if(
                 s.school_name = 'KIPP Sumner Elementary' and s.sections_grade_level = 5,
@@ -62,6 +62,7 @@ with
         where
             s.terms_academic_year = {{ var("current_academic_year") }}
             and s.sections_no_of_students != 0
+            and s._dbt_source_project != 'kippmiami'
     )
 
 select

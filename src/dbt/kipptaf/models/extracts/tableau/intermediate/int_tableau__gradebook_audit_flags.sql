@@ -231,7 +231,7 @@ union all
 
 -- this captures all eoq items
 select
-    _dbt_source_relation,
+    _dbt_source_project,
     academic_year,
     academic_year_display,
     yearid,
