@@ -353,8 +353,34 @@ as the structural template:
   members, `<last-join-segment>_<member>` for `prefix: true` joins
   (`dates_date_day`, `regions_region_name`).
 
-A `*_detail` view is **out of scope** for this spec (YAGNI — topline
-reconciliation is aggregate; add later if row-level drill-down is needed).
+### Component 4 — view `student_enrollment_daily_detail`
+
+`src/cube/model/views/students/student_enrollment_daily_detail.yml`. Row-level
+drill-down to individual students (e.g. "who was enrolled on Oct 1?", roster
+exports). Uses
+[`student_enrollments_detail.yml`](../../../src/cube/model/views/students/student_enrollments_detail.yml)
+as the structural template — same join paths and folders as the summary view,
+plus the student-identifier members.
+
+- Exposes the same measures and the `date` time dimension as the summary view,
+  plus the PK `student_enrollment_daily_key` and the `students` identifier
+  members (`student_key`, `full_name`, `birth_date`, `lea_student_identifier`,
+  `state_student_identifier`, `enrollment_status`) and `student_enrollment_key`
+  for stint-level joins.
+- **Two-policy PII access** (per `src/cube/CLAUDE.md` detail-view rule):
+  - `cube-access-student-data` — `includes: "*"` with `excludes:` listing every
+    direct identifier (`full_name`, `birth_date`, `lea_student_identifier`,
+    `state_student_identifier`, `district_student_identifier`,
+    `salesforce_contact_id` — copy the existing `student_enrollments_detail`
+    exclude list verbatim, adjusting for which of those members this view
+    actually includes).
+    - `cube-access-student-pii` — `includes: "*"`.
+- Same folder structure as `student_enrollments_detail` (Enrollment / Status /
+  Location / Student), plus a Date folder and the `Filter` anchor folder from
+  the summary view.
+
+This was previously scoped out as YAGNI; it is now a confirmed requirement
+(drill-down to students), so it ships in this spec.
 
 ### Population and point-in-time semantics (the alumni question)
 
@@ -401,8 +427,11 @@ int_powerschool__student_enrollment_union  (stints)   stg_powerschool__calendar_
                           ▼
         student_enrollment_daily (cube)       (+ snapshot anchors in cube.js)
                           │
-                          ▼
-        student_enrollment_daily_summary (view)   → MCP / Tableau / analysts
+            ┌─────────────┴─────────────┐
+            ▼                           ▼
+   _daily_summary (view)        _daily_detail (view, PII-gated)
+   (aggregate breakdowns)       (row-level student drill-down)
+            └──────────── → MCP / Tableau / analysts
 ```
 
 ### Exposure
@@ -478,6 +507,11 @@ diagnostic figures are recorded inline so the plan inherits them.
 - Cube: validate compilation in Cube Cloud Dev Mode (manual; no local compile),
   and confirm the summary view returns counts matching the BigQuery
   point-in-time query for a fixed date and a fixed week.
+- Detail view: confirm the two-policy PII gate — a `cube-access-student-data`
+  (non-PII) context must not surface `full_name` / identifiers (a `/load` 500
+  "hidden member" is the expected signal), while `cube-access-student-pii`
+  resolves them; and that detail-view `count_students` for a fixed date equals
+  the summary view's for the same filter.
 - Reconciliation queries (Open item D) as the acceptance gate — both the
   one-week topline match and the Oct 1 day-exact match.
 
@@ -488,6 +522,5 @@ diagnostic figures are recorded inline so the plan inherits them.
   `count_enrollments` and documents it (see "Measure naming"), it does not alter
   what it counts.
 - Touching `int_extracts__student_enrollments_weeks` or its 17 consumers.
-- A row-level `*_detail` daily view.
 - An every-calendar-day (incl. non-session) grain — in-session days only, per
   the coverage decision above.
