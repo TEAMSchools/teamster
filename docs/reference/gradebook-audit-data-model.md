@@ -435,9 +435,11 @@ The `scaffold_name` field identifies which branch a row belongs to:
 `'student_scaffold'` or `'student_category_scaffold'`.
 
 **Scope**: `current_academic_year`, `enroll_status = 0`, not out-of-district,
-`rn_year = 1` (deduplicated enrollment). Inherits all section and category
-exclusions from `int_tableau__gradebook_audit_teacher_scaffold` — no additional
-section-level exception joins are needed here.
+`rn_year = 1` (deduplicated enrollment), `sections_no_of_students != 0` (applied
+on the `base_powerschool__course_enrollments` JOIN — same filter as the teacher
+scaffold, independently enforced). Inherits all section and category exclusions
+from `int_tableau__gradebook_audit_teacher_scaffold` via INNER JOIN — no
+additional section-level exception joins are needed here.
 
 **Source table temporal scope**:
 

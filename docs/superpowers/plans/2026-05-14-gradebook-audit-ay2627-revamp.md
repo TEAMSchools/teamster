@@ -1386,6 +1386,10 @@ and the UNPIVOT list in `int_tableau__gradebook_audit_flags.sql`.
   - `is_quarter_end_date_range`, `quarter_end_date_insession`, `is_current_week`
     removed
   - Manager columns added from `sec`
+  - Miami excluded via `_dbt_source_project != 'kippmiami'` in teacher scaffold
+    WHERE; student scaffold inherits the exclusion through INNER JOIN
+  - `sections_no_of_students != 0` applied independently in both scaffolds:
+    teacher scaffold WHERE clause; student scaffold on the `ce` JOIN condition
   - Deprecated flags removed (Miami conduct codes, `w_grade_inflation`,
     effort/formative/summative)
   - `qt_es_comment_missing` updated: removed `is_quarter_end_date_range`

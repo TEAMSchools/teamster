@@ -357,9 +357,16 @@ Check in order:
    (reference doc flag inventory) and query it directly.
 3. **Section in the scaffold?** Check
    `int_tableau__gradebook_audit_teacher_scaffold` for the section/quarter
-   combination.
-4. **Active exception row?** Check `stg_google_sheets__gradebook_exceptions` for
-   a matching `view_name` / `cte` / `audit_flag_name` key.
+   combination. Two silent exclusion rules apply to both scaffolds:
+   - `sections_no_of_students != 0` — sections with zero enrolled students are
+     excluded entirely; a section that briefly had students but now shows zero
+     will disappear from the scaffold and produce no flags
+   - `_dbt_source_project != 'kippmiami'` — Miami is excluded at source
+4. ~~**Active exception row?**~~ **Exceptions were deprecated for SY
+   2026-2027.** `stg_google_sheets__gradebook_exceptions` is disabled and all
+   exception JOINs were removed from the pipeline in this refactor. Do not check
+   for exceptions — they are not a factor in any flag-not-firing investigation
+   from AY 2026 onward.
 
 ---
 
