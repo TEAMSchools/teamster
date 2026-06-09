@@ -85,6 +85,17 @@ the **transfer-out `END_DATE`**. So: API for the contact + a keyed join to the
 existing Status Report for workflow dates. The new "Focus Student Export" file
 is **not needed** as a source.
 
+_Status-history search (exhausted 2026-06-09):_ the status-change timeline
+(incl. `enrolled_date`) is **not** available via the External API — `activities`
+/ `history` / `statuses` / `status_history` endpoints all 404, and the matching
+`includes` tokens are silently ignored; the External API exposes only the
+**current** `status`. The admin UI renders the timeline from **server-side
+prerendered HTML**, not a JSON endpoint, so there is no programmatic API for it.
+The only structured source is the Status Report SFTP export
+(`stg_finalsite__status_report`), verified against the live UI per student
+(`enrolled_timestamp` / `enrollment_in_progress_timestamp` /
+`assigned_school_timestamp` match the rendered status rows to the second).
+
 The SFTP "Focus Student Export" sample documented below remains the **validation
 baseline** the API was checked against.
 
