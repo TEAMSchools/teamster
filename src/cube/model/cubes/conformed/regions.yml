@@ -1,5 +1,5 @@
 cubes:
-  - name: dim_regions
+  - name: regions
     public: false
     sql_table: kipptaf_marts.dim_regions
 

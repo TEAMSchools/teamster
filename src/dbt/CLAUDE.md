@@ -68,6 +68,33 @@ evolve an Avro source's schema, the new-schema file must sort last — materiali
 the MAX partition (latest hive `_dagster_partition_date=`). Mixed old/new files
 otherwise pick up the old (earlier-sorting) schema.
 
+**A metadata-cached Avro external can read a field NULL downstream though the
+GCS file is correct — two distinct failure modes, both surfaced by #4151:**
+
+- _Schema heterogeneity (deterministic)._ After a schema add + partial backfill,
+  old-schema files (field absent) and new-schema files (field present) coexist.
+  A query scanning both resolves one Avro reader schema and drops the new field
+  for the WHOLE scan — even the new files that hold it. The field still
+  _declares_ fine (autodetect from the last-alphabetical file) so it queries
+  without error and null-fills on old-only scans, but a `stg_*` model that scans
+  full partition history always includes old files, so the column reads NULL
+  everywhere. A cache refresh / rebuild does NOT fix it — only homogenizing the
+  files does (`scripts/reencode_avro_partitions.py` re-encodes every partition).
+- _Cache staleness (intermittent)._ `build_dbt_assets`
+  (stage→refresh→`dbt build`) races BigLake metadata-cache convergence after a
+  `create or replace` / overwrite-in-place: the
+  `refresh_external_metadata_cache` `CALL` returning DONE does NOT mean
+  queryable-fresh (lag seconds→hours, non-monotonic), so a just-materialized
+  partition reads NULL downstream.
+
+Verifying: `bq --nouse_cache` exposes the TRUE cached state (the BQ results
+cache and the BigQuery MCP otherwise return stale-but-fresh-looking counts).
+Selecting `_FILE_NAME` forces a live read that BYPASSES the metadata cache
+(ground truth vs. staleness) but does NOT bypass schema heterogeneity (a
+mixed-schema scan still drops the field), and it contaminates the whole query to
+a live read. So `_FILE_NAME` is ground truth only within a single-schema scan
+(one partition); never mix it into a cached-path check.
+
 dbt Cloud CI runs `dbt build` only (never `stage_external_sources`) → it reads
 the existing `zz_stg` external table as-is. To make CI see a new schema before
 prod Avro is updated: materialize the max partition locally (the Avro IO manager
@@ -86,7 +113,9 @@ the staged table; don't hand-transcribe.
 
 dbt CLI runs locally for Claude: `DBT_PROFILES_DIR` (repo `.dbt`) + ADC →
 `dbt debug` / `build` / `run-operation --target staging` connect with no
-1Password (BigQuery uses ADC, not the 1Password bootstrap).
+1Password (BigQuery uses ADC, not the 1Password bootstrap). `--target prod` runs
+(`dbt build` / `run`) are blocked by the auto-mode classifier as production
+deploys even with verbal approval — hand prod runs to the user.
 
 `stage_external_sources --args "select: ..."` takes a
 `<source_name>.<table_name>` selector — not project-qualified. The
@@ -220,6 +249,16 @@ surface at kipptaf-level consumers until district projects rebuild prod. For
 single-PR refactors, add transformations at the kipptaf-level wrapper, not at
 package level.
 
+## Editing a `sources-kipp*.yml` schema fans out `state:modified+`
+
+Changing a source's schema (e.g. adding a `target=staging` branch) marks the
+WHOLE source `state:modified` — CI's `state:modified+` builds EVERY kipptaf
+model reading it, not just your target. A district model dropped from code but
+lingering as a stale prod table is absent from the prod manifest → clone-skipped
+→ its kipptaf consumer fails CI `Table not found`. Fix such frozen/retired
+tables by declaring them a BQ-native source (`sources-bigquery.yml`, plain
+hardcoded schema, no target branch) so kipptaf reads prod regardless of target.
+
 ## Stale dev tables shadow `--defer`
 
 `--defer` uses any existing dev table before falling through to prod, so a stale
@@ -314,6 +353,15 @@ deployments. Developers use `<repo-root>/.dbt/profiles.yml` (not
   sustained transient 503s on `client.list_datasets()` at adapter init. Set
   `job_retries: 3` on the `prod` output. Set on all district profiles and
   kipptaf.
+- **`job_execution_timeout_seconds`**: Set to `900` on the `prod` output of all
+  five kipp\* profiles. Caps each BigQuery job server-side (`job_timeout_ms`) so
+  a runaway single model is cancelled by BigQuery before Dagster's run-level
+  `max_runtime` (1800s). Without it, a killed dbt run leaves the in-flight BQ
+  job orphaned — dbt does NOT cancel on termination (upstream limitation,
+  dbt-core #5275/#9639) — and the zombie `create or replace` can overwrite a
+  successful auto-retry's output with staler data. Routine models run <=330s
+  network-wide (affected models' p99 <=78s), so 900s won't false-kill legit
+  work.
 
 ## Model Conventions
 
@@ -553,6 +601,10 @@ the same partition.
   `grain projection: every selected column is functionally determined / by the partition key; not a mask for upstream duplicates`.
   If any projected column varies within the partition (`min()`, `first_value()`,
   etc.), use `dbt_utils.deduplicate()` instead.
+- **Least/earliest of N nullable columns**:
+  `(select min(x) from unnest([c1, c2, ...]) as x)` — aggregate `min` ignores
+  NULLs, unlike `least()` (which returns NULL if any arg is NULL). Avoids the
+  nested `coalesce(..., sentinel)` + outer-guard pyramid.
 - **`dbt_utils.generate_surrogate_key` coerces nulls internally** —
   `cast(null as <type>)` and bare `null` hash identically. Don't add the cast.
 - **No `GROUP BY ALL`** — list grouping columns explicitly. `GROUP BY ALL`

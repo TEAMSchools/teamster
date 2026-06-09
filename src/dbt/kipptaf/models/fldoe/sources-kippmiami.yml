@@ -2,7 +2,7 @@ sources:
   - name: kippmiami_fldoe
     schema:
       "{%- if target.name == 'dev' -%}zz_{{ env_var('GITHUB_USER', 'dev') }}_{%-
-      endif -%}kippmiami_fldoe"
+      elif target.name == 'staging' -%}zz_stg_{%- endif -%}kippmiami_fldoe"
     tables:
       - name: stg_fldoe__fast
         config:
@@ -13,15 +13,6 @@ sources:
                 - kippmiami
                 - fldoe
                 - stg_fldoe__fast
-      - name: stg_fldoe__fsa
-        config:
-          meta:
-            dagster:
-              group: fldoe
-              asset_key:
-                - kippmiami
-                - fldoe
-                - stg_fldoe__fsa
       - name: stg_fldoe__eoc
         config:
           meta:

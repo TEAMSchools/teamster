@@ -72,6 +72,6 @@ select
         then 'Newark'
         when 'KIPP Cooper Norcross Academy'
         then 'Camden'
-    end as region,
+    end as business_unit,
 from staff as s
 left join managers as m on s.reports_to_employee_number = m.employee_number

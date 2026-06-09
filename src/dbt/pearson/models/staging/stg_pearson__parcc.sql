@@ -174,12 +174,72 @@ with
 
             cast(regexp_extract(assessmentgrade, r'Grade\s(\d+)') as int) as test_grade,
 
+            cast(
+                safe.parse_datetime(
+                    '%m/%d/%Y %H:%M', unit1onlineteststartdatetime
+                ) as timestamp
+            ) as unit1_start_timestamp,
+            cast(
+                safe.parse_datetime(
+                    '%m/%d/%Y %H:%M', unit2onlineteststartdatetime
+                ) as timestamp
+            ) as unit2_start_timestamp,
+            cast(
+                safe.parse_datetime(
+                    '%m/%d/%Y %H:%M', unit3onlineteststartdatetime
+                ) as timestamp
+            ) as unit3_start_timestamp,
+            cast(
+                safe.parse_datetime(
+                    '%m/%d/%Y %H:%M', unit4onlineteststartdatetime
+                ) as timestamp
+            ) as unit4_start_timestamp,
+            date(
+                safe.parse_datetime('%m/%d/%Y %H:%M', attemptcreatedate)
+            ) as paper_attempt_date,
+
             if(
                 `subject` = 'English Language Arts/Literacy', 'ELA', 'Math'
             ) as discipline,
 
         from {{ source("pearson", "src_pearson__parcc") }}
         where summativeflag = 'Y' and testattemptednessflag = 'Y'
+    ),
+
+    earliest_test_start as (
+        select
+            * except (
+                unit1_start_timestamp,
+                unit2_start_timestamp,
+                unit3_start_timestamp,
+                unit4_start_timestamp
+            ),
+
+            (
+                select min(s),
+                from
+                    unnest(
+                        [
+                            unit1_start_timestamp,
+                            unit2_start_timestamp,
+                            unit3_start_timestamp,
+                            unit4_start_timestamp
+                        ]
+                    ) as s
+            ) as earliest_test_start_timestamp,
+
+        from parcc
+    ),
+
+    test_date_resolved as (
+        select
+            * except (earliest_test_start_timestamp, paper_attempt_date),
+
+            coalesce(
+                date(earliest_test_start_timestamp), paper_attempt_date
+            ) as test_date,
+
+        from earliest_test_start
     )
 
 select
@@ -204,4 +264,4 @@ select
         then 'Did Not Yet Meet Expectations'
     end as testperformancelevel_text,
 
-from parcc
+from test_date_resolved
