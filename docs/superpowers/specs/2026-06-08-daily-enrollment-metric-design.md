@@ -230,6 +230,10 @@ Columns:
     dogged the weekly design is gone — a week now has multiple day-rows, exactly
     one of which is the week-end).
 
+Materialization: `config: materialized: table` (in the properties yml) —
+overrides the marts `view` default. At ~18.9M rows with `row_number()` windows
+(see "Resolved decisions" E), a view would re-expand on every Cube query.
+
 Tests: `unique` on `student_enrollment_daily_key` (or
 `dbt_utils.unique_combination_of_columns` on the hash inputs); `relationships`
 on each FK; singular tests (`tests/test_*.sql`) for the single-row anchor
@@ -377,47 +381,57 @@ and stays as-is. The day-grain fact is independent; the topline reconciliation
 (Open item D) compares the two for one week as a correctness check, not a
 dependency.
 
-## Open items to resolve during planning
+## Resolved decisions
 
-- **A. Hash compatibility (load-bearing twice).** `student_enrollment_key` is
-  both the FK to `dim_student_enrollments` and the partition key for the three
-  anchor windows. Confirm it reconstructs identically to the dim
-  (`student_number, _dbt_source_project, academic_year, entrydate`) from the
-  stint side of the join. The stint source carries all four; verify
-  `_dbt_source_project` is materialized (or derive via `extract_code_location`).
-  If the hash cannot match, the FK is dropped and the windows partition by
-  `(student_number, _dbt_source_project, academic_year)` instead — but that
-  collapses multi-stint students in a way the per-stint key would not, so prefer
-  fixing the hash.
-- **B. Graduate / historical stints (resolved — see "Population and
-  point-in-time semantics").** The half-open join drops the 22,565 null-dated
-  `enroll_status = 3` placeholders (NULL fails the predicate), but **retains**
-  the 20,375 real-dated historical grad stints — by design. Alumni exclusion is
-  a date-filter concern, not a table filter; do not add an `enroll_status`
-  predicate. The only planning task here is to confirm the null-dated
-  placeholders do in fact drop (verify 0 rows with NULL `entrydate` survive the
-  join) and that the count at a pinned recent date excludes prior-year grads.
-- **C. Region / recent-year scoping.** Region resolves via the `locations` →
-  `regions` join in the view (not a fact column). **Still open:** whether the
-  _mart_ filters out Paterson and applies `academic_year >= current - 1`, or
-  leaves the data complete and scopes in the view / query. Recommendation: leave
-  the mart complete and scope downstream, so the mart is reusable.
-- **D. Reconcile against topline exactly.** Before merge, validate that
-  `count_students` filtered to the days of one week equals topline's
-  `Total Enrollment` for the same week and region (from
-  `int_extracts__student_enrollments_weeks`). Also spot-check `count_students`
-  at `date_key = date(academic_year, 10, 1)` against the upstream
-  `is_enrolled_oct01` count for the same year.
-- **E. Row volume and history bound.** Full history ≈ **16M rows** (~11.6M
-  pre-2024 + ~4.1M AY2024+, estimated 2026-06-09 from enrolled-week rows × ~5
-  in-session days). That is `fct_student_attendance_daily` scale, so it is
-  tolerable as a table — but the marts default is `view`, and a 16M-row windowed
-  fact almost certainly warrants `materialized: table` (decide + benchmark).
-  This is also where the recent-year question from item C bites hardest: if no
-  consumer needs pre-2024 day-grain enrollment, an
-  `academic_year >= current - N` bound in the mart roughly quarters the table.
-  Decide the history bound and materialization together; if bounding,
-  `log`/document the dropped years so it isn't mistaken for complete coverage.
+All five open items were closed against the warehouse on 2026-06-09; the
+diagnostic figures are recorded inline so the plan inherits them.
+
+- **A. Hash compatibility — RESOLVED (confirmed).** `_dbt_source_project` is
+  present and non-null on all four districts in
+  `int_powerschool__student_enrollment_union`. The reconstructed
+  `student_enrollment_key`
+  (`hash(student_number, _dbt_source_project, academic_year, entrydate)`) is
+  unique across all 123,126 stints and matches `dim_student_enrollments` exactly
+  for all 100,561 real-dated stints (the 22,565 unmatched are precisely the
+  null-entrydate placeholders the fact drops). So the FK joins cleanly and the
+  anchor windows partition by it — no fallback needed.
+- **B. Graduate / historical stints — RESOLVED.** The half-open join drops the
+  22,565 null-`entrydate` `enroll_status = 3` placeholders and retains the
+  real-dated historical stints by design (see "Population and point-in-time
+  semantics"). Alumni exclusion is a date-filter concern, never an
+  `enroll_status` table filter. Plan-time check: assert 0 rows with NULL
+  `entrydate` survive the join, and that a pinned recent-date count excludes
+  prior-year grads.
+- **C. Region scoping — RESOLVED.** Region resolves via the `locations` →
+  `regions` join in the view, not a fact column. The mart is left **complete**
+  (no Paterson filter, no year filter — see D) so it is reusable; scope happens
+  in the view / query. Paterson is sparse (37K historical + 159K recent daily
+  rows; its PowerSchool data effectively starts ~2024) but is not filtered out.
+- **D. Reconciliation acceptance gate — TARGET ESTABLISHED.** Daily-fact
+  `count_students` for the week containing 2025-10-01, filtered to that week's
+  days, must equal the topline `is_enrolled_week` count from
+  `int_extracts__student_enrollments_weeks` (verified 2026-06-09):
+
+  | Region   | Expected enrolled |
+  | -------- | ----------------- |
+  | Camden   | 2,161             |
+  | Miami    | 1,347             |
+  | Newark   | 6,611             |
+  | Paterson | 521               |
+  | Total    | 10,640            |
+
+  Also spot-check `count_students` at `date_key = date(academic_year, 10, 1)`
+  against the upstream `is_enrolled_oct01` count for the same year.
+
+- **E. Volume and materialization — RESOLVED.** Actual full-history volume is
+  **~18.9M rows** (verified by joining stints to in-session calendar days,
+  2026-06-09): Newark 13.0M (10.6M historical + 2.4M recent — 70% of the table),
+  Camden 3.3M, Miami 1.4M, Paterson 0.2M. **Decision: full history, no year
+  bound** (keeps the mart complete and makes historical point-in-time queries
+  like "enrollment on 2019-10-01" answerable). At ~19M rows with `row_number()`
+  windows, the mart **must be `materialized: table`** (override the marts `view`
+  default) — a windowed view would re-expand on every Cube query. Benchmark the
+  build time during implementation.
 
 ## Testing
 
