@@ -62,6 +62,12 @@ writes a debug JSON — it does NOT change the GCS path. So a pytest
 seeds `gs://teamster-test/dagster/<asset_key>/...` — the same path branch
 deployments write to.
 
+**Codespace SA can't read prod GCS blobs.** `codespaces@…` lacks
+`storage.objects.list/get` (and `buckets.get`) on `teamster-<location>` buckets
+— scripts that read Avro blobs 403 from the codespace. Run them where ADC has
+GCS perms (locally / in-cluster), not here. Use `client.bucket(name)`, not
+`get_bucket(name)`, to skip the `buckets.get` metadata probe.
+
 ### `freshness.py`
 
 **`FreshnessPolicy` UI surface**: evaluations do NOT appear on the asset's

@@ -272,8 +272,6 @@ with
 
             date(wa.jobcode.effectivedate) as job_code__effective_date,
 
-            date(wa.jobfunctioncode.effectivedate) as job_function_code__effective_date,
-
             date(wa.paycyclecode.effectivedate) as pay_cycle_code__effective_date,
 
             date(
@@ -430,7 +428,6 @@ select
     home_work_location__address__type_code__effective_date,
     home_work_location__name_code__effective_date,
     job_code__effective_date,
-    job_function_code__effective_date,
     pay_cycle_code__effective_date,
     standard_hours__unit_code__effective_date,
     wage_law_coverage__coverage_code__effective_date,
