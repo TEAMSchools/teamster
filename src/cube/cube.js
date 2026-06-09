@@ -303,7 +303,7 @@ module.exports = {
     if (touchesStaffCube && !groups.includes("cube-access-staff-all")) {
       query = {
         ...query,
-        segments: [...(query.segments ?? []), "dim_staff.reporting_chain"],
+        segments: [...(query.segments ?? []), "staff.reporting_chain"],
       };
     }
 
