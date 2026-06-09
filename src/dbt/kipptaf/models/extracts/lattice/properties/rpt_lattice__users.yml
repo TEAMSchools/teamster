@@ -49,7 +49,7 @@ models:
         description:
           Home work location abbreviation; falls back to full location name.
         data_type: string
-      - name: region
+      - name: business_unit
         description:
           Friendly region name derived from home business unit (Newark, Camden,
           Miami, Paterson, KTAF).
