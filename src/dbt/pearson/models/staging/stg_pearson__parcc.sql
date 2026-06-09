@@ -194,6 +194,9 @@ with
                     '%m/%d/%Y %H:%M', unit4onlineteststartdatetime
                 ) as timestamp
             ) as unit4_start_timestamp,
+            date(
+                safe.parse_datetime('%m/%d/%Y %H:%M', attemptcreatedate)
+            ) as paper_attempt_date,
 
             if(
                 `subject` = 'English Language Arts/Literacy', 'ELA', 'Math'
@@ -230,11 +233,10 @@ with
 
     test_date_resolved as (
         select
-            * except (earliest_test_start_timestamp),
+            * except (earliest_test_start_timestamp, paper_attempt_date),
 
             coalesce(
-                date(earliest_test_start_timestamp),
-                date(safe.parse_datetime('%m/%d/%Y %H:%M', attemptcreatedate))
+                date(earliest_test_start_timestamp), paper_attempt_date
             ) as test_date,
 
         from earliest_test_start

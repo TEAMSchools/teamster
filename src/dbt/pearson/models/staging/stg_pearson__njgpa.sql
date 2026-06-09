@@ -65,6 +65,7 @@ with
             safe_cast(
                 unit3onlineteststartdatetime as timestamp
             ) as unit3_start_timestamp,
+            safe_cast(paperattemptcreatedate as date) as paper_attempt_date,
 
             if(`period` = 'FallBlock', 'Fall', `period`) as `admin`,
             if(`period` = 'FallBlock', 'Fall', `period`) as season,
@@ -97,11 +98,10 @@ with
 
     test_date_resolved as (
         select
-            * except (earliest_test_start_timestamp),
+            * except (earliest_test_start_timestamp, paper_attempt_date),
 
             coalesce(
-                date(earliest_test_start_timestamp),
-                safe_cast(paperattemptcreatedate as date)
+                date(earliest_test_start_timestamp), paper_attempt_date
             ) as test_date,
 
         from earliest_test_start
