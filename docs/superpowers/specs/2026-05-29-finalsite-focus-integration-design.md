@@ -2,7 +2,9 @@
 
 - **Issue:** [#4073](https://github.com/TEAMSchools/teamster/issues/4073)
 - **Status:** Design / brainstorming output (no implementation yet); updated
-  2026-06-02 after the Finalsite SFTP export sample landed (see _Fork 1_).
+  2026-06-09 — Fork 1 resolved to the **REST API**, live-validated against
+  Miami; `START_DATE` sourced from `stg_finalsite__status_report` (see _Fork
+  1_).
 - **Scope:** KIPP Miami only (`kippmiami` code location)
 - **Related:** inbound Focus-load spec
   `2026-04-03-focus-sis-integration-design.md` (distinct pipeline — that loads
@@ -47,13 +49,40 @@ Finalsite  [FORK 1: REST API  OR  new SFTP export]
   -> reconciliation: Finalsite eligible roster vs Focus students
 ```
 
-### Fork 1 — Finalsite source (SFTP export sample has landed)
+### Fork 1 — Finalsite source: RESOLVED → REST API (live-validated 2026-06-09)
 
-Not sequential ("API now, SFTP later" was a mischaracterization). The source
-will be **either** the Finalsite REST API **or** the all-in-one SFTP export. The
-dbt **staging layer normalizes whichever source into one shape**, so the rest of
-the pipeline is source-independent. The existing Finalsite warehouse assets
-serve a different purpose and are not reused as-is.
+**Decision: source from the Finalsite REST API.** Validated live against Miami
+(`kippmiami.fsenrollment.com`): a single paginated call —
+`GET /contacts?school_year_id={current}&count=25&includes=contacts.relationships.contact`
+(paginate via `meta.next_cursor`) — reproduces **every column of the SFTP "Focus
+Student Export" except `Enrolled Date`** (and the gendered `mother`/`father`
+relationship label). Per student it returns base demographics + `grade` +
+`households` (address) + `custom_attributes` (Miami names confirmed: `race_ms`,
+`assigned_school_ss`, `med_doctor_txt`/`med_hospital_txt`/…, `mdcps_id_txt`,
+`sped_received_yn`, `latino_hispanic_yn`) + `id_attributes` + **fully-expanded
+guardian contacts** (name/email/phone) via the `contacts.relationships.contact`
+include. The dormant `build_finalsite_asset` + `FinalsiteResource` (JWT) already
+implement this auth + pagination, so wiring Miami contacts ingestion is mostly
+config. The dbt **staging layer normalizes the source into one shape**, so
+downstream is source-independent.
+
+**`Enrolled Date` (= `START_DATE`) is not in the API** — confirmed not in
+`contact_statuses` (catalog only), not reachable by any expansion (unknown
+`includes` tokens are silently ignored), and absent from the full payload (0
+minute-precision matches across 20 students). It is a workflow status-change
+timestamp the API does not expose. **Resolution (decided):** join the
+already-ingested **`stg_finalsite__status_report.enrolled_date`** on
+`finalsite_enrollment_id` (= the API `contact.id`; UUID, 2529/2529). That
+Status-Report SFTP feed also carries the full status-transition timeline
+(`accepted_date`, `enrollment_in_progress_date`, `assigned_school_date`,
+`enrolled_date`, `not_enrolling_date`, `mid_year_withdrawal_date`,
+`summer_withdraw_date`, …) — supplying both the **eligibility predicate** and
+the **transfer-out `END_DATE`**. So: API for the contact + a keyed join to the
+existing Status Report for workflow dates. The new "Focus Student Export" file
+is **not needed** as a source.
+
+The SFTP "Focus Student Export" sample documented below remains the **validation
+baseline** the API was checked against.
 
 **The SFTP export now exists** (sample dated 2026-06-02), so the comparison has
 real data on one side. It is a Finalsite "Swiss Army Export" configured as a
@@ -109,11 +138,10 @@ aggregates only):
 - **Data quality:** 3 students (1.8%) have no guardian and no address —
   quarantine rather than push.
 
-If the SFTP export is chosen as the source, the enrollment-data gate must
-resolve first. **Preferred:** add the missing enrollment columns to the export
-config so it stays a single source. A SFTP+API hybrid is the fallback (not the
-default), and a pre-filtered eligible roster with school/year derived downstream
-is the third option.
+**Superseded (2026-06-09).** The earlier "enrich the single SFTP export"
+preference is dropped: Fork 1 resolved to the **API** (above), with
+`enrolled_date` and lifecycle dates joined from `stg_finalsite__status_report`.
+The enrollment-data gate is thereby closed (see _Open decisions_).
 
 ### Fork 2 — Focus transport (decide after vendor confirmation)
 
@@ -180,11 +208,12 @@ config, or a Finalsite custom/track field (not a base column) · ✗ no source.
 | **Finalsite SFTP export →** | Demographics ✅ · Address ✅ · Contacts ✅¹ · Linked ✅² · **Enrollment ❌³** | student+demographics ✅ · address ✅ · 2 guardians ⚠️⁴ · **placement ⚠️³**                         |
 | **Finalsite API →**         | Demographics ✅⁵ · Address ✅ · Contacts ✅ · Linked ✅ · **Enrollment ⚠️³**  | demographics ✅⁵ · address ✅ · 2 guardians ⚠️⁴ · placement ⚠️³ + **status-driven eligibility ✅** |
 
-¹ `RESIDES_WITH_STUD` not in source → default.
-² via shared-parent inference.
-³ `SCHOOL` + `START_DATE` not in source (derive); Focus enrollment-code setup required; **the API cannot write the `enrollments` table at all** — placement only via `accepting_*`.
-⁴ Focus API caps guardians at 2 → violates the all-guardians decision (data loss).
-⁵ race/ethnicity/language/school are API custom fields, confirmed populated in Newark (per-tenant names — confirm Miami).
+¹ `RESIDES_WITH_STUD` not in source → default. ² via shared-parent inference. ³
+`SCHOOL` + `START_DATE` not in source (derive); Focus enrollment-code setup
+required; **the API cannot write the `enrollments` table at all** — placement
+only via `accepting_*`. ⁴ Focus API caps guardians at 2 → violates the
+all-guardians decision (data loss). ⁵ race/ethnicity/language/school are API
+custom fields, confirmed populated in Newark (per-tenant names — confirm Miami).
 
 ### Target A — Focus SFTP templates: required-field coverage
 
@@ -245,35 +274,38 @@ contacts.
    current SFTP export omits it, so enriching the export **must add `status`**
    (and `enrollment_type`) — not optional.
 
-### Student_Enrollment field resolution (Finalsite API → Focus SFTP)
+### Student_Enrollment field resolution (Finalsite API → Focus SFTP — chosen design)
 
-This permutation **sidesteps the API enrollment-write gap** — the Focus SFTP
-`STUDENT_ENROLLMENT` template does the enrollment write, so the API's GET-only
-`enrollments` doesn't matter here. Field-by-field from the Finalsite API source:
+This is the **chosen** path (Fork 1 = API; contacts via Focus SFTP). It
+**sidesteps the API enrollment-write gap** — the Focus SFTP `STUDENT_ENROLLMENT`
+template does the enrollment write. Field-by-field, validated live against
+Miami:
 
-| Focus field                     | From Finalsite API                            | Remaining                                                                                                      |
-| ------------------------------- | --------------------------------------------- | -------------------------------------------------------------------------------------------------------------- |
-| `SYEAR` (req)                   | `school_year.start_year` ✓                    | none — solved                                                                                                  |
-| `STUDENT_ID` (req)              | `id_attributes` (returning) / mint (new)      | minting authority (★ gate)                                                                                     |
-| `GRADE_ID` (req)                | `grade.canonical_name` ✓                      | Finalsite-grade → Focus Short-Name map (case-sensitive); Focus grade levels set up                             |
-| `SCHOOL_ID` (req)               | `assigned_school_ss`/`kipp_school_*` (Newark) | confirm Miami carries the field (per-tenant); Finalsite-school → Focus `SCH_ID` crosswalk; Focus Schools exist |
-| `START_DATE` (req)              | **none**                                      | **derivation rule** — first instructional day of `SYEAR` (Focus calendar) or a designated Finalsite date       |
-| `ENROLLMENT_CODE` (opt, needed) | derive from `status`/`enrollment_type`        | `new`/`returning` → Focus Add-code (`EA1`/`RA1`) map; codes set up in Focus                                    |
-| `END_DATE` + `DROP_CODE` (xfer) | withdrawal date + reason                      | whether Miami exposes a withdrawal-date field; reason → Focus `DROP_CODE` map (create-only: N/A)               |
-| `CALENDAR_ID` (opt)             | blank = school default                        | only if non-default calendars                                                                                  |
+| Focus field                     | Source                                                                                                      | Remaining                                                          |
+| ------------------------------- | ----------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------ |
+| `SYEAR` (req)                   | API `school_year.start_year` ✓                                                                              | none                                                               |
+| `STUDENT_ID` (req)              | API `id_attributes` (returning) / mint (new)                                                                | minting authority (★ gate)                                         |
+| `GRADE_ID` (req)                | API `grade.canonical_name` ✓                                                                                | Finalsite-grade → Focus Short-Name map; Focus grade levels set up  |
+| `SCHOOL_ID` (req)               | API `assigned_school_ss` (Miami, confirmed) ✓                                                               | Finalsite-school → Focus `SCH_ID` crosswalk; Focus Schools exist   |
+| `START_DATE` (req)              | **`stg_finalsite__status_report.enrolled_date`** (join `finalsite_enrollment_id`) ✓                         | none — sourced                                                     |
+| `ENROLLMENT_CODE` (opt, needed) | derive from API `status` / `enrollment_type`                                                                | `new`/`returning` → Focus Add-code (`EA1`/`RA1`) map; codes set up |
+| `END_DATE` + `DROP_CODE` (xfer) | status-report withdrawal dates (`mid_year_withdrawal_date` / `summer_withdraw_date` / `not_enrolling_date`) | reason → Focus `DROP_CODE` map                                     |
+| `CALENDAR_ID` (opt)             | blank = school default                                                                                      | only if non-default calendars                                      |
 
-Three buckets:
+**Every required field is now sourced — no data gaps.** The API supplies the
+contact-side fields; the already-ingested Status Report supplies the workflow
+dates (`enrolled_date` = `START_DATE`, withdrawal dates for transfer-out),
+joined on `finalsite_enrollment_id` (= API `contact.id`). What remains is
+**mapping + Focus-side setup**, not data availability:
 
-1. **One genuine data gap — `START_DATE`.** No source field; it's a
-   derivation-rule decision (likely the first instructional day of `SYEAR` from
-   the Focus calendar).
-2. **Mapping + Focus code-setup** (data is available): grade→Short-Name,
-   school→`SCH_ID`, status→`ENROLLMENT_CODE` — all depend on Focus-side setup
-   (Grade Levels, Enrollment Codes Add+Drop, Calendars, Schools) existing and
-   matching by case-sensitive short name.
-3. **Already-tracked gates:** `STUDENT_ID` minting, and Miami-tenant
-   confirmation that an `assigned_school`/equivalent field exists (needs Miami
-   profiling).
+1. **Mapping**: Finalsite grade → Focus Short-Name; `assigned_school_ss` → Focus
+   `SCH_ID`; `status`/`enrollment_type` → `ENROLLMENT_CODE`; withdrawal reason →
+   `DROP_CODE`.
+2. **Focus code setup** (must exist, case-sensitive short names): Grade Levels,
+   Enrollment Codes (Add + Drop), Calendars, Schools.
+3. **`STUDENT_ID` minting (★ gate)** — the only open item: returning students
+   match an existing number; new students need one minted (autogen `IdField`
+   pending Finalsite).
 
 ## Finalsite API live profile (Newark proxy, n=300)
 
@@ -455,26 +487,20 @@ them.
    Identity-resolution absorbs whichever via one config flag. Formal ownership
    sign-off: Miami ops / central data.
 
-2. **Fork 1** — Finalsite source (API vs SFTP export). The export sample has
-   landed (see _Fork 1_); choosing it is gated on the **enrollment-data gate**.
+2. **Fork 1 — RESOLVED → REST API** (live-validated 2026-06-09; see _Fork 1_).
+   `enrolled_date` / lifecycle dates join from `stg_finalsite__status_report`.
 3. **Fork 2** — Focus transport (SFTP vs API). The all-guardians decision rules
    out API-only for contacts; remaining choice is for the student/enrollment
    records, gated on the API vendor-confirm items below.
 
-   **★ Enrollment-data gate** — _confirm with:_ the Finalsite export owner /
-   Miami ops. _Question:_ the export carries no enrollment status / school /
-   entry date / school year / withdrawal — can these columns be added to the
-   Swiss Army Export config? _Research (coverage matrix):_ the Finalsite **API**
-   natively exposes `status`, `enrollment_type`, `grade`, `school_year`, and
-   `relationships` — the lifecycle drivers the export lacks — so a SFTP+API
-   hybrid _would_ close the gap. **Preferred resolution: enrich the single SFTP
-   export, not a hybrid** — one source is simpler to operate, and the export is
-   already demographically richer than the API (it carries race/ethnicity, which
-   the API base `Contact` lacks). `START_DATE` and `SCHOOL` need a derivation
-   rule either way. _Decides:_ confirms Fork 1 as SFTP-only (export
-   reconfigured); hybrid is the **fallback** only if the export cannot carry
-   enrollment fields; gates the eligibility predicate and lifecycle ops
-   (transfer-out, re-enroll).
+   **Enrollment-data gate — RESOLVED (2026-06-09).** Fork 1 sources from the
+   **API**, which natively carries `status` / `enrollment_type` / `grade` /
+   `school_year` / `relationships` plus race / school / medical as custom fields
+   (validated live against Miami). `enrolled_date` (`START_DATE`), the
+   eligibility status timeline, and transfer-out withdrawal dates come from the
+   already-ingested **`stg_finalsite__status_report`**, joined on
+   `finalsite_enrollment_id` (= API `contact.id`). No export reconfiguration
+   needed; the new "Focus Student Export" file is not used as a source.
 
    **★ SIS-ID column gate** — _confirm with:_ the Finalsite export owner.
    _Question:_ are the PowerSchool-named SIS-ID slots a cloned PowerSchool
