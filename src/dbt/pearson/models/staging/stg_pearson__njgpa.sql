@@ -60,52 +60,48 @@ with
             if(`period` = 'FallBlock', 'Fall', `period`) as season,
             if(`subject` = 'Mathematics', 'Math', 'ELA') as discipline,
 
-            coalesce(
-                case
-                    when
-                        coalesce(
-                            unit1onlineteststartdatetime,
-                            unit2onlineteststartdatetime,
-                            unit3onlineteststartdatetime
-                        )
-                        is not null
-                    then
-                        date(
-                            least(
-                                coalesce(
-                                    safe_cast(
-                                        unit1onlineteststartdatetime as timestamp
-                                    ),
-                                    cast('9999-12-31' as timestamp)
-                                ),
-                                coalesce(
-                                    safe_cast(
-                                        unit2onlineteststartdatetime as timestamp
-                                    ),
-                                    cast('9999-12-31' as timestamp)
-                                ),
-                                coalesce(
-                                    safe_cast(
-                                        unit3onlineteststartdatetime as timestamp
-                                    ),
-                                    cast('9999-12-31' as timestamp)
-                                )
-                            )
-                        )
-                end,
-                safe_cast(paperattemptcreatedate as date)
-            ) as test_date,
-
         from {{ source("pearson", "src_pearson__njgpa") }}
         where summativeflag = 'Y' and testattemptednessflag = 'Y'
+    ),
+
+    unit_test_starts as (
+        select
+            *,
+
+            safe_cast(
+                unit1onlineteststartdatetime as timestamp
+            ) as unit1_start_timestamp,
+            safe_cast(
+                unit2onlineteststartdatetime as timestamp
+            ) as unit2_start_timestamp,
+            safe_cast(
+                unit3onlineteststartdatetime as timestamp
+            ) as unit3_start_timestamp,
+
+        from njgpa
     )
 
 select
-    *,
+    * except (unit1_start_timestamp, unit2_start_timestamp, unit3_start_timestamp),
 
     'NJGPA' as assessment_name,
 
     if(testperformancelevel = 2, true, false) as is_proficient,
+
+    coalesce(
+        (
+            select date(min(unit_start)),
+            from
+                unnest(
+                    [
+                        unit1_start_timestamp,
+                        unit2_start_timestamp,
+                        unit3_start_timestamp
+                    ]
+                ) as unit_start
+        ),
+        safe_cast(paperattemptcreatedate as date)
+    ) as test_date,
 
     case
         testperformancelevel
@@ -115,4 +111,4 @@ select
         then 'Not Yet Graduation Ready'
     end as testperformancelevel_text,
 
-from njgpa
+from unit_test_starts

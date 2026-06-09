@@ -178,72 +178,66 @@ with
                 `subject` = 'English Language Arts/Literacy', 'ELA', 'Math'
             ) as discipline,
 
-            coalesce(
-                case
-                    when
-                        coalesce(
-                            unit1onlineteststartdatetime,
-                            unit2onlineteststartdatetime,
-                            unit3onlineteststartdatetime,
-                            unit4onlineteststartdatetime
-                        )
-                        is not null
-                    then
-                        date(
-                            least(
-                                coalesce(
-                                    cast(
-                                        safe.parse_datetime(
-                                            '%m/%d/%Y %H:%M',
-                                            unit1onlineteststartdatetime
-                                        ) as timestamp
-                                    ),
-                                    cast('9999-12-31' as timestamp)
-                                ),
-                                coalesce(
-                                    cast(
-                                        safe.parse_datetime(
-                                            '%m/%d/%Y %H:%M',
-                                            unit2onlineteststartdatetime
-                                        ) as timestamp
-                                    ),
-                                    cast('9999-12-31' as timestamp)
-                                ),
-                                coalesce(
-                                    cast(
-                                        safe.parse_datetime(
-                                            '%m/%d/%Y %H:%M',
-                                            unit3onlineteststartdatetime
-                                        ) as timestamp
-                                    ),
-                                    cast('9999-12-31' as timestamp)
-                                ),
-                                coalesce(
-                                    cast(
-                                        safe.parse_datetime(
-                                            '%m/%d/%Y %H:%M',
-                                            unit4onlineteststartdatetime
-                                        ) as timestamp
-                                    ),
-                                    cast('9999-12-31' as timestamp)
-                                )
-                            )
-                        )
-                end,
-                date(safe.parse_datetime('%m/%d/%Y %H:%M', attemptcreatedate))
-            ) as test_date,
-
         from {{ source("pearson", "src_pearson__parcc") }}
         where summativeflag = 'Y' and testattemptednessflag = 'Y'
+    ),
+
+    unit_test_starts as (
+        select
+            *,
+
+            cast(
+                safe.parse_datetime(
+                    '%m/%d/%Y %H:%M', unit1onlineteststartdatetime
+                ) as timestamp
+            ) as unit1_start_timestamp,
+            cast(
+                safe.parse_datetime(
+                    '%m/%d/%Y %H:%M', unit2onlineteststartdatetime
+                ) as timestamp
+            ) as unit2_start_timestamp,
+            cast(
+                safe.parse_datetime(
+                    '%m/%d/%Y %H:%M', unit3onlineteststartdatetime
+                ) as timestamp
+            ) as unit3_start_timestamp,
+            cast(
+                safe.parse_datetime(
+                    '%m/%d/%Y %H:%M', unit4onlineteststartdatetime
+                ) as timestamp
+            ) as unit4_start_timestamp,
+
+        from parcc
     )
 
 select
-    *,
+    * except (
+        unit1_start_timestamp,
+        unit2_start_timestamp,
+        unit3_start_timestamp,
+        unit4_start_timestamp
+    ),
 
     'PARCC' as assessment_name,
 
     if(testperformancelevel >= 4, true, false) as is_proficient,
     if(testperformancelevel <= 2, true, false) as is_bl_fb,
+
+    coalesce(
+        (
+            select date(min(unit_start)),
+            from
+                unnest(
+                    [
+                        unit1_start_timestamp,
+                        unit2_start_timestamp,
+                        unit3_start_timestamp,
+                        unit4_start_timestamp
+                    ]
+                ) as unit_start
+        ),
+        date(safe.parse_datetime('%m/%d/%Y %H:%M', attemptcreatedate))
+    ) as test_date,
 
     case
         testperformancelevel
@@ -259,4 +253,4 @@ select
         then 'Did Not Yet Meet Expectations'
     end as testperformancelevel_text,
 
-from parcc
+from unit_test_starts
