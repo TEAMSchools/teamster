@@ -507,16 +507,11 @@ based on which approach produces cleaner scaffold code — and rename accordingl
 
 ### ~~4a: `base_powerschool__sections` — add `school_abbreviation` and `school_level`~~
 
-> **Superseded.** Originally planned to add `school_abbreviation` and
-> `school_level` to `base_powerschool__sections` in the `powerschool` package.
-> Reverted because the VSCode dbt extension cannot preview source-system package
-> models (the `star()` macro requires `--defer --state target/prod`, which the
-> extension does not pass). Per `src/dbt/CLAUDE.md`: _"For single-PR refactors,
-> add transformations at the kipptaf-level wrapper, not at package level."_
->
-> These columns are sourced directly from `stg_powerschool__schools` via a new
-> join in the `teacher_master_schedule` CTE in **step 6a** instead. No changes
-> to the `powerschool` package are needed.
+> **Implemented in PR #4152.** `school_abbreviation` and `school_level` were
+> added to `base_powerschool__sections` in the `powerschool` package and merged
+> before step 6a executed. Step 6a reads these fields directly from
+> `base_powerschool__sections` — the `stg_powerschool__schools` join was removed
+> from the scaffold entirely.
 
 ---
 
@@ -1050,8 +1045,15 @@ and the UNPIVOT list in `int_tableau__gradebook_audit_flags.sql`.
   ORDER BY 1, 2, 3, 4
   ```
 
-  Expected: Newark with both scaffold variants, Q1–Q4. Camden/Paterson have
-  `teacher_scaffold` rows only (no PS expectations data yet).
+  Expected: Newark and Camden with both scaffold variants, Q1–Q4. Paterson has
+  `teacher_scaffold` rows only (PS plugin not yet deployed there).
+
+  > **Note (actual implementation):** `school_abbreviation` and `school_level`
+  > come directly from `base_powerschool__sections` (PR #4152); the
+  > `stg_powerschool__schools` join in the plan's code block was removed.
+  > `_dbt_source_relation` replaced by `_dbt_source_project` throughout.
+  > `int_powerschool__terms` was updated to expose `_dbt_source_project` (needed
+  > for the direct equality join replacing `union_dataset_join_clause`).
 
 ### 6b: `int_tableau__gradebook_audit_student_scaffold.sql` — quarter-grain redesign
 
