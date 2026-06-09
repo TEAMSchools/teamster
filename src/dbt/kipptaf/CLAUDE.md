@@ -140,7 +140,9 @@ enrolled); `1` is inactive — never report against either.
 `enroll_status = 3` have NULL `entrydate` / `exitdate`, one row per
 `academic_year` per (student, district). `generate_surrogate_key` inputs that
 include `academic_year` hash uniquely; omitting `academic_year` collides.
-Date-range joins on `entrydate` silently drop these rows.
+Date-range joins on `entrydate` silently drop these rows. Retain them for KIPP
+Forward / kippadb alumni reporting — derived enrollment models must not drop
+them, and `dim_student_enrollments` stays alumni-inclusive.
 
 **`enroll_status` is student-level, not per-stint.** Sourced from
 `stg_powerschool__students` and copied identically to every row in
@@ -232,6 +234,25 @@ or `dbt clone --select <upstream>` against staging. Trigger via
 `mcp__dbt__list_jobs` (~5 min run); after success, empty-commit + push
 re-triggers Build - CI.
 
+Distinct from stale staging defer — **stale per-PR shadow**: a model that was
+`state:modified` in an earlier run (e.g. before the branch merged `main`) but is
+now unmodified leaves a stale copy in the per-PR schema
+(`dbt_cloud_pr_<job>_<pr>_<schema>`, one dataset per dbt custom schema). dbt
+prefers an existing same-schema relation over the staging defer, so consumers
+fail `Name <col> not found` even when `zz_stg_*` has the column. Confirm via
+`INFORMATION_SCHEMA.COLUMNS` on the per-PR vs `zz_stg_*` schema, then drop the
+stale per-PR relation (match `drop view`/`drop table` to its type) — or
+`drop schema ... cascade` the whole `dbt_cloud_pr_<job>_<pr>_*` set to avoid
+model-by-model whack-a-mole — and re-run. Claude is DDL-blocked (BQ MCP / `bq`
+are SELECT-only), so hand the drops to the user.
+
+Re-triggering Build - CI: prefer `mcp__dbt__retry_job_run(run_id=<failed run>)`
+— it retries the _existing_ run, keeping the PR-schema override
+(`trigger_job_run` loses it; that's why the fallback is empty-commit + push).
+But `dbt retry` replays the prior run's compiled SQL and re-runs only
+errored/skipped nodes — so after changing external state (dropping PR schemas,
+refreshing staging) use a fresh build (empty-commit + push), not retry.
+
 ## Single-PR cross-project workflow
 
 CI only builds kipptaf; district staging schemas aren't auto-populated. For a PR
@@ -243,6 +264,15 @@ touching both a district model and a kipptaf consumer:
    `uv --directory <worktree> run dbt clone --target staging --state target/prod`
    to seed `zz_stg_<district>_*` from prod.
 3. Push; CI reads staged regional via the schema branch.
+
+`dbt clone` only seeds upstreams UNCHANGED in this PR (it copies prod schema).
+For district/package models you MODIFIED, clone gives the OLD schema — instead
+`stage_external_sources --target staging` their externals, then
+`dbt build --select <model> --target staging` into `zz_stg_`. Also clone+build
+`zz_stg_kipptaf` itself — under `--target staging` kipptaf reads its own models
+from there. Seed EVERY district that unions into the kipptaf model (e.g.
+`kipppaterson`, which feeds `stg_pearson__njsla`/`_science` via its own
+`int_pearson__*`, not the package `stg_*`).
 
 Alternative to the two-PR pattern in `src/dbt/CLAUDE.md`.
 

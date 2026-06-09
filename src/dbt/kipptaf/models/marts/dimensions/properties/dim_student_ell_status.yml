@@ -17,40 +17,24 @@ models:
             - kipptaf
             - marts
             - dim_student_ell_status
-    constraints:
-      - type: primary_key
-        columns: [student_ell_status_key]
-        warn_unsupported: false
-      - type: foreign_key
-        columns: [student_key]
-        expression: ref('dim_students')
-        to_columns: [student_key]
-        warn_unsupported: false
-      - type: foreign_key
-        columns: [student_enrollment_key]
-        expression: ref('dim_student_enrollments')
-        to_columns: [student_enrollment_key]
-        warn_unsupported: false
-      - type: foreign_key
-        columns: [effective_date_start_key]
-        expression: ref('dim_dates')
-        to_columns: [date_key]
-        warn_unsupported: false
-      - type: foreign_key
-        columns: [effective_date_end_key]
-        expression: ref('dim_dates')
-        to_columns: [date_key]
-        warn_unsupported: false
     columns:
       - name: student_ell_status_key
         data_type: string
         description: Surrogate primary key.
+        constraints:
+          - type: primary_key
+            warn_unsupported: false
         data_tests:
           - unique
           - not_null
       - name: student_key
         data_type: string
         description: Foreign key to `dim_students.student_key`.
+        constraints:
+          - type: foreign_key
+            to: ref('dim_students')
+            to_columns: [student_key]
+            warn_unsupported: false
         data_tests:
           - not_null
           - relationships:
@@ -64,6 +48,11 @@ models:
           status row is bound to exactly one enrollment stint (clipped to its
           entry/exit window at build time). Consumers join here directly rather
           than re-deriving the stint via date-range overlap.
+        constraints:
+          - type: foreign_key
+            to: ref('dim_student_enrollments')
+            to_columns: [student_enrollment_key]
+            warn_unsupported: false
         data_tests:
           - not_null
           - relationships:
@@ -89,6 +78,11 @@ models:
           First date this span is valid for the student in this district.
           Clipped to the later of the LEP record's begin date and the student's
           PowerSchool enrollment_start in the district.
+        constraints:
+          - type: foreign_key
+            to: ref('dim_dates')
+            to_columns: [date_key]
+            warn_unsupported: false
         data_tests:
           - not_null
           - relationships:
@@ -102,6 +96,11 @@ models:
           the LEP record's end date and the student's PowerSchool enrollment_end
           in the district. `'9999-12-31'` only when the student is currently
           active in the district AND the LEP record is open-ended.
+        constraints:
+          - type: foreign_key
+            to: ref('dim_dates')
+            to_columns: [date_key]
+            warn_unsupported: false
         data_tests:
           - not_null
           - relationships:

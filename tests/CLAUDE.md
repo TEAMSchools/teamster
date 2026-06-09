@@ -45,16 +45,25 @@ uv run pytest tests/assets/test_assets_dbt.py                         # requires
   `build_resources()` context manager to instantiate, then call methods on
   `resources.<name>`. `PrivateAttr` fields (`_log`, `_service`) accept direct
   assignment; use `object.__setattr__` to monkey-patch methods.
+- **Testing resource retry offline**: monkeypatch
+  `<Resource>._request.retry.wait = wait_none()` (tenacity) to kill backoff,
+  inject `object.__setattr__(r, "_session", SimpleNamespace(request=fake_fn))`
+  with a `_FakeResponse` stub, and assert call counts for retry/no-retry paths.
+  Reference harness: `tests/resources/test_resource_adp_workforce_now.py`.
 - **SSH `test=True`**: `SSHResource` reads the SSH password from a secret file
   by default (`test=False`). Integration tests must set `test=True` and pass
   `password` directly so each district uses its own credentials.
 - **Cross-file conftest imports fail** (`tests/` has no `__init__.py`). For
   fixture-injected param types, skip the annotation or use `TYPE_CHECKING` with
   a string forward-ref.
-- `dagster definitions validate` requires env vars from 1Password. Secrets are
-  fetched on demand by the root `conftest.py` during test runs. Outside of
-  pytest, run commands in the VS Code terminal where the token is available.
-  Claude sessions cannot access secrets — this is expected, not a code issue.
+- **Secrets ARE available to Claude inside pytest**: the autouse `conftest.py`
+  fixture bootstraps 1Password per run, so credentialed work (live API pulls,
+  asset `materialize()`, BigQuery) is runnable via `uv run pytest`. Wrap a
+  credentialed one-off as a throwaway `tests/**/test_zz_*.py` and delete it
+  after — a plain `uv run python script.py` is NOT bootstrapped. ADC
+  (BigQuery/GCS) auth is independent of 1Password and always works (dbt CLI, BQ
+  client). `dagster definitions validate` likewise relies on the conftest
+  bootstrap.
 
 ## Hook security tests (`tests/hooks/`)
 

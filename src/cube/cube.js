@@ -20,20 +20,13 @@ function nextMidnightEastern() {
   return now.getTime() + (24 * 60 * 60 * 1000 - msElapsedToday);
 }
 
-// STUDENT_CUBES: cubes that require cube-access-student-data.
-// Add cube name: here when adding a new student-data cube.
-const STUDENT_CUBES = [
-  "attendance",
-  "dim_student_ell_status",
-  "dim_student_iep_status",
-  "dim_student_meal_eligibility_status",
-];
-
-const STAFF_CUBES = [
-  "dim_staff",
-  "fct_staff_attrition",
-  "fct_staff_observations",
-];
+// Domain membership is derived from the cube-name prefix, not a static array —
+// a query member is "<cube>.<member>", so the cube name is the prefix. Adding a
+// new domain cube requires no cube.js change as long as it follows the naming
+// convention: student-domain cube names start with "student", staff-domain with
+// "staff" (see src/cube/CLAUDE.md naming rules).
+const isStudentMember = (member) => member.startsWith("student");
+const isStaffMember = (member) => member.startsWith("staff");
 
 // Convention for snapshot cubes: cumulative daily flags that overcount without
 // a point-in-time anchor. All snapshot cubes expose these three dimensions.
@@ -52,7 +45,7 @@ const SNAPSHOT_SELF_ANCHORED_SUFFIXES = [
 // / is_week_end_record and its measures need the anchor guard. Also add the
 // cube's snapshot measure stems to SNAPSHOT_MEASURE_STEMS below — both arrays
 // must stay in sync or the guard won't match the new cube's measures.
-const SNAPSHOT_CUBES = ["attendance"];
+const SNAPSHOT_CUBES = ["student_attendance"];
 
 // Measure-name stems that mark a snapshot (cumulative-daily-flag) measure
 // family — chronic absence, ADA tiers, and truancy. Only these need the
@@ -149,12 +142,8 @@ module.exports = {
     if (!groups.includes("cube-access-student-data")) {
       query = {
         ...query,
-        dimensions: (query.dimensions ?? []).filter(
-          (d) => !STUDENT_CUBES.some((c) => d.startsWith(c)),
-        ),
-        measures: (query.measures ?? []).filter(
-          (m) => !STUDENT_CUBES.some((c) => m.startsWith(c)),
-        ),
+        dimensions: (query.dimensions ?? []).filter((d) => !isStudentMember(d)),
+        measures: (query.measures ?? []).filter((m) => !isStudentMember(m)),
       };
     }
 
@@ -176,7 +165,7 @@ module.exports = {
         .replace(/^cube-region-/, "")
         .replace(/-(?:detail|summary)$/, "");
       locationFilter = {
-        member: "dim_locations.region_key",
+        member: "locations.region_key",
         operator: "equals",
         values: [region],
       };
@@ -185,7 +174,7 @@ module.exports = {
         .replace(/^cube-school-/, "")
         .replace(/-(?:detail|summary)$/, "");
       locationFilter = {
-        member: "dim_locations.abbreviation",
+        member: "locations.abbreviation",
         operator: "equals",
         values: [slug],
       };
@@ -195,7 +184,7 @@ module.exports = {
         ...query,
         filters: [
           {
-            member: "dim_locations.abbreviation",
+            member: "locations.abbreviation",
             operator: "equals",
             values: [],
           },
@@ -220,7 +209,7 @@ module.exports = {
       if (!measures.length) continue;
 
       const dateDayTd = (query.timeDimensions ?? []).find((td) =>
-        td.dimension?.endsWith("dim_dates_date_day"),
+        td.dimension?.endsWith("dates_date_day"),
       );
       const granularity = dateDayTd?.granularity ?? null;
 
@@ -275,14 +264,12 @@ module.exports = {
         ) ||
         filters.some(
           (f) =>
-            f.member?.endsWith("dim_dates_date_day") &&
+            f.member?.endsWith("dates_date_day") &&
             f.operator === "equals" &&
             Array.isArray(f.values) &&
             f.values.length === 1,
         ) ||
-        (query.dimensions ?? []).some((d) =>
-          d.endsWith("dim_dates_date_day"),
-        ) ||
+        (query.dimensions ?? []).some((d) => d.endsWith("dates_date_day")) ||
         // A point-in-time pin expressed via timeDimensions counts as anchored
         // only when it is a single day — a single-element dateRange or
         // granularity "day". A wider dateRange with null granularity is NOT
@@ -312,11 +299,11 @@ module.exports = {
     const touchesStaffCube = [
       ...(query.dimensions ?? []),
       ...(query.measures ?? []),
-    ].some((m) => STAFF_CUBES.some((c) => m.startsWith(c)));
+    ].some(isStaffMember);
     if (touchesStaffCube && !groups.includes("cube-access-staff-all")) {
       query = {
         ...query,
-        segments: [...(query.segments ?? []), "dim_staff.reporting_chain"],
+        segments: [...(query.segments ?? []), "staff.reporting_chain"],
       };
     }
 

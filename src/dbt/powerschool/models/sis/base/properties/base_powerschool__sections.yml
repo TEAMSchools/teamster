@@ -371,6 +371,19 @@ models:
         data_type: int64
       - name: terms_fiscal_year
         data_type: int64
+      - name: school_name
+        data_type: string
+        description:
+          Full name of the school, sourced from stg_powerschool__schools.
+      - name: school_abbreviation
+        data_type: string
+        description:
+          Short abbreviation for the school, sourced from
+          stg_powerschool__schools.
+      - name: school_level
+        data_type: string
+        description:
+          School level (ES, MS, HS), sourced from stg_powerschool__schools.
       - name: teachernumber
         data_type: string
       - name: teacher_lastfirst

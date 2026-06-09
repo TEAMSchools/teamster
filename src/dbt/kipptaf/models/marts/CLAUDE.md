@@ -125,6 +125,10 @@ avoid a join, the chain is probably already there — use it instead.
   multiple FKs to the same target coexist (e.g. `submitter_staff_key` +
   `assignee_staff_key` on `fct_support_tickets`). Never expose the raw natural
   key alongside its surrogate (R9).
+- **FK constraint form**: declare foreign keys with the ref-aware
+  `to: ref(...)` + `to_columns:` form (dbt 1.9+) at the **column** level for
+  single-column FKs — not model-level `expression: ref(...)`, which is free text
+  that doesn't capture the ref dependency.
 - **Date FK** (`_date_key`): raw DATE value matching `dim_dates.date_key`,
   **not** a hash. Never also expose the same date as a degenerate `_date` column
   next to its `_date_key` (R9).
@@ -281,6 +285,11 @@ represent enrollment-context status:
 - Half-open exit:
   `enrollment_end = coalesce(date_sub(exitdate, interval 1 day), '9999-12-31')`
   to avoid boundary-share overlaps.
+- `student_enrollment_key` is **non-unique** here — within-stint status changes
+  emit multiple spans per stint (IEP ~26% of stints, up to 10; meal ~3%; ELL 1).
+  A consumer equi-join on it fans out by the span count; collapse to one row per
+  stint (a rollup model with an explicit per-attribute rule) before joining a
+  fact or the enrollment dim.
 
 ## "Is current X" flags on dim_dates
 
@@ -300,6 +309,12 @@ from `<schema>.<fact>`
 ```
 
 Treat ≥99% NULL as a broken join, not a sparse FK.
+
+To join a mart by its surrogate key from ad-hoc BQ (verify FK population when
+the column was dropped, or compare PR vs prod), reproduce
+`generate_surrogate_key`:
+`to_hex(md5(concat(coalesce(cast(<f1> as string), '_dbt_utils_surrogate_key_null_'), '-', coalesce(cast(<f2> as string), '_dbt_utils_surrogate_key_null_'))))`.
+Validate the hash by checking the join row count reconciles before trusting it.
 
 ## Not in this layer
 
