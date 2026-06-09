@@ -44,12 +44,16 @@ file; domain specifics live in the nearest subdirectory CLAUDE.md.
   source systems, and `dagster`/`dbt` when applicable.
 
 - **Before creating a branch**: ask the user — worktree or branch switch? Do not
-  choose for them.
+  choose for them. When an issue isn't already required (i.e. quick fixes, not
+  specs/plans), also ask whether to anchor the branch with one, and honor a
+  decline — create the branch without an issue via the paths below.
 
 - **Before writing any file (spec, code, config)**: be on the feature branch.
 
-- **Worktree**: `gh issue develop <number> --name <branch>` (no `--checkout`),
-  then `git worktree add .worktrees/<branch> <branch>`.
+- **Worktree**: with an issue, `gh issue develop <number> --name <branch>` (no
+  `--checkout`), then `git worktree add .worktrees/<branch> <branch>`. If the
+  user explicitly declined an issue, skip `gh issue develop` and create the
+  branch directly: `git worktree add -b <branch> .worktrees/<branch>`.
 
 - **Linking an existing remote branch to an issue**:
   `mcp__github__create_branch` and GraphQL `createLinkedBranch` both no-op when
@@ -64,10 +68,14 @@ file; domain specifics live in the nearest subdirectory CLAUDE.md.
   the worktree root where `dbt_project.yml` doesn't exist). For Python execution
   from the main repo, prefix `VIRTUAL_ENV=` and use
   `uv --directory <worktree> run python ...` — bare `uv run --active` reads the
-  main repo's `.venv` and misses worktree-only changes. Otherwise prefer
-  absolute paths.
+  main repo's `.venv` and misses worktree-only changes. `uv --directory` also
+  resolves a relative _script_ path under the worktree, so a main-repo script
+  path breaks — pass an absolute script path or run it from the main repo.
+  Otherwise prefer absolute paths.
 
-- **Branch switch**: `gh issue develop <number> --name <branch> --checkout`.
+- **Branch switch**: with an issue,
+  `gh issue develop <number> --name <branch> --checkout`; if the user explicitly
+  declined an issue, `git checkout -b <branch>`.
 
 - **Git naming**: Commit messages and branch names use
   [conventional commits](https://www.conventionalcommits.org/en/v1.0.0/). Branch
@@ -104,8 +112,11 @@ file; domain specifics live in the nearest subdirectory CLAUDE.md.
   out-of-band consent, re-confirm in plain text the same turn or the write will
   be denied. Common surfaces: `git worktree add -b` / `git checkout -b`,
   `git push origin main` (route through a PR or have the user push), bulk Asana
-  `create_tasks`. If the user declined tracking issues, open minimal ones anyway
-  (title + 1-2 sentences) and use `gh issue develop`.
+  `create_tasks`. If the user hasn't ruled an issue out, open a minimal one
+  (title + 1-2 sentences) and use `gh issue develop`; if the user explicitly
+  declined an issue, create the branch directly (`git worktree add -b` /
+  `git checkout -b`) and re-confirm that consent in plain text the same turn so
+  the classifier (which can't see `AskUserQuestion` answers) allows it.
   `gh issue develop --name <branch>` also fails when the branch contains trigger
   words like `log`, `auth`, `secret` — rename and retry.
 
@@ -179,7 +190,11 @@ file; domain specifics live in the nearest subdirectory CLAUDE.md.
   `.trunk/tools/trunk check --force <files>` to verify before claiming the
   change is lint-clean. Run from inside the worktree —
   `trunk check --force <abs-worktree-paths>` from the main repo silently returns
-  "no applicable linters".
+  "no applicable linters". The `trunk` binary lives only in the main repo
+  (`.trunk/tools/` is gitignored, absent in worktrees) — invoke the absolute
+  path `/workspaces/teamster/.trunk/tools/trunk` with cwd set to the worktree;
+  relative paths run from the main repo check the main-repo copies, not your
+  worktree edits.
 
 - **Linter**: Suppress with `trunk-ignore(linter/rule): reason` (e.g.
   `# trunk-ignore(bandit/B603): static argv, no shell`) on the line immediately
@@ -248,9 +263,11 @@ alone may be safe; combinations may not. When unsure, consult the
   doc" step, `superpowers:writing-plans`' "Save plan" step, or
   `superpowers:using-git-worktrees`' worktree-consent prompt. Pause those
   skills, run the flow, then write specs to `docs/superpowers/specs/...` or
-  plans to `docs/superpowers/plans/...` on the new branch. Never
-  `git worktree add -b` or `git checkout -b` standalone — the branch must be
-  created via `gh issue develop` so it's linked to the issue.
+  plans to `docs/superpowers/plans/...` on the new branch. Default to
+  `gh issue develop` so the branch is linked to an issue; only create a branch
+  standalone (`git worktree add -b` / `git checkout -b`) when the user
+  explicitly declines an issue — re-confirm that consent in plain text the same
+  turn.
 
 - **`finishing-a-development-branch` verification gate**: Skip the skill's
   `npm test / pytest / ...` heuristic. For dbt changes,
@@ -409,6 +426,14 @@ opaque token.
   prior call (`"[\"a\",\"b\"]"`), not a bare list.
 
 ### Dagster run failure diagnosis
+
+A step failure's real exception is the **bottom of the error chain**:
+`get_run_logs(filter_types=["ExecutionStepFailureEvent"])` →
+`error.errorChain[-1].error.message`. The top-level
+`DagsterExecutionStepExecutionError` and the day2 collector's
+`errorClass`/`errorDetail` only show the wrapper — read the chain bottom before
+theorizing about cause (e.g. ADP "Code error" was a transient gateway 404, not
+rate-limiting).
 
 Step pod stdout is filtered from `k8s_container` logs. For per-step execution
 logs, use Dagster's compute log manager:

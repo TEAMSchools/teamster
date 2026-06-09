@@ -49,6 +49,11 @@ models:
         data_type: string
       - name: ba_nces_id
         data_type: string
+      - name: ba_adjusted_6_year_minority_graduation_rate
+        data_type: numeric
+        description:
+          Adjusted six-year minority graduation rate of the institution for the
+          most recent BA (4-year) enrollment.
       - name: aa_school_name
         data_type: string
       - name: aa_pursuing_degree_type
@@ -79,6 +84,11 @@ models:
         data_type: string
       - name: aa_nces_id
         data_type: string
+      - name: aa_adjusted_6_year_minority_graduation_rate
+        data_type: numeric
+        description:
+          Adjusted six-year minority graduation rate of the institution for the
+          most recent AA (2-year) enrollment.
       - name: ecc_school_name
         data_type: string
       - name: ecc_pursuing_degree_type

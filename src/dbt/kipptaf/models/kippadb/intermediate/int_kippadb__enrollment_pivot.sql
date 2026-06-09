@@ -195,6 +195,8 @@ with
             baa.name as ba_account_name,
             baa.billing_state as ba_billing_state,
             baa.nces_id as ba_nces_id,
+            baa.adjusted_6_year_minority_graduation_rate
+            as ba_adjusted_6_year_minority_graduation_rate,
 
             aa.name as aa_school_name,
             aa.pursuing_degree_type as aa_pursuing_degree_type,
@@ -212,6 +214,8 @@ with
             aaa.name as aa_account_name,
             aaa.billing_state as aa_billing_state,
             aaa.nces_id as aa_nces_id,
+            aaa.adjusted_6_year_minority_graduation_rate
+            as aa_adjusted_6_year_minority_graduation_rate,
 
             ecc.name as ecc_school_name,
             ecc.pursuing_degree_type as ecc_pursuing_degree_type,
@@ -346,6 +350,7 @@ select
     ew.ba_account_name,
     ew.ba_billing_state,
     ew.ba_nces_id,
+    ew.ba_adjusted_6_year_minority_graduation_rate,
     ew.aa_school_name,
     ew.aa_pursuing_degree_type,
     ew.aa_status,
@@ -361,6 +366,7 @@ select
     ew.aa_account_name,
     ew.aa_billing_state,
     ew.aa_nces_id,
+    ew.aa_adjusted_6_year_minority_graduation_rate,
     ew.ecc_school_name,
     ew.ecc_pursuing_degree_type,
     ew.ecc_status,
