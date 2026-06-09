@@ -264,19 +264,30 @@ invariants — exactly one `is_latest_record` per `student_enrollment_key`, one
   `is_*_record` anchors + `is_enrolled`. Region and grade-level breakdowns come
   through the `students` / `locations.regions` join paths in the view — no
   degenerate `region` dim on the cube (this is the attendance convention).
+- **All measures are `count_distinct(student_key)`, not `sum(is_enrolled)`.**
+  This matters: at a single pinned day the two agree (verified 2026-06-09: Oct 1
+  2025 → 10,637 rows = 10,637 distinct stints = 10,637 distinct students, no
+  same-day concurrent stints), but over a multi-day window `sum` yields
+  student-_days_ (a week → ~51,837) while `count_distinct` yields a sensible
+  unique-student count (~10,654). `count_distinct` degrades gracefully when
+  under-specified — the worst an analyst gets is "distinct students enrolled at
+  some point in the queried window," a real metric, not garbage. This matches
+  the attendance CA measures, which are also `count_distinct`. `is_enrolled`
+  stays on the fact as the row marker, but the measures count distinct students.
 - Measures follow the **named period-end pattern** that `student_attendance`
   uses (`count_truants_year_end` / `_month_end` / `_week_end`) — base measure
   unanchored, explicit variants carrying the anchor filter, rather than relying
   on `SNAPSHOT_MEASURE_STEMS` substring injection:
-  - `count_students`: `sum(is_enrolled)` (type `sum`). Base measure, no anchor
-    filter. This is the honest per-period student headcount (the stint cube's
-    counter is renamed `count_enrollments` — see "Measure naming" above — so
-    `count_students` is unambiguous). Valid only when the query isolates a
-    single period (via a `date` filter — e.g. Oct 1 — or one of the `_*_end`
-    variants). Summed across days unanchored it yields enrolled-student-days,
-    not a headcount; the view description must say so.
-  - `count_students_year_end`: `sum(is_enrolled)` with measure filter
-    `{CUBE}.is_latest_record = true`. Safe for year-over-year without an anchor
+  - `count_students`: `count_distinct(student_key)`, no filter. Counts distinct
+    students enrolled **at any point in the queried window** — "students
+    served," not point-in-time (the stint cube's counter is renamed
+    `count_enrollments` — see "Measure naming" above — so `count_students` is
+    unambiguous). Filtered to a single `date_key` it is the exact point-in-time
+    headcount; filtered to a year (no anchor) it is students-served-that-year
+    (includes mid-year withdrawals — see the ladder in Component 3). The view
+    description must draw this distinction.
+  - `count_students_year_end`: `count_distinct(student_key)` with measure filter
+    `{CUBE}.is_latest_record = true`. Safe for year-over-year without a date
     filter — mirrors `count_truants_year_end`.
   - `count_students_month_end`: filter `{CUBE}.is_month_end_record = true`. Use
     with `timeDimensions` granularity `month`.
@@ -286,7 +297,7 @@ invariants — exactly one `is_latest_record` per `student_enrollment_key`, one
   regulatory count dates (`oct01`, `oct15`, `mar15`) are filterable date
   predicates at day grain, not row properties. Expose them as named measures
   (discoverable in BI, analogous to the `_*_end` anchor measures), each
-  `sum(is_enrolled)` with a measure filter on `date_key`:
+  `count_distinct(student_key)` with a measure filter on `date_key`:
   - `count_students_oct01`: filter
     `extract(month from {CUBE}.date_key) = 10 and extract(day from {CUBE}.date_key) = 1`.
   - `count_students_oct15`: month 10, day 15.
@@ -324,8 +335,10 @@ invariants — exactly one `is_latest_record` per `student_enrollment_key`, one
   `_year_end` / `_month_end` / `_week_end` measures carry their anchors
   explicitly (the `SNAPSHOT_SELF_ANCHORED_SUFFIXES` convention in
   [cube.js](../../../src/cube/cube.js) recognizes these suffixes and skips
-  re-injecting), and the base measure's intended unanchored use is a single-date
-  filter. This matches how attendance leaves `avg_daily_attendance` unanchored.
+  re-injecting). The base `count_distinct(student_key)` is intentionally usable
+  unanchored — it returns "students served in the queried window" rather than a
+  meaningless day-sum (see the Component 3 ladder), so it needs no guard. This
+  matches how attendance leaves `avg_daily_attendance` unanchored.
 - The cube must expose all three `is_*_record` dimensions (the guard and the
   named measures both require them).
 
@@ -337,9 +350,26 @@ pattern (no direct identifiers): single `cube-access-student-data` policy,
 [`student_attendance_summary.yml`](../../../src/cube/model/views/student_attendance/student_attendance_summary.yml)
 as the structural template:
 
-- Surfaces `count_students` + the three named period-end variants
-  (`count_students_year_end` / `_month_end` / `_week_end`) and the three
-  `is_*_record` anchors (under a `Filter` folder, as attendance does).
+- Surfaces `count_students`, the three named period-end variants
+  (`count_students_year_end` / `_month_end` / `_week_end`), the three named
+  state-count-date variants (`count_students_oct01` / `_oct15` / `_mar15`), and
+  the three `is_*_record` anchors (under a `Filter` folder, as attendance does).
+- **The view description must spell out the three-number ladder** (all
+  `count_distinct(student_key)`, all alumni-free because the year/date filter
+  selects on the calendar day's school year, not student status — a prior-year
+  graduate has no rows labeled the queried year). Verified 2026-06-09 for
+  academic_year 2025:
+  - `count_students` + year filter → **~11,261 = students _served_** that year
+    (active + the ~887 who withdrew mid-year). Not point-in-time.
+  - `count_students` + single `date_key` (e.g. 2025-10-01) → **~10,637 =
+    enrolled _on that day_** (point-in-time).
+  - `count_students_year_end` + year → **~10,374 = enrolled as of each student's
+    last day** (≈ currently active).
+
+  These answer different questions; the description must steer analysts to the
+  date/anchored variants for point-in-time and reserve the bare `count_students`
+  for "students served in the period."
+
 - Time dimension via `join_path: student_enrollment_daily.dates`, `prefix: true`
   → `dates_*` members (day/week/month/quarter granularity).
 - **Region and grade breakdowns come through join paths, not degenerate dims**:
