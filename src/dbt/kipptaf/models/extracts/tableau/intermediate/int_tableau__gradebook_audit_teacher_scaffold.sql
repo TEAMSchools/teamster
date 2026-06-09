@@ -1,10 +1,10 @@
 with
-    /* base_powerschool__sections is section-grain (one row per section), which is
-       correct here — the teacher scaffold is the master schedule, not student-level */
     teacher_master_schedule as (
         select
-            s._dbt_source_relation,
+            s._dbt_source_project,
             s.terms_academic_year as academic_year,
+            s.school_abbreviation as school,
+            s.school_level,
             s.sections_dcid,
             s.sections_id as sectionid,
             s.sections_schoolid as schoolid,
@@ -16,7 +16,6 @@ with
             s.courses_excludefromgpa as exclude_from_gpa,
             s.teachernumber as teacher_number,
             s.teacher_lastfirst as teacher_name,
-            sch.abbreviation as school,
 
             r.sam_account_name as teacher_tableau_username,
             r.reports_to_employee_number as manager_employee_number,
@@ -33,7 +32,6 @@ with
             t.term_start_date as quarter_start_date,
             t.term_end_date as quarter_end_date,
             t.is_current_term,
-            sch.school_level,
 
             initcap(regexp_extract(s._dbt_source_relation, r'kipp(\w+)_')) as region,
 
@@ -51,10 +49,6 @@ with
 
         from {{ ref("base_powerschool__sections") }} as s
         left join
-            {{ ref("stg_powerschool__schools") }} as sch
-            on s.sections_schoolid = sch.school_number
-            and {{ union_dataset_join_clause(left_alias="s", right_alias="sch") }}
-        left join
             {{ ref("int_people__staff_roster") }} as r
             on s.teachernumber = r.powerschool_teacher_number
         left join
@@ -64,17 +58,14 @@ with
             {{ ref("int_powerschool__terms") }} as t
             on s.sections_schoolid = t.schoolid
             and s.terms_yearid = t.yearid
-            and {{ union_dataset_join_clause(left_alias="s", right_alias="t") }}
+            and s._dbt_source_project = t._dbt_source_project
         where
             s.terms_academic_year = {{ var("current_academic_year") }}
             and s.sections_no_of_students != 0
     )
 
-/* Explicit column listing required for all models under the tableau schema.
-   school_level and region_school_level are derived using school_level_alt
-   so the if() expression appears only once (in the CTE). */
 select
-    s._dbt_source_relation,
+    s._dbt_source_project,
     s.academic_year,
     s.academic_year_display,
     s.yearid,
@@ -129,7 +120,7 @@ from teacher_master_schedule as s
 union all
 
 select
-    s._dbt_source_relation,
+    s._dbt_source_project,
     s.academic_year,
     s.academic_year_display,
     s.yearid,
