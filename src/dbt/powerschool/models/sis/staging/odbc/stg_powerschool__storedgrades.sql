@@ -99,6 +99,9 @@ select
         /* unweighted 2019+ */
         when academic_year >= 0 and gradescale_name = 'KIPP NJ 2019 (5-12) Weighted'
         then 'KIPP NJ 2019 (5-12) Unweighted'
+        /* unweighted 2024 honors */
+        when gradescale_name = 'KIPP NJ 2024 (5-12) Weighted - Honors'
+        then 'KIPP NJ 2019 (5-12) Unweighted'
         /* MISSING GRADESCALE - default pre-2016 */
         when
             academic_year < 2016
