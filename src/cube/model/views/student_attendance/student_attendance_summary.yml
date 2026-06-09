@@ -1,5 +1,5 @@
 views:
-  - name: attendance_summary
+  - name: student_attendance_summary
     description: >-
       Aggregated student attendance for ADA, tardy rate, and truancy breakdowns.
       One row per filter slice — never per student-day. ADA is always
@@ -19,7 +19,7 @@ views:
       year.
 
     cubes:
-      - join_path: attendance
+      - join_path: student_attendance
         includes:
           - count_students
           - avg_daily_attendance
@@ -58,7 +58,7 @@ views:
           - is_month_end_record
           - is_week_end_record
 
-      - join_path: attendance.dates
+      - join_path: student_attendance.dates
         prefix: true
         includes:
           - date_day
@@ -67,7 +67,7 @@ views:
           - quarter_number
           - school_week_start_date
 
-      - join_path: attendance.student_enrollments.locations
+      - join_path: student_attendance.student_enrollments.locations
         prefix: true
         includes:
           - location_name
@@ -76,20 +76,20 @@ views:
           - campus
           - city
 
-      - join_path: attendance.student_enrollments.locations.regions
+      - join_path: student_attendance.student_enrollments.locations.regions
         prefix: true
         includes:
           - region_name
           - state
 
-      - join_path: attendance.student_enrollments
+      - join_path: student_attendance.student_enrollments
         prefix: false
         includes:
           - grade_level
           - graduation_year
           - is_retained_year
 
-      - join_path: attendance.student_enrollments.student_enrollment_status
+      - join_path: student_attendance.student_enrollments.student_enrollment_status
         prefix: false
         includes:
           - is_ell
@@ -101,14 +101,14 @@ views:
           - is_meal_eligible
           - meal_eligibility
 
-      - join_path: attendance.student_enrollments.students
+      - join_path: student_attendance.student_enrollments.students
         prefix: false
         includes:
           - gender_identity
           - race
           - is_gifted
 
-      - join_path: attendance.terms
+      - join_path: student_attendance.terms
         prefix: true
         includes:
           - academic_year

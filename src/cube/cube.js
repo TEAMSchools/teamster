@@ -20,20 +20,13 @@ function nextMidnightEastern() {
   return now.getTime() + (24 * 60 * 60 * 1000 - msElapsedToday);
 }
 
-// STUDENT_CUBES: cubes that require cube-access-student-data.
-// Add cube name: here when adding a new student-data cube.
-const STUDENT_CUBES = [
-  "attendance",
-  "student_enrollment_status",
-  "student_enrollments",
-];
-
-// STAFF_CUBES: cubes that require cube-access-staff-all. Empty until the staff
-// cubes (staff, fct_staff_attrition, fct_staff_observations) and the
-// dim_staff.reporting_chain segment are added in the follow-up spec (blocked on
-// #3729). Re-add each cube name: here when its YAML lands, or staff-data
-// queries will skip the reporting-chain access guard in queryRewrite below.
-const STAFF_CUBES = [];
+// Domain membership is derived from the cube-name prefix, not a static array —
+// a query member is "<cube>.<member>", so the cube name is the prefix. Adding a
+// new domain cube requires no cube.js change as long as it follows the naming
+// convention: student-domain cube names start with "student", staff-domain with
+// "staff" (see src/cube/CLAUDE.md naming rules).
+const isStudentMember = (member) => member.startsWith("student");
+const isStaffMember = (member) => member.startsWith("staff");
 
 // Convention for snapshot cubes: cumulative daily flags that overcount without
 // a point-in-time anchor. All snapshot cubes expose these three dimensions.
@@ -52,7 +45,7 @@ const SNAPSHOT_SELF_ANCHORED_SUFFIXES = [
 // / is_week_end_record and its measures need the anchor guard. Also add the
 // cube's snapshot measure stems to SNAPSHOT_MEASURE_STEMS below — both arrays
 // must stay in sync or the guard won't match the new cube's measures.
-const SNAPSHOT_CUBES = ["attendance"];
+const SNAPSHOT_CUBES = ["student_attendance"];
 
 // Measure-name stems that mark a snapshot (cumulative-daily-flag) measure
 // family — chronic absence, ADA tiers, and truancy. Only these need the
@@ -149,12 +142,8 @@ module.exports = {
     if (!groups.includes("cube-access-student-data")) {
       query = {
         ...query,
-        dimensions: (query.dimensions ?? []).filter(
-          (d) => !STUDENT_CUBES.some((c) => d.startsWith(c)),
-        ),
-        measures: (query.measures ?? []).filter(
-          (m) => !STUDENT_CUBES.some((c) => m.startsWith(c)),
-        ),
+        dimensions: (query.dimensions ?? []).filter((d) => !isStudentMember(d)),
+        measures: (query.measures ?? []).filter((m) => !isStudentMember(m)),
       };
     }
 
@@ -310,7 +299,7 @@ module.exports = {
     const touchesStaffCube = [
       ...(query.dimensions ?? []),
       ...(query.measures ?? []),
-    ].some((m) => STAFF_CUBES.some((c) => m.startsWith(c)));
+    ].some(isStaffMember);
     if (touchesStaffCube && !groups.includes("cube-access-staff-all")) {
       query = {
         ...query,

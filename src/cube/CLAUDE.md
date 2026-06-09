@@ -34,11 +34,18 @@ school_calendars) go in `cubes/conformed/`.
   for thin column/expression shaping only. (Cube's own dbt guidance and the
   `original_sql` pre-agg confirm this.)
 - **Naming.** Cube `name:` always matches its filename, and neither carries the
-  warehouse `dim_` prefix — the file `conformed/dates.yml` defines `name: dates`
-  reading `sql_table: kipptaf_marts.dim_dates`. View names are
-  `<domain>_<grain>` (`attendance_detail`, `attendance_summary`). `sql_table`
-  always points at `kipptaf_marts.<table>` (the warehouse table keeps its `dim_`
-  prefix) — cubes never read district datasets directly.
+  warehouse `dim_`/`fct_` prefix — the file `conformed/dates.yml` defines
+  `name: dates` reading `sql_table: kipptaf_marts.dim_dates`. **Domain-prefix
+  rule:** student-domain cubes start with `student` (`student_attendance`,
+  `student_enrollments`, `students`); staff-domain cubes start with `staff`.
+  `queryRewrite`'s `isStudentMember`/`isStaffMember` access gating keys off
+  these prefixes, so a misnamed domain cube silently loses its access guard.
+  Conformed dims (`dates`, `locations`, `regions`, `terms`, `school_calendars`)
+  are deliberately unprefixed — they carry no domain access tier. View names are
+  `<domain>_<grain>` (`student_attendance_detail`,
+  `student_attendance_summary`). `sql_table` always points at
+  `kipptaf_marts.<table>` (the warehouse table keeps its `dim_`/`fct_` prefix) —
+  cubes never read district datasets directly.
 - **Joins use cube-reference syntax** (`{students.col} = {CUBE}.col`), not raw
   identifiers. Dim joins from facts set `relationship: many_to_one`.
 - **Range/non-equi join predicates** (`BETWEEN`, `>=`) are valid in a join
@@ -46,9 +53,9 @@ school_calendars) go in `cubes/conformed/`.
   your declared `relationship` + `primary_key`, so any non-overlap invariant the
   join relies on must be test-enforced upstream in dbt.
 - **Avoid diamond paths.** Two join paths to the same dim → either a compound
-  join on the canonical path (see `attendance.yml` → `school_calendars`) or a
-  degenerate FK with no declared join (see `student_enrollments.location_key`).
-  Comment the choice.
+  join on the canonical path (see `student_attendance.yml` → `school_calendars`)
+  or a degenerate FK with no declared join (see
+  `student_enrollments.location_key`). Comment the choice.
 - **Time dimensions** must cast to `TIMESTAMP` in the dim's `sql:`; joins from
   facts cast through (`CAST({CUBE}.date_key AS TIMESTAMP)`).
 - **Hidden helper measures** prefix with `_` and set `public: false` (see
@@ -60,7 +67,8 @@ school_calendars) go in `cubes/conformed/`.
   don't list measures under `members:`.
 - **Folder member naming.** Bare for top-cube members; `<prefix>_<member>` for
   `prefix: true` joins, where `<prefix>` is the last `join_path` segment — so
-  `regions_region_name` for `attendance.student_enrollments.locations.regions`.
+  `regions_region_name` for
+  `student_attendance.student_enrollments.locations.regions`.
 - **Branch schema validation is manual.** Cube Cloud Staging Environments don't
   auto-create from pushes. Open Cube Cloud → Data Model → Dev Mode → add branch
   by name to spin up a per-branch staging instance.
@@ -99,17 +107,19 @@ Default-deny, group-driven. Read [`cube.js`](cube.js) before modifying.
   returns `INVALID_ARGUMENT`, not `PERMISSION_DENIED` — don't propose it as a
   transitive-resolution fix without verifying the tenant's edition.
 - **`queryRewrite`** enforces three filters:
-  - Strips dims/measures from `STUDENT_CUBES` for users without
-    `cube-access-student-data`.
+  - Strips student-domain dims/measures (members where `isStudentMember` is
+    true) for users without `cube-access-student-data`.
   - Adds a `locations` filter based on the highest-priority scope group: network
     (no filter) → region (`region_key`) → school (`abbreviation`). No scope
     group → empty `IN ()` filter (default deny).
-  - For queries touching `STAFF_CUBES`, injects the `dim_staff.reporting_chain`
-    segment unless the user has `cube-access-staff-all`.
-- **`STUDENT_CUBES` / `STAFF_CUBES` arrays.** Entries must match the cube
-  `name:` field — `queryRewrite` matches via `startsWith` on
-  `<cube_name>.<member>` query members. When adding a new student-data or
-  staff-data cube, append its `name:` to the matching array.
+  - For queries touching a staff-domain cube (`isStaffMember`), injects the
+    `staff.reporting_chain` segment unless the user has `cube-access-staff-all`.
+- **`isStudentMember` / `isStaffMember` prefix helpers.** Domain gating is
+  derived from the cube-name prefix (`student*` / `staff*`), not a static array
+  — a query member is `<cube_name>.<member>`, so the cube name is the prefix. A
+  new domain cube needs no `cube.js` change as long as it follows the
+  domain-prefix naming rule above. A domain cube misnamed off-prefix silently
+  loses its guard.
 - **`SNAPSHOT_CUBES` / `SNAPSHOT_MEASURE_STEMS` arrays.** For cubes built on
   fact tables with cumulative daily-status flags (values re-stamped on every row
   — overcounts without a point-in-time anchor). `queryRewrite` auto-injects

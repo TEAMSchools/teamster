@@ -1,10 +1,10 @@
 views:
-  - name: attendance_detail
+  - name: student_attendance_detail
     description: >-
       Row-level student attendance. One row per student × school day with
       attendance recorded. Use for drill-down, individual investigations, or
       breakdowns that need raw codes; for ADA / truancy roll-ups, use
-      attendance_summary instead. ADA is always SUM(attendance_value) /
+      student_attendance_summary instead. ADA is always SUM(attendance_value) /
       SUM(membership_value); never average a per-row ratio. attendance_value
       (0.0–1.0) is the fractional attendance contribution; membership_value
       (0.0–1.0) is the school's claim on the student that day (split across
@@ -25,7 +25,7 @@ views:
       for the year.
 
     cubes:
-      - join_path: attendance
+      - join_path: student_attendance
         includes:
           - count_students
           - avg_daily_attendance
@@ -75,7 +75,7 @@ views:
           - is_month_end_record
           - is_week_end_record
 
-      - join_path: attendance.dates
+      - join_path: student_attendance.dates
         prefix: true
         includes:
           - date_day
@@ -86,7 +86,7 @@ views:
           - day_of_week_name
           - is_weekday
 
-      - join_path: attendance.student_enrollments.locations
+      - join_path: student_attendance.student_enrollments.locations
         prefix: true
         includes:
           - location_name
@@ -95,13 +95,13 @@ views:
           - campus
           - city
 
-      - join_path: attendance.student_enrollments.locations.regions
+      - join_path: student_attendance.student_enrollments.locations.regions
         prefix: true
         includes:
           - region_name
           - state
 
-      - join_path: attendance.student_enrollments
+      - join_path: student_attendance.student_enrollments
         prefix: false
         includes:
           - student_enrollment_key
@@ -111,7 +111,7 @@ views:
           - exit_date
           - is_retained_year
 
-      - join_path: attendance.student_enrollments.student_enrollment_status
+      - join_path: student_attendance.student_enrollments.student_enrollment_status
         prefix: false
         includes:
           - is_ell
@@ -123,7 +123,7 @@ views:
           - is_meal_eligible
           - meal_eligibility
 
-      - join_path: attendance.student_enrollments.students
+      - join_path: student_attendance.student_enrollments.students
         prefix: false
         includes:
           - student_key
@@ -136,7 +136,7 @@ views:
           - enrollment_status
           - is_gifted
 
-      - join_path: attendance.terms
+      - join_path: student_attendance.terms
         prefix: true
         includes:
           - academic_year
@@ -145,7 +145,7 @@ views:
           - term_code
           - term_type
 
-      - join_path: attendance.school_calendars
+      - join_path: student_attendance.school_calendars
         prefix: true
         includes:
           - is_in_session
