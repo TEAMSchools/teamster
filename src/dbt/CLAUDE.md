@@ -68,6 +68,19 @@ evolve an Avro source's schema, the new-schema file must sort last — materiali
 the MAX partition (latest hive `_dagster_partition_date=`). Mixed old/new files
 otherwise pick up the old (earlier-sorting) schema.
 
+Even with the new-schema file sorting last (so autodetect _declares_ the field),
+**a query that scans both old- and new-schema files reads the new field NULL for
+the WHOLE scan** — BigQuery resolves one Avro reader schema across the scanned
+files and drops any field the older files lack. The field still queries without
+error and null-fills on old-only scans, but a `stg_*` model that scans full
+partition history always includes old files, so the column reads NULL
+everywhere. A metadata-cache refresh / rebuild does NOT fix it — only
+homogenizing the files does (`scripts/reencode_avro_partitions.py` re-encodes
+every partition to the current schema). Deterministic and scan-set-dependent
+(not the intermittent cache staleness tracked in #4151); a cache-bypassing
+`_FILE_NAME` read still shows it, so `_FILE_NAME` is ground truth only within a
+single-schema scan (one partition).
+
 dbt Cloud CI runs `dbt build` only (never `stage_external_sources`) → it reads
 the existing `zz_stg` external table as-is. To make CI see a new schema before
 prod Avro is updated: materialize the max partition locally (the Avro IO manager
