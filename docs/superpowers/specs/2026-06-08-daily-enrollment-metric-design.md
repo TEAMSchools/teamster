@@ -221,18 +221,30 @@ Columns:
 - `grade_level` (degenerate dim for filtering). Region is **not** a fact column
   — it resolves through the `locations` → `regions` join in the view (Component
   3).
+- `enroll_status` — INT64, carried from the stint (0 active / 2 withdrawn / 3
+  graduated). Student-level (identical across all of a student's rows), used
+  only by the `count_students_active` measure. Document the student-level caveat
+  in the column description (it is not a point-in-time status).
 - `is_enrolled` — INT64 1 for every row (each row is an enrolled in-session day;
-  per marts R3, a countable flag). Retained as the summable measure base so
-  `sum(is_enrolled)` reads naturally; could also be `membership_value` if a
-  partial-membership distinction is ever needed (not now).
+  per marts R3, a countable flag). Row marker, not the count base — measures use
+  `count_distinct(student_key)`, not `sum(is_enrolled)` (see Component 2).
 - Anchor flags (INT64 0/1) — the same three `fct_student_attendance_daily`
   exposes, computed with identical `row_number()` windows partitioned by
-  `student_enrollment_key`:
+  `student_enrollment_key`. **Critical: partition by `student_enrollment_key`,
+  which encodes `academic_year` in its hash — this makes `is_latest_record`
+  year-scoped by construction (the last in-session day of _this stint/year_),
+  not a global per-student latest.** Do NOT partition by `student_key` /
+  `student_number` alone: that would make `is_latest_record` the student's
+  global last day, so a past-year `_year_end` query would return only network
+  leavers-after-that-year (verified: AY2023 → 2,428 wrong vs 10,381 correct).
+  With the enrollment-key partition, `count_students_year_end` for any year —
+  current or past — equals that year's enrolled-as-of-last-day count (AY2023
+  10,381, AY2025 11,261; verified 2026-06-09).
   - `is_latest_record` —
     `row_number() over (partition by student_enrollment_key order by date_key desc) = 1`.
-    The student's most recent in-session day in the stint; drives `_year_end`
-    measures (attendance filters `_year_end` on `is_latest_record`, not a
-    separate flag — mirror that).
+    The most recent in-session day of the stint (hence of that academic year);
+    drives `_year_end` measures (attendance filters `_year_end` on
+    `is_latest_record`, not a separate flag — mirror that).
   - `is_month_end_record` —
     `row_number() over (partition by student_enrollment_key, date_trunc(date_key, month) order by date_key desc) = 1`.
     The last in-session day per student-month.
@@ -279,20 +291,42 @@ invariants — exactly one `is_latest_record` per `student_enrollment_key`, one
   unanchored, explicit variants carrying the anchor filter, rather than relying
   on `SNAPSHOT_MEASURE_STEMS` substring injection:
   - `count_students`: `count_distinct(student_key)`, no filter. Counts distinct
-    students enrolled **at any point in the queried window** — "students
-    served," not point-in-time (the stint cube's counter is renamed
-    `count_enrollments` — see "Measure naming" above — so `count_students` is
-    unambiguous). Filtered to a single `date_key` it is the exact point-in-time
-    headcount; filtered to a year (no anchor) it is students-served-that-year
-    (includes mid-year withdrawals — see the ladder in Component 3). The view
-    description must draw this distinction.
+    students enrolled **by enrollment dates** as of the latest date in the
+    queried scope (the stint cube's counter is renamed `count_enrollments` — see
+    "Measure naming" above — so `count_students` is unambiguous). **This matches
+    topline `Total Enrollment` exactly** — topline is
+    `if(is_enrolled_week, 1, 0)` (`week between entrydate and exitdate`) with
+    **no `enroll_status` filter**, and our row grain is the day-level equivalent
+    of the same date-range membership. Filtered to a single `date_key` it is the
+    exact point-in-time headcount (~10,637 on 2025-10-01); filtered to a year it
+    is enrolled-as-of-latest for that year (~11,261 for AY2025 — see the ladder
+    in Component 3). **Do not filter `enroll_status`** on this measure — it is
+    student-level (stamped on every row) and would drop a mid-year withdrawal
+    even from dates they were still enrolled, breaking both point-in-time
+    correctness and topline parity.
   - `count_students_year_end`: `count_distinct(student_key)` with measure filter
     `{CUBE}.is_latest_record = true`. Safe for year-over-year without a date
-    filter — mirrors `count_truants_year_end`.
+    filter — mirrors `count_truants_year_end`. Because `is_latest_record` is
+    year-scoped (partitioned by the academic-year-encoding
+    `student_enrollment_key` — see Component 1), this is "enrolled as of the
+    last in-session day of the queried year" for **every** year, current or past
+    (AY2023 10,381, AY2025 11,261; verified 2026-06-09) — the same per-year
+    total as the unanchored base `count_students`. The anchor's job is to
+    collapse to a single point-in-time row when results roll up across years or
+    to month/quarter granularity, not to change the per-year total.
   - `count_students_month_end`: filter `{CUBE}.is_month_end_record = true`. Use
     with `timeDimensions` granularity `month`.
   - `count_students_week_end`: filter `{CUBE}.is_week_end_record = true`. Use
     with granularity `week`.
+  - `count_students_active`: `count_distinct(student_key)` with measure filter
+    `{CUBE}.enroll_status = 0`. **Active-status** headcount (excludes mid-year
+    withdrawals / graduates: ~10,374 for AY2025 vs 11,261 by date-range). Needed
+    for a downstream use distinct from topline reconciliation; **by design it
+    does NOT match topline** (topline counts by dates, not status). Caveat to
+    document: `enroll_status` is student-level, so for a _past_ date this
+    measure reflects the student's _current_ status, not their status on that
+    date — only meaningful for current-state "active roster" questions, not
+    historical point-in-time.
 - **Named state-count-date measures — filter, do NOT add fact flags.** The
   regulatory count dates (`oct01`, `oct15`, `mar15`) are filterable date
   predicates at day grain, not row properties. Expose them as named measures
@@ -352,23 +386,30 @@ as the structural template:
 
 - Surfaces `count_students`, the three named period-end variants
   (`count_students_year_end` / `_month_end` / `_week_end`), the three named
-  state-count-date variants (`count_students_oct01` / `_oct15` / `_mar15`), and
-  the three `is_*_record` anchors (under a `Filter` folder, as attendance does).
-- **The view description must spell out the three-number ladder** (all
+  state-count-date variants (`count_students_oct01` / `_oct15` / `_mar15`),
+  `count_students_active`, and the three `is_*_record` anchors (under a `Filter`
+  folder, as attendance does).
+- **The view description must spell out the measure ladder** (all
   `count_distinct(student_key)`, all alumni-free because the year/date filter
   selects on the calendar day's school year, not student status — a prior-year
   graduate has no rows labeled the queried year). Verified 2026-06-09 for
   academic_year 2025:
-  - `count_students` + year filter → **~11,261 = students _served_** that year
-    (active + the ~887 who withdrew mid-year). Not point-in-time.
+  - `count_students` + year filter → **enrolled (by dates) as of that year's
+    last in-session day**. Matches topline `Total Enrollment` (no status
+    filter). Correct for **every** year, not just the current one — AY2023
+    10,381, AY2025 11,261 — and equals `count_students_year_end` for the same
+    year (the year-scoped anchor doesn't change the per-year total).
   - `count_students` + single `date_key` (e.g. 2025-10-01) → **~10,637 =
     enrolled _on that day_** (point-in-time).
-  - `count_students_year_end` + year → **~10,374 = enrolled as of each student's
-    last day** (≈ currently active).
+  - `count_students_active` + year → **~10,374 = active-status students**
+    (status 0; excludes the ~887 mid-year withdrawals). Does **not** match
+    topline by design.
 
-  These answer different questions; the description must steer analysts to the
-  date/anchored variants for point-in-time and reserve the bare `count_students`
-  for "students served in the period."
+  These answer different questions; the description must steer analysts to a
+  single `date_key` or the `_*_end` / `_oct01` variants for point-in-time, use
+  bare `count_students` for topline-parity enrollment, and
+  `count_students_active` only for current active-roster questions (not
+  historical point-in-time — see the Component 2 caveat).
 
 - Time dimension via `join_path: student_enrollment_daily.dates`, `prefix: true`
   → `dates_*` members (day/week/month/quarter granularity).
