@@ -206,9 +206,21 @@ Columns:
 - `location_key` — FK to `locations` (`dim_locations`), via `schoolid` →
   `stg_powerschool__schools` like `dim_student_enrollments` does.
 - `date_key` — DATE = `cd.date_value`, FK to `dim_dates`.
-- `academic_year`, `grade_level` (degenerate dims for filtering). Region is
-  **not** a fact column — it resolves through the `locations` → `regions` join
-  in the view (Component 3).
+- `academic_year` — **sourced from the calendar term, not the stint.** Join the
+  calendar day to `stg_powerschool__terms`
+  (`date_value between firstday and lastday`, per school) and take the term's
+  `academic_year`, so `date_key` and `academic_year` are consistent by
+  construction. Copying `enr.academic_year` from the stint would mislabel the
+  122 of 11.7M AY2024+ rows where a stint's date falls in a different school
+  year than the stint's own label (verified 2026-06-09) — and that mislabeling
+  is exactly the year-mixing that would break the `mar15` count (March 15
+  belongs to the prior-July academic year under the KIPP convention). The terms
+  join can match multiple term rows per day (slight fan-out observed); pick one
+  deterministically (e.g. `portion = 4` quarters, or `isyearrec = 1`) so the
+  grain stays one row per `(student_enrollment_key, date_key)`.
+- `grade_level` (degenerate dim for filtering). Region is **not** a fact column
+  — it resolves through the `locations` → `regions` join in the view (Component
+  3).
 - `is_enrolled` — INT64 1 for every row (each row is an enrolled in-session day;
   per marts R3, a countable flag). Retained as the summable measure base so
   `sum(is_enrolled)` reads naturally; could also be `membership_value` if a
@@ -270,10 +282,35 @@ invariants — exactly one `is_latest_record` per `student_enrollment_key`, one
     with `timeDimensions` granularity `month`.
   - `count_students_week_end`: filter `{CUBE}.is_week_end_record = true`. Use
     with granularity `week`.
+- **Named state-count-date measures — filter, do NOT add fact flags.** The
+  regulatory count dates (`oct01`, `oct15`, `mar15`) are filterable date
+  predicates at day grain, not row properties. Expose them as named measures
+  (discoverable in BI, analogous to the `_*_end` anchor measures), each
+  `sum(is_enrolled)` with a measure filter on `date_key`:
+  - `count_students_oct01`: filter
+    `extract(month from {CUBE}.date_key) = 10 and extract(day from {CUBE}.date_key) = 1`.
+  - `count_students_oct15`: month 10, day 15.
+  - `count_students_mar15`: month 3, day 15.
+
+  **Filter on the row's own month/day, never on `academic_year + 1`.** Each fact
+  row already carries the correct `academic_year` (sourced from the calendar
+  term — see Component 1) and a real `date_key`, so March 15 2026 self-labels as
+  `academic_year = 2025` (KIPP July–June convention; verified 2026-06-09 that
+  AY2025 spans 2025-07-01 → 2026-06-30 and contains both 2025-10-01 and
+  2026-03-15). The upstream `is_enrolled_mar15 = date(academic_year + 1, 3, 15)`
+  arithmetic exists only because the _stint_ row knows just its start year; the
+  day-grain row needs no such adjustment, which is exactly what removes the
+  year-mixing risk. A multi-year query (`group by academic_year`) then returns
+  one correct Oct-1 / Mar-15 headcount per school year with no `+1` bookkeeping.
+
+- **Do NOT materialize `is_oct01` / `is_mar15` flags on the fact.** They would
+  store three INT64 columns of information already in `date_key` (redundant on
+  an ~18.9M-row table), and a change to a count date would force a full rebuild
+  instead of a one-line measure edit. Keep them as measure filters.
 - A date join to `dates` on `date_key` for day/week/month/quarter granularity in
   the view. The day-grain `date` dimension is itself the answer to "enrollment
-  on a specific date" — a single-date filter on `count_students` needs no
-  anchor.
+  on a specific date" — a single-date filter on `count_students` answers any
+  arbitrary date (not just the named ones) and needs no anchor.
 
 `cube.js` wiring:
 
