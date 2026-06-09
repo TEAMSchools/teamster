@@ -234,6 +234,16 @@ surface at kipptaf-level consumers until district projects rebuild prod. For
 single-PR refactors, add transformations at the kipptaf-level wrapper, not at
 package level.
 
+## Editing a `sources-kipp*.yml` schema fans out `state:modified+`
+
+Changing a source's schema (e.g. adding a `target=staging` branch) marks the
+WHOLE source `state:modified` — CI's `state:modified+` builds EVERY kipptaf
+model reading it, not just your target. A district model dropped from code but
+lingering as a stale prod table is absent from the prod manifest → clone-skipped
+→ its kipptaf consumer fails CI `Table not found`. Fix such frozen/retired
+tables by declaring them a BQ-native source (`sources-bigquery.yml`, plain
+hardcoded schema, no target branch) so kipptaf reads prod regardless of target.
+
 ## Stale dev tables shadow `--defer`
 
 `--defer` uses any existing dev table before falling through to prod, so a stale
@@ -576,6 +586,10 @@ the same partition.
   `grain projection: every selected column is functionally determined / by the partition key; not a mask for upstream duplicates`.
   If any projected column varies within the partition (`min()`, `first_value()`,
   etc.), use `dbt_utils.deduplicate()` instead.
+- **Least/earliest of N nullable columns**:
+  `(select min(x) from unnest([c1, c2, ...]) as x)` — aggregate `min` ignores
+  NULLs, unlike `least()` (which returns NULL if any arg is NULL). Avoids the
+  nested `coalesce(..., sentinel)` + outer-guard pyramid.
 - **`dbt_utils.generate_surrogate_key` coerces nulls internally** —
   `cast(null as <type>)` and bare `null` hash identically. Don't add the cast.
 - **No `GROUP BY ALL`** — list grouping columns explicitly. `GROUP BY ALL`

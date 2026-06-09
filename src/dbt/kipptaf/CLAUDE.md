@@ -265,6 +265,15 @@ touching both a district model and a kipptaf consumer:
    to seed `zz_stg_<district>_*` from prod.
 3. Push; CI reads staged regional via the schema branch.
 
+`dbt clone` only seeds upstreams UNCHANGED in this PR (it copies prod schema).
+For district/package models you MODIFIED, clone gives the OLD schema — instead
+`stage_external_sources --target staging` their externals, then
+`dbt build --select <model> --target staging` into `zz_stg_`. Also clone+build
+`zz_stg_kipptaf` itself — under `--target staging` kipptaf reads its own models
+from there. Seed EVERY district that unions into the kipptaf model (e.g.
+`kipppaterson`, which feeds `stg_pearson__njsla`/`_science` via its own
+`int_pearson__*`, not the package `stg_*`).
+
 Alternative to the two-PR pattern in `src/dbt/CLAUDE.md`.
 
 ## Verifying a coalesce/override layer is vestigial
