@@ -1,72 +1,118 @@
 models:
   - name: int_assessments__resolved_section_enrollments
     description: >-
-      Resolves one PowerSchool course-section enrollment per (student, canonical
-      assessment) for internal scored assessments, mirroring the scope of
-      bridge_assessment_expectations_enrollment_scoped. When a student maps to
-      more than one section for a canonical assessment, the section active on
-      the date the test was given (coalesce of the earliest member date_taken
-      and the canonical administration date) is selected; this also excludes
-      cross-year phantom enrollments from the #3801 canonicalization defect.
-    data_tests:
-      - dbt_utils.unique_combination_of_columns:
-          arguments:
-            combination_of_columns:
-              - powerschool_student_number
-              - canonical_assessment_id
-              - _dbt_source_project
+      Resolves one PowerSchool course-section enrollment per score row for all
+      assessment types — internal (Illuminate-sourced), NJ state (Pearson), and
+      FL state (FLDOE). Joins the course-enrollment inventory from
+      int_assessments__course_enrollments directly; does not carry cc_dcid as an
+      output column. Resolution is tiered: tier 1 matches a subject section
+      whose half-open enrollment window contains the score's anchor date
+      (earliest date_taken across the canonical's members, falling back to the
+      canonical administered_date for internal; test_date for state rows); tier
+      2 falls back to the homeroom section active on the same anchor date.
+      Scores with no matching section in either tier are dropped. The
+      resolution_type column identifies which tier resolved the row.
     columns:
+      - name: source_type
+        data_type: string
+        description: >-
+          Assessment source branch that produced the score row. One of internal
+          (Illuminate-sourced), state_nj (Pearson NJ), or state_fl (FLDOE FL).
+        data_tests:
+          - accepted_values:
+              arguments:
+                values: [internal, state_nj, state_fl]
+      - name: resolution_type
+        data_type: string
+        description: >-
+          Tier at which a matching section was found. subject_section means tier
+          1 resolved the row (a subject-matched enrollment window contained the
+          anchor date); homeroom means tier 2 resolved it (no subject section
+          matched; the homeroom section active on the anchor date was used
+          instead).
+        data_tests:
+          - accepted_values:
+              arguments:
+                values: [subject_section, homeroom]
       - name: powerschool_student_number
         data_type: int64
         description: >-
-          Student number for the scored student. Pass-through from
-          int_assessments__scaffold.
+          Student identifier. Sourced from int_assessments__scaffold for
+          internal scores, from int_pearson__all_assessments for NJ state
+          scores, and from int_fldoe__all_assessments for FL state scores.
         config:
           meta:
             source_column: int_assessments__scaffold.powerschool_student_number
       - name: canonical_assessment_id
         data_type: int64
         description: >-
-          Canonical assessment identifier (groups member assessments into one
-          logical assessment). Pass-through from int_assessments__scaffold.
+          Canonical assessment identifier grouping member assessments into one
+          logical assessment. Populated only for internal scores; NULL for state
+          score rows.
         config:
           meta:
             source_column: int_assessments__scaffold.canonical_assessment_id
-      - name: cc_dcid
+      - name: academic_year
         data_type: int64
         description: >-
-          PowerSchool course-enrollment record id for the resolved section.
+          Academic year of the assessment sitting. Populated only for state
+          score rows (sourced from the state intermediate); NULL for internal
+          score rows, which derive their year from the enrollment window.
         config:
           meta:
-            source_column: int_assessments__scaffold.cc_dcid
+            source_column: int_pearson__all_assessments.academic_year
+      - name: administration_period
+        data_type: string
+        description: >-
+          Administration window label within the academic year. Populated only
+          for state score rows; NULL for internal score rows.
+        config:
+          meta:
+            source_column: int_pearson__all_assessments.administration_period
+      - name: subject_area
+        data_type: string
+        description: >-
+          Subject area of the assessment, aligned to illuminate_subject_area
+          values in int_assessments__course_enrollments. For internal scores
+          this is the scaffold subject_area; for state scores it is the
+          state-to-course mapped illuminate_subject column from the state
+          intermediates.
+        config:
+          meta:
+            source_column: int_assessments__scaffold.subject_area
       - name: _dbt_source_project
         data_type: string
         description: >-
-          Region-derived dbt source project (kipp{region}) of the assessment;
-          the join key the fact uses to attach this section enrollment.
+          Region identifier (kippnewark, kippcamden, kippmiami, kipppaterson) of
+          the score. Used as a discriminator alongside
+          powerschool_student_number when joining the course-enrollment
+          inventory and when deriving student_section_enrollment_key.
         config:
           meta:
             source_column: int_assessments__scaffold._dbt_source_project
       - name: cc_source_project
         data_type: string
         description: >-
-          dbt source project of the matched course enrollment; hashed with
-          cc_dcid into student_section_enrollment_key.
+          Region identifier of the matched course enrollment row. Combined with
+          cc_dcid in generate_surrogate_key to produce
+          student_section_enrollment_key.
         config:
           meta:
-            source_column: int_assessments__scaffold.cc_source_project
+            source_column: int_assessments__course_enrollments._dbt_source_project
       - name: student_section_enrollment_key
         data_type: string
         description: >-
-          Surrogate key (cc_dcid + cc_source_project), matching
+          Surrogate key derived from (cc_dcid, cc_source_project) of the
+          resolved course enrollment, matching
           dim_student_section_enrollments.student_section_enrollment_key.
 
 unit_tests:
-  - name: test_resolved_section_picks_in_window_over_phantom
-    description: >
-      Two candidate sections for one canonical assessment (a #3801 cross-year
-      case): the section whose enrollment window contains the anchor date is
-      picked, not the more-recent out-of-window phantom.
+  - name: test_subject_section_in_window_wins
+    description: >-
+      Subject section whose enrollment window contains the anchor date resolves
+      at tier 1 (resolution_type=subject_section). The second section for the
+      same student starts after the anchor date and is filtered out by the
+      half-open window join.
     model: int_assessments__resolved_section_enrollments
     given:
       - input: ref('int_assessments__scaffold')
@@ -75,41 +121,52 @@ unit_tests:
               powerschool_student_number: 1,
               canonical_assessment_id: 100,
               _dbt_source_project: kippnewark,
-              cc_dcid: 111,
-              cc_source_project: kippnewark,
-              cc_dateenrolled: 2017-09-01,
-              cc_dateleft: 2018-06-15,
-              date_taken: 2018-03-09,
-              is_internal_assessment: true,
-              is_replacement: false,
-            }
-          - {
-              powerschool_student_number: 1,
-              canonical_assessment_id: 100,
-              _dbt_source_project: kippnewark,
-              cc_dcid: 222,
-              cc_source_project: kippnewark,
-              cc_dateenrolled: 2018-08-23,
-              cc_dateleft: 2019-06-29,
-              date_taken: null,
+              subject_area: Mathematics,
+              date_taken: 2024-03-10,
               is_internal_assessment: true,
               is_replacement: false,
             }
       - input: ref('int_assessments__assessments_canonical')
         rows:
-          - { canonical_assessment_id: 100, administered_date: 2018-03-04 }
+          - { canonical_assessment_id: 100, administered_date: 2024-03-04 }
+      - input: ref('int_assessments__course_enrollments')
+        rows:
+          - {
+              powerschool_student_number: 1,
+              _dbt_source_project: kippnewark,
+              illuminate_subject_area: Mathematics,
+              courses_credittype: MATH,
+              cc_dateenrolled: 2024-01-01,
+              cc_dateleft: 2025-06-15,
+              cc_dcid: 111,
+            }
+          - {
+              powerschool_student_number: 1,
+              _dbt_source_project: kippnewark,
+              illuminate_subject_area: Mathematics,
+              courses_credittype: MATH,
+              cc_dateenrolled: 2025-09-01,
+              cc_dateleft: 2026-06-15,
+              cc_dcid: 222,
+            }
+      - input: ref('int_pearson__all_assessments')
+        rows: []
+      - input: ref('int_fldoe__all_assessments')
+        rows: []
     expect:
       rows:
         - {
             powerschool_student_number: 1,
             canonical_assessment_id: 100,
-            cc_dcid: 111,
+            resolution_type: subject_section,
+            cc_source_project: kippnewark,
           }
 
-  - name: test_resolved_section_single_candidate_always_resolves
-    description: >
-      With only one candidate section, it is selected even if the anchor date
-      falls outside its enrollment window.
+  - name: test_homeroom_fallback_when_no_subject_section
+    description: >-
+      When no subject section's enrollment window contains the anchor date the
+      homeroom section active on that date is used and resolution_type is
+      homeroom.
     model: int_assessments__resolved_section_enrollments
     given:
       - input: ref('int_assessments__scaffold')
@@ -117,30 +174,42 @@ unit_tests:
           - {
               powerschool_student_number: 2,
               canonical_assessment_id: 200,
-              _dbt_source_project: kippmiami,
-              cc_dcid: 333,
-              cc_source_project: kippmiami,
-              cc_dateenrolled: 2025-09-01,
-              cc_dateleft: 2026-06-15,
-              date_taken: null,
+              _dbt_source_project: kippcamden,
+              subject_area: ELA,
+              date_taken: 2024-11-05,
               is_internal_assessment: true,
               is_replacement: false,
             }
       - input: ref('int_assessments__assessments_canonical')
         rows:
-          - { canonical_assessment_id: 200, administered_date: 2099-01-01 }
+          - { canonical_assessment_id: 200, administered_date: 2024-11-01 }
+      - input: ref('int_assessments__course_enrollments')
+        rows:
+          - {
+              powerschool_student_number: 2,
+              _dbt_source_project: kippcamden,
+              illuminate_subject_area: HR,
+              courses_credittype: HR,
+              cc_dateenrolled: 2024-09-01,
+              cc_dateleft: 2025-06-15,
+              cc_dcid: 333,
+            }
+      - input: ref('int_pearson__all_assessments')
+        rows: []
+      - input: ref('int_fldoe__all_assessments')
+        rows: []
     expect:
       rows:
         - {
             powerschool_student_number: 2,
             canonical_assessment_id: 200,
-            cc_dcid: 333,
+            resolution_type: homeroom,
           }
 
-  - name: test_resolved_section_none_in_window_falls_back_to_latest
-    description: >
-      When no candidate window contains the anchor, the most recently ended
-      enrollment (latest cc_dateleft) is selected.
+  - name: test_no_matching_section_drops_row
+    description: >-
+      A score with no matching subject section and no matching homeroom section
+      produces no output row.
     model: int_assessments__resolved_section_enrollments
     given:
       - input: ref('int_assessments__scaffold')
@@ -148,78 +217,64 @@ unit_tests:
           - {
               powerschool_student_number: 3,
               canonical_assessment_id: 300,
-              _dbt_source_project: kippcamden,
-              cc_dcid: 444,
-              cc_source_project: kippcamden,
-              cc_dateenrolled: 2020-09-01,
-              cc_dateleft: 2021-06-15,
-              date_taken: null,
-              is_internal_assessment: true,
-              is_replacement: false,
-            }
-          - {
-              powerschool_student_number: 3,
-              canonical_assessment_id: 300,
-              _dbt_source_project: kippcamden,
-              cc_dcid: 555,
-              cc_source_project: kippcamden,
-              cc_dateenrolled: 2021-09-01,
-              cc_dateleft: 2022-06-15,
-              date_taken: null,
+              _dbt_source_project: kippmiami,
+              subject_area: Science,
+              date_taken: 2024-10-15,
               is_internal_assessment: true,
               is_replacement: false,
             }
       - input: ref('int_assessments__assessments_canonical')
         rows:
-          - { canonical_assessment_id: 300, administered_date: 2030-01-01 }
+          - { canonical_assessment_id: 300, administered_date: 2024-10-01 }
+      - input: ref('int_assessments__course_enrollments')
+        rows: []
+      - input: ref('int_pearson__all_assessments')
+        rows: []
+      - input: ref('int_fldoe__all_assessments')
+        rows: []
     expect:
-      rows:
-        - {
-            powerschool_student_number: 3,
-            canonical_assessment_id: 300,
-            cc_dcid: 555,
-          }
+      rows: []
 
-  - name: test_resolved_section_anchor_falls_back_to_admin_date
-    description: >
-      With no recorded date_taken, the anchor falls back to the canonical
-      administration date; the section whose window contains that date is
-      selected (not the more-recent out-of-window section).
+  - name: test_state_nj_resolves_subject_section
+    description: >-
+      A NJ state score resolves to a subject section active on its test_date and
+      source_type is state_nj.
     model: int_assessments__resolved_section_enrollments
     given:
       - input: ref('int_assessments__scaffold')
+        rows: []
+      - input: ref('int_assessments__assessments_canonical')
+        rows: []
+      - input: ref('int_assessments__course_enrollments')
         rows:
           - {
               powerschool_student_number: 4,
-              canonical_assessment_id: 400,
               _dbt_source_project: kippnewark,
-              cc_dcid: 666,
-              cc_source_project: kippnewark,
+              illuminate_subject_area: Mathematics,
+              courses_credittype: MATH,
               cc_dateenrolled: 2024-09-01,
               cc_dateleft: 2025-06-15,
-              date_taken: null,
-              is_internal_assessment: true,
-              is_replacement: false,
+              cc_dcid: 444,
             }
-          - {
-              powerschool_student_number: 4,
-              canonical_assessment_id: 400,
-              _dbt_source_project: kippnewark,
-              cc_dcid: 777,
-              cc_source_project: kippnewark,
-              cc_dateenrolled: 2025-09-01,
-              cc_dateleft: 2026-06-15,
-              date_taken: null,
-              is_internal_assessment: true,
-              is_replacement: false,
-            }
-      - input: ref('int_assessments__assessments_canonical')
+      - input: ref('int_pearson__all_assessments')
         rows:
-          - { canonical_assessment_id: 400, administered_date: 2024-11-01 }
+          - {
+              localstudentidentifier: 4,
+              academic_year: 2024,
+              administration_period: Spring,
+              illuminate_subject: Mathematics,
+              _dbt_source_project: kippnewark,
+              test_date: 2025-04-10,
+            }
+      - input: ref('int_fldoe__all_assessments')
+        rows: []
     expect:
       rows:
         - {
             powerschool_student_number: 4,
-            canonical_assessment_id: 400,
-            cc_dcid: 666,
+            academic_year: 2024,
+            administration_period: Spring,
+            subject_area: Mathematics,
+            source_type: state_nj,
+            resolution_type: subject_section,
           }

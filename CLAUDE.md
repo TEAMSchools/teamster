@@ -269,6 +269,11 @@ alone may be safe; combinations may not. When unsure, consult the
   explicitly declines an issue — re-confirm that consent in plain text the same
   turn.
 
+- **`trunk check` the spec/plan `.md` you write before pushing** — markdownlint
+  (MD040 fenced-block language, MD036) fires only at pre-push/CI, not the
+  pre-commit `fmt` hook; checking only the code files misses a doc-only Trunk
+  failure.
+
 - **`finishing-a-development-branch` verification gate**: Skip the skill's
   `npm test / pytest / ...` heuristic. For dbt changes,
   `uv run dbt build --select <model>+` against the relevant project. For Python
@@ -396,6 +401,9 @@ the allowlist.
   set; passing one label drops the rest.
 - GitHub Search API caps at 5 OR/AND/NOT operators per query (422 otherwise).
   Loop per-term via `gh api search/issues -f q='...'` for larger searches.
+- `mcp__github__search_issues` returns full issue **bodies** — a broad query
+  (bare model/column name) overflows the context budget and dumps to a file.
+  Narrow with `in:title`, a label, or `state:open`.
 
 ### Dagster asset diagnosis
 
@@ -559,6 +567,13 @@ queries spanning multiple districts — never manually `UNION ALL` across
 `kippnewark_*`, `kippcamden_*`, `kippmiami_*`. Extract district from
 `_dbt_source_relation` with
 `REGEXP_EXTRACT(_dbt_source_relation, r'`(kipp[^`]+\_<source>)`')`.
+
+Slow/timed-out dbt model: in `JOBS_BY_PROJECT`, same `total_bytes_processed` +
+N× `total_slot_ms` across runs of the same model = BigQuery straggler/shard
+re-execution (transient), NOT slot contention or a code/data change — confirm
+via the `timeline` array (`active_units` not starved) and low competing
+slot-minutes in the window. A cancelled BQ job ends `state=DONE` with
+`error_result.reason="stopped"`; natural completion has `error_result=null`.
 
 ### dbt MCP
 

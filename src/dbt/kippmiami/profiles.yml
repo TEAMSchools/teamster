@@ -16,3 +16,4 @@ kippmiami:
       project: teamster-332318
       threads: 40
       job_retries: 3
+      job_execution_timeout_seconds: 900

@@ -48,6 +48,13 @@ models:
         data_type: string
         description: Assessment year as reported by Pearson (string format).
 
+      - name: test_date
+        data_type: date
+        description: >-
+          Date the student took the assessment (per-student testing date,
+          derived from the per-student online unit start datetime). Null for
+          legacy records that carry no recorded testing date.
+
       - name: blackorafricanamerican
         data_type: string
         description:

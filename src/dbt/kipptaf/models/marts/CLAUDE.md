@@ -310,6 +310,12 @@ from `<schema>.<fact>`
 
 Treat ≥99% NULL as a broken join, not a sparse FK.
 
+To join a mart by its surrogate key from ad-hoc BQ (verify FK population when
+the column was dropped, or compare PR vs prod), reproduce
+`generate_surrogate_key`:
+`to_hex(md5(concat(coalesce(cast(<f1> as string), '_dbt_utils_surrogate_key_null_'), '-', coalesce(cast(<f2> as string), '_dbt_utils_surrogate_key_null_'))))`.
+Validate the hash by checking the join row count reconciles before trusting it.
+
 ## Not in this layer
 
 - Reporting views (`rpt_*`) — live under `extracts/`.

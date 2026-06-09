@@ -12,7 +12,7 @@ views:
       not student count.
 
     cubes:
-      - join_path: dim_student_enrollments
+      - join_path: student_enrollments
         includes:
           - count_students
           - academic_year
@@ -20,7 +20,7 @@ views:
           - graduation_year
           - is_retained_year
 
-      - join_path: dim_student_enrollments.dim_student_enrollment_status
+      - join_path: student_enrollments.student_enrollment_status
         prefix: false
         includes:
           - is_ell
@@ -32,7 +32,7 @@ views:
           - is_meal_eligible
           - meal_eligibility
 
-      - join_path: dim_student_enrollments.dim_locations
+      - join_path: student_enrollments.locations
         prefix: true
         includes:
           - location_name
@@ -41,14 +41,14 @@ views:
           - campus
           - city
 
-      - join_path: dim_student_enrollments.dim_locations.dim_regions
+      - join_path: student_enrollments.locations.regions
         prefix: true
         includes:
           - region_name
           - state
 
-      - join_path: dim_student_enrollments.dim_students
-        prefix: true
+      - join_path: student_enrollments.students
+        prefix: false
         includes:
           - gender_identity
           - race
@@ -75,19 +75,19 @@ views:
             - meal_eligibility
         - name: Location
           members:
-            - dim_locations_location_name
-            - dim_locations_abbreviation
-            - dim_locations_grade_band
-            - dim_locations_campus
-            - dim_locations_city
-            - dim_regions_region_name
-            - dim_regions_state
+            - locations_location_name
+            - locations_abbreviation
+            - locations_grade_band
+            - locations_campus
+            - locations_city
+            - regions_region_name
+            - regions_state
         - name: Student
           members:
-            - dim_students_gender_identity
-            - dim_students_race
-            - dim_students_is_gifted
-            - dim_students_enrollment_status
+            - gender_identity
+            - race
+            - is_gifted
+            - enrollment_status
 
     access_policy:
       # No direct student identifiers — demographic and status breakdowns only.
