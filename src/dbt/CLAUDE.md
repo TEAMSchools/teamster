@@ -68,18 +68,32 @@ evolve an Avro source's schema, the new-schema file must sort last — materiali
 the MAX partition (latest hive `_dagster_partition_date=`). Mixed old/new files
 otherwise pick up the old (earlier-sorting) schema.
 
-Even with the new-schema file sorting last (so autodetect _declares_ the field),
-**a query that scans both old- and new-schema files reads the new field NULL for
-the WHOLE scan** — BigQuery resolves one Avro reader schema across the scanned
-files and drops any field the older files lack. The field still queries without
-error and null-fills on old-only scans, but a `stg_*` model that scans full
-partition history always includes old files, so the column reads NULL
-everywhere. A metadata-cache refresh / rebuild does NOT fix it — only
-homogenizing the files does (`scripts/reencode_avro_partitions.py` re-encodes
-every partition to the current schema). Deterministic and scan-set-dependent
-(not the intermittent cache staleness tracked in #4151); a cache-bypassing
-`_FILE_NAME` read still shows it, so `_FILE_NAME` is ground truth only within a
-single-schema scan (one partition).
+**A metadata-cached Avro external can read a field NULL downstream though the
+GCS file is correct — two distinct failure modes, both surfaced by #4151:**
+
+- _Schema heterogeneity (deterministic)._ After a schema add + partial backfill,
+  old-schema files (field absent) and new-schema files (field present) coexist.
+  A query scanning both resolves one Avro reader schema and drops the new field
+  for the WHOLE scan — even the new files that hold it. The field still
+  _declares_ fine (autodetect from the last-alphabetical file) so it queries
+  without error and null-fills on old-only scans, but a `stg_*` model that scans
+  full partition history always includes old files, so the column reads NULL
+  everywhere. A cache refresh / rebuild does NOT fix it — only homogenizing the
+  files does (`scripts/reencode_avro_partitions.py` re-encodes every partition).
+- _Cache staleness (intermittent)._ `build_dbt_assets`
+  (stage→refresh→`dbt build`) races BigLake metadata-cache convergence after a
+  `create or replace` / overwrite-in-place: the
+  `refresh_external_metadata_cache` `CALL` returning DONE does NOT mean
+  queryable-fresh (lag seconds→hours, non-monotonic), so a just-materialized
+  partition reads NULL downstream.
+
+Verifying: `bq --nouse_cache` exposes the TRUE cached state (the BQ results
+cache and the BigQuery MCP otherwise return stale-but-fresh-looking counts).
+Selecting `_FILE_NAME` forces a live read that BYPASSES the metadata cache
+(ground truth vs. staleness) but does NOT bypass schema heterogeneity (a
+mixed-schema scan still drops the field), and it contaminates the whole query to
+a live read. So `_FILE_NAME` is ground truth only within a single-schema scan
+(one partition); never mix it into a cached-path check.
 
 dbt Cloud CI runs `dbt build` only (never `stage_external_sources`) → it reads
 the existing `zz_stg` external table as-is. To make CI see a new schema before
@@ -91,18 +105,6 @@ Re-stage to the prod location only post-merge once the prod re-pull lands — a
 pre-merge re-stage reverts CI to the old (narrow) schema.
 `stage_external_sources` SKIPs an existing table unless
 `ext_full_refresh: true`.
-
-**BigLake metadata-cache reads are non-deterministically stale after a
-`create or replace` / overwrite-in-place.** `build_dbt_assets`
-(stage→refresh→`dbt build`) races cache convergence: the
-`refresh_external_metadata_cache` `CALL` returning DONE does NOT mean
-queryable-fresh (lag seconds→hours, non-monotonic), so a just-materialized
-partition can read NULL downstream though the GCS file is correct (see #4151).
-Verify the TRUE cached state with `bq --nouse_cache` — the BQ results cache (and
-the BigQuery MCP) otherwise return stale-but-fresh-looking counts. Selecting
-`_FILE_NAME` forces a live file read that BYPASSES the metadata cache (ground
-truth), but it contaminates the whole query to a live read — never mix it into a
-cached-path check.
 
 Contract enforcement matches columns by **name + type, not YAML order** — new
 contract columns may be added anywhere in `properties.yml`. Regenerate a large
