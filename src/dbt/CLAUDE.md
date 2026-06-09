@@ -79,6 +79,18 @@ pre-merge re-stage reverts CI to the old (narrow) schema.
 `stage_external_sources` SKIPs an existing table unless
 `ext_full_refresh: true`.
 
+**BigLake metadata-cache reads are non-deterministically stale after a
+`create or replace` / overwrite-in-place.** `build_dbt_assets`
+(stage→refresh→`dbt build`) races cache convergence: the
+`refresh_external_metadata_cache` `CALL` returning DONE does NOT mean
+queryable-fresh (lag seconds→hours, non-monotonic), so a just-materialized
+partition can read NULL downstream though the GCS file is correct (see #4151).
+Verify the TRUE cached state with `bq --nouse_cache` — the BQ results cache (and
+the BigQuery MCP) otherwise return stale-but-fresh-looking counts. Selecting
+`_FILE_NAME` forces a live file read that BYPASSES the metadata cache (ground
+truth), but it contaminates the whole query to a live read — never mix it into a
+cached-path check.
+
 Contract enforcement matches columns by **name + type, not YAML order** — new
 contract columns may be added anywhere in `properties.yml`. Regenerate a large
 struct `data_type` by pulling it verbatim from `INFORMATION_SCHEMA.COLUMNS` of
@@ -86,7 +98,9 @@ the staged table; don't hand-transcribe.
 
 dbt CLI runs locally for Claude: `DBT_PROFILES_DIR` (repo `.dbt`) + ADC →
 `dbt debug` / `build` / `run-operation --target staging` connect with no
-1Password (BigQuery uses ADC, not the 1Password bootstrap).
+1Password (BigQuery uses ADC, not the 1Password bootstrap). `--target prod` runs
+(`dbt build` / `run`) are blocked by the auto-mode classifier as production
+deploys even with verbal approval — hand prod runs to the user.
 
 `stage_external_sources --args "select: ..."` takes a
 `<source_name>.<table_name>` selector — not project-qualified. The
