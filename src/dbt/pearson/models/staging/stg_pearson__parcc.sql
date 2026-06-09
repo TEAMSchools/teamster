@@ -174,18 +174,6 @@ with
 
             cast(regexp_extract(assessmentgrade, r'Grade\s(\d+)') as int) as test_grade,
 
-            if(
-                `subject` = 'English Language Arts/Literacy', 'ELA', 'Math'
-            ) as discipline,
-
-        from {{ source("pearson", "src_pearson__parcc") }}
-        where summativeflag = 'Y' and testattemptednessflag = 'Y'
-    ),
-
-    unit_test_starts as (
-        select
-            *,
-
             cast(
                 safe.parse_datetime(
                     '%m/%d/%Y %H:%M', unit1onlineteststartdatetime
@@ -207,7 +195,12 @@ with
                 ) as timestamp
             ) as unit4_start_timestamp,
 
-        from parcc
+            if(
+                `subject` = 'English Language Arts/Literacy', 'ELA', 'Math'
+            ) as discipline,
+
+        from {{ source("pearson", "src_pearson__parcc") }}
+        where summativeflag = 'Y' and testattemptednessflag = 'Y'
     ),
 
     earliest_test_start as (
@@ -232,7 +225,7 @@ with
                     ) as s
             ) as earliest_test_start_timestamp,
 
-        from unit_test_starts
+        from parcc
     ),
 
     test_date_resolved as (

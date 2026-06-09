@@ -173,21 +173,6 @@ with
 
             coalesce(multilinguallearnerml, englishlearnerel) as englishlearnerel,
 
-            if(
-                `subject`
-                in ('English Language Arts', 'English Language Arts/Literacy'),
-                'ELA',
-                'Math'
-            ) as discipline,
-
-        from {{ source("pearson", "src_pearson__njsla") }}
-        where summativeflag = 'Y' and testattemptednessflag = 'Y'
-    ),
-
-    unit_test_starts as (
-        select
-            *,
-
             safe_cast(
                 unit1onlineteststartdatetime as timestamp
             ) as unit1_start_timestamp,
@@ -198,7 +183,15 @@ with
                 unit3onlineteststartdatetime as timestamp
             ) as unit3_start_timestamp,
 
-        from njsla
+            if(
+                `subject`
+                in ('English Language Arts', 'English Language Arts/Literacy'),
+                'ELA',
+                'Math'
+            ) as discipline,
+
+        from {{ source("pearson", "src_pearson__njsla") }}
+        where summativeflag = 'Y' and testattemptednessflag = 'Y'
     ),
 
     earliest_test_start as (
@@ -219,7 +212,7 @@ with
                     ) as s
             ) as earliest_test_start_timestamp,
 
-        from unit_test_starts
+        from njsla
     ),
 
     test_date_resolved as (

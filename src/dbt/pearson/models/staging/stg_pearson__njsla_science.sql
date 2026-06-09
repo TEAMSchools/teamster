@@ -160,25 +160,6 @@ with
 
             cast(regexp_extract(assessmentgrade, r'Grade\s(\d+)') as int) as test_grade,
 
-            case
-                testcode
-                when 'SC05'
-                then 'SCI05'
-                when 'SC08'
-                then 'SCI08'
-                when 'SC11'
-                then 'SCI11'
-                else testcode
-            end as test_code,
-
-        from {{ source("pearson", "src_pearson__njsla_science") }}
-        where summativeflag = 'Y' and testattemptednessflag = 'Y'
-    ),
-
-    unit_test_starts as (
-        select
-            *,
-
             -- safe_cast fails on no-seconds strings (e.g. '2022-05-10 09:26');
             -- safe.parse_datetime('%Y-%m-%d %H:%M', ...) is load-bearing for that
             -- format
@@ -215,7 +196,19 @@ with
                 )
             ) as unit4_start_timestamp,
 
-        from njsla_science
+            case
+                testcode
+                when 'SC05'
+                then 'SCI05'
+                when 'SC08'
+                then 'SCI08'
+                when 'SC11'
+                then 'SCI11'
+                else testcode
+            end as test_code,
+
+        from {{ source("pearson", "src_pearson__njsla_science") }}
+        where summativeflag = 'Y' and testattemptednessflag = 'Y'
     ),
 
     earliest_test_start as (
@@ -240,7 +233,7 @@ with
                     ) as s
             ) as earliest_test_start_timestamp,
 
-        from unit_test_starts
+        from njsla_science
     ),
 
     test_date_resolved as (

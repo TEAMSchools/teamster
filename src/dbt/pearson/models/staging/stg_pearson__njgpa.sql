@@ -56,18 +56,6 @@ with
 
             coalesce(multilinguallearnerml, englishlearnerel) as englishlearnerel,
 
-            if(`period` = 'FallBlock', 'Fall', `period`) as `admin`,
-            if(`period` = 'FallBlock', 'Fall', `period`) as season,
-            if(`subject` = 'Mathematics', 'Math', 'ELA') as discipline,
-
-        from {{ source("pearson", "src_pearson__njgpa") }}
-        where summativeflag = 'Y' and testattemptednessflag = 'Y'
-    ),
-
-    unit_test_starts as (
-        select
-            *,
-
             safe_cast(
                 unit1onlineteststartdatetime as timestamp
             ) as unit1_start_timestamp,
@@ -78,7 +66,12 @@ with
                 unit3onlineteststartdatetime as timestamp
             ) as unit3_start_timestamp,
 
-        from njgpa
+            if(`period` = 'FallBlock', 'Fall', `period`) as `admin`,
+            if(`period` = 'FallBlock', 'Fall', `period`) as season,
+            if(`subject` = 'Mathematics', 'Math', 'ELA') as discipline,
+
+        from {{ source("pearson", "src_pearson__njgpa") }}
+        where summativeflag = 'Y' and testattemptednessflag = 'Y'
     ),
 
     earliest_test_start as (
@@ -99,7 +92,7 @@ with
                     ) as s
             ) as earliest_test_start_timestamp,
 
-        from unit_test_starts
+        from njgpa
     ),
 
     test_date_resolved as (
