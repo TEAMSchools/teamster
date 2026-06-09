@@ -28,11 +28,12 @@ const STUDENT_CUBES = [
   "student_enrollments",
 ];
 
-const STAFF_CUBES = [
-  "dim_staff",
-  "fct_staff_attrition",
-  "fct_staff_observations",
-];
+// STAFF_CUBES: cubes that require cube-access-staff-all. Empty until the staff
+// cubes (staff, fct_staff_attrition, fct_staff_observations) and the
+// dim_staff.reporting_chain segment are added in the follow-up spec (blocked on
+// #3729). Re-add each cube name: here when its YAML lands, or staff-data
+// queries will skip the reporting-chain access guard in queryRewrite below.
+const STAFF_CUBES = [];
 
 // Convention for snapshot cubes: cumulative daily flags that overcount without
 // a point-in-time anchor. All snapshot cubes expose these three dimensions.
