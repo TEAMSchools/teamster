@@ -24,6 +24,8 @@ select
     }},
 
     sch.name as school_name,
+    sch.abbreviation as school_abbreviation,
+    sch.school_level,
 
     t.teachernumber,
     t.lastfirst as teacher_lastfirst,
