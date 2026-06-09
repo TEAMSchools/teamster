@@ -55,8 +55,12 @@ Finalsite  [FORK 1: REST API  OR  new SFTP export]
 (`kippmiami.fsenrollment.com`): a single paginated call —
 `GET /contacts?school_year_id={current}&count=25&includes=contacts.relationships.contact`
 (paginate via `meta.next_cursor`) — reproduces **every column of the SFTP "Focus
-Student Export" except `Enrolled Date`** (and the gendered `mother`/`father`
-relationship label). Per student it returns base demographics + `grade` +
+Student Export."** The only field not directly present is `Enrolled Date`
+(sourced from the Status Report — see below); the gendered `mother`/`father`
+relationship label is **derived** from `relationships[].rel_type` + the
+guardian's `gender` (validated: `parent`+`F`→mother, `parent`+`M`→father, etc.,
+falling back to the bare `rel_type` when gender is unset — reproducing the
+export exactly). Per student it returns base demographics + `grade` +
 `households` (address) + `custom_attributes` (Miami names confirmed: `race_ms`,
 `assigned_school_ss`, `med_doctor_txt`/`med_hospital_txt`/…, `mdcps_id_txt`,
 `sped_received_yn`, `latino_hispanic_yn`) + `id_attributes` + **fully-expanded

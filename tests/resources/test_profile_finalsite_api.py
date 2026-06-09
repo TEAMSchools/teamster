@@ -567,6 +567,71 @@ def test_hunt_enrolled_date():
         )
 
 
+def test_guardian_gender_relationship():
+    """Test whether the export's gendered relationship (mother/father/…) is
+    reconstructable from API rel_type + the guardian contact's gender. Cross-tabs
+    export relationship label vs guardian gender. Aggregates only."""
+    import csv
+    import pathlib
+
+    district = os.environ.get("FINALSITE_VALIDATE_DISTRICT", "kippmiami")
+    suffix = district.upper()
+    csv_path = (
+        pathlib.Path(__file__).resolve().parents[2]
+        / ".claude/scratch/finalsite_export_new.csv"
+    )
+    if not os.environ.get(f"FINALSITE_CREDENTIAL_ID_{suffix}") or not csv_path.exists():
+        import pytest
+
+        pytest.skip("no creds or export csv")
+
+    with csv_path.open(newline="") as fh:
+        rows = [r for r in csv.DictReader(fh) if (r.get("Finalsite ID") or "").strip()][
+            :40
+        ]
+
+    with build_resources(
+        {
+            "finalsite": FinalsiteResource(
+                server=district,
+                credential_id=EnvVar(f"FINALSITE_CREDENTIAL_ID_{suffix}"),
+                secret=EnvVar(f"FINALSITE_SECRET_{suffix}"),
+            )
+        }
+    ) as resources:
+        fs = resources.finalsite
+        cache: dict = {}
+
+        def gget(cid_):
+            if cid_ not in cache:
+                try:
+                    cache[cid_] = (
+                        fs.get(path="contacts", id=cid_).json().get("contact", {})
+                    )
+                except Exception:  # noqa: BLE001
+                    cache[cid_] = {}
+            return cache[cid_]
+
+        gender_present = total = 0
+        xtab: Counter = Counter()
+        for r in rows:
+            for n in (1, 2, 3, 4):
+                pfid = (r.get(f"Parent {n} Finalsite ID") or "").strip()
+                label = (r.get(f"Parent {n} Relationship") or "").strip().lower()
+                if not (pfid and label):
+                    continue
+                total += 1
+                g = (gget(pfid).get("gender") or "").strip()
+                if g:
+                    gender_present += 1
+                xtab[(label, g or "none")] += 1
+
+        print(f"\n## guardian gender present: {gender_present}/{total}")
+        print("## export relationship-label x guardian gender:")
+        for (label, g), n in sorted(xtab.items(), key=lambda x: -x[1]):
+            print(f"    {label:14s} gender={g:4s} : {n}")
+
+
 def _race_set(v) -> set[str]:
     if isinstance(v, list):
         parts = v
