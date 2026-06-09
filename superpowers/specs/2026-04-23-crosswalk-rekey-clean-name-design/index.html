@@ -1,0 +1,1739 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+        <meta name="description" content="Data engineering platform for KIPP TEAM & Family Schools">
+      
+      
+      
+      
+      
+      
+        
+      
+      
+      <link rel="icon" href="../../../images/truck.svg">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.6">
+    
+    
+      
+        <title>Rekey downstream crosswalks on location_clean_name - teamster</title>
+      
+    
+    
+      <link rel="stylesheet" href="../../../assets/stylesheets/main.484c7ddc.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+    <script>__md_scope=new URL("../../..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+  </head>
+  
+  
+    <body dir="ltr">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#rekey-downstream-crosswalks-on-location_clean_name" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+  
+
+<header class="md-header md-header--shadow md-header--lifted" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href="../../.." title="teamster" class="md-header__button md-logo" aria-label="teamster" data-md-component="logo">
+      
+  <img src="../../../images/truck.svg" alt="logo">
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            teamster
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              Rekey downstream crosswalks on location_clean_name
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+        <div class="md-search__suggest" data-md-component="search-suggest"></div>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      
+    
+    
+      <div class="md-header__source">
+        <a href="https://github.com/TEAMSchools/teamster" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M173.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6m-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3m44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9M252.8 8C114.1 8 8 113.3 8 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C436.2 457.8 504 362.9 504 252 504 113.3 391.5 8 252.8 8M105.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1m-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7m32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1m-11.4-14.7c-1.6 1-1.6 3.6 0 5.9s4.3 3.3 5.6 2.3c1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2"/></svg>
+  </div>
+  <div class="md-source__repository">
+    TEAMSchools/teamster
+  </div>
+</a>
+      </div>
+    
+  </nav>
+  
+    
+      
+<nav class="md-tabs" aria-label="Tabs" data-md-component="tabs">
+  <div class="md-grid">
+    <ul class="md-tabs__list">
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../../.." class="md-tabs__link">
+        
+  
+  
+    
+  
+  Home
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../../guides/" class="md-tabs__link">
+          
+  
+  
+    
+  
+  Guides
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../../troubleshooting/dagster/" class="md-tabs__link">
+          
+  
+  
+    
+  
+  Troubleshooting
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../../reference/architecture/" class="md-tabs__link">
+          
+  
+  
+    
+  
+  Reference
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../../../reference/automations/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  Automations
+
+      </a>
+    </li>
+  
+
+      
+    </ul>
+  </div>
+</nav>
+    
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+  
+
+
+<nav class="md-nav md-nav--primary md-nav--lifted" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href="../../.." title="teamster" class="md-nav__button md-logo" aria-label="teamster" data-md-component="logo">
+      
+  <img src="../../../images/truck.svg" alt="logo">
+
+    </a>
+    teamster
+  </label>
+  
+    <div class="md-nav__source">
+      <a href="https://github.com/TEAMSchools/teamster" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M173.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6m-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3m44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9M252.8 8C114.1 8 8 113.3 8 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C436.2 457.8 504 362.9 504 252 504 113.3 391.5 8 252.8 8M105.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1m-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7m32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1m-11.4-14.7c-1.6 1-1.6 3.6 0 5.9s4.3 3.3 5.6 2.3c1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2"/></svg>
+  </div>
+  <div class="md-source__repository">
+    TEAMSchools/teamster
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../.." class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Home
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+          
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2" >
+        
+          
+          <div class="md-nav__link md-nav__container">
+            <a href="../../../guides/" class="md-nav__link ">
+              
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Guides
+  
+
+    
+  </span>
+  
+  
+
+            </a>
+            
+              
+              <label class="md-nav__link " for="__nav_2" id="__nav_2_label" tabindex="0">
+                <span class="md-nav__icon md-icon"></span>
+              </label>
+            
+          </div>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_2_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_2">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Guides
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/codespaces/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Codespaces
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/local-development/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Local Development
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/dagster/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Dagster
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/google-sheets/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Google Sheets & Forms
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/adp-location-renames/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ADP Location Renames
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/dbt-development/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    dbt Development
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/sftp-integration/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    SFTP Integration
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/superpowers/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Claude Code & Superpowers
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/cube/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Cube
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/claude-cube-connector/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Claude + Cube Connector
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3" >
+        
+          
+          <label class="md-nav__link" for="__nav_3" id="__nav_3_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Troubleshooting
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_3">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Troubleshooting
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../troubleshooting/dagster/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Dagster
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../troubleshooting/dbt/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    dbt
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../troubleshooting/vscode/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    VS Code
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4" >
+        
+          
+          <label class="md-nav__link" for="__nav_4" id="__nav_4_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Reference
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_4_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_4">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Reference
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/architecture/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Architecture
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/adding-an-integration/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Adding an Integration
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/io-managers/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    IO Managers
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/fiscal-year-partitioning/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Fiscal Year & Partitioning
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/dbt-conventions/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    dbt Conventions
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/marts-data-models/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Marts Data Models
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/automation-conditions/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Automation Conditions
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/automations/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Automations
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#problem" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Problem
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#goal" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Goal
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#out-of-scope" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Out of scope
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#design" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Design
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Design">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#join-key-choice" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Join key choice
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#source-sheets" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Source sheets
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#staging-models" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Staging models
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#intermediate-model-int_people__leadership_crosswalk" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Intermediate model: int_people__leadership_crosswalk
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#downstream-extracts-and-intermediate-consumers" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Downstream extracts and intermediate consumers
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Downstream extracts and intermediate consumers">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#output-column-preservation" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Output column preservation
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#rollout" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Rollout
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#verification" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Verification
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#operational-guide-new-documentation" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Operational guide (new documentation)
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Operational guide (new documentation)">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#scenario-1-adp-changes-the-raw-home_work_location_name-value-most-common" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Scenario 1: ADP changes the raw home_work_location_name value (most common)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#scenario-2-cleanreporting-name-itself-needs-to-change-rare" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Scenario 2: Clean/reporting name itself needs to change (rare)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#what-not-to-do" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        What NOT to do
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+  
+    <a href="https://github.com/TEAMSchools/teamster/edit/main/docs/superpowers/specs/2026-04-23-crosswalk-rekey-clean-name-design.md" title="Edit this page" class="md-content__button md-icon" rel="edit">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M10 20H6V4h7v5h5v3.1l2-2V8l-6-6H6c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h4zm10.2-7c.1 0 .3.1.4.2l1.3 1.3c.2.2.2.6 0 .8l-1 1-2.1-2.1 1-1c.1-.1.2-.2.4-.2m0 3.9L14.1 23H12v-2.1l6.1-6.1z"/></svg>
+    </a>
+  
+  
+
+
+<h1 id="rekey-downstream-crosswalks-on-location_clean_name">Rekey downstream crosswalks on <code>location_clean_name</code></h1>
+<p><strong>Issue</strong>: <a href="https://github.com/TEAMSchools/teamster/issues/3728">#3728</a>
+<strong>Date</strong>: 2026-04-23</p>
+<h2 id="problem">Problem</h2>
+<p>Multiple downstream crosswalks and one intermediate model are keyed on the raw
+<code>home_work_location_name</code> value from ADP. When ADP renames a physical location,
+every one of them must be updated in lockstep with
+<code>int_people__location_crosswalk</code>. The failure mode is silent — missed sheets
+produce NULL joins or dropped rows with no test signal, and the leadership
+crosswalk silently splits one logical school into two rows.</p>
+<p>Affected sheets: coupa <code>address_name_crosswalk</code>, coupa <code>intacct_program_lookup</code>,
+coupa <code>user_exceptions</code>, egencia <code>traveler_groups</code>, zendesk
+<code>zendesk_org_lookup</code>, and (partially) people <code>campus_crosswalk</code>. Affected
+intermediate model: <code>int_people__leadership_crosswalk</code>.</p>
+<p><code>int_people__location_crosswalk</code> already absorbs raw-name changes via alias rows
+(one row per ADP spelling, all pointing to the same <code>clean_name</code>). The
+downstream consumers do not benefit from that indirection because they join on
+the raw name directly.</p>
+<h2 id="goal">Goal</h2>
+<p>Rekey five downstream crosswalk sheets on <code>location_clean_name</code> and switch
+<code>int_people__leadership_crosswalk</code> to group on
+<code>home_work_location_reporting_name</code> so that raw ADP name changes stop
+propagating past <code>int_people__location_crosswalk</code>. After this change, a raw ADP
+rename is handled in exactly one place (the location crosswalk sheet) via an
+alias row.</p>
+<h2 id="out-of-scope">Out of scope</h2>
+<ul>
+<li><code>int_people__location_crosswalk</code> itself (already canonical).</li>
+<li>Raw <code>home_work_location_name</code> display columns in Tableau/reporting extracts —
+  these intentionally show the ADP value.</li>
+<li>The <code>'Room 11'</code> / <code>'%Room%'</code> hardcoded literals in
+  <code>rpt_appsheet__seat_tracker_roster.sql</code> (separate pattern, follow-up).</li>
+</ul>
+<h2 id="design">Design</h2>
+<h3 id="join-key-choice">Join key choice</h3>
+<p>Use <code>location_clean_name</code> (string) as the join key. <code>reporting_school_id</code> would
+be more stable but isn't universally populated; <code>clean_name</code> is human-readable
+and already the canonical name exposed by <code>int_people__location_crosswalk</code>.
+Accepted tradeoff: future <code>clean_name</code> edits still require a coordinated
+multi-sheet update (runbook added — see Operational Guide section below).</p>
+<h3 id="source-sheets">Source sheets</h3>
+<p>One row per logical school (already the structure; no dedup needed). Six sheets
+get edited in-place at merge time:</p>
+<table>
+<thead>
+<tr>
+<th>Sheet</th>
+<th>Current key column</th>
+<th>New key column</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>src_coupa__address_name_crosswalk</code></td>
+<td><code>adp_home_work_location_name</code></td>
+<td><code>location_clean_name</code></td>
+</tr>
+<tr>
+<td><code>src_coupa__intacct_program_lookup</code></td>
+<td><code>ADP_Home_Work_Location_Name</code></td>
+<td><code>location_clean_name</code></td>
+</tr>
+<tr>
+<td><code>src_coupa__user_exceptions</code></td>
+<td><code>home_work_location_name</code></td>
+<td><code>location_clean_name</code></td>
+</tr>
+<tr>
+<td><code>src_egencia__traveler_groups_v2</code></td>
+<td><code>adp_home_work_location_name</code></td>
+<td><code>location_clean_name</code></td>
+</tr>
+<tr>
+<td>zendesk <code>zendesk_org_lookup</code></td>
+<td><code>adp_location</code></td>
+<td><code>location_clean_name</code></td>
+</tr>
+<tr>
+<td><code>src_people__campus_crosswalk</code></td>
+<td><code>Name</code> (ADP-lookup usage only)</td>
+<td>no sheet change</td>
+</tr>
+</tbody>
+</table>
+<p>Sheet owners replace the raw ADP value in the renamed column with the clean name
+from <code>int_people__location_crosswalk</code>.</p>
+<p>For <code>campus_crosswalk</code>: the <code>Name</code> column is also used as a rollup key for other
+consumers, so it is not renamed. Instead, the ADP-lookup consumers (clever,
+illuminate, ddi_dashboard) switch their join column to <code>ccw.location_name</code>,
+which already holds the clean name.</p>
+<h3 id="staging-models">Staging models</h3>
+<p>Six staging YAMLs updated:</p>
+<ul>
+<li><code>stg_google_sheets__coupa__address_name_crosswalk</code></li>
+<li><code>stg_google_sheets__coupa__intacct_program_lookup</code></li>
+<li><code>stg_google_sheets__coupa__user_exceptions</code></li>
+<li><code>stg_google_sheets__egencia__traveler_groups</code></li>
+<li><code>stg_google_sheets__zendesk_org_lookup</code></li>
+<li><code>stg_google_sheets__people__campus_crosswalk</code> (no rename; test only)</li>
+</ul>
+<p>Each gets:</p>
+<ol>
+<li>Column renamed to <code>location_clean_name</code> (except campus_crosswalk, which keeps
+   its existing <code>Name</code> / <code>Location_Name</code> columns).</li>
+<li><code>unique</code> test on the clean-name column — catches silent join fan-out, which
+   no existing test covers.</li>
+<li><code>description</code> added to model and every column (project convention).</li>
+</ol>
+<p>Zendesk's composite join (<code>adp_business_unit + adp_location</code>) becomes
+(<code>adp_business_unit + location_clean_name</code>); egencia's composite becomes
+(<code>adp_home_business_unit_name + location_clean_name + adp_department_home_name + adp_job_title</code>);
+coupa <code>intacct_program_lookup</code> becomes
+(<code>adp_business_unit_home_code + location_clean_name</code>). Each uses
+<code>dbt_utils.unique_combination_of_columns</code>.</p>
+<h3 id="intermediate-model-int_people__leadership_crosswalk">Intermediate model: <code>int_people__leadership_crosswalk</code></h3>
+<p>Currently groups <code>int_people__staff_roster.home_work_location_name</code> (raw ADP) —
+a location rename would split one logical school into two rows, giving
+incomplete leadership. Switch the model to group on
+<code>home_work_location_reporting_name</code> and emit that as <code>home_work_location_name</code>'s
+replacement column. Downstream consumers that join on the old column name update
+in lockstep.</p>
+<h3 id="downstream-extracts-and-intermediate-consumers">Downstream extracts and intermediate consumers</h3>
+<p>Ten files change. The seven sheet-crosswalk joins plus three joins against
+<code>int_people__leadership_crosswalk</code>.</p>
+<table>
+<thead>
+<tr>
+<th>File</th>
+<th>New join</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>extracts/coupa/rpt_coupa__users.sql</code></td>
+<td>swap CTE passthrough + crosswalk joins (<code>anc</code>, <code>ipl1</code>, <code>ipl2</code>, <code>x</code>)</td>
+</tr>
+<tr>
+<td><code>extracts/egencia/rpt_egencia__users.sql</code></td>
+<td><code>sr.home_work_location_reporting_name = tg.location_clean_name</code></td>
+</tr>
+<tr>
+<td><code>extracts/zendesk/rpt_zendesk__users.sql</code></td>
+<td><code>sr.home_work_location_reporting_name = zol.location_clean_name</code></td>
+</tr>
+<tr>
+<td><code>extracts/clever/rpt_clever__staff.sql</code></td>
+<td><code>sr.home_work_location_reporting_name = ccw.location_name</code></td>
+</tr>
+<tr>
+<td><code>extracts/clever/rpt_clever__sections.sql</code></td>
+<td><code>sr.home_work_location_reporting_name = ccw.location_name</code></td>
+</tr>
+<tr>
+<td><code>extracts/illuminate/rpt_illuminate__roles.sql</code></td>
+<td><code>sr.home_work_location_reporting_name = cc.location_name</code></td>
+</tr>
+<tr>
+<td><code>extracts/tableau/rpt_tableau__ddi_dashboard.sql</code></td>
+<td><code>r.home_work_location_reporting_name = cw.location_name</code> (line 523 only)</td>
+</tr>
+<tr>
+<td><code>people/intermediate/int_people__renewal_status.sql</code></td>
+<td><code>h.home_work_location_reporting_name = ayl.home_work_location_reporting_name</code></td>
+</tr>
+<tr>
+<td><code>extracts/tableau/rpt_tableau__staff_roster.sql</code></td>
+<td><code>b.home_work_location_reporting_name = lc.home_work_location_reporting_name</code></td>
+</tr>
+<tr>
+<td><code>extracts/google/sheets/rpt_gsheets__pm_assignment_roster.sql</code></td>
+<td><code>sr.home_work_location_reporting_name = lc.home_work_location_reporting_name</code></td>
+</tr>
+</tbody>
+</table>
+<p>For coupa, <code>rpt_coupa__users</code> swaps its CTE passthrough column — the <code>all_users</code>
+CTE selects <code>sr.home_work_location_reporting_name as home_work_location_name</code>
+(preserving the column name within the file so downstream CTEs don't need
+restructuring) and all four crosswalk join RHSs switch to <code>location_clean_name</code>.
+The user_exceptions override column on line 179 flows through the same CTE, so
+that join also resolves correctly.</p>
+<p><strong>Not changed (already correct):</strong> <code>rpt_appsheet__seat_tracker_roster</code> joins to
+<code>stg_google_sheets__people__location_crosswalk</code> on <code>lc.name</code> — the canonical
+alias-resolution pattern. Out of scope.</p>
+<h4 id="output-column-preservation">Output column preservation</h4>
+<p><code>rpt_</code> output columns are consumer contracts — no renames. In particular,
+<code>rpt_zendesk__users.sql</code> emits <code>adp__home_work_location_name</code> as an output
+column (line 94); that name is preserved even though the underlying value now
+holds the clean name. The CTE that constructs it switches its source:</p>
+<div class="highlight"><pre><span></span><code><span class="n">sr</span><span class="p">.</span><span class="n">home_work_location_reporting_name</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">adp__home_work_location_name</span><span class="p">,</span>
+</code></pre></div>
+<h2 id="rollout">Rollout</h2>
+<p>Single PR, coordinated cutover. Ordering within the PR work:</p>
+<ol>
+<li>Branch + dbt Cloud CI PR environment provisioned.</li>
+<li>Update three staging YAMLs (rename columns, add <code>unique</code> tests, add
+   descriptions).</li>
+<li>Update staging SQL to select the renamed sheet columns.</li>
+<li>Update the seven downstream extract SQL files.</li>
+<li>Owners edit the four source sheets at merge time — values replaced with clean
+   names in the renamed column.</li>
+<li>Post-merge verification (see below).</li>
+</ol>
+<p>Accept a brief window around merge where sheet values and SQL schema are briefly
+inconsistent — affected models rebuild daily and none of the four crosswalks are
+traffic-critical.</p>
+<h2 id="verification">Verification</h2>
+<p>Post-merge checks (dbt Cloud CI covers uniqueness automatically):</p>
+<ol>
+<li><strong>Row-count parity</strong>: compare row count on PR branch vs production for each
+   of the seven extracts (<code>dbt_cloud_pr_&lt;ci_id&gt;_&lt;pr_num&gt;_*</code> schema vs prod). Any
+   drop signals sheet entries missing a clean-name translation.</li>
+<li><strong>NULL-join spot check</strong>: <code>SELECT COUNT(*) WHERE &lt;joined_column&gt; IS NULL</code> on
+   coupa/egencia/zendesk/clever output columns — expected NULLs should be at or
+   below prod baseline.</li>
+<li><strong>Uniqueness tests pass</strong> — automatic via dbt build.</li>
+<li><strong>Downstream system confirmation</strong>: next-day check with sheet owners that
+   coupa user sync, egencia traveler groups, zendesk user provisioning, and
+   clever roster sync still produce expected deltas.</li>
+</ol>
+<h2 id="operational-guide-new-documentation">Operational guide (new documentation)</h2>
+<p>New guide at <code>docs/guides/adp-location-renames.md</code>, added to MkDocs nav,
+covering two scenarios:</p>
+<h3 id="scenario-1-adp-changes-the-raw-home_work_location_name-value-most-common">Scenario 1: ADP changes the raw <code>home_work_location_name</code> value (most common)</h3>
+<ol>
+<li>Open <code>src_people__location_crosswalk</code> (Google Sheet).</li>
+<li>Add a new alias row: <code>name</code> = new ADP value, <code>clean_name</code> = unchanged
+   existing clean name, other columns copied from the existing row.</li>
+<li>No downstream action needed — <code>int_people__location_crosswalk</code> absorbs the
+   change via alias resolution.</li>
+<li>Verification: next-day query of <code>int_people__staff_roster</code> — affected staff's
+   <code>home_work_location_reporting_name</code> unchanged, <code>home_work_location_name</code>
+   shows the new ADP value.</li>
+</ol>
+<h3 id="scenario-2-cleanreporting-name-itself-needs-to-change-rare">Scenario 2: Clean/reporting name itself needs to change (rare)</h3>
+<ol>
+<li>Edit <code>clean_name</code> in <code>src_people__location_crosswalk</code> (updates all aliases
+   atomically).</li>
+<li>Edit the five downstream crosswalks in lockstep: coupa
+   <code>address_name_crosswalk</code>, coupa <code>intacct_program_lookup</code>, coupa
+   <code>user_exceptions</code>, egencia <code>traveler_groups</code>, zendesk <code>zendesk_org_lookup</code>,
+   <code>campus_crosswalk</code> — update the value in the <code>location_clean_name</code> /
+   <code>location_name</code> column in each.</li>
+<li>Audit any Tableau workbooks filtering on the string value.</li>
+<li>Verification: row-count parity check on the seven affected extracts.</li>
+</ol>
+<h3 id="what-not-to-do">What NOT to do</h3>
+<p>Never edit the raw ADP name column (<code>name</code>) in <code>src_people__location_crosswalk</code>
+to track renames — that breaks historical joins against
+<code>int_people__staff_roster_history</code>. Always add an alias row instead.</p>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+          <button type="button" class="md-top md-icon" data-md-component="top" hidden>
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8z"/></svg>
+  Back to top
+</button>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+    <div class="md-copyright__highlight">
+      Copyright &copy; KIPP TEAM & Family Schools
+    </div>
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      
+      <script id="__config" type="application/json">{"annotate": null, "base": "../../..", "features": ["content.action.edit", "content.code.copy", "navigation.instant", "navigation.indexes", "navigation.sections", "navigation.tabs", "navigation.tabs.sticky", "navigation.top", "search.highlight", "search.suggest", "toc.follow"], "search": "../../../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+    
+    
+      <script src="../../../assets/javascripts/bundle.79ae519e.min.js"></script>
+      
+    
+  </body>
+</html>

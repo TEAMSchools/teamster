@@ -1,0 +1,2612 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+        <meta name="description" content="Data engineering platform for KIPP TEAM & Family Schools">
+      
+      
+      
+      
+      
+      
+        
+      
+      
+      <link rel="icon" href="../../../images/truck.svg">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.6">
+    
+    
+      
+        <title>Column Naming Audit Inventory Implementation Plan - teamster</title>
+      
+    
+    
+      <link rel="stylesheet" href="../../../assets/stylesheets/main.484c7ddc.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+    <script>__md_scope=new URL("../../..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+  </head>
+  
+  
+    <body dir="ltr">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#column-naming-audit-inventory-implementation-plan" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+  
+
+<header class="md-header md-header--shadow md-header--lifted" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href="../../.." title="teamster" class="md-header__button md-logo" aria-label="teamster" data-md-component="logo">
+      
+  <img src="../../../images/truck.svg" alt="logo">
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            teamster
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              Column Naming Audit Inventory Implementation Plan
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+        <div class="md-search__suggest" data-md-component="search-suggest"></div>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      
+    
+    
+      <div class="md-header__source">
+        <a href="https://github.com/TEAMSchools/teamster" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M173.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6m-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3m44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9M252.8 8C114.1 8 8 113.3 8 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C436.2 457.8 504 362.9 504 252 504 113.3 391.5 8 252.8 8M105.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1m-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7m32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1m-11.4-14.7c-1.6 1-1.6 3.6 0 5.9s4.3 3.3 5.6 2.3c1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2"/></svg>
+  </div>
+  <div class="md-source__repository">
+    TEAMSchools/teamster
+  </div>
+</a>
+      </div>
+    
+  </nav>
+  
+    
+      
+<nav class="md-tabs" aria-label="Tabs" data-md-component="tabs">
+  <div class="md-grid">
+    <ul class="md-tabs__list">
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../../.." class="md-tabs__link">
+        
+  
+  
+    
+  
+  Home
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../../guides/" class="md-tabs__link">
+          
+  
+  
+    
+  
+  Guides
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../../troubleshooting/dagster/" class="md-tabs__link">
+          
+  
+  
+    
+  
+  Troubleshooting
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../../reference/architecture/" class="md-tabs__link">
+          
+  
+  
+    
+  
+  Reference
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../../../reference/automations/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  Automations
+
+      </a>
+    </li>
+  
+
+      
+    </ul>
+  </div>
+</nav>
+    
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+  
+
+
+<nav class="md-nav md-nav--primary md-nav--lifted" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href="../../.." title="teamster" class="md-nav__button md-logo" aria-label="teamster" data-md-component="logo">
+      
+  <img src="../../../images/truck.svg" alt="logo">
+
+    </a>
+    teamster
+  </label>
+  
+    <div class="md-nav__source">
+      <a href="https://github.com/TEAMSchools/teamster" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M173.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6m-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3m44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9M252.8 8C114.1 8 8 113.3 8 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C436.2 457.8 504 362.9 504 252 504 113.3 391.5 8 252.8 8M105.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1m-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7m32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1m-11.4-14.7c-1.6 1-1.6 3.6 0 5.9s4.3 3.3 5.6 2.3c1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2"/></svg>
+  </div>
+  <div class="md-source__repository">
+    TEAMSchools/teamster
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../.." class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Home
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+          
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2" >
+        
+          
+          <div class="md-nav__link md-nav__container">
+            <a href="../../../guides/" class="md-nav__link ">
+              
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Guides
+  
+
+    
+  </span>
+  
+  
+
+            </a>
+            
+              
+              <label class="md-nav__link " for="__nav_2" id="__nav_2_label" tabindex="0">
+                <span class="md-nav__icon md-icon"></span>
+              </label>
+            
+          </div>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_2_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_2">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Guides
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/codespaces/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Codespaces
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/local-development/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Local Development
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/dagster/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Dagster
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/google-sheets/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Google Sheets & Forms
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/adp-location-renames/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ADP Location Renames
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/dbt-development/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    dbt Development
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/sftp-integration/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    SFTP Integration
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/superpowers/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Claude Code & Superpowers
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/cube/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Cube
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/claude-cube-connector/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Claude + Cube Connector
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3" >
+        
+          
+          <label class="md-nav__link" for="__nav_3" id="__nav_3_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Troubleshooting
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_3">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Troubleshooting
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../troubleshooting/dagster/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Dagster
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../troubleshooting/dbt/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    dbt
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../troubleshooting/vscode/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    VS Code
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4" >
+        
+          
+          <label class="md-nav__link" for="__nav_4" id="__nav_4_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Reference
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_4_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_4">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Reference
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/architecture/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Architecture
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/adding-an-integration/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Adding an Integration
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/io-managers/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    IO Managers
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/fiscal-year-partitioning/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Fiscal Year & Partitioning
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/dbt-conventions/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    dbt Conventions
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/marts-data-models/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Marts Data Models
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/automation-conditions/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Automation Conditions
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/automations/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Automations
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#file-structure" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        File Structure
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#conventions-used-in-this-plan" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Conventions Used In This Plan
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#task-1-create-the-script-skeleton-and-importable-test-harness" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Task 1: Create the script skeleton and importable test harness
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#task-2-_flatten_description-collapse-multiline-yaml-descriptions" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Task 2: _flatten_description — collapse multiline YAML descriptions
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#task-3-_domain_for_model-classify-model-name-to-audit-domain" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Task 3: _domain_for_model — classify model name to audit domain
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#task-4-_plumbing_columns-constant-set-of-columns-slated-for-removal" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Task 4: _plumbing_columns — constant set of columns slated for removal
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#task-5-_initial_rename_guess-pre-populate-obvious-renames" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Task 5: _initial_rename_guess — pre-populate obvious renames
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#task-6-_structural_additions-pre-populated-new-column-rows" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Task 6: _structural_additions — pre-populated new-column rows
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#task-7-_read_mart_yaml-parse-one-yaml-file-into-csv-row-dicts" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Task 7: _read_mart_yaml — parse one YAML file into CSV row dicts
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#task-8-main-orchestrate-directory-walk-csv-emission" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Task 8: main() — orchestrate directory walk + CSV emission
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#task-9-execute-the-script-and-commit-the-initial-inventory-csv" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Task 9: Execute the script and commit the initial inventory CSV
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#task-10-update-scriptsclaudemd-catalog" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Task 10: Update scripts/CLAUDE.md catalog
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#post-plan-handoff" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Post-plan handoff
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Post-plan handoff">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#next-manual-step-human-gated" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Next manual step (human-gated)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#follow-up-plan" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Follow-up plan
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+  
+    <a href="https://github.com/TEAMSchools/teamster/edit/main/docs/superpowers/plans/2026-04-15-column-naming-audit-inventory.md" title="Edit this page" class="md-content__button md-icon" rel="edit">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M10 20H6V4h7v5h5v3.1l2-2V8l-6-6H6c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h4zm10.2-7c.1 0 .3.1.4.2l1.3 1.3c.2.2.2.6 0 .8l-1 1-2.1-2.1 1-1c.1-.1.2-.2.4-.2m0 3.9L14.1 23H12v-2.1l6.1-6.1z"/></svg>
+    </a>
+  
+  
+
+
+<h1 id="column-naming-audit-inventory-implementation-plan">Column Naming Audit Inventory Implementation Plan</h1>
+<blockquote>
+<p><strong>For agentic workers:</strong> REQUIRED SUB-SKILL: Use
+superpowers:subagent-driven-development (recommended) or
+superpowers:executing-plans to implement this plan task-by-task. Steps use
+checkbox (<code>- [ ]</code>) syntax for tracking.</p>
+</blockquote>
+<p><strong>Goal:</strong> Build a Python script that generates a CSV inventory of every column
+in every <code>kipptaf</code> mart model (plus structural-addition rows), ready for human
+review in a Google Sheet. Terminal state: initial CSV committed to
+<code>docs/superpowers/specs/</code>; no dbt model changes yet.</p>
+<p><strong>Architecture:</strong> Single PEP 723 script under <code>scripts/</code> with underscore name
+(for test importability via <code>importlib.util</code>). Reads YAML properties files under
+<code>src/dbt/kipptaf/models/marts/{bridges,dimensions,facts}/properties/</code> using
+stdlib via <code>yaml</code> (transitively available from <code>dbt-core</code>). Emits CSV via stdlib
+<code>csv</code>. Pure functions (no side effects) extracted for unit testing; <code>main()</code>
+orchestrates file I/O and writes the output CSV.</p>
+<p><strong>Tech Stack:</strong> Python 3.13, <code>uv run</code>, <code>pyyaml</code>, stdlib <code>csv</code>, <code>pytest</code>.</p>
+<p><strong>Scope note:</strong> This plan covers <strong>only</strong> the inventory-generation phase. A
+follow-up plan covers the implementation script that reads the <strong>approved</strong> CSV
+(after human sheet review) and emits the SQL + YAML edits.</p>
+<p><strong>Design reference:</strong>
+<a href="../../specs/2026-04-15-column-naming-audit/">2026-04-15-column-naming-audit.md</a></p>
+<hr />
+<h2 id="file-structure">File Structure</h2>
+<table>
+<thead>
+<tr>
+<th>File</th>
+<th>Responsibility</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>scripts/gen_column_naming_audit_inventory.py</code></td>
+<td>CREATE — main script; exposes pure helpers + <code>main()</code>.</td>
+</tr>
+<tr>
+<td><code>tests/test_gen_column_naming_audit_inventory.py</code></td>
+<td>CREATE — pytest unit tests; loads the script via <code>importlib.util</code>.</td>
+</tr>
+<tr>
+<td><code>tests/fixtures/mart_yaml/dim_sample.yml</code></td>
+<td>CREATE — minimal YAML fixture for <code>_read_mart_yaml</code> tests.</td>
+</tr>
+<tr>
+<td><code>docs/superpowers/specs/2026-04-15-column-naming-audit-inventory.csv</code></td>
+<td>CREATE — output CSV, committed so reviewers can import into the sheet.</td>
+</tr>
+<tr>
+<td><code>scripts/CLAUDE.md</code></td>
+<td>MODIFY — add the new script to the catalog table (one row, alphabetically).</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="conventions-used-in-this-plan">Conventions Used In This Plan</h2>
+<ul>
+<li>All paths are relative to the worktree root
+  <code>/workspaces/teamster/.worktrees/cbini/refactor/claude-column-naming-full-audit</code>.</li>
+<li>All shell commands are run from the worktree root unless noted.</li>
+<li>Python runs via <code>uv run</code> — never bare <code>python</code>.</li>
+<li>All commits use conventional commits (<code>feat(scripts): ...</code>, <code>test: ...</code>,
+  <code>docs: ...</code>).</li>
+<li>Stage changes with <code>git add &lt;explicit paths&gt;</code> in this plan — subagents must
+  name specific files per the project CLAUDE.md.</li>
+<li><code>trunk fmt</code> is handled by the PostToolUse hook — do not run manually.</li>
+</ul>
+<hr />
+<h2 id="task-1-create-the-script-skeleton-and-importable-test-harness">Task 1: Create the script skeleton and importable test harness</h2>
+<p><strong>Files:</strong></p>
+<ul class="task-list">
+<li>Create: <code>scripts/gen_column_naming_audit_inventory.py</code></li>
+<li>
+<p>Create: <code>tests/test_gen_column_naming_audit_inventory.py</code></p>
+</li>
+<li class="task-list-item">
+<p><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 1: Write the minimal script with PEP 723 header and module
+      docstring</strong></p>
+</li>
+</ul>
+<p>Write to <code>scripts/gen_column_naming_audit_inventory.py</code>:</p>
+<div class="highlight"><pre><span></span><code><span class="c1"># /// script</span>
+<span class="c1"># requires-python = &quot;&gt;=3.13&quot;</span>
+<span class="c1"># dependencies = [&quot;pyyaml&gt;=6.0&quot;]</span>
+<span class="c1"># ///</span>
+
+<span class="sd">&quot;&quot;&quot;Generate the column naming audit inventory CSV.</span>
+
+<span class="sd">Reads every YAML properties file under the kipptaf mart directories</span>
+<span class="sd">(bridges/dimensions/facts) and emits one CSV row per (model, column) pair</span>
+<span class="sd">plus pre-populated structural-addition rows for `dim_students` and</span>
+<span class="sd">`dim_staff`.</span>
+
+<span class="sd">Output: docs/superpowers/specs/2026-04-15-column-naming-audit-inventory.csv</span>
+
+<span class="sd">Usage:</span>
+<span class="sd">    uv run scripts/gen_column_naming_audit_inventory.py</span>
+
+<span class="sd">Design reference:</span>
+<span class="sd">    docs/superpowers/specs/2026-04-15-column-naming-audit.md</span>
+<span class="sd">&quot;&quot;&quot;</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">__future__</span><span class="w"> </span><span class="kn">import</span> <span class="n">annotations</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">main</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+    <span class="k">raise</span> <span class="ne">NotImplementedError</span>
+
+
+<span class="k">if</span> <span class="vm">__name__</span> <span class="o">==</span> <span class="s2">&quot;__main__&quot;</span><span class="p">:</span>
+    <span class="n">main</span><span class="p">()</span>
+</code></pre></div>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 2: Write the test harness that imports the script via
+      <code>importlib.util</code></strong></li>
+</ul>
+<p>Write to <code>tests/test_gen_column_naming_audit_inventory.py</code>:</p>
+<div class="highlight"><pre><span></span><code><span class="sd">&quot;&quot;&quot;Unit tests for scripts/gen_column_naming_audit_inventory.py.</span>
+
+<span class="sd">The script filename uses underscores specifically so we can import it.</span>
+<span class="sd">We use importlib.util rather than changing project-wide pytest config,</span>
+<span class="sd">keeping the import pattern local to this test file.</span>
+<span class="sd">&quot;&quot;&quot;</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">__future__</span><span class="w"> </span><span class="kn">import</span> <span class="n">annotations</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">importlib.util</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pathlib</span><span class="w"> </span><span class="kn">import</span> <span class="n">Path</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">types</span><span class="w"> </span><span class="kn">import</span> <span class="n">ModuleType</span>
+
+<span class="n">_REPO_ROOT</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(</span><span class="vm">__file__</span><span class="p">)</span><span class="o">.</span><span class="n">resolve</span><span class="p">()</span><span class="o">.</span><span class="n">parent</span><span class="o">.</span><span class="n">parent</span>
+<span class="n">_SCRIPT</span> <span class="o">=</span> <span class="n">_REPO_ROOT</span> <span class="o">/</span> <span class="s2">&quot;scripts&quot;</span> <span class="o">/</span> <span class="s2">&quot;gen_column_naming_audit_inventory.py&quot;</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_load_script</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="n">ModuleType</span><span class="p">:</span>
+    <span class="n">spec</span> <span class="o">=</span> <span class="n">importlib</span><span class="o">.</span><span class="n">util</span><span class="o">.</span><span class="n">spec_from_file_location</span><span class="p">(</span>
+        <span class="s2">&quot;gen_column_naming_audit_inventory&quot;</span><span class="p">,</span> <span class="n">_SCRIPT</span>
+    <span class="p">)</span>
+    <span class="k">assert</span> <span class="n">spec</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
+    <span class="k">assert</span> <span class="n">spec</span><span class="o">.</span><span class="n">loader</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
+    <span class="n">module</span> <span class="o">=</span> <span class="n">importlib</span><span class="o">.</span><span class="n">util</span><span class="o">.</span><span class="n">module_from_spec</span><span class="p">(</span><span class="n">spec</span><span class="p">)</span>
+    <span class="n">spec</span><span class="o">.</span><span class="n">loader</span><span class="o">.</span><span class="n">exec_module</span><span class="p">(</span><span class="n">module</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">module</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">test_script_module_loads</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+    <span class="n">module</span> <span class="o">=</span> <span class="n">_load_script</span><span class="p">()</span>
+    <span class="k">assert</span> <span class="nb">callable</span><span class="p">(</span><span class="n">module</span><span class="o">.</span><span class="n">main</span><span class="p">)</span>
+</code></pre></div>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 3: Run the smoke test and verify it passes</strong></li>
+</ul>
+<p>Run:</p>
+<div class="highlight"><pre><span></span><code>uv<span class="w"> </span>run<span class="w"> </span>pytest<span class="w"> </span>tests/test_gen_column_naming_audit_inventory.py<span class="w"> </span>-v
+</code></pre></div>
+<p>Expected: <code>test_script_module_loads PASSED</code>.</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 4: Commit</strong></li>
+</ul>
+<div class="highlight"><pre><span></span><code>git<span class="w"> </span>add<span class="w"> </span>scripts/gen_column_naming_audit_inventory.py<span class="w"> </span><span class="se">\</span>
+<span class="w">        </span>tests/test_gen_column_naming_audit_inventory.py
+git<span class="w"> </span>commit<span class="w"> </span>-m<span class="w"> </span><span class="s2">&quot;feat(scripts): scaffold column naming audit inventory script</span>
+
+<span class="s2">Empty skeleton with PEP 723 header and importable-via-importlib test harness.</span>
+<span class="s2">Tracked on #3643.&quot;</span>
+</code></pre></div>
+<hr />
+<h2 id="task-2-_flatten_description-collapse-multiline-yaml-descriptions">Task 2: <code>_flatten_description</code> — collapse multiline YAML descriptions</h2>
+<p><strong>Purpose:</strong> YAML descriptions use block scalars (<code>&gt;-</code>) that unfold into strings
+with embedded newlines and extra whitespace. The CSV needs them as single-line
+text. This helper flattens any whitespace sequence to one space and strips
+leading/trailing whitespace.</p>
+<p><strong>Files:</strong></p>
+<ul class="task-list">
+<li>Modify: <code>scripts/gen_column_naming_audit_inventory.py</code></li>
+<li>
+<p>Modify: <code>tests/test_gen_column_naming_audit_inventory.py</code></p>
+</li>
+<li class="task-list-item">
+<p><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 1: Write the failing tests</strong></p>
+</li>
+</ul>
+<p>Append to <code>tests/test_gen_column_naming_audit_inventory.py</code>:</p>
+<div class="highlight"><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">test_flatten_description_collapses_internal_whitespace</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+    <span class="n">module</span> <span class="o">=</span> <span class="n">_load_script</span><span class="p">()</span>
+    <span class="n">result</span> <span class="o">=</span> <span class="n">module</span><span class="o">.</span><span class="n">_flatten_description</span><span class="p">(</span><span class="s2">&quot;Student</span><span class="se">\n</span><span class="s2">  date   of</span><span class="se">\t</span><span class="s2">birth.&quot;</span><span class="p">)</span>
+    <span class="k">assert</span> <span class="n">result</span> <span class="o">==</span> <span class="s2">&quot;Student date of birth.&quot;</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">test_flatten_description_strips_edges</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+    <span class="n">module</span> <span class="o">=</span> <span class="n">_load_script</span><span class="p">()</span>
+    <span class="n">result</span> <span class="o">=</span> <span class="n">module</span><span class="o">.</span><span class="n">_flatten_description</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">  hello world  </span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">)</span>
+    <span class="k">assert</span> <span class="n">result</span> <span class="o">==</span> <span class="s2">&quot;hello world&quot;</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">test_flatten_description_handles_empty_and_none</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+    <span class="n">module</span> <span class="o">=</span> <span class="n">_load_script</span><span class="p">()</span>
+    <span class="k">assert</span> <span class="n">module</span><span class="o">.</span><span class="n">_flatten_description</span><span class="p">(</span><span class="s2">&quot;&quot;</span><span class="p">)</span> <span class="o">==</span> <span class="s2">&quot;&quot;</span>
+    <span class="k">assert</span> <span class="n">module</span><span class="o">.</span><span class="n">_flatten_description</span><span class="p">(</span><span class="kc">None</span><span class="p">)</span> <span class="o">==</span> <span class="s2">&quot;&quot;</span>
+</code></pre></div>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 2: Run tests; verify they fail</strong></li>
+</ul>
+<p>Run:</p>
+<div class="highlight"><pre><span></span><code>uv<span class="w"> </span>run<span class="w"> </span>pytest<span class="w"> </span>tests/test_gen_column_naming_audit_inventory.py<span class="w"> </span>-v<span class="w"> </span>-k<span class="w"> </span>flatten_description
+</code></pre></div>
+<p>Expected: three tests fail with
+<code>AttributeError: module ... has no attribute '_flatten_description'</code>.</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 3: Implement <code>_flatten_description</code></strong></li>
+</ul>
+<p>Insert above <code>main()</code> in <code>scripts/gen_column_naming_audit_inventory.py</code>:</p>
+<div class="highlight"><pre><span></span><code><span class="kn">import</span><span class="w"> </span><span class="nn">re</span>
+
+<span class="n">_WS_RE</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">compile</span><span class="p">(</span><span class="sa">r</span><span class="s2">&quot;\s+&quot;</span><span class="p">)</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_flatten_description</span><span class="p">(</span><span class="n">text</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Collapse whitespace runs to single spaces and strip edges.&quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">text</span><span class="p">:</span>
+        <span class="k">return</span> <span class="s2">&quot;&quot;</span>
+    <span class="k">return</span> <span class="n">_WS_RE</span><span class="o">.</span><span class="n">sub</span><span class="p">(</span><span class="s2">&quot; &quot;</span><span class="p">,</span> <span class="n">text</span><span class="p">)</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span>
+</code></pre></div>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 4: Run tests; verify they pass</strong></li>
+</ul>
+<p>Run:</p>
+<div class="highlight"><pre><span></span><code>uv<span class="w"> </span>run<span class="w"> </span>pytest<span class="w"> </span>tests/test_gen_column_naming_audit_inventory.py<span class="w"> </span>-v<span class="w"> </span>-k<span class="w"> </span>flatten_description
+</code></pre></div>
+<p>Expected: three tests pass.</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 5: Commit</strong></li>
+</ul>
+<div class="highlight"><pre><span></span><code>git<span class="w"> </span>add<span class="w"> </span>scripts/gen_column_naming_audit_inventory.py<span class="w"> </span><span class="se">\</span>
+<span class="w">        </span>tests/test_gen_column_naming_audit_inventory.py
+git<span class="w"> </span>commit<span class="w"> </span>-m<span class="w"> </span><span class="s2">&quot;feat(scripts): add _flatten_description helper</span>
+
+<span class="s2">Collapses multiline YAML description strings to single-line CSV-safe text.</span>
+<span class="s2">Tracked on #3643.&quot;</span>
+</code></pre></div>
+<hr />
+<h2 id="task-3-_domain_for_model-classify-model-name-to-audit-domain">Task 3: <code>_domain_for_model</code> — classify model name to audit domain</h2>
+<p><strong>Purpose:</strong> Group CSV rows by domain (Conformed, Student, Staff, Course,
+Assessment, College, Observation, Attendance, Behavioral, Gradebook, Survey,
+Talent, Staffing, IT). Reviewers filter the sheet by domain to focus their
+review passes. Domain is inferred from the model name prefix.</p>
+<p><strong>Files:</strong></p>
+<ul class="task-list">
+<li>Modify: <code>scripts/gen_column_naming_audit_inventory.py</code></li>
+<li>
+<p>Modify: <code>tests/test_gen_column_naming_audit_inventory.py</code></p>
+</li>
+<li class="task-list-item">
+<p><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 1: Write the failing tests</strong></p>
+</li>
+</ul>
+<p>Append to <code>tests/test_gen_column_naming_audit_inventory.py</code>:</p>
+<div class="highlight"><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">test_domain_for_model_conformed</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+    <span class="n">module</span> <span class="o">=</span> <span class="n">_load_script</span><span class="p">()</span>
+    <span class="k">assert</span> <span class="n">module</span><span class="o">.</span><span class="n">_domain_for_model</span><span class="p">(</span><span class="s2">&quot;dim_dates&quot;</span><span class="p">)</span> <span class="o">==</span> <span class="s2">&quot;Conformed&quot;</span>
+    <span class="k">assert</span> <span class="n">module</span><span class="o">.</span><span class="n">_domain_for_model</span><span class="p">(</span><span class="s2">&quot;dim_locations&quot;</span><span class="p">)</span> <span class="o">==</span> <span class="s2">&quot;Conformed&quot;</span>
+    <span class="k">assert</span> <span class="n">module</span><span class="o">.</span><span class="n">_domain_for_model</span><span class="p">(</span><span class="s2">&quot;dim_regions&quot;</span><span class="p">)</span> <span class="o">==</span> <span class="s2">&quot;Conformed&quot;</span>
+    <span class="k">assert</span> <span class="n">module</span><span class="o">.</span><span class="n">_domain_for_model</span><span class="p">(</span><span class="s2">&quot;dim_school_calendars&quot;</span><span class="p">)</span> <span class="o">==</span> <span class="s2">&quot;Conformed&quot;</span>
+    <span class="k">assert</span> <span class="n">module</span><span class="o">.</span><span class="n">_domain_for_model</span><span class="p">(</span><span class="s2">&quot;dim_terms&quot;</span><span class="p">)</span> <span class="o">==</span> <span class="s2">&quot;Conformed&quot;</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">test_domain_for_model_student</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+    <span class="n">module</span> <span class="o">=</span> <span class="n">_load_script</span><span class="p">()</span>
+    <span class="k">assert</span> <span class="n">module</span><span class="o">.</span><span class="n">_domain_for_model</span><span class="p">(</span><span class="s2">&quot;dim_students&quot;</span><span class="p">)</span> <span class="o">==</span> <span class="s2">&quot;Student&quot;</span>
+    <span class="k">assert</span> <span class="n">module</span><span class="o">.</span><span class="n">_domain_for_model</span><span class="p">(</span><span class="s2">&quot;dim_student_enrollments&quot;</span><span class="p">)</span> <span class="o">==</span> <span class="s2">&quot;Student&quot;</span>
+    <span class="k">assert</span> <span class="n">module</span><span class="o">.</span><span class="n">_domain_for_model</span><span class="p">(</span><span class="s2">&quot;bridge_student_contacts&quot;</span><span class="p">)</span> <span class="o">==</span> <span class="s2">&quot;Student&quot;</span>
+    <span class="k">assert</span> <span class="n">module</span><span class="o">.</span><span class="n">_domain_for_model</span><span class="p">(</span><span class="s2">&quot;fct_student_attendance_daily&quot;</span><span class="p">)</span> <span class="o">==</span> <span class="s2">&quot;Attendance&quot;</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">test_domain_for_model_staff</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+    <span class="n">module</span> <span class="o">=</span> <span class="n">_load_script</span><span class="p">()</span>
+    <span class="k">assert</span> <span class="n">module</span><span class="o">.</span><span class="n">_domain_for_model</span><span class="p">(</span><span class="s2">&quot;dim_staff&quot;</span><span class="p">)</span> <span class="o">==</span> <span class="s2">&quot;Staff&quot;</span>
+    <span class="k">assert</span> <span class="n">module</span><span class="o">.</span><span class="n">_domain_for_model</span><span class="p">(</span><span class="s2">&quot;dim_staff_work_assignments&quot;</span><span class="p">)</span> <span class="o">==</span> <span class="s2">&quot;Staff&quot;</span>
+    <span class="k">assert</span> <span class="n">module</span><span class="o">.</span><span class="n">_domain_for_model</span><span class="p">(</span><span class="s2">&quot;dim_staff_observation_types&quot;</span><span class="p">)</span> <span class="o">==</span> <span class="s2">&quot;Observation&quot;</span>
+    <span class="k">assert</span> <span class="n">module</span><span class="o">.</span><span class="n">_domain_for_model</span><span class="p">(</span><span class="s2">&quot;fct_staff_observations&quot;</span><span class="p">)</span> <span class="o">==</span> <span class="s2">&quot;Observation&quot;</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">test_domain_for_model_other_domains</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+    <span class="n">module</span> <span class="o">=</span> <span class="n">_load_script</span><span class="p">()</span>
+    <span class="k">assert</span> <span class="n">module</span><span class="o">.</span><span class="n">_domain_for_model</span><span class="p">(</span><span class="s2">&quot;dim_assessments&quot;</span><span class="p">)</span> <span class="o">==</span> <span class="s2">&quot;Assessment&quot;</span>
+    <span class="k">assert</span> <span class="n">module</span><span class="o">.</span><span class="n">_domain_for_model</span><span class="p">(</span><span class="s2">&quot;dim_colleges&quot;</span><span class="p">)</span> <span class="o">==</span> <span class="s2">&quot;College&quot;</span>
+    <span class="k">assert</span> <span class="n">module</span><span class="o">.</span><span class="n">_domain_for_model</span><span class="p">(</span><span class="s2">&quot;fct_behavioral_incidents&quot;</span><span class="p">)</span> <span class="o">==</span> <span class="s2">&quot;Behavioral&quot;</span>
+    <span class="k">assert</span> <span class="n">module</span><span class="o">.</span><span class="n">_domain_for_model</span><span class="p">(</span><span class="s2">&quot;fct_family_communications&quot;</span><span class="p">)</span> <span class="o">==</span> <span class="s2">&quot;Behavioral&quot;</span>
+    <span class="k">assert</span> <span class="n">module</span><span class="o">.</span><span class="n">_domain_for_model</span><span class="p">(</span><span class="s2">&quot;fct_grades_term&quot;</span><span class="p">)</span> <span class="o">==</span> <span class="s2">&quot;Gradebook&quot;</span>
+    <span class="k">assert</span> <span class="n">module</span><span class="o">.</span><span class="n">_domain_for_model</span><span class="p">(</span><span class="s2">&quot;dim_surveys&quot;</span><span class="p">)</span> <span class="o">==</span> <span class="s2">&quot;Survey&quot;</span>
+    <span class="k">assert</span> <span class="n">module</span><span class="o">.</span><span class="n">_domain_for_model</span><span class="p">(</span><span class="s2">&quot;dim_job_postings&quot;</span><span class="p">)</span> <span class="o">==</span> <span class="s2">&quot;Talent&quot;</span>
+    <span class="k">assert</span> <span class="n">module</span><span class="o">.</span><span class="n">_domain_for_model</span><span class="p">(</span><span class="s2">&quot;dim_staffing_positions&quot;</span><span class="p">)</span> <span class="o">==</span> <span class="s2">&quot;Staffing&quot;</span>
+    <span class="k">assert</span> <span class="n">module</span><span class="o">.</span><span class="n">_domain_for_model</span><span class="p">(</span><span class="s2">&quot;fct_support_tickets&quot;</span><span class="p">)</span> <span class="o">==</span> <span class="s2">&quot;IT&quot;</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">test_domain_for_model_course</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+    <span class="n">module</span> <span class="o">=</span> <span class="n">_load_script</span><span class="p">()</span>
+    <span class="k">assert</span> <span class="n">module</span><span class="o">.</span><span class="n">_domain_for_model</span><span class="p">(</span><span class="s2">&quot;dim_courses&quot;</span><span class="p">)</span> <span class="o">==</span> <span class="s2">&quot;Course&quot;</span>
+    <span class="k">assert</span> <span class="n">module</span><span class="o">.</span><span class="n">_domain_for_model</span><span class="p">(</span><span class="s2">&quot;dim_course_sections&quot;</span><span class="p">)</span> <span class="o">==</span> <span class="s2">&quot;Course&quot;</span>
+    <span class="k">assert</span> <span class="n">module</span><span class="o">.</span><span class="n">_domain_for_model</span><span class="p">(</span><span class="s2">&quot;bridge_course_section_teachers&quot;</span><span class="p">)</span> <span class="o">==</span> <span class="s2">&quot;Course&quot;</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">test_domain_for_model_unknown_returns_uncategorized</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+    <span class="n">module</span> <span class="o">=</span> <span class="n">_load_script</span><span class="p">()</span>
+    <span class="k">assert</span> <span class="n">module</span><span class="o">.</span><span class="n">_domain_for_model</span><span class="p">(</span><span class="s2">&quot;dim_wild_card_thing&quot;</span><span class="p">)</span> <span class="o">==</span> <span class="s2">&quot;Uncategorized&quot;</span>
+</code></pre></div>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 2: Run tests; verify they fail</strong></li>
+</ul>
+<p>Run:</p>
+<div class="highlight"><pre><span></span><code>uv<span class="w"> </span>run<span class="w"> </span>pytest<span class="w"> </span>tests/test_gen_column_naming_audit_inventory.py<span class="w"> </span>-v<span class="w"> </span>-k<span class="w"> </span>domain_for_model
+</code></pre></div>
+<p>Expected: all fail with <code>AttributeError</code>.</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 3: Implement <code>_domain_for_model</code></strong></li>
+</ul>
+<p>Add to <code>scripts/gen_column_naming_audit_inventory.py</code> below
+<code>_flatten_description</code>:</p>
+<div class="highlight"><pre><span></span><code><span class="n">_DOMAIN_RULES</span><span class="p">:</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">tuple</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">],</span> <span class="o">...</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span>
+    <span class="c1"># (substring-in-model-name, domain). Order matters — first match wins.</span>
+    <span class="p">(</span><span class="s2">&quot;staff_observation&quot;</span><span class="p">,</span> <span class="s2">&quot;Observation&quot;</span><span class="p">),</span>
+    <span class="p">(</span><span class="s2">&quot;staff_attrition&quot;</span><span class="p">,</span> <span class="s2">&quot;Staff&quot;</span><span class="p">),</span>
+    <span class="p">(</span><span class="s2">&quot;staff_benefits&quot;</span><span class="p">,</span> <span class="s2">&quot;Staff&quot;</span><span class="p">),</span>
+    <span class="p">(</span><span class="s2">&quot;staff_membership&quot;</span><span class="p">,</span> <span class="s2">&quot;Staff&quot;</span><span class="p">),</span>
+    <span class="p">(</span><span class="s2">&quot;staff_status&quot;</span><span class="p">,</span> <span class="s2">&quot;Staff&quot;</span><span class="p">),</span>
+    <span class="p">(</span><span class="s2">&quot;staff_work_assignment&quot;</span><span class="p">,</span> <span class="s2">&quot;Staff&quot;</span><span class="p">),</span>
+    <span class="p">(</span><span class="s2">&quot;work_assignment&quot;</span><span class="p">,</span> <span class="s2">&quot;Staff&quot;</span><span class="p">),</span>
+    <span class="p">(</span><span class="s2">&quot;staffing&quot;</span><span class="p">,</span> <span class="s2">&quot;Staffing&quot;</span><span class="p">),</span>
+    <span class="p">(</span><span class="s2">&quot;student_attendance&quot;</span><span class="p">,</span> <span class="s2">&quot;Attendance&quot;</span><span class="p">),</span>
+    <span class="p">(</span><span class="s2">&quot;student_contact&quot;</span><span class="p">,</span> <span class="s2">&quot;Student&quot;</span><span class="p">),</span>
+    <span class="p">(</span><span class="s2">&quot;student_section_enrollment&quot;</span><span class="p">,</span> <span class="s2">&quot;Student&quot;</span><span class="p">),</span>
+    <span class="p">(</span><span class="s2">&quot;student_enrollment&quot;</span><span class="p">,</span> <span class="s2">&quot;Student&quot;</span><span class="p">),</span>
+    <span class="p">(</span><span class="s2">&quot;student_assessment_expectation&quot;</span><span class="p">,</span> <span class="s2">&quot;Assessment&quot;</span><span class="p">),</span>
+    <span class="p">(</span><span class="s2">&quot;behavioral&quot;</span><span class="p">,</span> <span class="s2">&quot;Behavioral&quot;</span><span class="p">),</span>
+    <span class="p">(</span><span class="s2">&quot;family_communication&quot;</span><span class="p">,</span> <span class="s2">&quot;Behavioral&quot;</span><span class="p">),</span>
+    <span class="p">(</span><span class="s2">&quot;grade&quot;</span><span class="p">,</span> <span class="s2">&quot;Gradebook&quot;</span><span class="p">),</span>
+    <span class="p">(</span><span class="s2">&quot;assessment&quot;</span><span class="p">,</span> <span class="s2">&quot;Assessment&quot;</span><span class="p">),</span>
+    <span class="p">(</span><span class="s2">&quot;college&quot;</span><span class="p">,</span> <span class="s2">&quot;College&quot;</span><span class="p">),</span>
+    <span class="p">(</span><span class="s2">&quot;survey&quot;</span><span class="p">,</span> <span class="s2">&quot;Survey&quot;</span><span class="p">),</span>
+    <span class="p">(</span><span class="s2">&quot;course&quot;</span><span class="p">,</span> <span class="s2">&quot;Course&quot;</span><span class="p">),</span>
+    <span class="p">(</span><span class="s2">&quot;job_candidate&quot;</span><span class="p">,</span> <span class="s2">&quot;Talent&quot;</span><span class="p">),</span>
+    <span class="p">(</span><span class="s2">&quot;job_posting&quot;</span><span class="p">,</span> <span class="s2">&quot;Talent&quot;</span><span class="p">),</span>
+    <span class="p">(</span><span class="s2">&quot;support_ticket&quot;</span><span class="p">,</span> <span class="s2">&quot;IT&quot;</span><span class="p">),</span>
+    <span class="p">(</span><span class="s2">&quot;student&quot;</span><span class="p">,</span> <span class="s2">&quot;Student&quot;</span><span class="p">),</span>
+    <span class="p">(</span><span class="s2">&quot;staff&quot;</span><span class="p">,</span> <span class="s2">&quot;Staff&quot;</span><span class="p">),</span>
+<span class="p">)</span>
+
+<span class="n">_CONFORMED_MODELS</span> <span class="o">=</span> <span class="nb">frozenset</span><span class="p">(</span>
+    <span class="p">[</span>
+        <span class="s2">&quot;dim_dates&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;dim_locations&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;dim_regions&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;dim_school_calendars&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;dim_terms&quot;</span><span class="p">,</span>
+    <span class="p">]</span>
+<span class="p">)</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_domain_for_model</span><span class="p">(</span><span class="n">model_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Classify a mart model name into an audit-review domain.&quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="n">model_name</span> <span class="ow">in</span> <span class="n">_CONFORMED_MODELS</span><span class="p">:</span>
+        <span class="k">return</span> <span class="s2">&quot;Conformed&quot;</span>
+    <span class="k">for</span> <span class="n">substring</span><span class="p">,</span> <span class="n">domain</span> <span class="ow">in</span> <span class="n">_DOMAIN_RULES</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">substring</span> <span class="ow">in</span> <span class="n">model_name</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">domain</span>
+    <span class="k">return</span> <span class="s2">&quot;Uncategorized&quot;</span>
+</code></pre></div>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 4: Run tests; verify they pass</strong></li>
+</ul>
+<p>Run:</p>
+<div class="highlight"><pre><span></span><code>uv<span class="w"> </span>run<span class="w"> </span>pytest<span class="w"> </span>tests/test_gen_column_naming_audit_inventory.py<span class="w"> </span>-v<span class="w"> </span>-k<span class="w"> </span>domain_for_model
+</code></pre></div>
+<p>Expected: all six pass.</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 5: Commit</strong></li>
+</ul>
+<div class="highlight"><pre><span></span><code>git<span class="w"> </span>add<span class="w"> </span>scripts/gen_column_naming_audit_inventory.py<span class="w"> </span><span class="se">\</span>
+<span class="w">        </span>tests/test_gen_column_naming_audit_inventory.py
+git<span class="w"> </span>commit<span class="w"> </span>-m<span class="w"> </span><span class="s2">&quot;feat(scripts): add _domain_for_model classifier</span>
+
+<span class="s2">Maps mart model names to audit domains for sheet-level filtering.</span>
+<span class="s2">Tracked on #3643.&quot;</span>
+</code></pre></div>
+<hr />
+<h2 id="task-4-_plumbing_columns-constant-set-of-columns-slated-for-removal">Task 4: <code>_plumbing_columns</code> — constant set of columns slated for removal</h2>
+<p><strong>Purpose:</strong> Known plumbing column names (e.g., <code>_dbt_source_relation</code>) get a
+default <code>action=remove</code> and <code>rule_ref=plumbing</code> in the CSV. The list is
+conservative — edge cases are flagged for review rather than auto-removed.</p>
+<p><strong>Files:</strong></p>
+<ul class="task-list">
+<li>Modify: <code>scripts/gen_column_naming_audit_inventory.py</code></li>
+<li>
+<p>Modify: <code>tests/test_gen_column_naming_audit_inventory.py</code></p>
+</li>
+<li class="task-list-item">
+<p><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 1: Write the failing tests</strong></p>
+</li>
+</ul>
+<p>Append to <code>tests/test_gen_column_naming_audit_inventory.py</code>:</p>
+<div class="highlight"><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">test_plumbing_columns_includes_dbt_source_relation</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+    <span class="n">module</span> <span class="o">=</span> <span class="n">_load_script</span><span class="p">()</span>
+    <span class="k">assert</span> <span class="s2">&quot;_dbt_source_relation&quot;</span> <span class="ow">in</span> <span class="n">module</span><span class="o">.</span><span class="n">_plumbing_columns</span><span class="p">()</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">test_plumbing_columns_returns_frozenset</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+    <span class="n">module</span> <span class="o">=</span> <span class="n">_load_script</span><span class="p">()</span>
+    <span class="n">result</span> <span class="o">=</span> <span class="n">module</span><span class="o">.</span><span class="n">_plumbing_columns</span><span class="p">()</span>
+    <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">result</span><span class="p">,</span> <span class="nb">frozenset</span><span class="p">)</span>
+</code></pre></div>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 2: Run tests; verify they fail</strong></li>
+</ul>
+<p>Run:</p>
+<div class="highlight"><pre><span></span><code>uv<span class="w"> </span>run<span class="w"> </span>pytest<span class="w"> </span>tests/test_gen_column_naming_audit_inventory.py<span class="w"> </span>-v<span class="w"> </span>-k<span class="w"> </span>plumbing
+</code></pre></div>
+<p>Expected: both fail with <code>AttributeError</code>.</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 3: Implement <code>_plumbing_columns</code></strong></li>
+</ul>
+<p>Add to <code>scripts/gen_column_naming_audit_inventory.py</code>:</p>
+<div class="highlight"><pre><span></span><code><span class="n">_PLUMBING_COLUMNS</span><span class="p">:</span> <span class="nb">frozenset</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="nb">frozenset</span><span class="p">(</span>
+    <span class="p">[</span>
+        <span class="s2">&quot;_dbt_source_relation&quot;</span><span class="p">,</span>
+    <span class="p">]</span>
+<span class="p">)</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_plumbing_columns</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="nb">frozenset</span><span class="p">[</span><span class="nb">str</span><span class="p">]:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Columns whose default audit action is &#39;remove&#39; (plumbing).&quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="n">_PLUMBING_COLUMNS</span>
+</code></pre></div>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 4: Run tests; verify they pass</strong></li>
+</ul>
+<p>Run:</p>
+<div class="highlight"><pre><span></span><code>uv<span class="w"> </span>run<span class="w"> </span>pytest<span class="w"> </span>tests/test_gen_column_naming_audit_inventory.py<span class="w"> </span>-v<span class="w"> </span>-k<span class="w"> </span>plumbing
+</code></pre></div>
+<p>Expected: both pass.</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 5: Commit</strong></li>
+</ul>
+<div class="highlight"><pre><span></span><code>git<span class="w"> </span>add<span class="w"> </span>scripts/gen_column_naming_audit_inventory.py<span class="w"> </span><span class="se">\</span>
+<span class="w">        </span>tests/test_gen_column_naming_audit_inventory.py
+git<span class="w"> </span>commit<span class="w"> </span>-m<span class="w"> </span><span class="s2">&quot;feat(scripts): add _plumbing_columns set</span>
+
+<span class="s2">Seeds the audit with known plumbing columns that default to action=remove.</span>
+<span class="s2">Additional edge cases are flagged for reviewer judgment.</span>
+<span class="s2">Tracked on #3643.&quot;</span>
+</code></pre></div>
+<hr />
+<h2 id="task-5-_initial_rename_guess-pre-populate-obvious-renames">Task 5: <code>_initial_rename_guess</code> — pre-populate obvious renames</h2>
+<p><strong>Purpose:</strong> For column names that appear in the existing 67-rename audit list
+(Issue #3643 original), pre-populate <code>proposed_name</code> and <code>rule_ref</code> so reviewers
+have a starting point. Reviewers can accept, reject, or alter. The guess list is
+bounded — only high-confidence source-jargon cases are encoded; everything else
+defaults to <code>keep</code> with empty proposal.</p>
+<p><strong>Files:</strong></p>
+<ul class="task-list">
+<li>Modify: <code>scripts/gen_column_naming_audit_inventory.py</code></li>
+<li>
+<p>Modify: <code>tests/test_gen_column_naming_audit_inventory.py</code></p>
+</li>
+<li class="task-list-item">
+<p><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 1: Write the failing tests</strong></p>
+</li>
+</ul>
+<p>Append to <code>tests/test_gen_column_naming_audit_inventory.py</code>:</p>
+<div class="highlight"><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">test_initial_rename_guess_student_number</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+    <span class="n">module</span> <span class="o">=</span> <span class="n">_load_script</span><span class="p">()</span>
+    <span class="n">result</span> <span class="o">=</span> <span class="n">module</span><span class="o">.</span><span class="n">_initial_rename_guess</span><span class="p">(</span><span class="s2">&quot;student_number&quot;</span><span class="p">)</span>
+    <span class="k">assert</span> <span class="n">result</span> <span class="o">==</span> <span class="p">(</span><span class="s2">&quot;local_student_identifier&quot;</span><span class="p">,</span> <span class="s2">&quot;R1&quot;</span><span class="p">)</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">test_initial_rename_guess_employee_number</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+    <span class="n">module</span> <span class="o">=</span> <span class="n">_load_script</span><span class="p">()</span>
+    <span class="n">result</span> <span class="o">=</span> <span class="n">module</span><span class="o">.</span><span class="n">_initial_rename_guess</span><span class="p">(</span><span class="s2">&quot;employee_number&quot;</span><span class="p">)</span>
+    <span class="k">assert</span> <span class="n">result</span> <span class="o">==</span> <span class="p">(</span><span class="s2">&quot;local_staff_identifier&quot;</span><span class="p">,</span> <span class="s2">&quot;R2&quot;</span><span class="p">)</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">test_initial_rename_guess_formatted_name</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+    <span class="n">module</span> <span class="o">=</span> <span class="n">_load_script</span><span class="p">()</span>
+    <span class="n">result</span> <span class="o">=</span> <span class="n">module</span><span class="o">.</span><span class="n">_initial_rename_guess</span><span class="p">(</span><span class="s2">&quot;formatted_name&quot;</span><span class="p">)</span>
+    <span class="k">assert</span> <span class="n">result</span> <span class="o">==</span> <span class="p">(</span><span class="s2">&quot;full_name&quot;</span><span class="p">,</span> <span class="s2">&quot;R6&quot;</span><span class="p">)</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">test_initial_rename_guess_unmapped_returns_none</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+    <span class="n">module</span> <span class="o">=</span> <span class="n">_load_script</span><span class="p">()</span>
+    <span class="k">assert</span> <span class="n">module</span><span class="o">.</span><span class="n">_initial_rename_guess</span><span class="p">(</span><span class="s2">&quot;student_key&quot;</span><span class="p">)</span> <span class="ow">is</span> <span class="kc">None</span>
+    <span class="k">assert</span> <span class="n">module</span><span class="o">.</span><span class="n">_initial_rename_guess</span><span class="p">(</span><span class="s2">&quot;made_up_column&quot;</span><span class="p">)</span> <span class="ow">is</span> <span class="kc">None</span>
+</code></pre></div>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 2: Run tests; verify they fail</strong></li>
+</ul>
+<p>Run:</p>
+<div class="highlight"><pre><span></span><code>uv<span class="w"> </span>run<span class="w"> </span>pytest<span class="w"> </span>tests/test_gen_column_naming_audit_inventory.py<span class="w"> </span>-v<span class="w"> </span>-k<span class="w"> </span>initial_rename
+</code></pre></div>
+<p>Expected: all fail with <code>AttributeError</code>.</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 3: Implement <code>_initial_rename_guess</code></strong></li>
+</ul>
+<p>Add to <code>scripts/gen_column_naming_audit_inventory.py</code>:</p>
+<div class="highlight"><pre><span></span><code><span class="c1"># Pre-populated rename guesses carried over from the original 67-column</span>
+<span class="c1"># audit. Each entry is (current_name, (proposed_name, rule_ref)). The rule</span>
+<span class="c1"># references the rubric section in</span>
+<span class="c1"># docs/superpowers/specs/2026-04-15-column-naming-audit.md.</span>
+<span class="n">_RENAME_GUESSES</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">]]</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="c1"># Rule 1 — strip source-system names (student identifier)</span>
+    <span class="s2">&quot;student_number&quot;</span><span class="p">:</span> <span class="p">(</span><span class="s2">&quot;local_student_identifier&quot;</span><span class="p">,</span> <span class="s2">&quot;R1&quot;</span><span class="p">),</span>
+    <span class="c1"># Rule 2 — no KIPP-specific language (staff identifier)</span>
+    <span class="s2">&quot;employee_number&quot;</span><span class="p">:</span> <span class="p">(</span><span class="s2">&quot;local_staff_identifier&quot;</span><span class="p">,</span> <span class="s2">&quot;R2&quot;</span><span class="p">),</span>
+    <span class="s2">&quot;teacher_employee_number&quot;</span><span class="p">:</span> <span class="p">(</span><span class="s2">&quot;teacher_staff_identifier&quot;</span><span class="p">,</span> <span class="s2">&quot;R2&quot;</span><span class="p">),</span>
+    <span class="s2">&quot;observer_employee_number&quot;</span><span class="p">:</span> <span class="p">(</span><span class="s2">&quot;observer_staff_identifier&quot;</span><span class="p">,</span> <span class="s2">&quot;R2&quot;</span><span class="p">),</span>
+    <span class="s2">&quot;teammate_employee_number&quot;</span><span class="p">:</span> <span class="p">(</span><span class="s2">&quot;teammate_staff_identifier&quot;</span><span class="p">,</span> <span class="s2">&quot;R2&quot;</span><span class="p">),</span>
+    <span class="s2">&quot;recruiter_employee_number&quot;</span><span class="p">:</span> <span class="p">(</span><span class="s2">&quot;recruiter_staff_identifier&quot;</span><span class="p">,</span> <span class="s2">&quot;R2&quot;</span><span class="p">),</span>
+    <span class="c1"># Rule 6 — Ed-Fi / plain English for person names</span>
+    <span class="s2">&quot;formatted_name&quot;</span><span class="p">:</span> <span class="p">(</span><span class="s2">&quot;full_name&quot;</span><span class="p">,</span> <span class="s2">&quot;R6&quot;</span><span class="p">),</span>
+    <span class="s2">&quot;family_name_1&quot;</span><span class="p">:</span> <span class="p">(</span><span class="s2">&quot;last_name&quot;</span><span class="p">,</span> <span class="s2">&quot;R6&quot;</span><span class="p">),</span>
+    <span class="s2">&quot;given_name&quot;</span><span class="p">:</span> <span class="p">(</span><span class="s2">&quot;first_name&quot;</span><span class="p">,</span> <span class="s2">&quot;R6&quot;</span><span class="p">),</span>
+    <span class="s2">&quot;manager_formatted_name&quot;</span><span class="p">:</span> <span class="p">(</span><span class="s2">&quot;manager_full_name&quot;</span><span class="p">,</span> <span class="s2">&quot;R6&quot;</span><span class="p">),</span>
+    <span class="s2">&quot;manager_family_name_1&quot;</span><span class="p">:</span> <span class="p">(</span><span class="s2">&quot;manager_last_name&quot;</span><span class="p">,</span> <span class="s2">&quot;R6&quot;</span><span class="p">),</span>
+    <span class="s2">&quot;manager_given_name&quot;</span><span class="p">:</span> <span class="p">(</span><span class="s2">&quot;manager_first_name&quot;</span><span class="p">,</span> <span class="s2">&quot;R6&quot;</span><span class="p">),</span>
+    <span class="c1"># Rule 1 — PowerSchool identifier stripping</span>
+    <span class="s2">&quot;powerschool_school_id&quot;</span><span class="p">:</span> <span class="p">(</span><span class="s2">&quot;sis_school_id&quot;</span><span class="p">,</span> <span class="s2">&quot;R1&quot;</span><span class="p">),</span>
+    <span class="s2">&quot;deanslist_school_id&quot;</span><span class="p">:</span> <span class="p">(</span><span class="s2">&quot;behavior_system_school_id&quot;</span><span class="p">,</span> <span class="s2">&quot;R1&quot;</span><span class="p">),</span>
+    <span class="s2">&quot;powerschool_term_id&quot;</span><span class="p">:</span> <span class="p">(</span><span class="s2">&quot;sis_term_id&quot;</span><span class="p">,</span> <span class="s2">&quot;R1&quot;</span><span class="p">),</span>
+    <span class="s2">&quot;powerschool_year_id&quot;</span><span class="p">:</span> <span class="p">(</span><span class="s2">&quot;sis_year_id&quot;</span><span class="p">,</span> <span class="s2">&quot;R1&quot;</span><span class="p">),</span>
+    <span class="s2">&quot;powerschool_person_id&quot;</span><span class="p">:</span> <span class="p">(</span><span class="s2">&quot;contact_person_id&quot;</span><span class="p">,</span> <span class="s2">&quot;R1&quot;</span><span class="p">),</span>
+    <span class="s2">&quot;sections_dcid&quot;</span><span class="p">:</span> <span class="p">(</span><span class="s2">&quot;section_id&quot;</span><span class="p">,</span> <span class="s2">&quot;R1&quot;</span><span class="p">),</span>
+    <span class="s2">&quot;teachernumber&quot;</span><span class="p">:</span> <span class="p">(</span><span class="s2">&quot;teacher_number&quot;</span><span class="p">,</span> <span class="s2">&quot;R1&quot;</span><span class="p">),</span>
+<span class="p">}</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_initial_rename_guess</span><span class="p">(</span><span class="n">column_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Return (proposed_name, rule_ref) for known renames, else None.&quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="n">_RENAME_GUESSES</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">column_name</span><span class="p">)</span>
+</code></pre></div>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 4: Run tests; verify they pass</strong></li>
+</ul>
+<p>Run:</p>
+<div class="highlight"><pre><span></span><code>uv<span class="w"> </span>run<span class="w"> </span>pytest<span class="w"> </span>tests/test_gen_column_naming_audit_inventory.py<span class="w"> </span>-v<span class="w"> </span>-k<span class="w"> </span>initial_rename
+</code></pre></div>
+<p>Expected: all four pass.</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 5: Commit</strong></li>
+</ul>
+<div class="highlight"><pre><span></span><code>git<span class="w"> </span>add<span class="w"> </span>scripts/gen_column_naming_audit_inventory.py<span class="w"> </span><span class="se">\</span>
+<span class="w">        </span>tests/test_gen_column_naming_audit_inventory.py
+git<span class="w"> </span>commit<span class="w"> </span>-m<span class="w"> </span><span class="s2">&quot;feat(scripts): add _initial_rename_guess helper</span>
+
+<span class="s2">Pre-populates proposed_name + rule_ref for the high-confidence subset of</span>
+<span class="s2">renames from the original #3643 audit. Reviewers accept/override per row.</span>
+<span class="s2">Tracked on #3643.&quot;</span>
+</code></pre></div>
+<hr />
+<h2 id="task-6-_structural_additions-pre-populated-new-column-rows">Task 6: <code>_structural_additions</code> — pre-populated new-column rows</h2>
+<p><strong>Purpose:</strong> The audit CSV must include rows for the new columns the spec adds
+to <code>dim_students</code> (MDCPS ID, Salesforce contact ID) and <code>dim_staff</code> (Microsoft
+365 email). These don't exist in any YAML yet, so the script synthesizes them.</p>
+<p><strong>Files:</strong></p>
+<ul class="task-list">
+<li>Modify: <code>scripts/gen_column_naming_audit_inventory.py</code></li>
+<li>
+<p>Modify: <code>tests/test_gen_column_naming_audit_inventory.py</code></p>
+</li>
+<li class="task-list-item">
+<p><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 1: Write the failing tests</strong></p>
+</li>
+</ul>
+<p>Append to <code>tests/test_gen_column_naming_audit_inventory.py</code>:</p>
+<div class="highlight"><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">test_structural_additions_includes_mdcps</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+    <span class="n">module</span> <span class="o">=</span> <span class="n">_load_script</span><span class="p">()</span>
+    <span class="n">rows</span> <span class="o">=</span> <span class="n">module</span><span class="o">.</span><span class="n">_structural_additions</span><span class="p">()</span>
+    <span class="n">matches</span> <span class="o">=</span> <span class="p">[</span><span class="n">r</span> <span class="k">for</span> <span class="n">r</span> <span class="ow">in</span> <span class="n">rows</span> <span class="k">if</span> <span class="n">r</span><span class="p">[</span><span class="s2">&quot;proposed_name&quot;</span><span class="p">]</span> <span class="o">==</span> <span class="s2">&quot;mdcps_student_identifier&quot;</span><span class="p">]</span>
+    <span class="k">assert</span> <span class="nb">len</span><span class="p">(</span><span class="n">matches</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span>
+    <span class="n">row</span> <span class="o">=</span> <span class="n">matches</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+    <span class="k">assert</span> <span class="n">row</span><span class="p">[</span><span class="s2">&quot;domain&quot;</span><span class="p">]</span> <span class="o">==</span> <span class="s2">&quot;Student&quot;</span>
+    <span class="k">assert</span> <span class="n">row</span><span class="p">[</span><span class="s2">&quot;model&quot;</span><span class="p">]</span> <span class="o">==</span> <span class="s2">&quot;dim_students&quot;</span>
+    <span class="k">assert</span> <span class="n">row</span><span class="p">[</span><span class="s2">&quot;action&quot;</span><span class="p">]</span> <span class="o">==</span> <span class="s2">&quot;add&quot;</span>
+    <span class="k">assert</span> <span class="n">row</span><span class="p">[</span><span class="s2">&quot;rule_ref&quot;</span><span class="p">]</span> <span class="o">==</span> <span class="s2">&quot;structural&quot;</span>
+    <span class="k">assert</span> <span class="n">row</span><span class="p">[</span><span class="s2">&quot;current_column&quot;</span><span class="p">]</span> <span class="o">==</span> <span class="s2">&quot;&quot;</span>
+    <span class="k">assert</span> <span class="n">row</span><span class="p">[</span><span class="s2">&quot;review_status&quot;</span><span class="p">]</span> <span class="o">==</span> <span class="s2">&quot;not_reviewed&quot;</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">test_structural_additions_includes_salesforce</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+    <span class="n">module</span> <span class="o">=</span> <span class="n">_load_script</span><span class="p">()</span>
+    <span class="n">rows</span> <span class="o">=</span> <span class="n">module</span><span class="o">.</span><span class="n">_structural_additions</span><span class="p">()</span>
+    <span class="k">assert</span> <span class="nb">any</span><span class="p">(</span>
+        <span class="n">r</span><span class="p">[</span><span class="s2">&quot;proposed_name&quot;</span><span class="p">]</span> <span class="o">==</span> <span class="s2">&quot;salesforce_contact_id&quot;</span> <span class="ow">and</span> <span class="n">r</span><span class="p">[</span><span class="s2">&quot;model&quot;</span><span class="p">]</span> <span class="o">==</span> <span class="s2">&quot;dim_students&quot;</span>
+        <span class="k">for</span> <span class="n">r</span> <span class="ow">in</span> <span class="n">rows</span>
+    <span class="p">)</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">test_structural_additions_includes_microsoft_365_email</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+    <span class="n">module</span> <span class="o">=</span> <span class="n">_load_script</span><span class="p">()</span>
+    <span class="n">rows</span> <span class="o">=</span> <span class="n">module</span><span class="o">.</span><span class="n">_structural_additions</span><span class="p">()</span>
+    <span class="k">assert</span> <span class="nb">any</span><span class="p">(</span>
+        <span class="n">r</span><span class="p">[</span><span class="s2">&quot;proposed_name&quot;</span><span class="p">]</span> <span class="o">==</span> <span class="s2">&quot;microsoft_365_email&quot;</span> <span class="ow">and</span> <span class="n">r</span><span class="p">[</span><span class="s2">&quot;model&quot;</span><span class="p">]</span> <span class="o">==</span> <span class="s2">&quot;dim_staff&quot;</span>
+        <span class="k">for</span> <span class="n">r</span> <span class="ow">in</span> <span class="n">rows</span>
+    <span class="p">)</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">test_structural_additions_all_have_required_keys</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+    <span class="n">module</span> <span class="o">=</span> <span class="n">_load_script</span><span class="p">()</span>
+    <span class="n">required</span> <span class="o">=</span> <span class="p">{</span>
+        <span class="s2">&quot;domain&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;model&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;current_column&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;data_type&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;current_description&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;action&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;proposed_name&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;rule_ref&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;review_status&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;reviewer_notes&quot;</span><span class="p">,</span>
+    <span class="p">}</span>
+    <span class="k">for</span> <span class="n">row</span> <span class="ow">in</span> <span class="n">module</span><span class="o">.</span><span class="n">_structural_additions</span><span class="p">():</span>
+        <span class="k">assert</span> <span class="nb">set</span><span class="p">(</span><span class="n">row</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span> <span class="o">==</span> <span class="n">required</span><span class="p">,</span> <span class="sa">f</span><span class="s2">&quot;keys differ for </span><span class="si">{</span><span class="n">row</span><span class="si">}</span><span class="s2">&quot;</span>
+</code></pre></div>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 2: Run tests; verify they fail</strong></li>
+</ul>
+<p>Run:</p>
+<div class="highlight"><pre><span></span><code>uv<span class="w"> </span>run<span class="w"> </span>pytest<span class="w"> </span>tests/test_gen_column_naming_audit_inventory.py<span class="w"> </span>-v<span class="w"> </span>-k<span class="w"> </span>structural
+</code></pre></div>
+<p>Expected: all four fail with <code>AttributeError</code>.</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 3: Implement <code>_structural_additions</code></strong></li>
+</ul>
+<p>Add to <code>scripts/gen_column_naming_audit_inventory.py</code>:</p>
+<div class="highlight"><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">_structural_additions</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">[</span><span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">]]:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Pre-populated add-rows for structural columns defined in the spec.&quot;&quot;&quot;</span>
+    <span class="n">template</span> <span class="o">=</span> <span class="p">{</span>
+        <span class="s2">&quot;current_column&quot;</span><span class="p">:</span> <span class="s2">&quot;&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;current_description&quot;</span><span class="p">:</span> <span class="s2">&quot;&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;action&quot;</span><span class="p">:</span> <span class="s2">&quot;add&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;rule_ref&quot;</span><span class="p">:</span> <span class="s2">&quot;structural&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;review_status&quot;</span><span class="p">:</span> <span class="s2">&quot;not_reviewed&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;reviewer_notes&quot;</span><span class="p">:</span> <span class="s2">&quot;&quot;</span><span class="p">,</span>
+    <span class="p">}</span>
+    <span class="k">return</span> <span class="p">[</span>
+        <span class="p">{</span>
+            <span class="o">**</span><span class="n">template</span><span class="p">,</span>
+            <span class="s2">&quot;domain&quot;</span><span class="p">:</span> <span class="s2">&quot;Student&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;model&quot;</span><span class="p">:</span> <span class="s2">&quot;dim_students&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;data_type&quot;</span><span class="p">:</span> <span class="s2">&quot;string&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;proposed_name&quot;</span><span class="p">:</span> <span class="s2">&quot;mdcps_student_identifier&quot;</span><span class="p">,</span>
+        <span class="p">},</span>
+        <span class="p">{</span>
+            <span class="o">**</span><span class="n">template</span><span class="p">,</span>
+            <span class="s2">&quot;domain&quot;</span><span class="p">:</span> <span class="s2">&quot;Student&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;model&quot;</span><span class="p">:</span> <span class="s2">&quot;dim_students&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;data_type&quot;</span><span class="p">:</span> <span class="s2">&quot;string&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;proposed_name&quot;</span><span class="p">:</span> <span class="s2">&quot;salesforce_contact_id&quot;</span><span class="p">,</span>
+        <span class="p">},</span>
+        <span class="p">{</span>
+            <span class="o">**</span><span class="n">template</span><span class="p">,</span>
+            <span class="s2">&quot;domain&quot;</span><span class="p">:</span> <span class="s2">&quot;Staff&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;model&quot;</span><span class="p">:</span> <span class="s2">&quot;dim_staff&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;data_type&quot;</span><span class="p">:</span> <span class="s2">&quot;string&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;proposed_name&quot;</span><span class="p">:</span> <span class="s2">&quot;microsoft_365_email&quot;</span><span class="p">,</span>
+        <span class="p">},</span>
+    <span class="p">]</span>
+</code></pre></div>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 4: Run tests; verify they pass</strong></li>
+</ul>
+<p>Run:</p>
+<div class="highlight"><pre><span></span><code>uv<span class="w"> </span>run<span class="w"> </span>pytest<span class="w"> </span>tests/test_gen_column_naming_audit_inventory.py<span class="w"> </span>-v<span class="w"> </span>-k<span class="w"> </span>structural
+</code></pre></div>
+<p>Expected: all four pass.</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 5: Commit</strong></li>
+</ul>
+<div class="highlight"><pre><span></span><code>git<span class="w"> </span>add<span class="w"> </span>scripts/gen_column_naming_audit_inventory.py<span class="w"> </span><span class="se">\</span>
+<span class="w">        </span>tests/test_gen_column_naming_audit_inventory.py
+git<span class="w"> </span>commit<span class="w"> </span>-m<span class="w"> </span><span class="s2">&quot;feat(scripts): add _structural_additions helper</span>
+
+<span class="s2">Pre-populates audit rows for new columns the spec adds to dim_students</span>
+<span class="s2">(mdcps_student_identifier, salesforce_contact_id) and dim_staff</span>
+<span class="s2">(microsoft_365_email).</span>
+<span class="s2">Tracked on #3643.&quot;</span>
+</code></pre></div>
+<hr />
+<h2 id="task-7-_read_mart_yaml-parse-one-yaml-file-into-csv-row-dicts">Task 7: <code>_read_mart_yaml</code> — parse one YAML file into CSV row dicts</h2>
+<p><strong>Purpose:</strong> Read a single dbt properties YAML, iterate its <code>models[].columns[]</code>
+entries, and emit a list of dicts in the target CSV schema. Initial guesses
+(rename / remove / keep) are applied here.</p>
+<p><strong>Files:</strong></p>
+<ul class="task-list">
+<li>Modify: <code>scripts/gen_column_naming_audit_inventory.py</code></li>
+<li>Modify: <code>tests/test_gen_column_naming_audit_inventory.py</code></li>
+<li>
+<p>Create: <code>tests/fixtures/mart_yaml/dim_sample.yml</code></p>
+</li>
+<li class="task-list-item">
+<p><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 1: Create the YAML fixture</strong></p>
+</li>
+</ul>
+<p>Write to <code>tests/fixtures/mart_yaml/dim_sample.yml</code>:</p>
+<div class="highlight"><pre><span></span><code><span class="nt">models</span><span class="p">:</span>
+<span class="w">  </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">dim_sample</span>
+<span class="w">    </span><span class="nt">description</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">A fixture model used in unit tests.</span>
+<span class="w">    </span><span class="nt">columns</span><span class="p">:</span>
+<span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">sample_key</span>
+<span class="w">        </span><span class="nt">data_type</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">string</span>
+<span class="w">        </span><span class="nt">description</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">&gt;-</span>
+<span class="w">          </span><span class="no">Surrogate key for sample. Spanning multiple lines.</span>
+<span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">student_number</span>
+<span class="w">        </span><span class="nt">data_type</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">int64</span>
+<span class="w">        </span><span class="nt">description</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">Local student ID from PowerSchool.</span>
+<span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">_dbt_source_relation</span>
+<span class="w">        </span><span class="nt">data_type</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">string</span>
+<span class="w">        </span><span class="nt">description</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">dbt union metadata.</span>
+<span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">ordinary_column</span>
+<span class="w">        </span><span class="nt">data_type</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">string</span>
+<span class="w">        </span><span class="nt">description</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">Nothing special.</span>
+</code></pre></div>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 2: Write the failing tests</strong></li>
+</ul>
+<p>Append to <code>tests/test_gen_column_naming_audit_inventory.py</code>:</p>
+<div class="highlight"><pre><span></span><code><span class="n">_FIXTURE</span> <span class="o">=</span> <span class="n">_REPO_ROOT</span> <span class="o">/</span> <span class="s2">&quot;tests&quot;</span> <span class="o">/</span> <span class="s2">&quot;fixtures&quot;</span> <span class="o">/</span> <span class="s2">&quot;mart_yaml&quot;</span> <span class="o">/</span> <span class="s2">&quot;dim_sample.yml&quot;</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">test_read_mart_yaml_emits_one_row_per_column</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+    <span class="n">module</span> <span class="o">=</span> <span class="n">_load_script</span><span class="p">()</span>
+    <span class="n">rows</span> <span class="o">=</span> <span class="n">module</span><span class="o">.</span><span class="n">_read_mart_yaml</span><span class="p">(</span><span class="n">_FIXTURE</span><span class="p">)</span>
+    <span class="k">assert</span> <span class="nb">len</span><span class="p">(</span><span class="n">rows</span><span class="p">)</span> <span class="o">==</span> <span class="mi">4</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">test_read_mart_yaml_sets_model_and_domain</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+    <span class="n">module</span> <span class="o">=</span> <span class="n">_load_script</span><span class="p">()</span>
+    <span class="n">rows</span> <span class="o">=</span> <span class="n">module</span><span class="o">.</span><span class="n">_read_mart_yaml</span><span class="p">(</span><span class="n">_FIXTURE</span><span class="p">)</span>
+    <span class="k">assert</span> <span class="nb">all</span><span class="p">(</span><span class="n">r</span><span class="p">[</span><span class="s2">&quot;model&quot;</span><span class="p">]</span> <span class="o">==</span> <span class="s2">&quot;dim_sample&quot;</span> <span class="k">for</span> <span class="n">r</span> <span class="ow">in</span> <span class="n">rows</span><span class="p">)</span>
+    <span class="c1"># dim_sample is unknown — falls through to Uncategorized</span>
+    <span class="k">assert</span> <span class="nb">all</span><span class="p">(</span><span class="n">r</span><span class="p">[</span><span class="s2">&quot;domain&quot;</span><span class="p">]</span> <span class="o">==</span> <span class="s2">&quot;Uncategorized&quot;</span> <span class="k">for</span> <span class="n">r</span> <span class="ow">in</span> <span class="n">rows</span><span class="p">)</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">test_read_mart_yaml_flattens_description</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+    <span class="n">module</span> <span class="o">=</span> <span class="n">_load_script</span><span class="p">()</span>
+    <span class="n">rows</span> <span class="o">=</span> <span class="n">module</span><span class="o">.</span><span class="n">_read_mart_yaml</span><span class="p">(</span><span class="n">_FIXTURE</span><span class="p">)</span>
+    <span class="n">by_name</span> <span class="o">=</span> <span class="p">{</span><span class="n">r</span><span class="p">[</span><span class="s2">&quot;current_column&quot;</span><span class="p">]:</span> <span class="n">r</span> <span class="k">for</span> <span class="n">r</span> <span class="ow">in</span> <span class="n">rows</span><span class="p">}</span>
+    <span class="k">assert</span> <span class="n">by_name</span><span class="p">[</span><span class="s2">&quot;sample_key&quot;</span><span class="p">][</span><span class="s2">&quot;current_description&quot;</span><span class="p">]</span> <span class="o">==</span> <span class="p">(</span>
+        <span class="s2">&quot;Surrogate key for sample. Spanning multiple lines.&quot;</span>
+    <span class="p">)</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">test_read_mart_yaml_applies_plumbing_default</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+    <span class="n">module</span> <span class="o">=</span> <span class="n">_load_script</span><span class="p">()</span>
+    <span class="n">rows</span> <span class="o">=</span> <span class="n">module</span><span class="o">.</span><span class="n">_read_mart_yaml</span><span class="p">(</span><span class="n">_FIXTURE</span><span class="p">)</span>
+    <span class="n">by_name</span> <span class="o">=</span> <span class="p">{</span><span class="n">r</span><span class="p">[</span><span class="s2">&quot;current_column&quot;</span><span class="p">]:</span> <span class="n">r</span> <span class="k">for</span> <span class="n">r</span> <span class="ow">in</span> <span class="n">rows</span><span class="p">}</span>
+    <span class="n">plumb</span> <span class="o">=</span> <span class="n">by_name</span><span class="p">[</span><span class="s2">&quot;_dbt_source_relation&quot;</span><span class="p">]</span>
+    <span class="k">assert</span> <span class="n">plumb</span><span class="p">[</span><span class="s2">&quot;action&quot;</span><span class="p">]</span> <span class="o">==</span> <span class="s2">&quot;remove&quot;</span>
+    <span class="k">assert</span> <span class="n">plumb</span><span class="p">[</span><span class="s2">&quot;rule_ref&quot;</span><span class="p">]</span> <span class="o">==</span> <span class="s2">&quot;plumbing&quot;</span>
+    <span class="k">assert</span> <span class="n">plumb</span><span class="p">[</span><span class="s2">&quot;proposed_name&quot;</span><span class="p">]</span> <span class="o">==</span> <span class="s2">&quot;&quot;</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">test_read_mart_yaml_applies_rename_guess</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+    <span class="n">module</span> <span class="o">=</span> <span class="n">_load_script</span><span class="p">()</span>
+    <span class="n">rows</span> <span class="o">=</span> <span class="n">module</span><span class="o">.</span><span class="n">_read_mart_yaml</span><span class="p">(</span><span class="n">_FIXTURE</span><span class="p">)</span>
+    <span class="n">by_name</span> <span class="o">=</span> <span class="p">{</span><span class="n">r</span><span class="p">[</span><span class="s2">&quot;current_column&quot;</span><span class="p">]:</span> <span class="n">r</span> <span class="k">for</span> <span class="n">r</span> <span class="ow">in</span> <span class="n">rows</span><span class="p">}</span>
+    <span class="n">sn</span> <span class="o">=</span> <span class="n">by_name</span><span class="p">[</span><span class="s2">&quot;student_number&quot;</span><span class="p">]</span>
+    <span class="k">assert</span> <span class="n">sn</span><span class="p">[</span><span class="s2">&quot;action&quot;</span><span class="p">]</span> <span class="o">==</span> <span class="s2">&quot;rename&quot;</span>
+    <span class="k">assert</span> <span class="n">sn</span><span class="p">[</span><span class="s2">&quot;proposed_name&quot;</span><span class="p">]</span> <span class="o">==</span> <span class="s2">&quot;local_student_identifier&quot;</span>
+    <span class="k">assert</span> <span class="n">sn</span><span class="p">[</span><span class="s2">&quot;rule_ref&quot;</span><span class="p">]</span> <span class="o">==</span> <span class="s2">&quot;R1&quot;</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">test_read_mart_yaml_default_is_keep</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+    <span class="n">module</span> <span class="o">=</span> <span class="n">_load_script</span><span class="p">()</span>
+    <span class="n">rows</span> <span class="o">=</span> <span class="n">module</span><span class="o">.</span><span class="n">_read_mart_yaml</span><span class="p">(</span><span class="n">_FIXTURE</span><span class="p">)</span>
+    <span class="n">by_name</span> <span class="o">=</span> <span class="p">{</span><span class="n">r</span><span class="p">[</span><span class="s2">&quot;current_column&quot;</span><span class="p">]:</span> <span class="n">r</span> <span class="k">for</span> <span class="n">r</span> <span class="ow">in</span> <span class="n">rows</span><span class="p">}</span>
+    <span class="n">ord_row</span> <span class="o">=</span> <span class="n">by_name</span><span class="p">[</span><span class="s2">&quot;ordinary_column&quot;</span><span class="p">]</span>
+    <span class="k">assert</span> <span class="n">ord_row</span><span class="p">[</span><span class="s2">&quot;action&quot;</span><span class="p">]</span> <span class="o">==</span> <span class="s2">&quot;keep&quot;</span>
+    <span class="k">assert</span> <span class="n">ord_row</span><span class="p">[</span><span class="s2">&quot;proposed_name&quot;</span><span class="p">]</span> <span class="o">==</span> <span class="s2">&quot;&quot;</span>
+    <span class="k">assert</span> <span class="n">ord_row</span><span class="p">[</span><span class="s2">&quot;rule_ref&quot;</span><span class="p">]</span> <span class="o">==</span> <span class="s2">&quot;&quot;</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">test_read_mart_yaml_review_status_not_reviewed</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+    <span class="n">module</span> <span class="o">=</span> <span class="n">_load_script</span><span class="p">()</span>
+    <span class="n">rows</span> <span class="o">=</span> <span class="n">module</span><span class="o">.</span><span class="n">_read_mart_yaml</span><span class="p">(</span><span class="n">_FIXTURE</span><span class="p">)</span>
+    <span class="k">assert</span> <span class="nb">all</span><span class="p">(</span><span class="n">r</span><span class="p">[</span><span class="s2">&quot;review_status&quot;</span><span class="p">]</span> <span class="o">==</span> <span class="s2">&quot;not_reviewed&quot;</span> <span class="k">for</span> <span class="n">r</span> <span class="ow">in</span> <span class="n">rows</span><span class="p">)</span>
+    <span class="k">assert</span> <span class="nb">all</span><span class="p">(</span><span class="n">r</span><span class="p">[</span><span class="s2">&quot;reviewer_notes&quot;</span><span class="p">]</span> <span class="o">==</span> <span class="s2">&quot;&quot;</span> <span class="k">for</span> <span class="n">r</span> <span class="ow">in</span> <span class="n">rows</span><span class="p">)</span>
+</code></pre></div>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 3: Run tests; verify they fail</strong></li>
+</ul>
+<p>Run:</p>
+<div class="highlight"><pre><span></span><code>uv<span class="w"> </span>run<span class="w"> </span>pytest<span class="w"> </span>tests/test_gen_column_naming_audit_inventory.py<span class="w"> </span>-v<span class="w"> </span>-k<span class="w"> </span>read_mart_yaml
+</code></pre></div>
+<p>Expected: all seven fail with <code>AttributeError</code>.</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 4: Implement <code>_read_mart_yaml</code></strong></li>
+</ul>
+<p>Add to <code>scripts/gen_column_naming_audit_inventory.py</code> near the top of the file
+(after <code>from __future__ import ...</code>):</p>
+<div class="highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">pathlib</span><span class="w"> </span><span class="kn">import</span> <span class="n">Path</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">yaml</span>
+</code></pre></div>
+<p>Then add the function near the bottom, above <code>main()</code>:</p>
+<div class="highlight"><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">_read_mart_yaml</span><span class="p">(</span><span class="n">path</span><span class="p">:</span> <span class="n">Path</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">[</span><span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">]]:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Parse a single mart properties YAML into audit-row dicts.&quot;&quot;&quot;</span>
+    <span class="k">with</span> <span class="n">path</span><span class="o">.</span><span class="n">open</span><span class="p">(</span><span class="n">encoding</span><span class="o">=</span><span class="s2">&quot;utf-8&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">fh</span><span class="p">:</span>
+        <span class="n">doc</span> <span class="o">=</span> <span class="n">yaml</span><span class="o">.</span><span class="n">safe_load</span><span class="p">(</span><span class="n">fh</span><span class="p">)</span>
+
+    <span class="n">plumbing</span> <span class="o">=</span> <span class="n">_plumbing_columns</span><span class="p">()</span>
+    <span class="n">rows</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">]]</span> <span class="o">=</span> <span class="p">[]</span>
+
+    <span class="k">for</span> <span class="n">model</span> <span class="ow">in</span> <span class="n">doc</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;models&quot;</span><span class="p">,</span> <span class="p">[])</span> <span class="ow">or</span> <span class="p">[]:</span>
+        <span class="n">model_name</span> <span class="o">=</span> <span class="n">model</span><span class="p">[</span><span class="s2">&quot;name&quot;</span><span class="p">]</span>
+        <span class="n">domain</span> <span class="o">=</span> <span class="n">_domain_for_model</span><span class="p">(</span><span class="n">model_name</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">column</span> <span class="ow">in</span> <span class="n">model</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;columns&quot;</span><span class="p">,</span> <span class="p">[])</span> <span class="ow">or</span> <span class="p">[]:</span>
+            <span class="n">col_name</span> <span class="o">=</span> <span class="n">column</span><span class="p">[</span><span class="s2">&quot;name&quot;</span><span class="p">]</span>
+            <span class="n">row</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span>
+                <span class="s2">&quot;domain&quot;</span><span class="p">:</span> <span class="n">domain</span><span class="p">,</span>
+                <span class="s2">&quot;model&quot;</span><span class="p">:</span> <span class="n">model_name</span><span class="p">,</span>
+                <span class="s2">&quot;current_column&quot;</span><span class="p">:</span> <span class="n">col_name</span><span class="p">,</span>
+                <span class="s2">&quot;data_type&quot;</span><span class="p">:</span> <span class="n">column</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;data_type&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">)</span> <span class="ow">or</span> <span class="s2">&quot;&quot;</span><span class="p">,</span>
+                <span class="s2">&quot;current_description&quot;</span><span class="p">:</span> <span class="n">_flatten_description</span><span class="p">(</span>
+                    <span class="n">column</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;description&quot;</span><span class="p">)</span>
+                <span class="p">),</span>
+                <span class="s2">&quot;action&quot;</span><span class="p">:</span> <span class="s2">&quot;keep&quot;</span><span class="p">,</span>
+                <span class="s2">&quot;proposed_name&quot;</span><span class="p">:</span> <span class="s2">&quot;&quot;</span><span class="p">,</span>
+                <span class="s2">&quot;rule_ref&quot;</span><span class="p">:</span> <span class="s2">&quot;&quot;</span><span class="p">,</span>
+                <span class="s2">&quot;review_status&quot;</span><span class="p">:</span> <span class="s2">&quot;not_reviewed&quot;</span><span class="p">,</span>
+                <span class="s2">&quot;reviewer_notes&quot;</span><span class="p">:</span> <span class="s2">&quot;&quot;</span><span class="p">,</span>
+            <span class="p">}</span>
+
+            <span class="k">if</span> <span class="n">col_name</span> <span class="ow">in</span> <span class="n">plumbing</span><span class="p">:</span>
+                <span class="n">row</span><span class="p">[</span><span class="s2">&quot;action&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;remove&quot;</span>
+                <span class="n">row</span><span class="p">[</span><span class="s2">&quot;rule_ref&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;plumbing&quot;</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">guess</span> <span class="o">=</span> <span class="n">_initial_rename_guess</span><span class="p">(</span><span class="n">col_name</span><span class="p">)</span>
+                <span class="k">if</span> <span class="n">guess</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                    <span class="n">proposed</span><span class="p">,</span> <span class="n">rule_ref</span> <span class="o">=</span> <span class="n">guess</span>
+                    <span class="n">row</span><span class="p">[</span><span class="s2">&quot;action&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;rename&quot;</span>
+                    <span class="n">row</span><span class="p">[</span><span class="s2">&quot;proposed_name&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">proposed</span>
+                    <span class="n">row</span><span class="p">[</span><span class="s2">&quot;rule_ref&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">rule_ref</span>
+
+            <span class="n">rows</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">row</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">rows</span>
+</code></pre></div>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 5: Run tests; verify they pass</strong></li>
+</ul>
+<p>Run:</p>
+<div class="highlight"><pre><span></span><code>uv<span class="w"> </span>run<span class="w"> </span>pytest<span class="w"> </span>tests/test_gen_column_naming_audit_inventory.py<span class="w"> </span>-v<span class="w"> </span>-k<span class="w"> </span>read_mart_yaml
+</code></pre></div>
+<p>Expected: all seven pass.</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 6: Commit</strong></li>
+</ul>
+<div class="highlight"><pre><span></span><code>git<span class="w"> </span>add<span class="w"> </span>scripts/gen_column_naming_audit_inventory.py<span class="w"> </span><span class="se">\</span>
+<span class="w">        </span>tests/test_gen_column_naming_audit_inventory.py<span class="w"> </span><span class="se">\</span>
+<span class="w">        </span>tests/fixtures/mart_yaml/dim_sample.yml
+git<span class="w"> </span>commit<span class="w"> </span>-m<span class="w"> </span><span class="s2">&quot;feat(scripts): add _read_mart_yaml parser</span>
+
+<span class="s2">Parses one dbt properties YAML into audit-row dicts, applying plumbing and</span>
+<span class="s2">rename-guess defaults. Covered by fixture-based unit tests.</span>
+<span class="s2">Tracked on #3643.&quot;</span>
+</code></pre></div>
+<hr />
+<h2 id="task-8-main-orchestrate-directory-walk-csv-emission">Task 8: <code>main()</code> — orchestrate directory walk + CSV emission</h2>
+<p><strong>Purpose:</strong> Walk the three mart properties directories, read every YAML, append
+structural-addition rows, sort deterministically, and write the output CSV. This
+is the top-level entry point.</p>
+<p><strong>Files:</strong></p>
+<ul class="task-list">
+<li>Modify: <code>scripts/gen_column_naming_audit_inventory.py</code></li>
+<li>
+<p>Modify: <code>tests/test_gen_column_naming_audit_inventory.py</code></p>
+</li>
+<li class="task-list-item">
+<p><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 1: Write the failing tests</strong></p>
+</li>
+</ul>
+<p>Append to <code>tests/test_gen_column_naming_audit_inventory.py</code>:</p>
+<div class="highlight"><pre><span></span><code><span class="kn">import</span><span class="w"> </span><span class="nn">csv</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">io</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">test_write_csv_emits_header_and_rows</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+    <span class="n">module</span> <span class="o">=</span> <span class="n">_load_script</span><span class="p">()</span>
+    <span class="n">rows</span> <span class="o">=</span> <span class="p">[</span>
+        <span class="p">{</span>
+            <span class="s2">&quot;domain&quot;</span><span class="p">:</span> <span class="s2">&quot;Student&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;model&quot;</span><span class="p">:</span> <span class="s2">&quot;dim_students&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;current_column&quot;</span><span class="p">:</span> <span class="s2">&quot;student_number&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;data_type&quot;</span><span class="p">:</span> <span class="s2">&quot;int64&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;current_description&quot;</span><span class="p">:</span> <span class="s2">&quot;Local student ID.&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;action&quot;</span><span class="p">:</span> <span class="s2">&quot;rename&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;proposed_name&quot;</span><span class="p">:</span> <span class="s2">&quot;local_student_identifier&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;rule_ref&quot;</span><span class="p">:</span> <span class="s2">&quot;R1&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;review_status&quot;</span><span class="p">:</span> <span class="s2">&quot;not_reviewed&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;reviewer_notes&quot;</span><span class="p">:</span> <span class="s2">&quot;&quot;</span><span class="p">,</span>
+        <span class="p">}</span>
+    <span class="p">]</span>
+    <span class="n">buf</span> <span class="o">=</span> <span class="n">io</span><span class="o">.</span><span class="n">StringIO</span><span class="p">()</span>
+    <span class="n">module</span><span class="o">.</span><span class="n">_write_csv</span><span class="p">(</span><span class="n">rows</span><span class="p">,</span> <span class="n">buf</span><span class="p">)</span>
+    <span class="n">buf</span><span class="o">.</span><span class="n">seek</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+    <span class="n">reader</span> <span class="o">=</span> <span class="n">csv</span><span class="o">.</span><span class="n">DictReader</span><span class="p">(</span><span class="n">buf</span><span class="p">)</span>
+    <span class="n">header</span> <span class="o">=</span> <span class="n">reader</span><span class="o">.</span><span class="n">fieldnames</span>
+    <span class="k">assert</span> <span class="n">header</span> <span class="o">==</span> <span class="p">[</span>
+        <span class="s2">&quot;domain&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;model&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;current_column&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;data_type&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;current_description&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;action&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;proposed_name&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;rule_ref&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;review_status&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;reviewer_notes&quot;</span><span class="p">,</span>
+    <span class="p">]</span>
+    <span class="n">parsed</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">reader</span><span class="p">)</span>
+    <span class="k">assert</span> <span class="nb">len</span><span class="p">(</span><span class="n">parsed</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span>
+    <span class="k">assert</span> <span class="n">parsed</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="s2">&quot;proposed_name&quot;</span><span class="p">]</span> <span class="o">==</span> <span class="s2">&quot;local_student_identifier&quot;</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">test_sort_rows_groups_by_domain_then_model</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+    <span class="n">module</span> <span class="o">=</span> <span class="n">_load_script</span><span class="p">()</span>
+    <span class="n">unsorted</span> <span class="o">=</span> <span class="p">[</span>
+        <span class="p">{</span><span class="s2">&quot;domain&quot;</span><span class="p">:</span> <span class="s2">&quot;Staff&quot;</span><span class="p">,</span> <span class="s2">&quot;model&quot;</span><span class="p">:</span> <span class="s2">&quot;dim_staff&quot;</span><span class="p">,</span> <span class="s2">&quot;current_column&quot;</span><span class="p">:</span> <span class="s2">&quot;a&quot;</span><span class="p">},</span>
+        <span class="p">{</span><span class="s2">&quot;domain&quot;</span><span class="p">:</span> <span class="s2">&quot;Student&quot;</span><span class="p">,</span> <span class="s2">&quot;model&quot;</span><span class="p">:</span> <span class="s2">&quot;dim_students&quot;</span><span class="p">,</span> <span class="s2">&quot;current_column&quot;</span><span class="p">:</span> <span class="s2">&quot;b&quot;</span><span class="p">},</span>
+        <span class="p">{</span><span class="s2">&quot;domain&quot;</span><span class="p">:</span> <span class="s2">&quot;Student&quot;</span><span class="p">,</span> <span class="s2">&quot;model&quot;</span><span class="p">:</span> <span class="s2">&quot;dim_students&quot;</span><span class="p">,</span> <span class="s2">&quot;current_column&quot;</span><span class="p">:</span> <span class="s2">&quot;a&quot;</span><span class="p">},</span>
+        <span class="p">{</span><span class="s2">&quot;domain&quot;</span><span class="p">:</span> <span class="s2">&quot;Conformed&quot;</span><span class="p">,</span> <span class="s2">&quot;model&quot;</span><span class="p">:</span> <span class="s2">&quot;dim_dates&quot;</span><span class="p">,</span> <span class="s2">&quot;current_column&quot;</span><span class="p">:</span> <span class="s2">&quot;c&quot;</span><span class="p">},</span>
+    <span class="p">]</span>
+    <span class="n">out</span> <span class="o">=</span> <span class="n">module</span><span class="o">.</span><span class="n">_sort_rows</span><span class="p">(</span><span class="n">unsorted</span><span class="p">)</span>
+    <span class="k">assert</span> <span class="p">[</span><span class="n">r</span><span class="p">[</span><span class="s2">&quot;domain&quot;</span><span class="p">]</span> <span class="k">for</span> <span class="n">r</span> <span class="ow">in</span> <span class="n">out</span><span class="p">]</span> <span class="o">==</span> <span class="p">[</span><span class="s2">&quot;Conformed&quot;</span><span class="p">,</span> <span class="s2">&quot;Staff&quot;</span><span class="p">,</span> <span class="s2">&quot;Student&quot;</span><span class="p">,</span> <span class="s2">&quot;Student&quot;</span><span class="p">]</span>
+    <span class="c1"># Within a model, preserve column order from the YAML (stable sort).</span>
+    <span class="n">student_rows</span> <span class="o">=</span> <span class="p">[</span><span class="n">r</span> <span class="k">for</span> <span class="n">r</span> <span class="ow">in</span> <span class="n">out</span> <span class="k">if</span> <span class="n">r</span><span class="p">[</span><span class="s2">&quot;domain&quot;</span><span class="p">]</span> <span class="o">==</span> <span class="s2">&quot;Student&quot;</span><span class="p">]</span>
+    <span class="k">assert</span> <span class="p">[</span><span class="n">r</span><span class="p">[</span><span class="s2">&quot;current_column&quot;</span><span class="p">]</span> <span class="k">for</span> <span class="n">r</span> <span class="ow">in</span> <span class="n">student_rows</span><span class="p">]</span> <span class="o">==</span> <span class="p">[</span><span class="s2">&quot;b&quot;</span><span class="p">,</span> <span class="s2">&quot;a&quot;</span><span class="p">]</span>
+</code></pre></div>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 2: Run tests; verify they fail</strong></li>
+</ul>
+<p>Run:</p>
+<div class="highlight"><pre><span></span><code>uv<span class="w"> </span>run<span class="w"> </span>pytest<span class="w"> </span>tests/test_gen_column_naming_audit_inventory.py<span class="w"> </span>-v<span class="w"> </span>-k<span class="w"> </span><span class="s2">&quot;write_csv or sort_rows&quot;</span>
+</code></pre></div>
+<p>Expected: both fail with <code>AttributeError</code>.</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 3: Implement <code>_write_csv</code>, <code>_sort_rows</code>, and fill in <code>main()</code></strong></li>
+</ul>
+<p>Replace the <code>main()</code> stub and add helpers in
+<code>scripts/gen_column_naming_audit_inventory.py</code>:</p>
+<div class="highlight"><pre><span></span><code><span class="kn">import</span><span class="w"> </span><span class="nn">csv</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">TextIO</span>
+
+<span class="n">CSV_FIELDS</span><span class="p">:</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="o">...</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span>
+    <span class="s2">&quot;domain&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;model&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;current_column&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;data_type&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;current_description&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;action&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;proposed_name&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;rule_ref&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;review_status&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;reviewer_notes&quot;</span><span class="p">,</span>
+<span class="p">)</span>
+
+<span class="n">MART_YAML_DIRS</span><span class="p">:</span> <span class="nb">tuple</span><span class="p">[</span><span class="n">Path</span><span class="p">,</span> <span class="o">...</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span>
+    <span class="n">Path</span><span class="p">(</span><span class="s2">&quot;src/dbt/kipptaf/models/marts/bridges/properties&quot;</span><span class="p">),</span>
+    <span class="n">Path</span><span class="p">(</span><span class="s2">&quot;src/dbt/kipptaf/models/marts/dimensions/properties&quot;</span><span class="p">),</span>
+    <span class="n">Path</span><span class="p">(</span><span class="s2">&quot;src/dbt/kipptaf/models/marts/facts/properties&quot;</span><span class="p">),</span>
+<span class="p">)</span>
+
+<span class="n">OUTPUT_CSV</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(</span>
+    <span class="s2">&quot;docs/superpowers/specs/2026-04-15-column-naming-audit-inventory.csv&quot;</span>
+<span class="p">)</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_sort_rows</span><span class="p">(</span><span class="n">rows</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">]])</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">[</span><span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">]]:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Stable sort by (domain, model). Within a model, YAML order is kept.&quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">rows</span><span class="p">,</span> <span class="n">key</span><span class="o">=</span><span class="k">lambda</span> <span class="n">r</span><span class="p">:</span> <span class="p">(</span><span class="n">r</span><span class="p">[</span><span class="s2">&quot;domain&quot;</span><span class="p">],</span> <span class="n">r</span><span class="p">[</span><span class="s2">&quot;model&quot;</span><span class="p">]))</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_write_csv</span><span class="p">(</span><span class="n">rows</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">]],</span> <span class="n">fh</span><span class="p">:</span> <span class="n">TextIO</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+    <span class="n">writer</span> <span class="o">=</span> <span class="n">csv</span><span class="o">.</span><span class="n">DictWriter</span><span class="p">(</span><span class="n">fh</span><span class="p">,</span> <span class="n">fieldnames</span><span class="o">=</span><span class="nb">list</span><span class="p">(</span><span class="n">CSV_FIELDS</span><span class="p">))</span>
+    <span class="n">writer</span><span class="o">.</span><span class="n">writeheader</span><span class="p">()</span>
+    <span class="k">for</span> <span class="n">row</span> <span class="ow">in</span> <span class="n">rows</span><span class="p">:</span>
+        <span class="n">writer</span><span class="o">.</span><span class="n">writerow</span><span class="p">({</span><span class="n">key</span><span class="p">:</span> <span class="n">row</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">key</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">)</span> <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">CSV_FIELDS</span><span class="p">})</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">main</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+    <span class="n">rows</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">]]</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">for</span> <span class="n">directory</span> <span class="ow">in</span> <span class="n">MART_YAML_DIRS</span><span class="p">:</span>
+        <span class="k">for</span> <span class="n">yaml_path</span> <span class="ow">in</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">directory</span><span class="o">.</span><span class="n">glob</span><span class="p">(</span><span class="s2">&quot;*.yml&quot;</span><span class="p">)):</span>
+            <span class="n">rows</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span><span class="n">_read_mart_yaml</span><span class="p">(</span><span class="n">yaml_path</span><span class="p">))</span>
+    <span class="n">rows</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span><span class="n">_structural_additions</span><span class="p">())</span>
+    <span class="n">sorted_rows</span> <span class="o">=</span> <span class="n">_sort_rows</span><span class="p">(</span><span class="n">rows</span><span class="p">)</span>
+
+    <span class="n">OUTPUT_CSV</span><span class="o">.</span><span class="n">parent</span><span class="o">.</span><span class="n">mkdir</span><span class="p">(</span><span class="n">parents</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">exist_ok</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+    <span class="k">with</span> <span class="n">OUTPUT_CSV</span><span class="o">.</span><span class="n">open</span><span class="p">(</span><span class="s2">&quot;w&quot;</span><span class="p">,</span> <span class="n">encoding</span><span class="o">=</span><span class="s2">&quot;utf-8&quot;</span><span class="p">,</span> <span class="n">newline</span><span class="o">=</span><span class="s2">&quot;&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">fh</span><span class="p">:</span>
+        <span class="n">_write_csv</span><span class="p">(</span><span class="n">sorted_rows</span><span class="p">,</span> <span class="n">fh</span><span class="p">)</span>
+
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Wrote </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">sorted_rows</span><span class="p">)</span><span class="si">}</span><span class="s2"> rows to </span><span class="si">{</span><span class="n">OUTPUT_CSV</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+</code></pre></div>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 4: Run tests; verify they pass</strong></li>
+</ul>
+<p>Run:</p>
+<div class="highlight"><pre><span></span><code>uv<span class="w"> </span>run<span class="w"> </span>pytest<span class="w"> </span>tests/test_gen_column_naming_audit_inventory.py<span class="w"> </span>-v
+</code></pre></div>
+<p>Expected: <strong>all tests pass</strong> (the pre-existing tests plus the two new ones).</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 5: Commit</strong></li>
+</ul>
+<div class="highlight"><pre><span></span><code>git<span class="w"> </span>add<span class="w"> </span>scripts/gen_column_naming_audit_inventory.py<span class="w"> </span><span class="se">\</span>
+<span class="w">        </span>tests/test_gen_column_naming_audit_inventory.py
+git<span class="w"> </span>commit<span class="w"> </span>-m<span class="w"> </span><span class="s2">&quot;feat(scripts): implement main() with sort + CSV writing</span>
+
+<span class="s2">Walks the three mart properties directories, reads every YAML, appends</span>
+<span class="s2">structural-addition rows, sorts by (domain, model), and writes the audit</span>
+<span class="s2">inventory CSV.</span>
+<span class="s2">Tracked on #3643.&quot;</span>
+</code></pre></div>
+<hr />
+<h2 id="task-9-execute-the-script-and-commit-the-initial-inventory-csv">Task 9: Execute the script and commit the initial inventory CSV</h2>
+<p><strong>Purpose:</strong> Run the script end-to-end against the real mart YAMLs to produce
+the first inventory CSV. Verify row count, header, and a few known rows; commit
+the output as a reviewable artifact.</p>
+<p><strong>Files:</strong></p>
+<ul class="task-list">
+<li>
+<p>Create: <code>docs/superpowers/specs/2026-04-15-column-naming-audit-inventory.csv</code></p>
+</li>
+<li class="task-list-item">
+<p><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 1: Run the script</strong></p>
+</li>
+</ul>
+<p>Run:</p>
+<div class="highlight"><pre><span></span><code>uv<span class="w"> </span>run<span class="w"> </span>scripts/gen_column_naming_audit_inventory.py
+</code></pre></div>
+<p>Expected output (approximate):
+<code>Wrote 600+ rows to docs/superpowers/specs/2026-04-15-column-naming-audit-inventory.csv</code>
+(exact count depends on current mart YAML contents).</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 2: Sanity-check the output</strong></li>
+</ul>
+<p>Run:</p>
+<div class="highlight"><pre><span></span><code>head<span class="w"> </span>-1<span class="w"> </span>docs/superpowers/specs/2026-04-15-column-naming-audit-inventory.csv
+wc<span class="w"> </span>-l<span class="w"> </span>docs/superpowers/specs/2026-04-15-column-naming-audit-inventory.csv
+</code></pre></div>
+<p>Expected: header exactly
+<code>domain,model,current_column,data_type,current_description,action,proposed_name,rule_ref,review_status,reviewer_notes</code>.
+Line count: header + all column rows + 3 structural additions.</p>
+<p>Spot check: confirm three known rows exist in the output.</p>
+<div class="highlight"><pre><span></span><code>grep<span class="w"> </span><span class="s1">&#39;^Student,dim_students,student_key,&#39;</span><span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>docs/superpowers/specs/2026-04-15-column-naming-audit-inventory.csv
+
+grep<span class="w"> </span><span class="s1">&#39;,mdcps_student_identifier,structural,&#39;</span><span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>docs/superpowers/specs/2026-04-15-column-naming-audit-inventory.csv
+
+grep<span class="w"> </span><span class="s1">&#39;,_dbt_source_relation,.*,remove,,plumbing,&#39;</span><span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>docs/superpowers/specs/2026-04-15-column-naming-audit-inventory.csv
+</code></pre></div>
+<p>Each should return at least one line.</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 3: Commit the inventory CSV</strong></li>
+</ul>
+<div class="highlight"><pre><span></span><code>git<span class="w"> </span>add<span class="w"> </span>docs/superpowers/specs/2026-04-15-column-naming-audit-inventory.csv
+git<span class="w"> </span>commit<span class="w"> </span>-m<span class="w"> </span><span class="s2">&quot;docs(dbt): generate initial column naming audit inventory</span>
+
+<span class="s2">Output of \`uv run scripts/gen_column_naming_audit_inventory.py\` against</span>
+<span class="s2">the current kipptaf mart YAML state. Ready for import into a Google Sheet</span>
+<span class="s2">for reviewer annotation.</span>
+<span class="s2">Tracked on #3643.&quot;</span>
+</code></pre></div>
+<hr />
+<h2 id="task-10-update-scriptsclaudemd-catalog">Task 10: Update <code>scripts/CLAUDE.md</code> catalog</h2>
+<p><strong>Purpose:</strong> Document the new script in the <code>scripts/</code> catalog so it's
+discoverable.</p>
+<p><strong>Files:</strong></p>
+<ul class="task-list">
+<li>
+<p>Modify: <code>scripts/CLAUDE.md:8-22</code></p>
+</li>
+<li class="task-list-item">
+<p><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 1: Edit the catalog table</strong></p>
+</li>
+</ul>
+<p>In <code>scripts/CLAUDE.md</code>, insert a new row in the catalog table (the table at
+lines 8–22) in alphabetical position between <code>gen-automations-doc.py</code> and
+<code>init_sftp_integration.py</code>:</p>
+<p>Use the Edit tool with:</p>
+<ul>
+<li><code>old_string</code>:</li>
+</ul>
+<div class="highlight"><pre><span></span><code>| `gen-automations-doc.py`                      | Regenerate `docs/reference/automations.md`          |
+| `init_sftp_integration.py`                    | Inspect SFTP servers and scaffold new integrations  |
+</code></pre></div>
+<ul>
+<li><code>new_string</code>:</li>
+</ul>
+<div class="highlight"><pre><span></span><code>| `gen-automations-doc.py`                      | Regenerate `docs/reference/automations.md`          |
+| `gen_column_naming_audit_inventory.py`        | Generate mart column naming audit inventory CSV     |
+| `init_sftp_integration.py`                    | Inspect SFTP servers and scaffold new integrations  |
+</code></pre></div>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 2: Commit</strong></li>
+</ul>
+<div class="highlight"><pre><span></span><code>git<span class="w"> </span>add<span class="w"> </span>scripts/CLAUDE.md
+git<span class="w"> </span>commit<span class="w"> </span>-m<span class="w"> </span><span class="s2">&quot;docs(scripts): catalog gen_column_naming_audit_inventory</span>
+
+<span class="s2">Tracked on #3643.&quot;</span>
+</code></pre></div>
+<hr />
+<h2 id="post-plan-handoff">Post-plan handoff</h2>
+<p>After Task 10, the worktree contains:</p>
+<ul>
+<li>A tested inventory-generation script
+  (<code>scripts/gen_column_naming_audit_inventory.py</code>).</li>
+<li>Unit tests under <code>tests/test_gen_column_naming_audit_inventory.py</code> plus a YAML
+  fixture.</li>
+<li>The initial CSV inventory at
+  <code>docs/superpowers/specs/2026-04-15-column-naming-audit-inventory.csv</code>.</li>
+<li>Scripts catalog updated.</li>
+</ul>
+<h3 id="next-manual-step-human-gated">Next manual step (human-gated)</h3>
+<ol>
+<li>Create a Google Sheet, import the CSV, share with the audit-review team.</li>
+<li>Post the sheet URL to issue
+   <a href="https://github.com/TEAMSchools/teamster/issues/3643">#3643</a> and add it to
+   the <code>Sheet URL</code> placeholder in the spec.</li>
+<li>Reviewers annotate <code>review_status</code>, <code>proposed_name</code>, and <code>reviewer_notes</code> in
+   the sheet.</li>
+<li>When all rows reach <code>approved</code>, export the sheet back to CSV and commit as
+   <code>docs/superpowers/specs/2026-04-15-column-naming-audit-approved.csv</code>.</li>
+</ol>
+<h3 id="follow-up-plan">Follow-up plan</h3>
+<p>Once the approved CSV lands, a separate implementation plan covers:</p>
+<ul>
+<li>Building the script that reads the approved CSV and emits SQL + YAML edits.</li>
+<li>Structural additions: upstream dbt work in staging/intermediate layers to
+  populate the new <code>dim_students</code> and <code>dim_staff</code> columns.</li>
+<li>Running the implementation script, generating the single PR for the refactor.</li>
+</ul>
+<p>That plan is written during the second writing-plans pass, after reviewers
+complete their annotation and we have concrete approved-row decisions to drive
+the implementation.</p>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+          <button type="button" class="md-top md-icon" data-md-component="top" hidden>
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8z"/></svg>
+  Back to top
+</button>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+    <div class="md-copyright__highlight">
+      Copyright &copy; KIPP TEAM & Family Schools
+    </div>
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      
+      <script id="__config" type="application/json">{"annotate": null, "base": "../../..", "features": ["content.action.edit", "content.code.copy", "navigation.instant", "navigation.indexes", "navigation.sections", "navigation.tabs", "navigation.tabs.sticky", "navigation.top", "search.highlight", "search.suggest", "toc.follow"], "search": "../../../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+    
+    
+      <script src="../../../assets/javascripts/bundle.79ae519e.min.js"></script>
+      
+    
+  </body>
+</html>

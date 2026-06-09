@@ -1,0 +1,2110 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+        <meta name="description" content="Data engineering platform for KIPP TEAM & Family Schools">
+      
+      
+      
+      
+      
+      
+        
+      
+      
+      <link rel="icon" href="../../../images/truck.svg">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.6">
+    
+    
+      
+        <title>Marts Data-Model Reference Implementation Plan - teamster</title>
+      
+    
+    
+      <link rel="stylesheet" href="../../../assets/stylesheets/main.484c7ddc.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+    <script>__md_scope=new URL("../../..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+  </head>
+  
+  
+    <body dir="ltr">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#marts-data-model-reference-implementation-plan" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+  
+
+<header class="md-header md-header--shadow md-header--lifted" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href="../../.." title="teamster" class="md-header__button md-logo" aria-label="teamster" data-md-component="logo">
+      
+  <img src="../../../images/truck.svg" alt="logo">
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            teamster
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              Marts Data-Model Reference Implementation Plan
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+        <div class="md-search__suggest" data-md-component="search-suggest"></div>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      
+    
+    
+      <div class="md-header__source">
+        <a href="https://github.com/TEAMSchools/teamster" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M173.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6m-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3m44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9M252.8 8C114.1 8 8 113.3 8 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C436.2 457.8 504 362.9 504 252 504 113.3 391.5 8 252.8 8M105.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1m-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7m32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1m-11.4-14.7c-1.6 1-1.6 3.6 0 5.9s4.3 3.3 5.6 2.3c1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2"/></svg>
+  </div>
+  <div class="md-source__repository">
+    TEAMSchools/teamster
+  </div>
+</a>
+      </div>
+    
+  </nav>
+  
+    
+      
+<nav class="md-tabs" aria-label="Tabs" data-md-component="tabs">
+  <div class="md-grid">
+    <ul class="md-tabs__list">
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../../.." class="md-tabs__link">
+        
+  
+  
+    
+  
+  Home
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../../guides/" class="md-tabs__link">
+          
+  
+  
+    
+  
+  Guides
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../../troubleshooting/dagster/" class="md-tabs__link">
+          
+  
+  
+    
+  
+  Troubleshooting
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../../reference/architecture/" class="md-tabs__link">
+          
+  
+  
+    
+  
+  Reference
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../../../reference/automations/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  Automations
+
+      </a>
+    </li>
+  
+
+      
+    </ul>
+  </div>
+</nav>
+    
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+  
+
+
+<nav class="md-nav md-nav--primary md-nav--lifted" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href="../../.." title="teamster" class="md-nav__button md-logo" aria-label="teamster" data-md-component="logo">
+      
+  <img src="../../../images/truck.svg" alt="logo">
+
+    </a>
+    teamster
+  </label>
+  
+    <div class="md-nav__source">
+      <a href="https://github.com/TEAMSchools/teamster" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M173.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6m-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3m44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9M252.8 8C114.1 8 8 113.3 8 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C436.2 457.8 504 362.9 504 252 504 113.3 391.5 8 252.8 8M105.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1m-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7m32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1m-11.4-14.7c-1.6 1-1.6 3.6 0 5.9s4.3 3.3 5.6 2.3c1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2"/></svg>
+  </div>
+  <div class="md-source__repository">
+    TEAMSchools/teamster
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../.." class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Home
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+          
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2" >
+        
+          
+          <div class="md-nav__link md-nav__container">
+            <a href="../../../guides/" class="md-nav__link ">
+              
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Guides
+  
+
+    
+  </span>
+  
+  
+
+            </a>
+            
+              
+              <label class="md-nav__link " for="__nav_2" id="__nav_2_label" tabindex="0">
+                <span class="md-nav__icon md-icon"></span>
+              </label>
+            
+          </div>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_2_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_2">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Guides
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/codespaces/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Codespaces
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/local-development/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Local Development
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/dagster/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Dagster
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/google-sheets/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Google Sheets & Forms
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/adp-location-renames/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ADP Location Renames
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/dbt-development/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    dbt Development
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/sftp-integration/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    SFTP Integration
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/superpowers/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Claude Code & Superpowers
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/cube/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Cube
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/claude-cube-connector/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Claude + Cube Connector
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3" >
+        
+          
+          <label class="md-nav__link" for="__nav_3" id="__nav_3_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Troubleshooting
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_3">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Troubleshooting
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../troubleshooting/dagster/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Dagster
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../troubleshooting/dbt/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    dbt
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../troubleshooting/vscode/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    VS Code
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4" >
+        
+          
+          <label class="md-nav__link" for="__nav_4" id="__nav_4_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Reference
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_4_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_4">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Reference
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/architecture/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Architecture
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/adding-an-integration/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Adding an Integration
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/io-managers/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    IO Managers
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/fiscal-year-partitioning/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Fiscal Year & Partitioning
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/dbt-conventions/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    dbt Conventions
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/marts-data-models/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Marts Data Models
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/automation-conditions/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Automation Conditions
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/automations/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Automations
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#file-structure" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        File Structure
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#task-1-parse-fk-edges-from-a-properties-yaml" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Task 1: Parse FK edges from a properties YAML
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#task-2-build-the-fk-graph-and-traverse-the-snowflake-chain" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Task 2: Build the FK graph and traverse the snowflake chain
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#task-3-render-the-mermaid-diagram-fk-table-and-page" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Task 3: Render the Mermaid diagram, FK table, and page
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#task-4-wire-up-main-generate-the-real-page-and-commit-it" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Task 4: Wire up main(), generate the real page, and commit it
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#task-5-enable-mermaid-in-mkdocs-and-add-the-nav-entry" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Task 5: Enable Mermaid in MkDocs and add the nav entry
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#task-6-document-regeneration" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Task 6: Document regeneration
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#final-verification" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Final verification
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#notes-for-the-executor" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Notes for the executor
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+  
+    <a href="https://github.com/TEAMSchools/teamster/edit/main/docs/superpowers/plans/2026-06-04-marts-data-models-reference.md" title="Edit this page" class="md-content__button md-icon" rel="edit">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M10 20H6V4h7v5h5v3.1l2-2V8l-6-6H6c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h4zm10.2-7c.1 0 .3.1.4.2l1.3 1.3c.2.2.2.6 0 .8l-1 1-2.1-2.1 1-1c.1-.1.2-.2.4-.2m0 3.9L14.1 23H12v-2.1l6.1-6.1z"/></svg>
+    </a>
+  
+  
+
+
+<h1 id="marts-data-model-reference-implementation-plan">Marts Data-Model Reference Implementation Plan</h1>
+<blockquote>
+<p><strong>For agentic workers:</strong> REQUIRED SUB-SKILL: Use
+superpowers:subagent-driven-development (recommended) or
+superpowers:executing-plans to implement this plan task-by-task. Steps use
+checkbox (<code>- [ ]</code>) syntax for tracking.</p>
+</blockquote>
+<p><strong>Goal:</strong> Generate an MkDocs reference page documenting every <code>kipptaf</code> fact
+table with a Mermaid ER snowflake diagram (full FK chain) and a foreign-key
+table.</p>
+<p><strong>Architecture:</strong> A pure-Python generator parses FK <code>constraints</code> from the marts
+properties YAML, builds a directed FK graph, BFS-traverses the full snowflake
+chain per fact, and emits one markdown page. MkDocs Material renders the
+<code>mermaid</code> fences client-side once a superfences custom fence is added.</p>
+<p><strong>Tech Stack:</strong> Python 3.13 (PEP 723 inline deps), PyYAML, pytest, MkDocs
+Material.</p>
+<p><strong>Worktree:</strong> All work happens in <code>.worktrees/cbini-docs-marts-reference</code> on
+branch <code>cbini/docs/claude-marts-data-models-reference</code>. Commands below use the
+worktree path explicitly so they work when run from the main repo. Tracking
+issue: <a href="https://github.com/TEAMSchools/teamster/issues/4120">#4120</a>.</p>
+<hr />
+<h2 id="file-structure">File Structure</h2>
+<ul>
+<li>Create: <code>scripts/generate_marts_reference.py</code> — the generator (parse → graph →
+  render → write).</li>
+<li>Create: <code>tests/scripts/test_generate_marts_reference.py</code> — unit tests for the
+  pure functions.</li>
+<li>Create: <code>tests/scripts/fixtures/sample_fct_reference.yml</code> — minimal fixture
+  for <code>parse_fk_edges</code>.</li>
+<li>Create: <code>docs/reference/marts-data-models.md</code> — the generated page (output,
+  committed).</li>
+<li>Modify: <code>mkdocs.yml</code> — add the <code>mermaid</code> superfences custom fence and the nav
+  entry.</li>
+<li>Modify: <code>scripts/CLAUDE.md</code> — one-line regeneration note.</li>
+</ul>
+<p>The generator is one focused module: small pure functions (<code>parse_fk_edges</code>,
+<code>collect_edges</code>, <code>collect_fact_names</code>, <code>build_adjacency</code>, <code>snowflake_subgraph</code>,
+<code>render_*</code>) plus a thin <code>main()</code>. This mirrors <code>scripts/audit_marts_yaml.py</code>
+(PEP 723 header, <code>pathlib</code>, dataclasses) and its test in
+<code>tests/scripts/test_audit_marts_yaml.py</code> (loads the script via
+<code>importlib.util</code>).</p>
+<hr />
+<h2 id="task-1-parse-fk-edges-from-a-properties-yaml">Task 1: Parse FK edges from a properties YAML</h2>
+<p><strong>Files:</strong></p>
+<ul class="task-list">
+<li>Create: <code>scripts/generate_marts_reference.py</code></li>
+<li>Create: <code>tests/scripts/fixtures/sample_fct_reference.yml</code></li>
+<li>
+<p>Test: <code>tests/scripts/test_generate_marts_reference.py</code></p>
+</li>
+<li class="task-list-item">
+<p><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 1: Create the test fixture</strong></p>
+</li>
+</ul>
+<p>Create <code>tests/scripts/fixtures/sample_fct_reference.yml</code>:</p>
+<div class="highlight"><pre><span></span><code><span class="nt">models</span><span class="p">:</span>
+<span class="w">  </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">fct_sample</span>
+<span class="w">    </span><span class="nt">columns</span><span class="p">:</span>
+<span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">sample_key</span>
+<span class="w">        </span><span class="nt">constraints</span><span class="p">:</span>
+<span class="w">          </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">type</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">primary_key</span>
+<span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">student_enrollment_key</span>
+<span class="w">        </span><span class="nt">constraints</span><span class="p">:</span>
+<span class="w">          </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">type</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">foreign_key</span>
+<span class="w">            </span><span class="nt">to</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">ref(&#39;dim_student_enrollments&#39;)</span>
+<span class="w">        </span><span class="nt">data_tests</span><span class="p">:</span>
+<span class="w">          </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">relationships</span><span class="p">:</span>
+<span class="w">              </span><span class="nt">arguments</span><span class="p">:</span>
+<span class="w">                </span><span class="nt">to</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">ref(&#39;dim_student_enrollments&#39;)</span>
+<span class="w">                </span><span class="nt">field</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">student_enrollment_key</span>
+<span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">created_date_key</span>
+<span class="w">        </span><span class="nt">constraints</span><span class="p">:</span>
+<span class="w">          </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">type</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">foreign_key</span>
+<span class="w">            </span><span class="nt">to</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">ref(&#39;dim_dates&#39;)</span>
+<span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">solved_date_key</span>
+<span class="w">        </span><span class="nt">constraints</span><span class="p">:</span>
+<span class="w">          </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">type</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">foreign_key</span>
+<span class="w">            </span><span class="nt">to</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">ref(&#39;dim_dates&#39;)</span>
+</code></pre></div>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 2: Write the failing test</strong></li>
+</ul>
+<p>Create <code>tests/scripts/test_generate_marts_reference.py</code>:</p>
+<div class="highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">__future__</span><span class="w"> </span><span class="kn">import</span> <span class="n">annotations</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">importlib.util</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">sys</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pathlib</span><span class="w"> </span><span class="kn">import</span> <span class="n">Path</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">types</span><span class="w"> </span><span class="kn">import</span> <span class="n">ModuleType</span>
+
+<span class="n">FIXTURE_DIR</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(</span><span class="vm">__file__</span><span class="p">)</span><span class="o">.</span><span class="n">parent</span> <span class="o">/</span> <span class="s2">&quot;fixtures&quot;</span>
+<span class="n">SCRIPT_PATH</span> <span class="o">=</span> <span class="p">(</span>
+    <span class="n">Path</span><span class="p">(</span><span class="vm">__file__</span><span class="p">)</span><span class="o">.</span><span class="n">resolve</span><span class="p">()</span><span class="o">.</span><span class="n">parents</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span> <span class="o">/</span> <span class="s2">&quot;scripts/generate_marts_reference.py&quot;</span>
+<span class="p">)</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_load_module</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="n">ModuleType</span><span class="p">:</span>
+    <span class="n">spec</span> <span class="o">=</span> <span class="n">importlib</span><span class="o">.</span><span class="n">util</span><span class="o">.</span><span class="n">spec_from_file_location</span><span class="p">(</span>
+        <span class="s2">&quot;generate_marts_reference&quot;</span><span class="p">,</span> <span class="n">SCRIPT_PATH</span>
+    <span class="p">)</span>
+    <span class="k">assert</span> <span class="n">spec</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">spec</span><span class="o">.</span><span class="n">loader</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
+    <span class="n">module</span> <span class="o">=</span> <span class="n">importlib</span><span class="o">.</span><span class="n">util</span><span class="o">.</span><span class="n">module_from_spec</span><span class="p">(</span><span class="n">spec</span><span class="p">)</span>
+    <span class="n">sys</span><span class="o">.</span><span class="n">modules</span><span class="p">[</span><span class="s2">&quot;generate_marts_reference&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">module</span>
+    <span class="n">spec</span><span class="o">.</span><span class="n">loader</span><span class="o">.</span><span class="n">exec_module</span><span class="p">(</span><span class="n">module</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">module</span>
+
+
+<span class="n">gen</span> <span class="o">=</span> <span class="n">_load_module</span><span class="p">()</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">test_parse_fk_edges_reads_foreign_key_constraints</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+    <span class="n">edges</span> <span class="o">=</span> <span class="n">gen</span><span class="o">.</span><span class="n">parse_fk_edges</span><span class="p">(</span><span class="n">FIXTURE_DIR</span> <span class="o">/</span> <span class="s2">&quot;sample_fct_reference.yml&quot;</span><span class="p">)</span>
+
+    <span class="c1"># one edge per foreign_key constraint; primary_key ignored; relationships</span>
+    <span class="c1"># test is NOT double-counted.</span>
+    <span class="k">assert</span> <span class="n">edges</span> <span class="o">==</span> <span class="p">[</span>
+        <span class="n">gen</span><span class="o">.</span><span class="n">FkEdge</span><span class="p">(</span><span class="s2">&quot;fct_sample&quot;</span><span class="p">,</span> <span class="s2">&quot;student_enrollment_key&quot;</span><span class="p">,</span> <span class="s2">&quot;dim_student_enrollments&quot;</span><span class="p">),</span>
+        <span class="n">gen</span><span class="o">.</span><span class="n">FkEdge</span><span class="p">(</span><span class="s2">&quot;fct_sample&quot;</span><span class="p">,</span> <span class="s2">&quot;created_date_key&quot;</span><span class="p">,</span> <span class="s2">&quot;dim_dates&quot;</span><span class="p">),</span>
+        <span class="n">gen</span><span class="o">.</span><span class="n">FkEdge</span><span class="p">(</span><span class="s2">&quot;fct_sample&quot;</span><span class="p">,</span> <span class="s2">&quot;solved_date_key&quot;</span><span class="p">,</span> <span class="s2">&quot;dim_dates&quot;</span><span class="p">),</span>
+    <span class="p">]</span>
+</code></pre></div>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 3: Run the test to verify it fails</strong></li>
+</ul>
+<p>Run:</p>
+<div class="highlight"><pre><span></span><code><span class="nv">VIRTUAL_ENV</span><span class="o">=</span><span class="w"> </span>uv<span class="w"> </span>--directory<span class="w"> </span>.worktrees/cbini-docs-marts-reference<span class="w"> </span>run<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>pytest<span class="w"> </span>tests/scripts/test_generate_marts_reference.py<span class="w"> </span>-v
+</code></pre></div>
+<p>Expected: FAIL — <code>scripts/generate_marts_reference.py</code> does not exist
+(collection error).</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 4: Write the minimal implementation</strong></li>
+</ul>
+<p>Create <code>scripts/generate_marts_reference.py</code>:</p>
+<div class="highlight"><pre><span></span><code><span class="c1"># /// script</span>
+<span class="c1"># requires-python = &quot;&gt;=3.13&quot;</span>
+<span class="c1"># dependencies = [</span>
+<span class="c1">#   &quot;pyyaml&gt;=6.0&quot;,</span>
+<span class="c1"># ]</span>
+<span class="c1"># ///</span>
+
+<span class="sd">&quot;&quot;&quot;Generate the marts data-model reference page.</span>
+
+<span class="sd">Parses foreign-key constraints from the kipptaf marts properties YAML, builds a</span>
+<span class="sd">directed FK graph, traverses the full snowflake chain per fact table, and emits</span>
+<span class="sd">a single markdown page with a Mermaid ER diagram and an FK table per fact.</span>
+
+<span class="sd">No dbt build or warehouse access required.</span>
+
+<span class="sd">Usage:</span>
+<span class="sd">    uv run scripts/generate_marts_reference.py</span>
+
+<span class="sd">Design reference:</span>
+<span class="sd">    docs/superpowers/specs/2026-06-04-marts-data-models-reference-design.md</span>
+<span class="sd">&quot;&quot;&quot;</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">__future__</span><span class="w"> </span><span class="kn">import</span> <span class="n">annotations</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">argparse</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">dataclasses</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">re</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">collections</span><span class="w"> </span><span class="kn">import</span> <span class="n">defaultdict</span><span class="p">,</span> <span class="n">deque</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">collections.abc</span><span class="w"> </span><span class="kn">import</span> <span class="n">Iterable</span><span class="p">,</span> <span class="n">Mapping</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pathlib</span><span class="w"> </span><span class="kn">import</span> <span class="n">Path</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">yaml</span>
+
+<span class="n">REPO_ROOT</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(</span><span class="vm">__file__</span><span class="p">)</span><span class="o">.</span><span class="n">resolve</span><span class="p">()</span><span class="o">.</span><span class="n">parent</span><span class="o">.</span><span class="n">parent</span>
+<span class="n">MARTS_DIR</span> <span class="o">=</span> <span class="n">REPO_ROOT</span> <span class="o">/</span> <span class="s2">&quot;src/dbt/kipptaf/models/marts&quot;</span>
+<span class="n">DEFAULT_OUTPUT</span> <span class="o">=</span> <span class="n">REPO_ROOT</span> <span class="o">/</span> <span class="s2">&quot;docs/reference/marts-data-models.md&quot;</span>
+
+<span class="n">_REF_RE</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">compile</span><span class="p">(</span><span class="sa">r</span><span class="s2">&quot;ref\(\s*[&#39;</span><span class="se">\&quot;</span><span class="s2">]([a-z0-9_]+)[&#39;</span><span class="se">\&quot;</span><span class="s2">]\s*\)&quot;</span><span class="p">)</span>
+
+
+<span class="nd">@dataclasses</span><span class="o">.</span><span class="n">dataclass</span><span class="p">(</span><span class="n">frozen</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">FkEdge</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;A foreign-key edge from a model&#39;s column to a target model.&quot;&quot;&quot;</span>
+
+    <span class="n">source</span><span class="p">:</span> <span class="nb">str</span>
+    <span class="n">fk_column</span><span class="p">:</span> <span class="nb">str</span>
+    <span class="n">target</span><span class="p">:</span> <span class="nb">str</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_extract_target</span><span class="p">(</span><span class="n">to_value</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span><span class="p">:</span>
+    <span class="n">match</span> <span class="o">=</span> <span class="n">_REF_RE</span><span class="o">.</span><span class="n">search</span><span class="p">(</span><span class="n">to_value</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">match</span><span class="o">.</span><span class="n">group</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span> <span class="k">if</span> <span class="n">match</span> <span class="k">else</span> <span class="kc">None</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">parse_fk_edges</span><span class="p">(</span><span class="n">yaml_path</span><span class="p">:</span> <span class="n">Path</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">[</span><span class="n">FkEdge</span><span class="p">]:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Return one FkEdge per column-level foreign_key constraint in the file.&quot;&quot;&quot;</span>
+    <span class="n">doc</span> <span class="o">=</span> <span class="n">yaml</span><span class="o">.</span><span class="n">safe_load</span><span class="p">(</span><span class="n">yaml_path</span><span class="o">.</span><span class="n">read_text</span><span class="p">())</span> <span class="ow">or</span> <span class="p">{}</span>
+    <span class="n">edges</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="n">FkEdge</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">for</span> <span class="n">model</span> <span class="ow">in</span> <span class="n">doc</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;models&quot;</span><span class="p">,</span> <span class="p">[]):</span>
+        <span class="n">source</span> <span class="o">=</span> <span class="n">model</span><span class="p">[</span><span class="s2">&quot;name&quot;</span><span class="p">]</span>
+        <span class="k">for</span> <span class="n">column</span> <span class="ow">in</span> <span class="n">model</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;columns&quot;</span><span class="p">,</span> <span class="p">[]):</span>
+            <span class="k">for</span> <span class="n">constraint</span> <span class="ow">in</span> <span class="n">column</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;constraints&quot;</span><span class="p">,</span> <span class="p">[]):</span>
+                <span class="k">if</span> <span class="n">constraint</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;type&quot;</span><span class="p">)</span> <span class="o">!=</span> <span class="s2">&quot;foreign_key&quot;</span><span class="p">:</span>
+                    <span class="k">continue</span>
+                <span class="n">target</span> <span class="o">=</span> <span class="n">_extract_target</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">constraint</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;to&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">)))</span>
+                <span class="k">if</span> <span class="n">target</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                    <span class="n">edges</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">FkEdge</span><span class="p">(</span><span class="n">source</span><span class="p">,</span> <span class="n">column</span><span class="p">[</span><span class="s2">&quot;name&quot;</span><span class="p">],</span> <span class="n">target</span><span class="p">))</span>
+    <span class="k">return</span> <span class="n">edges</span>
+</code></pre></div>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 5: Run the test to verify it passes</strong></li>
+</ul>
+<p>Run:</p>
+<div class="highlight"><pre><span></span><code><span class="nv">VIRTUAL_ENV</span><span class="o">=</span><span class="w"> </span>uv<span class="w"> </span>--directory<span class="w"> </span>.worktrees/cbini-docs-marts-reference<span class="w"> </span>run<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>pytest<span class="w"> </span>tests/scripts/test_generate_marts_reference.py<span class="w"> </span>-v
+</code></pre></div>
+<p>Expected: PASS (1 passed).</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 6: Commit</strong></li>
+</ul>
+<div class="highlight"><pre><span></span><code>git<span class="w"> </span>-C<span class="w"> </span>.worktrees/cbini-docs-marts-reference<span class="w"> </span>add<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>scripts/generate_marts_reference.py<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>tests/scripts/fixtures/sample_fct_reference.yml<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>tests/scripts/test_generate_marts_reference.py
+git<span class="w"> </span>-C<span class="w"> </span>.worktrees/cbini-docs-marts-reference<span class="w"> </span>commit<span class="w"> </span>-m<span class="w"> </span><span class="s2">&quot;feat: add marts reference FK-edge parser</span>
+
+<span class="s2">Refs #4120&quot;</span>
+</code></pre></div>
+<hr />
+<h2 id="task-2-build-the-fk-graph-and-traverse-the-snowflake-chain">Task 2: Build the FK graph and traverse the snowflake chain</h2>
+<p><strong>Files:</strong></p>
+<ul class="task-list">
+<li>Modify: <code>scripts/generate_marts_reference.py</code> (add functions)</li>
+<li>
+<p>Test: <code>tests/scripts/test_generate_marts_reference.py</code> (add tests)</p>
+</li>
+<li class="task-list-item">
+<p><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 1: Write the failing tests</strong></p>
+</li>
+</ul>
+<p>Append to <code>tests/scripts/test_generate_marts_reference.py</code>:</p>
+<div class="highlight"><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">_sample_edges</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">:</span>
+    <span class="k">return</span> <span class="p">[</span>
+        <span class="n">gen</span><span class="o">.</span><span class="n">FkEdge</span><span class="p">(</span><span class="s2">&quot;fct_x&quot;</span><span class="p">,</span> <span class="s2">&quot;enrollment_key&quot;</span><span class="p">,</span> <span class="s2">&quot;dim_enrollments&quot;</span><span class="p">),</span>
+        <span class="n">gen</span><span class="o">.</span><span class="n">FkEdge</span><span class="p">(</span><span class="s2">&quot;fct_x&quot;</span><span class="p">,</span> <span class="s2">&quot;created_date_key&quot;</span><span class="p">,</span> <span class="s2">&quot;dim_dates&quot;</span><span class="p">),</span>
+        <span class="n">gen</span><span class="o">.</span><span class="n">FkEdge</span><span class="p">(</span><span class="s2">&quot;fct_x&quot;</span><span class="p">,</span> <span class="s2">&quot;solved_date_key&quot;</span><span class="p">,</span> <span class="s2">&quot;dim_dates&quot;</span><span class="p">),</span>
+        <span class="n">gen</span><span class="o">.</span><span class="n">FkEdge</span><span class="p">(</span><span class="s2">&quot;dim_enrollments&quot;</span><span class="p">,</span> <span class="s2">&quot;student_key&quot;</span><span class="p">,</span> <span class="s2">&quot;dim_students&quot;</span><span class="p">),</span>
+        <span class="n">gen</span><span class="o">.</span><span class="n">FkEdge</span><span class="p">(</span><span class="s2">&quot;dim_enrollments&quot;</span><span class="p">,</span> <span class="s2">&quot;location_key&quot;</span><span class="p">,</span> <span class="s2">&quot;dim_locations&quot;</span><span class="p">),</span>
+        <span class="n">gen</span><span class="o">.</span><span class="n">FkEdge</span><span class="p">(</span><span class="s2">&quot;dim_locations&quot;</span><span class="p">,</span> <span class="s2">&quot;region_key&quot;</span><span class="p">,</span> <span class="s2">&quot;dim_regions&quot;</span><span class="p">),</span>
+    <span class="p">]</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">test_build_adjacency_groups_edges_by_source</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+    <span class="n">adjacency</span> <span class="o">=</span> <span class="n">gen</span><span class="o">.</span><span class="n">build_adjacency</span><span class="p">(</span><span class="n">_sample_edges</span><span class="p">())</span>
+    <span class="k">assert</span> <span class="p">{</span><span class="n">e</span><span class="o">.</span><span class="n">target</span> <span class="k">for</span> <span class="n">e</span> <span class="ow">in</span> <span class="n">adjacency</span><span class="p">[</span><span class="s2">&quot;fct_x&quot;</span><span class="p">]}</span> <span class="o">==</span> <span class="p">{</span><span class="s2">&quot;dim_enrollments&quot;</span><span class="p">,</span> <span class="s2">&quot;dim_dates&quot;</span><span class="p">}</span>
+    <span class="k">assert</span> <span class="nb">len</span><span class="p">(</span><span class="n">adjacency</span><span class="p">[</span><span class="s2">&quot;fct_x&quot;</span><span class="p">])</span> <span class="o">==</span> <span class="mi">3</span>  <span class="c1"># two role-qualified date edges kept</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">test_snowflake_subgraph_walks_full_chain</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+    <span class="n">adjacency</span> <span class="o">=</span> <span class="n">gen</span><span class="o">.</span><span class="n">build_adjacency</span><span class="p">(</span><span class="n">_sample_edges</span><span class="p">())</span>
+    <span class="n">sub</span> <span class="o">=</span> <span class="n">gen</span><span class="o">.</span><span class="n">snowflake_subgraph</span><span class="p">(</span><span class="n">adjacency</span><span class="p">,</span> <span class="s2">&quot;fct_x&quot;</span><span class="p">)</span>
+
+    <span class="c1"># every reachable edge is collected (full snowflake chain), including both</span>
+    <span class="c1"># role-qualified edges to dim_dates and the dim-&gt;dim chain to dim_regions.</span>
+    <span class="k">assert</span> <span class="nb">len</span><span class="p">(</span><span class="n">sub</span><span class="p">)</span> <span class="o">==</span> <span class="mi">6</span>
+    <span class="k">assert</span> <span class="n">gen</span><span class="o">.</span><span class="n">FkEdge</span><span class="p">(</span><span class="s2">&quot;dim_locations&quot;</span><span class="p">,</span> <span class="s2">&quot;region_key&quot;</span><span class="p">,</span> <span class="s2">&quot;dim_regions&quot;</span><span class="p">)</span> <span class="ow">in</span> <span class="n">sub</span>
+    <span class="n">targets</span> <span class="o">=</span> <span class="p">{</span><span class="n">e</span><span class="o">.</span><span class="n">target</span> <span class="k">for</span> <span class="n">e</span> <span class="ow">in</span> <span class="n">sub</span><span class="p">}</span>
+    <span class="k">assert</span> <span class="p">{</span><span class="s2">&quot;dim_regions&quot;</span><span class="p">,</span> <span class="s2">&quot;dim_students&quot;</span><span class="p">,</span> <span class="s2">&quot;dim_dates&quot;</span><span class="p">}</span> <span class="o">&lt;=</span> <span class="n">targets</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">test_collect_fact_names_sorted_from_facts_dir</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+    <span class="n">names</span> <span class="o">=</span> <span class="n">gen</span><span class="o">.</span><span class="n">collect_fact_names</span><span class="p">(</span><span class="n">gen</span><span class="o">.</span><span class="n">MARTS_DIR</span><span class="p">)</span>
+    <span class="k">assert</span> <span class="n">names</span> <span class="o">==</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">names</span><span class="p">)</span>
+    <span class="k">assert</span> <span class="nb">all</span><span class="p">(</span><span class="n">n</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s2">&quot;fct_&quot;</span><span class="p">)</span> <span class="k">for</span> <span class="n">n</span> <span class="ow">in</span> <span class="n">names</span><span class="p">)</span>
+    <span class="k">assert</span> <span class="s2">&quot;fct_student_attendance_daily&quot;</span> <span class="ow">in</span> <span class="n">names</span>
+    <span class="k">assert</span> <span class="nb">len</span><span class="p">(</span><span class="n">names</span><span class="p">)</span> <span class="o">&gt;=</span> <span class="mi">20</span>
+</code></pre></div>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 2: Run the tests to verify they fail</strong></li>
+</ul>
+<p>Run:</p>
+<div class="highlight"><pre><span></span><code><span class="nv">VIRTUAL_ENV</span><span class="o">=</span><span class="w"> </span>uv<span class="w"> </span>--directory<span class="w"> </span>.worktrees/cbini-docs-marts-reference<span class="w"> </span>run<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>pytest<span class="w"> </span>tests/scripts/test_generate_marts_reference.py<span class="w"> </span>-v
+</code></pre></div>
+<p>Expected: FAIL — <code>build_adjacency</code>, <code>snowflake_subgraph</code>, <code>collect_fact_names</code>
+not defined.</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 3: Add the implementation</strong></li>
+</ul>
+<p>Insert these functions into <code>scripts/generate_marts_reference.py</code>, after
+<code>parse_fk_edges</code>:</p>
+<div class="highlight"><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">collect_edges</span><span class="p">(</span><span class="n">marts_dir</span><span class="p">:</span> <span class="n">Path</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">[</span><span class="n">FkEdge</span><span class="p">]:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Parse FK edges from every facts/dimensions/bridges properties file.&quot;&quot;&quot;</span>
+    <span class="n">edges</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="n">FkEdge</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">for</span> <span class="n">subdir</span> <span class="ow">in</span> <span class="p">(</span><span class="s2">&quot;facts&quot;</span><span class="p">,</span> <span class="s2">&quot;dimensions&quot;</span><span class="p">,</span> <span class="s2">&quot;bridges&quot;</span><span class="p">):</span>
+        <span class="k">for</span> <span class="n">path</span> <span class="ow">in</span> <span class="nb">sorted</span><span class="p">((</span><span class="n">marts_dir</span> <span class="o">/</span> <span class="n">subdir</span> <span class="o">/</span> <span class="s2">&quot;properties&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">glob</span><span class="p">(</span><span class="s2">&quot;*.yml&quot;</span><span class="p">)):</span>
+            <span class="n">edges</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span><span class="n">parse_fk_edges</span><span class="p">(</span><span class="n">path</span><span class="p">))</span>
+    <span class="k">return</span> <span class="n">edges</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">collect_fact_names</span><span class="p">(</span><span class="n">marts_dir</span><span class="p">:</span> <span class="n">Path</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">]:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Return the sorted list of fct_* model names from facts/properties.&quot;&quot;&quot;</span>
+    <span class="n">names</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">for</span> <span class="n">path</span> <span class="ow">in</span> <span class="nb">sorted</span><span class="p">((</span><span class="n">marts_dir</span> <span class="o">/</span> <span class="s2">&quot;facts&quot;</span> <span class="o">/</span> <span class="s2">&quot;properties&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">glob</span><span class="p">(</span><span class="s2">&quot;*.yml&quot;</span><span class="p">)):</span>
+        <span class="n">doc</span> <span class="o">=</span> <span class="n">yaml</span><span class="o">.</span><span class="n">safe_load</span><span class="p">(</span><span class="n">path</span><span class="o">.</span><span class="n">read_text</span><span class="p">())</span> <span class="ow">or</span> <span class="p">{}</span>
+        <span class="n">names</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span>
+            <span class="n">model</span><span class="p">[</span><span class="s2">&quot;name&quot;</span><span class="p">]</span>
+            <span class="k">for</span> <span class="n">model</span> <span class="ow">in</span> <span class="n">doc</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;models&quot;</span><span class="p">,</span> <span class="p">[])</span>
+            <span class="k">if</span> <span class="n">model</span><span class="p">[</span><span class="s2">&quot;name&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s2">&quot;fct_&quot;</span><span class="p">)</span>
+        <span class="p">)</span>
+    <span class="k">return</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">names</span><span class="p">)</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">build_adjacency</span><span class="p">(</span><span class="n">edges</span><span class="p">:</span> <span class="n">Iterable</span><span class="p">[</span><span class="n">FkEdge</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">list</span><span class="p">[</span><span class="n">FkEdge</span><span class="p">]]:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Group edges by source model into an adjacency map.&quot;&quot;&quot;</span>
+    <span class="n">adjacency</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">list</span><span class="p">[</span><span class="n">FkEdge</span><span class="p">]]</span> <span class="o">=</span> <span class="n">defaultdict</span><span class="p">(</span><span class="nb">list</span><span class="p">)</span>
+    <span class="k">for</span> <span class="n">edge</span> <span class="ow">in</span> <span class="n">edges</span><span class="p">:</span>
+        <span class="n">adjacency</span><span class="p">[</span><span class="n">edge</span><span class="o">.</span><span class="n">source</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">edge</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">adjacency</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">snowflake_subgraph</span><span class="p">(</span>
+    <span class="n">adjacency</span><span class="p">:</span> <span class="n">Mapping</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">list</span><span class="p">[</span><span class="n">FkEdge</span><span class="p">]],</span> <span class="n">root</span><span class="p">:</span> <span class="nb">str</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">[</span><span class="n">FkEdge</span><span class="p">]:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;BFS from root, collecting every reachable FK edge (full snowflake chain).</span>
+
+<span class="sd">    Each target node is enqueued once; role-qualified parallel edges to the same</span>
+<span class="sd">    target are all kept. Assumes a DAG (no diamonds, per the marts design).</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">visited</span><span class="p">:</span> <span class="nb">set</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span><span class="n">root</span><span class="p">}</span>
+    <span class="n">queue</span><span class="p">:</span> <span class="n">deque</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="n">deque</span><span class="p">([</span><span class="n">root</span><span class="p">])</span>
+    <span class="n">collected</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="n">FkEdge</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="n">seen</span><span class="p">:</span> <span class="nb">set</span><span class="p">[</span><span class="nb">tuple</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">]]</span> <span class="o">=</span> <span class="nb">set</span><span class="p">()</span>
+    <span class="k">while</span> <span class="n">queue</span><span class="p">:</span>
+        <span class="n">node</span> <span class="o">=</span> <span class="n">queue</span><span class="o">.</span><span class="n">popleft</span><span class="p">()</span>
+        <span class="k">for</span> <span class="n">edge</span> <span class="ow">in</span> <span class="n">adjacency</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">node</span><span class="p">,</span> <span class="p">[]):</span>
+            <span class="n">key</span> <span class="o">=</span> <span class="p">(</span><span class="n">edge</span><span class="o">.</span><span class="n">source</span><span class="p">,</span> <span class="n">edge</span><span class="o">.</span><span class="n">fk_column</span><span class="p">,</span> <span class="n">edge</span><span class="o">.</span><span class="n">target</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">key</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">seen</span><span class="p">:</span>
+                <span class="n">seen</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">key</span><span class="p">)</span>
+                <span class="n">collected</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">edge</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">edge</span><span class="o">.</span><span class="n">target</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">visited</span><span class="p">:</span>
+                <span class="n">visited</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">edge</span><span class="o">.</span><span class="n">target</span><span class="p">)</span>
+                <span class="n">queue</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">edge</span><span class="o">.</span><span class="n">target</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">collected</span>
+</code></pre></div>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 4: Run the tests to verify they pass</strong></li>
+</ul>
+<p>Run:</p>
+<div class="highlight"><pre><span></span><code><span class="nv">VIRTUAL_ENV</span><span class="o">=</span><span class="w"> </span>uv<span class="w"> </span>--directory<span class="w"> </span>.worktrees/cbini-docs-marts-reference<span class="w"> </span>run<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>pytest<span class="w"> </span>tests/scripts/test_generate_marts_reference.py<span class="w"> </span>-v
+</code></pre></div>
+<p>Expected: PASS (all tests).</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 5: Commit</strong></li>
+</ul>
+<div class="highlight"><pre><span></span><code>git<span class="w"> </span>-C<span class="w"> </span>.worktrees/cbini-docs-marts-reference<span class="w"> </span>add<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>scripts/generate_marts_reference.py<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>tests/scripts/test_generate_marts_reference.py
+git<span class="w"> </span>-C<span class="w"> </span>.worktrees/cbini-docs-marts-reference<span class="w"> </span>commit<span class="w"> </span>-m<span class="w"> </span><span class="s2">&quot;feat: add FK graph build and snowflake traversal</span>
+
+<span class="s2">Refs #4120&quot;</span>
+</code></pre></div>
+<hr />
+<h2 id="task-3-render-the-mermaid-diagram-fk-table-and-page">Task 3: Render the Mermaid diagram, FK table, and page</h2>
+<p><strong>Files:</strong></p>
+<ul class="task-list">
+<li>Modify: <code>scripts/generate_marts_reference.py</code> (add render functions)</li>
+<li>
+<p>Test: <code>tests/scripts/test_generate_marts_reference.py</code> (add tests)</p>
+</li>
+<li class="task-list-item">
+<p><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 1: Write the failing tests</strong></p>
+</li>
+</ul>
+<p>Append to <code>tests/scripts/test_generate_marts_reference.py</code>:</p>
+<div class="highlight"><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">test_render_erdiagram_emits_labeled_fk_edges</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+    <span class="n">adjacency</span> <span class="o">=</span> <span class="n">gen</span><span class="o">.</span><span class="n">build_adjacency</span><span class="p">(</span><span class="n">_sample_edges</span><span class="p">())</span>
+    <span class="n">sub</span> <span class="o">=</span> <span class="n">gen</span><span class="o">.</span><span class="n">snowflake_subgraph</span><span class="p">(</span><span class="n">adjacency</span><span class="p">,</span> <span class="s2">&quot;fct_x&quot;</span><span class="p">)</span>
+    <span class="n">block</span> <span class="o">=</span> <span class="n">gen</span><span class="o">.</span><span class="n">render_erdiagram</span><span class="p">(</span><span class="n">sub</span><span class="p">,</span> <span class="s2">&quot;fct_x&quot;</span><span class="p">)</span>
+
+    <span class="k">assert</span> <span class="n">block</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s2">&quot;```mermaid</span><span class="se">\n</span><span class="s2">erDiagram</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">)</span>
+    <span class="k">assert</span> <span class="n">block</span><span class="o">.</span><span class="n">rstrip</span><span class="p">()</span><span class="o">.</span><span class="n">endswith</span><span class="p">(</span><span class="s2">&quot;```&quot;</span><span class="p">)</span>
+    <span class="k">assert</span> <span class="s1">&#39;fct_x }o--|| dim_dates : &quot;created_date_key&quot;&#39;</span> <span class="ow">in</span> <span class="n">block</span>
+    <span class="k">assert</span> <span class="s1">&#39;fct_x }o--|| dim_dates : &quot;solved_date_key&quot;&#39;</span> <span class="ow">in</span> <span class="n">block</span>
+    <span class="k">assert</span> <span class="s1">&#39;dim_locations }o--|| dim_regions : &quot;region_key&quot;&#39;</span> <span class="ow">in</span> <span class="n">block</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">test_render_erdiagram_handles_fact_with_no_fks</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+    <span class="n">block</span> <span class="o">=</span> <span class="n">gen</span><span class="o">.</span><span class="n">render_erdiagram</span><span class="p">([],</span> <span class="s2">&quot;fct_lonely&quot;</span><span class="p">)</span>
+    <span class="k">assert</span> <span class="s2">&quot;erDiagram&quot;</span> <span class="ow">in</span> <span class="n">block</span>
+    <span class="k">assert</span> <span class="s2">&quot;fct_lonely {&quot;</span> <span class="ow">in</span> <span class="n">block</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">test_render_fk_table_lists_direct_fks_sorted</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+    <span class="n">adjacency</span> <span class="o">=</span> <span class="n">gen</span><span class="o">.</span><span class="n">build_adjacency</span><span class="p">(</span><span class="n">_sample_edges</span><span class="p">())</span>
+    <span class="n">table</span> <span class="o">=</span> <span class="n">gen</span><span class="o">.</span><span class="n">render_fk_table</span><span class="p">(</span><span class="n">adjacency</span><span class="p">,</span> <span class="s2">&quot;fct_x&quot;</span><span class="p">)</span>
+
+    <span class="k">assert</span> <span class="s2">&quot;| FK column | References |&quot;</span> <span class="ow">in</span> <span class="n">table</span>
+    <span class="n">lines</span> <span class="o">=</span> <span class="p">[</span><span class="n">ln</span> <span class="k">for</span> <span class="n">ln</span> <span class="ow">in</span> <span class="n">table</span><span class="o">.</span><span class="n">splitlines</span><span class="p">()</span> <span class="k">if</span> <span class="n">ln</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s2">&quot;| `&quot;</span><span class="p">)]</span>
+    <span class="c1"># direct FKs only, sorted by column name</span>
+    <span class="k">assert</span> <span class="n">lines</span> <span class="o">==</span> <span class="p">[</span>
+        <span class="s2">&quot;| `created_date_key` | `dim_dates` |&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;| `enrollment_key` | `dim_enrollments` |&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;| `solved_date_key` | `dim_dates` |&quot;</span><span class="p">,</span>
+    <span class="p">]</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">test_render_page_has_one_h2_per_fact_and_banner</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+    <span class="n">adjacency</span> <span class="o">=</span> <span class="n">gen</span><span class="o">.</span><span class="n">build_adjacency</span><span class="p">(</span><span class="n">_sample_edges</span><span class="p">())</span>
+    <span class="n">page</span> <span class="o">=</span> <span class="n">gen</span><span class="o">.</span><span class="n">render_page</span><span class="p">(</span><span class="n">adjacency</span><span class="p">,</span> <span class="p">[</span><span class="s2">&quot;fct_x&quot;</span><span class="p">])</span>
+
+    <span class="k">assert</span> <span class="n">page</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s2">&quot;# Marts data models</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">)</span>
+    <span class="k">assert</span> <span class="n">gen</span><span class="o">.</span><span class="n">BANNER</span> <span class="ow">in</span> <span class="n">page</span>
+    <span class="k">assert</span> <span class="n">page</span><span class="o">.</span><span class="n">count</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">## &quot;</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span>
+    <span class="k">assert</span> <span class="s2">&quot;## fct_x&quot;</span> <span class="ow">in</span> <span class="n">page</span>
+</code></pre></div>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 2: Run the tests to verify they fail</strong></li>
+</ul>
+<p>Run:</p>
+<div class="highlight"><pre><span></span><code><span class="nv">VIRTUAL_ENV</span><span class="o">=</span><span class="w"> </span>uv<span class="w"> </span>--directory<span class="w"> </span>.worktrees/cbini-docs-marts-reference<span class="w"> </span>run<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>pytest<span class="w"> </span>tests/scripts/test_generate_marts_reference.py<span class="w"> </span>-v
+</code></pre></div>
+<p>Expected: FAIL — <code>render_erdiagram</code>, <code>render_fk_table</code>, <code>render_page</code>, <code>BANNER</code>
+not defined.</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 3: Add the implementation</strong></li>
+</ul>
+<p>Insert into <code>scripts/generate_marts_reference.py</code>, after <code>snowflake_subgraph</code>:</p>
+<div class="highlight"><pre><span></span><code><span class="n">BANNER</span> <span class="o">=</span> <span class="p">(</span>
+    <span class="s2">&quot;&lt;!-- generated by scripts/generate_marts_reference.py; &quot;</span>
+    <span class="s2">&quot;do not edit by hand --&gt;&quot;</span>
+<span class="p">)</span>
+
+<span class="n">INTRO</span> <span class="o">=</span> <span class="s2">&quot;&quot;&quot;</span><span class="se">\</span>
+<span class="s2">The `kipptaf` marts are dimensional models (fact and dimension tables) consumed</span>
+<span class="s2">by Cube and Tableau. They follow a **strict-chain snowflake** design: each fact</span>
+<span class="s2">table holds foreign keys to its _direct_ parents only, and deeper context is</span>
+<span class="s2">reached by chaining one dimension to its parent dimension</span>
+<span class="s2">(`fct_student_attendance_daily` → `dim_student_enrollments` → `dim_students`).</span>
+
+<span class="s2">Each section below shows one fact table and the full snowflake chain reachable</span>
+<span class="s2">from it, followed by the fact&#39;s own foreign keys.</span>
+
+<span class="s2">&gt; **Reading the diagrams.** Boxes are tables (`fct_*` facts, `dim_*`</span>
+<span class="s2">&gt; dimensions). An edge `child }o--|| parent : &quot;fk_column&quot;` reads &quot;many rows of</span>
+<span class="s2">&gt; _child_ reference one row of _parent_ via _fk_column_.&quot; A fact with several</span>
+<span class="s2">&gt; edges to the same dimension (e.g. `created_date_key` and `solved_date_key`</span>
+<span class="s2">&gt; both to `dim_dates`) is showing role-qualified foreign keys.</span>
+<span class="s2">&quot;&quot;&quot;</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">render_erdiagram</span><span class="p">(</span><span class="n">edges</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="n">FkEdge</span><span class="p">],</span> <span class="n">root</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+    <span class="n">lines</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;```mermaid&quot;</span><span class="p">,</span> <span class="s2">&quot;erDiagram&quot;</span><span class="p">]</span>
+    <span class="k">if</span> <span class="n">edges</span><span class="p">:</span>
+        <span class="k">for</span> <span class="n">edge</span> <span class="ow">in</span> <span class="n">edges</span><span class="p">:</span>
+            <span class="n">lines</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s1">&#39;  </span><span class="si">{</span><span class="n">edge</span><span class="o">.</span><span class="n">source</span><span class="si">}</span><span class="s1"> </span><span class="se">}}</span><span class="s1">o--|| </span><span class="si">{</span><span class="n">edge</span><span class="o">.</span><span class="n">target</span><span class="si">}</span><span class="s1"> : &quot;</span><span class="si">{</span><span class="n">edge</span><span class="o">.</span><span class="n">fk_column</span><span class="si">}</span><span class="s1">&quot;&#39;</span>
+            <span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">lines</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;  </span><span class="si">{</span><span class="n">root</span><span class="si">}</span><span class="s2"> </span><span class="se">{{</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="n">lines</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s2">&quot;  }&quot;</span><span class="p">)</span>
+    <span class="n">lines</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s2">&quot;```&quot;</span><span class="p">)</span>
+    <span class="k">return</span> <span class="s2">&quot;</span><span class="se">\n</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">lines</span><span class="p">)</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">render_fk_table</span><span class="p">(</span><span class="n">adjacency</span><span class="p">:</span> <span class="n">Mapping</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">list</span><span class="p">[</span><span class="n">FkEdge</span><span class="p">]],</span> <span class="n">root</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+    <span class="n">direct</span> <span class="o">=</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">adjacency</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">root</span><span class="p">,</span> <span class="p">[]),</span> <span class="n">key</span><span class="o">=</span><span class="k">lambda</span> <span class="n">e</span><span class="p">:</span> <span class="n">e</span><span class="o">.</span><span class="n">fk_column</span><span class="p">)</span>
+    <span class="n">lines</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;| FK column | References |&quot;</span><span class="p">,</span> <span class="s2">&quot;| --- | --- |&quot;</span><span class="p">]</span>
+    <span class="n">lines</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;| `</span><span class="si">{</span><span class="n">edge</span><span class="o">.</span><span class="n">fk_column</span><span class="si">}</span><span class="s2">` | `</span><span class="si">{</span><span class="n">edge</span><span class="o">.</span><span class="n">target</span><span class="si">}</span><span class="s2">` |&quot;</span> <span class="k">for</span> <span class="n">edge</span> <span class="ow">in</span> <span class="n">direct</span><span class="p">)</span>
+    <span class="k">return</span> <span class="s2">&quot;</span><span class="se">\n</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">lines</span><span class="p">)</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">render_fact_section</span><span class="p">(</span><span class="n">adjacency</span><span class="p">:</span> <span class="n">Mapping</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">list</span><span class="p">[</span><span class="n">FkEdge</span><span class="p">]],</span> <span class="n">fact</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+    <span class="n">sub</span> <span class="o">=</span> <span class="n">snowflake_subgraph</span><span class="p">(</span><span class="n">adjacency</span><span class="p">,</span> <span class="n">fact</span><span class="p">)</span>
+    <span class="k">return</span> <span class="s2">&quot;</span><span class="se">\n</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span>
+        <span class="p">[</span>
+            <span class="sa">f</span><span class="s2">&quot;## </span><span class="si">{</span><span class="n">fact</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;&quot;</span><span class="p">,</span>
+            <span class="n">render_erdiagram</span><span class="p">(</span><span class="n">sub</span><span class="p">,</span> <span class="n">fact</span><span class="p">),</span>
+            <span class="s2">&quot;&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;**Foreign keys**&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;&quot;</span><span class="p">,</span>
+            <span class="n">render_fk_table</span><span class="p">(</span><span class="n">adjacency</span><span class="p">,</span> <span class="n">fact</span><span class="p">),</span>
+        <span class="p">]</span>
+    <span class="p">)</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">render_page</span><span class="p">(</span><span class="n">adjacency</span><span class="p">:</span> <span class="n">Mapping</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">list</span><span class="p">[</span><span class="n">FkEdge</span><span class="p">]],</span> <span class="n">facts</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+    <span class="n">sections</span> <span class="o">=</span> <span class="p">[</span><span class="n">render_fact_section</span><span class="p">(</span><span class="n">adjacency</span><span class="p">,</span> <span class="n">fact</span><span class="p">)</span> <span class="k">for</span> <span class="n">fact</span> <span class="ow">in</span> <span class="n">facts</span><span class="p">]</span>
+    <span class="n">body</span> <span class="o">=</span> <span class="s2">&quot;</span><span class="se">\n\n</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">join</span><span class="p">([</span><span class="s2">&quot;# Marts data models&quot;</span><span class="p">,</span> <span class="n">BANNER</span><span class="p">,</span> <span class="n">INTRO</span><span class="o">.</span><span class="n">rstrip</span><span class="p">(),</span> <span class="o">*</span><span class="n">sections</span><span class="p">])</span>
+    <span class="k">return</span> <span class="n">body</span> <span class="o">+</span> <span class="s2">&quot;</span><span class="se">\n</span><span class="s2">&quot;</span>
+</code></pre></div>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 4: Run the tests to verify they pass</strong></li>
+</ul>
+<p>Run:</p>
+<div class="highlight"><pre><span></span><code><span class="nv">VIRTUAL_ENV</span><span class="o">=</span><span class="w"> </span>uv<span class="w"> </span>--directory<span class="w"> </span>.worktrees/cbini-docs-marts-reference<span class="w"> </span>run<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>pytest<span class="w"> </span>tests/scripts/test_generate_marts_reference.py<span class="w"> </span>-v
+</code></pre></div>
+<p>Expected: PASS (all tests).</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 5: Commit</strong></li>
+</ul>
+<div class="highlight"><pre><span></span><code>git<span class="w"> </span>-C<span class="w"> </span>.worktrees/cbini-docs-marts-reference<span class="w"> </span>add<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>scripts/generate_marts_reference.py<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>tests/scripts/test_generate_marts_reference.py
+git<span class="w"> </span>-C<span class="w"> </span>.worktrees/cbini-docs-marts-reference<span class="w"> </span>commit<span class="w"> </span>-m<span class="w"> </span><span class="s2">&quot;feat: add Mermaid ER diagram and page rendering</span>
+
+<span class="s2">Refs #4120&quot;</span>
+</code></pre></div>
+<hr />
+<h2 id="task-4-wire-up-main-generate-the-real-page-and-commit-it">Task 4: Wire up main(), generate the real page, and commit it</h2>
+<p><strong>Files:</strong></p>
+<ul class="task-list">
+<li>Modify: <code>scripts/generate_marts_reference.py</code> (add <code>main()</code>)</li>
+<li>
+<p>Create: <code>docs/reference/marts-data-models.md</code> (generated output)</p>
+</li>
+<li class="task-list-item">
+<p><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 1: Add <code>main()</code> to the script</strong></p>
+</li>
+</ul>
+<p>Append to <code>scripts/generate_marts_reference.py</code>:</p>
+<div class="highlight"><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">main</span><span class="p">(</span><span class="n">argv</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
+    <span class="n">parser</span> <span class="o">=</span> <span class="n">argparse</span><span class="o">.</span><span class="n">ArgumentParser</span><span class="p">(</span><span class="n">description</span><span class="o">=</span><span class="vm">__doc__</span><span class="p">)</span>
+    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s2">&quot;--marts-dir&quot;</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="n">Path</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="n">MARTS_DIR</span><span class="p">)</span>
+    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s2">&quot;--output&quot;</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="n">Path</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="n">DEFAULT_OUTPUT</span><span class="p">)</span>
+    <span class="n">args</span> <span class="o">=</span> <span class="n">parser</span><span class="o">.</span><span class="n">parse_args</span><span class="p">(</span><span class="n">argv</span><span class="p">)</span>
+
+    <span class="n">edges</span> <span class="o">=</span> <span class="n">collect_edges</span><span class="p">(</span><span class="n">args</span><span class="o">.</span><span class="n">marts_dir</span><span class="p">)</span>
+    <span class="n">adjacency</span> <span class="o">=</span> <span class="n">build_adjacency</span><span class="p">(</span><span class="n">edges</span><span class="p">)</span>
+    <span class="n">facts</span> <span class="o">=</span> <span class="n">collect_fact_names</span><span class="p">(</span><span class="n">args</span><span class="o">.</span><span class="n">marts_dir</span><span class="p">)</span>
+    <span class="n">page</span> <span class="o">=</span> <span class="n">render_page</span><span class="p">(</span><span class="n">adjacency</span><span class="p">,</span> <span class="n">facts</span><span class="p">)</span>
+    <span class="n">args</span><span class="o">.</span><span class="n">output</span><span class="o">.</span><span class="n">write_text</span><span class="p">(</span><span class="n">page</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;wrote </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">facts</span><span class="p">)</span><span class="si">}</span><span class="s2"> fact sections to </span><span class="si">{</span><span class="n">args</span><span class="o">.</span><span class="n">output</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+    <span class="k">return</span> <span class="mi">0</span>
+
+
+<span class="k">if</span> <span class="vm">__name__</span> <span class="o">==</span> <span class="s2">&quot;__main__&quot;</span><span class="p">:</span>
+    <span class="k">raise</span> <span class="ne">SystemExit</span><span class="p">(</span><span class="n">main</span><span class="p">())</span>
+</code></pre></div>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 2: Run the generator</strong></li>
+</ul>
+<p>Run:</p>
+<div class="highlight"><pre><span></span><code><span class="nv">VIRTUAL_ENV</span><span class="o">=</span><span class="w"> </span>uv<span class="w"> </span>--directory<span class="w"> </span>.worktrees/cbini-docs-marts-reference<span class="w"> </span>run<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>python<span class="w"> </span>scripts/generate_marts_reference.py
+</code></pre></div>
+<p>Expected: prints
+<code>wrote 24 fact sections to .../docs/reference/marts-data-models.md</code>.</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 3: Spot-check the output against source YAML</strong></li>
+</ul>
+<p>Run:</p>
+<div class="highlight"><pre><span></span><code>grep<span class="w"> </span>-c<span class="w"> </span><span class="s1">&#39;^## fct_&#39;</span><span class="w"> </span>.worktrees/cbini-docs-marts-reference/docs/reference/marts-data-models.md
+grep<span class="w"> </span>-A2<span class="w"> </span><span class="s1">&#39;^## fct_support_tickets&#39;</span><span class="w"> </span>.worktrees/cbini-docs-marts-reference/docs/reference/marts-data-models.md<span class="w"> </span><span class="p">|</span><span class="w"> </span>head
+</code></pre></div>
+<p>Expected: count is <code>24</code>; the <code>fct_support_tickets</code> section shows an <code>erDiagram</code>
+with role-qualified <code>submitter_staff_key</code> / <code>assignee_staff_key</code> /
+<code>original_assignee_staff_key</code> edges to <code>dim_staff</code>.</p>
+<p>Then confirm every <code>foreign_key</code> constraint on one fact appears as an FK-table
+row:</p>
+<div class="highlight"><pre><span></span><code>grep<span class="w"> </span>-c<span class="w"> </span><span class="s2">&quot;type: foreign_key&quot;</span><span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>.worktrees/cbini-docs-marts-reference/src/dbt/kipptaf/models/marts/facts/properties/fct_support_tickets.yml
+grep<span class="w"> </span>-A40<span class="w"> </span><span class="s1">&#39;^## fct_support_tickets&#39;</span><span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>.worktrees/cbini-docs-marts-reference/docs/reference/marts-data-models.md<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span><span class="p">|</span><span class="w"> </span>grep<span class="w"> </span>-c<span class="w"> </span><span class="s1">&#39;^| `&#39;</span>
+</code></pre></div>
+<p>Expected: the FK-table row count equals the number of <code>foreign_key</code> constraints
+on that fact (6).</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 4: Run the full test suite for the script</strong></li>
+</ul>
+<p>Run:</p>
+<div class="highlight"><pre><span></span><code><span class="nv">VIRTUAL_ENV</span><span class="o">=</span><span class="w"> </span>uv<span class="w"> </span>--directory<span class="w"> </span>.worktrees/cbini-docs-marts-reference<span class="w"> </span>run<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>pytest<span class="w"> </span>tests/scripts/test_generate_marts_reference.py<span class="w"> </span>-v
+</code></pre></div>
+<p>Expected: PASS.</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 5: Commit (pre-commit <code>trunk fmt</code> will format the markdown)</strong></li>
+</ul>
+<div class="highlight"><pre><span></span><code>git<span class="w"> </span>-C<span class="w"> </span>.worktrees/cbini-docs-marts-reference<span class="w"> </span>add<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>scripts/generate_marts_reference.py<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>docs/reference/marts-data-models.md
+git<span class="w"> </span>-C<span class="w"> </span>.worktrees/cbini-docs-marts-reference<span class="w"> </span>commit<span class="w"> </span>-m<span class="w"> </span><span class="s2">&quot;docs: generate marts data-model reference page</span>
+
+<span class="s2">Refs #4120&quot;</span>
+</code></pre></div>
+<p>Note: <code>trunk-fmt-pre-commit</code> (prettier) reformats <code>marts-data-models.md</code> at
+commit — the committed file is the formatted form, and re-running the
+generator + committing is stable thereafter (prettier leaves the <code>mermaid</code> fence
+contents untouched).</p>
+<hr />
+<h2 id="task-5-enable-mermaid-in-mkdocs-and-add-the-nav-entry">Task 5: Enable Mermaid in MkDocs and add the nav entry</h2>
+<p><strong>Files:</strong></p>
+<ul class="task-list">
+<li>
+<p>Modify: <code>mkdocs.yml</code></p>
+</li>
+<li class="task-list-item">
+<p><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 1: Add the mermaid custom fence</strong></p>
+</li>
+</ul>
+<p>In <code>mkdocs.yml</code>, replace the bare superfences line under <code>markdown_extensions:</code>:</p>
+<div class="highlight"><pre><span></span><code><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">pymdownx.superfences</span>
+</code></pre></div>
+<p>with the mapping form:</p>
+<div class="highlight"><pre><span></span><code><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">pymdownx.superfences</span><span class="p">:</span>
+<span class="w">    </span><span class="nt">custom_fences</span><span class="p">:</span>
+<span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">mermaid</span>
+<span class="w">        </span><span class="nt">class</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">mermaid</span>
+<span class="w">        </span><span class="nt">format</span><span class="p">:</span><span class="w"> </span><span class="kt">!!python/name:pymdownx.superfences.fence_code_format</span>
+</code></pre></div>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 2: Add the nav entry</strong></li>
+</ul>
+<p>In <code>mkdocs.yml</code>, under the <code>Reference:</code> nav section, add a line after
+<code>dbt Conventions</code>:</p>
+<div class="highlight"><pre><span></span><code><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">Marts Data Models</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">reference/marts-data-models.md</span>
+</code></pre></div>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 3: Build the site</strong></li>
+</ul>
+<p>Run:</p>
+<div class="highlight"><pre><span></span><code><span class="nv">VIRTUAL_ENV</span><span class="o">=</span><span class="w"> </span>uv<span class="w"> </span>--directory<span class="w"> </span>.worktrees/cbini-docs-marts-reference<span class="w"> </span>run<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>mkdocs<span class="w"> </span>build<span class="w"> </span>--site-dir<span class="w"> </span>/tmp/marts-docs-build<span class="w"> </span><span class="m">2</span>&gt;<span class="p">&amp;</span><span class="m">1</span><span class="w"> </span><span class="p">|</span><span class="w"> </span>tee<span class="w"> </span>/tmp/marts-build.log<span class="w"> </span><span class="p">|</span><span class="w"> </span>tail<span class="w"> </span>-5
+</code></pre></div>
+<p>Expected: ends with <code>Documentation built in N seconds</code> and exits 0. Do <strong>not</strong>
+use <code>--strict</code>: this repo has ~58 pre-existing warnings (broken links and
+not-in-nav pages under <code>docs/superpowers/**</code>) that abort strict mode and are
+unrelated to this change.</p>
+<p>Then confirm the new page introduced no warnings of its own (it is in nav and
+has no markdown links):</p>
+<div class="highlight"><pre><span></span><code>grep<span class="w"> </span>-i<span class="w"> </span><span class="s1">&#39;marts-data-models&#39;</span><span class="w"> </span>/tmp/marts-build.log<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span><span class="o">&amp;&amp;</span><span class="w"> </span><span class="nb">echo</span><span class="w"> </span><span class="s2">&quot;FAIL: new page produced a warning&quot;</span><span class="w"> </span><span class="se">\</span>
+<span class="w">  </span><span class="o">||</span><span class="w"> </span><span class="nb">echo</span><span class="w"> </span><span class="s2">&quot;OK: no warnings reference the new page&quot;</span>
+</code></pre></div>
+<p>Expected: <code>OK: no warnings reference the new page</code>.</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 4: Confirm Mermaid blocks render as <code>class="mermaid"</code></strong></li>
+</ul>
+<p>Run:</p>
+<div class="highlight"><pre><span></span><code>grep<span class="w"> </span>-c<span class="w"> </span><span class="s1">&#39;class=&quot;mermaid&quot;&#39;</span><span class="w"> </span>/tmp/marts-docs-build/reference/marts-data-models/index.html
+</code></pre></div>
+<p>Expected: a count of <code>24</code> (one rendered block per fact). A count of <code>0</code> means
+the custom fence is mis-configured.</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 5: Commit</strong></li>
+</ul>
+<div class="highlight"><pre><span></span><code>git<span class="w"> </span>-C<span class="w"> </span>.worktrees/cbini-docs-marts-reference<span class="w"> </span>add<span class="w"> </span>mkdocs.yml
+git<span class="w"> </span>-C<span class="w"> </span>.worktrees/cbini-docs-marts-reference<span class="w"> </span>commit<span class="w"> </span>-m<span class="w"> </span><span class="s2">&quot;docs: enable mermaid fence and add marts reference to nav</span>
+
+<span class="s2">Refs #4120&quot;</span>
+</code></pre></div>
+<hr />
+<h2 id="task-6-document-regeneration">Task 6: Document regeneration</h2>
+<p><strong>Files:</strong></p>
+<ul class="task-list">
+<li>
+<p>Modify: <code>scripts/CLAUDE.md</code></p>
+</li>
+<li class="task-list-item">
+<p><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 1: Add a regeneration note</strong></p>
+</li>
+</ul>
+<p>Read <code>scripts/CLAUDE.md</code> first to match its existing structure, then add an
+entry documenting:</p>
+<div class="highlight"><pre><span></span><code>- `generate_marts_reference.py` — regenerates
+  `docs/reference/marts-data-models.md` from the marts FK constraints. Run after
+  adding/removing a fact or changing FK constraints:
+  `uv run scripts/generate_marts_reference.py`.
+</code></pre></div>
+<p>(Place it consistent with how other scripts are listed in that file; if there is
+no per-script list, add a short "Generated docs" subsection.)</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 2: Verify the doc edit is clean</strong></li>
+</ul>
+<p>Run:</p>
+<div class="highlight"><pre><span></span><code>.trunk/tools/trunk<span class="w"> </span>check<span class="w"> </span>--force<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>/workspaces/teamster/.worktrees/cbini-docs-marts-reference/scripts/CLAUDE.md
+</code></pre></div>
+<p>Run from inside the worktree directory. Expected: no issues.</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 3: Commit</strong></li>
+</ul>
+<div class="highlight"><pre><span></span><code>git<span class="w"> </span>-C<span class="w"> </span>.worktrees/cbini-docs-marts-reference<span class="w"> </span>add<span class="w"> </span>scripts/CLAUDE.md
+git<span class="w"> </span>-C<span class="w"> </span>.worktrees/cbini-docs-marts-reference<span class="w"> </span>commit<span class="w"> </span>-m<span class="w"> </span><span class="s2">&quot;docs: note marts reference regeneration in scripts/CLAUDE.md</span>
+
+<span class="s2">Refs #4120&quot;</span>
+</code></pre></div>
+<hr />
+<h2 id="final-verification">Final verification</h2>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> All script tests pass:</li>
+</ul>
+<div class="highlight"><pre><span></span><code><span class="nv">VIRTUAL_ENV</span><span class="o">=</span><span class="w"> </span>uv<span class="w"> </span>--directory<span class="w"> </span>.worktrees/cbini-docs-marts-reference<span class="w"> </span>run<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>pytest<span class="w"> </span>tests/scripts/test_generate_marts_reference.py<span class="w"> </span>-v
+</code></pre></div>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <code>mkdocs build</code> (non-strict) exits 0 and the new page produces no warnings
+      (Task 5, Step 3); its HTML has 24 <code>class="mermaid"</code> blocks (Step 4).</li>
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <code>git -C .worktrees/cbini-docs-marts-reference status</code> shows a clean tree
+      (no stray <code>site/</code> or <code>/tmp</code> artifacts tracked).</li>
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> Regenerating is idempotent: re-run the generator; <code>git status</code> shows no
+      diff to <code>docs/reference/marts-data-models.md</code>.</li>
+</ul>
+<hr />
+<h2 id="notes-for-the-executor">Notes for the executor</h2>
+<ul>
+<li>This repo requires <code>uv run</code> — never bare <code>python</code>/<code>pytest</code>.</li>
+<li>Run git and dbt/python via the worktree path (<code>git -C .worktrees/...</code>,
+  <code>uv --directory .worktrees/...</code>) so changes land on the feature branch, not
+  <code>main</code>.</li>
+<li>Do not run <code>trunk fmt</code>/<code>trunk check</code> manually except where Task 6 calls for
+  <code>trunk check --force</code> from inside the worktree — the pre-commit hook formats
+  on commit.</li>
+<li>PR comes after the plan completes; use <code>.github/pull_request_template.md</code> and
+  <code>Closes #4120</code>.</li>
+</ul>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+          <button type="button" class="md-top md-icon" data-md-component="top" hidden>
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8z"/></svg>
+  Back to top
+</button>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+    <div class="md-copyright__highlight">
+      Copyright &copy; KIPP TEAM & Family Schools
+    </div>
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      
+      <script id="__config" type="application/json">{"annotate": null, "base": "../../..", "features": ["content.action.edit", "content.code.copy", "navigation.instant", "navigation.indexes", "navigation.sections", "navigation.tabs", "navigation.tabs.sticky", "navigation.top", "search.highlight", "search.suggest", "toc.follow"], "search": "../../../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+    
+    
+      <script src="../../../assets/javascripts/bundle.79ae519e.min.js"></script>
+      
+    
+  </body>
+</html>

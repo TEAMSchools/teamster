@@ -1,0 +1,2226 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+        <meta name="description" content="Data engineering platform for KIPP TEAM & Family Schools">
+      
+      
+      
+      
+      
+      
+        
+      
+      
+      <link rel="icon" href="../../../images/truck.svg">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.6">
+    
+    
+      
+        <title>Paterson Pearson ID Translation Implementation Plan - teamster</title>
+      
+    
+    
+      <link rel="stylesheet" href="../../../assets/stylesheets/main.484c7ddc.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+    <script>__md_scope=new URL("../../..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+  </head>
+  
+  
+    <body dir="ltr">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#paterson-pearson-id-translation-implementation-plan" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+  
+
+<header class="md-header md-header--shadow md-header--lifted" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href="../../.." title="teamster" class="md-header__button md-logo" aria-label="teamster" data-md-component="logo">
+      
+  <img src="../../../images/truck.svg" alt="logo">
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            teamster
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              Paterson Pearson ID Translation Implementation Plan
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+        <div class="md-search__suggest" data-md-component="search-suggest"></div>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      
+    
+    
+      <div class="md-header__source">
+        <a href="https://github.com/TEAMSchools/teamster" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M173.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6m-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3m44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9M252.8 8C114.1 8 8 113.3 8 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C436.2 457.8 504 362.9 504 252 504 113.3 391.5 8 252.8 8M105.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1m-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7m32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1m-11.4-14.7c-1.6 1-1.6 3.6 0 5.9s4.3 3.3 5.6 2.3c1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2"/></svg>
+  </div>
+  <div class="md-source__repository">
+    TEAMSchools/teamster
+  </div>
+</a>
+      </div>
+    
+  </nav>
+  
+    
+      
+<nav class="md-tabs" aria-label="Tabs" data-md-component="tabs">
+  <div class="md-grid">
+    <ul class="md-tabs__list">
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../../.." class="md-tabs__link">
+        
+  
+  
+    
+  
+  Home
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../../guides/" class="md-tabs__link">
+          
+  
+  
+    
+  
+  Guides
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../../troubleshooting/dagster/" class="md-tabs__link">
+          
+  
+  
+    
+  
+  Troubleshooting
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../../reference/architecture/" class="md-tabs__link">
+          
+  
+  
+    
+  
+  Reference
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../../../reference/automations/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  Automations
+
+      </a>
+    </li>
+  
+
+      
+    </ul>
+  </div>
+</nav>
+    
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+  
+
+
+<nav class="md-nav md-nav--primary md-nav--lifted" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href="../../.." title="teamster" class="md-nav__button md-logo" aria-label="teamster" data-md-component="logo">
+      
+  <img src="../../../images/truck.svg" alt="logo">
+
+    </a>
+    teamster
+  </label>
+  
+    <div class="md-nav__source">
+      <a href="https://github.com/TEAMSchools/teamster" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M173.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6m-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3m44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9M252.8 8C114.1 8 8 113.3 8 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C436.2 457.8 504 362.9 504 252 504 113.3 391.5 8 252.8 8M105.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1m-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7m32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1m-11.4-14.7c-1.6 1-1.6 3.6 0 5.9s4.3 3.3 5.6 2.3c1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2"/></svg>
+  </div>
+  <div class="md-source__repository">
+    TEAMSchools/teamster
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../.." class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Home
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+          
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2" >
+        
+          
+          <div class="md-nav__link md-nav__container">
+            <a href="../../../guides/" class="md-nav__link ">
+              
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Guides
+  
+
+    
+  </span>
+  
+  
+
+            </a>
+            
+              
+              <label class="md-nav__link " for="__nav_2" id="__nav_2_label" tabindex="0">
+                <span class="md-nav__icon md-icon"></span>
+              </label>
+            
+          </div>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_2_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_2">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Guides
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/codespaces/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Codespaces
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/local-development/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Local Development
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/dagster/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Dagster
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/google-sheets/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Google Sheets & Forms
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/adp-location-renames/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ADP Location Renames
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/dbt-development/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    dbt Development
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/sftp-integration/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    SFTP Integration
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/superpowers/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Claude Code & Superpowers
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/cube/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Cube
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/claude-cube-connector/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Claude + Cube Connector
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3" >
+        
+          
+          <label class="md-nav__link" for="__nav_3" id="__nav_3_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Troubleshooting
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_3">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Troubleshooting
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../troubleshooting/dagster/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Dagster
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../troubleshooting/dbt/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    dbt
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../troubleshooting/vscode/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    VS Code
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4" >
+        
+          
+          <label class="md-nav__link" for="__nav_4" id="__nav_4_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Reference
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_4_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_4">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Reference
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/architecture/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Architecture
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/adding-an-integration/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Adding an Integration
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/io-managers/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    IO Managers
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/fiscal-year-partitioning/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Fiscal Year & Partitioning
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/dbt-conventions/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    dbt Conventions
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/marts-data-models/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Marts Data Models
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/automation-conditions/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Automation Conditions
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/automations/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Automations
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#why-two-prs" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Why two PRs
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#phase-a-kipppaterson-intermediates" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Phase A — kipppaterson intermediates
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Phase A — kipppaterson intermediates">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#task-a1-create-int_pearson__njslasql" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Task A1: Create int_pearson__njsla.sql
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#task-a2-create-int_pearson__njsla_sciencesql" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Task A2: Create int_pearson__njsla_science.sql
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#task-a3-create-properties-yml-for-both-intermediates" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Task A3: Create properties yml for both intermediates
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#task-a4-local-build-and-test" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Task A4: Local build and test
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#task-a5-push-branch-and-open-phase-a-pr" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Task A5: Push branch and open Phase A PR
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#gate-phase-a-merged-dagster-materializes-new-intermediates" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Gate: Phase A merged, Dagster materializes new intermediates
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#phase-b-kipptaf-wiring-crosswalk-removal" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Phase B — kipptaf wiring + crosswalk removal
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Phase B — kipptaf wiring + crosswalk removal">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#task-b0-create-phase-b-worktree" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Task B0: Create Phase B worktree
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#task-b1-declare-the-new-intermediates-as-kipptaf-sources" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Task B1: Declare the new intermediates as kipptaf sources
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#task-b2-repoint-the-njsla-union-to-the-translated-intermediate" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Task B2: Repoint the NJSLA union to the translated intermediate
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#task-b3-repoint-the-njsla-science-union-to-the-translated-intermediate" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Task B3: Repoint the NJSLA Science union to the translated intermediate
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#task-b4-remove-the-crosswalk-join-from-int_pearson__all_assessments" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Task B4: Remove the crosswalk join from int_pearson__all_assessments
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#task-b5-disable-the-crosswalk-staging-model" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Task B5: Disable the crosswalk staging model
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#task-b6-remove-the-crosswalk-source-entry-from-sources-externalyml" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Task B6: Remove the crosswalk source entry from sources-external.yml
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#task-b7-local-build-and-dbt-tests" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Task B7: Local build and dbt tests
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#task-b8-pre-merge-verification-paterson-resolution" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Task B8: Pre-merge verification — Paterson resolution
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#task-b9-pre-merge-verification-newark-camden-unchanged" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Task B9: Pre-merge verification — Newark / Camden unchanged
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#task-b10-push-branch-and-open-phase-b-pr" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Task B10: Push branch and open Phase B PR
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#acceptance-criteria-recapped-from-spec" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Acceptance criteria (recapped from spec)
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+  
+    <a href="https://github.com/TEAMSchools/teamster/edit/main/docs/superpowers/plans/2026-05-18-paterson-pearson-id-translation.md" title="Edit this page" class="md-content__button md-icon" rel="edit">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M10 20H6V4h7v5h5v3.1l2-2V8l-6-6H6c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h4zm10.2-7c.1 0 .3.1.4.2l1.3 1.3c.2.2.2.6 0 .8l-1 1-2.1-2.1 1-1c.1-.1.2-.2.4-.2m0 3.9L14.1 23H12v-2.1l6.1-6.1z"/></svg>
+    </a>
+  
+  
+
+
+<h1 id="paterson-pearson-id-translation-implementation-plan">Paterson Pearson ID Translation Implementation Plan</h1>
+<blockquote>
+<p><strong>For agentic workers:</strong> REQUIRED SUB-SKILL: Use
+superpowers:subagent-driven-development (recommended) or
+superpowers:executing-plans to implement this plan task-by-task. Steps use
+checkbox (<code>- [ ]</code>) syntax for tracking.</p>
+</blockquote>
+<p><strong>Goal:</strong> Resolve all 440 Paterson Pearson assessment rows to the correct
+<code>student_key</code> in <code>fct_assessment_scores_enrollment_scoped</code> by translating the
+Paterson district SIS ID stored in <code>localstudentidentifier</code> to the canonical
+KIPP <code>student_number</code> via PowerSchool's <code>prevstudentid</code>, and remove the
+vestigial Pearson UUID crosswalk.</p>
+<p><strong>Architecture:</strong> Two sequential PRs both linked to issue #3882. Phase A adds
+Paterson-specific intermediate models in the <code>kipppaterson</code> dbt project that
+translate <code>localstudentidentifier</code> via a join to Paterson PowerSchool. Phase B
+(a new branch off main, opened after Phase A merges and Dagster materializes the
+new intermediates to prod) repoints kipptaf's union models to source the
+translated intermediates and removes the now-unused crosswalk join.</p>
+<p><strong>Tech Stack:</strong> dbt-core, dbt-bigquery, BigQuery (warehouse), Dagster
+(orchestrator), <code>uv</code> for Python tooling, dbt Cloud (CI).</p>
+<hr />
+<h2 id="why-two-prs">Why two PRs</h2>
+<p>kipptaf's <code>sources-kipppaterson.yml</code> resolves the <code>kipppaterson_pearson</code> schema
+to plain prod (<code>kipppaterson_pearson</code>) for any non-dev target — including dbt
+Cloud CI (<code>target=staging</code>). Adding a kipptaf source declaration that references
+a new kipppaterson intermediate <strong>deterministically fails kipptaf CI</strong> until
+that intermediate exists in prod. The intermediate only lands in prod after the
+kipppaterson PR (Phase A) merges and Dagster materializes the new assets.
+Established convention per <a href="../../../src/dbt/CLAUDE.md">src/dbt/CLAUDE.md</a> →
+"kipptaf source consumers of district columns".</p>
+<hr />
+<h2 id="phase-a-kipppaterson-intermediates">Phase A — kipppaterson intermediates</h2>
+<p><strong>Branch:</strong> <code>cbini/fix/claude-paterson-pearson-id-translation</code> (already created,
+linked to #3882, worktree at
+<code>.worktrees/cbini/fix/claude-paterson-pearson-id-translation</code>).</p>
+<p><strong>Files (Phase A):</strong></p>
+<ul>
+<li>Create:
+  <code>src/dbt/kipppaterson/models/pearson/intermediate/int_pearson__njsla.sql</code></li>
+<li>Create:
+  <code>src/dbt/kipppaterson/models/pearson/intermediate/int_pearson__njsla_science.sql</code></li>
+<li>Create:
+  <code>src/dbt/kipppaterson/models/pearson/intermediate/properties/int_pearson__njsla.yml</code></li>
+<li>Create:
+  <code>src/dbt/kipppaterson/models/pearson/intermediate/properties/int_pearson__njsla_science.yml</code></li>
+</ul>
+<h3 id="task-a1-create-int_pearson__njslasql">Task A1: Create <code>int_pearson__njsla.sql</code></h3>
+<p><strong>Files:</strong></p>
+<ul class="task-list">
+<li>
+<p>Create:
+  <code>src/dbt/kipppaterson/models/pearson/intermediate/int_pearson__njsla.sql</code></p>
+</li>
+<li class="task-list-item">
+<p><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 1: Write the model SQL</strong></p>
+</li>
+</ul>
+<p>Path:
+<code>.worktrees/cbini/fix/claude-paterson-pearson-id-translation/src/dbt/kipppaterson/models/pearson/intermediate/int_pearson__njsla.sql</code></p>
+<div class="highlight"><pre><span></span><code><span class="k">with</span>
+<span class="w">    </span><span class="n">raw</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="p">(</span><span class="k">select</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="k">from</span><span class="w"> </span><span class="err">{{</span><span class="w"> </span><span class="k">ref</span><span class="p">(</span><span class="ss">&quot;stg_pearson__njsla&quot;</span><span class="p">)</span><span class="w"> </span><span class="err">}}</span><span class="p">),</span>
+
+<span class="w">    </span><span class="n">paterson_id_map</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="p">(</span>
+<span class="w">        </span><span class="k">select</span>
+<span class="w">            </span><span class="n">scf</span><span class="p">.</span><span class="n">prevstudentid</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">paterson_district_sis_id</span><span class="p">,</span>
+<span class="w">            </span><span class="n">s</span><span class="p">.</span><span class="n">student_number</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">kipp_student_number</span><span class="p">,</span>
+<span class="w">        </span><span class="k">from</span><span class="w"> </span><span class="err">{{</span><span class="w"> </span><span class="k">ref</span><span class="p">(</span><span class="ss">&quot;stg_powerschool__students&quot;</span><span class="p">)</span><span class="w"> </span><span class="err">}}</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">s</span>
+<span class="w">        </span><span class="k">inner</span><span class="w"> </span><span class="k">join</span><span class="w"> </span><span class="err">{{</span><span class="w"> </span><span class="k">ref</span><span class="p">(</span><span class="ss">&quot;stg_powerschool__studentcorefields&quot;</span><span class="p">)</span><span class="w"> </span><span class="err">}}</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">scf</span>
+<span class="w">            </span><span class="k">on</span><span class="w"> </span><span class="n">s</span><span class="p">.</span><span class="n">dcid</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">scf</span><span class="p">.</span><span class="n">studentsdcid</span>
+<span class="w">        </span><span class="k">where</span><span class="w"> </span><span class="n">s</span><span class="p">.</span><span class="n">enroll_status</span><span class="w"> </span><span class="k">in</span><span class="w"> </span><span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="w"> </span><span class="mi">2</span><span class="p">,</span><span class="w"> </span><span class="mi">3</span><span class="p">)</span><span class="w"> </span><span class="k">and</span><span class="w"> </span><span class="n">scf</span><span class="p">.</span><span class="n">prevstudentid</span><span class="w"> </span><span class="k">is</span><span class="w"> </span><span class="k">not</span><span class="w"> </span><span class="k">null</span>
+<span class="w">    </span><span class="p">)</span>
+
+<span class="k">select</span>
+<span class="w">    </span><span class="n">raw</span><span class="p">.</span><span class="o">*</span><span class="w"> </span><span class="k">except</span><span class="w"> </span><span class="p">(</span><span class="n">localstudentidentifier</span><span class="p">),</span>
+
+<span class="w">    </span><span class="k">coalesce</span><span class="p">(</span>
+<span class="w">        </span><span class="n">m</span><span class="p">.</span><span class="n">kipp_student_number</span><span class="p">,</span><span class="w"> </span><span class="n">raw</span><span class="p">.</span><span class="n">localstudentidentifier</span>
+<span class="w">    </span><span class="p">)</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">localstudentidentifier</span><span class="p">,</span>
+<span class="k">from</span><span class="w"> </span><span class="n">raw</span>
+<span class="k">left</span><span class="w"> </span><span class="k">join</span><span class="w"> </span><span class="n">paterson_id_map</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">m</span>
+<span class="w">    </span><span class="k">on</span><span class="w"> </span><span class="n">raw</span><span class="p">.</span><span class="n">localstudentidentifier</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">m</span><span class="p">.</span><span class="n">paterson_district_sis_id</span>
+</code></pre></div>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 2: Commit</strong></li>
+</ul>
+<div class="highlight"><pre><span></span><code>git<span class="w"> </span>-C<span class="w"> </span>/workspaces/teamster/.worktrees/cbini/fix/claude-paterson-pearson-id-translation<span class="w"> </span>add<span class="w"> </span>src/dbt/kipppaterson/models/pearson/intermediate/int_pearson__njsla.sql
+git<span class="w"> </span>-C<span class="w"> </span>/workspaces/teamster/.worktrees/cbini/fix/claude-paterson-pearson-id-translation<span class="w"> </span>commit<span class="w"> </span>-m<span class="w"> </span><span class="s2">&quot;feat(dbt/kipppaterson): add int_pearson__njsla with prevstudentid translation</span>
+
+<span class="s2">Refs #3882.&quot;</span>
+</code></pre></div>
+<h3 id="task-a2-create-int_pearson__njsla_sciencesql">Task A2: Create <code>int_pearson__njsla_science.sql</code></h3>
+<p><strong>Files:</strong></p>
+<ul class="task-list">
+<li>
+<p>Create:
+  <code>src/dbt/kipppaterson/models/pearson/intermediate/int_pearson__njsla_science.sql</code></p>
+</li>
+<li class="task-list-item">
+<p><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 1: Write the model SQL</strong></p>
+</li>
+</ul>
+<p>Path:
+<code>.worktrees/cbini/fix/claude-paterson-pearson-id-translation/src/dbt/kipppaterson/models/pearson/intermediate/int_pearson__njsla_science.sql</code></p>
+<div class="highlight"><pre><span></span><code><span class="k">with</span>
+<span class="w">    </span><span class="n">raw</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="p">(</span><span class="k">select</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="k">from</span><span class="w"> </span><span class="err">{{</span><span class="w"> </span><span class="k">ref</span><span class="p">(</span><span class="ss">&quot;stg_pearson__njsla_science&quot;</span><span class="p">)</span><span class="w"> </span><span class="err">}}</span><span class="p">),</span>
+
+<span class="w">    </span><span class="n">paterson_id_map</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="p">(</span>
+<span class="w">        </span><span class="k">select</span>
+<span class="w">            </span><span class="n">scf</span><span class="p">.</span><span class="n">prevstudentid</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">paterson_district_sis_id</span><span class="p">,</span>
+<span class="w">            </span><span class="n">s</span><span class="p">.</span><span class="n">student_number</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">kipp_student_number</span><span class="p">,</span>
+<span class="w">        </span><span class="k">from</span><span class="w"> </span><span class="err">{{</span><span class="w"> </span><span class="k">ref</span><span class="p">(</span><span class="ss">&quot;stg_powerschool__students&quot;</span><span class="p">)</span><span class="w"> </span><span class="err">}}</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">s</span>
+<span class="w">        </span><span class="k">inner</span><span class="w"> </span><span class="k">join</span><span class="w"> </span><span class="err">{{</span><span class="w"> </span><span class="k">ref</span><span class="p">(</span><span class="ss">&quot;stg_powerschool__studentcorefields&quot;</span><span class="p">)</span><span class="w"> </span><span class="err">}}</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">scf</span>
+<span class="w">            </span><span class="k">on</span><span class="w"> </span><span class="n">s</span><span class="p">.</span><span class="n">dcid</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">scf</span><span class="p">.</span><span class="n">studentsdcid</span>
+<span class="w">        </span><span class="k">where</span><span class="w"> </span><span class="n">s</span><span class="p">.</span><span class="n">enroll_status</span><span class="w"> </span><span class="k">in</span><span class="w"> </span><span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="w"> </span><span class="mi">2</span><span class="p">,</span><span class="w"> </span><span class="mi">3</span><span class="p">)</span><span class="w"> </span><span class="k">and</span><span class="w"> </span><span class="n">scf</span><span class="p">.</span><span class="n">prevstudentid</span><span class="w"> </span><span class="k">is</span><span class="w"> </span><span class="k">not</span><span class="w"> </span><span class="k">null</span>
+<span class="w">    </span><span class="p">)</span>
+
+<span class="k">select</span>
+<span class="w">    </span><span class="n">raw</span><span class="p">.</span><span class="o">*</span><span class="w"> </span><span class="k">except</span><span class="w"> </span><span class="p">(</span><span class="n">localstudentidentifier</span><span class="p">),</span>
+
+<span class="w">    </span><span class="k">coalesce</span><span class="p">(</span>
+<span class="w">        </span><span class="n">m</span><span class="p">.</span><span class="n">kipp_student_number</span><span class="p">,</span><span class="w"> </span><span class="n">raw</span><span class="p">.</span><span class="n">localstudentidentifier</span>
+<span class="w">    </span><span class="p">)</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">localstudentidentifier</span><span class="p">,</span>
+<span class="k">from</span><span class="w"> </span><span class="n">raw</span>
+<span class="k">left</span><span class="w"> </span><span class="k">join</span><span class="w"> </span><span class="n">paterson_id_map</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">m</span>
+<span class="w">    </span><span class="k">on</span><span class="w"> </span><span class="n">raw</span><span class="p">.</span><span class="n">localstudentidentifier</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">m</span><span class="p">.</span><span class="n">paterson_district_sis_id</span>
+</code></pre></div>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 2: Commit</strong></li>
+</ul>
+<div class="highlight"><pre><span></span><code>git<span class="w"> </span>-C<span class="w"> </span>/workspaces/teamster/.worktrees/cbini/fix/claude-paterson-pearson-id-translation<span class="w"> </span>add<span class="w"> </span>src/dbt/kipppaterson/models/pearson/intermediate/int_pearson__njsla_science.sql
+git<span class="w"> </span>-C<span class="w"> </span>/workspaces/teamster/.worktrees/cbini/fix/claude-paterson-pearson-id-translation<span class="w"> </span>commit<span class="w"> </span>-m<span class="w"> </span><span class="s2">&quot;feat(dbt/kipppaterson): add int_pearson__njsla_science with prevstudentid translation</span>
+
+<span class="s2">Refs #3882.&quot;</span>
+</code></pre></div>
+<h3 id="task-a3-create-properties-yml-for-both-intermediates">Task A3: Create properties yml for both intermediates</h3>
+<p><strong>Files:</strong></p>
+<ul>
+<li>Create:
+  <code>src/dbt/kipppaterson/models/pearson/intermediate/properties/int_pearson__njsla.yml</code></li>
+<li>Create:
+  <code>src/dbt/kipppaterson/models/pearson/intermediate/properties/int_pearson__njsla_science.yml</code></li>
+</ul>
+<p>Per <a href="../../../src/dbt/CLAUDE.md">src/dbt/CLAUDE.md</a> "All intermediate models
+must have a uniqueness test." Both upstream staging models are unique on
+<code>studenttestuuid</code> (verified: 44,533 / 44,533 NJSLA rows, 6,920 / 6,920 NJSLA
+Science rows). The intermediate preserves grain, so <code>studenttestuuid</code> remains
+the right key.</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 1: Write <code>int_pearson__njsla.yml</code></strong></li>
+</ul>
+<p>Path:
+<code>.worktrees/cbini/fix/claude-paterson-pearson-id-translation/src/dbt/kipppaterson/models/pearson/intermediate/properties/int_pearson__njsla.yml</code></p>
+<div class="highlight"><pre><span></span><code><span class="nt">models</span><span class="p">:</span>
+<span class="w">  </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">int_pearson__njsla</span>
+<span class="w">    </span><span class="nt">description</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">|</span>
+<span class="w">      </span><span class="no">Paterson NJSLA assessment rows with `localstudentidentifier` translated</span>
+<span class="w">      </span><span class="no">from the Paterson district SIS ID to the canonical KIPP</span>
+<span class="w">      </span><span class="no">`student_number` via PowerSchool&#39;s `prevstudentid` lookup. Rows whose</span>
+<span class="w">      </span><span class="no">`localstudentidentifier` does not match any Paterson PS record fall</span>
+<span class="w">      </span><span class="no">through unchanged.</span>
+<span class="w">    </span><span class="nt">columns</span><span class="p">:</span>
+<span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">studenttestuuid</span>
+<span class="w">        </span><span class="nt">description</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">Pearson per-test-attempt UUID. Unique grain.</span>
+<span class="w">        </span><span class="nt">data_tests</span><span class="p">:</span>
+<span class="w">          </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">unique</span>
+<span class="w">          </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">not_null</span>
+</code></pre></div>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 2: Write <code>int_pearson__njsla_science.yml</code></strong></li>
+</ul>
+<p>Path:
+<code>.worktrees/cbini/fix/claude-paterson-pearson-id-translation/src/dbt/kipppaterson/models/pearson/intermediate/properties/int_pearson__njsla_science.yml</code></p>
+<div class="highlight"><pre><span></span><code><span class="nt">models</span><span class="p">:</span>
+<span class="w">  </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">int_pearson__njsla_science</span>
+<span class="w">    </span><span class="nt">description</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">|</span>
+<span class="w">      </span><span class="no">Paterson NJSLA Science assessment rows with `localstudentidentifier`</span>
+<span class="w">      </span><span class="no">translated from the Paterson district SIS ID to the canonical KIPP</span>
+<span class="w">      </span><span class="no">`student_number` via PowerSchool&#39;s `prevstudentid` lookup. Rows whose</span>
+<span class="w">      </span><span class="no">`localstudentidentifier` does not match any Paterson PS record fall</span>
+<span class="w">      </span><span class="no">through unchanged.</span>
+<span class="w">    </span><span class="nt">columns</span><span class="p">:</span>
+<span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">studenttestuuid</span>
+<span class="w">        </span><span class="nt">description</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">Pearson per-test-attempt UUID. Unique grain.</span>
+<span class="w">        </span><span class="nt">data_tests</span><span class="p">:</span>
+<span class="w">          </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">unique</span>
+<span class="w">          </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">not_null</span>
+</code></pre></div>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 3: Commit</strong></li>
+</ul>
+<div class="highlight"><pre><span></span><code>git<span class="w"> </span>-C<span class="w"> </span>/workspaces/teamster/.worktrees/cbini/fix/claude-paterson-pearson-id-translation<span class="w"> </span>add<span class="w"> </span>src/dbt/kipppaterson/models/pearson/intermediate/properties/
+git<span class="w"> </span>-C<span class="w"> </span>/workspaces/teamster/.worktrees/cbini/fix/claude-paterson-pearson-id-translation<span class="w"> </span>commit<span class="w"> </span>-m<span class="w"> </span><span class="s2">&quot;feat(dbt/kipppaterson): add properties yml for Pearson NJSLA intermediates</span>
+
+<span class="s2">Refs #3882.&quot;</span>
+</code></pre></div>
+<h3 id="task-a4-local-build-and-test">Task A4: Local build and test</h3>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 1: Refresh prod manifest (if stale)</strong></li>
+</ul>
+<p>Required so <code>--defer --state=target/prod</code> resolves correctly. Per
+<a href="../../../src/dbt/CLAUDE.md">src/dbt/CLAUDE.md</a> "Dev <code>--defer</code> for unstaged
+externals" — <code>--state</code> is relative to <code>--project-dir</code>.</p>
+<div class="highlight"><pre><span></span><code>uv<span class="w"> </span>run<span class="w"> </span>dbt<span class="w"> </span>parse<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>--target<span class="w"> </span>prod<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>--project-dir<span class="w"> </span>/workspaces/teamster/.worktrees/cbini/fix/claude-paterson-pearson-id-translation/src/dbt/kipppaterson<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>--target-path<span class="w"> </span>target/prod
+</code></pre></div>
+<p>Expected: completes without error.</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 2: Build the two new intermediates against dev target</strong></li>
+</ul>
+<div class="highlight"><pre><span></span><code>uv<span class="w"> </span>run<span class="w"> </span>dbt<span class="w"> </span>build<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>--select<span class="w"> </span>int_pearson__njsla<span class="w"> </span>int_pearson__njsla_science<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>--target<span class="w"> </span>dev<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>--defer<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>--state<span class="w"> </span>target/prod<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>--project-dir<span class="w"> </span>/workspaces/teamster/.worktrees/cbini/fix/claude-paterson-pearson-id-translation/src/dbt/kipppaterson
+</code></pre></div>
+<p>Expected: 2 models materialized successfully. Tests pass: <code>unique</code> and
+<code>not_null</code> on <code>studenttestuuid</code> for both models.</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 3: Verify translation correctness in dev</strong></li>
+</ul>
+<p>Run against the dev BigQuery schema (substitute <code>&lt;user&gt;</code> for your dev username):</p>
+<div class="highlight"><pre><span></span><code><span class="k">with</span><span class="w"> </span><span class="n">paterson_int</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="p">(</span>
+<span class="w">    </span><span class="k">select</span>
+<span class="w">        </span><span class="k">cast</span><span class="p">(</span><span class="n">localstudentidentifier</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">string</span><span class="p">)</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">resolved_id</span><span class="p">,</span>
+<span class="w">        </span><span class="k">count</span><span class="p">(</span><span class="o">*</span><span class="p">)</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">n</span><span class="p">,</span>
+<span class="w">    </span><span class="k">from</span><span class="w"> </span><span class="o">`</span><span class="n">teamster</span><span class="o">-</span><span class="mi">332318</span><span class="p">.</span><span class="n">zz_</span><span class="o">&lt;</span><span class="k">user</span><span class="o">&gt;</span><span class="n">_kipppaterson_pearson</span><span class="p">.</span><span class="n">int_pearson__njsla</span><span class="o">`</span>
+<span class="w">    </span><span class="k">group</span><span class="w"> </span><span class="k">by</span><span class="w"> </span><span class="n">resolved_id</span>
+<span class="p">)</span>
+
+<span class="k">select</span>
+<span class="w">    </span><span class="k">sum</span><span class="p">(</span><span class="k">if</span><span class="p">(</span><span class="n">paterson_int</span><span class="p">.</span><span class="n">resolved_id</span><span class="w"> </span><span class="k">between</span><span class="w"> </span><span class="s1">&#39;10000&#39;</span><span class="w"> </span><span class="k">and</span><span class="w"> </span><span class="s1">&#39;10499&#39;</span><span class="p">,</span><span class="w"> </span><span class="n">n</span><span class="p">,</span><span class="w"> </span><span class="mi">0</span><span class="p">))</span>
+<span class="w">      </span><span class="k">as</span><span class="w"> </span><span class="n">n_remaining_district_sis</span><span class="p">,</span>
+<span class="w">    </span><span class="k">sum</span><span class="p">(</span><span class="k">if</span><span class="p">(</span><span class="n">paterson_int</span><span class="p">.</span><span class="n">resolved_id</span><span class="w"> </span><span class="k">not</span><span class="w"> </span><span class="k">between</span><span class="w"> </span><span class="s1">&#39;10000&#39;</span><span class="w"> </span><span class="k">and</span><span class="w"> </span><span class="s1">&#39;10499&#39;</span><span class="p">,</span><span class="w"> </span><span class="n">n</span><span class="p">,</span><span class="w"> </span><span class="mi">0</span><span class="p">))</span>
+<span class="w">      </span><span class="k">as</span><span class="w"> </span><span class="n">n_resolved_to_kipp_student_number</span><span class="p">,</span>
+<span class="k">from</span><span class="w"> </span><span class="n">paterson_int</span><span class="p">;</span>
+</code></pre></div>
+<p>Expected: <code>n_remaining_district_sis = 8</code> (the orphans, no <code>prevstudentid</code>
+match), <code>n_resolved_to_kipp_student_number &gt;= 316</code> (rest of the NJSLA rows).</p>
+<h3 id="task-a5-push-branch-and-open-phase-a-pr">Task A5: Push branch and open Phase A PR</h3>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 1: Push the branch</strong></li>
+</ul>
+<div class="highlight"><pre><span></span><code>git<span class="w"> </span>-C<span class="w"> </span>/workspaces/teamster/.worktrees/cbini/fix/claude-paterson-pearson-id-translation<span class="w"> </span>push<span class="w"> </span>-u<span class="w"> </span>origin<span class="w"> </span>cbini/fix/claude-paterson-pearson-id-translation
+</code></pre></div>
+<p>Expected: branch pushed, trunk-check-pre-push runs and reports <code>No issues</code>.</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 2: Open the PR</strong></li>
+</ul>
+<div class="highlight"><pre><span></span><code>gh<span class="w"> </span>pr<span class="w"> </span>create<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>--title<span class="w"> </span><span class="s2">&quot;fix(dbt/kipppaterson): add Pearson NJSLA intermediates with prevstudentid translation&quot;</span><span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>--body<span class="w"> </span><span class="s2">&quot;</span><span class="k">$(</span>cat<span class="w"> </span><span class="s">&lt;&lt;&#39;EOF&#39;</span>
+<span class="s">## Summary</span>
+
+<span class="s">Adds two kipppaterson intermediate models that translate Paterson Pearson `localstudentidentifier` from the Paterson district SIS ID stored in `prevstudentid` to the canonical KIPP `student_number`.</span>
+
+<span class="s">Phase A of the two-PR sequence for #3882. Phase B (kipptaf wiring + crosswalk removal) opens on a new branch after this PR merges and Dagster materializes the new intermediates in prod.</span>
+
+<span class="s">## Test plan</span>
+
+<span class="s">- [ ] Local `uv run dbt build` of both intermediates against `target=dev` passes</span>
+<span class="s">- [ ] Uniqueness + not_null tests on `studenttestuuid` pass</span>
+<span class="s">- [ ] dbt Cloud CI green</span>
+<span class="s">- [ ] After merge, confirm Dagster materializes `kipppaterson/pearson/int_pearson__njsla` and `kipppaterson/pearson/int_pearson__njsla_science` to prod</span>
+<span class="s">- [ ] Phase B PR opens after prod materialization completes</span>
+
+<span class="s">Refs #3882.</span>
+
+<span class="s">🤖 Generated with [Claude Code](https://claude.com/claude-code)</span>
+<span class="s">EOF</span>
+<span class="k">)</span><span class="s2">&quot;</span>
+</code></pre></div>
+<p>Expected: PR URL returned. CI starts.</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 3: Wait for CI green and review approval, then merge (squash)</strong></li>
+</ul>
+<p>Per <a href="../../../CLAUDE.md">CLAUDE.md</a> "Pull requests: Squash merge."</p>
+<hr />
+<h2 id="gate-phase-a-merged-dagster-materializes-new-intermediates">Gate: Phase A merged, Dagster materializes new intermediates</h2>
+<p><strong>Do not start Phase B until both:</strong></p>
+<ol>
+<li>Phase A PR is merged into main.</li>
+<li>Dagster has materialized <code>kipppaterson/pearson/int_pearson__njsla</code> and
+   <code>kipppaterson/pearson/int_pearson__njsla_science</code> to prod. Verify via:</li>
+</ol>
+<div class="highlight"><pre><span></span><code><span class="k">select</span><span class="w"> </span><span class="k">table_name</span><span class="p">,</span><span class="w"> </span><span class="n">table_type</span>
+<span class="k">from</span><span class="w"> </span><span class="o">`</span><span class="n">teamster</span><span class="o">-</span><span class="mi">332318</span><span class="p">.</span><span class="n">kipppaterson_pearson</span><span class="p">.</span><span class="n">INFORMATION_SCHEMA</span><span class="p">.</span><span class="n">TABLES</span><span class="o">`</span>
+<span class="k">where</span><span class="w"> </span><span class="k">table_name</span><span class="w"> </span><span class="k">in</span><span class="w"> </span><span class="p">(</span><span class="s1">&#39;int_pearson__njsla&#39;</span><span class="p">,</span><span class="w"> </span><span class="s1">&#39;int_pearson__njsla_science&#39;</span><span class="p">);</span>
+</code></pre></div>
+<p>Expected: 2 rows returned.</p>
+<hr />
+<h2 id="phase-b-kipptaf-wiring-crosswalk-removal">Phase B — kipptaf wiring + crosswalk removal</h2>
+<p><strong>Branch:</strong> create new from main, name
+<code>cbini/fix/claude-paterson-pearson-kipptaf-wiring</code>, link to #3882 via
+<code>gh issue develop --name</code>. Per <a href="../../../CLAUDE.md">CLAUDE.md</a> "Worktree"
+pattern.</p>
+<p><strong>Files (Phase B):</strong></p>
+<ul>
+<li>Modify: <code>src/dbt/kipptaf/models/pearson/sources-kipppaterson.yml</code></li>
+<li>Modify: <code>src/dbt/kipptaf/models/pearson/staging/stg_pearson__njsla.sql</code></li>
+<li>Modify:
+  <code>src/dbt/kipptaf/models/pearson/staging/stg_pearson__njsla_science.sql</code></li>
+<li>Modify:
+  <code>src/dbt/kipptaf/models/pearson/intermediate/int_pearson__all_assessments.sql</code></li>
+<li>Modify:
+  <code>src/dbt/kipptaf/models/google/sheets/staging/properties/stg_google_sheets__pearson__student_crosswalk.yml</code></li>
+<li>Modify: <code>src/dbt/kipptaf/models/google/sheets/sources-external.yml</code></li>
+</ul>
+<h3 id="task-b0-create-phase-b-worktree">Task B0: Create Phase B worktree</h3>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 1: Create issue-linked branch</strong></li>
+</ul>
+<div class="highlight"><pre><span></span><code>gh<span class="w"> </span>issue<span class="w"> </span>develop<span class="w"> </span><span class="m">3882</span><span class="w"> </span>--name<span class="w"> </span>cbini/fix/claude-paterson-pearson-kipptaf-wiring
+</code></pre></div>
+<p>Expected: branch created on remote.</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 2: Create worktree</strong></li>
+</ul>
+<div class="highlight"><pre><span></span><code>git<span class="w"> </span>worktree<span class="w"> </span>add<span class="w"> </span>/workspaces/teamster/.worktrees/cbini/fix/claude-paterson-pearson-kipptaf-wiring<span class="w"> </span>cbini/fix/claude-paterson-pearson-kipptaf-wiring
+</code></pre></div>
+<p>Expected: worktree at the named path tracking the remote branch.</p>
+<h3 id="task-b1-declare-the-new-intermediates-as-kipptaf-sources">Task B1: Declare the new intermediates as kipptaf sources</h3>
+<p><strong>Files:</strong></p>
+<ul class="task-list">
+<li>
+<p>Modify: <code>src/dbt/kipptaf/models/pearson/sources-kipppaterson.yml</code></p>
+</li>
+<li class="task-list-item">
+<p><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 1: Read the current file</strong></p>
+</li>
+</ul>
+<p>Path:
+<code>.worktrees/cbini/fix/claude-paterson-pearson-kipptaf-wiring/src/dbt/kipptaf/models/pearson/sources-kipppaterson.yml</code></p>
+<p>The file currently declares 6 tables under <code>kipppaterson_pearson</code>. Add two new
+table entries for the intermediates. Place them alphabetically — after
+<code>stg_pearson__njgpa</code> and before <code>stg_pearson__njsla</code> for <code>int_pearson__njsla</code>,
+and after <code>stg_pearson__njsla</code> and before <code>stg_pearson__njsla_science</code> for
+<code>int_pearson__njsla_science</code>. Use the same Dagster asset key convention as the
+surrounding entries.</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 2: Add the two table entries</strong></li>
+</ul>
+<p>Insert directly under <code>tables:</code> so the file ends up containing (in addition to
+the existing 6 entries):</p>
+<div class="highlight"><pre><span></span><code><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">int_pearson__njsla</span>
+<span class="w">  </span><span class="nt">config</span><span class="p">:</span>
+<span class="w">    </span><span class="nt">meta</span><span class="p">:</span>
+<span class="w">      </span><span class="nt">dagster</span><span class="p">:</span>
+<span class="w">        </span><span class="nt">group</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">pearson</span>
+<span class="w">        </span><span class="nt">asset_key</span><span class="p">:</span>
+<span class="w">          </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">kipppaterson</span>
+<span class="w">          </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">pearson</span>
+<span class="w">          </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">int_pearson__njsla</span>
+<span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">int_pearson__njsla_science</span>
+<span class="w">  </span><span class="nt">config</span><span class="p">:</span>
+<span class="w">    </span><span class="nt">meta</span><span class="p">:</span>
+<span class="w">      </span><span class="nt">dagster</span><span class="p">:</span>
+<span class="w">        </span><span class="nt">group</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">pearson</span>
+<span class="w">        </span><span class="nt">asset_key</span><span class="p">:</span>
+<span class="w">          </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">kipppaterson</span>
+<span class="w">          </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">pearson</span>
+<span class="w">          </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">int_pearson__njsla_science</span>
+</code></pre></div>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 3: Commit</strong></li>
+</ul>
+<div class="highlight"><pre><span></span><code>git<span class="w"> </span>-C<span class="w"> </span>/workspaces/teamster/.worktrees/cbini/fix/claude-paterson-pearson-kipptaf-wiring<span class="w"> </span>add<span class="w"> </span>src/dbt/kipptaf/models/pearson/sources-kipppaterson.yml
+git<span class="w"> </span>-C<span class="w"> </span>/workspaces/teamster/.worktrees/cbini/fix/claude-paterson-pearson-kipptaf-wiring<span class="w"> </span>commit<span class="w"> </span>-m<span class="w"> </span><span class="s2">&quot;feat(dbt/kipptaf): declare Paterson Pearson intermediates as sources</span>
+
+<span class="s2">Refs #3882.&quot;</span>
+</code></pre></div>
+<h3 id="task-b2-repoint-the-njsla-union-to-the-translated-intermediate">Task B2: Repoint the NJSLA union to the translated intermediate</h3>
+<p><strong>Files:</strong></p>
+<ul class="task-list">
+<li>
+<p>Modify: <code>src/dbt/kipptaf/models/pearson/staging/stg_pearson__njsla.sql</code></p>
+</li>
+<li class="task-list-item">
+<p><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 1: Edit the file</strong></p>
+</li>
+</ul>
+<p>Replace the existing content. The file currently reads:</p>
+<div class="highlight"><pre><span></span><code><span class="err">{{</span>
+<span class="w">    </span><span class="n">dbt_utils</span><span class="p">.</span><span class="n">union_relations</span><span class="p">(</span>
+<span class="w">        </span><span class="n">relations</span><span class="o">=</span><span class="p">[</span>
+<span class="w">            </span><span class="k">source</span><span class="p">(</span><span class="ss">&quot;kippnewark_pearson&quot;</span><span class="p">,</span><span class="w"> </span><span class="ss">&quot;stg_pearson__njsla&quot;</span><span class="p">),</span>
+<span class="w">            </span><span class="k">source</span><span class="p">(</span><span class="ss">&quot;kippcamden_pearson&quot;</span><span class="p">,</span><span class="w"> </span><span class="ss">&quot;stg_pearson__njsla&quot;</span><span class="p">),</span>
+<span class="w">            </span><span class="k">source</span><span class="p">(</span><span class="ss">&quot;kipppaterson_pearson&quot;</span><span class="p">,</span><span class="w"> </span><span class="ss">&quot;stg_pearson__njsla&quot;</span><span class="p">),</span>
+<span class="w">        </span><span class="p">]</span>
+<span class="w">    </span><span class="p">)</span>
+<span class="err">}}</span>
+</code></pre></div>
+<p>Change the Paterson source to point at the intermediate:</p>
+<div class="highlight"><pre><span></span><code><span class="err">{{</span>
+<span class="w">    </span><span class="n">dbt_utils</span><span class="p">.</span><span class="n">union_relations</span><span class="p">(</span>
+<span class="w">        </span><span class="n">relations</span><span class="o">=</span><span class="p">[</span>
+<span class="w">            </span><span class="k">source</span><span class="p">(</span><span class="ss">&quot;kippnewark_pearson&quot;</span><span class="p">,</span><span class="w"> </span><span class="ss">&quot;stg_pearson__njsla&quot;</span><span class="p">),</span>
+<span class="w">            </span><span class="k">source</span><span class="p">(</span><span class="ss">&quot;kippcamden_pearson&quot;</span><span class="p">,</span><span class="w"> </span><span class="ss">&quot;stg_pearson__njsla&quot;</span><span class="p">),</span>
+<span class="w">            </span><span class="k">source</span><span class="p">(</span><span class="ss">&quot;kipppaterson_pearson&quot;</span><span class="p">,</span><span class="w"> </span><span class="ss">&quot;int_pearson__njsla&quot;</span><span class="p">),</span>
+<span class="w">        </span><span class="p">]</span>
+<span class="w">    </span><span class="p">)</span>
+<span class="err">}}</span>
+</code></pre></div>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 2: Commit</strong></li>
+</ul>
+<div class="highlight"><pre><span></span><code>git<span class="w"> </span>-C<span class="w"> </span>/workspaces/teamster/.worktrees/cbini/fix/claude-paterson-pearson-kipptaf-wiring<span class="w"> </span>add<span class="w"> </span>src/dbt/kipptaf/models/pearson/staging/stg_pearson__njsla.sql
+git<span class="w"> </span>-C<span class="w"> </span>/workspaces/teamster/.worktrees/cbini/fix/claude-paterson-pearson-kipptaf-wiring<span class="w"> </span>commit<span class="w"> </span>-m<span class="w"> </span><span class="s2">&quot;fix(dbt/kipptaf): source Paterson NJSLA from translated intermediate</span>
+
+<span class="s2">Refs #3882.&quot;</span>
+</code></pre></div>
+<h3 id="task-b3-repoint-the-njsla-science-union-to-the-translated-intermediate">Task B3: Repoint the NJSLA Science union to the translated intermediate</h3>
+<p><strong>Files:</strong></p>
+<ul class="task-list">
+<li>
+<p>Modify:
+  <code>src/dbt/kipptaf/models/pearson/staging/stg_pearson__njsla_science.sql</code></p>
+</li>
+<li class="task-list-item">
+<p><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 1: Edit the file</strong></p>
+</li>
+</ul>
+<p>The file currently reads:</p>
+<div class="highlight"><pre><span></span><code><span class="err">{{</span>
+<span class="w">    </span><span class="n">dbt_utils</span><span class="p">.</span><span class="n">union_relations</span><span class="p">(</span>
+<span class="w">        </span><span class="n">relations</span><span class="o">=</span><span class="p">[</span>
+<span class="w">            </span><span class="k">source</span><span class="p">(</span><span class="ss">&quot;kippnewark_pearson&quot;</span><span class="p">,</span><span class="w"> </span><span class="ss">&quot;stg_pearson__njsla_science&quot;</span><span class="p">),</span>
+<span class="w">            </span><span class="k">source</span><span class="p">(</span><span class="ss">&quot;kippcamden_pearson&quot;</span><span class="p">,</span><span class="w"> </span><span class="ss">&quot;stg_pearson__njsla_science&quot;</span><span class="p">),</span>
+<span class="w">            </span><span class="k">source</span><span class="p">(</span><span class="ss">&quot;kipppaterson_pearson&quot;</span><span class="p">,</span><span class="w"> </span><span class="ss">&quot;stg_pearson__njsla_science&quot;</span><span class="p">),</span>
+<span class="w">        </span><span class="p">]</span>
+<span class="w">    </span><span class="p">)</span>
+<span class="err">}}</span>
+</code></pre></div>
+<p>Change the Paterson source to the intermediate:</p>
+<div class="highlight"><pre><span></span><code><span class="err">{{</span>
+<span class="w">    </span><span class="n">dbt_utils</span><span class="p">.</span><span class="n">union_relations</span><span class="p">(</span>
+<span class="w">        </span><span class="n">relations</span><span class="o">=</span><span class="p">[</span>
+<span class="w">            </span><span class="k">source</span><span class="p">(</span><span class="ss">&quot;kippnewark_pearson&quot;</span><span class="p">,</span><span class="w"> </span><span class="ss">&quot;stg_pearson__njsla_science&quot;</span><span class="p">),</span>
+<span class="w">            </span><span class="k">source</span><span class="p">(</span><span class="ss">&quot;kippcamden_pearson&quot;</span><span class="p">,</span><span class="w"> </span><span class="ss">&quot;stg_pearson__njsla_science&quot;</span><span class="p">),</span>
+<span class="w">            </span><span class="k">source</span><span class="p">(</span><span class="ss">&quot;kipppaterson_pearson&quot;</span><span class="p">,</span><span class="w"> </span><span class="ss">&quot;int_pearson__njsla_science&quot;</span><span class="p">),</span>
+<span class="w">        </span><span class="p">]</span>
+<span class="w">    </span><span class="p">)</span>
+<span class="err">}}</span>
+</code></pre></div>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 2: Commit</strong></li>
+</ul>
+<div class="highlight"><pre><span></span><code>git<span class="w"> </span>-C<span class="w"> </span>/workspaces/teamster/.worktrees/cbini/fix/claude-paterson-pearson-kipptaf-wiring<span class="w"> </span>add<span class="w"> </span>src/dbt/kipptaf/models/pearson/staging/stg_pearson__njsla_science.sql
+git<span class="w"> </span>-C<span class="w"> </span>/workspaces/teamster/.worktrees/cbini/fix/claude-paterson-pearson-kipptaf-wiring<span class="w"> </span>commit<span class="w"> </span>-m<span class="w"> </span><span class="s2">&quot;fix(dbt/kipptaf): source Paterson NJSLA Science from translated intermediate</span>
+
+<span class="s2">Refs #3882.&quot;</span>
+</code></pre></div>
+<h3 id="task-b4-remove-the-crosswalk-join-from-int_pearson__all_assessments">Task B4: Remove the crosswalk join from <code>int_pearson__all_assessments</code></h3>
+<p><strong>Files:</strong></p>
+<ul class="task-list">
+<li>
+<p>Modify:
+  <code>src/dbt/kipptaf/models/pearson/intermediate/int_pearson__all_assessments.sql</code></p>
+</li>
+<li class="task-list-item">
+<p><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 1: Edit the file</strong></p>
+</li>
+</ul>
+<p>Two changes:</p>
+<ol>
+<li>In the final SELECT, replace:</li>
+</ol>
+<div class="highlight"><pre><span></span><code><span class="k">coalesce</span><span class="p">(</span><span class="n">x</span><span class="p">.</span><span class="n">student_number</span><span class="p">,</span><span class="w"> </span><span class="n">u</span><span class="p">.</span><span class="n">localstudentidentifier</span><span class="p">)</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">localstudentidentifier</span><span class="p">,</span>
+</code></pre></div>
+<p>with:</p>
+<div class="highlight"><pre><span></span><code><span class="n">u</span><span class="p">.</span><span class="n">localstudentidentifier</span><span class="p">,</span>
+</code></pre></div>
+<ol>
+<li>At the bottom of the file, remove the <code>LEFT JOIN</code> block:</li>
+</ol>
+<div class="highlight"><pre><span></span><code><span class="k">left</span><span class="w"> </span><span class="k">join</span>
+<span class="w">    </span><span class="err">{{</span><span class="w"> </span><span class="k">ref</span><span class="p">(</span><span class="ss">&quot;stg_google_sheets__pearson__student_crosswalk&quot;</span><span class="p">)</span><span class="w"> </span><span class="err">}}</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">x</span>
+<span class="w">    </span><span class="k">on</span><span class="w"> </span><span class="n">u</span><span class="p">.</span><span class="n">studenttestuuid</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">x</span><span class="p">.</span><span class="n">student_test_uuid</span>
+</code></pre></div>
+<p>The file now ends after the <code>from union_relations as u</code> line.</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 2: Commit</strong></li>
+</ul>
+<div class="highlight"><pre><span></span><code>git<span class="w"> </span>-C<span class="w"> </span>/workspaces/teamster/.worktrees/cbini/fix/claude-paterson-pearson-kipptaf-wiring<span class="w"> </span>add<span class="w"> </span>src/dbt/kipptaf/models/pearson/intermediate/int_pearson__all_assessments.sql
+git<span class="w"> </span>-C<span class="w"> </span>/workspaces/teamster/.worktrees/cbini/fix/claude-paterson-pearson-kipptaf-wiring<span class="w"> </span>commit<span class="w"> </span>-m<span class="w"> </span><span class="s2">&quot;refactor(dbt/kipptaf): drop vestigial Pearson crosswalk join</span>
+
+<span class="s2">Refs #3882.&quot;</span>
+</code></pre></div>
+<h3 id="task-b5-disable-the-crosswalk-staging-model">Task B5: Disable the crosswalk staging model</h3>
+<p><strong>Files:</strong></p>
+<ul class="task-list">
+<li>
+<p>Modify:
+  <code>src/dbt/kipptaf/models/google/sheets/staging/properties/stg_google_sheets__pearson__student_crosswalk.yml</code></p>
+</li>
+<li class="task-list-item">
+<p><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 1: Edit the file</strong></p>
+</li>
+</ul>
+<p>The file currently reads:</p>
+<div class="highlight"><pre><span></span><code><span class="nt">models</span><span class="p">:</span>
+<span class="w">  </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">stg_google_sheets__pearson__student_crosswalk</span>
+<span class="w">    </span><span class="nt">columns</span><span class="p">:</span>
+<span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">Student_Test_UUID</span>
+<span class="w">        </span><span class="nt">data_type</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">string</span>
+<span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">Student_Number</span>
+<span class="w">        </span><span class="nt">data_type</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">int64</span>
+</code></pre></div>
+<p>Change to:</p>
+<div class="highlight"><pre><span></span><code><span class="nt">models</span><span class="p">:</span>
+<span class="w">  </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">stg_google_sheets__pearson__student_crosswalk</span>
+<span class="w">    </span><span class="nt">config</span><span class="p">:</span>
+<span class="w">      </span><span class="nt">enabled</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">false</span>
+<span class="w">    </span><span class="nt">columns</span><span class="p">:</span>
+<span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">Student_Test_UUID</span>
+<span class="w">        </span><span class="nt">data_type</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">string</span>
+<span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">Student_Number</span>
+<span class="w">        </span><span class="nt">data_type</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">int64</span>
+</code></pre></div>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 2: Commit</strong></li>
+</ul>
+<div class="highlight"><pre><span></span><code>git<span class="w"> </span>-C<span class="w"> </span>/workspaces/teamster/.worktrees/cbini/fix/claude-paterson-pearson-kipptaf-wiring<span class="w"> </span>add<span class="w"> </span>src/dbt/kipptaf/models/google/sheets/staging/properties/stg_google_sheets__pearson__student_crosswalk.yml
+git<span class="w"> </span>-C<span class="w"> </span>/workspaces/teamster/.worktrees/cbini/fix/claude-paterson-pearson-kipptaf-wiring<span class="w"> </span>commit<span class="w"> </span>-m<span class="w"> </span><span class="s2">&quot;chore(dbt/kipptaf): disable vestigial Pearson crosswalk staging model</span>
+
+<span class="s2">Refs #3882.&quot;</span>
+</code></pre></div>
+<h3 id="task-b6-remove-the-crosswalk-source-entry-from-sources-externalyml">Task B6: Remove the crosswalk source entry from <code>sources-external.yml</code></h3>
+<p><strong>Files:</strong></p>
+<ul class="task-list">
+<li>
+<p>Modify: <code>src/dbt/kipptaf/models/google/sheets/sources-external.yml</code></p>
+</li>
+<li class="task-list-item">
+<p><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 1: Locate the source entry</strong></p>
+</li>
+</ul>
+<p>Grep the file for the <code>pearson__student_crosswalk</code> entry:</p>
+<div class="highlight"><pre><span></span><code>grep<span class="w"> </span>-n<span class="w"> </span><span class="s2">&quot;pearson__student_crosswalk&quot;</span><span class="w"> </span>/workspaces/teamster/.worktrees/cbini/fix/claude-paterson-pearson-kipptaf-wiring/src/dbt/kipptaf/models/google/sheets/sources-external.yml
+</code></pre></div>
+<p>Expected: one match identifying the start of the source entry block.</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 2: Delete the entry</strong></li>
+</ul>
+<p>Remove the entire <code>- name: src_google_sheets__pearson__student_crosswalk</code> block
+from <code>tables:</code>, including its <code>external:</code>, <code>config:</code>, and <code>columns:</code> children.
+Adjacent table entries stay.</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 3: Commit</strong></li>
+</ul>
+<div class="highlight"><pre><span></span><code>git<span class="w"> </span>-C<span class="w"> </span>/workspaces/teamster/.worktrees/cbini/fix/claude-paterson-pearson-kipptaf-wiring<span class="w"> </span>add<span class="w"> </span>src/dbt/kipptaf/models/google/sheets/sources-external.yml
+git<span class="w"> </span>-C<span class="w"> </span>/workspaces/teamster/.worktrees/cbini/fix/claude-paterson-pearson-kipptaf-wiring<span class="w"> </span>commit<span class="w"> </span>-m<span class="w"> </span><span class="s2">&quot;chore(dbt/kipptaf): remove vestigial Pearson crosswalk source entry</span>
+
+<span class="s2">Refs #3882.&quot;</span>
+</code></pre></div>
+<h3 id="task-b7-local-build-and-dbt-tests">Task B7: Local build and dbt tests</h3>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 1: Refresh prod manifest</strong></li>
+</ul>
+<div class="highlight"><pre><span></span><code>uv<span class="w"> </span>run<span class="w"> </span>dbt<span class="w"> </span>parse<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>--target<span class="w"> </span>prod<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>--project-dir<span class="w"> </span>/workspaces/teamster/.worktrees/cbini/fix/claude-paterson-pearson-kipptaf-wiring/src/dbt/kipptaf<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>--target-path<span class="w"> </span>target/prod
+</code></pre></div>
+<p>Expected: completes without error.</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 2: Build the affected kipptaf models against dev target</strong></li>
+</ul>
+<div class="highlight"><pre><span></span><code>uv<span class="w"> </span>run<span class="w"> </span>dbt<span class="w"> </span>build<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>--select<span class="w"> </span>stg_pearson__njsla<span class="w"> </span>stg_pearson__njsla_science<span class="w"> </span>int_pearson__all_assessments<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>--target<span class="w"> </span>dev<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>--defer<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>--state<span class="w"> </span>target/prod<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>--project-dir<span class="w"> </span>/workspaces/teamster/.worktrees/cbini/fix/claude-paterson-pearson-kipptaf-wiring/src/dbt/kipptaf
+</code></pre></div>
+<p>Expected: 3 models built, tests pass.</p>
+<h3 id="task-b8-pre-merge-verification-paterson-resolution">Task B8: Pre-merge verification — Paterson resolution</h3>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 1: Run in BigQuery</strong></li>
+</ul>
+<p>Substitute <code>&lt;user&gt;</code> for your dev username:</p>
+<div class="highlight"><pre><span></span><code><span class="k">select</span>
+<span class="w">    </span><span class="n">regexp_extract</span><span class="p">(</span><span class="n">_dbt_source_relation</span><span class="p">,</span><span class="w"> </span><span class="n">r</span><span class="s1">&#39;`(kipp[^_]+)_powerschool`&#39;</span><span class="p">)</span>
+<span class="w">      </span><span class="k">as</span><span class="w"> </span><span class="n">resolved_district</span><span class="p">,</span>
+<span class="w">    </span><span class="k">count</span><span class="p">(</span><span class="o">*</span><span class="p">)</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">n_rows</span><span class="p">,</span>
+<span class="k">from</span><span class="w"> </span><span class="o">`</span><span class="n">teamster</span><span class="o">-</span><span class="mi">332318</span><span class="p">.</span><span class="n">zz_</span><span class="o">&lt;</span><span class="k">user</span><span class="o">&gt;</span><span class="n">_kipptaf_pearson</span><span class="p">.</span><span class="n">int_pearson__all_assessments</span><span class="o">`</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">p</span>
+<span class="k">left</span><span class="w"> </span><span class="k">join</span>
+<span class="w">    </span><span class="o">`</span><span class="n">teamster</span><span class="o">-</span><span class="mi">332318</span><span class="p">.</span><span class="n">kipptaf_powerschool</span><span class="p">.</span><span class="n">stg_powerschool__students</span><span class="o">`</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">s</span>
+<span class="w">    </span><span class="k">on</span><span class="w"> </span><span class="k">cast</span><span class="p">(</span><span class="n">s</span><span class="p">.</span><span class="n">student_number</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">string</span><span class="p">)</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">p</span><span class="p">.</span><span class="n">localstudentidentifier</span>
+<span class="k">where</span><span class="w"> </span><span class="n">p</span><span class="p">.</span><span class="n">_dbt_source_relation</span><span class="w"> </span><span class="k">like</span><span class="w"> </span><span class="s1">&#39;%paterson%&#39;</span>
+<span class="k">group</span><span class="w"> </span><span class="k">by</span><span class="w"> </span><span class="n">resolved_district</span><span class="p">;</span>
+</code></pre></div>
+<p>Expected output:</p>
+<table>
+<thead>
+<tr>
+<th>resolved_district</th>
+<th style="text-align: right;">n_rows</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>kipppaterson</code></td>
+<td style="text-align: right;">432</td>
+</tr>
+<tr>
+<td>(NULL)</td>
+<td style="text-align: right;">8</td>
+</tr>
+</tbody>
+</table>
+<p>No <code>kippnewark</code>, <code>kippcamden</code>, or <code>kippmiami</code> rows should appear.</p>
+<h3 id="task-b9-pre-merge-verification-newark-camden-unchanged">Task B9: Pre-merge verification — Newark / Camden unchanged</h3>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 1: Run in BigQuery</strong></li>
+</ul>
+<div class="highlight"><pre><span></span><code><span class="k">select</span>
+<span class="w">    </span><span class="n">p</span><span class="p">.</span><span class="n">_dbt_source_relation</span><span class="p">,</span>
+<span class="w">    </span><span class="k">count</span><span class="p">(</span><span class="o">*</span><span class="p">)</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">n_rows</span><span class="p">,</span>
+<span class="w">    </span><span class="n">countif</span><span class="p">(</span><span class="n">p</span><span class="p">.</span><span class="n">localstudentidentifier</span><span class="w"> </span><span class="o">!=</span><span class="w"> </span><span class="n">prev</span><span class="p">.</span><span class="n">localstudentidentifier</span><span class="p">)</span>
+<span class="w">      </span><span class="k">as</span><span class="w"> </span><span class="n">n_changed</span><span class="p">,</span>
+<span class="k">from</span><span class="w"> </span><span class="o">`</span><span class="n">teamster</span><span class="o">-</span><span class="mi">332318</span><span class="p">.</span><span class="n">zz_</span><span class="o">&lt;</span><span class="k">user</span><span class="o">&gt;</span><span class="n">_kipptaf_pearson</span><span class="p">.</span><span class="n">int_pearson__all_assessments</span><span class="o">`</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">p</span>
+<span class="k">inner</span><span class="w"> </span><span class="k">join</span>
+<span class="w">    </span><span class="o">`</span><span class="n">teamster</span><span class="o">-</span><span class="mi">332318</span><span class="p">.</span><span class="n">kipptaf_pearson</span><span class="p">.</span><span class="n">int_pearson__all_assessments</span><span class="o">`</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">prev</span>
+<span class="w">    </span><span class="k">on</span><span class="w"> </span><span class="n">p</span><span class="p">.</span><span class="n">studenttestuuid</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">prev</span><span class="p">.</span><span class="n">studenttestuuid</span>
+<span class="k">where</span><span class="w"> </span><span class="n">p</span><span class="p">.</span><span class="n">_dbt_source_relation</span><span class="w"> </span><span class="k">not</span><span class="w"> </span><span class="k">like</span><span class="w"> </span><span class="s1">&#39;%paterson%&#39;</span>
+<span class="k">group</span><span class="w"> </span><span class="k">by</span><span class="w"> </span><span class="n">p</span><span class="p">.</span><span class="n">_dbt_source_relation</span><span class="p">;</span>
+</code></pre></div>
+<p>Expected: <code>n_changed = 0</code> for every Newark and Camden source relation.</p>
+<h3 id="task-b10-push-branch-and-open-phase-b-pr">Task B10: Push branch and open Phase B PR</h3>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 1: Push</strong></li>
+</ul>
+<div class="highlight"><pre><span></span><code>git<span class="w"> </span>-C<span class="w"> </span>/workspaces/teamster/.worktrees/cbini/fix/claude-paterson-pearson-kipptaf-wiring<span class="w"> </span>push<span class="w"> </span>-u<span class="w"> </span>origin<span class="w"> </span>cbini/fix/claude-paterson-pearson-kipptaf-wiring
+</code></pre></div>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 2: Open the PR</strong></li>
+</ul>
+<div class="highlight"><pre><span></span><code>gh<span class="w"> </span>pr<span class="w"> </span>create<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>--title<span class="w"> </span><span class="s2">&quot;fix(dbt/kipptaf): wire Paterson Pearson translated intermediates; remove crosswalk&quot;</span><span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>--body<span class="w"> </span><span class="s2">&quot;</span><span class="k">$(</span>cat<span class="w"> </span><span class="s">&lt;&lt;&#39;EOF&#39;</span>
+<span class="s">## Summary</span>
+
+<span class="s">Repoints kipptaf&#39;s NJSLA and NJSLA Science union models to source Paterson rows from the new `kipppaterson.int_pearson__&lt;assessment&gt;` intermediates (added in #3882&#39;s Phase A PR), removes the vestigial Pearson UUID crosswalk join from `int_pearson__all_assessments`, and disables the crosswalk staging model + Google Sheet source.</span>
+
+<span class="s">Phase B of the two-PR sequence for #3882.</span>
+
+<span class="s">## Test plan</span>
+
+<span class="s">- [ ] Local `uv run dbt build` of `stg_pearson__njsla`, `stg_pearson__njsla_science`, `int_pearson__all_assessments` against `target=dev` passes</span>
+<span class="s">- [ ] All Paterson Pearson rows in `int_pearson__all_assessments` resolve to `kipppaterson` PowerSchool (432 rows) or remain orphan (8 rows, tracked in #3956)</span>
+<span class="s">- [ ] No Paterson Pearson rows resolve into Newark / Camden / Miami PowerSchool</span>
+<span class="s">- [ ] Newark and Camden Pearson `localstudentidentifier` values unchanged vs. prod</span>
+<span class="s">- [ ] dbt Cloud CI green</span>
+
+<span class="s">Closes #3882.</span>
+
+<span class="s">🤖 Generated with [Claude Code](https://claude.com/claude-code)</span>
+<span class="s">EOF</span>
+<span class="k">)</span><span class="s2">&quot;</span>
+</code></pre></div>
+<p>Expected: PR URL. CI starts.</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 3: Wait for CI green and review approval, then merge (squash)</strong></li>
+</ul>
+<hr />
+<h2 id="acceptance-criteria-recapped-from-spec">Acceptance criteria (recapped from spec)</h2>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> Phase A: 2 new <code>int_pearson__&lt;assessment&gt;</code> models exist in kipppaterson
+      (NJSLA + NJSLA Science) with passing uniqueness tests.</li>
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> Phase B: The 2 kipptaf-level union models source the translated
+      intermediates for Paterson.</li>
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> Phase B: <code>int_pearson__all_assessments</code> no longer references the
+      crosswalk.</li>
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> Phase B: <code>stg_google_sheets__pearson__student_crosswalk</code> is disabled.</li>
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> Phase B: <code>pearson__student_crosswalk</code> source entry removed in
+      <code>sources-external.yml</code>.</li>
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> After both PRs merge and Dagster materializes prod: 432 Paterson Pearson
+      rows that previously FKed into Newark <code>student_key</code>s now FK into Paterson
+      <code>student_key</code>s.</li>
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> 8 Paterson Pearson orphans remain orphans (tracked in #3956, not
+      blocking).</li>
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> Newark and Camden Pearson row counts and <code>student_key</code> resolution
+      unchanged.</li>
+</ul>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+          <button type="button" class="md-top md-icon" data-md-component="top" hidden>
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8z"/></svg>
+  Back to top
+</button>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+    <div class="md-copyright__highlight">
+      Copyright &copy; KIPP TEAM & Family Schools
+    </div>
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      
+      <script id="__config" type="application/json">{"annotate": null, "base": "../../..", "features": ["content.action.edit", "content.code.copy", "navigation.instant", "navigation.indexes", "navigation.sections", "navigation.tabs", "navigation.tabs.sticky", "navigation.top", "search.highlight", "search.suggest", "toc.follow"], "search": "../../../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+    
+    
+      <script src="../../../assets/javascripts/bundle.79ae519e.min.js"></script>
+      
+    
+  </body>
+</html>

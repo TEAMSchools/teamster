@@ -1,0 +1,1876 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+        <meta name="description" content="Data engineering platform for KIPP TEAM & Family Schools">
+      
+      
+      
+      
+      
+      
+        
+      
+      
+      <link rel="icon" href="../../../images/truck.svg">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.6">
+    
+    
+      
+        <title>fct_behavioral_consequences FK Hash-Drift Implementation Plan - teamster</title>
+      
+    
+    
+      <link rel="stylesheet" href="../../../assets/stylesheets/main.484c7ddc.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+    <script>__md_scope=new URL("../../..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+  </head>
+  
+  
+    <body dir="ltr">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#fct_behavioral_consequences-fk-hash-drift-implementation-plan" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+  
+
+<header class="md-header md-header--shadow md-header--lifted" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href="../../.." title="teamster" class="md-header__button md-logo" aria-label="teamster" data-md-component="logo">
+      
+  <img src="../../../images/truck.svg" alt="logo">
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            teamster
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              fct_behavioral_consequences FK Hash-Drift Implementation Plan
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+        <div class="md-search__suggest" data-md-component="search-suggest"></div>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      
+    
+    
+      <div class="md-header__source">
+        <a href="https://github.com/TEAMSchools/teamster" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M173.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6m-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3m44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9M252.8 8C114.1 8 8 113.3 8 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C436.2 457.8 504 362.9 504 252 504 113.3 391.5 8 252.8 8M105.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1m-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7m32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1m-11.4-14.7c-1.6 1-1.6 3.6 0 5.9s4.3 3.3 5.6 2.3c1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2"/></svg>
+  </div>
+  <div class="md-source__repository">
+    TEAMSchools/teamster
+  </div>
+</a>
+      </div>
+    
+  </nav>
+  
+    
+      
+<nav class="md-tabs" aria-label="Tabs" data-md-component="tabs">
+  <div class="md-grid">
+    <ul class="md-tabs__list">
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../../.." class="md-tabs__link">
+        
+  
+  
+    
+  
+  Home
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../../guides/" class="md-tabs__link">
+          
+  
+  
+    
+  
+  Guides
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../../troubleshooting/dagster/" class="md-tabs__link">
+          
+  
+  
+    
+  
+  Troubleshooting
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../../reference/architecture/" class="md-tabs__link">
+          
+  
+  
+    
+  
+  Reference
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../../../reference/automations/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  Automations
+
+      </a>
+    </li>
+  
+
+      
+    </ul>
+  </div>
+</nav>
+    
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+  
+
+
+<nav class="md-nav md-nav--primary md-nav--lifted" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href="../../.." title="teamster" class="md-nav__button md-logo" aria-label="teamster" data-md-component="logo">
+      
+  <img src="../../../images/truck.svg" alt="logo">
+
+    </a>
+    teamster
+  </label>
+  
+    <div class="md-nav__source">
+      <a href="https://github.com/TEAMSchools/teamster" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M173.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6m-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3m44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9M252.8 8C114.1 8 8 113.3 8 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C436.2 457.8 504 362.9 504 252 504 113.3 391.5 8 252.8 8M105.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1m-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7m32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1m-11.4-14.7c-1.6 1-1.6 3.6 0 5.9s4.3 3.3 5.6 2.3c1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2"/></svg>
+  </div>
+  <div class="md-source__repository">
+    TEAMSchools/teamster
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../.." class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Home
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+          
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2" >
+        
+          
+          <div class="md-nav__link md-nav__container">
+            <a href="../../../guides/" class="md-nav__link ">
+              
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Guides
+  
+
+    
+  </span>
+  
+  
+
+            </a>
+            
+              
+              <label class="md-nav__link " for="__nav_2" id="__nav_2_label" tabindex="0">
+                <span class="md-nav__icon md-icon"></span>
+              </label>
+            
+          </div>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_2_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_2">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Guides
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/codespaces/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Codespaces
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/local-development/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Local Development
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/dagster/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Dagster
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/google-sheets/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Google Sheets & Forms
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/adp-location-renames/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ADP Location Renames
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/dbt-development/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    dbt Development
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/sftp-integration/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    SFTP Integration
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/superpowers/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Claude Code & Superpowers
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/cube/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Cube
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/claude-cube-connector/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Claude + Cube Connector
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3" >
+        
+          
+          <label class="md-nav__link" for="__nav_3" id="__nav_3_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Troubleshooting
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_3">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Troubleshooting
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../troubleshooting/dagster/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Dagster
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../troubleshooting/dbt/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    dbt
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../troubleshooting/vscode/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    VS Code
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4" >
+        
+          
+          <label class="md-nav__link" for="__nav_4" id="__nav_4_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Reference
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_4_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_4">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Reference
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/architecture/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Architecture
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/adding-an-integration/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Adding an Integration
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/io-managers/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    IO Managers
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/fiscal-year-partitioning/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Fiscal Year & Partitioning
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/dbt-conventions/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    dbt Conventions
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/marts-data-models/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Marts Data Models
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/automation-conditions/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Automation Conditions
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/automations/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Automations
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+  
+    <a href="https://github.com/TEAMSchools/teamster/edit/main/docs/superpowers/plans/2026-05-04-fct-behavioral-consequences-fk-gap.md" title="Edit this page" class="md-content__button md-icon" rel="edit">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M10 20H6V4h7v5h5v3.1l2-2V8l-6-6H6c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h4zm10.2-7c.1 0 .3.1.4.2l1.3 1.3c.2.2.2.6 0 .8l-1 1-2.1-2.1 1-1c.1-.1.2-.2.4-.2m0 3.9L14.1 23H12v-2.1l6.1-6.1z"/></svg>
+    </a>
+  
+  
+
+
+<h1 id="fct_behavioral_consequences-fk-hash-drift-implementation-plan"><code>fct_behavioral_consequences</code> FK Hash-Drift Implementation Plan</h1>
+<blockquote>
+<p><strong>For agentic workers:</strong> REQUIRED SUB-SKILL: Use
+superpowers:subagent-driven-development (recommended) or
+superpowers:executing-plans to implement this plan task-by-task. Steps use
+checkbox (<code>- [ ]</code>) syntax for tracking.</p>
+</blockquote>
+<p><strong>Goal:</strong> Eliminate the 100% FK orphan rate on
+<code>fct_behavioral_consequences.behavioral_incident_key → fct_behavioral_incidents.behavioral_incident_key</code>
+by canonicalizing the second hash input across both facts.</p>
+<p><strong>Architecture:</strong> Add a <code>_dbt_source_project</code> column (the canonical region code,
+derived from <code>_dbt_source_relation</code> via the existing <code>extract_code_location</code>
+macro) to the two kipptaf cross-district union models —
+<code>int_deanslist__incidents</code> and <code>int_deanslist__incidents__penalties</code> — then
+change both facts to hash on <code>[incident_id, _dbt_source_project]</code> so producer
+and consumer hash on identical inputs by construction. Closes #3724; advances</p>
+<h1 id="3142-by-2-of-73-union-models">3142 by 2 of ~73 union models.</h1>
+<p><strong>Tech Stack:</strong> dbt (BigQuery), Jinja macros (<code>dbt_utils.union_relations</code>,
+<code>dbt_utils.generate_surrogate_key</code>, <code>extract_code_location</code>), <code>kipptaf</code> dbt
+project, dbt Cloud CI (Staging env, job id resolved at PR time).</p>
+<p><strong>Branch:</strong> <code>cbini/fix/claude-behavioral-incident-key-hash-drift</code> — work in the
+worktree at
+<code>/workspaces/teamster/.worktrees/cbini/fix/claude-behavioral-incident-key-hash-drift</code>.
+Prepend <code>cd &lt;worktree&gt;</code> to every Bash call. Verify with
+<code>git branch --show-current</code> before each commit.</p>
+<p><strong>Spec:</strong>
+<a href="../../specs/2026-05-04-fct-behavioral-consequences-fk-gap-design/"><code>docs/superpowers/specs/2026-05-04-fct-behavioral-consequences-fk-gap-design.md</code></a>.</p>
+<p><strong>Pre-flight CLAUDE.md reads (subagents must do these before any work):</strong></p>
+<ul>
+<li><code>/workspaces/teamster/CLAUDE.md</code></li>
+<li><code>/workspaces/teamster/src/dbt/CLAUDE.md</code></li>
+<li><code>/workspaces/teamster/src/dbt/kipptaf/CLAUDE.md</code></li>
+<li><code>/workspaces/teamster/src/dbt/kipptaf/models/marts/CLAUDE.md</code> (for fact tasks)</li>
+</ul>
+<p><strong>Skills the subagent must invoke before starting work:</strong></p>
+<ul>
+<li><code>Skill</code> with skill=<code>dbt:using-dbt-for-analytics-engineering</code> — required for
+  any task that touches a <code>.sql</code> model.</li>
+<li><code>Skill</code> with skill=<code>superpowers:verification-before-completion</code> — required
+  before marking the final verification task complete.</li>
+</ul>
+<p><strong>Anti-patterns to avoid (negation list — subagents otherwise re-introduce
+these):</strong></p>
+<ul>
+<li>Do NOT inline <code>regexp_extract(_dbt_source_relation, r'(kipp\w+)_')</code> inside
+  fact SQL. Use <code>_dbt_source_project</code> from the upstream union model.</li>
+<li>Do NOT rename <code>extract_code_location</code> to <code>extract_source_project</code> in
+  <code>macros/utils.sql</code> — that rename belongs to #3142.</li>
+<li>Do NOT modify other call sites of <code>union_dataset_join_clause</code> — that mass
+  replacement also belongs to #3142.</li>
+<li>Do NOT replace <code>union_dataset_join_clause</code> calls inside the two facts being
+  modified. They join to enrollments (a different union model that does not yet
+  have <code>_dbt_source_project</code>); leave the macro call alone.</li>
+<li>Do NOT add <code>_dbt_source_project</code> to any union model other than the two named
+  here.</li>
+<li>Do NOT touch <code>int_deanslist__incidents__custom_fields__pivot</code>,
+  <code>int_deanslist__incidents__actions</code>, <code>int_deanslist__incidents__attachments</code>,
+  or <code>int_deanslist__incidents__custom_fields</code>.</li>
+<li>Do NOT add <code>_dbt_source_project</code> to staging-layer (<code>stg_*</code>) or district-level
+  (<code>kippcamden_deanslist.*</code>, <code>kippnewark_deanslist.*</code>, <code>kippmiami_deanslist.*</code>)
+  models. The column is added at the kipptaf-layer union models only.</li>
+<li>Do NOT change column ordering, descriptions, or tests on either fact's
+  properties YAML beyond what each task specifies.</li>
+<li>Do NOT use <code>select distinct</code>, <code>qualify row_number()=1</code>, or
+  <code>dbt_utils.deduplicate</code> anywhere in this plan — no deduplication is needed.</li>
+</ul>
+<hr />
+<h2 id="file-structure">File Structure</h2>
+<table>
+<thead>
+<tr>
+<th>File</th>
+<th>Responsibility</th>
+<th>Change</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>src/dbt/kipptaf/models/deanslist/api/intermediate/int_deanslist__incidents.sql</code></td>
+<td>Cross-district union of incidents + location_key resolution</td>
+<td>Wrap union in CTE; add <code>_dbt_source_project</code></td>
+</tr>
+<tr>
+<td><code>src/dbt/kipptaf/models/deanslist/api/intermediate/int_deanslist__incidents__penalties.sql</code></td>
+<td>Cross-district union of incident penalties</td>
+<td>Wrap union in CTE; add <code>_dbt_source_project</code></td>
+</tr>
+<tr>
+<td><code>src/dbt/kipptaf/models/marts/facts/fct_behavioral_incidents.sql</code></td>
+<td>Parent fact for behavioral incidents</td>
+<td>Replace <code>_dbt_source_relation</code> with <code>_dbt_source_project</code> in <code>behavioral_incident_key</code> hash input</td>
+</tr>
+<tr>
+<td><code>src/dbt/kipptaf/models/marts/facts/fct_behavioral_consequences.sql</code></td>
+<td>Child fact carrying penalty/consequence rows; FKs to parent fact via <code>behavioral_incident_key</code></td>
+<td>Replace <code>_dbt_source_relation</code> with <code>_dbt_source_project</code> in both surrogate-key hashes (<code>behavioral_consequence_key</code> PK + <code>behavioral_incident_key</code> FK)</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Files NOT touched</strong> (verified during plan authoring):</p>
+<ul>
+<li>Properties YAMLs for the two intermediates — neither enumerates
+  <code>_dbt_source_relation</code> today; intermediates aren't contract-enforced
+  (<code>config.contract.enforced</code> is false at this layer per
+  <code>kipptaf/dbt_project.yml</code>), so adding a passthrough column doesn't require a
+  YAML edit.</li>
+<li>Properties YAMLs for the two facts — column shape, types, contracts, and tests
+  are unchanged. <code>behavioral_incident_key</code> and <code>behavioral_consequence_key</code>
+  remain <code>STRING</code> PK/FK columns.</li>
+<li><code>macros/utils.sql</code> — see anti-pattern list.</li>
+</ul>
+<hr />
+<h2 id="task-1-add-_dbt_source_project-to-int_deanslist__incidents">Task 1: Add <code>_dbt_source_project</code> to <code>int_deanslist__incidents</code></h2>
+<p><strong>Files:</strong></p>
+<ul>
+<li>Modify:
+  <code>src/dbt/kipptaf/models/deanslist/api/intermediate/int_deanslist__incidents.sql</code></li>
+</ul>
+<p><strong>Context:</strong> Today the model is a single statement that joins
+<code>dbt_utils.union_relations(...)</code> directly to
+<code>stg_google_sheets__people__locations</code>. Wrap the union in a <code>union_relations</code>
+CTE (matching the convention in
+<a href="../../src/dbt/kipptaf/models/powerschool/intermediate/int_powerschool__teacher_grade_levels.sql"><code>int_powerschool__teacher_grade_levels.sql</code></a>),
+then add <code>_dbt_source_project</code> derived from the existing <code>extract_code_location</code>
+macro.</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 1: Replace the file contents</strong></li>
+</ul>
+<p>Replace the entire file with:</p>
+<div class="highlight"><pre><span></span><code><span class="k">with</span>
+<span class="w">    </span><span class="n">union_relations</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="p">(</span>
+<span class="w">        </span><span class="err">{{</span>
+<span class="w">            </span><span class="n">dbt_utils</span><span class="p">.</span><span class="n">union_relations</span><span class="p">(</span>
+<span class="w">                </span><span class="n">relations</span><span class="o">=</span><span class="p">[</span>
+<span class="w">                    </span><span class="k">source</span><span class="p">(</span><span class="ss">&quot;kippnewark_deanslist&quot;</span><span class="p">,</span><span class="w"> </span><span class="ss">&quot;int_deanslist__incidents&quot;</span><span class="p">),</span>
+<span class="w">                    </span><span class="k">source</span><span class="p">(</span><span class="ss">&quot;kippcamden_deanslist&quot;</span><span class="p">,</span><span class="w"> </span><span class="ss">&quot;int_deanslist__incidents&quot;</span><span class="p">),</span>
+<span class="w">                    </span><span class="k">source</span><span class="p">(</span><span class="ss">&quot;kippmiami_deanslist&quot;</span><span class="p">,</span><span class="w"> </span><span class="ss">&quot;int_deanslist__incidents&quot;</span><span class="p">),</span>
+<span class="w">                </span><span class="p">]</span>
+<span class="w">            </span><span class="p">)</span>
+<span class="w">        </span><span class="err">}}</span>
+<span class="w">    </span><span class="p">)</span>
+
+<span class="k">select</span>
+<span class="w">    </span><span class="n">u</span><span class="p">.</span><span class="o">*</span><span class="p">,</span>
+
+<span class="w">    </span><span class="err">{{</span><span class="w"> </span><span class="n">extract_code_location</span><span class="p">(</span><span class="ss">&quot;u&quot;</span><span class="p">)</span><span class="w"> </span><span class="err">}}</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">_dbt_source_project</span><span class="p">,</span>
+
+<span class="w">    </span><span class="n">loc</span><span class="p">.</span><span class="n">location_key</span><span class="p">,</span>
+<span class="k">from</span><span class="w"> </span><span class="n">union_relations</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">u</span>
+<span class="k">left</span><span class="w"> </span><span class="k">join</span>
+<span class="w">    </span><span class="err">{{</span><span class="w"> </span><span class="k">ref</span><span class="p">(</span><span class="ss">&quot;stg_google_sheets__people__locations&quot;</span><span class="p">)</span><span class="w"> </span><span class="err">}}</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">loc</span>
+<span class="w">    </span><span class="k">on</span><span class="w"> </span><span class="n">u</span><span class="p">.</span><span class="n">school_id</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">loc</span><span class="p">.</span><span class="n">deanslist_school_id</span>
+<span class="w">    </span><span class="k">and</span><span class="w"> </span><span class="k">not</span><span class="w"> </span><span class="n">loc</span><span class="p">.</span><span class="n">is_pathways</span>
+<span class="w">    </span><span class="k">and</span><span class="w"> </span><span class="n">loc</span><span class="p">.</span><span class="n">location_name</span><span class="w"> </span><span class="o">&lt;&gt;</span><span class="w"> </span><span class="s1">&#39;KIPP Whittier Elementary&#39;</span>
+</code></pre></div>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 2: Compile and inspect</strong></li>
+</ul>
+<p>Run from the worktree root:</p>
+<div class="highlight"><pre><span></span><code><span class="nb">cd</span><span class="w"> </span>/workspaces/teamster/.worktrees/cbini/fix/claude-behavioral-incident-key-hash-drift
+uv<span class="w"> </span>run<span class="w"> </span>dbt<span class="w"> </span>compile<span class="w"> </span>--select<span class="w"> </span>int_deanslist__incidents<span class="w"> </span>--project-dir<span class="w"> </span>src/dbt/kipptaf<span class="w"> </span>--target<span class="w"> </span>dev<span class="w"> </span>--defer<span class="w"> </span>--state<span class="w"> </span>src/dbt/kipptaf/target/prod/
+</code></pre></div>
+<p>Expected: compile succeeds. Open
+<code>src/dbt/kipptaf/target/compiled/kipptaf/models/deanslist/api/intermediate/int_deanslist__incidents.sql</code>
+and confirm the <code>_dbt_source_project</code> SELECT line reads literally
+<code>regexp_extract(u._dbt_source_relation, r'(kipp\w+)_') as _dbt_source_project,</code>.</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 3: Build and verify column values</strong></li>
+</ul>
+<div class="highlight"><pre><span></span><code>uv<span class="w"> </span>run<span class="w"> </span>dbt<span class="w"> </span>build<span class="w"> </span>--select<span class="w"> </span>int_deanslist__incidents<span class="w"> </span>--project-dir<span class="w"> </span>src/dbt/kipptaf<span class="w"> </span>--target<span class="w"> </span>dev<span class="w"> </span>--defer<span class="w"> </span>--state<span class="w"> </span>src/dbt/kipptaf/target/prod/
+</code></pre></div>
+<p>Expected: 1 model built, all attached tests pass.</p>
+<p>Then via the BigQuery MCP tool, run:</p>
+<div class="highlight"><pre><span></span><code><span class="k">select</span><span class="w"> </span><span class="k">distinct</span><span class="w"> </span><span class="n">_dbt_source_project</span>
+<span class="k">from</span><span class="w"> </span><span class="o">`</span><span class="n">teamster</span><span class="o">-</span><span class="mi">332318</span><span class="p">.</span><span class="n">zz_</span><span class="o">&lt;</span><span class="n">your</span><span class="o">-</span><span class="n">username</span><span class="o">&gt;</span><span class="n">_kipptaf_deanslist</span><span class="p">.</span><span class="n">int_deanslist__incidents</span><span class="o">`</span>
+<span class="k">order</span><span class="w"> </span><span class="k">by</span><span class="w"> </span><span class="mi">1</span>
+</code></pre></div>
+<p>Expected: exactly three rows — <code>kippcamden</code>, <code>kippmiami</code>, <code>kippnewark</code>. No
+NULLs, no other values. If you don't know your dev schema name, run
+<code>uv run dbt debug --project-dir src/dbt/kipptaf --target dev</code> and look for
+<code>schema:</code> under your profile.</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 4: Commit</strong></li>
+</ul>
+<div class="highlight"><pre><span></span><code>git<span class="w"> </span>add<span class="w"> </span>src/dbt/kipptaf/models/deanslist/api/intermediate/int_deanslist__incidents.sql
+git<span class="w"> </span>commit<span class="w"> </span>-m<span class="w"> </span><span class="s2">&quot;</span><span class="k">$(</span>cat<span class="w"> </span><span class="s">&lt;&lt;&#39;EOF&#39;</span>
+<span class="s">feat(dbt): add _dbt_source_project to int_deanslist__incidents</span>
+
+<span class="s">Surfaces the canonical kipp* project code from _dbt_source_relation as a</span>
+<span class="s">materialized column so downstream consumers can hash and join on a stable</span>
+<span class="s">identifier across union-relation models. Incrementally advances #3142.</span>
+
+<span class="s">Co-Authored-By: Claude Opus 4.7 (1M context) &lt;noreply@anthropic.com&gt;</span>
+<span class="s">EOF</span>
+<span class="k">)</span><span class="s2">&quot;</span>
+</code></pre></div>
+<hr />
+<h2 id="task-2-add-_dbt_source_project-to-int_deanslist__incidents__penalties">Task 2: Add <code>_dbt_source_project</code> to <code>int_deanslist__incidents__penalties</code></h2>
+<p><strong>Files:</strong></p>
+<ul>
+<li>Modify:
+  <code>src/dbt/kipptaf/models/deanslist/api/intermediate/int_deanslist__incidents__penalties.sql</code></li>
+</ul>
+<p><strong>Context:</strong> Today the file is a single bare <code>dbt_utils.union_relations(...)</code>
+call. Wrap in a CTE, then SELECT all columns plus <code>_dbt_source_project</code>.</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 1: Replace the file contents</strong></li>
+</ul>
+<p>Replace the entire file with:</p>
+<div class="highlight"><pre><span></span><code><span class="k">with</span>
+<span class="w">    </span><span class="n">union_relations</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="p">(</span>
+<span class="w">        </span><span class="err">{{</span>
+<span class="w">            </span><span class="n">dbt_utils</span><span class="p">.</span><span class="n">union_relations</span><span class="p">(</span>
+<span class="w">                </span><span class="n">relations</span><span class="o">=</span><span class="p">[</span>
+<span class="w">                    </span><span class="k">source</span><span class="p">(</span>
+<span class="w">                        </span><span class="ss">&quot;kippnewark_deanslist&quot;</span><span class="p">,</span><span class="w"> </span><span class="ss">&quot;int_deanslist__incidents__penalties&quot;</span>
+<span class="w">                    </span><span class="p">),</span>
+<span class="w">                    </span><span class="k">source</span><span class="p">(</span>
+<span class="w">                        </span><span class="ss">&quot;kippcamden_deanslist&quot;</span><span class="p">,</span><span class="w"> </span><span class="ss">&quot;int_deanslist__incidents__penalties&quot;</span>
+<span class="w">                    </span><span class="p">),</span>
+<span class="w">                    </span><span class="k">source</span><span class="p">(</span>
+<span class="w">                        </span><span class="ss">&quot;kippmiami_deanslist&quot;</span><span class="p">,</span><span class="w"> </span><span class="ss">&quot;int_deanslist__incidents__penalties&quot;</span>
+<span class="w">                    </span><span class="p">),</span>
+<span class="w">                </span><span class="p">]</span>
+<span class="w">            </span><span class="p">)</span>
+<span class="w">        </span><span class="err">}}</span>
+<span class="w">    </span><span class="p">)</span>
+
+<span class="k">select</span>
+<span class="w">    </span><span class="o">*</span><span class="p">,</span>
+
+<span class="w">    </span><span class="err">{{</span><span class="w"> </span><span class="n">extract_code_location</span><span class="p">(</span><span class="ss">&quot;union_relations&quot;</span><span class="p">)</span><span class="w"> </span><span class="err">}}</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">_dbt_source_project</span><span class="p">,</span>
+<span class="k">from</span><span class="w"> </span><span class="n">union_relations</span>
+</code></pre></div>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 2: Compile and inspect</strong></li>
+</ul>
+<div class="highlight"><pre><span></span><code><span class="nb">cd</span><span class="w"> </span>/workspaces/teamster/.worktrees/cbini/fix/claude-behavioral-incident-key-hash-drift
+uv<span class="w"> </span>run<span class="w"> </span>dbt<span class="w"> </span>compile<span class="w"> </span>--select<span class="w"> </span>int_deanslist__incidents__penalties<span class="w"> </span>--project-dir<span class="w"> </span>src/dbt/kipptaf<span class="w"> </span>--target<span class="w"> </span>dev<span class="w"> </span>--defer<span class="w"> </span>--state<span class="w"> </span>src/dbt/kipptaf/target/prod/
+</code></pre></div>
+<p>Expected: compile succeeds. Compiled SQL contains
+<code>regexp_extract(union_relations._dbt_source_relation, r'(kipp\w+)_') as _dbt_source_project,</code>.</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 3: Build and verify column values</strong></li>
+</ul>
+<div class="highlight"><pre><span></span><code>uv<span class="w"> </span>run<span class="w"> </span>dbt<span class="w"> </span>build<span class="w"> </span>--select<span class="w"> </span>int_deanslist__incidents__penalties<span class="w"> </span>--project-dir<span class="w"> </span>src/dbt/kipptaf<span class="w"> </span>--target<span class="w"> </span>dev<span class="w"> </span>--defer<span class="w"> </span>--state<span class="w"> </span>src/dbt/kipptaf/target/prod/
+</code></pre></div>
+<p>Expected: 1 model built, all attached tests pass.</p>
+<p>BigQuery MCP query:</p>
+<div class="highlight"><pre><span></span><code><span class="k">select</span><span class="w"> </span><span class="k">distinct</span><span class="w"> </span><span class="n">_dbt_source_project</span>
+<span class="k">from</span><span class="w"> </span><span class="o">`</span><span class="n">teamster</span><span class="o">-</span><span class="mi">332318</span><span class="p">.</span><span class="n">zz_</span><span class="o">&lt;</span><span class="n">your</span><span class="o">-</span><span class="n">username</span><span class="o">&gt;</span><span class="n">_kipptaf_deanslist</span><span class="p">.</span><span class="n">int_deanslist__incidents__penalties</span><span class="o">`</span>
+<span class="k">order</span><span class="w"> </span><span class="k">by</span><span class="w"> </span><span class="mi">1</span>
+</code></pre></div>
+<p>Expected: exactly three rows — <code>kippcamden</code>, <code>kippmiami</code>, <code>kippnewark</code>.</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 4: Commit</strong></li>
+</ul>
+<div class="highlight"><pre><span></span><code>git<span class="w"> </span>add<span class="w"> </span>src/dbt/kipptaf/models/deanslist/api/intermediate/int_deanslist__incidents__penalties.sql
+git<span class="w"> </span>commit<span class="w"> </span>-m<span class="w"> </span><span class="s2">&quot;</span><span class="k">$(</span>cat<span class="w"> </span><span class="s">&lt;&lt;&#39;EOF&#39;</span>
+<span class="s">feat(dbt): add _dbt_source_project to int_deanslist__incidents__penalties</span>
+
+<span class="s">Same canonicalization as the parent incidents intermediate, so child fact</span>
+<span class="s">fct_behavioral_consequences can hash its FK to fct_behavioral_incidents on</span>
+<span class="s">identical inputs. Incrementally advances #3142.</span>
+
+<span class="s">Co-Authored-By: Claude Opus 4.7 (1M context) &lt;noreply@anthropic.com&gt;</span>
+<span class="s">EOF</span>
+<span class="k">)</span><span class="s2">&quot;</span>
+</code></pre></div>
+<hr />
+<h2 id="task-3-switch-fct_behavioral_incidentsbehavioral_incident_key-to-_dbt_source_project">Task 3: Switch <code>fct_behavioral_incidents.behavioral_incident_key</code> to <code>_dbt_source_project</code></h2>
+<p><strong>Files:</strong></p>
+<ul>
+<li>Modify: <code>src/dbt/kipptaf/models/marts/facts/fct_behavioral_incidents.sql</code> (the
+  <code>behavioral_incident_key</code> SELECT, currently at lines 35–36)</li>
+</ul>
+<p><strong>Context:</strong> Only the second hash input changes. <code>incident_id</code> stays.
+<code>i._dbt_source_relation</code> becomes <code>i._dbt_source_project</code>.</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 1: Edit the surrogate-key call</strong></li>
+</ul>
+<p>Replace exactly this block (lines 35–36 in the current file):</p>
+<div class="highlight"><pre><span></span><code><span class="w">    </span><span class="err">{{</span><span class="w"> </span><span class="n">dbt_utils</span><span class="p">.</span><span class="n">generate_surrogate_key</span><span class="p">([</span><span class="ss">&quot;i.incident_id&quot;</span><span class="p">,</span><span class="w"> </span><span class="ss">&quot;i._dbt_source_relation&quot;</span><span class="p">])</span><span class="w"> </span><span class="err">}}</span>
+<span class="w">    </span><span class="k">as</span><span class="w"> </span><span class="n">behavioral_incident_key</span><span class="p">,</span>
+</code></pre></div>
+<p>With:</p>
+<div class="highlight"><pre><span></span><code><span class="w">    </span><span class="err">{{</span><span class="w"> </span><span class="n">dbt_utils</span><span class="p">.</span><span class="n">generate_surrogate_key</span><span class="p">([</span><span class="ss">&quot;i.incident_id&quot;</span><span class="p">,</span><span class="w"> </span><span class="ss">&quot;i._dbt_source_project&quot;</span><span class="p">])</span><span class="w"> </span><span class="err">}}</span>
+<span class="w">    </span><span class="k">as</span><span class="w"> </span><span class="n">behavioral_incident_key</span><span class="p">,</span>
+</code></pre></div>
+<p>Leave every other line untouched. Do NOT modify the <code>student_enrollment_key</code> or
+<code>referring_staff_key</code> blocks. Do NOT modify the <code>union_dataset_join_clause</code> call
+on the enrollments join.</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 2: Compile</strong></li>
+</ul>
+<div class="highlight"><pre><span></span><code><span class="nb">cd</span><span class="w"> </span>/workspaces/teamster/.worktrees/cbini/fix/claude-behavioral-incident-key-hash-drift
+uv<span class="w"> </span>run<span class="w"> </span>dbt<span class="w"> </span>compile<span class="w"> </span>--select<span class="w"> </span>fct_behavioral_incidents<span class="w"> </span>--project-dir<span class="w"> </span>src/dbt/kipptaf<span class="w"> </span>--target<span class="w"> </span>dev<span class="w"> </span>--defer<span class="w"> </span>--state<span class="w"> </span>src/dbt/kipptaf/target/prod/
+</code></pre></div>
+<p>Expected: compile succeeds. Compiled SQL shows
+<code>to_hex(md5(cast(coalesce(cast(i.incident_id as string), '_dbt_utils_surrogate_key_null_') || '-' || coalesce(cast(i._dbt_source_project as string), '_dbt_utils_surrogate_key_null_') as string)))</code>
+(or the equivalent <code>to_hex(md5_*)</code> form generated by
+<code>dbt_utils.generate_surrogate_key</code>).</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 3: Build (this rebuilds the fact view) and inspect row count</strong></li>
+</ul>
+<div class="highlight"><pre><span></span><code>uv<span class="w"> </span>run<span class="w"> </span>dbt<span class="w"> </span>build<span class="w"> </span>--select<span class="w"> </span>fct_behavioral_incidents<span class="w"> </span>--project-dir<span class="w"> </span>src/dbt/kipptaf<span class="w"> </span>--target<span class="w"> </span>dev<span class="w"> </span>--defer<span class="w"> </span>--state<span class="w"> </span>src/dbt/kipptaf/target/prod/
+</code></pre></div>
+<p>Expected: 1 model built, all attached tests pass. Row count vs prod should match
+within ±0% (this fact is a view; the change is hash-only — no rows added or
+dropped).</p>
+<p>BigQuery MCP query:</p>
+<div class="highlight"><pre><span></span><code><span class="k">select</span>
+<span class="w">  </span><span class="p">(</span><span class="k">select</span><span class="w"> </span><span class="k">count</span><span class="p">(</span><span class="o">*</span><span class="p">)</span><span class="w"> </span><span class="k">from</span><span class="w"> </span><span class="o">`</span><span class="n">teamster</span><span class="o">-</span><span class="mi">332318</span><span class="p">.</span><span class="n">kipptaf_marts</span><span class="p">.</span><span class="n">fct_behavioral_incidents</span><span class="o">`</span><span class="p">)</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">prod_rows</span><span class="p">,</span>
+<span class="w">  </span><span class="p">(</span><span class="k">select</span><span class="w"> </span><span class="k">count</span><span class="p">(</span><span class="o">*</span><span class="p">)</span><span class="w"> </span><span class="k">from</span><span class="w"> </span><span class="o">`</span><span class="n">teamster</span><span class="o">-</span><span class="mi">332318</span><span class="p">.</span><span class="n">zz_</span><span class="o">&lt;</span><span class="n">your</span><span class="o">-</span><span class="n">username</span><span class="o">&gt;</span><span class="n">_kipptaf_marts</span><span class="p">.</span><span class="n">fct_behavioral_incidents</span><span class="o">`</span><span class="p">)</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">dev_rows</span>
+</code></pre></div>
+<p>Expected: <code>prod_rows = dev_rows</code> exactly.</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 4: Commit</strong></li>
+</ul>
+<div class="highlight"><pre><span></span><code>git<span class="w"> </span>add<span class="w"> </span>src/dbt/kipptaf/models/marts/facts/fct_behavioral_incidents.sql
+git<span class="w"> </span>commit<span class="w"> </span>-m<span class="w"> </span><span class="s2">&quot;</span><span class="k">$(</span>cat<span class="w"> </span><span class="s">&lt;&lt;&#39;EOF&#39;</span>
+<span class="s">fix(dbt): hash fct_behavioral_incidents.behavioral_incident_key on _dbt_source_project</span>
+
+<span class="s">Uses the canonical project code instead of the raw _dbt_source_relation</span>
+<span class="s">(which carries the source TABLE name and therefore differs from the child</span>
+<span class="s">fact&#39;s relation string). Half of #3724.</span>
+
+<span class="s">Co-Authored-By: Claude Opus 4.7 (1M context) &lt;noreply@anthropic.com&gt;</span>
+<span class="s">EOF</span>
+<span class="k">)</span><span class="s2">&quot;</span>
+</code></pre></div>
+<hr />
+<h2 id="task-4-switch-fct_behavioral_consequences-surrogate-keys-to-_dbt_source_project">Task 4: Switch <code>fct_behavioral_consequences</code> surrogate keys to <code>_dbt_source_project</code></h2>
+<p><strong>Files:</strong></p>
+<ul>
+<li>Modify: <code>src/dbt/kipptaf/models/marts/facts/fct_behavioral_consequences.sql</code>
+  (lines 17–28)</li>
+</ul>
+<p><strong>Context:</strong> Both hashes on this fact change — the PK
+(<code>behavioral_consequence_key</code>) and the FK to the parent
+(<code>behavioral_incident_key</code>). Both swap <code>p._dbt_source_relation</code> for
+<code>p._dbt_source_project</code>.</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 1: Edit both surrogate-key calls</strong></li>
+</ul>
+<p>Replace exactly this block (lines 17–28 in the current file):</p>
+<div class="highlight"><pre><span></span><code><span class="w">    </span><span class="err">{{</span>
+<span class="w">        </span><span class="n">dbt_utils</span><span class="p">.</span><span class="n">generate_surrogate_key</span><span class="p">(</span>
+<span class="w">            </span><span class="p">[</span>
+<span class="w">                </span><span class="ss">&quot;p.incident_id&quot;</span><span class="p">,</span>
+<span class="w">                </span><span class="ss">&quot;p.incident_penalty_id&quot;</span><span class="p">,</span>
+<span class="w">                </span><span class="ss">&quot;p._dbt_source_relation&quot;</span><span class="p">,</span>
+<span class="w">            </span><span class="p">]</span>
+<span class="w">        </span><span class="p">)</span>
+<span class="w">    </span><span class="err">}}</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">behavioral_consequence_key</span><span class="p">,</span>
+
+<span class="w">    </span><span class="err">{{</span><span class="w"> </span><span class="n">dbt_utils</span><span class="p">.</span><span class="n">generate_surrogate_key</span><span class="p">([</span><span class="ss">&quot;p.incident_id&quot;</span><span class="p">,</span><span class="w"> </span><span class="ss">&quot;p._dbt_source_relation&quot;</span><span class="p">])</span><span class="w"> </span><span class="err">}}</span>
+<span class="w">    </span><span class="k">as</span><span class="w"> </span><span class="n">behavioral_incident_key</span><span class="p">,</span>
+</code></pre></div>
+<p>With:</p>
+<div class="highlight"><pre><span></span><code><span class="w">    </span><span class="err">{{</span>
+<span class="w">        </span><span class="n">dbt_utils</span><span class="p">.</span><span class="n">generate_surrogate_key</span><span class="p">(</span>
+<span class="w">            </span><span class="p">[</span>
+<span class="w">                </span><span class="ss">&quot;p.incident_id&quot;</span><span class="p">,</span>
+<span class="w">                </span><span class="ss">&quot;p.incident_penalty_id&quot;</span><span class="p">,</span>
+<span class="w">                </span><span class="ss">&quot;p._dbt_source_project&quot;</span><span class="p">,</span>
+<span class="w">            </span><span class="p">]</span>
+<span class="w">        </span><span class="p">)</span>
+<span class="w">    </span><span class="err">}}</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">behavioral_consequence_key</span><span class="p">,</span>
+
+<span class="w">    </span><span class="err">{{</span><span class="w"> </span><span class="n">dbt_utils</span><span class="p">.</span><span class="n">generate_surrogate_key</span><span class="p">([</span><span class="ss">&quot;p.incident_id&quot;</span><span class="p">,</span><span class="w"> </span><span class="ss">&quot;p._dbt_source_project&quot;</span><span class="p">])</span><span class="w"> </span><span class="err">}}</span>
+<span class="w">    </span><span class="k">as</span><span class="w"> </span><span class="n">behavioral_incident_key</span><span class="p">,</span>
+</code></pre></div>
+<p>Leave the rest of the file (CTE, joins,
+<code>where p.incident_penalty_id is not null</code>, etc.) untouched. Do NOT touch the
+<code>union_dataset_join_clause</code> call on the enrollments join.</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 2: Compile</strong></li>
+</ul>
+<div class="highlight"><pre><span></span><code><span class="nb">cd</span><span class="w"> </span>/workspaces/teamster/.worktrees/cbini/fix/claude-behavioral-incident-key-hash-drift
+uv<span class="w"> </span>run<span class="w"> </span>dbt<span class="w"> </span>compile<span class="w"> </span>--select<span class="w"> </span>fct_behavioral_consequences<span class="w"> </span>--project-dir<span class="w"> </span>src/dbt/kipptaf<span class="w"> </span>--target<span class="w"> </span>dev<span class="w"> </span>--defer<span class="w"> </span>--state<span class="w"> </span>src/dbt/kipptaf/target/prod/
+</code></pre></div>
+<p>Expected: compile succeeds.</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 3: Build the fact and run its tests</strong></li>
+</ul>
+<div class="highlight"><pre><span></span><code>uv<span class="w"> </span>run<span class="w"> </span>dbt<span class="w"> </span>build<span class="w"> </span>--select<span class="w"> </span>fct_behavioral_consequences<span class="w"> </span>--project-dir<span class="w"> </span>src/dbt/kipptaf<span class="w"> </span>--target<span class="w"> </span>dev<span class="w"> </span>--defer<span class="w"> </span>--state<span class="w"> </span>src/dbt/kipptaf/target/prod/
+</code></pre></div>
+<p>Expected: 1 model built, all attached tests pass — including the
+previously-failing <code>relationships</code> test on
+<code>behavioral_incident_key → fct_behavioral_incidents.behavioral_incident_key</code>.</p>
+<p>If the relationships test still warns/errors, <strong>stop and diagnose</strong>: query both
+facts and confirm hash inputs actually agree. Do not paper over with <code>--exclude</code>
+or by relaxing the test.</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 4: Commit</strong></li>
+</ul>
+<div class="highlight"><pre><span></span><code>git<span class="w"> </span>add<span class="w"> </span>src/dbt/kipptaf/models/marts/facts/fct_behavioral_consequences.sql
+git<span class="w"> </span>commit<span class="w"> </span>-m<span class="w"> </span><span class="s2">&quot;</span><span class="k">$(</span>cat<span class="w"> </span><span class="s">&lt;&lt;&#39;EOF&#39;</span>
+<span class="s">fix(dbt): hash fct_behavioral_consequences keys on _dbt_source_project</span>
+
+<span class="s">Aligns behavioral_incident_key inputs with fct_behavioral_incidents so the</span>
+<span class="s">relationships test passes — the parent and child were previously hashing</span>
+<span class="s">two different table-name strings for the same logical incident, producing</span>
+<span class="s">100% orphans. Closes #3724.</span>
+
+<span class="s">Co-Authored-By: Claude Opus 4.7 (1M context) &lt;noreply@anthropic.com&gt;</span>
+<span class="s">EOF</span>
+<span class="k">)</span><span class="s2">&quot;</span>
+</code></pre></div>
+<hr />
+<h2 id="task-5-cross-fact-hash-equality-verification">Task 5: Cross-fact hash equality verification</h2>
+<p><strong>Files:</strong> none (read-only check).</p>
+<p><strong>Context:</strong> Confirm the producer and consumer now produce identical hashes for
+the same logical incident. Catches typos in either Task 3 or Task 4 (e.g., a
+stray remaining <code>_dbt_source_relation</code>).</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 1: Sample a handful of (incident_id, project) tuples from both
+      facts</strong></li>
+</ul>
+<p>BigQuery MCP query against your dev schema (explicit hash equality check):</p>
+<div class="highlight"><pre><span></span><code><span class="k">select</span>
+<span class="w">  </span><span class="k">count</span><span class="p">(</span><span class="o">*</span><span class="p">)</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">n_consequence_keys</span><span class="p">,</span>
+<span class="w">  </span><span class="n">countif</span><span class="p">(</span><span class="n">p</span><span class="p">.</span><span class="n">behavioral_incident_key</span><span class="w"> </span><span class="k">is</span><span class="w"> </span><span class="k">null</span><span class="p">)</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">n_orphan_keys</span>
+<span class="k">from</span><span class="w"> </span><span class="p">(</span>
+<span class="w">  </span><span class="k">select</span><span class="w"> </span><span class="k">distinct</span><span class="w"> </span><span class="n">behavioral_incident_key</span>
+<span class="w">  </span><span class="k">from</span><span class="w"> </span><span class="o">`</span><span class="n">teamster</span><span class="o">-</span><span class="mi">332318</span><span class="p">.</span><span class="n">zz_</span><span class="o">&lt;</span><span class="n">your</span><span class="o">-</span><span class="n">username</span><span class="o">&gt;</span><span class="n">_kipptaf_marts</span><span class="p">.</span><span class="n">fct_behavioral_consequences</span><span class="o">`</span>
+<span class="p">)</span><span class="w"> </span><span class="k">c</span>
+<span class="k">left</span><span class="w"> </span><span class="k">join</span><span class="w"> </span><span class="p">(</span>
+<span class="w">  </span><span class="k">select</span><span class="w"> </span><span class="k">distinct</span><span class="w"> </span><span class="n">behavioral_incident_key</span>
+<span class="w">  </span><span class="k">from</span><span class="w"> </span><span class="o">`</span><span class="n">teamster</span><span class="o">-</span><span class="mi">332318</span><span class="p">.</span><span class="n">zz_</span><span class="o">&lt;</span><span class="n">your</span><span class="o">-</span><span class="n">username</span><span class="o">&gt;</span><span class="n">_kipptaf_marts</span><span class="p">.</span><span class="n">fct_behavioral_incidents</span><span class="o">`</span>
+<span class="p">)</span><span class="w"> </span><span class="n">p</span>
+<span class="w">  </span><span class="k">using</span><span class="w"> </span><span class="p">(</span><span class="n">behavioral_incident_key</span><span class="p">)</span>
+</code></pre></div>
+<p>Expected: <code>n_orphan_keys = 0</code>. (Pre-fix: <code>n_orphan_keys = n_consequence_keys</code>.
+The exact count of <code>n_consequence_keys</code> should be near 212,694 ± natural growth
+since 2026-04-22.)</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 2: Confirm <code>_dbt_source_project</code> propagates onto the fact</strong></li>
+</ul>
+<div class="highlight"><pre><span></span><code><span class="k">select</span><span class="w"> </span><span class="k">distinct</span><span class="w"> </span><span class="n">_dbt_source_project</span>
+<span class="k">from</span><span class="w"> </span><span class="o">`</span><span class="n">teamster</span><span class="o">-</span><span class="mi">332318</span><span class="p">.</span><span class="n">zz_</span><span class="o">&lt;</span><span class="n">your</span><span class="o">-</span><span class="n">username</span><span class="o">&gt;</span><span class="n">_kipptaf_deanslist</span><span class="p">.</span><span class="n">int_deanslist__incidents__penalties</span><span class="o">`</span>
+</code></pre></div>
+<p>Expected: 3 values (<code>kippnewark</code>, <code>kippcamden</code>, <code>kippmiami</code>). If any NULL
+appears, Task 2 introduced a regression — stop.</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 3: No commit (verification-only task)</strong></li>
+</ul>
+<p>If both checks pass, proceed to Task 6.</p>
+<hr />
+<h2 id="task-6-run-the-full-downstream-test-suite-for-both-facts">Task 6: Run the full downstream test suite for both facts</h2>
+<p><strong>Files:</strong> none (CI dry run).</p>
+<p><strong>Context:</strong> Catch any test regressions on either fact (uniqueness, not_null,
+other relationships). The two intermediates feed only these two facts via the
+deanslist domain, but the facts may have additional FKs (date dims, location
+dim, staff dim) whose tests should still pass.</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 1: Build both intermediates and both facts plus their tests</strong></li>
+</ul>
+<div class="highlight"><pre><span></span><code><span class="nb">cd</span><span class="w"> </span>/workspaces/teamster/.worktrees/cbini/fix/claude-behavioral-incident-key-hash-drift
+uv<span class="w"> </span>run<span class="w"> </span>dbt<span class="w"> </span>build<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--select<span class="w"> </span>int_deanslist__incidents<span class="w"> </span>int_deanslist__incidents__penalties<span class="w"> </span>fct_behavioral_incidents<span class="w"> </span>fct_behavioral_consequences<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--project-dir<span class="w"> </span>src/dbt/kipptaf<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--target<span class="w"> </span>dev<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--defer<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--state<span class="w"> </span>src/dbt/kipptaf/target/prod/
+</code></pre></div>
+<p>Expected: 4 models built, all attached tests pass.</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 2: Inspect any warnings</strong></li>
+</ul>
+<p>If any test warns rather than errors, copy the warning text and verify it is
+unrelated to this change (e.g., pre-existing dim_dates range gaps from #3719).
+If a warning references <code>behavioral_incident_key</code>, <code>behavioral_consequence_key</code>,
+or <code>_dbt_source_project</code>, treat as a failure and diagnose.</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 3: Trunk check</strong></li>
+</ul>
+<div class="highlight"><pre><span></span><code>/workspaces/teamster/.trunk/tools/trunk<span class="w"> </span>check<span class="w"> </span>--ci
+</code></pre></div>
+<p>Expected: exit 0. If sqlfluff flags anything, fix per <code>.trunk/config/.sqlfluff</code>
+rules and re-stage.</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 4: No commit if everything's clean</strong></li>
+</ul>
+<p>If trunk check made formatting changes, commit them as a separate
+<code>chore: trunk fmt fixes</code> commit.</p>
+<hr />
+<h2 id="task-7-push-and-open-pr">Task 7: Push and open PR</h2>
+<p><strong>Files:</strong> none (git/GH operations).</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 1: Verify branch state</strong></li>
+</ul>
+<div class="highlight"><pre><span></span><code><span class="nb">cd</span><span class="w"> </span>/workspaces/teamster/.worktrees/cbini/fix/claude-behavioral-incident-key-hash-drift
+git<span class="w"> </span>branch<span class="w"> </span>--show-current
+git<span class="w"> </span>log<span class="w"> </span>--oneline<span class="w"> </span>origin/main..HEAD
+</code></pre></div>
+<p>Expected: branch is <code>cbini/fix/claude-behavioral-incident-key-hash-drift</code>. Five
+commits since <code>origin/main</code>: spec, two intermediates, two facts (a sixth if Task
+6 produced a trunk fmt commit).</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 2: Push</strong></li>
+</ul>
+<div class="highlight"><pre><span></span><code>git<span class="w"> </span>push<span class="w"> </span>-u<span class="w"> </span>origin<span class="w"> </span>cbini/fix/claude-behavioral-incident-key-hash-drift
+</code></pre></div>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 3: Open PR via <code>mcp__github__create_pull_request</code></strong></li>
+</ul>
+<p>Title: <code>fix(dbt): align behavioral_incident_key hash inputs across both facts</code></p>
+<p>Body (use the <code>.github/pull_request_template.md</code> skeleton — fill in summary
+referencing #3724 and #3142):</p>
+<div class="highlight"><pre><span></span><code><span class="gu">## Summary</span>
+
+<span class="k">-</span><span class="w"> </span>Adds <span class="sb">`_dbt_source_project`</span> to <span class="sb">`int_deanslist__incidents`</span> and
+  <span class="sb">`int_deanslist__incidents__penalties`</span> (2 of ~73 cross-district union models
+  for <span class="ni">#3142</span>).
+<span class="k">-</span><span class="w"> </span>Switches <span class="sb">`fct_behavioral_incidents.behavioral_incident_key`</span>,
+  <span class="sb">`fct_behavioral_consequences.behavioral_incident_key`</span>, and
+  <span class="sb">`fct_behavioral_consequences.behavioral_consequence_key`</span> to hash on
+  <span class="sb">`_dbt_source_project`</span> instead of <span class="sb">`_dbt_source_relation`</span>. Producer and consumer
+  now hash identical inputs by construction.
+
+Closes <span class="ni">#3724</span>. Incrementally advances <span class="ni">#3142</span>.
+
+<span class="gu">## Hash churn</span>
+
+Per <span class="sb">`src/dbt/CLAUDE.md`</span> reason <span class="ni">#1</span> (values unify). All three keys above change.
+Marts are views — no incremental concerns. The FK was 100% broken pre-fix so no
+downstream consumer was meaningfully relying on the prior hash.
+
+<span class="gu">## Test plan</span>
+
+<span class="k">- [x]</span> <span class="sb">`dbt build --select int_deanslist__incidents+ int_deanslist__incidents__penalties+ fct_behavioral_incidents fct_behavioral_consequences --target dev`</span>
+      — all tests pass locally.
+<span class="k">- [x]</span> <span class="sb">`relationships`</span> test on
+      <span class="sb">`fct_behavioral_consequences.behavioral_incident_key`</span> returns 0 failures.
+<span class="k">- [x]</span> <span class="sb">`_dbt_source_project`</span> resolves to exactly <span class="sb">`kippnewark`</span> / <span class="sb">`kippcamden`</span> /
+      <span class="sb">`kippmiami`</span> on both intermediates.
+<span class="k">- [ ]</span> dbt Cloud CI build succeeds on this branch.
+</code></pre></div>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 4: Wait for CI, then verify the relationships test in CI</strong></li>
+</ul>
+<p>After CI completes, query the PR-branch schema
+(<code>dbt_cloud_pr_70403104388001_&lt;pr_num&gt;_marts</code>) via BigQuery MCP:</p>
+<div class="highlight"><pre><span></span><code><span class="k">select</span><span class="w"> </span><span class="k">count</span><span class="p">(</span><span class="o">*</span><span class="p">)</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">n_orphans</span>
+<span class="k">from</span><span class="w"> </span><span class="o">`</span><span class="n">teamster</span><span class="o">-</span><span class="mi">332318</span><span class="p">.</span><span class="n">dbt_cloud_pr_70403104388001_</span><span class="o">&lt;</span><span class="n">pr_num</span><span class="o">&gt;</span><span class="n">_marts</span><span class="p">.</span><span class="n">fct_behavioral_consequences</span><span class="o">`</span><span class="w"> </span><span class="k">c</span>
+<span class="k">left</span><span class="w"> </span><span class="k">join</span><span class="w"> </span><span class="o">`</span><span class="n">teamster</span><span class="o">-</span><span class="mi">332318</span><span class="p">.</span><span class="n">dbt_cloud_pr_70403104388001_</span><span class="o">&lt;</span><span class="n">pr_num</span><span class="o">&gt;</span><span class="n">_marts</span><span class="p">.</span><span class="n">fct_behavioral_incidents</span><span class="o">`</span><span class="w"> </span><span class="n">p</span>
+<span class="w">  </span><span class="k">using</span><span class="w"> </span><span class="p">(</span><span class="n">behavioral_incident_key</span><span class="p">)</span>
+<span class="k">where</span><span class="w"> </span><span class="n">p</span><span class="p">.</span><span class="n">behavioral_incident_key</span><span class="w"> </span><span class="k">is</span><span class="w"> </span><span class="k">null</span>
+</code></pre></div>
+<p>Expected: <code>n_orphans = 0</code>. If non-zero, do not merge — diagnose.</p>
+<hr />
+<h2 id="spec-coverage-check">Spec coverage check</h2>
+<table>
+<thead>
+<tr>
+<th>Spec acceptance item</th>
+<th>Implementing task</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>_dbt_source_project</code> on both intermediates</td>
+<td>Tasks 1, 2</td>
+</tr>
+<tr>
+<td>Both facts hash on <code>[incident_id, _dbt_source_project]</code></td>
+<td>Tasks 3, 4</td>
+</tr>
+<tr>
+<td><code>relationships</code> test passes in CI</td>
+<td>Tasks 4 + 7</td>
+</tr>
+<tr>
+<td>No other test regressions on either fact</td>
+<td>Task 6</td>
+</tr>
+<tr>
+<td>#3142 progress: 2 of ~73 union models</td>
+<td>Tasks 1, 2</td>
+</tr>
+<tr>
+<td>Cross-fact hash equality verified</td>
+<td>Task 5</td>
+</tr>
+</tbody>
+</table>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+          <button type="button" class="md-top md-icon" data-md-component="top" hidden>
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8z"/></svg>
+  Back to top
+</button>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+    <div class="md-copyright__highlight">
+      Copyright &copy; KIPP TEAM & Family Schools
+    </div>
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      
+      <script id="__config" type="application/json">{"annotate": null, "base": "../../..", "features": ["content.action.edit", "content.code.copy", "navigation.instant", "navigation.indexes", "navigation.sections", "navigation.tabs", "navigation.tabs.sticky", "navigation.top", "search.highlight", "search.suggest", "toc.follow"], "search": "../../../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+    
+    
+      <script src="../../../assets/javascripts/bundle.79ae519e.min.js"></script>
+      
+    
+  </body>
+</html>

@@ -1,0 +1,1918 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+        <meta name="description" content="Data engineering platform for KIPP TEAM & Family Schools">
+      
+      
+      
+      
+      
+      
+        
+      
+      
+      <link rel="icon" href="../../../images/truck.svg">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.6">
+    
+    
+      
+        <title>PowerSchool U_EXPECTATIONS Extract Implementation Plan - teamster</title>
+      
+    
+    
+      <link rel="stylesheet" href="../../../assets/stylesheets/main.484c7ddc.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+    <script>__md_scope=new URL("../../..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+  </head>
+  
+  
+    <body dir="ltr">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#powerschool-u_expectations-extract-implementation-plan" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+  
+
+<header class="md-header md-header--shadow md-header--lifted" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href="../../.." title="teamster" class="md-header__button md-logo" aria-label="teamster" data-md-component="logo">
+      
+  <img src="../../../images/truck.svg" alt="logo">
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            teamster
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              PowerSchool U_EXPECTATIONS Extract Implementation Plan
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+        <div class="md-search__suggest" data-md-component="search-suggest"></div>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      
+    
+    
+      <div class="md-header__source">
+        <a href="https://github.com/TEAMSchools/teamster" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M173.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6m-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3m44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9M252.8 8C114.1 8 8 113.3 8 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C436.2 457.8 504 362.9 504 252 504 113.3 391.5 8 252.8 8M105.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1m-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7m32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1m-11.4-14.7c-1.6 1-1.6 3.6 0 5.9s4.3 3.3 5.6 2.3c1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2"/></svg>
+  </div>
+  <div class="md-source__repository">
+    TEAMSchools/teamster
+  </div>
+</a>
+      </div>
+    
+  </nav>
+  
+    
+      
+<nav class="md-tabs" aria-label="Tabs" data-md-component="tabs">
+  <div class="md-grid">
+    <ul class="md-tabs__list">
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../../.." class="md-tabs__link">
+        
+  
+  
+    
+  
+  Home
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../../guides/" class="md-tabs__link">
+          
+  
+  
+    
+  
+  Guides
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../../troubleshooting/dagster/" class="md-tabs__link">
+          
+  
+  
+    
+  
+  Troubleshooting
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../../reference/architecture/" class="md-tabs__link">
+          
+  
+  
+    
+  
+  Reference
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../../../reference/automations/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  Automations
+
+      </a>
+    </li>
+  
+
+      
+    </ul>
+  </div>
+</nav>
+    
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+  
+
+
+<nav class="md-nav md-nav--primary md-nav--lifted" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href="../../.." title="teamster" class="md-nav__button md-logo" aria-label="teamster" data-md-component="logo">
+      
+  <img src="../../../images/truck.svg" alt="logo">
+
+    </a>
+    teamster
+  </label>
+  
+    <div class="md-nav__source">
+      <a href="https://github.com/TEAMSchools/teamster" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M173.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6m-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3m44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9M252.8 8C114.1 8 8 113.3 8 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C436.2 457.8 504 362.9 504 252 504 113.3 391.5 8 252.8 8M105.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1m-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7m32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1m-11.4-14.7c-1.6 1-1.6 3.6 0 5.9s4.3 3.3 5.6 2.3c1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2"/></svg>
+  </div>
+  <div class="md-source__repository">
+    TEAMSchools/teamster
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../.." class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Home
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+          
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2" >
+        
+          
+          <div class="md-nav__link md-nav__container">
+            <a href="../../../guides/" class="md-nav__link ">
+              
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Guides
+  
+
+    
+  </span>
+  
+  
+
+            </a>
+            
+              
+              <label class="md-nav__link " for="__nav_2" id="__nav_2_label" tabindex="0">
+                <span class="md-nav__icon md-icon"></span>
+              </label>
+            
+          </div>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_2_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_2">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Guides
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/codespaces/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Codespaces
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/local-development/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Local Development
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/dagster/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Dagster
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/google-sheets/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Google Sheets & Forms
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/adp-location-renames/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ADP Location Renames
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/dbt-development/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    dbt Development
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/sftp-integration/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    SFTP Integration
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/superpowers/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Claude Code & Superpowers
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/cube/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Cube
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/claude-cube-connector/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Claude + Cube Connector
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3" >
+        
+          
+          <label class="md-nav__link" for="__nav_3" id="__nav_3_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Troubleshooting
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_3">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Troubleshooting
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../troubleshooting/dagster/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Dagster
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../troubleshooting/dbt/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    dbt
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../troubleshooting/vscode/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    VS Code
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4" >
+        
+          
+          <label class="md-nav__link" for="__nav_4" id="__nav_4_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Reference
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_4_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_4">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Reference
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/architecture/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Architecture
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/adding-an-integration/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Adding an Integration
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/io-managers/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    IO Managers
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/fiscal-year-partitioning/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Fiscal Year & Partitioning
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/dbt-conventions/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    dbt Conventions
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/marts-data-models/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Marts Data Models
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/automation-conditions/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Automation Conditions
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/automations/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Automations
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#file-structure" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        File Structure
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#task-1-register-the-dagster-asset-tdd-via-e2e-test" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Task 1: Register the Dagster asset (TDD via e2e test)
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#task-2-add-the-dbt-source-entry-and-stage-the-bigquery-external-table" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Task 2: Add the dbt source entry and stage the BigQuery external table
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#task-3-add-the-dbt-staging-model" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Task 3: Add the dbt staging model
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#task-4-disable-in-camden-miami-paterson" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Task 4: Disable in Camden / Miami / Paterson
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#task-5-final-verification-and-pr" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Task 5: Final verification and PR
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#notes-for-the-executing-agent" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Notes for the Executing Agent
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+  
+    <a href="https://github.com/TEAMSchools/teamster/edit/main/docs/superpowers/plans/2026-05-08-powerschool-u-expectations-extract-plan.md" title="Edit this page" class="md-content__button md-icon" rel="edit">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M10 20H6V4h7v5h5v3.1l2-2V8l-6-6H6c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h4zm10.2-7c.1 0 .3.1.4.2l1.3 1.3c.2.2.2.6 0 .8l-1 1-2.1-2.1 1-1c.1-.1.2-.2.4-.2m0 3.9L14.1 23H12v-2.1l6.1-6.1z"/></svg>
+    </a>
+  
+  
+
+
+<h1 id="powerschool-u_expectations-extract-implementation-plan">PowerSchool <code>U_EXPECTATIONS</code> Extract Implementation Plan</h1>
+<blockquote>
+<p><strong>For agentic workers:</strong> REQUIRED SUB-SKILL: Use
+superpowers:subagent-driven-development (recommended) or
+superpowers:executing-plans to implement this plan task-by-task. Steps use
+checkbox (<code>- [ ]</code>) syntax for tracking.</p>
+</blockquote>
+<p><strong>Goal:</strong> Stand up a recurring BigQuery extract of the <code>U_EXPECTATIONS</code>
+PowerSchool extension table from Newark production via the existing Oracle ODBC
+factory, plus a dbt staging model and district-level opt-outs for the three
+districts that don't yet have the table.</p>
+<p><strong>Architecture:</strong> A single YAML entry in <code>assets-full.yaml</code> registers the asset
+with the existing <code>build_powerschool_table_asset()</code> factory; the asset
+auto-flows through the existing fiscal-year-partitioned PS sensor, GCS landing
+path, and BigQuery loader. A dbt source entry in the shared <code>dbt/powerschool/</code>
+package (with a sibling staging model) lets all consuming district projects
+reference it; Camden/Miami/Paterson disable both source and model in their
+<code>dbt_project.yml</code>.</p>
+<p><strong>Tech Stack:</strong> Dagster, Python 3.13, <code>oracledb</code>, <code>fastavro</code>, dbt-bigquery,
+BigQuery external tables (Avro), pytest.</p>
+<p><strong>Spec:</strong>
+<a href="../../specs/2026-05-08-powerschool-u-expectations-extract-design/"><code>docs/superpowers/specs/2026-05-08-powerschool-u-expectations-extract-design.md</code></a></p>
+<p><strong>Worktree root:</strong>
+<code>/workspaces/teamster/.worktrees/cbini/feat/claude-powerschool-u-expectations</code></p>
+<p>All <code>git</code>, <code>uv run</code>, and tool invocations below assume that worktree as the
+working directory. From other working directories use <code>git -C &lt;worktree&gt;</code> and
+<code>--project-dir &lt;worktree&gt;/...</code> per CLAUDE.md.</p>
+<hr />
+<h2 id="file-structure">File Structure</h2>
+<table>
+<thead>
+<tr>
+<th>Path</th>
+<th>Action</th>
+<th>Responsibility</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>src/teamster/code_locations/kippnewark/powerschool/config/assets-full.yaml</code></td>
+<td>modify</td>
+<td>Register <code>u_expectations</code> as a fiscal-year-partitioned ODBC asset on <code>whenmodified</code>.</td>
+</tr>
+<tr>
+<td><code>tests/assets/test_assets_powerschool_sis.py</code></td>
+<td>modify</td>
+<td>Add <code>test_u_expectations_kippnewark</code> e2e test.</td>
+</tr>
+<tr>
+<td><code>src/dbt/powerschool/models/sis/staging/odbc/sources-external.yml</code></td>
+<td>modify</td>
+<td>Declare <code>src_powerschool__u_expectations</code> as a BigQuery Avro external source.</td>
+</tr>
+<tr>
+<td><code>src/dbt/powerschool/models/sis/staging/odbc/stg_powerschool__u_expectations.sql</code></td>
+<td>create</td>
+<td>Unwrap Avro NUMBER struct columns; pass through everything else.</td>
+</tr>
+<tr>
+<td><code>src/dbt/powerschool/models/sis/staging/properties/stg_powerschool__u_expectations.yml</code></td>
+<td>create</td>
+<td>Contract column types + descriptions; uniqueness on <code>dcid</code>.</td>
+</tr>
+<tr>
+<td><code>src/dbt/kippcamden/dbt_project.yml</code>, <code>src/dbt/kippmiami/dbt_project.yml</code>, <code>src/dbt/kipppaterson/dbt_project.yml</code></td>
+<td>modify</td>
+<td>Disable source + staging model (table not present in those instances).</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="task-1-register-the-dagster-asset-tdd-via-e2e-test">Task 1: Register the Dagster asset (TDD via e2e test)</h2>
+<p><strong>Files:</strong></p>
+<ul class="task-list">
+<li>Test: <code>tests/assets/test_assets_powerschool_sis.py</code></li>
+<li>
+<p>Modify:
+  <code>src/teamster/code_locations/kippnewark/powerschool/config/assets-full.yaml</code></p>
+</li>
+<li class="task-list-item">
+<p><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 1: Add the failing e2e test</strong></p>
+</li>
+</ul>
+<p>Edit <code>tests/assets/test_assets_powerschool_sis.py</code>. Insert this function
+immediately before <code>def test_u_studentsuserfields_kippnewark():</code> (around line
+85):</p>
+<div class="highlight"><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">test_u_expectations_kippnewark</span><span class="p">():</span>
+    <span class="kn">from</span><span class="w"> </span><span class="nn">teamster.code_locations.kippnewark</span><span class="w"> </span><span class="kn">import</span> <span class="n">CODE_LOCATION</span>
+    <span class="kn">from</span><span class="w"> </span><span class="nn">teamster.code_locations.kippnewark.powerschool</span><span class="w"> </span><span class="kn">import</span> <span class="n">assets</span>
+
+    <span class="n">_test_partitioned_asset</span><span class="p">(</span>
+        <span class="n">assets</span><span class="o">=</span><span class="n">assets</span><span class="p">,</span>
+        <span class="n">asset_name</span><span class="o">=</span><span class="s2">&quot;u_expectations&quot;</span><span class="p">,</span>
+        <span class="n">code_location</span><span class="o">=</span><span class="n">CODE_LOCATION</span><span class="o">.</span><span class="n">upper</span><span class="p">(),</span>
+    <span class="p">)</span>
+</code></pre></div>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 2: Run the test and verify it fails</strong></li>
+</ul>
+<div class="highlight"><pre><span></span><code>uv<span class="w"> </span>run<span class="w"> </span>pytest<span class="w"> </span>tests/assets/test_assets_powerschool_sis.py::test_u_expectations_kippnewark<span class="w"> </span>-v
+</code></pre></div>
+<p>Expected: <code>IndexError: list index out of range</code> raised inside
+<code>_test_partitioned_asset</code> at the line
+<code>asset = [a for a in assets if a.key.path[-1] == asset_name][0]</code> — the asset
+doesn't exist yet, so the list comprehension is empty.</p>
+<p>If the test errors instead with <code>1Password</code> / env var / SSH-related messages
+before reaching the IndexError, the local environment isn't authenticated. Set
+<code>OP_SERVICE_ACCOUNT_TOKEN</code> (the user runs in a VS Code terminal, not via Claude)
+and re-run.</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 3: Add the asset YAML entry</strong></li>
+</ul>
+<p>Edit
+<code>src/teamster/code_locations/kippnewark/powerschool/config/assets-full.yaml</code>.
+Append at the end of the file (after the existing <code># whenmodified</code> group;
+alphabetical order is not enforced — match existing trailing-entry style):</p>
+<div class="highlight"><pre><span></span><code><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">asset_name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">u_expectations</span>
+<span class="w">  </span><span class="nt">partition_column</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">whenmodified</span>
+</code></pre></div>
+<p>Indent must be two spaces under <code>assets:</code> matching surrounding entries.</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 4: Run the test against Newark Oracle and verify it passes</strong></li>
+</ul>
+<div class="highlight"><pre><span></span><code>uv<span class="w"> </span>run<span class="w"> </span>pytest<span class="w"> </span>tests/assets/test_assets_powerschool_sis.py::test_u_expectations_kippnewark<span class="w"> </span>-v
+</code></pre></div>
+<p>Expected: PASS. The test materializes a randomly chosen fiscal-year partition;
+the assertion <code>result.success</code> plus a non-negative integer record count is
+sufficient — zero rows is acceptable for older partitions because the plugin was
+installed recently.</p>
+<p>If the test fails with <code>ORA-00942: table or view does not exist</code>, the Oracle
+table name needs investigation: connect via the SSH tunnel and run</p>
+<div class="highlight"><pre><span></span><code><span class="k">select</span><span class="w"> </span><span class="k">owner</span><span class="p">,</span><span class="w"> </span><span class="k">table_name</span><span class="w"> </span><span class="k">from</span><span class="w"> </span><span class="n">all_tables</span><span class="w"> </span><span class="k">where</span><span class="w"> </span><span class="k">table_name</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s1">&#39;U_EXPECTATIONS&#39;</span><span class="p">;</span>
+</code></pre></div>
+<p>If it's schema-qualified (e.g., owner is not <code>PS</code>), update the YAML <code>asset_name</code>
+to <code>&lt;owner_lower&gt;.u_expectations</code>. SQLAlchemy uppercases unquoted identifiers,
+so the lowercase YAML value resolves correctly.</p>
+<p>If the test fails with the usual <code>whenmodified</code>-related partition mismatch
+(table has the column but no rows in the chosen partition), re-run —
+<code>_test_partitioned_asset</code> picks a random partition from the full fiscal-year
+range starting 2016-07-01.</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 5: Confirm Dagster definitions still load</strong></li>
+</ul>
+<div class="highlight"><pre><span></span><code>uv<span class="w"> </span>run<span class="w"> </span>dagster<span class="w"> </span>definitions<span class="w"> </span>validate<span class="w"> </span>-m<span class="w"> </span>teamster.code_locations.kippnewark.definitions
+</code></pre></div>
+<p>Expected: exit 0. Errors specific to env vars unavailable in this Codespace are
+acceptable per <code>src/teamster/CLAUDE.md</code> ("<code>dagster definitions validate</code> may
+mislead locally — env vars unavailable in codespace cause false errors"). What
+you're confirming is that no asset-wiring error appears.</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 6: Commit</strong></li>
+</ul>
+<div class="highlight"><pre><span></span><code>git<span class="w"> </span>add<span class="w"> </span>tests/assets/test_assets_powerschool_sis.py<span class="w"> </span><span class="se">\</span>
+<span class="w">        </span>src/teamster/code_locations/kippnewark/powerschool/config/assets-full.yaml
+git<span class="w"> </span>commit<span class="w"> </span>-m<span class="w"> </span><span class="s2">&quot;feat(powerschool): extract U_EXPECTATIONS from Newark Oracle (#3756)&quot;</span>
+</code></pre></div>
+<hr />
+<h2 id="task-2-add-the-dbt-source-entry-and-stage-the-bigquery-external-table">Task 2: Add the dbt source entry and stage the BigQuery external table</h2>
+<p><strong>Files:</strong></p>
+<ul class="task-list">
+<li>
+<p>Modify: <code>src/dbt/powerschool/models/sis/staging/odbc/sources-external.yml</code></p>
+</li>
+<li class="task-list-item">
+<p><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 1: Add the source entry</strong></p>
+</li>
+</ul>
+<p>Open <code>src/dbt/powerschool/models/sis/staging/odbc/sources-external.yml</code>. Locate
+the existing <code>src_powerschool__u_studentsuserfields</code> block (around line 891).
+Insert the following block immediately after it, preserving two-space YAML
+indentation under the parent <code>tables:</code> list:</p>
+<div class="highlight"><pre><span></span><code><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">src_powerschool__u_expectations</span>
+<span class="w">  </span><span class="nt">config</span><span class="p">:</span>
+<span class="w">    </span><span class="nt">meta</span><span class="p">:</span>
+<span class="w">      </span><span class="nt">dagster</span><span class="p">:</span>
+<span class="w">        </span><span class="nt">asset_key</span><span class="p">:</span>
+<span class="w">          </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="s">&quot;{{</span><span class="nv"> </span><span class="s">project_name</span><span class="nv"> </span><span class="s">}}&quot;</span>
+<span class="w">          </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">powerschool</span>
+<span class="w">          </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">u_expectations</span>
+<span class="w">  </span><span class="nt">external</span><span class="p">:</span>
+<span class="w">    </span><span class="nt">location</span><span class="p">:</span>
+<span class="w">      </span><span class="s">&quot;{{</span><span class="nv"> </span><span class="s">var(&#39;powerschool_external_location_root&#39;,</span>
+<span class="w">      </span><span class="s">env_var(&#39;DBT_DEV_CLOUD_STORAGE_URI_BASE&#39;,</span><span class="nv"> </span><span class="s">&#39;&#39;))</span><span class="nv"> </span><span class="s">}}/u_expectations/*&quot;</span>
+<span class="w">    </span><span class="nt">options</span><span class="p">:</span>
+<span class="w">      </span><span class="nt">connection_name</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;{{</span><span class="nv"> </span><span class="s">var(&#39;bigquery_external_connection_name&#39;)</span><span class="nv"> </span><span class="s">}}&quot;</span>
+<span class="w">      </span><span class="nt">metadata_cache_mode</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">MANUAL</span>
+<span class="w">      </span><span class="nt">max_staleness</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">INTERVAL 7 DAY</span>
+<span class="w">      </span><span class="nt">format</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">AVRO</span>
+<span class="w">      </span><span class="nt">enable_logical_types</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">true</span>
+</code></pre></div>
+<p>The block must mirror <code>src_powerschool__u_studentsuserfields</code> exactly except for
+the table-name slug <code>u_expectations</code>.</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 2: Verify dbt parses the new source</strong></li>
+</ul>
+<div class="highlight"><pre><span></span><code>uv<span class="w"> </span>run<span class="w"> </span>dbt<span class="w"> </span>parse<span class="w"> </span>--project-dir<span class="w"> </span>src/dbt/kippnewark<span class="w"> </span>--target<span class="w"> </span>prod<span class="w"> </span>--target-path<span class="w"> </span>target/prod
+</code></pre></div>
+<p>Expected: parse succeeds. If it fails with a YAML error, fix indentation. If it
+fails with a Jinja error pointing at the new block, double-check the curly-brace
+nesting against the precedent.</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 3: Materialize the Dagster asset to land Avro in GCS</strong></li>
+</ul>
+<p>The dbt external source points to
+<code>gs://teamster-kippnewark/dagster/kippnewark/powerschool/u_expectations/*</code>.
+Until the asset has materialized at least one partition,
+<code>stage_external_sources</code> will create an empty BQ external table.</p>
+<p>Trigger materialization through Dagster's UI (or re-run the e2e test from Task 1
+— same effect, materializes one partition into the Hive-partitioned GCS path).</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 4: Stage the external table to BigQuery</strong></li>
+</ul>
+<div class="highlight"><pre><span></span><code>uv<span class="w"> </span>run<span class="w"> </span>dbt<span class="w"> </span>run-operation<span class="w"> </span>stage_external_sources<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--args<span class="w"> </span><span class="s1">&#39;select: powerschool_odbc.src_powerschool__u_expectations&#39;</span><span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--project-dir<span class="w"> </span>src/dbt/kippnewark<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--target<span class="w"> </span>staging
+</code></pre></div>
+<p>Expected: dbt prints <code>1 of 1 OK</code> and the table appears in BigQuery. Note from
+<code>src/dbt/CLAUDE.md</code>: the source selector is <code>&lt;source_name&gt;.&lt;table_name&gt;</code>,
+<strong>not</strong> project-qualified.</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 5: Smoke-test the external table</strong></li>
+</ul>
+<div class="highlight"><pre><span></span><code>uv<span class="w"> </span>run<span class="w"> </span>dbt<span class="w"> </span>show<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--inline<span class="w"> </span><span class="s2">&quot;select count(*) as n from {{ source(&#39;powerschool_odbc&#39;, &#39;src_powerschool__u_expectations&#39;) }}&quot;</span><span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--project-dir<span class="w"> </span>src/dbt/kippnewark<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--target<span class="w"> </span>staging
+</code></pre></div>
+<p>Expected: returns a non-negative integer. Zero is acceptable if the plugin's
+only populated partitions don't yet have ODBC-extracted Avro on disk; non-zero
+confirms end-to-end raw-data pipe.</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 6: Commit</strong></li>
+</ul>
+<div class="highlight"><pre><span></span><code>git<span class="w"> </span>add<span class="w"> </span>src/dbt/powerschool/models/sis/staging/odbc/sources-external.yml
+git<span class="w"> </span>commit<span class="w"> </span>-m<span class="w"> </span><span class="s2">&quot;feat(dbt-powerschool): add U_EXPECTATIONS external source (#3756)&quot;</span>
+</code></pre></div>
+<hr />
+<h2 id="task-3-add-the-dbt-staging-model">Task 3: Add the dbt staging model</h2>
+<p><strong>Files:</strong></p>
+<ul class="task-list">
+<li>Create:
+  <code>src/dbt/powerschool/models/sis/staging/odbc/stg_powerschool__u_expectations.sql</code></li>
+<li>
+<p>Create:
+  <code>src/dbt/powerschool/models/sis/staging/properties/stg_powerschool__u_expectations.yml</code></p>
+</li>
+<li class="task-list-item">
+<p><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 1: Profile the loaded raw table to confirm column shape</strong></p>
+</li>
+</ul>
+<div class="highlight"><pre><span></span><code>uv<span class="w"> </span>run<span class="w"> </span>dbt<span class="w"> </span>show<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--inline<span class="w"> </span><span class="s2">&quot;select column_name, data_type from \`teamster-332318\`.kippnewark_powerschool.INFORMATION_SCHEMA.COLUMNS where table_name = &#39;src_powerschool__u_expectations&#39; order by ordinal_position&quot;</span><span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--project-dir<span class="w"> </span>src/dbt/kippnewark<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--target<span class="w"> </span>staging
+</code></pre></div>
+<p>(Adjust dataset prefix to whatever <code>stage_external_sources</code> materialized to
+under the staging target — likely <code>staging_kippnewark_powerschool</code> or similar;
+check the result of Task 2 Step 4.)</p>
+<p>Record which columns land as
+<code>STRUCT&lt;int_value INT64, decimal_value NUMERIC, ...&gt;</code> (Avro NUMBER union → BQ
+struct) versus plain types. Expected: <code>dcid</code>, <code>id</code>, <code>quarter</code>, <code>week_number</code>,
+<code>cnt_w</code>, <code>cnt_h</code>, <code>cnt_f</code>, <code>cnt_s</code> arrive as structs; string/timestamp columns
+are plain.</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 2: Write the staging SQL</strong></li>
+</ul>
+<p>Create
+<code>src/dbt/powerschool/models/sis/staging/odbc/stg_powerschool__u_expectations.sql</code>:</p>
+<div class="highlight"><pre><span></span><code><span class="k">with</span>
+<span class="w">    </span><span class="n">transformations</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="p">(</span>
+<span class="w">        </span><span class="k">select</span>
+<span class="w">            </span><span class="o">*</span><span class="w"> </span><span class="k">except</span><span class="w"> </span><span class="p">(</span><span class="n">dcid</span><span class="p">,</span><span class="w"> </span><span class="n">id</span><span class="p">,</span><span class="w"> </span><span class="n">quarter</span><span class="p">,</span><span class="w"> </span><span class="n">week_number</span><span class="p">,</span><span class="w"> </span><span class="n">cnt_w</span><span class="p">,</span><span class="w"> </span><span class="n">cnt_h</span><span class="p">,</span><span class="w"> </span><span class="n">cnt_f</span><span class="p">,</span><span class="w"> </span><span class="n">cnt_s</span><span class="p">),</span>
+
+<span class="w">            </span><span class="cm">/* column transformations */</span>
+<span class="w">            </span><span class="n">dcid</span><span class="p">.</span><span class="n">int_value</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">dcid</span><span class="p">,</span>
+<span class="w">            </span><span class="n">id</span><span class="p">.</span><span class="n">int_value</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">id</span><span class="p">,</span>
+<span class="w">            </span><span class="n">quarter</span><span class="p">.</span><span class="n">int_value</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">quarter</span><span class="p">,</span>
+<span class="w">            </span><span class="n">week_number</span><span class="p">.</span><span class="n">int_value</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">week_number</span><span class="p">,</span>
+<span class="w">            </span><span class="n">cnt_w</span><span class="p">.</span><span class="n">int_value</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">cnt_w</span><span class="p">,</span>
+<span class="w">            </span><span class="n">cnt_h</span><span class="p">.</span><span class="n">int_value</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">cnt_h</span><span class="p">,</span>
+<span class="w">            </span><span class="n">cnt_f</span><span class="p">.</span><span class="n">int_value</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">cnt_f</span><span class="p">,</span>
+<span class="w">            </span><span class="n">cnt_s</span><span class="p">.</span><span class="n">int_value</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">cnt_s</span><span class="p">,</span>
+<span class="w">        </span><span class="k">from</span><span class="w"> </span><span class="err">{{</span><span class="w"> </span><span class="k">source</span><span class="p">(</span><span class="ss">&quot;powerschool_odbc&quot;</span><span class="p">,</span><span class="w"> </span><span class="ss">&quot;src_powerschool__u_expectations&quot;</span><span class="p">)</span><span class="w"> </span><span class="err">}}</span>
+<span class="w">    </span><span class="p">)</span>
+
+<span class="k">select</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="k">from</span><span class="w"> </span><span class="n">transformations</span>
+</code></pre></div>
+<p>If Step 1 showed a column landing as plain <code>INT64</code> rather than a struct (e.g.,
+the plugin wrote it as a Java int rather than an Oracle NUMBER), drop it from
+the <code>* except (...)</code> list and the unwrap block. Likewise, if a count column
+comes back as <code>NUMERIC</code> with non-zero scale, replace <code>.int_value</code> with
+<code>safe_cast(... as int64)</code> for that column.</p>
+<p>Note: no <code>dbt_utils.deduplicate</code> here — <code>dcid</code> is unique by construction (Oracle
+auto-PK); the precedent in <code>stg_powerschool__u_clg_et_stu</code> deduplicates because
+of <code>studentsdcid + exit_date</code> business-key collisions, which don't apply to a
+raw-counts roll-up table.</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 3: Write the properties YAML</strong></li>
+</ul>
+<p>Create
+<code>src/dbt/powerschool/models/sis/staging/properties/stg_powerschool__u_expectations.yml</code>:</p>
+<div class="highlight"><pre><span></span><code><span class="nt">models</span><span class="p">:</span>
+<span class="w">  </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">stg_powerschool__u_expectations</span>
+<span class="w">    </span><span class="nt">description</span><span class="p">:</span>
+<span class="w">      </span><span class="l l-Scalar l-Scalar-Plain">Per-school-level / quarter / week roll-up of expectations counts (W/H/F/S)</span>
+<span class="w">      </span><span class="l l-Scalar l-Scalar-Plain">from the Newark Gradebook Audit plugin&#39;s U_EXPECTATIONS extension table.</span>
+<span class="w">      </span><span class="l l-Scalar l-Scalar-Plain">Always scoped to the current academic year — the source has no academic</span>
+<span class="w">      </span><span class="l l-Scalar l-Scalar-Plain">year column.</span>
+<span class="w">    </span><span class="nt">columns</span><span class="p">:</span>
+<span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">dcid</span>
+<span class="w">        </span><span class="nt">data_type</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">int64</span>
+<span class="w">        </span><span class="nt">description</span><span class="p">:</span>
+<span class="w">          </span><span class="l l-Scalar l-Scalar-Plain">Auto-generated PowerSchool descendant ID. Primary key for this</span>
+<span class="w">          </span><span class="l l-Scalar l-Scalar-Plain">extension table.</span>
+<span class="w">        </span><span class="nt">data_tests</span><span class="p">:</span>
+<span class="w">          </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">unique</span><span class="p">:</span>
+<span class="w">              </span><span class="nt">config</span><span class="p">:</span>
+<span class="w">                </span><span class="nt">severity</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">error</span>
+<span class="w">          </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">not_null</span><span class="p">:</span>
+<span class="w">              </span><span class="nt">config</span><span class="p">:</span>
+<span class="w">                </span><span class="nt">severity</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">error</span>
+<span class="w">        </span><span class="nt">constraints</span><span class="p">:</span>
+<span class="w">          </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">type</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">primary_key</span>
+<span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">id</span>
+<span class="w">        </span><span class="nt">data_type</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">int64</span>
+<span class="w">        </span><span class="nt">description</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">Plugin-assigned row identifier.</span>
+<span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">school_level</span>
+<span class="w">        </span><span class="nt">data_type</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">string</span>
+<span class="w">        </span><span class="nt">description</span><span class="p">:</span>
+<span class="w">          </span><span class="l l-Scalar l-Scalar-Plain">School-level grouping (e.g. ES / MS / HS) for the rollup row.</span>
+<span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">quarter</span>
+<span class="w">        </span><span class="nt">data_type</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">int64</span>
+<span class="w">        </span><span class="nt">description</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">Academic quarter (1-4) the rollup row covers.</span>
+<span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">week_number</span>
+<span class="w">        </span><span class="nt">data_type</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">int64</span>
+<span class="w">        </span><span class="nt">description</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">Week number within the quarter.</span>
+<span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">cnt_w</span>
+<span class="w">        </span><span class="nt">data_type</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">int64</span>
+<span class="w">        </span><span class="nt">description</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">Count of students in the W expectations bucket for the row.</span>
+<span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">cnt_h</span>
+<span class="w">        </span><span class="nt">data_type</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">int64</span>
+<span class="w">        </span><span class="nt">description</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">Count of students in the H expectations bucket for the row.</span>
+<span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">cnt_f</span>
+<span class="w">        </span><span class="nt">data_type</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">int64</span>
+<span class="w">        </span><span class="nt">description</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">Count of students in the F expectations bucket for the row.</span>
+<span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">cnt_s</span>
+<span class="w">        </span><span class="nt">data_type</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">int64</span>
+<span class="w">        </span><span class="nt">description</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">Count of students in the S expectations bucket for the row.</span>
+<span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">notes</span>
+<span class="w">        </span><span class="nt">data_type</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">string</span>
+<span class="w">        </span><span class="nt">description</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">Free-text notes captured by the plugin for the rollup row.</span>
+<span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">whocreated</span>
+<span class="w">        </span><span class="nt">data_type</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">string</span>
+<span class="w">        </span><span class="nt">description</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">User login that created the record.</span>
+<span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">whencreated</span>
+<span class="w">        </span><span class="nt">data_type</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">timestamp</span>
+<span class="w">        </span><span class="nt">description</span><span class="p">:</span>
+<span class="w">          </span><span class="l l-Scalar l-Scalar-Plain">Date and time the record was created. Defaults to system date.</span>
+<span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">whomodified</span>
+<span class="w">        </span><span class="nt">data_type</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">string</span>
+<span class="w">        </span><span class="nt">description</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">User login that last modified the record.</span>
+<span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">whenmodified</span>
+<span class="w">        </span><span class="nt">data_type</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">timestamp</span>
+<span class="w">        </span><span class="nt">description</span><span class="p">:</span>
+<span class="w">          </span><span class="l l-Scalar l-Scalar-Plain">Date and time the record was last modified. Defaults to system date.</span>
+</code></pre></div>
+<p>If Step 1 showed any additional PS audit columns landing in the table that
+aren't in this list (PS occasionally adds new ones), add them with <code>data_type</code>
+matching the BQ column type — contract enforcement fails otherwise.</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 4: Build the model and confirm it compiles + tests pass</strong></li>
+</ul>
+<div class="highlight"><pre><span></span><code>uv<span class="w"> </span>run<span class="w"> </span>dbt<span class="w"> </span>build<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--select<span class="w"> </span>stg_powerschool__u_expectations<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--project-dir<span class="w"> </span>src/dbt/kippnewark<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--target<span class="w"> </span>staging
+</code></pre></div>
+<p>Expected: <code>1 of 1 OK created sql view model</code> + tests <code>dcid not_null</code> and
+<code>dcid unique</code> both pass.</p>
+<p>If contract enforcement fails (<code>Contract for model X has unmatched columns:</code>),
+reconcile the YAML with the actual columns from Step 1.</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 5: Lint check</strong></li>
+</ul>
+<div class="highlight"><pre><span></span><code>.trunk/tools/trunk<span class="w"> </span>check<span class="w"> </span>--force<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>src/dbt/powerschool/models/sis/staging/odbc/stg_powerschool__u_expectations.sql<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>src/dbt/powerschool/models/sis/staging/properties/stg_powerschool__u_expectations.yml<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>src/dbt/powerschool/models/sis/staging/odbc/sources-external.yml
+</code></pre></div>
+<p>Expected: no issues. sqlfluff and yamllint enforce style; fix in place if
+anything fires (don't add <code># trunk-ignore</code> to bypass real issues).</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 6: Commit</strong></li>
+</ul>
+<div class="highlight"><pre><span></span><code>git<span class="w"> </span>add<span class="w"> </span>src/dbt/powerschool/models/sis/staging/odbc/stg_powerschool__u_expectations.sql<span class="w"> </span><span class="se">\</span>
+<span class="w">        </span>src/dbt/powerschool/models/sis/staging/properties/stg_powerschool__u_expectations.yml
+git<span class="w"> </span>commit<span class="w"> </span>-m<span class="w"> </span><span class="s2">&quot;feat(dbt-powerschool): add stg_powerschool__u_expectations (#3756)&quot;</span>
+</code></pre></div>
+<hr />
+<h2 id="task-4-disable-in-camden-miami-paterson">Task 4: Disable in Camden / Miami / Paterson</h2>
+<p><strong>Files:</strong></p>
+<ul>
+<li>Modify: <code>src/dbt/kippcamden/dbt_project.yml</code></li>
+<li>Modify: <code>src/dbt/kippmiami/dbt_project.yml</code></li>
+<li>Modify: <code>src/dbt/kipppaterson/dbt_project.yml</code></li>
+</ul>
+<p>The Gradebook Audit plugin is only on Newark prod, so the asset/source/model
+must be disabled in the other three districts to avoid <code>relation does not exist</code>
+errors at parse and build time.</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 1: Disable the model in each district</strong></li>
+</ul>
+<p>In each of the three district <code>dbt_project.yml</code> files, find the existing
+<code>models.powerschool.sis.staging.odbc.stg_powerschool__u_clg_et_stu_alt: { +enabled: false }</code>
+block. Insert immediately after it (alphabetical order keeps the list
+scannable):</p>
+<div class="highlight"><pre><span></span><code><span class="nt">stg_powerschool__u_expectations</span><span class="p">:</span>
+<span class="w">  </span><span class="nt">+enabled</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">false</span>
+</code></pre></div>
+<p>Match the existing indentation exactly — three or four levels of two-space
+nesting depending on the district file.</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 2: Disable the source in each district</strong></li>
+</ul>
+<p>In each of the three district <code>dbt_project.yml</code> files, find the existing
+<code>sources.powerschool.staging.odbc.powerschool_odbc.src_powerschool__u_clg_et_stu_alt: { +enabled: false }</code>
+block. Insert immediately after it:</p>
+<div class="highlight"><pre><span></span><code><span class="nt">src_powerschool__u_expectations</span><span class="p">:</span>
+<span class="w">  </span><span class="nt">+enabled</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">false</span>
+</code></pre></div>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 3: Verify each district parses cleanly</strong></li>
+</ul>
+<div class="highlight"><pre><span></span><code>uv<span class="w"> </span>run<span class="w"> </span>dbt<span class="w"> </span>parse<span class="w"> </span>--project-dir<span class="w"> </span>src/dbt/kippcamden<span class="w"> </span>--target<span class="w"> </span>prod<span class="w"> </span>--target-path<span class="w"> </span>target/prod
+uv<span class="w"> </span>run<span class="w"> </span>dbt<span class="w"> </span>parse<span class="w"> </span>--project-dir<span class="w"> </span>src/dbt/kippmiami<span class="w"> </span>--target<span class="w"> </span>prod<span class="w"> </span>--target-path<span class="w"> </span>target/prod
+uv<span class="w"> </span>run<span class="w"> </span>dbt<span class="w"> </span>parse<span class="w"> </span>--project-dir<span class="w"> </span>src/dbt/kipppaterson<span class="w"> </span>--target<span class="w"> </span>prod<span class="w"> </span>--target-path<span class="w"> </span>target/prod
+</code></pre></div>
+<p>Expected: all three parse without error.</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 4: Verify the model resolves as disabled (not built) in each
+      non-Newark district</strong></li>
+</ul>
+<div class="highlight"><pre><span></span><code>uv<span class="w"> </span>run<span class="w"> </span>dbt<span class="w"> </span>list<span class="w"> </span>--select<span class="w"> </span>stg_powerschool__u_expectations<span class="w"> </span>--project-dir<span class="w"> </span>src/dbt/kippcamden<span class="w"> </span>--target<span class="w"> </span>prod
+uv<span class="w"> </span>run<span class="w"> </span>dbt<span class="w"> </span>list<span class="w"> </span>--select<span class="w"> </span>stg_powerschool__u_expectations<span class="w"> </span>--project-dir<span class="w"> </span>src/dbt/kippmiami<span class="w"> </span>--target<span class="w"> </span>prod
+uv<span class="w"> </span>run<span class="w"> </span>dbt<span class="w"> </span>list<span class="w"> </span>--select<span class="w"> </span>stg_powerschool__u_expectations<span class="w"> </span>--project-dir<span class="w"> </span>src/dbt/kipppaterson<span class="w"> </span>--target<span class="w"> </span>prod
+</code></pre></div>
+<p>Expected: each command prints "no nodes selected" or equivalent — i.e., the
+model is correctly excluded from the graph.</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 5: Verify Newark still includes the model</strong></li>
+</ul>
+<div class="highlight"><pre><span></span><code>uv<span class="w"> </span>run<span class="w"> </span>dbt<span class="w"> </span>list<span class="w"> </span>--select<span class="w"> </span>stg_powerschool__u_expectations<span class="w"> </span>--project-dir<span class="w"> </span>src/dbt/kippnewark<span class="w"> </span>--target<span class="w"> </span>prod
+</code></pre></div>
+<p>Expected: prints <code>powerschool.staging.stg_powerschool__u_expectations</code> (one
+node).</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 6: Commit</strong></li>
+</ul>
+<div class="highlight"><pre><span></span><code>git<span class="w"> </span>add<span class="w"> </span>src/dbt/kippcamden/dbt_project.yml<span class="w"> </span><span class="se">\</span>
+<span class="w">        </span>src/dbt/kippmiami/dbt_project.yml<span class="w"> </span><span class="se">\</span>
+<span class="w">        </span>src/dbt/kipppaterson/dbt_project.yml
+git<span class="w"> </span>commit<span class="w"> </span>-m<span class="w"> </span><span class="s2">&quot;chore(dbt): disable u_expectations in non-Newark districts (#3756)&quot;</span>
+</code></pre></div>
+<hr />
+<h2 id="task-5-final-verification-and-pr">Task 5: Final verification and PR</h2>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 1: Re-run the e2e test to confirm nothing regressed</strong></li>
+</ul>
+<div class="highlight"><pre><span></span><code>uv<span class="w"> </span>run<span class="w"> </span>pytest<span class="w"> </span>tests/assets/test_assets_powerschool_sis.py::test_u_expectations_kippnewark<span class="w"> </span>-v
+</code></pre></div>
+<p>Expected: PASS.</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 2: Re-run the full kippnewark dbt build for the staging model and
+      any directly-touched dependents</strong></li>
+</ul>
+<div class="highlight"><pre><span></span><code>uv<span class="w"> </span>run<span class="w"> </span>dbt<span class="w"> </span>build<span class="w"> </span>--select<span class="w"> </span>+stg_powerschool__u_expectations<span class="w"> </span>--project-dir<span class="w"> </span>src/dbt/kippnewark<span class="w"> </span>--target<span class="w"> </span>staging
+</code></pre></div>
+<p>Expected: builds and tests pass. The <code>+</code> prefix selects upstream nodes; for a
+staging model with only an external source as parent, this is just the model
+itself plus its tests.</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 3: Branch lint check</strong></li>
+</ul>
+<div class="highlight"><pre><span></span><code>.trunk/tools/trunk<span class="w"> </span>check<span class="w"> </span>--force<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span><span class="k">$(</span>git<span class="w"> </span>diff<span class="w"> </span>--name-only<span class="w"> </span>origin/main...HEAD<span class="k">)</span>
+</code></pre></div>
+<p>Expected: no issues. The <code>pre-push</code> hook runs the same check on push, so any
+failure here would block the push anyway.</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 4: Push the branch</strong></li>
+</ul>
+<div class="highlight"><pre><span></span><code>git<span class="w"> </span>push
+</code></pre></div>
+<p>If a push hook complains, address the root cause. Do not pass <code>--no-verify</code>.</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 5: Open the PR</strong></li>
+</ul>
+<p>Use <code>.github/pull_request_template.md</code> as the body. Title format:
+<code>feat(powerschool): extract U_EXPECTATIONS from Newark Oracle (#3756)</code>.</p>
+<div class="highlight"><pre><span></span><code>gh<span class="w"> </span>pr<span class="w"> </span>create<span class="w"> </span>--title<span class="w"> </span><span class="s2">&quot;feat(powerschool): extract U_EXPECTATIONS from Newark Oracle (#3756)&quot;</span><span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--body<span class="w"> </span><span class="s2">&quot;</span><span class="k">$(</span>cat<span class="w"> </span>.github/pull_request_template.md<span class="k">)</span><span class="s2">&quot;</span>
+</code></pre></div>
+<p>Update the populated PR body to reference issue #3756 in the description and
+check off items in the template's checklist that apply.</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 6: Verify branch deployment build</strong></li>
+</ul>
+<p>After CI kicks off the dbt Cloud branch deployment, confirm:</p>
+<ol>
+<li><code>dbt build --select stg_powerschool__u_expectations</code> passes in the branch
+   deployment's Newark project.</li>
+<li>The Dagster branch deployment materializes the asset against Newark prod (one
+   partition, latest fiscal year).</li>
+</ol>
+<p>Both are run by the platform; you're checking the run status, not invoking them
+manually.</p>
+<hr />
+<h2 id="notes-for-the-executing-agent">Notes for the Executing Agent</h2>
+<ul>
+<li>This work is happening in a worktree at
+  <code>/workspaces/teamster/.worktrees/cbini/feat/claude-powerschool-u-expectations</code>.
+  <strong>Always pass <code>--project-dir</code> / <code>git -C</code> explicitly when invoking from a
+  different working directory.</strong> Bare <code>git</code> from <code>/workspaces/teamster</code> commits
+  to <code>main</code>.</li>
+<li><strong>Do not run</strong> <code>trunk fmt</code> or <code>trunk check</code> proactively — the pre-commit hook
+  formats; the pre-push hook checks. Use
+  <code>.trunk/tools/trunk check --force &lt;files&gt;</code> only for the verification step in
+  Task 3 Step 5 and Task 5 Step 3, where confirmation is required before
+  claiming clean.</li>
+<li><strong>Do not</strong> use <code>dbt_utils.deduplicate</code>, <code>select distinct</code>, or
+  <code>qualify row_number() = 1</code> in the staging SQL. The model has a single primary
+  key (<code>dcid</code>); deduplication is unnecessary and is explicitly an anti-pattern
+  per <code>src/dbt/CLAUDE.md</code>.</li>
+<li><strong>Do not</strong> add <code>+enabled: false</code> overrides to <code>kippnewark/dbt_project.yml</code> —
+  Newark is the only district where this asset is enabled by default.</li>
+<li><strong>Do not</strong> add a per-model <code>contract: { enforced: true }</code> block in the
+  properties YAML — contract enforcement is set at the directory level in
+  <code>src/dbt/powerschool/dbt_project.yml</code>.</li>
+<li><strong>Do not</strong> introduce a new schedule, sensor, job, intermediate, or mart model.
+  Spec section 6 explicitly defers all downstream modeling to a separate plan.</li>
+<li>If any Oracle / SSH / 1Password env-var-related test failure surfaces, surface
+  it to the user — Claude sessions cannot access secrets. Re-running in a VS
+  Code terminal where <code>OP_SERVICE_ACCOUNT_TOKEN</code> is set is the correct fix.</li>
+</ul>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+          <button type="button" class="md-top md-icon" data-md-component="top" hidden>
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8z"/></svg>
+  Back to top
+</button>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+    <div class="md-copyright__highlight">
+      Copyright &copy; KIPP TEAM & Family Schools
+    </div>
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      
+      <script id="__config" type="application/json">{"annotate": null, "base": "../../..", "features": ["content.action.edit", "content.code.copy", "navigation.instant", "navigation.indexes", "navigation.sections", "navigation.tabs", "navigation.tabs.sticky", "navigation.top", "search.highlight", "search.suggest", "toc.follow"], "search": "../../../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+    
+    
+      <script src="../../../assets/javascripts/bundle.79ae519e.min.js"></script>
+      
+    
+  </body>
+</html>

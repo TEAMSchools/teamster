@@ -1,0 +1,2987 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+        <meta name="description" content="Data engineering platform for KIPP TEAM & Family Schools">
+      
+      
+      
+      
+      
+      
+        
+      
+      
+      <link rel="icon" href="../../../images/truck.svg">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.6">
+    
+    
+      
+        <title>Column-Naming Audit Execution Implementation Plan - teamster</title>
+      
+    
+    
+      <link rel="stylesheet" href="../../../assets/stylesheets/main.484c7ddc.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+    <script>__md_scope=new URL("../../..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+  </head>
+  
+  
+    <body dir="ltr">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#column-naming-audit-execution-implementation-plan" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+  
+
+<header class="md-header md-header--shadow md-header--lifted" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href="../../.." title="teamster" class="md-header__button md-logo" aria-label="teamster" data-md-component="logo">
+      
+  <img src="../../../images/truck.svg" alt="logo">
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            teamster
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              Column-Naming Audit Execution Implementation Plan
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+        <div class="md-search__suggest" data-md-component="search-suggest"></div>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      
+    
+    
+      <div class="md-header__source">
+        <a href="https://github.com/TEAMSchools/teamster" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M173.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6m-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3m44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9M252.8 8C114.1 8 8 113.3 8 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C436.2 457.8 504 362.9 504 252 504 113.3 391.5 8 252.8 8M105.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1m-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7m32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1m-11.4-14.7c-1.6 1-1.6 3.6 0 5.9s4.3 3.3 5.6 2.3c1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2"/></svg>
+  </div>
+  <div class="md-source__repository">
+    TEAMSchools/teamster
+  </div>
+</a>
+      </div>
+    
+  </nav>
+  
+    
+      
+<nav class="md-tabs" aria-label="Tabs" data-md-component="tabs">
+  <div class="md-grid">
+    <ul class="md-tabs__list">
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../../.." class="md-tabs__link">
+        
+  
+  
+    
+  
+  Home
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../../guides/" class="md-tabs__link">
+          
+  
+  
+    
+  
+  Guides
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../../troubleshooting/dagster/" class="md-tabs__link">
+          
+  
+  
+    
+  
+  Troubleshooting
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../../reference/architecture/" class="md-tabs__link">
+          
+  
+  
+    
+  
+  Reference
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../../../reference/automations/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  Automations
+
+      </a>
+    </li>
+  
+
+      
+    </ul>
+  </div>
+</nav>
+    
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+  
+
+
+<nav class="md-nav md-nav--primary md-nav--lifted" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href="../../.." title="teamster" class="md-nav__button md-logo" aria-label="teamster" data-md-component="logo">
+      
+  <img src="../../../images/truck.svg" alt="logo">
+
+    </a>
+    teamster
+  </label>
+  
+    <div class="md-nav__source">
+      <a href="https://github.com/TEAMSchools/teamster" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M173.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6m-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3m44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9M252.8 8C114.1 8 8 113.3 8 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C436.2 457.8 504 362.9 504 252 504 113.3 391.5 8 252.8 8M105.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1m-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7m32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1m-11.4-14.7c-1.6 1-1.6 3.6 0 5.9s4.3 3.3 5.6 2.3c1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2"/></svg>
+  </div>
+  <div class="md-source__repository">
+    TEAMSchools/teamster
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../.." class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Home
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+          
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2" >
+        
+          
+          <div class="md-nav__link md-nav__container">
+            <a href="../../../guides/" class="md-nav__link ">
+              
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Guides
+  
+
+    
+  </span>
+  
+  
+
+            </a>
+            
+              
+              <label class="md-nav__link " for="__nav_2" id="__nav_2_label" tabindex="0">
+                <span class="md-nav__icon md-icon"></span>
+              </label>
+            
+          </div>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_2_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_2">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Guides
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/codespaces/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Codespaces
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/local-development/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Local Development
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/dagster/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Dagster
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/google-sheets/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Google Sheets & Forms
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/adp-location-renames/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ADP Location Renames
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/dbt-development/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    dbt Development
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/sftp-integration/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    SFTP Integration
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/superpowers/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Claude Code & Superpowers
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/cube/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Cube
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/claude-cube-connector/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Claude + Cube Connector
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3" >
+        
+          
+          <label class="md-nav__link" for="__nav_3" id="__nav_3_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Troubleshooting
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_3">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Troubleshooting
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../troubleshooting/dagster/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Dagster
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../troubleshooting/dbt/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    dbt
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../troubleshooting/vscode/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    VS Code
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4" >
+        
+          
+          <label class="md-nav__link" for="__nav_4" id="__nav_4_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Reference
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_4_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_4">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Reference
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/architecture/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Architecture
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/adding-an-integration/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Adding an Integration
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/io-managers/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    IO Managers
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/fiscal-year-partitioning/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Fiscal Year & Partitioning
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/dbt-conventions/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    dbt Conventions
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/marts-data-models/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Marts Data Models
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/automation-conditions/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Automation Conditions
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/automations/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Automations
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#file-structure" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        File structure
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="File structure">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#created" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Created
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#modified-upstream-prerequisites-phase-1" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Modified — upstream prerequisites (Phase 1)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#modified-mart-sql-yaml-phase-2" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Modified — mart SQL + YAML (Phase 2)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#modified-exposures-phase-3" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Modified — exposures (Phase 3)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#modified-spec-plan-phase-3" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Modified — spec + plan (Phase 3)
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#procedure-per-model-change-pattern" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Procedure — per-model change pattern
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Procedure — per-model change pattern">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#inputs" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Inputs
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#actions-per-inventory-action-column" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Actions, per inventory action column
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Actions, per inventory action column">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#rename" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        rename
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#remove" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        remove
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#add" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        add
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#coverage-gap-exception-severity-warn-todo-issue" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Coverage-gap exception — severity: warn + TODO issue
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#per-model-verification-required" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Per-model verification (required)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#per-domain-commit" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Per-domain commit
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#rubric-recap-spec-lines-3598" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Rubric recap (spec lines 35–98)
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#group-3-structural-deferrals-out-of-scope-this-pr" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Group 3 — structural deferrals (out of scope this PR)
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#phase-1-upstream-prerequisites" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Phase 1 — Upstream prerequisites
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Phase 1 — Upstream prerequisites">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#task-1-filter-dead-weight-rows-in-dim_staff-3637" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Task 1: Filter dead-weight rows in dim_staff (#3637)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#task-2-split-location-crosswalk-grains-canonical-region-derivation-3633" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Task 2: Split location crosswalk grains + canonical region derivation (#3633)
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#phase-2-per-domain-mart-changes" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Phase 2 — Per-domain mart changes
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Phase 2 — Per-domain mart changes">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#task-3-it-domain-1-model-fct_support_tickets" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Task 3: IT domain (1 model — fct_support_tickets)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#task-4-course-domain-4-models" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Task 4: Course domain (4 models)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#task-5-staffing-domain-1-model-dim_staffing_positions" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Task 5: Staffing domain (1 model — dim_staffing_positions)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#task-6-talent-domain-3-models" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Task 6: Talent domain (3 models)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#task-7-survey-domain-7-models" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Task 7: Survey domain (7 models)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#task-8-college-domain-2-models" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Task 8: College domain (2 models)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#task-9-attendance-domain-4-models" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Task 9: Attendance domain (4 models)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#task-10-conformed-domain-5-models-cross-cutting" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Task 10: Conformed domain (5 models, cross-cutting)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#task-11-behavioral-domain-3-models" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Task 11: Behavioral domain (3 models)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#task-12-student-domain-5-models" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Task 12: Student domain (5 models)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#task-13-gradebook-domain-4-models" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Task 13: Gradebook domain (4 models)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#task-14-observation-domain-8-models-includes-model-renames" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Task 14: Observation domain (8 models, includes model renames)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#task-15-assessment-domain-6-models" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Task 15: Assessment domain (6 models)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#task-16-staff-domain-14-models-largest" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Task 16: Staff domain (14 models, largest)
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#phase-3-verification-and-cleanup" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Phase 3 — Verification and cleanup
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Phase 3 — Verification and cleanup">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#task-17-exposure-sweep" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Task 17: Exposure sweep
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#task-18-final-verification-spec-update-pr" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Task 18: Final verification + spec update + PR
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#execution-notes" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Execution notes
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+  
+    <a href="https://github.com/TEAMSchools/teamster/edit/main/docs/superpowers/plans/2026-04-21-column-naming-audit-execution.md" title="Edit this page" class="md-content__button md-icon" rel="edit">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M10 20H6V4h7v5h5v3.1l2-2V8l-6-6H6c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h4zm10.2-7c.1 0 .3.1.4.2l1.3 1.3c.2.2.2.6 0 .8l-1 1-2.1-2.1 1-1c.1-.1.2-.2.4-.2m0 3.9L14.1 23H12v-2.1l6.1-6.1z"/></svg>
+    </a>
+  
+  
+
+
+<h1 id="column-naming-audit-execution-implementation-plan">Column-Naming Audit Execution Implementation Plan</h1>
+<blockquote>
+<p><strong>For agentic workers:</strong> REQUIRED SUB-SKILL: Use
+superpowers:subagent-driven-development (recommended) or
+superpowers:executing-plans to implement this plan task-by-task. Steps use
+checkbox (<code>- [ ]</code>) syntax for tracking.</p>
+</blockquote>
+<p><strong>Goal:</strong> Apply the approved column-naming decisions to every mart model
+(dimensions, facts, bridges) so analyst-facing columns follow one rubric, with
+upstream prerequisite fixes that unblock the R9 FK traversals.</p>
+<p><strong>Architecture:</strong> Three phases executed as a single PR on branch
+<code>cbini/feat/claude-column-naming-audit</code>. Phase 1 fixes upstream blockers so R9
+removes + structural FK adds work downstream. Phase 2 applies per-domain mart
+changes from the authoritative inventory CSV. Phase 3 sweeps exposures,
+documents hash-change impact, and opens the PR.</p>
+<p><strong>Tech Stack:</strong> dbt 1.11 on BigQuery, <code>dbt_utils</code>, Python (for inventory
+filtering via <code>pandas</code>), no new code dependencies.</p>
+<p><strong>Authoritative sources:</strong></p>
+<ul>
+<li>Decisions (168 renames, 180 removes, 25 adds, 520 keeps across 67 mart
+  models):
+  <a href="../../specs/2026-04-15-column-naming-audit-inventory.csv">docs/superpowers/specs/2026-04-15-column-naming-audit-inventory.csv</a></li>
+<li>Rubric + rationale:
+  <a href="../../specs/2026-04-15-column-naming-audit/">docs/superpowers/specs/2026-04-15-column-naming-audit.md</a></li>
+</ul>
+<p><strong>Workspace:</strong> Worktree at
+<code>/workspaces/teamster/.worktrees/cbini/feat/claude-column-naming-audit</code>. All
+<code>git</code> and <code>uv run</code> commands execute from the worktree (the main repo and
+worktree have separate HEADs).</p>
+<hr />
+<h2 id="file-structure">File structure</h2>
+<p>Every touched file is listed below. New code files are rare — this is mostly
+edits to existing mart SQL + their properties YAML.</p>
+<h3 id="created">Created</h3>
+<ul>
+<li><code>src/dbt/kipptaf/models/people/staging/stg_people__locations.sql</code> — new
+  canonical-grain locations staging model (1 row per logical school).</li>
+<li><code>src/dbt/kipptaf/models/people/staging/properties/stg_people__locations.yml</code> —
+  YAML contract for the above.</li>
+</ul>
+<h3 id="modified-upstream-prerequisites-phase-1">Modified — upstream prerequisites (Phase 1)</h3>
+<ul>
+<li><code>src/dbt/kipptaf/models/marts/dimensions/dim_staff.sql</code> — dead-weight row
+  filter.</li>
+<li><code>src/dbt/kipptaf/models/people/staging/stg_people__locations.sql</code> — <code>region</code>
+  column renamed to <code>business_unit</code>; new canonical <code>region</code> derived from
+  <code>dagster_code_location</code>.</li>
+<li><code>src/dbt/kipptaf/models/people/staging/properties/stg_people__locations.yml</code> —
+  matching rename + add.</li>
+<li>7 canonical-seeking consumers rerouted from <code>int_people__location_crosswalk</code>
+  to <code>stg_people__locations</code>.</li>
+</ul>
+<h3 id="modified-mart-sql-yaml-phase-2">Modified — mart SQL + YAML (Phase 2)</h3>
+<p>67 mart models across 14 domains in
+<code>src/dbt/kipptaf/models/marts/{dimensions,facts,bridges}/</code> and their
+<code>properties/</code> YAML siblings. See per-domain tasks for full model lists.</p>
+<h3 id="modified-exposures-phase-3">Modified — exposures (Phase 3)</h3>
+<ul>
+<li><code>src/dbt/kipptaf/models/exposures/**/*.yml</code> — any exposure referencing a
+  renamed mart column.</li>
+</ul>
+<h3 id="modified-spec-plan-phase-3">Modified — spec + plan (Phase 3)</h3>
+<ul>
+<li><code>docs/superpowers/specs/2026-04-15-column-naming-audit.md</code> — enumerated
+  surrogate keys whose hash changed and why.</li>
+</ul>
+<hr />
+<h2 id="procedure-per-model-change-pattern">Procedure — per-model change pattern</h2>
+<p>Every Phase 2 task applies this pattern once per model in the domain. Reference
+this section; do not repeat it in per-task step lists.</p>
+<h3 id="inputs">Inputs</h3>
+<ul>
+<li>Mart SQL:
+  <code>src/dbt/kipptaf/models/marts/{dimensions,facts,bridges}/&lt;model&gt;.sql</code></li>
+<li>Mart YAML: adjacent <code>properties/&lt;model&gt;.yml</code></li>
+<li>Inventory rows filtered by model:</li>
+</ul>
+<div class="highlight"><pre><span></span><code><span class="nb">cd</span><span class="w"> </span>/workspaces/teamster/.worktrees/cbini/feat/claude-column-naming-audit
+uv<span class="w"> </span>run<span class="w"> </span>--with<span class="w"> </span>pandas<span class="w"> </span>python<span class="w"> </span><span class="s">&lt;&lt;&#39;PY&#39;</span>
+<span class="s">import pandas as pd</span>
+<span class="s">df = pd.read_csv(</span>
+<span class="s">    &#39;docs/superpowers/specs/2026-04-15-column-naming-audit-inventory.csv&#39;,</span>
+<span class="s">    keep_default_na=False, na_values=[&#39;&#39;],</span>
+<span class="s">)</span>
+<span class="s">u = df[df[&#39;model&#39;] == &#39;&lt;model_name&gt;&#39;]</span>
+<span class="s">print(u[[&#39;current_column&#39;,&#39;action&#39;,&#39;proposed_name&#39;,&#39;rule_ref&#39;,&#39;reviewer_notes&#39;]].to_string(max_colwidth=200))</span>
+<span class="s">PY</span>
+</code></pre></div>
+<h3 id="actions-per-inventory-action-column">Actions, per inventory <code>action</code> column</h3>
+<h4 id="rename"><code>rename</code></h4>
+<p>SQL: change the column alias at the final <code>SELECT</code>. Do <strong>not</strong> rename the
+upstream source column — the rename is mart-layer only unless the
+<code>reviewer_notes</code> explicitly calls for an upstream rename.</p>
+<div class="highlight"><pre><span></span><code><span class="c1">-- Before</span>
+<span class="k">select</span>
+<span class="w">    </span><span class="n">old_name</span><span class="p">,</span>
+<span class="c1">-- After</span>
+<span class="k">select</span>
+<span class="w">    </span><span class="n">old_name</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">new_name</span><span class="p">,</span>
+</code></pre></div>
+<p>YAML: update <code>name:</code>. Preserve <code>data_tests:</code> and <code>config.meta</code> blocks on the
+renamed column (migrate them intact). Update the <code>description:</code> only when the
+current YAML description is clearly stale (e.g., still names the old column,
+references a removed sibling, or was copy-pasted from an unrelated upstream
+model). When the rename is followed by a type coercion (see below), adjust
+<code>data_type:</code> to match the new output type and refresh the description to reflect
+the new semantics.</p>
+<h4 id="remove"><code>remove</code></h4>
+<p>SQL: strip the column from the final <code>SELECT</code>. If the removed column was derived
+in a CTE whose only surviving consumers also dropped it, remove the derivation
+too.</p>
+<p>YAML: delete the column block entirely.</p>
+<p>If the removed column carried a <code>data_tests:</code> entry (e.g., <code>unique</code> on a natural
+key being removed), verify the replacement key (usually the surrogate <code>*_key</code>)
+already carries the equivalent test. If not, add it on the replacement.</p>
+<h4 id="add"><code>add</code></h4>
+<p>SQL: add the new column to the final <code>SELECT</code>.</p>
+<p>For FK adds, derive via <code>dbt_utils.generate_surrogate_key</code> wrapped with the
+nullable-wrap helper when the source key can be null:</p>
+<div class="highlight"><pre><span></span><code><span class="k">if</span><span class="p">(</span>
+<span class="w">    </span><span class="n">source_column</span><span class="w"> </span><span class="k">is</span><span class="w"> </span><span class="k">not</span><span class="w"> </span><span class="k">null</span><span class="p">,</span>
+<span class="w">    </span><span class="err">{{</span><span class="w"> </span><span class="n">dbt_utils</span><span class="p">.</span><span class="n">generate_surrogate_key</span><span class="p">([</span><span class="ss">&quot;source_column&quot;</span><span class="p">])</span><span class="w"> </span><span class="err">}}</span><span class="p">,</span>
+<span class="w">    </span><span class="k">cast</span><span class="p">(</span><span class="k">null</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">string</span><span class="p">)</span>
+<span class="p">)</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">fk_column</span><span class="p">,</span>
+</code></pre></div>
+<p>The hash <strong>must</strong> match the parent dim's <code>*_key</code> derivation. If the parent
+hashes a different field (e.g. a join-resolved name rather than the raw source
+key on this model), derive the FK via a lookup in a CTE so the input matches.</p>
+<p>YAML: add the column block with:</p>
+<ul>
+<li><code>data_type:</code> matching the SQL output.</li>
+<li><code>description:</code> qualitative, analyst-facing (no stats; describe meaning, not
+  distribution).</li>
+<li>FK adds: <code>relationships</code> test pointing to the parent dim's <code>*_key</code>. Include
+  <code>not_null</code> only when the source is guaranteed non-null; otherwise rely on
+  nullable-wrap + <code>relationships</code>.</li>
+</ul>
+<h4 id="coverage-gap-exception-severity-warn-todo-issue">Coverage-gap exception — <code>severity: warn</code> + TODO issue</h4>
+<p>When an FK derivation is correct but upstream data coverage is incomplete (some
+source values don't resolve in the parent dim), downgrade the <code>relationships</code>
+test severity and reference a tracked issue:</p>
+<div class="highlight"><pre><span></span><code><span class="nt">data_tests</span><span class="p">:</span>
+<span class="w">  </span><span class="c1"># TODO: #&lt;issue&gt; — &lt;match %&gt; rows fail FK; promote to error once crosswalk</span>
+<span class="w">  </span><span class="c1"># covers the unresolved values.</span>
+<span class="w">  </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">relationships</span><span class="p">:</span>
+<span class="w">      </span><span class="nt">arguments</span><span class="p">:</span>
+<span class="w">        </span><span class="nt">to</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">ref(&#39;&lt;parent_dim&gt;&#39;)</span>
+<span class="w">        </span><span class="nt">field</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">&lt;parent_key&gt;</span>
+<span class="w">      </span><span class="nt">config</span><span class="p">:</span>
+<span class="w">        </span><span class="nt">severity</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">warn</span>
+</code></pre></div>
+<p>Open the issue first (<code>gh issue create</code>), capture its number, then write the
+TODO. Issues created during this PR:</p>
+<ul>
+<li><a href="https://github.com/TEAMSchools/teamster/issues/3672">#3672</a> —
+  <code>fct_job_candidate_applications.shared_with_location_key</code> ~20% FK miss.</li>
+</ul>
+<h3 id="per-model-verification-required">Per-model verification (required)</h3>
+<div class="highlight"><pre><span></span><code><span class="nb">cd</span><span class="w"> </span>/workspaces/teamster/.worktrees/cbini/feat/claude-column-naming-audit
+uv<span class="w"> </span>run<span class="w"> </span>dbt<span class="w"> </span>compile<span class="w"> </span>--project-dir<span class="w"> </span>src/dbt/kipptaf<span class="w"> </span>--select<span class="w"> </span>&lt;model_name&gt;
+</code></pre></div>
+<p>Expected: exit 0, SQL emitted without warnings. <code>dbt compile</code> parses the full
+project first — a separate <code>dbt parse</code> call is redundant.</p>
+<h3 id="per-domain-commit">Per-domain commit</h3>
+<p>One commit per Phase 2 domain task, covering all models in the domain.
+Conventional-commits form with the domain name:</p>
+<div class="highlight"><pre><span></span><code>refactor(dbt): rename mart columns - &lt;Domain&gt; domain per #3643
+</code></pre></div>
+<p>Stage files explicitly (<code>git add &lt;paths&gt;</code>, never <code>-u</code>/<code>-A</code>/<code>.</code>). Do not use
+<code>--no-verify</code>. If the pre-commit hook reformats files via trunk, it modifies
+them in place and the commit succeeds.</p>
+<hr />
+<h2 id="rubric-recap-spec-lines-3598">Rubric recap (spec lines 35–98)</h2>
+<p>Numbering used in inventory <code>rule_ref</code> column:</p>
+<table>
+<thead>
+<tr>
+<th>Rule</th>
+<th>Summary</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>R1</td>
+<td>Strip source-system prefixes/jargon (<code>powerschool_</code>, <code>adp_</code>, etc.) unless disambiguating.</td>
+</tr>
+<tr>
+<td>R2</td>
+<td>No KIPP-specific language (<code>teammate</code>, <code>employee_number</code>, <code>microgoal</code>, <code>commlog</code>).</td>
+</tr>
+<tr>
+<td>R3</td>
+<td><code>is_</code>/<code>has_</code> prefix for booleans. Fact-table countable 0/1 flags may use INT64 so <code>SUM</code>/<code>AVG</code> work without casting; <code>FLOAT64</code> reserved for genuinely non-binary weights (e.g., <code>present_weight</code>).</td>
+</tr>
+<tr>
+<td>R4</td>
+<td>Dates end <code>_date</code>; timestamps end <code>_timestamp</code>. Strict suffix convention.</td>
+</tr>
+<tr>
+<td>R5</td>
+<td>Well-known external acronyms allowed for specific-use IDs.</td>
+</tr>
+<tr>
+<td>R6</td>
+<td>Ed-Fi Unified Data Model nomenclature is the default; deviate toward plain English for awkward descriptive attributes.</td>
+</tr>
+<tr>
+<td>R7</td>
+<td>Keep ubiquitous acronyms (<code>gpa</code>, <code>ada</code>, <code>fte</code>, <code>dob</code>, <code>ell</code>, <code>iep</code>, <code>sat</code>, <code>psat</code>, <code>act</code>, <code>ap</code>, <code>lea</code>, <code>nces</code>, <code>fleid</code>, <code>smid</code>); spell out internal ones.</td>
+</tr>
+<tr>
+<td>R8</td>
+<td>Plumbing columns removed from mart SELECTs (remain in staging/intermediate).</td>
+</tr>
+<tr>
+<td>R9</td>
+<td>Remove dimension attributes reachable via FK traversal (denormalized copies).</td>
+</tr>
+</tbody>
+</table>
+<p><code>structural</code> (new column add) and <code>exception</code> (specific-use jargon allowed) are
+non-rubric tags used in the inventory.</p>
+<hr />
+<h2 id="group-3-structural-deferrals-out-of-scope-this-pr">Group 3 — structural deferrals (out of scope this PR)</h2>
+<p>The inventory includes structural adds that require upstream work beyond this
+PR's scope. Leave these unapplied; tracked in
+<a href="https://github.com/TEAMSchools/teamster/issues/3631">#3631</a>:</p>
+<ol>
+<li><strong><code>fct_grades_assignments</code> score split</strong> — adds <code>points_earned</code> +
+   <code>numeric_grade_earned</code>; removes <code>score</code> + <code>score_type</code>. Requires staging
+   changes to compute the split from the upstream score field.</li>
+<li><strong><code>dim_locations</code> address unification</strong> — adds <code>address_line_one</code>,
+   <code>address_line_two</code>, <code>city</code>, <code>postal_code</code>. Prerequisite for the work-location
+   FK below.</li>
+<li><strong><code>dim_work_assignment_locations</code> FK to <code>dim_locations</code></strong> — removes 8 ADP
+   address columns, adds <code>location_key</code>. Blocked by (2) and by a reliable
+   mapping from ADP <code>home_work_location__name_code__code_value</code> to
+   <code>dim_locations.location_name</code>.</li>
+<li><strong>Business-unit / region FK parity</strong> — optional: add <code>business_unit_code</code> to
+   <code>dim_regions</code> so staff-side business_unit can FK directly. Requires alignment
+   on canonical business-unit code values.</li>
+</ol>
+<p>These four items together enable the
+<code>dim_staff → dim_staff_work_assignments → dim_work_assignment_locations → dim_locations → dim_regions</code>
+chain, currently left as attribute-only via <code>business_unit_name</code> string.</p>
+<p>For each deferral, the inventory has <code>add</code> / <code>remove</code> rows that this plan
+explicitly skips — see per-domain task notes.</p>
+<hr />
+<h2 id="phase-1-upstream-prerequisites">Phase 1 — Upstream prerequisites</h2>
+<p>Two independent fixes that unblock downstream R9 removes and FK adds. One commit
+each.</p>
+<h3 id="task-1-filter-dead-weight-rows-in-dim_staff-3637">Task 1: Filter dead-weight rows in <code>dim_staff</code> (#3637)</h3>
+<p><strong>Background:</strong> <code>stg_people__employee_numbers</code> accumulates NULL-keyed duplicate
+rows because its incremental MERGE never matches on NULL merge keys. 91
+<code>employee_number</code> values with <code>NULL adp_associate_id</code> accumulate 16 dup rows per
+run; 7 additional <code>is_active = false</code> rows carry NULL ADP columns. All 98 are
+dead weight.</p>
+<p>The staging model is the employee-number provisioner (computes
+<code>MAX(employee_number)</code> to assign the next-available number for new hires), so
+<code>--full-refresh</code> at staging is policy-denied. Fix the symptom downstream in
+<code>dim_staff</code> instead.</p>
+<p><strong>Files:</strong></p>
+<ul class="task-list">
+<li>
+<p>Modify: <code>src/dbt/kipptaf/models/marts/dimensions/dim_staff.sql</code></p>
+</li>
+<li class="task-list-item">
+<p><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 1: Read <code>dim_staff.sql</code>.</strong> Locate the CTE containing
+      <code>SELECT DISTINCT employee_number FROM ... stg_people__employee_numbers</code>
+      with the <code>-- TODO: #3637</code> comment.</p>
+</li>
+<li class="task-list-item">
+<p><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 2: Replace the DISTINCT CTE with a filtered SELECT:</strong></p>
+</li>
+</ul>
+<div class="highlight"><pre><span></span><code><span class="c1">-- Before</span>
+<span class="k">select</span><span class="w"> </span><span class="k">distinct</span><span class="w"> </span><span class="n">employee_number</span>
+<span class="k">from</span><span class="w"> </span><span class="err">{{</span><span class="w"> </span><span class="k">ref</span><span class="p">(</span><span class="ss">&quot;stg_people__employee_numbers&quot;</span><span class="p">)</span><span class="w"> </span><span class="err">}}</span>
+<span class="c1">-- TODO: #3637</span>
+
+<span class="c1">-- After</span>
+<span class="k">select</span><span class="w"> </span><span class="n">employee_number</span>
+<span class="k">from</span><span class="w"> </span><span class="err">{{</span><span class="w"> </span><span class="k">ref</span><span class="p">(</span><span class="ss">&quot;stg_people__employee_numbers&quot;</span><span class="p">)</span><span class="w"> </span><span class="err">}}</span>
+<span class="k">where</span><span class="w"> </span><span class="n">adp_associate_id</span><span class="w"> </span><span class="k">is</span><span class="w"> </span><span class="k">not</span><span class="w"> </span><span class="k">null</span><span class="w"> </span><span class="k">and</span><span class="w"> </span><span class="n">is_active</span>
+</code></pre></div>
+<p>Remove the <code>-- TODO: #3637</code> comment — the downstream filter is now the
+  intended behavior, not a workaround.</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 3: Verify:</strong></li>
+</ul>
+<div class="highlight"><pre><span></span><code>uv<span class="w"> </span>run<span class="w"> </span>dbt<span class="w"> </span>compile<span class="w"> </span>--project-dir<span class="w"> </span>src/dbt/kipptaf<span class="w"> </span>--select<span class="w"> </span>dim_staff
+</code></pre></div>
+<p>Expected: clean compile.</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 4: Commit.</strong></li>
+</ul>
+<div class="highlight"><pre><span></span><code>git<span class="w"> </span>add<span class="w"> </span>src/dbt/kipptaf/models/marts/dimensions/dim_staff.sql
+git<span class="w"> </span>commit<span class="w"> </span>-m<span class="w"> </span><span class="s2">&quot;fix(dbt): filter dead-weight rows downstream in dim_staff (#3637)&quot;</span>
+</code></pre></div>
+<h3 id="task-2-split-location-crosswalk-grains-canonical-region-derivation-3633">Task 2: Split location crosswalk grains + canonical region derivation (#3633)</h3>
+<p><strong>Background:</strong> <code>int_people__location_crosswalk</code> is 1 row per <strong>alias</strong>
+(alternate spelling of <code>location_name</code>) — the source Google Sheet has multiple
+rows per logical school. Two consumers rely on the alias grain
+(<code>fct_staff_observations</code>, <code>int_topline__seats_staffed_weekly_aggregations</code>);
+the other 7 canonical-seeking consumers use <code>SELECT DISTINCT</code> workarounds.</p>
+<p><strong>Two coordinated changes:</strong></p>
+<ol>
+<li>Create a new <code>stg_people__locations</code> staging model at canonical-school grain
+   (1 row per logical school).</li>
+<li>Derive canonical <code>region</code> from <code>dagster_code_location</code> (values <code>kippnewark</code> /
+   <code>kippcamden</code> / <code>kippmiami</code> / <code>kipppaterson</code>), and rename the existing
+   <code>region</code> column (which holds legal-entity names like "TEAM Academy Charter
+   School", matching <code>dim_regions.legal_entity</code>) to <code>business_unit</code> — aligning
+   with the ADP/staff-side convention on
+   <code>dim_work_assignment_organizational_units.business_unit_*</code>.</li>
+</ol>
+<p>The canonical region derivation is what unblocks Conformed-domain R9 removes and
+structural FK adds in Phase 2.</p>
+<p><strong>Files:</strong></p>
+<ul class="task-list">
+<li>Create: <code>src/dbt/kipptaf/models/people/staging/stg_people__locations.sql</code></li>
+<li>Create:
+  <code>src/dbt/kipptaf/models/people/staging/properties/stg_people__locations.yml</code></li>
+<li>Modify:
+  <code>src/dbt/kipptaf/models/people/intermediate/properties/int_people__location_crosswalk.yml</code>
+  (add <code>unique</code> test on <code>location_name</code> to document the alias grain).</li>
+<li>Modify 7 canonical-seeking consumers to use <code>stg_people__locations</code>:
+  <code>dim_locations.sql</code>, <code>dim_school_calendars.sql</code>,
+  <code>dim_student_enrollments.sql</code>, <code>dim_course_sections.sql</code>,
+  <code>dim_assessment_targets.sql</code>, <code>fct_student_attendance_daily.sql</code>,
+  <code>fct_student_attendance_interventions.sql</code>.</li>
+<li>
+<p>Modify: <code>src/dbt/kipptaf/CLAUDE.md</code> — "Known Upstream Issues" section gets the
+  grain split documented.</p>
+</li>
+<li class="task-list-item">
+<p><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 1: Rediscover the consumer set.</strong></p>
+</li>
+</ul>
+<div class="highlight"><pre><span></span><code>grep<span class="w"> </span>-rn<span class="w"> </span><span class="s2">&quot;int_people__location_crosswalk&quot;</span><span class="w"> </span>src/dbt/kipptaf/models/
+grep<span class="w"> </span>-rn<span class="w"> </span><span class="s2">&quot;#3633&quot;</span><span class="w"> </span>src/dbt/kipptaf/models/
+</code></pre></div>
+<p>Classify each hit:
+  - Canonical-seeking: has <code>SELECT DISTINCT</code> + <code>-- TODO: #3633</code> on the crosswalk
+    CTE.
+  - Alias-seeking: joins on <code>location_name</code> as an alternate spelling (e.g.
+    <code>fct_staff_observations</code> on <code>gro.school_name</code>).</p>
+<p>Canonical-seeking consumers (7) get rerouted. Alias-seeking consumers (3:
+  <code>fct_staff_observations</code>, <code>int_people__staff_roster_history</code>,
+  <code>int_topline__seats_staffed_weekly_aggregations</code>) stay on the int model.</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 2: Create <code>stg_people__locations.sql</code>.</strong></li>
+</ul>
+<p>Read from
+  <code>{{ source("google_sheets", "src_google_sheets__people__location_crosswalk") }}</code>
+  directly (skip the existing <code>stg_google_sheets__people__location_crosswalk</code> so
+  a future Google-Sheet refactor with cleaner grain can reuse this model name).
+  Left-join <code>src_google_sheets__people__campus_crosswalk</code> to populate
+  <code>campus_name</code>.</p>
+<p>Apply these column transformations in the <code>renamed</code> CTE:</p>
+<div class="highlight"><pre><span></span><code><span class="n">lc</span><span class="p">.</span><span class="n">name</span><span class="p">,</span>
+<span class="n">lc</span><span class="p">.</span><span class="n">abbreviation</span><span class="p">,</span>
+<span class="n">lc</span><span class="p">.</span><span class="n">grade_band</span><span class="p">,</span>
+<span class="n">lc</span><span class="p">.</span><span class="n">powerschool_school_id</span><span class="p">,</span>
+<span class="n">lc</span><span class="p">.</span><span class="n">deanslist_school_id</span><span class="p">,</span>
+<span class="n">lc</span><span class="p">.</span><span class="n">reporting_school_id</span><span class="p">,</span>
+<span class="n">lc</span><span class="p">.</span><span class="n">is_campus</span><span class="p">,</span>
+<span class="n">lc</span><span class="p">.</span><span class="n">is_pathways</span><span class="p">,</span>
+<span class="n">lc</span><span class="p">.</span><span class="n">dagster_code_location</span><span class="p">,</span>
+<span class="n">lc</span><span class="p">.</span><span class="n">head_of_schools_employee_number</span><span class="p">,</span>
+<span class="n">lc</span><span class="p">.</span><span class="n">clean_name</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">location_name</span><span class="p">,</span>
+<span class="n">lc</span><span class="p">.</span><span class="n">region</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">business_unit</span><span class="p">,</span>
+
+<span class="k">case</span><span class="w"> </span><span class="n">lc</span><span class="p">.</span><span class="n">dagster_code_location</span>
+<span class="w">    </span><span class="k">when</span><span class="w"> </span><span class="s1">&#39;kippnewark&#39;</span><span class="w"> </span><span class="k">then</span><span class="w"> </span><span class="s1">&#39;Newark&#39;</span>
+<span class="w">    </span><span class="k">when</span><span class="w"> </span><span class="s1">&#39;kippcamden&#39;</span><span class="w"> </span><span class="k">then</span><span class="w"> </span><span class="s1">&#39;Camden&#39;</span>
+<span class="w">    </span><span class="k">when</span><span class="w"> </span><span class="s1">&#39;kippmiami&#39;</span><span class="w"> </span><span class="k">then</span><span class="w"> </span><span class="s1">&#39;Miami&#39;</span>
+<span class="w">    </span><span class="k">when</span><span class="w"> </span><span class="s1">&#39;kipppaterson&#39;</span><span class="w"> </span><span class="k">then</span><span class="w"> </span><span class="s1">&#39;Paterson&#39;</span>
+<span class="k">end</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">region</span><span class="p">,</span>
+
+<span class="n">cc</span><span class="p">.</span><span class="n">name</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">campus_name</span><span class="p">,</span>
+</code></pre></div>
+<p>Dedup via <code>dbt_utils.deduplicate</code> with
+  <code>partition_by="powerschool_school_id, dagster_code_location, location_name, is_pathways"</code>
+  and <code>order_by="name asc"</code> (deterministic tie-breaker; document the choice in a
+  SQL comment).</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 3: Create the properties YAML.</strong></li>
+</ul>
+<p>Declare 13 columns (the 12 in the final SELECT plus the new <code>region</code>) with
+  <code>data_type</code> and qualitative descriptions. Add a
+  <code>dbt_utils.unique_combination_of_columns</code> test on the four-column grain key.
+  Add <code>not_null</code> on the grain-key columns. List columns with <code>data_tests:</code>
+  first.</p>
+<ul class="task-list">
+<li class="task-list-item">
+<p><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 4: Add <code>unique</code> test on
+      <code>int_people__location_crosswalk.location_name</code></strong> to document the alias
+      grain.</p>
+</li>
+<li class="task-list-item">
+<p><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 5: Reroute 7 canonical-seeking consumers.</strong> For each file from Step
+      1's canonical-seeking list:</p>
+</li>
+<li>Replace the <code>SELECT DISTINCT ... FROM ref("int_people__location_crosswalk")</code>
+    CTE with <code>SELECT ... FROM ref("stg_people__locations")</code>.</li>
+<li>Drop the <code>location_</code> prefix from join keys / surrogate-key inputs that came
+    from the previously-prefixed intermediate columns
+    (<code>location_powerschool_school_id</code> → <code>powerschool_school_id</code>,
+    <code>location_clean_name</code> → <code>location_name</code>, etc.).</li>
+<li>Preserve per-consumer filters (<code>not is_pathways</code>, Whittier exclusion).</li>
+<li>
+<p>Remove <code>-- TODO: #3633</code> comments.</p>
+</li>
+<li class="task-list-item">
+<p><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 6: Update <code>src/dbt/kipptaf/CLAUDE.md</code></strong> "Known Upstream Issues"
+      section. Replace the stale "duplicate" description of
+      <code>int_people__location_crosswalk</code> with the grain split: this model is the
+      alias grain, <code>stg_people__locations</code> is the canonical grain.</p>
+</li>
+<li class="task-list-item">
+<p><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 7: Verify.</strong></p>
+</li>
+</ul>
+<div class="highlight"><pre><span></span><code>uv<span class="w"> </span>run<span class="w"> </span>dbt<span class="w"> </span>compile<span class="w"> </span>--project-dir<span class="w"> </span>src/dbt/kipptaf<span class="w"> </span>--select<span class="w"> </span>stg_people__locations+
+</code></pre></div>
+<p>Expected: <code>stg_people__locations</code> compiles; all 7 rerouted consumers compile
+  without the DISTINCT workaround.</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 8: Commit.</strong></li>
+</ul>
+<div class="highlight"><pre><span></span><code>git<span class="w"> </span>add<span class="w"> </span>src/dbt/kipptaf/models/people/staging/stg_people__locations.sql<span class="w"> </span><span class="se">\</span>
+<span class="w">        </span>src/dbt/kipptaf/models/people/staging/properties/stg_people__locations.yml<span class="w"> </span><span class="se">\</span>
+<span class="w">        </span>src/dbt/kipptaf/models/people/intermediate/properties/int_people__location_crosswalk.yml<span class="w"> </span><span class="se">\</span>
+<span class="w">        </span>src/dbt/kipptaf/models/marts/dimensions/dim_locations.sql<span class="w"> </span><span class="se">\</span>
+<span class="w">        </span>src/dbt/kipptaf/models/marts/dimensions/dim_school_calendars.sql<span class="w"> </span><span class="se">\</span>
+<span class="w">        </span>src/dbt/kipptaf/models/marts/dimensions/dim_student_enrollments.sql<span class="w"> </span><span class="se">\</span>
+<span class="w">        </span>src/dbt/kipptaf/models/marts/dimensions/dim_course_sections.sql<span class="w"> </span><span class="se">\</span>
+<span class="w">        </span>src/dbt/kipptaf/models/marts/dimensions/dim_assessment_targets.sql<span class="w"> </span><span class="se">\</span>
+<span class="w">        </span>src/dbt/kipptaf/models/marts/facts/fct_student_attendance_daily.sql<span class="w"> </span><span class="se">\</span>
+<span class="w">        </span>src/dbt/kipptaf/models/marts/facts/fct_student_attendance_interventions.sql<span class="w"> </span><span class="se">\</span>
+<span class="w">        </span>src/dbt/kipptaf/CLAUDE.md
+git<span class="w"> </span>commit<span class="w"> </span>-m<span class="w"> </span><span class="s2">&quot;feat(dbt): add stg_people__locations canonical-grain crosswalk with canonical region (#3633)&quot;</span>
+</code></pre></div>
+<hr />
+<h2 id="phase-2-per-domain-mart-changes">Phase 2 — Per-domain mart changes</h2>
+<p>Each task below applies the Procedure section once per listed model, using the
+inventory as the source of truth for specific rename targets, remove sets, and
+add derivations. One commit per domain; commit message template:</p>
+<div class="highlight"><pre><span></span><code>refactor(dbt): rename mart columns - &lt;Domain&gt; domain per #3643
+</code></pre></div>
+<p>Where per-domain notes below call out Group 3 deferrals, special type coercions,
+or coverage-gap exceptions, follow those exactly — the inventory on its own does
+not encode those qualifications.</p>
+<p>Recommended execution order: Conformed first (cross-cutting FKs land before
+downstream facts reference them), then IT / Course / Staffing as warm-up, then
+the medium domains, then Observation (model renames cascade via <code>ref()</code>), then
+Staff (largest). Completed tasks follow this order.</p>
+<h3 id="task-3-it-domain-1-model-fct_support_tickets">Task 3: IT domain (1 model — <code>fct_support_tickets</code>)</h3>
+<p><strong>Inventory counts:</strong> 9 renames, 1 remove.</p>
+<p><strong>Key changes:</strong></p>
+<ul class="task-list">
+<li>Rename pattern R4 on timestamps: <code>created_at</code>, <code>initially_assigned_at</code>,
+  <code>assignee_updated_at</code>, <code>solved_at</code> → <code>*_timestamp</code> suffix; <code>created_date</code> →
+  <code>ticket_created_date</code> for parallelism with <code>ticket_subject</code> / <code>ticket_url</code>.</li>
+<li>Rename pattern R2 on Zendesk jargon: <code>assignee_stations</code> →
+  <code>agent_reassignment_count</code>, <code>group_stations</code> → <code>group_reassignment_count</code>.</li>
+<li>Rename R6: <code>category</code> → <code>ticket_category</code>, <code>reply_time_in_minutes_business</code> →
+  <code>business_minutes_to_first_reply</code>.</li>
+<li>Remove <code>ticket_id</code> (R9 via <code>support_ticket_key</code>; its unique+not_null test is
+  redundant with the surrogate key's).</li>
+<li>
+<p>Description fix on <code>ticket_status</code>: current YAML description is a PowerSchool
+  copy-paste ("0=user-created, 3=auto-created"); replace with
+  <code>Zendesk ticket workflow status (closed, open, new, pending, solved).</code> and
+  delete the erroneous <code>config.meta</code> block.</p>
+</li>
+<li class="task-list-item">
+<p><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 1:</strong> Filter inventory for <code>model='fct_support_tickets'</code>.</p>
+</li>
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 2:</strong> Apply the Procedure to <code>fct_support_tickets</code>.</li>
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 3:</strong> <code>uv run dbt compile ... --select fct_support_tickets</code>.</li>
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 4:</strong> Commit.</li>
+</ul>
+<h3 id="task-4-course-domain-4-models">Task 4: Course domain (4 models)</h3>
+<p><strong>Models:</strong> <code>bridge_course_section_teachers</code>, <code>bridge_course_section_terms</code>,
+<code>dim_course_sections</code>, <code>dim_courses</code>.</p>
+<p><strong>Inventory counts:</strong> 7 renames, 5 removes.</p>
+<p><strong>Key changes:</strong></p>
+<ul class="task-list">
+<li><code>bridge_course_section_teachers</code>: effective-date SCD renames
+  (<code>effective_date_start</code> → <code>effective_start_date</code>, <code>effective_date_end</code> →
+  <code>effective_end_date</code>); remove <code>sections_dcid</code>, <code>employee_number</code>,
+  <code>teachernumber</code> (R9 via FK traversal). Update the
+  <code>unique_combination_of_columns</code> test to reference the renamed
+  <code>effective_start_date</code>.</li>
+<li><code>bridge_course_section_terms</code>: remove <code>sections_dcid</code>, <code>term_code</code> (R9).</li>
+<li><code>dim_course_sections</code>: rename <code>section_number</code> → <code>section_identifier</code> (R6,
+  Ed-Fi <code>edFi_gradeReference.sectionIdentifier</code>).</li>
+<li>
+<p><code>dim_courses</code>: rename <code>course_number</code> → <code>course_code</code>, <code>course_name</code> →
+  <code>course_title</code>, <code>discipline</code> → <code>academic_subject</code>, <code>credit_hours</code> → <code>credits</code>
+  (R6, all Ed-Fi cognates).</p>
+</li>
+<li class="task-list-item">
+<p><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 1:</strong> Filter inventory for <code>domain='Course'</code>.</p>
+</li>
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 2:</strong> Apply the Procedure to each of the 4 models.</li>
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 3:</strong>
+      <code>uv run dbt compile ... --select bridge_course_section_teachers bridge_course_section_terms dim_course_sections dim_courses</code>.</li>
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 4:</strong> Commit.</li>
+</ul>
+<h3 id="task-5-staffing-domain-1-model-dim_staffing_positions">Task 5: Staffing domain (1 model — <code>dim_staffing_positions</code>)</h3>
+<p><strong>Inventory counts:</strong> 5 renames, 7 removes.</p>
+<p><strong>Key changes + special cases:</strong></p>
+<ul>
+<li>Rename R2: <code>teammate_staff_key</code> → <code>incumbent_staff_key</code> (KIPP jargon);
+  description must be rewritten — existing copy still references "teammate" as
+  the column identity. Replace with:
+  <code>Foreign key to dim_staff for the incumbent (staff member filling the position). Surrogate key derived from the teammate employee number. Nullable — open positions have no incumbent.</code></li>
+<li>Rename R3 with type coercion: <code>plan_status</code> → <code>is_active</code> (string → boolean).
+  SQL:</li>
+</ul>
+<div class="highlight"><pre><span></span><code><span class="k">if</span><span class="p">(</span><span class="n">plan_status</span><span class="w"> </span><span class="k">in</span><span class="w"> </span><span class="p">(</span><span class="s1">&#39;Active&#39;</span><span class="p">,</span><span class="w"> </span><span class="s1">&#39;TRUE&#39;</span><span class="p">),</span><span class="w"> </span><span class="k">true</span><span class="p">,</span><span class="w"> </span><span class="k">false</span><span class="p">)</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">is_active</span><span class="p">,</span>
+</code></pre></div>
+<p>This matches the sibling <code>int_seat_tracker__snapshot</code> /
+  <code>stg_google_appsheet__seat_tracker__log_archive</code> pattern. YAML
+  <code>data_type: boolean</code>; description reads
+  <code>Whether this position is active in the staffing plan. True when plan_status is 'Active' or 'TRUE'; false otherwise (including 'Inactive' and null).</code></p>
+<ul class="task-list">
+<li>Rename R6: <code>job_title</code> → <code>position_title</code> (Ed-Fi
+  <code>openStaffPosition.position_title</code>).</li>
+<li>Rename R4: <code>effective_date_start</code> / <code>effective_date_end</code> →
+  <code>effective_start_date</code> / <code>effective_end_date</code>.</li>
+<li>Removes: <code>staffing_model_id</code> (plumbing); <code>entity</code>, <code>grade_band</code> (R9, blocked
+  cascade — accept traversal loss per spec Region cascade section);
+  <code>home_work_location_name</code>, <code>location_short_name</code>, <code>recruiter_employee_number</code>,
+  <code>teammate_employee_number</code> (R9 via FK).</li>
+<li>
+<p>Model-level description rewrite: existing enumerates removed/renamed columns
+  (<code>entity</code>, <code>grade_band</code>, <code>plan status</code>, <code>job title</code>, <code>teammate</code>). Replace to
+  reflect new identities.</p>
+</li>
+<li class="task-list-item">
+<p><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 1:</strong> Filter inventory for <code>model='dim_staffing_positions'</code>.</p>
+</li>
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 2:</strong> Apply the Procedure with special cases above.</li>
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 3:</strong> <code>uv run dbt compile ... --select dim_staffing_positions</code>.</li>
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 4:</strong> Commit.</li>
+</ul>
+<h3 id="task-6-talent-domain-3-models">Task 6: Talent domain (3 models)</h3>
+<p><strong>Models:</strong> <code>dim_job_candidates</code>, <code>dim_job_postings</code>,
+<code>fct_job_candidate_applications</code>.</p>
+<p><strong>Inventory counts:</strong> 24 renames, 26 removes, 1 add.</p>
+<p><strong>Key changes + special cases:</strong></p>
+<ul class="task-list">
+<li><code>dim_job_candidates</code>: 4 R6 renames stripping <code>candidate_</code> prefix
+  (<code>candidate_first_name</code> → <code>first_name</code>, etc.); 4 plumbing removes.</li>
+<li><code>dim_job_postings</code>: 5 R6 renames (<code>job_title</code> → <code>position_title</code>,
+  <code>department_internal</code> → <code>department_name</code>, <code>department_org_field_value</code> →
+  <code>organizational_hierarchy</code>, etc.). The surrogate-key macro
+  <code>generate_surrogate_key(["job_title", "department_internal", "job_city"])</code>
+  references CTE-internal column names — do NOT change the macro input.</li>
+<li><code>fct_job_candidate_applications</code>: 15 renames (11 R4 <code>_datetime</code> →
+  <code>_timestamp</code>, <code>source</code> → <code>application_source</code>, others); 22 plumbing/R9
+  removes; 1 structural add <code>shared_with_location_key</code>.</li>
+<li>
+<p><strong>R4 type coercion</strong> on <code>application_status_interview_performance_task_date</code>
+    → <code>application_status_interview_performance_task_timestamp</code>: upstream is
+    string; coerce at the mart layer (minimize blast radius vs. staging edit):</p>
+<div class="highlight"><pre><span></span><code><span class="n">safe_cast</span><span class="p">(</span>
+<span class="w">    </span><span class="n">application_status_interview_performance_task_date</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="k">timestamp</span>
+<span class="p">)</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">application_status_interview_performance_task_timestamp</span><span class="p">,</span>
+</code></pre></div>
+<p>YAML <code>data_type: timestamp</code>. <code>safe_cast</code> (not <code>cast</code>) so malformed strings
+produce NULL rather than failing the model.</p>
+</li>
+<li>
+<p><strong>Structural add</strong> <code>shared_with_location_key</code>: FK to <code>dim_locations</code> via
+    <code>generate_surrogate_key(["school_shared_with"])</code> wrapped for nullability
+    (<code>school_shared_with</code> is nullable). <code>dim_locations.location_key</code> hashes
+    <code>location_name</code>; <code>school_shared_with</code> holds school-name strings, so hashes
+    align for matched rows.</p>
+</li>
+<li><strong>Coverage-gap exception</strong> on <code>shared_with_location_key</code>: ~20% of rows carry
+    <code>school_shared_with</code> values that don't exist in
+    <code>dim_locations.location_name</code> (notably <code>KIPP High School</code>). Ship the
+    <code>relationships</code> test at <code>severity: warn</code> with a TODO referencing
+    <a href="https://github.com/TEAMSchools/teamster/issues/3672">#3672</a>. See the
+    Procedure's "Coverage-gap exception" section for the YAML shape.</li>
+<li>
+<p>Model-level description update: current enumerates <code>dim_job_candidates</code> and
+    <code>dim_job_postings</code> FKs; add <code>dim_locations</code> after the structural add.</p>
+</li>
+<li class="task-list-item">
+<p><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 1:</strong> Filter inventory for <code>domain='Talent'</code>.</p>
+</li>
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 2:</strong> Apply the Procedure with special cases above.</li>
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 3:</strong>
+      <code>uv run dbt compile ... --select dim_job_candidates dim_job_postings fct_job_candidate_applications</code>.</li>
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 4:</strong> Commit.</li>
+</ul>
+<h3 id="task-7-survey-domain-7-models">Task 7: Survey domain (7 models)</h3>
+<p><strong>Models:</strong> <code>bridge_survey_questions</code>, <code>dim_survey_administrations</code>,
+<code>dim_survey_expectations</code>, <code>dim_survey_questions</code>, <code>dim_surveys</code>,
+<code>fct_survey_responses</code>, <code>fct_survey_submissions</code>.</p>
+<p><strong>Inventory counts:</strong> 5 renames, 11 removes.</p>
+<p><strong>Key changes:</strong></p>
+<ul class="task-list">
+<li><code>dim_surveys.subject_area</code> → <code>category</code> (R6);
+  <code>dim_survey_expectations.respondent_population</code> → <code>respondent_type</code> (R6);
+  <code>fct_survey_submissions.respondent_population</code> → <code>respondent_type</code> (R6);
+  <code>dim_survey_administrations.response_deadline</code> → <code>response_deadline_date</code>
+  (R4); <code>fct_survey_submissions.date_submitted</code> → <code>submission_timestamp</code> (R4 —
+  upstream <code>int_surveys__survey_responses</code> already emits <code>timestamp</code>, so this is
+  an alias rename with YAML <code>data_type</code> sanity check, no cast).</li>
+<li><code>dim_survey_administrations</code> removes <code>survey_id</code>, <code>survey_name</code>, <code>term_code</code>,
+  <code>term_name</code> (R9). The downstream <code>dim_survey_expectations</code> previously joined
+  to pick up <code>survey_name</code> from administrations; this task adds an inner-join to
+  <code>dim_surveys</code> so <code>survey_name</code> is sourced directly via <code>survey_key</code>.
+  <code>dim_surveys.survey_key</code> is unique, so the join cannot fan out.</li>
+<li>
+<p>Other removes: <code>fct_survey_responses.question_shortname</code>,
+  <code>survey_response_id</code>, <code>survey_id</code> (all R9 / plumbing).</p>
+</li>
+<li class="task-list-item">
+<p><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 1:</strong> Filter inventory for <code>domain='Survey'</code>.</p>
+</li>
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 2:</strong> Apply the Procedure to each of the 7 models. Ensure the
+      <code>dim_survey_expectations</code> CTE refactor preserves semantics.</li>
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 3:</strong>
+      <code>uv run dbt compile ... --select bridge_survey_questions dim_survey_administrations dim_survey_expectations dim_survey_questions dim_surveys fct_survey_responses fct_survey_submissions</code>.</li>
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 4:</strong> Commit.</li>
+</ul>
+<h3 id="task-8-college-domain-2-models">Task 8: College domain (2 models)</h3>
+<p><strong>Models:</strong> <code>dim_college_enrollments</code>, <code>dim_colleges</code>.</p>
+<p><strong>Inventory counts:</strong> 3 renames, 4 removes.</p>
+<p><strong>Key changes:</strong></p>
+<ul class="task-list">
+<li><code>dim_colleges</code>: <code>college_state</code> → <code>state_abbreviation</code> (R6);
+  <code>is_strong_oos_option</code> → <code>is_strong_out_of_state_option</code> (R7, spell out
+  <code>oos</code>); <code>selectivity</code> → <code>selectivity_tier</code> (R6); remove <code>two_year_four_year</code>
+  (plumbing — dead in production; redundant with <code>account_type</code>). Upstream CTEs
+  may reference <code>two_year_four_year</code> only to feed the removed column — clean up
+  the dead derivation.</li>
+<li>
+<p><code>dim_college_enrollments</code>: remove <code>student_number</code>, <code>college_code_branch</code> (R9
+  via FK); <code>degree_pursued</code> (plumbing — no upstream source). The upstream
+  <code>degree_pursued</code> aggregation (<code>max()</code>) in a CTE becomes dead — remove it.</p>
+</li>
+<li class="task-list-item">
+<p><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 1:</strong> Filter inventory for <code>domain='College'</code>.</p>
+</li>
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 2:</strong> Apply the Procedure to both models, cleaning dead upstream
+      derivations.</li>
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 3:</strong>
+      <code>uv run dbt compile ... --select dim_college_enrollments dim_colleges</code>.</li>
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 4:</strong> Commit.</li>
+</ul>
+<h3 id="task-9-attendance-domain-4-models">Task 9: Attendance domain (4 models)</h3>
+<p><strong>Models:</strong> <code>dim_student_attendance_intervention_types</code>,
+<code>fct_student_attendance_daily</code>, <code>fct_student_attendance_interventions</code>,
+<code>fct_student_attendance_streaks</code>.</p>
+<p><strong>Inventory counts:</strong> 6 renames, 12 removes, 2 adds.</p>
+<p><strong>Key changes + special cases:</strong></p>
+<ul class="task-list">
+<li><code>dim_student_attendance_intervention_types</code>: <code>commlog_reason</code> →
+  <code>family_communication_reason</code> (R2, DeansList jargon); remove <code>region</code> (R9);
+  add <code>region_key</code> FK to <code>dim_regions</code>. The derivation hashes the canonical
+  region value (from <code>stg_people__locations</code> lookup post-Phase-1) so hashes
+  match <code>dim_regions.region_key</code>.</li>
+<li><code>fct_student_attendance_daily</code>:</li>
+<li>
+<p><strong>R3 type coercions on 6 countable flags:</strong> <code>is_absent</code>, <code>is_tardy</code>,
+    <code>is_ontime</code>, <code>is_oss</code>, <code>is_iss</code>, <code>is_suspended</code> — float → int64:</p>
+<div class="highlight"><pre><span></span><code><span class="k">cast</span><span class="p">(</span><span class="n">is_absent</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">int64</span><span class="p">)</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">is_absent</span><span class="p">,</span>
+</code></pre></div>
+<p>Update each YAML <code>data_type: float64</code> → <code>int64</code>. These are <code>keep</code> actions in
+the inventory (no name change) — the coercion is a type-only change per the
+updated R3 rule.</p>
+</li>
+<li>
+<p>Rename <code>is_present_weighted</code> → <code>present_weight</code> (R3, <strong>keep float64</strong> — this
+    is the genuinely-fractional weight column).</p>
+</li>
+<li>Rename <code>term</code> → <code>term_code</code> (R6).</li>
+<li>
+<p>Remove <code>student_number</code> (R9).</p>
+</li>
+<li>
+<p><code>fct_student_attendance_interventions</code>:</p>
+</li>
+<li>
+<p>Rename <code>intervention_status</code> → <code>is_complete</code> (R3, string → boolean cast):</p>
+<div class="highlight"><pre><span></span><code><span class="k">case</span><span class="w"> </span><span class="n">intervention_status</span>
+<span class="w">    </span><span class="k">when</span><span class="w"> </span><span class="s1">&#39;Complete&#39;</span><span class="w"> </span><span class="k">then</span><span class="w"> </span><span class="k">true</span>
+<span class="w">    </span><span class="k">when</span><span class="w"> </span><span class="s1">&#39;Incomplete&#39;</span><span class="w"> </span><span class="k">then</span><span class="w"> </span><span class="k">false</span>
+<span class="k">end</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">is_complete</span><span class="p">,</span>
+</code></pre></div>
+<p>Read the actual string enum values first and adjust the case arms to match
+production data. YAML <code>data_type: boolean</code>; description updated to reflect
+boolean semantics.</p>
+</li>
+<li>
+<p>Rename <code>is_ca_exception</code> → <code>is_chronic_absence_exception</code> (R2).</p>
+</li>
+<li>Remove 7 <code>commlog_*</code> columns (R9 via new <code>family_communication_key</code>) and
+    <code>intervention_status_required_int</code> (plumbing — redundant).</li>
+<li>
+<p>Add <code>family_communication_key</code> FK: derive via
+    <code>generate_surrogate_key([&lt;upstream commlog_id&gt;])</code>, matching whatever
+    <code>fct_family_communications.family_communication_key</code> hashes. Check that
+    model's SQL to identify the input column. Wrap for nullability.</p>
+</li>
+<li>
+<p><code>fct_student_attendance_streaks</code>: rename <code>streak_type</code> → <code>attendance_code</code>
+  (R6); remove <code>student_number</code> (R9).</p>
+</li>
+<li class="task-list-item">
+<p><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 1:</strong> Filter inventory for <code>domain='Attendance'</code>.</p>
+</li>
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 2:</strong> Apply the Procedure plus the type coercions and FK adds.</li>
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 3:</strong>
+      <code>uv run dbt compile ... --select dim_student_attendance_intervention_types fct_student_attendance_daily fct_student_attendance_interventions fct_student_attendance_streaks</code>.</li>
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 4:</strong> Commit.</li>
+</ul>
+<h3 id="task-10-conformed-domain-5-models-cross-cutting">Task 10: Conformed domain (5 models, cross-cutting)</h3>
+<p><strong>Models:</strong> <code>dim_dates</code>, <code>dim_locations</code>, <code>dim_regions</code>, <code>dim_school_calendars</code>,
+<code>dim_terms</code>.</p>
+<p><strong>Inventory counts:</strong> 6 renames, 7 removes, 7 adds. <strong>4 of the 7 adds are Group
+3 deferrals</strong> (dim_locations address unification) — skip them.</p>
+<p><strong>In-scope changes (6 renames, 7 removes, 3 adds):</strong></p>
+<ul class="task-list">
+<li><code>dim_dates</code>: 4 R6/R4 renames (<code>week_start_date</code> → <code>calendar_week_start_date</code>,
+  <code>week_end_date</code> → <code>calendar_week_end_date</code>, <code>week_start_monday</code> →
+  <code>school_week_start_date</code>, <code>week_end_sunday</code> → <code>school_week_end_date</code>).</li>
+<li><code>dim_regions</code>: rename <code>region</code> → <code>region_name</code> (R6). The <code>region_key</code>
+  surrogate hashes the upstream <code>region</code> value; that value is unchanged, so the
+  hash is byte-identical. Do NOT change the <code>generate_surrogate_key(["region"])</code>
+  input.</li>
+<li><code>dim_locations</code>:</li>
+<li>Remove <code>region</code> (R9 via new <code>region_key</code>), <code>powerschool_school_id</code>
+    (plumbing), <code>deanslist_school_id</code> (plumbing).</li>
+<li>
+<p>Add <code>region_key</code> FK (Group 1/2 structural add). Derivation:</p>
+<div class="highlight"><pre><span></span><code><span class="k">if</span><span class="p">(</span>
+<span class="w">    </span><span class="n">region</span><span class="w"> </span><span class="k">is</span><span class="w"> </span><span class="k">not</span><span class="w"> </span><span class="k">null</span><span class="p">,</span>
+<span class="w">    </span><span class="err">{{</span><span class="w"> </span><span class="n">dbt_utils</span><span class="p">.</span><span class="n">generate_surrogate_key</span><span class="p">([</span><span class="ss">&quot;region&quot;</span><span class="p">])</span><span class="w"> </span><span class="err">}}</span><span class="p">,</span>
+<span class="w">    </span><span class="k">cast</span><span class="p">(</span><span class="k">null</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">string</span><span class="p">)</span>
+<span class="p">)</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">region_key</span><span class="p">,</span>
+</code></pre></div>
+<p>The <code>region</code> input is now the canonical region from the Phase-1 staging fix
+— hashes match <code>dim_regions.region_key</code>.</p>
+</li>
+<li>
+<p><strong>DEFERRED</strong> (inventory rows 889–892, Group 3): <code>address_line_one</code>,
+    <code>address_line_two</code>, <code>city</code>, <code>postal_code</code> adds. Do NOT apply.</p>
+</li>
+<li>
+<p><code>dim_terms</code>:</p>
+</li>
+<li>Remove <code>region</code>, <code>school_id</code> (R9 via new FKs); <code>powerschool_year_id</code>,
+    <code>powerschool_term_id</code> (plumbing).</li>
+<li>Add <code>region_key</code>, <code>location_key</code> FKs. Derive both via a CTE that joins to
+    <code>stg_people__locations</code> on
+    <code>dim_terms.school_id = stg_people__locations.powerschool_school_id</code> (filter
+    <code>not is_pathways and location_name &lt;&gt; 'KIPP Whittier Elementary'</code> to match
+    <code>dim_locations</code> dedup). The resulting <code>location_name</code> and <code>region</code> become
+    the hash inputs for the two FKs, matching the parent dims' derivations.</li>
+<li><code>term_key</code> surrogate-key input stays
+    <code>["type", "code", "name", "start_date", "region", "school_id"]</code> (with
+    reserved-word backticks where needed) — the raw <code>region</code> / <code>school_id</code>
+    upstream values still exist in the source CTE; hash stable.</li>
+<li>Rename <code>lockbox_date</code> → <code>data_freeze_date</code> (R2, KIPP jargon).</li>
+<li>
+<p><code>dim_school_calendars</code>: no changes per inventory (all <code>keep</code>). Include in the
+  verification <code>--select</code> to confirm no cascade breakage.</p>
+</li>
+<li class="task-list-item">
+<p><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 1:</strong> Filter inventory for <code>domain='Conformed'</code>.</p>
+</li>
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 2:</strong> Apply the Procedure per model, skipping the 4 deferred
+      <code>dim_locations</code> address adds. Confirm <code>dim_terms</code> uniqueness
+      (<code>count(*) = count(distinct term_key)</code>) after adding the lookup join.</li>
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 3:</strong>
+      <code>uv run dbt compile ... --select dim_dates dim_locations dim_regions dim_school_calendars dim_terms</code>;
+      also run full-project compile to confirm no cascade breakage.</li>
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 4:</strong> Commit.</li>
+</ul>
+<h3 id="task-11-behavioral-domain-3-models">Task 11: Behavioral domain (3 models)</h3>
+<p><strong>Models:</strong> <code>fct_behavioral_consequences</code>, <code>fct_behavioral_incidents</code>,
+<code>fct_family_communications</code>.</p>
+<p><strong>Inventory counts:</strong> 5 renames, 9 removes, 2 adds.</p>
+<p><strong>Key changes + special cases:</strong></p>
+<ul class="task-list">
+<li><code>fct_behavioral_consequences</code>: <code>num_days</code> → <code>days_assigned</code>, <code>num_periods</code> →
+  <code>periods_assigned</code> (R6); remove <code>incident_id</code>, <code>incident_penalty_id</code>
+  (plumbing).</li>
+<li><code>fct_behavioral_incidents</code>:</li>
+<li>Rename <code>infraction</code> → <code>infraction_description</code> (R6).</li>
+<li>Remove <code>student_number</code>, <code>incident_id</code> (plumbing), <code>referring_staff_name</code>,
+    <code>referring_staff_id</code> (R9 via new FK).</li>
+<li>Add <code>referring_staff_key</code> FK to <code>dim_staff</code>. DeansList has no direct
+    <code>employee_number</code> crosswalk, so derive via the only available bridge:
+    <code>stg_deanslist__users</code> (on <code>dl_user_id</code>) → <code>email</code> →
+    <code>int_people__staff_roster</code> (on <code>work_email</code>) → <code>employee_number</code> →
+    <code>generate_surrogate_key(["sr.employee_number"])</code>. Both joins are LEFT so
+    unmatched fact rows are preserved. <code>int_people__staff_roster</code> is unique per
+    <code>employee_number</code> (verified in its YAML); no fan-out.</li>
+<li>Model-level description update: current version claims "no employee_number
+    available from DeansList" — this task adds that resolution. Update to
+    describe the FK resolution via email lookup.</li>
+<li><code>fct_family_communications</code>:</li>
+<li>Rename <code>status</code> → <code>communication_outcome</code> (R6); <code>communication_datetime</code> →
+    <code>communication_timestamp</code> (R4).</li>
+<li>Remove <code>student_number</code>, <code>record_id</code> (plumbing), <code>staff_name</code> (R9 via new
+    FK).</li>
+<li>
+<p>Add <code>staff_key</code> FK to <code>dim_staff</code>. Same DeansList-email resolution as above.</p>
+</li>
+<li class="task-list-item">
+<p><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 1:</strong> Filter inventory for <code>domain='Behavioral'</code>.</p>
+</li>
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 2:</strong> Apply the Procedure with FK adds via the email-lookup chain;
+      update the <code>fct_behavioral_incidents</code> model-level description.</li>
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 3:</strong>
+      <code>uv run dbt compile ... --select fct_behavioral_consequences fct_behavioral_incidents fct_family_communications</code>.</li>
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 4:</strong> Commit.</li>
+</ul>
+<h3 id="task-12-student-domain-5-models">Task 12: Student domain (5 models)</h3>
+<p><strong>Models:</strong> <code>bridge_student_contacts</code>, <code>dim_student_contact_persons</code>,
+<code>dim_student_enrollments</code>, <code>dim_student_section_enrollments</code>, <code>dim_students</code>.</p>
+<p><strong>Inventory counts:</strong> 8 renames, 5 removes, 2 adds.</p>
+<p><strong>Key changes + special cases:</strong></p>
+<ul class="task-list">
+<li><code>bridge_student_contacts</code>: remove <code>student_number</code> (R9).</li>
+<li><code>dim_student_contact_persons</code>: remove <code>_dbt_source_relation</code>,
+  <code>powerschool_person_id</code> (plumbing); rename <code>address</code> → <code>home_address</code> (R6).
+  <code>email</code> and <code>phone</code> are flagged as 100%-null model bugs in the spec — <strong>KEEP</strong>
+  them both; do not remove. The primary-key description should reference the
+  upstream <code>personid</code> column (not the removed <code>powerschool_person_id</code>).</li>
+<li><code>dim_student_enrollments</code>: remove <code>school_level</code> (R9 via location_key); rename
+  <code>enroll_status</code> → <code>enrollment_status</code> (R1, spell out).</li>
+<li><code>dim_student_section_enrollments</code>: remove <code>student_number</code> (R9); rename
+  <code>date_enrolled</code> → <code>entry_date</code> (R4), <code>date_left</code> → <code>exit_date</code> (R4).</li>
+<li><code>dim_students</code>:</li>
+<li>Renames: <code>local_student_identifier</code> → <code>lea_student_identifier</code> (R6,
+    KIPP-as-LEA perspective; <strong>must have <code>not_null</code> test per spec</strong> — see spec
+    "Structural additions" line 128); <code>gender</code> → <code>gender_identity</code> (R1);
+    <code>lunch_status</code> → <code>meal_eligibility_status</code> (R6); <code>ethnicity</code> → <code>race</code> (R1).
+    The <code>race</code> description must NOT claim Hispanic ethnicity is separated into
+    <code>is_hispanic</code> — no such column exists on <code>dim_students</code> (the inventory's
+    reviewer_notes on that row were inaccurate).</li>
+<li>
+<p>Structural adds (per spec lines 117–145 — four-ID model):</p>
+<ul>
+<li><code>district_student_identifier</code> (<strong><code>data_type: string</code></strong> — upstream
+  <code>int_extracts__student_enrollments.secondary_state_studentnumber</code> is
+  string). Host-district identifier: MDCPS for Miami; NULL for NJ regions
+  where the host-district ID is not surfaced upstream. Generalizes the
+  previously Miami-only concept.</li>
+<li><code>salesforce_contact_id</code> (<code>data_type: string</code>). KIPPADB Salesforce contact
+  ID; sourced from upstream <code>salesforce_id</code> alias.</li>
+</ul>
+</li>
+<li class="task-list-item">
+<p><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 1:</strong> Filter inventory for <code>domain='Student'</code>; read spec lines
+      117–180 for the multi-ID structural additions.</p>
+</li>
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 2:</strong> Apply the Procedure per model. Confirm
+      <code>lea_student_identifier</code> carries <code>not_null</code>; <code>district_student_identifier</code>
+      is <code>string</code>.</li>
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 3:</strong>
+      <code>uv run dbt compile ... --select bridge_student_contacts dim_student_contact_persons dim_student_enrollments dim_student_section_enrollments dim_students</code>.</li>
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 4:</strong> Commit.</li>
+</ul>
+<h3 id="task-13-gradebook-domain-4-models">Task 13: Gradebook domain (4 models)</h3>
+<p><strong>Models:</strong> <code>fct_grades_assignments</code>, <code>fct_grades_category</code>, <code>fct_grades_gpa</code>,
+<code>fct_grades_term</code>.</p>
+<p><strong>Inventory counts:</strong> 7 renames, 9 removes, 2 adds. <strong>Group 3 score-split
+deferred:</strong> skip 2 removes (<code>score</code>, <code>score_type</code>) and 2 adds (<code>points_earned</code>,
+<code>numeric_grade_earned</code>) on <code>fct_grades_assignments</code>.</p>
+<p><strong>In-scope changes (7 renames, 7 removes, 0 adds):</strong></p>
+<ul>
+<li><code>fct_grades_assignments</code>: <code>points_possible</code> → <code>max_points</code> (R6, Ed-Fi); remove
+  <code>student_number</code> (R9). <strong>Deferred:</strong> keep <code>score</code>, <code>score_type</code>; do not add
+  <code>points_earned</code>, <code>numeric_grade_earned</code>.</li>
+<li><code>fct_grades_category</code>: remove <code>student_number</code>, <code>term_code</code> (R9).</li>
+<li><code>fct_grades_gpa</code>: rename 3 R6 (<code>cumulative_y1_gpa</code> → <code>cumulative_gpa</code>,
+  <code>cumulative_y1_gpa_unweighted</code> → <code>cumulative_gpa_unweighted</code>,
+  <code>cumulative_y1_gpa_projected</code> → <code>cumulative_gpa_projected</code>); remove
+  <code>student_number</code>, <code>term_name</code> (R9).</li>
+<li><code>fct_grades_term</code>: rename R1/R6 (<code>citizenship</code> → <code>citizenship_grade</code>,
+  <code>grade_points</code> → <code>grade_points_earned</code>); rename R3 with type coercion
+  <code>exclude_from_gpa</code> → <code>is_excluded_from_gpa</code> (int64 0/1 → boolean):</li>
+</ul>
+<div class="highlight"><pre><span></span><code><span class="k">cast</span><span class="p">(</span><span class="n">exclude_from_gpa</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">bool</span><span class="p">)</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">is_excluded_from_gpa</span><span class="p">,</span>
+</code></pre></div>
+<p>YAML <code>data_type: boolean</code>. Remove <code>student_number</code>, <code>term_code</code> (R9).</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 1:</strong> Filter inventory for <code>domain='Gradebook'</code>; skip the 4 deferred
+      rows.</li>
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 2:</strong> Apply the Procedure with the int → bool cast.</li>
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 3:</strong>
+      <code>uv run dbt compile ... --select fct_grades_assignments fct_grades_category fct_grades_gpa fct_grades_term</code>.</li>
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 4:</strong> Commit.</li>
+</ul>
+<h3 id="task-14-observation-domain-8-models-includes-model-renames">Task 14: Observation domain (8 models, includes model renames)</h3>
+<p><strong>Models:</strong> <code>dim_staff_observation_expectations</code>,
+<code>dim_staff_observation_microgoal_types</code>,
+<code>dim_staff_observation_rubric_measurements</code>, <code>dim_staff_observation_rubrics</code>,
+<code>dim_staff_observation_types</code>, <code>fct_staff_observation_microgoals</code>,
+<code>fct_staff_observation_scores</code>, <code>fct_staff_observations</code>.</p>
+<p><strong>Inventory counts:</strong> 19 renames, 36 removes, 2 adds.</p>
+<p><strong>Model renames (spec lines 147–158):</strong> two models carry KIPP <code>microgoal</code> jargon
+and get renamed:</p>
+<table>
+<thead>
+<tr>
+<th>Current</th>
+<th>Renamed</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>dim_staff_observation_microgoal_types</code></td>
+<td><code>dim_staff_observation_goal_types</code></td>
+</tr>
+<tr>
+<td><code>fct_staff_observation_microgoals</code></td>
+<td><code>fct_staff_observation_goals</code></td>
+</tr>
+</tbody>
+</table>
+<p>All <code>*_microgoal_*</code> column renames in the inventory derive from these model
+renames — once the models are renamed, column renames follow naturally without
+needing per-column edits.</p>
+<p>Cascading changes:</p>
+<ul>
+<li>Rename the <code>.sql</code> file and its <code>properties/&lt;name&gt;.yml</code> file.</li>
+<li>Update every <code>ref()</code> to the old model names in the repo (use
+  <code>grep -rn "fct_staff_observation_microgoals\|dim_staff_observation_microgoal_types" src/dbt/kipptaf/</code>).</li>
+<li>Check <code>dbt_project.yml</code> for any explicit per-model configuration at the old
+  names.</li>
+</ul>
+<p><strong>Other key changes:</strong></p>
+<ul>
+<li><code>fct_staff_observations</code>:</li>
+<li>Rename <code>glows</code> → <code>positive_feedback</code> (R2, KIPP jargon); <code>grows</code> →
+    <code>growth_areas</code> (R2).</li>
+<li>Keep <code>observation_score</code>.</li>
+<li>Remove <code>eval_date</code>, <code>assignment_status</code>, <code>term_type</code>, <code>term_code</code>,
+    <code>term_name</code>, <code>term_start_date</code>, <code>term_end_date</code> (R9 via <code>term_key</code>).</li>
+<li>Add <code>staff_observation_type_key</code> and <code>staff_observation_rubric_key</code> FKs.</li>
+<li><code>dim_staff_observation_rubric_measurements</code>: remove <code>measurement_row_style</code>
+  (plumbing).</li>
+<li><code>dim_staff_observation_rubrics</code>: remove <code>district</code> (plumbing).</li>
+</ul>
+<p><strong>Execution order:</strong> apply model renames first (they affect file paths and
+refs); then per-model column changes.</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 1:</strong> Filter inventory for <code>domain='Observation'</code>.</li>
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 2:</strong> Rename the two model files + YAMLs; grep and update all
+      <code>ref()</code> calls in the project; then apply the Procedure per model.</li>
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 3:</strong>
+      <code>uv run dbt compile ... --select dim_staff_observation_expectations dim_staff_observation_goal_types dim_staff_observation_rubric_measurements dim_staff_observation_rubrics dim_staff_observation_types fct_staff_observation_goals fct_staff_observation_scores fct_staff_observations</code>.</li>
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 4:</strong> Commit.</li>
+</ul>
+<h3 id="task-15-assessment-domain-6-models">Task 15: Assessment domain (6 models)</h3>
+<p><strong>Models:</strong> <code>dim_assessment_comparisons</code>, <code>dim_assessment_targets</code>,
+<code>dim_assessments</code>, <code>dim_student_assessment_expectations</code>,
+<code>fct_assessment_scores_enrollment_scoped</code>,
+<code>fct_assessment_scores_student_scoped</code>.</p>
+<p><strong>Inventory counts:</strong> 10 renames, 24 removes, 4 adds.</p>
+<p><strong>Key changes + special cases:</strong></p>
+<ul class="task-list">
+<li><code>dim_assessments</code>:</li>
+<li>Rename <code>title</code> → <code>assessment_title</code>, <code>subject_area</code> → <code>academic_subject</code>,
+    <code>scope</code> → <code>assessment_category</code> (all R6). <strong>Coexistence flag:</strong>
+    <code>dim_assessments</code> also has an existing <code>assessment_scope</code> column per spec
+    "Structural follow-ups — <code>dim_assessments</code> scope vs assessment_scope
+    untangling". Keep both — the rename produces <code>assessment_category</code>
+    (internal/state/college grouping), while <code>assessment_scope</code> (values
+    "enrollment" etc.) remains its own column. Verify they're semantically
+    distinct during execution.</li>
+<li>Structural adds: <code>combined_academic_subject</code>, <code>aligned_academic_subject</code>,
+    <code>credit_category</code>. Determine upstream sources from <code>dim_assessments.sql</code> and
+    any relevant staging/intermediate models before implementing; if any of the
+    three lack clear upstream sources, flag BLOCKED.</li>
+<li><code>dim_assessment_targets</code>: rename <code>illuminate_subject_area</code> →
+  <code>academic_subject</code> (R1); remove <code>school_level</code>, <code>region</code> (R9).</li>
+<li><code>dim_student_assessment_expectations</code>: rename <code>administered_at</code> →
+  <code>administered_date</code> (R4 — verify upstream is actually a date-typed column
+  despite the <code>_at</code> suffix; if it's a timestamp, treat as R4 timestamp rename
+  instead); rename <code>scope</code> → <code>assessment_category</code> (R6); remove 8 columns
+  (R9/plumbing); add <code>student_key</code> FK to <code>dim_students</code> (match its hash
+  derivation).</li>
+<li><code>fct_assessment_scores_enrollment_scoped</code>: rename <code>scope</code> →
+  <code>assessment_category</code>, <code>score_source</code> → <code>score_provider</code> (R6); remove 6
+  columns (R9/plumbing).</li>
+<li><code>fct_assessment_scores_student_scoped</code>: rename <code>rn_highest</code> → <code>score_rank</code>
+  (R1), <code>score_source</code> → <code>score_provider</code> (R1); remove 8 columns
+  (<code>student_number</code>, <code>assessment_scope</code>, <code>subject_area</code>, <code>percent_correct</code>,
+  <code>course_discipline</code>, <code>aligned_subject_area</code>, <code>aligned_subject</code>).</li>
+<li>
+<p><code>dim_assessment_comparisons</code>: remove <code>region</code> (R9).</p>
+</li>
+<li class="task-list-item">
+<p><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 1:</strong> Filter inventory for <code>domain='Assessment'</code>.</p>
+</li>
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 2:</strong> Apply the Procedure per model. Handle the three
+      <code>dim_assessments</code> structural adds carefully; verify the <code>assessment_scope</code>
+      / <code>assessment_category</code> coexistence.</li>
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 3:</strong>
+      <code>uv run dbt compile ... --select dim_assessment_comparisons dim_assessment_targets dim_assessments dim_student_assessment_expectations fct_assessment_scores_enrollment_scoped fct_assessment_scores_student_scoped</code>.</li>
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 4:</strong> Commit.</li>
+</ul>
+<h3 id="task-16-staff-domain-14-models-largest">Task 16: Staff domain (14 models, largest)</h3>
+<p><strong>Models:</strong> <code>dim_staff</code>, <code>dim_staff_status</code>, <code>dim_staff_work_assignments</code>,
+<code>dim_work_assignment_jobs</code>, <code>dim_work_assignment_locations</code>,
+<code>dim_work_assignment_organizational_units</code>,
+<code>dim_work_assignment_reporting_relationships</code>, <code>dim_work_assignment_status</code>,
+<code>dim_work_assignment_types</code>, <code>fct_staff_attrition</code>,
+<code>fct_staff_benefits_enrollments</code>, <code>fct_staff_membership_enrollments</code>,
+<code>fct_work_assignment_additional_earnings</code>, <code>fct_work_assignment_compensation</code>.</p>
+<p><strong>Inventory counts:</strong> 54 renames, 24 removes, 3 adds. Largest domain — consider
+splitting the commit into two if the diff is unreviewably large: <code>dim_staff</code> +
+<code>dim_staff_work_assignments</code> first, then the SCD2 dims + facts. Same commit
+message; append <code>(part 1/2)</code> / <code>(part 2/2)</code> if split.</p>
+<p><strong>Group 3 deferrals</strong> on <code>dim_work_assignment_locations</code>: do NOT remove the 8
+address columns, do NOT add <code>location_key</code>. Apply only the 3 SCD-date renames
+(<code>effective_date_start</code> → <code>effective_start_date</code>, etc.) and <code>is_current_record</code>
+→ <code>is_current</code>.</p>
+<p><strong>Key in-scope changes:</strong></p>
+<ul class="task-list">
+<li><code>dim_staff</code>:</li>
+<li>Rename <code>employee_number</code> → <code>staff_unique_id</code> (R6, Ed-Fi exact match);
+    <code>formatted_name</code> → <code>full_name</code> (R6, drop ADP jargon); <code>given_name</code> →
+    <code>first_name</code> (R6); <code>family_name_1</code> → <code>last_name</code> (R6);
+    <code>race_ethnicity_reporting</code> → <code>race</code> (R6); <code>personal_cell</code> →
+    <code>personal_cell_phone</code> (R6, parallel with <code>work_email</code>); <code>sam_account_name</code> →
+    <code>active_directory_username</code> (R1, drop Microsoft SAM legacy term).</li>
+<li>Type note on <code>staff_unique_id</code>: stays <code>int64</code>.
+    <code>dbt_utils.generate_surrogate_key</code> stringifies inputs — no hash change.</li>
+<li><code>dim_staff_work_assignments</code>:</li>
+<li>12 renames incl. 7 <code>*_code__code_value</code> / <code>*_name</code> ADP-structure flattenings
+    (see inventory <code>reviewer_notes</code>); 4 <code>worker_time_profile__*</code> renames;
+    <code>time_and_attendance_indicator</code> → <code>is_time_and_attendance_active</code>;
+    <code>full_time_equivalence_ratio</code> → <code>full_time_equivalency</code>.</li>
+<li>Remove 6 columns.</li>
+<li>Add <code>time_service_supervisor_staff_key</code> FK to <code>dim_staff</code>.</li>
+<li>All SCD2 dims uniform renames: <code>effective_date_start</code> →
+  <code>effective_start_date</code>, <code>effective_date_end</code> → <code>effective_end_date</code>,
+  <code>is_current_record</code> → <code>is_current</code>.</li>
+<li><code>dim_work_assignment_jobs</code>: <code>job_title</code> → <code>position_title</code>; <code>job_code_name</code> →
+  <code>job_code_description</code>.</li>
+<li><code>dim_work_assignment_reporting_relationships</code>: 6 <code>manager_*</code> removes (R9); add
+  <code>manager_staff_key</code> FK.</li>
+<li><code>fct_work_assignment_compensation</code>: <code>annual_rate</code> → <code>annual_wage</code>;
+  <code>hourly_rate</code> → <code>hourly_wage</code>.</li>
+<li>
+<p><code>fct_staff_benefits_enrollments</code>: remove <code>enrollment_status</code> (100% <code>'Active'</code>
+  in production — dead).</p>
+</li>
+<li class="task-list-item">
+<p><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 1:</strong> Filter inventory for <code>domain='Staff'</code>.</p>
+</li>
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 2:</strong> Apply the Procedure per model. Honor Group 3 deferrals on
+      <code>dim_work_assignment_locations</code>. Consider two commits if the diff is large
+      (<code>dim_staff</code> + <code>dim_staff_work_assignments</code> in one; remaining 12 models in
+      another).</li>
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 3:</strong> <code>uv run dbt compile ... --select &lt;all 14 models&gt;</code>.</li>
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 4:</strong> Commit (one or two commits per Step 2 decision).</li>
+</ul>
+<hr />
+<h2 id="phase-3-verification-and-cleanup">Phase 3 — Verification and cleanup</h2>
+<h3 id="task-17-exposure-sweep">Task 17: Exposure sweep</h3>
+<p><strong>Files:</strong> <code>src/dbt/kipptaf/models/exposures/**/*.yml</code>.</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 1: Enumerate renamed columns.</strong></li>
+</ul>
+<div class="highlight"><pre><span></span><code><span class="nb">cd</span><span class="w"> </span>/workspaces/teamster/.worktrees/cbini/feat/claude-column-naming-audit
+uv<span class="w"> </span>run<span class="w"> </span>--with<span class="w"> </span>pandas<span class="w"> </span>python<span class="w"> </span><span class="s">&lt;&lt;&#39;PY&#39; &gt; /tmp/renames.tsv</span>
+<span class="s">import pandas as pd</span>
+<span class="s">df = pd.read_csv(</span>
+<span class="s">    &#39;docs/superpowers/specs/2026-04-15-column-naming-audit-inventory.csv&#39;,</span>
+<span class="s">    keep_default_na=False, na_values=[&#39;&#39;],</span>
+<span class="s">)</span>
+<span class="s">for _, r in df[df[&#39;action&#39;] == &#39;rename&#39;].iterrows():</span>
+<span class="s">    print(f&quot;{r[&#39;current_column&#39;]}\t{r[&#39;proposed_name&#39;]}&quot;)</span>
+<span class="s">PY</span>
+</code></pre></div>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 2: Grep exposures for each old name.</strong></li>
+</ul>
+<div class="highlight"><pre><span></span><code><span class="nb">cd</span><span class="w"> </span>src/dbt/kipptaf/models/exposures
+<span class="k">while</span><span class="w"> </span><span class="nv">IFS</span><span class="o">=</span><span class="s1">$&#39;\t&#39;</span><span class="w"> </span><span class="nb">read</span><span class="w"> </span>-r<span class="w"> </span>old_name<span class="w"> </span>new_name<span class="p">;</span><span class="w"> </span><span class="k">do</span>
+<span class="w">    </span><span class="nv">matches</span><span class="o">=</span><span class="k">$(</span>grep<span class="w"> </span>-rn<span class="w"> </span><span class="s2">&quot;</span><span class="nv">$old_name</span><span class="s2">&quot;</span><span class="w"> </span>.<span class="w"> </span><span class="o">||</span><span class="w"> </span><span class="nb">true</span><span class="k">)</span>
+<span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="o">[</span><span class="w"> </span>-n<span class="w"> </span><span class="s2">&quot;</span><span class="nv">$matches</span><span class="s2">&quot;</span><span class="w"> </span><span class="o">]</span><span class="p">;</span><span class="w"> </span><span class="k">then</span>
+<span class="w">        </span><span class="nb">echo</span><span class="w"> </span><span class="s2">&quot;=== </span><span class="nv">$old_name</span><span class="s2"> → </span><span class="nv">$new_name</span><span class="s2"> ===&quot;</span>
+<span class="w">        </span><span class="nb">echo</span><span class="w"> </span><span class="s2">&quot;</span><span class="nv">$matches</span><span class="s2">&quot;</span>
+<span class="w">    </span><span class="k">fi</span>
+<span class="k">done</span><span class="w"> </span>&lt;<span class="w"> </span>/tmp/renames.tsv
+</code></pre></div>
+<ul class="task-list">
+<li class="task-list-item">
+<p><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 3: Update each match.</strong> Replace the old column name with the new
+      name in the exposure YAML. External tools (Tableau workbooks, Google
+      Sheets destinations) that reference these columns are outside the repo —
+      flag those as follow-up work but don't block this PR.</p>
+</li>
+<li class="task-list-item">
+<p><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 4: Commit (only if exposures changed).</strong></p>
+</li>
+</ul>
+<div class="highlight"><pre><span></span><code>git<span class="w"> </span>add<span class="w"> </span>src/dbt/kipptaf/models/exposures/
+git<span class="w"> </span>commit<span class="w"> </span>-m<span class="w"> </span><span class="s2">&quot;refactor(dbt): update exposures for renamed mart columns per #3643&quot;</span>
+</code></pre></div>
+<h3 id="task-18-final-verification-spec-update-pr">Task 18: Final verification + spec update + PR</h3>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 1: Full-project compile.</strong></li>
+</ul>
+<div class="highlight"><pre><span></span><code><span class="nb">cd</span><span class="w"> </span>/workspaces/teamster/.worktrees/cbini/feat/claude-column-naming-audit
+uv<span class="w"> </span>run<span class="w"> </span>dbt<span class="w"> </span>compile<span class="w"> </span>--project-dir<span class="w"> </span>src/dbt/kipptaf
+</code></pre></div>
+<p>Expected: zero errors.</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 2: Targeted build on modified models.</strong></li>
+</ul>
+<div class="highlight"><pre><span></span><code>uv<span class="w"> </span>run<span class="w"> </span>dbt<span class="w"> </span>build<span class="w"> </span>--project-dir<span class="w"> </span>src/dbt/kipptaf<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>--select<span class="w"> </span>state:modified+<span class="w"> </span>--target<span class="w"> </span>defer<span class="w"> </span>--full-refresh
+</code></pre></div>
+<p>Expected: all tests pass, all models build. <code>state:modified+</code> expands
+  downstream so any <code>relationships</code> tests that would fail due to hash-change
+  cascades are caught here. Warn-severity <code>relationships</code> tests on documented
+  coverage gaps (e.g. <code>shared_with_location_key</code> per #3672) will report
+  warnings, not fail.</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 3: Update spec's Hash-change posture with enumerated keys.</strong></li>
+</ul>
+<p>Edit
+  <a href="../../specs/2026-04-15-column-naming-audit/">docs/superpowers/specs/2026-04-15-column-naming-audit.md</a>
+  section "Hash-change posture". Replace the prose description with an explicit
+  list of surrogate keys whose input composition changed, their before/after
+  derivation, and the expected hash-change cause. Use the compiled SQL from Step
+  2 to identify changed keys precisely.</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 4: Commit spec update.</strong></li>
+</ul>
+<div class="highlight"><pre><span></span><code>git<span class="w"> </span>add<span class="w"> </span>docs/superpowers/specs/2026-04-15-column-naming-audit.md
+git<span class="w"> </span>commit<span class="w"> </span>-m<span class="w"> </span><span class="s2">&quot;docs(spec): enumerate hash-change surrogate keys for #3643&quot;</span>
+</code></pre></div>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 5: Pre-push lint.</strong> Trunk git hooks are not installed in worktrees,
+      so run the CI check manually before pushing:</li>
+</ul>
+<div class="highlight"><pre><span></span><code><span class="nb">cd</span><span class="w"> </span>/workspaces/teamster/.worktrees/cbini/feat/claude-column-naming-audit
+/workspaces/teamster/.trunk/tools/trunk<span class="w"> </span>check<span class="w"> </span>--ci
+</code></pre></div>
+<p>Fix any reported issues.</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 6: Push branch and open PR.</strong></li>
+</ul>
+<div class="highlight"><pre><span></span><code>git<span class="w"> </span>push<span class="w"> </span>-u<span class="w"> </span>origin<span class="w"> </span>cbini/feat/claude-column-naming-audit
+gh<span class="w"> </span>pr<span class="w"> </span>create<span class="w"> </span>--title<span class="w"> </span><span class="s2">&quot;refactor(dbt): mart column naming alignment + upstream prerequisites&quot;</span><span class="w"> </span>--body<span class="w"> </span><span class="s2">&quot;</span><span class="k">$(</span>cat<span class="w"> </span><span class="s">&lt;&lt;&#39;EOF&#39;</span>
+<span class="s">## Summary</span>
+
+<span class="s">Executes the column-naming audit (#3643) bundled with the two upstream</span>
+<span class="s">prerequisite fixes (#3633, #3637).</span>
+
+<span class="s">- Applies 168 renames, 180 removes, and structural adds (Groups 1 + 2)</span>
+<span class="s">  per the finalized audit inventory across 67 mart models.</span>
+<span class="s">- Deduplicates `stg_people__employee_numbers` and</span>
+<span class="s">  `int_people__location_crosswalk` upstream, removing downstream</span>
+<span class="s">  `SELECT DISTINCT` workarounds.</span>
+<span class="s">- Derives canonical region from `dagster_code_location` in</span>
+<span class="s">  `stg_people__locations`, unblocking Conformed-domain R9 removes + FK</span>
+<span class="s">  adds; preserves the existing legal-entity names as `business_unit`.</span>
+<span class="s">- Ed-Fi / CEDS aligned naming across assessment, staff, location, and</span>
+<span class="s">  gradebook domains.</span>
+<span class="s">- Group 3 structural adds (fct_grades_assignments score split,</span>
+<span class="s">  dim_locations address unification + dim_work_assignment_locations FK)</span>
+<span class="s">  deferred to follow-up PRs under issue #3631.</span>
+
+<span class="s">## Test plan</span>
+
+<span class="s">- [ ] `dbt compile` clean</span>
+<span class="s">- [ ] CI `dbt build` against staging passes (warn-severity</span>
+<span class="s">      `shared_with_location_key` relationships test per #3672)</span>
+<span class="s">- [ ] New uniqueness tests on `stg_people__employee_numbers` and</span>
+<span class="s">      `int_people__location_crosswalk` pass</span>
+<span class="s">- [ ] Hash-change posture in the spec is updated with the enumerated</span>
+<span class="s">      surrogate keys whose composition changed</span>
+<span class="s">- [ ] Exposure sweep complete; Tableau/Google Sheets follow-ups flagged</span>
+
+<span class="s">Closes #3643, #3633, #3637.</span>
+
+<span class="s">🤖 Generated with [Claude Code](https://claude.com/claude-code)</span>
+<span class="s">EOF</span>
+<span class="k">)</span><span class="s2">&quot;</span>
+</code></pre></div>
+<hr />
+<h2 id="execution-notes">Execution notes</h2>
+<ul>
+<li><strong>Worktree posture:</strong> all execution in
+  <code>/workspaces/teamster/.worktrees/cbini/feat/claude-column-naming-audit</code>. <code>cd</code>
+  to the worktree before any <code>git</code> or <code>uv run</code> command.</li>
+<li><strong>Commit granularity:</strong> one commit per Phase 2 task (two for Staff if large).
+  Phase 1 is 2 commits, Phase 2 is 14–15 commits, Phase 3 is 2–3 commits. Total
+  target: ~18–20 commits on the branch; single squash-merge PR.</li>
+<li><strong>No test runs between domains:</strong> only <code>dbt compile</code>. Full <code>dbt build</code> is Task
+  18 to avoid redundant BQ costs.</li>
+<li><strong>Inventory CSV is append-only during execution.</strong> Do NOT edit
+  <code>reviewer_notes</code> or decisions during execution. If you discover an error, stop
+  and document it separately (spec edit + issue).</li>
+<li><strong>If a cross-domain consumer fails to compile</strong> after a rename/remove:
+  classify the failing model's domain. If that domain is already completed
+  (earlier in execution order), investigate immediately — an earlier commit
+  missed a dependency. If the failing model is in a pending domain, log the
+  failure in the DONE_WITH_CONCERNS report for the current task; the pending
+  domain task will resolve it naturally.</li>
+<li><strong>Coverage-gap exceptions</strong> (warn-severity <code>relationships</code> tests) are allowed
+  but must reference a tracked GitHub issue. Do NOT downgrade to warn silently.</li>
+<li><strong>Group 3 deferrals</strong> are tracked in #3631. Leaving their inventory rows
+  unapplied is the correct behavior — the plan explicitly skips them.</li>
+</ul>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+          <button type="button" class="md-top md-icon" data-md-component="top" hidden>
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8z"/></svg>
+  Back to top
+</button>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+    <div class="md-copyright__highlight">
+      Copyright &copy; KIPP TEAM & Family Schools
+    </div>
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      
+      <script id="__config" type="application/json">{"annotate": null, "base": "../../..", "features": ["content.action.edit", "content.code.copy", "navigation.instant", "navigation.indexes", "navigation.sections", "navigation.tabs", "navigation.tabs.sticky", "navigation.top", "search.highlight", "search.suggest", "toc.follow"], "search": "../../../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+    
+    
+      <script src="../../../assets/javascripts/bundle.79ae519e.min.js"></script>
+      
+    
+  </body>
+</html>

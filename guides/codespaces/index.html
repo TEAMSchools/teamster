@@ -1,0 +1,1883 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+        <meta name="description" content="Data engineering platform for KIPP TEAM & Family Schools">
+      
+      
+      
+      
+        <link rel="prev" href="../">
+      
+      
+        <link rel="next" href="../local-development/">
+      
+      
+        
+      
+      
+      <link rel="icon" href="../../images/truck.svg">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.6">
+    
+    
+      
+        <title>Codespaces - teamster</title>
+      
+    
+    
+      <link rel="stylesheet" href="../../assets/stylesheets/main.484c7ddc.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+    <script>__md_scope=new URL("../..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+  </head>
+  
+  
+    <body dir="ltr">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#github-codespaces" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+  
+
+<header class="md-header md-header--shadow md-header--lifted" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href="../.." title="teamster" class="md-header__button md-logo" aria-label="teamster" data-md-component="logo">
+      
+  <img src="../../images/truck.svg" alt="logo">
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            teamster
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              Codespaces
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+        <div class="md-search__suggest" data-md-component="search-suggest"></div>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      
+    
+    
+      <div class="md-header__source">
+        <a href="https://github.com/TEAMSchools/teamster" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M173.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6m-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3m44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9M252.8 8C114.1 8 8 113.3 8 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C436.2 457.8 504 362.9 504 252 504 113.3 391.5 8 252.8 8M105.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1m-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7m32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1m-11.4-14.7c-1.6 1-1.6 3.6 0 5.9s4.3 3.3 5.6 2.3c1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2"/></svg>
+  </div>
+  <div class="md-source__repository">
+    TEAMSchools/teamster
+  </div>
+</a>
+      </div>
+    
+  </nav>
+  
+    
+      
+<nav class="md-tabs" aria-label="Tabs" data-md-component="tabs">
+  <div class="md-grid">
+    <ul class="md-tabs__list">
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../.." class="md-tabs__link">
+        
+  
+  
+    
+  
+  Home
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+    
+  
+  
+    
+    
+      <li class="md-tabs__item md-tabs__item--active">
+        <a href="../" class="md-tabs__link">
+          
+  
+  
+    
+  
+  Guides
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../troubleshooting/dagster/" class="md-tabs__link">
+          
+  
+  
+    
+  
+  Troubleshooting
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../reference/architecture/" class="md-tabs__link">
+          
+  
+  
+    
+  
+  Reference
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../../reference/automations/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  Automations
+
+      </a>
+    </li>
+  
+
+      
+    </ul>
+  </div>
+</nav>
+    
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+  
+
+
+<nav class="md-nav md-nav--primary md-nav--lifted" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href="../.." title="teamster" class="md-nav__button md-logo" aria-label="teamster" data-md-component="logo">
+      
+  <img src="../../images/truck.svg" alt="logo">
+
+    </a>
+    teamster
+  </label>
+  
+    <div class="md-nav__source">
+      <a href="https://github.com/TEAMSchools/teamster" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M173.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6m-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3m44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9M252.8 8C114.1 8 8 113.3 8 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C436.2 457.8 504 362.9 504 252 504 113.3 391.5 8 252.8 8M105.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1m-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7m32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1m-11.4-14.7c-1.6 1-1.6 3.6 0 5.9s4.3 3.3 5.6 2.3c1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2"/></svg>
+  </div>
+  <div class="md-source__repository">
+    TEAMSchools/teamster
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../.." class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Home
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+    
+  
+  
+  
+    
+    
+      
+        
+          
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+        
+        
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2" checked>
+        
+          
+          <div class="md-nav__link md-nav__container">
+            <a href="../" class="md-nav__link ">
+              
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Guides
+  
+
+    
+  </span>
+  
+  
+
+            </a>
+            
+              
+              <label class="md-nav__link " for="__nav_2" id="__nav_2_label" tabindex="">
+                <span class="md-nav__icon md-icon"></span>
+              </label>
+            
+          </div>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_2_label" aria-expanded="true">
+          <label class="md-nav__title" for="__nav_2">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Guides
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+            
+              
+                
+  
+  
+    
+  
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Codespaces
+  
+
+    
+  </span>
+  
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Codespaces
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#prerequisites" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Prerequisites
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#creating-a-codespace" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Creating a Codespace
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#after-the-codespace-opens" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        After the Codespace opens
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#first-time-dbt-setup" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        First-time dbt setup
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#manual-tasks" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Manual tasks
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#subsequent-sessions" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Subsequent sessions
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#container-internals" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Container Internals
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Container Internals">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#setup-lifecycle" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Setup Lifecycle
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#secret-injection" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Secret Injection
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#1password-cli-commands" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        1Password CLI Commands
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#gcloud-authentication" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        GCloud Authentication
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#claude-code-setup" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Claude Code Setup
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#container-quirks" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Container Quirks
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../local-development/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Local Development
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../dagster/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Dagster
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../google-sheets/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Google Sheets & Forms
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../adp-location-renames/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ADP Location Renames
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../dbt-development/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    dbt Development
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../sftp-integration/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    SFTP Integration
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../superpowers/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Claude Code & Superpowers
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../cube/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Cube
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../claude-cube-connector/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Claude + Cube Connector
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3" >
+        
+          
+          <label class="md-nav__link" for="__nav_3" id="__nav_3_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Troubleshooting
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_3">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Troubleshooting
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../troubleshooting/dagster/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Dagster
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../troubleshooting/dbt/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    dbt
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../troubleshooting/vscode/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    VS Code
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4" >
+        
+          
+          <label class="md-nav__link" for="__nav_4" id="__nav_4_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Reference
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_4_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_4">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Reference
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../reference/architecture/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Architecture
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../reference/adding-an-integration/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Adding an Integration
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../reference/io-managers/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    IO Managers
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../reference/fiscal-year-partitioning/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Fiscal Year & Partitioning
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../reference/dbt-conventions/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    dbt Conventions
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../reference/marts-data-models/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Marts Data Models
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../reference/automation-conditions/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Automation Conditions
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../reference/automations/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Automations
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#prerequisites" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Prerequisites
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#creating-a-codespace" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Creating a Codespace
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#after-the-codespace-opens" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        After the Codespace opens
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#first-time-dbt-setup" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        First-time dbt setup
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#manual-tasks" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Manual tasks
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#subsequent-sessions" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Subsequent sessions
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#container-internals" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Container Internals
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Container Internals">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#setup-lifecycle" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Setup Lifecycle
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#secret-injection" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Secret Injection
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#1password-cli-commands" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        1Password CLI Commands
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#gcloud-authentication" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        GCloud Authentication
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#claude-code-setup" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Claude Code Setup
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#container-quirks" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Container Quirks
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+  
+    <a href="https://github.com/TEAMSchools/teamster/edit/main/docs/guides/codespaces.md" title="Edit this page" class="md-content__button md-icon" rel="edit">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M10 20H6V4h7v5h5v3.1l2-2V8l-6-6H6c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h4zm10.2-7c.1 0 .3.1.4.2l1.3 1.3c.2.2.2.6 0 .8l-1 1-2.1-2.1 1-1c.1-.1.2-.2.4-.2m0 3.9L14.1 23H12v-2.1l6.1-6.1z"/></svg>
+    </a>
+  
+  
+
+
+<h1 id="github-codespaces">GitHub Codespaces</h1>
+<p>The devcontainer is pre-configured for
+<a href="https://github.com/features/codespaces">GitHub Codespaces</a> — no local setup
+required.</p>
+<h2 id="prerequisites">Prerequisites</h2>
+<p>Set <strong>VS Code Desktop</strong> as your default Codespaces editor:</p>
+<ol>
+<li>Go to
+   <a href="https://github.com/settings/codespaces">github.com/settings/codespaces</a>.</li>
+<li>Under <strong>Editor preference</strong>, select <strong>Visual Studio Code</strong>.</li>
+<li>Save.</li>
+</ol>
+<p>This ensures Codespaces open in VS Code Desktop (with full extension support)
+rather than the browser editor.</p>
+<h2 id="creating-a-codespace">Creating a Codespace</h2>
+<ol>
+<li>On the repository page, click <strong>Code → Codespaces → Create codespace on
+   main</strong> (or your branch).</li>
+<li>Select the <strong>4-core / 16 GB</strong> machine type.</li>
+<li>Wait for the container to finish building. <code>postCreate.sh</code> runs
+   automatically: installs dependencies, bootstraps all dbt projects
+   (<code>dbt deps</code> + <code>dbt parse</code> in parallel), and injects secrets from 1Password.
+   First creation takes a few minutes. VS Code may show a Python interpreter
+   warning during this phase — the base container image seeds a machine-scoped
+   setting pointing to <code>/usr/local/bin/python</code> before the project venv exists.
+   <code>postCreate.sh</code> overwrites that setting early in its run, so the warning is
+   transient and resolves on its own without any action needed.</li>
+</ol>
+<h2 id="after-the-codespace-opens">After the Codespace opens</h2>
+<div class="admonition warning">
+<p class="admonition-title">Allow Automatic Tasks</p>
+<p>The first time the workspace opens, VS Code will ask:</p>
+<blockquote>
+<p><em>"This folder has tasks that run automatically when you open this folder.
+Do you allow automatic tasks to run when you open this folder?"</em></p>
+</blockquote>
+<p><strong>Click "Allow and Run".</strong> This is required for the automated setup to work.
+If you dismiss or deny this prompt, the setup task will not run. To fix it,
+add <code>"task.allowAutomaticTasks": "on"</code> to your local VS Code <strong>User
+Settings</strong> (<span class="keys"><kbd class="key-control">Ctrl</kbd><span>+</span><kbd class="key-shift">Shift</kbd><span>+</span><kbd class="key-p">P</kbd></span> → <strong>Open User Settings (JSON)</strong>), then reopen
+the Codespace.</p>
+</div>
+<p>The <strong>Setup: Post-Build Init</strong> VS Code task runs automatically when the
+workspace opens. It walks you through each step in order:</p>
+<ol>
+<li><strong>GCloud Application Default Credentials</strong> — opens a browser for Google
+   OAuth. Required for BigQuery, dbt, and all GCP-authenticated tooling.</li>
+<li><strong>Claude Code authentication</strong> — opens a browser for Claude login.</li>
+<li><strong>Claude Code plugin installation</strong> — installs plugins listed in
+   <code>.claude/settings.json</code>. Re-runs automatically when the plugin list changes.</li>
+<li><strong>dbt dev dataset reminder</strong> — prints a note about running <strong>dbt: Build
+   Init</strong> for first-time setup.</li>
+</ol>
+<p>On subsequent opens (restarts, reconnects), the task re-checks each step and
+skips anything already configured.</p>
+<p><strong>Dismiss VS Code extension prompts</strong> — all required extensions are already
+configured in <code>devcontainer.json</code>; dismiss any extension install prompts VS Code
+shows.</p>
+<p><strong>Wait for dbt Power User to finish parsing</strong> — the extension parses all
+projects in the background, which pegs CPU and makes the extension unresponsive
+until complete. Use <code>htop</code> to monitor; wait for CPU to settle before using the
+extension. This is also the most common cause of "extension not responding"
+errors.</p>
+<p><strong>Reload the window</strong> once background processes finish (<span class="keys"><kbd class="key-control">Ctrl</kbd><span>+</span><kbd class="key-shift">Shift</kbd><span>+</span><kbd class="key-p">P</kbd></span> →
+<strong>Developer: Reload Window</strong>) for a clean editor state.</p>
+<h2 id="first-time-dbt-setup">First-time dbt setup</h2>
+<p>If this is your first Codespace, you need to build your personal dev datasets in
+BigQuery. Run the <strong>dbt: Build Init</strong> task:</p>
+<ol>
+<li><span class="keys"><kbd class="key-control">Ctrl</kbd><span>+</span><kbd class="key-shift">Shift</kbd><span>+</span><kbd class="key-p">P</kbd></span> → <strong>Tasks: Run Task</strong> → <strong>dbt: Build Init</strong></li>
+<li>Select a project (or <strong>all</strong> for the full build).</li>
+</ol>
+<p>Regional projects (Camden, Miami, Newark, Paterson) build in parallel; kipptaf
+builds last since it depends on them.</p>
+<h2 id="manual-tasks">Manual tasks</h2>
+<p>Individual setup steps are also available via <span class="keys"><kbd class="key-control">Ctrl</kbd><span>+</span><kbd class="key-shift">Shift</kbd><span>+</span><kbd class="key-p">P</kbd></span> → <strong>Tasks: Run
+Task</strong>:</p>
+<table>
+<thead>
+<tr>
+<th>Task</th>
+<th>When to use</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>GCloud: Application Default Login</td>
+<td>Re-authenticate after token expiry</td>
+</tr>
+<tr>
+<td>Claude: Login</td>
+<td>Re-authenticate Claude Code</td>
+</tr>
+<tr>
+<td>Claude: Install Plugins</td>
+<td>Manually re-install project plugins</td>
+</tr>
+<tr>
+<td>dbt: Build Init</td>
+<td>Rebuild dev datasets (pick projects)</td>
+</tr>
+</tbody>
+</table>
+<h2 id="subsequent-sessions">Subsequent sessions</h2>
+<p><code>postStart.sh</code> runs automatically on resume (updates uv, syncs dependencies).
+The setup task re-checks auth and plugin state — you only need to
+re-authenticate if credentials have expired.</p>
+<h2 id="container-internals">Container Internals</h2>
+<h3 id="setup-lifecycle">Setup Lifecycle</h3>
+<ul>
+<li><strong><code>postCreate.sh</code></strong> runs once on container creation — installs dependencies,
+  sets up GCP auth, removes <code>sudo</code></li>
+<li><strong><code>postStart.sh</code></strong> runs on every container start — refreshes GCP ADC, Claude
+  auth, VS Code tasks. Keep it idempotent.</li>
+<li>The "Setup: Post-Build Init" task polls with <code>pgrep</code> until
+  <code>postCreate.sh</code>/<code>postStart.sh</code> finish — VS Code fires <code>folderOpen</code> before they
+  complete, so the guard is intentional; do not remove it.</li>
+</ul>
+<h3 id="secret-injection">Secret Injection</h3>
+<p>Secrets are fetched on demand from 1Password by <code>tests/conftest.py</code> when pytest
+runs. The 1Password service account token is saved to
+<code>/etc/secret-volume/.op-token</code> during <code>postCreate</code> and revoked from interactive
+shells in <code>postStart</code>.</p>
+<ul>
+<li><strong>Adding a new secret</strong>: update <code>_FILE_SECRETS</code> in <code>tests/conftest.py</code> and the
+  <code>.env.tpl</code> template in <code>.devcontainer/tpl/</code>.</li>
+</ul>
+<h3 id="1password-cli-commands">1Password CLI Commands</h3>
+<ul>
+<li><strong><code>op inject</code></strong> — replaces <code>op://</code> references in template files; used for
+  <code>.env.tpl</code> and other templates with embedded secret URIs</li>
+<li><strong><code>op read</code></strong> — reads a single secret or file attachment by <code>op://</code> URI;
+  supports <code>--out-file</code> for binary output; use for multi-attachment items (e.g.,
+  <code>op read "op://vault/item/filename" --out-file path</code>)</li>
+<li><strong><code>op document get</code></strong> — downloads an item's document attachment by item
+  name/UUID (not <code>op://</code> URIs); no <code>--file-name</code> flag exists, so it cannot
+  select among multiple attachments — use <code>op read</code> instead</li>
+</ul>
+<h3 id="gcloud-authentication">GCloud Authentication</h3>
+<p>ADC in Codespaces works via user-impersonation of the service account
+<code>codespaces@teamster-332318.iam.gserviceaccount.com</code>. Access is split into two
+independent layers:</p>
+<ul>
+<li><strong>Developer access</strong>: all members of <code>teamster-analysts@apps.teamschools.org</code>
+  are granted <code>roles/iam.serviceAccountTokenCreator</code> on the SA, which allows
+  them to impersonate it via <code>--impersonate-service-account</code></li>
+<li><strong>SA permissions</strong>: <code>codespaces@</code> has its own direct IAM bindings on the
+  project — it is <strong>not</strong> a member of <code>teamster-analysts@</code> and does not inherit
+  group roles. This prevents a self-impersonation loop and keeps the SA's
+  permissions explicitly auditable in IAM.</li>
+</ul>
+<p>To grant a new developer access: add them to
+<code>teamster-analysts@apps.teamschools.org</code>.</p>
+<details class="note">
+<summary>GCloud quirks</summary>
+<ul>
+<li>To check if ADC is valid, use
+  <code>gcloud auth application-default print-access-token</code>; <code>gcloud auth list</code>
+  only checks user accounts, not ADC — they're independent</li>
+<li><code>bq</code> CLI requires <code>gcloud auth login</code> (user credentials), not just ADC</li>
+<li>Running <code>gcloud auth login</code> before
+  <code>gcloud auth application-default login</code> in the same script causes "This
+  app is blocked" errors — keep them separate</li>
+<li><code>bq ls</code> paginates at ~50 rows by default — use <code>--max_results=N</code> for
+  large result sets</li>
+<li><code>gcloud auth application-default login</code> doesn't work in Codespaces — the
+  localhost OAuth callback can't reach the container.
+  <code>gcloud-application-default-login.sh</code> uses
+  <code>--impersonate-service-account=codespaces@teamster-332318.iam.gserviceaccount.com</code>
+  to work around this; the user must have
+  <code>roles/iam.serviceAccountTokenCreator</code> on that SA</li>
+<li>The default gcloud OAuth client blocks <code>drive.*</code> scopes — never add them
+  to <code>gcloud auth application-default login</code> without
+  <code>--impersonate-service-account</code></li>
+<li><code>gcloud auth application-default set-quota-project</code> fails with
+  impersonated credentials — use <code>--billing-project</code> flag on the login
+  command instead</li>
+</ul>
+</details>
+<h3 id="claude-code-setup">Claude Code Setup</h3>
+<ul>
+<li><code>CLAUDE_CODE_OAUTH_TOKEN</code> (not <code>ANTHROPIC_AUTH_TOKEN</code>) is the correct env var
+  for OAuth token auth — use as a personal Codespace secret to bypass credential
+  store entirely</li>
+<li>GitHub Actions workflows use <code>claude_code_oauth_token</code> input (not
+  <code>anthropic_api_key</code>)</li>
+<li>The CLI detects <code>op</code> on <code>$PATH</code> and tries to use it as a credential backend —
+  <code>OP_SERVICE_ACCOUNT_TOKEN</code> is set to a dummy value after secret injection
+  (<code>postStart.sh</code>) to make <code>op</code> fail fast instead of prompting</li>
+<li><code>claude-plugins-official</code> must be listed in <code>.claude/settings.json</code>
+  <code>extraKnownMarketplaces</code> (pointing to <code>anthropics/claude-plugins-official</code>) so
+  <code>claude-install-plugins.sh</code> explicitly refreshes it via
+  <code>marketplace add --scope project</code> before installs run — omitting it causes
+  "Plugin not found in marketplace" errors for all <code>*@claude-plugins-official</code>
+  plugins</li>
+<li>Check Claude auth with <code>"${CLAUDE}" auth status | grep -q '"loggedIn": true'</code>;
+  flag-file guards are redundant and produce false "not logged in" errors —
+  check auth directly</li>
+<li>On a fresh rebuild the Claude Code extension may not be installed when
+  <code>folderOpen</code> fires; <code>$CLAUDE</code> will be empty — poll for the binary rather than
+  silently skipping</li>
+</ul>
+<h3 id="container-quirks">Container Quirks</h3>
+<ul>
+<li><strong><code>apt-get</code> and <code>DAC_OVERRIDE</code></strong>: devcontainer features run <code>apt-get update</code>
+  during <code>docker build</code>, leaving stale files in <code>/var/lib/apt/lists/partial/</code>
+  owned by <code>_apt:root</code> with mode <code>0700</code>. <code>--cap-drop=DAC_OVERRIDE</code> would prevent
+  root from accessing these directories at runtime — do NOT add it back.
+  <code>DAC_OVERRIDE</code> is safe to keep because <code>sudo</code> is removed at the end of
+  <code>postCreate.sh</code>, making the capability irrelevant after setup.</li>
+<li><strong><code>sudo</code> removed</strong>: at the end of <code>postCreate.sh</code> — privileged setup (gcloud
+  components, Helm) must go in <code>postCreate.sh</code>, not later. To add new
+  components, update <code>postCreate.sh</code> and rebuild the container.</li>
+<li><strong><code>/etc/secret-volume</code> tmpfs permissions</strong>: mounted <code>0777</code> (world-writable) so
+  <code>postCreate.sh</code> can write the token file without sudo. File-based secrets are
+  written <code>600</code> (owner-read-only) by <code>tests/conftest.py</code> on demand. <code>uid</code>/<code>gid</code>
+  mount options were not used — they are not supported on all Codespaces hosts.</li>
+<li><strong><code>--cap-add</code> stripped</strong>: Codespaces silently strips <code>--cap-add</code> from
+  <code>runArgs</code> — namespace-based sandboxing (bwrap, unshare) will not work.</li>
+<li><strong>dbt Power User extension</strong>: activates on
+  <code>workspaceContains:**/dbt_project.yml</code> and auto-runs <code>dbt deps</code> (controlled by
+  <code>dbt.installDepsOnProjectInitialization</code>, default <code>true</code>) and <code>dbt parse</code> (not
+  configurable) on startup. Risk: extension may activate before <code>uv sync</code>
+  installs dbt-core. If <code>dbt deps</code> runs in <code>postCreate.sh</code>, set
+  <code>dbt.installDepsOnProjectInitialization</code> to <code>false</code> to avoid duplicate work.</li>
+<li><strong>dbt Power User project scanning</strong>: <code>dbt.allowListFolders</code> restricts which
+  paths the extension scans for <code>dbt_project.yml</code> — uses <code>startsWith</code> matching.
+  The extension also has a built-in <code>notInDBtPackages</code> filter. Manifest is read
+  from <code>target/</code> via Python bridge, not VS Code file watcher, so
+  <code>files.watcherExclude</code> on <code>target/</code> doesn't break it.</li>
+</ul>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+          <button type="button" class="md-top md-icon" data-md-component="top" hidden>
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8z"/></svg>
+  Back to top
+</button>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+    <div class="md-copyright__highlight">
+      Copyright &copy; KIPP TEAM & Family Schools
+    </div>
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      
+      <script id="__config" type="application/json">{"annotate": null, "base": "../..", "features": ["content.action.edit", "content.code.copy", "navigation.instant", "navigation.indexes", "navigation.sections", "navigation.tabs", "navigation.tabs.sticky", "navigation.top", "search.highlight", "search.suggest", "toc.follow"], "search": "../../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+    
+    
+      <script src="../../assets/javascripts/bundle.79ae519e.min.js"></script>
+      
+    
+  </body>
+</html>

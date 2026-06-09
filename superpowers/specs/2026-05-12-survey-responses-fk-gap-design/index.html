@@ -1,0 +1,1706 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+        <meta name="description" content="Data engineering platform for KIPP TEAM & Family Schools">
+      
+      
+      
+      
+      
+      
+        
+      
+      
+      <link rel="icon" href="../../../images/truck.svg">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.6">
+    
+    
+      
+        <title>fct_survey_responses → fct_survey_submissions FK gap — design - teamster</title>
+      
+    
+    
+      <link rel="stylesheet" href="../../../assets/stylesheets/main.484c7ddc.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+    <script>__md_scope=new URL("../../..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+  </head>
+  
+  
+    <body dir="ltr">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#fct_survey_responses-fct_survey_submissions-fk-gap-design" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+  
+
+<header class="md-header md-header--shadow md-header--lifted" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href="../../.." title="teamster" class="md-header__button md-logo" aria-label="teamster" data-md-component="logo">
+      
+  <img src="../../../images/truck.svg" alt="logo">
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            teamster
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              fct_survey_responses → fct_survey_submissions FK gap — design
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+        <div class="md-search__suggest" data-md-component="search-suggest"></div>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      
+    
+    
+      <div class="md-header__source">
+        <a href="https://github.com/TEAMSchools/teamster" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M173.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6m-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3m44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9M252.8 8C114.1 8 8 113.3 8 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C436.2 457.8 504 362.9 504 252 504 113.3 391.5 8 252.8 8M105.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1m-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7m32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1m-11.4-14.7c-1.6 1-1.6 3.6 0 5.9s4.3 3.3 5.6 2.3c1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2"/></svg>
+  </div>
+  <div class="md-source__repository">
+    TEAMSchools/teamster
+  </div>
+</a>
+      </div>
+    
+  </nav>
+  
+    
+      
+<nav class="md-tabs" aria-label="Tabs" data-md-component="tabs">
+  <div class="md-grid">
+    <ul class="md-tabs__list">
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../../.." class="md-tabs__link">
+        
+  
+  
+    
+  
+  Home
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../../guides/" class="md-tabs__link">
+          
+  
+  
+    
+  
+  Guides
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../../troubleshooting/dagster/" class="md-tabs__link">
+          
+  
+  
+    
+  
+  Troubleshooting
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../../reference/architecture/" class="md-tabs__link">
+          
+  
+  
+    
+  
+  Reference
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../../../reference/automations/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  Automations
+
+      </a>
+    </li>
+  
+
+      
+    </ul>
+  </div>
+</nav>
+    
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+  
+
+
+<nav class="md-nav md-nav--primary md-nav--lifted" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href="../../.." title="teamster" class="md-nav__button md-logo" aria-label="teamster" data-md-component="logo">
+      
+  <img src="../../../images/truck.svg" alt="logo">
+
+    </a>
+    teamster
+  </label>
+  
+    <div class="md-nav__source">
+      <a href="https://github.com/TEAMSchools/teamster" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M173.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6m-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3m44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9M252.8 8C114.1 8 8 113.3 8 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C436.2 457.8 504 362.9 504 252 504 113.3 391.5 8 252.8 8M105.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1m-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7m32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1m-11.4-14.7c-1.6 1-1.6 3.6 0 5.9s4.3 3.3 5.6 2.3c1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2"/></svg>
+  </div>
+  <div class="md-source__repository">
+    TEAMSchools/teamster
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../.." class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Home
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+          
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2" >
+        
+          
+          <div class="md-nav__link md-nav__container">
+            <a href="../../../guides/" class="md-nav__link ">
+              
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Guides
+  
+
+    
+  </span>
+  
+  
+
+            </a>
+            
+              
+              <label class="md-nav__link " for="__nav_2" id="__nav_2_label" tabindex="0">
+                <span class="md-nav__icon md-icon"></span>
+              </label>
+            
+          </div>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_2_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_2">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Guides
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/codespaces/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Codespaces
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/local-development/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Local Development
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/dagster/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Dagster
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/google-sheets/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Google Sheets & Forms
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/adp-location-renames/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ADP Location Renames
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/dbt-development/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    dbt Development
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/sftp-integration/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    SFTP Integration
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/superpowers/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Claude Code & Superpowers
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/cube/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Cube
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/claude-cube-connector/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Claude + Cube Connector
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3" >
+        
+          
+          <label class="md-nav__link" for="__nav_3" id="__nav_3_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Troubleshooting
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_3">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Troubleshooting
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../troubleshooting/dagster/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Dagster
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../troubleshooting/dbt/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    dbt
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../troubleshooting/vscode/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    VS Code
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4" >
+        
+          
+          <label class="md-nav__link" for="__nav_4" id="__nav_4_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Reference
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_4_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_4">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Reference
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/architecture/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Architecture
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/adding-an-integration/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Adding an Integration
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/io-managers/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    IO Managers
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/fiscal-year-partitioning/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Fiscal Year & Partitioning
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/dbt-conventions/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    dbt Conventions
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/marts-data-models/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Marts Data Models
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/automation-conditions/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Automation Conditions
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/automations/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Automations
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#problem" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Problem
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#root-cause" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Root cause
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#decision" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Decision
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#implementation" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Implementation
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Implementation">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#fct_survey_submissionssql-student-leg" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        fct_survey_submissions.sql — student leg
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#int_surveys__survey_responsessql-alias-resolution-fallback" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        int_surveys__survey_responses.sql — alias-resolution fallback
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#fct_survey_submissionssql-staff-leg" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        fct_survey_submissions.sql — staff leg
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#tests" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Tests
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#yaml" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        YAML
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#out-of-scope" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Out of scope
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#pre-merge-checklist-per-martsclaudemd" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Pre-merge checklist (per marts/CLAUDE.md)
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#acceptance-criteria" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Acceptance criteria
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+  
+    <a href="https://github.com/TEAMSchools/teamster/edit/main/docs/superpowers/specs/2026-05-12-survey-responses-fk-gap-design.md" title="Edit this page" class="md-content__button md-icon" rel="edit">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M10 20H6V4h7v5h5v3.1l2-2V8l-6-6H6c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h4zm10.2-7c.1 0 .3.1.4.2l1.3 1.3c.2.2.2.6 0 .8l-1 1-2.1-2.1 1-1c.1-.1.2-.2.4-.2m0 3.9L14.1 23H12v-2.1l6.1-6.1z"/></svg>
+    </a>
+  
+  
+
+
+<h1 id="fct_survey_responses-fct_survey_submissions-fk-gap-design"><code>fct_survey_responses → fct_survey_submissions</code> FK gap — design</h1>
+<p>Refs #3794. Part of project <a href="https://github.com/orgs/TEAMSchools/projects/4">#4</a>
+"enrollment FK cluster" batch.</p>
+<h2 id="problem">Problem</h2>
+<p>After #3793 unified the <code>survey_submission_key</code> hash composition on both facts,
+<code>fct_survey_responses.survey_submission_key → fct_survey_submissions.survey_submission_key</code>
+relationships test still WARNs. Residual is coverage, not hash drift.</p>
+<p>Current prod sizing (BigQuery, 2026-05-12):</p>
+<ul>
+<li>143,758 orphan response rows</li>
+<li>12,261 distinct orphan submissions</li>
+</ul>
+<h2 id="root-cause">Root cause</h2>
+<p><code>fct_survey_submissions.student_submissions_ranked</code>
+(<a href="src/dbt/kipptaf/models/marts/facts/fct_survey_submissions.sql#L71-L75">fct_survey_submissions.sql:71-75</a>)
+joins <code>int_extracts__student_enrollments</code> on <code>(respondent_email, academic_year)</code>
+with <code>enr.enroll_status = 0</code>. Both legs of that predicate are wrong:</p>
+<ul>
+<li><strong><code>enroll_status</code> is a student-level flag</strong>, not an enrollment-level one — it
+  reflects the student's <em>current</em> active status across all their enrollment
+  rows, not whether the row in hand was active on <code>date_submitted</code>. Filtering by
+  it drops every historical enrollment row for students who have since withdrawn
+  / transferred / graduated, even though those students were active when they
+  submitted the survey.</li>
+<li><strong><code>academic_year</code> equality</strong> assumes the submission's academic-year tag
+  exactly matches the enrollment's; for students with mid-year enrollment
+  changes (transfer in/out, exit + re-entry) the matching enrollment row may
+  fall under a different year tag than the submission's term.</li>
+</ul>
+<p>The correct membership condition is <strong><code>date_submitted</code> falls inside the
+enrollment's <code>[entrydate, exitdate)</code> window</strong> — that's the only join predicate
+that answers "which enrollment was this student in when they submitted?"</p>
+<p>The staff leg has a separate, smaller coverage gap with two contributing causes:</p>
+<ol>
+<li><strong>Upstream null <code>respondent_employee_number</code>.</strong>
+   <code>int_surveys__survey_responses</code> resolves <code>respondent_employee_number</code> by
+   joining <code>int_people__staff_roster_history</code> on either
+   <code>local_part(respondent_email) = srh.sam_account_name</code> or
+   <code>respondent_email = srh.google_email</code>, time-bounded to the row's effective
+   window. <code>int_people__staff_roster_history</code> carries the <strong>current</strong>
+   <code>sam_account_name</code> / <code>google_email</code> on every effective-dated row — those
+   identifiers are not historicized — so a survey submitted under an employee's
+   prior email/username can never match. Empirically (prod, 2026-05-12) 23 of
+   35,600 staff/engagement responses across 14 distinct emails are null; 13 of
+   the 14 emails are preserved as historical entries in
+   <code>stg_google_directory__users.emails</code> / <code>aliases</code> with a current
+   <code>primary_email</code> that does resolve to an <code>employee_number</code>.</li>
+<li><strong>Downstream filter on the resolved value.</strong>
+   <code>fct_survey_submissions.staff_submissions</code>
+   (<a href="src/dbt/kipptaf/models/marts/facts/fct_survey_submissions.sql#L30-L31">fct_survey_submissions.sql:30-31</a>)
+   then filters <code>respondent_employee_number is not null</code>, dropping the residual
+   from <code>fct_survey_submissions</code> entirely.</li>
+</ol>
+<h2 id="decision">Decision</h2>
+<p><strong>Replace the student-leg join predicate with a date-range membership check on
+<code>date_submitted</code> against the enrollment's entry / exit dates, and drop
+<code>enroll_status</code> and <code>academic_year</code> from the join.</strong> Use a half-open interval
+per <code>marts/CLAUDE.md</code> → "Date-range joins" to avoid boundary fan-out on
+back-to-back enrollments.</p>
+<p>For the staff leg, two changes:</p>
+<ol>
+<li><strong>Upstream in <code>int_surveys__survey_responses</code></strong>: add an additive Google
+   Directory alias-resolution fallback for <code>respondent_employee_number</code> — when
+   the existing <code>sam_account_name</code> / <code>google_email</code> join returns null, map
+   <code>respondent_email</code> to its <code>primary_email</code> via <code>stg_google_directory__users</code>
+   (any of <code>primary_email</code>, <code>aliases</code>, <code>emails[].address</code>), then re-join
+   <code>int_people__staff_roster_history</code> on <code>srh.google_email = primary_email</code>.
+   Empirically recovers 21 of 23 currently- null submissions with zero silent
+   reassignments and zero regressions to currently-resolved submissions; the 2
+   residuals are one employee whose <code>int_people__staff_roster_history</code> coverage
+   gap (separate upstream issue) leaves them unresolved.</li>
+<li><strong>Downstream in <code>fct_survey_submissions</code></strong>: drop the
+   <code>respondent_employee_number is not null</code> filter and let <code>staff_key</code> be null
+   when source is null, covering the residual.</li>
+</ol>
+<p>Rejected alternatives:</p>
+<ul>
+<li><em>Keep <code>academic_year</code> in the join and only fix <code>enroll_status</code></em> — still drops
+  responses whose submission-year tag disagrees with the enrollment's year tag
+  (the year-tag mismatch is real for mid-year transfers).</li>
+<li><em>Filter <code>fct_survey_responses</code> down to the active-enrollment scope</em> — drops
+  real response events; analysts counting "students who answered Q1" would get a
+  silently low number.</li>
+<li><em>Sentinel "unknown enrollment" submission row</em> — pollutes
+  <code>dim_student_enrollments</code> with synthetic keys. Strict-chain traversal
+  consumers would treat it as a real enrollment.</li>
+</ul>
+<h2 id="implementation">Implementation</h2>
+<h3 id="fct_survey_submissionssql-student-leg"><code>fct_survey_submissions.sql</code> — student leg</h3>
+<p>Rewrite <code>student_submissions_ranked</code> so the join is:</p>
+<div class="highlight"><pre><span></span><code><span class="k">inner</span><span class="w"> </span><span class="k">join</span>
+<span class="w">    </span><span class="err">{{</span><span class="w"> </span><span class="k">ref</span><span class="p">(</span><span class="ss">&quot;int_extracts__student_enrollments&quot;</span><span class="p">)</span><span class="w"> </span><span class="err">}}</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">enr</span>
+<span class="w">    </span><span class="k">on</span><span class="w"> </span><span class="n">sr</span><span class="p">.</span><span class="n">respondent_email</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">enr</span><span class="p">.</span><span class="n">student_email</span>
+<span class="w">    </span><span class="k">and</span><span class="w"> </span><span class="n">enr</span><span class="p">.</span><span class="n">entrydate</span><span class="w"> </span><span class="o">&lt;=</span><span class="w"> </span><span class="n">sr</span><span class="p">.</span><span class="n">date_submitted</span>
+<span class="w">    </span><span class="k">and</span><span class="w"> </span><span class="n">enr</span><span class="p">.</span><span class="n">exitdate</span><span class="w"> </span><span class="o">&gt;</span><span class="w"> </span><span class="n">sr</span><span class="p">.</span><span class="n">date_submitted</span>
+</code></pre></div>
+<p>Half-open interval (<code>entrydate &lt;= ... and exitdate &gt; ...</code>), not <code>BETWEEN</code> — per
+<code>marts/CLAUDE.md</code>, <code>BETWEEN</code> fans out when consecutive enrollments share a
+boundary date.</p>
+<p><strong>Drop the existing <code>row_number() OVER (PARTITION BY survey_response_id ...)</code>
+tiebreaker</strong> and collapse the <code>student_submissions_ranked</code> →
+<code>student_submissions</code> two-CTE structure into a single CTE.
+<code>int_extracts__student_enrollments</code> has 3 overlapping date-range pairs in prod
+across 2 students (one Camden boundary off-by-one between two consecutive
+same-school years; one Miami student with a wide phantom multi-year row
+coexisting with two short same-year rows). Joining all distinct student SCD
+submissions against the table under the half-open predicate produces zero
+multi-matches today — none of the three overlap windows intersect a submission
+date for the affected students. The PK uniqueness test on
+<code>survey_submission_key</code> guards against regression if a future overlap ever does
+produce fan-out.</p>
+<p>Responses whose email resolves to no enrollment row whose window contains
+<code>date_submitted</code> fall out of the student leg. The <code>student_enrollment_key</code>
+column is built from <code>student_number</code> / <code>_dbt_source_relation</code> / <code>academic_year</code>
+/ <code>entrydate</code> at the final SELECT
+(<a href="src/dbt/kipptaf/models/marts/facts/fct_survey_submissions.sql#L320-L329">fct_survey_submissions.sql:320-329</a>),
+so the <code>academic_year</code> value attributed to the submission comes from the
+enrollment row itself (<code>enr.academic_year</code>), not from <code>sr.academic_year</code>. Pull
+<code>enr.academic_year</code> through the CTE alongside <code>student_number</code> /
+<code>_dbt_source_relation</code> / <code>entrydate</code>, and reference it (not <code>sr.academic_year</code>)
+in the <code>student_enrollment_key</code> hash inputs.</p>
+<h3 id="int_surveys__survey_responsessql-alias-resolution-fallback"><code>int_surveys__survey_responses.sql</code> — alias-resolution fallback</h3>
+<p>Both <code>respondent_employee_number</code>-producing branches of the file (Google Forms
+union at <code>int_surveys__survey_responses.sql:17</code> and Alchemer-equivalent at
+<code>int_surveys__survey_responses.sql:81</code>) currently <code>left join</code>
+<code>int_people__staff_roster_history</code> on
+<code>(local_part(respondent_email) = srh.sam_account_name OR respondent_email = srh.google_email)</code>
+plus time-bound + <code>primary_indicator</code>. Keep that join. Add a second <code>left join</code>
+against an alias-resolution CTE; pull
+<code>coalesce(srh.employee_number, srh_alias.employee_number)</code> (and the parallel
+<code>formatted_name</code> / <code>sam_account_name</code> / <code>user_principal_name</code>) through to the
+SELECT.</p>
+<p>Alias-resolution CTE shape:</p>
+<div class="highlight"><pre><span></span><code><span class="n">gdir_alias_map</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="p">(</span>
+<span class="w">    </span><span class="k">select</span><span class="w"> </span><span class="n">gd</span><span class="p">.</span><span class="n">primary_email</span><span class="p">,</span><span class="w"> </span><span class="n">addr</span><span class="p">.</span><span class="n">address</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">known_address</span>
+<span class="w">    </span><span class="k">from</span><span class="w"> </span><span class="err">{{</span><span class="w"> </span><span class="k">ref</span><span class="p">(</span><span class="ss">&quot;stg_google_directory__users&quot;</span><span class="p">)</span><span class="w"> </span><span class="err">}}</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">gd</span><span class="p">,</span>
+<span class="w">        </span><span class="k">unnest</span><span class="p">(</span><span class="n">gd</span><span class="p">.</span><span class="n">emails</span><span class="p">)</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">addr</span>
+<span class="w">    </span><span class="k">union</span><span class="w"> </span><span class="k">distinct</span>
+<span class="w">    </span><span class="k">select</span><span class="w"> </span><span class="n">gd</span><span class="p">.</span><span class="n">primary_email</span><span class="p">,</span><span class="w"> </span><span class="k">alias</span>
+<span class="w">    </span><span class="k">from</span><span class="w"> </span><span class="err">{{</span><span class="w"> </span><span class="k">ref</span><span class="p">(</span><span class="ss">&quot;stg_google_directory__users&quot;</span><span class="p">)</span><span class="w"> </span><span class="err">}}</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">gd</span><span class="p">,</span>
+<span class="w">        </span><span class="k">unnest</span><span class="p">(</span><span class="n">gd</span><span class="p">.</span><span class="n">aliases</span><span class="p">)</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="k">alias</span>
+<span class="w">    </span><span class="k">union</span><span class="w"> </span><span class="k">distinct</span>
+<span class="w">    </span><span class="k">select</span><span class="w"> </span><span class="n">gd</span><span class="p">.</span><span class="n">primary_email</span><span class="p">,</span><span class="w"> </span><span class="n">gd</span><span class="p">.</span><span class="n">primary_email</span>
+<span class="w">    </span><span class="k">from</span><span class="w"> </span><span class="err">{{</span><span class="w"> </span><span class="k">ref</span><span class="p">(</span><span class="ss">&quot;stg_google_directory__users&quot;</span><span class="p">)</span><span class="w"> </span><span class="err">}}</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">gd</span>
+<span class="p">),</span>
+</code></pre></div>
+<p>Fallback join (applied in both union branches):</p>
+<div class="highlight"><pre><span></span><code><span class="k">left</span><span class="w"> </span><span class="k">join</span><span class="w"> </span><span class="n">gdir_alias_map</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">gam</span>
+<span class="w">    </span><span class="k">on</span><span class="w"> </span><span class="n">fr</span><span class="p">.</span><span class="n">respondent_email</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">gam</span><span class="p">.</span><span class="n">known_address</span>
+<span class="k">left</span><span class="w"> </span><span class="k">join</span><span class="w"> </span><span class="err">{{</span><span class="w"> </span><span class="k">ref</span><span class="p">(</span><span class="ss">&quot;int_people__staff_roster_history&quot;</span><span class="p">)</span><span class="w"> </span><span class="err">}}</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">srh_alias</span>
+<span class="w">    </span><span class="k">on</span><span class="w"> </span><span class="n">gam</span><span class="p">.</span><span class="n">primary_email</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">srh_alias</span><span class="p">.</span><span class="n">google_email</span>
+<span class="w">    </span><span class="k">and</span><span class="w"> </span><span class="k">timestamp</span><span class="p">(</span><span class="n">fr</span><span class="p">.</span><span class="n">last_submitted_time</span><span class="p">)</span>
+<span class="w">        </span><span class="k">between</span><span class="w"> </span><span class="n">srh_alias</span><span class="p">.</span><span class="n">effective_date_start_timestamp</span>
+<span class="w">        </span><span class="k">and</span><span class="w"> </span><span class="n">srh_alias</span><span class="p">.</span><span class="n">effective_date_end_timestamp</span>
+<span class="w">    </span><span class="k">and</span><span class="w"> </span><span class="n">srh_alias</span><span class="p">.</span><span class="n">primary_indicator</span>
+</code></pre></div>
+<p>Reference <code>stg_google_directory__users</code> is already a kipptaf source; no new
+upstream package required. Verify that the new CTE doesn't introduce fan-out at
+the response grain — the <code>union distinct</code> form on <code>gdir_alias_map</code> deduplicates
+redundant (primary_email, known_address) pairs across users.</p>
+<h3 id="fct_survey_submissionssql-staff-leg"><code>fct_survey_submissions.sql</code> — staff leg</h3>
+<p>Remove the <code>respondent_employee_number is not null</code> filter from
+<code>staff_submissions</code>
+(<a href="src/dbt/kipptaf/models/marts/facts/fct_survey_submissions.sql#L30-L31">fct_survey_submissions.sql:30-31</a>).
+Apply the nullable-FK wrap to <code>staff_key</code> at the final SELECT
+(<a href="src/dbt/kipptaf/models/marts/facts/fct_survey_submissions.sql#L289">fct_survey_submissions.sql:289</a>):</p>
+<div class="highlight"><pre><span></span><code><span class="k">if</span><span class="p">(</span>
+<span class="w">    </span><span class="n">respondent_employee_number</span><span class="w"> </span><span class="k">is</span><span class="w"> </span><span class="k">not</span><span class="w"> </span><span class="k">null</span><span class="p">,</span>
+<span class="w">    </span><span class="err">{{</span><span class="w"> </span><span class="n">dbt_utils</span><span class="p">.</span><span class="n">generate_surrogate_key</span><span class="p">([</span><span class="ss">&quot;respondent_employee_number&quot;</span><span class="p">])</span><span class="w"> </span><span class="err">}}</span><span class="p">,</span>
+<span class="w">    </span><span class="k">cast</span><span class="p">(</span><span class="k">null</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">string</span><span class="p">)</span>
+<span class="p">)</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">staff_key</span><span class="p">,</span>
+</code></pre></div>
+<p>Symmetric with <code>subject_staff_key</code>
+(<a href="src/dbt/kipptaf/models/marts/facts/fct_survey_submissions.sql#L294-L298">fct_survey_submissions.sql:294-298</a>).</p>
+<h3 id="tests">Tests</h3>
+<ul>
+<li>Keep
+  <code>fct_survey_responses.survey_submission_key → fct_survey_submissions.survey_submission_key</code>
+  relationships test at the default mart severity (<code>warn</code>); flip to
+  <code>severity: error</code> once the orphan count returns to zero post-change.</li>
+<li>No <code>not_null</code> tests added on <code>student_enrollment_key</code> or <code>staff_key</code> — both
+  are legitimately nullable on this fact (multi-respondent-type union).</li>
+<li>PK uniqueness test on <code>survey_submission_key</code> already exists. With the
+  tiebreaker dropped, this test is the load-bearing guard against future
+  enrollment-overlap fan-out — verify it still passes on the PR-branch schema.</li>
+</ul>
+<h3 id="yaml">YAML</h3>
+<ul>
+<li>Update <code>fct_survey_submissions</code> model description to note that the student leg
+  attributes a response to the enrollment whose <code>[entrydate, exitdate)</code> window
+  contains <code>date_submitted</code>, and that <code>student_enrollment_key</code> / <code>staff_key</code> are
+  nullable for responses that can't be attributed.</li>
+<li>No column rename or contract change — hash composition is unchanged
+  structurally (same input columns); the <code>academic_year</code> <em>value</em> feeding the
+  hash now sources from the enrollment row rather than the response row, which
+  will reshuffle keys for any response whose response-year tag differed from its
+  enrollment-year tag. Acceptable per <code>marts/CLAUDE.md</code> → "Spec authoring
+  context" (no production consumers yet).</li>
+</ul>
+<h2 id="out-of-scope">Out of scope</h2>
+<ul>
+<li><strong>#3777</strong> (ES Writing bridge coverage) — separate spec, separate PR; same
+  PR-batch label on project board.</li>
+<li><strong>#3629</strong> (response-grain upstream refactor) — orthogonal; this fix lives
+  entirely in <code>fct_survey_submissions</code>.</li>
+<li><strong>#3790</strong> multi-select expansion — already merged; sizing in this spec
+  includes its contribution.</li>
+<li><strong><code>int_extracts__student_enrollments</code> semantics</strong> — taken as authoritative for
+  "what enrollments exist" and for <code>entrydate</code> / <code>exitdate</code> values. No upstream
+  change.</li>
+<li><strong>Historicizing <code>sam_account_name</code> / <code>google_email</code> in
+  <code>int_people__staff_roster_history</code></strong> — the alias-resolution fallback in
+  <code>int_surveys__survey_responses</code> covers the staff-survey case empirically; a
+  full historicization of the identifier columns would help other email-keyed
+  joiners and should be filed separately.</li>
+<li><strong>LDAP <code>employeeID</code> provisioning gap</strong> — one of the 14 null-employee emails
+  (its own Directory primary, no alias chain) maps to an employee who is Active
+  in ADP across the submission window AND has a complete LDAP
+  (<code>stg_ldap__user_person</code>) record with the correct <code>google_email</code>,
+  <code>sam_account_name</code>, <code>user_principal_name</code>, and <code>mail</code>. The break is in LDAP's
+  <code>employee_number</code> column — it's NULL because the user's <code>employeeID</code> AD
+  attribute was set to a temporary placeholder (<code>TMP00378</code>-style) at
+  provisioning and never reconciled to her real ADP <code>employee_number</code>.
+  <code>int_people__staff_roster_history</code> joins ADP ↔ LDAP on <code>employee_number</code>, so
+  that NULL on the LDAP side strands her ADP record with no AD/Workspace
+  identifiers. Neither the existing <code>sam_account_name</code> / <code>google_email</code> join nor
+  the Directory-alias fallback can recover her. Remediation is administrative
+  (correct her AD <code>employeeID</code> attribute), not a model change; tracked
+  separately. The nullable <code>staff_key</code> wrap covers the residual here.</li>
+</ul>
+<h2 id="pre-merge-checklist-per-martsclaudemd">Pre-merge checklist (per <code>marts/CLAUDE.md</code>)</h2>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> Scan touched models for diamond paths (none introduced — the join shape
+      changes but the FK target is unchanged).</li>
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> Scan touched models for R1–R10 violations (no new columns).</li>
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> Pull marts-model warnings from latest CI run via dbt MCP
+      <code>get_job_run_error(warning_only=true)</code>; confirm the
+      <code>fct_survey_responses → fct_survey_submissions</code> warning disappears and no
+      new warnings are introduced (incl. no new <code>staff_key → dim_staff</code> orphans
+      from the alias-resolved employee numbers).</li>
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> Scan
+      <a href="https://github.com/orgs/TEAMSchools/projects/4/views/1">project board #4</a>
+      for bonus issues incidentally resolved; close them in the PR.</li>
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> Confirm orphan rows return to 0 on the PR-branch schema
+      (<code>dbt_cloud_pr_&lt;ci_id&gt;_3794_marts</code>).</li>
+</ul>
+<h2 id="acceptance-criteria">Acceptance criteria</h2>
+<ul>
+<li><code>fct_survey_responses.survey_submission_key → fct_survey_submissions.survey_submission_key</code>
+  relationships test orphan count drops from prod baseline (143,758 response
+  rows / ~9,700 distinct submissions) to a small residual driven by pre-existing
+  upstream gaps, not by this PR's fact-model logic. Empirically (dev build,
+  2026-05-12): student SCD orphans 9,563 → ~134 (~99% reduction); staff SCD
+  orphans 42 → 19; Manager Survey orphans unchanged at ~100 (pre-existing
+  hash-composition mismatch with <code>int_surveys__manager_survey_details</code>, out of
+  scope). The student residual (~134) splits into 106 responses submitted
+  outside the AY2025 SCD term window in <code>stg_google_sheets__reporting__terms</code>
+  (Ops config gap, out of scope) and 28 responses whose email has no enrollment
+  row covering <code>date_submitted</code>.</li>
+<li><code>fct_survey_submissions.survey_submission_key</code> uniqueness test still passes.</li>
+<li><code>student_enrollment_key</code> nullability: null only for responses whose email has
+  no enrollment row covering <code>date_submitted</code> in
+  <code>int_extracts__student_enrollments</code>.</li>
+<li><code>staff_key</code> nullability: null only for responses whose
+  <code>respondent_employee_number</code> cannot be resolved by either the existing
+  <code>sam_account_name</code> / <code>google_email</code> join or the Google Directory alias
+  fallback (sized at 2 distinct submissions, 1 email, in prod 2026-05-12).</li>
+<li><code>int_surveys__survey_responses.respondent_employee_number</code>: no
+  currently-non-null value changes; recovered null count matches the pre-merge
+  verification (21 of 23 currently-null staff/engagement submissions resolve
+  post-change).</li>
+</ul>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+          <button type="button" class="md-top md-icon" data-md-component="top" hidden>
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8z"/></svg>
+  Back to top
+</button>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+    <div class="md-copyright__highlight">
+      Copyright &copy; KIPP TEAM & Family Schools
+    </div>
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      
+      <script id="__config" type="application/json">{"annotate": null, "base": "../../..", "features": ["content.action.edit", "content.code.copy", "navigation.instant", "navigation.indexes", "navigation.sections", "navigation.tabs", "navigation.tabs.sticky", "navigation.top", "search.highlight", "search.suggest", "toc.follow"], "search": "../../../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+    
+    
+      <script src="../../../assets/javascripts/bundle.79ae519e.min.js"></script>
+      
+    
+  </body>
+</html>

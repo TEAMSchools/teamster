@@ -1,0 +1,2482 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+        <meta name="description" content="Data engineering platform for KIPP TEAM & Family Schools">
+      
+      
+      
+      
+      
+      
+        
+      
+      
+      <link rel="icon" href="../../../images/truck.svg">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.6">
+    
+    
+      
+        <title>Survey Responses FK Gap Implementation Plan - teamster</title>
+      
+    
+    
+      <link rel="stylesheet" href="../../../assets/stylesheets/main.484c7ddc.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+    <script>__md_scope=new URL("../../..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+  </head>
+  
+  
+    <body dir="ltr">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#survey-responses-fk-gap-implementation-plan" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+  
+
+<header class="md-header md-header--shadow md-header--lifted" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href="../../.." title="teamster" class="md-header__button md-logo" aria-label="teamster" data-md-component="logo">
+      
+  <img src="../../../images/truck.svg" alt="logo">
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            teamster
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              Survey Responses FK Gap Implementation Plan
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+        <div class="md-search__suggest" data-md-component="search-suggest"></div>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      
+    
+    
+      <div class="md-header__source">
+        <a href="https://github.com/TEAMSchools/teamster" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M173.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6m-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3m44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9M252.8 8C114.1 8 8 113.3 8 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C436.2 457.8 504 362.9 504 252 504 113.3 391.5 8 252.8 8M105.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1m-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7m32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1m-11.4-14.7c-1.6 1-1.6 3.6 0 5.9s4.3 3.3 5.6 2.3c1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2"/></svg>
+  </div>
+  <div class="md-source__repository">
+    TEAMSchools/teamster
+  </div>
+</a>
+      </div>
+    
+  </nav>
+  
+    
+      
+<nav class="md-tabs" aria-label="Tabs" data-md-component="tabs">
+  <div class="md-grid">
+    <ul class="md-tabs__list">
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../../.." class="md-tabs__link">
+        
+  
+  
+    
+  
+  Home
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../../guides/" class="md-tabs__link">
+          
+  
+  
+    
+  
+  Guides
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../../troubleshooting/dagster/" class="md-tabs__link">
+          
+  
+  
+    
+  
+  Troubleshooting
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../../reference/architecture/" class="md-tabs__link">
+          
+  
+  
+    
+  
+  Reference
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../../../reference/automations/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  Automations
+
+      </a>
+    </li>
+  
+
+      
+    </ul>
+  </div>
+</nav>
+    
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+  
+
+
+<nav class="md-nav md-nav--primary md-nav--lifted" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href="../../.." title="teamster" class="md-nav__button md-logo" aria-label="teamster" data-md-component="logo">
+      
+  <img src="../../../images/truck.svg" alt="logo">
+
+    </a>
+    teamster
+  </label>
+  
+    <div class="md-nav__source">
+      <a href="https://github.com/TEAMSchools/teamster" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M173.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6m-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3m44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9M252.8 8C114.1 8 8 113.3 8 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C436.2 457.8 504 362.9 504 252 504 113.3 391.5 8 252.8 8M105.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1m-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7m32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1m-11.4-14.7c-1.6 1-1.6 3.6 0 5.9s4.3 3.3 5.6 2.3c1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2"/></svg>
+  </div>
+  <div class="md-source__repository">
+    TEAMSchools/teamster
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../.." class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Home
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+          
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2" >
+        
+          
+          <div class="md-nav__link md-nav__container">
+            <a href="../../../guides/" class="md-nav__link ">
+              
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Guides
+  
+
+    
+  </span>
+  
+  
+
+            </a>
+            
+              
+              <label class="md-nav__link " for="__nav_2" id="__nav_2_label" tabindex="0">
+                <span class="md-nav__icon md-icon"></span>
+              </label>
+            
+          </div>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_2_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_2">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Guides
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/codespaces/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Codespaces
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/local-development/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Local Development
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/dagster/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Dagster
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/google-sheets/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Google Sheets & Forms
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/adp-location-renames/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ADP Location Renames
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/dbt-development/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    dbt Development
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/sftp-integration/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    SFTP Integration
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/superpowers/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Claude Code & Superpowers
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/cube/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Cube
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/claude-cube-connector/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Claude + Cube Connector
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3" >
+        
+          
+          <label class="md-nav__link" for="__nav_3" id="__nav_3_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Troubleshooting
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_3">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Troubleshooting
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../troubleshooting/dagster/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Dagster
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../troubleshooting/dbt/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    dbt
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../troubleshooting/vscode/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    VS Code
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4" >
+        
+          
+          <label class="md-nav__link" for="__nav_4" id="__nav_4_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Reference
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_4_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_4">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Reference
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/architecture/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Architecture
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/adding-an-integration/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Adding an Integration
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/io-managers/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    IO Managers
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/fiscal-year-partitioning/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Fiscal Year & Partitioning
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/dbt-conventions/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    dbt Conventions
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/marts-data-models/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Marts Data Models
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/automation-conditions/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Automation Conditions
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/automations/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Automations
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#file-structure" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        File Structure
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#task-1-add-google-directory-alias-fallback-to-int_surveys__survey_responses" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Task 1: Add Google Directory alias-fallback to int_surveys__survey_responses
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Task 1: Add Google Directory alias-fallback to int_surveys__survey_responses">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#step-11-read-the-file-in-full-to-confirm-structure" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Step 1.1: Read the file in full to confirm structure
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#step-12-replace-the-file-body-with-the-alias-fallback-version" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Step 1.2: Replace the file body with the alias-fallback version
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#step-13-build-the-model-with-downstream-tests" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Step 1.3: Build the model with downstream tests
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#step-14-verify-zero-silent-reassignments-alias-recovery-sizing" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Step 1.4: Verify zero silent reassignments + alias recovery sizing
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#step-15-commit-and-push" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Step 1.5: Commit and push
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#task-2-fct_survey_submissions-student-leg-rewrite" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Task 2: fct_survey_submissions — student-leg rewrite
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Task 2: fct_survey_submissions — student-leg rewrite">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#step-21-apply-the-student-leg-edit" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Step 2.1: Apply the student-leg edit
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#step-22-confirm-rn_enrollment-was-only-referenced-in-the-dropped-wrapper" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Step 2.2: Confirm rn_enrollment was only referenced in the dropped wrapper
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#step-23-build-the-model-and-run-tests" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Step 2.3: Build the model and run tests
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#step-24-commit-and-push" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Step 2.4: Commit and push
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#task-3-fct_survey_submissions-staff-leg-nullable-fk" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Task 3: fct_survey_submissions — staff-leg nullable FK
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Task 3: fct_survey_submissions — staff-leg nullable FK">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#step-31-drop-the-is-not-null-filter" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Step 3.1: Drop the is not null filter
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#step-32-wrap-staff_key-with-the-nullable-fk-pattern" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Step 3.2: Wrap staff_key with the nullable-FK pattern
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#step-33-build-and-run-tests" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Step 3.3: Build and run tests
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#step-34-commit-and-push" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Step 3.4: Commit and push
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#task-4-update-fct_survey_submissions-model-description" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Task 4: Update fct_survey_submissions model description
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Task 4: Update fct_survey_submissions model description">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#step-41-update-model-level-description" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Step 4.1: Update model-level description
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#step-42-update-staff_key-column-description" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Step 4.2: Update staff_key column description
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#step-43-update-student_enrollment_key-column-description" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Step 4.3: Update student_enrollment_key column description
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#step-44-re-parse-the-project-to-verify-yaml-is-well-formed" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Step 4.4: Re-parse the project to verify YAML is well-formed
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#step-45-commit-and-push" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Step 4.5: Commit and push
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#task-5-final-verification-on-pr-branch-schema" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Task 5: Final verification on PR-branch schema
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Task 5: Final verification on PR-branch schema">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#step-51-find-the-ci-runs-pr-schema-id" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Step 5.1: Find the CI run's PR-schema id
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#step-52-verify-orphan-count-returns-to-zero-on-pr-branch-marts-schema" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Step 5.2: Verify orphan count returns to zero on PR-branch marts schema
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#step-53-confirm-pk-uniqueness-and-fk-relationships-tests-pass" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Step 5.3: Confirm PK uniqueness and FK relationships tests pass
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#step-54-marts-pre-merge-checklist" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Step 5.4: Marts pre-merge checklist
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#step-55-open-the-pr" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Step 5.5: Open the PR
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#follow-up-issues-to-file-not-part-of-this-pr" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Follow-up issues to file (not part of this PR)
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+  
+    <a href="https://github.com/TEAMSchools/teamster/edit/main/docs/superpowers/plans/2026-05-12-survey-responses-fk-gap.md" title="Edit this page" class="md-content__button md-icon" rel="edit">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M10 20H6V4h7v5h5v3.1l2-2V8l-6-6H6c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h4zm10.2-7c.1 0 .3.1.4.2l1.3 1.3c.2.2.2.6 0 .8l-1 1-2.1-2.1 1-1c.1-.1.2-.2.4-.2m0 3.9L14.1 23H12v-2.1l6.1-6.1z"/></svg>
+    </a>
+  
+  
+
+
+<h1 id="survey-responses-fk-gap-implementation-plan">Survey Responses FK Gap Implementation Plan</h1>
+<blockquote>
+<p><strong>For agentic workers:</strong> REQUIRED SUB-SKILL: Use
+superpowers:subagent-driven-development (recommended) or
+superpowers:executing-plans to implement this plan task-by-task. Steps use
+checkbox (<code>- [ ]</code>) syntax for tracking.</p>
+</blockquote>
+<p><strong>Goal:</strong> Close the
+<code>fct_survey_responses.survey_submission_key → fct_survey_submissions.survey_submission_key</code>
+relationships-test gap (143,758 orphan response rows / 12,261 orphan submissions
+on 2026-05-12) by fixing two upstream join defects.</p>
+<p><strong>Architecture:</strong> Two coordinated upstream edits.</p>
+<ol>
+<li><code>int_surveys__survey_responses.sql</code> — add an additive Google Directory
+   alias-resolution fallback so staff respondents who took the survey from an
+   aliased email pick up their <code>respondent_employee_number</code>. Empirically
+   recovers 21 of 23 currently-null staff submissions with 0 silent
+   reassignments and 0 regressions.</li>
+<li><code>fct_survey_submissions.sql</code> — replace the student-leg join predicate
+   (<code>enroll_status = 0 AND academic_year =</code>) with a date-range membership check
+   on <code>date_submitted</code> against the enrollment's <code>[entrydate, exitdate)</code> window;
+   drop the now-unnecessary <code>row_number()</code> tiebreaker; drop the staff-leg
+   <code>respondent_employee_number is not null</code> filter and wrap <code>staff_key</code> with the
+   nullable-FK pattern.</li>
+</ol>
+<p><strong>Tech Stack:</strong> dbt 1.11+ (BigQuery), <code>dbt_utils.generate_surrogate_key</code>,
+<code>uv run dbt</code> invocation, sqlfluff via trunk (auto-applied at commit/push).</p>
+<p><strong>Working directory:</strong> All paths in this plan are relative to the worktree root
+<code>/workspaces/teamster/.worktrees/cbini/fix/claude-survey-responses-fk-gap</code>. Use
+absolute paths or <code>git -C &lt;worktree&gt;</code> /
+<code>uv run dbt ... --project-dir &lt;worktree&gt;/src/dbt/kipptaf</code> from any other
+location (project root or other worktree).</p>
+<p><strong>Pre-flight:</strong> Confirm <code>target/prod/manifest.json</code> exists under the dbt project
+(<code>src/dbt/kipptaf/target/prod/</code>). If absent or stale (older than the most recent
+<code>git pull</code>), regenerate it with:</p>
+<div class="highlight"><pre><span></span><code>uv<span class="w"> </span>run<span class="w"> </span>dbt<span class="w"> </span>parse<span class="w"> </span>--target<span class="w"> </span>prod<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--project-dir<span class="w"> </span>src/dbt/kipptaf<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--target-path<span class="w"> </span>target/prod
+</code></pre></div>
+<p>The <code>post-merge</code> git hook normally does this; only re-run if a build fails with
+"Could not find manifest".</p>
+<hr />
+<h2 id="file-structure">File Structure</h2>
+<table>
+<thead>
+<tr>
+<th>File</th>
+<th>Action</th>
+<th>Responsibility</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>src/dbt/kipptaf/models/surveys/intermediate/int_surveys__survey_responses.sql</code></td>
+<td>Modify</td>
+<td>Add <code>gdir_alias_map</code> CTE; add fallback <code>left join</code>s in both Google Forms (lines 41-58) and Alchemer (lines 101-120) branches; <code>coalesce</code> the resolved <code>employee_number</code> / <code>sam_account_name</code> / <code>user_principal_name</code> / <code>formatted_name</code>.</td>
+</tr>
+<tr>
+<td><code>src/dbt/kipptaf/models/marts/facts/fct_survey_submissions.sql</code></td>
+<td>Modify</td>
+<td>Student leg: rewrite join predicate to half-open date-range, drop <code>row_number()</code> tiebreaker, collapse two CTEs into one, source <code>academic_year</code> from <code>enr</code> not <code>sr</code>. Staff leg: drop <code>is not null</code> filter, wrap <code>staff_key</code> with nullable-FK pattern at final SELECT.</td>
+</tr>
+<tr>
+<td><code>src/dbt/kipptaf/models/marts/facts/properties/fct_survey_submissions.yml</code></td>
+<td>Modify</td>
+<td>Update model <code>description:</code> to document the date-range attribution rule and nullable <code>student_enrollment_key</code> / <code>staff_key</code> semantics.</td>
+</tr>
+</tbody>
+</table>
+<p>No new files. No schema/contract changes.</p>
+<hr />
+<h2 id="task-1-add-google-directory-alias-fallback-to-int_surveys__survey_responses">Task 1: Add Google Directory alias-fallback to <code>int_surveys__survey_responses</code></h2>
+<p><strong>Files:</strong></p>
+<ul>
+<li>Modify:
+  <code>src/dbt/kipptaf/models/surveys/intermediate/int_surveys__survey_responses.sql</code></li>
+</ul>
+<p>This task is purely additive. The existing <code>left join</code> on
+<code>int_people__staff_roster_history</code> stays. We add (a) a <code>gdir_alias_map</code> CTE that
+flattens <code>stg_google_directory__users</code> aliases / emails / primary, (b) a second
+<code>left join</code> chain that maps <code>respondent_email</code> → <code>primary_email</code> → fresh <code>srh</code>
+row, in <strong>both</strong> the Google Forms branch (lines 41-58) and the Alchemer branch
+(lines 101-120). At the final projection we <code>coalesce</code> the resolved values,
+current-path-first.</p>
+<h3 id="step-11-read-the-file-in-full-to-confirm-structure">Step 1.1: Read the file in full to confirm structure</h3>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> Run:</li>
+</ul>
+<div class="highlight"><pre><span></span><code>cat<span class="w"> </span>src/dbt/kipptaf/models/surveys/intermediate/int_surveys__survey_responses.sql
+</code></pre></div>
+<p>Expected: file is 128 lines; two <code>union all</code> branches inside an <code>enriched</code> CTE;
+both use a <code>left join</code> to <code>int_people__staff_roster_history as srh</code> to populate
+<code>respondent_employee_number</code>, <code>respondent_preferred_name</code>,
+<code>respondent_samaccountname</code>, <code>respondent_userprincipalname</code>.</p>
+<h3 id="step-12-replace-the-file-body-with-the-alias-fallback-version">Step 1.2: Replace the file body with the alias-fallback version</h3>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> Apply this Edit. Old string is the existing <code>with</code> keyword opening through
+      the end of the file's terminal <code>from enriched as e</code>; new string adds the
+      <code>gdir_alias_map</code> CTE before <code>enriched</code>, plus the two fallback <code>left join</code>
+      blocks and <code>coalesce</code> projections inside each union branch.</li>
+</ul>
+<p>The four columns to coalesce (in this order) are:</p>
+<div class="highlight"><pre><span></span><code>respondent_employee_number  ← srh.employee_number,  fallback srh_alias.employee_number
+respondent_preferred_name   ← srh.formatted_name,   fallback srh_alias.formatted_name
+respondent_samaccountname   ← srh.sam_account_name, fallback srh_alias.sam_account_name
+respondent_userprincipalname← srh.user_principal_name, fallback srh_alias.user_principal_name
+</code></pre></div>
+<p>The Google Forms branch passes the response timestamp into the time-bound
+predicate as <code>timestamp(fr.last_submitted_time)</code>. The Alchemer branch passes
+<code>sr.response_date_submitted</code>. Use the same expressions for the alias-fallback
+join.</p>
+<p>Replace the entire file content with the version below. (It's easier and safer
+to overwrite than to patch — the file is small.)</p>
+<div class="highlight"><pre><span></span><code><span class="k">with</span>
+<span class="w">    </span><span class="n">gdir_alias_map</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="p">(</span>
+<span class="w">        </span><span class="k">select</span><span class="w"> </span><span class="n">gd</span><span class="p">.</span><span class="n">primary_email</span><span class="p">,</span><span class="w"> </span><span class="n">addr</span><span class="p">.</span><span class="n">address</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">known_address</span><span class="p">,</span>
+<span class="w">        </span><span class="k">from</span><span class="w"> </span><span class="err">{{</span><span class="w"> </span><span class="k">ref</span><span class="p">(</span><span class="ss">&quot;stg_google_directory__users&quot;</span><span class="p">)</span><span class="w"> </span><span class="err">}}</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">gd</span><span class="p">,</span>
+<span class="w">            </span><span class="k">unnest</span><span class="p">(</span><span class="n">gd</span><span class="p">.</span><span class="n">emails</span><span class="p">)</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">addr</span>
+<span class="w">        </span><span class="k">union</span><span class="w"> </span><span class="k">distinct</span>
+<span class="w">        </span><span class="k">select</span><span class="w"> </span><span class="n">gd</span><span class="p">.</span><span class="n">primary_email</span><span class="p">,</span><span class="w"> </span><span class="k">alias</span><span class="p">,</span>
+<span class="w">        </span><span class="k">from</span><span class="w"> </span><span class="err">{{</span><span class="w"> </span><span class="k">ref</span><span class="p">(</span><span class="ss">&quot;stg_google_directory__users&quot;</span><span class="p">)</span><span class="w"> </span><span class="err">}}</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">gd</span><span class="p">,</span>
+<span class="w">            </span><span class="k">unnest</span><span class="p">(</span><span class="n">gd</span><span class="p">.</span><span class="n">aliases</span><span class="p">)</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="k">alias</span>
+<span class="w">        </span><span class="k">union</span><span class="w"> </span><span class="k">distinct</span>
+<span class="w">        </span><span class="k">select</span><span class="w"> </span><span class="n">gd</span><span class="p">.</span><span class="n">primary_email</span><span class="p">,</span><span class="w"> </span><span class="n">gd</span><span class="p">.</span><span class="n">primary_email</span><span class="p">,</span>
+<span class="w">        </span><span class="k">from</span><span class="w"> </span><span class="err">{{</span><span class="w"> </span><span class="k">ref</span><span class="p">(</span><span class="ss">&quot;stg_google_directory__users&quot;</span><span class="p">)</span><span class="w"> </span><span class="err">}}</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">gd</span>
+<span class="w">    </span><span class="p">),</span>
+
+<span class="w">    </span><span class="n">enriched</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="p">(</span>
+<span class="w">        </span><span class="k">select</span>
+<span class="w">            </span><span class="n">fr</span><span class="p">.</span><span class="n">form_id</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">survey_id</span><span class="p">,</span>
+<span class="w">            </span><span class="n">fr</span><span class="p">.</span><span class="n">info_title</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">survey_title</span><span class="p">,</span>
+<span class="w">            </span><span class="n">fr</span><span class="p">.</span><span class="n">response_id</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">survey_response_id</span><span class="p">,</span>
+<span class="w">            </span><span class="n">fr</span><span class="p">.</span><span class="n">question_id</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">survey_question_id</span><span class="p">,</span>
+<span class="w">            </span><span class="n">fr</span><span class="p">.</span><span class="n">text_value</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">answer</span><span class="p">,</span>
+<span class="w">            </span><span class="n">fr</span><span class="p">.</span><span class="n">item_title</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">question_title</span><span class="p">,</span>
+<span class="w">            </span><span class="n">fr</span><span class="p">.</span><span class="n">item_abbreviation</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">question_shortname</span><span class="p">,</span>
+<span class="w">            </span><span class="n">fr</span><span class="p">.</span><span class="n">respondent_email</span><span class="p">,</span>
+
+<span class="w">            </span><span class="n">rt</span><span class="p">.</span><span class="n">academic_year</span><span class="p">,</span>
+<span class="w">            </span><span class="n">rt</span><span class="p">.</span><span class="n">code</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">term_code</span><span class="p">,</span>
+<span class="w">            </span><span class="n">rt</span><span class="p">.</span><span class="n">name</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">term_name</span><span class="p">,</span>
+
+<span class="w">            </span><span class="k">coalesce</span><span class="p">(</span>
+<span class="w">                </span><span class="n">srh</span><span class="p">.</span><span class="n">employee_number</span><span class="p">,</span><span class="w"> </span><span class="n">srh_alias</span><span class="p">.</span><span class="n">employee_number</span>
+<span class="w">            </span><span class="p">)</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">respondent_employee_number</span><span class="p">,</span>
+
+<span class="w">            </span><span class="k">coalesce</span><span class="p">(</span>
+<span class="w">                </span><span class="n">srh</span><span class="p">.</span><span class="n">formatted_name</span><span class="p">,</span><span class="w"> </span><span class="n">srh_alias</span><span class="p">.</span><span class="n">formatted_name</span>
+<span class="w">            </span><span class="p">)</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">respondent_preferred_name</span><span class="p">,</span>
+<span class="w">            </span><span class="k">coalesce</span><span class="p">(</span>
+<span class="w">                </span><span class="n">srh</span><span class="p">.</span><span class="n">sam_account_name</span><span class="p">,</span><span class="w"> </span><span class="n">srh_alias</span><span class="p">.</span><span class="n">sam_account_name</span>
+<span class="w">            </span><span class="p">)</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">respondent_samaccountname</span><span class="p">,</span>
+<span class="w">            </span><span class="k">coalesce</span><span class="p">(</span>
+<span class="w">                </span><span class="n">srh</span><span class="p">.</span><span class="n">user_principal_name</span><span class="p">,</span><span class="w"> </span><span class="n">srh_alias</span><span class="p">.</span><span class="n">user_principal_name</span>
+<span class="w">            </span><span class="p">)</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">respondent_userprincipalname</span><span class="p">,</span>
+
+<span class="w">            </span><span class="n">safe_cast</span><span class="p">(</span><span class="n">fr</span><span class="p">.</span><span class="n">text_value</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nb">numeric</span><span class="p">)</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">answer_value</span><span class="p">,</span>
+
+<span class="w">            </span><span class="k">timestamp</span><span class="p">(</span><span class="n">fr</span><span class="p">.</span><span class="n">create_time</span><span class="p">)</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">date_started</span><span class="p">,</span>
+<span class="w">            </span><span class="k">timestamp</span><span class="p">(</span><span class="n">fr</span><span class="p">.</span><span class="n">last_submitted_time</span><span class="p">)</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">date_submitted</span><span class="p">,</span>
+
+<span class="w">            </span><span class="n">concat</span><span class="p">(</span>
+<span class="w">                </span><span class="s1">&#39;https://docs.google.com/forms/d/&#39;</span><span class="p">,</span>
+<span class="w">                </span><span class="n">fr</span><span class="p">.</span><span class="n">form_id</span><span class="p">,</span>
+<span class="w">                </span><span class="s1">&#39;/edit#response=&#39;</span><span class="p">,</span>
+<span class="w">                </span><span class="n">fr</span><span class="p">.</span><span class="n">response_id</span>
+<span class="w">            </span><span class="p">)</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">survey_response_link</span><span class="p">,</span>
+
+<span class="w">            </span><span class="k">if</span><span class="p">(</span><span class="n">safe_cast</span><span class="p">(</span><span class="n">fr</span><span class="p">.</span><span class="n">text_value</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nb">int</span><span class="p">)</span><span class="w"> </span><span class="k">is</span><span class="w"> </span><span class="k">null</span><span class="p">,</span><span class="w"> </span><span class="mi">1</span><span class="p">,</span><span class="w"> </span><span class="mi">0</span><span class="p">)</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">is_open_ended</span><span class="p">,</span>
+
+<span class="w">            </span><span class="n">dense_rank</span><span class="p">()</span><span class="w"> </span><span class="n">over</span><span class="w"> </span><span class="p">(</span>
+<span class="w">                </span><span class="n">partition</span><span class="w"> </span><span class="k">by</span><span class="w"> </span><span class="n">fr</span><span class="p">.</span><span class="n">respondent_email</span><span class="p">,</span><span class="w"> </span><span class="n">rt</span><span class="p">.</span><span class="n">academic_year</span><span class="p">,</span><span class="w"> </span><span class="n">rt</span><span class="p">.</span><span class="n">code</span><span class="p">,</span><span class="w"> </span><span class="n">fr</span><span class="p">.</span><span class="n">form_id</span>
+<span class="w">                </span><span class="k">order</span><span class="w"> </span><span class="k">by</span><span class="w"> </span><span class="n">fr</span><span class="p">.</span><span class="n">last_submitted_time</span><span class="w"> </span><span class="k">desc</span>
+<span class="w">            </span><span class="p">)</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">round_rn</span><span class="p">,</span>
+<span class="w">        </span><span class="k">from</span><span class="w"> </span><span class="err">{{</span><span class="w"> </span><span class="k">ref</span><span class="p">(</span><span class="ss">&quot;int_google_forms__form_responses&quot;</span><span class="p">)</span><span class="w"> </span><span class="err">}}</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">fr</span>
+<span class="w">        </span><span class="k">left</span><span class="w"> </span><span class="k">join</span>
+<span class="w">            </span><span class="err">{{</span><span class="w"> </span><span class="k">ref</span><span class="p">(</span><span class="ss">&quot;stg_google_sheets__reporting__terms&quot;</span><span class="p">)</span><span class="w"> </span><span class="err">}}</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">rt</span>
+<span class="w">            </span><span class="k">on</span><span class="w"> </span><span class="n">fr</span><span class="p">.</span><span class="n">info_title</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">rt</span><span class="p">.</span><span class="n">name</span>
+<span class="w">            </span><span class="k">and</span><span class="w"> </span><span class="nb">date</span><span class="p">(</span><span class="n">fr</span><span class="p">.</span><span class="n">last_submitted_time</span><span class="p">)</span><span class="w"> </span><span class="k">between</span><span class="w"> </span><span class="n">rt</span><span class="p">.</span><span class="n">start_date</span><span class="w"> </span><span class="k">and</span><span class="w"> </span><span class="n">rt</span><span class="p">.</span><span class="n">end_date</span>
+<span class="w">            </span><span class="k">and</span><span class="w"> </span><span class="n">rt</span><span class="p">.</span><span class="k">type</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s1">&#39;SURVEY&#39;</span>
+<span class="w">        </span><span class="k">left</span><span class="w"> </span><span class="k">join</span>
+<span class="w">            </span><span class="err">{{</span><span class="w"> </span><span class="k">ref</span><span class="p">(</span><span class="ss">&quot;int_people__staff_roster_history&quot;</span><span class="p">)</span><span class="w"> </span><span class="err">}}</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">srh</span>
+<span class="w">            </span><span class="k">on</span><span class="w"> </span><span class="p">(</span>
+<span class="w">                </span><span class="k">lower</span><span class="p">(</span><span class="n">regexp_extract</span><span class="p">(</span><span class="n">fr</span><span class="p">.</span><span class="n">respondent_email</span><span class="p">,</span><span class="w"> </span><span class="n">r</span><span class="s1">&#39;^([^@]+)&#39;</span><span class="p">))</span>
+<span class="w">                </span><span class="o">=</span><span class="w"> </span><span class="n">srh</span><span class="p">.</span><span class="n">sam_account_name</span>
+<span class="w">                </span><span class="k">or</span><span class="w"> </span><span class="n">fr</span><span class="p">.</span><span class="n">respondent_email</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">srh</span><span class="p">.</span><span class="n">google_email</span>
+<span class="w">            </span><span class="p">)</span>
+<span class="w">            </span><span class="k">and</span><span class="w"> </span><span class="k">timestamp</span><span class="p">(</span><span class="n">fr</span><span class="p">.</span><span class="n">last_submitted_time</span><span class="p">)</span>
+<span class="w">            </span><span class="k">between</span><span class="w"> </span><span class="n">srh</span><span class="p">.</span><span class="n">effective_date_start_timestamp</span>
+<span class="w">            </span><span class="k">and</span><span class="w"> </span><span class="n">srh</span><span class="p">.</span><span class="n">effective_date_end_timestamp</span>
+<span class="w">            </span><span class="k">and</span><span class="w"> </span><span class="n">srh</span><span class="p">.</span><span class="n">primary_indicator</span>
+<span class="w">        </span><span class="k">left</span><span class="w"> </span><span class="k">join</span><span class="w"> </span><span class="n">gdir_alias_map</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">gam</span><span class="w"> </span><span class="k">on</span><span class="w"> </span><span class="n">fr</span><span class="p">.</span><span class="n">respondent_email</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">gam</span><span class="p">.</span><span class="n">known_address</span>
+<span class="w">        </span><span class="k">left</span><span class="w"> </span><span class="k">join</span>
+<span class="w">            </span><span class="err">{{</span><span class="w"> </span><span class="k">ref</span><span class="p">(</span><span class="ss">&quot;int_people__staff_roster_history&quot;</span><span class="p">)</span><span class="w"> </span><span class="err">}}</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">srh_alias</span>
+<span class="w">            </span><span class="k">on</span><span class="w"> </span><span class="n">gam</span><span class="p">.</span><span class="n">primary_email</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">srh_alias</span><span class="p">.</span><span class="n">google_email</span>
+<span class="w">            </span><span class="k">and</span><span class="w"> </span><span class="k">timestamp</span><span class="p">(</span><span class="n">fr</span><span class="p">.</span><span class="n">last_submitted_time</span><span class="p">)</span>
+<span class="w">            </span><span class="k">between</span><span class="w"> </span><span class="n">srh_alias</span><span class="p">.</span><span class="n">effective_date_start_timestamp</span>
+<span class="w">            </span><span class="k">and</span><span class="w"> </span><span class="n">srh_alias</span><span class="p">.</span><span class="n">effective_date_end_timestamp</span>
+<span class="w">            </span><span class="k">and</span><span class="w"> </span><span class="n">srh_alias</span><span class="p">.</span><span class="n">primary_indicator</span>
+
+<span class="w">        </span><span class="k">union</span><span class="w"> </span><span class="k">all</span>
+
+<span class="w">        </span><span class="k">select</span>
+<span class="w">            </span><span class="n">safe_cast</span><span class="p">(</span><span class="n">sr</span><span class="p">.</span><span class="n">survey_id</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">string</span><span class="p">)</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">survey_id</span><span class="p">,</span>
+
+<span class="w">            </span><span class="n">sr</span><span class="p">.</span><span class="n">survey_title</span><span class="p">,</span>
+
+<span class="w">            </span><span class="n">safe_cast</span><span class="p">(</span><span class="n">sr</span><span class="p">.</span><span class="n">response_id</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">string</span><span class="p">)</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">survey_response_id</span><span class="p">,</span>
+
+<span class="w">            </span><span class="n">safe_cast</span><span class="p">(</span><span class="n">sr</span><span class="p">.</span><span class="n">question_id</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">string</span><span class="p">)</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">survey_question_id</span><span class="p">,</span>
+
+<span class="w">            </span><span class="n">sr</span><span class="p">.</span><span class="n">response_value</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">answer</span><span class="p">,</span>
+<span class="w">            </span><span class="n">sr</span><span class="p">.</span><span class="n">question_title_english</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">question_title</span><span class="p">,</span>
+<span class="w">            </span><span class="n">sr</span><span class="p">.</span><span class="n">question_short_name</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">question_shortname</span><span class="p">,</span>
+
+<span class="w">            </span><span class="n">ri</span><span class="p">.</span><span class="n">respondent_mail</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">respondent_email</span><span class="p">,</span>
+
+<span class="w">            </span><span class="k">coalesce</span><span class="p">(</span><span class="n">sr</span><span class="p">.</span><span class="n">campaign_fiscal_year</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="mi">1</span><span class="p">,</span><span class="w"> </span><span class="n">rt</span><span class="p">.</span><span class="n">academic_year</span><span class="p">)</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">academic_year</span><span class="p">,</span>
+
+<span class="w">            </span><span class="k">coalesce</span><span class="p">(</span><span class="n">regexp_extract</span><span class="p">(</span><span class="n">sr</span><span class="p">.</span><span class="n">campaign_name</span><span class="p">,</span><span class="w"> </span><span class="n">r</span><span class="s1">&#39;\s(.*)&#39;</span><span class="p">),</span><span class="w"> </span><span class="n">rt</span><span class="p">.</span><span class="n">code</span><span class="p">)</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">term_code</span><span class="p">,</span>
+
+<span class="w">            </span><span class="n">rt</span><span class="p">.</span><span class="n">name</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">term_name</span><span class="p">,</span>
+
+<span class="w">            </span><span class="k">coalesce</span><span class="p">(</span>
+<span class="w">                </span><span class="n">srh</span><span class="p">.</span><span class="n">employee_number</span><span class="p">,</span><span class="w"> </span><span class="n">srh_alias</span><span class="p">.</span><span class="n">employee_number</span>
+<span class="w">            </span><span class="p">)</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">respondent_employee_number</span><span class="p">,</span>
+<span class="w">            </span><span class="k">coalesce</span><span class="p">(</span>
+<span class="w">                </span><span class="n">srh</span><span class="p">.</span><span class="n">formatted_name</span><span class="p">,</span><span class="w"> </span><span class="n">srh_alias</span><span class="p">.</span><span class="n">formatted_name</span>
+<span class="w">            </span><span class="p">)</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">respondent_preferred_name</span><span class="p">,</span>
+<span class="w">            </span><span class="k">coalesce</span><span class="p">(</span>
+<span class="w">                </span><span class="n">srh</span><span class="p">.</span><span class="n">sam_account_name</span><span class="p">,</span><span class="w"> </span><span class="n">srh_alias</span><span class="p">.</span><span class="n">sam_account_name</span>
+<span class="w">            </span><span class="p">)</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">respondent_samaccountname</span><span class="p">,</span>
+<span class="w">            </span><span class="k">coalesce</span><span class="p">(</span>
+<span class="w">                </span><span class="n">srh</span><span class="p">.</span><span class="n">user_principal_name</span><span class="p">,</span><span class="w"> </span><span class="n">srh_alias</span><span class="p">.</span><span class="n">user_principal_name</span>
+<span class="w">            </span><span class="p">)</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">respondent_userprincipalname</span><span class="p">,</span>
+
+<span class="w">            </span><span class="n">safe_cast</span><span class="p">(</span><span class="n">sr</span><span class="p">.</span><span class="n">response_value</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nb">numeric</span><span class="p">)</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">answer_value</span><span class="p">,</span>
+
+<span class="w">            </span><span class="n">sr</span><span class="p">.</span><span class="n">response_date_started</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">date_started</span><span class="p">,</span>
+<span class="w">            </span><span class="n">sr</span><span class="p">.</span><span class="n">response_date_submitted</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">date_submitted</span><span class="p">,</span>
+
+<span class="w">            </span><span class="n">concat</span><span class="p">(</span>
+<span class="w">                </span><span class="n">sr</span><span class="p">.</span><span class="n">survey_link_default</span><span class="p">,</span>
+<span class="w">                </span><span class="s1">&#39;?snc=&#39;</span><span class="p">,</span>
+<span class="w">                </span><span class="n">sr</span><span class="p">.</span><span class="n">response_session_id</span><span class="p">,</span>
+<span class="w">                </span><span class="s1">&#39;&amp;sg_navigate=start&#39;</span>
+<span class="w">            </span><span class="p">)</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">survey_response_link</span><span class="p">,</span>
+
+<span class="w">            </span><span class="k">if</span><span class="p">(</span><span class="n">safe_cast</span><span class="p">(</span><span class="n">sr</span><span class="p">.</span><span class="n">response_value</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nb">int</span><span class="p">)</span><span class="w"> </span><span class="k">is</span><span class="w"> </span><span class="k">null</span><span class="p">,</span><span class="w"> </span><span class="mi">1</span><span class="p">,</span><span class="w"> </span><span class="mi">0</span><span class="p">)</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">is_open_ended</span><span class="p">,</span>
+
+<span class="w">            </span><span class="mi">1</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">round_rn</span><span class="p">,</span>
+<span class="w">        </span><span class="k">from</span><span class="w"> </span><span class="err">{{</span><span class="w"> </span><span class="k">source</span><span class="p">(</span><span class="ss">&quot;alchemer&quot;</span><span class="p">,</span><span class="w"> </span><span class="ss">&quot;base_alchemer__survey_results&quot;</span><span class="p">)</span><span class="w"> </span><span class="err">}}</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">sr</span>
+<span class="w">        </span><span class="k">inner</span><span class="w"> </span><span class="k">join</span>
+<span class="w">            </span><span class="err">{{</span><span class="w"> </span><span class="k">ref</span><span class="p">(</span><span class="ss">&quot;stg_google_sheets__reporting__terms&quot;</span><span class="p">)</span><span class="w"> </span><span class="err">}}</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">rt</span>
+<span class="w">            </span><span class="k">on</span><span class="w"> </span><span class="n">sr</span><span class="p">.</span><span class="n">survey_title</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">rt</span><span class="p">.</span><span class="n">name</span>
+<span class="w">            </span><span class="k">and</span><span class="w"> </span><span class="n">sr</span><span class="p">.</span><span class="n">response_date_submitted_date</span><span class="w"> </span><span class="k">between</span><span class="w"> </span><span class="n">rt</span><span class="p">.</span><span class="n">start_date</span><span class="w"> </span><span class="k">and</span><span class="w"> </span><span class="n">rt</span><span class="p">.</span><span class="n">end_date</span>
+<span class="w">        </span><span class="k">left</span><span class="w"> </span><span class="k">join</span>
+<span class="w">            </span><span class="err">{{</span><span class="w"> </span><span class="k">source</span><span class="p">(</span><span class="ss">&quot;surveys&quot;</span><span class="p">,</span><span class="w"> </span><span class="ss">&quot;int_surveys__response_identifiers&quot;</span><span class="p">)</span><span class="w"> </span><span class="err">}}</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">ri</span>
+<span class="w">            </span><span class="k">on</span><span class="w"> </span><span class="n">sr</span><span class="p">.</span><span class="n">survey_id</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">ri</span><span class="p">.</span><span class="n">survey_id</span>
+<span class="w">            </span><span class="k">and</span><span class="w"> </span><span class="n">sr</span><span class="p">.</span><span class="n">response_id</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">ri</span><span class="p">.</span><span class="n">response_id</span>
+<span class="w">        </span><span class="k">left</span><span class="w"> </span><span class="k">join</span>
+<span class="w">            </span><span class="err">{{</span><span class="w"> </span><span class="k">ref</span><span class="p">(</span><span class="ss">&quot;int_people__staff_roster_history&quot;</span><span class="p">)</span><span class="w"> </span><span class="err">}}</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">srh</span>
+<span class="w">            </span><span class="k">on</span><span class="w"> </span><span class="p">(</span>
+<span class="w">                </span><span class="k">lower</span><span class="p">(</span><span class="n">regexp_extract</span><span class="p">(</span><span class="n">ri</span><span class="p">.</span><span class="n">respondent_mail</span><span class="p">,</span><span class="w"> </span><span class="n">r</span><span class="s1">&#39;^([^@]+)&#39;</span><span class="p">))</span>
+<span class="w">                </span><span class="o">=</span><span class="w"> </span><span class="n">srh</span><span class="p">.</span><span class="n">sam_account_name</span>
+<span class="w">                </span><span class="k">or</span><span class="w"> </span><span class="n">ri</span><span class="p">.</span><span class="n">respondent_mail</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">srh</span><span class="p">.</span><span class="n">google_email</span>
+<span class="w">            </span><span class="p">)</span>
+<span class="w">            </span><span class="k">and</span><span class="w"> </span><span class="n">sr</span><span class="p">.</span><span class="n">response_date_submitted</span>
+<span class="w">            </span><span class="k">between</span><span class="w"> </span><span class="n">srh</span><span class="p">.</span><span class="n">effective_date_start_timestamp</span>
+<span class="w">            </span><span class="k">and</span><span class="w"> </span><span class="n">srh</span><span class="p">.</span><span class="n">effective_date_end_timestamp</span>
+<span class="w">            </span><span class="k">and</span><span class="w"> </span><span class="n">srh</span><span class="p">.</span><span class="n">primary_indicator</span>
+<span class="w">        </span><span class="k">left</span><span class="w"> </span><span class="k">join</span><span class="w"> </span><span class="n">gdir_alias_map</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">gam</span><span class="w"> </span><span class="k">on</span><span class="w"> </span><span class="n">ri</span><span class="p">.</span><span class="n">respondent_mail</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">gam</span><span class="p">.</span><span class="n">known_address</span>
+<span class="w">        </span><span class="k">left</span><span class="w"> </span><span class="k">join</span>
+<span class="w">            </span><span class="err">{{</span><span class="w"> </span><span class="k">ref</span><span class="p">(</span><span class="ss">&quot;int_people__staff_roster_history&quot;</span><span class="p">)</span><span class="w"> </span><span class="err">}}</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">srh_alias</span>
+<span class="w">            </span><span class="k">on</span><span class="w"> </span><span class="n">gam</span><span class="p">.</span><span class="n">primary_email</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">srh_alias</span><span class="p">.</span><span class="n">google_email</span>
+<span class="w">            </span><span class="k">and</span><span class="w"> </span><span class="n">sr</span><span class="p">.</span><span class="n">response_date_submitted</span>
+<span class="w">            </span><span class="k">between</span><span class="w"> </span><span class="n">srh_alias</span><span class="p">.</span><span class="n">effective_date_start_timestamp</span>
+<span class="w">            </span><span class="k">and</span><span class="w"> </span><span class="n">srh_alias</span><span class="p">.</span><span class="n">effective_date_end_timestamp</span>
+<span class="w">            </span><span class="k">and</span><span class="w"> </span><span class="n">srh_alias</span><span class="p">.</span><span class="n">primary_indicator</span>
+<span class="w">    </span><span class="p">)</span>
+
+<span class="k">select</span>
+<span class="w">    </span><span class="n">e</span><span class="p">.</span><span class="o">*</span><span class="p">,</span>
+<span class="w">    </span><span class="k">coalesce</span><span class="p">(</span>
+<span class="w">        </span><span class="k">cast</span><span class="p">(</span><span class="n">e</span><span class="p">.</span><span class="n">respondent_employee_number</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">string</span><span class="p">),</span><span class="w"> </span><span class="n">e</span><span class="p">.</span><span class="n">respondent_email</span>
+<span class="w">    </span><span class="p">)</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">respondent_identifier</span><span class="p">,</span>
+<span class="k">from</span><span class="w"> </span><span class="n">enriched</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">e</span>
+</code></pre></div>
+<h3 id="step-13-build-the-model-with-downstream-tests">Step 1.3: Build the model with downstream tests</h3>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> Run:</li>
+</ul>
+<div class="highlight"><pre><span></span><code>uv<span class="w"> </span>run<span class="w"> </span>dbt<span class="w"> </span>build<span class="w"> </span>--select<span class="w"> </span>int_surveys__survey_responses+1<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--project-dir<span class="w"> </span>src/dbt/kipptaf<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--target<span class="w"> </span>dev<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--defer<span class="w"> </span>--state<span class="w"> </span>target/prod/
+</code></pre></div>
+<p>Expected: PASS for <code>int_surveys__survey_responses</code> and all
+immediately-downstream tests. <code>+1</code> limits to direct children so this step stays
+fast; the full <code>+</code> selector comes in Task 5.</p>
+<p>If the build fails with "Could not find manifest" or "table not found" on a
+<code>stg_*</code> source, regenerate the prod manifest (see Pre-flight).</p>
+<h3 id="step-14-verify-zero-silent-reassignments-alias-recovery-sizing">Step 1.4: Verify zero silent reassignments + alias recovery sizing</h3>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> Run via BigQuery MCP <code>mcp__bigquery__execute_sql</code>. Replace <code>&lt;dev_schema&gt;</code>
+      with the developer's dev schema (look it up via <code>~/.dbt/profiles.yml</code> or
+      the dbt parse output if unsure — it follows the pattern
+      <code>zz_&lt;github_username&gt;_kipptaf_surveys</code>).</li>
+</ul>
+<div class="highlight"><pre><span></span><code><span class="k">with</span><span class="w"> </span><span class="n">new_resolution</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="p">(</span>
+<span class="w">  </span><span class="k">select</span>
+<span class="w">    </span><span class="n">survey_response_id</span><span class="p">,</span>
+<span class="w">    </span><span class="n">survey_title</span><span class="p">,</span>
+<span class="w">    </span><span class="n">respondent_email</span><span class="p">,</span>
+<span class="w">    </span><span class="n">respondent_employee_number</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">new_emp</span><span class="p">,</span>
+<span class="w">  </span><span class="k">from</span><span class="w"> </span><span class="o">`</span><span class="n">teamster</span><span class="o">-</span><span class="mi">332318</span><span class="p">.</span><span class="o">&lt;</span><span class="n">dev_schema</span><span class="o">&gt;</span><span class="p">.</span><span class="n">int_surveys__survey_responses</span><span class="o">`</span>
+<span class="w">  </span><span class="k">where</span><span class="w"> </span><span class="n">survey_title</span><span class="w"> </span><span class="k">in</span><span class="w"> </span><span class="p">(</span>
+<span class="w">    </span><span class="s1">&#39;School Community Diagnostic Staff Survey&#39;</span><span class="p">,</span>
+<span class="w">    </span><span class="s1">&#39;Engagement &amp; Support Surveys&#39;</span>
+<span class="w">  </span><span class="p">)</span>
+<span class="p">),</span>
+<span class="n">prod_resolution</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="p">(</span>
+<span class="w">  </span><span class="k">select</span>
+<span class="w">    </span><span class="n">survey_response_id</span><span class="p">,</span>
+<span class="w">    </span><span class="n">respondent_email</span><span class="p">,</span>
+<span class="w">    </span><span class="n">respondent_employee_number</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">prod_emp</span><span class="p">,</span>
+<span class="w">  </span><span class="k">from</span><span class="w"> </span><span class="o">`</span><span class="n">teamster</span><span class="o">-</span><span class="mi">332318</span><span class="p">.</span><span class="n">kipptaf_surveys</span><span class="p">.</span><span class="n">int_surveys__survey_responses</span><span class="o">`</span>
+<span class="w">  </span><span class="k">where</span><span class="w"> </span><span class="n">survey_title</span><span class="w"> </span><span class="k">in</span><span class="w"> </span><span class="p">(</span>
+<span class="w">    </span><span class="s1">&#39;School Community Diagnostic Staff Survey&#39;</span><span class="p">,</span>
+<span class="w">    </span><span class="s1">&#39;Engagement &amp; Support Surveys&#39;</span>
+<span class="w">  </span><span class="p">)</span>
+<span class="p">),</span>
+<span class="n">joined</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="p">(</span>
+<span class="w">  </span><span class="k">select</span><span class="w"> </span><span class="n">n</span><span class="p">.</span><span class="n">survey_response_id</span><span class="p">,</span><span class="w"> </span><span class="n">n</span><span class="p">.</span><span class="n">respondent_email</span><span class="p">,</span><span class="w"> </span><span class="n">p</span><span class="p">.</span><span class="n">prod_emp</span><span class="p">,</span><span class="w"> </span><span class="n">n</span><span class="p">.</span><span class="n">new_emp</span>
+<span class="w">  </span><span class="k">from</span><span class="w"> </span><span class="n">new_resolution</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">n</span>
+<span class="w">  </span><span class="k">inner</span><span class="w"> </span><span class="k">join</span><span class="w"> </span><span class="n">prod_resolution</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">p</span><span class="w"> </span><span class="k">using</span><span class="w"> </span><span class="p">(</span><span class="n">survey_response_id</span><span class="p">)</span>
+<span class="p">)</span>
+<span class="k">select</span>
+<span class="w">  </span><span class="k">count</span><span class="p">(</span><span class="k">distinct</span><span class="w"> </span><span class="n">survey_response_id</span><span class="p">)</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">distinct_submissions</span><span class="p">,</span>
+<span class="w">  </span><span class="n">countif</span><span class="p">(</span><span class="n">prod_emp</span><span class="w"> </span><span class="k">is</span><span class="w"> </span><span class="k">null</span><span class="w"> </span><span class="k">and</span><span class="w"> </span><span class="n">new_emp</span><span class="w"> </span><span class="k">is</span><span class="w"> </span><span class="k">not</span><span class="w"> </span><span class="k">null</span><span class="p">)</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">recovered</span><span class="p">,</span>
+<span class="w">  </span><span class="n">countif</span><span class="p">(</span><span class="n">prod_emp</span><span class="w"> </span><span class="k">is</span><span class="w"> </span><span class="k">null</span><span class="w"> </span><span class="k">and</span><span class="w"> </span><span class="n">new_emp</span><span class="w"> </span><span class="k">is</span><span class="w"> </span><span class="k">null</span><span class="p">)</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">still_null</span><span class="p">,</span>
+<span class="w">  </span><span class="n">countif</span><span class="p">(</span><span class="n">prod_emp</span><span class="w"> </span><span class="k">is</span><span class="w"> </span><span class="k">not</span><span class="w"> </span><span class="k">null</span><span class="w"> </span><span class="k">and</span><span class="w"> </span><span class="n">new_emp</span><span class="w"> </span><span class="o">!=</span><span class="w"> </span><span class="n">prod_emp</span><span class="p">)</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">reassignments</span><span class="p">,</span>
+<span class="w">  </span><span class="n">countif</span><span class="p">(</span><span class="n">prod_emp</span><span class="w"> </span><span class="k">is</span><span class="w"> </span><span class="k">not</span><span class="w"> </span><span class="k">null</span><span class="w"> </span><span class="k">and</span><span class="w"> </span><span class="n">new_emp</span><span class="w"> </span><span class="k">is</span><span class="w"> </span><span class="k">null</span><span class="p">)</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">regressions</span><span class="p">,</span>
+<span class="k">from</span><span class="w"> </span><span class="n">joined</span>
+</code></pre></div>
+<p>Expected:</p>
+<ul>
+<li><code>recovered</code> ≥ 21 (multiple response rows per submission collapse here; the
+  distinct-submission target is 21, raw rows will be higher)</li>
+<li><code>still_null</code> corresponds to the 1 unresolvable email
+  (<code>jperez@apps.teamschools.org</code> per the spec residual)</li>
+<li><code>reassignments</code> = 0</li>
+<li><code>regressions</code> = 0</li>
+</ul>
+<p><strong>If <code>reassignments &gt; 0</code></strong>: STOP. Investigate which email got reassigned and to
+which <code>employee_number</code>. Likely cause: a Google Directory record holds an alias
+that another active employee uses as their <code>sam_account_name</code>. Do NOT proceed
+until reassignments are 0 — the wrap design assumes additive-only recovery.</p>
+<p><strong>If <code>regressions &gt; 0</code></strong>: STOP. The <code>coalesce(srh.x, srh_alias.x)</code> is
+current-first, so regressions should be impossible. If they occur, a bug exists
+in the new SQL.</p>
+<h3 id="step-15-commit-and-push">Step 1.5: Commit and push</h3>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> Run:</li>
+</ul>
+<div class="highlight"><pre><span></span><code>git<span class="w"> </span>-C<span class="w"> </span>.<span class="w"> </span>add<span class="w"> </span>src/dbt/kipptaf/models/surveys/intermediate/int_surveys__survey_responses.sql
+git<span class="w"> </span>-C<span class="w"> </span>.<span class="w"> </span>commit<span class="w"> </span>-m<span class="w"> </span><span class="s2">&quot;</span><span class="k">$(</span>cat<span class="w"> </span><span class="s">&lt;&lt;&#39;EOF&#39;</span>
+<span class="s">fix(dbt): add Google Directory alias fallback to survey response resolution</span>
+
+<span class="s">Refs #3794. When the current sam_account_name / google_email join against</span>
+<span class="s">int_people__staff_roster_history returns null for a staff survey response,</span>
+<span class="s">fall through to a Google Directory alias-resolution path: respondent_email</span>
+<span class="s">→ stg_google_directory__users (emails/aliases/primary) → primary_email →</span>
+<span class="s">fresh srh lookup. Coalesce current-first.</span>
+
+<span class="s">Recovers 21 of 23 currently-null respondent_employee_number values across</span>
+<span class="s">staff and engagement surveys (prod 2026-05-12) with 0 silent reassignments</span>
+<span class="s">and 0 regressions to currently-resolved submissions.</span>
+
+<span class="s">Co-Authored-By: Claude Opus 4.7 (1M context) &lt;noreply@anthropic.com&gt;</span>
+<span class="s">EOF</span>
+<span class="k">)</span><span class="s2">&quot;</span>
+git<span class="w"> </span>-C<span class="w"> </span>.<span class="w"> </span>push
+</code></pre></div>
+<p>Expected: pre-commit fmt runs cleanly; pre-push trunk-check passes
+sqlfluff/yamllint; remote receives the commit.</p>
+<hr />
+<h2 id="task-2-fct_survey_submissions-student-leg-rewrite">Task 2: <code>fct_survey_submissions</code> — student-leg rewrite</h2>
+<p><strong>Files:</strong></p>
+<ul>
+<li>Modify: <code>src/dbt/kipptaf/models/marts/facts/fct_survey_submissions.sql</code> (lines
+  39-99, the <code>student_submissions_ranked</code> and <code>student_submissions</code> CTEs)</li>
+</ul>
+<p>Three changes in one CTE:</p>
+<ol>
+<li>Replace the join predicate
+   <code>enr.enroll_status = 0 AND sr.academic_year = enr.academic_year</code> with
+   <code>enr.entrydate &lt;= sr.date_submitted AND enr.exitdate &gt; sr.date_submitted</code>.</li>
+<li>Drop the
+   <code>row_number() OVER (PARTITION BY sr.survey_response_id ORDER BY enr.entrydate DESC)</code>
+   tiebreaker and the wrapper <code>student_submissions</code> CTE — collapse to a single
+   CTE.</li>
+<li>Source <code>academic_year</code> from <code>enr.academic_year</code> (not <code>sr.academic_year</code>) so
+   the <code>student_enrollment_key</code> hash composition matches
+   <code>dim_student_enrollments</code>.</li>
+</ol>
+<h3 id="step-21-apply-the-student-leg-edit">Step 2.1: Apply the student-leg edit</h3>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> Edit <code>src/dbt/kipptaf/models/marts/facts/fct_survey_submissions.sql</code>.
+      Replace the block from line 38 <code>/* Student SCD submissions */</code> through
+      line 99 <code>),</code> (inclusive — through and including the closing
+      parenthesis of <code>student_submissions</code>) with:</li>
+</ul>
+<div class="highlight"><pre><span></span><code><span class="w">    </span><span class="cm">/* Student SCD submissions */</span>
+<span class="w">    </span><span class="n">student_submissions</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="p">(</span>
+<span class="w">        </span><span class="k">select</span>
+<span class="w">            </span><span class="n">sr</span><span class="p">.</span><span class="n">survey_id</span><span class="p">,</span>
+<span class="w">            </span><span class="n">sr</span><span class="p">.</span><span class="n">survey_response_id</span><span class="p">,</span>
+<span class="w">            </span><span class="n">sr</span><span class="p">.</span><span class="n">respondent_email</span><span class="p">,</span>
+<span class="w">            </span><span class="n">sr</span><span class="p">.</span><span class="n">date_submitted</span><span class="p">,</span>
+<span class="w">            </span><span class="n">sr</span><span class="p">.</span><span class="n">term_code</span><span class="p">,</span>
+
+<span class="w">            </span><span class="n">rt</span><span class="p">.</span><span class="k">type</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">term_type</span><span class="p">,</span>
+<span class="w">            </span><span class="n">rt</span><span class="p">.</span><span class="n">code</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">rt_code</span><span class="p">,</span>
+<span class="w">            </span><span class="n">rt</span><span class="p">.</span><span class="o">`</span><span class="n">name</span><span class="o">`</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">rt_name</span><span class="p">,</span>
+<span class="w">            </span><span class="n">rt</span><span class="p">.</span><span class="n">start_date</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">rt_start_date</span><span class="p">,</span>
+<span class="w">            </span><span class="n">rt</span><span class="p">.</span><span class="n">region</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">rt_region</span><span class="p">,</span>
+<span class="w">            </span><span class="n">rt</span><span class="p">.</span><span class="n">school_id</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">rt_school_id</span><span class="p">,</span>
+
+<span class="w">            </span><span class="s1">&#39;student&#39;</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">respondent_type</span><span class="p">,</span>
+
+<span class="w">            </span><span class="n">enr</span><span class="p">.</span><span class="n">student_number</span><span class="p">,</span>
+<span class="w">            </span><span class="n">enr</span><span class="p">.</span><span class="n">_dbt_source_relation</span><span class="p">,</span>
+<span class="w">            </span><span class="n">enr</span><span class="p">.</span><span class="n">academic_year</span><span class="p">,</span>
+<span class="w">            </span><span class="n">enr</span><span class="p">.</span><span class="n">entrydate</span><span class="p">,</span>
+<span class="w">        </span><span class="k">from</span><span class="w"> </span><span class="err">{{</span><span class="w"> </span><span class="k">ref</span><span class="p">(</span><span class="ss">&quot;int_surveys__survey_responses&quot;</span><span class="p">)</span><span class="w"> </span><span class="err">}}</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">sr</span>
+<span class="w">        </span><span class="k">inner</span><span class="w"> </span><span class="k">join</span>
+<span class="w">            </span><span class="err">{{</span><span class="w"> </span><span class="k">ref</span><span class="p">(</span><span class="ss">&quot;stg_google_sheets__reporting__terms&quot;</span><span class="p">)</span><span class="w"> </span><span class="err">}}</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">rt</span>
+<span class="w">            </span><span class="k">on</span><span class="w"> </span><span class="n">sr</span><span class="p">.</span><span class="n">survey_title</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">rt</span><span class="p">.</span><span class="o">`</span><span class="n">name</span><span class="o">`</span>
+<span class="w">            </span><span class="k">and</span><span class="w"> </span><span class="n">sr</span><span class="p">.</span><span class="n">academic_year</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">rt</span><span class="p">.</span><span class="n">academic_year</span>
+<span class="w">            </span><span class="k">and</span><span class="w"> </span><span class="n">sr</span><span class="p">.</span><span class="n">term_code</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">rt</span><span class="p">.</span><span class="n">code</span>
+<span class="w">            </span><span class="k">and</span><span class="w"> </span><span class="n">rt</span><span class="p">.</span><span class="k">type</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s1">&#39;SURVEY&#39;</span>
+<span class="w">        </span><span class="k">inner</span><span class="w"> </span><span class="k">join</span>
+<span class="w">            </span><span class="err">{{</span><span class="w"> </span><span class="k">ref</span><span class="p">(</span><span class="ss">&quot;int_extracts__student_enrollments&quot;</span><span class="p">)</span><span class="w"> </span><span class="err">}}</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">enr</span>
+<span class="w">            </span><span class="k">on</span><span class="w"> </span><span class="n">sr</span><span class="p">.</span><span class="n">respondent_email</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">enr</span><span class="p">.</span><span class="n">student_email</span>
+<span class="w">            </span><span class="k">and</span><span class="w"> </span><span class="n">enr</span><span class="p">.</span><span class="n">entrydate</span><span class="w"> </span><span class="o">&lt;=</span><span class="w"> </span><span class="n">sr</span><span class="p">.</span><span class="n">date_submitted</span>
+<span class="w">            </span><span class="k">and</span><span class="w"> </span><span class="n">enr</span><span class="p">.</span><span class="n">exitdate</span><span class="w"> </span><span class="o">&gt;</span><span class="w"> </span><span class="n">sr</span><span class="p">.</span><span class="n">date_submitted</span>
+<span class="w">        </span><span class="k">where</span><span class="w"> </span><span class="n">sr</span><span class="p">.</span><span class="n">survey_title</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s1">&#39;School Community Diagnostic Student Survey&#39;</span>
+<span class="w">    </span><span class="p">),</span>
+</code></pre></div>
+<p>Key points to verify after editing:</p>
+<ul>
+<li><code>sr.academic_year</code> is no longer in the SELECT list of <code>student_submissions</code>.
+  <code>enr.academic_year</code> replaces it.</li>
+<li>The two-CTE shape (<code>student_submissions_ranked</code> → <code>student_submissions</code>)
+  collapses to one CTE named <code>student_submissions</code>. The <code>combined_student</code> and
+  downstream <code>select ... from combined_student</code> references continue to compile
+  because the new CTE preserves the same column set the old
+  <code>student_submissions</code> exposed (the <code>rn_enrollment</code> column is dropped — confirm
+  via grep below it has no other consumers).</li>
+</ul>
+<h3 id="step-22-confirm-rn_enrollment-was-only-referenced-in-the-dropped-wrapper">Step 2.2: Confirm <code>rn_enrollment</code> was only referenced in the dropped wrapper</h3>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> Run:</li>
+</ul>
+<div class="highlight"><pre><span></span><code>grep<span class="w"> </span>-rn<span class="w"> </span><span class="s2">&quot;rn_enrollment&quot;</span><span class="w"> </span>src/dbt/kipptaf/
+</code></pre></div>
+<p>Expected: zero matches. If any match exists outside the file you just edited,
+that's a real consumer — STOP and resolve.</p>
+<h3 id="step-23-build-the-model-and-run-tests">Step 2.3: Build the model and run tests</h3>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> Run:</li>
+</ul>
+<div class="highlight"><pre><span></span><code>uv<span class="w"> </span>run<span class="w"> </span>dbt<span class="w"> </span>build<span class="w"> </span>--select<span class="w"> </span>fct_survey_submissions<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--project-dir<span class="w"> </span>src/dbt/kipptaf<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--target<span class="w"> </span>dev<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--defer<span class="w"> </span>--state<span class="w"> </span>target/prod/
+</code></pre></div>
+<p>Expected: model materializes successfully; <code>unique</code> test on
+<code>survey_submission_key</code> passes; FK relationships tests against
+<code>dim_student_enrollments</code>, <code>dim_staff</code>, <code>dim_survey_administrations</code>,
+<code>dim_dates</code>, and <code>dim_student_contact_persons</code> all PASS or WARN (some WARN at
+default mart severity, which is acceptable per the spec).</p>
+<p><strong>If <code>unique</code> fails</strong>: Investigate fan-out. Cause is either (a) an enrollment
+overlap that does intersect a submission date for some student (a hypothesis the
+spec explicitly tests as "currently zero"), or (b) a duplicate response
+upstream. Re-run the spec's overlap-detection query (see spec § "Implementation"
+→ "fct_survey_submissions.sql — student leg") against the dev schema's
+<code>student_submissions</code> materialization to characterize.</p>
+<h3 id="step-24-commit-and-push">Step 2.4: Commit and push</h3>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> Run:</li>
+</ul>
+<div class="highlight"><pre><span></span><code>git<span class="w"> </span>-C<span class="w"> </span>.<span class="w"> </span>add<span class="w"> </span>src/dbt/kipptaf/models/marts/facts/fct_survey_submissions.sql
+git<span class="w"> </span>-C<span class="w"> </span>.<span class="w"> </span>commit<span class="w"> </span>-m<span class="w"> </span><span class="s2">&quot;</span><span class="k">$(</span>cat<span class="w"> </span><span class="s">&lt;&lt;&#39;EOF&#39;</span>
+<span class="s">fix(dbt): use date-range membership for student-leg enrollment join</span>
+
+<span class="s">Refs #3794. Replaces the student-leg join in fct_survey_submissions from</span>
+<span class="s">(academic_year =, enroll_status = 0) to a half-open date-range membership</span>
+<span class="s">check on enr.entrydate &lt;= sr.date_submitted &lt; enr.exitdate. The old</span>
+<span class="s">predicates were both wrong: enroll_status is a student-level current-active</span>
+<span class="s">flag (drops historical enrollments for since-departed students), and the</span>
+<span class="s">academic_year equality misses mid-year enrollment year-tag changes.</span>
+
+<span class="s">Collapses student_submissions_ranked and student_submissions into a single</span>
+<span class="s">CTE, dropping the row_number() tiebreaker after verifying zero</span>
+<span class="s">enrollment-overlap fan-out on actual survey submissions. The PK uniqueness</span>
+<span class="s">test on survey_submission_key remains the regression guard.</span>
+
+<span class="s">Sources academic_year from the matched enrollment row so</span>
+<span class="s">student_enrollment_key hash inputs match dim_student_enrollments.</span>
+
+<span class="s">Co-Authored-By: Claude Opus 4.7 (1M context) &lt;noreply@anthropic.com&gt;</span>
+<span class="s">EOF</span>
+<span class="k">)</span><span class="s2">&quot;</span>
+git<span class="w"> </span>-C<span class="w"> </span>.<span class="w"> </span>push
+</code></pre></div>
+<hr />
+<h2 id="task-3-fct_survey_submissions-staff-leg-nullable-fk">Task 3: <code>fct_survey_submissions</code> — staff-leg nullable FK</h2>
+<p><strong>Files:</strong></p>
+<ul>
+<li>Modify: <code>src/dbt/kipptaf/models/marts/facts/fct_survey_submissions.sql</code> (lines
+  30-31 in the <code>staff_submissions</code> CTE; line 289 in the staff-leg final SELECT)</li>
+</ul>
+<p>Two changes:</p>
+<ol>
+<li>Drop the <code>sr.respondent_employee_number is not null and</code> predicate from
+   <code>staff_submissions</code>'s WHERE clause.</li>
+<li>Wrap <code>staff_key</code> with the nullable-FK
+   <code>if(... is not null, generate_surrogate_key(...), cast(null as string))</code>
+   pattern, mirroring <code>subject_staff_key</code>.</li>
+</ol>
+<h3 id="step-31-drop-the-is-not-null-filter">Step 3.1: Drop the <code>is not null</code> filter</h3>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> Edit. Replace:</li>
+</ul>
+<div class="highlight"><pre><span></span><code><span class="w">        </span><span class="k">where</span>
+<span class="w">            </span><span class="n">sr</span><span class="p">.</span><span class="n">respondent_employee_number</span><span class="w"> </span><span class="k">is</span><span class="w"> </span><span class="k">not</span><span class="w"> </span><span class="k">null</span>
+<span class="w">            </span><span class="k">and</span><span class="w"> </span><span class="n">sr</span><span class="p">.</span><span class="n">survey_title</span><span class="w"> </span><span class="k">in</span><span class="w"> </span><span class="p">(</span>
+<span class="w">                </span><span class="s1">&#39;School Community Diagnostic Staff Survey&#39;</span><span class="p">,</span>
+<span class="w">                </span><span class="s1">&#39;Engagement &amp; Support Surveys&#39;</span>
+<span class="w">            </span><span class="p">)</span>
+</code></pre></div>
+<p>with:</p>
+<div class="highlight"><pre><span></span><code><span class="w">        </span><span class="k">where</span>
+<span class="w">            </span><span class="n">sr</span><span class="p">.</span><span class="n">survey_title</span><span class="w"> </span><span class="k">in</span><span class="w"> </span><span class="p">(</span>
+<span class="w">                </span><span class="s1">&#39;School Community Diagnostic Staff Survey&#39;</span><span class="p">,</span>
+<span class="w">                </span><span class="s1">&#39;Engagement &amp; Support Surveys&#39;</span>
+<span class="w">            </span><span class="p">)</span>
+</code></pre></div>
+<h3 id="step-32-wrap-staff_key-with-the-nullable-fk-pattern">Step 3.2: Wrap <code>staff_key</code> with the nullable-FK pattern</h3>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> Edit. Replace the line in the staff-leg final SELECT (currently
+      <code>fct_survey_submissions.sql:289</code>):</li>
+</ul>
+<div class="highlight"><pre><span></span><code><span class="w">    </span><span class="err">{{</span><span class="w"> </span><span class="n">dbt_utils</span><span class="p">.</span><span class="n">generate_surrogate_key</span><span class="p">([</span><span class="ss">&quot;respondent_employee_number&quot;</span><span class="p">])</span><span class="w"> </span><span class="err">}}</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">staff_key</span><span class="p">,</span>
+</code></pre></div>
+<p>with:</p>
+<div class="highlight"><pre><span></span><code><span class="w">    </span><span class="k">if</span><span class="p">(</span>
+<span class="w">        </span><span class="n">respondent_employee_number</span><span class="w"> </span><span class="k">is</span><span class="w"> </span><span class="k">not</span><span class="w"> </span><span class="k">null</span><span class="p">,</span>
+<span class="w">        </span><span class="err">{{</span><span class="w"> </span><span class="n">dbt_utils</span><span class="p">.</span><span class="n">generate_surrogate_key</span><span class="p">([</span><span class="ss">&quot;respondent_employee_number&quot;</span><span class="p">])</span><span class="w"> </span><span class="err">}}</span><span class="p">,</span>
+<span class="w">        </span><span class="k">cast</span><span class="p">(</span><span class="k">null</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">string</span><span class="p">)</span>
+<span class="w">    </span><span class="p">)</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">staff_key</span><span class="p">,</span>
+</code></pre></div>
+<h3 id="step-33-build-and-run-tests">Step 3.3: Build and run tests</h3>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> Run:</li>
+</ul>
+<div class="highlight"><pre><span></span><code>uv<span class="w"> </span>run<span class="w"> </span>dbt<span class="w"> </span>build<span class="w"> </span>--select<span class="w"> </span>fct_survey_submissions<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--project-dir<span class="w"> </span>src/dbt/kipptaf<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--target<span class="w"> </span>dev<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--defer<span class="w"> </span>--state<span class="w"> </span>target/prod/
+</code></pre></div>
+<p>Expected: PASS. The relationships test <code>staff_key → dim_staff.staff_key</code> should
+report zero orphans because every now-included null-employee submission produces
+<code>staff_key = null</code> (relationships tests treat null FKs as not-applicable).</p>
+<p><strong>If new <code>staff_key → dim_staff</code> orphans appear</strong>: a recovered <code>employee_number</code>
+from Task 1's alias resolution doesn't exist in <code>dim_staff</code>. Investigate by
+joining the orphan keys back to <code>int_surveys__survey_responses</code>; cross-check
+those emails against <code>dim_staff</code>. The expected resolution: file a follow-up
+issue for the missing <code>dim_staff</code> row(s); for this PR, accept the WARN and call
+it out in the PR description.</p>
+<h3 id="step-34-commit-and-push">Step 3.4: Commit and push</h3>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> Run:</li>
+</ul>
+<div class="highlight"><pre><span></span><code>git<span class="w"> </span>-C<span class="w"> </span>.<span class="w"> </span>add<span class="w"> </span>src/dbt/kipptaf/models/marts/facts/fct_survey_submissions.sql
+git<span class="w"> </span>-C<span class="w"> </span>.<span class="w"> </span>commit<span class="w"> </span>-m<span class="w"> </span><span class="s2">&quot;</span><span class="k">$(</span>cat<span class="w"> </span><span class="s">&lt;&lt;&#39;EOF&#39;</span>
+<span class="s">fix(dbt): include null-employee staff survey submissions</span>
+
+<span class="s">Refs #3794. Drops the respondent_employee_number is not null filter from</span>
+<span class="s">fct_survey_submissions.staff_submissions and wraps staff_key with the</span>
+<span class="s">nullable-FK if-not-null pattern. Submissions whose respondent_employee_number</span>
+<span class="s">still cannot be resolved after upstream alias resolution now produce a row</span>
+<span class="s">with staff_key = null, restoring 1:1 coverage with fct_survey_responses.</span>
+
+<span class="s">Co-Authored-By: Claude Opus 4.7 (1M context) &lt;noreply@anthropic.com&gt;</span>
+<span class="s">EOF</span>
+<span class="k">)</span><span class="s2">&quot;</span>
+git<span class="w"> </span>-C<span class="w"> </span>.<span class="w"> </span>push
+</code></pre></div>
+<hr />
+<h2 id="task-4-update-fct_survey_submissions-model-description">Task 4: Update <code>fct_survey_submissions</code> model description</h2>
+<p><strong>Files:</strong></p>
+<ul>
+<li>Modify:
+  <code>src/dbt/kipptaf/models/marts/facts/properties/fct_survey_submissions.yml</code>
+  (lines 3-10 model description; line 70-72 <code>staff_key</code>; line 86-88
+  <code>student_enrollment_key</code>)</li>
+</ul>
+<p>Update the descriptions to document (a) the date-range attribution rule for the
+student leg, (b) the nullable-FK semantics on <code>staff_key</code> and
+<code>student_enrollment_key</code>.</p>
+<h3 id="step-41-update-model-level-description">Step 4.1: Update model-level description</h3>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> Edit. Replace lines 3-10:</li>
+</ul>
+<div class="highlight"><pre><span></span><code><span class="nt">description</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">&gt;-</span>
+<span class="w">  </span><span class="no">Survey submission fact table. One row per respondent x survey_administration.</span>
+<span class="w">  </span><span class="no">Records survey completion events across all populations (staff, student,</span>
+<span class="w">  </span><span class="no">family). The respondent_type discriminator determines which respondent FK is</span>
+<span class="w">  </span><span class="no">populated (exactly one per row). Nullable subject_staff_key is populated only</span>
+<span class="w">  </span><span class="no">for Manager Survey submissions (role-playing FK to dim_staff for the manager</span>
+<span class="w">  </span><span class="no">being evaluated). FK to dim_survey_administrations and dim_dates.</span>
+</code></pre></div>
+<p>with:</p>
+<div class="highlight"><pre><span></span><code><span class="nt">description</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">&gt;-</span>
+<span class="w">  </span><span class="no">Survey submission fact table. One row per respondent x survey_administration.</span>
+<span class="w">  </span><span class="no">Records survey completion events across all populations (staff, student,</span>
+<span class="w">  </span><span class="no">family). The respondent_type discriminator determines which respondent FK is</span>
+<span class="w">  </span><span class="no">populated (exactly one per row). For student submissions,</span>
+<span class="w">  </span><span class="no">student_enrollment_key resolves to the enrollment row whose [entrydate,</span>
+<span class="w">  </span><span class="no">exitdate) window contains date_submitted. staff_key and student_enrollment_key</span>
+<span class="w">  </span><span class="no">are nullable for respondents whose identity cannot be resolved (e.g. staff</span>
+<span class="w">  </span><span class="no">respondents whose employee_number was never linked, or student respondents</span>
+<span class="w">  </span><span class="no">whose email is not present in int_extracts__student_enrollments). Nullable</span>
+<span class="w">  </span><span class="no">subject_staff_key is populated only for Manager Survey submissions</span>
+<span class="w">  </span><span class="no">(role-playing FK to dim_staff for the manager being evaluated). FK to</span>
+<span class="w">  </span><span class="no">dim_survey_administrations and dim_dates.</span>
+</code></pre></div>
+<h3 id="step-42-update-staff_key-column-description">Step 4.2: Update <code>staff_key</code> column description</h3>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> Edit. Replace:</li>
+</ul>
+<div class="highlight"><pre><span></span><code><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">staff_key</span>
+<span class="w">  </span><span class="nt">data_type</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">string</span>
+<span class="w">  </span><span class="nt">description</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">&gt;-</span>
+<span class="w">    </span><span class="no">FK to dim_staff for the respondent. Populated when respondent_type is staff.</span>
+<span class="w">    </span><span class="no">Null for student and family.</span>
+</code></pre></div>
+<p>with:</p>
+<div class="highlight"><pre><span></span><code><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">staff_key</span>
+<span class="w">  </span><span class="nt">data_type</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">string</span>
+<span class="w">  </span><span class="nt">description</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">&gt;-</span>
+<span class="w">    </span><span class="no">FK to dim_staff for the respondent. Populated when respondent_type is staff</span>
+<span class="w">    </span><span class="no">AND the upstream respondent_employee_number resolves. Null for student /</span>
+<span class="w">    </span><span class="no">family respondents AND for staff respondents whose identity cannot be</span>
+<span class="w">    </span><span class="no">resolved upstream.</span>
+</code></pre></div>
+<h3 id="step-43-update-student_enrollment_key-column-description">Step 4.3: Update <code>student_enrollment_key</code> column description</h3>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> Edit. Replace:</li>
+</ul>
+<div class="highlight"><pre><span></span><code><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">student_enrollment_key</span>
+<span class="w">  </span><span class="nt">data_type</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">string</span>
+<span class="w">  </span><span class="nt">description</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">&gt;-</span>
+<span class="w">    </span><span class="no">FK to dim_student_enrollments for the respondent. Populated when</span>
+<span class="w">    </span><span class="no">respondent_type is student. Null for staff and family.</span>
+</code></pre></div>
+<p>with:</p>
+<div class="highlight"><pre><span></span><code><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">student_enrollment_key</span>
+<span class="w">  </span><span class="nt">data_type</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">string</span>
+<span class="w">  </span><span class="nt">description</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">&gt;-</span>
+<span class="w">    </span><span class="no">FK to dim_student_enrollments for the respondent, resolved by matching</span>
+<span class="w">    </span><span class="no">respondent_email to an enrollment row whose [entrydate, exitdate) window</span>
+<span class="w">    </span><span class="no">contains date_submitted. Populated when respondent_type is student AND such</span>
+<span class="w">    </span><span class="no">an enrollment exists. Null for staff / family respondents AND for student</span>
+<span class="w">    </span><span class="no">respondents whose email is not present in int_extracts__student_enrollments</span>
+<span class="w">    </span><span class="no">or has no enrollment row covering date_submitted.</span>
+</code></pre></div>
+<h3 id="step-44-re-parse-the-project-to-verify-yaml-is-well-formed">Step 4.4: Re-parse the project to verify YAML is well-formed</h3>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> Run:</li>
+</ul>
+<div class="highlight"><pre><span></span><code>uv<span class="w"> </span>run<span class="w"> </span>dbt<span class="w"> </span>parse<span class="w"> </span>--target<span class="w"> </span>dev<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--project-dir<span class="w"> </span>src/dbt/kipptaf<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--no-partial-parse
+</code></pre></div>
+<p>Expected: parse completes without errors. <code>--no-partial-parse</code> forces a full
+re-parse so any description-merge edge case surfaces.</p>
+<h3 id="step-45-commit-and-push">Step 4.5: Commit and push</h3>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> Run:</li>
+</ul>
+<div class="highlight"><pre><span></span><code>git<span class="w"> </span>-C<span class="w"> </span>.<span class="w"> </span>add<span class="w"> </span>src/dbt/kipptaf/models/marts/facts/properties/fct_survey_submissions.yml
+git<span class="w"> </span>-C<span class="w"> </span>.<span class="w"> </span>commit<span class="w"> </span>-m<span class="w"> </span><span class="s2">&quot;</span><span class="k">$(</span>cat<span class="w"> </span><span class="s">&lt;&lt;&#39;EOF&#39;</span>
+<span class="s">docs(dbt): update fct_survey_submissions description for nullable FKs</span>
+
+<span class="s">Refs #3794. Documents the date-range attribution rule for the student leg</span>
+<span class="s">and the nullable-FK semantics on staff_key and student_enrollment_key.</span>
+
+<span class="s">Co-Authored-By: Claude Opus 4.7 (1M context) &lt;noreply@anthropic.com&gt;</span>
+<span class="s">EOF</span>
+<span class="k">)</span><span class="s2">&quot;</span>
+git<span class="w"> </span>-C<span class="w"> </span>.<span class="w"> </span>push
+</code></pre></div>
+<hr />
+<h2 id="task-5-final-verification-on-pr-branch-schema">Task 5: Final verification on PR-branch schema</h2>
+<p>After Task 4 pushes, the dbt Cloud CI job builds the PR's models into a schema
+named <code>dbt_cloud_pr_&lt;ci_id&gt;_3794_&lt;schema_part&gt;</code>. Wait for CI to complete
+(visible on the GitHub PR), then verify against the materialized PR-branch
+tables.</p>
+<h3 id="step-51-find-the-ci-runs-pr-schema-id">Step 5.1: Find the CI run's PR-schema id</h3>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> Run:</li>
+</ul>
+<div class="highlight"><pre><span></span><code>gh<span class="w"> </span>pr<span class="w"> </span>view<span class="w"> </span>--json<span class="w"> </span>number,statusCheckRollup
+</code></pre></div>
+<p>Look for the dbt Cloud CI run and its run id. The PR-branch schema follows the
+pattern <code>dbt_cloud_pr_&lt;env_id&gt;_&lt;pr_number&gt;_&lt;schema_suffix&gt;</code>. For this repo
+<code>env_id</code> is <code>70403104388001</code> and <code>pr_number</code> is whatever GitHub assigned. The
+suffix matches the model's prod schema suffix (<code>surveys</code>, <code>marts</code>, <code>extracts</code>,
+etc.).</p>
+<h3 id="step-52-verify-orphan-count-returns-to-zero-on-pr-branch-marts-schema">Step 5.2: Verify orphan count returns to zero on PR-branch marts schema</h3>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> Run via <code>mcp__bigquery__execute_sql</code>, substituting the correct PR-branch
+      schema names:</li>
+</ul>
+<div class="highlight"><pre><span></span><code><span class="k">select</span>
+<span class="w">  </span><span class="k">count</span><span class="p">(</span><span class="o">*</span><span class="p">)</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">orphan_responses</span><span class="p">,</span>
+<span class="w">  </span><span class="k">count</span><span class="p">(</span><span class="k">distinct</span><span class="w"> </span><span class="n">r</span><span class="p">.</span><span class="n">survey_submission_key</span><span class="p">)</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">orphan_distinct_submissions</span><span class="p">,</span>
+<span class="k">from</span><span class="w"> </span><span class="o">`</span><span class="n">teamster</span><span class="o">-</span><span class="mi">332318</span><span class="p">.</span><span class="n">dbt_cloud_pr_70403104388001_</span><span class="o">&lt;</span><span class="n">PR</span><span class="o">&gt;</span><span class="n">_marts</span><span class="p">.</span><span class="n">fct_survey_responses</span><span class="o">`</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">r</span>
+<span class="k">left</span><span class="w"> </span><span class="k">join</span><span class="w"> </span><span class="o">`</span><span class="n">teamster</span><span class="o">-</span><span class="mi">332318</span><span class="p">.</span><span class="n">dbt_cloud_pr_70403104388001_</span><span class="o">&lt;</span><span class="n">PR</span><span class="o">&gt;</span><span class="n">_marts</span><span class="p">.</span><span class="n">fct_survey_submissions</span><span class="o">`</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">s</span>
+<span class="w">  </span><span class="k">on</span><span class="w"> </span><span class="n">r</span><span class="p">.</span><span class="n">survey_submission_key</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">s</span><span class="p">.</span><span class="n">survey_submission_key</span>
+<span class="k">where</span><span class="w"> </span><span class="n">r</span><span class="p">.</span><span class="n">survey_submission_key</span><span class="w"> </span><span class="k">is</span><span class="w"> </span><span class="k">not</span><span class="w"> </span><span class="k">null</span>
+<span class="w">  </span><span class="k">and</span><span class="w"> </span><span class="n">s</span><span class="p">.</span><span class="n">survey_submission_key</span><span class="w"> </span><span class="k">is</span><span class="w"> </span><span class="k">null</span>
+</code></pre></div>
+<p>Expected: <code>orphan_responses = 0</code> and <code>orphan_distinct_submissions = 0</code>.</p>
+<p>If non-zero, run the diagnostic breakdown:</p>
+<div class="highlight"><pre><span></span><code><span class="k">select</span>
+<span class="w">  </span><span class="n">r</span><span class="p">.</span><span class="n">respondent_type</span><span class="p">,</span>
+<span class="w">  </span><span class="n">r</span><span class="p">.</span><span class="n">survey_title</span><span class="p">,</span>
+<span class="w">  </span><span class="k">count</span><span class="p">(</span><span class="o">*</span><span class="p">)</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">orphan_rows</span><span class="p">,</span>
+<span class="w">  </span><span class="k">count</span><span class="p">(</span><span class="k">distinct</span><span class="w"> </span><span class="n">r</span><span class="p">.</span><span class="n">survey_submission_key</span><span class="p">)</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">distinct_submissions</span><span class="p">,</span>
+<span class="k">from</span><span class="w"> </span><span class="o">`</span><span class="n">teamster</span><span class="o">-</span><span class="mi">332318</span><span class="p">.</span><span class="n">dbt_cloud_pr_70403104388001_</span><span class="o">&lt;</span><span class="n">PR</span><span class="o">&gt;</span><span class="n">_marts</span><span class="p">.</span><span class="n">fct_survey_responses</span><span class="o">`</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">r</span>
+<span class="k">left</span><span class="w"> </span><span class="k">join</span><span class="w"> </span><span class="o">`</span><span class="n">teamster</span><span class="o">-</span><span class="mi">332318</span><span class="p">.</span><span class="n">dbt_cloud_pr_70403104388001_</span><span class="o">&lt;</span><span class="n">PR</span><span class="o">&gt;</span><span class="n">_marts</span><span class="p">.</span><span class="n">fct_survey_submissions</span><span class="o">`</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">s</span>
+<span class="w">  </span><span class="k">on</span><span class="w"> </span><span class="n">r</span><span class="p">.</span><span class="n">survey_submission_key</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">s</span><span class="p">.</span><span class="n">survey_submission_key</span>
+<span class="k">where</span><span class="w"> </span><span class="n">r</span><span class="p">.</span><span class="n">survey_submission_key</span><span class="w"> </span><span class="k">is</span><span class="w"> </span><span class="k">not</span><span class="w"> </span><span class="k">null</span>
+<span class="w">  </span><span class="k">and</span><span class="w"> </span><span class="n">s</span><span class="p">.</span><span class="n">survey_submission_key</span><span class="w"> </span><span class="k">is</span><span class="w"> </span><span class="k">null</span>
+<span class="k">group</span><span class="w"> </span><span class="k">by</span><span class="w"> </span><span class="mi">1</span><span class="p">,</span><span class="w"> </span><span class="mi">2</span>
+<span class="k">order</span><span class="w"> </span><span class="k">by</span><span class="w"> </span><span class="n">orphan_rows</span><span class="w"> </span><span class="k">desc</span>
+</code></pre></div>
+<h3 id="step-53-confirm-pk-uniqueness-and-fk-relationships-tests-pass">Step 5.3: Confirm PK uniqueness and FK relationships tests pass</h3>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> Use <code>mcp__dbt__get_job_run_error</code> with <code>warning_only=true</code> on the CI run's
+      job id and look for any test referencing <code>fct_survey_submissions</code>. The
+      relationship test for
+      <code>fct_survey_responses.survey_submission_key → fct_survey_submissions.survey_submission_key</code>
+      should report zero rows; the <code>unique</code> test on <code>survey_submission_key</code>
+      should pass.</li>
+</ul>
+<p>If the <code>fct_survey_responses → fct_survey_submissions</code> relationships test
+reports zero rows, optionally flip its severity from default <code>warn</code> to <code>error</code>
+(in the properties yml for <code>fct_survey_responses</code>); confirm with the user before
+doing so since severity changes affect deploy-time gating.</p>
+<h3 id="step-54-marts-pre-merge-checklist">Step 5.4: Marts pre-merge checklist</h3>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> Walk the <code>marts/CLAUDE.md</code> § "Pre-merge checklist" items inline in the PR
+      description:</li>
+<li>Diamond paths introduced? (Expected: no — only join shape changed.)</li>
+<li>R1–R10 violations? (Expected: no — no new columns.)</li>
+<li>Marts-model warnings from latest CI run via
+    <code>mcp__dbt__get_job_run_error(warning_only=true)</code>. List any new warnings; for
+    each, search open issues by model name + FK target. Confirm the survey-FK
+    warning disappears and no new warnings (incl. <code>staff_key → dim_staff</code>)
+    appear.</li>
+<li>Scan <code>https://github.com/orgs/TEAMSchools/projects/4/views/1</code> for bonus
+    issues incidentally resolved; close them in the PR.</li>
+</ul>
+<h3 id="step-55-open-the-pr">Step 5.5: Open the PR</h3>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> Open the PR using the repository's PR template
+      (<code>.github/pull_request_template.md</code> — <code>gh pr create</code> loads it by default).
+      Title: <code>fix(dbt): close survey responses → submissions FK gap</code>. Body: fill
+      in the template's <em>Summary &amp; Motivation</em> with:</li>
+</ul>
+<blockquote>
+<p>When merged, this pull request will close the
+<code>fct_survey_responses → fct_survey_submissions</code> FK gap (143,758 orphan
+response rows / 12,261 orphan submissions on 2026-05-12) by adding a Google
+Directory alias-resolution fallback in <code>int_surveys__survey_responses</code> and
+rewriting the <code>fct_survey_submissions</code> student-leg join to use date-range
+enrollment membership. Closes #3794.</p>
+</blockquote>
+<p>Add an <em>AI Assistance</em> note: spec authoring, plan generation, and SQL drafting
+  were Claude-assisted; data verification (BigQuery queries against prod and dev
+  schemas) and final review human-directed.</p>
+<p>Check the dbt section items as applicable (no new exposures, no new external
+  sources, no breaking column renames). Leave the unrelated sections unchecked /
+  let the template's "skip if no X changes" guidance apply.</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> Run:</li>
+</ul>
+<div class="highlight"><pre><span></span><code>gh<span class="w"> </span>pr<span class="w"> </span>create<span class="w"> </span>--title<span class="w"> </span><span class="s2">&quot;fix(dbt): close survey responses → submissions FK gap&quot;</span>
+</code></pre></div>
+<p>(omitting <code>--body</code> so <code>gh</code> opens an editor pre-filled with the template; paste
+in the summary above before saving)</p>
+<hr />
+<h2 id="follow-up-issues-to-file-not-part-of-this-pr">Follow-up issues to file (not part of this PR)</h2>
+<ul>
+<li><strong>LDAP <code>employeeID</code> provisioning gap</strong> — the <code>jperez@apps.teamschools.org</code>
+  residual. Administrative remediation, not a model change.</li>
+<li><strong><code>int_people__staff_roster_history</code> identifier historicization</strong> —
+  <code>sam_account_name</code> / <code>google_email</code> / <code>user_principal_name</code> overwritten with
+  current values across all effective-dated rows; a true effective-dated
+  identifier history would obviate the Directory-alias fallback added in this
+  PR.</li>
+<li><strong>Paterson <code>primary_indicator = false</code> on currently-effective rows</strong> — for
+  both Paterson Prep staff in <code>int_people__staff_roster_history</code>, the most
+  recent effective row has <code>primary_indicator = false</code>, meaning the existing
+  survey-response join would miss them even if AD linkage were intact.</li>
+<li><strong><code>int_extracts__student_enrollments</code> overlapping date ranges</strong> — 3
+  overlapping pairs across 2 students in prod 2026-05-12. Doesn't affect survey
+  submissions today but warrants the upstream
+  <code>base_powerschool__student_enrollments</code> cleanup tracked in #3633.</li>
+</ul>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+          <button type="button" class="md-top md-icon" data-md-component="top" hidden>
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8z"/></svg>
+  Back to top
+</button>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+    <div class="md-copyright__highlight">
+      Copyright &copy; KIPP TEAM & Family Schools
+    </div>
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      
+      <script id="__config" type="application/json">{"annotate": null, "base": "../../..", "features": ["content.action.edit", "content.code.copy", "navigation.instant", "navigation.indexes", "navigation.sections", "navigation.tabs", "navigation.tabs.sticky", "navigation.top", "search.highlight", "search.suggest", "toc.follow"], "search": "../../../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+    
+    
+      <script src="../../../assets/javascripts/bundle.79ae519e.min.js"></script>
+      
+    
+  </body>
+</html>

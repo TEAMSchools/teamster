@@ -1,0 +1,2144 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+        <meta name="description" content="Data engineering platform for KIPP TEAM & Family Schools">
+      
+      
+      
+      
+      
+      
+        
+      
+      
+      <link rel="icon" href="../../../images/truck.svg">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.6">
+    
+    
+      
+        <title>fct_survey_responses orphan resolution — implementation plan - teamster</title>
+      
+    
+    
+      <link rel="stylesheet" href="../../../assets/stylesheets/main.484c7ddc.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+    <script>__md_scope=new URL("../../..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+  </head>
+  
+  
+    <body dir="ltr">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#fct_survey_responses-orphan-resolution-implementation-plan" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+  
+
+<header class="md-header md-header--shadow md-header--lifted" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href="../../.." title="teamster" class="md-header__button md-logo" aria-label="teamster" data-md-component="logo">
+      
+  <img src="../../../images/truck.svg" alt="logo">
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            teamster
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              fct_survey_responses orphan resolution — implementation plan
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+        <div class="md-search__suggest" data-md-component="search-suggest"></div>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      
+    
+    
+      <div class="md-header__source">
+        <a href="https://github.com/TEAMSchools/teamster" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M173.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6m-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3m44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9M252.8 8C114.1 8 8 113.3 8 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C436.2 457.8 504 362.9 504 252 504 113.3 391.5 8 252.8 8M105.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1m-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7m32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1m-11.4-14.7c-1.6 1-1.6 3.6 0 5.9s4.3 3.3 5.6 2.3c1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2"/></svg>
+  </div>
+  <div class="md-source__repository">
+    TEAMSchools/teamster
+  </div>
+</a>
+      </div>
+    
+  </nav>
+  
+    
+      
+<nav class="md-tabs" aria-label="Tabs" data-md-component="tabs">
+  <div class="md-grid">
+    <ul class="md-tabs__list">
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../../.." class="md-tabs__link">
+        
+  
+  
+    
+  
+  Home
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../../guides/" class="md-tabs__link">
+          
+  
+  
+    
+  
+  Guides
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../../troubleshooting/dagster/" class="md-tabs__link">
+          
+  
+  
+    
+  
+  Troubleshooting
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../../reference/architecture/" class="md-tabs__link">
+          
+  
+  
+    
+  
+  Reference
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../../../reference/automations/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  Automations
+
+      </a>
+    </li>
+  
+
+      
+    </ul>
+  </div>
+</nav>
+    
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+  
+
+
+<nav class="md-nav md-nav--primary md-nav--lifted" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href="../../.." title="teamster" class="md-nav__button md-logo" aria-label="teamster" data-md-component="logo">
+      
+  <img src="../../../images/truck.svg" alt="logo">
+
+    </a>
+    teamster
+  </label>
+  
+    <div class="md-nav__source">
+      <a href="https://github.com/TEAMSchools/teamster" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M173.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6m-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3m44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9M252.8 8C114.1 8 8 113.3 8 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C436.2 457.8 504 362.9 504 252 504 113.3 391.5 8 252.8 8M105.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1m-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7m32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1m-11.4-14.7c-1.6 1-1.6 3.6 0 5.9s4.3 3.3 5.6 2.3c1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2"/></svg>
+  </div>
+  <div class="md-source__repository">
+    TEAMSchools/teamster
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../.." class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Home
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+          
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2" >
+        
+          
+          <div class="md-nav__link md-nav__container">
+            <a href="../../../guides/" class="md-nav__link ">
+              
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Guides
+  
+
+    
+  </span>
+  
+  
+
+            </a>
+            
+              
+              <label class="md-nav__link " for="__nav_2" id="__nav_2_label" tabindex="0">
+                <span class="md-nav__icon md-icon"></span>
+              </label>
+            
+          </div>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_2_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_2">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Guides
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/codespaces/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Codespaces
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/local-development/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Local Development
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/dagster/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Dagster
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/google-sheets/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Google Sheets & Forms
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/adp-location-renames/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ADP Location Renames
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/dbt-development/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    dbt Development
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/sftp-integration/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    SFTP Integration
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/superpowers/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Claude Code & Superpowers
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/cube/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Cube
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/claude-cube-connector/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Claude + Cube Connector
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3" >
+        
+          
+          <label class="md-nav__link" for="__nav_3" id="__nav_3_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Troubleshooting
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_3">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Troubleshooting
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../troubleshooting/dagster/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Dagster
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../troubleshooting/dbt/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    dbt
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../troubleshooting/vscode/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    VS Code
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4" >
+        
+          
+          <label class="md-nav__link" for="__nav_4" id="__nav_4_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Reference
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_4_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_4">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Reference
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/architecture/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Architecture
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/adding-an-integration/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Adding an Integration
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/io-managers/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    IO Managers
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/fiscal-year-partitioning/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Fiscal Year & Partitioning
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/dbt-conventions/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    dbt Conventions
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/marts-data-models/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Marts Data Models
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/automation-conditions/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Automation Conditions
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/automations/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Automations
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#file-map" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        File map
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#task-0-pre-flight-sync-branch-with-main" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Task 0: Pre-flight — sync branch with main
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#task-1-null-safe-fallback-hash-in-historic_archive_submissions" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Task 1: NULL-safe fallback hash in historic_archive_submissions
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#task-2-verify-orphan-reproduction-one-more-time" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Task 2: Verify orphan reproduction one more time
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#task-3-warn-level-test-for-window-gap-rows-in-int_surveys__survey_responses" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Task 3: Warn-level test for window-gap rows in int_surveys__survey_responses
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#task-4-warn-level-singular-test-for-missing-admin-tuples-in-int_surveys__manager_survey_details" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Task 4: Warn-level singular test for missing admin tuples in int_surveys__manager_survey_details
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#task-5-inner-join-fk-enforcement-in-fct_survey_responses" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Task 5: Inner-join FK enforcement in fct_survey_responses
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#task-6-promote-relationships-test-to-severity-error" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Task 6: Promote relationships test to severity: error
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#task-7-full-subgraph-build-commit-verification" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Task 7: Full subgraph build + commit verification
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#task-8-file-follow-up-issue-for-enrollment-residue-rows" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Task 8: File follow-up issue for enrollment-residue rows
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#task-9-open-the-pr" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Task 9: Open the PR
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#acceptance-gates-per-spec" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Acceptance gates (per spec)
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#notes-for-the-implementer" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Notes for the implementer
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+  
+    <a href="https://github.com/TEAMSchools/teamster/edit/main/docs/superpowers/plans/2026-05-28-fct-survey-responses-orphan-resolution-plan.md" title="Edit this page" class="md-content__button md-icon" rel="edit">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M10 20H6V4h7v5h5v3.1l2-2V8l-6-6H6c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h4zm10.2-7c.1 0 .3.1.4.2l1.3 1.3c.2.2.2.6 0 .8l-1 1-2.1-2.1 1-1c.1-.1.2-.2.4-.2m0 3.9L14.1 23H12v-2.1l6.1-6.1z"/></svg>
+    </a>
+  
+  
+
+
+<h1 id="fct_survey_responses-orphan-resolution-implementation-plan">fct_survey_responses orphan resolution — implementation plan</h1>
+<blockquote>
+<p><strong>For agentic workers:</strong> REQUIRED SUB-SKILL: Use
+<code>superpowers:subagent-driven-development</code> (recommended) or
+<code>superpowers:executing-plans</code> to implement this plan task-by-task. Steps use
+checkbox (<code>- [ ]</code>) syntax for tracking.</p>
+</blockquote>
+<p><strong>Goal:</strong> Drive <code>fct_survey_responses.survey_submission_key</code> orphans to zero,
+surface future terms-sheet gaps as warn-level dbt failures, eliminate latent
+NULL-collision in archive fallback hash, and promote the FK relationships test
+to <code>severity: error</code>.</p>
+<p><strong>Architecture:</strong> Five narrow edits in one PR — NULL-safe
+<code>format('%T_%T_%T', …)</code> fallback in <code>historic_archive_submissions</code>; warn-level
+test on <code>int_surveys__survey_responses</code> for window-gap rows; warn-level singular
+test on <code>int_surveys__manager_survey_details</code> for missing admin tuples;
+inner-join enforcement of the FK invariant in <code>fct_survey_responses</code>; severity
+promotion in <code>fct_survey_responses.yml</code>.</p>
+<p><strong>Tech Stack:</strong> dbt + BigQuery, dbt_utils, kipptaf project.</p>
+<p><strong>Spec:</strong>
+<a href="docs/superpowers/specs/2026-05-28-fct-survey-responses-orphan-resolution-design.md">docs/superpowers/specs/2026-05-28-fct-survey-responses-orphan-resolution-design.md</a>
+(commit <code>84d5b7553</code>).</p>
+<p><strong>Issue:</strong> <a href="https://github.com/TEAMSchools/teamster/issues/4018">#4018</a>.</p>
+<p><strong>Worktree:</strong> <code>.worktrees/cbini/fix/claude-survey-attribution</code>. All paths in
+this plan are relative to that worktree root. All git operations use
+<code>git -C .worktrees/cbini/fix/claude-survey-attribution …</code> per root CLAUDE.md.</p>
+<hr />
+<h2 id="file-map">File map</h2>
+<p><strong>Modify:</strong></p>
+<ul>
+<li><code>src/dbt/kipptaf/models/marts/facts/fct_survey_submissions.sql</code> — replace
+  <code>concat</code> fallback with <code>format('%T_%T_%T', …)</code> (Task 1).</li>
+<li><code>src/dbt/kipptaf/models/surveys/intermediate/properties/int_surveys__survey_responses.yml</code>
+  — add warn-level <code>expression_is_true</code> test (Task 3).</li>
+<li><code>src/dbt/kipptaf/models/marts/facts/fct_survey_responses.sql</code> — project
+  <code>survey_submission_key</code> in <code>all_responses</code>; inner-join
+  <code>fct_survey_submissions</code> in final SELECT (Task 5).</li>
+<li><code>src/dbt/kipptaf/models/marts/facts/properties/fct_survey_responses.yml</code> —
+  promote <code>relationships_…__survey_submission_key__…</code> to <code>severity: error</code> (Task
+  6).</li>
+<li><code>src/dbt/kipptaf/tests/properties.yml</code> — add description for the new singular
+  test (Task 4 sub-step).</li>
+</ul>
+<p><strong>Create:</strong></p>
+<ul>
+<li><code>src/dbt/kipptaf/tests/test_int_surveys__manager_survey_details__terms_coverage.sql</code>
+  — warn-level singular test (Task 4).</li>
+</ul>
+<p><strong>Untouched but referenced:</strong></p>
+<ul>
+<li><code>stg_google_sheets__reporting__terms</code> (Ops sheet — handed off in PR body).</li>
+</ul>
+<hr />
+<h2 id="task-0-pre-flight-sync-branch-with-main">Task 0: Pre-flight — sync branch with main</h2>
+<p><strong>Files:</strong> none modified.</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 1: Fetch + merge main into the worktree branch</strong></li>
+</ul>
+<div class="highlight"><pre><span></span><code>git<span class="w"> </span>-C<span class="w"> </span>.worktrees/cbini/fix/claude-survey-attribution<span class="w"> </span>fetch<span class="w"> </span>origin<span class="w"> </span>main
+git<span class="w"> </span>-C<span class="w"> </span>.worktrees/cbini/fix/claude-survey-attribution<span class="w"> </span>merge<span class="w"> </span>origin/main
+</code></pre></div>
+<p>Expected: either "Already up to date." or a clean merge with no conflicts. If
+conflicts surface, resolve them before continuing — do not push fix commits onto
+a stale base.</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 2: Confirm clean working tree before starting</strong></li>
+</ul>
+<div class="highlight"><pre><span></span><code>git<span class="w"> </span>-C<span class="w"> </span>.worktrees/cbini/fix/claude-survey-attribution<span class="w"> </span>status<span class="w"> </span>--short
+</code></pre></div>
+<p>Expected: empty output. If the YAML modification observed earlier
+(<code>src/dbt/kipptaf/models/marts/facts/properties/fct_survey_submissions.yml</code>) is
+still present uncommitted, ask the user whether to commit, stash, or discard
+before continuing.</p>
+<hr />
+<h2 id="task-1-null-safe-fallback-hash-in-historic_archive_submissions">Task 1: NULL-safe fallback hash in <code>historic_archive_submissions</code></h2>
+<p><strong>Files:</strong></p>
+<ul class="task-list">
+<li>
+<p>Modify:
+  <code>src/dbt/kipptaf/models/marts/facts/fct_survey_submissions.sql:213-222</code></p>
+</li>
+<li class="task-list-item">
+<p><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 1: Pre-merge hash-stability check</strong></p>
+</li>
+</ul>
+<p>Run via BigQuery MCP:</p>
+<div class="highlight"><pre><span></span><code><span class="k">select</span><span class="w"> </span><span class="k">count</span><span class="p">(</span><span class="o">*</span><span class="p">)</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">null_fallback_rows</span>
+<span class="k">from</span><span class="w"> </span><span class="o">`</span><span class="n">teamster</span><span class="o">-</span><span class="mi">332318</span><span class="p">.</span><span class="n">kipptaf_surveys</span><span class="p">.</span><span class="n">int_surveys__manager_survey_details</span><span class="o">`</span>
+<span class="k">where</span><span class="w"> </span><span class="n">survey_id</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s1">&#39;historic_alchemer_Manager_survey&#39;</span>
+<span class="w">  </span><span class="k">and</span><span class="w"> </span><span class="n">survey_response_id</span><span class="w"> </span><span class="k">is</span><span class="w"> </span><span class="k">null</span>
+</code></pre></div>
+<p>Expected: <code>null_fallback_rows = 0</code>. If non-zero, <strong>stop and flag to the user</strong> —
+the <code>concat</code> → <code>format</code> change will produce real hash churn for archive rows,
+which per
+<a href="src/dbt/kipptaf/models/marts/CLAUDE.md">src/dbt/kipptaf/models/marts/CLAUDE.md</a>
+hash-change discipline requires coordinating with downstream consumers before
+merging.</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 2: Apply the edit</strong></li>
+</ul>
+<p>Replace the <code>coalesce(... concat(...) ...)</code> block in
+<code>historic_archive_submissions</code> (currently lines ~213–222) with:</p>
+<div class="highlight"><pre><span></span><code><span class="w">            </span><span class="k">coalesce</span><span class="p">(</span>
+<span class="w">                </span><span class="n">ms</span><span class="p">.</span><span class="n">survey_response_id</span><span class="p">,</span>
+<span class="w">                </span><span class="n">format</span><span class="p">(</span>
+<span class="w">                    </span><span class="s1">&#39;%T_%T_%T&#39;</span><span class="p">,</span>
+<span class="w">                    </span><span class="n">ms</span><span class="p">.</span><span class="n">respondent_df_employee_number</span><span class="p">,</span>
+<span class="w">                    </span><span class="n">ms</span><span class="p">.</span><span class="n">subject_df_employee_number</span><span class="p">,</span>
+<span class="w">                    </span><span class="n">ms</span><span class="p">.</span><span class="n">campaign_reporting_term</span>
+<span class="w">                </span><span class="p">)</span>
+<span class="w">            </span><span class="p">)</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">survey_response_id</span><span class="p">,</span>
+</code></pre></div>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 3: Compile to confirm no syntax error</strong></li>
+</ul>
+<div class="highlight"><pre><span></span><code>uv<span class="w"> </span>run<span class="w"> </span>dbt<span class="w"> </span>compile<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--select<span class="w"> </span>fct_survey_submissions<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--project-dir<span class="w"> </span>.worktrees/cbini/fix/claude-survey-attribution/src/dbt/kipptaf
+</code></pre></div>
+<p>Expected: <code>Done.</code> with no errors.</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 4: Build the model against staging defer</strong></li>
+</ul>
+<div class="highlight"><pre><span></span><code>uv<span class="w"> </span>run<span class="w"> </span>dbt<span class="w"> </span>build<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--select<span class="w"> </span>fct_survey_submissions<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--project-dir<span class="w"> </span>.worktrees/cbini/fix/claude-survey-attribution/src/dbt/kipptaf<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--defer<span class="w"> </span>--state<span class="w"> </span>.worktrees/cbini/fix/claude-survey-attribution/src/dbt/kipptaf/target/prod/
+</code></pre></div>
+<p>Expected: PASS. Submission count should be unchanged (the fallback path is
+unused per Step 1).</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 5: Commit</strong></li>
+</ul>
+<div class="highlight"><pre><span></span><code>git<span class="w"> </span>-C<span class="w"> </span>.worktrees/cbini/fix/claude-survey-attribution<span class="w"> </span>add<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>src/dbt/kipptaf/models/marts/facts/fct_survey_submissions.sql
+
+git<span class="w"> </span>-C<span class="w"> </span>.worktrees/cbini/fix/claude-survey-attribution<span class="w"> </span>commit<span class="w"> </span>-m<span class="w"> </span><span class="s2">&quot;</span><span class="k">$(</span>cat<span class="w"> </span><span class="s">&lt;&lt;&#39;EOF&#39;</span>
+<span class="s">fix(dbt): null-safe fallback hash in historic_archive_submissions</span>
+
+<span class="s">concat() returns NULL when any argument is NULL, so two archive rows with</span>
+<span class="s">NULL respondent or subject employee numbers would both fall back to NULL</span>
+<span class="s">and generate_surrogate_key would hash them to the same placeholder.</span>
+<span class="s">format(&#39;%T_%T_%T&#39;, …) emits NULL-distinguishable literals.</span>
+
+<span class="s">Latent today (no archive rows take the fallback path); no observable hash</span>
+<span class="s">churn. Refs #4018.</span>
+
+<span class="s">Co-Authored-By: Claude Opus 4.7 &lt;noreply@anthropic.com&gt;</span>
+<span class="s">EOF</span>
+<span class="k">)</span><span class="s2">&quot;</span>
+</code></pre></div>
+<p>Expected: pre-commit <code>trunk fmt</code> may reformat the SQL; that's fine. Commit
+succeeds.</p>
+<hr />
+<h2 id="task-2-verify-orphan-reproduction-one-more-time">Task 2: Verify orphan reproduction one more time</h2>
+<p><strong>Files:</strong> none.</p>
+<p>This is a measurement step before adding tests / the inner join, so we can
+confirm post-edit row counts.</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 1: Capture current orphan baseline</strong></li>
+</ul>
+<p>Run via BigQuery MCP:</p>
+<div class="highlight"><pre><span></span><code><span class="k">select</span>
+<span class="w">  </span><span class="k">count</span><span class="p">(</span><span class="o">*</span><span class="p">)</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">orphan_rows</span><span class="p">,</span>
+<span class="w">  </span><span class="k">count</span><span class="p">(</span><span class="k">distinct</span><span class="w"> </span><span class="n">r</span><span class="p">.</span><span class="n">survey_submission_key</span><span class="p">)</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">distinct_subs</span>
+<span class="k">from</span><span class="w"> </span><span class="o">`</span><span class="n">teamster</span><span class="o">-</span><span class="mi">332318</span><span class="p">.</span><span class="n">kipptaf_marts</span><span class="p">.</span><span class="n">fct_survey_responses</span><span class="o">`</span><span class="w"> </span><span class="n">r</span>
+<span class="k">left</span><span class="w"> </span><span class="k">join</span><span class="w"> </span><span class="o">`</span><span class="n">teamster</span><span class="o">-</span><span class="mi">332318</span><span class="p">.</span><span class="n">kipptaf_marts</span><span class="p">.</span><span class="n">fct_survey_submissions</span><span class="o">`</span><span class="w"> </span><span class="n">s</span>
+<span class="w">  </span><span class="k">using</span><span class="w"> </span><span class="p">(</span><span class="n">survey_submission_key</span><span class="p">)</span>
+<span class="k">where</span><span class="w"> </span><span class="n">s</span><span class="p">.</span><span class="n">survey_submission_key</span><span class="w"> </span><span class="k">is</span><span class="w"> </span><span class="k">null</span>
+</code></pre></div>
+<p>Expected (per spec, as of 2026-05-27): <code>orphan_rows ≈ 47,788</code>,
+<code>distinct_subs ≈ 2,727</code>. Record the exact numbers in the task notes — Task 5's
+post-build query should reduce both to 0.</p>
+<hr />
+<h2 id="task-3-warn-level-test-for-window-gap-rows-in-int_surveys__survey_responses">Task 3: Warn-level test for window-gap rows in <code>int_surveys__survey_responses</code></h2>
+<p><strong>Files:</strong></p>
+<ul class="task-list">
+<li>
+<p>Modify:
+  <code>src/dbt/kipptaf/models/surveys/intermediate/properties/int_surveys__survey_responses.yml</code></p>
+</li>
+<li class="task-list-item">
+<p><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 1: Read the current properties yml</strong></p>
+</li>
+</ul>
+<p>Open the file. Find the model-level <code>data_tests:</code> block (it must sit above the
+<code>columns:</code> block per <a href="src/dbt/CLAUDE.md">src/dbt/CLAUDE.md</a>). If the block
+doesn't exist yet, create it just before <code>columns:</code>.</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 2: Add the warn-level expression_is_true test</strong></li>
+</ul>
+<p>Add the following entry under the model-level <code>data_tests:</code>:</p>
+<div class="highlight"><pre><span></span><code><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">dbt_utils.expression_is_true</span><span class="p">:</span>
+<span class="w">    </span><span class="nt">arguments</span><span class="p">:</span>
+<span class="w">      </span><span class="nt">expression</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">&gt;-</span>
+<span class="w">        </span><span class="no">survey_title not in (</span>
+<span class="w">          </span><span class="no">&#39;School Community Diagnostic Staff Survey&#39;,</span>
+<span class="w">          </span><span class="no">&#39;School Community Diagnostic Student Survey&#39;,</span>
+<span class="w">          </span><span class="no">&#39;KIPP NJ &amp; KIPP Miami Family Survey&#39;,</span>
+<span class="w">          </span><span class="no">&#39;KIPP Miami Re-Commitment Form &amp; Family School Community Diagnostic&#39;,</span>
+<span class="w">          </span><span class="no">&#39;Engagement &amp; Support Surveys&#39;,</span>
+<span class="w">          </span><span class="no">&#39;Manager Survey&#39;</span>
+<span class="w">        </span><span class="no">) or (academic_year is not null and term_code is not null)</span>
+<span class="w">    </span><span class="nt">config</span><span class="p">:</span>
+<span class="w">      </span><span class="nt">severity</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">warn</span>
+</code></pre></div>
+<p>Indent to match the surrounding YAML. This test fails for any row whose
+<code>survey_title</code> requires terms-sheet attribution but whose <code>academic_year</code> or
+<code>term_code</code> resolved to NULL upstream — i.e. submissions that fell outside any
+matching SURVEY-type terms window.</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 3: Parse and run the test in isolation</strong></li>
+</ul>
+<div class="highlight"><pre><span></span><code>uv<span class="w"> </span>run<span class="w"> </span>dbt<span class="w"> </span>parse<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--project-dir<span class="w"> </span>.worktrees/cbini/fix/claude-survey-attribution/src/dbt/kipptaf
+
+uv<span class="w"> </span>run<span class="w"> </span>dbt<span class="w"> </span><span class="nb">test</span><span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--select<span class="w"> </span><span class="s1">&#39;int_surveys__survey_responses,test_type:generic&#39;</span><span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--project-dir<span class="w"> </span>.worktrees/cbini/fix/claude-survey-attribution/src/dbt/kipptaf<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--defer<span class="w"> </span>--state<span class="w"> </span>.worktrees/cbini/fix/claude-survey-attribution/src/dbt/kipptaf/target/prod/
+</code></pre></div>
+<p>Expected: the new test runs and <strong>warns</strong> (it should fail because 142
+submissions are currently window-gap; warn severity keeps CI green). The warn is
+the intended signal — it's what Ops will resolve by widening sheet windows.</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 4: Commit</strong></li>
+</ul>
+<div class="highlight"><pre><span></span><code>git<span class="w"> </span>-C<span class="w"> </span>.worktrees/cbini/fix/claude-survey-attribution<span class="w"> </span>add<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>src/dbt/kipptaf/models/surveys/intermediate/properties/int_surveys__survey_responses.yml
+
+git<span class="w"> </span>-C<span class="w"> </span>.worktrees/cbini/fix/claude-survey-attribution<span class="w"> </span>commit<span class="w"> </span>-m<span class="w"> </span><span class="s2">&quot;</span><span class="k">$(</span>cat<span class="w"> </span><span class="s">&lt;&lt;&#39;EOF&#39;</span>
+<span class="s">test(dbt): warn on int_surveys__survey_responses window-gap rows</span>
+
+<span class="s">Surfaces submissions that fall outside any matching SURVEY-type terms-sheet</span>
+<span class="s">window as a warn-level test at the intermediate layer, instead of bleeding</span>
+<span class="s">into the downstream fct_survey_responses FK relationships test where the</span>
+<span class="s">mechanism is obscured.</span>
+
+<span class="s">Currently warns on 142 submissions. Refs #4018.</span>
+
+<span class="s">Co-Authored-By: Claude Opus 4.7 &lt;noreply@anthropic.com&gt;</span>
+<span class="s">EOF</span>
+<span class="k">)</span><span class="s2">&quot;</span>
+</code></pre></div>
+<hr />
+<h2 id="task-4-warn-level-singular-test-for-missing-admin-tuples-in-int_surveys__manager_survey_details">Task 4: Warn-level singular test for missing admin tuples in <code>int_surveys__manager_survey_details</code></h2>
+<p><strong>Files:</strong></p>
+<ul class="task-list">
+<li>Create:
+  <code>src/dbt/kipptaf/tests/test_int_surveys__manager_survey_details__terms_coverage.sql</code></li>
+<li>
+<p>Modify: <code>src/dbt/kipptaf/tests/properties.yml</code></p>
+</li>
+<li class="task-list-item">
+<p><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 1: Create the singular test SQL</strong></p>
+</li>
+</ul>
+<p>Write to
+<code>src/dbt/kipptaf/tests/test_int_surveys__manager_survey_details__terms_coverage.sql</code>:</p>
+<div class="highlight"><pre><span></span><code><span class="err">{{</span><span class="w"> </span><span class="n">config</span><span class="p">(</span><span class="n">severity</span><span class="o">=</span><span class="s1">&#39;warn&#39;</span><span class="p">)</span><span class="w"> </span><span class="err">}}</span>
+
+<span class="k">select</span>
+<span class="w">    </span><span class="n">ms</span><span class="p">.</span><span class="n">campaign_academic_year</span><span class="p">,</span>
+<span class="w">    </span><span class="n">ms</span><span class="p">.</span><span class="n">campaign_reporting_term</span><span class="p">,</span>
+<span class="w">    </span><span class="k">count</span><span class="p">(</span><span class="o">*</span><span class="p">)</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">orphan_rows</span><span class="p">,</span>
+<span class="k">from</span><span class="w"> </span><span class="err">{{</span><span class="w"> </span><span class="k">ref</span><span class="p">(</span><span class="ss">&quot;int_surveys__manager_survey_details&quot;</span><span class="p">)</span><span class="w"> </span><span class="err">}}</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">ms</span>
+<span class="k">left</span><span class="w"> </span><span class="k">join</span>
+<span class="w">    </span><span class="err">{{</span><span class="w"> </span><span class="k">ref</span><span class="p">(</span><span class="ss">&quot;stg_google_sheets__reporting__terms&quot;</span><span class="p">)</span><span class="w"> </span><span class="err">}}</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">rt</span>
+<span class="w">    </span><span class="k">on</span><span class="w"> </span><span class="n">rt</span><span class="p">.</span><span class="o">`</span><span class="n">name</span><span class="o">`</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s1">&#39;Manager Survey&#39;</span>
+<span class="w">    </span><span class="k">and</span><span class="w"> </span><span class="n">ms</span><span class="p">.</span><span class="n">campaign_academic_year</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">rt</span><span class="p">.</span><span class="n">academic_year</span>
+<span class="w">    </span><span class="k">and</span><span class="w"> </span><span class="n">ms</span><span class="p">.</span><span class="n">campaign_reporting_term</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">rt</span><span class="p">.</span><span class="n">code</span>
+<span class="w">    </span><span class="k">and</span><span class="w"> </span><span class="n">rt</span><span class="p">.</span><span class="k">type</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s1">&#39;SURVEY&#39;</span>
+<span class="k">where</span><span class="w"> </span><span class="n">ms</span><span class="p">.</span><span class="n">campaign_academic_year</span><span class="w"> </span><span class="k">is</span><span class="w"> </span><span class="k">not</span><span class="w"> </span><span class="k">null</span>
+<span class="w">  </span><span class="k">and</span><span class="w"> </span><span class="n">rt</span><span class="p">.</span><span class="n">academic_year</span><span class="w"> </span><span class="k">is</span><span class="w"> </span><span class="k">null</span>
+<span class="k">group</span><span class="w"> </span><span class="k">by</span><span class="w"> </span><span class="mi">1</span><span class="p">,</span><span class="w"> </span><span class="mi">2</span>
+</code></pre></div>
+<p>This test returns one row per
+<code>(campaign_academic_year, campaign_reporting_term)</code> tuple that has no matching
+<code>(name='Manager Survey', type='SURVEY')</code> row in the terms sheet. Currently warns
+on 2,556 archive submissions (Manager AY2022 MGR1 + MGR2).</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 2: Add the test description to <code>tests/properties.yml</code></strong></li>
+</ul>
+<p>Open <code>src/dbt/kipptaf/tests/properties.yml</code>. Find the existing <code>data_tests:</code>
+list (it starts near the top per the file we read earlier). Add this entry
+alphabetically or at the end:</p>
+<div class="highlight"><pre><span></span><code><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">test_int_surveys__manager_survey_details__terms_coverage</span>
+<span class="w">  </span><span class="nt">description</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">&gt;-</span>
+<span class="w">    </span><span class="no">Warns when int_surveys__manager_survey_details has a</span>
+<span class="w">    </span><span class="no">(campaign_academic_year, campaign_reporting_term) tuple with no matching</span>
+<span class="w">    </span><span class="no">(name=&#39;Manager Survey&#39;, type=&#39;SURVEY&#39;) row in</span>
+<span class="w">    </span><span class="no">stg_google_sheets__reporting__terms. Surfaces Manager Survey admin-tuple</span>
+<span class="w">    </span><span class="no">coverage gaps that would otherwise drop archive rows at the</span>
+<span class="w">    </span><span class="no">fct_survey_submissions terms join.</span>
+</code></pre></div>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 3: Parse and run the test in isolation</strong></li>
+</ul>
+<div class="highlight"><pre><span></span><code>uv<span class="w"> </span>run<span class="w"> </span>dbt<span class="w"> </span>parse<span class="w"> </span>--no-partial-parse<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--project-dir<span class="w"> </span>.worktrees/cbini/fix/claude-survey-attribution/src/dbt/kipptaf
+
+uv<span class="w"> </span>run<span class="w"> </span>dbt<span class="w"> </span><span class="nb">test</span><span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--select<span class="w"> </span>test_int_surveys__manager_survey_details__terms_coverage<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--project-dir<span class="w"> </span>.worktrees/cbini/fix/claude-survey-attribution/src/dbt/kipptaf<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--defer<span class="w"> </span>--state<span class="w"> </span>.worktrees/cbini/fix/claude-survey-attribution/src/dbt/kipptaf/target/prod/
+</code></pre></div>
+<p>Expected: <strong>WARN</strong>, with <code>failures = 2</code> (one row each for AY2022 MGR1 and MGR2).
+<code>--no-partial-parse</code> is needed because the description is in a yml that the
+partial-parse cache may not pick up immediately (per src/dbt/CLAUDE.md
+singular-test description placement note).</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 4: Commit</strong></li>
+</ul>
+<div class="highlight"><pre><span></span><code>git<span class="w"> </span>-C<span class="w"> </span>.worktrees/cbini/fix/claude-survey-attribution<span class="w"> </span>add<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>src/dbt/kipptaf/tests/test_int_surveys__manager_survey_details__terms_coverage.sql<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>src/dbt/kipptaf/tests/properties.yml
+
+git<span class="w"> </span>-C<span class="w"> </span>.worktrees/cbini/fix/claude-survey-attribution<span class="w"> </span>commit<span class="w"> </span>-m<span class="w"> </span><span class="s2">&quot;</span><span class="k">$(</span>cat<span class="w"> </span><span class="s">&lt;&lt;&#39;EOF&#39;</span>
+<span class="s">test(dbt): warn on Manager Survey admin-tuple coverage gaps</span>
+
+<span class="s">Singular test on int_surveys__manager_survey_details that warns when a</span>
+<span class="s">(campaign_academic_year, campaign_reporting_term) tuple has no matching</span>
+<span class="s">(name=&#39;Manager Survey&#39;, type=&#39;SURVEY&#39;) row in</span>
+<span class="s">stg_google_sheets__reporting__terms.</span>
+
+<span class="s">Symmetric to the int_surveys__survey_responses window-gap test — covers the</span>
+<span class="s">Manager-historic shape where AY/term are valid upstream but the terms sheet</span>
+<span class="s">lacks the admin tuple altogether. Currently warns on 2,556 archive</span>
+<span class="s">submissions (AY2022 MGR1/MGR2). Refs #4018.</span>
+
+<span class="s">Co-Authored-By: Claude Opus 4.7 &lt;noreply@anthropic.com&gt;</span>
+<span class="s">EOF</span>
+<span class="k">)</span><span class="s2">&quot;</span>
+</code></pre></div>
+<hr />
+<h2 id="task-5-inner-join-fk-enforcement-in-fct_survey_responses">Task 5: Inner-join FK enforcement in <code>fct_survey_responses</code></h2>
+<p><strong>Files:</strong></p>
+<ul class="task-list">
+<li>
+<p>Modify: <code>src/dbt/kipptaf/models/marts/facts/fct_survey_responses.sql</code></p>
+</li>
+<li class="task-list-item">
+<p><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 1: Read the current model</strong></p>
+</li>
+</ul>
+<p>Re-read <code>fct_survey_responses.sql</code> to confirm the structure: two source CTEs
+(<code>general_responses</code>, <code>manager_responses</code>), an <code>all_responses</code> UNION ALL, and a
+final SELECT that hashes the surrogate keys.</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 2: Apply the edit</strong></li>
+</ul>
+<p>Rewrite <code>all_responses</code> to project <code>survey_submission_key</code>, and replace the
+final SELECT to inner-join <code>fct_survey_submissions</code>:</p>
+<div class="highlight"><pre><span></span><code><span class="w">    </span><span class="n">all_responses</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="p">(</span>
+<span class="w">        </span><span class="k">select</span>
+<span class="w">            </span><span class="n">survey_id</span><span class="p">,</span>
+<span class="w">            </span><span class="n">survey_response_id</span><span class="p">,</span>
+<span class="w">            </span><span class="n">survey_question_id</span><span class="p">,</span>
+<span class="w">            </span><span class="n">question_shortname</span><span class="p">,</span>
+<span class="w">            </span><span class="n">response_text</span><span class="p">,</span>
+<span class="w">            </span><span class="n">response_value</span><span class="p">,</span>
+<span class="w">            </span><span class="err">{{</span><span class="w"> </span><span class="n">dbt_utils</span><span class="p">.</span><span class="n">generate_surrogate_key</span><span class="p">([</span><span class="ss">&quot;survey_id&quot;</span><span class="p">,</span><span class="w"> </span><span class="ss">&quot;survey_response_id&quot;</span><span class="p">])</span><span class="w"> </span><span class="err">}}</span>
+<span class="w">                </span><span class="k">as</span><span class="w"> </span><span class="n">survey_submission_key</span><span class="p">,</span>
+<span class="w">        </span><span class="k">from</span><span class="w"> </span><span class="n">general_responses</span>
+<span class="w">        </span><span class="k">union</span><span class="w"> </span><span class="k">all</span>
+<span class="w">        </span><span class="k">select</span>
+<span class="w">            </span><span class="n">survey_id</span><span class="p">,</span>
+<span class="w">            </span><span class="n">survey_response_id</span><span class="p">,</span>
+<span class="w">            </span><span class="n">survey_question_id</span><span class="p">,</span>
+<span class="w">            </span><span class="n">question_shortname</span><span class="p">,</span>
+<span class="w">            </span><span class="n">response_text</span><span class="p">,</span>
+<span class="w">            </span><span class="n">response_value</span><span class="p">,</span>
+<span class="w">            </span><span class="err">{{</span><span class="w"> </span><span class="n">dbt_utils</span><span class="p">.</span><span class="n">generate_surrogate_key</span><span class="p">([</span><span class="ss">&quot;survey_id&quot;</span><span class="p">,</span><span class="w"> </span><span class="ss">&quot;survey_response_id&quot;</span><span class="p">])</span><span class="w"> </span><span class="err">}}</span>
+<span class="w">                </span><span class="k">as</span><span class="w"> </span><span class="n">survey_submission_key</span><span class="p">,</span>
+<span class="w">        </span><span class="k">from</span><span class="w"> </span><span class="n">manager_responses</span>
+<span class="w">    </span><span class="p">)</span>
+
+<span class="k">select</span>
+<span class="w">    </span><span class="err">{{</span>
+<span class="w">        </span><span class="n">dbt_utils</span><span class="p">.</span><span class="n">generate_surrogate_key</span><span class="p">(</span>
+<span class="w">            </span><span class="p">[</span><span class="ss">&quot;survey_id&quot;</span><span class="p">,</span><span class="w"> </span><span class="ss">&quot;survey_response_id&quot;</span><span class="p">,</span><span class="w"> </span><span class="ss">&quot;survey_question_id&quot;</span><span class="p">]</span>
+<span class="w">        </span><span class="p">)</span>
+<span class="w">    </span><span class="err">}}</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">survey_response_key</span><span class="p">,</span>
+
+<span class="w">    </span><span class="n">ar</span><span class="p">.</span><span class="n">survey_submission_key</span><span class="p">,</span>
+
+<span class="w">    </span><span class="err">{{</span><span class="w"> </span><span class="n">dbt_utils</span><span class="p">.</span><span class="n">generate_surrogate_key</span><span class="p">([</span><span class="ss">&quot;question_shortname&quot;</span><span class="p">])</span><span class="w"> </span><span class="err">}}</span>
+<span class="w">    </span><span class="k">as</span><span class="w"> </span><span class="n">survey_question_key</span><span class="p">,</span>
+
+<span class="w">    </span><span class="n">response_value</span><span class="p">,</span>
+<span class="w">    </span><span class="n">response_text</span><span class="p">,</span>
+<span class="k">from</span><span class="w"> </span><span class="n">all_responses</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">ar</span>
+<span class="k">inner</span><span class="w"> </span><span class="k">join</span><span class="w"> </span><span class="err">{{</span><span class="w"> </span><span class="k">ref</span><span class="p">(</span><span class="ss">&quot;fct_survey_submissions&quot;</span><span class="p">)</span><span class="w"> </span><span class="err">}}</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">fss</span>
+<span class="w">    </span><span class="k">using</span><span class="w"> </span><span class="p">(</span><span class="n">survey_submission_key</span><span class="p">)</span>
+</code></pre></div>
+<p>Notes:</p>
+<ul class="task-list">
+<li><code>survey_submission_key</code> is now projected once in the source CTEs rather than
+  re-computed in the final SELECT; the hash inputs are identical
+  (<code>survey_id, survey_response_id</code>) so no hash churn.</li>
+<li>The final SELECT uses table aliasing (<code>as ar</code>) per src/dbt/CLAUDE.md ("When a
+  SELECT reads from a single table/CTE, do not prefix columns with the alias" —
+  here we read from two, so aliasing is correct).</li>
+<li>
+<p>No <code>select *</code> from the join — only the projection columns the final SELECT
+  needs.</p>
+</li>
+<li class="task-list-item">
+<p><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 3: Compile and build</strong></p>
+</li>
+</ul>
+<div class="highlight"><pre><span></span><code>uv<span class="w"> </span>run<span class="w"> </span>dbt<span class="w"> </span>build<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--select<span class="w"> </span>fct_survey_responses<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--project-dir<span class="w"> </span>.worktrees/cbini/fix/claude-survey-attribution/src/dbt/kipptaf<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--defer<span class="w"> </span>--state<span class="w"> </span>.worktrees/cbini/fix/claude-survey-attribution/src/dbt/kipptaf/target/prod/
+</code></pre></div>
+<p>Expected: PASS. All tests pass (including the existing <code>relationships</code> test,
+which still runs at warn for now — gets promoted in Task 6).</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 4: Confirm row-count delta</strong></li>
+</ul>
+<p>Query the PR-branch schema (per root CLAUDE.md "Pre-merge queries against
+PR-branch schema"). After dbt Cloud CI runs, the PR-branch schema follows
+<code>dbt_cloud_pr_&lt;job_definition_id&gt;_&lt;pr_num&gt;_marts</code>. For local dev verification:</p>
+<p>Find your dev marts schema from <code>src/dbt/kipptaf/profiles.yml</code> (or
+<code>&lt;repo-root&gt;/.dbt/profiles.yml</code> for local dev — the schema is typically
+<code>zz_&lt;username&gt;_kipptaf_marts</code>). Then via BigQuery MCP:</p>
+<div class="highlight"><pre><span></span><code><span class="k">select</span>
+<span class="w">  </span><span class="k">count</span><span class="p">(</span><span class="o">*</span><span class="p">)</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">orphan_rows</span>
+<span class="k">from</span><span class="w"> </span><span class="o">`</span><span class="n">teamster</span><span class="o">-</span><span class="mi">332318</span><span class="p">.</span><span class="n">zz_</span><span class="o">&lt;</span><span class="n">username</span><span class="o">&gt;</span><span class="n">_kipptaf_marts</span><span class="p">.</span><span class="n">fct_survey_responses</span><span class="o">`</span><span class="w"> </span><span class="n">r</span>
+<span class="k">left</span><span class="w"> </span><span class="k">join</span><span class="w"> </span><span class="o">`</span><span class="n">teamster</span><span class="o">-</span><span class="mi">332318</span><span class="p">.</span><span class="n">zz_</span><span class="o">&lt;</span><span class="n">username</span><span class="o">&gt;</span><span class="n">_kipptaf_marts</span><span class="p">.</span><span class="n">fct_survey_submissions</span><span class="o">`</span><span class="w"> </span><span class="n">s</span>
+<span class="w">  </span><span class="k">using</span><span class="w"> </span><span class="p">(</span><span class="n">survey_submission_key</span><span class="p">)</span>
+<span class="k">where</span><span class="w"> </span><span class="n">s</span><span class="p">.</span><span class="n">survey_submission_key</span><span class="w"> </span><span class="k">is</span><span class="w"> </span><span class="k">null</span>
+</code></pre></div>
+<p>Skip this step if local dev didn't actually build to BigQuery (e.g., <code>--empty</code>
+runs); the same check happens in CI against the PR-branch schema.</p>
+<p>Expected: <code>orphan_rows = 0</code>. Row count of <code>fct_survey_responses</code> should be
+~47,788 lower than the baseline captured in Task 2.</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 5: Commit</strong></li>
+</ul>
+<div class="highlight"><pre><span></span><code>git<span class="w"> </span>-C<span class="w"> </span>.worktrees/cbini/fix/claude-survey-attribution<span class="w"> </span>add<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>src/dbt/kipptaf/models/marts/facts/fct_survey_responses.sql
+
+git<span class="w"> </span>-C<span class="w"> </span>.worktrees/cbini/fix/claude-survey-attribution<span class="w"> </span>commit<span class="w"> </span>-m<span class="w"> </span><span class="s2">&quot;</span><span class="k">$(</span>cat<span class="w"> </span><span class="s">&lt;&lt;&#39;EOF&#39;</span>
+<span class="s">fix(dbt): inner-join fct_survey_submissions in fct_survey_responses</span>
+
+<span class="s">Project survey_submission_key once in all_responses and inner-join the</span>
+<span class="s">parent fact in the final SELECT. Encodes the FK invariant the</span>
+<span class="s">relationships test asserts, dropping the 47,788 / 2,727 orphan response</span>
+<span class="s">rows that have no matching submission.</span>
+
+<span class="s">Once Ops widens the terms sheet (Manager AY2022 MGR1/MGR2 admin rows +</span>
+<span class="s">date-window gaps), most of those rows reappear with valid</span>
+<span class="s">survey_submission_keys. 28 enrollment-residue rows stay filtered until a</span>
+<span class="s">separate follow-up resolves. Refs #4018.</span>
+
+<span class="s">Co-Authored-By: Claude Opus 4.7 &lt;noreply@anthropic.com&gt;</span>
+<span class="s">EOF</span>
+<span class="k">)</span><span class="s2">&quot;</span>
+</code></pre></div>
+<hr />
+<h2 id="task-6-promote-relationships-test-to-severity-error">Task 6: Promote relationships test to <code>severity: error</code></h2>
+<p><strong>Files:</strong></p>
+<ul class="task-list">
+<li>
+<p>Modify:
+  <code>src/dbt/kipptaf/models/marts/facts/properties/fct_survey_responses.yml</code></p>
+</li>
+<li class="task-list-item">
+<p><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 1: Apply the edit</strong></p>
+</li>
+</ul>
+<p>Find the <code>survey_submission_key</code> column's <code>data_tests:</code> block (around line ~30
+per our earlier read). Add <code>config: severity: error</code> to the relationships test:</p>
+<div class="highlight"><pre><span></span><code><span class="nt">data_tests</span><span class="p">:</span>
+<span class="w">  </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">relationships</span><span class="p">:</span>
+<span class="w">      </span><span class="nt">arguments</span><span class="p">:</span>
+<span class="w">        </span><span class="nt">to</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">ref(&#39;fct_survey_submissions&#39;)</span>
+<span class="w">        </span><span class="nt">field</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">survey_submission_key</span>
+<span class="w">      </span><span class="nt">config</span><span class="p">:</span>
+<span class="w">        </span><span class="nt">severity</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">error</span>
+</code></pre></div>
+<p>No change to <code>survey_question_key</code> — its relationships test is already at the
+project default (warn for marts per project-level <code>data_tests:</code> config); the
+spec only calls for promoting the <code>survey_submission_key</code> FK because that's the
+one Task 5's inner join guarantees to be clean.</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 2: Run the test against the local build</strong></li>
+</ul>
+<div class="highlight"><pre><span></span><code>uv<span class="w"> </span>run<span class="w"> </span>dbt<span class="w"> </span><span class="nb">test</span><span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--select<span class="w"> </span>fct_survey_responses<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--project-dir<span class="w"> </span>.worktrees/cbini/fix/claude-survey-attribution/src/dbt/kipptaf<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--defer<span class="w"> </span>--state<span class="w"> </span>.worktrees/cbini/fix/claude-survey-attribution/src/dbt/kipptaf/target/prod/
+</code></pre></div>
+<p>Expected: PASS at error. If FAIL, the inner join from Task 5 isn't dropping all
+orphans — re-run Task 5 Step 4 to investigate.</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 3: Commit</strong></li>
+</ul>
+<div class="highlight"><pre><span></span><code>git<span class="w"> </span>-C<span class="w"> </span>.worktrees/cbini/fix/claude-survey-attribution<span class="w"> </span>add<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>src/dbt/kipptaf/models/marts/facts/properties/fct_survey_responses.yml
+
+git<span class="w"> </span>-C<span class="w"> </span>.worktrees/cbini/fix/claude-survey-attribution<span class="w"> </span>commit<span class="w"> </span>-m<span class="w"> </span><span class="s2">&quot;</span><span class="k">$(</span>cat<span class="w"> </span><span class="s">&lt;&lt;&#39;EOF&#39;</span>
+<span class="s">test(dbt): promote fct_survey_responses.survey_submission_key FK to error</span>
+
+<span class="s">The inner join added in fct_survey_responses now guarantees zero orphans</span>
+<span class="s">against fct_survey_submissions, so the relationships test can run at error.</span>
+<span class="s">Future Ops-sheet drift surfaces at the two new warn-level intermediate</span>
+<span class="s">tests instead of at this downstream FK check. Refs #4018.</span>
+
+<span class="s">Co-Authored-By: Claude Opus 4.7 &lt;noreply@anthropic.com&gt;</span>
+<span class="s">EOF</span>
+<span class="k">)</span><span class="s2">&quot;</span>
+</code></pre></div>
+<hr />
+<h2 id="task-7-full-subgraph-build-commit-verification">Task 7: Full subgraph build + commit verification</h2>
+<p><strong>Files:</strong> none modified.</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 1: Build the full surveys subgraph locally</strong></li>
+</ul>
+<div class="highlight"><pre><span></span><code>uv<span class="w"> </span>run<span class="w"> </span>dbt<span class="w"> </span>build<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--select<span class="w"> </span>int_surveys__survey_responses+<span class="w"> </span>int_surveys__manager_survey_details<span class="w"> </span>fct_survey_submissions+<span class="w"> </span>fct_survey_responses+<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--project-dir<span class="w"> </span>.worktrees/cbini/fix/claude-survey-attribution/src/dbt/kipptaf<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--defer<span class="w"> </span>--state<span class="w"> </span>.worktrees/cbini/fix/claude-survey-attribution/src/dbt/kipptaf/target/prod/
+</code></pre></div>
+<p>Expected: all models PASS. The new warn-level tests from Tasks 3 and 4 surface
+as warnings (142 + 2,556 submissions affected). The promoted
+<code>relationships_…__survey_submission_key__…</code> PASSES at error.</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 2: Verify the commit log</strong></li>
+</ul>
+<div class="highlight"><pre><span></span><code>git<span class="w"> </span>-C<span class="w"> </span>.worktrees/cbini/fix/claude-survey-attribution<span class="w"> </span>log<span class="w"> </span>--oneline<span class="w"> </span>origin/main..HEAD
+</code></pre></div>
+<p>Expected: four <code>fix(dbt)</code> / <code>test(dbt)</code> commits on top of the spec commit
+(<code>84d5b7553</code>) — one per Task 1, 3, 4, 5, 6. (Task 0 and Task 7 don't produce
+commits; Task 2 captures a baseline but doesn't modify files.)</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 3: Run trunk check to catch lint issues that pre-commit hook
+      didn't</strong></li>
+</ul>
+<div class="highlight"><pre><span></span><code>.trunk/tools/trunk<span class="w"> </span>check<span class="w"> </span>--force<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>src/dbt/kipptaf/models/marts/facts/fct_survey_submissions.sql<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>src/dbt/kipptaf/models/marts/facts/fct_survey_responses.sql<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>src/dbt/kipptaf/models/marts/facts/properties/fct_survey_responses.yml<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>src/dbt/kipptaf/models/surveys/intermediate/properties/int_surveys__survey_responses.yml<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>src/dbt/kipptaf/tests/test_int_surveys__manager_survey_details__terms_coverage.sql<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>src/dbt/kipptaf/tests/properties.yml
+</code></pre></div>
+<p>Run from inside the worktree
+(<code>cd .worktrees/cbini/fix/claude-survey-attribution</code>) — per root CLAUDE.md,
+<code>trunk check --force &lt;abs-worktree-paths&gt;</code> from the main repo silently returns
+"no applicable linters".</p>
+<p>Expected: clean. Address any sqlfluff / yamllint findings before pushing.</p>
+<hr />
+<h2 id="task-8-file-follow-up-issue-for-enrollment-residue-rows">Task 8: File follow-up issue for enrollment-residue rows</h2>
+<p><strong>Files:</strong> none in repo; opens a GitHub issue.</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 1: Create the issue</strong></li>
+</ul>
+<p>Use <code>mcp__github__issue_write</code> with:</p>
+<ul class="task-list">
+<li>title:
+  <code>fix(dbt): fct_survey_responses Student SCD enrollment-attribution residue (28 submissions)</code></li>
+<li>body: short summary (per spec): 28 Student SCD orphan submissions whose
+  <code>respondent_email</code> doesn't resolve to an <code>int_extracts__student_enrollments</code>
+  row overlapping <code>date_submitted</code>. 19 emails with no enrollment ever; 9 with
+  enrollment but date-miss. Filtered out at build time by the inner join added
+  in #4018; tracked separately because no clean upstream fix exists. Link to
+  #4018.</li>
+<li>
+<p>labels: <code>fix</code>, <code>dbt</code></p>
+</li>
+<li class="task-list-item">
+<p><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 2: Record the new issue number</strong></p>
+</li>
+</ul>
+<p>Capture the returned issue number; reference it in the PR body's "Known
+deferred" section in Task 9.</p>
+<hr />
+<h2 id="task-9-open-the-pr">Task 9: Open the PR</h2>
+<p><strong>Files:</strong> PR body only.</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 1: Push the branch</strong></li>
+</ul>
+<div class="highlight"><pre><span></span><code>git<span class="w"> </span>-C<span class="w"> </span>.worktrees/cbini/fix/claude-survey-attribution<span class="w"> </span>push
+</code></pre></div>
+<p>Expected: dbt Cloud CI fires automatically.</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 2: Wait for dbt Cloud CI to reach terminal state</strong></li>
+</ul>
+<p>Do not open the PR with code changes still in-flight (root CLAUDE.md: pushing
+cancels in-progress runs; bundle fixes into one push). After the push from Step
+1, monitor via:</p>
+<div class="highlight"><pre><span></span><code><span class="c1"># Via mcp__dbt__list_jobs_runs and mcp__dbt__get_job_run_details</span>
+</code></pre></div>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 3: Verify CI warnings match expectations</strong></li>
+</ul>
+<p>After CI passes:</p>
+<div class="highlight"><pre><span></span><code><span class="c1"># mcp__dbt__get_job_run_error(run_id=&lt;ci_run&gt;, warning_only=true)</span>
+</code></pre></div>
+<p>Expected warnings:</p>
+<ul>
+<li><code>dbt_utils_expression_is_true_int_surveys__survey_responses_…</code> — 142
+  window-gap submissions.</li>
+<li><code>test_int_surveys__manager_survey_details__terms_coverage</code> — 2 rows (AY2022
+  MGR1 + MGR2).</li>
+</ul>
+<p>Any other new warning is unexpected — investigate before opening the PR.</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 4: Create the PR</strong></li>
+</ul>
+<p>Use <code>mcp__github__create_pull_request</code> with the body following
+<a href=".github/pull_request_template.md"><code>.github/pull_request_template.md</code></a>. Key
+sections to fill:</p>
+<ul>
+<li><strong>Summary</strong> — bullets covering the 5 edits.</li>
+<li><strong>Action required from Ops</strong> (called out explicitly):</li>
+<li>Add
+    <code>(name='Manager Survey', academic_year=2022, code='MGR1', type='SURVEY', start_date=…, end_date=…)</code>
+    and <code>(… code='MGR2' …)</code> rows to <code>stg_google_sheets__reporting__terms</code>.
+    Reclaims 2,556 submissions.</li>
+<li>Widen Student SCD AY2025 window (currently 2025-12-01 → 2026-03-01) or add
+    interim windows for off-period submissions. Reclaims 114.</li>
+<li>Add Staff SCD coverage for 2024-11-09 → 2025-02-13. Reclaims 19.</li>
+<li>Widen Manager Survey AY2024 MGR1/MGR2 windows to cover 2024-11-09 →
+    2025-04-26 stragglers. Reclaims 9.</li>
+<li>These edits clear the two new warn-level tests.</li>
+<li><strong>Known deferred</strong> — 28 Student SCD enrollment-residue rows filtered at build
+  time; tracked in the new issue from Task 8.</li>
+<li><strong>Refs / Closes</strong> — <code>Refs #4018</code>. (Don't <code>Closes</code> until orphans actually hit
+  zero in prod after Ops edits land.)</li>
+</ul>
+<hr />
+<h2 id="acceptance-gates-per-spec">Acceptance gates (per spec)</h2>
+<table>
+<thead>
+<tr>
+<th style="text-align: right;">#</th>
+<th>Gate</th>
+<th>Verified in</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align: right;">1</td>
+<td>NULL-safe fallback hash</td>
+<td>Task 1</td>
+</tr>
+<tr>
+<td style="text-align: right;">2</td>
+<td>Window-gap warn test</td>
+<td>Task 3</td>
+</tr>
+<tr>
+<td style="text-align: right;">3</td>
+<td>Admin-tuple-coverage warn test</td>
+<td>Task 4</td>
+</tr>
+<tr>
+<td style="text-align: right;">4</td>
+<td>Inner-join FK enforcement</td>
+<td>Task 5</td>
+</tr>
+<tr>
+<td style="text-align: right;">5</td>
+<td>Severity promotion to error</td>
+<td>Task 6</td>
+</tr>
+<tr>
+<td style="text-align: right;">6</td>
+<td>Pre-merge hash-stability check (<code>null_fallback_rows = 0</code>)</td>
+<td>Task 1, Step 1</td>
+</tr>
+<tr>
+<td style="text-align: right;">7</td>
+<td>dbt Cloud CI passes at error; new warns match expectations</td>
+<td>Task 9, Step 3</td>
+</tr>
+<tr>
+<td style="text-align: right;">8</td>
+<td>Post-merge orphan count = 0</td>
+<td>Verify in prod after merge (out of plan)</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="notes-for-the-implementer">Notes for the implementer</h2>
+<ul>
+<li>Every git operation uses
+  <code>git -C .worktrees/cbini/fix/claude-survey-attribution</code>. Bare <code>git</code> from the
+  main repo silently commits to <code>main</code>.</li>
+<li>Every dbt operation uses
+  <code>--project-dir .worktrees/cbini/fix/claude-survey-attribution/src/dbt/kipptaf</code>.
+  Do NOT use <code>uv --directory &lt;worktree&gt; run dbt</code> — that overrides cwd to the
+  worktree root where <code>dbt_project.yml</code> doesn't exist.</li>
+<li><code>dbt build --defer --state</code> paths are relative to <code>--project-dir</code>. The prod
+  manifest path <code>src/dbt/kipptaf/target/prod/</code> is refreshed by
+  <code>.git/hooks/post-merge</code> on git pull.</li>
+<li>Pre-commit <code>trunk fmt</code> runs automatically; pre-push <code>trunk check</code> enforces
+  sqlfluff + yamllint. If a commit message gets blocked by the hook, fall back
+  to <code>.claude/scratch/commit-msg.txt</code> per .claude/CLAUDE.md.</li>
+<li>Do not push fix commits onto an in-progress dbt Cloud CI run — wait for
+  terminal state first.</li>
+</ul>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+          <button type="button" class="md-top md-icon" data-md-component="top" hidden>
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8z"/></svg>
+  Back to top
+</button>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+    <div class="md-copyright__highlight">
+      Copyright &copy; KIPP TEAM & Family Schools
+    </div>
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      
+      <script id="__config" type="application/json">{"annotate": null, "base": "../../..", "features": ["content.action.edit", "content.code.copy", "navigation.instant", "navigation.indexes", "navigation.sections", "navigation.tabs", "navigation.tabs.sticky", "navigation.top", "search.highlight", "search.suggest", "toc.follow"], "search": "../../../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+    
+    
+      <script src="../../../assets/javascripts/bundle.79ae519e.min.js"></script>
+      
+    
+  </body>
+</html>

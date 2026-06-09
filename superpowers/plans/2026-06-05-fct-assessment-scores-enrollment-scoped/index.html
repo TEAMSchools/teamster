@@ -1,0 +1,2226 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+        <meta name="description" content="Data engineering platform for KIPP TEAM & Family Schools">
+      
+      
+      
+      
+      
+      
+        
+      
+      
+      <link rel="icon" href="../../../images/truck.svg">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.6">
+    
+    
+      
+        <title>Enrollment-Scoped Assessment Fact — Implementation Plan - teamster</title>
+      
+    
+    
+      <link rel="stylesheet" href="../../../assets/stylesheets/main.484c7ddc.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+    <script>__md_scope=new URL("../../..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+  </head>
+  
+  
+    <body dir="ltr">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#enrollment-scoped-assessment-fact-implementation-plan" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+  
+
+<header class="md-header md-header--shadow md-header--lifted" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href="../../.." title="teamster" class="md-header__button md-logo" aria-label="teamster" data-md-component="logo">
+      
+  <img src="../../../images/truck.svg" alt="logo">
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            teamster
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              Enrollment-Scoped Assessment Fact — Implementation Plan
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+        <div class="md-search__suggest" data-md-component="search-suggest"></div>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      
+    
+    
+      <div class="md-header__source">
+        <a href="https://github.com/TEAMSchools/teamster" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M173.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6m-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3m44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9M252.8 8C114.1 8 8 113.3 8 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C436.2 457.8 504 362.9 504 252 504 113.3 391.5 8 252.8 8M105.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1m-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7m32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1m-11.4-14.7c-1.6 1-1.6 3.6 0 5.9s4.3 3.3 5.6 2.3c1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2"/></svg>
+  </div>
+  <div class="md-source__repository">
+    TEAMSchools/teamster
+  </div>
+</a>
+      </div>
+    
+  </nav>
+  
+    
+      
+<nav class="md-tabs" aria-label="Tabs" data-md-component="tabs">
+  <div class="md-grid">
+    <ul class="md-tabs__list">
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../../.." class="md-tabs__link">
+        
+  
+  
+    
+  
+  Home
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../../guides/" class="md-tabs__link">
+          
+  
+  
+    
+  
+  Guides
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../../troubleshooting/dagster/" class="md-tabs__link">
+          
+  
+  
+    
+  
+  Troubleshooting
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../../reference/architecture/" class="md-tabs__link">
+          
+  
+  
+    
+  
+  Reference
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../../../reference/automations/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  Automations
+
+      </a>
+    </li>
+  
+
+      
+    </ul>
+  </div>
+</nav>
+    
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+  
+
+
+<nav class="md-nav md-nav--primary md-nav--lifted" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href="../../.." title="teamster" class="md-nav__button md-logo" aria-label="teamster" data-md-component="logo">
+      
+  <img src="../../../images/truck.svg" alt="logo">
+
+    </a>
+    teamster
+  </label>
+  
+    <div class="md-nav__source">
+      <a href="https://github.com/TEAMSchools/teamster" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M173.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6m-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3m44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9M252.8 8C114.1 8 8 113.3 8 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C436.2 457.8 504 362.9 504 252 504 113.3 391.5 8 252.8 8M105.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1m-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7m32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1m-11.4-14.7c-1.6 1-1.6 3.6 0 5.9s4.3 3.3 5.6 2.3c1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2"/></svg>
+  </div>
+  <div class="md-source__repository">
+    TEAMSchools/teamster
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../.." class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Home
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+          
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2" >
+        
+          
+          <div class="md-nav__link md-nav__container">
+            <a href="../../../guides/" class="md-nav__link ">
+              
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Guides
+  
+
+    
+  </span>
+  
+  
+
+            </a>
+            
+              
+              <label class="md-nav__link " for="__nav_2" id="__nav_2_label" tabindex="0">
+                <span class="md-nav__icon md-icon"></span>
+              </label>
+            
+          </div>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_2_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_2">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Guides
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/codespaces/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Codespaces
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/local-development/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Local Development
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/dagster/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Dagster
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/google-sheets/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Google Sheets & Forms
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/adp-location-renames/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ADP Location Renames
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/dbt-development/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    dbt Development
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/sftp-integration/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    SFTP Integration
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/superpowers/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Claude Code & Superpowers
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/cube/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Cube
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/claude-cube-connector/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Claude + Cube Connector
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3" >
+        
+          
+          <label class="md-nav__link" for="__nav_3" id="__nav_3_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Troubleshooting
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_3">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Troubleshooting
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../troubleshooting/dagster/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Dagster
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../troubleshooting/dbt/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    dbt
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../troubleshooting/vscode/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    VS Code
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4" >
+        
+          
+          <label class="md-nav__link" for="__nav_4" id="__nav_4_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Reference
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_4_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_4">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Reference
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/architecture/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Architecture
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/adding-an-integration/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Adding an Integration
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/io-managers/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    IO Managers
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/fiscal-year-partitioning/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Fiscal Year & Partitioning
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/dbt-conventions/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    dbt Conventions
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/marts-data-models/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Marts Data Models
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/automation-conditions/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Automation Conditions
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/automations/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Automations
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#file-structure" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        File Structure
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#phase-0-ci-wiring-for-the-single-pr-cross-project-workflow" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Phase 0 — CI wiring for the single-PR cross-project workflow
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Phase 0 — CI wiring for the single-PR cross-project workflow">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#task-0-stage-the-cross-project-sources" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Task 0: Stage the cross-project sources
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#phase-1-thread-test_date-from-state-sources" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Phase 1 — Thread test_date from state sources
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Phase 1 — Thread test_date from state sources">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#task-1-kipptaf-pearson-staging-derive-test_date-njsla-science-parcc" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Task 1: kipptaf Pearson staging — derive test_date (NJSLA / Science / PARCC)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#task-2-fldoe-district-int-expose-test_date-cross-project-kippmiami" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Task 2: FLDOE district int — expose test_date (cross-project, kippmiami)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#task-3-njgpa-upstream-stop-dropping-unit-datetimes-cross-project" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Task 3: NJGPA upstream — stop dropping unit datetimes (cross-project)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#task-4-kipptaf-state-intermediates-carry-test_date" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Task 4: kipptaf state intermediates carry test_date
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#phase-2-rebuild-the-resolver" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Phase 2 — Rebuild the resolver
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Phase 2 — Rebuild the resolver">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#task-5-rewrite-int_assessments__resolved_section_enrollments" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Task 5: Rewrite int_assessments__resolved_section_enrollments
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#task-6-rewrite-resolver-propertiesyml-description-columns-tests-unit-tests" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Task 6: Rewrite resolver properties.yml (description, columns, tests, unit tests)
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#phase-3-fact-contract" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Phase 3 — Fact + contract
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Phase 3 — Fact + contract">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#task-7-rewrite-fct_assessment_scores_enrollment_scopedsql" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Task 7: Rewrite fct_assessment_scores_enrollment_scoped.sql
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#task-8-update-fact-propertiesyml" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Task 8: Update fact properties.yml
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#phase-4-cross-project-ci-seeding-validation-exposure-check" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Phase 4 — Cross-project CI seeding, validation, exposure check
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Phase 4 — Cross-project CI seeding, validation, exposure check">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#task-9-seed-district-staging-full-build" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Task 9: Seed district staging + full build
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#task-10-validate-fk-population-row-count-delta-pr-branch-schema" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Task 10: Validate FK population + row-count delta (PR-branch schema)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#task-11-exposure-cube-check" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Task 11: Exposure / Cube check
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#out-of-scope-tracked-separately" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Out of scope (tracked separately)
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#open-implementation-decisions-resolve-via-dbt-show-during-execution" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Open implementation decisions (resolve via dbt show during execution)
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+  
+    <a href="https://github.com/TEAMSchools/teamster/edit/main/docs/superpowers/plans/2026-06-05-fct-assessment-scores-enrollment-scoped.md" title="Edit this page" class="md-content__button md-icon" rel="edit">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M10 20H6V4h7v5h5v3.1l2-2V8l-6-6H6c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h4zm10.2-7c.1 0 .3.1.4.2l1.3 1.3c.2.2.2.6 0 .8l-1 1-2.1-2.1 1-1c.1-.1.2-.2.4-.2m0 3.9L14.1 23H12v-2.1l6.1-6.1z"/></svg>
+    </a>
+  
+  
+
+
+<h1 id="enrollment-scoped-assessment-fact-implementation-plan">Enrollment-Scoped Assessment Fact — Implementation Plan</h1>
+<blockquote>
+<p><strong>For agentic workers:</strong> REQUIRED SUB-SKILL: Use
+superpowers:subagent-driven-development (recommended) or
+superpowers:executing-plans to implement this plan task-by-task. Steps use
+checkbox (<code>- [ ]</code>) syntax for tracking.</p>
+</blockquote>
+<p><strong>Goal:</strong> Eliminate the diamond path in
+<code>fct_assessment_scores_enrollment_scoped</code> by dropping the direct <code>student_key</code>
+FK and reaching the student through a single, total
+<code>student_section_enrollment_key → dim_student_section_enrollments → dim_student_enrollments → dim_students</code>
+chain.</p>
+<p><strong>Architecture:</strong> Expand <code>int_assessments__resolved_section_enrollments</code> into
+the single section-resolver for all scores (internal + state), sourcing the
+enrollment inventory <code>int_assessments__course_enrollments</code> directly. Resolve
+each score to one section by date-window containment, tiered
+<code>subject_section → homeroom</code>; unresolved rows drop. Thread a real per-student
+<code>test_date</code> from state sources so state anchors on a real date. The fact drops
+<code>student_key</code>, INNER-joins the resolver, and gains an <code>enrollment_resolution</code>
+degenerate dim.</p>
+<p><strong>Tech Stack:</strong> dbt (BigQuery), <code>dbt_utils</code> (<code>union_relations</code>,
+<code>generate_surrogate_key</code>, <code>deduplicate</code>), dbt unit tests + data tests, single-PR
+cross-project clone workflow.</p>
+<p><strong>Spec:</strong>
+<code>docs/superpowers/specs/2026-06-05-fct-assessment-scores-enrollment-scoped-diamond-design.md</code>
+· <strong>Issue:</strong> <a href="https://github.com/TEAMSchools/teamster/issues/4135">#4135</a> ·
+<strong>Follow-up:</strong> <a href="https://github.com/TEAMSchools/teamster/issues/4139">#4139</a></p>
+<p><strong>Validation idiom (not pytest):</strong> dbt changes are validated by (a) dbt
+data/unit tests, (b) <code>uv run dbt build --select &lt;model&gt;</code> against kipptaf, (c)
+<code>dbt show</code> / BigQuery <code>INFORMATION_SCHEMA</code> + row-count checks against the
+PR-branch schema. All <code>dbt</code>/<code>git</code> commands run against the worktree:
+<code>/workspaces/teamster/.worktrees/cbini/refactor/claude-assessment-scores-enrollment-scoped</code>.
+Use <code>uv run dbt ... --project-dir &lt;worktree&gt;/src/dbt/&lt;project&gt;</code> and
+<code>git -C &lt;worktree&gt;</code>.</p>
+<hr />
+<h2 id="file-structure">File Structure</h2>
+<p><strong>Cross-project source threading (single-PR clone workflow):</strong></p>
+<ul>
+<li><code>src/dbt/kippmiami/models/fldoe/intermediate/int_fldoe__all_assessments.sql</code> —
+  district FLDOE int: expose <code>test_date</code> (from <code>date_taken</code>).</li>
+<li>NJGPA upstream (exact file TBD in Task 3): one of
+  <code>src/dbt/pearson/models/staging/stg_pearson__njgpa.sql</code> or
+  <code>src/dbt/kipppaterson/models/.../int_pearson__njgpa.sql</code> — stop dropping unit
+  datetimes.</li>
+<li><code>src/dbt/kipptaf/models/sources-kippmiami.yml</code> (+
+  <code>sources-kippnewark/camden/paterson.yml</code> if NJGPA needs them) — add the
+  <code>target=staging</code> schema branch.</li>
+</ul>
+<p><strong>kipptaf state intermediates:</strong></p>
+<ul>
+<li><code>src/dbt/kipptaf/models/pearson/staging/stg_pearson__{njsla,njsla_science,njgpa,parcc}.sql</code>
+  — derive <code>test_date</code>.</li>
+<li><code>src/dbt/kipptaf/models/pearson/intermediate/int_pearson__all_assessments.sql</code>
+  — add <code>test_date</code> to <code>include</code> + select.</li>
+<li><code>src/dbt/kipptaf/models/fldoe/intermediate/int_fldoe__all_assessments.sql</code> —
+  carry <code>test_date</code> through.</li>
+<li>Their <code>properties/*.yml</code> — document <code>test_date</code>.</li>
+</ul>
+<p><strong>Resolver (heart of the change):</strong></p>
+<ul>
+<li><code>src/dbt/kipptaf/models/assessments/intermediate/int_assessments__resolved_section_enrollments.sql</code>
+  — full rewrite.</li>
+<li><code>.../intermediate/properties/int_assessments__resolved_section_enrollments.yml</code>
+  — rewrite description, columns (<code>resolution_type</code>), uniqueness test, unit
+  tests.</li>
+</ul>
+<p><strong>Mart:</strong></p>
+<ul>
+<li><code>src/dbt/kipptaf/models/marts/facts/fct_assessment_scores_enrollment_scoped.sql</code>
+  — drop <code>student_key</code>, real state <code>test_date_key</code>, INNER join resolver,
+  <code>enrollment_resolution</code>.</li>
+<li><code>.../marts/facts/properties/fct_assessment_scores_enrollment_scoped.yml</code> —
+  remove <code>student_key</code>, add <code>enrollment_resolution</code>, tighten descriptions.</li>
+</ul>
+<hr />
+<h2 id="phase-0-ci-wiring-for-the-single-pr-cross-project-workflow">Phase 0 — CI wiring for the single-PR cross-project workflow</h2>
+<blockquote>
+<p><strong>Sequencing decision (2026-06-05):</strong> Single-PR with <strong>staged externals</strong> (not
+clone-from-prod). The NJGPA package columns (Task 3) and FLDOE district
+<code>test_date</code> (Task 2) are <em>new</em> columns absent from prod, so
+<code>dbt clone --state target/prod</code> can't introduce them and
+<code>dbt_utils.union_relations</code> intersects the prod schema. Instead: add the
+<code>target=staging</code> source-schema branch (Task 0),
+<code>stage_external_sources --target staging</code> for the pearson + fldoe GCS
+externals, then <strong>build</strong> the modified district/package models into the
+<code>zz_stg_&lt;district&gt;_*</code> schemas so kipptaf resolves the new columns. The
+<code>stage_external_sources</code> + district-build commands are <strong>run/confirmed by the
+user</strong> (env-touching) at the Task 9 pause.</p>
+</blockquote>
+<h3 id="task-0-stage-the-cross-project-sources">Task 0: Stage the cross-project sources</h3>
+<p>Per <code>src/dbt/kipptaf/CLAUDE.md</code> → "Single-PR cross-project workflow": kipptaf CI
+builds only kipptaf and won't auto-populate district staging schemas, so the
+district-side edits (FLDOE int, NJGPA upstream) must be reachable via the
+<code>zz_stg_&lt;district&gt;_*</code> schema branch.</p>
+<p><strong>Files:</strong></p>
+<ul class="task-list">
+<li>
+<p>Modify: <code>src/dbt/kipptaf/models/sources-kippmiami.yml</code> (and
+  <code>sources-kippnewark.yml</code> / <code>sources-kippcamden.yml</code> /
+  <code>sources-kipppaterson.yml</code> if Task 3 edits NJGPA there).</p>
+</li>
+<li class="task-list-item">
+<p><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 1:</strong> In each affected <code>sources-kipp*.yml</code>, confirm the
+      <code>target=staging</code> schema branch routes the source schema to
+      <code>zz_stg_&lt;district&gt;_&lt;source&gt;</code> (the region source-schema pattern). If the
+      file already uses the standard inline-Jinja region pattern, no edit is
+      needed yet — note which sources Task 3 will touch and revisit.</p>
+</li>
+<li class="task-list-item">
+<p><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 2:</strong> Defer the clone-seeding command to Task 9 (after the district
+      models are edited), since clone seeds from prod + the branch's compiled
+      models. Record here that the clone command will be:</p>
+</li>
+</ul>
+<div class="highlight"><pre><span></span><code>uv<span class="w"> </span>--directory<span class="w"> </span>/workspaces/teamster/.worktrees/cbini/refactor/claude-assessment-scores-enrollment-scoped<span class="w"> </span>run<span class="w"> </span>dbt<span class="w"> </span>clone<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--target<span class="w"> </span>staging<span class="w"> </span>--state<span class="w"> </span>target/prod<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--project-dir<span class="w"> </span>/workspaces/teamster/.worktrees/cbini/refactor/claude-assessment-scores-enrollment-scoped/src/dbt/kippmiami
+<span class="c1"># repeat per affected district project (kippnewark/kippcamden/kipppaterson) if NJGPA touches them</span>
+</code></pre></div>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 3: Commit</strong> (no-op if no file change yet — otherwise):</li>
+</ul>
+<div class="highlight"><pre><span></span><code>git<span class="w"> </span>-C<span class="w"> </span>/workspaces/teamster/.worktrees/cbini/refactor/claude-assessment-scores-enrollment-scoped<span class="w"> </span>add<span class="w"> </span>-u
+git<span class="w"> </span>-C<span class="w"> </span>/workspaces/teamster/.worktrees/cbini/refactor/claude-assessment-scores-enrollment-scoped<span class="w"> </span>commit<span class="w"> </span>-m<span class="w"> </span><span class="s2">&quot;chore(dbt): stage cross-project sources for assessment test_date threading&quot;</span>
+</code></pre></div>
+<hr />
+<h2 id="phase-1-thread-test_date-from-state-sources">Phase 1 — Thread <code>test_date</code> from state sources</h2>
+<h3 id="task-1-kipptaf-pearson-staging-derive-test_date-njsla-science-parcc">Task 1: kipptaf Pearson staging — derive <code>test_date</code> (NJSLA / Science / PARCC)</h3>
+<p>These three already carry the <code>unit{1..4}online{start,end}datetime</code> columns at
+kipptaf staging (verified). Derive one DATE.</p>
+<p><strong>Files:</strong></p>
+<ul class="task-list">
+<li>Modify: <code>src/dbt/kipptaf/models/pearson/staging/stg_pearson__njsla.sql</code></li>
+<li>Modify:
+  <code>src/dbt/kipptaf/models/pearson/staging/stg_pearson__njsla_science.sql</code></li>
+<li>Modify: <code>src/dbt/kipptaf/models/pearson/staging/stg_pearson__parcc.sql</code></li>
+<li>
+<p>Modify: <code>.../pearson/staging/properties/*.yml</code> (add <code>test_date</code>)</p>
+</li>
+<li class="task-list-item">
+<p><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 1: Profile the source datetimes</strong> (confirm format before parsing):</p>
+</li>
+</ul>
+<div class="highlight"><pre><span></span><code>uv<span class="w"> </span>run<span class="w"> </span>dbt<span class="w"> </span>show<span class="w"> </span>--inline<span class="w"> </span><span class="s2">&quot;select unit1onlineteststartdatetime, paperattemptcreatedate from {{ ref(&#39;stg_pearson__njsla&#39;) }} where unit1onlineteststartdatetime is not null limit 5&quot;</span><span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--project-dir<span class="w"> </span>/workspaces/teamster/.worktrees/cbini/refactor/claude-assessment-scores-enrollment-scoped/src/dbt/kipptaf
+</code></pre></div>
+<p>Expected: ISO-ish datetime strings (e.g. <code>2024-05-01T09:13:00</code>). Note the exact
+format for the parse in Step 2.</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 2: Add the <code>test_date</code> column</strong> to each model's final <code>select</code>
+      (adjust the parse function to the observed format;
+      <code>safe.parse_timestamp</code>/<code>safe_cast</code> guards bad values):</li>
+</ul>
+<div class="highlight"><pre><span></span><code><span class="w">    </span><span class="k">coalesce</span><span class="p">(</span>
+<span class="w">        </span><span class="nb">date</span><span class="p">(</span>
+<span class="w">            </span><span class="n">least</span><span class="p">(</span>
+<span class="w">                </span><span class="n">safe_cast</span><span class="p">(</span><span class="n">unit1onlineteststartdatetime</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="k">timestamp</span><span class="p">),</span>
+<span class="w">                </span><span class="n">safe_cast</span><span class="p">(</span><span class="n">unit2onlineteststartdatetime</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="k">timestamp</span><span class="p">),</span>
+<span class="w">                </span><span class="n">safe_cast</span><span class="p">(</span><span class="n">unit3onlineteststartdatetime</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="k">timestamp</span><span class="p">),</span>
+<span class="w">                </span><span class="n">safe_cast</span><span class="p">(</span><span class="n">unit4onlineteststartdatetime</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="k">timestamp</span><span class="p">)</span>
+<span class="w">            </span><span class="p">)</span>
+<span class="w">        </span><span class="p">),</span>
+<span class="w">        </span><span class="n">safe_cast</span><span class="p">(</span><span class="n">paperattemptcreatedate</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nb">date</span><span class="p">)</span>
+<span class="w">    </span><span class="p">)</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">test_date</span><span class="p">,</span>
+</code></pre></div>
+<p>PARCC uses <code>attemptcreatedate</code> (not <code>paperattemptcreatedate</code>) — use whichever
+the model exposes; NJSLA Science has the same unit columns as NJSLA. If a model
+lacks <code>unit4...</code>, drop that arg.</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 3: Add <code>test_date</code> to each staging <code>properties/*.yml</code></strong> with a
+      description (no stats):</li>
+</ul>
+<div class="highlight"><pre><span></span><code><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">test_date</span>
+<span class="w">  </span><span class="nt">data_type</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">date</span>
+<span class="w">  </span><span class="nt">description</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">&gt;-</span>
+<span class="w">    </span><span class="no">Date the student took the assessment, derived from the earliest online unit</span>
+<span class="w">    </span><span class="no">start datetime, falling back to the paper attempt create date.</span>
+</code></pre></div>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 4: Build + verify populated:</strong></li>
+</ul>
+<div class="highlight"><pre><span></span><code>uv<span class="w"> </span>run<span class="w"> </span>dbt<span class="w"> </span>build<span class="w"> </span>--select<span class="w"> </span>stg_pearson__njsla<span class="w"> </span>stg_pearson__njsla_science<span class="w"> </span>stg_pearson__parcc<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--project-dir<span class="w"> </span>/workspaces/teamster/.worktrees/cbini/refactor/claude-assessment-scores-enrollment-scoped/src/dbt/kipptaf
+</code></pre></div>
+<p>Then in BigQuery MCP, against the PR-branch schema, confirm
+<code>countif(test_date is null) / count(*)</code> is low for online-tested rows.</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 5: Commit:</strong></li>
+</ul>
+<div class="highlight"><pre><span></span><code>git<span class="w"> </span>-C<span class="w"> </span>&lt;worktree&gt;<span class="w"> </span>add<span class="w"> </span>-u<span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span>git<span class="w"> </span>-C<span class="w"> </span>&lt;worktree&gt;<span class="w"> </span>commit<span class="w"> </span>-m<span class="w"> </span><span class="s2">&quot;feat(dbt): derive test_date on Pearson NJSLA/Science/PARCC staging&quot;</span>
+</code></pre></div>
+<h3 id="task-2-fldoe-district-int-expose-test_date-cross-project-kippmiami">Task 2: FLDOE district int — expose <code>test_date</code> (cross-project, kippmiami)</h3>
+<p><code>kippmiami stg_fldoe__{fast,eoc,science}</code> already parse <code>date_taken</code> to <code>DATE</code>,
+but <code>kippmiami int_fldoe__all_assessments</code> doesn't select it.</p>
+<p><strong>Files:</strong></p>
+<ul class="task-list">
+<li>Modify:
+  <code>src/dbt/kippmiami/models/fldoe/intermediate/int_fldoe__all_assessments.sql</code></li>
+<li>
+<p>Modify:
+  <code>src/dbt/kippmiami/models/fldoe/intermediate/properties/int_fldoe__all_assessments.yml</code>
+  (add <code>test_date</code>)</p>
+</li>
+<li class="task-list-item">
+<p><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 1:</strong> Read the model's final <code>select</code> and the per-test CTEs. Add
+      <code>date_taken as test_date</code> (the FAST branch is already <code>DATE</code>; for
+      <code>eoc</code>/<code>science</code>, confirm the staging cast — <code>stg_fldoe__eoc/science</code> carry
+      it as STRING, so cast <code>safe_cast(... as date)</code> or align with the FAST
+      parse) to each unioned branch and the final select.</p>
+</li>
+<li class="task-list-item">
+<p><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 2:</strong> Add <code>test_date</code> to the properties YAML with a description.</p>
+</li>
+<li class="task-list-item">
+<p><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 3: Build against kippmiami:</strong></p>
+</li>
+</ul>
+<div class="highlight"><pre><span></span><code>uv<span class="w"> </span>run<span class="w"> </span>dbt<span class="w"> </span>build<span class="w"> </span>--select<span class="w"> </span>stg_fldoe__fast<span class="w"> </span>stg_fldoe__eoc<span class="w"> </span>stg_fldoe__science<span class="w"> </span>int_fldoe__all_assessments<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--project-dir<span class="w"> </span>/workspaces/teamster/.worktrees/cbini/refactor/claude-assessment-scores-enrollment-scoped/src/dbt/kippmiami
+</code></pre></div>
+<p>Expected: PASS; <code>test_date</code> populated.</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 4: Commit:</strong></li>
+</ul>
+<div class="highlight"><pre><span></span><code>git<span class="w"> </span>-C<span class="w"> </span>&lt;worktree&gt;<span class="w"> </span>add<span class="w"> </span>-u<span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span>git<span class="w"> </span>-C<span class="w"> </span>&lt;worktree&gt;<span class="w"> </span>commit<span class="w"> </span>-m<span class="w"> </span><span class="s2">&quot;feat(dbt): expose test_date in kippmiami int_fldoe__all_assessments&quot;</span>
+</code></pre></div>
+<h3 id="task-3-njgpa-upstream-stop-dropping-unit-datetimes-cross-project">Task 3: NJGPA upstream — stop dropping unit datetimes (cross-project)</h3>
+<p>kipptaf <code>stg_pearson__njgpa</code> does NOT expose the unit datetimes (verified —
+present on NJSLA/Science/PARCC but not NJGPA). Find where they're dropped and
+restore them.</p>
+<p><strong>Files (one of):</strong></p>
+<ul class="task-list">
+<li><code>src/dbt/pearson/models/staging/stg_pearson__njgpa.sql</code> (package, used by
+  Newark/Camden)</li>
+<li>
+<p><code>src/dbt/kipppaterson/models/.../int_pearson__njgpa.sql</code> (Paterson's variant —
+  kipptaf unions <code>source("kipppaterson_pearson", "int_pearson__njgpa")</code>)</p>
+</li>
+<li class="task-list-item">
+<p><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 1: Trace the drop point.</strong> Run, for each district source feeding
+      kipptaf <code>stg_pearson__njgpa</code>:</p>
+</li>
+</ul>
+<div class="highlight"><pre><span></span><code>uv<span class="w"> </span>run<span class="w"> </span>dbt<span class="w"> </span>show<span class="w"> </span>--inline<span class="w"> </span><span class="s2">&quot;select column_name from \`teamster-332318\`.\`region-us\`.INFORMATION_SCHEMA.COLUMNS where table_schema=&#39;kippcamden_pearson&#39; and table_name=&#39;stg_pearson__njgpa&#39; and lower(column_name) like &#39;unit%datetime&#39;&quot;</span><span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--project-dir<span class="w"> </span>&lt;worktree&gt;/src/dbt/kipptaf
+</code></pre></div>
+<p>Repeat for <code>kippnewark_pearson</code> and <code>kipppaterson_pearson</code> (table
+<code>int_pearson__njgpa</code>). Whichever returns zero is the drop point.
+<code>union_relations</code> takes the column intersection, so if ANY source lacks them,
+kipptaf loses them.</p>
+<ul class="task-list">
+<li class="task-list-item">
+<p><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 2:</strong> In the drop-point model(s), stop excluding
+      <code>unit{1..3}online{start,end}datetime</code> / <code>paperattemptcreatedate</code> (NJGPA
+      has units 1–3). If it's a <code>select * except(...)</code>, remove them from the
+      <code>except</code> list; if it's an explicit select, add them.</p>
+</li>
+<li class="task-list-item">
+<p><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 3:</strong> Add the same <code>test_date</code> derivation (Task 1, Step 2 shape,
+      units 1–3) to kipptaf <code>stg_pearson__njgpa.sql</code> + its properties YAML.</p>
+</li>
+<li class="task-list-item">
+<p><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 4: Build</strong> the affected district model(s) and kipptaf
+      <code>stg_pearson__njgpa</code>; verify <code>test_date</code> populated.</p>
+</li>
+<li class="task-list-item">
+<p><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 5: Commit:</strong></p>
+</li>
+</ul>
+<div class="highlight"><pre><span></span><code>git<span class="w"> </span>-C<span class="w"> </span>&lt;worktree&gt;<span class="w"> </span>add<span class="w"> </span>-u<span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span>git<span class="w"> </span>-C<span class="w"> </span>&lt;worktree&gt;<span class="w"> </span>commit<span class="w"> </span>-m<span class="w"> </span><span class="s2">&quot;feat(dbt): thread NJGPA test_date from unit datetimes&quot;</span>
+</code></pre></div>
+<h3 id="task-4-kipptaf-state-intermediates-carry-test_date">Task 4: kipptaf state intermediates carry <code>test_date</code></h3>
+<p><strong>Files:</strong></p>
+<ul class="task-list">
+<li>Modify:
+  <code>src/dbt/kipptaf/models/pearson/intermediate/int_pearson__all_assessments.sql</code></li>
+<li>Modify:
+  <code>src/dbt/kipptaf/models/fldoe/intermediate/int_fldoe__all_assessments.sql</code></li>
+<li>
+<p>Modify: both <code>properties/*.yml</code></p>
+</li>
+<li class="task-list-item">
+<p><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 1 (Pearson):</strong> Add <code>"test_date"</code> to the
+      <code>union_relations(... include=[...])</code> list (line ~12–47), and add
+      <code>u.test_date,</code> to the <code>transformations</code> select (after the other
+      pass-throughs).</p>
+</li>
+<li class="task-list-item">
+<p><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 2 (FLDOE):</strong> Add <code>fl.test_date,</code> to the final <code>select</code> (it unions
+      <code>source("kippmiami_fldoe", "int_fldoe__all_assessments")</code>, which now
+      carries it after Task 2).</p>
+</li>
+<li class="task-list-item">
+<p><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 3:</strong> Add <code>test_date</code> to both properties YAMLs.</p>
+</li>
+<li class="task-list-item">
+<p><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 4: Build + verify:</strong></p>
+</li>
+</ul>
+<div class="highlight"><pre><span></span><code>uv<span class="w"> </span>run<span class="w"> </span>dbt<span class="w"> </span>build<span class="w"> </span>--select<span class="w"> </span>int_pearson__all_assessments<span class="w"> </span>int_fldoe__all_assessments<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--project-dir<span class="w"> </span>&lt;worktree&gt;/src/dbt/kipptaf
+</code></pre></div>
+<p>Then confirm <code>test_date</code> is populated on both (BigQuery, PR-branch schema):
+<code>countif(test_date is null)/count(*)</code>.</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 5: Commit:</strong></li>
+</ul>
+<div class="highlight"><pre><span></span><code>git<span class="w"> </span>-C<span class="w"> </span>&lt;worktree&gt;<span class="w"> </span>add<span class="w"> </span>-u<span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span>git<span class="w"> </span>-C<span class="w"> </span>&lt;worktree&gt;<span class="w"> </span>commit<span class="w"> </span>-m<span class="w"> </span><span class="s2">&quot;feat(dbt): carry test_date through kipptaf state assessment intermediates&quot;</span>
+</code></pre></div>
+<hr />
+<h2 id="phase-2-rebuild-the-resolver">Phase 2 — Rebuild the resolver</h2>
+<h3 id="task-5-rewrite-int_assessments__resolved_section_enrollments">Task 5: Rewrite <code>int_assessments__resolved_section_enrollments</code></h3>
+<p>The resolver becomes the single section-resolver for all scores, sourcing
+<code>int_assessments__course_enrollments</code> (inventory) directly. Output grain: one
+row per score (internal:
+<code>student_number + canonical_assessment_id + _dbt_source_project</code>; state:
+<code>student_number + academic_year + subject_area + administration_period + _dbt_source_project</code>),
+each carrying <code>student_section_enrollment_key</code> + <code>resolution_type</code>.</p>
+<p><strong>Files:</strong></p>
+<ul class="task-list">
+<li>
+<p>Rewrite:
+  <code>src/dbt/kipptaf/models/assessments/intermediate/int_assessments__resolved_section_enrollments.sql</code></p>
+</li>
+<li class="task-list-item">
+<p><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 1: Profile the inventory's HR + subject coverage and the year
+      offset</strong> (confirm join keys before writing):</p>
+</li>
+</ul>
+<div class="highlight"><pre><span></span><code>uv<span class="w"> </span>run<span class="w"> </span>dbt<span class="w"> </span>show<span class="w"> </span>--inline<span class="w"> </span><span class="s2">&quot;select courses_credittype, illuminate_subject_area, illuminate_academic_year, count(*) n from {{ ref(&#39;int_assessments__course_enrollments&#39;) }} group by 1,2,3 order by n desc limit 20&quot;</span><span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--project-dir<span class="w"> </span>&lt;worktree&gt;/src/dbt/kipptaf
+</code></pre></div>
+<p>Confirm: HR rows present; <code>illuminate_academic_year = cc_academic_year + 1</code>;
+<code>illuminate_subject_area</code> values (<code>Text Study</code>, <code>Mathematics</code>, <code>Science</code>,
+<code>Social Studies</code>, <code>Writing</code>).</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 2: Write the rewritten model.</strong> Structure (CTEs):</li>
+<li><code>scores</code> — UNION of three score sources, normalized to
+     <code>(student_number, _dbt_source_project, academic_year, subject_area, anchor_date, score_grain_key, source_type)</code>:<ul>
+<li><strong>internal</strong> from <code>int_assessments__scaffold</code> (<code>is_internal_assessment</code>
+   rows): <code>subject_area</code>, <code>coalesce(date_taken, administered_at)</code> as
+   <code>anchor_date</code>, <code>canonical_assessment_id</code>, <code>academic_year</code>.</li>
+<li><strong>state_nj</strong> from <code>int_pearson__all_assessments</code>:
+   <code>localstudentidentifier</code> as <code>student_number</code>, <code>illuminate_subject</code> as
+   <code>subject_area</code>, <code>test_date</code> as <code>anchor_date</code>, <code>academic_year</code>,
+   <code>administration_period</code>.</li>
+<li><strong>state_fl</strong> from <code>int_fldoe__all_assessments</code>: <code>student_number</code>,
+   <code>illuminate_subject</code>, <code>test_date</code> as <code>anchor_date</code>, <code>academic_year</code>,
+   <code>administration_window</code> as <code>administration_period</code>.</li>
+</ul>
+</li>
+<li><code>state_subject_map</code> — derive <code>course_subject</code> from the state <code>subject_area</code>
+     via an inline <code>CASE</code> (Component 2): <code>Text Study → Text Study</code>,
+     <code>Mathematics → Mathematics</code>, <code>Science → Science</code>, etc. (internal
+     <code>subject_area</code> already matches <code>illuminate_subject_area</code>, so pass through).</li>
+<li><code>candidates_subject</code> — join <code>scores</code> to
+     <code>int_assessments__course_enrollments</code> on
+     <code>student_number = powerschool_student_number</code>, <code>_dbt_source_project</code>,
+     <code>course_subject = illuminate_subject_area</code>,
+     <code>academic_year = (illuminate_academic_year - 1)</code>, and
+     <code>anchor_date &gt;= cc_dateenrolled and anchor_date &lt; cc_dateleft</code> (half-open).
+     Stamp <code>resolution_type = 'subject_section'</code>.</li>
+<li><code>candidates_homeroom</code> — for scores NOT resolved in <code>candidates_subject</code>,
+     join the inventory on <code>courses_credittype = 'HR'</code>, <code>academic_year</code>,
+     <code>anchor_date</code> in window. Stamp <code>resolution_type = 'homeroom'</code>.</li>
+<li><code>all_candidates</code> — <code>union all</code> of the two;
+     <code>dbt_utils.deduplicate(partition_by="&lt;score_grain_key cols&gt;", order_by="resolution_type asc, cc_dateleft desc")</code>
+     so <code>subject_section</code> (alphabetically before <code>homeroom</code>? — no: 'homeroom' &lt;
+     'subject_section', so order by a numeric tier instead). Use an explicit
+     <code>tier</code> int (1 subject, 2 homeroom) and
+     <code>order_by="tier asc, cc_dateleft desc"</code>.</li>
+<li>final <code>select</code> — <code>powerschool_student_number</code>, <code>canonical_assessment_id</code>
+     (null for state), state grain cols, <code>_dbt_source_project</code>,
+     <code>cc_source_project</code>, <code>resolution_type</code>, and
+     <code>{{ dbt_utils.generate_surrogate_key(["cc_dcid", "cc_source_project"]) }} as student_section_enrollment_key</code>.</li>
+</ul>
+<p>Honor <code>src/dbt/CLAUDE.md</code>: half-open date interval; no
+  <code>select distinct</code>/<code>qualify</code> for dedup (use <code>dbt_utils.deduplicate</code>); no
+  <code>GROUP BY ALL</code>; derive the <code>CASE</code> subject map as a named column in a CTE (not
+  inline in <code>generate_surrogate_key</code>).</p>
+<p><strong>Academic-year offset differs by branch — do not use one join expression for
+  both.</strong> <code>int_assessments__scaffold.academic_year</code> is already
+  <code>academic_year_clean</code> (the illuminate <code>+1</code> year), so the internal branch
+  matches <code>inventory.illuminate_academic_year</code> <strong>directly</strong>. State
+  <code>academic_year</code> is the raw year, so the state branch matches
+  <code>inventory.illuminate_academic_year - 1</code> (equivalently <code>cc_academic_year</code>).
+  Normalize each <code>scores</code> branch to a single <code>illuminate_academic_year</code> column
+  in CTE 1 (internal: pass through; state: <code>academic_year + 1</code>) so CTE 3/4 join
+  on one key.</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 3: Validate one section per score</strong> (<code>dbt show</code>, must return zero
+      rows):</li>
+</ul>
+<div class="highlight"><pre><span></span><code>uv<span class="w"> </span>run<span class="w"> </span>dbt<span class="w"> </span>show<span class="w"> </span>--inline<span class="w"> </span><span class="s2">&quot;with r as (select * from {{ ref(&#39;int_assessments__resolved_section_enrollments&#39;) }}) select count(*) c from (select powerschool_student_number, canonical_assessment_id, academic_year, subject_area, administration_period, _dbt_source_project, count(*) n from r group by 1,2,3,4,5,6 having n&gt;1)&quot;</span><span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--project-dir<span class="w"> </span>&lt;worktree&gt;/src/dbt/kipptaf
+</code></pre></div>
+<p>Expected: <code>c = 0</code>.</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 4: Build:</strong></li>
+</ul>
+<div class="highlight"><pre><span></span><code>uv<span class="w"> </span>run<span class="w"> </span>dbt<span class="w"> </span>build<span class="w"> </span>--select<span class="w"> </span>int_assessments__resolved_section_enrollments<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--project-dir<span class="w"> </span>&lt;worktree&gt;/src/dbt/kipptaf
+</code></pre></div>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 5: Commit:</strong></li>
+</ul>
+<div class="highlight"><pre><span></span><code>git<span class="w"> </span>-C<span class="w"> </span>&lt;worktree&gt;<span class="w"> </span>add<span class="w"> </span>-u<span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span>git<span class="w"> </span>-C<span class="w"> </span>&lt;worktree&gt;<span class="w"> </span>commit<span class="w"> </span>-m<span class="w"> </span><span class="s2">&quot;feat(dbt): resolve all scores (internal+state) to one section, tiered subject-&gt;homeroom&quot;</span>
+</code></pre></div>
+<h3 id="task-6-rewrite-resolver-propertiesyml-description-columns-tests-unit-tests">Task 6: Rewrite resolver <code>properties.yml</code> (description, columns, tests, unit tests)</h3>
+<p><strong>Files:</strong></p>
+<ul class="task-list">
+<li>
+<p>Rewrite:
+  <code>src/dbt/kipptaf/models/assessments/intermediate/properties/int_assessments__resolved_section_enrollments.yml</code></p>
+</li>
+<li class="task-list-item">
+<p><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 1:</strong> Update <code>description</code> (now all scores, inventory-sourced,
+      tiered, date-containment).</p>
+</li>
+<li class="task-list-item">
+<p><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 2:</strong> Replace the uniqueness test with the new grain:</p>
+</li>
+</ul>
+<div class="highlight"><pre><span></span><code><span class="nt">data_tests</span><span class="p">:</span>
+<span class="w">  </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">dbt_utils.unique_combination_of_columns</span><span class="p">:</span>
+<span class="w">      </span><span class="nt">arguments</span><span class="p">:</span>
+<span class="w">        </span><span class="nt">combination_of_columns</span><span class="p">:</span>
+<span class="w">          </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">powerschool_student_number</span>
+<span class="w">          </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">canonical_assessment_id</span>
+<span class="w">          </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">academic_year</span>
+<span class="w">          </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">subject_area</span>
+<span class="w">          </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">administration_period</span>
+<span class="w">          </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">_dbt_source_project</span>
+</code></pre></div>
+<p>(NULL-safe: composite includes columns null on one branch — acceptable since the
+populated subset differs by branch; if the test miscounts on nulls, switch to
+<code>count(distinct format("%T", ...))</code> per <code>src/dbt/CLAUDE.md</code>.)</p>
+<ul class="task-list">
+<li class="task-list-item">
+<p><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 3:</strong> Add the <code>resolution_type</code> column with
+      <code>accepted_values: [subject_section, homeroom]</code>. Update <code>source_column</code>
+      meta on carried columns (no longer scaffold-only).</p>
+</li>
+<li class="task-list-item">
+<p><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 4: Rewrite the <code>unit_tests</code>.</strong> The existing four mock
+      <code>int_assessments__scaffold</code> + <code>int_assessments__assessments_canonical</code>;
+      the resolver now reads <code>int_assessments__course_enrollments</code> + the score
+      sources. Re-mock for the new inputs, preserving the intent of each
+      (in-window-over-phantom; single-candidate; tier fallback to homeroom;
+      anchor date drives pick). Each <code>given</code> mocks
+      <code>int_assessments__course_enrollments</code> rows (with <code>courses_credittype</code>,
+      <code>illuminate_subject_area</code>, <code>illuminate_academic_year</code>, <code>cc_dateenrolled</code>,
+      <code>cc_dateleft</code>, <code>cc_dcid</code>, <code>cc_source_project</code>,
+      <code>powerschool_student_number</code>) and a <code>scores</code>-source row; <code>expect</code> asserts
+      the chosen <code>cc_dcid</code> + <code>resolution_type</code>. Add one test for <strong>homeroom
+      fallback</strong> (no subject section → HR picked,
+      <code>resolution_type = 'homeroom'</code>) and one for <strong>no enrollment → row
+      absent</strong>.</p>
+</li>
+<li class="task-list-item">
+<p><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 5: Run tests:</strong></p>
+</li>
+</ul>
+<div class="highlight"><pre><span></span><code>uv<span class="w"> </span>run<span class="w"> </span>dbt<span class="w"> </span><span class="nb">test</span><span class="w"> </span>--select<span class="w"> </span>int_assessments__resolved_section_enrollments<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--project-dir<span class="w"> </span>&lt;worktree&gt;/src/dbt/kipptaf
+uv<span class="w"> </span>run<span class="w"> </span>dbt<span class="w"> </span>parse<span class="w"> </span>--no-partial-parse<span class="w"> </span>--project-dir<span class="w"> </span>&lt;worktree&gt;/src/dbt/kipptaf<span class="w">   </span><span class="c1"># bind unit-test/description YAML</span>
+</code></pre></div>
+<p>Expected: PASS.</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 6: Commit:</strong></li>
+</ul>
+<div class="highlight"><pre><span></span><code>git<span class="w"> </span>-C<span class="w"> </span>&lt;worktree&gt;<span class="w"> </span>add<span class="w"> </span>-u<span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span>git<span class="w"> </span>-C<span class="w"> </span>&lt;worktree&gt;<span class="w"> </span>commit<span class="w"> </span>-m<span class="w"> </span><span class="s2">&quot;test(dbt): resolver YAML + unit tests for tiered all-score resolution&quot;</span>
+</code></pre></div>
+<hr />
+<h2 id="phase-3-fact-contract">Phase 3 — Fact + contract</h2>
+<h3 id="task-7-rewrite-fct_assessment_scores_enrollment_scopedsql">Task 7: Rewrite <code>fct_assessment_scores_enrollment_scoped.sql</code></h3>
+<p><strong>Files:</strong></p>
+<ul class="task-list">
+<li>
+<p>Modify:
+  <code>src/dbt/kipptaf/models/marts/facts/fct_assessment_scores_enrollment_scoped.sql</code></p>
+</li>
+<li class="task-list-item">
+<p><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 1: Internal branch</strong> — replace the LEFT join to the resolver with
+      an INNER join (drops internal rows with no resolved section). Keep
+      <code>student_key</code> derivation removed (see Step 3). Add
+      <code>sr.resolution_type as enrollment_resolution</code>.</p>
+</li>
+<li class="task-list-item">
+<p><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 2: State branch</strong> — set <code>test_date_key</code> to the real threaded
+      <code>test_date</code> (replace <code>cast(null as date) as test_date</code>); INNER join the
+      resolver on the state grain
+      (<code>student_number, academic_year, subject_area, administration_period, _dbt_source_project</code>);
+      drop the <code>left join dim_students</code> and the
+      <code>if(ds.lea_student_identifier is not null, ...)</code> wrapper; add
+      <code>sr.resolution_type as enrollment_resolution</code>.</p>
+</li>
+<li class="task-list-item">
+<p><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 3: Remove <code>student_key</code></strong> from BOTH branches' <code>select</code> lists.
+      Confirm <code>assessment_score_key</code> PK hash inputs are unchanged (they hash
+      <code>student_number</code> + assessment identifiers, not the FK).</p>
+</li>
+<li class="task-list-item">
+<p><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 4: Build:</strong></p>
+</li>
+</ul>
+<div class="highlight"><pre><span></span><code>uv<span class="w"> </span>run<span class="w"> </span>dbt<span class="w"> </span>build<span class="w"> </span>--select<span class="w"> </span>fct_assessment_scores_enrollment_scoped<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--project-dir<span class="w"> </span>&lt;worktree&gt;/src/dbt/kipptaf
+</code></pre></div>
+<p>Expected: PASS (contract may fail until Task 8 YAML — if so, do Task 8 first
+then rebuild).</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 5: Commit:</strong></li>
+</ul>
+<div class="highlight"><pre><span></span><code>git<span class="w"> </span>-C<span class="w"> </span>&lt;worktree&gt;<span class="w"> </span>add<span class="w"> </span>-u<span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span>git<span class="w"> </span>-C<span class="w"> </span>&lt;worktree&gt;<span class="w"> </span>commit<span class="w"> </span>-m<span class="w"> </span><span class="s2">&quot;feat(dbt): drop student_key, INNER-join resolver, real state test_date_key on assessment fact&quot;</span>
+</code></pre></div>
+<h3 id="task-8-update-fact-propertiesyml">Task 8: Update fact <code>properties.yml</code></h3>
+<p><strong>Files:</strong></p>
+<ul class="task-list">
+<li>
+<p>Modify:
+  <code>src/dbt/kipptaf/models/marts/facts/properties/fct_assessment_scores_enrollment_scoped.yml</code></p>
+</li>
+<li class="task-list-item">
+<p><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 1:</strong> Remove the entire <code>student_key</code> column block (description,
+      <code>constraints</code> FK, <code>relationships</code> test).</p>
+</li>
+<li class="task-list-item">
+<p><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 2:</strong> Add <code>enrollment_resolution</code>:</p>
+</li>
+</ul>
+<div class="highlight"><pre><span></span><code><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">enrollment_resolution</span>
+<span class="w">  </span><span class="nt">data_type</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">string</span>
+<span class="w">  </span><span class="nt">description</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">&gt;-</span>
+<span class="w">    </span><span class="no">How the section enrollment was resolved: subject_section (the section for</span>
+<span class="w">    </span><span class="no">the assessment&#39;s subject, active on the test date) or homeroom (the</span>
+<span class="w">    </span><span class="no">student&#39;s HR section, used when no subject section resolved). Filter to</span>
+<span class="w">    </span><span class="no">subject_section for course/section-level rollups.</span>
+<span class="w">  </span><span class="nt">data_tests</span><span class="p">:</span>
+<span class="w">    </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">accepted_values</span><span class="p">:</span>
+<span class="w">        </span><span class="nt">arguments</span><span class="p">:</span>
+<span class="w">          </span><span class="nt">values</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">[</span><span class="nv">subject_section</span><span class="p p-Indicator">,</span><span class="w"> </span><span class="nv">homeroom</span><span class="p p-Indicator">]</span>
+</code></pre></div>
+<ul class="task-list">
+<li class="task-list-item">
+<p><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 3:</strong> Tighten descriptions: <code>student_section_enrollment_key</code> (now
+      populated for every row; note tier semantics + homeroom coarseness);
+      <code>test_date_key</code> (now populated for state too).</p>
+</li>
+<li class="task-list-item">
+<p><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 4: Build + verify contract/tests:</strong></p>
+</li>
+</ul>
+<div class="highlight"><pre><span></span><code>uv<span class="w"> </span>run<span class="w"> </span>dbt<span class="w"> </span>build<span class="w"> </span>--select<span class="w"> </span>fct_assessment_scores_enrollment_scoped<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--project-dir<span class="w"> </span>&lt;worktree&gt;/src/dbt/kipptaf
+</code></pre></div>
+<p>Expected: PASS, including <code>accepted_values</code> and <code>relationships</code>.</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 5: Commit:</strong></li>
+</ul>
+<div class="highlight"><pre><span></span><code>git<span class="w"> </span>-C<span class="w"> </span>&lt;worktree&gt;<span class="w"> </span>add<span class="w"> </span>-u<span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span>git<span class="w"> </span>-C<span class="w"> </span>&lt;worktree&gt;<span class="w"> </span>commit<span class="w"> </span>-m<span class="w"> </span><span class="s2">&quot;feat(dbt): fact YAML — remove student_key, add enrollment_resolution&quot;</span>
+</code></pre></div>
+<hr />
+<h2 id="phase-4-cross-project-ci-seeding-validation-exposure-check">Phase 4 — Cross-project CI seeding, validation, exposure check</h2>
+<h3 id="task-9-seed-district-staging-full-build">Task 9: Seed district staging + full build</h3>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 1: Refresh the prod manifest</strong> (for clone <code>--state</code>):</li>
+</ul>
+<div class="highlight"><pre><span></span><code>uv<span class="w"> </span>run<span class="w"> </span>dbt<span class="w"> </span>parse<span class="w"> </span>--target<span class="w"> </span>prod<span class="w"> </span>--project-dir<span class="w"> </span>&lt;worktree&gt;/src/dbt/kippmiami<span class="w"> </span>--target-path<span class="w"> </span>target/prod
+</code></pre></div>
+<p>(Repeat for any district touched in Task 3.)</p>
+<ul class="task-list">
+<li class="task-list-item">
+<p><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 2: Clone-seed</strong> the affected district staging schemas (Task 0, Step
+      2 command), per affected district.</p>
+</li>
+<li class="task-list-item">
+<p><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 3: Full chain build</strong> from the resolver/state intermediates down:</p>
+</li>
+</ul>
+<div class="highlight"><pre><span></span><code>uv<span class="w"> </span>run<span class="w"> </span>dbt<span class="w"> </span>build<span class="w"> </span>--select<span class="w"> </span>int_pearson__all_assessments<span class="w"> </span>int_fldoe__all_assessments<span class="w"> </span>int_assessments__resolved_section_enrollments+<span class="w"> </span>fct_assessment_scores_enrollment_scoped+<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--project-dir<span class="w"> </span>&lt;worktree&gt;/src/dbt/kipptaf
+</code></pre></div>
+<p>Expected: PASS.</p>
+<h3 id="task-10-validate-fk-population-row-count-delta-pr-branch-schema">Task 10: Validate FK population + row-count delta (PR-branch schema)</h3>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 1: FK population</strong> (per <code>marts/CLAUDE.md</code> "Verify FK population,
+      not just compilation") — <code>student_section_enrollment_key</code> must be ~100%
+      non-null:</li>
+</ul>
+<div class="highlight"><pre><span></span><code><span class="k">select</span><span class="w"> </span><span class="n">countif</span><span class="p">(</span><span class="n">student_section_enrollment_key</span><span class="w"> </span><span class="k">is</span><span class="w"> </span><span class="k">null</span><span class="p">)</span><span class="w"> </span><span class="n">n_null</span><span class="p">,</span><span class="w"> </span><span class="k">count</span><span class="p">(</span><span class="o">*</span><span class="p">)</span><span class="w"> </span><span class="n">n_total</span>
+<span class="k">from</span><span class="w"> </span><span class="o">`&lt;</span><span class="n">pr_branch_schema</span><span class="o">&gt;</span><span class="p">.</span><span class="n">fct_assessment_scores_enrollment_scoped</span><span class="o">`</span>
+</code></pre></div>
+<p>Expected: <code>n_null = 0</code>.</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 2: Resolution mix</strong> sanity:</li>
+</ul>
+<div class="highlight"><pre><span></span><code><span class="k">select</span><span class="w"> </span><span class="n">enrollment_resolution</span><span class="p">,</span><span class="w"> </span><span class="k">count</span><span class="p">(</span><span class="o">*</span><span class="p">)</span><span class="w"> </span><span class="n">n</span>
+<span class="k">from</span><span class="w"> </span><span class="o">`&lt;</span><span class="n">pr_branch_schema</span><span class="o">&gt;</span><span class="p">.</span><span class="n">fct_assessment_scores_enrollment_scoped</span><span class="o">`</span><span class="w"> </span><span class="k">group</span><span class="w"> </span><span class="k">by</span><span class="w"> </span><span class="mi">1</span>
+</code></pre></div>
+<p>Expected: mostly <code>subject_section</code>, a minority <code>homeroom</code>; no nulls.</p>
+<ul class="task-list">
+<li class="task-list-item">
+<p><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 3: Row-count delta</strong> vs prod — new total ≈ prod
+      <code>n_resolved (13.6M) + n_student_no_section (604K)</code> minus the
+      no-section/no-homeroom residual (the 39 + Paterson-style tail). Confirm
+      the drop is bounded (single-digit thousands at most), not a large
+      unexpected loss.</p>
+</li>
+<li class="task-list-item">
+<p><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 4: State <code>test_date_key</code></strong> now populated:</p>
+</li>
+</ul>
+<div class="highlight"><pre><span></span><code><span class="k">select</span><span class="w"> </span><span class="n">countif</span><span class="p">(</span><span class="n">test_date_key</span><span class="w"> </span><span class="k">is</span><span class="w"> </span><span class="k">null</span><span class="p">)</span><span class="w"> </span><span class="n">n_null</span><span class="p">,</span><span class="w"> </span><span class="k">count</span><span class="p">(</span><span class="o">*</span><span class="p">)</span><span class="w"> </span><span class="n">n</span>
+<span class="k">from</span><span class="w"> </span><span class="o">`&lt;</span><span class="n">pr_branch_schema</span><span class="o">&gt;</span><span class="p">.</span><span class="n">fct_assessment_scores_enrollment_scoped</span><span class="o">`</span>
+</code></pre></div>
+<p>Expected: low null rate (internal always had it; state now populated).</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 5: Internal section-resolution stability</strong> — the resolver now
+      re-resolves internal scores from the inventory directly (previously via
+      the scaffold's pre-pick), so internal <code>student_section_enrollment_key</code>
+      could shift. Compare the PR-branch fact to prod for internal rows and
+      confirm the overwhelming majority keep the same section:</li>
+</ul>
+<div class="highlight"><pre><span></span><code><span class="k">select</span><span class="w"> </span><span class="n">countif</span><span class="p">(</span><span class="n">pr</span><span class="p">.</span><span class="n">student_section_enrollment_key</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">pd</span><span class="p">.</span><span class="n">student_section_enrollment_key</span><span class="p">)</span><span class="w"> </span><span class="n">n_same</span><span class="p">,</span>
+<span class="w">       </span><span class="k">count</span><span class="p">(</span><span class="o">*</span><span class="p">)</span><span class="w"> </span><span class="n">n_compared</span>
+<span class="k">from</span><span class="w"> </span><span class="o">`&lt;</span><span class="n">pr_branch_schema</span><span class="o">&gt;</span><span class="p">.</span><span class="n">fct_assessment_scores_enrollment_scoped</span><span class="o">`</span><span class="w"> </span><span class="n">pr</span>
+<span class="k">join</span><span class="w"> </span><span class="o">`</span><span class="n">teamster</span><span class="o">-</span><span class="mi">332318</span><span class="p">.</span><span class="n">kipptaf_marts</span><span class="p">.</span><span class="n">fct_assessment_scores_enrollment_scoped</span><span class="o">`</span><span class="w"> </span><span class="n">pd</span>
+<span class="w">  </span><span class="k">using</span><span class="w"> </span><span class="p">(</span><span class="n">assessment_score_key</span><span class="p">)</span>
+<span class="k">where</span><span class="w"> </span><span class="n">pr</span><span class="p">.</span><span class="n">enrollment_resolution</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s1">&#39;subject_section&#39;</span>
+</code></pre></div>
+<p>Expected: <code>n_same / n_compared</code> ≈ 1.0. Investigate a material drop before merge
+— it signals the inventory-direct join diverges from the prior scaffold pick.</p>
+<h3 id="task-11-exposure-cube-check">Task 11: Exposure / Cube check</h3>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 1:</strong> Confirm nothing reads the dropped <code>student_key</code>:</li>
+</ul>
+<div class="highlight"><pre><span></span><code>rg<span class="w"> </span>-n<span class="w"> </span><span class="s2">&quot;student_key&quot;</span><span class="w"> </span>/workspaces/teamster/.worktrees/cbini/refactor/claude-assessment-scores-enrollment-scoped/src/cube/model/
+</code></pre></div>
+<p>Expected: no reference tied to this fact. If any, update the Cube model in this
+PR (per <code>marts/CLAUDE.md</code> "Exposures are the consumer contract").</p>
+<ul class="task-list">
+<li class="task-list-item">
+<p><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 2:</strong> Confirm the <code>cube.yml</code> exposure <code>depends_on</code> still lists the
+      fact; no rename occurred, so no change expected.</p>
+</li>
+<li class="task-list-item">
+<p><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 3: Lint</strong> the touched SQL/YAML from inside the worktree:</p>
+</li>
+</ul>
+<div class="highlight"><pre><span></span><code><span class="nb">cd</span><span class="w"> </span>/workspaces/teamster/.worktrees/cbini/refactor/claude-assessment-scores-enrollment-scoped<span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span>.trunk/tools/trunk<span class="w"> </span>check<span class="w"> </span>--force<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>src/dbt/kipptaf/models/assessments/intermediate/int_assessments__resolved_section_enrollments.sql<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>src/dbt/kipptaf/models/marts/facts/fct_assessment_scores_enrollment_scoped.sql
+</code></pre></div>
+<p>Expected: no issues.</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 4: Final commit</strong> (if Cube/lint fixes):</li>
+</ul>
+<div class="highlight"><pre><span></span><code>git<span class="w"> </span>-C<span class="w"> </span>&lt;worktree&gt;<span class="w"> </span>add<span class="w"> </span>-u<span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span>git<span class="w"> </span>-C<span class="w"> </span>&lt;worktree&gt;<span class="w"> </span>commit<span class="w"> </span>-m<span class="w"> </span><span class="s2">&quot;chore(dbt): cube/lint cleanup for enrollment-scoped assessment fact&quot;</span>
+</code></pre></div>
+<hr />
+<h2 id="out-of-scope-tracked-separately">Out of scope (tracked separately)</h2>
+<ul>
+<li>The 39 truly-unattributable state scores →
+  <a href="https://github.com/TEAMSchools/teamster/issues/4139">#4139</a>.</li>
+<li>No-homeroom residual (mostly Paterson AY2024–25) — excluded by design; monitor
+  via resolver match-rate, fold into #4139.</li>
+</ul>
+<h2 id="open-implementation-decisions-resolve-via-dbt-show-during-execution">Open implementation decisions (resolve via <code>dbt show</code> during execution)</h2>
+<ul>
+<li><strong>Pearson <code>test_date</code></strong>: earliest unit start vs. test completion — plan uses
+  earliest unit start (when the kid began); confirm acceptable.</li>
+<li><strong>State subject <code>CASE</code> granularity</strong>: NJGPA maps to ELA <em>and</em> Math — if a
+  single score row carries one discipline, map on <code>discipline</code>; if it spans
+  both, the resolver may produce two subject candidates (dedup tier handles it).
+  Verify NJGPA row grain in Step 1 of Task 5.</li>
+<li><strong>Resolver uniqueness test NULL-safety</strong>: if the composite-column test
+  miscounts due to branch-null columns, switch to the <code>format("%T", ...)</code>
+  distinct-count singular test.</li>
+</ul>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+          <button type="button" class="md-top md-icon" data-md-component="top" hidden>
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8z"/></svg>
+  Back to top
+</button>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+    <div class="md-copyright__highlight">
+      Copyright &copy; KIPP TEAM & Family Schools
+    </div>
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      
+      <script id="__config" type="application/json">{"annotate": null, "base": "../../..", "features": ["content.action.edit", "content.code.copy", "navigation.instant", "navigation.indexes", "navigation.sections", "navigation.tabs", "navigation.tabs.sticky", "navigation.top", "search.highlight", "search.suggest", "toc.follow"], "search": "../../../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+    
+    
+      <script src="../../../assets/javascripts/bundle.79ae519e.min.js"></script>
+      
+    
+  </body>
+</html>
