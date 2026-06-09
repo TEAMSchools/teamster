@@ -314,6 +314,15 @@ deployments. Developers use `<repo-root>/.dbt/profiles.yml` (not
   sustained transient 503s on `client.list_datasets()` at adapter init. Set
   `job_retries: 3` on the `prod` output. Set on all district profiles and
   kipptaf.
+- **`job_execution_timeout_seconds`**: Set to `900` on the `prod` output of all
+  five kipp\* profiles. Caps each BigQuery job server-side (`job_timeout_ms`) so
+  a runaway single model is cancelled by BigQuery before Dagster's run-level
+  `max_runtime` (1800s). Without it, a killed dbt run leaves the in-flight BQ
+  job orphaned — dbt does NOT cancel on termination (upstream limitation,
+  dbt-core #5275/#9639) — and the zombie `create or replace` can overwrite a
+  successful auto-retry's output with staler data. Routine models run <=330s
+  network-wide (affected models' p99 <=78s), so 900s won't false-kill legit
+  work.
 
 ## Model Conventions
 

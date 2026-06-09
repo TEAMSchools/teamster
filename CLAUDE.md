@@ -560,6 +560,13 @@ queries spanning multiple districts — never manually `UNION ALL` across
 `_dbt_source_relation` with
 `REGEXP_EXTRACT(_dbt_source_relation, r'`(kipp[^`]+\_<source>)`')`.
 
+Slow/timed-out dbt model: in `JOBS_BY_PROJECT`, same `total_bytes_processed` +
+N× `total_slot_ms` across runs of the same model = BigQuery straggler/shard
+re-execution (transient), NOT slot contention or a code/data change — confirm
+via the `timeline` array (`active_units` not starved) and low competing
+slot-minutes in the window. A cancelled BQ job ends `state=DONE` with
+`error_result.reason="stopped"`; natural completion has `error_result=null`.
+
 ### dbt MCP
 
 Auth via `scripts/dbt-mcp-launch.sh` — do not add `DBT_TOKEN` to `.mcp.json`
