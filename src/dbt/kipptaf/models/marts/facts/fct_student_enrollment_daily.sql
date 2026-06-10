@@ -8,7 +8,6 @@ with
             entrydate,
             exitdate,
             academic_year,
-            enroll_status,
             grade_level,
         from {{ ref("int_powerschool__student_enrollment_union") }}
     ),
@@ -37,7 +36,6 @@ with
             enr._dbt_source_project,
             enr.schoolid,
             enr.entrydate,
-            enr.enroll_status,
             enr.grade_level,
 
             enr.academic_year as stint_academic_year,
@@ -70,7 +68,6 @@ select
     e.date_key,
     e.term_academic_year as academic_year,
     e.grade_level,
-    e.enroll_status,
 
     {{
         dbt_utils.generate_surrogate_key(

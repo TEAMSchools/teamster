@@ -48,11 +48,6 @@ const SNAPSHOT_SELF_ANCHORED_SUFFIXES = [
   "_year_end",
   "_month_end",
   "_week_end",
-  "_served",
-  "_active",
-  "_oct01",
-  "_oct15",
-  "_mar15",
 ];
 
 // Add a cube name here when it exposes is_latest_record / is_month_end_record

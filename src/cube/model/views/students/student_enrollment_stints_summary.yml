@@ -10,8 +10,7 @@ views:
       students and NOT a point-in-time headcount: it is alumni-inclusive and
       spans all academic years. For a point-in-time student headcount (e.g.
       "enrollment on October 1" or "students enrolled in 2025") use the
-      student_enrollments_summary view's count_students; for "how many students
-      we served this year" use its count_students_served.
+      student_enrollments_summary view's count_students.
 
     cubes:
       - join_path: student_enrollment_stints

@@ -4,8 +4,8 @@ models:
       Student daily enrollment fact table. One row per enrollment stint x
       in-session calendar date — a student enrolled and attending school on a
       given day contributes one row. Location, student, enrollment stint, and
-      calendar date are reached via their dimensions; grade level and enrollment
-      status are carried on the row for convenience.
+      calendar date are reached via their dimensions; grade level is carried on
+      the row for convenience.
 
       academic_year is sourced from the school's own year-record calendar term
       (the term covering the date), so date_key and academic_year are always
@@ -15,10 +15,10 @@ models:
       This is a complete historical record: alumni and withdrawn students retain
       their real-dated enrolled rows. Point-in-time scoping (a single date, or a
       period-end anchor) is a query concern handled by a date filter or one of
-      the is_*_record anchor flags — it is never expressed by filtering
-      enroll_status, which is student-level and current-only. A small number of
-      in-session days that fall outside every year-record term span are dropped,
-      so coverage is effectively complete but not exhaustive.
+      the is_*_record anchor flags — never by enrollment status, which is
+      student-level and current-only. A small number of in-session days that
+      fall outside every year-record term span are dropped, so coverage is
+      effectively complete but not exhaustive.
 
     config:
       materialized: table
@@ -106,14 +106,6 @@ models:
         description: >-
           Student's grade level on this day.
 
-      - name: enroll_status
-        data_type: int64
-        description: >-
-          Student-level enrollment status — the student's current status,
-          identical across every row for the student and NOT a point-in-time
-          value. Do not use it to scope a historical or point-in-time enrollment
-          count; filter by date_key (or the is_*_record anchors) instead.
-
       - name: is_current_record
         data_type: boolean
         description: >-
@@ -143,7 +135,6 @@ models:
         data_type: boolean
         description: >-
           TRUE on the last enrolled day of each enrollment stint (one row per
-          student_enrollment_key), FALSE otherwise. An ever-enrolled marker that
-          drives the "served" count — use it to pick each stint's final day
-          without a date filter. NOT a period-end anchor; distinct from
-          is_current_record.
+          student_enrollment_key), FALSE otherwise. Marks each student's final
+          enrolled day — use it to pick that day without a date filter. NOT a
+          period-end anchor; distinct from is_current_record.

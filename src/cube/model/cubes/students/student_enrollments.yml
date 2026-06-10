@@ -71,15 +71,6 @@ cubes:
         type: number
         public: true
 
-      - name: enroll_status
-        description: >-
-          Enrollment status: 0 active, 2 withdrawn, 3 graduated. Student-level
-          (current status), not point-in-time. Used only by
-          count_students_active.
-        sql: enroll_status
-        type: number
-        public: true
-
       - name: is_current_record
         description: >-
           TRUE on the school's last in-session day of the academic year that has
@@ -110,8 +101,8 @@ cubes:
       - name: is_latest_record
         description: >-
           TRUE on each student-stint's last enrolled in-session day of the
-          academic year. Ever-enrolled marker (drives count_students_served) —
-          NOT a period-end marker.
+          academic year (one row per stint). Marks each student's last enrolled
+          day — NOT a period-end marker; distinct from is_current_record.
         sql: is_latest_record
         type: boolean
         public: true
@@ -121,87 +112,15 @@ cubes:
         description: >-
           Distinct students enrolled, point-in-time. Counts each student once as
           of the most recent in-session school day in your query: the exact date
-          if you filter to one, otherwise each school's latest in-session day in
-          the period (today for the current year, the last day of school for
-          completed years). Matches the topline Total Enrollment methodology —
-          enrollment is by entry/exit dates, not status. Note: when no single
-          date is pinned, schools that end on different days are each counted as
-          of their own last day, so a network total can mix as-of dates within
-          the final weeks of a year. For 'how many students did we serve at any
-          point' use count_students_served; for active-status roster use
-          count_students_active.
+          if you filter to one (filter dates_date_day to a single date, e.g.
+          2025-10-01 for the fall count), otherwise each school's latest
+          in-session day in the period (today for the current year, the last day
+          of school for completed years). Group by month or week to trend the
+          point-in-time headcount over the year. Matches the topline Total
+          Enrollment methodology — enrollment is by entry/exit dates, not
+          status. Note: when no single date is pinned, schools that end on
+          different days are each counted as of their own last day, so a network
+          total can mix as-of dates within the final weeks of a year.
         sql: student_key
         type: count_distinct
         public: true
-
-      - name: count_students_served
-        description: >-
-          Distinct students enrolled at any point during the queried period. A
-          student who enrolled and then withdrew mid-year is still counted. Use
-          for 'how many students did we serve this year.' This is higher than
-          count_students (point-in-time) by the number of mid-period
-          enrollments/withdrawals. Not a point-in-time headcount — for that use
-          count_students.
-        sql: student_key
-        type: count_distinct
-        public: true
-        filters:
-          - sql: "{CUBE}.is_latest_record = true"
-
-      - name: count_students_active
-        description: >-
-          Distinct students with an active enrollment status (excludes withdrawn
-          and graduated). Use for current active-roster questions. WARNING:
-          enrollment status is the student's current status, not their status on
-          a past date — do not use this for historical point-in-time counts (use
-          count_students with a date filter). Does not match topline Total
-          Enrollment, which counts by enrollment dates rather than status.
-        sql: student_key
-        type: count_distinct
-        public: true
-        filters:
-          - sql: "{CUBE}.enroll_status = 0"
-
-      - name: count_students_oct01
-        description: >-
-          Distinct students enrolled on the October 1 state count date of the
-          queried academic year. Point-in-time headcount for the regulatory fall
-          enrollment count. Group by academic_year to compare count dates across
-          years.
-        sql: student_key
-        type: count_distinct
-        public: true
-        filters:
-          - sql: >-
-              EXTRACT(MONTH FROM {CUBE}.date_key) = 10 AND EXTRACT(DAY FROM
-              {CUBE}.date_key) = 1
-
-      - name: count_students_oct15
-        description: >-
-          Distinct students enrolled on the October 15 state count date of the
-          queried academic year. Point-in-time headcount for the regulatory fall
-          enrollment count. Group by academic_year to compare count dates across
-          years.
-        sql: student_key
-        type: count_distinct
-        public: true
-        filters:
-          - sql: >-
-              EXTRACT(MONTH FROM {CUBE}.date_key) = 10 AND EXTRACT(DAY FROM
-              {CUBE}.date_key) = 15
-
-      - name: count_students_mar15
-        description: >-
-          Distinct students enrolled on the March 15 state count date of the
-          queried academic year. Point-in-time headcount for the regulatory
-          spring enrollment count. Group by academic_year to compare count dates
-          across years. (March 15 falls in the spring of the academic year —
-          e.g. academic_year 2025 = March 15, 2026 — and is handled
-          automatically.)
-        sql: student_key
-        type: count_distinct
-        public: true
-        filters:
-          - sql: >-
-              EXTRACT(MONTH FROM {CUBE}.date_key) = 3 AND EXTRACT(DAY FROM
-              {CUBE}.date_key) = 15

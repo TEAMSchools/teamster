@@ -3,24 +3,18 @@ views:
     description: >-
       Row-level point-in-time student enrollment drill-down — one row per
       enrolled student-day. Use for roster exports and questions like "who was
-      enrolled on October 1?". Same measures as the summary view plus the
+      enrolled on October 1?" (pin a single date by filtering dates_date_day).
+      Same count_students measure as the summary view, plus the
       student-identifier members and the enrollment_date time dimension.
 
       count_students is point-in-time (as of the most recent in-session day in
-      the query, or the pinned enrollment_date). count_students_served counts
-      ever-enrolled in the period. count_students_active is active-status only
-      (current-roster, not historical). Detail-view count_students for a fixed
+      the query, or the pinned date). Detail-view count_students for a fixed
       date equals the summary view's for the same filter.
 
     cubes:
       - join_path: student_enrollments
         includes:
           - count_students
-          - count_students_served
-          - count_students_active
-          - count_students_oct01
-          - count_students_oct15
-          - count_students_mar15
           - student_enrollment_daily_key
           - student_enrollment_key
           - grade_level
