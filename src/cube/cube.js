@@ -143,6 +143,18 @@ module.exports = {
   },
 
   queryRewrite: (query, { securityContext }) => {
+    // TEMP DEBUG (REMOVE): capture the raw query object to diagnose how the SQL
+    // API expresses time-dimension granularity vs the REST path. Visible in the
+    // Cube Cloud Dev Mode playground logs panel.
+    console.log(
+      "QUERYREWRITE_DEBUG " +
+        JSON.stringify({
+          measures: query.measures,
+          dimensions: query.dimensions,
+          timeDimensions: query.timeDimensions,
+          filters: query.filters,
+        }),
+    );
     const email =
       securityContext?.email ??
       securityContext?.cubeCloud?.userAttributes?.email;
