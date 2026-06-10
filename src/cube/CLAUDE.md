@@ -52,10 +52,15 @@ school_calendars) go in `cubes/conformed/`.
   `sql:` (Cube custom-calendar recipe). `many_to_one` fan-trap protection trusts
   your declared `relationship` + `primary_key`, so any non-overlap invariant the
   join relies on must be test-enforced upstream in dbt.
-- **Avoid diamond paths.** Two join paths to the same dim → either a compound
-  join on the canonical path (see `student_attendance.yml` → `school_calendars`)
-  or a degenerate FK with no declared join (see
-  `student_enrollments.location_key`). Comment the choice.
+- **Avoid diamond paths.** Two join paths to the same dim → resolve to one
+  canonical path. The `student_enrollments` daily-fact cube declares a
+  **direct** `locations` join AND joins `student_enrollment_stints` (which also
+  joins `locations`) — two paths to `locations`. Views MUST traverse the direct
+  path (`join_path: student_enrollments.locations`); routing through
+  `student_enrollments.student_enrollment_stints.locations` would trigger the
+  diamond. Alternative resolutions: a compound join on the canonical path (see
+  `student_attendance.yml` → `school_calendars`), or a degenerate FK with no
+  declared join. Comment the choice.
 - **Time dimensions** must cast to `TIMESTAMP` in the dim's `sql:`; joins from
   facts cast through (`CAST({CUBE}.date_key AS TIMESTAMP)`).
 - **Hidden helper measures** prefix with `_` and set `public: false` (see
@@ -120,15 +125,26 @@ Default-deny, group-driven. Read [`cube.js`](cube.js) before modifying.
   new domain cube needs no `cube.js` change as long as it follows the
   domain-prefix naming rule above. A domain cube misnamed off-prefix silently
   loses its guard.
-- **`SNAPSHOT_CUBES` / `SNAPSHOT_MEASURE_STEMS` arrays.** For cubes built on
-  fact tables with cumulative daily-status flags (values re-stamped on every row
-  — overcounts without a point-in-time anchor). `queryRewrite` auto-injects
-  `is_latest_record`, `is_month_end_record`, or `is_week_end_record` depending
-  on query granularity. To add a new domain: append the cube `name:` to
-  `SNAPSHOT_CUBES` and its snapshot measure name stems (e.g.
-  `"chronically_absent"`) to `SNAPSHOT_MEASURE_STEMS`. The cube must expose
-  `is_latest_record`, `is_month_end_record`, and `is_week_end_record`
-  dimensions.
+- **`SNAPSHOT_CUBES` / `SNAPSHOT_MEASURE_STEMS` / `SNAPSHOT_ANCHOR_OVERRIDES`.**
+  For cubes built on fact tables with cumulative daily-status flags (values
+  re-stamped on every row — overcounts without a point-in-time anchor), or a
+  `count_distinct` over a daily grain (a member appearing on N days counts N
+  without an anchor). `queryRewrite` auto-injects `is_latest_record`,
+  `is_month_end_record`, or `is_week_end_record` depending on query granularity.
+  To add a new domain: append the cube `name:` to `SNAPSHOT_CUBES` and add its
+  snapshot measure name stems under that **same cube key** in
+  `SNAPSHOT_MEASURE_STEMS` (a per-cube map — stems are NOT shared across cubes,
+  so e.g. `count_students` is a snapshot stem for `student_enrollments` but not
+  `student_attendance`, whose `count_students` is stint-keyed and
+  additive-safe). The cube must expose `is_latest_record`,
+  `is_month_end_record`, and `is_week_end_record` dimensions. To change a cube's
+  no-granularity default anchor (e.g. enrollment uses `is_current_record`, the
+  per-school period-end-as-of-now flag, instead of the `is_latest_record`
+  default), add a per-cube entry to `SNAPSHOT_ANCHOR_OVERRIDES`. **The injected
+  anchor is a query-level filter, so it constrains every measure in the query**
+  — do not put an additive measure (e.g. `avg_daily_attendance`) and a guarded
+  snapshot measure in the same request, or the additive one is wrongly anchored
+  ([#4160](https://github.com/TEAMSchools/teamster/issues/4160)).
 - **`canSwitchSqlUser`** only allows the SQL super-user to impersonate
   `@apps.teamschools.org` accounts (Superset integration). Do not broaden the
   suffix check.
