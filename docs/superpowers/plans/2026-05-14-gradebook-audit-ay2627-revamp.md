@@ -50,19 +50,21 @@ MCP for spot-checks, `uv run dbt` CLI, branch
 
 ### SQL — modified models
 
-| File                                                   | Task(s)  | Change                                                                             |
-| ------------------------------------------------------ | -------- | ---------------------------------------------------------------------------------- |
-| `int_tableau__gradebook_audit_teacher_scaffold.sql`    | 2, 3, 6  | SQL                                                                                |
-| `int_tableau__gradebook_audit_student_scaffold.sql`    | 2, 3     | SQL                                                                                |
-| `int_tableau__gradebook_audit_assignments_teacher.sql` | 3, 6     | SQL                                                                                |
-| `int_tableau__gradebook_audit_assignments_student.sql` | 3        | SQL                                                                                |
-| `int_tableau__gradebook_audit_categories_teacher.sql`  | 3, 4, 6  | SQL                                                                                |
-| `int_tableau__gradebook_audit_flags.sql`               | 3, 6     | SQL                                                                                |
-| `rpt_tableau__gradebook_audit.sql`                     | 3, 6     | SQL                                                                                |
-| `rpt_tableau__gradebook_es_comments.sql`               | 6h.7     | Complete rewrite — standalone CTE-based model; ES removed from main flags pipeline |
-| `int_extracts__student_enrollments.sql`                | 3        | Add boolean column                                                                 |
-| `rpt_tableau__gradebook_gpa.sql`                       | 3        | Add boolean, remove Paterson filter                                                |
-| YAML properties for each modified model                | per task | Column additions / removals                                                        |
+| File                                                   | Task(s)  | Change                                                                                 |
+| ------------------------------------------------------ | -------- | -------------------------------------------------------------------------------------- |
+| `int_tableau__gradebook_audit_teacher_scaffold.sql`    | 2, 3, 6  | SQL                                                                                    |
+| `int_tableau__gradebook_audit_student_scaffold.sql`    | 2, 3     | SQL                                                                                    |
+| `int_tableau__gradebook_audit_assignments_teacher.sql` | 3, 6     | SQL                                                                                    |
+| `int_tableau__gradebook_audit_assignments_student.sql` | 3        | SQL                                                                                    |
+| `int_tableau__gradebook_audit_categories_teacher.sql`  | 3, 4, 6  | SQL                                                                                    |
+| `int_tableau__gradebook_audit_flags.sql`               | 3, 6     | SQL                                                                                    |
+| `rpt_tableau__gradebook_audit.sql`                     | 3, 6     | SQL                                                                                    |
+| `rpt_tableau__gradebook_es_comments.sql`               | 6h.7     | Complete rewrite; refactored to source from `int_extracts__course_enrollments_by_term` |
+| `int_extracts__course_enrollments_by_term.sql`         | 6h.7     | New — one row per student × course × quarter; uniqueness-tested                        |
+| `stg_powerschool__calendar_day.sql`                    | 6h.7     | Adds `_dbt_source_project` column                                                      |
+| `int_extracts__student_enrollments.sql`                | 3        | Add boolean column                                                                     |
+| `rpt_tableau__gradebook_gpa.sql`                       | 3        | Add boolean, remove Paterson filter                                                    |
+| YAML properties for each modified model                | per task | Column additions / removals                                                            |
 
 ### SQL — disabled models
 
@@ -3746,6 +3748,15 @@ model. It no longer depends on the flags pipeline. Key design decisions:
       student/course/quarter, max 4 quarters per student/course, transfer
       student `is_partial_quarter` correctly `false` when combined enrollment ≥
       25%)
+
+**Follow-up refactor (same session):** The inline `schedule_by_terms` CTE and
+`int_extracts__student_enrollments` join were extracted into a new shared
+intermediate model `int_extracts__course_enrollments_by_term` (one row per
+student × course × quarter, uniqueness-tested).
+`rpt_tableau__gradebook_es_comments` now sources from that model.
+`is_partial_quarter` was removed — it used `date_diff`-based day counting that
+the intermediate model does not expose. `stg_powerschool__calendar_day` gained a
+`_dbt_source_project` column as part of this work.
 
 ---
 
