@@ -610,37 +610,51 @@ models:
           Overgrad. False if the student has no Overgrad top-choice data.
       - name: es_attended
         data_type: string
+      - name: amount
+        data_type: numeric
+        description:
+          Total KIPP Aid award amount in dollars for the student in the academic
+          year, summed across all awards from rpt_tableau__kfwd_aid_report.
+      - name: aid_award_count
+        data_type: int64
+        description:
+          Number of KIPP Aid awards the student received in the academic year.
       - name: id
         data_type: string
         description:
-          KIPP Aid award record ID (Salesforce) joined from
-          rpt_tableau__kfwd_aid_report on contact and academic year.
+          KIPP Aid award record ID (Salesforce) of the student's most recent
+          award in the academic year (ordered by award_date, then created_date).
       - name: aid_name
         data_type: string
-        description: KIPP Aid record name / auto-number (e.g. KA-016473).
-      - name: amount
-        data_type: numeric
-        description: KIPP Aid award amount in dollars.
+        description:
+          KIPP Aid record name / auto-number (e.g. KA-016473) of the most recent
+          award in the academic year.
       - name: award_date
         data_type: date
-        description: Date the KIPP Aid award was recorded.
+        description:
+          Date the most recent KIPP Aid award in the academic year was recorded.
       - name: created_date
         data_type: timestamp
-        description: Timestamp the KIPP Aid record was created in Salesforce.
+        description:
+          Timestamp the most recent KIPP Aid award in the year was created in
+          Salesforce.
       - name: fund_type
         data_type: string
         description:
-          Maher funding type parsed from the MAHER_FUND tag (Emergency,
-          Enrichment, or Unclassified); null when untagged.
+          Maher funding type of the most recent award, parsed from the
+          MAHER_FUND tag (Emergency, Enrichment, or Unclassified); null when
+          untagged.
       - name: kipp_aid_count
         data_type: numeric
-        description: KIPP Aid count value from the source record.
+        description:
+          KIPP Aid count value from the most recent award's source record.
       - name: notes
         data_type: string
         description:
-          Raw KIPP Aid award note, including any appended MAHER_FUND marker tag.
+          Raw note from the most recent KIPP Aid award, including any appended
+          MAHER_FUND marker tag.
       - name: notes_clean
         data_type: string
         description:
-          KIPP Aid award note with the MAHER_FUND tag and surrounding whitespace
-          removed; null when the note is null.
+          Most recent KIPP Aid award note with the MAHER_FUND tag and
+          surrounding whitespace removed; null when the note is null.

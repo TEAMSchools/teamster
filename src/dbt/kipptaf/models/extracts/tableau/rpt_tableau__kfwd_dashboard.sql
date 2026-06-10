@@ -212,6 +212,34 @@ with
         from {{ ref("int_kippadb__persistence") }}
         where rn_enrollment_year = 1 and pursuing_degree_type = "Bachelor's (4-year)"
         group by sf_contact_id
+    ),
+
+    aid_awards as (
+        select
+            sf_contact_id,
+            academic_year,
+            id,
+            aid_name,
+            award_date,
+            created_date,
+            fund_type,
+            kipp_aid_count,
+            notes,
+            notes_clean,
+
+            sum(amount) over (
+                partition by sf_contact_id, academic_year
+            ) as total_aid_amount,
+
+            count(*) over (
+                partition by sf_contact_id, academic_year
+            ) as aid_award_count,
+
+            row_number() over (
+                partition by sf_contact_id, academic_year
+                order by award_date desc, created_date desc
+            ) as rn_award,
+        from {{ ref("rpt_tableau__kfwd_aid_report") }}
     )
 
 select
@@ -522,13 +550,14 @@ select
 
     kar.id,
     kar.aid_name,
-    kar.amount,
     kar.award_date,
     kar.created_date,
     kar.fund_type,
     kar.kipp_aid_count,
     kar.notes,
     kar.notes_clean,
+    kar.aid_award_count,
+    kar.total_aid_amount as amount,
 
     if(
         c.contact_kipp_region_name = 'KIPP Miami' and c.ktc_status like 'TAF%',
@@ -753,9 +782,10 @@ left join
     {{ ref("int_overgrad__choice_counts") }} as ogc on c.contact_id = ogc.contact_id
 left join {{ ref("int_overgrad__top_choices") }} as otc on c.contact_id = otc.contact_id
 left join
-    {{ ref("rpt_tableau__kfwd_aid_report") }} as kar
+    aid_awards as kar
     on c.contact_id = kar.sf_contact_id
     and ay.academic_year = kar.academic_year
+    and kar.rn_award = 1
 where
     c.ktc_status in ('HS9', 'HS10', 'HS11', 'HS12', 'HSG', 'TAF', 'TAFHS')
     and c.contact_id is not null
