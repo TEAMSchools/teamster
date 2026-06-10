@@ -106,6 +106,17 @@ def test_get_workers_meta():
     json.dump(obj=data, fp=filepath.open(mode="w"))
 
 
+def test_get_valiation_tables():
+    adp_wfn = get_adp_wfn_resource()
+
+    data = adp_wfn.get(endpoint="hcm/v1/validation-tables/jobs").json()
+    filepath = pathlib.Path("env/test/adp/hcm/v1/validation-tables/jobs.json")
+
+    filepath.parent.mkdir(parents=True, exist_ok=True)
+
+    json.dump(obj=data, fp=filepath.open(mode="w"))
+
+
 def test_get_talent_associate_memberships():
     aoid = "G550F72Q44ZGT3QT"
 
