@@ -119,6 +119,45 @@ with
         from {{ ref("int_deanslist__incidents__attachments") }}
         where attachment_type = 'UPLOAD'
         group by incident_id
+    ),
+
+    referral_counts as (
+        select
+            co.student_number,
+            co.academic_year,
+            co.schoolid,
+
+            count(distinct dli.incident_id) as total_referrals,
+        from {{ ref("int_extracts__student_enrollments_weeks") }} as co
+        inner join
+            {{ ref("int_deanslist__incidents__penalties") }} as dli
+            on co.student_number = dli.student_school_id
+            and co.academic_year = dli.create_ts_academic_year
+            and extract(date from dli.create_ts_date)
+            between co.week_start_monday and co.week_end_sunday
+            and {{ union_dataset_join_clause(left_alias="co", right_alias="dli") }}
+        group by co.student_number, co.academic_year, co.schoolid
+    ),
+
+    referral_ranks as (
+        select
+            student_number,
+            academic_year,
+            schoolid,
+            total_referrals,
+
+            rank() over (
+                partition by academic_year, schoolid order by total_referrals desc
+            ) as referral_rank,
+
+            round(
+                cume_dist() over (
+                    partition by academic_year, schoolid order by total_referrals asc
+                )
+                * 100,
+                2
+            ) as referral_percentile,
+        from referral_counts
     )
 
 select
@@ -191,6 +230,10 @@ select
 
     ats.attachments,
     atr.attachments as attachments_uploaded,
+
+    rr.total_referrals,
+    rr.referral_rank,
+    rr.referral_percentile,
 
     coalesce(s.ssds_period, 'Outside SSDS Period') as ssds_period,
 
@@ -352,4 +395,9 @@ left join
     attachments as atr
     on dli.incident_id = atr.incident_id
     and atr.incident_type = 'Upload'
+left join
+    referral_ranks as rr
+    on co.student_number = rr.student_number
+    and co.academic_year = rr.academic_year
+    and co.schoolid = rr.schoolid
 where co.academic_year >= {{ var("current_academic_year") - 1 }}
