@@ -1,20 +1,22 @@
 views:
   - name: student_enrollments_summary
     description: >-
-      Aggregated student enrollment for headcount and demographic breakdowns. No
+      Aggregated student enrollment STINT counts and demographic breakdowns. No
       direct student identifiers — demographic dimensions (race,
       gender_identity, is_gifted) and status dimensions (ELL, IEP, meal) are
       aggregate breakdowns only.
 
-      Always use count_students (count_distinct on student_enrollment_key) for
-      enrollment headcounts. Filter to a specific academic_year for per-year
-      counts — omitting it sums across all years and produces enrollment-years,
-      not student count.
+      count_enrollments counts enrollment records (stints), NOT distinct
+      students and NOT a point-in-time headcount: it is alumni-inclusive and
+      spans all academic years. For a point-in-time student headcount (e.g.
+      "enrollment on October 1" or "students enrolled in 2025") use the
+      student_enrollment_daily_summary view's count_students; for "how many
+      students we served this year" use its count_students_served.
 
     cubes:
       - join_path: student_enrollments
         includes:
-          - count_students
+          - count_enrollments
           - academic_year
           - grade_level
           - graduation_year

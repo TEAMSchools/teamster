@@ -5,15 +5,16 @@ views:
       eligibility status. One row per enrollment stint including graduate
       placeholder stints.
 
-      Use count_students (count_distinct on student_enrollment_key) for
-      enrollment headcounts. Status fields (is_ell, is_iep, is_meal_eligible,
-      etc.) reflect the enrollment-grain aggregate — not point-in-time within
-      the stint. Point-in-time status queries should use the attendance views.
+      count_enrollments (count_distinct on student_enrollment_key) counts
+      enrollment records, not distinct students. Status fields (is_ell, is_iep,
+      is_meal_eligible, etc.) reflect the enrollment-grain aggregate — not
+      point-in-time within the stint. For point-in-time student headcounts use
+      the student_enrollment_daily views.
 
     cubes:
       - join_path: student_enrollments
         includes:
-          - count_students
+          - count_enrollments
           - student_enrollment_key
           - academic_year
           - grade_level
