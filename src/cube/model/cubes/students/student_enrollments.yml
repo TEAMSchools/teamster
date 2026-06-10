@@ -120,7 +120,11 @@ cubes:
           Enrollment methodology — enrollment is by entry/exit dates, not
           status. Note: when no single date is pinned, schools that end on
           different days are each counted as of their own last day, so a network
-          total can mix as-of dates within the final weeks of a year.
+          total can mix as-of dates within the final weeks of a year. A week or
+          month with no in-session days (e.g. winter or February break) has no
+          point-in-time snapshot and reads as 0 in a trend — read trends on
+          instructional periods, or carry the prior value forward in the BI
+          layer (the daily fact is in-session-days only by design).
         sql: student_key
         type: count_distinct
         public: true
