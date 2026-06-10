@@ -143,24 +143,6 @@ module.exports = {
   },
 
   queryRewrite: (query, { securityContext }) => {
-    // TEMP DEBUG (REMOVE): structural-only capture to diagnose how the SQL API
-    // expresses time-dimension granularity vs the REST path. Logs member names
-    // and granularity ONLY — never filter values / dateRange (no PII to logs).
-    // Gated to non-production. Visible in the Cube Cloud Dev Mode logs panel.
-    if (process.env.NODE_ENV !== "production") {
-      console.log(
-        "QUERYREWRITE_DEBUG " +
-          JSON.stringify({
-            measures: query.measures,
-            dimensions: query.dimensions,
-            timeDimensions: (query.timeDimensions ?? []).map((td) => ({
-              dimension: td.dimension,
-              granularity: td.granularity ?? null,
-            })),
-            filterMembers: (query.filters ?? []).map((f) => f.member),
-          }),
-      );
-    }
     const email =
       securityContext?.email ??
       securityContext?.cubeCloud?.userAttributes?.email;
