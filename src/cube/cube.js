@@ -35,17 +35,28 @@ const SNAPSHOT_ANCHOR_DIMENSIONS = {
   month: "is_month_end_record",
   week: "is_week_end_record",
 };
+
+// Per-cube override of the no-granularity default anchor. Enrollment's default
+// is the per-school period-end-as-of-now flag (is_current_record), not the
+// per-student-last-day flag (is_latest_record = "served"). Falls back to
+// SNAPSHOT_ANCHOR_DIMENSIONS for any cube not listed here, so attendance's
+// resolved anchor map is byte-for-byte unchanged.
+const SNAPSHOT_ANCHOR_OVERRIDES = {
+  student_enrollment_daily: { default: "is_current_record" },
+};
 const SNAPSHOT_SELF_ANCHORED_SUFFIXES = [
   "_year_end",
   "_month_end",
   "_week_end",
+  "_served",
+  "_active",
 ];
 
 // Add a cube name here when it exposes is_latest_record / is_month_end_record
 // / is_week_end_record and its measures need the anchor guard. Also add the
 // cube's snapshot measure stems to SNAPSHOT_MEASURE_STEMS below — both arrays
 // must stay in sync or the guard won't match the new cube's measures.
-const SNAPSHOT_CUBES = ["student_attendance"];
+const SNAPSHOT_CUBES = ["student_attendance", "student_enrollment_daily"];
 
 // Measure-name stems that mark a snapshot (cumulative-daily-flag) measure
 // family — chronic absence, ADA tiers, and truancy. Only these need the
@@ -58,6 +69,7 @@ const SNAPSHOT_MEASURE_STEMS = [
   "tier_1_2",
   "tier_3",
   "truant",
+  "count_students",
 ];
 
 module.exports = {
@@ -248,17 +260,17 @@ module.exports = {
 
       if (granularity === "day") continue;
 
-      const anchorDimension =
-        SNAPSHOT_ANCHOR_DIMENSIONS[granularity] ??
-        SNAPSHOT_ANCHOR_DIMENSIONS.default;
+      const anchorMap = {
+        ...SNAPSHOT_ANCHOR_DIMENSIONS,
+        ...(SNAPSHOT_ANCHOR_OVERRIDES[cubePrefix] ?? {}),
+      };
+      const anchorDimension = anchorMap[granularity] ?? anchorMap.default;
       const anchorMember = `${cubePrefix}.${anchorDimension}`;
 
       const alreadyAnchored =
         filters.some(
           (f) =>
-            Object.values(SNAPSHOT_ANCHOR_DIMENSIONS).some((d) =>
-              f.member?.endsWith(d),
-            ) &&
+            Object.values(anchorMap).some((d) => f.member?.endsWith(d)) &&
             f.operator === "equals" &&
             [true, "true", "1"].includes(f.values?.[0]),
         ) ||
