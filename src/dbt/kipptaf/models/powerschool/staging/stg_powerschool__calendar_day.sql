@@ -19,4 +19,5 @@ select
     * except (date_value),
 
     if(date_value < date '2000-01-01', null, date_value) as date_value,
+    regexp_extract(_dbt_source_relation, r'(kipp\w+)_') as _dbt_source_project,
 from union_relations

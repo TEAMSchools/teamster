@@ -83,5 +83,3 @@ models:
         data_type: string
       - name: qt_es_comment_missing
         data_type: boolean
-      - name: is_partial_quarter
-        data_type: boolean
