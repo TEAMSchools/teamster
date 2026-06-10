@@ -1,5 +1,5 @@
 select
-    ce._dbt_source_relation,
+    ce._dbt_source_project,
     ce.academic_year,
     ce.academic_year_display,
     ce.yearid,
@@ -208,9 +208,9 @@ left join
     on ce.sections_dcid = a.sectionsdcid
     and ce.students_dcid = a.students_dcid
     and ce.assignment_category_code = a.category_code
+    and ce._dbt_source_project = a._dbt_source_project
     and a.duedate between ce.quarter_start_date and ce.quarter_end_date
     and ce.date_enrolled <= a.duedate
-    and {{ union_dataset_join_clause(left_alias="ce", right_alias="a") }}
     and a.iscountedinfinalgrade = 1
     and a.scoretype in ('POINTS', 'PERCENT')
 where ce.scaffold_name = 'student_category_scaffold'

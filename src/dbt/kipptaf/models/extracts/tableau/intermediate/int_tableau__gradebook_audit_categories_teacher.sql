@@ -1,19 +1,7 @@
 with
-    assignment_score_rollup as (
-        select
-            s._dbt_source_relation,
-            s.assignmentsectionid,
-
-            countif(s.is_expected) as n_expected,
-            countif(s.is_expected_scored) as n_expected_scored,
-
-        from {{ ref("int_powerschool__gradebook_assignments_scores") }} as s
-        group by s._dbt_source_relation, s.assignmentsectionid
-    ),
-
     assignments as (
         select
-            sec._dbt_source_relation,
+            sec._dbt_source_project,
             sec.academic_year,
             sec.academic_year_display,
             sec.yearid,
@@ -62,14 +50,12 @@ with
 
             count(a.assignmentid) over (
                 partition by
-                    sec._dbt_source_relation,
-                    sec.sectionid,
-                    sec.assignment_category_term
+                    sec._dbt_source_project, sec.sectionid, sec.assignment_category_term
             ) as teacher_running_total_assign_by_cat,
 
             sum(a.totalpointvalue) over (
                 partition by
-                    sec._dbt_source_relation,
+                    sec._dbt_source_project,
                     sec.quarter,
                     sec.sectionid,
                     sec.assignment_category_code
@@ -77,7 +63,7 @@ with
 
             sum(asg.n_expected) over (
                 partition by
-                    sec._dbt_source_relation,
+                    sec._dbt_source_project,
                     sec.sectionid,
                     sec.quarter,
                     sec.assignment_category_code
@@ -85,7 +71,7 @@ with
 
             sum(asg.n_expected_scored) over (
                 partition by
-                    sec._dbt_source_relation,
+                    sec._dbt_source_project,
                     sec.sectionid,
                     sec.quarter,
                     sec.assignment_category_code
@@ -97,11 +83,11 @@ with
             on sec.sections_dcid = a.sectionsdcid
             and sec.assignment_category_name = a.category_name
             and a.duedate between sec.quarter_start_date and sec.quarter_end_date
-            and {{ union_dataset_join_clause(left_alias="sec", right_alias="a") }}
+            and sec._dbt_source_project = a._dbt_source_project
         left join
-            assignment_score_rollup as asg
+            {{ ref("int_powerschool__gradebook_assignment_score_rollup") }} as asg
             on a.assignmentsectionid = asg.assignmentsectionid
-            and {{ union_dataset_join_clause(left_alias="a", right_alias="asg") }}
+            and a._dbt_source_project = asg._dbt_source_project
         where sec.scaffold_name = 'teacher_category_scaffold'
     ),
 
@@ -118,7 +104,7 @@ with
     )
 
 select
-    f._dbt_source_relation,
+    f._dbt_source_project,
     f.academic_year,
     f.academic_year_display,
     f.yearid,
