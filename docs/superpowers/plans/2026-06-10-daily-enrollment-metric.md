@@ -31,13 +31,20 @@ existing `dim_student_enrollments` / `dim_students` / `dim_locations` /
 > for the stint cube/views. The shipped names swap these so the heavy-lifting
 > daily surface gets the clean name:
 >
-> | Role                 | Working name (in this doc)                     | Shipped name                                    |
-> | -------------------- | ---------------------------------------------- | ----------------------------------------------- |
-> | dbt mart (unchanged) | `fct_student_enrollment_daily`                 | `fct_student_enrollment_daily`                  |
-> | daily fact cube      | `student_enrollment_daily`                     | `student_enrollments`                           |
-> | daily views          | `student_enrollment_daily_summary` / `_detail` | `student_enrollments_summary` / `_detail`       |
-> | stint dim cube       | `student_enrollments`                          | `student_enrollment_stints`                     |
-> | stint views          | `student_enrollments_summary` / `_detail`      | `student_enrollment_stints_summary` / `_detail` |
+> | Role                 | Working name (in this doc)                     | Shipped name                              |
+> | -------------------- | ---------------------------------------------- | ----------------------------------------- |
+> | dbt mart (unchanged) | `fct_student_enrollment_daily`                 | `fct_student_enrollment_daily`            |
+> | daily fact cube      | `student_enrollment_daily`                     | `student_enrollments`                     |
+> | daily views          | `student_enrollment_daily_summary` / `_detail` | `student_enrollments_summary` / `_detail` |
+> | stint dim cube       | `student_enrollments`                          | `student_enrollment_stints`               |
+> | stint views          | `student_enrollments_summary` / `_detail`      | _removed (cube kept; see below)_          |
+>
+> **Stint views removed** — only the point-in-time daily surface is used. The
+> stint cube remains as the enrollment dimension. Stint-grain breakdowns still
+> wanted (ELL/IEP/meal status, `graduation_year`, `is_retained_year`) are
+> surfaced on the daily `student_enrollments` views via the
+> `student_enrollment_stints` join path. `count_enrollments` and entry/exit
+> dates are no longer exposed.
 >
 > `student_attendance`'s join to the stint dim (and both attendance views' join
 > paths) were repointed `student_enrollments` → `student_enrollment_stints`. The

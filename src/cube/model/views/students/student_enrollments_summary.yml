@@ -15,6 +15,12 @@ views:
       guard so it is always a point-in-time snapshot, never an unanchored
       day-sum. Quarter granularity is unsupported — use month.
 
+      Status and enrollment breakdowns (ELL / IEP / meal eligibility,
+      graduation_year, is_retained_year) come from the enrollment stint and are
+      stint-grain — the student's status within the stint, not point-in-time on
+      the queried date. Use them as demographic breakdowns of the headcount, not
+      as a status-on-a-specific-day fact.
+
     cubes:
       - join_path: student_enrollments
         includes:
@@ -56,6 +62,24 @@ views:
           - race
           - is_gifted
 
+      - join_path: student_enrollments.student_enrollment_stints
+        prefix: false
+        includes:
+          - graduation_year
+          - is_retained_year
+
+      - join_path: student_enrollments.student_enrollment_stints.student_enrollment_status
+        prefix: false
+        includes:
+          - is_ell
+          - is_iep
+          - iep_classification
+          - special_education_code
+          - special_education_name
+          - special_education_placement
+          - is_meal_eligible
+          - meal_eligibility
+
     meta:
       folders:
         - name: Date
@@ -82,6 +106,18 @@ views:
         - name: Enrollment
           members:
             - grade_level
+            - graduation_year
+            - is_retained_year
+        - name: Status
+          members:
+            - is_ell
+            - is_iep
+            - iep_classification
+            - special_education_code
+            - special_education_name
+            - special_education_placement
+            - is_meal_eligible
+            - meal_eligibility
         - name: Filter
           members:
             - is_current_record

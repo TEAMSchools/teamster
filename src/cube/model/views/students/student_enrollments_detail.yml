@@ -60,6 +60,24 @@ views:
           - is_gifted
           - enrollment_status
 
+      - join_path: student_enrollments.student_enrollment_stints
+        prefix: false
+        includes:
+          - graduation_year
+          - is_retained_year
+
+      - join_path: student_enrollments.student_enrollment_stints.student_enrollment_status
+        prefix: false
+        includes:
+          - is_ell
+          - is_iep
+          - iep_classification
+          - special_education_code
+          - special_education_name
+          - special_education_placement
+          - is_meal_eligible
+          - meal_eligibility
+
     meta:
       folders:
         - name: Enrollment
@@ -67,6 +85,18 @@ views:
             - student_enrollment_daily_key
             - student_enrollment_key
             - grade_level
+            - graduation_year
+            - is_retained_year
+        - name: Status
+          members:
+            - is_ell
+            - is_iep
+            - iep_classification
+            - special_education_code
+            - special_education_name
+            - special_education_placement
+            - is_meal_eligible
+            - meal_eligibility
         - name: Date
           members:
             - dates_date_day

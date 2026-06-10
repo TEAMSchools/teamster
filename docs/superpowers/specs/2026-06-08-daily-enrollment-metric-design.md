@@ -2,16 +2,23 @@
 
 Issue: [#4138](https://github.com/TEAMSchools/teamster/issues/4138)
 
-> **Final naming (decided post-implementation).** This spec uses working names
-> `student_enrollment_daily*` for the new cube/views and `student_enrollments*`
-> for the stint cube/views. The shipped names swap these so the heavy-lifting
-> daily surface gets the clean name: the daily fact cube ships as
-> `student_enrollments`, its views as `student_enrollments_summary` / `_detail`;
-> the stint dim cube ships as `student_enrollment_stints`, its views as
-> `student_enrollment_stints_summary` / `_detail`. The dbt mart is unchanged
-> (`fct_student_enrollment_daily`). `student_attendance`'s join to the stint dim
-> was repointed `student_enrollments` → `student_enrollment_stints`. Read the
-> working names below as those shipped equivalents.
+> **Final naming + scope (decided post-implementation).** This spec uses working
+> names `student_enrollment_daily*` for the new cube/views and
+> `student_enrollments*` for the stint cube/views. As shipped: the daily fact
+> cube is `student_enrollments` with views `student_enrollments_summary` /
+> `_detail`; the stint dim cube is `student_enrollment_stints` (no views — see
+> below). The dbt mart is unchanged (`fct_student_enrollment_daily`).
+> `student_attendance`'s join to the stint dim was repointed
+> `student_enrollments` → `student_enrollment_stints`.
+>
+> **Stint views removed.** The stint summary/detail views were dropped (only the
+> point-in-time daily surface is used). The stint **cube** remains as the
+> enrollment dimension in the join graph. Stint-grain attributes still wanted as
+> breakdowns of the point-in-time headcount — ELL/IEP/meal status,
+> `graduation_year`, `is_retained_year` — are surfaced on the daily
+> `student_enrollments` views via the `student_enrollment_stints` join path
+> (they are stint-grain, documented as such). The stint measure
+> `count_enrollments` and the entry/exit dates are no longer exposed.
 
 ## Problem
 
