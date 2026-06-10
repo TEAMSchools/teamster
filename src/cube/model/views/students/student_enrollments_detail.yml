@@ -1,39 +1,42 @@
 views:
   - name: student_enrollments_detail
     description: >-
-      Student enrollment detail with enrollment-grain ELL, IEP, and meal
-      eligibility status. One row per enrollment stint including graduate
-      placeholder stints.
+      Row-level point-in-time student enrollment drill-down — one row per
+      enrolled student-day. Use for roster exports and questions like "who was
+      enrolled on October 1?". Same measures as the summary view plus the
+      student-identifier members and the enrollment_date time dimension.
 
-      count_enrollments (count_distinct on student_enrollment_key) counts
-      enrollment records, not distinct students. Status fields (is_ell, is_iep,
-      is_meal_eligible, etc.) reflect the enrollment-grain aggregate — not
-      point-in-time within the stint. For point-in-time student headcounts use
-      the student_enrollment_daily views.
+      count_students is point-in-time (as of the most recent in-session day in
+      the query, or the pinned enrollment_date). count_students_served counts
+      ever-enrolled in the period. count_students_active is active-status only
+      (current-roster, not historical). Detail-view count_students for a fixed
+      date equals the summary view's for the same filter.
 
     cubes:
       - join_path: student_enrollments
         includes:
-          - count_enrollments
+          - count_students
+          - count_students_served
+          - count_students_active
+          - count_students_oct01
+          - count_students_oct15
+          - count_students_mar15
+          - student_enrollment_daily_key
           - student_enrollment_key
-          - academic_year
           - grade_level
-          - graduation_year
-          - entry_date
-          - exit_date
-          - is_retained_year
+          - is_current_record
+          - is_month_end_record
+          - is_week_end_record
+          - is_latest_record
 
-      - join_path: student_enrollments.student_enrollment_status
-        prefix: false
+      - join_path: student_enrollments.dates
+        prefix: true
         includes:
-          - is_ell
-          - is_iep
-          - iep_classification
-          - special_education_code
-          - special_education_name
-          - special_education_placement
-          - is_meal_eligible
-          - meal_eligibility
+          - date_day
+          - month_number
+          - month_name
+          - quarter_number
+          - academic_year
 
       - join_path: student_enrollments.locations
         prefix: true
@@ -67,23 +70,16 @@ views:
       folders:
         - name: Enrollment
           members:
+            - student_enrollment_daily_key
             - student_enrollment_key
-            - academic_year
             - grade_level
-            - graduation_year
-            - entry_date
-            - exit_date
-            - is_retained_year
-        - name: Status
+        - name: Date
           members:
-            - is_ell
-            - is_iep
-            - iep_classification
-            - special_education_code
-            - special_education_name
-            - special_education_placement
-            - is_meal_eligible
-            - meal_eligibility
+            - dates_date_day
+            - dates_month_number
+            - dates_month_name
+            - dates_quarter_number
+            - dates_academic_year
         - name: Location
           members:
             - locations_location_name
@@ -104,6 +100,12 @@ views:
             - race
             - is_gifted
             - enrollment_status
+        - name: Filter
+          members:
+            - is_current_record
+            - is_month_end_record
+            - is_week_end_record
+            - is_latest_record
 
     access_policy:
       - group: cube-access-student-data

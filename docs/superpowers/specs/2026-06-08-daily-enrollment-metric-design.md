@@ -2,6 +2,17 @@
 
 Issue: [#4138](https://github.com/TEAMSchools/teamster/issues/4138)
 
+> **Final naming (decided post-implementation).** This spec uses working names
+> `student_enrollment_daily*` for the new cube/views and `student_enrollments*`
+> for the stint cube/views. The shipped names swap these so the heavy-lifting
+> daily surface gets the clean name: the daily fact cube ships as
+> `student_enrollments`, its views as `student_enrollments_summary` / `_detail`;
+> the stint dim cube ships as `student_enrollment_stints`, its views as
+> `student_enrollment_stints_summary` / `_detail`. The dbt mart is unchanged
+> (`fct_student_enrollment_daily`). `student_attendance`'s join to the stint dim
+> was repointed `student_enrollments` → `student_enrollment_stints`. Read the
+> working names below as those shipped equivalents.
+
 ## Problem
 
 The Cube measure `student_enrollments.count_students` counts enrollment _stints_

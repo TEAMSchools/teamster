@@ -1,9 +1,13 @@
 cubes:
   - name: student_enrollments
     public: false
-    sql_table: kipptaf_marts.dim_student_enrollments
+    sql_table: kipptaf_marts.fct_student_enrollment_daily
 
     joins:
+      - name: dates
+        sql: "{dates.date_day} = CAST({CUBE}.date_key AS TIMESTAMP)"
+        relationship: many_to_one
+
       - name: students
         sql: "{students.student_key} = {CUBE}.student_key"
         relationship: many_to_one
@@ -12,87 +16,196 @@ cubes:
         sql: "{locations.location_key} = {CUBE}.location_key"
         relationship: many_to_one
 
-      - name: student_enrollment_status
+      - name: student_enrollment_stints
         sql: >
-          {student_enrollment_status.student_enrollment_key} =
+          {student_enrollment_stints.student_enrollment_key} =
           {CUBE}.student_enrollment_key
-        relationship: one_to_one
+        relationship: many_to_one
 
     dimensions:
-      - name: student_enrollment_key
+      - name: student_enrollment_daily_key
         description: >-
-          Surrogate key derived from student_number, _dbt_source_project,
-          academic_year, and entrydate. Primary key for this dimension — matches
-          the uniqueness grain on int_powerschool__student_enrollment_union.
-        sql: student_enrollment_key
+          Surrogate key derived from student_number, _dbt_source_project, and
+          date_key. Primary key for this fact.
+        sql: student_enrollment_daily_key
         type: string
         primary_key: true
-        public: true
 
       - name: student_key
         description: Surrogate key derived from student_number. FK to students.
         sql: student_key
         type: string
 
-      - name: location_key
+      - name: student_enrollment_key
         description: >-
-          Surrogate key derived from location_clean_name. FK to locations. Null
-          when schoolid does not match any location in the crosswalk (e.g.,
-          grade_level 99 placeholder schools).
+          FK to student_enrollment_stints (the stint dimension). Surrogate key
+          from student_number, _dbt_source_project, academic_year, entrydate.
+        sql: student_enrollment_key
+        type: string
+
+      - name: location_key
+        description: Surrogate key. FK to locations.
         sql: location_key
         type: string
 
+      - name: enrollment_date
+        description: The in-session school day this row represents.
+        sql: CAST(date_key AS TIMESTAMP)
+        type: time
+        public: true
+
       - name: academic_year
         description: >-
-          KIPP academic year (July start) in which this enrollment falls. The
-          calendar year in which the academic year begins (e.g., 2025 for the
-          2025-26 school year).
+          KIPP academic year (July start) of this day, from the school's
+          year-record calendar term. 2025 = the 2025-26 school year.
         sql: academic_year
         type: number
         public: true
 
       - name: grade_level
-        description: >-
-          The grade the student is in. Since this is an integer: 0=Kindergarten,
-          -2=Preschool.
+        description: Grade level. 0 = Kindergarten, -2 = Preschool.
         sql: grade_level
         type: number
         public: true
 
-      - name: graduation_year
-        description: Student graduation year.
-        sql: graduation_year
+      - name: enroll_status
+        description: >-
+          Enrollment status: 0 active, 2 withdrawn, 3 graduated. Student-level
+          (current status), not point-in-time. Used only by
+          count_students_active.
+        sql: enroll_status
         type: number
         public: true
 
-      - name: entry_date
-        sql: CAST(entry_date_key AS TIMESTAMP)
-        type: time
+      - name: is_enrolled
+        description:
+          1 for every row (one enrolled in-session day). Row marker only.
+        sql: is_enrolled
+        type: number
         public: true
 
-      - name: exit_date
-        sql: CAST(exit_date_key AS TIMESTAMP)
-        type: time
-        public: true
-
-      - name: is_retained_year
+      - name: is_current_record
         description: >-
-          TRUE if the student repeated this grade level in the same school
-          compared to the prior academic year.
-        sql: is_retained_year
+          1 on the school's last in-session day of the academic year that has
+          actually occurred (capped at today). Per-school period-end-as-of-now
+          marker — drives the default count_students at year / no grouping.
+        sql: is_current_record = 1
+        type: boolean
+        public: true
+
+      - name: is_month_end_record
+        description: >-
+          1 on the school's last in-session day of the calendar month that has
+          occurred (capped at today). Use with timeDimensions granularity
+          "month".
+        sql: is_month_end_record = 1
+        type: boolean
+        public: true
+
+      - name: is_week_end_record
+        description: >-
+          1 on the school's last in-session day of the ISO week that has
+          occurred (capped at today). Use with timeDimensions granularity
+          "week".
+        sql: is_week_end_record = 1
+        type: boolean
+        public: true
+
+      - name: is_latest_record
+        description: >-
+          TRUE on each student-stint's last enrolled in-session day of the
+          academic year. Ever-enrolled marker (drives count_students_served) —
+          NOT a period-end marker.
+        sql: is_latest_record
         type: boolean
         public: true
 
     measures:
-      - name: count_enrollments
+      - name: count_students
         description: >-
-          Count of enrollment records (stints), NOT a student headcount —
-          count_distinct on student_enrollment_key. Alumni-inclusive and spans
-          all academic years (a multi-stint student counts once per stint; a
-          graduate retains a placeholder stint per year). For a point-in-time
-          student headcount use the student_enrollment_daily cube's
-          count_students; for "students we served" use its
-          count_students_served.
-        sql: student_enrollment_key
+          Distinct students enrolled, point-in-time. Counts each student once as
+          of the most recent in-session school day in your query: the exact date
+          if you filter to one, otherwise each school's latest in-session day in
+          the period (today for the current year, the last day of school for
+          completed years). Matches the topline Total Enrollment methodology —
+          enrollment is by entry/exit dates, not status. Note: when no single
+          date is pinned, schools that end on different days are each counted as
+          of their own last day, so a network total can mix as-of dates within
+          the final weeks of a year. For 'how many students did we serve at any
+          point' use count_students_served; for active-status roster use
+          count_students_active.
+        sql: student_key
         type: count_distinct
         public: true
+
+      - name: count_students_served
+        description: >-
+          Distinct students enrolled at any point during the queried period. A
+          student who enrolled and then withdrew mid-year is still counted. Use
+          for 'how many students did we serve this year.' This is higher than
+          count_students (point-in-time) by the number of mid-period
+          enrollments/withdrawals. Not a point-in-time headcount — for that use
+          count_students.
+        sql: student_key
+        type: count_distinct
+        public: true
+        filters:
+          - sql: "{CUBE}.is_latest_record = true"
+
+      - name: count_students_active
+        description: >-
+          Distinct students with an active enrollment status (excludes withdrawn
+          and graduated). Use for current active-roster questions. WARNING:
+          enrollment status is the student's current status, not their status on
+          a past date — do not use this for historical point-in-time counts (use
+          count_students with a date filter). Does not match topline Total
+          Enrollment, which counts by enrollment dates rather than status.
+        sql: student_key
+        type: count_distinct
+        public: true
+        filters:
+          - sql: "{CUBE}.enroll_status = 0"
+
+      - name: count_students_oct01
+        description: >-
+          Distinct students enrolled on the October 1 state count date of the
+          queried academic year. Point-in-time headcount for the regulatory fall
+          enrollment count. Group by academic_year to compare count dates across
+          years.
+        sql: student_key
+        type: count_distinct
+        public: true
+        filters:
+          - sql: >-
+              EXTRACT(MONTH FROM {CUBE}.date_key) = 10 AND EXTRACT(DAY FROM
+              {CUBE}.date_key) = 1
+
+      - name: count_students_oct15
+        description: >-
+          Distinct students enrolled on the October 15 state count date of the
+          queried academic year. Point-in-time headcount for the regulatory fall
+          enrollment count. Group by academic_year to compare count dates across
+          years.
+        sql: student_key
+        type: count_distinct
+        public: true
+        filters:
+          - sql: >-
+              EXTRACT(MONTH FROM {CUBE}.date_key) = 10 AND EXTRACT(DAY FROM
+              {CUBE}.date_key) = 15
+
+      - name: count_students_mar15
+        description: >-
+          Distinct students enrolled on the March 15 state count date of the
+          queried academic year. Point-in-time headcount for the regulatory
+          spring enrollment count. Group by academic_year to compare count dates
+          across years. (March 15 falls in the spring of the academic year —
+          e.g. academic_year 2025 = March 15, 2026 — and is handled
+          automatically.)
+        sql: student_key
+        type: count_distinct
+        public: true
+        filters:
+          - sql: >-
+              EXTRACT(MONTH FROM {CUBE}.date_key) = 3 AND EXTRACT(DAY FROM
+              {CUBE}.date_key) = 15

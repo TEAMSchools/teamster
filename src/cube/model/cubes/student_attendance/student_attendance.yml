@@ -8,18 +8,19 @@ cubes:
         sql: "{dates.date_day} = CAST({CUBE}.date_key AS TIMESTAMP)"
         relationship: many_to_one
 
-      - name: student_enrollments
+      - name: student_enrollment_stints
         sql: >
-          {student_enrollments.student_enrollment_key} =
+          {student_enrollment_stints.student_enrollment_key} =
           {CUBE}.student_enrollment_key
         relationship: many_to_one
 
-      # location reached via student_enrollments.location_key; calendar
+      # location reached via student_enrollment_stints.location_key; calendar
       # joined on (date_key, enrollment's location_key)
       - name: school_calendars
         sql: >
           {school_calendars.date_key} = {CUBE}.date_key AND
-          {school_calendars.location_key} = {student_enrollments.location_key}
+          {school_calendars.location_key} =
+          {student_enrollment_stints.location_key}
         relationship: many_to_one
 
       - name: terms

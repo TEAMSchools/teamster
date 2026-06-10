@@ -1,0 +1,98 @@
+views:
+  - name: student_enrollment_stints_summary
+    description: >-
+      Aggregated student enrollment STINT counts and demographic breakdowns. No
+      direct student identifiers — demographic dimensions (race,
+      gender_identity, is_gifted) and status dimensions (ELL, IEP, meal) are
+      aggregate breakdowns only.
+
+      count_enrollments counts enrollment records (stints), NOT distinct
+      students and NOT a point-in-time headcount: it is alumni-inclusive and
+      spans all academic years. For a point-in-time student headcount (e.g.
+      "enrollment on October 1" or "students enrolled in 2025") use the
+      student_enrollments_summary view's count_students; for "how many students
+      we served this year" use its count_students_served.
+
+    cubes:
+      - join_path: student_enrollment_stints
+        includes:
+          - count_enrollments
+          - academic_year
+          - grade_level
+          - graduation_year
+          - is_retained_year
+
+      - join_path: student_enrollment_stints.student_enrollment_status
+        prefix: false
+        includes:
+          - is_ell
+          - is_iep
+          - iep_classification
+          - special_education_code
+          - special_education_name
+          - special_education_placement
+          - is_meal_eligible
+          - meal_eligibility
+
+      - join_path: student_enrollment_stints.locations
+        prefix: true
+        includes:
+          - location_name
+          - abbreviation
+          - grade_band
+          - campus
+          - city
+
+      - join_path: student_enrollment_stints.locations.regions
+        prefix: true
+        includes:
+          - region_name
+          - state
+
+      - join_path: student_enrollment_stints.students
+        prefix: false
+        includes:
+          - gender_identity
+          - race
+          - is_gifted
+          - enrollment_status
+
+    meta:
+      folders:
+        - name: Enrollment
+          members:
+            - academic_year
+            - grade_level
+            - graduation_year
+            - is_retained_year
+        - name: Status
+          members:
+            - is_ell
+            - is_iep
+            - iep_classification
+            - special_education_code
+            - special_education_name
+            - special_education_placement
+            - is_meal_eligible
+            - meal_eligibility
+        - name: Location
+          members:
+            - locations_location_name
+            - locations_abbreviation
+            - locations_grade_band
+            - locations_campus
+            - locations_city
+            - regions_region_name
+            - regions_state
+        - name: Student
+          members:
+            - gender_identity
+            - race
+            - is_gifted
+            - enrollment_status
+
+    access_policy:
+      # No direct student identifiers — demographic and status breakdowns only.
+      - group: cube-access-student-data
+        member_level:
+          includes: "*"

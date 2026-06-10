@@ -1,0 +1,121 @@
+views:
+  - name: student_enrollment_stints_detail
+    description: >-
+      Student enrollment detail with enrollment-grain ELL, IEP, and meal
+      eligibility status. One row per enrollment stint including graduate
+      placeholder stints.
+
+      count_enrollments (count_distinct on student_enrollment_key) counts
+      enrollment records, not distinct students. Status fields (is_ell, is_iep,
+      is_meal_eligible, etc.) reflect the enrollment-grain aggregate — not
+      point-in-time within the stint. For point-in-time student headcounts use
+      the student_enrollments views.
+
+    cubes:
+      - join_path: student_enrollment_stints
+        includes:
+          - count_enrollments
+          - student_enrollment_key
+          - academic_year
+          - grade_level
+          - graduation_year
+          - entry_date
+          - exit_date
+          - is_retained_year
+
+      - join_path: student_enrollment_stints.student_enrollment_status
+        prefix: false
+        includes:
+          - is_ell
+          - is_iep
+          - iep_classification
+          - special_education_code
+          - special_education_name
+          - special_education_placement
+          - is_meal_eligible
+          - meal_eligibility
+
+      - join_path: student_enrollment_stints.locations
+        prefix: true
+        includes:
+          - location_name
+          - abbreviation
+          - grade_band
+          - campus
+          - city
+
+      - join_path: student_enrollment_stints.locations.regions
+        prefix: true
+        includes:
+          - region_name
+          - state
+
+      - join_path: student_enrollment_stints.students
+        prefix: false
+        includes:
+          - student_key
+          - full_name
+          - birth_date
+          - lea_student_identifier
+          - state_student_identifier
+          - gender_identity
+          - race
+          - is_gifted
+          - enrollment_status
+
+    meta:
+      folders:
+        - name: Enrollment
+          members:
+            - student_enrollment_key
+            - academic_year
+            - grade_level
+            - graduation_year
+            - entry_date
+            - exit_date
+            - is_retained_year
+        - name: Status
+          members:
+            - is_ell
+            - is_iep
+            - iep_classification
+            - special_education_code
+            - special_education_name
+            - special_education_placement
+            - is_meal_eligible
+            - meal_eligibility
+        - name: Location
+          members:
+            - locations_location_name
+            - locations_abbreviation
+            - locations_grade_band
+            - locations_campus
+            - locations_city
+            - regions_region_name
+            - regions_state
+        - name: Student
+          members:
+            - student_key
+            - full_name
+            - birth_date
+            - lea_student_identifier
+            - state_student_identifier
+            - gender_identity
+            - race
+            - is_gifted
+            - enrollment_status
+
+    access_policy:
+      - group: cube-access-student-data
+        member_level:
+          includes: "*"
+          excludes:
+            - full_name
+            - birth_date
+            - lea_student_identifier
+            - state_student_identifier
+            - district_student_identifier
+            - salesforce_contact_id
+      - group: cube-access-student-pii
+        member_level:
+          includes: "*"

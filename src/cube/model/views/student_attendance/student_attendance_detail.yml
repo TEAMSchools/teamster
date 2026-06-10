@@ -13,8 +13,8 @@ views:
       Absent, Tardy, In-School Suspension, Out-of-School Suspension);
       attendance_code is the raw SIS code for specific drill-down. is_in_session
       and is_membership_day come from school_calendars and are joined on
-      (date_key, student_enrollments.location_key). Contains direct student
-      identifiers — see access_policy for PII gating.
+      (date_key, student_enrollment_stints.location_key). Contains direct
+      student identifiers — see access_policy for PII gating.
 
       CA, tier, and truancy base measures default to year-end snapshots when
       queried without an anchor — no filter required for year-over-year
@@ -86,7 +86,7 @@ views:
           - day_of_week_name
           - is_weekday
 
-      - join_path: student_attendance.student_enrollments.locations
+      - join_path: student_attendance.student_enrollment_stints.locations
         prefix: true
         includes:
           - location_name
@@ -95,13 +95,13 @@ views:
           - campus
           - city
 
-      - join_path: student_attendance.student_enrollments.locations.regions
+      - join_path: student_attendance.student_enrollment_stints.locations.regions
         prefix: true
         includes:
           - region_name
           - state
 
-      - join_path: student_attendance.student_enrollments
+      - join_path: student_attendance.student_enrollment_stints
         prefix: false
         includes:
           - student_enrollment_key
@@ -111,7 +111,7 @@ views:
           - exit_date
           - is_retained_year
 
-      - join_path: student_attendance.student_enrollments.student_enrollment_status
+      - join_path: student_attendance.student_enrollment_stints.student_enrollment_status
         prefix: false
         includes:
           - is_ell
@@ -123,7 +123,7 @@ views:
           - is_meal_eligible
           - meal_eligibility
 
-      - join_path: student_attendance.student_enrollments.students
+      - join_path: student_attendance.student_enrollment_stints.students
         prefix: false
         includes:
           - student_key

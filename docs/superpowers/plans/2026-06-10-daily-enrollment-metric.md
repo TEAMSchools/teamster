@@ -26,6 +26,25 @@ existing `dim_student_enrollments` / `dim_students` / `dim_locations` /
 [`docs/superpowers/specs/2026-06-08-daily-enrollment-metric-design.md`](../specs/2026-06-08-daily-enrollment-metric-design.md)
 (GitHub issue [#4138](https://github.com/TEAMSchools/teamster/issues/4138)).
 
+> **Final naming (decided post-implementation).** This doc uses working names
+> `student_enrollment_daily*` for the new cube/views and `student_enrollments*`
+> for the stint cube/views. The shipped names swap these so the heavy-lifting
+> daily surface gets the clean name:
+>
+> | Role                 | Working name (in this doc)                     | Shipped name                                    |
+> | -------------------- | ---------------------------------------------- | ----------------------------------------------- |
+> | dbt mart (unchanged) | `fct_student_enrollment_daily`                 | `fct_student_enrollment_daily`                  |
+> | daily fact cube      | `student_enrollment_daily`                     | `student_enrollments`                           |
+> | daily views          | `student_enrollment_daily_summary` / `_detail` | `student_enrollments_summary` / `_detail`       |
+> | stint dim cube       | `student_enrollments`                          | `student_enrollment_stints`                     |
+> | stint views          | `student_enrollments_summary` / `_detail`      | `student_enrollment_stints_summary` / `_detail` |
+>
+> `student_attendance`'s join to the stint dim (and both attendance views' join
+> paths) were repointed `student_enrollments` → `student_enrollment_stints`. The
+> fact cube's `sql_table` still reads
+> `kipptaf_marts.fct_student_enrollment_daily`. `cube.js` `SNAPSHOT_CUBES` /
+> `SNAPSHOT_ANCHOR_OVERRIDES` key on the new `student_enrollments` name.
+
 ---
 
 ## Spec reconciliations discovered during planning (read first)
@@ -57,9 +76,7 @@ changes the design; they make tentative spec instructions concrete.
    exactly one academic-year label per day with no fan-out, which is cleaner
    than the spec's tentative "`portion = 4` or `isyearrec = 1`."
 
-Everything else in the spec validated against the warehouse and current code.
-
-4. **Table materialization + `foreign_key` constraints to view-dims is
+3. **Table materialization + `foreign_key` constraints to view-dims is
    unbuildable on BigQuery.** Contract-enforced `materialized: table` emits real
    `references <dim> (...) not enforced` DDL, which BigQuery rejects unless the
    referenced relation declares a PRIMARY KEY — and the parent dims
@@ -71,6 +88,8 @@ Everything else in the spec validated against the warehouse and current code.
    the tests enforce referential integrity AND capture the `ref()` dependency in
    the DAG (Cube reads joins from its own YAML, not these constraints). Keep the
    PK `constraints: primary_key` block (the `unique`+`not_null` tests back it).
+
+Everything else in the spec validated against the warehouse and current code.
 
 ## Working conventions for the implementer
 

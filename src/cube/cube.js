@@ -42,7 +42,7 @@ const SNAPSHOT_ANCHOR_DIMENSIONS = {
 // SNAPSHOT_ANCHOR_DIMENSIONS for any cube not listed here, so attendance's
 // resolved anchor map is byte-for-byte unchanged.
 const SNAPSHOT_ANCHOR_OVERRIDES = {
-  student_enrollment_daily: { default: "is_current_record" },
+  student_enrollments: { default: "is_current_record" },
 };
 const SNAPSHOT_SELF_ANCHORED_SUFFIXES = [
   "_year_end",
@@ -59,7 +59,7 @@ const SNAPSHOT_SELF_ANCHORED_SUFFIXES = [
 // / is_week_end_record and its measures need the anchor guard. Also add the
 // cube's snapshot measure stems to SNAPSHOT_MEASURE_STEMS below — both arrays
 // must stay in sync or the guard won't match the new cube's measures.
-const SNAPSHOT_CUBES = ["student_attendance", "student_enrollment_daily"];
+const SNAPSHOT_CUBES = ["student_attendance", "student_enrollments"];
 
 // Measure-name stems that mark a snapshot (cumulative-daily-flag) measure
 // family — chronic absence, ADA tiers, and truancy. Only these need the
