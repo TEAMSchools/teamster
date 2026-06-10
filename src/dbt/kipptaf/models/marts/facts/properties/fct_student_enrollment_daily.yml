@@ -114,36 +114,30 @@ models:
           value. Do not use it to scope a historical or point-in-time enrollment
           count; filter by date_key (or the is_*_record anchors) instead.
 
-      - name: is_enrolled
-        data_type: int64
-        description: >-
-          Always 1 — every row represents an enrolled, in-session day. Sum to
-          count enrolled student-days.
-
       - name: is_current_record
-        data_type: int64
+        data_type: boolean
         description: >-
-          1 on the school's last occurred in-session day of the academic year, 0
-          otherwise. Computed per school and academic year, capped at today so
-          the in-progress year anchors on the most recent in-session day. Drives
-          the default point-in-time enrollment count. Distinct from
+          TRUE on the school's last occurred in-session day of the academic
+          year, FALSE otherwise. Computed per school and academic year, capped
+          at today so the in-progress year anchors on the most recent in-session
+          day. Drives the default point-in-time enrollment count. Distinct from
           is_latest_record.
 
       - name: is_month_end_record
-        data_type: int64
+        data_type: boolean
         description: >-
-          1 on the school's last occurred in-session day of each calendar month,
-          0 otherwise. Computed per school and month, capped at today. Use with
-          a month-granularity date dimension for month-over-month enrollment
-          trends.
+          TRUE on the school's last occurred in-session day of each calendar
+          month, FALSE otherwise. Computed per school and month, capped at
+          today. Use with a month-granularity date dimension for
+          month-over-month enrollment trends.
 
       - name: is_week_end_record
-        data_type: int64
+        data_type: boolean
         description: >-
-          1 on the school's last occurred in-session day of each calendar week
-          (Monday–Sunday), 0 otherwise. Computed per school and week, capped at
-          today. Correctly handles shortened weeks (last in-session day before a
-          holiday).
+          TRUE on the school's last occurred in-session day of each calendar
+          week (Monday–Sunday), FALSE otherwise. Computed per school and week,
+          capped at today. Correctly handles shortened weeks (last in-session
+          day before a holiday).
 
       - name: is_latest_record
         data_type: boolean

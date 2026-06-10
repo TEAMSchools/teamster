@@ -95,42 +95,34 @@ select
 
     {{ dbt_utils.generate_surrogate_key(["e.student_number"]) }} as student_key,
 
-    1 as is_enrolled,
-
-    cast(
-        e.date_key = least(
-            max(e.date_key) over (
-                partition by e.schoolid, e.code_location, e.term_academic_year
-            ),
-            current_date('{{ var("local_timezone") }}')
-        ) as int64
+    e.date_key = least(
+        max(e.date_key) over (
+            partition by e.schoolid, e.code_location, e.term_academic_year
+        ),
+        current_date('{{ var("local_timezone") }}')
     ) as is_current_record,
 
-    cast(
-        e.date_key = least(
-            max(e.date_key) over (
-                partition by
-                    e.schoolid,
-                    e.code_location,
-                    e.term_academic_year,
-                    date_trunc(e.date_key, month)
-            ),
-            current_date('{{ var("local_timezone") }}')
-        ) as int64
+    e.date_key = least(
+        max(e.date_key) over (
+            partition by
+                e.schoolid,
+                e.code_location,
+                e.term_academic_year,
+                date_trunc(e.date_key, month)
+        ),
+        current_date('{{ var("local_timezone") }}')
     ) as is_month_end_record,
 
-    cast(
-        e.date_key = least(
-            max(e.date_key) over (
-                partition by
-                    e.schoolid,
-                    e.code_location,
-                    e.term_academic_year,
-                    -- trunk-ignore(sqlfluff/LT01): week(monday) special syntax
-                    date_trunc(e.date_key, week(monday))
-            ),
-            current_date('{{ var("local_timezone") }}')
-        ) as int64
+    e.date_key = least(
+        max(e.date_key) over (
+            partition by
+                e.schoolid,
+                e.code_location,
+                e.term_academic_year,
+                -- trunk-ignore(sqlfluff/LT01): week(monday) special syntax
+                date_trunc(e.date_key, week(monday))
+        ),
+        current_date('{{ var("local_timezone") }}')
     ) as is_week_end_record,
 
     row_number() over (
