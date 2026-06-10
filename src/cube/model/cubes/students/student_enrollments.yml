@@ -89,7 +89,7 @@ cubes:
           1 on the school's last in-session day of the academic year that has
           actually occurred (capped at today). Per-school period-end-as-of-now
           marker — drives the default count_students at year / no grouping.
-        sql: is_current_record = 1
+        sql: CAST(is_current_record AS BOOL)
         type: boolean
         public: true
 
@@ -98,7 +98,7 @@ cubes:
           1 on the school's last in-session day of the calendar month that has
           occurred (capped at today). Use with timeDimensions granularity
           "month".
-        sql: is_month_end_record = 1
+        sql: CAST(is_month_end_record AS BOOL)
         type: boolean
         public: true
 
@@ -107,7 +107,7 @@ cubes:
           1 on the school's last in-session day of the ISO week that has
           occurred (capped at today). Use with timeDimensions granularity
           "week".
-        sql: is_week_end_record = 1
+        sql: CAST(is_week_end_record AS BOOL)
         type: boolean
         public: true
 
