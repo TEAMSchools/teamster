@@ -1,7 +1,10 @@
 cubes:
   - name: student_enrollments
     public: false
-    sql_table: kipptaf_marts.fct_student_enrollment_daily
+    # TEMP for pre-merge Cube Cloud Dev Mode validation — REVERT before merge to
+    # kipptaf_marts.fct_student_enrollment_daily (prod table doesn't exist until
+    # the PR merges + Dagster materializes it). See src/cube/CLAUDE.md.
+    sql_table: zz_cristinabaldor_kipptaf_marts.fct_student_enrollment_daily
 
     joins:
       - name: dates
