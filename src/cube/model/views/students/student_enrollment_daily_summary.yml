@@ -1,0 +1,115 @@
+views:
+  - name: student_enrollment_daily_summary
+    description: >-
+      Point-in-time student enrollment headcounts and demographic breakdowns.
+      One row per filter slice — never per student-day. No direct student
+      identifiers; demographic dimensions are aggregate breakdowns only.
+
+      Measure ladder (all count_distinct(student_key), all alumni-free because
+      the year/date filter selects on the calendar day's school year, not
+      student status):
+
+      - count_students — point-in-time headcount. With a year filter, counts
+        students enrolled as of each school's last occurred in-session day
+        (period-end-as-of-now). With a single enrollment_date (e.g. 2025-10-01),
+        counts students enrolled on that exact day. This is the default; it is
+        governed by the snapshot guard so it is always a point-in-time snapshot,
+        never an unanchored day-sum.
+      - count_students_served — distinct students enrolled at any point in the
+        period ("students we served"); includes mid-year leavers. The topline
+        Total Enrollment analog.
+      - count_students_active — active-status students only (status 0). Does NOT
+        match topline by design; current-roster only, not historical
+        point-in-time.
+      - count_students_oct01 / _oct15 / _mar15 — point-in-time headcount on the
+        state count dates; group by academic_year to compare across years.
+
+      For point-in-time enrollment use count_students (or pin a single
+      enrollment_date). Quarter granularity is unsupported — use month.
+
+    cubes:
+      - join_path: student_enrollment_daily
+        includes:
+          - count_students
+          - count_students_served
+          - count_students_active
+          - count_students_oct01
+          - count_students_oct15
+          - count_students_mar15
+          - grade_level
+          - is_current_record
+          - is_month_end_record
+          - is_week_end_record
+          - is_latest_record
+
+      - join_path: student_enrollment_daily.dates
+        prefix: true
+        includes:
+          - date_day
+          - month_number
+          - month_name
+          - quarter_number
+          - academic_year
+
+      - join_path: student_enrollment_daily.locations
+        prefix: true
+        includes:
+          - location_name
+          - abbreviation
+          - grade_band
+          - campus
+          - city
+
+      - join_path: student_enrollment_daily.locations.regions
+        prefix: true
+        includes:
+          - region_name
+          - state
+
+      - join_path: student_enrollment_daily.students
+        prefix: false
+        includes:
+          - gender_identity
+          - race
+          - is_gifted
+
+    meta:
+      folders:
+        - name: Date
+          members:
+            - dates_date_day
+            - dates_month_number
+            - dates_month_name
+            - dates_quarter_number
+            - dates_academic_year
+        - name: Location
+          members:
+            - locations_location_name
+            - locations_abbreviation
+            - locations_grade_band
+            - locations_campus
+            - locations_city
+            - regions_region_name
+            - regions_state
+        - name: Student
+          members:
+            - gender_identity
+            - race
+            - is_gifted
+        - name: Enrollment
+          members:
+            - grade_level
+        - name: Filter
+          members:
+            - is_current_record
+            - is_month_end_record
+            - is_week_end_record
+            - is_latest_record
+
+    access_policy:
+      # No PII tier — view contains no direct student identifiers.
+      # Demographic dimensions (race, gender_identity, is_gifted) are
+      # aggregate breakdowns only.
+      - group: cube-access-student-data
+        member_level:
+          includes: "*"
