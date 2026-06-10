@@ -21,6 +21,7 @@ read/write on the target bucket (run where ADC has those permissions).
 """
 
 import importlib
+from concurrent.futures import ThreadPoolExecutor, as_completed
 from dataclasses import dataclass, field
 from io import BytesIO
 
@@ -36,6 +37,12 @@ from google.cloud import storage
 
 from teamster.core.resources import GCS_RESOURCE
 
+# Bytes fetched for the header-only schema check. The Avro writer schema lives in
+# the file header, so a small first read resolves the skip/re-encode decision
+# without downloading or decoding the record body. GCS's default BlobReader chunk
+# is ~40 MB, which would pull the whole partition just to read the header.
+_HEADER_CHUNK_SIZE = 64 * 1024
+
 
 @dataclass
 class ReencodeSummary:
@@ -48,6 +55,91 @@ class ReencodeSummary:
     errors: list[str] = field(default_factory=list)
 
 
+@dataclass
+class BlobResult:
+    """Outcome of processing one blob. Holds no shared state, so each blob can be
+    processed on its own worker thread and the results aggregated afterward."""
+
+    skipped: bool = False
+    reencoded: bool = False
+    archived: bool = False
+    error: str | None = None
+    messages: list[str] = field(default_factory=list)
+
+
+def _process_blob(
+    blob: storage.Blob,
+    bucket: storage.Bucket,
+    *,
+    parsed: Schema,
+    target_canonical: str,
+    asset_prefix: str,
+    archive_prefix: str,
+    dry_run: bool,
+    archive: bool,
+) -> BlobResult:
+    """Process one blob: header-only schema check, then re-encode if needed.
+
+    The schema decision reads only the Avro header (``_HEADER_CHUNK_SIZE``), so
+    skipped files and dry-run reports never download or decode the record body —
+    the record stream is read only when an actual re-encode is performed. Catches
+    per-blob errors into the result rather than raising, so one bad partition does
+    not abort the pool.
+    """
+    result = BlobResult()
+    blob_name = check.not_none(value=blob.name)
+
+    try:
+        with blob.open(mode="rb", chunk_size=_HEADER_CHUNK_SIZE) as fo:
+            # trunk-ignore(pyright/reportArgumentType): GCS BlobReader is a binary file-like; fastavro stubs type fo as IO[Unknown]
+            writer_schema = check.not_none(value=reader(fo).writer_schema)
+
+        if to_parsing_canonical_form(writer_schema) == target_canonical:
+            result.skipped = True
+            result.messages.append(f"SKIP (already target schema): {blob_name}")
+            return result
+
+        if dry_run:
+            result.reencoded = True
+            result.messages.append(f"WOULD RE-ENCODE: {blob_name}")
+            return result
+
+        if archive:
+            archive_name = blob_name.replace(
+                asset_prefix + "/", archive_prefix + "/", 1
+            )
+            bucket.copy_blob(
+                blob=blob, destination_bucket=bucket, new_name=archive_name
+            )
+            result.archived = True
+            result.messages.append(f"ARCHIVED -> {archive_name}")
+
+        # Re-encode: full body read (default chunk size for an efficient stream).
+        with blob.open(mode="rb") as fo:
+            # trunk-ignore(pyright/reportArgumentType): GCS BlobReader is a binary file-like; fastavro stubs type fo as IO[Unknown]
+            records = list(reader(fo))
+
+        buf = BytesIO()
+        writer(fo=buf, schema=parsed, records=records, codec="snappy")
+        buf.seek(0)
+        blob.upload_from_file(file_obj=buf)
+        result.reencoded = True
+        result.messages.append(
+            f"RE-ENCODED in place ({len(records)} records): {blob_name}"
+        )
+    except (
+        GoogleAPIError,
+        SchemaResolutionError,
+        SchemaParseException,
+        ValueError,
+        OSError,
+        EOFError,
+    ) as e:
+        result.error = f"{blob_name}: {e}"
+
+    return result
+
+
 def reencode_avro_blobs(
     bucket: storage.Bucket,
     asset_key: list[str],
@@ -55,6 +147,7 @@ def reencode_avro_blobs(
     *,
     dry_run: bool = True,
     archive: bool = True,
+    workers: int = 8,
 ) -> ReencodeSummary:
     """Re-encode every partition Avro file of an asset to a target schema.
 
@@ -64,6 +157,13 @@ def reencode_avro_blobs(
     blob is optionally copied to a sibling ``<asset>_archive/`` path (outside the
     external-table glob) before being overwritten in place with the re-encoded
     records.
+
+    The schema check reads only the Avro header, so skips and dry-run reports
+    never decode the record body (the dominant cost when most partitions already
+    match). Blobs are processed concurrently on a thread pool — the work is
+    network-bound, so threads (not processes) give the speedup. Because each
+    re-encode loads a full partition into memory, ``workers`` also bounds peak
+    memory to roughly that many partitions at once.
 
     fastavro fills absent optional fields with their schema defaults, so this is
     valid only for additive (superset) schema evolution — fields present in the
@@ -78,6 +178,7 @@ def reencode_avro_blobs(
         dry_run: When True (default), report actions without writing.
         archive: When True (default), copy each original to an archive sibling
             before overwriting it in place.
+        workers: Max concurrent blobs processed; also caps peak memory.
 
     Returns:
         A ``ReencodeSummary`` with per-action counts and any per-blob errors.
@@ -89,53 +190,37 @@ def reencode_avro_blobs(
     archive_prefix = asset_prefix + "_archive"
 
     summary = ReencodeSummary()
+    blobs = list(bucket.list_blobs(match_glob=f"{asset_prefix}/**/data"))
 
-    for blob in bucket.list_blobs(match_glob=f"{asset_prefix}/**/data"):
-        summary.total += 1
-        blob_name = blob.name
+    with ThreadPoolExecutor(max_workers=workers) as executor:
+        futures = [
+            executor.submit(
+                _process_blob,
+                blob,
+                bucket,
+                parsed=parsed,
+                target_canonical=target_canonical,
+                asset_prefix=asset_prefix,
+                archive_prefix=archive_prefix,
+                dry_run=dry_run,
+                archive=archive,
+            )
+            for blob in blobs
+        ]
 
-        try:
-            with blob.open(mode="rb") as fo:
-                rdr = reader(fo)
-                writer_schema = check.not_none(value=rdr.writer_schema)
-                records = list(rdr)
+        for future in as_completed(futures):
+            result = future.result()
+            summary.total += 1
+            summary.skipped += int(result.skipped)
+            summary.reencoded += int(result.reencoded)
+            summary.archived += int(result.archived)
 
-            if to_parsing_canonical_form(writer_schema) == target_canonical:
-                summary.skipped += 1
-                click.echo(f"SKIP (already target schema): {blob_name}")
-                continue
+            for message in result.messages:
+                click.echo(message)
 
-            if dry_run:
-                summary.reencoded += 1
-                click.echo(f"WOULD RE-ENCODE ({len(records)} records): {blob_name}")
-                continue
-
-            if archive:
-                archive_name = blob_name.replace(
-                    asset_prefix + "/", archive_prefix + "/", 1
-                )
-                bucket.copy_blob(
-                    blob=blob, destination_bucket=bucket, new_name=archive_name
-                )
-                summary.archived += 1
-                click.echo(f"ARCHIVED -> {archive_name}")
-
-            buf = BytesIO()
-            writer(fo=buf, schema=parsed, records=records, codec="snappy")
-            buf.seek(0)
-            blob.upload_from_file(file_obj=buf)
-            summary.reencoded += 1
-            click.echo(f"RE-ENCODED in place ({len(records)} records): {blob_name}")
-        except (
-            GoogleAPIError,
-            SchemaResolutionError,
-            SchemaParseException,
-            ValueError,
-            OSError,
-            EOFError,
-        ) as e:
-            summary.errors.append(f"{blob_name}: {e}")
-            click.echo(f"ERROR re-encoding {blob_name}: {e}", err=True)
+            if result.error is not None:
+                summary.errors.append(result.error)
+                click.echo(f"ERROR re-encoding {result.error}", err=True)
 
     click.echo(
         f"done: total={summary.total} skipped={summary.skipped} "
@@ -179,12 +264,20 @@ def resolve_schema(spec: str) -> Schema:
     is_flag=True,
     help="skip copying each original to an archive sibling before overwrite",
 )
+@click.option(
+    "--workers",
+    default=8,
+    show_default=True,
+    type=click.IntRange(min=1),
+    help="max concurrent blobs processed; also caps peak memory",
+)
 def main(
     asset_key: str,
     schema_spec: str,
     bucket_name: str | None,
     execute: bool,
     no_archive: bool,
+    workers: int,
 ) -> None:
     """Re-encode an asset's partitioned GCS Avro files to its current schema."""
     try:
@@ -205,6 +298,7 @@ def main(
             schema=schema,
             dry_run=not execute,
             archive=not no_archive,
+            workers=workers,
         )
 
     if summary.errors:
