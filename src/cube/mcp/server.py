@@ -30,7 +30,6 @@ import asyncio
 import hashlib
 import json
 import os
-import re
 import time
 from pathlib import Path
 from typing import Any
@@ -245,15 +244,18 @@ mcp = FastMCP(
         "2025). In attendance views, the academic year is exposed as "
         "dates_academic_year (integer) and dates_academic_year_label "
         "(string, e.g. '2025-2026'), both sourced from the date dimension.\n\n"
-        "REQUIRED: Before building any Cube query that involves a year value "
-        "from the user's request, call resolve_academic_year with the raw year "
-        "string the user provided (e.g. 'SY26', '2025-26', '25-26', '2026'). Use the "
-        "returned academic_year integer for numeric filters/grouping, or "
-        "academic_year_label for the label dimension. Emit the interpreted_as "
-        "value as a brief inline statement (e.g. 'Interpreting as the 2025-2026 "
-        "school year') before showing results — do not pause or ask for "
-        "confirmation, just state it and proceed. Do not skip this step even "
-        "when the year seems unambiguous.\n\n"
+        "ACADEMIC YEAR — resolve it yourself before building any query that "
+        "names a year:\n"
+        "- academic_year is the START year; 'SY' notation uses the END year.\n"
+        "- 'SY26' -> academic_year 2025, label '2025-2026' (SY end year minus "
+        "1).\n"
+        "- '2025-26', '2025-2026', 'AY2025' -> academic_year 2025, label "
+        "'2025-2026'.\n"
+        "- bare '2026' -> treat as the START year (academic_year 2026, label "
+        "'2026-2027'); if the user's wording implies SY / end-year, note the "
+        "other reading.\n"
+        "State your interpretation inline (e.g. 'Interpreting as the 2025-2026 "
+        "school year') before showing results, then proceed.\n\n"
         "Numeric values come back as strings — cast to numeric before "
         "comparing or arithmetic. Raw `==` / `<` compare lexicographically "
         "(`'10' < '9'`).\n\n"
@@ -269,120 +271,6 @@ mcp = FastMCP(
     ),
     **_fastmcp_kwargs,
 )
-
-
-def _resolve_academic_year(raw: str) -> dict[str, int | str]:
-    """Translate any year phrasing to canonical academic_year int + label.
-
-    Returns a dict with academic_year (int), academic_year_label (str),
-    school_year (str), interpreted_as (str), and optionally note (str)
-    for bare-integer inputs.
-    """
-    s = raw.strip()
-    start: int | None = None
-    note: str | None = None
-
-    # SY + 2-digit: SY26 → end=2026 → start=2025
-    m = re.fullmatch(r"[Ss][Yy](\d{2})", s)
-    if m:
-        start = 2000 + int(m.group(1)) - 1
-
-    # SY + 4-digit: SY2026 → end=2026 → start=2025
-    if start is None:
-        m = re.fullmatch(r"[Ss][Yy](\d{4})", s)
-        if m:
-            start = int(m.group(1)) - 1
-
-    # AY + 4-digit: AY2025 → start=2025
-    if start is None:
-        m = re.fullmatch(r"[Aa][Yy](\d{4})", s)
-        if m:
-            start = int(m.group(1))
-
-    # AY + 2-digit: AY25 → start=2025
-    if start is None:
-        m = re.fullmatch(r"[Aa][Yy](\d{2})", s)
-        if m:
-            start = 2000 + int(m.group(1))
-
-    # 4-digit separator 4-digit: 2025-2026 or 2025–2026
-    if start is None:
-        m = re.fullmatch(r"(\d{4})[-–](\d{4})", s)
-        if m:
-            start = int(m.group(1))
-
-    # 4-digit separator 2-digit: 2025-26 or 2025–26
-    if start is None:
-        m = re.fullmatch(r"(\d{4})[-–](\d{2})", s)
-        if m:
-            start = int(m.group(1))
-
-    # 2-digit separator 2-digit: 25-26
-    if start is None:
-        m = re.fullmatch(r"(\d{2})[-–](\d{2})", s)
-        if m:
-            start = 2000 + int(m.group(1))
-
-    # bare 4-digit integer: treated as start year
-    if start is None:
-        m = re.fullmatch(r"(\d{4})", s)
-        if m:
-            start = int(m.group(1))
-            note = (
-                f"Bare integer treated as start year "
-                f"({start} = July {start} – June {start + 1} = SY{(start + 1) % 100:02d})."
-            )
-
-    # bare 2-digit integer: treated as start year
-    if start is None:
-        m = re.fullmatch(r"(\d{2})", s)
-        if m:
-            start = 2000 + int(m.group(1))
-            note = (
-                f"Bare integer treated as start year "
-                f"({start} = July {start} – June {start + 1} = SY{(start + 1) % 100:02d})."
-            )
-
-    if start is None:
-        raise ValueError(f"Cannot parse year from {raw!r}")
-
-    if not (2000 <= start <= 2100):
-        raise ValueError(
-            f"Resolved year {start} is outside the supported range for {raw!r}"
-        )
-
-    end = start + 1
-    label = f"{start}-{end}"
-    sy = f"SY{end % 100:02d}"
-    result: dict[str, int | str] = {
-        "academic_year": start,
-        "academic_year_label": label,
-        "school_year": sy,
-        "interpreted_as": f"{start}-{end} school year",
-    }
-    if note is not None:
-        result["note"] = note
-    return result
-
-
-@mcp.tool()
-async def resolve_academic_year(raw: str) -> dict[str, int | str]:
-    """Translate any year phrasing to the canonical Cube academic_year integer
-    and label.
-
-    Call this BEFORE building any Cube query that involves a year value from
-    the user's request. Pass the raw year string exactly as the user typed it.
-
-    Handles: SY26, SY2026, AY2025, AY25, 2025-2026, 2025–2026, 2025-26,
-    25-26, bare 2025, bare 26. Bare integers default to start-year with a
-    note field explaining the assumption.
-
-    Returns: academic_year (int for Cube filters), academic_year_label (str,
-    e.g. "2025-2026", for Cube filters when using the label dimension),
-    school_year (str, e.g. "SY26"), interpreted_as (str -- echo this to the
-    user before showing results), and note (str, only for bare integers).
-    """
-    return _resolve_academic_year(raw)
 
 
 client = httpx.AsyncClient(

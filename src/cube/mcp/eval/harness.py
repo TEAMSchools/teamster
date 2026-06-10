@@ -4,16 +4,13 @@ loop against a single arm, capturing what the model did.
 Every Cube tool is stubbed so the only thing measured is model behavior:
 - ``meta`` returns the fixed catalog (arms.META_STUB),
 - ``load`` / ``sql`` record the query the model built and return a dummy
-  result,
-- ``resolve_academic_year`` (arm C only) calls the real parser in server.py.
+  result.
 
-The recorded transcript (resolver calls, load queries, final text) is handed
-to scorer.py.
+The recorded transcript (load queries, final text) is handed to scorer.py.
 """
 
 import asyncio
 import json
-from types import ModuleType
 from typing import Any
 
 import arms as arms_mod
@@ -29,7 +26,6 @@ def _dispatch(
     name: str,
     tool_input: dict[str, Any],
     captured: dict[str, list[Any]],
-    server: ModuleType,
 ) -> dict[str, Any]:
     """Execute a stubbed tool call and record arguments of interest."""
     if name == "meta":
@@ -46,13 +42,6 @@ def _dispatch(
         return {
             "sql": {"status": "ok", "sql": ["SELECT 1", []], "query_type": "regular"}
         }
-    if name == "resolve_academic_year":
-        raw = str(tool_input.get("raw", ""))
-        captured["resolve_calls"].append(raw)
-        try:
-            return dict(server._resolve_academic_year(raw))
-        except ValueError as exc:
-            return {"error": str(exc)}
     return {"error": f"unknown tool {name}"}
 
 
@@ -76,12 +65,10 @@ async def run_one(
     instructions: str,
     tools: list[dict[str, Any]],
     prompt: str,
-    server: ModuleType,
 ) -> dict[str, Any]:
     """Run a single conversation; return the captured transcript summary."""
     messages: list[dict[str, Any]] = [{"role": "user", "content": prompt}]
     captured: dict[str, list[Any]] = {
-        "resolve_calls": [],
         "load_queries": [],
         "sql_queries": [],
     }
@@ -114,7 +101,7 @@ async def run_one(
             {
                 "type": "tool_result",
                 "tool_use_id": tu.id,
-                "content": json.dumps(_dispatch(tu.name, tu.input, captured, server)),
+                "content": json.dumps(_dispatch(tu.name, tu.input, captured)),
             }
             for tu in tool_uses
         ]

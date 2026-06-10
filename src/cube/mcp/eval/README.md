@@ -1,36 +1,43 @@
-# Academic-year resolver eval
+# Academic-year eval
 
-Measures whether the `resolve_academic_year` MCP tool actually lowers the
-**wrong-year rate** for the claude.ai connector path on Sonnet/Haiku — i.e.
-whether the tool earns its round-trip over plain instructions plus the
+Measures whether the academic-year crosswalk in the FastMCP `instructions`
+string keeps the **wrong-year rate** near zero on Sonnet/Haiku, on top of the
 `academic_year_label` dimension.
 
-The unit tests in `tests/cube/test_mcp_server.py` already prove the parser is
-correct in isolation. This eval covers the part they can't: **model-in-the-loop
-behavior** — does the model land on the right academic year end-to-end, and does
-it bother to call the resolver when told to.
+The unit tests in `tests/cube/test_mcp_server.py` cover the dimensions and view
+wiring in isolation. This eval covers the part they can't: **model-in-the-loop
+behavior** — does the model land on the right academic year end-to-end.
+
+## History: the dropped resolver
+
+An earlier version of this harness compared a third arm (`C_tool`) that added a
+deterministic `resolve_academic_year` MCP tool the model was instructed to call
+before any year-based query. Across 720 conversations (2 models × 24 prompts × 5
+reps × 3 arms) the tool **never beat arm B**, and on the Family-2 trap it
+produced the off-by-one it existed to prevent — fed the bare end-year integer
+`2026`, it returned `SY27 (2026-2027)`, and only the model overriding the tool
+avoided a wrong answer. The tool was dropped (issue #4084 proposal #4, PR
+#4125); the crosswalk now lives inline in `instructions=`. This harness is
+retained as the A-vs-B regression guard for that crosswalk.
 
 ## What it compares
 
-Three arms, holding the `meta` catalog (and its dimension descriptions)
-constant; only the FastMCP `instructions` string and the presence of the
-resolver tool change. Tool schemas and instructions are read from the real
+Two arms, holding the `meta` catalog (and its dimension descriptions) constant;
+only the academic-year crosswalk paragraph in the FastMCP `instructions` string
+changes. The instructions string is read from the real
 [`server.py`](../server.py), so the eval measures the shipped surface.
 
-| Arm              | instructions                                                        | resolver tool | isolates                    |
-| ---------------- | ------------------------------------------------------------------- | ------------- | --------------------------- |
-| `A_baseline`     | current, minus the "REQUIRED: call resolve_academic_year" paragraph | no            | floor — descriptions alone  |
-| `B_instructions` | same, plus an inline crosswalk + worked examples                    | no            | can prompting alone fix it? |
-| `C_tool`         | branch as-is (REQUIRED paragraph)                                   | yes           | does the tool beat B?       |
+| Arm              | instructions                                | isolates                   |
+| ---------------- | ------------------------------------------- | -------------------------- |
+| `A_baseline`     | shipped, minus the crosswalk paragraph      | floor — descriptions alone |
+| `B_instructions` | the shipped branch as-is (inline crosswalk) | does the crosswalk help?   |
 
-`B` vs `C` is the money comparison: if `C` doesn't beat `B`, the tool is
-overengineering. `A` vs `B` shows whether strengthening instructions helps at
-all.
+`A` vs `B` shows whether the crosswalk paragraph buys correctness over the
+dimension descriptions alone.
 
 Every Cube tool is stubbed (`harness.py`): `meta` returns a fixed catalog,
-`load`/`sql` record the query the model built and return a dummy result, and
-`resolve_academic_year` (arm C only) calls the real parser. No warehouse, no
-auth, no PII.
+`load`/`sql` record the query the model built and return a dummy result. No
+warehouse, no auth, no PII.
 
 ## Prompts (`prompts.yaml`)
 
@@ -46,9 +53,7 @@ auth, no PII.
 
 Determinate prompts: `wrong_rate`, `silent_wrong_rate` (wrong **and** no
 interpretation echoed), `correct_rate`, `no_query_rate`. Ambiguous prompts:
-`disambig_rate`. All arms: `resolver_rate` — fraction of reps that called the
-tool (only meaningful for arm C; it quantifies how reliable the soft "REQUIRED"
-gate is on each model). Rates are reported with Wilson 95% intervals.
+`disambig_rate`. Rates are reported with Wilson 95% intervals.
 
 ## Two runners
 
@@ -95,15 +100,16 @@ usage draws from a separate monthly Agent-SDK credit pool.
 
 ## Decision rules (pre-register before running)
 
-1. **Resolver call-rate on Haiku (arm C) < ~85%** → the "REQUIRED" gate is
-   unreliable on the target model → don't make the resolver the safety
-   mechanism; make the label self-sufficient.
-2. **`C` does not beat `B` on wrong-rate (both models)** → the deterministic
-   tool isn't buying correctness over good instructions → slim or drop it.
-3. **`B` already near-zero wrong-rate on Family 1** → filtering the label is
-   unambiguous by construction → the label dimension is the real fix.
-4. **`C` beats `B` specifically on Family 2 / SY-notation** → the end-year flip
-   is where determinism pays → keep a thin resolver scoped to that transform.
+1. **`B` near-zero wrong-rate on both models** → the shipped crosswalk holds; no
+   regression.
+2. **`B` wrong-rate climbs above `A` on any family** → a crosswalk edit made
+   things worse → revert it.
+3. **`A` already near-zero wrong-rate on Family 1** → filtering the label is
+   unambiguous by construction → the label dimension carries the floor; the
+   crosswalk is the Family-2 (SY-notation trap) safety margin.
+
+> Earlier runs also pre-registered a rule keyed on the dropped resolver's
+> call-rate and its `C`-vs-`B` win; see _History: the dropped resolver_ above.
 
 ## Fidelity caveats
 

@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Run the academic-year resolver eval.
+"""Run the academic-year eval.
 
 Sweeps {arm} x {model} x {prompt} x {reps}, driving each conversation through
 the Anthropic tool-use loop against stubbed Cube tools, scores the captured
@@ -48,8 +48,8 @@ def parse_args() -> argparse.Namespace:
     p.add_argument(
         "--arms",
         nargs="+",
-        default=["A_baseline", "B_instructions", "C_tool"],
-        choices=["A_baseline", "B_instructions", "C_tool"],
+        default=["A_baseline", "B_instructions"],
+        choices=["A_baseline", "B_instructions"],
     )
     p.add_argument("--reps", type=int, default=DEFAULT_REPS)
     p.add_argument("--concurrency", type=int, default=DEFAULT_CONCURRENCY)
@@ -77,14 +77,12 @@ def do_dry_run(arms: dict[str, dict[str, Any]], prompts: list[dict[str, Any]]) -
     )
     for name, arm in arms.items():
         tool_names = [t["name"] for t in arm["tools"]]
-        has_required = "REQUIRED: Before building" in arm["instructions"]
         has_crosswalk = "resolve it yourself" in arm["instructions"]
         print(f"=== {name} ===")
         print(f"  tools: {tool_names}")
         print(
             f"  instructions: {len(arm['instructions'])} chars "
-            f"(REQUIRED paragraph: {has_required}; inline crosswalk: "
-            f"{has_crosswalk})"
+            f"(inline crosswalk: {has_crosswalk})"
         )
     print("\nDry run only — no API calls made.")
 
@@ -97,7 +95,6 @@ async def sweep(
     prompts: list[dict[str, Any]],
     reps: int,
     concurrency: int,
-    server: Any,
 ) -> list[dict[str, Any]]:
     import harness as harness_mod
 
@@ -130,7 +127,6 @@ async def sweep(
             instructions=arm["instructions"],
             tools=arm["tools"],
             prompt=prompt["prompt"],
-            server=server,
         )
         rec = scorer_mod.score_record(prompt, result)
         rec.update({"model": model, "arm": arm_name, "rep": rep})
@@ -148,7 +144,7 @@ def main() -> None:
 
     if args.smoke:
         prompts = prompts[:1]
-        args.arms = ["C_tool"]
+        args.arms = ["B_instructions"]
         args.models = args.models[:1]
         args.reps = 1
 
@@ -167,7 +163,6 @@ def main() -> None:
             prompts=prompts,
             reps=args.reps,
             concurrency=args.concurrency,
-            server=server,
         )
     )
 

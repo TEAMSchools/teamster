@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
-"""Run the academic-year resolver eval through the Claude Agent SDK.
+"""Run the academic-year eval through the Claude Agent SDK.
 
-Same experiment as run_eval.py (arms A/B/C x models x prompts x reps, scored by
+Same experiment as run_eval.py (arms A/B x models x prompts x reps, scored by
 scorer.py), but drives the model through Claude Code instead of the raw
 Anthropic Messages API — so it authenticates with your Claude Code
 subscription, no ANTHROPIC_API_KEY needed.
@@ -17,9 +17,8 @@ tools" surface as the API runner, just on subscription auth — NOT a faithful
 reproduction of the claude.ai connector's own host prompt.
 
 Cube tools are in-process SDK MCP tools (create_sdk_mcp_server): meta returns
-the fixed catalog, load/sql return dummy results, resolve_academic_year calls
-the real parser. The filter the model builds is captured from the streamed
-ToolUseBlock.input, not from inside the tools.
+the fixed catalog, load/sql return dummy results. The filter the model builds is
+captured from the streamed ToolUseBlock.input, not from inside the tools.
 
 Run it in YOUR terminal (the SDK shells out to the `claude` binary, which must
 be on PATH and logged in — it is not available in the Bash sandbox):
@@ -88,8 +87,8 @@ def parse_args() -> argparse.Namespace:
     p.add_argument(
         "--arms",
         nargs="+",
-        default=["A_baseline", "B_instructions", "C_tool"],
-        choices=["A_baseline", "B_instructions", "C_tool"],
+        default=["A_baseline", "B_instructions"],
+        choices=["A_baseline", "B_instructions"],
     )
     p.add_argument("--reps", type=int, default=DEFAULT_REPS)
     p.add_argument("--concurrency", type=int, default=DEFAULT_CONCURRENCY)
@@ -97,12 +96,12 @@ def parse_args() -> argparse.Namespace:
     p.add_argument("--out", type=Path, default=DEFAULT_OUT)
     p.add_argument("--dry-run", action="store_true", help="no model calls")
     p.add_argument(
-        "--smoke", action="store_true", help="1 prompt x C x 1 model x 1 rep"
+        "--smoke", action="store_true", help="1 prompt x B x 1 model x 1 rep"
     )
     return p.parse_args()
 
 
-def _make_tools(server: Any, tool_desc: dict[str, str]) -> dict[str, Any]:
+def _make_tools(tool_desc: dict[str, str]) -> dict[str, Any]:
     """Build in-process SDK tools; descriptions reuse the real server's text."""
     # trunk-ignore(pyright/reportMissingImports): claude-agent-sdk is a runtime --with dep
     from claude_agent_sdk import tool
@@ -119,29 +118,15 @@ def _make_tools(server: Any, tool_desc: dict[str, str]) -> dict[str, Any]:
     async def sql_tool(_args: dict[str, Any]) -> dict[str, Any]:
         return {"content": [{"type": "text", "text": json.dumps(_SQL_RESULT)}]}
 
-    @tool("resolve_academic_year", tool_desc["resolve_academic_year"], {"raw": str})
-    async def resolve_tool(args: dict[str, Any]) -> dict[str, Any]:
-        try:
-            res: dict[str, Any] = dict(
-                server._resolve_academic_year(str(args.get("raw", "")))
-            )
-        except ValueError as exc:
-            res = {"error": str(exc)}
-        return {"content": [{"type": "text", "text": json.dumps(res)}]}
-
     return {
         "meta": meta_tool,
         "load": load_tool,
         "sql": sql_tool,
-        "resolve_academic_year": resolve_tool,
     }
 
 
-def _arm_tool_names(arm_name: str) -> list[str]:
-    names = ["meta", "load", "sql"]
-    if arm_name == "C_tool":
-        names.append("resolve_academic_year")
-    return names
+def _arm_tool_names(_arm_name: str) -> list[str]:
+    return ["meta", "load", "sql"]
 
 
 async def run_one(
@@ -179,7 +164,6 @@ async def run_one(
         max_turns=MAX_TURNS,
     )
     load_queries: list[Any] = []
-    resolve_calls: list[Any] = []
     tool_calls: list[str] = []  # every tool name, in order — to diagnose loops
     text_parts: list[str] = []
     error: str | None = None
@@ -192,8 +176,6 @@ async def run_one(
                         tool_calls.append(block.name)
                         if block.name.endswith("__load") or block.name == "load":
                             load_queries.append(block.input.get("query"))
-                        elif block.name.endswith("resolve_academic_year"):
-                            resolve_calls.append(block.input.get("raw"))
                     elif isinstance(block, TextBlock):
                         text_parts.append(block.text)
             elif isinstance(message, ResultMessage) and message.result:
@@ -203,7 +185,6 @@ async def run_one(
 
     return {
         "load_queries": load_queries,
-        "resolve_calls": resolve_calls,
         "tool_calls": tool_calls,
         "final_text": "\n".join(text_parts),
         "error": error,
@@ -231,14 +212,13 @@ async def sweep(
     prompts: list[dict[str, Any]],
     reps: int,
     concurrency: int,
-    server: Any,
     tool_desc: dict[str, str],
     out_path: Path,
 ) -> list[dict[str, Any]]:
     # trunk-ignore(pyright/reportMissingImports): claude-agent-sdk is a runtime --with dep
     from claude_agent_sdk import create_sdk_mcp_server
 
-    tools = _make_tools(server, tool_desc)
+    tools = _make_tools(tool_desc)
     # One server object per arm (stateless tools, safe to share across runs).
     arm_servers = {
         name: create_sdk_mcp_server(
@@ -287,7 +267,6 @@ async def sweep(
         rec.update({"model": model, "arm": arm_name, "rep": rep})
         rec["final_text"] = result.get("final_text", "")
         rec["load_queries"] = result.get("load_queries", [])
-        rec["resolve_calls"] = result.get("resolve_calls", [])
         rec["tool_calls"] = result.get("tool_calls", [])
         async with write_lock:
             out_fh.write(json.dumps(rec) + "\n")
@@ -310,12 +289,14 @@ def main() -> None:
     args = parse_args()
     server = arms_mod.load_server()
     arm_defs = arms_mod.build_arms(server)
-    tool_desc = {t["name"]: t["description"] for t in arm_defs["C_tool"]["tools"]}
+    tool_desc = {
+        t["name"]: t["description"] for t in arm_defs["B_instructions"]["tools"]
+    }
     prompts = load_prompts()
 
     if args.smoke:
         prompts = prompts[:1]
-        args.arms = ["C_tool"]
+        args.arms = ["B_instructions"]
         args.models = args.models[:1]
         args.reps = 1
     if args.limit:
@@ -334,7 +315,6 @@ def main() -> None:
             prompts=prompts,
             reps=args.reps,
             concurrency=args.concurrency,
-            server=server,
             tool_desc=tool_desc,
             out_path=args.out,
         )

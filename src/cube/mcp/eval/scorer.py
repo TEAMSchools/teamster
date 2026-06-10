@@ -1,4 +1,4 @@
-"""Scoring for the academic-year resolver eval.
+"""Scoring for the academic-year eval.
 
 Maps the filter the model built (captured by the harness) to a canonical
 academic-year START integer, compares it to each prompt's ground truth, and
@@ -13,10 +13,6 @@ Determinate prompts (families 1 & 2 — a correct year exists):
     silent_wrong     wrong AND no interpretation echoed in the reply
 Ambiguous prompts (family 3 — no correct year):
     disambig_rate    model echoed an interpretation / noted the ambiguity
-All arms:
-    resolver_rate    fraction of reps that called resolve_academic_year
-                     (only meaningful for arm C; measures the soft "REQUIRED"
-                      gate's reliability)
 """
 
 import math
@@ -103,7 +99,6 @@ def score_record(prompt: dict[str, Any], result: dict[str, Any]) -> dict[str, An
             break
     start = _start_from_ay(filt)
     echoed = bool(_ECHO_RE.search(result.get("final_text") or ""))
-    resolver_called = len(result.get("resolve_calls", [])) > 0
 
     rec: dict[str, Any] = {
         "id": prompt["id"],
@@ -112,7 +107,6 @@ def score_record(prompt: dict[str, Any], result: dict[str, Any]) -> dict[str, An
         "queried_start": start,
         "ay_filter": filt,
         "echoed": echoed,
-        "resolver_called": resolver_called,
         "error": result.get("error"),
     }
     if gt is not None:  # determinate
@@ -154,7 +148,6 @@ def aggregate(records: list[dict[str, Any]]) -> dict[tuple[str, str], dict[str, 
         correct = sum(1 for r in determinate if r["correct"])
         no_query = sum(1 for r in determinate if r["no_query"])
         silent = sum(1 for r in determinate if r["silent_wrong"])
-        resolver = sum(1 for r in recs if r["resolver_called"])
         errors = sum(1 for r in recs if r.get("error"))
         disambig = sum(1 for r in ambiguous if r["disambiguated"])
 
@@ -166,7 +159,6 @@ def aggregate(records: list[dict[str, Any]]) -> dict[tuple[str, str], dict[str, 
             "correct_rate": _wilson(correct, n_det),
             "no_query_rate": _wilson(no_query, n_det),
             "silent_wrong_rate": _wilson(silent, n_det),
-            "resolver_rate": _wilson(resolver, len(recs)),
             "disambig_rate": _wilson(disambig, len(ambiguous)),
         }
     return summary
@@ -182,7 +174,7 @@ def format_summary(summary: dict[tuple[str, str], dict[str, Any]]) -> str:
     header = (
         f"{'model':<22} {'arm':<16} {'n':>4} "
         f"{'wrong':>16} {'silent_wrong':>16} {'correct':>16} "
-        f"{'no_query':>16} {'resolver':>16} {'disambig':>16}"
+        f"{'no_query':>16} {'disambig':>16}"
     )
     lines = [header, "-" * len(header)]
     for model, arm in sorted(summary):
@@ -191,6 +183,6 @@ def format_summary(summary: dict[tuple[str, str], dict[str, Any]]) -> str:
             f"{model:<22} {arm:<16} {s['n_determinate']:>4} "
             f"{pct(s['wrong_rate']):>16} {pct(s['silent_wrong_rate']):>16} "
             f"{pct(s['correct_rate']):>16} {pct(s['no_query_rate']):>16} "
-            f"{pct(s['resolver_rate']):>16} {pct(s['disambig_rate']):>16}"
+            f"{pct(s['disambig_rate']):>16}"
         )
     return "\n".join(lines)
