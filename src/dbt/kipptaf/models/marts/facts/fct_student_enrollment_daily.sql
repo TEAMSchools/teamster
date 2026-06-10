@@ -54,6 +54,9 @@ with
             and {{ union_dataset_join_clause(left_alias="enr", right_alias="cd") }}
             and enr.entrydate <= cd.date_value
             and enr.exitdate > cd.date_value
+        -- inner join intentionally drops the ~67 of 17.9M in-session stint-days that
+        -- fall outside every isyearrec=1 term span (year-margin boundary days with no
+        -- defensible academic_year label); see plan Task 2 review
         inner join
             year_terms as yt
             on cd.schoolid = yt.schoolid
@@ -131,7 +134,8 @@ select
     ) as is_week_end_record,
 
     row_number() over (
-        partition by e.student_number, e._dbt_source_project, e.term_academic_year
+        partition by
+            e.student_number, e._dbt_source_project, e.stint_academic_year, e.entrydate
         order by e.date_key desc
     )
     = 1 as is_latest_record,
