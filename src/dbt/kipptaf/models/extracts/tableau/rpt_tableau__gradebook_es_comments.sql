@@ -31,6 +31,23 @@ with
             date_diff(t.term_end_date, t.term_start_date, day)
             + 1 as quarter_length_days,
 
+            least(
+                sum(
+                    date_diff(
+                        least(c.cc_dateleft, t.term_end_date),
+                        greatest(c.cc_dateenrolled, t.term_start_date),
+                        day
+                    )
+                    + 1
+                ) over (partition by c.cc_studentid, c.cc_course_number, t.term),
+                date_diff(t.term_end_date, t.term_start_date, day) + 1
+            ) as total_days_enrolled_in_quarter,
+
+            row_number() over (
+                partition by c.cc_studentid, c.cc_course_number, t.term
+                order by c.cc_dateleft desc
+            ) as rn,
+
         from {{ ref("base_powerschool__course_enrollments") }} as c
         inner join
             {{ ref("int_powerschool__terms") }} as t
@@ -92,7 +109,7 @@ select
 
     if(qg.comment_value is null, true, false) as qt_es_comment_missing,
 
-    safe_divide(c.days_enrolled_in_quarter, c.quarter_length_days)
+    safe_divide(c.total_days_enrolled_in_quarter, c.quarter_length_days)
     < 0.25 as is_partial_quarter,
 
 from {{ ref("int_extracts__student_enrollments") }} as s
@@ -116,3 +133,4 @@ where
     and s.rn_year = 1
     and s.enroll_status = 0
     and not s.is_out_of_district
+    and c.rn = 1

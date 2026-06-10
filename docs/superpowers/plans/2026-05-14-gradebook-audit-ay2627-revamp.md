@@ -41,25 +41,28 @@ MCP for spot-checks, `uv run dbt` CLI, branch
 
 ### SQL — new models
 
-| File                                            | Task | Change |
-| ----------------------------------------------- | ---- | ------ |
-| `int_powerschool__u_expectations[_unpivot].sql` | 2    | Create |
-| `int_powerschool__u_expectations[_unpivot].yml` | 2    | Create |
+| File                                                     | Task | Change                                                               |
+| -------------------------------------------------------- | ---- | -------------------------------------------------------------------- |
+| `int_powerschool__u_expectations[_unpivot].sql`          | 2    | Create                                                               |
+| `int_powerschool__u_expectations[_unpivot].yml`          | 2    | Create                                                               |
+| `int_powerschool__gradebook_assignment_score_rollup.sql` | 6d   | Create — score rollup extracted from inline CTE; shared by 6d and 6e |
+| `int_powerschool__gradebook_assignment_score_rollup.yml` | 6d   | Create                                                               |
 
 ### SQL — modified models
 
-| File                                                   | Task(s)  | Change                              |
-| ------------------------------------------------------ | -------- | ----------------------------------- |
-| `int_tableau__gradebook_audit_teacher_scaffold.sql`    | 2, 3, 6  | SQL                                 |
-| `int_tableau__gradebook_audit_student_scaffold.sql`    | 2, 3     | SQL                                 |
-| `int_tableau__gradebook_audit_assignments_teacher.sql` | 3, 6     | SQL                                 |
-| `int_tableau__gradebook_audit_assignments_student.sql` | 3        | SQL                                 |
-| `int_tableau__gradebook_audit_categories_teacher.sql`  | 3, 4, 6  | SQL                                 |
-| `int_tableau__gradebook_audit_flags.sql`               | 3, 6     | SQL                                 |
-| `rpt_tableau__gradebook_audit.sql`                     | 3, 6     | SQL                                 |
-| `int_extracts__student_enrollments.sql`                | 3        | Add boolean column                  |
-| `rpt_tableau__gradebook_gpa.sql`                       | 3        | Add boolean, remove Paterson filter |
-| YAML properties for each modified model                | per task | Column additions / removals         |
+| File                                                   | Task(s)  | Change                                                                             |
+| ------------------------------------------------------ | -------- | ---------------------------------------------------------------------------------- |
+| `int_tableau__gradebook_audit_teacher_scaffold.sql`    | 2, 3, 6  | SQL                                                                                |
+| `int_tableau__gradebook_audit_student_scaffold.sql`    | 2, 3     | SQL                                                                                |
+| `int_tableau__gradebook_audit_assignments_teacher.sql` | 3, 6     | SQL                                                                                |
+| `int_tableau__gradebook_audit_assignments_student.sql` | 3        | SQL                                                                                |
+| `int_tableau__gradebook_audit_categories_teacher.sql`  | 3, 4, 6  | SQL                                                                                |
+| `int_tableau__gradebook_audit_flags.sql`               | 3, 6     | SQL                                                                                |
+| `rpt_tableau__gradebook_audit.sql`                     | 3, 6     | SQL                                                                                |
+| `rpt_tableau__gradebook_es_comments.sql`               | 6h.7     | Complete rewrite — standalone CTE-based model; ES removed from main flags pipeline |
+| `int_extracts__student_enrollments.sql`                | 3        | Add boolean column                                                                 |
+| `rpt_tableau__gradebook_gpa.sql`                       | 3        | Add boolean, remove Paterson filter                                                |
+| YAML properties for each modified model                | per task | Column additions / removals                                                        |
 
 ### SQL — disabled models
 
@@ -1867,11 +1870,10 @@ Complete replacement. Changes from the old model:
   Remove `s_max_score_greater_100` from
   `intermediate/properties/int_tableau__gradebook_audit_assignments_teacher.yml`.
 
-> ⚠️ **Future step (TBD):** Extract the `assignment_score_rollup` CTE into its
-> own intermediate model (`int_powerschool__gradebook_assignment_score_rollup`)
-> once the grain question for `rpt_tableau__gradebook_gpa` is resolved. Without
-> exceptions, there is no longer a reason to keep the rollup inline. See Task 5
-> note.
+> ✅ **Done:** The `assignment_score_rollup` CTE was extracted into
+> `int_powerschool__gradebook_assignment_score_rollup`. Both 6d and 6e now
+> `ref()` the shared model and join on `_dbt_source_project` (no macro). The
+> inline CTE is removed from both models.
 
 - [x] **Step 6d.3: Build and verify**
 
@@ -3706,25 +3708,36 @@ This model is being deprecated. Disable it and archive per the standard pattern.
 
 ---
 
-### 6h.7: `rpt_tableau__gradebook_es_comments.sql` — remove Miami, add Paterson
+### 6h.7: `rpt_tableau__gradebook_es_comments.sql` — standalone CTE rewrite
 
 **File:**
 `src/dbt/kipptaf/models/extracts/tableau/rpt_tableau__gradebook_es_comments.sql`
 
-- [ ] **Step 6h.7.1: Review and update**
+**What changed:** The model was completely rewritten as a standalone CTE-based
+model. It no longer depends on the flags pipeline. Key design decisions:
 
-  > ⚠️ Full SQL TBD — review the model next session. Changes: remove Miami from
-  > all filters/joins; add Paterson ES.
+- Source: `base_powerschool__course_enrollments` joined to
+  `int_powerschool__terms` for quarter grain (one row per student × course ×
+  quarter)
+- Scope: `credittype IN ('HR', 'MATH', 'ENG')`, `region != 'Miami'`,
+  `school_level = 'ES'`
+- Dedup: `not is_dropped_section` +
+  `row_number() over (partition by cc_studentid, cc_course_number, term order by cc_dateleft desc) = 1`
+  — handles both dropped courses and section-to-section transfers
+- `total_days_enrolled_in_quarter`: window sum across all sections for the same
+  student/course/quarter, capped at `quarter_length_days` — correctly accounts
+  for transfer students when determining `is_partial_quarter`
+- `is_partial_quarter = true` when
+  `total_days_enrolled_in_quarter / quarter_length_days < 0.25`
+- ES rows were also removed from `stg_google_sheets__gradebook_flags` by the
+  user — ES is no longer handled by the main flags pipeline for AY 2026-2027+
 
-- [ ] **Step 6h.7.2: Build and verify**
+- [x] **Step 6h.7.1: Rewrite the model** (complete)
 
-  ```bash
-  uv run dbt build \
-    --select rpt_tableau__gradebook_es_comments \
-    --project-dir src/dbt/kipptaf \
-    --defer \
-    --state src/dbt/kipptaf/target/prod
-  ```
+- [x] **Step 6h.7.2: Build and verify** (complete — spot-checked: max 1 row per
+      student/course/quarter, max 4 quarters per student/course, transfer
+      student `is_partial_quarter` correctly `false` when combined enrollment ≥
+      25%)
 
 ---
 
