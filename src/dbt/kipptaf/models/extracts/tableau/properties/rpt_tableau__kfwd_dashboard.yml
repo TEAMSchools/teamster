@@ -610,3 +610,37 @@ models:
           Overgrad. False if the student has no Overgrad top-choice data.
       - name: es_attended
         data_type: string
+      - name: id
+        data_type: string
+        description:
+          KIPP Aid award record ID (Salesforce) joined from
+          rpt_tableau__kfwd_aid_report on contact and academic year.
+      - name: aid_name
+        data_type: string
+        description: KIPP Aid record name / auto-number (e.g. KA-016473).
+      - name: amount
+        data_type: numeric
+        description: KIPP Aid award amount in dollars.
+      - name: award_date
+        data_type: date
+        description: Date the KIPP Aid award was recorded.
+      - name: created_date
+        data_type: timestamp
+        description: Timestamp the KIPP Aid record was created in Salesforce.
+      - name: fund_type
+        data_type: string
+        description:
+          Maher funding type parsed from the MAHER_FUND tag (Emergency,
+          Enrichment, or Unclassified); null when untagged.
+      - name: kipp_aid_count
+        data_type: numeric
+        description: KIPP Aid count value from the source record.
+      - name: notes
+        data_type: string
+        description:
+          Raw KIPP Aid award note, including any appended MAHER_FUND marker tag.
+      - name: notes_clean
+        data_type: string
+        description:
+          KIPP Aid award note with the MAHER_FUND tag and surrounding whitespace
+          removed; null when the note is null.
