@@ -1,7 +1,6 @@
 with
     scores as (
         select
-            a._dbt_source_relation,
             a._dbt_source_project,
             a.assignmentsectionid,
             a.sectionsdcid,
@@ -91,65 +90,71 @@ with
             and a._dbt_source_project = s._dbt_source_project
             and e.students_dcid = s.studentsdcid
             and e._dbt_source_project = s._dbt_source_project
+    ),
+
+    assignment_coding as (
+        select
+            _dbt_source_project,
+            assignmentsectionid,
+            sectionsdcid,
+            assignmentid,
+            assignment_name,
+            duedate,
+            scoretype,
+            totalpointvalue,
+            category_name,
+            category_code,
+            iscountedinfinalgrade,
+            scorepoints,
+            actualscoreentered,
+            academic_year,
+            students_dcid,
+            credit_type,
+            is_late,
+            is_exempt,
+            is_missing,
+            region,
+            is_expected,
+            school_level_alt,
+            score_entered,
+            points_earned,
+            numeric_grade_earned,
+            assign_final_score_percent,
+            half_total_point_value,
+
+            if(score_entered = 0, 1, 0) as is_zero,
+
+            if(
+                score_entered = 0 and school_level_alt = 'HS' and is_missing = 0, 1, 0
+            ) as is_academic_dishonesty,
+
+            if(score_entered is null, 1, 0) as is_null,
+
+            if(score_entered is not null, 1, 0) as is_scored,
+
+            if(is_expected and score_entered = 0, 1, 0) as is_expected_zero,
+
+            if(
+                is_expected
+                and score_entered = 0
+                and school_level_alt = 'HS'
+                and is_missing = 0,
+                1,
+                0
+            ) as is_expected_academic_dishonesty,
+
+            if(is_expected and score_entered is null, 1, 0) as is_expected_null,
+
+            if(is_expected and is_late = 1, 1, 0) as is_expected_late,
+
+            if(is_expected and is_missing = 1, 1, 0) as is_expected_missing,
+
+            if(
+                is_expected and score_entered is not null, true, false
+            ) as is_expected_scored,
+
+        from scores
     )
 
-select
-    _dbt_source_relation,
-    _dbt_source_project,
-    assignmentsectionid,
-    sectionsdcid,
-    assignmentid,
-    assignment_name,
-    duedate,
-    scoretype,
-    totalpointvalue,
-    category_name,
-    category_code,
-    iscountedinfinalgrade,
-    scorepoints,
-    actualscoreentered,
-    academic_year,
-    students_dcid,
-    credit_type,
-    is_late,
-    is_exempt,
-    is_missing,
-    region,
-    is_expected,
-    school_level_alt,
-    score_entered,
-    points_earned,
-    numeric_grade_earned,
-    assign_final_score_percent,
-    half_total_point_value,
-
-    if(score_entered = 0, 1, 0) as is_zero,
-
-    if(
-        score_entered = 0 and school_level_alt = 'HS' and is_missing = 0, 1, 0
-    ) as is_academic_dishonesty,
-
-    if(score_entered is null, 1, 0) as is_null,
-
-    if(score_entered is not null, 1, 0) as is_scored,
-
-    if(is_expected and score_entered = 0, 1, 0) as is_expected_zero,
-
-    if(
-        is_expected
-        and score_entered = 0
-        and school_level_alt = 'HS'
-        and is_missing = 0,
-        1,
-        0
-    ) as is_expected_academic_dishonesty,
-
-    if(is_expected and score_entered is null, 1, 0) as is_expected_null,
-
-    if(is_expected and is_late = 1, 1, 0) as is_expected_late,
-
-    if(is_expected and is_missing = 1, 1, 0) as is_expected_missing,
-
-    if(is_expected and score_entered is not null, true, false) as is_expected_scored,
-
-from scores
+select *,
+from assignment_coding
