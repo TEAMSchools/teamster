@@ -500,9 +500,10 @@ based on which approach produces cleaner scaffold code — and rename accordingl
   `(region, school_level, academic_year, quarter, assignment_category_code)`. No
   `week_number` — the model is quarter-grain.
 
-> ⚠️ **Pending merge of PR #4077.** PR #4077 (Camden U_EXPECTATIONS integration)
-> is approved. This task can proceed once #4077 is merged and Dagster has
-> materialized the new staging model in prod.
+> ✅ **PR #4077 merged.** Camden U_EXPECTATIONS data is live in prod. The
+> teacher scaffold's `inner join ... on s.region = ge.region` naturally picks up
+> Camden rows — no SQL change needed. Both Newark and Camden now produce
+> `teacher_category_scaffold` rows.
 
 ---
 
@@ -3639,7 +3640,7 @@ Complete replacement. Changes from the old model:
 
 ### 6h: Spot-check and commit Task 3
 
-- [ ] **Step 6h.1: Spot-check removed flags**
+- [x] **Step 6h.1: Spot-check removed flags**
 
   Via BigQuery MCP — query each modified model directly (not
   `rpt_tableau__gradebook_audit` until the full chain is valid):
@@ -3655,7 +3656,10 @@ Complete replacement. Changes from the old model:
 
   Expected: 0 rows for each deprecated flag column.
 
-- [ ] **Step 6h.2: Commit**
+  > ✅ **Verified:** All deprecated flag columns removed across 6a–6f. Flag
+  > removal commits landed across the Task 6 series.
+
+- [x] **Step 6h.2: Commit**
 
   ```bash
   git add -u
@@ -3691,12 +3695,16 @@ This model is being deprecated. Disable it and archive per the standard pattern.
 **File:**
 `src/dbt/kipptaf/models/extracts/tableau/rpt_tableau__gradebook_ms_hs_comments.sql`
 
-- [ ] **Step 6h.6.1: Review and update**
+- [x] **Step 6h.6.1: Review and update**
 
-  > ⚠️ Full SQL TBD — review the model next session. Change: remove Miami from
-  > all filters/joins.
+  > ✅ **No changes needed.** `rpt_tableau__gradebook_ms_hs_comments` reads from
+  > `int_tableau__gradebook_audit_flags`, which sources from the teacher
+  > scaffold. The teacher scaffold already excludes Miami
+  > (`_dbt_source_project != 'kippmiami'` in its WHERE), so no Miami rows reach
+  > this model. Zero Miami references confirmed via grep across the model and
+  > all upstream models.
 
-- [ ] **Step 6h.6.2: Build and verify**
+- [x] **Step 6h.6.2: Build and verify**
 
   ```bash
   uv run dbt build \
