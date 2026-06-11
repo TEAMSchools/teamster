@@ -29,6 +29,10 @@ models:
         data_type: date
       - name: school_week_end_date
         data_type: date
+      - name: last_day_school_year
+        data_type: date
+        description:
+          Last actual instructional day of the school year for this school.
       - name: date_count
         data_type: int64
       - name: week_number_academic_year
