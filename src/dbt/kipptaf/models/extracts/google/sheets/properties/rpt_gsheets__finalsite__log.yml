@@ -1,29 +1,53 @@
 models:
   - name: rpt_gsheets__finalsite__log
+    description: >
+      Latest Finalsite enrollment status per applicant for the current academic
+      year, one row per finalsite_enrollment_id. Feeds the SRE team's Finalsite
+      Log Google Sheet.
+    config:
+      meta:
+        contains_pii: true
     columns:
       - name: enrollment_academic_year_display
         data_type: string
+        description:
+          Academic year label as displayed in Finalsite (e.g. "2025-2026").
       - name: region
         data_type: string
+        description: KTAF region the applicant applied to.
       - name: assigned_school
         data_type: string
+        description: School the applicant has been assigned to in Finalsite.
       - name: finalsite_enrollment_id
         data_type: string
+        description: Unique identifier for a Finalsite enrollment record.
+        data_tests:
+          - unique
       - name: powerschool_student_number
         data_type: int64
+        description: Corresponding PowerSchool student number, if matched.
       - name: first_name
         data_type: string
+        description: Applicant first name.
       - name: last_name
         data_type: string
+        description: Applicant last name.
       - name: grade_level
         data_type: int64
+        description: Grade level the applicant is applying for.
       - name: enrollment_type
         data_type: string
+        description:
+          Finalsite enrollment type (e.g. New Student, Re-Enrollment).
       - name: gender
         data_type: string
+        description: Applicant gender as recorded in Finalsite.
       - name: birthdate
         data_type: date
+        description: Applicant date of birth.
       - name: status_start_date
         data_type: date
+        description: Date the applicant entered their latest enrollment status.
       - name: detailed_status
         data_type: string
+        description: Human-readable label of the latest enrollment status stage.
