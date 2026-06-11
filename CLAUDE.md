@@ -369,6 +369,9 @@ the allowlist.
   (e.g. `<role>`, `<col>`) — **even inside inline backticks**. Use
   `{placeholder}` braces or a fenced code block (fenced blocks preserve `<`,
   `<=`, `>=`). Read the stored body back and verify after writing.
+- `mcp__github__pull_request_review_write` `method=create` requires the FULL
+  40-char `commitID` — an abbreviated SHA fails with "Could not coerce value ...
+  to GitObjectID".
 - `gh issue develop` — linked branch creation; `mcp__github__create_branch` does
   not link branches to issues.
 - `gh project item-edit --id <ITEM_ID> --project-id <PROJECT_ID> --field-id <FIELD_ID> --single-select-option-id <OPTION_ID>`
