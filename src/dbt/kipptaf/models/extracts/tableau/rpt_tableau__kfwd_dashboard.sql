@@ -238,8 +238,8 @@ with
 
             count(*) as aid_award_count,
             {%- for i in range(1, max_awards + 1) %}
-            max(if(rn_award = {{ i }}, aid_name, null)) as award_{{ i }}_name,
-            max(if(rn_award = {{ i }}, amount, null)) as award_{{ i }}_amount,
+                max(if(rn_award = {{ i }}, aid_name, null)) as award_{{ i }}_name,
+                max(if(rn_award = {{ i }}, amount, null)) as award_{{ i }}_amount,
             {%- endfor %}
         from aid_awards
         group by sf_contact_id, academic_year
@@ -554,8 +554,7 @@ select
     kar.total_aid_amount,
     kar.aid_award_count,
     {%- for i in range(1, max_awards + 1) %}
-    kar.award_{{ i }}_name,
-    kar.award_{{ i }}_amount,
+        kar.award_{{ i }}_name, kar.award_{{ i }}_amount,
     {%- endfor %}
 
     if(
