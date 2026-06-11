@@ -29,6 +29,12 @@ models:
         data_type: date
       - name: school_week_end_date
         data_type: date
+      - name: first_day_school_year
+        data_type: date
+        description: Calendar Monday of the first school week of the year.
+      - name: last_week_start_school_year
+        data_type: date
+        description: Calendar Monday of the last school week of the year.
       - name: last_day_school_year
         data_type: date
         description:
@@ -45,3 +51,8 @@ models:
         data_type: date
       - name: school_week_start_date_lead
         data_type: date
+      - name: is_current_week_mon_sun
+        data_type: boolean
+        description:
+          True if this is the current school week (Mon–Sun window), or the last
+          school week of the year once its Sunday has passed.
