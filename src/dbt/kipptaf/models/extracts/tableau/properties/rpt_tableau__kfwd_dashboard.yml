@@ -610,3 +610,134 @@ models:
           Overgrad. False if the student has no Overgrad top-choice data.
       - name: es_attended
         data_type: string
+      - name: total_aid_amount
+        data_type: numeric
+        description:
+          Total KIPP Aid award amount in dollars, summed across all of the
+          student's awards in the academic year.
+      - name: aid_award_count
+        data_type: int64
+        description:
+          Number of KIPP Aid awards the student received in the academic year.
+          May exceed the number of populated award_N_* slots when the count of
+          awards exceeds the pivot's fixed slot limit.
+      - name: award_1_name
+        data_type: string
+        description:
+          Record name / auto-number of the student's award number 1 in the
+          academic year (awards ordered earliest first); null when the student
+          had fewer than 1 award(s).
+      - name: award_1_amount
+        data_type: numeric
+        description:
+          Amount in dollars of the student's award number 1 in the academic year
+          (awards ordered earliest first); null when the student had fewer than
+          1 award(s).
+      - name: award_2_name
+        data_type: string
+        description:
+          Record name / auto-number of the student's award number 2 in the
+          academic year (awards ordered earliest first); null when the student
+          had fewer than 2 award(s).
+      - name: award_2_amount
+        data_type: numeric
+        description:
+          Amount in dollars of the student's award number 2 in the academic year
+          (awards ordered earliest first); null when the student had fewer than
+          2 award(s).
+      - name: award_3_name
+        data_type: string
+        description:
+          Record name / auto-number of the student's award number 3 in the
+          academic year (awards ordered earliest first); null when the student
+          had fewer than 3 award(s).
+      - name: award_3_amount
+        data_type: numeric
+        description:
+          Amount in dollars of the student's award number 3 in the academic year
+          (awards ordered earliest first); null when the student had fewer than
+          3 award(s).
+      - name: award_4_name
+        data_type: string
+        description:
+          Record name / auto-number of the student's award number 4 in the
+          academic year (awards ordered earliest first); null when the student
+          had fewer than 4 award(s).
+      - name: award_4_amount
+        data_type: numeric
+        description:
+          Amount in dollars of the student's award number 4 in the academic year
+          (awards ordered earliest first); null when the student had fewer than
+          4 award(s).
+      - name: award_5_name
+        data_type: string
+        description:
+          Record name / auto-number of the student's award number 5 in the
+          academic year (awards ordered earliest first); null when the student
+          had fewer than 5 award(s).
+      - name: award_5_amount
+        data_type: numeric
+        description:
+          Amount in dollars of the student's award number 5 in the academic year
+          (awards ordered earliest first); null when the student had fewer than
+          5 award(s).
+      - name: award_6_name
+        data_type: string
+        description:
+          Record name / auto-number of the student's award number 6 in the
+          academic year (awards ordered earliest first); null when the student
+          had fewer than 6 award(s).
+      - name: award_6_amount
+        data_type: numeric
+        description:
+          Amount in dollars of the student's award number 6 in the academic year
+          (awards ordered earliest first); null when the student had fewer than
+          6 award(s).
+      - name: award_7_name
+        data_type: string
+        description:
+          Record name / auto-number of the student's award number 7 in the
+          academic year (awards ordered earliest first); null when the student
+          had fewer than 7 award(s).
+      - name: award_7_amount
+        data_type: numeric
+        description:
+          Amount in dollars of the student's award number 7 in the academic year
+          (awards ordered earliest first); null when the student had fewer than
+          7 award(s).
+      - name: award_8_name
+        data_type: string
+        description:
+          Record name / auto-number of the student's award number 8 in the
+          academic year (awards ordered earliest first); null when the student
+          had fewer than 8 award(s).
+      - name: award_8_amount
+        data_type: numeric
+        description:
+          Amount in dollars of the student's award number 8 in the academic year
+          (awards ordered earliest first); null when the student had fewer than
+          8 award(s).
+      - name: award_9_name
+        data_type: string
+        description:
+          Record name / auto-number of the student's award number 9 in the
+          academic year (awards ordered earliest first); null when the student
+          had fewer than 9 award(s).
+      - name: award_9_amount
+        data_type: numeric
+        description:
+          Amount in dollars of the student's award number 9 in the academic year
+          (awards ordered earliest first); null when the student had fewer than
+          9 award(s).
+      - name: award_10_name
+        data_type: string
+        description:
+          Record name / auto-number of the student's award number 10 in the
+          academic year (awards ordered earliest first); null when the student
+          had fewer than 10 award(s).
+      - name: award_10_amount
+        data_type: numeric
+        description:
+          Amount in dollars of the student's award number 10 in the academic
+          year (awards ordered earliest first); null when the student had fewer
+          than 10 award(s).
