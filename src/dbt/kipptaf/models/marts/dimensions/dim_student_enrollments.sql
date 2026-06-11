@@ -21,6 +21,7 @@ select
     enr.grade_level,
     enr.cohort_primary as graduation_year,
     enr.is_retained_year,
+    enr.year_in_network,
 
 from {{ ref("int_powerschool__student_enrollment_union") }} as enr
 left join
