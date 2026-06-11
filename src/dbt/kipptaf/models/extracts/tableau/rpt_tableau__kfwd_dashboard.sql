@@ -217,16 +217,16 @@ with
 
     aid_awards as (
         select
-            sf_contact_id,
+            student as sf_contact_id,
             academic_year,
-            aid_name,
+            `name` as aid_name,
             amount,
 
             row_number() over (
-                partition by sf_contact_id, academic_year
-                order by award_date asc, created_date asc
+                partition by student, academic_year
+                order by `date` asc, created_date asc, id asc
             ) as rn_award,
-        from {{ ref("rpt_tableau__kfwd_aid_report") }}
+        from {{ ref("stg_kippadb__kipp_aid") }}
     ),
 
     aid_pivot as (
