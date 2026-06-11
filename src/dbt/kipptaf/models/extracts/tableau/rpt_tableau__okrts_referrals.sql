@@ -158,6 +158,60 @@ with
                 2
             ) as referral_percentile,
         from referral_counts
+    ),
+
+    student_weeks as (
+        -- grain projection: distinct student-week spine from the enrollment-weeks
+        -- model; every column is functionally determined by the partition key,
+        -- not a mask for upstream duplicates
+        select distinct
+            _dbt_source_relation,
+            student_number,
+            academic_year,
+            week_number_academic_year,
+        from {{ ref("int_extracts__student_enrollments_weeks") }}
+    ),
+
+    tardies_weekly as (
+        select
+            _dbt_source_relation,
+            student_number,
+            academic_year,
+            week_number_academic_year,
+
+            sum(is_tardy) as n_tardies_week,
+        from {{ ref("int_powerschool__ps_adaadm_daily_ctod") }}
+        group by
+            _dbt_source_relation,
+            student_number,
+            academic_year,
+            week_number_academic_year
+    ),
+
+    tardies_ytd as (
+        select
+            sw._dbt_source_relation,
+            sw.student_number,
+            sw.academic_year,
+            sw.week_number_academic_year,
+
+            sum(coalesce(tw.n_tardies_week, 0)) over (
+                partition by
+                    sw._dbt_source_relation, sw.student_number, sw.academic_year
+                order by sw.week_number_academic_year
+            ) as total_tardies_ytd,
+
+            sum(coalesce(tw.n_tardies_week, 0)) over (
+                partition by
+                    sw._dbt_source_relation, sw.student_number, sw.academic_year
+            ) as total_tardies,
+        from student_weeks as sw
+        left join
+            tardies_weekly as tw
+            on sw.student_number = tw.student_number
+            and sw.academic_year = tw.academic_year
+            and sw.week_number_academic_year = tw.week_number_academic_year
+            and {{ union_dataset_join_clause(left_alias="sw", right_alias="tw") }}
     )
 
 select
@@ -234,6 +288,9 @@ select
     rr.total_referrals,
     rr.referral_rank,
     rr.referral_percentile,
+
+    tar.total_tardies_ytd,
+    tar.total_tardies,
 
     coalesce(s.ssds_period, 'Outside SSDS Period') as ssds_period,
 
@@ -400,4 +457,10 @@ left join
     on co.student_number = rr.student_number
     and co.academic_year = rr.academic_year
     and co.schoolid = rr.schoolid
+left join
+    tardies_ytd as tar
+    on co.student_number = tar.student_number
+    and co.academic_year = tar.academic_year
+    and co.week_number_academic_year = tar.week_number_academic_year
+    and {{ union_dataset_join_clause(left_alias="co", right_alias="tar") }}
 where co.academic_year >= {{ var("current_academic_year") - 1 }}
