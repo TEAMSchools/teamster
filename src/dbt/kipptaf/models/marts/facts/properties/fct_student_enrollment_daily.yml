@@ -40,6 +40,7 @@ models:
         constraints:
           - type: primary_key
             warn_unsupported: false
+            warn_unenforced: false
         data_tests:
           - unique
           - not_null
@@ -50,11 +51,6 @@ models:
           FK to dim_student_enrollments. Surrogate key derived from
           student_number, _dbt_source_project, academic_year, and entrydate —
           identifies the enrollment stint this day belongs to.
-        constraints:
-          - type: foreign_key
-            to: ref('dim_student_enrollments')
-            to_columns: [student_enrollment_key]
-            warn_unsupported: false
         data_tests:
           - not_null
 
@@ -67,11 +63,6 @@ models:
         data_type: string
         description: >-
           FK to dim_students. Surrogate key derived from student_number.
-        constraints:
-          - type: foreign_key
-            to: ref('dim_students')
-            to_columns: [student_key]
-            warn_unsupported: false
         data_tests:
           - not_null
 
@@ -84,11 +75,6 @@ models:
         data_type: date
         description: >-
           In-session calendar date of the enrollment record. FK to dim_dates.
-        constraints:
-          - type: foreign_key
-            to: ref('dim_dates')
-            to_columns: [date_key]
-            warn_unsupported: false
         data_tests:
           - not_null
 
@@ -102,11 +88,6 @@ models:
         description: >-
           FK to dim_locations — the school the student attended on this day.
           Null for placeholder schools with no location dimension row.
-        constraints:
-          - type: foreign_key
-            to: ref('dim_locations')
-            to_columns: [location_key]
-            warn_unsupported: false
         data_tests:
           - relationships:
               arguments:
