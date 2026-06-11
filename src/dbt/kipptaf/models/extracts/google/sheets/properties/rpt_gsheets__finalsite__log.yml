@@ -8,6 +8,11 @@ models:
       meta:
         contains_pii: true
     columns:
+      - name: finalsite_enrollment_id
+        data_type: string
+        description: Unique identifier for a Finalsite enrollment record.
+        data_tests:
+          - unique
       - name: enrollment_academic_year_display
         data_type: string
         description:
@@ -18,11 +23,6 @@ models:
       - name: assigned_school
         data_type: string
         description: School the applicant has been assigned to in Finalsite.
-      - name: finalsite_enrollment_id
-        data_type: string
-        description: Unique identifier for a Finalsite enrollment record.
-        data_tests:
-          - unique
       - name: powerschool_student_number
         data_type: int64
         description: Corresponding PowerSchool student number, if matched.
