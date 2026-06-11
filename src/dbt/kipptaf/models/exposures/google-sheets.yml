@@ -859,3 +859,16 @@ exposures:
         dagster:
           kinds:
             - googlesheets
+  - name: finalsite_log
+    label: Finalsite Log
+    type: application
+    owner:
+      name: Data Team
+    url: https://docs.google.com/spreadsheets/d/1O0LapZFC1X1JoYs8z3K3iFNeaD5hV2xpV_fdhIYx1Vo
+    depends_on:
+      - ref("rpt_gsheets__finalsite__log")
+    config:
+      meta:
+        dagster:
+          kinds:
+            - googlesheets
