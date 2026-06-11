@@ -1,3 +1,4 @@
+{%- set max_awards = 10 -%}
 with
     year_scaffold as (
         select {{ var("current_academic_year") }} as academic_year
@@ -218,28 +219,30 @@ with
         select
             sf_contact_id,
             academic_year,
-            id,
             aid_name,
-            award_date,
-            created_date,
-            fund_type,
-            kipp_aid_count,
-            notes,
-            notes_clean,
-
-            sum(amount) over (
-                partition by sf_contact_id, academic_year
-            ) as total_aid_amount,
-
-            count(*) over (
-                partition by sf_contact_id, academic_year
-            ) as aid_award_count,
+            amount,
 
             row_number() over (
                 partition by sf_contact_id, academic_year
-                order by award_date desc, created_date desc
+                order by award_date asc, created_date asc
             ) as rn_award,
         from {{ ref("rpt_tableau__kfwd_aid_report") }}
+    ),
+
+    aid_pivot as (
+        select
+            sf_contact_id,
+            academic_year,
+
+            sum(amount) as total_aid_amount,
+
+            count(*) as aid_award_count,
+            {%- for i in range(1, max_awards + 1) %}
+            max(if(rn_award = {{ i }}, aid_name, null)) as award_{{ i }}_name,
+            max(if(rn_award = {{ i }}, amount, null)) as award_{{ i }}_amount,
+            {%- endfor %}
+        from aid_awards
+        group by sf_contact_id, academic_year
     )
 
 select
@@ -548,16 +551,12 @@ select
 
     ba.n_ba_enrolled_semesters,
 
-    kar.id,
-    kar.aid_name,
-    kar.award_date,
-    kar.created_date,
-    kar.fund_type,
-    kar.kipp_aid_count,
-    kar.notes,
-    kar.notes_clean,
+    kar.total_aid_amount,
     kar.aid_award_count,
-    kar.total_aid_amount as amount,
+    {%- for i in range(1, max_awards + 1) %}
+    kar.award_{{ i }}_name,
+    kar.award_{{ i }}_amount,
+    {%- endfor %}
 
     if(
         c.contact_kipp_region_name = 'KIPP Miami' and c.ktc_status like 'TAF%',
@@ -782,10 +781,9 @@ left join
     {{ ref("int_overgrad__choice_counts") }} as ogc on c.contact_id = ogc.contact_id
 left join {{ ref("int_overgrad__top_choices") }} as otc on c.contact_id = otc.contact_id
 left join
-    aid_awards as kar
+    aid_pivot as kar
     on c.contact_id = kar.sf_contact_id
     and ay.academic_year = kar.academic_year
-    and kar.rn_award = 1
 where
     c.ktc_status in ('HS9', 'HS10', 'HS11', 'HS12', 'HSG', 'TAF', 'TAFHS')
     and c.contact_id is not null
