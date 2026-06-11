@@ -8,7 +8,6 @@ with
             entrydate,
             exitdate,
             academic_year,
-            grade_level,
         from {{ ref("int_powerschool__student_enrollment_union") }}
     ),
 
@@ -36,7 +35,6 @@ with
             enr._dbt_source_project,
             enr.schoolid,
             enr.entrydate,
-            enr.grade_level,
 
             enr.academic_year as stint_academic_year,
 
@@ -66,8 +64,6 @@ select
     sch.location_key,
 
     e.date_key,
-    e.term_academic_year as academic_year,
-    e.grade_level,
 
     {{
         dbt_utils.generate_surrogate_key(
@@ -89,8 +85,6 @@ select
             ]
         )
     }} as student_enrollment_key,
-
-    {{ dbt_utils.generate_surrogate_key(["e.student_number"]) }} as student_key,
 
     e.date_key = least(
         max(e.date_key) over (

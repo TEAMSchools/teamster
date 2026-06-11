@@ -3,14 +3,10 @@ models:
     description: >-
       Student daily enrollment fact table. One row per enrollment stint x
       in-session calendar date — a student enrolled and attending school on a
-      given day contributes one row. Location, student, enrollment stint, and
-      calendar date are reached via their dimensions; grade level is carried on
-      the row for convenience.
-
-      academic_year is sourced from the school's own year-record calendar term
-      (the term covering the date), so date_key and academic_year are always
-      consistent by construction — a date in March self-labels as the prior-July
-      academic year per the KIPP convention, regardless of when the stint began.
+      given day contributes one row. Location, enrollment stint, and calendar
+      date are reached via their dimensions; student identity and grade level
+      come through dim_student_enrollments, and academic year through dim_dates
+      (no dimension attributes are denormalized onto the fact).
 
       This is a complete historical record: alumni and withdrawn students retain
       their real-dated enrolled rows. Point-in-time scoping (a single date, or a
@@ -59,18 +55,6 @@ models:
                 to: ref('dim_student_enrollments')
                 field: student_enrollment_key
 
-      - name: student_key
-        data_type: string
-        description: >-
-          FK to dim_students. Surrogate key derived from student_number.
-        data_tests:
-          - not_null
-
-          - relationships:
-              arguments:
-                to: ref('dim_students')
-                field: student_key
-
       - name: date_key
         data_type: date
         description: >-
@@ -93,19 +77,6 @@ models:
               arguments:
                 to: ref('dim_locations')
                 field: location_key
-
-      - name: academic_year
-        data_type: int64
-        description: >-
-          Academic year of the date, taken from the school's year-record
-          calendar term covering date_key (e.g. 2025 = the 2025–26 school year,
-          July 2025 – June 2026). Consistent with date_key by construction — not
-          copied from the enrollment stint.
-
-      - name: grade_level
-        data_type: int64
-        description: >-
-          Student's grade level on this day.
 
       - name: is_current_record
         data_type: boolean

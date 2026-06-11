@@ -17,7 +17,6 @@ views:
           - count_students
           - student_enrollment_daily_key
           - student_enrollment_key
-          - grade_level
           - is_current_record
           - is_month_end_record
           - is_week_end_record
@@ -47,7 +46,7 @@ views:
           - region_name
           - state
 
-      - join_path: student_enrollments.students
+      - join_path: student_enrollments.student_enrollment_stints.students
         prefix: false
         includes:
           - student_key
@@ -63,6 +62,7 @@ views:
       - join_path: student_enrollments.student_enrollment_stints
         prefix: false
         includes:
+          - grade_level
           - graduation_year
           - is_retained_year
 

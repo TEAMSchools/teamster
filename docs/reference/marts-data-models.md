@@ -359,7 +359,6 @@ erDiagram
 ```mermaid
 erDiagram
   fct_student_enrollment_daily }o--|| dim_student_enrollments : "student_enrollment_key"
-  fct_student_enrollment_daily }o--|| dim_students : "student_key"
   dim_student_enrollments }o--|| dim_students : "student_key"
 ```
 
@@ -370,7 +369,6 @@ erDiagram
 | `date_key`               | `dim_dates`               |
 | `location_key`           | `dim_locations`           |
 | `student_enrollment_key` | `dim_student_enrollments` |
-| `student_key`            | `dim_students`            |
 
 ## fct_support_tickets
 

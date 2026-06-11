@@ -8,10 +8,10 @@ cubes:
         sql: "{dates.date_day} = CAST({CUBE}.date_key AS TIMESTAMP)"
         relationship: many_to_one
 
-      - name: students
-        sql: "{students.student_key} = {CUBE}.student_key"
-        relationship: many_to_one
-
+      # No direct students join: student identity is reached via
+      # student_enrollment_stints (dim_student_enrollments carries student_key),
+      # keeping a single FK route to students per the strict-chain rule. The
+      # locations diamond below is the one documented exception (src/cube/CLAUDE.md).
       - name: locations
         sql: "{locations.location_key} = {CUBE}.location_key"
         relationship: many_to_one
@@ -31,11 +31,6 @@ cubes:
         type: string
         primary_key: true
 
-      - name: student_key
-        description: Surrogate key derived from student_number. FK to students.
-        sql: student_key
-        type: string
-
       - name: student_enrollment_key
         description: >-
           FK to student_enrollment_stints (the stint dimension). Surrogate key
@@ -52,20 +47,6 @@ cubes:
         description: The in-session school day this row represents.
         sql: CAST(date_key AS TIMESTAMP)
         type: time
-        public: true
-
-      - name: academic_year
-        description: >-
-          KIPP academic year (July start) of this day, from the school's
-          year-record calendar term. 2025 = the 2025-26 school year.
-        sql: academic_year
-        type: number
-        public: true
-
-      - name: grade_level
-        description: Grade level. 0 = Kindergarten, -2 = Preschool.
-        sql: grade_level
-        type: number
         public: true
 
       - name: is_current_record
@@ -122,6 +103,6 @@ cubes:
           point-in-time snapshot and reads as 0 in a trend — read trends on
           instructional periods, or carry the prior value forward in the BI
           layer (the daily fact is in-session-days only by design).
-        sql: student_key
+        sql: "{student_enrollment_stints.student_key}"
         type: count_distinct
         public: true
