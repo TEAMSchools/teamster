@@ -6,7 +6,9 @@ Follow-ups: [#4164](https://github.com/TEAMSchools/teamster/issues/4164)
 [#4165](https://github.com/TEAMSchools/teamster/issues/4165) (section teacher),
 [#4167](https://github.com/TEAMSchools/teamster/issues/4167) (academic-goals
 dim), [#4168](https://github.com/TEAMSchools/teamster/issues/4168)
-(student-subject intervention-status dim).
+(student-subject intervention-status dim),
+[#4170](https://github.com/TEAMSchools/teamster/issues/4170) (score-to-member
+drill-down).
 
 ## Purpose
 
@@ -16,10 +18,9 @@ and NJ/FL state assessments (NJSLA, NJGPA, FAST). The headline metric is
 proficiency/mastery rate, which is the only score measure meaningful across the
 incompatible score scales of the different sources. Analysts slice by
 standard/skill, subject, score source, testing season, administration date,
-school/region, grade level, course, and student demographics, and can drill from
-aggregates to row-level scores and to the individual member assessments behind a
-score. Dimension parity is benchmarked against the existing
-`rpt_tableau__ddi_dashboard` Tableau extract.
+school/region, grade level, course, and student demographics, and drill from
+aggregates to row-level scores. Dimension parity is benchmarked against the
+existing `rpt_tableau__ddi_dashboard` Tableau extract.
 
 ## Source fact
 
@@ -38,8 +39,8 @@ parent dims. The fact FKs to `dim_assessment_administrations`
 `date_taken` / completion date), and carries `enrollment_resolution`
 (`subject_section` / `homeroom`).
 
-Event-grained (one row per scored response), not a cumulative daily-status fact,
-so it is **not** a snapshot cube.
+Event-grained, not a cumulative daily-status fact, so it is **not** a snapshot
+cube.
 
 ## Verified findings (drove the design)
 
@@ -56,39 +57,85 @@ All confirmed against prod (`kipptaf_marts`, `kipptaf_assessments`):
   member. Across all 4,748 Illuminate canonicals,
   `surrogate(assessment_type, module_code, canonical_id, null)` matches a
   `dim_assessments` row 100% of the time, with **0** `title` and **0**
-  `academic_subject` mismatches vs. the canonical. This join is
-  many-administrations-to-one-assessment — **no fan-out**. (The 30x fan-out risk
-  applies only to joining the _fact_ to all members, which is the bridge path.)
-- **Member is multi-valued per score; canonical is single.** Of 14.16M internal
+  `academic_subject` mismatches. This is many-administrations-to-one-assessment
+  — **no fan-out** — so canonical descriptors are read from `dim_assessments`
+  via a single FK.
+- **Actual member is multi-valued per score; deferred.** Of 14.16M internal
   score rows, 96.5% map to one member, 2.8% to two, 0.7% to three or more (max
-  23). The actual member(s) a score rolled up are reached via the bridge.
+  23). Drilling to the actual member form(s) a score rolled up requires a
+  score-grain bridge; it is deferred to #4170 because the canonical FK covers
+  reporting needs.
 
 ## Architecture
 
 ### Cube inventory
 
-Nine new cubes, reusing six existing (`student_enrollments`, `students`,
-`locations`, `regions`, `dates`, `terms`). Two pairs are role-played (same
-table, two cube instances): `dim_dates` (`dates` + `administration_dates`) and
-`dim_assessments` (`assessments` + `assessment_members`).
+Seven new cubes; seven reused (three extended additively):
 
-| New cube                            | Reads                                                   | Role                                          |
-| ----------------------------------- | ------------------------------------------------------- | --------------------------------------------- |
-| `student_assessment_scores` (fact)  | `fct_assessment_scores_enrollment_scoped`               | scores                                        |
-| `student_section_enrollments`       | `dim_student_section_enrollments`                       | enrollment bridge to student/course           |
-| `assessment_administrations`        | `dim_assessment_administrations` (+`assessment_key` FK) | occurrence: season, admin date                |
-| `assessments`                       | `dim_assessments`                                       | canonical descriptors (via administration FK) |
-| `assessment_members`                | `dim_assessments`                                       | actual member(s) (via score bridge)           |
-| `course_sections`                   | `dim_course_sections`                                   | section context                               |
-| `courses`                           | `dim_courses` (+`is_foundations`)                       | course subject/title/code                     |
-| `assessment_score_members` (bridge) | `bridge_assessment_score_members`                       | score to member(s)                            |
-| `administration_dates`              | `dim_dates`                                             | administration-date calendar                  |
+| New cube                           | Reads                                                   | Role                                          |
+| ---------------------------------- | ------------------------------------------------------- | --------------------------------------------- |
+| `student_assessment_scores` (fact) | `fct_assessment_scores_enrollment_scoped`               | scores                                        |
+| `student_section_enrollments`      | `dim_student_section_enrollments`                       | enrollment bridge to student/course           |
+| `assessment_administrations`       | `dim_assessment_administrations` (+`assessment_key` FK) | occurrence: season, admin date                |
+| `assessments`                      | `dim_assessments`                                       | canonical descriptors (via administration FK) |
+| `course_sections`                  | `dim_course_sections`                                   | section context                               |
+| `courses`                          | `dim_courses` (+`is_foundations`)                       | course subject/title/code                     |
+| `administration_dates`             | `dim_dates`                                             | administration-date calendar (role-played)    |
+
+| Reused cube                 | Change                                                |
+| --------------------------- | ----------------------------------------------------- |
+| `dates`                     | as-is (role-played with `administration_dates`)       |
+| `student_enrollments`       | extend: `year_in_network`                             |
+| `students`                  | as-is                                                 |
+| `student_enrollment_status` | extend: `status_504`, `is_self_contained`, `is_sipps` |
+| `locations`                 | extend: `head_of_school`                              |
+| `regions`                   | as-is                                                 |
+| `terms`                     | as-is                                                 |
 
 Student-domain cubes are `student`-prefixed for `cube.js` gating; assessment,
 curriculum, and date dims are unprefixed. `standard_domain` is a degenerate
-column on the fact (1:1 on `response_type_code`), not a cube.
+column on the fact (1:1 on `response_type_code`), not a cube. Only `dim_dates`
+is role-played (`dates` + `administration_dates`); `dim_assessments` is a single
+instance reached via the administration FK.
 
-### Cube join graph
+### Relationship diagram
+
+```mermaid
+graph TD
+  FCT["student_assessment_scores (fct)"]
+  DATE[dates]
+  ADM[assessment_administrations]
+  ADATE[administration_dates]
+  ASM[assessments]
+  SSE[student_section_enrollments]
+  SE[student_enrollments]
+  STU[students]
+  SES[student_enrollment_status]
+  LOC[locations]
+  REG[regions]
+  CS[course_sections]
+  CRS[courses]
+  TRM[terms]
+
+  FCT -->|test_date_key| DATE
+  FCT -->|assessment_administration_key| ADM
+  ADM -->|administered_date_key| ADATE
+  ADM -->|assessment_key| ASM
+  FCT -->|student_section_enrollment_key| SSE
+  SSE -->|student_enrollment_key| SE
+  SE -->|student_key| STU
+  SE -->|student_enrollment_key one_to_one| SES
+  SE -->|location_key| LOC
+  LOC -->|region_key| REG
+  SSE -->|course_section_key| CS
+  CS -->|course_key| CRS
+  SSE -->|term_key| TRM
+```
+
+`dates` and `administration_dates` both read `dim_dates` (role-played). Edge
+labels are the join keys.
+
+### Cube join graph (text)
 
 ```text
 student_assessment_scores (fct)
@@ -99,19 +146,18 @@ student_assessment_scores (fct)
   - student_section_enrollments student_section_enrollment_key
       - student_enrollments     student_enrollment_key
           - students            student_key
+          - student_enrollment_status  student_enrollment_key (one_to_one: ELL/IEP/504/SpEd/meal)
           - locations           location_key
               - regions         region_key
       - course_sections         course_section_key
           - courses             course_key
       - terms                   term_key
-  - (bridge) assessment_score_members assessment_score_key
-      - assessment_members      assessment_key  (actual member(s); drill-down only)
 ```
 
 ### dbt model references (FK graph)
 
 Arrows point from child to the parent it references (`*` marks a model touched
-by this spec; `[NEW]` is created by it).
+by this spec; `[NEW FK]` is a column added by it).
 
 ```text
 fct_assessment_scores_enrollment_scoped *
@@ -121,23 +167,18 @@ fct_assessment_scores_enrollment_scoped *
   |-- student_section_enrollment_key --> dim_student_section_enrollments
   |                                        |-- student_enrollment_key --> dim_student_enrollments *
   |                                        |                                |-- student_key --> dim_students
+  |                                        |                                |-- student_enrollment_key --> dim_student_enrollment_status *
   |                                        |                                '-- location_key --> dim_locations *
   |                                        |                                                      '-- region_key --> dim_regions
   |                                        |-- course_section_key --> dim_course_sections
   |                                        |                            '-- course_key --> dim_courses *
   |                                        '-- term_key --> dim_terms
   '-- test_date_key --> dim_dates
-
-bridge_assessment_score_members [NEW]
-  |-- assessment_score_key --> fct_assessment_scores_enrollment_scoped *
-  '-- assessment_key --------> dim_assessments
-
-dim_student_enrollment_status *   (joined to dim_student_enrollments via student_enrollment_key)
 ```
 
-`dim_assessments` itself is unchanged (it already carries `title`,
-`academic_subject`, `type`, `scope`, `grade_level_tested`, `module_type`,
-`module_code`, `is_internal_assessment`).
+`dim_assessments` is unchanged (it already carries `title`, `academic_subject`,
+`type`, `scope`, `grade_level_tested`, `module_type`, `module_code`,
+`is_internal_assessment`).
 
 ### Diamond / role-play resolutions
 
@@ -145,14 +186,10 @@ dim_student_enrollment_status *   (joined to dim_student_enrollments via student
    `dates`; administration `administered_date_key` (administered_at, primary
    reporting date; null for state) joins a second instance
    `administration_dates`. Two instances, two single-path joins — no diamond.
-2. **`dim_assessments` (role-played).** Canonical descriptors reached via
-   `assessment_administrations → assessments` (FK on `assessment_key`, the
-   canonical-representative row, single, no fan-out). Actual member(s) reached
-   via `bridge → assessment_members`. Two instances avoid a diamond.
-3. **`locations`** — single join via `student_enrollments`; `course_sections`
-   `location_key` unused.
-4. **`academic_year`** — exposed canonically from `student_section_enrollments`.
-5. **canonical assessment** — reached through the administration FK, not a
+2. **`locations`** — single join via `student_enrollments`; `course_sections`
+   `location_key` unused (verified never divergent).
+3. **`academic_year`** — exposed canonically from `student_section_enrollments`.
+4. **canonical assessment** — reached through the administration FK, not a
    direct fact FK (which would diamond against the administration).
 
 ## dbt changes (additive only)
@@ -172,11 +209,9 @@ and any `select *` consumers.
 Add **one** column: `assessment_key` =
 `generate_surrogate_key([assessment_type, module_code, source_assessment_id, test_type])`
 (all four already in the `all_administrations` CTE). For Illuminate this
-resolves to the canonical-representative `dim_assessments` row; for state it's
+resolves to the canonical-representative `dim_assessments` row; for state it is
 the 1:1 state row. Add a `relationships` test to `dim_assessments`. No
-descriptor denormalization, no hash change. (Existing columns —
-`administered_date_key`, `_dbt_source_project`, `administration_period`,
-`source_assessment_id`, `test_type` — stay.)
+descriptor denormalization, no hash change. Existing columns stay.
 
 ### Other dims (additive)
 
@@ -190,22 +225,12 @@ descriptor denormalization, no hash change. (Existing columns —
   `graduation_year`.)
 - `dim_locations`: add `head_of_school`.
 
-No change to `int_assessments__assessments_canonical` — `module_type` comes from
-`dim_assessments` via the administration FK.
-
-### New `bridge_assessment_score_members`
-
-Factless bridge: `assessment_score_key` to member `assessment_key`. Internal:
-reconstruct `assessment_score_key` from the fact's inputs and unnest the rollup
-`assessment_ids` to member ids, hashing each to
-`surrogate('illuminate', module_code, member_assessment_id, null)`. State: the
-single state `assessment_key`. Tests: `unique_combination_of_columns` on the two
-keys; `relationships` to the fact and to `dim_assessments`.
+No change to `int_assessments__assessments_canonical` (`module_type` comes from
+`dim_assessments` via the administration FK) and none to `dim_assessments`.
 
 ## Cube measures
 
-On `student_assessment_scores`; detail + summary views only (never the member
-view — bridge fan-out):
+On `student_assessment_scores`:
 
 | Measure               | Definition                                  | Notes                                                        |
 | --------------------- | ------------------------------------------- | ------------------------------------------------------------ |
@@ -230,10 +255,8 @@ From joined cubes:
   `module_code`, `is_internal_assessment`.
 - `assessment_administrations`: `administration_period`, `test_type`,
   `source_assessment_id` (canonical id).
-- `administration_dates`: administration-date calendar attributes (primary
-  reporting date). `dates`: completion-date attributes.
-- `assessment_members` (member view only): `title`, `academic_subject`,
-  `module_code`, `module_type`, `grade_level_tested`.
+- `administration_dates`: administration-date calendar (primary reporting date).
+  `dates`: completion-date calendar.
 - `courses`: `academic_subject`, `course_title`, `course_code`, `credit_type`,
   `is_foundations`. `course_sections`: `identifier`, `period`.
 - `student_section_enrollments`: `academic_year`, `entry_date`, `exit_date`,
@@ -253,12 +276,11 @@ From joined cubes:
 
 - **`student_assessment_scores_detail`** — row-level; `full_name` / identifiers;
   two-policy access (PII fields in `excludes` + a `cube-access-student-pii`
-  `includes: "*"`). Reads `assessments` (canonical) via the administration; does
-  not join the member bridge.
+  `includes: "*"`).
 - **`student_assessment_scores_summary`** — aggregates + demographic breakdowns;
   single `cube-access-student-data` policy.
-- **`student_assessment_scores_members_detail`** — member drill-down via bridge
-  to `assessment_members`; one row per score x member; no aggregate measures.
+
+(A member-level drill-down view is deferred with the bridge — #4170.)
 
 ## Access gating
 
@@ -272,7 +294,7 @@ Add every new/touched mart to `cube.yml`'s `cube_semantic_layer.depends_on`:
 `fct_assessment_scores_enrollment_scoped`, `dim_assessment_administrations`,
 `dim_assessments`, `dim_student_section_enrollments`, `dim_course_sections`,
 `dim_courses`, `dim_student_enrollment_status`, `dim_student_enrollments`,
-`dim_locations`, `dim_dates`, `bridge_assessment_score_members`.
+`dim_locations`, `dim_dates`.
 
 ## DDI dimension parity
 
@@ -283,7 +305,8 @@ module_code/type via the `dim_assessments` FK, administered_at), the
 response/standard family, course fields (incl. `is_foundations`), and enrollment
 extras (`year_in_network`, `head_of_school`). Intentionally **not** in this cube
 (separate facts/domains): iReady lessons, walkthrough/observation data,
-microgoals. Teacher fields deferred (#4165).
+microgoals. Teacher fields deferred (#4165); actual-member drill-down deferred
+(#4170).
 
 ## Out of scope (tracked)
 
@@ -295,13 +318,14 @@ microgoals. Teacher fields deferred (#4165).
   [#4167](https://github.com/TEAMSchools/teamster/issues/4167).
 - Student-subject intervention-status dim —
   [#4168](https://github.com/TEAMSchools/teamster/issues/4168).
+- Score-to-member drill-down (bridge + `assessment_members` + members view) —
+  [#4170](https://github.com/TEAMSchools/teamster/issues/4170).
 - QBL / power-standard flags — not currently tracked.
 
 ## Validation approach
 
-- Build the enriched dims + bridge in a dev schema; confirm uniqueness /
-  relationships tests pass; reconcile bridge row counts with the rollup
-  `assessment_ids` cardinality.
+- Build the enriched dims in a dev schema; confirm uniqueness / relationships
+  tests pass.
 - **Confirm the `assessment_key` FK on `dim_assessment_administrations`
   populates for the state branches** (Illuminate proven 100%; state is
   structurally 1:1 but unverified empirically).
@@ -310,4 +334,3 @@ microgoals. Teacher fields deferred (#4165).
 - Compile each view via Cube `/sql`; validate `pct_proficient` by
   `response_type_code` x `region` x `academic_year` and by administration season
   against direct warehouse SQL.
-- Confirm the member view never inflates `count_scores`.
