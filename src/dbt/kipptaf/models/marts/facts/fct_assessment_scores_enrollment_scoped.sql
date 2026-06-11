@@ -10,7 +10,11 @@ with
             rr.response_type,
             rr.response_type_id,
             rr.response_type_code,
+            rr.response_type_description,
+            rr.response_type_root_description,
+            rr.is_replacement,
             rr.performance_band_label,
+            rr.performance_band_label_number,
             rr.is_mastery,
             rr.n_assessments,
             rr.percent_correct,
@@ -201,6 +205,12 @@ select
     ia.percent_correct,
     ia.proficiency_level,
     ia.is_mastery,
+    ia.response_type,
+    ia.response_type_code,
+    ia.response_type_description,
+    ia.response_type_root_description,
+    ia.is_replacement,
+    ia.performance_band_label_number,
 
     sr.resolution_type as enrollment_resolution,
 from internal_assessments as ia
@@ -253,8 +263,14 @@ select
     su.scale_score,
     su.percent_correct,
     su.performance_band as proficiency_level,
-
     su.is_proficient as is_mastery,
+
+    cast(null as string) as response_type,
+    cast(null as string) as response_type_code,
+    cast(null as string) as response_type_description,
+    cast(null as string) as response_type_root_description,
+    cast(null as bool) as is_replacement,
+    cast(null as numeric) as performance_band_label_number,
 
     sr.resolution_type as enrollment_resolution,
 from state_union as su
