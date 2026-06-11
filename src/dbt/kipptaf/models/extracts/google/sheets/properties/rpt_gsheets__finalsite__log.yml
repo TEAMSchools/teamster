@@ -1,0 +1,29 @@
+models:
+  - name: rpt_gsheets__finalsite__log
+    columns:
+      - name: enrollment_academic_year_display
+        data_type: string
+      - name: region
+        data_type: string
+      - name: assigned_school
+        data_type: string
+      - name: finalsite_enrollment_id
+        data_type: string
+      - name: powerschool_student_number
+        data_type: int64
+      - name: first_name
+        data_type: string
+      - name: last_name
+        data_type: string
+      - name: grade_level
+        data_type: int64
+      - name: enrollment_type
+        data_type: string
+      - name: gender
+        data_type: string
+      - name: birthdate
+        data_type: date
+      - name: status_start_date
+        data_type: date
+      - name: detailed_status
+        data_type: string
