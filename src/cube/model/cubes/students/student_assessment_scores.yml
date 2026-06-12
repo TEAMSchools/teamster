@@ -1,0 +1,207 @@
+cubes:
+  - name: student_assessment_scores
+    public: false
+    sql_table: kipptaf_marts.fct_assessment_scores_enrollment_scoped
+
+    joins:
+      - name: student_assessment_administrations
+        sql: >
+          {student_assessment_administrations.assessment_administration_key} =
+          {CUBE}.assessment_administration_key
+        relationship: many_to_one
+
+      - name: student_section_enrollments
+        sql: >
+          {student_section_enrollments.student_section_enrollment_key} =
+          {CUBE}.student_section_enrollment_key
+        relationship: many_to_one
+
+    dimensions:
+      - name: assessment_score_key
+        description: Surrogate key. Primary key for this fact.
+        sql: assessment_score_key
+        type: string
+        primary_key: true
+
+      - name: date_taken
+        description: >-
+          Date the assessment was taken (completion date), as a standalone date
+          dimension not joined to a calendar cube — date_taken is corrupt for a
+          small share of rows, so calendar rollups belong on the administration
+          date (student_assessment_administrations -> dates). Populated for
+          state; nullable for internal rows lacking a recorded sitting.
+        sql: CAST(test_date_key AS TIMESTAMP)
+        type: time
+        public: true
+
+      - name: enrollment_resolution
+        description: >-
+          How the section enrollment was resolved: subject_section or homeroom.
+          Filter to subject_section for course/section-level rollups.
+        sql: enrollment_resolution
+        type: string
+        public: true
+
+      - name: proficiency_level
+        description: >-
+          Proficiency band label (performance band for internal, achievement
+          level for state).
+        sql: proficiency_level
+        type: string
+        public: true
+
+      - name: performance_band_label_number
+        description: >-
+          Numeric ordering of the performance band label within the band scale.
+          Null for state assessments.
+        sql: performance_band_label_number
+        type: number
+        public: true
+
+      - name: is_mastery
+        description: >-
+          TRUE if the student met the mastery/proficiency threshold for this
+          assessment.
+        sql: is_mastery
+        type: boolean
+        public: true
+
+      - name: scale_score
+        description:
+          Scale score achieved. Null for internal (percent-correct) rows.
+        sql: scale_score
+        type: number
+        public: true
+
+      - name: percent_correct
+        description: Percent correct. Null for state assessments.
+        sql: percent_correct
+        type: number
+        public: true
+
+      - name: response_type
+        description: >-
+          Response-type breakdown (e.g., overall, strand, standard). Null for
+          state assessments.
+        sql: response_type
+        type: string
+        public: true
+
+      - name: response_type_code
+        description: Short code identifying the response type. Null for state.
+        sql: response_type_code
+        type: string
+        public: true
+
+      - name: response_type_description
+        description: Human-readable response-type description. Null for state.
+        sql: response_type_description
+        type: string
+        public: true
+
+      - name: response_type_root_description
+        description: >-
+          Description of the root (top-level) response type. Null for state.
+        sql: response_type_root_description
+        type: string
+        public: true
+
+      - name: is_replacement
+        description: >-
+          TRUE if this score replaces an earlier attempt. Null for state.
+        sql: is_replacement
+        type: boolean
+        public: true
+
+    measures:
+      - name: count_scores
+        description: >-
+          Scored-response count. COUNT(*) over the unique PK
+          (assessment_score_key) — additive, so pre-aggregations roll it up to
+          any grain.
+        type: count
+        public: true
+
+      - name: count_students
+        description: >-
+          Distinct students (per student-year) with a score in the filtered
+          slice. Exact count_distinct — non-additive, so a rollup
+          pre-aggregation cannot re-aggregate it to a coarser grain; switch to
+          count_distinct_approx (HLL) if/when this is pre-aggregated and an
+          approximate distinct is acceptable.
+        sql: "{student_section_enrollments.student_enrollment_key}"
+        type: count_distinct
+        public: true
+
+      - name: _sum_proficient
+        description: >-
+          Additive proficient-score count (1 per mastered response). Building
+          block for pct_proficient.
+        sql: "IF({CUBE}.is_mastery, 1, 0)"
+        type: sum
+        public: false
+
+      - name: pct_proficient
+        description: >-
+          Proficiency/mastery rate — proficient scores / total scores. The
+          headline, source-agnostic metric (the only score measure comparable
+          across the incompatible scales of internal vs state assessments).
+          Built from additive primitives (_sum_proficient / count_scores) so
+          pre-aggregations roll it up to any grain.
+        sql: "1.0 * {_sum_proficient} / NULLIF({count_scores}, 0)"
+        type: number
+        format: percent
+        public: true
+
+      - name: _sum_percent_correct
+        description: >-
+          Additive sum of percent_correct (nulls ignored). Building block for
+          avg_percent_correct.
+        sql: percent_correct
+        type: sum
+        public: false
+
+      - name: _count_percent_correct
+        description: >-
+          Count of rows with a non-null percent_correct (internal scores).
+          Building block for avg_percent_correct.
+        type: count
+        public: false
+        filters:
+          - sql: "{CUBE}.percent_correct IS NOT NULL"
+
+      - name: avg_percent_correct
+        description: >-
+          Average percent correct. Internal-effective (null for state) — filter
+          by subject/standard for a meaningful value. Built from additive
+          primitives so pre-aggregations roll it up.
+        sql: "{_sum_percent_correct} / NULLIF({_count_percent_correct}, 0)"
+        type: number
+        public: true
+
+      - name: _sum_scale_score
+        description: >-
+          Additive sum of scale_score (nulls ignored). Building block for
+          avg_scale_score.
+        sql: scale_score
+        type: sum
+        public: false
+
+      - name: _count_scale_score
+        description: >-
+          Count of rows with a non-null scale_score (state scores). Building
+          block for avg_scale_score.
+        type: count
+        public: false
+        filters:
+          - sql: "{CUBE}.scale_score IS NOT NULL"
+
+      - name: avg_scale_score
+        description: >-
+          Average scale score. Only meaningful within a single
+          assessment/subject/grade/source — scales are not comparable across
+          sources. Built from additive primitives so pre-aggregations roll it
+          up.
+        sql: "{_sum_scale_score} / NULLIF({_count_scale_score}, 0)"
+        type: number
+        public: true

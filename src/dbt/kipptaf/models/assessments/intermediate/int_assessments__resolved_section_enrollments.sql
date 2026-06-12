@@ -1,7 +1,9 @@
 with
     -- internal scores: one row per (student, canonical assessment, source).
-    -- anchor = earliest sitting date across the canonical's member assessments,
-    -- falling back to the scheduled administration date. The academic year is
+    -- anchor = the scheduled administration date (administered_date). date_taken
+    -- is NOT used -- it is occasionally corrupt (epoch / year-2000 sentinels) and
+    -- the wrong grain; anchoring on it dropped scores whose bad date missed every
+    -- enrollment window (#4183). The academic year is
     -- not carried: the half-open enrollment window [cc_dateenrolled, cc_dateleft)
     -- pins the section to the year the assessment was actually sat. Adding a
     -- year-equality predicate is redundant for state scores and wrong for
@@ -16,15 +18,7 @@ with
             sc.subject_area,
             sc._dbt_source_project,
 
-            coalesce(
-                min(sc.date_taken) over (
-                    partition by
-                        sc.powerschool_student_number,
-                        sc.canonical_assessment_id,
-                        sc._dbt_source_project
-                ),
-                c.administered_date
-            ) as anchor_date,
+            c.administered_date as anchor_date,
         from {{ ref("int_assessments__scaffold") }} as sc
         inner join
             {{ ref("int_assessments__assessments_canonical") }} as c
