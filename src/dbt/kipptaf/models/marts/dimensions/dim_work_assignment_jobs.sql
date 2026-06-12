@@ -16,6 +16,8 @@ with
                 dbt_utils.generate_surrogate_key(
                     [
                         "wa.job_title",
+                        "wa.job_function_code__short_name",
+                        "wa.job_function_code__long_name",
                         "wa.job_code__code_value",
                     ]
                 )
