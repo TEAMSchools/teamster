@@ -221,6 +221,7 @@ with
             academic_year,
             `name` as aid_name,
             amount,
+            is_maher,
 
             row_number() over (
                 partition by student, academic_year
@@ -240,6 +241,7 @@ with
             {%- for i in range(1, max_awards + 1) %}
                 max(if(rn_award = {{ i }}, aid_name, null)) as award_{{ i }}_name,
                 max(if(rn_award = {{ i }}, amount, null)) as award_{{ i }}_amount,
+                max(if(rn_award = {{ i }}, is_maher, null)) as award_{{ i }}_is_maher,
             {%- endfor %}
         from aid_awards
         group by sf_contact_id, academic_year
@@ -554,7 +556,7 @@ select
     kar.total_aid_amount,
     kar.aid_award_count,
     {%- for i in range(1, max_awards + 1) %}
-        kar.award_{{ i }}_name, kar.award_{{ i }}_amount,
+        kar.award_{{ i }}_name, kar.award_{{ i }}_amount, kar.award_{{ i }}_is_maher,
     {%- endfor %}
 
     if(
