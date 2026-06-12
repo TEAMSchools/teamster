@@ -8,7 +8,9 @@ with
             wa.job_code__long_name,
             wa.job_code__short_name,
 
-            coalesce(wa.job_function_code__short_name, wa.job_function_code__long_name) as job_function,
+            coalesce(
+                wa.job_function_code__short_name, wa.job_function_code__long_name
+            ) as job_function,
 
             {{
                 dbt_utils.generate_surrogate_key(
