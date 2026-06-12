@@ -86,6 +86,10 @@ Pattern:
   prompt fires once per user. Allow `<UPPER>_OVERRIDE` env var to bypass.
 - Launcher (`<name>-mcp-launch.sh`) handles only the secret fetch via `op read`;
   non-secret config lives in `.mcp.json` `env:`.
+- Adding an MCP for a system Dagster already integrates? Reuse its 1Password
+  item rather than minting new credentials — `dagster-cloud.yaml`'s
+  `op-<system>` `secretKeyRef` confirms the item exists (item name ≈ secret
+  name, minus the `op-` prefix).
 - A launcher's `op read` references must match 1Password field **labels**.
   Source them from `.devcontainer/tpl/.env.tpl` (hook-blocked — ask the user to
   paste the relevant lines). Do NOT derive them from `dagster-cloud.yaml`
