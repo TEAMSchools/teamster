@@ -1,0 +1,84 @@
+cubes:
+  - name: assessments
+    public: false
+    sql_table: kipptaf_marts.dim_assessments
+
+    dimensions:
+      - name: assessment_key
+        description: >-
+          Surrogate key (type, module_code, source_assessment_id, test_type).
+          Primary key. Member-grained for Illuminate; canonical for
+          state/college/AP.
+        sql: assessment_key
+        type: string
+        primary_key: true
+
+      - name: title
+        description: Display name of the assessment.
+        sql: title
+        type: string
+        public: true
+
+      - name: academic_subject
+        description: >-
+          Subject tested (e.g., Mathematics, English Language Arts, Reading,
+          Science).
+        sql: academic_subject
+        type: string
+        public: true
+
+      - name: assessment_type
+        description: >-
+          Source-system category: illuminate (internal), state_nj, state_fl,
+          college, or ap.
+        sql: "{CUBE}.`type`"
+        type: string
+        public: true
+
+      - name: category
+        description: >-
+          Assessment category by format/content (e.g., CMA, CGI, NJSLA, FAST,
+          SAT).
+        sql: category
+        type: string
+        public: true
+
+      - name: module_code
+        description: >-
+          Module/test code identifying the assessment variant (e.g., QA1, ELA05,
+          sat_total_score).
+        sql: module_code
+        type: string
+        public: true
+
+      - name: module_type
+        description: >-
+          Module type for internal Illuminate assessments (e.g., QA, CR). Null
+          for state and college.
+        sql: module_type
+        type: string
+        public: true
+
+      - name: grade_level_tested
+        description: >-
+          Grade level the assessment targets. Null for college-entrance
+          assessments.
+        sql: grade_level_tested
+        type: number
+        public: true
+
+      - name: scope
+        description: >-
+          How scores link to students: enrollment (tied to a section enrollment)
+          or student.
+        sql: scope
+        type: string
+        public: true
+
+      - name: is_internal_assessment
+        description: >-
+          TRUE for KIPP-created internal assessments via Illuminate; FALSE for
+          state and college.
+        sql: is_internal_assessment
+        type: boolean
+        public: true
