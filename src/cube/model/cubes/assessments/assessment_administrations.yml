@@ -1,0 +1,54 @@
+cubes:
+  - name: assessment_administrations
+    public: false
+    sql_table: kipptaf_marts.dim_assessment_administrations
+
+    joins:
+      - name: administration_dates
+        sql: >
+          {administration_dates.date_day} = CAST({CUBE}.administered_date_key AS
+          TIMESTAMP)
+        relationship: many_to_one
+
+      - name: assessments
+        sql: "{assessments.assessment_key} = {CUBE}.assessment_key"
+        relationship: many_to_one
+
+    dimensions:
+      - name: assessment_administration_key
+        description: >-
+          Surrogate key for the administration occurrence. Primary key.
+        sql: assessment_administration_key
+        type: string
+        primary_key: true
+
+      # FK to assessments — not exposed; descriptors come from the assessments cube.
+      - name: assessment_key
+        description: FK to assessments (canonical-representative row).
+        sql: assessment_key
+        type: string
+
+      - name: administration_period
+        description: >-
+          Scheduling period distinguishing administrations within an academic
+          year. NJ state: testing season (Fall, Winter, Spring). FL state: FLDOE
+          window. College: College Board round. Null for Illuminate and AP.
+        sql: administration_period
+        type: string
+        public: true
+
+      - name: test_type
+        description: >-
+          Official vs Practice for college-entrance administrations. Null for
+          Illuminate, state, and AP.
+        sql: test_type
+        type: string
+        public: true
+
+      - name: source_assessment_id
+        description: >-
+          Illuminate assessment id carried to the administration grain (the
+          canonical id). Null for non-Illuminate branches.
+        sql: source_assessment_id
+        type: number
+        public: true
