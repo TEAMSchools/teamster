@@ -11,6 +11,7 @@ scripts: `bash scripts/<name>.sh`.
 | `dagster-mcp-launch.sh`                             | MCP launcher: exchange OP token for scoped Dagster Cloud API token, exec `dagster_plus_mcp`                                                                                                                                                                                      |
 | `dbt-mcp-launch.sh`                                 | MCP launcher: exchange OP token for dbt Cloud service token, exec `dbt-mcp`                                                                                                                                                                                                      |
 | `cube-rest-mcp-launch.sh`                           | MCP launcher (dev mode only): fetch `CUBE_API_SECRET`, exec `src/cube/mcp/server.py` in stdio. Default cube MCP path is the Cloud Run deploy — use this only when iterating on the server itself.                                                                                |
+| `tableau-mcp-launch.sh`                             | MCP launcher: fetch Tableau connection config (server/site/PAT) from 1Password item `Tableau Server PAT - Dagster` (Data Team vault), exec `@tableau/mcp-server`. Reuses the same PAT as the Dagster Tableau refresh assets.                                                     |
 | `audit_marts_yaml.py`                               | Audit mart YAMLs against BigQuery + Dagster (#3678)                                                                                                                                                                                                                              |
 | `avro-schema-update.py`                             | Rewrite Avro data in GCS with updated schema (flat records only — stringifies values and drops nulls; for nested schemas use `reencode_avro_partitions.py`)                                                                                                                      |
 | `backfill_google_directory_student_external_ids.py` | One-shot: backfill Workspace `externalIds[type='organization']` for existing student accounts (#3950)                                                                                                                                                                            |
@@ -85,6 +86,11 @@ Pattern:
   prompt fires once per user. Allow `<UPPER>_OVERRIDE` env var to bypass.
 - Launcher (`<name>-mcp-launch.sh`) handles only the secret fetch via `op read`;
   non-secret config lives in `.mcp.json` `env:`.
+- A launcher's `op read` references must match 1Password field **labels**.
+  Source them from `.devcontainer/tpl/.env.tpl` (hook-blocked — ask the user to
+  paste the relevant lines). Do NOT derive them from `dagster-cloud.yaml`
+  `secretKeyRef.key`: those are 1Password-operator-normalized internal names
+  (label `site id` → k8s key `site-id`) and won't resolve via `op read`.
 - **Containerizing a PEP 723 script**: install deps at Dockerfile build time via
   `uv export --script foo.py --no-hashes > /tmp/requirements.txt && uv pip install --system --no-cache -r /tmp/requirements.txt`,
   then `CMD ["python", "foo.py"]`. `CMD ["uv", "run", "foo.py"]` reinstalls on

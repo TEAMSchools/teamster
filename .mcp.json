@@ -48,6 +48,13 @@
     "context7": {
       "command": "npx",
       "args": ["-y", "@upstash/context7-mcp"]
+    },
+    "tableau": {
+      "command": "/workspaces/teamster/scripts/tableau-mcp-launch.sh",
+      "args": [],
+      "env": {
+        "TRANSPORT": "stdio"
+      }
     }
   }
 }
