@@ -1,0 +1,77 @@
+models:
+  - name: int_tableau__fresh_dashboard_enrollment_metrics
+    config:
+      materialized: table
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns:
+              - academic_year
+              - schoolid
+          config:
+            store_failures: true
+    columns:
+      - name: academic_year
+        data_type: int64
+      - name: org
+        data_type: string
+      - name: region
+        data_type: string
+      - name: schoolid
+        data_type: int64
+      - name: school
+        data_type: string
+      - name: school_level
+        data_type: string
+      - name: school_level_sort
+        data_type: int64
+      - name: all_student_enrollment_s
+        data_type: int64
+      - name: new_student_enrollment_s
+        data_type: int64
+      - name: re_enroll_enrollment_s
+        data_type: int64
+      - name: all_student_enrollment_sg
+        data_type: int64
+      - name: new_student_enrollment_sg
+        data_type: int64
+      - name: re_enroll_enrollment_sg
+        data_type: int64
+      - name: seat_target_s
+        data_type: numeric
+      - name: fdos_target_s
+        data_type: numeric
+      - name: new_student_target_s
+        data_type: numeric
+      - name: re_enroll_projection_s
+        data_type: numeric
+      - name: seat_target_distance_s
+        data_type: numeric
+      - name: fdos_target_distance_s
+        data_type: numeric
+      - name: budget_target_distance_s
+        data_type: numeric
+      - name: new_student_target_distance_s
+        data_type: numeric
+      - name: re_enroll_target_distance_s
+        data_type: numeric
+      - name: seat_target_distance_sg
+        data_type: numeric
+      - name: fdos_target_distance_sg
+        data_type: numeric
+      - name: budget_target_distance_sg
+        data_type: numeric
+      - name: new_student_target_distance_sg
+        data_type: numeric
+      - name: re_enroll_target_distance_sg
+        data_type: numeric
+      - name: seat_target_distance_pct
+        data_type: float64
+      - name: fdos_target_distance_pct
+        data_type: float64
+      - name: budget_target_distance_pct
+        data_type: float64
+      - name: new_student_target_distance_pct
+        data_type: float64
+      - name: re_enroll_target_distance_pct
+        data_type: float64
