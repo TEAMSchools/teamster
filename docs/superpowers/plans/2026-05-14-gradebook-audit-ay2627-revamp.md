@@ -686,7 +686,7 @@ academic-dishonesty, and scored checks across every downstream consumer
   without further changes. Update the `is_expected` column description in the
   properties YAML to document the 7-day rule.
 
-- [ ] **Step 4d.3: Build and verify**
+- [x] **Step 4d.3: Build and verify**
 
   ```bash
   uv run dbt build \
@@ -754,7 +754,7 @@ academic-dishonesty, and scored checks across every downstream consumer
     data_type: boolean
   ```
 
-- [ ] **Step 5.4: Build and verify**
+- [x] **Step 5.4: Build and verify**
 
   ```bash
   uv run dbt build \
@@ -1429,7 +1429,7 @@ and the UNPIVOT list in `int_tableau__gradebook_audit_flags.sql`.
     --state src/dbt/kipptaf/target/prod
   ```
 
-- [ ] **Step 6b.3: Disable the deprecated staging model**
+- [x] **Step 6b.3: Disable the deprecated staging model**
 
   Nothing references `stg_google_sheets__gradebook_expectations_assignments`
   after steps 6.1–6.2. Disable it rather than deleting, in case operational
