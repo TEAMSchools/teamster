@@ -147,7 +147,22 @@ them, and `dim_student_enrollments` stays alumni-inclusive.
 **`enroll_status` is student-level, not per-stint.** Sourced from
 `stg_powerschool__students` and copied identically to every row in
 `int_powerschool__student_enrollment_union`. Don't expect different stints for
-the same student to carry different values.
+the same student to carry different values. **For point-in-time or historical
+enrollment counts, filter by enrollment dates (`entrydate`/`exitdate` covering
+the target date), NOT `enroll_status`** — status is current-only, so a status
+filter drops a mid-year withdrawal even from dates they were still enrolled
+(~887 students network-wide for AY2025) and never reflects
+status-on-a-past-date. Topline `Total Enrollment` counts by dates, not status;
+match that for reconciliation.
+
+**School calendars diverge at year-end; never anchor a point-in-time count on a
+network-wide `max(date)`.** Mid-year months share a last in-session day across
+schools, but June does not (Miami ends ~Jun 4, Newark ~Jun 9, others to ~Jun
+29). Any "as of the last day of the period" computation (year/month/week-end)
+must take the per-school last in-session day
+(`max(date_value) ... group by school`), capped at `current_date` for the
+in-progress period — a global max silently drops early-ending schools (e.g. all
+of Miami).
 
 **`dim_terms.type` is KIPP-managed, not PowerSchool-derived.** Values from
 `stg_google_sheets__reporting__terms` — RT (reporting term, quarter grain), ATT

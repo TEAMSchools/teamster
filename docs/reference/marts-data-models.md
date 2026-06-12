@@ -354,6 +354,22 @@ erDiagram
 | `streak_start_date_key`  | `dim_dates`               |
 | `student_enrollment_key` | `dim_student_enrollments` |
 
+## fct_student_enrollment_daily
+
+```mermaid
+erDiagram
+  fct_student_enrollment_daily }o--|| dim_student_enrollments : "student_enrollment_key"
+  dim_student_enrollments }o--|| dim_students : "student_key"
+```
+
+### Foreign keys
+
+| FK column                | References                |
+| ------------------------ | ------------------------- |
+| `date_key`               | `dim_dates`               |
+| `location_key`           | `dim_locations`           |
+| `student_enrollment_key` | `dim_student_enrollments` |
+
 ## fct_support_tickets
 
 ```mermaid

@@ -1,36 +1,43 @@
 views:
   - name: student_enrollments_summary
     description: >-
-      Aggregated student enrollment for headcount and demographic breakdowns. No
-      direct student identifiers — demographic dimensions (race,
-      gender_identity, is_gifted) and status dimensions (ELL, IEP, meal) are
-      aggregate breakdowns only.
+      Point-in-time student enrollment headcounts and demographic breakdowns.
+      One row per filter slice — never per student-day. No direct student
+      identifiers; demographic dimensions are aggregate breakdowns only.
 
-      Always use count_students (count_distinct on student_enrollment_key) for
-      enrollment headcounts. Filter to a specific academic_year for per-year
-      counts — omitting it sums across all years and produces enrollment-years,
-      not student count.
+      count_students is a point-in-time distinct-student headcount
+      (count_distinct student_key), alumni-free because the year/date filter
+      selects on the calendar day's school year, not student status. With a year
+      filter it counts students enrolled as of each school's last occurred
+      in-session day (period-end-as-of-now); group by month or week to trend the
+      headcount over the year; pin a single date (filter dates_date_day to e.g.
+      2025-10-01) for that exact day's count. It is governed by the snapshot
+      guard so it is always a point-in-time snapshot, never an unanchored
+      day-sum. Quarter granularity is unsupported — use month.
+
+      Status and enrollment breakdowns (ELL / IEP / meal eligibility,
+      graduation_year, is_retained_year) come from the enrollment stint and are
+      stint-grain — the student's status within the stint, not point-in-time on
+      the queried date. Use them as demographic breakdowns of the headcount, not
+      as a status-on-a-specific-day fact.
 
     cubes:
       - join_path: student_enrollments
         includes:
           - count_students
-          - academic_year
-          - grade_level
-          - graduation_year
-          - is_retained_year
+          - is_current_record
+          - is_month_end_record
+          - is_week_end_record
+          - is_latest_record
 
-      - join_path: student_enrollments.student_enrollment_status
-        prefix: false
+      - join_path: student_enrollments.dates
+        prefix: true
         includes:
-          - is_ell
-          - is_iep
-          - iep_classification
-          - special_education_code
-          - special_education_name
-          - special_education_placement
-          - is_meal_eligible
-          - meal_eligibility
+          - date_day
+          - month_number
+          - month_name
+          - quarter_number
+          - academic_year
 
       - join_path: student_enrollments.locations
         prefix: true
@@ -47,32 +54,41 @@ views:
           - region_name
           - state
 
-      - join_path: student_enrollments.students
+      - join_path: student_enrollments.student_enrollment_stints.students
         prefix: false
         includes:
           - gender_identity
           - race
           - is_gifted
-          - enrollment_status
+
+      - join_path: student_enrollments.student_enrollment_stints
+        prefix: false
+        includes:
+          - grade_level
+          - graduation_year
+          - is_retained_year
+
+      - join_path: student_enrollments.student_enrollment_stints.student_enrollment_status
+        prefix: false
+        includes:
+          - is_ell
+          - is_iep
+          - iep_classification
+          - special_education_code
+          - special_education_name
+          - special_education_placement
+          - is_meal_eligible
+          - meal_eligibility
 
     meta:
       folders:
-        - name: Enrollment
+        - name: Date
           members:
-            - academic_year
-            - grade_level
-            - graduation_year
-            - is_retained_year
-        - name: Status
-          members:
-            - is_ell
-            - is_iep
-            - iep_classification
-            - special_education_code
-            - special_education_name
-            - special_education_placement
-            - is_meal_eligible
-            - meal_eligibility
+            - dates_date_day
+            - dates_month_number
+            - dates_month_name
+            - dates_quarter_number
+            - dates_academic_year
         - name: Location
           members:
             - locations_location_name
@@ -87,10 +103,32 @@ views:
             - gender_identity
             - race
             - is_gifted
-            - enrollment_status
+        - name: Enrollment
+          members:
+            - grade_level
+            - graduation_year
+            - is_retained_year
+        - name: Status
+          members:
+            - is_ell
+            - is_iep
+            - iep_classification
+            - special_education_code
+            - special_education_name
+            - special_education_placement
+            - is_meal_eligible
+            - meal_eligibility
+        - name: Filter
+          members:
+            - is_current_record
+            - is_month_end_record
+            - is_week_end_record
+            - is_latest_record
 
     access_policy:
-      # No direct student identifiers — demographic and status breakdowns only.
+      # No PII tier — view contains no direct student identifiers.
+      # Demographic dimensions (race, gender_identity, is_gifted) are
+      # aggregate breakdowns only.
       - group: cube-access-student-data
         member_level:
           includes: "*"

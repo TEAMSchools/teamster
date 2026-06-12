@@ -35,6 +35,15 @@ const SNAPSHOT_ANCHOR_DIMENSIONS = {
   month: "is_month_end_record",
   week: "is_week_end_record",
 };
+
+// Per-cube override of the no-granularity default anchor. Enrollment's default
+// is the per-school period-end-as-of-now flag (is_current_record), not the
+// per-student-last-day flag (is_latest_record = "served"). Falls back to
+// SNAPSHOT_ANCHOR_DIMENSIONS for any cube not listed here, so attendance's
+// resolved anchor map is byte-for-byte unchanged.
+const SNAPSHOT_ANCHOR_OVERRIDES = {
+  student_enrollments: { default: "is_current_record" },
+};
 const SNAPSHOT_SELF_ANCHORED_SUFFIXES = [
   "_year_end",
   "_month_end",
@@ -43,22 +52,28 @@ const SNAPSHOT_SELF_ANCHORED_SUFFIXES = [
 
 // Add a cube name here when it exposes is_latest_record / is_month_end_record
 // / is_week_end_record and its measures need the anchor guard. Also add the
-// cube's snapshot measure stems to SNAPSHOT_MEASURE_STEMS below — both arrays
-// must stay in sync or the guard won't match the new cube's measures.
-const SNAPSHOT_CUBES = ["student_attendance"];
+// cube's snapshot measure stems under the same key in SNAPSHOT_MEASURE_STEMS
+// below — a cube in this list with no stems entry matches nothing (guard no-op).
+const SNAPSHOT_CUBES = ["student_attendance", "student_enrollments"];
 
-// Measure-name stems that mark a snapshot (cumulative-daily-flag) measure
-// family — chronic absence, ADA tiers, and truancy. Only these need the
-// period-end anchor guard. Additive measures on the same cube
-// (avg_daily_attendance, count_students, pct_tardy, pct_ontime,
-// count_absent_days) are point-in-time safe and must be left untouched, so the
-// guard must NOT match every measure that starts with a snapshot cube name.
-const SNAPSHOT_MEASURE_STEMS = [
-  "chronically_absent",
-  "tier_1_2",
-  "tier_3",
-  "truant",
-];
+// Per-cube measure-name stems that mark a snapshot measure needing the
+// period-end anchor guard. Keyed per cube (like SNAPSHOT_ANCHOR_OVERRIDES) so a
+// stem matches ONLY its own cube — a flat shared list substring-matches across
+// cubes (e.g. "count_students" would wrongly catch student_attendance's
+// count_students too). Which measures need the guard, by cube:
+//   student_attendance: chronic absence / ADA tiers / truancy are cumulative
+//     daily flags (re-stamped each row) — count_distinct over a range without an
+//     anchor overcounts. Its ADDITIVE measures (avg_daily_attendance,
+//     count_students, pct_tardy, pct_ontime, count_absent_days) are NOT listed —
+//     they are point-in-time safe and must stay unanchored.
+//   student_enrollments: count_students is count_distinct(student_key); a student
+//     enrolled across N in-session days appears in N rows, so an unanchored count
+//     over a range overcounts — it needs the guard (a stint-keyed count would
+//     not, which is why attendance's count_students stays off this list).
+const SNAPSHOT_MEASURE_STEMS = {
+  student_attendance: ["chronically_absent", "tier_1_2", "tier_3", "truant"],
+  student_enrollments: ["count_students"],
+};
 
 module.exports = {
   driverFactory: () => ({
@@ -201,10 +216,10 @@ module.exports = {
     // but require matching granularity — _month_end without grouping by month
     // returns "CA at any month-end during the range," which is meaningless.
     for (const cubePrefix of SNAPSHOT_CUBES) {
+      const stems = SNAPSHOT_MEASURE_STEMS[cubePrefix] ?? [];
       const measures = (query.measures ?? []).filter(
         (m) =>
-          m.startsWith(cubePrefix) &&
-          SNAPSHOT_MEASURE_STEMS.some((stem) => m.includes(stem)),
+          m.startsWith(cubePrefix) && stems.some((stem) => m.includes(stem)),
       );
       if (!measures.length) continue;
 
@@ -248,17 +263,17 @@ module.exports = {
 
       if (granularity === "day") continue;
 
-      const anchorDimension =
-        SNAPSHOT_ANCHOR_DIMENSIONS[granularity] ??
-        SNAPSHOT_ANCHOR_DIMENSIONS.default;
+      const anchorMap = {
+        ...SNAPSHOT_ANCHOR_DIMENSIONS,
+        ...(SNAPSHOT_ANCHOR_OVERRIDES[cubePrefix] ?? {}),
+      };
+      const anchorDimension = anchorMap[granularity] ?? anchorMap.default;
       const anchorMember = `${cubePrefix}.${anchorDimension}`;
 
       const alreadyAnchored =
         filters.some(
           (f) =>
-            Object.values(SNAPSHOT_ANCHOR_DIMENSIONS).some((d) =>
-              f.member?.endsWith(d),
-            ) &&
+            Object.values(anchorMap).some((d) => f.member?.endsWith(d)) &&
             f.operator === "equals" &&
             [true, "true", "1"].includes(f.values?.[0]),
         ) ||

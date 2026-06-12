@@ -1,0 +1,112 @@
+models:
+  - name: fct_student_enrollment_daily
+    description: >-
+      Student daily enrollment fact table. One row per enrollment stint x
+      in-session calendar date — a student enrolled and attending school on a
+      given day contributes one row. Location, enrollment stint, and calendar
+      date are reached via their dimensions; student identity and grade level
+      come through dim_student_enrollments, and academic year through dim_dates
+      (no dimension attributes are denormalized onto the fact).
+
+      This is a complete historical record: alumni and withdrawn students retain
+      their real-dated enrolled rows. Point-in-time scoping (a single date, or a
+      period-end anchor) is a query concern handled by a date filter or one of
+      the is_*_record anchor flags — never by enrollment status, which is
+      student-level and current-only. A small number of in-session days that
+      fall outside every year-record term span are dropped, so coverage is
+      effectively complete but not exhaustive.
+
+    config:
+      materialized: table
+
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns:
+              - student_enrollment_key
+              - date_key
+
+    columns:
+      - name: student_enrollment_daily_key
+        data_type: string
+        description: >-
+          Surrogate key derived from student_number, _dbt_source_project, and
+          date_key. Primary key for this fact — one per student per in-session
+          day.
+        constraints:
+          - type: primary_key
+            warn_unsupported: false
+            warn_unenforced: false
+        data_tests:
+          - unique
+          - not_null
+
+      - name: student_enrollment_key
+        data_type: string
+        description: >-
+          FK to dim_student_enrollments. Surrogate key derived from
+          student_number, _dbt_source_project, academic_year, and entrydate —
+          identifies the enrollment stint this day belongs to.
+        data_tests:
+          - not_null
+
+          - relationships:
+              arguments:
+                to: ref('dim_student_enrollments')
+                field: student_enrollment_key
+
+      - name: date_key
+        data_type: date
+        description: >-
+          In-session calendar date of the enrollment record. FK to dim_dates.
+        data_tests:
+          - not_null
+
+          - relationships:
+              arguments:
+                to: ref('dim_dates')
+                field: date_key
+
+      - name: location_key
+        data_type: string
+        description: >-
+          FK to dim_locations — the school the student attended on this day.
+          Null for placeholder schools with no location dimension row.
+        data_tests:
+          - relationships:
+              arguments:
+                to: ref('dim_locations')
+                field: location_key
+
+      - name: is_current_record
+        data_type: boolean
+        description: >-
+          TRUE on the school's last occurred in-session day of the academic
+          year, FALSE otherwise. Computed per school and academic year, capped
+          at today so the in-progress year anchors on the most recent in-session
+          day. Drives the default point-in-time enrollment count. Distinct from
+          is_latest_record.
+
+      - name: is_month_end_record
+        data_type: boolean
+        description: >-
+          TRUE on the school's last occurred in-session day of each calendar
+          month, FALSE otherwise. Computed per school and month, capped at
+          today. Use with a month-granularity date dimension for
+          month-over-month enrollment trends.
+
+      - name: is_week_end_record
+        data_type: boolean
+        description: >-
+          TRUE on the school's last occurred in-session day of each calendar
+          week (Monday–Sunday), FALSE otherwise. Computed per school and week,
+          capped at today. Correctly handles shortened weeks (last in-session
+          day before a holiday).
+
+      - name: is_latest_record
+        data_type: boolean
+        description: >-
+          TRUE on the last enrolled day of each enrollment stint (one row per
+          student_enrollment_key), FALSE otherwise. Marks each student's final
+          enrolled day — use it to pick that day without a date filter. NOT a
+          period-end anchor; distinct from is_current_record.
