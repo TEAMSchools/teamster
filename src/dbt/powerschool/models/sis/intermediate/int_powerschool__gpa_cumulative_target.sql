@@ -1,0 +1,86 @@
+with
+    historical as (
+        select
+            sg.studentid,
+            sg.schoolid,
+
+            sum(
+                if(sg.excludefromgpa = 0, sg.potentialcrhrs, null)
+            ) as potentialcrhrs_hist,
+            sum(
+                if(sg.excludefromgpa = 0, sg.potentialcrhrs * su.grade_points, null)
+            ) as unweighted_points_hist,
+        from {{ ref("stg_powerschool__storedgrades") }} as sg
+        left join
+            {{ ref("int_powerschool__gradescaleitem_lookup") }} as su
+            on sg.percent between su.min_cutoffpercentage and su.max_cutoffpercentage
+            and sg.gradescale_name_unweighted = su.gradescale_name
+        where sg.storecode = 'Y1'
+        group by sg.studentid, sg.schoolid
+    ),
+
+    enrolled as (
+        select
+            fg.studentid,
+            fg.schoolid,
+
+            sum(
+                if(fg.y1_letter_grade is null, null, fg.potential_credit_hours)
+            ) as enrolled_potentialcrhrs,
+        from {{ ref("base_powerschool__final_grades") }} as fg
+        left join
+            {{ ref("stg_powerschool__storedgrades") }} as sg
+            on fg.studentid = sg.studentid
+            and fg.course_number = sg.course_number
+            and sg.academic_year = {{ var("current_academic_year") }}
+            and sg.storecode = 'Y1'
+        where
+            fg.exclude_from_gpa = 0
+            and sg.studentid is null
+            and current_date('{{ var("local_timezone") }}')
+            between fg.termbin_start_date and fg.termbin_end_date
+        group by fg.studentid, fg.schoolid
+    )
+
+/*
+    cumulative_y1_gpa_projected_unweighted
+        = (hist_uw_pts + E_crhrs * current_y1_uw_gpa) / (hist_crhrs + E_crhrs)
+
+    solving for current_y1_uw_gpa at a target T:
+        needed_y1_uw_gpa = (T * (hist_crhrs + E_crhrs) - hist_uw_pts) / E_crhrs
+
+    hist_crhrs  = sum(potentialcrhrs) from stored Y1 records (excludefromgpa = 0)
+    hist_uw_pts = sum(potentialcrhrs * unweighted_grade_points) from stored Y1
+    E_crhrs     = sum(potential_credit_hours) from currently enrolled courses
+*/
+select
+    e.studentid,
+    e.schoolid,
+    e.enrolled_potentialcrhrs,
+
+    round(
+        safe_divide(
+            2.5 * (coalesce(h.potentialcrhrs_hist, 0) + e.enrolled_potentialcrhrs)
+            - coalesce(h.unweighted_points_hist, 0),
+            e.enrolled_potentialcrhrs
+        ),
+        2
+    ) as needed_gpa_unweighted_for_2_5,
+    round(
+        safe_divide(
+            3.0 * (coalesce(h.potentialcrhrs_hist, 0) + e.enrolled_potentialcrhrs)
+            - coalesce(h.unweighted_points_hist, 0),
+            e.enrolled_potentialcrhrs
+        ),
+        2
+    ) as needed_gpa_unweighted_for_3_0,
+    round(
+        safe_divide(
+            3.5 * (coalesce(h.potentialcrhrs_hist, 0) + e.enrolled_potentialcrhrs)
+            - coalesce(h.unweighted_points_hist, 0),
+            e.enrolled_potentialcrhrs
+        ),
+        2
+    ) as needed_gpa_unweighted_for_3_5,
+from enrolled as e
+left join historical as h on e.studentid = h.studentid and e.schoolid = h.schoolid
