@@ -83,6 +83,15 @@ cubes:
         type: boolean
         public: true
 
+      - name: year_in_network
+        description: >-
+          Count of years the student has been enrolled in the network. Populated
+          on the student's primary enrollment stint per academic year; null on
+          additional same-year stints.
+        sql: year_in_network
+        type: number
+        public: true
+
     measures:
       - name: count_students
         sql: student_enrollment_key
