@@ -1,0 +1,164 @@
+cubes:
+  - name: student_assessment_scores
+    public: false
+    sql_table: kipptaf_marts.fct_assessment_scores_enrollment_scoped
+
+    joins:
+      - name: dates
+        sql: "{dates.date_day} = CAST({CUBE}.test_date_key AS TIMESTAMP)"
+        relationship: many_to_one
+
+      - name: assessment_administrations
+        sql: >
+          {assessment_administrations.assessment_administration_key} =
+          {CUBE}.assessment_administration_key
+        relationship: many_to_one
+
+      - name: student_section_enrollments
+        sql: >
+          {student_section_enrollments.student_section_enrollment_key} =
+          {CUBE}.student_section_enrollment_key
+        relationship: many_to_one
+
+    dimensions:
+      - name: assessment_score_key
+        description: Surrogate key. Primary key for this fact.
+        sql: assessment_score_key
+        type: string
+        primary_key: true
+
+      - name: test_date
+        description: >-
+          Date the assessment was taken (completion date). Populated for state
+          assessments; nullable for internal rows lacking a recorded sitting.
+        sql: CAST(test_date_key AS TIMESTAMP)
+        type: time
+        public: true
+
+      - name: enrollment_resolution
+        description: >-
+          How the section enrollment was resolved: subject_section or homeroom.
+          Filter to subject_section for course/section-level rollups.
+        sql: enrollment_resolution
+        type: string
+        public: true
+
+      - name: proficiency_level
+        description: >-
+          Proficiency band label (performance band for internal, achievement
+          level for state).
+        sql: proficiency_level
+        type: string
+        public: true
+
+      - name: performance_band_label_number
+        description: >-
+          Numeric ordering of the performance band label within the band scale.
+          Null for state assessments.
+        sql: performance_band_label_number
+        type: number
+        public: true
+
+      - name: is_mastery
+        description: >-
+          TRUE if the student met the mastery/proficiency threshold for this
+          assessment.
+        sql: is_mastery
+        type: boolean
+        public: true
+
+      - name: scale_score
+        description:
+          Scale score achieved. Null for internal (percent-correct) rows.
+        sql: scale_score
+        type: number
+        public: true
+
+      - name: percent_correct
+        description: Percent correct. Null for state assessments.
+        sql: percent_correct
+        type: number
+        public: true
+
+      - name: response_type
+        description: >-
+          Response-type breakdown (e.g., overall, strand, standard). Null for
+          state assessments.
+        sql: response_type
+        type: string
+        public: true
+
+      - name: response_type_code
+        description: Short code identifying the response type. Null for state.
+        sql: response_type_code
+        type: string
+        public: true
+
+      - name: response_type_description
+        description: Human-readable response-type description. Null for state.
+        sql: response_type_description
+        type: string
+        public: true
+
+      - name: response_type_root_description
+        description: >-
+          Description of the root (top-level) response type. Null for state.
+        sql: response_type_root_description
+        type: string
+        public: true
+
+      - name: is_replacement
+        description: >-
+          TRUE if this score replaces an earlier attempt. Null for state.
+        sql: is_replacement
+        type: boolean
+        public: true
+
+    measures:
+      - name: count_scores
+        description: Scored-response count (distinct assessment_score_key).
+        sql: assessment_score_key
+        type: count_distinct
+        public: true
+
+      - name: count_students
+        description: >-
+          Distinct students (per student-year) with a score in the filtered
+          slice.
+        sql: "{student_section_enrollments.student_enrollment_key}"
+        type: count_distinct
+        public: true
+
+      - name: _count_proficient
+        sql: assessment_score_key
+        type: count_distinct
+        public: false
+        filters:
+          - sql: "{CUBE}.is_mastery = true"
+
+      - name: pct_proficient
+        description: >-
+          Proficiency/mastery rate — proficient scores / total scores. The
+          headline, source-agnostic metric (the only score measure comparable
+          across the incompatible scales of internal vs state assessments).
+        sql: "1.0 * {_count_proficient} / NULLIF({count_scores}, 0)"
+        type: number
+        format: percent
+        public: true
+
+      - name: avg_percent_correct
+        description: >-
+          Average percent correct. Internal-effective (null for state) — filter
+          by subject/standard for a meaningful value.
+        sql: percent_correct
+        type: avg
+        public: true
+
+      - name: avg_scale_score
+        description: >-
+          Average scale score. Only meaningful within a single
+          assessment/subject/grade/source — scales are not comparable across
+          sources.
+        sql: scale_score
+        type: avg
+        public: true
