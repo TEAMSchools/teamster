@@ -92,6 +92,10 @@ with
             null as race_ethnicity_reporting,
             null as reports_to_employee_number,
 
+            coalesce(
+                w.job_function_code__short_name, w.job_function_code__long_name
+            ) as job_function,
+
             if(
                 w.effective_date_start < '2021-01-01',
                 '2021-01-01',
@@ -224,6 +228,7 @@ with
             employee_number,
             race_ethnicity_reporting,
             manager_employee_number as reports_to_employee_number,
+            null as job_function,
             effective_start_date as effective_date_start,
             effective_start_timestamp as effective_date_start_timestamp,
         from {{ source("dayforce", "int_dayforce__employee_history") }}
