@@ -78,6 +78,8 @@ views:
       - join_path: student_attendance.dates
         prefix: true
         includes:
+          - academic_year
+          - academic_year_label
           - date_day
           - month_number
           - month_name
@@ -139,7 +141,6 @@ views:
       - join_path: student_attendance.terms
         prefix: true
         includes:
-          - academic_year
           - semester
           - term_name
           - term_code
@@ -171,6 +172,8 @@ views:
             - is_chronically_absent
         - name: Date
           members:
+            - dates_academic_year
+            - dates_academic_year_label
             - attendance_date
             - dates_date_day
             - dates_month_number
@@ -181,7 +184,6 @@ views:
             - dates_is_weekday
         - name: Term
           members:
-            - terms_academic_year
             - terms_semester
             - terms_term_name
             - terms_term_code
