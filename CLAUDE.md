@@ -431,6 +431,15 @@ opaque token.
 - `mcp__dagster__launch_multiple_runs` requires non-empty `asset_keys` per run —
   jobName alone won't queue. Resolve null-`assetSelection` failures to asset
   keys first.
+- `mcp__dagster__launch_run` for a **partitioned** asset takes the partition via
+  `tags={"dagster/partition": "<key>"}` — there is no partition arg. The key
+  must match the asset's `partitions_def` fmt (e.g. `DailyPartitionsDefinition`
+  `%m/%d/%Y` → `05/11/2026`). Preview with `confirm=False` first.
+- A run-level **SUCCESS can still carry a FAILED asset check** (e.g.
+  `zero_api_errors`) that fired an alert — `list_runs(statuses=["FAILURE"])` and
+  day2 step_01 both miss it; check `get_asset_check_executions` (day2 step_16).
+  The check payload often lacks the offending entity id — recover it from the
+  run's `LogMessageEvent` compute logs (`context.log.info` lines).
 - `mcp__dagster__search_assets` `cursor` is the JSON-string form returned by the
   prior call (`"[\"a\",\"b\"]"`), not a bare list.
 
@@ -524,6 +533,13 @@ wide tables, paginate with `WHERE ordinal_position > N`.
 `<dataset>.__TABLES__` exposes `last_modified_time` and `type` (1=table, 2=view)
 — use it to check whether a model rebuilt or is a live view.
 `INFORMATION_SCHEMA.TABLES` has neither.
+
+Verifying a just-re-materialized partition: the external-table query can read
+the **stale pre-overwrite file for minutes even with `_FILE_NAME`**
+(file-listing lag after `create or replace`) — a re-pull that changed the data
+still shows the OLD rows/count. Cross-check the run's materialization
+`record_count` + `data_version` via `mcp__dagster__get_asset_materializations`
+(ground truth) before concluding a re-pull did or didn't change anything.
 
 Hyphenated identifiers in INFORMATION_SCHEMA paths need backticks — `region-us`
 as a bare token fails with "Syntax error: Expected end of input but got '-'".
