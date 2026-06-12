@@ -34,7 +34,6 @@ views:
           - is_replacement
 
       - join_path: student_assessment_scores.student_assessment_administrations.student_assessments
-        prefix: true
         includes:
           - title
           - academic_subject
@@ -47,7 +46,6 @@ views:
           - is_internal_assessment
 
       - join_path: student_assessment_scores.student_assessment_administrations
-        prefix: true
         includes:
           - administration_period
           - test_type
@@ -55,7 +53,6 @@ views:
 
       - join_path: >-
           student_assessment_scores.student_assessment_administrations.dates
-        prefix: true
         includes:
           - date_day
           - academic_year
@@ -63,33 +60,28 @@ views:
           - month_name
 
       - join_path: student_assessment_scores.student_section_enrollments.course_sections.courses
-        prefix: true
         includes:
-          - academic_subject
+          - discipline
           - course_title
           - course_code
           - credit_type
           - is_foundations
 
       - join_path: student_assessment_scores.student_section_enrollments.course_sections
-        prefix: true
         includes:
           - identifier
           - period
 
       - join_path: student_assessment_scores.student_section_enrollments
-        prefix: false
         includes:
           - student_section_enrollment_key
           - student_enrollment_key
-          - academic_year
           - entry_date
           - exit_date
           - is_dropped_section
           - is_dropped_course
 
       - join_path: student_assessment_scores.student_section_enrollments.student_enrollments
-        prefix: false
         includes:
           - grade_level
           - graduation_year
@@ -98,7 +90,6 @@ views:
 
       - join_path: >-
           student_assessment_scores.student_section_enrollments.student_enrollments.student_enrollment_status
-        prefix: false
         includes:
           - is_ell
           - is_iep
@@ -111,7 +102,6 @@ views:
 
       - join_path: >-
           student_assessment_scores.student_section_enrollments.student_enrollments.students
-        prefix: false
         includes:
           - student_key
           - full_name
@@ -127,7 +117,6 @@ views:
 
       - join_path: >-
           student_assessment_scores.student_section_enrollments.student_enrollments.locations
-        prefix: true
         includes:
           - location_name
           - abbreviation
@@ -137,13 +126,11 @@ views:
 
       - join_path: >-
           student_assessment_scores.student_section_enrollments.student_enrollments.locations.regions
-        prefix: true
         includes:
           - region_name
           - state
 
       - join_path: student_assessment_scores.student_section_enrollments.terms
-        prefix: true
         includes:
           - semester
           - term_name
@@ -154,18 +141,18 @@ views:
       folders:
         - name: Assessment
           members:
-            - student_assessments_title
-            - student_assessments_academic_subject
-            - student_assessments_assessment_type
-            - student_assessments_category
-            - student_assessments_module_code
-            - student_assessments_module_type
-            - student_assessments_grade_level_tested
-            - student_assessments_scope
-            - student_assessments_is_internal_assessment
-            - student_assessment_administrations_administration_period
-            - student_assessment_administrations_test_type
-            - student_assessment_administrations_source_assessment_id
+            - title
+            - academic_subject
+            - assessment_type
+            - category
+            - module_code
+            - module_type
+            - grade_level_tested
+            - scope
+            - is_internal_assessment
+            - administration_period
+            - test_type
+            - source_assessment_id
             - date_taken
             - enrollment_resolution
             - proficiency_level
@@ -180,34 +167,34 @@ views:
             - is_replacement
         - name: Date
           members:
-            - dates_date_day
-            - dates_academic_year
-            - dates_month_number
-            - dates_month_name
+            - date_day
+            - academic_year
+            - month_number
+            - month_name
         - name: Course
           members:
-            - courses_academic_subject
-            - courses_course_title
-            - courses_course_code
-            - courses_credit_type
-            - courses_is_foundations
-            - course_sections_identifier
-            - course_sections_period
+            - discipline
+            - course_title
+            - course_code
+            - credit_type
+            - is_foundations
+            - identifier
+            - period
         - name: Term
           members:
-            - terms_semester
-            - terms_term_name
-            - terms_term_code
-            - terms_term_type
+            - semester
+            - term_name
+            - term_code
+            - term_type
         - name: Location
           members:
-            - locations_location_name
-            - locations_abbreviation
-            - locations_grade_band
-            - locations_campus
-            - locations_city
-            - regions_region_name
-            - regions_state
+            - location_name
+            - abbreviation
+            - grade_band
+            - campus
+            - city
+            - region_name
+            - state
         - name: Student
           members:
             - student_key
@@ -235,7 +222,6 @@ views:
           members:
             - student_section_enrollment_key
             - student_enrollment_key
-            - academic_year
             - entry_date
             - exit_date
             - grade_level

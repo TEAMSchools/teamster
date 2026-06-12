@@ -23,9 +23,12 @@ cubes:
         type: string
         public: true
 
-      - name: academic_subject
+      - name: discipline
         description: >-
-          Discipline from the course-subject crosswalk (e.g., Mathematics, ELA).
+          Course discipline from the course-subject crosswalk — broad grouping
+          (ELA, Math, Science, Social Studies, CCR, World Language). Distinct
+          from the assessment's academic_subject, which is the granular subject
+          tested. (dim_courses.academic_subject is sourced from csc.discipline.)
         sql: academic_subject
         type: string
         public: true
