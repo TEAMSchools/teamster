@@ -1,0 +1,45 @@
+cubes:
+  - name: courses
+    public: false
+    sql_table: kipptaf_marts.dim_courses
+
+    dimensions:
+      - name: course_key
+        description: >-
+          Surrogate key (course_number, _dbt_source_project). Primary key.
+        sql: course_key
+        type: string
+        primary_key: true
+
+      - name: course_code
+        description: PowerSchool course number.
+        sql: course_code
+        type: string
+        public: true
+
+      - name: course_title
+        description: Course name.
+        sql: course_title
+        type: string
+        public: true
+
+      - name: academic_subject
+        description: >-
+          Discipline from the course-subject crosswalk (e.g., Mathematics, ELA).
+        sql: academic_subject
+        type: string
+        public: true
+
+      - name: credit_type
+        description: Credit type for the course.
+        sql: credit_type
+        type: string
+        public: true
+
+      - name: is_foundations
+        description: >-
+          TRUE if this is a Foundations (intervention) course, per the
+          course-subject crosswalk.
+        sql: is_foundations
+        type: boolean
+        public: true
