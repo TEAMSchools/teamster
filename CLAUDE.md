@@ -523,7 +523,9 @@ wide tables, paginate with `WHERE ordinal_position > N`.
 
 `<dataset>.__TABLES__` exposes `last_modified_time` and `type` (1=table, 2=view)
 — use it to check whether a model rebuilt or is a live view.
-`INFORMATION_SCHEMA.TABLES` has neither.
+`INFORMATION_SCHEMA.TABLES` has neither. `__TABLES__.row_count` lags — it can
+read `0` for a table that already holds rows (e.g. just after a CI rebuild);
+confirm population with `COUNT(*)`, not `__TABLES__.row_count`.
 
 Hyphenated identifiers in INFORMATION_SCHEMA paths need backticks — `region-us`
 as a bare token fails with "Syntax error: Expected end of input but got '-'".
@@ -538,7 +540,10 @@ Pre-merge queries against PR-branch schema use
 the dbt Cloud CI job ID (stable across runs); read from
 `mcp__dbt__get_job_run_details(run_id)` step name
 `"Create profile from connection BigQuery (override schema to '...')"`. Prod
-`<schema>` lacks unmerged renames.
+`<schema>` lacks unmerged renames. The PR-branch marts schema holds only
+`state:modified+` models (often just the fact) — for unmodified dimensional
+context, join the PR-branch fact to PROD dims (`kipptaf_marts.dim_*`), which are
+absent from the PR schema and unchanged anyway.
 
 Chained joins through PR-branch marts (mart-view → mart-view → upstream-view)
 hit BigQuery's 16-view nesting limit. Query materialized prod tables instead, or
