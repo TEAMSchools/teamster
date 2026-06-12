@@ -633,6 +633,12 @@ models:
           Amount in dollars of the student's award number 1 in the academic year
           (awards ordered earliest first); null when the student had fewer than
           1 award(s).
+      - name: award_1_is_maher
+        data_type: boolean
+        description:
+          True when the student's award number 1 in the academic year (awards
+          ordered earliest first) carries the MAHER_FUND marker tag in its
+          notes; null when the student had fewer than 1 award(s).
       - name: award_2_name
         data_type: string
         description:
@@ -645,6 +651,12 @@ models:
           Amount in dollars of the student's award number 2 in the academic year
           (awards ordered earliest first); null when the student had fewer than
           2 award(s).
+      - name: award_2_is_maher
+        data_type: boolean
+        description:
+          True when the student's award number 2 in the academic year (awards
+          ordered earliest first) carries the MAHER_FUND marker tag in its
+          notes; null when the student had fewer than 2 award(s).
       - name: award_3_name
         data_type: string
         description:
@@ -657,6 +669,12 @@ models:
           Amount in dollars of the student's award number 3 in the academic year
           (awards ordered earliest first); null when the student had fewer than
           3 award(s).
+      - name: award_3_is_maher
+        data_type: boolean
+        description:
+          True when the student's award number 3 in the academic year (awards
+          ordered earliest first) carries the MAHER_FUND marker tag in its
+          notes; null when the student had fewer than 3 award(s).
       - name: award_4_name
         data_type: string
         description:
@@ -669,6 +687,12 @@ models:
           Amount in dollars of the student's award number 4 in the academic year
           (awards ordered earliest first); null when the student had fewer than
           4 award(s).
+      - name: award_4_is_maher
+        data_type: boolean
+        description:
+          True when the student's award number 4 in the academic year (awards
+          ordered earliest first) carries the MAHER_FUND marker tag in its
+          notes; null when the student had fewer than 4 award(s).
       - name: award_5_name
         data_type: string
         description:
@@ -681,6 +705,12 @@ models:
           Amount in dollars of the student's award number 5 in the academic year
           (awards ordered earliest first); null when the student had fewer than
           5 award(s).
+      - name: award_5_is_maher
+        data_type: boolean
+        description:
+          True when the student's award number 5 in the academic year (awards
+          ordered earliest first) carries the MAHER_FUND marker tag in its
+          notes; null when the student had fewer than 5 award(s).
       - name: award_6_name
         data_type: string
         description:
@@ -693,6 +723,12 @@ models:
           Amount in dollars of the student's award number 6 in the academic year
           (awards ordered earliest first); null when the student had fewer than
           6 award(s).
+      - name: award_6_is_maher
+        data_type: boolean
+        description:
+          True when the student's award number 6 in the academic year (awards
+          ordered earliest first) carries the MAHER_FUND marker tag in its
+          notes; null when the student had fewer than 6 award(s).
       - name: award_7_name
         data_type: string
         description:
@@ -705,6 +741,12 @@ models:
           Amount in dollars of the student's award number 7 in the academic year
           (awards ordered earliest first); null when the student had fewer than
           7 award(s).
+      - name: award_7_is_maher
+        data_type: boolean
+        description:
+          True when the student's award number 7 in the academic year (awards
+          ordered earliest first) carries the MAHER_FUND marker tag in its
+          notes; null when the student had fewer than 7 award(s).
       - name: award_8_name
         data_type: string
         description:
@@ -717,6 +759,12 @@ models:
           Amount in dollars of the student's award number 8 in the academic year
           (awards ordered earliest first); null when the student had fewer than
           8 award(s).
+      - name: award_8_is_maher
+        data_type: boolean
+        description:
+          True when the student's award number 8 in the academic year (awards
+          ordered earliest first) carries the MAHER_FUND marker tag in its
+          notes; null when the student had fewer than 8 award(s).
       - name: award_9_name
         data_type: string
         description:
@@ -729,6 +777,12 @@ models:
           Amount in dollars of the student's award number 9 in the academic year
           (awards ordered earliest first); null when the student had fewer than
           9 award(s).
+      - name: award_9_is_maher
+        data_type: boolean
+        description:
+          True when the student's award number 9 in the academic year (awards
+          ordered earliest first) carries the MAHER_FUND marker tag in its
+          notes; null when the student had fewer than 9 award(s).
       - name: award_10_name
         data_type: string
         description:
@@ -741,3 +795,9 @@ models:
           Amount in dollars of the student's award number 10 in the academic
           year (awards ordered earliest first); null when the student had fewer
           than 10 award(s).
+      - name: award_10_is_maher
+        data_type: boolean
+        description:
+          True when the student's award number 10 in the academic year (awards
+          ordered earliest first) carries the MAHER_FUND marker tag in its
+          notes; null when the student had fewer than 10 award(s).
