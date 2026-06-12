@@ -3941,7 +3941,7 @@ docs = [
 
 [package.metadata]
 requires-dist = [
-    { name = "beautifulsoup4", specifier = ">=4.12.2" },
+    { name = "beautifulsoup4", specifier = ">=4.15.0" },
     { name = "cramjam", specifier = ">=2.7.0" },
     { name = "dagster", specifier = ">=1.13,<1.14" },
     { name = "dagster-airbyte" },
