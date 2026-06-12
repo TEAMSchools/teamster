@@ -3971,7 +3971,7 @@ requires-dist = [
 
 [package.metadata.requires-dev]
 dev = [
-    { name = "cron-descriptor", specifier = ">=1.4" },
+    { name = "cron-descriptor", specifier = ">=2.1.0" },
     { name = "dagster-plus-mcp", git = "https://github.com/TEAMSchools/dagster-plus-mcp.git" },
     { name = "dagster-webserver" },
     { name = "pytest", specifier = ">=8.3.4" },

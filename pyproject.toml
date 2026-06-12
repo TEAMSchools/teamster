@@ -38,7 +38,7 @@ dependencies = [
 
 [dependency-groups]
 dev = [
-  "cron-descriptor>=1.4",
+  "cron-descriptor>=2.1.0",
   "dagster-plus-mcp @ git+https://github.com/TEAMSchools/dagster-plus-mcp.git",
   "dagster-webserver",
   "pytest>=8.3.4",
