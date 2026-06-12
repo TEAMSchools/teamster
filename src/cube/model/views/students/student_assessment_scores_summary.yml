@@ -1,0 +1,201 @@
+views:
+  - name: student_assessment_scores_summary
+    description: >-
+      Aggregated assessment proficiency across internal Illuminate interims and
+      NJ/FL state assessments. One row per filter slice — never per score.
+      pct_proficient (mastery rate) is the headline, source-agnostic metric;
+      avg_scale_score and avg_percent_correct are only meaningful within a
+      single source/subject/grade. No direct student identifiers — demographic
+      dimensions are aggregate breakdowns only. State assessment rows have null
+      response_type / percent_correct and null administration_dates by design.
+
+    cubes:
+      - join_path: student_assessment_scores
+        includes:
+          - count_scores
+          - count_students
+          - pct_proficient
+          - avg_percent_correct
+          - avg_scale_score
+          - enrollment_resolution
+          - proficiency_level
+          - is_mastery
+          - response_type
+          - response_type_code
+          - response_type_root_description
+
+      - join_path: student_assessment_scores.assessment_administrations.assessments
+        prefix: true
+        includes:
+          - title
+          - academic_subject
+          - assessment_type
+          - category
+          - module_code
+          - module_type
+          - grade_level_tested
+          - scope
+          - is_internal_assessment
+
+      - join_path: student_assessment_scores.assessment_administrations
+        prefix: true
+        includes:
+          - administration_period
+          - test_type
+
+      - join_path: >-
+          student_assessment_scores.assessment_administrations.administration_dates
+        prefix: true
+        includes:
+          - academic_year
+          - month_number
+          - month_name
+
+      - join_path: student_assessment_scores.student_section_enrollments.course_sections.courses
+        prefix: true
+        includes:
+          - academic_subject
+          - course_title
+          - course_code
+          - is_foundations
+
+      - join_path: student_assessment_scores.student_section_enrollments
+        prefix: false
+        includes:
+          - academic_year
+          - is_dropped_section
+          - is_dropped_course
+
+      - join_path: student_assessment_scores.student_section_enrollments.student_enrollments
+        prefix: false
+        includes:
+          - grade_level
+          - graduation_year
+          - year_in_network
+          - is_retained_year
+
+      - join_path: >-
+          student_assessment_scores.student_section_enrollments.student_enrollments.student_enrollment_status
+        prefix: false
+        includes:
+          - is_ell
+          - is_iep
+          - iep_classification
+          - special_education_code
+          - special_education_name
+          - special_education_placement
+          - is_meal_eligible
+          - meal_eligibility
+
+      - join_path: >-
+          student_assessment_scores.student_section_enrollments.student_enrollments.students
+        prefix: false
+        includes:
+          - gender_identity
+          - race
+          - is_gifted
+
+      - join_path: >-
+          student_assessment_scores.student_section_enrollments.student_enrollments.locations
+        prefix: true
+        includes:
+          - location_name
+          - abbreviation
+          - grade_band
+          - campus
+          - city
+
+      - join_path: >-
+          student_assessment_scores.student_section_enrollments.student_enrollments.locations.regions
+        prefix: true
+        includes:
+          - region_name
+          - state
+
+      - join_path: student_assessment_scores.student_section_enrollments.terms
+        prefix: true
+        includes:
+          - semester
+          - term_name
+          - term_code
+          - term_type
+
+    meta:
+      folders:
+        - name: Assessment
+          members:
+            - assessments_title
+            - assessments_academic_subject
+            - assessments_assessment_type
+            - assessments_category
+            - assessments_module_code
+            - assessments_module_type
+            - assessments_grade_level_tested
+            - assessments_scope
+            - assessments_is_internal_assessment
+            - assessment_administrations_administration_period
+            - assessment_administrations_test_type
+            - enrollment_resolution
+            - proficiency_level
+            - is_mastery
+            - response_type
+            - response_type_code
+            - response_type_root_description
+        - name: Date
+          members:
+            - administration_dates_academic_year
+            - administration_dates_month_number
+            - administration_dates_month_name
+        - name: Course
+          members:
+            - courses_academic_subject
+            - courses_course_title
+            - courses_course_code
+            - courses_is_foundations
+        - name: Term
+          members:
+            - terms_semester
+            - terms_term_name
+            - terms_term_code
+            - terms_term_type
+        - name: Location
+          members:
+            - locations_location_name
+            - locations_abbreviation
+            - locations_grade_band
+            - locations_campus
+            - locations_city
+            - regions_region_name
+            - regions_state
+        - name: Student
+          members:
+            - gender_identity
+            - race
+            - is_gifted
+        - name: Status
+          members:
+            - is_ell
+            - is_iep
+            - iep_classification
+            - special_education_code
+            - special_education_name
+            - special_education_placement
+            - is_meal_eligible
+            - meal_eligibility
+        - name: Enrollment
+          members:
+            - academic_year
+            - grade_level
+            - graduation_year
+            - year_in_network
+            - is_retained_year
+            - is_dropped_section
+            - is_dropped_course
+
+    access_policy:
+      # No PII tier — view contains no direct student identifiers.
+      # Demographic dimensions (race, gender_identity, etc.) are
+      # aggregate breakdowns only.
+      - group: cube-access-student-data
+        member_level:
+          includes: "*"
