@@ -1,5 +1,5 @@
 cubes:
-  - name: assessments
+  - name: student_assessments
     public: false
     sql_table: kipptaf_marts.dim_assessments
 

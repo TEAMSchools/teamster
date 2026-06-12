@@ -8,7 +8,7 @@ views:
       rate) is the source-agnostic headline; scale_score is null for internal
       rows and percent_correct is null for state rows. response_type /
       response_type_code carry the standard/skill breakdown. State rows have
-      null administration_dates by design (no exact administered date). Contains
+      null administration dates by design (no exact administered date). Contains
       direct student identifiers — see access_policy for PII gating.
 
     cubes:
@@ -20,7 +20,7 @@ views:
           - avg_percent_correct
           - avg_scale_score
           - assessment_score_key
-          - test_date
+          - date_taken
           - enrollment_resolution
           - proficiency_level
           - performance_band_label_number
@@ -33,7 +33,7 @@ views:
           - response_type_root_description
           - is_replacement
 
-      - join_path: student_assessment_scores.assessment_administrations.assessments
+      - join_path: student_assessment_scores.student_assessment_administrations.student_assessments
         prefix: true
         includes:
           - title
@@ -46,7 +46,7 @@ views:
           - scope
           - is_internal_assessment
 
-      - join_path: student_assessment_scores.assessment_administrations
+      - join_path: student_assessment_scores.student_assessment_administrations
         prefix: true
         includes:
           - administration_period
@@ -54,7 +54,7 @@ views:
           - source_assessment_id
 
       - join_path: >-
-          student_assessment_scores.assessment_administrations.administration_dates
+          student_assessment_scores.student_assessment_administrations.dates
         prefix: true
         includes:
           - date_day
@@ -154,19 +154,19 @@ views:
       folders:
         - name: Assessment
           members:
-            - assessments_title
-            - assessments_academic_subject
-            - assessments_assessment_type
-            - assessments_category
-            - assessments_module_code
-            - assessments_module_type
-            - assessments_grade_level_tested
-            - assessments_scope
-            - assessments_is_internal_assessment
-            - assessment_administrations_administration_period
-            - assessment_administrations_test_type
-            - assessment_administrations_source_assessment_id
-            - test_date
+            - student_assessments_title
+            - student_assessments_academic_subject
+            - student_assessments_assessment_type
+            - student_assessments_category
+            - student_assessments_module_code
+            - student_assessments_module_type
+            - student_assessments_grade_level_tested
+            - student_assessments_scope
+            - student_assessments_is_internal_assessment
+            - student_assessment_administrations_administration_period
+            - student_assessment_administrations_test_type
+            - student_assessment_administrations_source_assessment_id
+            - date_taken
             - enrollment_resolution
             - proficiency_level
             - performance_band_label_number
@@ -180,10 +180,10 @@ views:
             - is_replacement
         - name: Date
           members:
-            - administration_dates_date_day
-            - administration_dates_academic_year
-            - administration_dates_month_number
-            - administration_dates_month_name
+            - dates_date_day
+            - dates_academic_year
+            - dates_month_number
+            - dates_month_name
         - name: Course
           members:
             - courses_academic_subject

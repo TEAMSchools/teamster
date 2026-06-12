@@ -7,7 +7,7 @@ views:
       avg_scale_score and avg_percent_correct are only meaningful within a
       single source/subject/grade. No direct student identifiers — demographic
       dimensions are aggregate breakdowns only. State assessment rows have null
-      response_type / percent_correct and null administration_dates by design.
+      response_type / percent_correct and null administration dates by design.
 
     cubes:
       - join_path: student_assessment_scores
@@ -19,12 +19,13 @@ views:
           - avg_scale_score
           - enrollment_resolution
           - proficiency_level
+          - performance_band_label_number
           - is_mastery
           - response_type
           - response_type_code
           - response_type_root_description
 
-      - join_path: student_assessment_scores.assessment_administrations.assessments
+      - join_path: student_assessment_scores.student_assessment_administrations.student_assessments
         prefix: true
         includes:
           - title
@@ -37,14 +38,14 @@ views:
           - scope
           - is_internal_assessment
 
-      - join_path: student_assessment_scores.assessment_administrations
+      - join_path: student_assessment_scores.student_assessment_administrations
         prefix: true
         includes:
           - administration_period
           - test_type
 
       - join_path: >-
-          student_assessment_scores.assessment_administrations.administration_dates
+          student_assessment_scores.student_assessment_administrations.dates
         prefix: true
         includes:
           - academic_year
@@ -124,28 +125,29 @@ views:
       folders:
         - name: Assessment
           members:
-            - assessments_title
-            - assessments_academic_subject
-            - assessments_assessment_type
-            - assessments_category
-            - assessments_module_code
-            - assessments_module_type
-            - assessments_grade_level_tested
-            - assessments_scope
-            - assessments_is_internal_assessment
-            - assessment_administrations_administration_period
-            - assessment_administrations_test_type
+            - student_assessments_title
+            - student_assessments_academic_subject
+            - student_assessments_assessment_type
+            - student_assessments_category
+            - student_assessments_module_code
+            - student_assessments_module_type
+            - student_assessments_grade_level_tested
+            - student_assessments_scope
+            - student_assessments_is_internal_assessment
+            - student_assessment_administrations_administration_period
+            - student_assessment_administrations_test_type
             - enrollment_resolution
             - proficiency_level
+            - performance_band_label_number
             - is_mastery
             - response_type
             - response_type_code
             - response_type_root_description
         - name: Date
           members:
-            - administration_dates_academic_year
-            - administration_dates_month_number
-            - administration_dates_month_name
+            - dates_academic_year
+            - dates_month_number
+            - dates_month_name
         - name: Course
           members:
             - courses_academic_subject

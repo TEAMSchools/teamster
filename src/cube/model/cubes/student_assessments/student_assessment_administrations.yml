@@ -1,17 +1,19 @@
 cubes:
-  - name: assessment_administrations
+  - name: student_assessment_administrations
     public: false
     sql_table: kipptaf_marts.dim_assessment_administrations
 
     joins:
-      - name: administration_dates
+      # administration date -> the conformed dates cube (no role-play); the fact
+      # surfaces the completion date (date_taken) as an unjoined degenerate dim,
+      # so dates is reached by a single path and there is no diamond.
+      - name: dates
         sql: >
-          {administration_dates.date_day} = CAST({CUBE}.administered_date_key AS
-          TIMESTAMP)
+          {dates.date_day} = CAST({CUBE}.administered_date_key AS TIMESTAMP)
         relationship: many_to_one
 
-      - name: assessments
-        sql: "{assessments.assessment_key} = {CUBE}.assessment_key"
+      - name: student_assessments
+        sql: "{student_assessments.assessment_key} = {CUBE}.assessment_key"
         relationship: many_to_one
 
     dimensions:
@@ -22,9 +24,9 @@ cubes:
         type: string
         primary_key: true
 
-      # FK to assessments — not exposed; descriptors come from the assessments cube.
+      # FK to student_assessments — descriptors come from that cube, not here.
       - name: assessment_key
-        description: FK to assessments (canonical-representative row).
+        description: FK to student_assessments (canonical-representative row).
         sql: assessment_key
         type: string
 

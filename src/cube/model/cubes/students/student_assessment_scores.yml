@@ -4,13 +4,9 @@ cubes:
     sql_table: kipptaf_marts.fct_assessment_scores_enrollment_scoped
 
     joins:
-      - name: dates
-        sql: "{dates.date_day} = CAST({CUBE}.test_date_key AS TIMESTAMP)"
-        relationship: many_to_one
-
-      - name: assessment_administrations
+      - name: student_assessment_administrations
         sql: >
-          {assessment_administrations.assessment_administration_key} =
+          {student_assessment_administrations.assessment_administration_key} =
           {CUBE}.assessment_administration_key
         relationship: many_to_one
 
@@ -27,10 +23,13 @@ cubes:
         type: string
         primary_key: true
 
-      - name: test_date
+      - name: date_taken
         description: >-
-          Date the assessment was taken (completion date). Populated for state
-          assessments; nullable for internal rows lacking a recorded sitting.
+          Date the assessment was taken (completion date), as a standalone date
+          dimension not joined to a calendar cube — date_taken is corrupt for a
+          small share of rows, so calendar rollups belong on the administration
+          date (student_assessment_administrations -> dates). Populated for
+          state; nullable for internal rows lacking a recorded sitting.
         sql: CAST(test_date_key AS TIMESTAMP)
         type: time
         public: true

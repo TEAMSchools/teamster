@@ -55,11 +55,17 @@ cubes:
         public: true
 
       - name: entry_date
+        description: >-
+          Date the student enrolled in this section. Cast to TIMESTAMP for Cube
+          time joins.
         sql: CAST(entry_date AS TIMESTAMP)
         type: time
         public: true
 
       - name: exit_date
+        description: >-
+          Date the student left this section. Cast to TIMESTAMP for Cube time
+          joins.
         sql: CAST(exit_date AS TIMESTAMP)
         type: time
         public: true
