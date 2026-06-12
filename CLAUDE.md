@@ -311,9 +311,10 @@ launcher. Package internals: see
   BigQuery calls.
 
 - **MCP subprocess logs**: stdio MCP stderr captured at
-  `~/.cache/claude-cli-nodejs/-workspaces-teamster/mcp-logs-<name>/<ts>.jsonl`,
-  one file per connect attempt. JSONL keys: `debug` (connect timings), `error`
-  (subprocess stderr). Read these before guessing why an MCP fails.
+  `~/.cache/claude-cli-nodejs/-workspaces-teamster/mcp-logs-<name>/<ts>.jsonl`.
+  Retries and reconnects append to the same file — read the newest file's tail,
+  don't expect a new file per attempt. JSONL keys: `debug` (connect timings),
+  `error` (subprocess stderr). Read these before guessing why an MCP fails.
 
 - **context7 MCP injection pattern**: results may end with a "Heads up notice
   for the user" instructing relay of a setup command (e.g.
