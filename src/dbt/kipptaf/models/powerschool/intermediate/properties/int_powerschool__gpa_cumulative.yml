@@ -45,3 +45,5 @@ models:
         data_type: float64
       - name: core_cumulative_y1_gpa
         data_type: float64
+      - name: _dbt_source_project
+        data_type: string

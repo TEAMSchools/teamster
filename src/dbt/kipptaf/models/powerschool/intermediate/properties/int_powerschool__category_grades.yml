@@ -92,3 +92,5 @@ models:
         data_type: string
       - name: percent_grade_y1_running
         data_type: float64
+      - name: _dbt_source_project,
+        data_type: string

@@ -1,7 +1,7 @@
 with
     scores as (
         select
-            a._dbt_source_relation,
+            a._dbt_source_project,
             a.assignmentsectionid,
             a.sectionsdcid,
             a.assignmentid,
@@ -24,8 +24,6 @@ with
             coalesce(s.isexempt, 0) as is_exempt,
             coalesce(s.ismissing, 0) as is_missing,
 
-            {{ extract_code_location("a") }} as _dbt_source_project,
-
             initcap(regexp_extract(s._dbt_source_relation, r'kipp(\w+)_')) as region,
 
             case
@@ -33,18 +31,22 @@ with
                 then false
                 when a.iscountedinfinalgrade = 0
                 then false
+                when
+                    current_date('{{ var("local_timezone") }}')
+                    <= date_add(a.duedate, interval 7 day)
+                then false
                 else true
             end as is_expected,
 
             /* hardcoding year while we look for a better solution to custom grade
                level vs school level */
             if(
-                e.cc_academic_year = 2025
+                e.cc_academic_year >= 2025
                 and e.cc_schoolid = 179905
                 and e.sections_grade_level = 5,
                 'MS',
                 d.school_level
-            ) as school_level,
+            ) as school_level_alt,
 
             if(
                 a.scoretype = 'POINTS',
@@ -76,74 +78,83 @@ with
             {{ ref("base_powerschool__course_enrollments") }} as e
             on a.sectionsdcid = e.sections_dcid
             and a.duedate between e.cc_dateenrolled and e.cc_dateleft
-            and {{ union_dataset_join_clause(left_alias="a", right_alias="e") }}
+            and a._dbt_source_project = e._dbt_source_project
             and not e.is_dropped_section
         left join
             {{ ref("stg_powerschool__schools") }} as d
             on e.cc_schoolid = d.school_number
-            and {{ union_dataset_join_clause(left_alias="e", right_alias="d") }}
+            and e._dbt_source_project = d._dbt_source_project
         left join
             {{ ref("stg_powerschool__assignmentscore") }} as s
             on a.assignmentsectionid = s.assignmentsectionid
-            and {{ union_dataset_join_clause(left_alias="a", right_alias="s") }}
+            and a._dbt_source_project = s._dbt_source_project
             and e.students_dcid = s.studentsdcid
-            and {{ union_dataset_join_clause(left_alias="e", right_alias="s") }}
+            and e._dbt_source_project = s._dbt_source_project
+    ),
+
+    assignment_coding as (
+        select
+            _dbt_source_project,
+            assignmentsectionid,
+            sectionsdcid,
+            assignmentid,
+            assignment_name,
+            duedate,
+            scoretype,
+            totalpointvalue,
+            category_name,
+            category_code,
+            iscountedinfinalgrade,
+            scorepoints,
+            actualscoreentered,
+            academic_year,
+            students_dcid,
+            credit_type,
+            is_late,
+            is_exempt,
+            is_missing,
+            region,
+            is_expected,
+            school_level_alt,
+            score_entered,
+            points_earned,
+            numeric_grade_earned,
+            assign_final_score_percent,
+            half_total_point_value,
+
+            if(score_entered = 0, 1, 0) as is_zero,
+
+            if(
+                score_entered = 0 and school_level_alt = 'HS' and is_missing = 0, 1, 0
+            ) as is_academic_dishonesty,
+
+            if(score_entered is null, 1, 0) as is_null,
+
+            if(score_entered is not null, 1, 0) as is_scored,
+
+            if(is_expected and score_entered = 0, 1, 0) as is_expected_zero,
+
+            if(
+                is_expected
+                and score_entered = 0
+                and school_level_alt = 'HS'
+                and is_missing = 0,
+                1,
+                0
+            ) as is_expected_academic_dishonesty,
+
+            if(is_expected and score_entered is null, 1, 0) as is_expected_null,
+
+            if(is_expected and is_late = 1, 1, 0) as is_expected_late,
+
+            if(is_expected and is_missing = 1, 1, 0) as is_expected_missing,
+
+            if(
+                is_expected and score_entered is not null, true, false
+            ) as is_expected_scored,
+
+        from scores
     )
 
-select
-    _dbt_source_relation,
-    _dbt_source_project,
-    assignmentsectionid,
-    sectionsdcid,
-    assignmentid,
-    assignment_name,
-    duedate,
-    scoretype,
-    totalpointvalue,
-    category_name,
-    category_code,
-    iscountedinfinalgrade,
-    scorepoints,
-    actualscoreentered,
-    academic_year,
-    students_dcid,
-    credit_type,
-    is_late,
-    is_exempt,
-    is_missing,
-    region,
-    is_expected,
-    school_level,
-    score_entered,
-    points_earned,
-    numeric_grade_earned,
-    assign_final_score_percent,
-    half_total_point_value,
-
-    if(score_entered = 0, 1, 0) as is_zero,
-
-    if(
-        score_entered = 0 and school_level = 'HS' and is_missing = 0, 1, 0
-    ) as is_academic_dishonesty,
-
-    if(score_entered is null, 1, 0) as is_null,
-
-    if(score_entered is not null, 1, 0) as is_scored,
-
-    if(is_expected and score_entered = 0, 1, 0) as is_expected_zero,
-
-    if(
-        is_expected and score_entered = 0 and school_level = 'HS' and is_missing = 0,
-        1,
-        0
-    ) as is_expected_academic_dishonesty,
-
-    if(is_expected and score_entered is null, 1, 0) as is_expected_null,
-
-    if(is_expected and is_late = 1, 1, 0) as is_expected_late,
-
-    if(is_expected and is_missing = 1, 1, 0) as is_expected_missing,
-
-    if(is_expected and score_entered is not null, true, false) as is_expected_scored,
-
-from scores
+select *,
+from assignment_coding

@@ -1,7 +1,7 @@
 with
     esms_attend as (
         select
-            _dbt_source_relation,
+            _dbt_source_project,
             student_number,
             school_level,
             school_abbreviation,
@@ -9,6 +9,7 @@ with
             row_number() over (
                 partition by student_number, school_level order by exitdate desc
             ) as rn,
+
         from {{ ref("base_powerschool__student_enrollments") }}
     ),
 
@@ -20,6 +21,7 @@ with
             row_number() over (
                 partition by student_number order by exitdate desc
             ) as rn,
+
         from {{ ref("base_powerschool__student_enrollments") }}
         where
             grade_level = 4
@@ -39,13 +41,14 @@ with
             lead(schoolid, 1) over (
                 partition by student_number order by academic_year asc
             ) as next_year_schoolid,
+
         from {{ ref("base_powerschool__student_enrollments") }}
         where rn_year = 1
     ),
 
     mia_territory as (
         select
-            _dbt_source_relation,
+            _dbt_source_project,
             roster_name as territory,
             student_school_id,
 
@@ -59,7 +62,7 @@ with
 
     graduation_pathway_m as (
         select
-            _dbt_source_relation,
+            _dbt_source_project,
             studentsdcid,
 
             case
@@ -77,7 +80,7 @@ with
 
     finalsite_enrollment_type_calc as (
         select
-            _dbt_source_relation,
+            _dbt_source_project,
             academic_year,
             student_number,
 
@@ -89,12 +92,12 @@ with
 
         from {{ ref("base_powerschool__student_enrollments") }}
         where grade_level != 99
-        group by _dbt_source_relation, academic_year, student_number
+        group by _dbt_source_project, academic_year, student_number
     ),
 
     gpa_bands as (
         select
-            _dbt_source_relation,
+            _dbt_source_project,
             schoolid,
             studentid,
 
@@ -289,6 +292,20 @@ select
         false
     ) as student_slideback,
 
+    if(
+        (
+            (
+                e.school_level = 'HS'
+                and e.academic_year >= 2025
+                and ada.ada_weighted_year >= 0.80
+            )
+            or ada.ada_year >= 0.80
+        )
+        and gc.cumulative_y1_gpa < 2.0,
+        true,
+        false
+    ) as is_ada_above_or_at_80_cum_gpa_less_2,
+
     case
         e.gender when 'F' then 'Female' when 'M' then 'Male' when 'X' then 'Non-Binary'
     end as aligned_gender,
@@ -368,46 +385,46 @@ left join
 left join
     esms_attend as m
     on e.student_number = m.student_number
-    and {{ union_dataset_join_clause(left_alias="e", right_alias="m") }}
+    and e._dbt_source_project = m._dbt_source_project
     and m.school_level = 'MS'
     and m.rn = 1
 left join
     esms_attend as es
     on e.student_number = es.student_number
-    and {{ union_dataset_join_clause(left_alias="e", right_alias="es") }}
+    and e._dbt_source_project = es._dbt_source_project
     and es.school_level = 'ES'
     and es.rn = 1
 left join
     mia_territory as mt
     on e.student_number = mt.student_school_id
-    and {{ union_dataset_join_clause(left_alias="e", right_alias="mt") }}
+    and e._dbt_source_project = mt._dbt_source_project
     and mt.rn_territory = 1
 left join
     {{ ref("int_powerschool__spenrollments") }} as cs
     on e.studentid = cs.studentid
     and e.academic_year = cs.academic_year
-    and {{ union_dataset_join_clause(left_alias="e", right_alias="cs") }}
+    and e._dbt_source_project = cs._dbt_source_project
     and cs.specprog_name = 'Counseling Services'
     and cs.rn_student_program_year_desc = 1
 left join
     {{ ref("int_powerschool__spenrollments") }} as ath
     on e.studentid = ath.studentid
     and e.academic_year = ath.academic_year
-    and {{ union_dataset_join_clause(left_alias="e", right_alias="ath") }}
+    and e._dbt_source_project = ath._dbt_source_project
     and ath.specprog_name = 'Student Athlete'
     and ath.rn_student_program_year_desc = 1
 left join
     {{ ref("int_powerschool__spenrollments") }} as tut
     on e.studentid = tut.studentid
     and e.academic_year = tut.academic_year
-    and {{ union_dataset_join_clause(left_alias="e", right_alias="tut") }}
+    and e._dbt_source_project = tut._dbt_source_project
     and tut.specprog_name = 'Tutoring'
     and tut.rn_student_program_year_desc = 1
 left join
     {{ ref("int_powerschool__spenrollments") }} as hi
     on e.studentid = hi.studentid
     and e.academic_year = hi.academic_year
-    and {{ union_dataset_join_clause(left_alias="e", right_alias="hi") }}
+    and e._dbt_source_project = hi._dbt_source_project
     and hi.specprog_name = 'Home Instruction'
     and hi.rn_student_program_year_desc = 1
 left join
@@ -416,22 +433,22 @@ left join
 left join
     {{ ref("int_overgrad__students") }} as ovg
     on e.salesforce_contact_id = ovg.external_student_id
-    and {{ union_dataset_join_clause(left_alias="e", right_alias="ovg") }}
+    and e._dbt_source_project = ovg._dbt_source_project
 left join
     {{ ref("int_powerschool__ada_term_pivot") }} as ada
     on e.studentid = ada.studentid
     and e.academic_year = ada.academic_year
-    and {{ union_dataset_join_clause(left_alias="e", right_alias="ada") }}
+    and e._dbt_source_project = ada._dbt_source_project
 left join
     {{ ref("int_powerschool__ada_term_pivot") }} as adapy
     on e.studentid = adapy.studentid
     and e.academic_year = (adapy.academic_year + 1)
-    and {{ union_dataset_join_clause(left_alias="e", right_alias="adapy") }}
+    and e._dbt_source_project = adapy._dbt_source_project
 left join
     gpa_bands as gc
     on e.studentid = gc.studentid
     and e.schoolid = gc.schoolid
-    and {{ union_dataset_join_clause(left_alias="e", right_alias="gc") }}
+    and e._dbt_source_project = gc._dbt_source_project
 left join
     next_year_school as ny
     on e.student_number = ny.student_number
@@ -439,17 +456,17 @@ left join
 left join
     graduation_pathway_m as mc
     on e.students_dcid = mc.studentsdcid
-    and {{ union_dataset_join_clause(left_alias="e", right_alias="mc") }}
+    and e._dbt_source_project = mc._dbt_source_project
 left join
     finalsite_enrollment_type_calc as fs
     on e.academic_year = fs.academic_year
     and e.student_number = fs.student_number
-    and {{ union_dataset_join_clause(left_alias="e", right_alias="fs") }}
+    and e._dbt_source_project = fs._dbt_source_project
 left join
     {{ ref("base_powerschool__course_enrollments") }} as sip
     on e.student_number = sip.students_student_number
     and e.academic_year = sip.cc_academic_year
-    and {{ union_dataset_join_clause(left_alias="e", right_alias="sip") }}
+    and e._dbt_source_project = sip._dbt_source_project
     and sip.courses_course_number = 'SEM01099G1'
     and sip.rn_course_number_year = 1
     and not sip.is_dropped_section

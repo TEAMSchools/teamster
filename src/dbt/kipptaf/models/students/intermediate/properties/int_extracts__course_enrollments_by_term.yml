@@ -1,5 +1,9 @@
 models:
-  - name: int_extracts__student_enrollments
+  - name: int_extracts__course_enrollments_by_term
+    description: >
+      One row per student per course per quarter based on course enrollment
+      overlap with term dates. Students who re-enrolled in the same course
+      within a quarter are deduped to the most recent stint.
     config:
       schema: extracts
       materialized: table
@@ -8,9 +12,9 @@ models:
           arguments:
             combination_of_columns:
               - _dbt_source_project
-              - student_number
-              - academic_year
-              - entrydate
+              - studentid
+              - course_number
+              - quarter
           config:
             severity: error
     columns:
@@ -23,28 +27,27 @@ models:
         config:
           meta:
             source_system: PowerSchool
-            source_model: stg_powerschool__storedgrades
+            source_model: stg_powerschool__students
             source_column: studentid
             column_role: foreign_key
       - name: students_dcid
         data_type: int64
       - name: student_number
         data_type: int64
-        description: Student Number assigned by the school. Indexed.
+        description: Student number assigned by the school. Indexed.
         config:
           meta:
             source_system: PowerSchool
             source_model: stg_powerschool__students
             source_column: student_number
             contains_pii: true
-            column_role: primary_key
       - name: reenrollments_dcid
         data_type: int64
       - name: grade_level
         data_type: int64
-        description:
-          "The grade the student is in. Since this is an integer: 0=Kindergarten
-          1, -2=Preschool. Indexed."
+        description: >
+          The grade the student is in. Since this is an integer: 0=Kindergarten,
+          -2=Preschool. Indexed.
         config:
           meta:
             source_system: PowerSchool
@@ -62,7 +65,6 @@ models:
         data_type: date
         description:
           The date the student enrolled in school for the current enrollment.
-          Indexed.
         config:
           meta:
             source_system: PowerSchool
@@ -70,11 +72,9 @@ models:
             source_column: entrydate
       - name: exitdate
         data_type: date
-        description:
+        description: >
           The date the student exited for the current/last enrollment. This is
-          the day after a student-attended class. For example, if the last day
-          the student is in school is a Wednesday, Thursdayis the exit day.
-          Indexed.
+          the day after the student's last attended class.
         config:
           meta:
             source_system: PowerSchool
@@ -82,10 +82,6 @@ models:
             source_column: exitdate
       - name: entrycode
         data_type: string
-        description:
-          The code representing how or why the student entered school. These
-          codes are stored in Gen Table [6] cat=entrycodes. These are set in
-          school setup.
         config:
           meta:
             source_system: PowerSchool
@@ -93,10 +89,6 @@ models:
             source_column: entrycode
       - name: exitcode
         data_type: string
-        description:
-          The code representing how or why the student exited the school. These
-          codes are stored in Gen Table [6] cat=exitcodes. These are set in
-          school setup.
         config:
           meta:
             source_system: PowerSchool
@@ -104,7 +96,6 @@ models:
             source_column: exitcode
       - name: exitcomment
         data_type: string
-        description: Any comments for the student exiting this school.
         config:
           meta:
             source_system: PowerSchool
@@ -112,9 +103,6 @@ models:
             source_column: exitcomment
       - name: fteid
         data_type: int64
-        description:
-          The internal number for the FTE with which this record is associated.
-          Indexed.
         config:
           meta:
             source_system: PowerSchool
@@ -148,7 +136,7 @@ models:
             contains_pii: true
       - name: city
         data_type: string
-        description: City element of the students address.
+        description: City element of the student's address.
         config:
           meta:
             source_system: PowerSchool
@@ -157,7 +145,7 @@ models:
             contains_pii: true
       - name: zip
         data_type: string
-        description: Students zip code.
+        description: Student's zip code.
         config:
           meta:
             source_system: PowerSchool
@@ -166,7 +154,7 @@ models:
             contains_pii: true
       - name: home_phone
         data_type: string
-        description: Home phone number for the student. Indexed.
+        description: Home phone number for the student.
         config:
           meta:
             source_system: PowerSchool
@@ -175,9 +163,6 @@ models:
             contains_pii: true
       - name: fedethnicity
         data_type: int64
-        description:
-          'Numerical answer to the question "Is the student Hispanic or Latino?"
-          Valid values :'
         config:
           meta:
             source_system: PowerSchool
@@ -185,10 +170,6 @@ models:
             source_column: fedethnicity
       - name: next_school
         data_type: int64
-        description:
-          The school the student will be attending the next school year. It is
-          likely this will be the sameschool. The information is stored as the
-          internal ID on the schools table for that school.
         config:
           meta:
             source_system: PowerSchool
@@ -196,9 +177,6 @@ models:
             source_column: next_school
       - name: sched_nextyeargrade
         data_type: int64
-        description:
-          The grade the student is going to be in next year. If the student is
-          being retained, this shouldbe the same as the current grade level.
         config:
           meta:
             source_system: PowerSchool
@@ -208,7 +186,7 @@ models:
         data_type: int64
       - name: gender
         data_type: string
-        description: M=Male F=Female. Indexed.
+        description: M=Male F=Female.
         config:
           meta:
             source_system: PowerSchool
@@ -216,9 +194,7 @@ models:
             source_column: gender
       - name: ethnicity
         data_type: string
-        description:
-          Heritage background of a student. The codes assigned here are stored
-          in the Gen Table [6]Cat=Ethnicity. These are set in school setup.
+        description: Heritage background of a student.
         config:
           meta:
             source_system: PowerSchool
@@ -226,10 +202,9 @@ models:
             source_column: ethnicity
       - name: yearid
         data_type: int64
-        description:
-          A number representing which year the term belongs to, such as 13 for
-          2003-2004. Thenumber is equal to the ID of the year term divided by
-          100. Maintained in the Terms table.Required. Indexed.
+        description: >
+          A number representing which year the term belongs to (e.g. 13 for
+          2003-2004). Equal to the ID of the year term divided by 100.
         config:
           meta:
             source_system: PowerSchool
@@ -237,11 +212,10 @@ models:
             source_column: yearid
       - name: academic_year
         data_type: int64
+        description: >
+          Starting calendar year of the school year (e.g. 2025 for 2025-2026).
       - name: track
         data_type: string
-        description:
-          A-H or blank. This represents the times of year a student goes to
-          school. This is most commonwith year-round schools.
         config:
           meta:
             source_system: PowerSchool
@@ -303,146 +277,338 @@ models:
         data_type: string
       - name: contact_1_address_home
         data_type: string
+        config:
+          meta:
+            contains_pii: true
       - name: contact_1_email_current
         data_type: string
+        config:
+          meta:
+            contains_pii: true
       - name: contact_1_name
         data_type: string
+        config:
+          meta:
+            contains_pii: true
       - name: contact_1_phone_daytime
         data_type: string
+        config:
+          meta:
+            contains_pii: true
       - name: contact_1_phone_home
         data_type: string
+        config:
+          meta:
+            contains_pii: true
       - name: contact_1_phone_mobile
         data_type: string
+        config:
+          meta:
+            contains_pii: true
       - name: contact_1_phone_primary
         data_type: string
+        config:
+          meta:
+            contains_pii: true
       - name: contact_1_phone_work
         data_type: string
+        config:
+          meta:
+            contains_pii: true
       - name: contact_1_relationship
         data_type: string
       - name: contact_2_address_home
         data_type: string
+        config:
+          meta:
+            contains_pii: true
       - name: contact_2_email_current
         data_type: string
+        config:
+          meta:
+            contains_pii: true
       - name: contact_2_name
         data_type: string
+        config:
+          meta:
+            contains_pii: true
       - name: contact_2_phone_daytime
         data_type: string
+        config:
+          meta:
+            contains_pii: true
       - name: contact_2_phone_home
         data_type: string
+        config:
+          meta:
+            contains_pii: true
       - name: contact_2_phone_mobile
         data_type: string
+        config:
+          meta:
+            contains_pii: true
       - name: contact_2_phone_primary
         data_type: string
+        config:
+          meta:
+            contains_pii: true
       - name: contact_2_phone_work
         data_type: string
+        config:
+          meta:
+            contains_pii: true
       - name: contact_2_relationship
         data_type: string
       - name: emergency_1_address_home
         data_type: string
+        config:
+          meta:
+            contains_pii: true
       - name: emergency_1_email_current
         data_type: string
+        config:
+          meta:
+            contains_pii: true
       - name: emergency_1_name
         data_type: string
+        config:
+          meta:
+            contains_pii: true
       - name: emergency_1_phone_daytime
         data_type: string
+        config:
+          meta:
+            contains_pii: true
       - name: emergency_1_phone_home
         data_type: string
+        config:
+          meta:
+            contains_pii: true
       - name: emergency_1_phone_mobile
         data_type: string
+        config:
+          meta:
+            contains_pii: true
       - name: emergency_1_phone_primary
         data_type: string
+        config:
+          meta:
+            contains_pii: true
       - name: emergency_1_phone_work
         data_type: string
+        config:
+          meta:
+            contains_pii: true
       - name: emergency_1_relationship
         data_type: string
       - name: emergency_2_address_home
         data_type: string
+        config:
+          meta:
+            contains_pii: true
       - name: emergency_2_email_current
         data_type: string
+        config:
+          meta:
+            contains_pii: true
       - name: emergency_2_name
         data_type: string
+        config:
+          meta:
+            contains_pii: true
       - name: emergency_2_phone_daytime
         data_type: string
+        config:
+          meta:
+            contains_pii: true
       - name: emergency_2_phone_home
         data_type: string
+        config:
+          meta:
+            contains_pii: true
       - name: emergency_2_phone_mobile
         data_type: string
+        config:
+          meta:
+            contains_pii: true
       - name: emergency_2_phone_primary
         data_type: string
+        config:
+          meta:
+            contains_pii: true
       - name: emergency_2_phone_work
         data_type: string
+        config:
+          meta:
+            contains_pii: true
       - name: emergency_2_relationship
         data_type: string
       - name: emergency_3_address_home
         data_type: string
+        config:
+          meta:
+            contains_pii: true
       - name: emergency_3_email_current
         data_type: string
+        config:
+          meta:
+            contains_pii: true
       - name: emergency_3_name
         data_type: string
+        config:
+          meta:
+            contains_pii: true
       - name: emergency_3_phone_daytime
         data_type: string
+        config:
+          meta:
+            contains_pii: true
       - name: emergency_3_phone_home
         data_type: string
+        config:
+          meta:
+            contains_pii: true
       - name: emergency_3_phone_mobile
         data_type: string
+        config:
+          meta:
+            contains_pii: true
       - name: emergency_3_phone_primary
         data_type: string
+        config:
+          meta:
+            contains_pii: true
       - name: emergency_3_phone_work
         data_type: string
+        config:
+          meta:
+            contains_pii: true
       - name: emergency_3_relationship
         data_type: string
       - name: pickup_1_address_home
         data_type: string
+        config:
+          meta:
+            contains_pii: true
       - name: pickup_1_email_current
         data_type: string
+        config:
+          meta:
+            contains_pii: true
       - name: pickup_1_name
         data_type: string
+        config:
+          meta:
+            contains_pii: true
       - name: pickup_1_phone_daytime
         data_type: string
+        config:
+          meta:
+            contains_pii: true
       - name: pickup_1_phone_home
         data_type: string
+        config:
+          meta:
+            contains_pii: true
       - name: pickup_1_phone_mobile
         data_type: string
+        config:
+          meta:
+            contains_pii: true
       - name: pickup_1_phone_primary
         data_type: string
+        config:
+          meta:
+            contains_pii: true
       - name: pickup_1_phone_work
         data_type: string
+        config:
+          meta:
+            contains_pii: true
       - name: pickup_1_relationship
         data_type: string
       - name: pickup_2_address_home
         data_type: string
+        config:
+          meta:
+            contains_pii: true
       - name: pickup_2_email_current
         data_type: string
+        config:
+          meta:
+            contains_pii: true
       - name: pickup_2_name
         data_type: string
+        config:
+          meta:
+            contains_pii: true
       - name: pickup_2_phone_daytime
         data_type: string
+        config:
+          meta:
+            contains_pii: true
       - name: pickup_2_phone_home
         data_type: string
+        config:
+          meta:
+            contains_pii: true
       - name: pickup_2_phone_mobile
         data_type: string
+        config:
+          meta:
+            contains_pii: true
       - name: pickup_2_phone_primary
         data_type: string
+        config:
+          meta:
+            contains_pii: true
       - name: pickup_2_phone_work
         data_type: string
+        config:
+          meta:
+            contains_pii: true
       - name: pickup_2_relationship
         data_type: string
       - name: pickup_3_address_home
         data_type: string
+        config:
+          meta:
+            contains_pii: true
       - name: pickup_3_email_current
         data_type: string
+        config:
+          meta:
+            contains_pii: true
       - name: pickup_3_name
         data_type: string
+        config:
+          meta:
+            contains_pii: true
       - name: pickup_3_phone_daytime
         data_type: string
+        config:
+          meta:
+            contains_pii: true
       - name: pickup_3_phone_home
         data_type: string
+        config:
+          meta:
+            contains_pii: true
       - name: pickup_3_phone_mobile
         data_type: string
+        config:
+          meta:
+            contains_pii: true
       - name: pickup_3_phone_primary
         data_type: string
+        config:
+          meta:
+            contains_pii: true
       - name: pickup_3_phone_work
         data_type: string
+        config:
+          meta:
+            contains_pii: true
       - name: pickup_3_relationship
         data_type: string
       - name: exit_code_kf
@@ -539,7 +705,6 @@ models:
         data_type: string
       - name: graduation_year
         data_type: int64
-        description: Student graduation year.
         config:
           meta:
             source_system: PowerSchool
@@ -559,8 +724,6 @@ models:
         data_type: int64
       - name: student_web_id
         data_type: string
-        description:
-          The student user ID for logging in to Power School Parent. Indexed.
         config:
           meta:
             source_system: PowerSchool
@@ -568,7 +731,6 @@ models:
             source_column: student_web_id
       - name: student_web_password
         data_type: string
-        description: The password for Student_Web_ID.
         config:
           meta:
             source_system: PowerSchool
@@ -585,7 +747,6 @@ models:
         data_type: string
       - name: spedlep
         data_type: string
-        description: Database extension field associated to the Students table.
         config:
           meta:
             source_system: PowerSchool
@@ -609,7 +770,7 @@ models:
         data_type: int64
       - name: student_name
         data_type: string
-        description: Last, First, Mi. Indexed.
+        description: Last, First, Mi.
         config:
           meta:
             source_system: PowerSchool
@@ -618,7 +779,6 @@ models:
             contains_pii: true
       - name: student_last_name
         data_type: string
-        description: Students last name.
         config:
           meta:
             source_system: PowerSchool
@@ -627,7 +787,6 @@ models:
             contains_pii: true
       - name: student_first_name
         data_type: string
-        description: Students' first name.
         config:
           meta:
             source_system: PowerSchool
@@ -636,7 +795,6 @@ models:
             contains_pii: true
       - name: student_middle_name
         data_type: string
-        description: Student's middle name.
         config:
           meta:
             source_system: PowerSchool
@@ -647,15 +805,6 @@ models:
         data_type: string
       - name: team
         data_type: string
-        description:
-          This field is necessary to capture the team value assigned in Power
-          Scheduler to a student.This will need to be moved from
-          Students:Sched_Next Year Team during the End-of-Yearprocess.
-          Sched_Next Year Team captures the record ID from the Gen table (Cat
-          =Teacher Groups). Current_Team cannot capture the ID since this record
-          is part of Power Scheduler and may be changed when scheduling for a
-          future year. An acceptablecompromise is to capture the value instead
-          (i.e. Blue) and store this.
         config:
           meta:
             source_system: PowerSchool
@@ -687,30 +836,10 @@ models:
         data_type: string
       - name: home_instruction_enter_date
         data_type: date
-        description: The date the student enters a program.
-        config:
-          meta:
-            source_system: PowerSchool
-            source_model: stg_powerschool__spenrollments
-            source_column: enter_date
       - name: home_instruction_exit_date
         data_type: date
-        description: The date the student left the program
-        config:
-          meta:
-            source_system: PowerSchool
-            source_model: stg_powerschool__spenrollments
-            source_column: exit_date
       - name: home_instruction_sp_comment
         data_type: string
-        description:
-          in5.2.0 CLOB Comment value. Populated when modified by a system
-          process. Mass Create, Import, Drop.
-        config:
-          meta:
-            source_system: PowerSchool
-            source_model: stg_powerschool__spenrollments
-            source_column: sp_comment
       - name: hos
         data_type: string
       - name: school_leader
@@ -765,57 +894,28 @@ models:
         data_type: string
       - name: district
         data_type: string
-        description: Computed expression.
       - name: region_school_level
         data_type: string
-        description: Derived from region, school_level.
       - name: guardian_email
         data_type: string
-        description:
-          First non-null of contact_1_email_current, contact_2_email_current.
       - name: academic_year_display
         data_type: string
-        description: Derived from academic_year.
       - name: next_year_enrollment_history
         data_type: string
-        description:
-          The grade level the student was in for this enrollment or if EOY, the
-          next grade level unless thestudent is being demoted. Conditional on
-          grade_level, next_year_enrollment_history.
       - name: overgrad_fafsa_opt_out
         data_type: string
-        description: Conditional on fafsa_opt_out.
       - name: grad_iep_exempt_status_overall
         data_type: string
-        data_tests:
-          - accepted_values:
-              arguments:
-                values:
-                  - Not Grad IEP Exempt
-                  - "Yes"
-        description:
-          The enrollment status of the student. Conditional on enroll_status,
-          grad_iep_exempt_overall.
       - name: iep_status
         data_type: string
-        description:
-          Database extension field associated to the Students table. Conditional
-          on spedlep.
       - name: ml_status
         data_type: string
-        description:
-          Student Limited English Proficiency status. Conditional on lep_status.
       - name: status_504
         data_type: string
-        description: Conditional on is_504.
       - name: self_contained_status
         data_type: string
-        description: Conditional on is_self_contained.
       - name: state_studentnumber
         data_type: string
-        description:
-          The state-assigned student number for the student. In most cases, this
-          number should stay thesame from school to school.
         config:
           meta:
             source_system: PowerSchool
@@ -824,81 +924,34 @@ models:
             contains_pii: true
       - name: secondary_state_studentnumber
         data_type: string
-        description:
-          The state-assigned student number for the student. In most cases, this
-          number should stay thesame from school to school. Conditional on
-          region, state_studentnumber.
       - name: ada
         data_type: float64
-        description:
-          Conditional on academic_year, ada_weighted_year, ada_year,
-          school_level.
       - name: met_fafsa_requirement
         data_type: boolean
-        description:
-          Conditional on fafsa_opt_out, salesforce_contact_df_has_fafsa.
       - name: is_counseling_services
         data_type: int64
-        description:
-          The date the student enters a program. Conditional on enter_date,
-          exit_date.
       - name: is_student_athlete
         data_type: int64
-        description:
-          The date the student enters a program. Conditional on enter_date,
-          exit_date.
       - name: is_tutoring
         data_type: boolean
-        description:
-          The date the student enters a program. Conditional on enter_date,
-          exit_date.
       - name: is_sipps
         data_type: boolean
-        description: Conditional on students_student_number.
       - name: student_slideback
         data_type: boolean
-        description: >
-          True if a student's projected unweighted GPA
-          (cumulative_y1_gpa_projected_unweighted) has dropped to a lower KTAF
-          GPA band than their current unweighted GPA
-          (cumulative_y1_gpa_unweighted). False if bands are equal, improving,
-          or either GPA value is null.
       - name: is_ada_above_or_at_80_cum_gpa_less_2
         data_type: boolean
-        description: >
-          True when the student's ADA is at or above 80% (using weighted ADA for
-          HS starting AY 2025) and their cumulative year-to-date GPA
-          (cumulative_y1_gpa) is below 2.0. False otherwise.
       - name: aligned_gender
         data_type: string
-        description: >
-          Full-word gender label derived from gender: 'F' = 'Female', 'M' =
-          'Male', 'X' = 'Non-Binary'.
       - name: enroll_status_string
         data_type: string
-        description:
-          The enrollment status of the student. Categorical mapping of
-          enroll_status.
       - name: race_ethnicity
         data_type: string
-        description:
-          Heritage background of a student. The codes assigned here are stored
-          in the Gen Table [6]Cat=Ethnicity. These are set in school setup.
-          Categorical mapping of ethnicity.
       - name: school_level_alt
         data_type: string
-        description:
-          The grade level the student was in for this enrollment or if EOY, the
-          next grade level unless thestudent is being demoted. Categorical
-          mapping of academic_year, grade_level, school_abbreviation,
-          school_level.
       - name: advisory
         data_type: string
-        description:
-          Categorical mapping of advisor_lastfirst, advisory_name, school_level.
       - name: state
         data_type: string
-        description: State element of address.
         config:
           meta:
             source_system: PowerSchool
@@ -906,22 +959,118 @@ models:
             source_column: state
       - name: ada_above_or_at_80
         data_type: boolean
-        description:
-          Categorical mapping of academic_year, ada_weighted_year, ada_year,
-          school_level.
       - name: fafsa_status_mismatch_category
         data_type: string
-        data_tests:
-          - accepted_values:
-              arguments:
-                values:
-                  - No issues
-              config:
-                where:
-                  grade_level != 99 and academic_year = {{
-                  var('current_academic_year')}}
+      - name: sectionid
+        data_type: int64
+        description: Internal ID of the course section.
+        config:
+          meta:
+            source_system: PowerSchool
+            source_model: base_powerschool__course_enrollments
+            source_column: cc_sectionid
+      - name: course_number
+        data_type: string
+        description: Course number from the PS Courses table.
+        config:
+          meta:
+            source_system: PowerSchool
+            source_model: base_powerschool__course_enrollments
+            source_column: cc_course_number
+      - name: sections_dcid
+        data_type: int64
+        description: DCID of the associated Sections record.
+        config:
+          meta:
+            source_system: PowerSchool
+            source_model: base_powerschool__course_enrollments
+            source_column: sections_dcid
+      - name: section_number
+        data_type: string
+        config:
+          meta:
+            source_system: PowerSchool
+            source_model: base_powerschool__course_enrollments
+            source_column: sections_section_number
+      - name: external_expression
+        data_type: string
+        description: Period/day expression for the section (e.g. A(A)).
+        config:
+          meta:
+            source_system: PowerSchool
+            source_model: base_powerschool__course_enrollments
+            source_column: sections_external_expression
+      - name: credit_type
+        data_type: string
+        description: Credit type of the course (e.g. MATH, ENG).
+        config:
+          meta:
+            source_system: PowerSchool
+            source_model: base_powerschool__course_enrollments
+            source_column: courses_credittype
+      - name: course_name
+        data_type: string
+        config:
+          meta:
+            source_system: PowerSchool
+            source_model: base_powerschool__course_enrollments
+            source_column: courses_course_name
+      - name: exclude_from_gpa
+        data_type: int64
         description:
-          The grade level the student was in for this enrollment or if EOY, the
-          next grade level unless thestudent is being demoted. Categorical
-          mapping of academic_year, fafsa_opt_out, grade_level,
-          salesforce_contact_df_has_fafsa.
+          1 if this course is excluded from GPA calculations, 0 otherwise.
+        config:
+          meta:
+            source_system: PowerSchool
+            source_model: base_powerschool__course_enrollments
+            source_column: courses_excludefromgpa
+      - name: sections_no_of_students
+        data_type: int64
+        description: Number of students enrolled in the section.
+        config:
+          meta:
+            source_system: PowerSchool
+            source_model: base_powerschool__course_enrollments
+            source_column: sections_no_of_students
+      - name: teacher_number
+        data_type: string
+        config:
+          meta:
+            source_system: PowerSchool
+            source_model: base_powerschool__course_enrollments
+            source_column: teachernumber
+      - name: teacher_name
+        data_type: string
+        description: Teacher last name, first name.
+        config:
+          meta:
+            source_system: PowerSchool
+            source_model: base_powerschool__course_enrollments
+            source_column: teacher_lastfirst
+      - name: quarter
+        data_type: string
+        description: Term storecode (Q1, Q2, Q3, Q4).
+        config:
+          meta:
+            source_system: PowerSchool
+            source_model: int_powerschool__terms
+            source_column: term
+      - name: quarter_start_date
+        data_type: date
+        description: First day of the quarter term.
+        config:
+          meta:
+            source_system: PowerSchool
+            source_model: int_powerschool__terms
+            source_column: term_start_date
+      - name: quarter_end_date
+        data_type: date
+        description: Last day of the quarter term.
+        config:
+          meta:
+            source_system: PowerSchool
+            source_model: int_powerschool__terms
+            source_column: term_end_date
+      - name: is_current_quarter
+        data_type: boolean
+        description: True if today falls within this quarter's date range.

@@ -102,7 +102,7 @@ models:
             source_column: actualscoreentered
       - name: students_dcid
         data_type: int64
-      - name: school_level
+      - name: school_level_alt
         data_type: string
       - name: is_late
         data_type: int64
@@ -112,6 +112,10 @@ models:
         data_type: int64
       - name: is_expected
         data_type: boolean
+        description: >
+          True when the student is expected to have a score for this assignment:
+          not exempt, counted in final grade, and at least 7 days have passed
+          since the assignment due date. False otherwise.
       - name: score_entered
         data_type: float64
       - name: points_earned
@@ -146,7 +150,7 @@ models:
         description: Conditional on score_entered.
       - name: is_academic_dishonesty
         data_type: int64
-        description: Conditional on is_missing, school_level, score_entered.
+        description: Conditional on is_missing, school_level_alt, score_entered.
       - name: is_null
         data_type: int64
         description: Conditional on score_entered.
@@ -159,7 +163,8 @@ models:
       - name: is_expected_academic_dishonesty
         data_type: int64
         description:
-          Conditional on is_expected, is_missing, school_level, score_entered.
+          Conditional on is_expected, is_missing, school_level_alt,
+          score_entered.
       - name: is_expected_null
         data_type: int64
         description: Conditional on is_expected, score_entered.

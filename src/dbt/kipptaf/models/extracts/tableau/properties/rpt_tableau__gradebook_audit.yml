@@ -19,15 +19,11 @@ models:
         data_type: string
       - name: semester
         data_type: string
-      - name: audit_qt_week_number
-        data_type: int64
       - name: quarter_start_date
         data_type: date
       - name: quarter_end_date
         data_type: date
       - name: is_current_quarter
-        data_type: boolean
-      - name: is_quarter_end_date_range
         data_type: boolean
       - name: audit_start_date
         data_type: date
@@ -35,8 +31,6 @@ models:
         data_type: date
       - name: audit_due_date
         data_type: date
-      - name: is_current_week
-        data_type: boolean
       - name: assignment_category_name
         data_type: string
       - name: assignment_category_code
@@ -44,7 +38,7 @@ models:
       - name: assignment_category_term
         data_type: string
       - name: expectation
-        data_type: float64
+        data_type: int64
       - name: notes
         data_type: string
       - name: section_or_period
@@ -72,6 +66,12 @@ models:
       - name: teacher_name
         data_type: string
       - name: teacher_tableau_username
+        data_type: string
+      - name: manager_employee_number
+        data_type: int64
+      - name: manager_name
+        data_type: string
+      - name: manager_tableau_username
         data_type: string
       - name: school_leader
         data_type: string
@@ -107,16 +107,16 @@ models:
         data_type: int64
       - name: n_expected_scored
         data_type: int64
-      - name: total_expected_scored_section_quarter_week_category
-        data_type: float64
-      - name: total_expected_section_quarter_week_category
-        data_type: float64
-      - name: percent_graded_for_quarter_week_class
+      - name: total_expected_scored_section_quarter_category
+        data_type: int64
+      - name: total_expected_section_quarter_category
+        data_type: int64
+      - name: percent_graded_for_quarter_class
         data_type: float64
       - name: sum_totalpointvalue_section_quarter_category
         data_type: float64
       - name: teacher_running_total_assign_by_cat
-        data_type: float64
+        data_type: int64
       - name: teacher_avg_score_for_assign_per_class_section_and_assign_id
         data_type: float64
       - name: audit_category
@@ -185,14 +185,10 @@ models:
         data_type: date
       - name: category_quarter_percent_grade
         data_type: float64
-      - name: category_quarter_average_all_courses
-        data_type: float64
       - name: quarter_course_percent_grade
         data_type: float64
       - name: quarter_course_grade_points
         data_type: float64
-      - name: quarter_conduct
-        data_type: string
       - name: quarter_comment_value
         data_type: string
       - name: raw_score

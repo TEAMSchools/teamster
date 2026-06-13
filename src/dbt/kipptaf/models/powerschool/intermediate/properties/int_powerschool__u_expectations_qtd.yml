@@ -1,5 +1,5 @@
 models:
-  - name: int_powerschool__u_expectations_qtd
+  - name: int_powerschool__u_expectations_qtd_unpivot
     description:
       Quarter-to-date expectations counts per region and school level. For each
       active quarter, returns the counts from the most recent school week with
@@ -12,6 +12,7 @@ models:
               - region
               - school_level
               - quarter
+              - assignment_category_code
     columns:
       - name: region
         data_type: string
@@ -27,25 +28,32 @@ models:
         data_type: int64
         description:
           Week number within the quarter as of which the counts are reported.
-      - name: cnt_w
-        data_type: int64
-        description:
-          Count of students in the W expectations bucket as of week_number_qtd.
-      - name: cnt_h
-        data_type: int64
-        description:
-          Count of students in the H expectations bucket as of week_number_qtd.
-      - name: cnt_f
-        data_type: int64
-        description:
-          Count of students in the F expectations bucket as of week_number_qtd.
-      - name: cnt_s
-        data_type: int64
-        description:
-          Count of students in the S expectations bucket as of week_number_qtd.
       - name: week_start_monday
         data_type: date
         description: Monday of the school week represented by week_number_qtd.
       - name: week_end_sunday
         data_type: date
         description: Sunday of the school week represented by week_number_qtd.
+      - name: notes
+        data_type: string
+      - name: assignment_category_code
+        data_type: string
+        description: Single-letter category code (W, H, F, or S).
+      - name: expectation
+        data_type: int64
+        description:
+          Count of expected assignments for this category as of week_number_qtd.
+      - name: academic_year
+        data_type: int64
+        description: >
+          Academic year (starting year). Always current_academic_year — the
+          model filters to one year only.
+      - name: assignment_category_term
+        data_type: string
+        description:
+          Category code concatenated with quarter number (e.g. W1, H2, F3, S4).
+      - name: assignment_category_name
+        data_type: string
+        description:
+          Human-readable category name (Work Habits, Homework, Formative
+          Mastery, Summative Mastery).
