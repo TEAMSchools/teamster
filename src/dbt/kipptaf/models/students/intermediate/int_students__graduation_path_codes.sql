@@ -30,7 +30,7 @@ with
             fulfilling the NJGPA test requirement */
             if(
                 current_date('{{ var("local_timezone") }}')
-                < date({{ var("current_academic_year") + 1 }}, 06, 05),
+                < date({{ var("current_academic_year") + 1 }}, 06, 30),
                 false,
                 true
             ) as njgpa_season_11th,
