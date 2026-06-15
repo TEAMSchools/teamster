@@ -125,6 +125,14 @@ mutate ProjectV2 items/fields fail with "Resource not accessible by integration"
 — prefix with `GITHUB_TOKEN=` to fall back to the user's OAuth token (`gho_*`)
 which has full scopes.
 
+`gh workflow run` (`workflow_dispatch`) can't be done from the Codespace: the
+`ghu_*` token lacks the `workflow` scope (403 "Resource not accessible by
+integration"), and emptying it via `GITHUB_TOKEN=` leaves `gh` API calls
+unauthenticated. No `mcp__github__*` tool dispatches workflows either — hand it
+to the user or the Actions UI. (Pushing a commit that edits a
+`deploy-prod-<loc>.yaml` also triggers that location's deploy, since the file is
+in its own push-paths.)
+
 ## Modifying protected files
 
 - Hook scripts (`.claude/hooks/**/*.sh`), `.devcontainer/scripts/`, and

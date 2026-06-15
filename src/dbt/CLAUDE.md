@@ -106,6 +106,13 @@ pre-merge re-stage reverts CI to the old (narrow) schema.
 `stage_external_sources` SKIPs an existing table unless
 `ext_full_refresh: true`.
 
+Re-pulling a source asset refreshes the **prod** external
+(`<district>_<source>.src_*`) but NOT the `zz_stg_*` staging external that
+`--target staging` builds and dbt Cloud CI read — those stay frozen until
+`stage_external_sources --target staging` re-runs. A BigQuery MCP query against
+the prod external passing does NOT mean a staging build / CI will; verify
+against `zz_stg_*`.
+
 Contract enforcement matches columns by **name + type, not YAML order** — new
 contract columns may be added anywhere in `properties.yml`. Regenerate a large
 struct `data_type` by pulling it verbatim from `INFORMATION_SCHEMA.COLUMNS` of
@@ -116,11 +123,15 @@ dbt CLI runs locally for Claude: `DBT_PROFILES_DIR` (repo `.dbt`) + ADC →
 1Password (BigQuery uses ADC, not the 1Password bootstrap). `--target prod` runs
 (`dbt build` / `run`) are blocked by the auto-mode classifier as production
 deploys even with verbal approval — hand prod runs to the user.
+`stage_external_sources --target staging` with `ext_full_refresh: true` is also
+classifier-blocked (drops/recreates shared `zz_stg` tables) — needs direct user
+authorization in the immediately-preceding turn, else hand off.
 
 `stage_external_sources --args "select: ..."` takes a
 `<source_name>.<table_name>` selector — not project-qualified. The
 project-prefix form (e.g. `kipptaf.google_sheets.<table>`) silently matches zero
-sources.
+sources. Multiple space-separated selectors work in one call:
+`select: pearson.src_pearson__njsla pearson.src_pearson__njsla_science`.
 
 `stage_external_sources` is a `dbt run-operation` — `--threads` doesn't apply.
 Running it in parallel across all 5 district projects exhausts BigQuery's
@@ -584,6 +595,10 @@ the same partition.
   `ON` clauses. Deleted rows should never reach intermediate or mart models.
   Omit columns whose value is predetermined by the WHERE filter (e.g.,
   `deleted_at` after `WHERE deleted_at IS NULL`) — they add no signal.
+- **SFTP `source_file_name`**: drop in the staging model with
+  `select * except (source_file_name)` — the SFTP IO adds it to every row
+  (`core/utils/functions.py`); a contracted `stg_*` that doesn't except it fails
+  the contract on the next re-pull after the ingestion change.
 - **Google Sheets external-table case**: `select *,` in a staging model inherits
   the sheet header case (often PascalCase). Contract-enforced YAML column names
   must match that case, or use explicit `<raw> as <renamed>` aliasing in the

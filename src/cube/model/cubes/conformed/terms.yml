@@ -53,6 +53,8 @@ cubes:
           KIPP academic year (July start) this term falls within. Calendar year
           in which the academic year begins (e.g., 2025 for the 2025–26 school
           year) — opposite of typical FY conventions where FY2025 ends in 2025.
+          academic_year 2025 = the 2025-26 school year = SY26. SY notation uses
+          the END year; this integer uses the START year.
         sql: academic_year
         type: number
         public: true

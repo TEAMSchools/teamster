@@ -10,6 +10,17 @@
   `deploy-prod-*.yaml` workflows. Uses `cancel-in-progress: true` grouped by
   workflow + ref + event — rapid pushes to the same branch cancel prior deploys.
   Does not prevent multiple locations deploying simultaneously from one commit.
+- **Each `deploy-prod-<location>.yaml` push-`paths` must list every dbt package
+  in that district's `src/dbt/<district>/packages.yml`** (`src/dbt/pearson/**`,
+  etc.). Drift silently skips that district's prod deploy on a shared
+  source-package change, stranding it on stale code (PR #4175: paterson omitted
+  `src/dbt/pearson/**` → failed contract enforcement while newark/camden
+  deployed). After merging a source-package change, confirm every consuming
+  district deployed (`gh run list --branch main`); a post-merge prod failure
+  whose run tags show the OLD `dagster/git_commit_hash`/image is a
+  missed/lagging deploy, not a code bug. The `pull_request` `paths`
+  intentionally exclude `src/dbt/**` (dbt Cloud CI covers those); only the
+  `push` section needs them.
 - `trunk-check.yaml` — runs Trunk linter on PRs (excludes `requirements.txt`).
 - `mkdocs-gh-deploy.yaml` — deploys docs site on push to `main`.
 - `deploy-cube-mcp.yaml` — builds and deploys the Cube MCP server to Cloud Run

@@ -130,3 +130,10 @@ models:
         description: >-
           TRUE if the student repeated this grade level in the same school
           compared to the prior academic year.
+
+      - name: year_in_network
+        data_type: int64
+        description: >-
+          Count of years the student has been enrolled in the network. Populated
+          on the student's primary enrollment stint per academic year; null on
+          additional same-year stints (multi-stint students).

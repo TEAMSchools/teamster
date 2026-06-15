@@ -18,6 +18,7 @@ on:
       - src/dbt/amplify/**
       - src/dbt/finalsite/**
       - src/dbt/kipppaterson/**
+      - src/dbt/pearson/**
       - src/dbt/powerschool/**
       - src/teamster/code_locations/kipppaterson/**
       - src/teamster/core/**
