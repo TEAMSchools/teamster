@@ -41,7 +41,7 @@ dev = [
   "cron-descriptor>=1.4",
   "dagster-plus-mcp @ git+https://github.com/TEAMSchools/dagster-plus-mcp.git",
   "dagster-webserver",
-  "pytest>=8.3.4",
+  "pytest>=9.1.0",
 ]
 docs = ["mkdocs-material>=9.7.5"]
 
