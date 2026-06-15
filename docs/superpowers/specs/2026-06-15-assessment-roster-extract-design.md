@@ -170,14 +170,13 @@ lands once the URL is known.
 - Build/validate with `uv run dbt build --select int_assessments__roster_union+`
   against kipptaf.
 
-## Verification items (resolve during implementation)
+## Verification items
 
-- Confirm i-Ready `student_id` is the PowerSchool `student_number`; if it is the
-  internal i-Ready id, route through the identity crosswalk.
-- Confirm the exact `school_abbreviation` column name in
-  `int_extracts__student_enrollments_subjects`.
-- Confirm the NJSLA subject mapping from `illuminate_subject` covers only ELA &
-  Math (exclude science).
+- i-Ready `student_id` is the PowerSchool `student_number` — confirmed; join
+  directly.
+- Demographics column is `school_abbreviation` — confirmed.
+- During implementation: confirm the NJSLA subject mapping from
+  `illuminate_subject` covers only ELA & Math (exclude science).
 
 ## Out of scope (model 1)
 
@@ -243,9 +242,7 @@ Contract enforced (extracts default); `unique` + `not_null` on the PK;
 
 ### Verification items (model 2)
 
-- Confirm `powerschool_teacher_number` is unique among teachers (staff_roster's
-  uniqueness test is on `employee_number` + `powerschool_teacher_number`). If
-  not 1:1, key the PK on `employee_number` and still surface the teacher number.
+- `powerschool_teacher_number` is 1:1 with teachers — confirmed; it is the PK.
 
 ### Exposure (model 2)
 
