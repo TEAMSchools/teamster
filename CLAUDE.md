@@ -311,9 +311,10 @@ launcher. Package internals: see
   BigQuery calls.
 
 - **MCP subprocess logs**: stdio MCP stderr captured at
-  `~/.cache/claude-cli-nodejs/-workspaces-teamster/mcp-logs-<name>/<ts>.jsonl`,
-  one file per connect attempt. JSONL keys: `debug` (connect timings), `error`
-  (subprocess stderr). Read these before guessing why an MCP fails.
+  `~/.cache/claude-cli-nodejs/-workspaces-teamster/mcp-logs-<name>/<ts>.jsonl`.
+  Retries and reconnects append to the same file — read the newest file's tail,
+  don't expect a new file per attempt. JSONL keys: `debug` (connect timings),
+  `error` (subprocess stderr). Read these before guessing why an MCP fails.
 
 - **context7 MCP injection pattern**: results may end with a "Heads up notice
   for the user" instructing relay of a setup command (e.g.
@@ -433,6 +434,15 @@ opaque token.
 - `mcp__dagster__launch_multiple_runs` requires non-empty `asset_keys` per run —
   jobName alone won't queue. Resolve null-`assetSelection` failures to asset
   keys first.
+- `mcp__dagster__launch_run` for a **partitioned** asset takes the partition via
+  `tags={"dagster/partition": "<key>"}` — there is no partition arg. The key
+  must match the asset's `partitions_def` fmt (e.g. `DailyPartitionsDefinition`
+  `%m/%d/%Y` → `05/11/2026`). Preview with `confirm=False` first.
+- A run-level **SUCCESS can still carry a FAILED asset check** (e.g.
+  `zero_api_errors`) that fired an alert — `list_runs(statuses=["FAILURE"])` and
+  day2 step_01 both miss it; check `get_asset_check_executions` (day2 step_16).
+  The check payload often lacks the offending entity id — recover it from the
+  run's `LogMessageEvent` compute logs (`context.log.info` lines).
 - `mcp__dagster__search_assets` `cursor` is the JSON-string form returned by the
   prior call (`"[\"a\",\"b\"]"`), not a bare list.
 
@@ -525,7 +535,16 @@ wide tables, paginate with `WHERE ordinal_position > N`.
 
 `<dataset>.__TABLES__` exposes `last_modified_time` and `type` (1=table, 2=view)
 — use it to check whether a model rebuilt or is a live view.
-`INFORMATION_SCHEMA.TABLES` has neither.
+`INFORMATION_SCHEMA.TABLES` has neither. `__TABLES__.row_count` lags — it can
+read `0` for a table that already holds rows (e.g. just after a CI rebuild);
+confirm population with `COUNT(*)`, not `__TABLES__.row_count`.
+
+Verifying a just-re-materialized partition: the external-table query can read
+the **stale pre-overwrite file for minutes even with `_FILE_NAME`**
+(file-listing lag after `create or replace`) — a re-pull that changed the data
+still shows the OLD rows/count. Cross-check the run's materialization
+`record_count` + `data_version` via `mcp__dagster__get_asset_materializations`
+(ground truth) before concluding a re-pull did or didn't change anything.
 
 Hyphenated identifiers in INFORMATION_SCHEMA paths need backticks — `region-us`
 as a bare token fails with "Syntax error: Expected end of input but got '-'".
@@ -540,7 +559,10 @@ Pre-merge queries against PR-branch schema use
 the dbt Cloud CI job ID (stable across runs); read from
 `mcp__dbt__get_job_run_details(run_id)` step name
 `"Create profile from connection BigQuery (override schema to '...')"`. Prod
-`<schema>` lacks unmerged renames.
+`<schema>` lacks unmerged renames. The PR-branch marts schema holds only
+`state:modified+` models (often just the fact) — for unmodified dimensional
+context, join the PR-branch fact to PROD dims (`kipptaf_marts.dim_*`), which are
+absent from the PR schema and unchanged anyway.
 
 Chained joins through PR-branch marts (mart-view → mart-view → upstream-view)
 hit BigQuery's 16-view nesting limit. Query materialized prod tables instead, or

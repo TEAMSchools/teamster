@@ -65,6 +65,18 @@ models:
             source_model: stg_google_sheets__assessments__course_subject_crosswalk
             source_column: discipline
 
+      - name: is_foundations
+        data_type: boolean
+        description: >-
+          TRUE if this course is a Foundations (intervention) course, per the
+          course-subject crosswalk.
+
+        config:
+          meta:
+            source_system: Google Sheets
+            source_model: stg_google_sheets__assessments__course_subject_crosswalk
+            source_column: is_foundations
+
       - name: credits
         data_type: float64
         description: >-

@@ -4,11 +4,12 @@ cli:
 plugins:
   sources:
     - id: trunk
-      ref: v1.10.0
+      ref: v1.10.2
       uri: https://github.com/trunk-io/plugins
 lint:
   enabled:
-    - grype@0.113.0
+    - pinact@4.1.0
+    - grype@0.114.0
     - bandit@1.9.4
     - actionlint@1.7.12
     - git-diff-check
@@ -18,9 +19,9 @@ lint:
     - markdownlint@0.48.0
     - osv-scanner@2.3.8
     - oxipng@10.1.1
-    - prettier@3.8.3
+    - prettier@3.8.4
     - pyright@1.1.410
-    - ruff@0.15.16
+    - ruff@0.15.17
     - shellcheck@0.11.0
     - shfmt@3.6.0
     - sqlfluff@4.2.2

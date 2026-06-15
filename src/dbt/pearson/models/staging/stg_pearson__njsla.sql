@@ -2,6 +2,7 @@ with
     njsla as (
         select
             * except (
+                source_file_name,
                 accountabledistrictcode,
                 accountableorganizationaltype,
                 accountableschoolcode,

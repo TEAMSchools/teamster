@@ -349,6 +349,17 @@ select
         )
     }} as assessment_administration_key,
 
+    {{
+        dbt_utils.generate_surrogate_key(
+            [
+                "assessment_type",
+                "module_code",
+                "source_assessment_id",
+                "test_type",
+            ]
+        )
+    }} as assessment_key,
+
     -- `academic_year` is intentionally not exposed in the final SELECT —
     -- it's a hash input only. The canonical-grain dim represents an
     -- administration scoped by `_dbt_source_project` + `administered_date_key`

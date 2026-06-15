@@ -187,6 +187,13 @@ The `cube` MCP wraps Cube Cloud's REST API. Auth path that works:
   diagnosing API errors on a branch staging env, verify
   `GOOGLE_DIRECTORY_SA_KEY` / `GOOGLE_DIRECTORY_SA_SUBJECT` (and any other
   required secrets) are set on that environment.
+- **Validate a cube against a Tableau dashboard from the workbook extract**:
+  `unzip <workbook>.twbx`, then query `Data/Extracts/*.hyper` with
+  `uv run --with tableauhyperapi python` (the data table is
+  `"Extract"."Extract"`). Reproduce a Tableau categorical group (e.g. a
+  Subject-Area "Literacy" bin) from its `<calculation class='categorical-bin'>`
+  `<value>` list in the `.twb`. Cube side = the PR-branch fact joined to prod
+  dims with the same filters.
 
 ## Jinja in cube YAML
 

@@ -27,6 +27,26 @@ models:
           - unique
           - not_null
 
+      - name: assessment_key
+        data_type: string
+        description: >-
+          FK to dim_assessments. Resolves to the canonical-representative member
+          row for Illuminate (the canonical id is itself the representative
+          member id) and the 1:1 row for state assessments. Lets consumers read
+          canonical descriptors (title, academic_subject, type,
+          grade_level_tested, module_type) without denormalizing them onto this
+          dim.
+        constraints:
+          - type: foreign_key
+            to: ref('dim_assessments')
+            to_columns: [assessment_key]
+            warn_unsupported: false
+        data_tests:
+          - relationships:
+              arguments:
+                to: ref('dim_assessments')
+                field: assessment_key
+
       - name: administered_date_key
         data_type: date
         description: >-
