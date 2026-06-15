@@ -1,4 +1,57 @@
 with
+    -- trunk-ignore(sqlfluff/ST03)
+    actual_quarters as (
+        select
+            c._dbt_source_project,
+            c.academic_year,
+            c.region,
+            c.schoolid,
+            c.`quarter`,
+            c.first_day_school_year,
+            c.last_day_school_year,
+
+            t.is_current_term as is_current_quarter,
+
+            if(
+                c.`quarter` = 'Q1' and t.term_start_date < c.first_day_school_year,
+                c.first_day_school_year,
+                t.term_start_date
+            ) as quarter_start_date,
+
+            if(
+                c.`quarter` = 'Q4' and t.term_end_date > c.last_day_school_year,
+                c.last_day_school_year,
+                t.term_end_date
+            ) as quarter_end_date,
+
+            sum(c.date_count) over (
+                partition by
+                    c._dbt_source_project,
+                    c.academic_year,
+                    c.region,
+                    c.schoolid,
+                    c.`quarter`
+            ) as days_in_quarter,
+
+        from {{ ref("int_powerschool__calendar_week") }} as c
+        inner join
+            {{ ref("int_powerschool__terms") }} as t
+            on c.academic_year = t.academic_year
+            and c.schoolid = t.schoolid
+            and c._dbt_source_project = t._dbt_source_project
+            and c.`quarter` = t.term
+    ),
+
+    quarters as (
+        {{
+            dbt_utils.deduplicate(
+                relation="actual_quarters",
+                partition_by="_dbt_source_project, academic_year, region, schoolid, `quarter`",
+                order_by="quarter_start_date",
+            )
+        }}
+    ),
+
     schedule_by_terms as (
         select
             e._dbt_source_project,
@@ -17,44 +70,90 @@ with
             e.teachernumber as teacher_number,
             e.teacher_lastfirst as teacher_name,
 
-            t.term as `quarter`,
-            t.term_start_date as quarter_start_date,
-            t.term_end_date as quarter_end_date,
-            t.is_current_term as is_current_quarter,
+            q.`quarter`,
+            q.quarter_start_date,
+            q.quarter_end_date,
+            q.is_current_quarter,
+            q.first_day_school_year,
+            q.last_day_school_year,
+            q.days_in_quarter,
+
+            if(
+                e.cc_dateenrolled < q.first_day_school_year,
+                q.first_day_school_year,
+                e.cc_dateenrolled
+            ) as dateenrolled,
+
+            if(
+                e.cc_dateleft > q.last_day_school_year,
+                q.last_day_school_year,
+                e.cc_dateleft
+            ) as dateleft,
 
             row_number() over (
-                partition by e.cc_studentid, e.cc_course_number, t.term
-                order by e.cc_dateleft desc
+                partition by e.cc_studentid, e.cc_course_number, q.`quarter`
+                order by e.cc_dateleft desc, e.cc_sectionid desc
             ) as rn,
 
         from {{ ref("base_powerschool__course_enrollments") }} as e
         inner join
-            {{ ref("int_powerschool__terms") }} as t
-            on e.cc_academic_year = t.academic_year
-            and e.cc_schoolid = t.schoolid
-            and e._dbt_source_project = t._dbt_source_project
-            and e.cc_dateenrolled <= t.term_end_date
-            and e.cc_dateleft >= t.term_start_date
-        where
-            e.cc_academic_year = {{ var("current_academic_year") }}
-            and not e.is_dropped_section
+            quarters as q
+            on e.cc_academic_year = q.academic_year
+            and e.cc_schoolid = q.schoolid
+            and e._dbt_source_project = q._dbt_source_project
+            and e.cc_dateenrolled <= q.quarter_end_date
+            and e.cc_dateleft >= q.quarter_start_date
+        where not e.is_dropped_section
     ),
 
-    -- one school enrollment row per student per year; prefer latest exitdate
-    student_enrollment as (
+    days_course_enrolled as (
         select
-            *,
+            s._dbt_source_project,
+            s.cc_academic_year,
+            s.cc_schoolid,
+            s.cc_studentid,
+            s.course_number,
+            s.`quarter`,
 
-            row_number() over (
-                partition by _dbt_source_project, studentid, academic_year
-                order by exitdate desc
-            ) as rn,
+            sum(c.date_count) as days_course_enrolled,
 
+        from schedule_by_terms as s
+        inner join
+            {{ ref("int_powerschool__calendar_week") }} as c
+            on s.cc_academic_year = c.academic_year
+            and s.cc_schoolid = c.schoolid
+            and s._dbt_source_project = c._dbt_source_project
+            and s.`quarter` = c.`quarter`
+            and s.dateenrolled <= c.school_week_end_date
+            and s.dateleft >= c.school_week_start_date
+        where s.rn = 1
+        group by
+            s._dbt_source_project,
+            s.cc_academic_year,
+            s.cc_schoolid,
+            s.cc_studentid,
+            s.course_number,
+            s.`quarter`
+    ),
+
+    -- trunk-ignore(sqlfluff/ST03)
+    student_enrollment_base as (
+        select *,
         from {{ ref("int_extracts__student_enrollments") }}
         where exitdate >= date(academic_year, 8, 1)
-        qualify rn = 1
+    ),
+
+    student_enrollment as (
+        {{
+            dbt_utils.deduplicate(
+                relation="student_enrollment_base",
+                partition_by="_dbt_source_project, studentid, academic_year",
+                order_by="exitdate desc",
+            )
+        }}
     )
 
+-- trunk-ignore(sqlfluff/AM04)
 select
     e.*,
 
@@ -73,6 +172,12 @@ select
     s.quarter_start_date,
     s.quarter_end_date,
     s.is_current_quarter,
+    s.dateenrolled,
+    s.dateleft,
+    s.days_in_quarter,
+    d.days_course_enrolled,
+
+    safe_divide(d.days_course_enrolled, s.days_in_quarter) as pct_enrolled_in_quarter,
 
 from student_enrollment as e
 inner join
@@ -82,3 +187,11 @@ inner join
     and e.studentid = s.cc_studentid
     and e._dbt_source_project = s._dbt_source_project
     and s.rn = 1
+left join
+    days_course_enrolled as d
+    on s.cc_academic_year = d.cc_academic_year
+    and s.cc_schoolid = d.cc_schoolid
+    and s.cc_studentid = d.cc_studentid
+    and s.course_number = d.course_number
+    and s.`quarter` = d.`quarter`
+    and s._dbt_source_project = d._dbt_source_project
