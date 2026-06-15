@@ -1,6 +1,13 @@
-# Assessment Roster Google Sheets Extract — Design
+# Assessment + Teacher Google Sheets Extracts — Design
 
 Issue: [#4191](https://github.com/TEAMSchools/teamster/issues/4191)
+
+Two related Google Sheets extracts delivered on one branch:
+
+1. **Assessment roster** — student/test/round grain (sections below through "Out
+   of scope").
+2. **Teacher roster** — teacher/year grain; the join partner to model 1's
+   `teacher_powerschool_teacher_number` (see "Model 2").
 
 ## Context
 
@@ -172,7 +179,81 @@ lands once the URL is known.
 - Confirm the NJSLA subject mapping from `illuminate_subject` covers only ELA &
   Math (exclude science).
 
-## Out of scope
+## Out of scope (model 1)
 
-- The second extract model (to be specified separately).
 - Backfill/Dagster scheduling beyond the standard dagster-dbt asset pickup.
+
+## Model 2 — teacher roster extract
+
+### Overview
+
+`rpt_gsheets__teacher_roster` — a standalone Google Sheets extract at
+teacher/year grain, joining staff attributes, current-year performance scores,
+and experience. It is the join partner to model 1 via
+`powerschool_teacher_number`. Race/ethnicity and gender are deliberately
+excluded from the sheet.
+
+### Decisions (model 2)
+
+- **Architecture:** a single reporting view. `int_people__staff_roster` is
+  already teacher-grain, so the `rpt_` view refs the three intermediates and
+  joins them — no union or new intermediate needed, and the `rpt`-buffers-
+  intermediate rule is satisfied on its own.
+- **Year:** `var("current_academic_year")` for the perf/experience joins (not
+  hardcoded), so it rolls forward each July.
+- **Population:** teachers only (`powerschool_teacher_number is not null`).
+- **PII:** race/ethnicity and gender excluded; teacher is identified by
+  `powerschool_teacher_number` (the intended join key to model 1).
+
+### Grain (model 2)
+
+One row per `powerschool_teacher_number` for the current academic year.
+
+### Joins (model 2)
+
+- Base: `int_people__staff_roster` (one row per employee), filtered to
+  `powerschool_teacher_number is not null`.
+- LEFT join `int_performance_management__overall_scores` on `employee_number`
+  and `academic_year = var("current_academic_year")`.
+- LEFT join `int_people__years_experience` on `employee_number` and
+  `academic_year = var("current_academic_year")`.
+
+Left joins so a teacher with no current-year score/experience still appears
+(null metrics).
+
+### Final sheet columns (model 2)
+
+| Column                       | Source                                  |
+| ---------------------------- | --------------------------------------- |
+| `powerschool_teacher_number` | staff_roster (PK / join key to model 1) |
+| `academic_year`              | `var("current_academic_year")`          |
+| `job_title`                  | staff_roster                            |
+| `level_of_education`         | staff_roster                            |
+| `final_score`                | overall_scores                          |
+| `final_tier`                 | overall_scores                          |
+| `years_at_kipp_total`        | years_experience                        |
+| `years_experience_total`     | years_experience                        |
+| `years_teaching_total`       | years_experience                        |
+
+### Testing (model 2)
+
+Contract enforced (extracts default); `unique` + `not_null` on the PK;
+`not_null` on `academic_year`. Build with
+`uv run dbt build --select rpt_gsheets__teacher_roster` against kipptaf.
+
+### Verification items (model 2)
+
+- Confirm `powerschool_teacher_number` is unique among teachers (staff_roster's
+  uniqueness test is on `employee_number` + `powerschool_teacher_number`). If
+  not 1:1, key the PK on `employee_number` and still surface the teacher number.
+
+### Exposure (model 2)
+
+Add `rpt_gsheets__teacher_roster` to
+`src/dbt/kipptaf/models/exposures/google-sheets.yml`; URL provided later.
+
+### Out of scope (model 2)
+
+- Race/ethnicity and gender columns (deliberately excluded).
+- Multi-year history (staff_roster is a current snapshot with no
+  `academic_year`).
