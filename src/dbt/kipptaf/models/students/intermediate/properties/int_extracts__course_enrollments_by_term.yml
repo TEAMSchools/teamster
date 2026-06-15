@@ -1047,6 +1047,22 @@ models:
             source_system: PowerSchool
             source_model: base_powerschool__course_enrollments
             source_column: teacher_lastfirst
+      - name: termid
+        data_type: int64
+        description: Internal ID of the term the section belongs to.
+        config:
+          meta:
+            source_system: PowerSchool
+            source_model: base_powerschool__course_enrollments
+            source_column: sections_termid
+      - name: is_ap_course
+        data_type: boolean
+        description: True if the course is an AP course.
+        config:
+          meta:
+            source_system: PowerSchool
+            source_model: base_powerschool__course_enrollments
+            source_column: is_ap_course
       - name: quarter
         data_type: string
         description: Term storecode (Q1, Q2, Q3, Q4).
