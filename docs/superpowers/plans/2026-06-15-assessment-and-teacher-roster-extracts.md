@@ -77,6 +77,15 @@ The population is every `student_number` present in the demographics model
 within the two-year window, so the crosswalk covers exactly the students model 1
 can emit.
 
+The `student_anon_id` is a **salted** hash. The salt is read from
+`env_var("STUDENT_ANON_SALT", "dev_salt")` and appended as a quoted string
+literal inside the hash inputs. The `dev_salt` default keeps local and dbt Cloud
+CI builds working (throwaway schemas); the real secret is set only in the prod
+runtime (Dagster deployment / secret bootstrap) and must stay constant —
+changing it re-anonymizes every student. An unsalted hash of a low-entropy
+`student_number` is brute-forceable by anyone who knows the method, so the salt
+is required.
+
 ```sql
 with
     students as (
@@ -89,9 +98,18 @@ with
 
 select distinct
     student_number,
-    {{ dbt_utils.generate_surrogate_key(["student_number"]) }} as student_anon_id,
+    {{
+        dbt_utils.generate_surrogate_key(
+            ["student_number", "'" ~ env_var("STUDENT_ANON_SALT", "dev_salt") ~ "'"]
+        )
+    }} as student_anon_id,
 from students
 ```
+
+> **Prerequisite (prod):** provision the `STUDENT_ANON_SALT` secret in the prod
+> runtime environment before the first prod materialization, and record it where
+> it won't change. This is a secret-setup step for you / platform, not a code
+> change.
 
 - [ ] **Step 2: Write the properties YAML**
 

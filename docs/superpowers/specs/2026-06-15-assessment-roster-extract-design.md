@@ -27,9 +27,15 @@ id back to `student_number` inside BigQuery.
 - **Architecture:** union intermediate + thin reporting view (Approach B), per
   the kipptaf rule that an `rpt_*` view must buffer an intermediate from any
   external consumer.
-- **Anon id:** stable `generate_surrogate_key(['student_number'])` in the sheet;
-  a separate internal-only crosswalk model maps it back to `student_number`. The
-  crosswalk gets no Google Sheets exposure.
+- **Anon id:** stable **salted** hash of `student_number` in the sheet —
+  `generate_surrogate_key(['student_number', '<salt>'])`, where the salt is read
+  from `env_var('STUDENT_ANON_SALT')` (a dev/CI default; the real secret is
+  provisioned only in the prod runtime and never committed). Salting closes the
+  brute-force hole: an unsalted MD5 of a low-entropy `student_number` is
+  trivially reversible by anyone who knows the (public) method. A separate
+  internal-only crosswalk model maps the id back to `student_number`; it gets no
+  Google Sheets exposure. The salt must stay constant in prod — changing it
+  re-anonymizes every student.
 - **Performance columns:** two columns — `performance_band_label` (string, e.g.
   "Mid or Above Grade Level") and `performance_band_int` (integer, e.g. 5). Both
   are native to each source; no new standardized scale is invented.
@@ -99,11 +105,20 @@ Location: `src/dbt/kipptaf/models/assessments/intermediate/`. One row per
 ```sql
 select distinct
     student_number,
-    {{ dbt_utils.generate_surrogate_key(["student_number"]) }} as student_anon_id
+    {{
+        dbt_utils.generate_surrogate_key(
+            ["student_number", "'" ~ env_var("STUDENT_ANON_SALT", "dev_salt") ~ "'"]
+        )
+    }} as student_anon_id
 from <enrollment population>
 ```
 
-Internal-only decode table — **no Google Sheets exposure.** Decode usage:
+The salt is appended as a quoted string literal inside the hash inputs.
+`env_var("STUDENT_ANON_SALT", "dev_salt")` falls back to `dev_salt` for local
+and dbt Cloud CI (throwaway schemas), so those builds never break; the real
+secret is set only in the prod runtime environment (Dagster deployment / secret
+bootstrap) and must remain constant. Internal-only decode table — **no Google
+Sheets exposure.** Decode usage:
 `select student_number from <crosswalk> where student_anon_id = '<id>'`.
 
 ### 3. `rpt_gsheets__assessment_roster`
