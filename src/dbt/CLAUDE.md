@@ -177,6 +177,11 @@ file before re-running the build.
 Stdout interleaves dbt log lines with JSON records. Pipe through `grep '^{'`
 before parsing.
 
+## `dbt show --inline` rejects a trailing `limit`
+
+dbt 1.11/BigQuery errors when an `--inline` query ends in `limit N`. Omit it —
+`dbt show` already caps rows with its own `--limit` flag (default 5).
+
 ## Materialization overrides go in properties yml
 
 Use `config: materialized: <kind>` in `properties/<model>.yml`, not inline

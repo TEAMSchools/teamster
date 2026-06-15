@@ -391,10 +391,12 @@ the allowlist.
   equivalents and are not on this list.
 - Editing an existing comment — `mcp__github__add_issue_comment` only creates.
   Use `gh api -X PATCH repos/<owner>/<repo>/issues/comments/<id> -f body='...'`.
-- Replying to a PR inline review comment in-thread —
-  `mcp__github__add_issue_comment` posts top-level PR comments only, not thread
-  replies. Use
-  `gh api -X POST repos/<owner>/<repo>/pulls/<pr>/comments/<id>/replies -f body='...'`.
+- Replying to a PR inline review comment in-thread — use
+  `mcp__github__add_reply_to_pull_request_comment`
+  (`mcp__github__add_issue_comment` posts top-level PR comments only, not thread
+  replies). The `gh api -X POST .../pulls/<pr>/comments/<id>/replies` fallback
+  is blocked by the classifier (read as routing around the `gh pr comment` deny)
+  — don't retry it.
 - `gh api -X POST repos/<owner>/<repo>/labels -f name=... -f color=... -f description=...`
   — no `mcp__github__*` label-create tool.
 - `gh api -X POST repos/<owner>/<repo>/issues/<n>/labels -f 'labels[]=<name>'` —
