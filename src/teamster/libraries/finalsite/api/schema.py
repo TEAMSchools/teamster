@@ -42,16 +42,6 @@ class Household(BaseModel):
     country: str | None = None
 
 
-class Relationship(BaseModel):
-    id: str | None = None
-    rel_id: str | None = None
-    rel_name: str | None = None
-    rel_type: str | None = None
-    primary: bool | None = None
-    financial: bool | None = None
-    portal_access: bool | None = None
-
-
 class SchoolYear(BaseModel):
     id: str | None = None
     name: str | None = None
@@ -65,6 +55,16 @@ class CustomAttribute(BaseModel):
     field_display_name: str | None = None
 
     value: bool | str | list[str] | None = None
+
+
+class Relationship(BaseModel):
+    id: str | None = None
+    rel_id: str | None = None
+    rel_name: str | None = None
+    rel_type: str | None = None
+    primary: bool | None = None
+    financial: bool | None = None
+    portal_access: bool | None = None
 
 
 class TrackAttribute(CustomAttribute):

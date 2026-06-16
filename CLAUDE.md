@@ -73,6 +73,12 @@ file; domain specifics live in the nearest subdirectory CLAUDE.md.
   path breaks — pass an absolute script path or run it from the main repo.
   Otherwise prefer absolute paths.
 
+- **Worktree Read/Edit/Write must target the worktree path**, not the main
+  checkout: editing `/workspaces/teamster/<path>` instead of
+  `/workspaces/teamster/.worktrees/<branch>/<path>` silently leaves the worktree
+  unchanged and dirties `main` (the worktree commit then reports "nothing to
+  commit").
+
 - **Branch switch**: with an issue,
   `gh issue develop <number> --name <branch> --checkout`; if the user explicitly
   declined an issue, `git checkout -b <branch>`.

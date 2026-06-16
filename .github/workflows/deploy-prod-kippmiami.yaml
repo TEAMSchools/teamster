@@ -61,6 +61,7 @@ on:
       - synchronize
       - reopened
       - closed
+      - ready_for_review
 
 jobs:
   dagster-cloud-deploy:
