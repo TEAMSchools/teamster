@@ -260,7 +260,7 @@ alone may be safe; combinations may not. When unsure, consult the
 
 - **Branch creation always goes through the issue-and-branch flow in _Working
   Conventions_** — no exceptions for `superpowers:brainstorming`'s "Write design
-  doc" step, `superpowers:writing-plans`' "Save plan" step, or
+  doc" step, `superpowers:writing-plans`' "Save plans to:" step, or
   `superpowers:using-git-worktrees`' worktree-consent prompt. Pause those
   skills, run the flow, then write specs to `docs/superpowers/specs/...` or
   plans to `docs/superpowers/plans/...` on the new branch. Default to
@@ -274,11 +274,15 @@ alone may be safe; combinations may not. When unsure, consult the
   pre-commit `fmt` hook; checking only the code files misses a doc-only Trunk
   failure.
 
-- **`finishing-a-development-branch` verification gate**: Skip the skill's
-  `npm test / pytest / ...` heuristic. For dbt changes,
-  `uv run dbt build --select <model>+` against the relevant project. For Python
-  changes, `uv run pytest` where tests exist. PR body uses
-  `.github/pull_request_template.md`.
+- **`finishing-a-development-branch` / `using-git-worktrees` tooling**: This repo
+  is `uv`-only — skip both skills' `npm test / cargo test / pytest / go test`
+  heuristics, plus `using-git-worktrees` Step 2 setup (`poetry install` /
+  `pip install`) and Step 3 baseline. Verify dbt changes with
+  `uv run dbt build --select <model>+` against the relevant project, Python with
+  `uv run pytest` where tests exist. At `finishing-a-development-branch`'s menu
+  pick Option 2 (push + PR) — never Option 1 (local merge to `main`;
+  `git push origin main` is hard-blocked and we squash-merge via PR). PR body
+  uses `.github/pull_request_template.md`.
 
 - **Before brainstorming a fix for a GitHub issue**: verify the issue's claims
   (row counts, bucket sizes, reproduce queries, named files/columns) against
@@ -286,8 +290,9 @@ alone may be safe; combinations may not. When unsure, consult the
   PRs land. Re-run the diagnostic before designing.
 
 - **Continuous execution exceptions**: `superpowers:subagent-driven-development`
-  and `superpowers:executing-plans` say "do not pause between tasks." Pause
-  anyway to ask the user before (a) opening a tracking issue, (b) creating a
+  and `superpowers:executing-plans` push you to execute every task without
+  pausing to check in. Pause anyway to ask the user before (a) opening a
+  tracking issue, (b) creating a
   branch or worktree, (c) modifying protected files (hook scripts,
   `.devcontainer/scripts/`, `.claude/settings*.json`).
 
