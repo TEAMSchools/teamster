@@ -9,6 +9,7 @@ from dagster_shared import check
 from teamster import GCS_PROJECT_NAME
 from teamster.core.io_managers.gcs import GCSIOManager
 from teamster.libraries.deanslist.resources import DeansListResource
+from teamster.libraries.finalsite.api.resources import FinalsiteResource
 from teamster.libraries.google.drive.resources import GoogleDriveResource
 from teamster.libraries.google.forms.resources import GoogleFormsResource
 from teamster.libraries.overgrad.resources import OvergradResource
@@ -87,6 +88,12 @@ DEANSLIST_RESOURCE = DeansListResource(
     subdomain=EnvVar("DEANSLIST_SUBDOMAIN"),
     api_key_map="/etc/secret-volume/deanslist_api_key_map_yaml",
     request_timeout=90.0,
+)
+
+FINALSITE_RESOURCE = FinalsiteResource(
+    server="kippmiami",
+    credential_id=EnvVar("FINALSITE_CREDENTIAL_ID_KIPPMIAMI"),
+    secret=EnvVar("FINALSITE_SECRET_KIPPMIAMI"),
 )
 
 DLT_RESOURCE = DagsterDltResource()
