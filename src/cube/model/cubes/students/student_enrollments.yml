@@ -1,7 +1,7 @@
 cubes:
   - name: student_enrollments
     public: false
-    sql_table: zz_cristinabaldor_kipptaf_marts.fct_student_attendance_daily
+    sql_table: kipptaf_marts.fct_student_attendance_daily
 
     joins:
       - name: dates
