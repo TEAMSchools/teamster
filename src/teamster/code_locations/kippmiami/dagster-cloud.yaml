@@ -176,12 +176,12 @@ locations:
                 valueFrom:
                   secretKeyRef:
                     name: op-finalsite-api-kippmiami
-                    key: credential_id
+                    key: username
               - name: FINALSITE_SECRET
                 valueFrom:
                   secretKeyRef:
                     name: op-finalsite-api-kippmiami
-                    key: secret
+                    key: password
         run_k8s_config:
           container_config:
             env:
@@ -189,12 +189,12 @@ locations:
                 valueFrom:
                   secretKeyRef:
                     name: op-finalsite-api-kippmiami
-                    key: credential_id
+                    key: username
               - name: FINALSITE_SECRET
                 valueFrom:
                   secretKeyRef:
                     name: op-finalsite-api-kippmiami
-                    key: secret
+                    key: password
               - name: COUCHDROP_SFTP_PASSWORD
                 valueFrom:
                   secretKeyRef:
