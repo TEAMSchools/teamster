@@ -65,6 +65,15 @@ cubes:
         type: number
         public: true
 
+      - name: year_in_network
+        description: >-
+          Count of years the student has been enrolled in the network. Populated
+          on the student's primary enrollment stint per academic year; null on
+          additional same-year stints.
+        sql: year_in_network
+        type: number
+        public: true
+
       - name: entry_date
         sql: CAST(entry_date_key AS TIMESTAMP)
         type: time

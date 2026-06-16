@@ -4,9 +4,9 @@ cubes:
     sql_table: kipptaf_marts.dim_student_section_enrollments
 
     joins:
-      - name: student_enrollments
+      - name: student_enrollment_stints
         sql: >
-          {student_enrollments.student_enrollment_key} =
+          {student_enrollment_stints.student_enrollment_key} =
           {CUBE}.student_enrollment_key
         relationship: many_to_one
 
@@ -29,7 +29,7 @@ cubes:
 
       - name: student_enrollment_key
         description:
-          FK to student_enrollments (resolved school enrollment stint).
+          FK to student_enrollment_stints (resolved school enrollment stint).
         sql: student_enrollment_key
         type: string
         public: true

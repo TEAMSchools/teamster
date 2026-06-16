@@ -61,7 +61,7 @@ views:
           - is_dropped_section
           - is_dropped_course
 
-      - join_path: student_assessment_scores.student_section_enrollments.student_enrollments
+      - join_path: student_assessment_scores.student_section_enrollments.student_enrollment_stints
         includes:
           - grade_level
           - graduation_year
@@ -69,7 +69,7 @@ views:
           - is_retained_year
 
       - join_path: >-
-          student_assessment_scores.student_section_enrollments.student_enrollments.student_enrollment_status
+          student_assessment_scores.student_section_enrollments.student_enrollment_stints.student_enrollment_status
         includes:
           - is_ell
           - is_iep
@@ -81,14 +81,14 @@ views:
           - meal_eligibility
 
       - join_path: >-
-          student_assessment_scores.student_section_enrollments.student_enrollments.students
+          student_assessment_scores.student_section_enrollments.student_enrollment_stints.students
         includes:
           - gender_identity
           - race
           - is_gifted
 
       - join_path: >-
-          student_assessment_scores.student_section_enrollments.student_enrollments.locations
+          student_assessment_scores.student_section_enrollments.student_enrollment_stints.locations
         includes:
           - location_name
           - abbreviation
@@ -97,7 +97,7 @@ views:
           - city
 
       - join_path: >-
-          student_assessment_scores.student_section_enrollments.student_enrollments.locations.regions
+          student_assessment_scores.student_section_enrollments.student_enrollment_stints.locations.regions
         includes:
           - region_name
           - state
