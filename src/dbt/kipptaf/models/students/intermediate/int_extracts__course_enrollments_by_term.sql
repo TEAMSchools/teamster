@@ -202,3 +202,9 @@ left join
     and s.`quarter` = d.`quarter`
     and s._dbt_source_project = d._dbt_source_project
 where not e.is_pre_year_withdrawal
+qualify
+    row_number() over (
+        partition by s._dbt_source_project, s.cc_studentid, s.course_number, s.`quarter`
+        order by e.exitdate desc
+    )
+    = 1
