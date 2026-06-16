@@ -93,48 +93,6 @@ with
         from {{ ref("base_powerschool__student_enrollments") }}
         where grade_level != 99
         group by _dbt_source_project, academic_year, student_number
-    ),
-
-    gpa_bands as (
-        select
-            _dbt_source_project,
-            schoolid,
-            studentid,
-
-            cumulative_y1_gpa,
-            cumulative_y1_gpa_unweighted,
-            cumulative_y1_gpa_projected,
-            cumulative_y1_gpa_projected_s1,
-            cumulative_y1_gpa_projected_s1_unweighted,
-            cumulative_y1_gpa_projected_unweighted,
-            core_cumulative_y1_gpa,
-            earned_credits_cum,
-            earned_credits_cum_projected,
-            potential_credits_cum,
-
-            case
-                when cumulative_y1_gpa_unweighted >= 3.00
-                then 4
-                when cumulative_y1_gpa_unweighted >= 2.50
-                then 3
-                when cumulative_y1_gpa_unweighted >= 2.00
-                then 2
-                when cumulative_y1_gpa_unweighted < 2.00
-                then 1
-            end as cumulative_y1_gpa_unweighted_band,
-
-            case
-                when cumulative_y1_gpa_projected_unweighted >= 3.00
-                then 4
-                when cumulative_y1_gpa_projected_unweighted >= 2.50
-                then 3
-                when cumulative_y1_gpa_projected_unweighted >= 2.00
-                then 2
-                when cumulative_y1_gpa_projected_unweighted < 2.00
-                then 1
-            end as cumulative_y1_gpa_projected_unweighted_band,
-
-        from {{ ref("int_powerschool__gpa_cumulative") }}
     )
 
 select
@@ -306,6 +264,8 @@ select
         false
     ) as is_ada_above_or_at_80_cum_gpa_less_2,
 
+    if(e.exitdate < date(e.academic_year, 8, 1), true, false) as is_pre_year_withdrawal,
+
     case
         e.gender when 'F' then 'Female' when 'M' then 'Male' when 'X' then 'Non-Binary'
     end as aligned_gender,
@@ -445,7 +405,7 @@ left join
     and e.academic_year = (adapy.academic_year + 1)
     and e._dbt_source_project = adapy._dbt_source_project
 left join
-    gpa_bands as gc
+    {{ ref("int_powerschool__gpa_cumulative") }} as gc
     on e.studentid = gc.studentid
     and e.schoolid = gc.schoolid
     and e._dbt_source_project = gc._dbt_source_project

@@ -9,6 +9,8 @@ with
             c.`quarter`,
             c.first_day_school_year,
             c.last_day_school_year,
+            t.term_start_date as quarter_start_date,
+            t.term_end_date as quarter_end_date,
 
             t.is_current_term as is_current_quarter,
 
@@ -16,13 +18,13 @@ with
                 c.`quarter` = 'Q1' and t.term_start_date < c.first_day_school_year,
                 c.first_day_school_year,
                 t.term_start_date
-            ) as quarter_start_date,
+            ) as alt_quarter_start_date,
 
             if(
                 c.`quarter` = 'Q4' and t.term_end_date > c.last_day_school_year,
                 c.last_day_school_year,
                 t.term_end_date
-            ) as quarter_end_date,
+            ) as alt_quarter_end_date,
 
             sum(c.date_count) over (
                 partition by
@@ -58,6 +60,8 @@ with
             e.cc_academic_year,
             e.cc_schoolid,
             e.cc_studentid,
+            e.cc_dateenrolled as dateenrolled,
+            e.cc_dateleft as dateleft,
             e.cc_sectionid as sectionid,
             e.cc_course_number as course_number,
             e.sections_dcid,
@@ -75,6 +79,8 @@ with
             q.`quarter`,
             q.quarter_start_date,
             q.quarter_end_date,
+            q.alt_quarter_start_date,
+            q.alt_quarter_end_date,
             q.is_current_quarter,
             q.first_day_school_year,
             q.last_day_school_year,
@@ -84,13 +90,13 @@ with
                 e.cc_dateenrolled < q.first_day_school_year,
                 q.first_day_school_year,
                 e.cc_dateenrolled
-            ) as dateenrolled,
+            ) as alt_dateenrolled,
 
             if(
                 e.cc_dateleft > q.last_day_school_year,
                 q.last_day_school_year,
                 e.cc_dateleft
-            ) as dateleft,
+            ) as alt_dateleft,
 
             row_number() over (
                 partition by e.cc_studentid, e.cc_course_number, q.`quarter`
@@ -103,8 +109,8 @@ with
             on e.cc_academic_year = q.academic_year
             and e.cc_schoolid = q.schoolid
             and e._dbt_source_project = q._dbt_source_project
-            and e.cc_dateenrolled <= q.quarter_end_date
-            and e.cc_dateleft >= q.quarter_start_date
+            and e.cc_dateenrolled <= q.alt_quarter_end_date
+            and e.cc_dateleft >= q.alt_quarter_start_date
         where not e.is_dropped_section
     ),
 
@@ -126,8 +132,8 @@ with
             and s.cc_schoolid = c.schoolid
             and s._dbt_source_project = c._dbt_source_project
             and s.`quarter` = c.`quarter`
-            and s.dateenrolled <= c.school_week_end_date
-            and s.dateleft >= c.school_week_start_date
+            and s.alt_dateenrolled <= c.school_week_end_date
+            and s.alt_dateleft >= c.school_week_start_date
         where s.rn = 1
         group by
             s._dbt_source_project,
@@ -136,26 +142,8 @@ with
             s.cc_studentid,
             s.course_number,
             s.`quarter`
-    ),
-
-    -- trunk-ignore(sqlfluff/ST03)
-    student_enrollment_base as (
-        select *,
-        from {{ ref("int_extracts__student_enrollments") }}
-        where exitdate >= date(academic_year, 8, 1)
-    ),
-
-    student_enrollment as (
-        {{
-            dbt_utils.deduplicate(
-                relation="student_enrollment_base",
-                partition_by="_dbt_source_project, studentid, academic_year",
-                order_by="exitdate desc",
-            )
-        }}
     )
 
--- trunk-ignore(sqlfluff/AM04)
 select
     e.*,
 
@@ -175,15 +163,24 @@ select
     s.`quarter`,
     s.quarter_start_date,
     s.quarter_end_date,
+    s.alt_quarter_start_date,
+    s.alt_quarter_end_date,
     s.is_current_quarter,
     s.dateenrolled,
     s.dateleft,
+    s.alt_dateenrolled,
+    s.alt_dateleft,
     s.days_in_quarter,
+
     d.days_course_enrolled,
+
+    if(
+        e.school_level_alt = 'HS', s.external_expression, s.section_number
+    ) as section_or_period,
 
     safe_divide(d.days_course_enrolled, s.days_in_quarter) as pct_enrolled_in_quarter,
 
-from student_enrollment as e
+from {{ ref("int_extracts__student_enrollments") }} as e
 inner join
     schedule_by_terms as s
     on e.academic_year = s.cc_academic_year
@@ -199,3 +196,4 @@ left join
     and s.course_number = d.course_number
     and s.`quarter` = d.`quarter`
     and s._dbt_source_project = d._dbt_source_project
+where not e.is_pre_year_withdrawal

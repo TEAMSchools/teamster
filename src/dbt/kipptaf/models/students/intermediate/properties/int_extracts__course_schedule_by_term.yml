@@ -1,0 +1,299 @@
+models:
+  - name: int_extracts__course_schedule_by_term
+    description: >
+      One row per section per quarter, enriched with teacher, manager, and
+      school leadership from the staff roster and leadership crosswalk. Covers
+      all academic years and all regions. Quarter-level PS term sections are
+      excluded (only year and semester sections fan out to quarters).
+    config:
+      schema: extracts
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns:
+              - _dbt_source_project
+              - sectionid
+              - quarter
+          config:
+            severity: error
+    columns:
+      - name: _dbt_source_project
+        data_type: string
+        description: Source project identifier (district code).
+        config:
+          meta:
+            source_system: PowerSchool
+            source_model: base_powerschool__sections
+            source_column: _dbt_source_project
+      - name: academic_year
+        data_type: int64
+        description: Academic year (e.g. 2025 = 2025–26 school year).
+        config:
+          meta:
+            source_system: PowerSchool
+            source_model: base_powerschool__sections
+            source_column: terms_academic_year
+      - name: school
+        data_type: string
+        description: School abbreviation.
+        config:
+          meta:
+            source_system: PowerSchool
+            source_model: base_powerschool__sections
+            source_column: school_abbreviation
+      - name: school_level
+        data_type: string
+        description: School level (ES, MS, HS).
+        config:
+          meta:
+            source_system: PowerSchool
+            source_model: base_powerschool__sections
+            source_column: school_level
+      - name: sections_dcid
+        data_type: int64
+        description: PowerSchool DCID for the section record.
+        config:
+          meta:
+            source_system: PowerSchool
+            source_model: base_powerschool__sections
+            source_column: sections_dcid
+      - name: sectionid
+        data_type: int64
+        description: PowerSchool section ID.
+        config:
+          meta:
+            source_system: PowerSchool
+            source_model: base_powerschool__sections
+            source_column: sections_id
+      - name: schoolid
+        data_type: int64
+        description: PowerSchool school ID.
+        config:
+          meta:
+            source_system: PowerSchool
+            source_model: base_powerschool__sections
+            source_column: sections_schoolid
+      - name: course_number
+        data_type: string
+        description: Course number.
+        config:
+          meta:
+            source_system: PowerSchool
+            source_model: base_powerschool__sections
+            source_column: sections_course_number
+      - name: section_number
+        data_type: string
+        description: Section number.
+        config:
+          meta:
+            source_system: PowerSchool
+            source_model: base_powerschool__sections
+            source_column: sections_section_number
+      - name: external_expression
+        data_type: string
+        description: External expression (period/day schedule pattern).
+        config:
+          meta:
+            source_system: PowerSchool
+            source_model: base_powerschool__sections
+            source_column: sections_external_expression
+      - name: course_name
+        data_type: string
+        description: Course name.
+        config:
+          meta:
+            source_system: PowerSchool
+            source_model: base_powerschool__sections
+            source_column: courses_course_name
+      - name: credit_type
+        data_type: string
+        description: Credit type (e.g. MATH, ENG).
+        config:
+          meta:
+            source_system: PowerSchool
+            source_model: base_powerschool__sections
+            source_column: courses_credittype
+      - name: exclude_from_gpa
+        data_type: int64
+        description:
+          Flag indicating whether the course is excluded from GPA calculation.
+        config:
+          meta:
+            source_system: PowerSchool
+            source_model: base_powerschool__sections
+            source_column: courses_excludefromgpa
+      - name: sections_no_of_students
+        data_type: int64
+        description: Number of students enrolled in the section.
+        config:
+          meta:
+            source_system: PowerSchool
+            source_model: base_powerschool__sections
+            source_column: sections_no_of_students
+      - name: teacher_number
+        data_type: string
+        description: Teacher's PowerSchool teacher number.
+        config:
+          meta:
+            source_system: PowerSchool
+            source_model: base_powerschool__sections
+            source_column: teachernumber
+      - name: teacher_name
+        data_type: string
+        description: Teacher's last, first name.
+        config:
+          meta:
+            source_system: PowerSchool
+            source_model: base_powerschool__sections
+            source_column: teacher_lastfirst
+      - name: teacher_tableau_username
+        data_type: string
+        description: Teacher's Tableau username (SAM account name).
+        config:
+          meta:
+            source_system: People
+            source_model: int_people__staff_roster
+            source_column: sam_account_name
+      - name: manager_employee_number
+        data_type: int64
+        description: Employee number of the teacher's direct manager.
+        config:
+          meta:
+            source_system: People
+            source_model: int_people__staff_roster
+            source_column: reports_to_employee_number
+      - name: manager_name
+        data_type: string
+        description: Formatted name of the teacher's direct manager.
+        config:
+          meta:
+            source_system: People
+            source_model: int_people__staff_roster
+            source_column: reports_to_formatted_name
+      - name: manager_tableau_username
+        data_type: string
+        description: Tableau username of the teacher's direct manager.
+        config:
+          meta:
+            source_system: People
+            source_model: int_people__staff_roster
+            source_column: reports_to_sam_account_name
+      - name: hos
+        data_type: string
+        description: Head of school preferred name (last, first).
+        config:
+          meta:
+            source_system: People
+            source_model: int_people__leadership_crosswalk
+            source_column: head_of_school_preferred_name_lastfirst
+      - name: school_leader
+        data_type: string
+        description: School leader preferred name (last, first).
+        config:
+          meta:
+            source_system: People
+            source_model: int_people__leadership_crosswalk
+            source_column: school_leader_preferred_name_lastfirst
+      - name: school_leader_tableau_username
+        data_type: string
+        description: School leader's Tableau username.
+        config:
+          meta:
+            source_system: People
+            source_model: int_people__leadership_crosswalk
+            source_column: school_leader_sam_account_name
+      - name: quarter
+        data_type: string
+        description: Reporting quarter (Q1–Q4).
+        config:
+          meta:
+            source_system: PowerSchool
+            source_model: int_powerschool__terms
+            source_column: term
+      - name: semester
+        data_type: string
+        description: Semester (S1, S2).
+        config:
+          meta:
+            source_system: PowerSchool
+            source_model: int_powerschool__terms
+            source_column: semester
+      - name: quarter_start_date
+        data_type: date
+        description: First day of the quarter.
+        config:
+          meta:
+            source_system: PowerSchool
+            source_model: int_powerschool__terms
+            source_column: term_start_date
+      - name: quarter_end_date
+        data_type: date
+        description: Last day of the quarter.
+        config:
+          meta:
+            source_system: PowerSchool
+            source_model: int_powerschool__terms
+            source_column: term_end_date
+      - name: quarter_start_date_alt
+        data_type: date
+        description: >
+          Adjusted quarter start date. Clamps Q1 start to the first day of
+          school when the PS term start predates it.
+        config:
+          meta:
+            source_system: PowerSchool
+            source_model: int_powerschool__calendar_week
+            source_column: first_day_school_year
+      - name: quarter_end_date_alt
+        data_type: date
+        description: >
+          Adjusted quarter end date. Clamps Q4 end to the last day of school
+          when the PS term end falls after it.
+        config:
+          meta:
+            source_system: PowerSchool
+            source_model: int_powerschool__calendar_week
+            source_column: last_day_school_year
+      - name: is_current_quarter
+        data_type: boolean
+        description: True if the quarter is the current reporting term.
+        config:
+          meta:
+            source_system: PowerSchool
+            source_model: int_powerschool__terms
+            source_column: is_current_term
+      - name: days_in_quarter
+        data_type: int64
+        description: Total instructional days in the quarter for this school.
+        config:
+          meta:
+            source_system: PowerSchool
+            source_model: int_powerschool__calendar_week
+            source_column: date_count
+      - name: region
+        data_type: string
+        description:
+          Region name derived from the source project (e.g. Newark, Camden).
+        config:
+          meta:
+            source_system: PowerSchool
+            source_model: base_powerschool__sections
+            source_column: _dbt_source_project
+      - name: school_level_alt
+        data_type: string
+        description: >
+          Alternate school level override. Set to 'MS' for KIPP Sumner
+          Elementary grade 5 sections; null otherwise.
+        config:
+          meta:
+            source_system: PowerSchool
+            source_model: base_powerschool__sections
+      - name: academic_year_display
+        data_type: string
+        description: >
+          Academic year formatted as 'YYYY-YY' (e.g. 2025-26).
+        config:
+          meta:
+            source_system: PowerSchool
+            source_model: base_powerschool__sections
+            source_column: terms_academic_year
