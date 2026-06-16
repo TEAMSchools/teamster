@@ -1,3 +1,4 @@
+# trunk-ignore-all(yamllint/empty-values): vendor swagger reference dump
 ---
 openapi: 3.0.1
 paths:

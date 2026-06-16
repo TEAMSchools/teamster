@@ -10,7 +10,7 @@
 - **Related:** inbound Focus-load spec
   `2026-04-03-focus-sis-integration-design.md` (distinct pipeline — that loads
   Focus → warehouse; this pushes Finalsite → Focus)
-- **API reference:** `references/focus-api-spec.md` (+ `.json`)
+- **API reference:** `references/focus-api-spec.md`
 - **Source sample:** Finalsite Swiss Army Export "Focus Student Export" SFTP CSV
   (`kippmiami_SwissArmyExport_Focus_Student_Export…_SFTP_…`, 2026-06-02). PII —
   held in Drive, **not committed** to the repo. Schema documented in _Fork 1_.
@@ -201,7 +201,7 @@ enrollment, if the API can't create enrollments.
 How completely each **Finalsite source** (SFTP export vs REST API) can populate
 each **Focus target** (the 5 SFTP import templates vs the `POST /student` API).
 Authoritative field lists: Finalsite API = `references/finalsite-api-spec.yml`;
-Focus API = `references/focus-api-spec.json`; Focus SFTP = the FL K-12 import
+Focus API = `references/focus-api-spec.md`; Focus SFTP = the FL K-12 import
 workbook; Finalsite SFTP = the landed export (_Fork 1_).
 
 **Legend:** ✓ direct field in the source · ◐ obtainable by pipeline derivation,
