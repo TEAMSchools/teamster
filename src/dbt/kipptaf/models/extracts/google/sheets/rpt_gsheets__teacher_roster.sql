@@ -1,4 +1,8 @@
 with
+    -- primary_indicator + the April-1 as-of filter is assumed to yield one row
+    -- per teacher; the upstream grain is (employee_number, effective_date_start,
+    -- position_id), so the PK unique test guards against a teacher ever holding
+    -- two concurrent primary positions spanning the as-of date.
     staff as (
         select
             powerschool_teacher_number,

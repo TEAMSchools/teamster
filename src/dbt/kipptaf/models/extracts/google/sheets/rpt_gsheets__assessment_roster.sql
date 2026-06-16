@@ -67,6 +67,9 @@ select
     c.course_number,
     c.section_number,
 from {{ ref("int_assessments__roster_union") }} as ru
+-- demographics is the enrollment gate: the grade 0-8 (K-8) scope is enforced
+-- here, so this join is INNER. Assessment rows for a student with no
+-- enrollment-subjects record for that year are intentionally dropped.
 inner join
     demographics as de
     on ru.student_number = de.student_number

@@ -122,7 +122,7 @@ present in the demographics model within the two-year window.
 | `student_number`                     | union (raw PowerSchool id; PII)     |
 | `academic_year`                      | union                               |
 | `region`                             | demographics                        |
-| `school_abbreviation`                | demographics (verify column name)   |
+| `school_abbreviation`                | demographics (`school`, aliased)    |
 | `grade_level`                        | demographics                        |
 | `iep_status`                         | demographics                        |
 | `ml_status`                          | demographics (`lep_status`)         |
@@ -161,7 +161,9 @@ lands once the URL is known.
 
 - i-Ready `student_id` is the PowerSchool `student_number` — confirmed; join
   directly.
-- Demographics column is `school_abbreviation` — confirmed.
+- Demographics abbreviation lives in the `school` column (holds values like NCA
+  / TEAM / SPARK), aliased to `school_abbreviation` in the rpt model —
+  confirmed.
 - During implementation: confirm the NJSLA subject mapping from
   `illuminate_subject` covers only ELA & Math (exclude science).
 
