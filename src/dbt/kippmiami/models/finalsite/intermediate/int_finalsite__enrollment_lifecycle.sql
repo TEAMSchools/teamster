@@ -69,8 +69,9 @@ with
             enrollment_end_date,
             withdrawal_reason,
 
-            enrollment_start_date is not null
-            and enrollment_end_date is not null as is_transfer_out,
+            (
+                enrollment_start_date is not null and enrollment_end_date is not null
+            ) as is_transfer_out,
         from dated
     )
 
