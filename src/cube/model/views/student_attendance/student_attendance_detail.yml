@@ -85,7 +85,6 @@ views:
           - month_number
           - month_name
           - quarter_number
-          - school_week_start_date
           - day_of_week_name
           - is_weekday
 
@@ -180,7 +179,6 @@ views:
             - dates_month_number
             - dates_month_name
             - dates_quarter_number
-            - dates_school_week_start_date
             - dates_day_of_week_name
             - dates_is_weekday
         - name: Term

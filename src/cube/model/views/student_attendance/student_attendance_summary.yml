@@ -68,7 +68,6 @@ views:
           - month_number
           - month_name
           - quarter_number
-          - school_week_start_date
 
       - join_path: student_attendance.student_enrollment_stints.locations
         prefix: true
@@ -135,7 +134,6 @@ views:
             - dates_month_number
             - dates_month_name
             - dates_quarter_number
-            - dates_school_week_start_date
         - name: Term
           members:
             - terms_semester
