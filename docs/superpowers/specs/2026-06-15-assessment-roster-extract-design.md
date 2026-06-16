@@ -11,31 +11,28 @@ Two related Google Sheets extracts delivered on one branch:
 
 ## Context
 
-Ops/academics need a long-format, PII-stripped assessment roster spanning the
-current and prior academic year, at student/test/round grain, delivered to a
-Google Sheet. It unifies five assessment sources (i-Ready, Miami FAST, DIBELS,
-NJSLA, internal assessments) into one schema and ties each result to the
-student's ELA/Math course enrollment (teacher, course, section) and core
-demographics.
+Ops/academics need a long-format assessment roster spanning the current and
+prior academic year, at student/test/round grain, delivered to a Google Sheet.
+It unifies five assessment sources (i-Ready, Miami FAST, DIBELS, NJSLA, internal
+assessments) into one schema and ties each result to the student's ELA/Math
+course enrollment (teacher, course, section) and core demographics.
 
-PII is stripped: the sheet carries a stable anonymized student id, never
-`student_number`. A separate internal crosswalk lets the owner decode the anon
-id back to `student_number` inside BigQuery.
+**PII / access basis:** the sheet carries the raw `student_number` (no in-model
+anonymization). Anonymization is handled downstream by the owner before any
+external sharing. The destination Google Sheet is access-restricted to the
+owner/team, and the owner has confirmed permission and a legitimate need. The
+sheet output therefore contains directly-identifiable student data and must be
+treated as PII (restricted access; not shared with outside researchers as-is).
 
 ## Decisions
 
 - **Architecture:** union intermediate + thin reporting view (Approach B), per
   the kipptaf rule that an `rpt_*` view must buffer an intermediate from any
   external consumer.
-- **Anon id:** stable **salted** hash of `student_number` in the sheet —
-  `generate_surrogate_key(['student_number', '<salt>'])`, where the salt is read
-  from `env_var('STUDENT_ANON_SALT')` (a dev/CI default; the real secret is
-  provisioned only in the prod runtime and never committed). Salting closes the
-  brute-force hole: an unsalted MD5 of a low-entropy `student_number` is
-  trivially reversible by anyone who knows the (public) method. A separate
-  internal-only crosswalk model maps the id back to `student_number`; it gets no
-  Google Sheets exposure. The salt must stay constant in prod — changing it
-  re-anonymizes every student.
+- **Student identifier:** the sheet carries the raw `student_number` directly.
+  In-model anonymization (salted-hash + crosswalk) was scrapped — anonymization
+  is handled downstream by the owner before external sharing. See the PII /
+  access basis in Context.
 - **Performance columns:** two columns — `performance_band_label` (string, e.g.
   "Mid or Above Grade Level") and `performance_band_int` (integer, e.g. 5). Both
   are native to each source; no new standardized scale is invented.
@@ -97,36 +94,11 @@ term). PK = `generate_surrogate_key` over those fields with a sentinel for null
 **DIBELS proficiency derivation:** no native boolean — derive `is_proficient`
 from `aggregated_measure_standard_level` (`'At/Above'` → true, else false).
 
-### 2. `int_assessments__student_anon_crosswalk`
-
-Location: `src/dbt/kipptaf/models/assessments/intermediate/`. One row per
-`student_number`:
-
-```sql
-select distinct
-    student_number,
-    {{
-        dbt_utils.generate_surrogate_key(
-            ["student_number", "'" ~ env_var("STUDENT_ANON_SALT", "dev_salt") ~ "'"]
-        )
-    }} as student_anon_id
-from <enrollment population>
-```
-
-The salt is appended as a quoted string literal inside the hash inputs.
-`env_var("STUDENT_ANON_SALT", "dev_salt")` falls back to `dev_salt` for local
-and dbt Cloud CI (throwaway schemas), so those builds never break; the real
-secret is set only in the prod runtime environment (Dagster deployment / secret
-bootstrap) and must remain constant. Internal-only decode table — **no Google
-Sheets exposure.** Decode usage:
-`select student_number from <crosswalk> where student_anon_id = '<id>'`.
-
-### 3. `rpt_gsheets__assessment_roster`
+### 2. `rpt_gsheets__assessment_roster`
 
 Location: `src/dbt/kipptaf/models/extracts/google/sheets/`. View (extract
-default). Joins demographics + course enrollment onto the union, swaps
-`student_number` for `student_anon_id`, drops `student_number`, and selects the
-final sheet columns.
+default). Joins demographics + course enrollment onto the union and selects the
+final sheet columns. Carries `student_number` directly (no anonymization layer).
 
 **Joins:**
 
@@ -136,35 +108,34 @@ final sheet columns.
   `student_number` + `academic_year`, with `rn_credittype_year = 1`,
   `not is_dropped_section`, `credittype in ('ENG','MATH')`, and `credittype`
   matched to `subject` (ELA→ENG, Math→MATH). LEFT join.
-- Anon id ← crosswalk on `student_number`.
 
 **Scope:** grade `K-8` (`grade_level between 0 and 8`); population = students
 present in the demographics model within the two-year window.
 
 **Final sheet columns:**
 
-| Column                               | Source                                |
-| ------------------------------------ | ------------------------------------- |
-| `student_anon_id`                    | crosswalk (replaces `student_number`) |
-| `academic_year`                      | union                                 |
-| `region`                             | demographics                          |
-| `school_abbreviation`                | demographics (verify column name)     |
-| `grade_level`                        | demographics                          |
-| `iep_status`                         | demographics                          |
-| `ml_status`                          | demographics (`lep_status`)           |
-| `status_504`                         | demographics                          |
-| `assessment_source`                  | union                                 |
-| `subject`                            | union                                 |
-| `administration_round`               | union                                 |
-| `assessment_title`                   | union (internal only)                 |
-| `teacher_powerschool_teacher_number` | `teachernumber`                       |
-| `course_number`                      | `cc_course_number`                    |
-| `section_number`                     | `cc_section_number`                   |
-| `scale_score`                        | union                                 |
-| `percent_correct`                    | union (internal only)                 |
-| `is_proficient`                      | union (mastery/proficiency boolean)   |
-| `performance_band_label`             | union                                 |
-| `performance_band_int`               | union                                 |
+| Column                               | Source                              |
+| ------------------------------------ | ----------------------------------- |
+| `student_number`                     | union (raw PowerSchool id; PII)     |
+| `academic_year`                      | union                               |
+| `region`                             | demographics                        |
+| `school_abbreviation`                | demographics (verify column name)   |
+| `grade_level`                        | demographics                        |
+| `iep_status`                         | demographics                        |
+| `ml_status`                          | demographics (`lep_status`)         |
+| `status_504`                         | demographics                        |
+| `assessment_source`                  | union                               |
+| `subject`                            | union                               |
+| `administration_round`               | union                               |
+| `assessment_title`                   | union (internal only)               |
+| `teacher_powerschool_teacher_number` | `teachernumber`                     |
+| `course_number`                      | `cc_course_number`                  |
+| `section_number`                     | `cc_section_number`                 |
+| `scale_score`                        | union                               |
+| `percent_correct`                    | union (internal only)               |
+| `is_proficient`                      | union (mastery/proficiency boolean) |
+| `performance_band_label`             | union                               |
+| `performance_band_int`               | union                               |
 
 ## Exposure
 
@@ -178,10 +149,8 @@ lands once the URL is known.
 - `int_assessments__roster_union`: `dbt_utils.unique_combination_of_columns` on
   the grain (or `unique` on the surrogate PK); `not_null` on PK,
   `student_number`, `academic_year`, `assessment_source`, `subject`.
-- `int_assessments__student_anon_crosswalk`: `unique` + `not_null` on
-  `student_number` and `student_anon_id`.
 - `rpt_gsheets__assessment_roster`: contract enforced (extracts default);
-  uniqueness test on the row grain; `not_null` on `student_anon_id`.
+  uniqueness test on the row grain; `not_null` on `student_number`.
 - Build/validate with `uv run dbt build --select int_assessments__roster_union+`
   against kipptaf.
 

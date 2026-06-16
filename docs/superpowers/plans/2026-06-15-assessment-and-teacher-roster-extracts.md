@@ -5,17 +5,19 @@
 > superpowers:executing-plans to implement this plan task-by-task. Steps use
 > checkbox (`- [ ]`) syntax for tracking.
 
-**Goal:** Ship two kipptaf Google Sheets extracts — a PII-stripped assessment
-roster (student/test/round grain) and a teacher roster (teacher/year grain) —
-plus the assessment anon-id crosswalk that backs the first.
+**Goal:** Ship two kipptaf Google Sheets extracts — an assessment roster
+(student/test/round grain) and a teacher roster (teacher/year grain).
+
+**PII note:** the assessment roster carries the raw `student_number` (no
+in-model anonymization — handled downstream by the owner before external
+sharing). The destination sheet is access-restricted; treat its output as PII.
 
 **Architecture:** Model 1 uses a union intermediate
-(`int_assessments__roster_union`) that normalizes five assessment sources, a
-private anon-id crosswalk (`int_assessments__student_anon_crosswalk`), and a
+(`int_assessments__roster_union`) that normalizes five assessment sources and a
 thin reporting view (`rpt_gsheets__assessment_roster`) that joins demographics +
-course enrollment and swaps `student_number` for the anon id. Model 2 is a
-single reporting view (`rpt_gsheets__teacher_roster`) joining staff roster +
-current-year performance + experience.
+course enrollment. Model 2 is a single reporting view
+(`rpt_gsheets__teacher_roster`) joining staff roster + current-year
+performance + experience.
 
 **Tech Stack:** dbt (BigQuery dialect), kipptaf project. Validation via
 `uv run dbt build`. SQL must follow `.trunk/config/.sqlfluff` (trailing commas,
@@ -59,107 +61,6 @@ single quotes, 88-char lines, BigQuery reserved words backticked).
   `data_type` in YAML, and a uniqueness test.
 - `prod`-target builds are blocked for Claude — all builds here use the default
   (dev) target with `--defer`. Hand any `--target prod` run to the user.
-
----
-
-## Task 1: Anon-id crosswalk — `int_assessments__student_anon_crosswalk`
-
-**Files:**
-
-- Create:
-  `src/dbt/kipptaf/models/assessments/intermediate/int_assessments__student_anon_crosswalk.sql`
-- Create:
-  `src/dbt/kipptaf/models/assessments/intermediate/properties/int_assessments__student_anon_crosswalk.yml`
-
-- [ ] **Step 1: Write the model SQL**
-
-The population is every `student_number` present in the demographics model
-within the two-year window, so the crosswalk covers exactly the students model 1
-can emit.
-
-The `student_anon_id` is a **salted** hash. The salt is read from
-`env_var("STUDENT_ANON_SALT", "dev_salt")` and appended as a quoted string
-literal inside the hash inputs. The `dev_salt` default keeps local and dbt Cloud
-CI builds working (throwaway schemas); the real secret is set only in the prod
-runtime (Dagster deployment / secret bootstrap) and must stay constant —
-changing it re-anonymizes every student. An unsalted hash of a low-entropy
-`student_number` is brute-forceable by anyone who knows the method, so the salt
-is required.
-
-```sql
-with
-    students as (
-        select student_number,
-        from {{ ref("int_extracts__student_enrollments_subjects") }}
-        where
-            academic_year
-            in ({{ var("current_academic_year") }}, {{ var("current_academic_year") }} - 1)
-    )
-
-select distinct
-    student_number,
-    {{
-        dbt_utils.generate_surrogate_key(
-            ["student_number", "'" ~ env_var("STUDENT_ANON_SALT", "dev_salt") ~ "'"]
-        )
-    }} as student_anon_id,
-from students
-```
-
-> **Prerequisite (prod):** provision the `STUDENT_ANON_SALT` secret in the prod
-> runtime environment before the first prod materialization, and record it where
-> it won't change. This is a secret-setup step for you / platform, not a code
-> change.
-
-- [ ] **Step 2: Write the properties YAML**
-
-```yaml
-models:
-  - name: int_assessments__student_anon_crosswalk
-    description: >
-      Internal-only decode table mapping student_number to its stable anonymized
-      id (student_anon_id) for the assessment roster extract. Never exposed to
-      Google Sheets; query it in BigQuery to decode a sheet value back to
-      student_number. One row per student_number in the two-year assessment
-      window.
-    columns:
-      - name: student_number
-        description: PowerSchool student number (the value to decode back to).
-        data_tests:
-          - unique
-          - not_null
-      - name: student_anon_id
-        description: >
-          Stable surrogate hash of student_number; the value that appears in the
-          assessment roster sheet in place of student_number.
-        data_tests:
-          - not_null
-```
-
-- [ ] **Step 3: Build and test**
-
-```bash
-uv run dbt build --select int_assessments__student_anon_crosswalk \
-    --project-dir src/dbt/kipptaf --defer --state target/prod
-```
-
-Expected: model builds; `unique` + `not_null` tests pass.
-
-- [ ] **Step 4: Lint**
-
-```bash
-/workspaces/teamster/.trunk/tools/trunk check --force \
-    src/dbt/kipptaf/models/assessments/intermediate/int_assessments__student_anon_crosswalk.sql \
-    src/dbt/kipptaf/models/assessments/intermediate/properties/int_assessments__student_anon_crosswalk.yml
-```
-
-- [ ] **Step 5: Commit**
-
-```bash
-git add src/dbt/kipptaf/models/assessments/intermediate/int_assessments__student_anon_crosswalk.sql \
-        src/dbt/kipptaf/models/assessments/intermediate/properties/int_assessments__student_anon_crosswalk.yml
-git commit -m "feat(dbt): add int_assessments__student_anon_crosswalk (#4191)"
-```
 
 ---
 
@@ -389,11 +290,17 @@ select
 from unioned
 ```
 
-> Note on types: confirm `scale_score` and `performance_band_int` resolve to a
-> single type across branches. If sources disagree (e.g. int vs float),
-> standardize each branch with an explicit `cast(... as numeric)` /
-> `cast(... as int)` so `union all` succeeds. Adjust the casts shown above to
-> match the verified source types from Task 2.
+> **Verified type unification (Task 2):** scale-score sources are mixed
+> (iReady/FAST `int64`, DIBELS/NJSLA `float64`), so `union all` fails unless
+> standardized — cast EVERY scale_score branch to `numeric`
+> (`cast(overall_scale_score as numeric)`, `cast(scale_score as numeric)`,
+> `cast(measure_standard_score as numeric)`, `cast(testscalescore as numeric)`,
+> and `cast(null as numeric)` for internal). For `performance_band_int`,
+> iReady/FAST/DIBELS are already `int64`; cast the float/numeric ones —
+> `cast(testperformancelevel as int)` (NJSLA) and
+> `cast(performance_band_label_number as int)` (internal). `student_number` is
+> `int64` across all sources (no cast). The contract `data_type` for
+> `scale_score` is therefore `numeric`.
 
 - [ ] **Step 2: Write the properties YAML** (uniqueness on the grain, no
       contract — intermediate). Reuse the verified column meanings.
@@ -520,7 +427,7 @@ git commit -m "feat(dbt): add int_assessments__roster_union (#4191)"
 - [ ] **Step 2: Write the model SQL.** A course-enrollment CTE narrowed to one
       ENG/MATH row per student/year, then left-joined to the union by subject.
       Demographics scope the population to enrolled K-8. `student_number` is
-      replaced by `student_anon_id` and dropped. Columns are enumerated (no
+      carried through directly (no anonymization). Columns are enumerated (no
       `select *` in a contract-enforced `rpt_` final select).
 
 ```sql
@@ -541,7 +448,7 @@ with
     )
 
 select
-    cw.student_anon_id,
+    ru.student_number,
 
     ru.academic_year,
     ru.assessment_source,
@@ -570,9 +477,6 @@ inner join
     {{ ref("int_extracts__student_enrollments_subjects") }} as se
     on ru.student_number = se.student_number
     and ru.academic_year = se.academic_year
-inner join
-    {{ ref("int_assessments__student_anon_crosswalk") }} as cw
-    on ru.student_number = cw.student_number
 left join
     courses as c
     on ru.student_number = c.student_number
@@ -597,24 +501,23 @@ where se.grade_level between 0 and 8
 models:
   - name: rpt_gsheets__assessment_roster
     description: >
-      PII-stripped assessment roster for Google Sheets, student/test/round
-      grain, K-8 ELA & Math, current + prior academic year. student_number is
-      replaced by student_anon_id (decode via
-      int_assessments__student_anon_crosswalk). One row per student / assessment
-      source / subject / administration round / assessment.
+      Assessment roster for Google Sheets, student/test/round grain, K-8 ELA &
+      Math, current + prior academic year. Carries the raw student_number (PII;
+      anonymization handled downstream before external sharing). One row per
+      student / assessment source / subject / administration round / assessment.
     data_tests:
       - dbt_utils.unique_combination_of_columns:
           arguments:
             combination_of_columns:
-              - student_anon_id
+              - student_number
               - assessment_source
               - subject
               - administration_round
               - assessment_title
     columns:
-      - name: student_anon_id
-        data_type: string
-        description: Stable anonymized student id (decode via the crosswalk).
+      - name: student_number
+        data_type: int
+        description: PowerSchool student number (raw identifier; PII).
         data_tests:
           - not_null
       - name: academic_year
@@ -663,7 +566,7 @@ models:
         data_type: string
         description: Matched section number (null when no match).
       - name: scale_score
-        data_type: int
+        data_type: numeric
         description: Scale score (null for internal).
       - name: percent_correct
         data_type: numeric
