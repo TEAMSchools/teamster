@@ -13,16 +13,58 @@ models:
         data_type: string
       - name: last_name
         data_type: string
+      - name: full_name
+        data_type: string
+      - name: preferred_name
+        data_type: string
+      - name: email
+        data_type: string
       - name: gender
+        data_type: string
+      - name: gender_display
+        data_type: string
+      - name: gender_full_text
         data_type: string
       - name: status
         data_type: string
       - name: enrollment_type
         data_type: string
+      - name: inquiry_submit_date
+        data_type: string
+      - name: application_submit_date
+        data_type: string
+      - name: contract_submit_date
+        data_type: string
       - name: grade_canonical_name
+        data_type: string
+      - name: grade_name
+        data_type: string
+      - name: grade_school_level
         data_type: string
       - name: school_year_start
         data_type: int64
+      - name: phone_1_type
+        data_type: string
+      - name: phone_1_number
+        data_type: string
+      - name: phone_2_type
+        data_type: string
+      - name: phone_2_number
+        data_type: string
+      - name: phone_3_type
+        data_type: string
+      - name: phone_3_number
+        data_type: string
+      - name: custom_attributes
+        data_type:
+          array<struct<field_id string, field_name string, field_display_name
+          string, value struct<boolean_value bool, string_value string,
+          array_string_value array<string>>>>
+      - name: id_attributes
+        data_type:
+          array<struct<field_id string, field_name string, field_display_name
+          string, value struct<boolean_value bool, string_value string,
+          array_string_value array<string>>>>
       - name: birth_date
         data_type: date
       - name: address_1
@@ -35,15 +77,5 @@ models:
         data_type: string
       - name: zip
         data_type: string
-      - name: race_ms
-        data_type: string
-      - name: latino_hispanic_yn
-        data_type: string
-      - name: assigned_school_ss
-        data_type: string
-      - name: sped_received_yn
-        data_type: string
-      - name: mdcps_id_txt
-        data_type: string
-      - name: powerschool_student_number
+      - name: country
         data_type: string
