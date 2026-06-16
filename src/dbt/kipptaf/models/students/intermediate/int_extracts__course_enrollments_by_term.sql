@@ -188,6 +188,8 @@ inner join
     and e.studentid = s.cc_studentid
     and e._dbt_source_project = s._dbt_source_project
     and s.rn = 1
+    and e.entrydate <= s.alt_dateleft
+    and e.exitdate >= s.alt_dateenrolled
 left join
     days_course_enrolled as d
     on s.cc_academic_year = d.cc_academic_year
