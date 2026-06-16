@@ -226,8 +226,11 @@ before merge:
    → creates `zz_<username>_kipptaf_marts.<model>`
 2. Temporarily change `sql_table` in the cube YAML to
    `zz_<username>_kipptaf_marts.<table>` — do NOT commit or push
-3. Test in local `npm run dev` from `src/cube/` (hot-reloads on file save, no
-   push required); or commit+push for Cube Cloud Dev Mode
+3. Test in the local dev server — launch the **`Cube: Dev Server`** VS Code task
+   (`.vscode/tasks.json`; installs `src/cube/node_modules` if missing, then
+   `npm --prefix src/cube run dev`). Hot-reloads on file save, no push required.
+   Claude can't run it (long-running server) — ask the user to start the task
+   and report back. Or commit+push for Cube Cloud Dev Mode.
 4. Revert `sql_table` to `kipptaf_marts.<table>` before committing
 
 For **snowflake sub-dims** (cubes joined one-to-one from a parent), swap
