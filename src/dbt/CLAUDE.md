@@ -432,6 +432,17 @@ data_tests:
 
 ### Test config defaults
 
+- **A test/asset-check re-runs only when its host model materializes, and the
+  data-change automation condition re-materializes only TABLE models, not
+  views.** To make a check refresh regularly, anchor it to a table-materialized
+  model — only `staging/` is table by default; other layers need
+  `config: materialized: table` in properties yml (e.g.
+  `int_people__staff_roster`). `store_failures_as: table` does NOT affect
+  refresh cadence — it only relocates failure rows.
+- **Before adding a data-quality test, read the target model's existing
+  `data_tests:`.** This repo commonly uses `config.where`-scoped `not_null` /
+  `expression_is_true` to flag null-column / drop-from-extract conditions, so
+  the coverage you want may already exist and already fire as a warn.
 - Project-level `data_tests:` defaults flow through to singular tests too. Drop
   redundant `severity` / `store_failures` / `store_failures_as` from
   singular-test `config()`; keep only per-test fields (`meta.dagster.ref`).
