@@ -19,7 +19,10 @@ select
     grade.name as grade_name,
     grade.school_level as grade_school_level,
 
+    prospect_entry_grade.canonical_name as prospect_entry_grade_canonical_name,
+
     school_year.start_year as school_year_start,
+    prospect_entry_year.start_year as prospect_entry_year_start,
 
     phone_1.phone_type as phone_1_type,
     phone_1.number as phone_1_number,
@@ -30,6 +33,7 @@ select
 
     custom_attributes,
     id_attributes,
+    track_attributes,
 
     safe_cast(birth_date as date) as birth_date,
 

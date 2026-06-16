@@ -1,81 +1,150 @@
 models:
   - name: stg_finalsite__contacts
+    description:
+      One row per Finalsite Enrollment contact (the student/applicant record)
+      from the REST API `/contacts` endpoint. Flattens the populated base
+      fields, the grade / school-year / prospect-entry structs, the primary
+      household address, and up to three phones; the custom / id / track
+      attribute arrays are passed through whole (key-value style) for downstream
+      models to pivot. Fields the API exposes but that are unpopulated for this
+      tenant are intentionally omitted (billing / financial-aid / scholarship /
+      account-balance fields, `previous_school_1`, `review_decision`,
+      `is_alumni`). Medical custom fields are not surfaced pending the
+      medical-destination decision.
     columns:
       - name: finalsite_enrollment_id
         data_type: string
+        description: Finalsite contact UUID; the natural key for this grain.
         data_tests:
+          - not_null:
+              config:
+                severity: error
           - unique:
               config:
                 severity: error
       - name: first_name
         data_type: string
+        description: Contact's first name.
       - name: middle_name
         data_type: string
+        description: Contact's middle name.
       - name: last_name
         data_type: string
+        description: Contact's last name.
       - name: full_name
         data_type: string
+        description: Contact's full name as composed by Finalsite.
       - name: preferred_name
         data_type: string
+        description: Contact's preferred name.
       - name: email
         data_type: string
+        description: Contact's email address.
       - name: gender
         data_type: string
+        description: Gender code as stored in Finalsite.
       - name: gender_display
         data_type: string
+        description: Display form of the gender value.
       - name: gender_full_text
         data_type: string
+        description: Full-text form of the gender value.
       - name: status
         data_type: string
+        description: Current Finalsite workflow status for the contact.
       - name: enrollment_type
         data_type: string
+        description: Finalsite enrollment type classification.
       - name: inquiry_submit_date
         data_type: string
+        description: Raw inquiry submission timestamp string from the API.
       - name: application_submit_date
         data_type: string
+        description: Raw application submission timestamp string from the API.
       - name: contract_submit_date
         data_type: string
+        description: Raw enrollment-contract submission timestamp string.
       - name: grade_canonical_name
         data_type: string
+        description: Canonical name of the contact's current grade.
       - name: grade_name
         data_type: string
+        description: Display name of the contact's current grade.
       - name: grade_school_level
         data_type: string
+        description: School level of the contact's current grade.
+      - name: prospect_entry_grade_canonical_name
+        data_type: string
+        description: Canonical name of the grade the prospect is entering.
       - name: school_year_start
         data_type: int64
+        description: Start year of the contact's active school year.
+      - name: prospect_entry_year_start
+        data_type: int64
+        description: Start year of the prospect's intended entry school year.
       - name: phone_1_type
         data_type: string
+        description: Type label of the first phone.
       - name: phone_1_number
         data_type: string
+        description: Number of the first phone.
       - name: phone_2_type
         data_type: string
+        description: Type label of the second phone.
       - name: phone_2_number
         data_type: string
+        description: Number of the second phone.
       - name: phone_3_type
         data_type: string
+        description: Type label of the third phone.
       - name: phone_3_number
         data_type: string
+        description: Number of the third phone.
       - name: custom_attributes
         data_type:
           array<struct<field_id string, field_name string, field_display_name
           string, value struct<boolean_value bool, string_value string,
           array_string_value array<string>>>>
+        description:
+          Repeated key-value custom fields; `value` is a typed union struct
+          (boolean / string / string-array). Passed through whole for downstream
+          pivoting.
       - name: id_attributes
         data_type:
           array<struct<field_id string, field_name string, field_display_name
           string, value struct<boolean_value bool, string_value string,
           array_string_value array<string>>>>
+        description:
+          Repeated identifier fields (e.g. minted student number) in the same
+          key-value shape as `custom_attributes`. Passed through whole.
+      - name: track_attributes
+        data_type:
+          array<struct<field_id string, field_name string, field_display_name
+          string, value struct<boolean_value bool, string_value string,
+          array_string_value array<string>>, school_year struct<id string, name
+          string, start_year int64, created_at string>>>
+        description:
+          Repeated per-school-year ("track") custom fields; same key-value shape
+          as `custom_attributes` plus the `school_year` the value applies to.
+          Passed through whole.
       - name: birth_date
         data_type: date
+        description: Contact's date of birth, cast from the source string.
       - name: address_1
         data_type: string
+        description: Line 1 of the primary household address.
       - name: address_2
         data_type: string
+        description: Line 2 of the primary household address.
       - name: city
         data_type: string
+        description: City of the primary household address.
       - name: state
         data_type: string
+        description: State of the primary household address.
       - name: zip
         data_type: string
+        description: ZIP code of the primary household address.
       - name: country
         data_type: string
+        description: Country of the primary household address.
