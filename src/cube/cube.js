@@ -66,10 +66,11 @@ const SNAPSHOT_CUBES = ["student_attendance", "student_enrollments"];
 //     anchor overcounts. Its ADDITIVE measures (avg_daily_attendance,
 //     count_students, pct_tardy, pct_ontime, count_absent_days) are NOT listed —
 //     they are point-in-time safe and must stay unanchored.
-//   student_enrollments: count_students is count_distinct(student_key); a student
-//     enrolled across N in-session days appears in N rows, so an unanchored count
-//     over a range overcounts — it needs the guard (a stint-keyed count would
-//     not, which is why attendance's count_students stays off this list).
+//   student_enrollments: count_students is count_distinct(student_key) over the
+//     attendance daily fact; a student enrolled across N in-session days appears
+//     in N rows, so an unanchored count over a range overcounts — needs the guard.
+// Both cubes' weekly trends are driven by a school_week_start_date grouping
+// (PowerSchool school weeks), not Cube's ISO granularity: "week".
 const SNAPSHOT_MEASURE_STEMS = {
   student_attendance: ["chronically_absent", "tier_1_2", "tier_3", "truant"],
   student_enrollments: ["count_students"],
@@ -228,21 +229,44 @@ module.exports = {
       );
       const granularity = dateDayTd?.granularity ?? null;
 
-      // Named period-end measures must be grouped by the matching granularity.
+      const groupsBySchoolWeek = [
+        ...(query.dimensions ?? []),
+        ...(query.timeDimensions ?? []).map((td) => td.dimension),
+      ].some((m) => m && m.split(".").pop() === "school_week_start_date");
+
+      // School weeks (PowerSchool week_start_monday) replace Cube's ISO week for
+      // snapshot measures: the *_week_end anchors are school-week-based, so weekly
+      // trends MUST group by school_week_start_date. Treat that grouping as the
+      // "week" period; Cube's native granularity drives only day/month.
+      const period = groupsBySchoolWeek ? "week" : granularity;
+
+      if (granularity === "week" && !groupsBySchoolWeek) {
+        throw new Error(
+          "Weekly snapshot trends use school weeks — group by " +
+            '<view>.school_week_start_date, not Cube\'s granularity: "week" ' +
+            "(ISO Monday weeks do not match PowerSchool school weeks).",
+        );
+      }
+
+      // Named period-end measures must be grouped by the matching period.
       // Without it, the result is "CA at any period-end during the range."
-      for (const [suffix, required] of [
-        ["_month_end", "month"],
-        ["_week_end", "week"],
+      for (const { suffix, ok, hint } of [
+        {
+          suffix: "_month_end",
+          ok: granularity === "month",
+          hint: 'timeDimensions granularity: "month"',
+        },
+        {
+          suffix: "_week_end",
+          ok: groupsBySchoolWeek,
+          hint: "a school_week_start_date grouping",
+        },
       ]) {
-        if (
-          measures.some((m) => m.endsWith(suffix)) &&
-          granularity !== required
-        ) {
+        if (measures.some((m) => m.endsWith(suffix)) && !ok) {
           throw new Error(
-            `${suffix} measures must be grouped by ${required} — add ` +
-              `timeDimensions with granularity: "${required}". Without it, ` +
-              `the result counts students across all ${required}-ends in the ` +
-              `date range, not a per-${required} breakdown.`,
+            `${suffix} measures must be grouped by ${hint}. Without it, the ` +
+              `result counts students across all period-ends in the date range, ` +
+              `not a per-period breakdown.`,
           );
         }
       }
@@ -261,13 +285,13 @@ module.exports = {
         );
       }
 
-      if (granularity === "day") continue;
+      if (period === "day") continue;
 
       const anchorMap = {
         ...SNAPSHOT_ANCHOR_DIMENSIONS,
         ...(SNAPSHOT_ANCHOR_OVERRIDES[cubePrefix] ?? {}),
       };
-      const anchorDimension = anchorMap[granularity] ?? anchorMap.default;
+      const anchorDimension = anchorMap[period] ?? anchorMap.default;
       const anchorMember = `${cubePrefix}.${anchorDimension}`;
 
       const alreadyAnchored =
