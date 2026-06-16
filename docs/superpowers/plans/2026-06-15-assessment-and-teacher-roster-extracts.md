@@ -320,6 +320,7 @@ models:
           arguments:
             combination_of_columns:
               - student_number
+              - academic_year
               - assessment_source
               - subject
               - administration_round
@@ -510,6 +511,7 @@ models:
           arguments:
             combination_of_columns:
               - student_number
+              - academic_year
               - assessment_source
               - subject
               - administration_round

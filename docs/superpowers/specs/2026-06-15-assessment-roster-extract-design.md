@@ -53,11 +53,14 @@ stacks the five sources into the common schema below. Carries `student_number`
 (no PII swap at this layer). Uniqueness test on the row grain.
 
 **Grain / PK:** one row per
-`student_number × assessment_source × subject × administration_round ×`
-`assessment_id`. `assessment_id` is null for benchmark/state sources (one score
-per round) and the Illuminate `assessment_id` for internal assessments (many per
-term). PK = `generate_surrogate_key` over those fields with a sentinel for null
-`assessment_id`.
+`student_number × academic_year × assessment_source × subject ×`
+`administration_round × assessment_id`. `academic_year` is required — benchmark
+and state sources reuse round labels (BOY/MOY/EOY) across both years with a null
+`assessment_id`, so they collide without it. `assessment_id` is null for
+benchmark/state sources (one score per round after deduping multiple sittings to
+the most recent) and the Illuminate `assessment_id` for internal assessments
+(many per term). PK = `generate_surrogate_key` over those fields with a sentinel
+for null `assessment_id`.
 
 **Common schema and per-source derivation:**
 
