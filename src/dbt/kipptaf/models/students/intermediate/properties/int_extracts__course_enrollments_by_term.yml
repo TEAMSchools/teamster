@@ -1071,6 +1071,14 @@ models:
             source_system: PowerSchool
             source_model: int_powerschool__terms
             source_column: term
+      - name: semester
+        data_type: string
+        description: Semester (S1, S2).
+        config:
+          meta:
+            source_system: PowerSchool
+            source_model: int_powerschool__terms
+            source_column: semester
       - name: quarter_start_date
         data_type: date
         description: First day of the quarter term.
@@ -1087,6 +1095,26 @@ models:
             source_system: PowerSchool
             source_model: int_powerschool__terms
             source_column: term_end_date
+      - name: quarter_start_date_alt
+        data_type: date
+        description: >
+          Adjusted quarter start date. Clamps Q1 start to the first day of
+          school when the PS term start predates it.
+        config:
+          meta:
+            source_system: PowerSchool
+            source_model: int_powerschool__calendar_week
+            source_column: first_day_school_year
+      - name: quarter_end_date_alt
+        data_type: date
+        description: >
+          Adjusted quarter end date. Clamps Q4 end to the last day of school
+          when the PS term end falls after it.
+        config:
+          meta:
+            source_system: PowerSchool
+            source_model: int_powerschool__calendar_week
+            source_column: last_day_school_year
       - name: is_current_quarter
         data_type: boolean
         description: True if today falls within this quarter's date range.

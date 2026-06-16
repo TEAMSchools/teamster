@@ -12,19 +12,20 @@ with
             t.term_start_date as quarter_start_date,
             t.term_end_date as quarter_end_date,
 
+            t.semester,
             t.is_current_term as is_current_quarter,
 
             if(
                 c.`quarter` = 'Q1' and t.term_start_date < c.first_day_school_year,
                 c.first_day_school_year,
                 t.term_start_date
-            ) as alt_quarter_start_date,
+            ) as quarter_start_date_alt,
 
             if(
                 c.`quarter` = 'Q4' and t.term_end_date > c.last_day_school_year,
                 c.last_day_school_year,
                 t.term_end_date
-            ) as alt_quarter_end_date,
+            ) as quarter_end_date_alt,
 
             sum(c.date_count) over (
                 partition by
@@ -77,10 +78,11 @@ with
             e.is_ap_course,
 
             q.`quarter`,
+            q.semester,
             q.quarter_start_date,
             q.quarter_end_date,
-            q.alt_quarter_start_date,
-            q.alt_quarter_end_date,
+            q.quarter_start_date_alt,
+            q.quarter_end_date_alt,
             q.is_current_quarter,
             q.first_day_school_year,
             q.last_day_school_year,
@@ -109,8 +111,8 @@ with
             on e.cc_academic_year = q.academic_year
             and e.cc_schoolid = q.schoolid
             and e._dbt_source_project = q._dbt_source_project
-            and e.cc_dateenrolled <= q.alt_quarter_end_date
-            and e.cc_dateleft >= q.alt_quarter_start_date
+            and e.cc_dateenrolled <= q.quarter_end_date_alt
+            and e.cc_dateleft >= q.quarter_start_date_alt
         where not e.is_dropped_section
     ),
 
@@ -161,10 +163,11 @@ select
     s.teacher_name,
     s.is_ap_course,
     s.`quarter`,
+    s.semester,
     s.quarter_start_date,
     s.quarter_end_date,
-    s.alt_quarter_start_date,
-    s.alt_quarter_end_date,
+    s.quarter_start_date_alt,
+    s.quarter_end_date_alt,
     s.is_current_quarter,
     s.dateenrolled,
     s.dateleft,

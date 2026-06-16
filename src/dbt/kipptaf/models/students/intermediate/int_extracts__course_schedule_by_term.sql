@@ -93,19 +93,21 @@ select
 
     initcap(regexp_extract(s._dbt_source_project, r'kipp(\w+)')) as region,
 
+    cast(s.terms_academic_year as string)
+    || '-'
+    || right(cast(s.terms_academic_year + 1 as string), 2) as academic_year_display,
+
     if(
         s.school_name = 'KIPP Sumner Elementary' and s.sections_grade_level = 5,
         'MS',
         d.school_level
     ) as school_level_alt,
 
-    cast(s.terms_academic_year as string)
-    || '-'
-    || right(cast(s.terms_academic_year + 1 as string), 2) as academic_year_display,
-
 from {{ ref("base_powerschool__sections") }} as s
 inner join
-    {{ ref("stg_powerschool__schools") }} as d on s.sections_schoolid = d.school_number
+    {{ ref("stg_powerschool__schools") }} as d
+    on s.sections_schoolid = d.school_number
+    and s._dbt_source_project = d._dbt_source_project
 left join
     {{ ref("int_people__staff_roster") }} as r
     on s.teachernumber = r.powerschool_teacher_number
