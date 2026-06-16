@@ -2,9 +2,10 @@
 
 - **Issue:** [#4073](https://github.com/TEAMSchools/teamster/issues/4073)
 - **Status:** Design / brainstorming output (no implementation yet); updated
-  2026-06-09 — Fork 1 resolved to the **REST API**, live-validated against
-  Miami; `START_DATE` sourced from `stg_finalsite__status_report`; `STUDENT_ID`
-  minted by Finalsite (autogen `IdField`). See _Fork 1_ / _Open decisions_.
+  2026-06-16 — Fork 1 resolved to the **REST API**, live-validated against
+  Miami; Fork 2 resolved to **Focus SFTP import** (all templates); `START_DATE`
+  sourced from `stg_finalsite__status_report`; `STUDENT_ID` minted by Finalsite
+  (autogen `IdField`). See _Fork 1_ / _Fork 2_ / _Open decisions_.
 - **Scope:** KIPP Miami only (`kippmiami` code location)
 - **Related:** inbound Focus-load spec
   `2026-04-03-focus-sis-integration-design.md` (distinct pipeline — that loads
@@ -43,8 +44,8 @@ Finalsite  [FORK 1: REST API  OR  new SFTP export]
   -> dbt staging            (normalize the chosen source to one common shape)
   -> dbt eligibility filter (accepted/enrolled, target school year)
   -> dbt identity resolution  <-> persisted crosswalk
-  -> dbt Focus-shaped output models  (API shape and/or 5 SFTP-template shapes)
-  -> [FORK 2: Focus SFTP templates  OR  Focus REST API]
+  -> dbt Focus-shaped output models  (5 SFTP-template shapes)
+  -> [FORK 2 = Focus SFTP import: 5 coordinated CSVs, keyed STDT_ID]
   -> [optional] write resolved student_id + Focus uuid back to Finalsite
   -> reconciliation: Finalsite eligible roster vs Focus students
 ```
@@ -158,12 +159,22 @@ preference is dropped: Fork 1 resolved to the **API** (above), with
 `enrolled_date` and lifecycle dates joined from `stg_finalsite__status_report`.
 The enrollment-data gate is thereby closed (see _Open decisions_).
 
-### Fork 2 — Focus transport (decide after vendor confirmation)
+### Fork 2 — Focus transport — RESOLVED → Focus SFTP import (2026-06-16)
 
-Both are **neutral on identity grounds** (we supply the student number on either
-path — see Identity). For **contacts**, the choice is already made — SFTP, per
-the all-guardians decision below (API caps at 2). For the **student/enrollment**
-records either remains viable; decide on the factors below.
+**Decision: all records flow to Focus via the SFTP import templates** — the 5
+coordinated CSVs (Demographics, Student*Enrollment, Address, Contacts,
+Linked_Students), keyed on `STDT_ID`. The Focus REST API is not used. This
+covers the whole picture: contacts were already SFTP (all-guardians decision,
+below — the API caps at 2), and SFTP is **the only path that creates an actual
+enrollment record** (the API's `enrollments` table is GET-only; placement only
+via
+`accepting*\*`). It also reuses the existing `build_bigquery_query_sftp_asset`
+precedent, sidesteps the OAuth2 outbound resource, and avoids the API's
+vendor-confirm unknowns entirely. Trade-off accepted: error feedback is
+batch-level (mismatches land in Focus's manual "Match Students" queue) rather
+than per-record synchronous.
+
+The comparison below is retained for context.
 
 |                   | Focus SFTP templates                                                                                         | Focus REST API                                                                                                                                    |
 | ----------------- | ------------------------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -357,26 +368,26 @@ PowerSchool/FACTS/Blackbaud/Veracross — no Focus field).
 Finalsite is SoR for the full student lifecycle. The integration applies each of
 these to Focus on an ongoing basis — not just at initial enrollment:
 
-| Operation               | Finalsite trigger                 | Focus effect                                                 | Transport notes                                                                                        |
-| ----------------------- | --------------------------------- | ------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------ |
-| **Create**              | New accepted/enrolled contact     | New student + demographics + address + contacts + enrollment | SFTP full template set, or API `POST /student` (+ enrollment — see gap)                                |
-| **Update after create** | Any change to an existing student | Update the matched Focus student                             | SFTP refresh (re-send current state) or API `PUT /student/:uuid` (needs `uuid` from crosswalk)         |
-| **Transfer out**        | Withdrawal / drop in Finalsite    | End-date / drop the enrollment                               | SFTP `STUDENT_ENROLLMENT` `END_DATE`+`DROP_CODE`; **no API enrollment-write** (`enrollments` GET-only) |
-| **Re-enrollment**       | Returning student for a new year  | New enrollment row for the existing student                  | SFTP `STUDENT_ENROLLMENT` (per-year file); API path unconfirmed                                        |
-| **Contacts**            | Guardian / relationship changes   | Upsert contacts + sibling links                              | SFTP `Contacts`/`Linked_Students` (many) or API `guardian_1`/`guardian_2` (max 2)                      |
+| Operation               | Finalsite trigger                 | Focus effect                                                 | Transport (Fork 2 = SFTP import)                                          |
+| ----------------------- | --------------------------------- | ------------------------------------------------------------ | ------------------------------------------------------------------------- |
+| **Create**              | New accepted/enrolled contact     | New student + demographics + address + contacts + enrollment | Full SFTP template set                                                    |
+| **Update after create** | Any change to an existing student | Update the matched Focus student                             | SFTP refresh (re-send current state), matched on `STDT_ID` from crosswalk |
+| **Transfer out**        | Withdrawal / drop in Finalsite    | End-date / drop the enrollment                               | SFTP `STUDENT_ENROLLMENT` `END_DATE`+`DROP_CODE`                          |
+| **Re-enrollment**       | Returning student for a new year  | New enrollment row for the existing student                  | SFTP `STUDENT_ENROLLMENT` (per-year file)                                 |
+| **Contacts**            | Guardian / relationship changes   | Upsert contacts + sibling links                              | SFTP `Contacts`/`Linked_Students` (many guardians via `SORT_ORDER`)       |
 
 Two consequences:
 
 - **Updates require resolving the Focus `uuid`/`student_id` for every record**,
   not just new ones — the persisted crosswalk is load-bearing for the entire
   lifecycle, not a one-time convenience.
-- **The enrollment-write gap matters more than for create-only.** Transfers-out
-  and re-enrollment are enrollment-record changes, and the API exposes no
-  enrollment write (`enrollments`/`school_enrollments` are GET-only). So either
-  the SFTP `STUDENT_ENROLLMENT` template is required for those operations (a
-  hybrid, even if the API is used for student/contact upserts) or the vendor
-  confirms an API path. The SFTP full-refresh model handles the whole lifecycle
-  in one mechanism; the API likely cannot alone.
+- **The enrollment-write gap settled Fork 2 toward SFTP.** Transfers-out and
+  re-enrollment are enrollment-record changes, and the Focus API exposes no
+  enrollment write (`enrollments`/`school_enrollments` are GET-only). The SFTP
+  `STUDENT_ENROLLMENT` template is the only mechanism that writes enrollments,
+  so the chosen design (Fork 2 = SFTP) handles the whole lifecycle in one
+  mechanism — create, update, transfer-out, and re-enroll all via the template
+  set.
 
 ## Identity (the crux) — resolved model
 
@@ -430,13 +441,12 @@ Implications:
 3. **Identity resolution + persisted crosswalk** — anchored on `student_id`,
    legacy bridge via `custom_l1482`. Resolves the Focus `uuid`/`student_id` for
    **every** in-scope record (updates and transfers, not just creates).
-4. **Focus-shaped output models** — API wide-row shape and/or the 5
-   SFTP-template shapes; shared upstream makes adding the second cheap.
-5. **Transport seam** — applies create / update / drop per record. SFTP via
-   `build_bigquery_query_sftp_asset` (static filenames, full refresh of in-scope
-   students) **or** a new `FocusResource` (OAuth2 client_credentials, token
-   cache/refresh, 429 handling) posting `POST`/`PUT` per student or via
-   `/multi`, capturing returned `uuid` and per-record errors.
+4. **Focus-shaped output models** — the 5 SFTP-template shapes (Demographics,
+   Student_Enrollment, Address, Contacts, Linked_Students), keyed on `STDT_ID`.
+5. **Transport seam** — applies create / update / drop per record via the SFTP
+   import (Fork 2). `build_bigquery_query_sftp_asset` (static filenames, full
+   refresh of in-scope students) writes the coordinated CSVs to Focus's import
+   directory.
 6. **Change detection & cadence** — full refresh of the in-scope set each run
    (simplest; matches SFTP's keyed-replace model) **or** incremental via
    Finalsite `since` / `since_includes_expanded`. Ongoing schedule (e.g. daily,
@@ -509,9 +519,13 @@ them.
 
 2. **Fork 1 — RESOLVED → REST API** (live-validated 2026-06-09; see _Fork 1_).
    `enrolled_date` / lifecycle dates join from `stg_finalsite__status_report`.
-3. **Fork 2** — Focus transport (SFTP vs API). The all-guardians decision rules
-   out API-only for contacts; remaining choice is for the student/enrollment
-   records, gated on the API vendor-confirm items below.
+3. **Fork 2 — RESOLVED → Focus SFTP import (decided 2026-06-16).** All records
+   (student, enrollment, demographics, address, contacts, links) flow to Focus
+   via the 5 coordinated SFTP import templates keyed on `STDT_ID`. The Focus
+   REST API is not used — SFTP is the only path that creates a real enrollment
+   record and preserves all guardians, and it reuses
+   `build_bigquery_query_sftp_asset`. The API vendor-confirm items below are
+   thereby moot. See _Fork 2_.
 
    **Enrollment-data gate — RESOLVED (2026-06-09).** Fork 1 sources from the
    **API**, which natively carries `status` / `enrollment_type` / `grade` /
