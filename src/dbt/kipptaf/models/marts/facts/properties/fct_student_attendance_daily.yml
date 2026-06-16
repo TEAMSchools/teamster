@@ -7,6 +7,11 @@ models:
       year are reached via dim_student_enrollments and dim_terms — not stored on
       the fact. FK to dim_student_enrollments, dim_dates, and dim_terms.
 
+      Paterson attendance values for AY2025 are known-incomplete due to an
+      upstream PowerSchool attendance-conversion gap (#4193); ADA and
+      attendance-derived measures reflect source and will correct once that
+      config is fixed. Membership and enrollment counts are unaffected.
+
       Four numeric attendance measures coexist — use the right one for the
       question:
 
@@ -102,8 +107,7 @@ models:
           where 1 is a full attendance day. Used with membership_value to
           compute ADA. Precision depends on the source SIS's attendance mode
           (full-day vs period-level vs day-part); see source_model for
-          provenance. Null for Paterson records before academic_year 2026
-          (excluded from ADA — data not fully integrated until AY2026).
+          provenance.
 
         config:
           meta:
@@ -116,9 +120,7 @@ models:
           The amount of a student's membership this school claims. If a student
           attends more than one school each one will only be able to claim a
           certain portion of the membership. The largest number for this will
-          usually be 1 and fractions expressed as decimals. Like .5 or .25. Null
-          for Paterson records before academic_year 2026 (excluded from ADA —
-          data not fully integrated until AY2026).
+          usually be 1 and fractions expressed as decimals. Like .5 or .25.
 
         config:
           meta:
@@ -129,9 +131,7 @@ models:
         data_type: float64
         description: >-
           Weighted presence value. 0.67 for tardy (T-prefix codes), otherwise
-          equals attendance_value. Fractional by design — not a 0/1 flag. Null
-          for Paterson records before academic_year 2026 (excluded from ADA —
-          data not fully integrated until AY2026).
+          equals attendance_value. Fractional by design — not a 0/1 flag.
 
       - name: is_truant
         data_type: boolean
@@ -191,7 +191,6 @@ models:
           (student_enrollment_key), ordered by date. Point-in-time — filter to a
           single date to get YTD CA status as of that date. Filtering to a date
           range overcounts by including students CA at any point in the range.
-          Null for Paterson records before academic_year 2026.
 
       - name: ada_tier
         data_type: string
@@ -199,8 +198,7 @@ models:
           ADA tier based on cumulative attendance rate through this date. Tier 1
           = 95%+ ADA (on track). Tier 2 = 90–94% (at risk). Tier 3 = 80–89%
           (chronic). Tier 4 = below 80% (severe chronic). Partitioned by
-          enrollment stint (student_enrollment_key), ordered by date. Null for
-          Paterson records before academic_year 2026.
+          enrollment stint (student_enrollment_key), ordered by date.
         data_tests:
           - accepted_values:
               arguments:
@@ -224,13 +222,58 @@ models:
           dimension for month-over-month CA trends — gives one snapshot per
           student per month at the last school day of that month.
 
+      - name: school_week_start_date
+        data_type: date
+        description: >-
+          PowerSchool per-school school-week start date. The week-bucket key for
+          weekly attendance trends, matching topline reporting. School weeks are
+          not a clean Monday-Sunday calendar grid — PowerSchool splits weeks at
+          month and term boundaries, so the start date varies by school and
+          calendar configuration. Use as the GROUP BY axis for week-over-week
+          enrollment and attendance trends.
+        config:
+          meta:
+            source_system: PowerSchool
+            source_model: int_powerschool__ps_adaadm_daily_ctod
+            source_column: week_start_monday
+
       - name: is_week_end_record
         data_type: boolean
         description: >-
           TRUE on the last full membership day (membership_value = 1) of each
-          calendar week (Monday–Sunday) per student enrollment. FALSE on all
-          other rows, including non-membership days. Use with a week-granularity
-          date dimension for week-over-week CA trends — gives one snapshot per
-          student per week at the last school day of that week. Correctly
-          handles shortened weeks (e.g. Wednesday is last school day before a
-          holiday).
+          PowerSchool school week (week_start_monday) per student enrollment.
+          FALSE on all other rows, including non-membership days. Use with
+          school_week_start_date for week-over-week CA trends — gives one
+          snapshot per student per school week at the last school day of that
+          week. Correctly handles shortened weeks (e.g. Wednesday is last school
+          day before a holiday).
+
+      - name: is_current_record
+        data_type: boolean
+        description: >-
+          TRUE on the school's latest attendance day that has occurred, per
+          school and academic year (fact is capped at today, so no future rows).
+          Drives the default point-in-time enrollment headcount — students
+          enrolled but withdrawn before the current date will not have a TRUE
+          row, excluding them from active headcounts. Distinct from
+          is_latest_record, which is per student enrollment stint, not per
+          school.
+
+      - name: is_enrollment_month_end_record
+        data_type: boolean
+        description: >-
+          TRUE on the school's latest attendance day of each calendar month, per
+          school and academic year. For month-over-month point-in-time
+          enrollment trend counts — one headcount snapshot per school per month
+          at the last in-session day of that month. Independent of
+          is_month_end_record, which operates per student enrollment stint.
+
+      - name: is_enrollment_week_end_record
+        data_type: boolean
+        description: >-
+          TRUE on the school's latest attendance day of each PowerSchool school
+          week (week_start_monday), per school. For week-over-week point-in-time
+          enrollment trend counts — one headcount snapshot per school per week
+          at the last in-session day of that week. Group by
+          school_week_start_date for the weekly trend axis. Independent of
+          is_week_end_record, which operates per student enrollment stint.

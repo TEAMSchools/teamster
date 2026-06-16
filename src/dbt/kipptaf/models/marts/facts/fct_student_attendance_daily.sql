@@ -22,28 +22,21 @@ with
                 )
             }} as student_enrollment_key,
 
+            ada.schoolid,
+            ada._dbt_source_project,
+            ada.academic_year,
+            ada.week_start_monday,
+
             ada.calendardate as date_key,
 
             t.term_key,
 
             ada.att_code as attendance_code,
 
-            if(
-                ada._dbt_source_project = 'kipppaterson' and ada.academic_year < 2026,
-                null,
-                ada.attendancevalue
-            ) as attendance_value,
-            if(
-                ada._dbt_source_project = 'kipppaterson' and ada.academic_year < 2026,
-                null,
-                ada.membershipvalue
-            ) as membership_value,
+            ada.attendancevalue as attendance_value,
+            ada.membershipvalue as membership_value,
 
-            if(
-                ada._dbt_source_project = 'kipppaterson' and ada.academic_year < 2026,
-                null,
-                ada.is_present_weighted
-            ) as present_weight,
+            ada.is_present_weighted as present_weight,
 
             ada.is_truant,
 
@@ -100,6 +93,7 @@ select
 
     date_key,
     term_key,
+    week_start_monday as school_week_start_date,
 
     attendance_code,
     attendance_value,
@@ -142,10 +136,22 @@ select
     and membership_value = 1 as is_month_end_record,
 
     row_number() over (
-        -- trunk-ignore(sqlfluff/LT01): week(monday) requires special formatting
-        partition by student_enrollment_key, date_trunc(date_key, week(monday))
+        partition by student_enrollment_key, week_start_monday
         order by if(membership_value = 1, date_key, null) desc nulls last
     )
     = 1
     and membership_value = 1 as is_week_end_record,
+
+    date_key = max(date_key) over (
+        partition by schoolid, _dbt_source_project, academic_year
+    ) as is_current_record,
+
+    date_key = max(date_key) over (
+        partition by
+            schoolid, _dbt_source_project, academic_year, date_trunc(date_key, month)
+    ) as is_enrollment_month_end_record,
+
+    date_key = max(date_key) over (
+        partition by schoolid, _dbt_source_project, week_start_monday
+    ) as is_enrollment_week_end_record,
 from running
