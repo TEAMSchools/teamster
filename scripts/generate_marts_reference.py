@@ -101,11 +101,8 @@ def parse_fk_edges(yaml_path: Path) -> list[FkEdge]:
     model-level edges (in constraint order, then column order within each
     constraint).  Non-foreign-key constraints are ignored in both locations.
 
-    Table-materialized models (``config.materialized: table``) cannot declare
-    foreign_key constraints — the constraint renders into CREATE TABLE DDL and
-    BigQuery rejects an FK whose referenced parent is a view (all dims are
-    views).  For those models only, column-level ``relationships`` data tests
-    provide the edges for columns without a constraint.
+    For table-materialized models, column-level ``relationships`` data tests
+    provide FK edges for columns that lack a ``constraints: foreign_key`` entry.
     """
     doc = yaml.safe_load(yaml_path.read_text(encoding="utf-8")) or {}
     edges: list[FkEdge] = []
