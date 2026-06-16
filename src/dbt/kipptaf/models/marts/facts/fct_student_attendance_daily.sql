@@ -14,10 +14,10 @@ with
             {{
                 dbt_utils.generate_surrogate_key(
                     [
-                        "enr.student_number",
-                        "enr._dbt_source_project",
-                        "enr.academic_year",
-                        "enr.entrydate",
+                        "ada.student_number",
+                        "ada._dbt_source_project",
+                        "ada.academic_year",
+                        "ada.entrydate",
                     ]
                 )
             }} as student_enrollment_key,
@@ -60,13 +60,6 @@ with
                 else 'Present'
             end as attendance_category,
         from {{ ref("int_powerschool__ps_adaadm_daily_ctod") }} as ada
-        inner join
-            {{ ref("int_powerschool__student_enrollment_union") }} as enr
-            on ada.studentid = enr.studentid
-            and ada.schoolid = enr.schoolid
-            and ada.calendardate >= enr.entrydate
-            and ada.calendardate < enr.exitdate
-            and ada._dbt_source_project = enr._dbt_source_project
         left join
             {{ ref("dim_terms") }} as t
             on ada.schoolid = t.school_id
