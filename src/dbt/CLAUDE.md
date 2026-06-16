@@ -118,6 +118,11 @@ contract columns may be added anywhere in `properties.yml`. Regenerate a large
 struct `data_type` by pulling it verbatim from `INFORMATION_SCHEMA.COLUMNS` of
 the staged table; don't hand-transcribe.
 
+A multi-type Avro union (e.g. a Pydantic `bool | str | list[str]` field) lands
+in a BigQuery external table as a named
+`STRUCT<boolean_value, string_value, array_string_value>`, not a scalar — read
+the typed subfield (`.string_value` / `.array_string_value` / `.boolean_value`).
+
 dbt CLI runs locally for Claude: `DBT_PROFILES_DIR` (repo `.dbt`) + ADC →
 `dbt debug` / `build` / `run-operation --target staging` connect with no
 1Password (BigQuery uses ADC, not the 1Password bootstrap). `--target prod` runs
