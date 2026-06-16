@@ -26,3 +26,19 @@ sources:
                 - "{{ project_name }}"
                 - finalsite
                 - status_report
+      - name: contacts
+        external:
+          location: "{{ var('cloud_storage_uri_base') }}/finalsite/contacts/*"
+          options:
+            connection_name: "{{ var('bigquery_external_connection_name') }}"
+            metadata_cache_mode: MANUAL
+            max_staleness: INTERVAL 7 DAY
+            format: AVRO
+            enable_logical_types: true
+        config:
+          meta:
+            dagster:
+              asset_key:
+                - "{{ project_name }}"
+                - finalsite
+                - contacts
