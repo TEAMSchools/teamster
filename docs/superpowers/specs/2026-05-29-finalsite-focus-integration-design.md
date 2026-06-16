@@ -3,8 +3,8 @@
 - **Issue:** [#4073](https://github.com/TEAMSchools/teamster/issues/4073)
 - **Status:** Design / brainstorming output (no implementation yet); updated
   2026-06-09 — Fork 1 resolved to the **REST API**, live-validated against
-  Miami; `START_DATE` sourced from `stg_finalsite__status_report` (see _Fork
-  1_).
+  Miami; `START_DATE` sourced from `stg_finalsite__status_report`; `STUDENT_ID`
+  minted by Finalsite (autogen `IdField`). See _Fork 1_ / _Open decisions_.
 - **Scope:** KIPP Miami only (`kippmiami` code location)
 - **Related:** inbound Focus-load spec
   `2026-04-03-focus-sis-integration-design.md` (distinct pipeline — that loads
@@ -299,7 +299,7 @@ Miami:
 | Focus field                     | Source                                                                                                      | Remaining                                                          |
 | ------------------------------- | ----------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------ |
 | `SYEAR` (req)                   | API `school_year.start_year` ✓                                                                              | none                                                               |
-| `STUDENT_ID` (req)              | API `id_attributes` (returning) / mint (new)                                                                | minting authority (★ gate)                                         |
+| `STUDENT_ID` (req)              | API `id_attributes` (Finalsite-minted via autogen `IdField`)                                                | Finalsite config: create the 10-digit autogen field                |
 | `GRADE_ID` (req)                | API `grade.canonical_name` ✓                                                                                | Finalsite-grade → Focus Short-Name map; Focus grade levels set up  |
 | `SCHOOL_ID` (req)               | API `assigned_school_ss` (Miami, confirmed) ✓                                                               | Finalsite-school → Focus `SCH_ID` crosswalk; Focus Schools exist   |
 | `START_DATE` (req)              | **`stg_finalsite__status_report.enrolled_date`** (join `finalsite_enrollment_id`) ✓                         | none — sourced                                                     |
@@ -318,9 +318,9 @@ joined on `finalsite_enrollment_id` (= API `contact.id`). What remains is
    `DROP_CODE`.
 2. **Focus code setup** (must exist, case-sensitive short names): Grade Levels,
    Enrollment Codes (Add + Drop), Calendars, Schools.
-3. **`STUDENT_ID` minting (★ gate)** — the only open item: returning students
-   match an existing number; new students need one minted (autogen `IdField`
-   pending Finalsite).
+3. **`STUDENT_ID` minting — decided: Finalsite mints** via an autogen `IdField`;
+   the pipeline reads `id_attributes`. Remaining is the Finalsite-side field
+   config, not a pipeline concern.
 
 ## Finalsite API live profile (Newark proxy, n=300)
 
@@ -465,8 +465,11 @@ them.
 
 ## Open decisions & gates (do not block writing/implementation planning)
 
-1. **★ Go-forward number minting.** Who assigns the 10-digit `student_id` for a
-   brand-new enrollee. Per Finalsite's
+1. **Go-forward number minting — RESOLVED → (a) Finalsite mints (decided
+   2026-06-09).** The 10-digit `student_id` for a brand-new enrollee is minted
+   **by Finalsite** (autogen `IdField`); the pipeline reads it from
+   `id_attributes` and pushes to Focus — no pipeline minting, no number
+   write-back. The options below are retained for context. Per Finalsite's
    [ID Generation & Sync to Third-Party Systems](https://schooladmin.zendesk.com/hc/en-us/articles/6219105734925-ID-Generation-Sync-to-Third-Party-Systems)
    doc, Finalsite supports rule-based ID generation (incrementing numbers or
    composite values like `LAST + FIRST + DOB`, with formatting such as leading
@@ -491,13 +494,15 @@ them.
    **Live evidence (Newark profile).** No `IdField` uses `autogen=True` today
    (all 7 are passthrough), and `id_attributes` is populated only for
    **returning** students (205/205), **0/44 new** — the number is written back
-   **manually today** and undone for new enrollees. **KTAF is in active
-   discussion with Finalsite about adding an autogen `IdField`** (option **a**);
-   the formatting engine is confirmed present (e.g.
-   `STU{{ value | … | pad_zeroes: 12 }}`), so 1a is viable pending Finalsite's
-   answers on counter scope/uniqueness, template tokens, 10-digit match, and
-   admin setup. Under 1a the integration just **reads** the generated id and
-   pushes to Focus — no pipeline minting and no number write-back.
+   **manually today** and undone for new enrollees. **Decided: Finalsite mints
+   (option a).** The formatting engine is confirmed present (e.g.
+   `STU{{ value | … | pad_zeroes: 12 }}`). Remaining is a **Finalsite-side
+   config task** (not a pipeline concern): create the autogen `IdField`
+   producing the 10-digit scheme (counter scope/uniqueness, template, admin
+   setup) and have it generate for the new cohort (today 0/44 new students carry
+   a number). The integration just **reads** the generated id from
+   `id_attributes` and pushes to Focus — no pipeline minting and no number
+   write-back.
 
    Identity-resolution absorbs whichever via one config flag. Formal ownership
    sign-off: Miami ops / central data.
