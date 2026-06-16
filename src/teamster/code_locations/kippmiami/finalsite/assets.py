@@ -3,7 +3,7 @@ from teamster.code_locations.kippmiami.finalsite.schema import (
     CONTACTS_SCHEMA,
     STATUS_REPORT_SCHEMA,
 )
-from teamster.libraries.finalsite.api.assets import build_finalsite_contacts_asset
+from teamster.libraries.finalsite.api.assets import build_finalsite_asset
 from teamster.libraries.finalsite.sftp.assets import (
     get_finalsite_school_year_partition_keys,
 )
@@ -24,8 +24,11 @@ status_report = build_sftp_file_asset(
     ssh_resource_key="ssh_couchdrop",
 )
 
-contacts = build_finalsite_contacts_asset(
-    code_location=CODE_LOCATION, schema=CONTACTS_SCHEMA
+contacts = build_finalsite_asset(
+    code_location=CODE_LOCATION,
+    asset_name="contacts",
+    schema=CONTACTS_SCHEMA,
+    params={"includes": "contacts.relationships.contact"},
 )
 
 assets = [

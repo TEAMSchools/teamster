@@ -20,12 +20,12 @@ from teamster.code_locations.kippmiami import (
     powerschool,
     renlearn,
 )
+from teamster.code_locations.kippmiami.resources import FINALSITE_RESOURCE
 from teamster.core.resources import (
     BIGQUERY_RESOURCE,
     DB_POWERSCHOOL,
     DEANSLIST_RESOURCE,
     DLT_RESOURCE,
-    FINALSITE_RESOURCE,
     GCS_RESOURCE,
     GOOGLE_DRIVE_RESOURCE,
     SSH_COUCHDROP,

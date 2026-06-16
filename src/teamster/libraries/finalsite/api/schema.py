@@ -54,9 +54,7 @@ class CustomAttribute(BaseModel):
     field_name: str | None = None
     field_display_name: str | None = None
 
-    # value is coerced to a string at ingestion (lists JSON-encoded) to avoid a
-    # multi-type Avro union that BigQuery external tables handle poorly.
-    value: str | None = None
+    value: bool | str | list[str] | None = None
 
 
 class RelatedContact(BaseModel):
