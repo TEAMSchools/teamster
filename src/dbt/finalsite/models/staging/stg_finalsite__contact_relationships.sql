@@ -12,10 +12,9 @@ with
             r.contact.gender as guardian_gender,
             r.contact.phone_1.number as guardian_phone,
             (
-                select av.value
+                select any_value(av.value),
                 from unnest(r.contact.id_attributes) as av
                 where av.field_name = 'powerschool_contact_id'
-                limit 1
             ) as guardian_powerschool_contact_id,
         from {{ source("finalsite", "contacts") }} as c
         cross join unnest(c.relationships) as r
