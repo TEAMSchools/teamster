@@ -1,4 +1,10 @@
 with
+    school_year_start as (
+        select distinct
+            _dbt_source_project, academic_year, schoolid, first_day_school_year,
+        from {{ ref("int_powerschool__calendar_week") }}
+    ),
+
     esms_attend as (
         select
             _dbt_source_project,
@@ -264,7 +270,7 @@ select
         false
     ) as is_ada_above_or_at_80_cum_gpa_less_2,
 
-    if(e.exitdate < date(e.academic_year, 8, 1), true, false) as is_pre_year_withdrawal,
+    if(e.exitdate < cal.first_day_school_year, true, false) as is_pre_year_withdrawal,
 
     case
         e.gender when 'F' then 'Female' when 'M' then 'Male' when 'X' then 'Non-Binary'
@@ -339,6 +345,11 @@ select
     end as fafsa_status_mismatch_category,
 
 from {{ ref("base_powerschool__student_enrollments") }} as e
+left join
+    school_year_start as cal
+    on e.schoolid = cal.schoolid
+    and e.academic_year = cal.academic_year
+    and e._dbt_source_project = cal._dbt_source_project
 left join
     {{ ref("int_people__location_crosswalk") }} as lc
     on e.school_name = lc.location_name
