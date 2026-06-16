@@ -13,6 +13,19 @@ models:
             combination_of_columns:
               - illuminate_student_id
               - assessment_id
+      # Source data-quality guard: Illuminate occasionally emits a corrupt
+      # date_taken (epoch / year-2000 sentinels). Section resolution anchors on
+      # administered_date instead (#4183), so this is surveillance only. Scoped
+      # to the current academic year to surface fresh corruption without years
+      # of legacy noise; warn, not error.
+      - dbt_utils.expression_is_true:
+          arguments:
+            expression: |
+              academic_year != {{ var("current_academic_year") }}
+              or date_taken is null
+              or date_taken >= date(academic_year, 7, 1)
+          config:
+            severity: warn
     columns:
       - name: illuminate_student_id
         data_type: int64
@@ -83,6 +96,26 @@ models:
         config:
           meta:
             source_column: int_assessments__course_enrollments._dbt_source_project
+      - name: cc_dateenrolled
+        data_type: date
+        description: >-
+          Date the student enrolled in the matched PowerSchool course section.
+          Populated only for the internal-assessment branch
+          (is_internal_assessment=true and is_replacement=false); null for K-8
+          replacement curriculum and external-assessment rows.
+        config:
+          meta:
+            source_column: int_assessments__course_enrollments.cc_dateenrolled
+      - name: cc_dateleft
+        data_type: date
+        description: >-
+          Date the student left the matched PowerSchool course section.
+          Populated only for the internal-assessment branch
+          (is_internal_assessment=true and is_replacement=false); null for K-8
+          replacement curriculum and external-assessment rows.
+        config:
+          meta:
+            source_column: int_assessments__course_enrollments.cc_dateleft
       - name: _dbt_source_project
         data_type: string
         description: >-

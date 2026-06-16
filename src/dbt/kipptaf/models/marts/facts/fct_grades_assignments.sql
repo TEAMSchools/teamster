@@ -49,7 +49,7 @@ select
         dbt_utils.generate_surrogate_key(
             [
                 "asg.assignmentsectionid",
-                "asg._dbt_source_relation",
+                "asg._dbt_source_project",
                 "ce.students_dcid",
             ]
         )
@@ -57,17 +57,6 @@ select
 
     {{ dbt_utils.generate_surrogate_key(["ce.cc_dcid", "ce._dbt_source_project"]) }}
     as student_section_enrollment_key,
-
-    {{
-        dbt_utils.generate_surrogate_key(
-            [
-                "enr.student_number",
-                "enr._dbt_source_project",
-                "asg.academic_year",
-                "enr.entrydate",
-            ]
-        )
-    }} as student_enrollment_key,
 
     if(
         rt.code is not null,
@@ -112,6 +101,9 @@ inner join
     and asg.duedate >= ce.cc_dateenrolled
     and asg.duedate < ce.cc_dateleft
     and {{ union_dataset_join_clause(left_alias="asg", right_alias="ce") }}
+-- retained as a row-population filter (assignment must fall within a covering
+-- school enrollment); enrollment linkage now flows via
+-- student_section_enrollment_key -> dim_student_section_enrollments
 inner join
     student_enrollments as enr
     on ce.cc_studentid = enr.studentid

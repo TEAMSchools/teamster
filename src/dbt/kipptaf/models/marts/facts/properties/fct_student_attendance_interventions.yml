@@ -42,7 +42,7 @@ models:
         data_type: string
         description: >-
           FK to dim_student_attendance_intervention_types. Surrogate key derived
-          from region_name and family_communication_reason.
+          from _dbt_source_project and family_communication_reason.
         constraints:
           - type: foreign_key
             to: ref('dim_student_attendance_intervention_types')
@@ -58,8 +58,8 @@ models:
         data_type: string
         description: >-
           FK to fct_family_communications. Surrogate key derived from the
-          DeansList comm log record_id and _dbt_source_relation. Nullable when
-          no matching communication was logged (intervention is not complete).
+          DeansList comm log record_id and _dbt_source_project. Nullable when no
+          matching communication was logged (intervention is not complete).
         constraints:
           - type: foreign_key
             to: ref('fct_family_communications')

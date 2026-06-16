@@ -9,7 +9,7 @@ application tracking platform). Produces staging and intermediate models.
 models/
   staging/
   intermediate/
-  sources.yml
+  sources-external.yml
 ```
 
 ## Cross-Project Usage

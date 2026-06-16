@@ -1,3 +1,15 @@
+"""Pydantic models for the ADP WFN ``/hr/v2/workers`` response.
+
+This models the **complete retrievable** worker representation (ADP's full
+default response). The asset's ``$select`` and the dbt staging model deliberately
+surface only the subset ADP returns for KTAF today; the remaining fields — e.g.
+``Person.deathDate``, ``WorkerDates.adjustedServiceDate`` / ``retirementDate``,
+``Communication.faxes``, ``Person.governmentIDs`` / ``identityDocuments`` — are
+declared for forward-compatibility so adding one later is a one-line ``$select``
+change rather than a schema/Avro change. Tests exercise model *parsing* of these
+fields, not warehouse capture.
+"""
+
 from pydantic import BaseModel, Field
 
 
@@ -46,6 +58,19 @@ class IndicatorField(CustomField):
     indicatorValue: bool | None = None
 
 
+class AmountField(CustomField):
+    amountValue: float | None = None
+    currencyCode: str | None = None
+
+
+class PercentField(CustomField):
+    percentValue: float | None = None
+
+
+class TelephoneField(CustomField):
+    formattedNumber: str | None = None
+
+
 class Phone(BaseModel):
     areaDialing: str
     countryDialing: str
@@ -74,6 +99,7 @@ class Address(BaseModel):
     lineTwo: str | None = None
     lineThree: str | None = None
     postalCode: str | None = None
+    deliveryPoint: str | None = None
 
     countrySubdivisionLevel1: CountrySubdivisionLevel | None = None
     countrySubdivisionLevel2: CountrySubdivisionLevel | None = None
@@ -88,6 +114,16 @@ class GovernmentID(BaseModel):
     expirationDate: str | None = None
 
     nameCode: Code
+    statusCode: Code | None = None
+
+
+class IdentityDocument(BaseModel):
+    countryCode: str | None = None
+    idValue: str | None = None
+    itemID: str | None = None
+    expirationDate: str | None = None
+
+    nameCode: Code | None = None
     statusCode: Code | None = None
 
 
@@ -124,6 +160,10 @@ class AssignmentStatus(BaseModel):
 class WorkerGroup(BaseModel):
     groupCode: Code
     nameCode: Code
+
+
+class LaborUnion(BaseModel):
+    laborUnionCode: Code | None = None
 
 
 class WageLawCoverage(BaseModel):
@@ -174,6 +214,17 @@ class Rate(BaseModel):
     nameCode: Code | None = None
 
 
+class PayGradeRate(BaseModel):
+    # pay-grade range bound — only amountValue (no currencyCode/nameCode, unlike Rate)
+    amountValue: float | None = None
+
+
+class PayGradePayRange(BaseModel):
+    minimumRate: PayGradeRate | None = None
+    medianRate: PayGradeRate | None = None
+    maximumRate: PayGradeRate | None = None
+
+
 class BaseRemuneration(BaseModel):
     effectiveDate: str
 
@@ -216,6 +267,8 @@ class Communication(BaseModel):
     emails: list[Email] | None = None
     landlines: list[Phone] | None = None
     mobiles: list[Phone] | None = None
+    faxes: list[Phone] | None = None
+    pagers: list[Phone] | None = None
 
 
 class WorkerStatus(BaseModel):
@@ -234,19 +287,25 @@ class WorkerDates(BaseModel):
     originalHireDate: str
     terminationDate: str | None = None
     rehireDate: str | None = None
+    adjustedServiceDate: str | None = None
+    retirementDate: str | None = None
 
 
 class CustomFieldGroup(BaseModel):
+    amountFields: list[AmountField] | None = None
     codeFields: list[CodeField] | None = None
     dateFields: list[DateField] | None = None
     indicatorFields: list[IndicatorField] | None = None
     multiCodeFields: list[MultiCodeField] | None = None
     numberFields: list[NumberField] | None = None
+    percentFields: list[PercentField] | None = None
     stringFields: list[StringField] | None = None
+    telephoneFields: list[TelephoneField] | None = None
 
 
 class Person(BaseModel):
     birthDate: str
+    deathDate: str | None = None
     disabledIndicator: bool
     militaryDischargeDate: str | None = None
     tobaccoUserIndicator: bool | None = None
@@ -265,9 +324,11 @@ class Person(BaseModel):
     preferredGenderPronounCode: Code | None = None
     preferredName: Name
     raceCode: RaceCode | None = None
+    religionCode: Code | None = None
 
     disabilityTypeCodes: list[Code] | None = None
     governmentIDs: list[GovernmentID] | None = None
+    identityDocuments: list[IdentityDocument] | None = None
     militaryClassificationCodes: list[Code]
     otherPersonalAddresses: list[Address] | None = None
     socialInsurancePrograms: list[SocialInsuranceProgram] | None = None
@@ -285,6 +346,7 @@ class WorkAssignment(BaseModel):
     payrollScheduleGroupID: str | None = None
     positionID: str
     primaryIndicator: bool
+    rehireEligibleIndicator: bool | None = None
     seniorityDate: str | None = None
     terminationDate: str | None = None
     voluntaryIndicator: bool | None = None
@@ -294,14 +356,22 @@ class WorkAssignment(BaseModel):
     customFieldGroup: CustomFieldGroup | None = None
     homeWorkLocation: WorkLocation | None = None
     jobCode: Code | None = None
+    jobFunctionCode: Code | None = None
+    laborUnion: LaborUnion | None = None
     payCycleCode: Code | None = None
+    payGradeCode: Code | None = None
+    payGradePayRange: PayGradePayRange | None = None
     payrollProcessingStatusCode: Code
     standardHours: StandardHours | None = None
     standardPayPeriodHours: StandardPayPeriodHours | None = None
     wageLawCoverage: WageLawCoverage | None = None
+    workShiftCode: Code | None = None
     workerTimeProfile: WorkerTimeProfile | None = None
     workerTypeCode: Code | None = None
 
+    # customCountryInputs is always empty in live data; shape unconfirmed —
+    # modeled as a Code list so the (empty) array still validates.
+    customCountryInputs: list[Code] | None = None
     additionalRemunerations: list[AdditionalRemuneration] | None = None
     assignedOrganizationalUnits: list[OrganizationalUnit] | None = None
     assignedWorkLocations: list[WorkLocation] | None = None

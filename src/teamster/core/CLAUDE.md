@@ -53,9 +53,20 @@ The epoch timestamp (`1970-01-01`) is treated as a resync signal and replaced
 with the current timestamp.
 
 Three `object_type` modes: `"pickle"`, `"avro"` (writes Fastavro container
-files), `"file"` (writes raw bytes from a local file path). The `test=True` flag
-writes local files to `/tmp/dagster` (not the `dagster-tmp` symlink — causes
-`FileExistsError`) instead of `env/`, and prefixes GCS paths with `test/`.
+files), `"file"` (writes raw bytes from a local file path). `AvroGCSIOManager`
+**always uploads to GCS** (`bucket=teamster-{code_location}`, object path =
+asset-key-based); `test=True` only redirects the LOCAL temp dir to
+`/tmp/dagster` (not the `dagster-tmp` symlink — causes `FileExistsError`) and
+writes a debug JSON — it does NOT change the GCS path. So a pytest
+`materialize(..., get_io_manager_gcs_avro(code_location="test", test=True))`
+seeds `gs://teamster-test/dagster/<asset_key>/...` — the same path branch
+deployments write to.
+
+**Codespace SA can't read prod GCS blobs.** `codespaces@…` lacks
+`storage.objects.list/get` (and `buckets.get`) on `teamster-<location>` buckets
+— scripts that read Avro blobs 403 from the codespace. Run them where ADC has
+GCS perms (locally / in-cluster), not here. Use `client.bucket(name)`, not
+`get_bucket(name)`, to skip the `buckets.get` metadata probe.
 
 ### `freshness.py`
 

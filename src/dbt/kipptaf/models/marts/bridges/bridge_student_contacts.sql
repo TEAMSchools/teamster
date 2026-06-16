@@ -1,17 +1,4 @@
 with
-    contacts_union as (
-        {{
-            dbt_utils.union_relations(
-                relations=[
-                    source("kippnewark_powerschool", "int_powerschool__contacts"),
-                    source("kippcamden_powerschool", "int_powerschool__contacts"),
-                    source("kippmiami_powerschool", "int_powerschool__contacts"),
-                    source("kipppaterson_powerschool", "int_powerschool__contacts"),
-                ]
-            )
-        }}
-    ),
-
     students_union as (
         select _dbt_source_relation, dcid, student_number,
         from {{ ref("stg_powerschool__students") }}
@@ -20,7 +7,7 @@ with
 select
     {{ dbt_utils.generate_surrogate_key(["s.student_number"]) }} as student_key,
 
-    {{ dbt_utils.generate_surrogate_key(["c._dbt_source_relation", "c.personid"]) }}
+    {{ dbt_utils.generate_surrogate_key(["c._dbt_source_project", "c.personid"]) }}
     as student_contact_person_key,
 
     c.relationship_type,
@@ -31,7 +18,7 @@ select
     c.iscustodial = 1 as is_custodial,
     c.liveswithflg = 1 as is_household_member,
 
-from contacts_union as c
+from {{ ref("int_powerschool__contacts") }} as c
 inner join
     students_union as s
     on c.studentdcid = s.dcid

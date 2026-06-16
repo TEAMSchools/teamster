@@ -1,0 +1,247 @@
+views:
+  - name: student_assessment_scores_detail
+    description: >-
+      Row-level assessment scores across internal Illuminate interims and NJ/FL
+      state assessments. One row per student x assessment x administration x
+      response type. Use for drill-down and individual investigations; for
+      roll-ups use student_assessment_scores_summary. pct_proficient (mastery
+      rate) is the source-agnostic headline; scale_score is null for internal
+      rows and percent_correct is null for state rows. response_type /
+      response_type_code carry the standard/skill breakdown. State rows have
+      null administration dates by design (no exact administered date). Contains
+      direct student identifiers — see access_policy for PII gating.
+
+    cubes:
+      - join_path: student_assessment_scores
+        includes:
+          - count_scores
+          - count_students
+          - pct_proficient
+          - avg_percent_correct
+          - avg_scale_score
+          - assessment_score_key
+          - date_taken
+          - enrollment_resolution
+          - proficiency_level
+          - performance_band_label_number
+          - is_mastery
+          - scale_score
+          - percent_correct
+          - response_type
+          - response_type_code
+          - response_type_description
+          - response_type_root_description
+          - is_replacement
+
+      - join_path: student_assessment_scores.student_assessment_administrations.student_assessments
+        includes:
+          - title
+          - academic_subject
+          - assessment_type
+          - category
+          - module_code
+          - module_type
+          - grade_level_tested
+          - scope
+          - is_internal_assessment
+
+      - join_path: student_assessment_scores.student_assessment_administrations
+        includes:
+          - administration_period
+          - test_type
+          - source_assessment_id
+
+      - join_path: >-
+          student_assessment_scores.student_assessment_administrations.dates
+        includes:
+          - date_day
+          - academic_year
+          - month_number
+          - month_name
+
+      - join_path: student_assessment_scores.student_section_enrollments.course_sections.courses
+        includes:
+          - discipline
+          - course_title
+          - course_code
+          - credit_type
+          - is_foundations
+
+      - join_path: student_assessment_scores.student_section_enrollments.course_sections
+        includes:
+          - identifier
+          - period
+
+      - join_path: student_assessment_scores.student_section_enrollments
+        includes:
+          - student_section_enrollment_key
+          - student_enrollment_key
+          - entry_date
+          - exit_date
+          - is_dropped_section
+          - is_dropped_course
+
+      - join_path: student_assessment_scores.student_section_enrollments.student_enrollments
+        includes:
+          - grade_level
+          - graduation_year
+          - year_in_network
+          - is_retained_year
+
+      - join_path: >-
+          student_assessment_scores.student_section_enrollments.student_enrollments.student_enrollment_status
+        includes:
+          - is_ell
+          - is_iep
+          - iep_classification
+          - special_education_code
+          - special_education_name
+          - special_education_placement
+          - is_meal_eligible
+          - meal_eligibility
+
+      - join_path: >-
+          student_assessment_scores.student_section_enrollments.student_enrollments.students
+        includes:
+          - student_key
+          - full_name
+          - birth_date
+          - lea_student_identifier
+          - state_student_identifier
+          - district_student_identifier
+          - salesforce_contact_id
+          - gender_identity
+          - race
+          - enrollment_status
+          - is_gifted
+
+      - join_path: >-
+          student_assessment_scores.student_section_enrollments.student_enrollments.locations
+        includes:
+          - location_name
+          - abbreviation
+          - grade_band
+          - campus
+          - city
+
+      - join_path: >-
+          student_assessment_scores.student_section_enrollments.student_enrollments.locations.regions
+        includes:
+          - region_name
+          - state
+
+      - join_path: student_assessment_scores.student_section_enrollments.terms
+        includes:
+          - semester
+          - term_name
+          - term_code
+          - term_type
+
+    meta:
+      folders:
+        - name: Assessment
+          members:
+            - title
+            - academic_subject
+            - assessment_type
+            - category
+            - module_code
+            - module_type
+            - grade_level_tested
+            - scope
+            - is_internal_assessment
+            - administration_period
+            - test_type
+            - source_assessment_id
+            - date_taken
+            - enrollment_resolution
+            - proficiency_level
+            - performance_band_label_number
+            - is_mastery
+            - scale_score
+            - percent_correct
+            - response_type
+            - response_type_code
+            - response_type_description
+            - response_type_root_description
+            - is_replacement
+        - name: Date
+          members:
+            - date_day
+            - academic_year
+            - month_number
+            - month_name
+        - name: Course
+          members:
+            - discipline
+            - course_title
+            - course_code
+            - credit_type
+            - is_foundations
+            - identifier
+            - period
+        - name: Term
+          members:
+            - semester
+            - term_name
+            - term_code
+            - term_type
+        - name: Location
+          members:
+            - location_name
+            - abbreviation
+            - grade_band
+            - campus
+            - city
+            - region_name
+            - state
+        - name: Student
+          members:
+            - student_key
+            - full_name
+            - birth_date
+            - lea_student_identifier
+            - state_student_identifier
+            - district_student_identifier
+            - salesforce_contact_id
+            - gender_identity
+            - race
+            - enrollment_status
+            - is_gifted
+        - name: Status
+          members:
+            - is_ell
+            - is_iep
+            - iep_classification
+            - special_education_code
+            - special_education_name
+            - special_education_placement
+            - is_meal_eligible
+            - meal_eligibility
+        - name: Enrollment
+          members:
+            - student_section_enrollment_key
+            - student_enrollment_key
+            - entry_date
+            - exit_date
+            - grade_level
+            - graduation_year
+            - year_in_network
+            - is_retained_year
+            - is_dropped_section
+            - is_dropped_course
+
+    access_policy:
+      - group: cube-access-student-data
+        member_level:
+          includes: "*"
+          excludes:
+            - full_name
+            - birth_date
+            - lea_student_identifier
+            - state_student_identifier
+            - district_student_identifier
+            - salesforce_contact_id
+      - group: cube-access-student-pii
+        member_level:
+          includes: "*"

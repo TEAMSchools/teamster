@@ -455,3 +455,8 @@ models:
         data_type: string
       - name: is_bl_fb
         data_type: boolean
+      - name: test_date
+        data_type: date
+        description: >-
+          Date the student took the assessment, derived from the earliest online
+          unit start datetime, falling back to the paper attempt create date.

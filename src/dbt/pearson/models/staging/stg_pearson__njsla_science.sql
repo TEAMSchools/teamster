@@ -2,6 +2,7 @@ with
     njsla_science as (
         select
             * except (
+                source_file_name,
                 accountabledistrictcode,
                 accountableorganizationaltype,
                 accountableschoolcode,
@@ -160,6 +161,43 @@ with
 
             cast(regexp_extract(assessmentgrade, r'Grade\s(\d+)') as int) as test_grade,
 
+            -- safe_cast fails on no-seconds strings (e.g. '2022-05-10 09:26');
+            -- safe.parse_datetime('%Y-%m-%d %H:%M', ...) is load-bearing for that
+            -- format
+            coalesce(
+                safe_cast(unit1onlineteststartdatetime as timestamp),
+                cast(
+                    safe.parse_datetime(
+                        '%Y-%m-%d %H:%M', unit1onlineteststartdatetime
+                    ) as timestamp
+                )
+            ) as unit1_start_timestamp,
+            coalesce(
+                safe_cast(unit2onlineteststartdatetime as timestamp),
+                cast(
+                    safe.parse_datetime(
+                        '%Y-%m-%d %H:%M', unit2onlineteststartdatetime
+                    ) as timestamp
+                )
+            ) as unit2_start_timestamp,
+            coalesce(
+                safe_cast(unit3onlineteststartdatetime as timestamp),
+                cast(
+                    safe.parse_datetime(
+                        '%Y-%m-%d %H:%M', unit3onlineteststartdatetime
+                    ) as timestamp
+                )
+            ) as unit3_start_timestamp,
+            coalesce(
+                safe_cast(unit4onlineteststartdatetime as timestamp),
+                cast(
+                    safe.parse_datetime(
+                        '%Y-%m-%d %H:%M', unit4onlineteststartdatetime
+                    ) as timestamp
+                )
+            ) as unit4_start_timestamp,
+            safe_cast(paperattemptcreatedate as date) as paper_attempt_date,
+
             case
                 testcode
                 when 'SC05'
@@ -173,6 +211,42 @@ with
 
         from {{ source("pearson", "src_pearson__njsla_science") }}
         where summativeflag = 'Y' and testattemptednessflag = 'Y'
+    ),
+
+    earliest_test_start as (
+        select
+            * except (
+                unit1_start_timestamp,
+                unit2_start_timestamp,
+                unit3_start_timestamp,
+                unit4_start_timestamp
+            ),
+
+            (
+                select min(s),
+                from
+                    unnest(
+                        [
+                            unit1_start_timestamp,
+                            unit2_start_timestamp,
+                            unit3_start_timestamp,
+                            unit4_start_timestamp
+                        ]
+                    ) as s
+            ) as earliest_test_start_timestamp,
+
+        from njsla_science
+    ),
+
+    test_date_resolved as (
+        select
+            * except (earliest_test_start_timestamp, paper_attempt_date),
+
+            coalesce(
+                date(earliest_test_start_timestamp), paper_attempt_date
+            ) as test_date,
+
+        from earliest_test_start
     )
 
 select
@@ -195,4 +269,4 @@ select
         then 'Did Not Yet Meet Expectations'
     end as testperformancelevel_text,
 
-from njsla_science
+from test_date_resolved

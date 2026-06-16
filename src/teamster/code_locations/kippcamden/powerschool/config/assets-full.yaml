@@ -90,6 +90,8 @@ assets:
       - media_release
       - newark_enrollment_number
       - rides_staff
+  - asset_name: u_expectations
+    partition_column: whenmodified
   - asset_name: u_storedgrades_de
     partition_column: whenmodified
   # - asset_name: gpstudentwaiver

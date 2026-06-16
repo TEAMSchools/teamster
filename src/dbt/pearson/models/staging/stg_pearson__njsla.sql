@@ -2,6 +2,7 @@ with
     njsla as (
         select
             * except (
+                source_file_name,
                 accountabledistrictcode,
                 accountableorganizationaltype,
                 accountableschoolcode,
@@ -173,6 +174,17 @@ with
 
             coalesce(multilinguallearnerml, englishlearnerel) as englishlearnerel,
 
+            safe_cast(
+                unit1onlineteststartdatetime as timestamp
+            ) as unit1_start_timestamp,
+            safe_cast(
+                unit2onlineteststartdatetime as timestamp
+            ) as unit2_start_timestamp,
+            safe_cast(
+                unit3onlineteststartdatetime as timestamp
+            ) as unit3_start_timestamp,
+            safe_cast(paperattemptcreatedate as date) as paper_attempt_date,
+
             if(
                 `subject`
                 in ('English Language Arts', 'English Language Arts/Literacy'),
@@ -182,6 +194,38 @@ with
 
         from {{ source("pearson", "src_pearson__njsla") }}
         where summativeflag = 'Y' and testattemptednessflag = 'Y'
+    ),
+
+    earliest_test_start as (
+        select
+            * except (
+                unit1_start_timestamp, unit2_start_timestamp, unit3_start_timestamp
+            ),
+
+            (
+                select min(s),
+                from
+                    unnest(
+                        [
+                            unit1_start_timestamp,
+                            unit2_start_timestamp,
+                            unit3_start_timestamp
+                        ]
+                    ) as s
+            ) as earliest_test_start_timestamp,
+
+        from njsla
+    ),
+
+    test_date_resolved as (
+        select
+            * except (earliest_test_start_timestamp, paper_attempt_date),
+
+            coalesce(
+                date(earliest_test_start_timestamp), paper_attempt_date
+            ) as test_date,
+
+        from earliest_test_start
     )
 
 select
@@ -206,4 +250,4 @@ select
         then 'Did Not Yet Meet Expectations'
     end as testperformancelevel_text,
 
-from njsla
+from test_date_resolved

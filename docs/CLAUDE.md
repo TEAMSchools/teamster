@@ -22,10 +22,16 @@ docs/
     claude-code-security-hooks.md  # Not in nav
   guides/                  # Task-focused walkthroughs
     index.md               # Account setup + guide routing table (section landing)
+    adp-location-renames.md
+    claude-cube-connector.md
     codespaces.md
-    local-development.md
+    cube.md
     dagster.md
+    dbt-development.md
     google-sheets.md
+    local-development.md
+    sftp-integration.md
+    superpowers.md
   troubleshooting/         # Diagnostic guides for common failures
     dagster.md
     dbt.md
@@ -84,6 +90,11 @@ documentation mechanism for that work.
 
 ## Writing Conventions
 
+- **Don't use a standalone `**bold**` line as a pseudo-heading** — markdownlint
+  MD036 fails it; use a real `###` heading (MD024 is `siblings_only`, so a
+  subsection heading repeated across sections is fine). `mkdocs build` does NOT
+  run markdownlint, so `trunk check` the generated/edited `.md` before pushing —
+  MD036 / MD001 fire only at pre-push / CI, not in the mkdocs build.
 - Always specify a language on fenced code blocks (` ```python `, ` ```sql `,
   ` ```yaml `, ` ```bash `, ` ```text ` for plain output)
 - SQL examples must follow `.trunk/config/.sqlfluff` rules (BigQuery dialect,

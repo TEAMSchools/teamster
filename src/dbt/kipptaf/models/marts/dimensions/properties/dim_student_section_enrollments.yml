@@ -25,9 +25,11 @@ models:
         data_type: string
         description: >-
           Surrogate key derived from student_number, _dbt_source_project,
-          academic_year, and entrydate. FK to dim_student_enrollments. Null when
-          no matching student enrollment record covers the CC dateenrolled.
-
+          academic_year, and entrydate. FK to dim_student_enrollments. Resolved
+          to the school enrollment stint the section enrollment overlaps (the
+          stint covering cc_dateenrolled when one exists, else the earliest
+          overlapping stint). Null only when no enrollment stint overlaps the
+          section enrollment.
         constraints:
           - type: foreign_key
             to: ref('dim_student_enrollments')

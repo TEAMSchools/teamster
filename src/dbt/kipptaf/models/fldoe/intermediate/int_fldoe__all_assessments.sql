@@ -14,6 +14,7 @@ with
 
             'FAST_NEW' as source_system,
             'FL' as destination_system,
+
         from
             unnest(
                 generate_array(2023, {{ var("current_academic_year") }})
@@ -28,6 +29,7 @@ with
             2022 as academic_year,
             'FAST' as source_system,
             'FL' as destination_system,
+
         from unnest(['PM1', 'PM2']) as administration_window
 
         union all
@@ -54,6 +56,8 @@ select
     fl.performance_level,
     fl.student_id,
     fl.assessment_name,
+    fl.performance_level as achievement_level_int,
+    fl.test_date,
     fl.student_number,
 
     {{ extract_code_location("fl") }} as _dbt_source_project,
@@ -61,7 +65,61 @@ select
     cw1.sublevel_number,
     cw1.sublevel_name,
 
-    cast(regexp_extract(fl.achievement_level, r'\d+') as int) as achievement_level_int,
+    'Actual' as results_type,
+    'KTAF FL' as district_state,
+
+    case
+        when fl.test_code = 'ALG01' and fl.assessment_grade = '8'
+        then concat(fl.test_code, '_', 'MS')
+        when fl.test_code = 'ALG01' and fl.assessment_grade in ('9', '10', '11', '12')
+        then concat(fl.test_code, '_', 'HS')
+        else fl.test_code
+    end as aligned_level_test_code,
+
+    case
+        when fl.assessment_subject like 'English Language Arts%'
+        then 'Text Study'
+        when fl.assessment_subject in ('Algebra I', 'Algebra II', 'Geometry')
+        then 'Mathematics'
+        else fl.assessment_subject
+    end as illuminate_subject,
+
+    case
+        when fl.performance_level = 1
+        then 'Below/Far Below'
+        when fl.performance_level = 2
+        then 'Approaching'
+        when fl.performance_level >= 3
+        then 'At/Above'
+    end as fast_aggregated_proficiency,
+
+    case
+        when fl.performance_level = 1
+        then 'Not Proficient (1)'
+        when fl.performance_level = 2
+        then 'Bubble (2)'
+        when fl.performance_level >= 3
+        then 'Proficient (3-5)'
+    end as fast_performance_band_group_label,
+
+    case
+        when fl.achievement_level in ('Inadequate', 'Level 1')
+        then 'Lvl 1'
+        when fl.achievement_level in ('Below Satisfactory', 'Level 2')
+        then 'Lvl 2'
+        when fl.achievement_level in ('Satisfactory', 'Level 3')
+        then 'Lvl 3'
+        when fl.achievement_level in ('Proficient', 'Level 4')
+        then 'Lvl 4'
+        when fl.achievement_level in ('Mastery', 'Level 5')
+        then 'Lvl 5'
+    end as aligned_performance_band_group,
+
+    if(fl.is_proficient, 1, 0) as is_proficient_int,
+
+    if(fl.performance_level = 2, 1, 0) as is_approaching_int,
+
+    if(fl.performance_level < 2, 1, 0) as is_below_int,
 
     if(cw1.sublevel_number >= 6, null, cw2.scale_low) as scale_for_proficiency,
 

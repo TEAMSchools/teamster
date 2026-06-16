@@ -41,7 +41,7 @@ requirements and selection criteria:
 
 | Asset variable            | `select`              | `exclude`                              | Notes                                         |
 | ------------------------- | --------------------- | -------------------------------------- | --------------------------------------------- |
-| `core_dbt_assets`         | `fqn:*`               | `source:adp_payroll+ tag:google_sheet` | Main run                                      |
+| `core_dbt_assets`         | — (all)               | `source:adp_payroll+ tag:google_sheet` | Main run                                      |
 | `google_sheet_dbt_assets` | `tag:google_sheet`    | —                                      | Separate to isolate brittle gsheet deps       |
 | `adp_payroll_dbt_assets`  | `source:adp_payroll+` | —                                      | Partitioned by payroll file; cannot be merged |
 

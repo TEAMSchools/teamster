@@ -31,4 +31,5 @@ select
         then 'SCI11'
         else testcode
     end as module_code,
+
 from union_relations

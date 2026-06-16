@@ -1,17 +1,4 @@
 {
-  "autoMemoryEnabled": false,
-  "enabledMcpjsonServers": ["dagster", "bigquery", "dbt"],
-  "enabledPlugins": {
-    "claude-md-management@claude-plugins-official": true,
-    "code-simplifier@claude-plugins-official": true,
-    "commit-commands@claude-plugins-official": true,
-    "dagster-expert@dagster": true,
-    "dbt@dbt-agent-marketplace": true,
-    "dignified-python@dagster": true,
-    "pyright-lsp@claude-plugins-official": true,
-    "security-guidance@claude-plugins-official": true,
-    "superpowers@claude-plugins-official": true
-  },
   "permissions": {
     "allow": [
       "Bash(//workspaces/teamster/.trunk/tools/trunk check --ci)",
@@ -168,6 +155,7 @@
       "Read(/env/**)"
     ]
   },
+  "enabledMcpjsonServers": ["dagster", "bigquery", "dbt"],
   "hooks": {
     "SessionStart": [
       {
@@ -204,6 +192,16 @@
       }
     ]
   },
+  "enabledPlugins": {
+    "claude-md-management@claude-plugins-official": true,
+    "commit-commands@claude-plugins-official": true,
+    "dagster-expert@dagster": true,
+    "dbt@dbt-agent-marketplace": true,
+    "dignified-python@dagster": true,
+    "pyright-lsp@claude-plugins-official": true,
+    "security-guidance@claude-plugins-official": true,
+    "superpowers@claude-plugins-official": true
+  },
   "extraKnownMarketplaces": {
     "claude-plugins-official": {
       "source": {
@@ -223,5 +221,6 @@
         "repo": "dbt-labs/dbt-agent-skills"
       }
     }
-  }
+  },
+  "autoMemoryEnabled": false
 }

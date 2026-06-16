@@ -30,7 +30,8 @@ with
                 or (
                     home_business_unit_name
                     in ('TEAM Academy Charter School', 'KIPP Cooper Norcross Academy')
-                    and home_department_name = 'Technology'
+                    and home_department_name
+                    in ('Technology', 'Marketing, Comms, and Enrollment')
                 )
             )
             and (
@@ -72,6 +73,6 @@ select
         then 'Newark'
         when 'KIPP Cooper Norcross Academy'
         then 'Camden'
-    end as region,
+    end as business_unit,
 from staff as s
 left join managers as m on s.reports_to_employee_number = m.employee_number

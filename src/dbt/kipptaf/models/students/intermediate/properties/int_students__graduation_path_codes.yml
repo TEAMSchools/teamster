@@ -58,8 +58,14 @@ models:
       - name: has_fafsa
       - name: njgpa_season_11th
         data_type: boolean
+        description: >-
+          True on or after June 30 of the current academic year end; gates
+          11th-grade NJGPA test accountability.
       - name: fafsa_season_12th
         data_type: boolean
+        description: >-
+          True on or after January 1 of the current academic year end; gates
+          12th-grade FAFSA accountability.
       - name: pathway_option
         data_type: string
       - name: score_type

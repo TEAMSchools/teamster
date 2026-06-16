@@ -14,6 +14,7 @@ models/
 
 ## Cross-Project Usage
 
-Referenced as a dbt package by `kippnewark`, `kippcamden`, and `kipptaf`.
-Consuming district projects may disable specific models (e.g.,
-`stg_deanslist__followups`) in their own `dbt_project.yml`.
+Referenced as a dbt package by `kippnewark`, `kippcamden`, and `kippmiami`;
+`kipptaf` consumes the resulting tables via `source()`. Consuming district
+projects may disable specific models (e.g., `stg_deanslist__followups`) in their
+own `dbt_project.yml`.

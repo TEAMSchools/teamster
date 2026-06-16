@@ -12,7 +12,7 @@ with
     )
 
 select
-    {{ dbt_utils.generate_surrogate_key(["st.streak_id", "st._dbt_source_relation"]) }}
+    {{ dbt_utils.generate_surrogate_key(["st.streak_id", "st._dbt_source_project"]) }}
     as student_attendance_streak_key,
 
     {{
@@ -40,4 +40,4 @@ inner join
     and st.yearid = enr.yearid
     and st.streak_start_date >= enr.entrydate
     and st.streak_start_date < enr.exitdate
-    and {{ union_dataset_join_clause(left_alias="st", right_alias="enr") }}
+    and st._dbt_source_project = enr._dbt_source_project

@@ -45,13 +45,43 @@ uv run pytest tests/assets/test_assets_dbt.py                         # requires
   `build_resources()` context manager to instantiate, then call methods on
   `resources.<name>`. `PrivateAttr` fields (`_log`, `_service`) accept direct
   assignment; use `object.__setattr__` to monkey-patch methods.
+- **Testing resource retry offline**: monkeypatch
+  `<Resource>._request.retry.wait = wait_none()` (tenacity) to kill backoff,
+  inject `object.__setattr__(r, "_session", SimpleNamespace(request=fake_fn))`
+  with a `_FakeResponse` stub, and assert call counts for retry/no-retry paths.
+  Reference harness: `tests/resources/test_resource_adp_workforce_now.py`.
 - **SSH `test=True`**: `SSHResource` reads the SSH password from a secret file
   by default (`test=False`). Integration tests must set `test=True` and pass
   `password` directly so each district uses its own credentials.
 - **Cross-file conftest imports fail** (`tests/` has no `__init__.py`). For
   fixture-injected param types, skip the annotation or use `TYPE_CHECKING` with
   a string forward-ref.
-- `dagster definitions validate` requires env vars from 1Password. Secrets are
-  fetched on demand by the root `conftest.py` during test runs. Outside of
-  pytest, run commands in the VS Code terminal where the token is available.
-  Claude sessions cannot access secrets — this is expected, not a code issue.
+- **Secrets ARE available to Claude inside pytest**: the autouse `conftest.py`
+  fixture bootstraps 1Password per run, so credentialed work (live API pulls,
+  asset `materialize()`, BigQuery) is runnable via `uv run pytest`. Wrap a
+  credentialed one-off as a throwaway `tests/**/test_zz_*.py` and delete it
+  after — a plain `uv run python script.py` is NOT bootstrapped. ADC
+  (BigQuery/GCS) auth is independent of 1Password and always works (dbt CLI, BQ
+  client). `dagster definitions validate` likewise relies on the conftest
+  bootstrap.
+
+## Hook security tests (`tests/hooks/`)
+
+Shell suites for the two `.claude/hooks/` scripts. `bash tests/hooks/run_all.sh`
+runs all of them; each `test_*.sh` covers one rule area; `helpers.sh` provides
+`expect_deny`/`expect_allow`/`expect_deny_exit0`.
+
+- **Validate a candidate patch to a protected hook BEFORE handing it off** (the
+  `.sh` hooks can't be edited in place): write the patched copy to
+  `.claude/scratch/`, then run the suite against it — `helpers.sh` honors `HOOK`
+  / `OUTPUT_HOOK` env overrides:
+  `HOOK=/abs/scratch/check-sensitive-x.sh OUTPUT_HOOK=/abs/scratch/check-output-x.sh bash tests/hooks/run_all.sh`.
+- Reading a `test_*.sh` range that contains secret-shaped fixtures (`op://`, key
+  headers, cloud tokens) trips `check-output.sh` on the Read result. Read clean
+  ranges only, or anchor Edits on a non-fixture line (e.g. `print_summary`).
+- Synthetic secret fixtures: split the literal (`"sk_live""_..."`,
+  `'-----BEGIN ''PRIVATE KEY-----'`) so gitleaks' source scan misses it but bash
+  rebuilds the value at run time — cleaner than a `trunk-ignore`, which trips
+  `trunk/ignore-does-nothing` when gitleaks wouldn't have flagged it anyway.
+- New detection rules: add benign outputs to `test_fp_corpus.sh` and measure
+  against it — it is the false-positive back-out gauge.

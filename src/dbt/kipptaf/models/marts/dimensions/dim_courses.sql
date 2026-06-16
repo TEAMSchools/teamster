@@ -5,8 +5,10 @@ select
     c.course_number as course_code,
     c.course_name as course_title,
     c.credittype as credit_type,
-    csc.discipline as academic_subject,
     c.credit_hours as credits,
+
+    csc.discipline as academic_subject,
+    csc.is_foundations,
 
 from {{ ref("stg_powerschool__courses") }} as c
 left join
