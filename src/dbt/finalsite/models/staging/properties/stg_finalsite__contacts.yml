@@ -1,0 +1,52 @@
+models:
+  - name: stg_finalsite__contacts
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns:
+              - finalsite_enrollment_id
+          config:
+            severity: error
+    columns:
+      - name: finalsite_enrollment_id
+        data_type: string
+      - name: first_name
+        data_type: string
+      - name: middle_name
+        data_type: string
+      - name: last_name
+        data_type: string
+      - name: gender
+        data_type: string
+      - name: status
+        data_type: string
+      - name: enrollment_type
+        data_type: string
+      - name: grade_canonical_name
+        data_type: string
+      - name: school_year_start
+        data_type: int64
+      - name: birth_date
+        data_type: date
+      - name: address_1
+        data_type: string
+      - name: address_2
+        data_type: string
+      - name: city
+        data_type: string
+      - name: state
+        data_type: string
+      - name: zip
+        data_type: string
+      - name: race_ms
+        data_type: string
+      - name: latino_hispanic_yn
+        data_type: string
+      - name: assigned_school_ss
+        data_type: string
+      - name: sped_received_yn
+        data_type: string
+      - name: mdcps_id_txt
+        data_type: string
+      - name: powerschool_student_number
+        data_type: string
