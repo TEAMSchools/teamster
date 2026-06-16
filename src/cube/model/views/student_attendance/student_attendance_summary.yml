@@ -57,6 +57,7 @@ views:
           - is_latest_record
           - is_month_end_record
           - is_week_end_record
+          - school_week_start_date
 
       - join_path: student_attendance.dates
         prefix: true
@@ -175,6 +176,7 @@ views:
             - is_latest_record
             - is_month_end_record
             - is_week_end_record
+            - school_week_start_date
 
     access_policy:
       # No PII tier — view contains no direct student identifiers.
