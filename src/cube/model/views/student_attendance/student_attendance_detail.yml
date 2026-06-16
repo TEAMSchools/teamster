@@ -74,7 +74,6 @@ views:
           - is_latest_record
           - is_month_end_record
           - is_week_end_record
-          - school_week_start_date
 
       - join_path: student_attendance.dates
         prefix: true
@@ -85,6 +84,7 @@ views:
           - month_number
           - month_name
           - quarter_number
+          - school_week_start_date
           - day_of_week_name
           - is_weekday
 
@@ -234,7 +234,7 @@ views:
             - is_latest_record
             - is_month_end_record
             - is_week_end_record
-            - school_week_start_date
+            - dates_school_week_start_date
 
     access_policy:
       - group: cube-access-student-data

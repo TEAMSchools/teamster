@@ -25,7 +25,6 @@ views:
       - join_path: student_enrollments
         includes:
           - count_students
-          - school_week_start_date
           - is_current_record
           - is_month_end_record
           - is_week_end_record
@@ -39,6 +38,7 @@ views:
           - month_name
           - quarter_number
           - academic_year
+          - school_week_start_date
 
       - join_path: student_enrollments.student_enrollment_stints.locations
         prefix: true
@@ -90,7 +90,7 @@ views:
             - dates_month_name
             - dates_quarter_number
             - dates_academic_year
-            - school_week_start_date
+            - dates_school_week_start_date
         - name: Location
           members:
             - locations_location_name

@@ -1,7 +1,7 @@
 cubes:
   - name: student_enrollments
     public: false
-    sql_table: kipptaf_marts.fct_student_attendance_daily
+    sql_table: zz_cristinabaldor_kipptaf_marts.fct_student_attendance_daily
 
     joins:
       - name: dates
@@ -54,8 +54,8 @@ cubes:
       - name: is_week_end_record
         description: >-
           TRUE on the school's latest attendance day of each PowerSchool school
-          week. Group the weekly trend by school_week_start_date (not Cube's
-          native ISO week).
+          week. Group the weekly trend by dates_school_week_start_date (not
+          Cube's native ISO week).
         sql: is_enrollment_week_end_record
         type: boolean
         public: true
@@ -67,16 +67,6 @@ cubes:
           is_current_record.
         sql: is_latest_record
         type: boolean
-        public: true
-
-      - name: school_week_start_date
-        description: >-
-          PowerSchool per-school school-week start. Group the weekly enrollment
-          trend by THIS, not Cube's native week granularity (which is ISO) — it
-          matches topline school-week buckets. The snapshot guard injects the
-          week anchor when a query groups by this dimension.
-        sql: CAST(school_week_start_date AS TIMESTAMP)
-        type: time
         public: true
 
     measures:

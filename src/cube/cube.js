@@ -232,18 +232,18 @@ module.exports = {
       const groupsBySchoolWeek = [
         ...(query.dimensions ?? []),
         ...(query.timeDimensions ?? []).map((td) => td.dimension),
-      ].some((m) => m && m.split(".").pop() === "school_week_start_date");
+      ].some((m) => m && m.split(".").pop() === "dates_school_week_start_date");
 
-      // School weeks (PowerSchool week_start_monday) replace Cube's ISO week for
-      // snapshot measures: the *_week_end anchors are school-week-based, so weekly
-      // trends MUST group by school_week_start_date. Treat that grouping as the
-      // "week" period; Cube's native granularity drives only day/month.
+      // School weeks (PowerSchool week_start_monday, via dim_dates) replace Cube's
+      // ISO week for snapshot measures: the *_week_end anchors are school-week-based,
+      // so weekly trends MUST group by dates_school_week_start_date. Treat that
+      // grouping as the "week" period; Cube's native granularity drives only day/month.
       const period = groupsBySchoolWeek ? "week" : granularity;
 
       if (granularity === "week" && !groupsBySchoolWeek) {
         throw new Error(
           "Weekly snapshot trends use school weeks — group by " +
-            '<view>.school_week_start_date, not Cube\'s granularity: "week" ' +
+            '<view>.dates_school_week_start_date, not Cube\'s granularity: "week" ' +
             "(ISO Monday weeks do not match PowerSchool school weeks).",
         );
       }
@@ -259,7 +259,7 @@ module.exports = {
         {
           suffix: "_week_end",
           ok: groupsBySchoolWeek,
-          hint: "a school_week_start_date grouping",
+          hint: "a dates_school_week_start_date grouping",
         },
       ]) {
         if (measures.some((m) => m.endsWith(suffix)) && !ok) {

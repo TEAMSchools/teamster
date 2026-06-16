@@ -222,21 +222,6 @@ models:
           dimension for month-over-month CA trends — gives one snapshot per
           student per month at the last school day of that month.
 
-      - name: school_week_start_date
-        data_type: date
-        description: >-
-          PowerSchool per-school school-week start date. The week-bucket key for
-          weekly attendance trends, matching topline reporting. School weeks are
-          not a clean Monday-Sunday calendar grid — PowerSchool splits weeks at
-          month and term boundaries, so the start date varies by school and
-          calendar configuration. Use as the GROUP BY axis for week-over-week
-          enrollment and attendance trends.
-        config:
-          meta:
-            source_system: PowerSchool
-            source_model: int_powerschool__ps_adaadm_daily_ctod
-            source_column: week_start_monday
-
       - name: is_week_end_record
         data_type: boolean
         description: >-

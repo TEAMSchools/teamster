@@ -93,7 +93,6 @@ select
 
     date_key,
     term_key,
-    week_start_monday as school_week_start_date,
 
     attendance_code,
     attendance_value,
