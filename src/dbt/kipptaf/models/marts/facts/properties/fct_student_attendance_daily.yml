@@ -7,11 +7,6 @@ models:
       year are reached via dim_student_enrollments and dim_terms — not stored on
       the fact. FK to dim_student_enrollments, dim_dates, and dim_terms.
 
-      Paterson attendance values for AY2025 are known-incomplete due to an
-      upstream PowerSchool attendance-conversion gap (#4193); ADA and
-      attendance-derived measures reflect source and will correct once that
-      config is fixed. Membership and enrollment counts are unaffected.
-
       Four numeric attendance measures coexist — use the right one for the
       question:
 
