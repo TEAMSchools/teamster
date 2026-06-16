@@ -57,6 +57,7 @@ defs = Definitions(
         *dlt.schedules,
         *extracts.schedules,
         *deanslist.schedules,
+        *finalsite.schedules,
         *powerschool.schedules,
     ],
     sensors=[
