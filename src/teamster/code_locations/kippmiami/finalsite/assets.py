@@ -28,7 +28,7 @@ contacts = build_finalsite_asset(
     code_location=CODE_LOCATION,
     asset_name="contacts",
     schema=CONTACTS_SCHEMA,
-    params={"includes": "contacts.relationships.contact"},
+    params={"includes": "contacts.relationships"},
 )
 
 assets = [

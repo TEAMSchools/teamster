@@ -1,10 +1,12 @@
 models:
   - name: stg_finalsite__contact_relationships
     description:
-      One row per (contact, relationship) — the guardians/related contacts
-      attached to each Finalsite contact, exploded from the `relationships`
-      array with the expanded related contact inlined. Guardian custom / id
-      attribute arrays are passed through whole for downstream pivoting.
+      One row per (contact, relationship) — the family-graph edges (guardians,
+      siblings, children) attached to each Finalsite contact, unnested from the
+      `relationships` array. `rel_id` is the related person's Finalsite contact
+      UUID; join it to `stg_finalsite__contacts` for the related person's
+      details (guardians resolve there; sibling/child links to people outside
+      the pulled cohort will not match).
     data_tests:
       - dbt_utils.unique_combination_of_columns:
           arguments:
@@ -24,13 +26,16 @@ models:
       - name: rel_id
         data_type: string
         description:
-          Finalsite contact UUID of the related person (the guardian).
+          Finalsite contact UUID of the related person; join to
+          `stg_finalsite__contacts` for their details.
       - name: rel_name
         data_type: string
         description: Name of the related person as stored on the relationship.
       - name: rel_type
         data_type: string
-        description: Relationship type (e.g. parent, guardian) — not gendered.
+        description:
+          Relationship type (e.g. parent, guardian, sibling, child) — not
+          gendered.
       - name: is_primary
         data_type: boolean
         description: Whether this is the primary relationship for the contact.
@@ -41,57 +46,3 @@ models:
       - name: has_portal_access
         data_type: boolean
         description: Whether the related person has Finalsite portal access.
-      - name: guardian_finalsite_id
-        data_type: string
-        description: Finalsite contact UUID of the expanded guardian record.
-      - name: guardian_first_name
-        data_type: string
-        description: Guardian's first name.
-      - name: guardian_middle_name
-        data_type: string
-        description: Guardian's middle name.
-      - name: guardian_last_name
-        data_type: string
-        description: Guardian's last name.
-      - name: guardian_full_name
-        data_type: string
-        description: Guardian's full name as composed by Finalsite.
-      - name: guardian_preferred_name
-        data_type: string
-        description: Guardian's preferred name.
-      - name: guardian_email
-        data_type: string
-        description: Guardian's email address.
-      - name: guardian_gender
-        data_type: string
-        description:
-          Guardian's gender code; drives the gendered relationship_label.
-      - name: guardian_phone_1_type
-        data_type: string
-        description: Type label of the guardian's first phone.
-      - name: guardian_phone_1_number
-        data_type: string
-        description: Number of the guardian's first phone.
-      - name: guardian_custom_attributes
-        data_type:
-          array<struct<field_id string, field_name string, field_display_name
-          string, value struct<boolean_value bool, string_value string,
-          array_string_value array<string>>>>
-        description:
-          Guardian's repeated key-value custom fields, passed through whole
-          (same shape as the contact's custom_attributes).
-      - name: guardian_id_attributes
-        data_type:
-          array<struct<field_id string, field_name string, field_display_name
-          string, value struct<boolean_value bool, string_value string,
-          array_string_value array<string>>>>
-        description:
-          Guardian's repeated identifier fields, passed through whole (same
-          shape as the contact's id_attributes).
-      - name: relationship_label
-        data_type: string
-        description:
-          Gendered relationship label — 'mother' / 'father' for a parent
-          relationship when guardian_gender is 'F' / 'M'. Falls back to the raw
-          rel_type for any other relationship type or when guardian_gender is
-          null or non-binary.

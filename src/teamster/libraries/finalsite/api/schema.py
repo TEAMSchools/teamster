@@ -57,25 +57,6 @@ class CustomAttribute(BaseModel):
     value: bool | str | list[str] | None = None
 
 
-class RelatedContact(BaseModel):
-    id: str | None = None
-    first_name: str | None = None
-    middle_name: str | None = None
-    last_name: str | None = None
-    full_name: str | None = None
-    preferred_name: str | None = None
-    email: str | None = None
-    gender: str | None = None
-
-    phone_1: Phone | None = None
-    phone_2: Phone | None = None
-    phone_3: Phone | None = None
-
-    households: list[Household] | None = None
-    custom_attributes: list[CustomAttribute] | None = None
-    id_attributes: list[CustomAttribute] | None = None
-
-
 class Relationship(BaseModel):
     id: str | None = None
     rel_id: str | None = None
@@ -84,7 +65,6 @@ class Relationship(BaseModel):
     primary: bool | None = None
     financial: bool | None = None
     portal_access: bool | None = None
-    contact: RelatedContact | None = None
 
 
 class TrackAttribute(CustomAttribute):
