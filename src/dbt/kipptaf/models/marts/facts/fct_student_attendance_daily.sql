@@ -22,10 +22,11 @@ with
                 )
             }} as student_enrollment_key,
 
-            ada.schoolid,
-            ada._dbt_source_project,
-            ada.academic_year,
             ada.week_start_monday,
+
+            ada.is_current_record,
+            ada.is_enrollment_month_end_record,
+            ada.is_enrollment_week_end_record,
 
             ada.calendardate as date_key,
 
@@ -94,6 +95,10 @@ select
     date_key,
     term_key,
 
+    is_current_record,
+    is_enrollment_month_end_record,
+    is_enrollment_week_end_record,
+
     attendance_code,
     attendance_value,
     membership_value,
@@ -140,17 +145,4 @@ select
     )
     = 1
     and membership_value = 1 as is_week_end_record,
-
-    date_key = max(date_key) over (
-        partition by schoolid, _dbt_source_project, academic_year
-    ) as is_current_record,
-
-    date_key = max(date_key) over (
-        partition by
-            schoolid, _dbt_source_project, academic_year, date_trunc(date_key, month)
-    ) as is_enrollment_month_end_record,
-
-    date_key = max(date_key) over (
-        partition by schoolid, _dbt_source_project, week_start_monday
-    ) as is_enrollment_week_end_record,
 from running

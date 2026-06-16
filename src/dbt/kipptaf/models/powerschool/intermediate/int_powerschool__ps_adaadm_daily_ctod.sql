@@ -87,6 +87,31 @@ with
             and mem.calendardate between cw.week_start_monday and cw.week_end_sunday
     ),
 
+    enrollment_anchors as (
+        select
+            *,
+
+            -- Per-school point-in-time enrollment anchor columns. Used by
+            -- fct_student_attendance_daily to drive the student_enrollments Cube.
+            calendardate = max(calendardate) over (
+                partition by schoolid, _dbt_source_project, academic_year
+            ) as is_current_record,
+
+            calendardate = max(calendardate) over (
+                partition by
+                    schoolid,
+                    _dbt_source_project,
+                    academic_year,
+                    date_trunc(calendardate, month)
+            ) as is_enrollment_month_end_record,
+
+            calendardate = max(calendardate) over (
+                partition by schoolid, _dbt_source_project, week_start_monday
+            ) as is_enrollment_week_end_record,
+
+        from calcs
+    ),
+
     running_calcs as (
         select
             *,
@@ -105,7 +130,7 @@ with
                 partition by academic_year, student_number
             ) as n_membership_student_year,
 
-        from calcs
+        from enrollment_anchors
     )
 
 select
@@ -143,6 +168,9 @@ select
     n_absent_running_90,
     pct_absent_running_student_year,
     n_membership_student_year,
+    is_current_record,
+    is_enrollment_month_end_record,
+    is_enrollment_week_end_record,
 
     pct_absent_running_student_year * n_membership_student_year as n_absent_projected,
 
