@@ -28,6 +28,7 @@ diagram still lists them.
 erDiagram
   fct_assessment_scores_enrollment_scoped }o--|| dim_assessment_administrations : "assessment_administration_key"
   fct_assessment_scores_enrollment_scoped }o--|| dim_student_section_enrollments : "student_section_enrollment_key"
+  dim_assessment_administrations }o--|| dim_assessments : "assessment_key"
   dim_student_section_enrollments }o--|| dim_student_enrollments : "student_enrollment_key"
   dim_student_section_enrollments }o--|| dim_course_sections : "course_section_key"
   dim_student_enrollments }o--|| dim_students : "student_key"
@@ -48,6 +49,7 @@ erDiagram
 erDiagram
   fct_assessment_scores_student_scoped }o--|| dim_students : "student_key"
   fct_assessment_scores_student_scoped }o--|| dim_assessment_administrations : "assessment_administration_key"
+  dim_assessment_administrations }o--|| dim_assessments : "assessment_key"
 ```
 
 ### Foreign keys
@@ -352,22 +354,6 @@ erDiagram
 | ------------------------ | ------------------------- |
 | `streak_end_date_key`    | `dim_dates`               |
 | `streak_start_date_key`  | `dim_dates`               |
-| `student_enrollment_key` | `dim_student_enrollments` |
-
-## fct_student_enrollment_daily
-
-```mermaid
-erDiagram
-  fct_student_enrollment_daily }o--|| dim_student_enrollments : "student_enrollment_key"
-  dim_student_enrollments }o--|| dim_students : "student_key"
-```
-
-### Foreign keys
-
-| FK column                | References                |
-| ------------------------ | ------------------------- |
-| `date_key`               | `dim_dates`               |
-| `location_key`           | `dim_locations`           |
 | `student_enrollment_key` | `dim_student_enrollments` |
 
 ## fct_support_tickets

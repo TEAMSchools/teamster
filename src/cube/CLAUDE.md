@@ -53,12 +53,10 @@ school_calendars) go in `cubes/conformed/`.
   your declared `relationship` + `primary_key`, so any non-overlap invariant the
   join relies on must be test-enforced upstream in dbt.
 - **Avoid diamond paths.** Two join paths to the same dim → resolve to one
-  canonical path. The `student_enrollments` daily-fact cube declares a
-  **direct** `locations` join AND joins `student_enrollment_stints` (which also
-  joins `locations`) — two paths to `locations`. Views MUST traverse the direct
-  path (`join_path: student_enrollments.locations`); routing through
-  `student_enrollments.student_enrollment_stints.locations` would trigger the
-  diamond. Alternative resolutions: a compound join on the canonical path (see
+  canonical path. Reach deeper dims by traversing the FK chain (e.g.
+  `student_enrollments` and `student_attendance` both reach `locations` only via
+  `student_enrollment_stints.locations` — no direct second join). Alternative
+  resolutions: a compound join on the canonical path (see
   `student_attendance.yml` → `school_calendars`), or a degenerate FK with no
   declared join. Comment the choice.
 - **Time dimensions** must cast to `TIMESTAMP` in the dim's `sql:`; joins from

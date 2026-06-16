@@ -73,7 +73,6 @@ exposures:
       - ref("fct_student_attendance_daily")
       - ref("fct_student_attendance_interventions")
       - ref("fct_student_attendance_streaks")
-      - ref("fct_student_enrollment_daily")
       - ref("fct_support_tickets")
       - ref("fct_survey_responses")
       - ref("fct_survey_submissions")
