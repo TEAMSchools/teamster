@@ -1,21 +1,17 @@
 cubes:
   - name: student_enrollments
     public: false
-    sql_table: kipptaf_marts.fct_student_enrollment_daily
+    sql_table: kipptaf_marts.fct_student_attendance_daily
 
     joins:
       - name: dates
         sql: "{dates.date_day} = CAST({CUBE}.date_key AS TIMESTAMP)"
         relationship: many_to_one
 
-      # No direct students join: student identity is reached via
-      # student_enrollment_stints (dim_student_enrollments carries student_key),
-      # keeping a single FK route to students per the strict-chain rule. The
-      # locations diamond below is the one documented exception (src/cube/CLAUDE.md).
-      - name: locations
-        sql: "{locations.location_key} = {CUBE}.location_key"
-        relationship: many_to_one
-
+      # Location, student identity, grade, and status are all reached via
+      # student_enrollment_stints (single FK route, no diamond). The prior
+      # direct locations join is removed because fct_student_attendance_daily
+      # has no location_key column.
       - name: student_enrollment_stints
         sql: >
           {student_enrollment_stints.student_enrollment_key} =
@@ -23,11 +19,11 @@ cubes:
         relationship: many_to_one
 
     dimensions:
-      - name: student_enrollment_daily_key
+      - name: student_attendance_daily_key
         description: >-
           Surrogate key derived from student_number, _dbt_source_project, and
-          date_key. Primary key for this fact.
-        sql: student_enrollment_daily_key
+          calendardate. Primary key of the underlying attendance daily fact.
+        sql: student_attendance_daily_key
         type: string
         primary_key: true
 
@@ -38,60 +34,49 @@ cubes:
         sql: student_enrollment_key
         type: string
 
-      - name: location_key
-        description: Surrogate key. FK to locations.
-        sql: location_key
-        type: string
-
-      - name: enrollment_date
-        description: The in-session school day this row represents.
-        sql: CAST(date_key AS TIMESTAMP)
-        type: time
-        public: true
-
       - name: is_current_record
         description: >-
-          TRUE on the school's last in-session day of the academic year that has
-          actually occurred (capped at today). Per-school period-end-as-of-now
-          marker — drives the default count_students at year / no grouping.
+          TRUE on the school's latest attendance day that has occurred (per
+          school × academic year, capped at today). Default point-in-time
+          enrollment anchor — drives count_students at year / no grouping.
         sql: is_current_record
         type: boolean
         public: true
 
       - name: is_month_end_record
         description: >-
-          TRUE on the school's last in-session day of the calendar month that
-          has occurred (capped at today). Use with timeDimensions granularity
-          "month".
-        sql: is_month_end_record
+          TRUE on the school's latest attendance day of each calendar month. Use
+          for month-granularity point-in-time enrollment trends.
+        sql: is_enrollment_month_end_record
         type: boolean
         public: true
 
       - name: is_week_end_record
         description: >-
-          TRUE on the school's last in-session day of the ISO week that has
-          occurred (capped at today). Use with timeDimensions granularity
-          "week".
-        sql: is_week_end_record
+          TRUE on the school's latest attendance day of each PowerSchool school
+          week. Group the weekly trend by school_week_start_date (not Cube's
+          native ISO week).
+        sql: is_enrollment_week_end_record
         type: boolean
         public: true
 
       - name: is_latest_record
         description: >-
-          TRUE on each student-stint's last enrolled in-session day of the
-          academic year (one row per stint). Marks each student's last enrolled
-          day — NOT a period-end marker; distinct from is_current_record.
+          TRUE on the last attendance day of each enrollment stint. Per-stint
+          "served" marker — not a period-end anchor; distinct from
+          is_current_record.
         sql: is_latest_record
         type: boolean
         public: true
 
-      - name: year_in_network
+      - name: school_week_start_date
         description: >-
-          Count of years the student has been enrolled in the network. Populated
-          on the student's primary enrollment stint per academic year; null on
-          additional same-year stints.
-        sql: year_in_network
-        type: number
+          PowerSchool per-school school-week start. Group the weekly enrollment
+          trend by THIS, not Cube's native week granularity (which is ISO) — it
+          matches topline school-week buckets. The snapshot guard injects the
+          week anchor when a query groups by this dimension.
+        sql: CAST(school_week_start_date AS TIMESTAMP)
+        type: time
         public: true
 
     measures:
