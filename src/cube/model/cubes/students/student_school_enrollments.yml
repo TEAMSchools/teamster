@@ -1,5 +1,5 @@
 cubes:
-  - name: student_enrollment_stints
+  - name: student_school_enrollments
     public: false
     sql_table: kipptaf_marts.dim_student_enrollments
 

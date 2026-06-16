@@ -32,7 +32,7 @@ views:
           - academic_year
           - school_week_start_date
 
-      - join_path: student_enrollments.student_enrollment_stints.locations
+      - join_path: student_enrollments.student_school_enrollments.locations
         prefix: true
         includes:
           - location_name
@@ -41,13 +41,13 @@ views:
           - campus
           - city
 
-      - join_path: student_enrollments.student_enrollment_stints.locations.regions
+      - join_path: student_enrollments.student_school_enrollments.locations.regions
         prefix: true
         includes:
           - region_name
           - state
 
-      - join_path: student_enrollments.student_enrollment_stints.students
+      - join_path: student_enrollments.student_school_enrollments.students
         prefix: false
         includes:
           - student_key
@@ -60,14 +60,14 @@ views:
           - is_gifted
           - enrollment_status
 
-      - join_path: student_enrollments.student_enrollment_stints
+      - join_path: student_enrollments.student_school_enrollments
         prefix: false
         includes:
           - grade_level
           - graduation_year
           - is_retained_year
 
-      - join_path: student_enrollments.student_enrollment_stints.student_enrollment_status
+      - join_path: student_enrollments.student_school_enrollments.student_enrollment_status
         prefix: false
         includes:
           - is_ell

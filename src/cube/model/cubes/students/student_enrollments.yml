@@ -9,12 +9,12 @@ cubes:
         relationship: many_to_one
 
       # Location, student identity, grade, and status are all reached via
-      # student_enrollment_stints (single FK route, no diamond). The prior
+      # student_school_enrollments (single FK route, no diamond). The prior
       # direct locations join is removed because fct_student_attendance_daily
       # has no location_key column.
-      - name: student_enrollment_stints
+      - name: student_school_enrollments
         sql: >
-          {student_enrollment_stints.student_enrollment_key} =
+          {student_school_enrollments.student_enrollment_key} =
           {CUBE}.student_enrollment_key
         relationship: many_to_one
 
@@ -29,7 +29,7 @@ cubes:
 
       - name: student_enrollment_key
         description: >-
-          FK to student_enrollment_stints (the stint dimension). Surrogate key
+          FK to student_school_enrollments (the stint dimension). Surrogate key
           from student_number, _dbt_source_project, academic_year, entrydate.
         sql: student_enrollment_key
         type: string
@@ -87,6 +87,6 @@ cubes:
           point-in-time snapshot and reads as 0 in a trend — read trends on
           instructional periods, or carry the prior value forward in the BI
           layer (the daily fact is in-session-days only by design).
-        sql: "{student_enrollment_stints.student_key}"
+        sql: "{student_school_enrollments.student_key}"
         type: count_distinct
         public: true
