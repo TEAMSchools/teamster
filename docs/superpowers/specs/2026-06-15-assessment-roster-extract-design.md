@@ -209,15 +209,28 @@ excluded from the sheet.
 
 ### Decisions (model 2)
 
-- **Architecture:** a single reporting view. `int_people__staff_roster` is
-  already teacher-grain, so the `rpt_` view refs the three intermediates and
-  joins them — no union or new intermediate needed, and the `rpt`-buffers-
-  intermediate rule is satisfied on its own.
+- **Architecture:** a single reporting view. The base
+  (`int_people__staff_roster_history`, pinned to a point in time) is
+  teacher-grain, so the `rpt_` view refs the intermediates and joins them — no
+  union or new intermediate needed, and the `rpt`-buffers-intermediate rule is
+  satisfied on its own.
+- **Base source — point-in-time history, not the live snapshot.** Use
+  `int_people__staff_roster_history` filtered to `primary_indicator` and an
+  as-of date, NOT `int_people__staff_roster`. The live snapshot surfaces _next_
+  year's `job_title` once summer reassignments are entered; the history table
+  pinned to the school year returns the correct title.
+- **As-of date — variable-derived, not hardcoded.**
+  `date({{ current_academic_year }} + 1, 4, 1)` (April 1 of the current school
+  year's spring). Rolls forward each July, consistent with model 1's
+  no-hardcoding rule. The `between` must coalesce an open `effective_date_end`
+  (`coalesce(effective_date_end, '9999-12-31')`) so the live record isn't
+  dropped.
 - **Year:** `var("current_academic_year")` for the perf/experience joins (not
   hardcoded), so it rolls forward each July.
 - **Population:** teachers only (`powerschool_teacher_number is not null`).
 - **PII:** race/ethnicity and gender excluded; teacher is identified by
   `powerschool_teacher_number` (the intended join key to model 1).
+  `reports_to_employee_number` (manager id, not protected-class) is included.
 
 ### Grain (model 2)
 
@@ -225,8 +238,11 @@ One row per `powerschool_teacher_number` for the current academic year.
 
 ### Joins (model 2)
 
-- Base: `int_people__staff_roster` (one row per employee), filtered to
-  `powerschool_teacher_number is not null`.
+- Base: `int_people__staff_roster_history`, filtered to `primary_indicator`,
+  `powerschool_teacher_number is not null`, and
+  `date({{ current_academic_year }} + 1, 4, 1) between effective_date_start and`
+  `coalesce(effective_date_end, '9999-12-31')` — one row per employee as of that
+  date.
 - LEFT join `int_performance_management__overall_scores` on `employee_number`
   and `academic_year = var("current_academic_year")`.
 - LEFT join `int_people__years_experience` on `employee_number` and
@@ -237,17 +253,18 @@ Left joins so a teacher with no current-year score/experience still appears
 
 ### Final sheet columns (model 2)
 
-| Column                       | Source                                  |
-| ---------------------------- | --------------------------------------- |
-| `powerschool_teacher_number` | staff_roster (PK / join key to model 1) |
-| `academic_year`              | `var("current_academic_year")`          |
-| `job_title`                  | staff_roster                            |
-| `level_of_education`         | staff_roster                            |
-| `final_score`                | overall_scores                          |
-| `final_tier`                 | overall_scores                          |
-| `years_at_kipp_total`        | years_experience                        |
-| `years_experience_total`     | years_experience                        |
-| `years_teaching_total`       | years_experience                        |
+| Column                       | Source                                      |
+| ---------------------------- | ------------------------------------------- |
+| `powerschool_teacher_number` | staff_roster_history (PK / join to model 1) |
+| `academic_year`              | `var("current_academic_year")`              |
+| `job_title`                  | staff_roster_history (as-of date)           |
+| `level_of_education`         | staff_roster_history                        |
+| `reports_to_employee_number` | staff_roster_history (manager id)           |
+| `final_score`                | overall_scores                              |
+| `final_tier`                 | overall_scores                              |
+| `years_at_kipp_total`        | years_experience                            |
+| `years_experience_total`     | years_experience                            |
+| `years_teaching_total`       | years_experience                            |
 
 ### Testing (model 2)
 
@@ -258,6 +275,9 @@ Contract enforced (extracts default); `unique` + `not_null` on the PK;
 ### Verification items (model 2)
 
 - `powerschool_teacher_number` is 1:1 with teachers — confirmed; it is the PK.
+- During implementation: confirm the `primary_indicator` + as-of-date filter on
+  `int_people__staff_roster_history` yields exactly one row per
+  `powerschool_teacher_number` (the PK uniqueness test will catch a violation).
 
 ### Exposure (model 2)
 
@@ -267,5 +287,5 @@ Add `rpt_gsheets__teacher_roster` to
 ### Out of scope (model 2)
 
 - Race/ethnicity and gender columns (deliberately excluded).
-- Multi-year history (staff_roster is a current snapshot with no
-  `academic_year`).
+- Multi-year history — the roster is pinned to a single as-of date per the
+  current academic year, not a per-year time series.

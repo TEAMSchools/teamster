@@ -722,21 +722,46 @@ git commit -m "feat(dbt): add rpt_gsheets__assessment_roster (#4191)"
 - Create:
   `src/dbt/kipptaf/models/extracts/google/sheets/properties/rpt_gsheets__teacher_roster.yml`
 
-- [ ] **Step 1: Confirm source columns.** In `int_people__staff_roster`:
+- [ ] **Step 1: Confirm source columns.** In `int_people__staff_roster_history`:
       `employee_number`, `powerschool_teacher_number`, `job_title`,
-      `level_of_education`. In `int_performance_management__overall_scores`:
-      `employee_number`, `academic_year`, `final_score`, `final_tier`. In
+      `level_of_education`, `reports_to_employee_number`, `primary_indicator`,
+      `effective_date_start`, `effective_date_end`. In
+      `int_performance_management__overall_scores`: `employee_number`,
+      `academic_year`, `final_score`, `final_tier`. In
       `int_people__years_experience`: `employee_number`, `academic_year`,
       `years_at_kipp_total`, `years_experience_total`, `years_teaching_total`.
 
-- [ ] **Step 2: Write the model SQL.** Teachers only; perf + experience left
-      joined on `employee_number` and the current academic year.
+- [ ] **Step 2: Write the model SQL.** Base is the point-in-time staff history
+      (not the live snapshot, which surfaces next year's title during summer),
+      pinned to April 1 of the current school year's spring —
+      `date(current_academic_year + 1, 4, 1)`, derived from the variable.
+      `coalesce(effective_date_end, '9999-12-31')` keeps the open/live record.
+      Teachers only; perf + experience left joined on `employee_number` and the
+      current academic year.
 
 ```sql
+with
+    staff as (
+        select
+            powerschool_teacher_number,
+            employee_number,
+            job_title,
+            level_of_education,
+            reports_to_employee_number,
+        from {{ ref("int_people__staff_roster_history") }}
+        where
+            primary_indicator
+            and powerschool_teacher_number is not null
+            and date({{ var("current_academic_year") }} + 1, 4, 1)
+            between effective_date_start
+            and coalesce(effective_date_end, date '9999-12-31')
+    )
+
 select
     sr.powerschool_teacher_number,
     sr.job_title,
     sr.level_of_education,
+    sr.reports_to_employee_number,
 
     os.final_score,
     os.final_tier,
@@ -746,7 +771,7 @@ select
     ye.years_teaching_total,
 
     {{ var("current_academic_year") }} as academic_year,
-from {{ ref("int_people__staff_roster") }} as sr
+from staff as sr
 left join
     {{ ref("int_performance_management__overall_scores") }} as os
     on sr.employee_number = os.employee_number
@@ -755,8 +780,11 @@ left join
     {{ ref("int_people__years_experience") }} as ye
     on sr.employee_number = ye.employee_number
     and ye.academic_year = {{ var("current_academic_year") }}
-where sr.powerschool_teacher_number is not null
 ```
+
+> The `date '9999-12-31'` typed-literal sentinel is fine inside a single
+> `coalesce` (not across a UNION ALL). If sqlfluff or the contract complains,
+> fall back to `cast('9999-12-31' as date)`.
 
 - [ ] **Step 3: Write the properties YAML** (contract enforced, PK on the
       teacher number).
@@ -766,10 +794,11 @@ models:
   - name: rpt_gsheets__teacher_roster
     description: >
       Teacher roster for Google Sheets, one row per teacher for the current
-      academic year. Joins staff attributes, current-year performance scores,
-      and experience. Join partner to rpt_gsheets__assessment_roster via
-      powerschool_teacher_number. Race/ethnicity and gender are deliberately
-      excluded.
+      academic year. Staff attributes are taken from the point-in-time staff
+      history as of April 1 of the current school year; joined to current-year
+      performance scores and experience. Join partner to
+      rpt_gsheets__assessment_roster via powerschool_teacher_number.
+      Race/ethnicity and gender are deliberately excluded.
     columns:
       - name: powerschool_teacher_number
         data_type: string
@@ -784,10 +813,13 @@ models:
           - not_null
       - name: job_title
         data_type: string
-        description: Current job title.
+        description: Job title as of April 1 of the current school year.
       - name: level_of_education
         data_type: string
         description: Highest level of education.
+      - name: reports_to_employee_number
+        data_type: int
+        description: Employee number of the teacher's manager (as-of date).
       - name: final_score
         data_type: float
         description: Current-year performance management final score.
