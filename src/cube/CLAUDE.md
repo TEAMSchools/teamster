@@ -240,6 +240,39 @@ stays pointed at prod; only the new sub-dim needs redirecting.
 The security hook flags `zz_*` schemas as an access-control regression —
 expected if you do commit the temporary change; acknowledge and revert.
 
+**`zz_*` redirect — never `git add` the whole cubes/ dir while it's live.** When
+a `sql_table` redirect to a `zz_*` dev schema is in the working tree, staging
+with `git add -A`, `git add .`, or `git add src/cube/model/cubes/` accidentally
+commits the redirect. Name files explicitly in every `git add` while any cube
+YAML is redirected.
+
+## School weeks vs ISO weeks
+
+PowerSchool's per-school school week (`week_start_monday`) is NOT a clean
+Monday-Sunday grid — weeks split at month/term boundaries (~14% of calendar days
+diverge from ISO Monday). Both topline surfaces key on school weeks:
+`int_topline__ada_running_weekly` (attendance) and
+`int_extracts__student_enrollments_weeks` (enrollment) both group by
+`week_start_monday`. Use `dim_dates.school_week_start_date` (same values, routed
+cleanly via the join) rather than a raw fact column — Cube can throw "not found"
+on a `DATE` fact column cast to `TIMESTAMP` in a BigQuery view.
+
+**Snapshot guard drives the week period off `dates_school_week_start_date`
+grouping, not Cube's native `granularity: "week"` (ISO).** The guard detects a
+weekly trend when any query member's last dotted segment equals
+`dates_school_week_start_date`; ISO `granularity: "week"` throws for snapshot
+measures. `_week_end` named measures require this grouping.
+
+## `prefix: true` join member names
+
+A member inside a `prefix: true` includes block is exposed with the last
+`join_path` segment prepended: `school_week_start_date` under
+`join_path: student_enrollments.dates` (prefix: true) surfaces as
+`dates_school_week_start_date`. A same-named fact-level dimension alongside the
+join creates ambiguity Cube can't resolve at query time. Route via the join when
+`dim_dates` carries the same value — avoids the compile error and the redundant
+fact column.
+
 ## Operational notes
 
 - **Never use the Cube Playground Models tab.** It overwrites YAML in

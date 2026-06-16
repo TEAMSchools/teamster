@@ -155,6 +155,16 @@ filter drops a mid-year withdrawal even from dates they were still enrolled
 status-on-a-past-date. Topline `Total Enrollment` counts by dates, not status;
 match that for reconciliation.
 
+**Point-in-time enrollment headcount uses entry/exit dates, not
+`enroll_status`.** `count_students` in the `student_enrollments` Cube derives
+from `fct_student_attendance_daily` anchored on per-school `is_current_record` /
+`is_enrollment_month_end_record` / `is_enrollment_week_end_record`. Topline
+Total Enrollment reconciles at Oct-1 2025 = 10,637 (Camden 2,161 / Miami 1,346 /
+Newark 6,608 / Paterson 522). Break weeks (no in-session rows) return 0 by
+design — gap-fill in the BI layer. Paterson `attendance_value` is unreliable
+(upstream PS conversion-items gap, #4193) but `membership_value` is clean —
+enrollment counts include Paterson correctly.
+
 **School calendars diverge at year-end; never anchor a point-in-time count on a
 network-wide `max(date)`.** Mid-year months share a last in-session day across
 schools, but June does not (Miami ends ~Jun 4, Newark ~Jun 9, others to ~Jun
