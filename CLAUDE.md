@@ -274,15 +274,10 @@ alone may be safe; combinations may not. When unsure, consult the
   pre-commit `fmt` hook; checking only the code files misses a doc-only Trunk
   failure.
 
-- **`finishing-a-development-branch` / `using-git-worktrees` tooling**: This repo
-  is `uv`-only — skip both skills' `npm test / cargo test / pytest / go test`
-  heuristics, plus `using-git-worktrees` Step 2 setup (`poetry install` /
-  `pip install`) and Step 3 baseline. Verify dbt changes with
-  `uv run dbt build --select <model>+` against the relevant project, Python with
-  `uv run pytest` where tests exist. At `finishing-a-development-branch`'s menu
-  pick Option 2 (push + PR) — never Option 1 (local merge to `main`;
-  `git push origin main` is hard-blocked and we squash-merge via PR). PR body
-  uses `.github/pull_request_template.md`.
+- **`finishing-a-development-branch` / `using-git-worktrees` tests & setup**:
+  this repo uses `uv`, not `poetry`/`pip`, and
+  `uv run dbt build --select <model>+` should run alongside the skills' other
+  tests.
 
 - **Before brainstorming a fix for a GitHub issue**: verify the issue's claims
   (row counts, bucket sizes, reproduce queries, named files/columns) against
@@ -292,9 +287,8 @@ alone may be safe; combinations may not. When unsure, consult the
 - **Continuous execution exceptions**: `superpowers:subagent-driven-development`
   and `superpowers:executing-plans` push you to execute every task without
   pausing to check in. Pause anyway to ask the user before (a) opening a
-  tracking issue, (b) creating a
-  branch or worktree, (c) modifying protected files (hook scripts,
-  `.devcontainer/scripts/`, `.claude/settings*.json`).
+  tracking issue, (b) creating a branch or worktree, (c) modifying protected
+  files (hook scripts, `.devcontainer/scripts/`, `.claude/settings*.json`).
 
 ## CLAUDE.md Editing Rules
 
