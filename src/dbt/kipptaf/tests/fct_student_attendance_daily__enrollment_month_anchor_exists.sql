@@ -7,9 +7,9 @@ with
         select
             d.location_key,
 
-            date_trunc(f.date_key, month) as month_start,
-
             f.is_enrollment_month_end_record,
+
+            date_trunc(f.date_key, month) as month_start,
         from {{ ref("fct_student_attendance_daily") }} as f
         inner join
             {{ ref("dim_student_enrollments") }} as d
