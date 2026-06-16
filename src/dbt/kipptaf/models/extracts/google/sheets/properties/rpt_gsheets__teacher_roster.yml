@@ -1,0 +1,62 @@
+models:
+  - name: rpt_gsheets__teacher_roster
+    description: >
+      Teacher roster for Google Sheets, at one row per teacher for the current
+      academic year. Staff attributes come from the point-in-time staff history
+      as of April 1 of the current school year (spring), so summer reassignment
+      to a next-year job title does not surface here. Joined to current-year
+      performance scores and years of experience. Serves as the join partner to
+      rpt_gsheets__assessment_roster via powerschool_teacher_number.
+      Race/ethnicity and gender are deliberately excluded.
+    columns:
+      - name: powerschool_teacher_number
+        data_type: string
+        description: >
+          The PowerSchool teacher number, carried through from the staff
+          history. The grain of this model and the join key to the assessment
+          roster.
+        data_tests:
+          - unique
+          - not_null
+      - name: academic_year
+        data_type: int64
+        description: >
+          The starting year of the current academic year (e.g. 2025 means the
+          2025-2026 school year).
+        data_tests:
+          - not_null
+      - name: job_title
+        data_type: string
+        description: >
+          The teacher's job title as of April 1 of the current school year.
+      - name: level_of_education
+        data_type: string
+        description: The teacher's self-reported highest level of education.
+      - name: reports_to_employee_number
+        data_type: int64
+        description: The employee number of the teacher's manager.
+      - name: final_score
+        data_type: float64
+        description: >
+          The teacher's overall performance management score for the current
+          academic year; null when no score exists.
+      - name: final_tier
+        data_type: int64
+        description: >
+          The teacher's overall performance management tier for the current
+          academic year; null when no score exists.
+      - name: years_at_kipp_total
+        data_type: float64
+        description: >
+          Total years working at KIPP as of the current academic year; null when
+          no experience record exists.
+      - name: years_experience_total
+        data_type: float64
+        description: >
+          Total years of professional experience (at KIPP plus outside KIPP) as
+          of the current academic year; null when no experience record exists.
+      - name: years_teaching_total
+        data_type: float64
+        description: >
+          Total years of teaching experience as of the current academic year;
+          null when no experience record exists.
