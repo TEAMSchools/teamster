@@ -16,6 +16,12 @@ with
             enrollment_type,
             school_year_start,
             grade_canonical_name,
+
+            (
+                select max(t.value.string_value),
+                from unnest(track_attributes) as t
+                where t.field_name = 'promotion_status_ss'
+            ) as promotion_status,
         from {{ ref("stg_finalsite__contacts") }}
     ),
 
@@ -26,6 +32,7 @@ with
             c.enrollment_type,
             c.school_year_start,
             c.grade_canonical_name,
+            c.promotion_status,
 
             sr.assigned_school,
             sr.enrolled_date as enrollment_start_date,
@@ -63,6 +70,7 @@ with
             enrollment_type,
             school_year_start,
             grade_canonical_name,
+            promotion_status,
             assigned_school,
             enrollment_start_date,
             enrollment_end_date,
@@ -80,6 +88,7 @@ select
     enrollment_type,
     school_year_start,
     grade_canonical_name,
+    promotion_status,
     assigned_school,
     enrollment_start_date,
 

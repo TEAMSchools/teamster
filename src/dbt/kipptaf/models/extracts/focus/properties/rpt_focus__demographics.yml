@@ -10,9 +10,10 @@ models:
       Produces 43 columns in `DEMOGRAPHICS_LAYOUT` order. Focus column header
       casing (`STDT_ID`, `LAST_NAME`, etc.) is applied at transport time via
       `file_config.format.header_replacements`; dbt column names remain
-      lowercase snake_case. Race columns are always null pending a race-value
-      mapping from Finalsite custom attributes. `ETHNIC_HL` derives from
-      `int_finalsite__contact_custom_attributes.latino_hispanic_yn`.
+      lowercase snake_case. Race flags, language, photo permission, and
+      `ETHNIC_HL` derive from the `int_finalsite__contact_custom_attributes`
+      pivot (`race_ms`, `lang_parent_ss`, `media_release_yn`,
+      `latino_hispanic_yn`).
     columns:
       - name: stdt_id
         data_type: string
@@ -50,7 +51,9 @@ models:
           Female/F; null for other values.
       - name: lang
         data_type: string
-        description: Primary language; not sourced from Finalsite — always null.
+        description:
+          Primary language from the `lang_parent_ss` Finalsite custom field
+          (e.g. English/Spanish/Creole). May need a Focus language-code mapping.
       - name: stdt_email
         data_type: string
         description: Student email address from Finalsite.
@@ -67,28 +70,28 @@ models:
       - name: race_am_ind_ak_nat
         data_type: string
         description:
-          American Indian or Alaska Native race flag; pending race-value mapping
-          from Finalsite custom attributes — always null.
+          Set to `Y` when `American Indian` is in the `race_ms` Finalsite custom
+          multi-select; else null.
       - name: race_asian
         data_type: string
         description:
-          Asian race flag; pending race-value mapping from Finalsite custom
-          attributes — always null.
+          Set to `Y` when `Asian` is in the `race_ms` Finalsite custom
+          multi-select; else null.
       - name: race_black
         data_type: string
         description:
-          Black or African American race flag; pending race-value mapping from
-          Finalsite custom attributes — always null.
+          Set to `Y` when `Black` is in the `race_ms` Finalsite custom
+          multi-select; else null.
       - name: race_nat_haw_pac_isl
         data_type: string
         description:
-          Native Hawaiian or Pacific Islander race flag; pending race-value
-          mapping from Finalsite custom attributes — always null.
+          Set to `Y` when `Native Pacific Islander` is in the `race_ms`
+          Finalsite custom multi-select; else null.
       - name: race_white
         data_type: string
         description:
-          White race flag; pending race-value mapping from Finalsite custom
-          attributes — always null.
+          Set to `Y` when `White` is in the `race_ms` Finalsite custom
+          multi-select; else null.
       - name: residence_county
         data_type: string
         description: Residence county; not sourced from Finalsite — always null.
@@ -116,11 +119,13 @@ models:
       - name: primary_home_lang
         data_type: string
         description:
-          Primary home language; not sourced from Finalsite — always null.
+          Primary home language from the `lang_parent_ss` Finalsite custom
+          field.
       - name: native_parent_lang
         data_type: string
         description:
-          Native parent language; not sourced from Finalsite — always null.
+          Native parent language from the `lang_parent_ss` Finalsite custom
+          field.
       - name: grde_enter_dist
         data_type: string
         description:
@@ -156,7 +161,8 @@ models:
       - name: photo_vid_perm
         data_type: string
         description:
-          Photo/video permission flag; not sourced from Finalsite — always null.
+          Photo/video permission — `Y`/`N` from the `media_release_yn` Finalsite
+          custom field.
       - name: survey_perm
         data_type: string
         description:
@@ -216,7 +222,12 @@ unit_tests:
       - input: ref('int_finalsite__contact_custom_attributes')
         format: sql
         rows: |
-          select 'enr-001' as finalsite_enrollment_id, true as latino_hispanic_yn
+          select
+            'enr-001' as finalsite_enrollment_id,
+            true as latino_hispanic_yn,
+            true as media_release_yn,
+            'Spanish' as lang_parent_ss,
+            ['Black', 'White'] as race_ms
     expect:
       rows:
         - {
@@ -228,15 +239,15 @@ unit_tests:
             nickname: Jay,
             dt_birth: "20120315",
             gender: F,
-            lang: null,
+            lang: Spanish,
             stdt_email: jane.smith@example.com,
             ethnic_hl: Y,
             single_ethnic: null,
             race_am_ind_ak_nat: null,
             race_asian: null,
-            race_black: null,
+            race_black: Y,
             race_nat_haw_pac_isl: null,
-            race_white: null,
+            race_white: Y,
             residence_county: null,
             contry_birth: null,
             homeroom_tchr: null,
@@ -244,8 +255,8 @@ unit_tests:
             birth_loc: null,
             bdate_verif: null,
             immun_st: null,
-            primary_home_lang: null,
-            native_parent_lang: null,
+            primary_home_lang: Spanish,
+            native_parent_lang: Spanish,
             grde_enter_dist: null,
             msix_id: null,
             homeroom: null,
@@ -254,7 +265,7 @@ unit_tests:
             act_perm: null,
             direct_perm: null,
             screen_perm: null,
-            photo_vid_perm: null,
+            photo_vid_perm: Y,
             survey_perm: null,
             mckay_sch_attend: null,
             fhsaa_el3_ind: null,

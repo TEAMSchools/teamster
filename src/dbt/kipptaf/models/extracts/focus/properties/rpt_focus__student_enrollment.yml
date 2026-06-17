@@ -107,8 +107,8 @@ models:
       - name: moved_to
         data_type: string
         description:
-          Destination school/district code; not sourced from Finalsite — always
-          null.
+          Destination school for a transfer-out, from the
+          `withdrawal_school_txt` Finalsite custom field; null otherwise.
       - name: sec_sch
         data_type: string
         description:
@@ -116,7 +116,9 @@ models:
       - name: grde_prom_st
         data_type: string
         description:
-          Grade promotion status; not sourced from Finalsite — always null.
+          Grade promotion/retention status from the `track_attributes`
+          `promotion_status_ss` Finalsite field (e.g. `Retained`); may need a
+          Focus code mapping.
       - name: good_cause_exempt
         data_type: string
         description:
@@ -179,7 +181,14 @@ unit_tests:
               enrollment_start_date: 2025-08-12,
               enrollment_end_date: null,
               withdrawal_reason: null,
+              promotion_status: null,
             }
+      - input: ref('int_finalsite__contact_custom_attributes')
+        format: sql
+        rows: |
+          select
+            'e1' as finalsite_enrollment_id,
+            cast(null as string) as withdrawal_school_txt
       - input: ref('int_people__location_crosswalk')
         format: sql
         rows: |
@@ -245,7 +254,14 @@ unit_tests:
               enrollment_start_date: 2025-08-12,
               enrollment_end_date: 2026-01-15,
               withdrawal_reason: mid_year_withdrawal,
+              promotion_status: Retained,
             }
+      - input: ref('int_finalsite__contact_custom_attributes')
+        format: sql
+        rows: |
+          select
+            'e2' as finalsite_enrollment_id,
+            'Prior Elementary' as withdrawal_school_txt
       - input: ref('int_people__location_crosswalk')
         format: sql
         rows: |
@@ -283,9 +299,9 @@ unit_tests:
             stdt_dis_affect: null,
             offender_transfer_stdt: null,
             came_from: null,
-            moved_to: null,
+            moved_to: Prior Elementary,
             sec_sch: null,
-            grde_prom_st: null,
+            grde_prom_st: Retained,
             good_cause_exempt: null,
             graduation_requirement_program: null,
             next_school: null,

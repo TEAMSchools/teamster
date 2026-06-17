@@ -42,6 +42,11 @@ models:
       - name: grade_canonical_name
         data_type: string
         description: Finalsite canonical grade name for the enrollment.
+      - name: promotion_status
+        data_type: string
+        description:
+          Promotion/retention status from the `track_attributes`
+          `promotion_status_ss` field (e.g. `Retained`); null when unset.
       - name: assigned_school
         data_type: string
         description:
@@ -202,6 +207,7 @@ unit_tests:
             enrollment_type: new,
             school_year_start: 2025,
             grade_canonical_name: KF,
+            promotion_status: null,
             assigned_school: School A,
             enrollment_start_date: 2025-08-15,
             enrollment_end_date: null,
@@ -214,6 +220,7 @@ unit_tests:
             enrollment_type: returning,
             school_year_start: 2025,
             grade_canonical_name: "01",
+            promotion_status: null,
             assigned_school: School A,
             enrollment_start_date: 2025-08-15,
             enrollment_end_date: null,
@@ -226,6 +233,7 @@ unit_tests:
             enrollment_type: returning,
             school_year_start: 2025,
             grade_canonical_name: "02",
+            promotion_status: null,
             assigned_school: School A,
             enrollment_start_date: 2025-08-15,
             enrollment_end_date: 2026-01-10,
@@ -238,6 +246,7 @@ unit_tests:
             enrollment_type: null,
             school_year_start: 2025,
             grade_canonical_name: "03",
+            promotion_status: null,
             assigned_school: School B,
             enrollment_start_date: null,
             enrollment_end_date: null,
@@ -250,6 +259,7 @@ unit_tests:
             enrollment_type: new,
             school_year_start: 2024,
             grade_canonical_name: "04",
+            promotion_status: null,
             assigned_school: null,
             enrollment_start_date: null,
             enrollment_end_date: null,
@@ -262,6 +272,7 @@ unit_tests:
             enrollment_type: returning,
             school_year_start: 2025,
             grade_canonical_name: "07",
+            promotion_status: null,
             assigned_school: School C,
             enrollment_start_date: 2025-08-15,
             enrollment_end_date: 2026-02-01,

@@ -62,4 +62,6 @@ inner join
 inner join
     {{ ref("int_finalsite__enrollment_lifecycle") }} as l
     on rel.finalsite_enrollment_id = l.finalsite_enrollment_id
-where rel.rel_type in ('parent', 'guardian')
+where
+    rel.rel_type
+    in ('parent', 'guardian', 'grandparent', 'stepparent', 'relative', 'aunt/uncle')

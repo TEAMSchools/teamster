@@ -12,14 +12,10 @@ select
     ) as grade_id,
     format_date('%Y%m%d', l.enrollment_start_date) as start_date,
     ec.focus_enrollment_code as enrollment_code,
-    if(
-        l.lifecycle_action = 'transfer_out',
-        format_date('%Y%m%d', l.enrollment_end_date),
-        cast(null as string)
-    ) as end_date,
-    if(
-        l.lifecycle_action = 'transfer_out', dc.focus_drop_code, cast(null as string)
-    ) as drop_code,
+    -- enrollment_end_date / withdrawal_reason are already null upstream for
+    -- non-transfer rows, so no transfer_out re-gating is needed here.
+    format_date('%Y%m%d', l.enrollment_end_date) as end_date,
+    dc.focus_drop_code as drop_code,
     cast(null as string) as calendar_id,
     cast(null as string) as prior_dist,
     cast(null as string) as prior_state,
@@ -28,9 +24,9 @@ select
     cast(null as string) as stdt_dis_affect,
     cast(null as string) as offender_transfer_stdt,
     cast(null as string) as came_from,
-    cast(null as string) as moved_to,
+    cca.withdrawal_school_txt as moved_to,
     cast(null as string) as sec_sch,
-    cast(null as string) as grde_prom_st,
+    l.promotion_status as grde_prom_st,
     cast(null as string) as good_cause_exempt,
     cast(null as string) as graduation_requirement_program,
     cast(null as string) as next_school,
@@ -42,6 +38,9 @@ select
     cast(null as int64) as fl_days_absent,
     cast(null as int64) as fl_days_absent_not_disc,
 from {{ ref("int_finalsite__enrollment_lifecycle") }} as l
+left join
+    {{ ref("int_finalsite__contact_custom_attributes") }} as cca
+    on l.finalsite_enrollment_id = cca.finalsite_enrollment_id
 left join
     {{ ref("int_people__location_crosswalk") }} as sch
     on l.assigned_school = sch.location_name
