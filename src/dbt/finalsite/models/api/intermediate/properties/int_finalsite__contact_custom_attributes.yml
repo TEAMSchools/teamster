@@ -1,0 +1,215 @@
+models:
+  - name: int_finalsite__contact_custom_attributes
+    description:
+      One row per Finalsite contact, pivoting every field in the repeated
+      `custom_attributes` key-value array into its own column, aliased to its
+      original Finalsite field name and typed by the populated value subtype
+      (`_yn`/`_opt_in` booleans, `_ms` string arrays, everything else strings).
+      Contacts with no `custom_attributes` are absent (resolve via a left join).
+      The PIVOT enumerates fields explicitly — add a new `custom_attributes`
+      field to the PIVOT field list in the model SQL; it does not surface
+      automatically. The model produces ~170 string columns; only the fields
+      consumed by the Focus extracts and the typed (boolean / array) fields are
+      documented below.
+    columns:
+      - name: finalsite_enrollment_id
+        data_type: string
+        description: Finalsite contact UUID; the grain of this model.
+        data_tests:
+          - unique
+          - not_null
+      - name: withdrawal_school_txt
+        data_type: string
+        description:
+          Free-text destination school a withdrawing student is transferring to,
+          from `custom_attributes`; consumed by the Focus enrollment extract as
+          MOVED_TO. Null when unset.
+      - name: lang_parent_ss
+        data_type: string
+        description:
+          Parent/home primary-language single-select from `custom_attributes`;
+          consumed by the Focus demographics extract for LANG,
+          PRIMARY_HOME_LANG, and NATIVE_PARENT_LANG. Null when unset.
+      - name: race_ms
+        data_type: array<string>
+        description:
+          Race/ethnicity multi-select from `custom_attributes`; consumed by the
+          Focus demographics extract for the per-race RACE_* flags. Null when
+          unset.
+      - name: latino_hispanic_yn
+        data_type: boolean
+        description:
+          Boolean value of the `latino_hispanic_yn` Finalsite custom field;
+          consumed by the Focus demographics extract as ETHNIC_HL. Null when
+          unset.
+      - name: media_release_yn
+        data_type: boolean
+        description:
+          Whether the family granted media (photo/video) release, from
+          `custom_attributes`; consumed by the Focus demographics extract as
+          PHOTO_VID_PERM. Null when unset.
+      - name: address_verification_ms
+        data_type: array<string>
+        description:
+          Address-verification multi-select from `custom_attributes`. Null when
+          unset.
+      - name: additional_phone_number_1_phone_opt_in
+        data_type: boolean
+        description:
+          Boolean value of the `additional_phone_number_1_phone_opt_in`
+          Finalsite custom field; null when unset.
+      - name: bus_interest_yn
+        data_type: boolean
+        description:
+          Boolean value of the `bus_interest_yn` Finalsite custom field; null
+          when unset.
+      - name: emrg_1_phone_1_opt_in
+        data_type: boolean
+        description:
+          Boolean value of the `emrg_1_phone_1_opt_in` Finalsite custom field;
+          null when unset.
+      - name: emrg_2_phone_1_opt_in
+        data_type: boolean
+        description:
+          Boolean value of the `emrg_2_phone_1_opt_in` Finalsite custom field;
+          null when unset.
+      - name: florida_residency_yn
+        data_type: boolean
+        description:
+          Boolean value of the `florida_residency_yn` Finalsite custom field;
+          null when unset.
+      - name: import_update_yn
+        data_type: boolean
+        description:
+          Boolean value of the `import_update_yn` Finalsite custom field; null
+          when unset.
+      - name: is_parent2
+        data_type: boolean
+        description:
+          Boolean value of the `is_parent2` Finalsite custom field; null when
+          unset.
+      - name: is_parent3
+        data_type: boolean
+        description:
+          Boolean value of the `is_parent3` Finalsite custom field; null when
+          unset.
+      - name: is_parent4
+        data_type: boolean
+        description:
+          Boolean value of the `is_parent4` Finalsite custom field; null when
+          unset.
+      - name: lang_first_nonenglish_yn
+        data_type: boolean
+        description:
+          Boolean value of the `lang_first_nonenglish_yn` Finalsite custom
+          field; null when unset.
+      - name: lang_home_nonenglish_yn
+        data_type: boolean
+        description:
+          Boolean value of the `lang_home_nonenglish_yn` Finalsite custom field;
+          null when unset.
+      - name: lang_spoken_nonenglish_yn
+        data_type: boolean
+        description:
+          Boolean value of the `lang_spoken_nonenglish_yn` Finalsite custom
+          field; null when unset.
+      - name: mdcps_attendee_yn
+        data_type: boolean
+        description:
+          Boolean value of the `mdcps_attendee_yn` Finalsite custom field; null
+          when unset.
+      - name: mdcps_student_1_yn
+        data_type: boolean
+        description:
+          Boolean value of the `mdcps_student_1_yn` Finalsite custom field; null
+          when unset.
+      - name: mdcps_student_2_yn
+        data_type: boolean
+        description:
+          Boolean value of the `mdcps_student_2_yn` Finalsite custom field; null
+          when unset.
+      - name: mdcps_student_3_yn
+        data_type: boolean
+        description:
+          Boolean value of the `mdcps_student_3_yn` Finalsite custom field; null
+          when unset.
+      - name: med_considerations_yn
+        data_type: boolean
+        description:
+          Boolean value of the `med_considerations_yn` Finalsite custom field;
+          null when unset.
+      - name: mental_health_referrals_yn
+        data_type: boolean
+        description:
+          Boolean value of the `mental_health_referrals_yn` Finalsite custom
+          field; null when unset.
+      - name: military_parent_yn
+        data_type: boolean
+        description:
+          Boolean value of the `military_parent_yn` Finalsite custom field; null
+          when unset.
+      - name: nonpickup_1_yn
+        data_type: boolean
+        description:
+          Boolean value of the `nonpickup_1_yn` Finalsite custom field; null
+          when unset.
+      - name: nonpickup_2_yn
+        data_type: boolean
+        description:
+          Boolean value of the `nonpickup_2_yn` Finalsite custom field; null
+          when unset.
+      - name: nonpickup_3_yn
+        data_type: boolean
+        description:
+          Boolean value of the `nonpickup_3_yn` Finalsite custom field; null
+          when unset.
+      - name: preschool_parent_paid_yn
+        data_type: boolean
+        description:
+          Boolean value of the `preschool_parent_paid_yn` Finalsite custom
+          field; null when unset.
+      - name: preschool_yn
+        data_type: boolean
+        description:
+          Boolean value of the `preschool_yn` Finalsite custom field; null when
+          unset.
+      - name: prev_arrested_yn
+        data_type: boolean
+        description:
+          Boolean value of the `prev_arrested_yn` Finalsite custom field; null
+          when unset.
+      - name: prev_expelled_yn
+        data_type: boolean
+        description:
+          Boolean value of the `prev_expelled_yn` Finalsite custom field; null
+          when unset.
+      - name: prev_juvenile_party_yn
+        data_type: boolean
+        description:
+          Boolean value of the `prev_juvenile_party_yn` Finalsite custom field;
+          null when unset.
+      - name: self_contained_yn
+        data_type: boolean
+        description:
+          Boolean value of the `self_contained_yn` Finalsite custom field; null
+          when unset.
+      - name: sib_enrolled_yn
+        data_type: boolean
+        description:
+          Boolean value of the `sib_enrolled_yn` Finalsite custom field; null
+          when unset.
+      - name: sped_received_yn
+        data_type: boolean
+        description:
+          Boolean value of the `sped_received_yn` Finalsite custom field; null
+          when unset.
+      - name: staff_transport_yn
+        data_type: boolean
+        description:
+          Boolean value of the `staff_transport_yn` Finalsite custom field; null
+          when unset.
+      - name: unaccompanied_youth_yn
+        data_type: boolean
+        description:
+          Boolean value of the `unaccompanied_youth_yn` Finalsite custom field;
+          null when unset.

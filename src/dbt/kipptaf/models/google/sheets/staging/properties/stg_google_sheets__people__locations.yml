@@ -119,3 +119,8 @@ models:
         description: |
           Postal (ZIP) code as a STRING to preserve leading zeros for
           New Jersey five-digit codes.
+      - name: focus_school_id
+        data_type: string
+        description: |
+          Focus SIS school-number code (alphanumeric, e.g. 2332A, 1000B). The
+          `SCH_ID` value for Focus SFTP enrollment imports.

@@ -17,10 +17,18 @@ clean-targets:
 models:
   +schema: finalsite
   finalsite:
-    staging:
-      +materialized: table
-      +contract:
-        enforced: true
+    api:
+      staging:
+        +materialized: table
+        +contract:
+          enforced: true
+      intermediate:
+        +materialized: table
+    sftp:
+      staging:
+        +materialized: table
+        +contract:
+          enforced: true
 
 vars:
   cloud_storage_uri_base: null
