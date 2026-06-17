@@ -1751,13 +1751,12 @@ sources:
                 - sheets
                 - kfwd
                 - career_launch_bulk_add
-      # TODO(#4073): replace with crosswalk Sheet URL before merge
       - name: src_google_sheets__focus__grade_crosswalk
         external:
           options:
             format: GOOGLE_SHEETS
             uris:
-              - https://docs.google.com/spreadsheets/d/REPLACE_WITH_CROSSWALK_SHEET_ID
+              - https://docs.google.com/spreadsheets/d/16l2loYxWINL7MG7eE1xzO2piVdKx5vvgavxntEMRSLk
             sheet_range: src_focus__grade_crosswalk
             skip_leading_rows: 1
         columns:
@@ -1779,7 +1778,7 @@ sources:
           options:
             format: GOOGLE_SHEETS
             uris:
-              - https://docs.google.com/spreadsheets/d/REPLACE_WITH_CROSSWALK_SHEET_ID
+              - https://docs.google.com/spreadsheets/d/16l2loYxWINL7MG7eE1xzO2piVdKx5vvgavxntEMRSLk
             sheet_range: src_focus__school_crosswalk
             skip_leading_rows: 1
         columns:
@@ -1801,7 +1800,7 @@ sources:
           options:
             format: GOOGLE_SHEETS
             uris:
-              - https://docs.google.com/spreadsheets/d/REPLACE_WITH_CROSSWALK_SHEET_ID
+              - https://docs.google.com/spreadsheets/d/16l2loYxWINL7MG7eE1xzO2piVdKx5vvgavxntEMRSLk
             sheet_range: src_focus__enrollment_code_crosswalk
             skip_leading_rows: 1
         columns:
@@ -1823,7 +1822,7 @@ sources:
           options:
             format: GOOGLE_SHEETS
             uris:
-              - https://docs.google.com/spreadsheets/d/REPLACE_WITH_CROSSWALK_SHEET_ID
+              - https://docs.google.com/spreadsheets/d/16l2loYxWINL7MG7eE1xzO2piVdKx5vvgavxntEMRSLk
             sheet_range: src_focus__drop_code_crosswalk
             skip_leading_rows: 1
         columns:
