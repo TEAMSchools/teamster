@@ -172,9 +172,29 @@ locations:
                     key: port
               - name: FOCUS_DB__CREDENTIALS__QUERY__SSLMODE
                 value: require
+              - name: FINALSITE_CREDENTIAL_ID
+                valueFrom:
+                  secretKeyRef:
+                    name: op-finalsite-api-kippmiami
+                    key: username
+              - name: FINALSITE_SECRET
+                valueFrom:
+                  secretKeyRef:
+                    name: op-finalsite-api-kippmiami
+                    key: password
         run_k8s_config:
           container_config:
             env:
+              - name: FINALSITE_CREDENTIAL_ID
+                valueFrom:
+                  secretKeyRef:
+                    name: op-finalsite-api-kippmiami
+                    key: username
+              - name: FINALSITE_SECRET
+                valueFrom:
+                  secretKeyRef:
+                    name: op-finalsite-api-kippmiami
+                    key: password
               - name: COUCHDROP_SFTP_PASSWORD
                 valueFrom:
                   secretKeyRef:
