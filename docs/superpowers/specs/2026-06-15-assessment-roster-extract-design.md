@@ -26,9 +26,11 @@ treated as PII (restricted access; not shared with outside researchers as-is).
 
 ## Decisions
 
-- **Architecture:** union intermediate + thin reporting view (Approach B), per
-  the kipptaf rule that an `rpt_*` view must buffer an intermediate from any
-  external consumer.
+- **Architecture:** the five-source union, demographics, and course joins all
+  live in the single `rpt_gsheets__assessment_roster` view. (The union was
+  initially built as a separate `int_assessments__roster_union` intermediate —
+  Approach B — but was folded into the reporting view during PR review since it
+  had exactly one consumer.)
 - **Student identifier:** the sheet carries the raw `student_number` directly.
   In-model anonymization (salted-hash + crosswalk) was scrapped — anonymization
   is handled downstream by the owner before external sharing. See the PII /
