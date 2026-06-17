@@ -22,7 +22,7 @@ with
     ),
 
     pairs as (
-        select pri.stdt_id as primary_student_id, sec.stdt_id as secondary_student_id,
+        select pri.stdt_id as id_a, sec.stdt_id as id_b,
         from sibling_edges as e
         inner join
             student_ids as pri
@@ -31,6 +31,10 @@ with
         where pri.stdt_id is not null and sec.stdt_id is not null
     )
 
-select p.primary_student_id, p.secondary_student_id, 'sibling' as relationship,
+select distinct
+    -- grain projection: each row is one unordered sibling pair; every selected
+    -- column is functionally determined by the (least, greatest) id pair
+    'sibling' as relationship,
+    least(p.id_a, p.id_b) as primary_student_id,
+    greatest(p.id_a, p.id_b) as secondary_student_id,
 from pairs as p
-where p.primary_student_id < p.secondary_student_id
