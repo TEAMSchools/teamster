@@ -1,10 +1,21 @@
 models:
   - name: stg_google_sheets__focus__grade_crosswalk
+    description: >
+      Crosswalk mapping a Finalsite canonical grade name to the corresponding
+      Focus grade-level short name (grade ID).
     columns:
       - name: finalsite_grade_canonical_name
         data_type: string
+        description: Canonical grade name as used in Finalsite.
         data_tests:
-          - not_null
-          - unique
+          - not_null:
+              config:
+                severity: error
+          - unique:
+              config:
+                severity: error
       - name: focus_grade_id
         data_type: string
+        description:
+          Focus grade-level short name (grade ID) that corresponds to the
+          Finalsite grade.
