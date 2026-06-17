@@ -1,35 +1,6 @@
 with
-    iready_filtered as (
-        select
-            student_id,
-            academic_year_int,
-            subject,
-            test_round,
-            overall_scale_score,
-            overall_relative_placement,
-            overall_relative_placement_int,
-            is_proficient,
-            completion_date,
-        from {{ ref("int_iready__diagnostic_results") }}
-        where
-            subject in ('Reading', 'Math')
-            and academic_year_int in (
-                {{ var("current_academic_year") }},
-                {{ var("current_academic_year") - 1 }}
-            )
-    ),
-
-    -- a student can take more than one diagnostic within a round; keep the latest
-    iready_deduplicated as (
-        {{
-            dbt_utils.deduplicate(
-                relation="iready_filtered",
-                partition_by="student_id, academic_year_int, subject, test_round",
-                order_by="completion_date desc",
-            )
-        }}
-    ),
-
+    -- rn_subj_round = 1 keeps the latest diagnostic per student/year/subject/round
+    -- (precomputed upstream), so no dedupe CTE is needed here.
     iready as (
         select
             student_id as student_number,
@@ -38,6 +9,7 @@ with
             overall_relative_placement as performance_band_label,
             overall_relative_placement_int as performance_band_int,
             is_proficient,
+            `discipline` as `subject`,
 
             'i-Ready' as assessment_source,
 
@@ -45,11 +17,14 @@ with
             cast(null as string) as assessment_title,
             cast(overall_scale_score as numeric) as scale_score,
             cast(null as numeric) as percent_correct,
-
-            case
-                `subject` when 'Reading' then 'ELA' when 'Math' then 'Math'
-            end as `subject`,
-        from iready_deduplicated
+        from {{ ref("int_iready__diagnostic_results") }}
+        where
+            `discipline` in ('ELA', 'Math')
+            and rn_subj_round = 1
+            and academic_year_int in (
+                {{ var("current_academic_year") }},
+                {{ var("current_academic_year") - 1 }}
+            )
     ),
 
     fast as (
@@ -60,6 +35,7 @@ with
             achievement_level as performance_band_label,
             performance_level as performance_band_int,
             is_proficient,
+            `discipline` as `subject`,
 
             'FAST' as assessment_source,
 
@@ -67,18 +43,10 @@ with
             cast(null as string) as assessment_title,
             cast(scale_score as numeric) as scale_score,
             cast(null as numeric) as percent_correct,
-
-            case
-                illuminate_subject
-                when 'Text Study'
-                then 'ELA'
-                when 'Mathematics'
-                then 'Math'
-            end as `subject`,
         from {{ ref("int_fldoe__all_assessments") }}
         where
             student_number is not null
-            and illuminate_subject in ('Text Study', 'Mathematics')
+            and `discipline` in ('ELA', 'Math')
             and academic_year in (
                 {{ var("current_academic_year") }},
                 {{ var("current_academic_year") - 1 }}
@@ -143,6 +111,7 @@ with
             admin as administration_round,
             testperformancelevel_text as performance_band_label,
             is_proficient,
+            `discipline` as `subject`,
 
             'NJSLA' as assessment_source,
 
@@ -151,18 +120,10 @@ with
             cast(testscalescore as numeric) as scale_score,
             cast(null as numeric) as percent_correct,
             cast(testperformancelevel as int) as performance_band_int,
-
-            case
-                illuminate_subject
-                when 'Text Study'
-                then 'ELA'
-                when 'Mathematics'
-                then 'Math'
-            end as `subject`,
         from {{ ref("int_pearson__all_assessments") }}
         where
             assessment_name = 'NJSLA'
-            and illuminate_subject in ('Text Study', 'Mathematics')
+            and `discipline` in ('ELA', 'Math')
             and academic_year = {{ var("current_academic_year") - 1 }}
     ),
 

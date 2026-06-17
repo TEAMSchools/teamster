@@ -21,7 +21,7 @@ with
         select
             students_student_number as student_number,
             cc_academic_year as academic_year,
-            courses_credittype as credittype,
+            `discipline`,
             teachernumber as teacher_powerschool_teacher_number,
             cc_course_number as course_number,
             cc_section_number as section_number,
@@ -68,5 +68,5 @@ left join
     courses as c
     on ru.student_number = c.student_number
     and ru.academic_year = c.academic_year
-    and case when ru.`subject` = 'ELA' then 'ENG' else 'MATH' end = c.credittype
+    and ru.`subject` = c.`discipline`
 where de.grade_level between 0 and 8
