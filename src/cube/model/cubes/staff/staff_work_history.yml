@@ -7,7 +7,7 @@ cubes:
         swa.staff_key,
         swa.full_time_equivalency,
         swa.is_management_position,
-        ss.status_name,
+        ss.status_code,
         wj.position_title,
         wj.job_code,
         wt.worker_type_name            AS worker_type,
@@ -101,8 +101,8 @@ cubes:
         type: string
         primary_key: true
 
-      - name: status_name
-        sql: status_name
+      - name: status_code
+        sql: status_code
         type: string
         public: true
 
