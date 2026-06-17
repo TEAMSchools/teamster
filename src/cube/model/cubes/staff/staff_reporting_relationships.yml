@@ -1,0 +1,50 @@
+cubes:
+  - name: staff_reporting_relationships
+    public: false
+    sql: |
+      SELECT
+        swa.staff_key,
+        rr.manager_staff_key,
+        GREATEST(wap.effective_start_date, rr.effective_start_date) AS effective_start_date,
+        LEAST(wap.effective_end_date,      rr.effective_end_date)   AS effective_end_date
+      FROM kipptaf_marts.dim_work_assignment_primary wap
+      JOIN kipptaf_marts.dim_staff_work_assignments swa
+        ON wap.work_assignment_key = swa.work_assignment_key
+        AND swa.staff_key IS NOT NULL
+      JOIN kipptaf_marts.dim_work_assignment_reporting_relationships rr
+        ON rr.work_assignment_key = wap.work_assignment_key
+        AND wap.effective_start_date <= rr.effective_end_date
+        AND wap.effective_end_date   >= rr.effective_start_date
+      WHERE wap.is_primary_position
+
+    dimensions:
+      - name: staff_reporting_relationship_key
+        sql: >
+          CONCAT(
+            CAST({CUBE}.staff_key AS STRING), '|',
+            CAST({CUBE}.effective_start_date AS STRING)
+          )
+        type: string
+        primary_key: true
+
+      - name: staff_key
+        sql: staff_key
+        type: string
+        public: true
+
+      - name: manager_staff_key
+        sql: manager_staff_key
+        type: string
+        public: true
+
+      - name: effective_start_date
+        sql: CAST(effective_start_date AS TIMESTAMP)
+        type: time
+        public: true
+
+      # Required by the per-fact BETWEEN join condition used in
+      # staff_observations and other cubes that resolve point-in-time manager.
+      - name: effective_end_date
+        sql: CAST(effective_end_date AS TIMESTAMP)
+        type: time
+        public: true

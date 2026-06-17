@@ -1,0 +1,198 @@
+views:
+  - name: staff_detail
+    description: >-
+      Row-level staff employment history. One row per employee x employment
+      period — each row represents a contiguous window when all time-varying
+      attributes (status, job, worker type, org unit, location, compensation)
+      held simultaneously, with point-in-time manager context via
+      staff_reporting_relationships. Use for drill-down, headcount-over-time,
+      and individual employee investigations. Always apply a date filter before
+      querying — without one, each employment period fans out to one row per
+      calendar day in its effective range.
+
+      Primary-position filtering: use is_primary_position = true to isolate the
+      employee's primary assignment at a point in time. status_name = 'Active'
+      filters to active employees only. Contains direct staff and manager
+      identifiers — see access_policy for PII gating.
+
+    cubes:
+      - join_path: staff_work_history
+        includes:
+          - status_name
+          - position_title
+          - job_code
+          - worker_type
+          - department_name
+          - business_unit_name
+          - is_primary_position
+          - is_management_position
+          - full_time_equivalency
+          - effective_start_date
+          - annual_wage
+          - hourly_wage
+          - daily_rate
+          - period_rate
+
+      - join_path: staff_work_history.dates
+        prefix: true
+        includes:
+          - date_day
+          - academic_year
+          - month_name
+          - month_number
+          - year_number
+
+      - join_path: staff_work_history.staff
+        prefix: true
+        includes:
+          - staff_key
+          - staff_unique_id
+          - full_name
+          - first_name
+          - last_name
+          - birth_date
+          - work_email
+          - google_email
+          - personal_email
+          - personal_cell_phone
+          - active_directory_username
+          - gender_identity
+          - race
+          - is_hispanic
+          - original_hire_date
+          - rehire_date
+
+      - join_path: staff_work_history.locations
+        prefix: true
+        includes:
+          - location_name
+          - abbreviation
+          - grade_band
+
+      - join_path: staff_work_history.locations.regions
+        prefix: true
+        includes:
+          - region_name
+
+      - join_path: staff_work_history.staff_manager
+        prefix: true
+        includes:
+          - staff_key
+          - full_name
+          - first_name
+          - last_name
+          - work_email
+
+    meta:
+      folders:
+        - name: Employment
+          members:
+            - status_name
+            - position_title
+            - job_code
+            - worker_type
+            - department_name
+            - business_unit_name
+            - is_primary_position
+            - is_management_position
+            - full_time_equivalency
+            - effective_start_date
+        - name: Date
+          members:
+            - dates_date_day
+            - dates_academic_year
+            - dates_month_name
+            - dates_month_number
+            - dates_year_number
+        - name: Location
+          members:
+            - locations_location_name
+            - locations_abbreviation
+            - locations_grade_band
+            - regions_region_name
+        - name: Staff
+          members:
+            - staff_staff_key
+            - staff_staff_unique_id
+            - staff_full_name
+            - staff_first_name
+            - staff_last_name
+            - staff_birth_date
+            - staff_work_email
+            - staff_google_email
+            - staff_personal_email
+            - staff_personal_cell_phone
+            - staff_active_directory_username
+            - staff_gender_identity
+            - staff_race
+            - staff_is_hispanic
+            - staff_original_hire_date
+            - staff_rehire_date
+        - name: Manager
+          members:
+            - staff_manager_staff_key
+            - staff_manager_full_name
+            - staff_manager_first_name
+            - staff_manager_last_name
+            - staff_manager_work_email
+
+    access_policy:
+      # Purely additive: each block uses explicit includes only — no excludes
+      # anywhere. Cube's OR semantics unions all matching blocks, so having
+      # multiple groups always adds access, never blocks it.
+      # detail-access: base employment, demographic, date, and location fields.
+      # cube-access-staff-pii: direct staff and manager identifiers.
+      # cube-access-staff-compensation: wage/rate fields.
+      - group: detail-access
+        member_level:
+          includes:
+            - status_name
+            - position_title
+            - job_code
+            - worker_type
+            - department_name
+            - business_unit_name
+            - is_primary_position
+            - is_management_position
+            - full_time_equivalency
+            - effective_start_date
+            - dates_date_day
+            - dates_academic_year
+            - dates_month_name
+            - dates_month_number
+            - dates_year_number
+            - locations_location_name
+            - locations_abbreviation
+            - locations_grade_band
+            - regions_region_name
+            - staff_staff_key
+            - staff_gender_identity
+            - staff_race
+            - staff_is_hispanic
+            - staff_original_hire_date
+            - staff_rehire_date
+            - staff_manager_staff_key
+      - group: cube-access-staff-pii
+        member_level:
+          includes:
+            - staff_full_name
+            - staff_first_name
+            - staff_last_name
+            - staff_birth_date
+            - staff_work_email
+            - staff_google_email
+            - staff_personal_email
+            - staff_personal_cell_phone
+            - staff_active_directory_username
+            - staff_staff_unique_id
+            - staff_manager_full_name
+            - staff_manager_first_name
+            - staff_manager_last_name
+            - staff_manager_work_email
+      - group: cube-access-staff-compensation
+        member_level:
+          includes:
+            - annual_wage
+            - hourly_wage
+            - daily_rate
+            - period_rate
