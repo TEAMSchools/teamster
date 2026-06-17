@@ -1,7 +1,10 @@
 with
-    -- trunk-ignore(sqlfluff/ST03): referenced via dbt_utils.deduplicate below
-    demographics_distinct as (
-        select distinct
+    -- rn_year = 1 is one row per student/year (the canonical latest enrollment),
+    -- so a mid-year transfer collapses to its current school/grade without a
+    -- distinct/dedupe step. Sourced from the enrollment-grain model rather than
+    -- the subject-grain one to avoid the subject cross-join fan-out.
+    demographics as (
+        select
             student_number,
             academic_year,
             region,
@@ -10,21 +13,8 @@ with
             iep_status,
             lep_status,
             status_504,
-        from {{ ref("int_extracts__student_enrollments_subjects") }}
-    ),
-
-    -- a student can hold more than one enrollment (school/grade) within a year
-    -- (mid-year transfers); collapse to one row per student/year by a
-    -- deterministic pick (highest grade_level, then school). For the small set of
-    -- transfers this attributes the year's rows to a single school/grade.
-    demographics as (
-        {{
-            dbt_utils.deduplicate(
-                relation="demographics_distinct",
-                partition_by="student_number, academic_year",
-                order_by="grade_level desc, school",
-            )
-        }}
+        from {{ ref("int_extracts__student_enrollments") }}
+        where rn_year = 1
     ),
 
     courses as (
