@@ -14,6 +14,7 @@ cubes:
         wo.department_name,
         wo.business_unit_name,
         wl.location_key                AS work_location_key,
+        rr.manager_staff_key,
         wp.is_primary_position,
         comp.annual_wage,
         comp.hourly_wage,
@@ -66,6 +67,10 @@ cubes:
         ON comp.work_assignment_key = swa.work_assignment_key
         AND ss.effective_start_date < comp.effective_end_date_key
         AND ss.effective_end_date   > comp.effective_start_date_key
+      LEFT JOIN kipptaf_marts.dim_work_assignment_reporting_relationships rr
+        ON rr.work_assignment_key = swa.work_assignment_key
+        AND ss.effective_start_date < rr.effective_end_date
+        AND ss.effective_end_date   > rr.effective_start_date
 
     joins:
       - name: dates
@@ -76,6 +81,10 @@ cubes:
 
       - name: staff
         sql: "{staff.staff_key} = {CUBE}.staff_key"
+        relationship: many_to_one
+
+      - name: staff_manager
+        sql: "{staff_manager.staff_key} = {CUBE}.manager_staff_key"
         relationship: many_to_one
 
       - name: locations
@@ -124,6 +133,11 @@ cubes:
 
       - name: work_location_key
         sql: work_location_key
+        type: string
+        public: true
+
+      - name: manager_staff_key
+        sql: manager_staff_key
         type: string
         public: true
 

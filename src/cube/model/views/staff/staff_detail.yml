@@ -11,8 +11,8 @@ views:
 
       Primary-position filtering: use is_primary_position = true to isolate the
       employee's primary assignment at a point in time. status_name = 'Active'
-      filters to active employees only. Contains direct staff identifiers — see
-      access_policy for PII gating.
+      filters to active employees only. Contains direct staff and manager
+      identifiers — see access_policy for PII gating.
 
     cubes:
       - join_path: staff_work_history
@@ -60,6 +60,15 @@ views:
           - is_hispanic
           - original_hire_date
           - rehire_date
+
+      - join_path: staff_work_history.staff_manager
+        prefix: true
+        includes:
+          - staff_key
+          - full_name
+          - first_name
+          - last_name
+          - work_email
 
       - join_path: staff_work_history.locations
         prefix: true
@@ -118,6 +127,13 @@ views:
             - staff_is_hispanic
             - staff_original_hire_date
             - staff_rehire_date
+        - name: Manager
+          members:
+            - staff_manager_staff_key
+            - staff_manager_full_name
+            - staff_manager_first_name
+            - staff_manager_last_name
+            - staff_manager_work_email
     access_policy:
       # Purely additive: each block uses explicit includes only — no excludes
       # anywhere. Cube's OR semantics unions all matching blocks, so having
@@ -153,6 +169,7 @@ views:
             - staff_is_hispanic
             - staff_original_hire_date
             - staff_rehire_date
+            - staff_manager_staff_key
       - group: cube-access-staff-pii
         member_level:
           includes:
@@ -166,6 +183,10 @@ views:
             - staff_personal_cell_phone
             - staff_active_directory_username
             - staff_staff_unique_id
+            - staff_manager_full_name
+            - staff_manager_first_name
+            - staff_manager_last_name
+            - staff_manager_work_email
       - group: cube-access-staff-compensation
         member_level:
           includes:
