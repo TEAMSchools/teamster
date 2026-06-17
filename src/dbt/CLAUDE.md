@@ -721,6 +721,16 @@ the same partition.
 - **`select *` inside UNION ALL CTEs trips CV03**: sqlfluff requires a trailing
   comma after the last column, but `select *` has nothing to trail. Enumerate
   columns explicitly in each UNION branch.
+- **BigQuery `PIVOT` operator**: pivots ONE value column per aggregate. For a
+  mixed-type key-value array, use a multi-aggregate pivot —
+  `pivot(max(v_str) as s, max(v_bool) as b, any_value(v_arr) as a for field_name in ('x', ...))`
+  — then project the typed column per field (`s_x as x` / `b_x as x`). Output
+  columns are `{agg_alias}_{value}`; a SINGLE-aggregate pivot names them by the
+  bare value (`'x'` → column `x`). `max()` can't aggregate ARRAY — use
+  `any_value()` for array fields.
+- **AL09 on struct subfields**: `value.string_value as string_value` trips AL09
+  (alias equals the leaf name). Rename to a distinct alias (`as value_string`)
+  rather than dropping it when a downstream PIVOT/ref needs the column named.
 
 ### SQL column ordering in SELECT clauses (enforced by ST06)
 
@@ -740,6 +750,9 @@ alias.
 
 ### YAML conventions
 
+- **Unquoted multi-line `description:` scalars** can't start with a backtick
+  (`` `Y` when… ``) or contain `: ` (colon-space, e.g. "types: parent") — both
+  fail YAML parsing. Reword (lead with a word; use `—` not `:`).
 - **Read `properties.yml` before modifying a model.** It carries the
   authoritative `description:`, `data_tests:`, contract column types, and
   `config.meta.source_column` pointers. Copy-pasted column blocks rot here first

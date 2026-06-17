@@ -37,6 +37,15 @@ models/
   field to its own column, aliased to the original field name and typed by the
   populated value subtype (`_yn`/`_opt_in` booleans, `_ms` string arrays, else
   strings).
+- `int_finalsite__contact_track_attributes` — pivots `track_attributes`
+  (`assigned_school_ss`, `bsr_contact_info_updated_yn`, `promotion_status_ss`).
+
+`stg_finalsite__contacts` carries THREE repeated key-value arrays —
+`id_attributes`, `custom_attributes`, `track_attributes` (each
+`STRUCT<field_name, value STRUCT<string_value, boolean_value, array_string_value>>`);
+each has a pivot int model above. Scan all three when sourcing a field, and
+verify by VALUES, not field name (e.g. `current_residence_ss` is McKinney-Vento
+housing status, not a county).
 
 ## Cross-Project Usage
 

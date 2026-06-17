@@ -65,6 +65,11 @@ When both joined union models materialize `_dbt_source_project`, prefer
 `a._dbt_source_project = b._dbt_source_project` over the macro — same semantics,
 no `regexp_extract` per call.
 
+Produce `_dbt_source_project` on a union model with
+`select *, {{ extract_code_location("union_relations") }} as _dbt_source_project`
+`from union_relations` (the `union_relations` CTE wrapping
+`dbt_utils.union_relations`).
+
 ### Selecting from `dbt_utils.star()` models
 
 `base_` models using `star()` resolve columns from BigQuery at run time, not
