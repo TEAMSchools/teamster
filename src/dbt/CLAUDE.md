@@ -118,6 +118,11 @@ contract columns may be added anywhere in `properties.yml`. Regenerate a large
 struct `data_type` by pulling it verbatim from `INFORMATION_SCHEMA.COLUMNS` of
 the staged table; don't hand-transcribe.
 
+A multi-type Avro union (e.g. a Pydantic `bool | str | list[str]` field) lands
+in a BigQuery external table as a named
+`STRUCT<boolean_value, string_value, array_string_value>`, not a scalar — read
+the typed subfield (`.string_value` / `.array_string_value` / `.boolean_value`).
+
 dbt CLI runs locally for Claude: `DBT_PROFILES_DIR` (repo `.dbt`) + ADC →
 `dbt debug` / `build` / `run-operation --target staging` connect with no
 1Password (BigQuery uses ADC, not the 1Password bootstrap). `--target prod` runs
@@ -137,6 +142,17 @@ sources. Multiple space-separated selectors work in one call:
 Running it in parallel across all 5 district projects exhausts BigQuery's
 `INFORMATION_SCHEMA.simple_rate.user` quota (429). Serialize across projects, or
 run only the project you need.
+
+## Source-package staging builds in every consuming district
+
+A source-system package's staging models build in **every** district that
+imports it, but only carry data where that source's Dagster ingestion is wired
+per code location — e.g. `stg_finalsite__contacts` builds in all four districts
+(all import the `finalsite` package) but only `kippmiami` materializes the
+contacts asset; the other three build it empty. Before promoting a district
+model to a shared source package, confirm the source ingestion exists in every
+consuming district, or the promoted model builds empty there (or fails on a
+missing external).
 
 ## Source Schema Resolution
 
@@ -505,7 +521,9 @@ The flat form (without `arguments:`) triggers a deprecation warning:
 `given`/`expect` dict scalars must be UNQUOTED — yamllint `quoted-strings` flags
 quoted dates/strings as redundant. It fires at pre-push/CI, NOT the pre-commit
 fmt hook, so a locally-clean commit fails CI. Unquoted `YYYY-MM-DD` parses
-correctly for date columns.
+correctly for date columns. Exception: leading-zero strings (`"01"`, `"02"` —
+e.g. zero-padded grade codes) must be QUOTED, or yamllint `octal-values` fails
+at CI.
 
 ### Date-range joins
 
@@ -630,7 +648,9 @@ the same partition.
 - **Least/earliest of N nullable columns**:
   `(select min(x) from unnest([c1, c2, ...]) as x)` — aggregate `min` ignores
   NULLs, unlike `least()` (which returns NULL if any arg is NULL). Avoids the
-  nested `coalesce(..., sentinel)` + outer-guard pyramid.
+  nested `coalesce(..., sentinel)` + outer-guard pyramid. sqlfluff CV03 wants a
+  trailing comma on the inner `select min(x),`; the `unnest([...])` array
+  literal must NOT have one (BigQuery rejects a trailing comma in an array).
 - **`dbt_utils.generate_surrogate_key` coerces nulls internally** —
   `cast(null as <type>)` and bare `null` hash identically. Don't add the cast.
 - **No `GROUP BY ALL`** — list grouping columns explicitly. `GROUP BY ALL`

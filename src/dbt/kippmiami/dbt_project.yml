@@ -41,6 +41,8 @@ models:
       staging:
         +contract:
           enforced: true
+    finalsite:
+      +schema: finalsite
     powerschool:
       +materialized: table
       +schema: powerschool

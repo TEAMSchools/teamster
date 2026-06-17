@@ -7,7 +7,9 @@ from teamster.core.asset_checks import (
 from teamster.libraries.finalsite.api.resources import FinalsiteResource
 
 
-def build_finalsite_asset(code_location: str, asset_name: str, schema):
+def build_finalsite_asset(
+    code_location: str, asset_name: str, schema, params: dict | None = None
+):
     key = [code_location, "finalsite", asset_name]
 
     @asset(
@@ -19,7 +21,7 @@ def build_finalsite_asset(code_location: str, asset_name: str, schema):
         kinds={"python"},
     )
     def _asset(context: AssetExecutionContext, finalsite: FinalsiteResource):
-        data = finalsite.list(path=asset_name)
+        data = finalsite.list(path=asset_name, params=params or {})
 
         yield Output(value=(data, schema), metadata={"record_count": len(data)})
         yield check_avro_schema_valid(
