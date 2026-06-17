@@ -36,7 +36,7 @@ cubes:
         primary_key: true
 
       - name: attendance_date
-        sql: CAST(date_key AS TIMESTAMP)
+        sql: CAST({CUBE}.date_key AS TIMESTAMP)
         type: time
         public: true
 
@@ -160,6 +160,24 @@ cubes:
         sql: ada_tier
         type: string
         public: true
+
+      - name: _location_key
+        description: >-
+          Proxy for school location — FK surfaced from the joined
+          student_enrollments cube so it can be referenced in grain.keep_only
+          for the EOP rank measure.
+        sql: "{student_enrollments.location_key}"
+        type: string
+        public: false
+
+      - name: _student_enrollment_key
+        description: >-
+          Proxy dimension for student_enrollment_key so it can be referenced
+          in multi-stage measure SQL (multi-stage can only ref members, not
+          raw columns).
+        sql: student_enrollment_key
+        type: string
+        public: false
 
       - name: is_month_end_record
         description: >-
@@ -797,3 +815,45 @@ cubes:
         type: number
         format: percent
         public: true
+
+      # ── POC: filter.include test measures ─────────────────────────────────
+      # Test whether multi-stage filter.include can replace per-grain copies.
+
+      - name: _count_ca_test_year_end
+        description: >-
+          POC — replicate count_chronically_absent_year_end via filter.include.
+        multi_stage: true
+        sql: "{count_chronically_absent}"
+        type: number
+        filter:
+          include:
+            - member: student_attendance.is_latest_record
+              operator: equals
+              values: ["true"]
+        public: false
+
+      - name: _count_ca_test_month_end
+        description: >-
+          POC — replicate count_chronically_absent_month_end via filter.include.
+        multi_stage: true
+        sql: "{count_chronically_absent}"
+        type: number
+        filter:
+          include:
+            - member: student_attendance.is_month_end_record
+              operator: equals
+              values: ["true"]
+        public: false
+
+      - name: _count_ca_test_week_end
+        description: >-
+          POC — replicate count_chronically_absent_week_end via filter.include.
+        multi_stage: true
+        sql: "{count_chronically_absent}"
+        type: number
+        filter:
+          include:
+            - member: student_attendance.is_week_end_record
+              operator: equals
+              values: ["true"]
+        public: false
