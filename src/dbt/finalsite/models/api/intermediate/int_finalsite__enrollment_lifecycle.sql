@@ -16,12 +16,6 @@ with
             enrollment_type,
             school_year_start,
             grade_canonical_name,
-
-            (
-                select max(t.value.string_value),
-                from unnest(track_attributes) as t
-                where t.field_name = 'promotion_status_ss'
-            ) as promotion_status,
         from {{ ref("stg_finalsite__contacts") }}
     ),
 
@@ -32,10 +26,11 @@ with
             c.enrollment_type,
             c.school_year_start,
             c.grade_canonical_name,
-            c.promotion_status,
 
             sr.assigned_school,
             sr.enrolled_date as enrollment_start_date,
+
+            trk.promotion_status_ss as promotion_status,
 
             (
                 select min(d),
@@ -61,6 +56,9 @@ with
         left join
             status_report_latest as sr
             on c.finalsite_enrollment_id = sr.finalsite_enrollment_id
+        left join
+            {{ ref("int_finalsite__contact_track_attributes") }} as trk
+            on c.finalsite_enrollment_id = trk.finalsite_enrollment_id
     ),
 
     joined as (

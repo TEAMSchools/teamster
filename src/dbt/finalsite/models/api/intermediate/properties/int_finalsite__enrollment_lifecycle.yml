@@ -45,8 +45,9 @@ models:
       - name: promotion_status
         data_type: string
         description:
-          Promotion/retention status from the `track_attributes`
-          `promotion_status_ss` field (e.g. `Retained`); null when unset.
+          Promotion/retention status (e.g. `Retained`), joined from
+          `int_finalsite__contact_track_attributes.promotion_status_ss`; null
+          when unset.
       - name: assigned_school
         data_type: string
         description:
@@ -199,6 +200,10 @@ unit_tests:
               not_enrolling_date: null,
               assigned_school: School C,
             }
+      - input: ref('int_finalsite__contact_track_attributes')
+        format: sql
+        rows: |
+          select 'c_new' as finalsite_enrollment_id, 'Retained' as promotion_status_ss
     expect:
       rows:
         - {
@@ -207,7 +212,7 @@ unit_tests:
             enrollment_type: new,
             school_year_start: 2025,
             grade_canonical_name: KF,
-            promotion_status: null,
+            promotion_status: Retained,
             assigned_school: School A,
             enrollment_start_date: 2025-08-15,
             enrollment_end_date: null,
