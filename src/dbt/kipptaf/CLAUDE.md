@@ -90,6 +90,14 @@ view. Don't add either when creating a new one.
 data, and push to their own PowerSchool instance. Exposures live in regional
 projects, not kipptaf.
 
+This cross-project shape generalizes (e.g. finalsite→focus): the heavy `rpt_*`
+view lives in kipptaf sourcing district data via `source()`, and each district
+has a thin wrapper sourcing `kipptaf_extracts`. The wrapper is
+contract-columns-only — NO data tests or descriptions (those live on the kipptaf
+view). A new kipptaf region source (`sources-kipp*.yml`) needs the
+`dev`/`staging` (`zz_stg_`)/prod schema branch, or single-PR cross-project CI
+can't read it.
+
 ## `dbt_project.yml` Inherited Defaults
 
 These are set at directory level — **do not repeat per-model** or flag their
