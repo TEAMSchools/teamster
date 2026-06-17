@@ -57,5 +57,4 @@ where
     and s.region_school_level in ('CamdenES', 'NewarkES', 'PatersonES')
     and s.credit_type in ('HR', 'MATH', 'ENG')
     and s.enroll_status = 0
-    and s.sections_no_of_students != 0
     and not s.is_out_of_district

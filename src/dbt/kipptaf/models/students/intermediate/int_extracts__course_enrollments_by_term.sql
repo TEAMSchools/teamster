@@ -204,6 +204,6 @@ with
         where not e.is_pre_year_withdrawal
     )
 
-select *
+select *,
 from enrollments
 where rn = 1
