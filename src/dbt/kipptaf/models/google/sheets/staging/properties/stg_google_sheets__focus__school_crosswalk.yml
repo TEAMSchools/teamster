@@ -1,0 +1,10 @@
+models:
+  - name: stg_google_sheets__focus__school_crosswalk
+    columns:
+      - name: finalsite_assigned_school
+        data_type: string
+        data_tests:
+          - not_null
+          - unique
+      - name: focus_school_id
+        data_type: string

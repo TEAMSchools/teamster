@@ -1,0 +1,10 @@
+models:
+  - name: stg_google_sheets__focus__enrollment_code_crosswalk
+    columns:
+      - name: finalsite_lifecycle_action
+        data_type: string
+        data_tests:
+          - not_null
+          - unique
+      - name: focus_enrollment_code
+        data_type: string

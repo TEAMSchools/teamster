@@ -1,0 +1,10 @@
+models:
+  - name: stg_google_sheets__focus__grade_crosswalk
+    columns:
+      - name: finalsite_grade_canonical_name
+        data_type: string
+        data_tests:
+          - not_null
+          - unique
+      - name: focus_grade_id
+        data_type: string

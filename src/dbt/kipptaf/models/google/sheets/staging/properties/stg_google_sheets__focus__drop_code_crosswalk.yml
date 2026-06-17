@@ -1,0 +1,10 @@
+models:
+  - name: stg_google_sheets__focus__drop_code_crosswalk
+    columns:
+      - name: finalsite_withdrawal_reason
+        data_type: string
+        data_tests:
+          - not_null
+          - unique
+      - name: focus_drop_code
+        data_type: string
