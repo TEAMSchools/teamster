@@ -1,5 +1,5 @@
 models:
-  - name: rpt_finalsite__student_enrollment
+  - name: rpt_focus__student_enrollment
     description:
       One row per in-scope Finalsite enrollment reshaped into the Focus
       `STUDENT_ENROLLMENT` SFTP template layout. Joins
@@ -165,7 +165,7 @@ unit_tests:
       — crosswalk joins resolve grade/school/enrollment code, student_id is null
       (no Focus ID minted yet), and end_date/drop_code are null for a
       non-transfer row.
-    model: rpt_finalsite__student_enrollment
+    model: rpt_focus__student_enrollment
     given:
       - input: ref('stg_finalsite__contacts')
         rows:
@@ -251,7 +251,7 @@ unit_tests:
     description:
       Verifies that end_date and drop_code populate for a transfer_out row, and
       that end_date is formatted as YYYYMMDD.
-    model: rpt_finalsite__student_enrollment
+    model: rpt_focus__student_enrollment
     given:
       - input: ref('stg_finalsite__contacts')
         rows:

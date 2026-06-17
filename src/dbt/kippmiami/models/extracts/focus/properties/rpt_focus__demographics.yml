@@ -1,5 +1,5 @@
 models:
-  - name: rpt_finalsite__demographics
+  - name: rpt_focus__demographics
     description:
       One row per in-scope Finalsite student reshaped into the Focus
       `DEMOGRAPHICS` SFTP template layout. Joins `stg_finalsite__contacts` to
@@ -193,7 +193,7 @@ unit_tests:
       is pivoted from id_attributes, DT_BIRTH is formatted as YYYYMMDD, GENDER
       is mapped to single-letter code, ETHNIC_HL derives from the
       latino_hispanic_yn custom attribute boolean.
-    model: rpt_finalsite__demographics
+    model: rpt_focus__demographics
     given:
       - input: ref('stg_finalsite__contacts')
         format: sql

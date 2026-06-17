@@ -13,12 +13,12 @@ models — plus the four Google-Sheets value crosswalks they depend on.
 **Architecture:** Finalsite is the system of record. Staging
 (`stg_finalsite__contacts`, `stg_finalsite__contact_relationships`,
 `stg_finalsite__status_report`) plus the existing
-`int_finalsite__enrollment_lifecycle` classifier feed five `rpt_finalsite__*`
-output models in `kippmiami/models/extracts/finalsite/`. Each output model emits
-the **full Focus template column set in exact left-to-right order**, populating
-what Finalsite supplies and emitting typed `NULL` for the FL-specific columns we
-have no source for. Value translation (Finalsite grade/school/status/withdrawal
-→ Focus codes) is done via four Google-Sheets crosswalks declared in `kipptaf`
+`int_finalsite__enrollment_lifecycle` classifier feed five `rpt_focus__*` output
+models in `kippmiami/models/extracts/focus/`. Each output model emits the **full
+Focus template column set in exact left-to-right order**, populating what
+Finalsite supplies and emitting typed `NULL` for the FL-specific columns we have
+no source for. Value translation (Finalsite grade/school/status/withdrawal →
+Focus codes) is done via four Google-Sheets crosswalks declared in `kipptaf`
 (the project wired for Sheet ingestion) and consumed cross-project. Component 5
 (the `build_bigquery_query_sftp_asset` transport that writes these tables to
 Focus's SFTP) is **out of scope** — a separate plan.
@@ -95,12 +95,12 @@ none blocks the build.
 
 **Create (kippmiami — output models):**
 
-- `src/dbt/kippmiami/models/extracts/finalsite/rpt_finalsite__demographics.sql`
-  (+ properties yml + unit test)
-- `.../rpt_finalsite__student_enrollment.sql` (+ yml + unit test)
-- `.../rpt_finalsite__addresses.sql` (+ yml + unit test)
-- `.../rpt_finalsite__contacts.sql` (+ yml + unit test)
-- `.../rpt_finalsite__linked_students.sql` (+ yml + unit test)
+- `src/dbt/kippmiami/models/extracts/focus/rpt_focus__demographics.sql` (+
+  properties yml + unit test)
+- `.../rpt_focus__student_enrollment.sql` (+ yml + unit test)
+- `.../rpt_focus__addresses.sql` (+ yml + unit test)
+- `.../rpt_focus__contacts.sql` (+ yml + unit test)
+- `.../rpt_focus__linked_students.sql` (+ yml + unit test)
 
 **Modify (kippmiami):**
 
@@ -472,14 +472,14 @@ eligibility + transfer-out predicate).
 
 ---
 
-## Task 4: `rpt_finalsite__student_enrollment` (the core model)
+## Task 4: `rpt_focus__student_enrollment` (the core model)
 
 **Files:**
 
 - Create:
-  `src/dbt/kippmiami/models/extracts/finalsite/rpt_finalsite__student_enrollment.sql`
-- Create: `.../properties/rpt_finalsite__student_enrollment.yml`
-- Test: `.../properties/rpt_finalsite__student_enrollment.yml` (unit test block)
+  `src/dbt/kippmiami/models/extracts/focus/rpt_focus__student_enrollment.sql`
+- Create: `.../properties/rpt_focus__student_enrollment.yml`
+- Test: `.../properties/rpt_focus__student_enrollment.yml` (unit test block)
 
 Grain: one row per in-scope enrollment (`finalsite_enrollment_id`). Emit all 29
 `STUDENT_ENROLLMENT_LAYOUT` columns in order. `END_DATE`/`DROP_CODE` populate
@@ -493,7 +493,7 @@ only for `lifecycle_action = 'transfer_out'`.
 ```yaml
 unit_tests:
   - name: test_student_enrollment_shape
-    model: rpt_finalsite__student_enrollment
+    model: rpt_focus__student_enrollment
     given:
       - input: ref('stg_finalsite__contacts')
         rows:
@@ -557,7 +557,7 @@ unit_tests:
 > `DROP_CODE` populate.
 
 - [ ] **Step 2: Run it to confirm it fails** (model doesn't exist):
-      `DBT_PROFILES_DIR=/workspaces/teamster/.dbt uv run dbt test --select rpt_finalsite__student_enrollment --project-dir /workspaces/teamster/.worktrees/cbini/feat/claude-finalsite-focus-output/src/dbt/kippmiami`
+      `DBT_PROFILES_DIR=/workspaces/teamster/.dbt uv run dbt test --select rpt_focus__student_enrollment --project-dir /workspaces/teamster/.worktrees/cbini/feat/claude-finalsite-focus-output/src/dbt/kippmiami`
       Expected: compilation/selection error.
 
 - [ ] **Step 3: Write the model.** Column order is authoritative.
@@ -665,14 +665,14 @@ left join
 
 ```bash
 git -C /workspaces/teamster/.worktrees/cbini/feat/claude-finalsite-focus-output add -u
-git -C /workspaces/teamster/.worktrees/cbini/feat/claude-finalsite-focus-output commit -m "feat(finalsite): add rpt_finalsite__student_enrollment focus output"
+git -C /workspaces/teamster/.worktrees/cbini/feat/claude-finalsite-focus-output commit -m "feat(finalsite): add rpt_focus__student_enrollment focus output"
 ```
 
 ---
 
-## Task 5: `rpt_finalsite__demographics`
+## Task 5: `rpt_focus__demographics`
 
-**Files:** `.../rpt_finalsite__demographics.sql` + properties yml + unit test.
+**Files:** `.../rpt_focus__demographics.sql` + properties yml + unit test.
 
 Grain: one row per in-scope student (`finalsite_enrollment_id`). 43 columns in
 `DEMOGRAPHICS_LAYOUT` order. Per-column source:
@@ -733,13 +733,13 @@ Grain: one row per in-scope student (`finalsite_enrollment_id`). 43 columns in
       `stdt_id`).
 - [ ] **Step 5:** Run unit test to pass.
 - [ ] **Step 6:** Commit
-      (`feat(finalsite): add rpt_finalsite__demographics focus output`).
+      (`feat(finalsite): add rpt_focus__demographics focus output`).
 
 ---
 
-## Task 6: `rpt_finalsite__addresses`
+## Task 6: `rpt_focus__addresses`
 
-**Files:** `.../rpt_finalsite__addresses.sql` + properties yml + unit test.
+**Files:** `.../rpt_focus__addresses.sql` + properties yml + unit test.
 
 Grain: one row per in-scope student. 13 columns in `ADDRESS_LAYOUT` order:
 
@@ -762,13 +762,13 @@ Grain: one row per in-scope student. 13 columns in `ADDRESS_LAYOUT` order:
 - [ ] **Step 1–6:** failing unit test (assert address columns map) → confirm
       fail → model (13 cols in order) → contract YAML (`unique`/`not_null` on
       `student_id`) → pass → commit
-      (`feat(finalsite): add rpt_finalsite__addresses focus output`).
+      (`feat(finalsite): add rpt_focus__addresses focus output`).
 
 ---
 
-## Task 7: `rpt_finalsite__contacts`
+## Task 7: `rpt_focus__contacts`
 
-**Files:** `.../rpt_finalsite__contacts.sql` + properties yml + unit test.
+**Files:** `.../rpt_focus__contacts.sql` + properties yml + unit test.
 
 Grain: **one row per (student, guardian)** — multiple rows per student, one per
 contact. Source: `stg_finalsite__contact_relationships` (guardian edges,
@@ -874,14 +874,13 @@ inner join guardians as g on s.finalsite_enrollment_id = g.finalsite_enrollment_
       `not_null` on `student_id`/`first_name`/`last_name`/`sort_order`.
 - [ ] **Step 5:** Run unit test to pass.
 - [ ] **Step 6:** Commit
-      (`feat(finalsite): add rpt_finalsite__contacts focus output`).
+      (`feat(finalsite): add rpt_focus__contacts focus output`).
 
 ---
 
-## Task 8: `rpt_finalsite__linked_students`
+## Task 8: `rpt_focus__linked_students`
 
-**Files:** `.../rpt_finalsite__linked_students.sql` + properties yml + unit
-test.
+**Files:** `.../rpt_focus__linked_students.sql` + properties yml + unit test.
 
 Grain: one row per sibling pair (`PRIMARY_STUDENT_ID`, `SECONDARY_STUDENT_ID`).
 Source: `stg_finalsite__contact_relationships` with `rel_type = 'sibling'`. Both
@@ -909,7 +908,7 @@ outside the pulled cohort / has no id). 3 columns in `LINKED_STUDENTS` order:
       (`[sibling, step_sibling, cousin, parent]`).
 - [ ] **Step 5:** Run unit test to pass.
 - [ ] **Step 6:** Commit
-      (`feat(finalsite): add rpt_finalsite__linked_students focus output`).
+      (`feat(finalsite): add rpt_focus__linked_students focus output`).
 
 ---
 
@@ -919,16 +918,16 @@ outside the pulled cohort / has no id). 3 columns in `LINKED_STUDENTS` order:
 entry.
 
 - [ ] **Step 1: Confirm the new models inherit the `extracts` contract.** They
-      live under `models/extracts/finalsite/`, and `dbt_project.yml` sets
+      live under `models/extracts/focus/`, and `dbt_project.yml` sets
       `extracts: +schema: extracts` + `+contract: enforced: true` at the
       `extracts` level — so they are contract-enforced and land in the
       `extracts` schema with no additional config. Verify with
-      `dbt ls --select rpt_finalsite__*` that schema + contract resolve.
+      `dbt ls --select rpt_focus__*` that schema + contract resolve.
 - [ ] **Step 2: Full parse of both projects:**
       `DBT_PROFILES_DIR=/workspaces/teamster/.dbt uv run dbt parse --project-dir .../src/dbt/kippmiami`
       and the same for `kipptaf`. Expected: no errors.
 - [ ] **Step 3: Run all five unit tests together:**
-      `DBT_PROFILES_DIR=/workspaces/teamster/.dbt uv run dbt test --select rpt_finalsite__* --project-dir .../src/dbt/kippmiami`
+      `DBT_PROFILES_DIR=/workspaces/teamster/.dbt uv run dbt test --select rpt_focus__* --project-dir .../src/dbt/kippmiami`
       Expected: all unit tests PASS.
 - [ ] **Step 4: Trunk check** every changed/created `.sql`, `.yml`, `.md` from
       inside the worktree with the absolute trunk binary.

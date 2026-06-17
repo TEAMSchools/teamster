@@ -1,5 +1,5 @@
 models:
-  - name: rpt_finalsite__contacts
+  - name: rpt_focus__contacts
     description:
       One row per (student, guardian) reshaped into the Focus `CONTACTS` SFTP
       template layout. Joins `stg_finalsite__contacts` students to
@@ -259,7 +259,7 @@ unit_tests:
       Verifies the 51-column CONTACTS layout for one student with two guardian
       relationships — primary guardian sorts to SORT_ORDER 1, non-primary to 2.
       Asserts STUDENT_RELATION, FIRST_NAME, LAST_NAME, and CONTACT1_VALUE.
-    model: rpt_finalsite__contacts
+    model: rpt_focus__contacts
     given:
       - input: ref('stg_finalsite__contacts')
         format: sql

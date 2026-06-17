@@ -1,5 +1,5 @@
 models:
-  - name: rpt_finalsite__linked_students
+  - name: rpt_focus__linked_students
     description:
       One row per unordered sibling pair, normalized so the student with the
       lexicographically-smaller minted Focus ID is always `PRIMARY_STUDENT_ID`
@@ -54,7 +54,7 @@ unit_tests:
       minted Focus IDs and are in-scope in int_finalsite__enrollment_lifecycle.
       Expects exactly one output row with primary_student_id = S100001 (lesser
       ID) and secondary_student_id = S200002 (greater ID).
-    model: rpt_finalsite__linked_students
+    model: rpt_focus__linked_students
     given:
       - input: ref('stg_finalsite__contact_relationships')
         rows:
@@ -256,7 +256,7 @@ unit_tests:
       entirely. The new least/greatest normalization must yield exactly one row
       with primary_student_id = S100001 (the lesser ID) and secondary_student_id
       = S900009 (the greater ID).
-    model: rpt_finalsite__linked_students
+    model: rpt_focus__linked_students
     given:
       - input: ref('stg_finalsite__contact_relationships')
         rows:

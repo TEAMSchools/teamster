@@ -1,5 +1,5 @@
 models:
-  - name: rpt_finalsite__addresses
+  - name: rpt_focus__addresses
     config:
       contract:
         enforced: true
@@ -70,7 +70,7 @@ unit_tests:
       Verifies the 13-column ADDRESS layout for a single student — STUDENT_ID is
       pivoted from id_attributes, address columns map from contacts, mailing
       columns are always null.
-    model: rpt_finalsite__addresses
+    model: rpt_focus__addresses
     given:
       - input: ref('stg_finalsite__contacts')
         format: sql
