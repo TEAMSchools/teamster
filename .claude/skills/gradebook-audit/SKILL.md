@@ -293,34 +293,47 @@ intentional or a typo.
 
 ---
 
-## Procedure: Recover category grades or course grades after academic year rollover
+## Procedure: Work on the gradebook audit dashboard after academic year rollover
 
-**Trigger phrases:** "we lost category grades", "dashboard is blank after
-summer", "no grades showing", "category grades disappeared", "current year
-rolled over but data isn't there yet"
+**Trigger phrases:** "we have swapped academic years on the database and I need
+to make edits to the gradebook audit dashboard before the start of the school
+year", "the database rolled over to the new year but school hasn't started yet
+and I need data to work on the dash", "I need to work on the gradebook audit
+views this summer"
 
-**What happens:** In July, the dbt `current_academic_year` variable is bumped
-(e.g., 2025 → 2026). PowerSchool has no grade records for the new year yet.
-`int_tableau__gradebook_audit_student_scaffold` then looks for data that doesn't
-exist and the dashboard goes blank.
+**What's happening:** In July, the data engineering team bumps
+`current_academic_year` (e.g., 2025 → 2026). At that point:
 
-**File:**
-`src/dbt/kipptaf/models/extracts/tableau/intermediate/int_tableau__gradebook_audit_student_scaffold.sql`
+- The scaffold filters to `academic_year = 2026`, but PowerSchool has no
+  sections or enrollments for the new year yet — the scaffold returns no rows.
+- Even if sections existed, quarter course grades for the prior year live in
+  `stg_powerschool__storedgrades` (archived), not
+  `base_powerschool__final_grades` (which only holds live/active grades for the
+  current year).
 
-**Two flips to recover (switch to prior-year data):**
+Both problems must be fixed together. Changing only the scaffold year or only
+the `grades_type` will still produce no data.
 
-1. Direct JOIN to `int_powerschool__category_grades` in the
-   `student_category_scaffold` branch — change the yearid join condition:
+**Files to edit:**
+
+- `src/dbt/kipptaf/models/extracts/tableau/intermediate/int_tableau__gradebook_audit_scaffold.sql`
+- `src/dbt/kipptaf/models/extracts/tableau/intermediate/int_tableau__gradebook_audit_flags_calculations.sql`
+
+**Two changes to make:**
+
+1. In `int_tableau__gradebook_audit_scaffold` — change the year filter in all 5
+   UNION branches:
 
    ```sql
-   -- change this:
-   and cg.yearid = {{ var("current_academic_year") - 1990 }}
+   -- change this (appears 5 times):
+   s.academic_year = {{ var("current_academic_year") }}
    -- to this:
-   and cg.yearid = {{ var("current_academic_year") - 1991 }}
+   s.academic_year = {{ var("current_academic_year") - 1 }}
    ```
 
-2. Both UNION branches — change the `quarter_course_grades` join filter from
-   current year to prior year:
+2. In `int_tableau__gradebook_audit_flags_calculations`,
+   `student_scaffold_course` branch — change the `quarter_course_grades` join
+   grades type filter:
 
    ```sql
    -- change this:
@@ -329,19 +342,24 @@ exist and the dashboard goes blank.
    and qg.grades_type = 'last_year'
    ```
 
-**When to flip back:** once the new academic year's grade data starts appearing
-in PowerSchool (typically when teachers start entering grades in Q1), revert
-both changes: `- 1991` → `- 1990` and `'last_year'` → `'current_year'`.
+   This routes the grade lookup to `stg_powerschool__storedgrades` (prior-year
+   archived quarter grades) instead of `base_powerschool__final_grades` (empty
+   until teachers start entering grades for the new year).
 
-Build and verify after each flip:
+Build and verify after both changes:
 
 ```bash
 uv run dbt build \
-  --select int_tableau__gradebook_audit_student_scaffold \
+  --select int_tableau__gradebook_audit_scaffold int_tableau__gradebook_audit_flags_calculations \
   --project-dir src/dbt/kipptaf \
   --defer \
   --state src/dbt/kipptaf/target/prod
 ```
+
+**When to revert:** once the new school year starts and teachers begin entering
+grades in PowerSchool (typically Q1), revert both changes:
+`current_academic_year - 1` → `current_academic_year` in the scaffold, and
+`'last_year'` → `'current_year'` in flags calculations.
 
 ---
 
