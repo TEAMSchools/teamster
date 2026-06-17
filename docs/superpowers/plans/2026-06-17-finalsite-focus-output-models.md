@@ -117,32 +117,78 @@ none blocks the build.
 
 ---
 
-## Task 0: Create the crosswalk Google Sheet (prerequisite)
+## Task 0: Crosswalk Google Sheet (prerequisite — owned by Charlie/ops)
 
-**Files:** none (external artifact).
-
-- [ ] **Step 1: Create the spreadsheet + four tabs with header rows.**
+**Files:** none (external artifact). **Not built by this plan's implementer.**
+Charlie creates the Sheet before the PR using the data below; until then Task 1
+commits a clearly-marked placeholder URL. The dbt code is validated offline by
+the per-model unit tests, so the missing Sheet does not block any task.
 
 Create a Google Sheet titled `KIPP Miami | Finalsite→Focus Crosswalks` with four
-tabs named exactly (these become the `sheet_range` values):
+tabs named exactly (these become the `sheet_range` values). Share it with the
+BigQuery external-connection service account (copy the share from any sheet in
+`kipptaf/models/google/sheets/sources-external.yml`), then record the URL and
+replace the Task 1 placeholder.
 
-| Tab name                               | Header row (row 1)                                   | Pre-fill (known)                                                                  | Leave blank (ops)                               |
-| -------------------------------------- | ---------------------------------------------------- | --------------------------------------------------------------------------------- | ----------------------------------------------- |
-| `src_focus__grade_crosswalk`           | `finalsite_grade_canonical_name`, `focus_grade_id`   | FL short names: `KG`,`PK`,`00`…`12` mapped to the Finalsite canonical grade names | —                                               |
-| `src_focus__school_crosswalk`          | `finalsite_assigned_school`, `focus_school_id`       | the `assigned_school_ss` label(s) Miami emits                                     | `focus_school_id` (Focus `SCH_ID`)              |
-| `src_focus__enrollment_code_crosswalk` | `finalsite_enrollment_type`, `focus_enrollment_code` | `new`→`EA1`, `returning`→`RA1`                                                    | confirm codes w/ Focus admin                    |
-| `src_focus__drop_code_crosswalk`       | `finalsite_withdrawal_reason`, `focus_drop_code`     | reasons `mid_year_withdrawal`,`summer_withdraw`,`not_enrolling`                   | `focus_drop_code` (Focus Drop code, e.g. `W05`) |
+The key values below are pulled from live Miami staging
+(`kippmiami_finalsite.*`, 2026-06-17) — real, not assumed.
 
-- [ ] **Step 2: Share the Sheet** with the BigQuery external-connection service
-      account (same SA used by existing google_sheets sources — copy the share
-      from any sheet referenced in
-      `kipptaf/models/google/sheets/sources-external.yml`).
+**Tab `src_focus__grade_crosswalk`** — header `finalsite_grade_canonical_name`,
+`focus_grade_id`:
 
-- [ ] **Step 3: Record the spreadsheet URL**
-      (`https://docs.google.com/spreadsheets/d/<ID>`). It is the same `uris`
-      value for all four source blocks (the tab is selected by `sheet_range`).
+| finalsite_grade_canonical_name | focus_grade_id (confirm vs Focus grade-level short names) |
+| ------------------------------ | --------------------------------------------------------- |
+| `k`                            | `KG`                                                      |
+| `1st`                          | `1`                                                       |
+| `2nd`                          | `2`                                                       |
+| `3rd`                          | `3`                                                       |
+| `4th`                          | `4`                                                       |
+| `5th`                          | `5`                                                       |
+| `6th`                          | `6`                                                       |
+| `7th`                          | `7`                                                       |
+| `8th`                          | `8`                                                       |
+| `9th`                          | `9`                                                       |
 
-> No commit in this task — it produces the URL used by Task 1.
+(Miami is K–9 today; add `10th`–`12th` as grades roll up.)
+
+**Tab `src_focus__enrollment_code_crosswalk`** — header
+`finalsite_lifecycle_action`, `focus_enrollment_code` (keyed on
+`lifecycle_action`, NOT `enrollment_type` — `enrollment_type` is NULL on most
+in-scope `create` rows):
+
+| finalsite_lifecycle_action | focus_enrollment_code                       |
+| -------------------------- | ------------------------------------------- |
+| `create`                   | `EA1` (confirm)                             |
+| `re_enroll`                | `RA1` (confirm)                             |
+| `transfer_out`             | (ops — add code on the existing enrollment) |
+
+**Tab `src_focus__school_crosswalk`** — header `finalsite_assigned_school`,
+`focus_school_id` (ops fills `focus_school_id` = Focus `SCH_ID`):
+
+| finalsite_assigned_school | focus_school_id                                        |
+| ------------------------- | ------------------------------------------------------ |
+| `KIPP Royalty Academy`    | (ops)                                                  |
+| `KIPP Courage Academy`    | (ops)                                                  |
+| `KIPP Miami Tech`         | (ops)                                                  |
+| `KIPP Legacy Elementary`  | (ops)                                                  |
+| `KIPP Legacy Middle`      | (ops)                                                  |
+| `KIPP Miami Courage`      | (ops — likely a data-entry variant of Courage Academy) |
+| `KIPP Miami Royalty`      | (ops — likely a data-entry variant of Royalty Academy) |
+
+(19 in-scope rows have a NULL `assigned_school` — they will not join; surfaced
+by the warn-severity coverage test.)
+
+**Tab `src_focus__drop_code_crosswalk`** — header `finalsite_withdrawal_reason`,
+`focus_drop_code` (ops fills `focus_drop_code` = Focus Drop code, e.g. `W05`):
+
+| finalsite_withdrawal_reason | focus_drop_code |
+| --------------------------- | --------------- |
+| `mid_year_withdrawal`       | (ops)           |
+| `summer_withdraw`           | (ops)           |
+| `not_enrolling`             | (ops)           |
+
+> No commit in this task — it produces the URL that replaces the Task 1
+> placeholder before the PR.
 
 ---
 
@@ -152,17 +198,23 @@ tabs named exactly (these become the `sheet_range` values):
 
 - Modify: `src/dbt/kipptaf/models/google/sheets/sources-external.yml`
 
-- [ ] **Step 1: Append four source table blocks.** Use the spreadsheet URL from
-      Task 0 for every `uris` entry. Pattern mirrors the existing
-      `src_google_sheets__coupa__school_name_crosswalk` block.
+- [ ] **Step 1: Append four source table blocks.** The Sheet does not exist yet
+      (Task 0 is owned by Charlie). Use the literal placeholder
+      `https://docs.google.com/spreadsheets/d/REPLACE_WITH_CROSSWALK_SHEET_ID`
+      for every `uris` entry, and add a YAML comment
+      `# TODO(#4073): replace with crosswalk Sheet URL before merge` above the
+      first block. Pattern mirrors the existing
+      `src_google_sheets__coupa__school_name_crosswalk` block. The placeholder
+      does not affect `dbt parse`; live ingestion waits on the real URL.
 
 ```yaml
+# TODO(#4073): replace with crosswalk Sheet URL before merge
 - name: src_google_sheets__focus__grade_crosswalk
   external:
     options:
       format: GOOGLE_SHEETS
       uris:
-        - https://docs.google.com/spreadsheets/d/<SHEET_ID>
+        - https://docs.google.com/spreadsheets/d/REPLACE_WITH_CROSSWALK_SHEET_ID
       sheet_range: src_focus__grade_crosswalk
       skip_leading_rows: 1
   columns:
@@ -179,7 +231,7 @@ tabs named exactly (these become the `sheet_range` values):
     options:
       format: GOOGLE_SHEETS
       uris:
-        - https://docs.google.com/spreadsheets/d/<SHEET_ID>
+        - https://docs.google.com/spreadsheets/d/REPLACE_WITH_CROSSWALK_SHEET_ID
       sheet_range: src_focus__school_crosswalk
       skip_leading_rows: 1
   columns:
@@ -196,11 +248,11 @@ tabs named exactly (these become the `sheet_range` values):
     options:
       format: GOOGLE_SHEETS
       uris:
-        - https://docs.google.com/spreadsheets/d/<SHEET_ID>
+        - https://docs.google.com/spreadsheets/d/REPLACE_WITH_CROSSWALK_SHEET_ID
       sheet_range: src_focus__enrollment_code_crosswalk
       skip_leading_rows: 1
   columns:
-    - name: finalsite_enrollment_type
+    - name: finalsite_lifecycle_action
       data_type: string
     - name: focus_enrollment_code
       data_type: string
@@ -213,7 +265,7 @@ tabs named exactly (these become the `sheet_range` values):
     options:
       format: GOOGLE_SHEETS
       uris:
-        - https://docs.google.com/spreadsheets/d/<SHEET_ID>
+        - https://docs.google.com/spreadsheets/d/REPLACE_WITH_CROSSWALK_SHEET_ID
       sheet_range: src_focus__drop_code_crosswalk
       skip_leading_rows: 1
   columns:
@@ -280,7 +332,7 @@ models:
 ```
 
 (school keyed on `finalsite_assigned_school`; enrollment_code on
-`finalsite_enrollment_type`; drop_code on `finalsite_withdrawal_reason`.)
+`finalsite_lifecycle_action`; drop_code on `finalsite_withdrawal_reason`.)
 
 - [ ] **Step 3: Verify parse.** Run the Task 1 Step 2 `dbt parse` command;
       expect the four models to resolve. (A live `dbt build` requires the Sheet
@@ -473,7 +525,8 @@ unit_tests:
       - input:
           source('kipptaf_google_sheets',
           'stg_google_sheets__focus__enrollment_code_crosswalk')
-        rows: [{ finalsite_enrollment_type: new, focus_enrollment_code: EA1 }]
+        rows:
+          [{ finalsite_lifecycle_action: create, focus_enrollment_code: EA1 }]
       - input:
           source('kipptaf_google_sheets',
           'stg_google_sheets__focus__drop_code_crosswalk')
@@ -525,7 +578,6 @@ with
             l.school_year_start,
             l.assigned_school,
             l.grade_canonical_name,
-            l.enrollment_type,
             l.lifecycle_action,
             l.enrollment_start_date,
             l.enrollment_end_date,
@@ -588,7 +640,7 @@ left join
             "stg_google_sheets__focus__enrollment_code_crosswalk",
         )
     }} as ec
-    on e.enrollment_type = ec.finalsite_enrollment_type
+    on e.lifecycle_action = ec.finalsite_lifecycle_action
 left join
     {{ source("kipptaf_google_sheets", "stg_google_sheets__focus__drop_code_crosswalk") }}
         as dc
