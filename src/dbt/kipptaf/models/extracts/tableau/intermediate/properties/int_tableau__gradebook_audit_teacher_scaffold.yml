@@ -9,8 +9,6 @@ models:
         data_type: int64
       - name: academic_year_display
         data_type: string
-      - name: yearid
-        data_type: int64
       - name: schoolid
         data_type: int64
       - name: school
@@ -60,7 +58,7 @@ models:
         data_type: date
       - name: quarter_end_date
         data_type: date
-      - name: is_current_term
+      - name: is_current_quarter
         data_type: boolean
       - name: assignment_category_code
         data_type: string
