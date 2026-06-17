@@ -12,13 +12,13 @@ models:
       `file_config.format.header_replacements`; dbt column names remain
       lowercase snake_case. Race columns are always null pending a race-value
       mapping from Finalsite custom attributes. `ETHNIC_HL` derives from
-      `int_finalsite__contact_custom_attributes.is_latino_hispanic`.
+      `int_finalsite__contact_custom_attributes.latino_hispanic_yn`.
     columns:
       - name: stdt_id
         data_type: string
         description:
-          Focus student ID from `int_finalsite__contact_id_attributes`
-          (`focus_student_id`). Null until Focus mints an ID for the student.
+          Focus student ID. Null until Finalsite mints the student id into
+          `int_finalsite__contact_id_attributes`, then sourced from there.
         data_tests:
           - unique
           - not_null
@@ -58,7 +58,7 @@ models:
         data_type: string
         description:
           Hispanic/Latino indicator derived from
-          `int_finalsite__contact_custom_attributes.is_latino_hispanic` — `Y` if
+          `int_finalsite__contact_custom_attributes.latino_hispanic_yn` — `Y` if
           true, `N` if false.
       - name: single_ethnic
         data_type: string
@@ -193,12 +193,12 @@ unit_tests:
   - name: test_demographics_shape
     description:
       Verifies the 43-column DEMOGRAPHICS layout for a single student — STDT_ID
-      comes from int_finalsite__contact_id_attributes, DT_BIRTH is formatted as
-      YYYYMMDD, GENDER is mapped to single-letter code, ETHNIC_HL derives from
-      int_finalsite__contact_custom_attributes.is_latino_hispanic.
+      is null until the Finalsite-minted student id lands, DT_BIRTH is formatted
+      as YYYYMMDD, GENDER is mapped to single-letter code, ETHNIC_HL derives
+      from int_finalsite__contact_custom_attributes.latino_hispanic_yn.
     model: rpt_focus__demographics
     given:
-      - input: source('kippmiami_finalsite', 'stg_finalsite__contacts')
+      - input: ref('stg_finalsite__contacts')
         rows:
           - {
               finalsite_enrollment_id: enr-001,
@@ -210,25 +210,17 @@ unit_tests:
               gender: Female,
               birth_date: 2012-03-15,
             }
-      - input:
-          source('kippmiami_finalsite', 'int_finalsite__enrollment_lifecycle')
+      - input: ref('int_finalsite__enrollment_lifecycle')
         rows:
           - { finalsite_enrollment_id: enr-001 }
-      - input:
-          source('kippmiami_finalsite', 'int_finalsite__contact_id_attributes')
+      - input: ref('int_finalsite__contact_custom_attributes')
         format: sql
         rows: |
-          select 'enr-001' as finalsite_enrollment_id, 'S123456' as focus_student_id
-      - input: >-
-          source('kippmiami_finalsite',
-          'int_finalsite__contact_custom_attributes')
-        format: sql
-        rows: |
-          select 'enr-001' as finalsite_enrollment_id, true as is_latino_hispanic
+          select 'enr-001' as finalsite_enrollment_id, true as latino_hispanic_yn
     expect:
       rows:
         - {
-            stdt_id: S123456,
+            stdt_id: null,
             last_name: Smith,
             first_name: Jane,
             name_suffix: null,

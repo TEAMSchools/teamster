@@ -8,41 +8,21 @@ with
             c.email,
             c.gender,
             c.birth_date,
-            idf.focus_student_id as stdt_id,
-            cca.is_latino_hispanic,
-        from
-            {{
-                source(
-                    "kippmiami_finalsite",
-                    "stg_finalsite__contacts",
-                )
-            }} as c
+            cca.latino_hispanic_yn,
+        from {{ ref("stg_finalsite__contacts") }} as c
         inner join
-            {{
-                source(
-                    "kippmiami_finalsite",
-                    "int_finalsite__enrollment_lifecycle",
-                )
-            }} as l on c.finalsite_enrollment_id = l.finalsite_enrollment_id
+            {{ ref("int_finalsite__enrollment_lifecycle") }} as l
+            on c.finalsite_enrollment_id = l.finalsite_enrollment_id
         left join
-            {{
-                source(
-                    "kippmiami_finalsite",
-                    "int_finalsite__contact_id_attributes",
-                )
-            }} as idf on c.finalsite_enrollment_id = idf.finalsite_enrollment_id
-        left join
-            {{
-                source(
-                    "kippmiami_finalsite",
-                    "int_finalsite__contact_custom_attributes",
-                )
-            }} as cca on c.finalsite_enrollment_id = cca.finalsite_enrollment_id
+            {{ ref("int_finalsite__contact_custom_attributes") }} as cca
+            on c.finalsite_enrollment_id = cca.finalsite_enrollment_id
     )
 
 -- trunk-ignore(sqlfluff/ST06): column order fixed by Focus DEMOGRAPHICS contract
 select
-    d.stdt_id,
+    -- STDT_ID is null until the Finalsite-minted student id lands in
+    -- id_attributes; repoint to int_finalsite__contact_id_attributes then.
+    cast(null as string) as stdt_id,
     d.last_name,
     d.first_name,
     cast(null as string) as name_suffix,
@@ -57,7 +37,7 @@ select
     end as gender,
     cast(null as string) as lang,
     d.email as stdt_email,
-    if(d.is_latino_hispanic, 'Y', 'N') as ethnic_hl,
+    if(d.latino_hispanic_yn, 'Y', 'N') as ethnic_hl,
     cast(null as string) as single_ethnic,
     cast(null as string) as race_am_ind_ak_nat,
     cast(null as string) as race_asian,

@@ -17,7 +17,6 @@ with
             school_year_start,
             grade_canonical_name,
         from {{ ref("stg_finalsite__contacts") }}
-        where school_year_start >= {{ var("current_academic_year") }}
     ),
 
     dated as (

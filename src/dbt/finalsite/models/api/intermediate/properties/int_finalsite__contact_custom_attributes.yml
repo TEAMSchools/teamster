@@ -1,12 +1,12 @@
 models:
   - name: int_finalsite__contact_custom_attributes
     description:
-      One row per Finalsite contact, pivoting the repeated `custom_attributes`
-      key-value array into the typed custom fields downstream models need.
-      `is_latino_hispanic` is the boolean value of the `latino_hispanic_yn`
-      custom field. Contacts with no `custom_attributes` are absent (resolve via
-      a left join). Extend with additional custom fields (e.g. race) as
-      downstream needs grow.
+      One row per Finalsite contact, pivoting every field in the repeated
+      `custom_attributes` key-value array into its own column, aliased to its
+      original Finalsite field name and typed by the populated value subtype
+      (`_yn`/`_opt_in` booleans, `_ms` string arrays, everything else strings).
+      Contacts with no `custom_attributes` are absent (resolve via a left join).
+      New custom fields appear here automatically once they carry data.
     columns:
       - name: finalsite_enrollment_id
         data_type: string
@@ -14,7 +14,7 @@ models:
         data_tests:
           - unique
           - not_null
-      - name: is_latino_hispanic
+      - name: latino_hispanic_yn
         data_type: boolean
         description:
           Boolean value of the `latino_hispanic_yn` Finalsite custom field; null

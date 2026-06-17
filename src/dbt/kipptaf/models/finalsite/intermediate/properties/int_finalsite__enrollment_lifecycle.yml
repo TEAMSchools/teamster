@@ -1,0 +1,15 @@
+models:
+  - name: int_finalsite__enrollment_lifecycle
+    description:
+      Network-wide union of the per-region Finalsite
+      `int_finalsite__enrollment_lifecycle` models (one row per in-scope contact
+      with the intended Focus enrollment action). Enabled only where the
+      Finalsite API layer is wired (today KIPP Miami); carries
+      `_dbt_source_relation`.
+    columns:
+      - name: finalsite_enrollment_id
+        data_type: string
+        description: Finalsite contact UUID; the grain of this model.
+        data_tests:
+          - unique
+          - not_null

@@ -6,40 +6,48 @@ Finalsite → SIS enrollment integration.
 
 ## Model Structure
 
+Models are split into top-level **method folders** (the amplify convention) so a
+region can enable one integration method without the other:
+
 ```text
 models/
-  staging/         # materialized: table
-  intermediate/    # materialized: table — SIS-agnostic enrollment models
+  api/             # Finalsite Contacts API (Miami-only today)
+    staging/       # materialized: table, contract enforced
+    intermediate/  # materialized: table — SIS-agnostic enrollment models
+  sftp/            # Finalsite Status Report SFTP feed (network-wide)
+    staging/       # materialized: table, contract enforced
   sources-external.yml
 ```
 
-Intermediate models:
+`api/staging`: `stg_finalsite__contacts`,
+`stg_finalsite__contact_relationships`. `sftp/staging`:
+`stg_finalsite__status_report`.
 
-- `int_finalsite__enrollment_lifecycle` — one row per in-scope contact with the
-  intended SIS action (`create` / `re_enroll` / `transfer_out`); SIS-agnostic
-  (feeds both the Focus and PowerSchool receivers).
-- `int_finalsite__contact_id_attributes` — pivots `id_attributes` →
-  `focus_student_id` (the field named by the `finalsite_focus_student_id_field`
-  var).
-- `int_finalsite__contact_custom_attributes` — pivots `custom_attributes` →
-  typed custom fields (`is_latino_hispanic`, extensible).
+`api/intermediate` models:
 
-## Vars
-
-`cloud_storage_uri_base`, `bigquery_external_connection_name`, `local_timezone`
-(null here, set by consuming projects), plus intermediate-layer vars with
-package defaults that consumers override: `current_academic_year` (default `0`)
-and `finalsite_focus_student_id_field` (default `""`).
+- `int_finalsite__enrollment_lifecycle` — one row per in-scope contact (all
+  school years) with the intended SIS action (`create` / `re_enroll` /
+  `transfer_out`); SIS-agnostic (feeds both the Focus and PowerSchool
+  receivers).
+- `int_finalsite__contact_id_attributes` — pivots every `id_attributes` field to
+  its own column, aliased to the original field name (`power_school_contact_id`,
+  `powerschool_student_number`). The Finalsite-minted Focus `STDT_ID` field
+  appears here automatically once it carries data.
+- `int_finalsite__contact_custom_attributes` — pivots every `custom_attributes`
+  field to its own column, aliased to the original field name and typed by the
+  populated value subtype (`_yn`/`_opt_in` booleans, `_ms` string arrays, else
+  strings).
 
 ## Cross-Project Usage
 
 Referenced as a dbt package by all four district projects (`kippnewark`,
 `kippcamden`, `kippmiami`, `kipppaterson`). `kipptaf` consumes the resulting
-tables via `source()`.
+tables via `source()` (network-wide union models live in
+`kipptaf/models/finalsite/`).
 
-**The `intermediate/` layer is enabled only where Finalsite ingestion is
+**The `api/` layer is enabled only where Finalsite Contacts ingestion is
 wired.** Today that is `kippmiami` only; `kippnewark`, `kippcamden`, and
-`kipppaterson` set `finalsite: intermediate: +enabled: false` in their
-`dbt_project.yml` (the staging models build empty there, but the intermediate
-models would have no data). Re-enable a region when its Finalsite contacts
+`kipppaterson` set `finalsite: api: +enabled: false` in their `dbt_project.yml`.
+The `sftp/` layer (`status_report`) stays enabled everywhere — kipptaf unions it
+across all four regions. Re-enable a region's `api` when its Finalsite contacts
 ingestion lands.

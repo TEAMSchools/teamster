@@ -2,12 +2,11 @@ models:
   - name: int_finalsite__contact_id_attributes
     description:
       One row per Finalsite contact, pivoting the repeated `id_attributes`
-      key-value array into the identifier columns downstream models need.
-      `focus_student_id` is the value of the identifier field named by the
-      `finalsite_focus_student_id_field` var (the Finalsite-minted student
-      number exported to Focus as `STDT_ID`); null when the contact has no such
-      identifier yet. Contacts with no `id_attributes` are absent (resolve via a
-      left join).
+      key-value array into one column per identifier field, each aliased to its
+      original Finalsite field name. Contacts with no `id_attributes` are absent
+      (resolve via a left join). When the Finalsite-minted student number (the
+      future Focus `STDT_ID`) lands as a new `id_attributes` field, it appears
+      here automatically and downstream extracts repoint to it.
     columns:
       - name: finalsite_enrollment_id
         data_type: string
@@ -15,9 +14,9 @@ models:
         data_tests:
           - unique
           - not_null
-      - name: focus_student_id
+      - name: power_school_contact_id
         data_type: string
-        description:
-          Finalsite-minted student number from the `id_attributes` field named
-          by the `finalsite_focus_student_id_field` var; exported to Focus as
-          `STDT_ID`.
+        description: PowerSchool contact id from the `id_attributes` array.
+      - name: powerschool_student_number
+        data_type: string
+        description: PowerSchool student number from the `id_attributes` array.

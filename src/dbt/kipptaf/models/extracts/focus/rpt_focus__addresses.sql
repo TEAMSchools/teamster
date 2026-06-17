@@ -1,38 +1,16 @@
 with
     addresses as (
-        select
-            c.address_1,
-            c.address_2,
-            c.city,
-            c.state,
-            c.zip,
-            c.phone_1_number,
-            idf.focus_student_id as stdt_id,
-        from
-            {{
-                source(
-                    "kippmiami_finalsite",
-                    "stg_finalsite__contacts",
-                )
-            }} as c
+        select c.address_1, c.address_2, c.city, c.state, c.zip, c.phone_1_number,
+        from {{ ref("stg_finalsite__contacts") }} as c
         inner join
-            {{
-                source(
-                    "kippmiami_finalsite",
-                    "int_finalsite__enrollment_lifecycle",
-                )
-            }} as l on c.finalsite_enrollment_id = l.finalsite_enrollment_id
-        left join
-            {{
-                source(
-                    "kippmiami_finalsite",
-                    "int_finalsite__contact_id_attributes",
-                )
-            }} as idf on c.finalsite_enrollment_id = idf.finalsite_enrollment_id
+            {{ ref("int_finalsite__enrollment_lifecycle") }} as l
+            on c.finalsite_enrollment_id = l.finalsite_enrollment_id
     )
 
 select
-    a.stdt_id as student_id,
+    -- STDT_ID is null until the Finalsite-minted student id lands in
+    -- id_attributes; repoint to int_finalsite__contact_id_attributes then.
+    cast(null as string) as student_id,
     a.address_1 as address,
     a.address_2 as address2,
     a.city,

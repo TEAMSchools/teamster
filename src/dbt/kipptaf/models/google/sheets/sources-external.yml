@@ -1171,7 +1171,7 @@ sources:
             format: GOOGLE_SHEETS
             uris:
               - https://docs.google.com/spreadsheets/d/1FCc28XWxFj3gSfItGGJ2tVU0C1fYD1JxKRxuSFqisMo
-            sheet_range: src_google_sheets__people__locations
+            sheet_range: src_google_sheets__people__locations_v2
             skip_leading_rows: 1
         config:
           meta:
@@ -1216,6 +1216,8 @@ sources:
           - name: City
             data_type: STRING
           - name: Postal_Code
+            data_type: STRING
+          - name: Focus_School_ID
             data_type: STRING
       - name: src_google_sheets__people__campus_crosswalk
         external:
@@ -1773,28 +1775,6 @@ sources:
                 - sheets
                 - focus
                 - grade_crosswalk
-      - name: src_google_sheets__focus__school_crosswalk
-        external:
-          options:
-            format: GOOGLE_SHEETS
-            uris:
-              - https://docs.google.com/spreadsheets/d/16l2loYxWINL7MG7eE1xzO2piVdKx5vvgavxntEMRSLk
-            sheet_range: src_focus__school_crosswalk
-            skip_leading_rows: 1
-        columns:
-          - name: finalsite_assigned_school
-            data_type: string
-          - name: focus_school_id
-            data_type: string
-        config:
-          meta:
-            dagster:
-              asset_key:
-                - kipptaf
-                - google
-                - sheets
-                - focus
-                - school_crosswalk
       - name: src_google_sheets__focus__enrollment_code_crosswalk
         external:
           options:

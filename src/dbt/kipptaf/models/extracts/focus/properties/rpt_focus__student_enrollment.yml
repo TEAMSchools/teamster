@@ -15,8 +15,8 @@ models:
       - name: student_id
         data_type: string
         description:
-          Focus student ID from `int_finalsite__contact_id_attributes`
-          (`focus_student_id`). Null until Focus mints an ID for the student.
+          Focus student ID. Null until Finalsite mints the student id into
+          `int_finalsite__contact_id_attributes`, then sourced from there.
         data_tests:
           - unique
           - not_null
@@ -167,8 +167,7 @@ unit_tests:
       non-transfer row.
     model: rpt_focus__student_enrollment
     given:
-      - input:
-          source('kippmiami_finalsite', 'int_finalsite__enrollment_lifecycle')
+      - input: ref('int_finalsite__enrollment_lifecycle')
         rows:
           - {
               finalsite_enrollment_id: e1,
@@ -179,28 +178,16 @@ unit_tests:
               enrollment_start_date: 2025-08-12,
               enrollment_end_date: null,
               withdrawal_reason: null,
-              enrollment_type: new,
             }
-      - input:
-          source('kippmiami_finalsite', 'int_finalsite__contact_id_attributes')
-        format: sql
-        rows: |
-          select 'e1' as finalsite_enrollment_id, cast(null as string) as focus_student_id
-      - input: >-
-          source('kippmiami_finalsite',
-          'int_finalsite__contact_custom_attributes')
-        format: sql
-        rows: |
-          select 'e1' as finalsite_enrollment_id, false as is_latino_hispanic
       - input: ref('stg_google_sheets__focus__grade_crosswalk')
         rows:
           - { finalsite_grade_canonical_name: "05", focus_grade_id: "5" }
-      - input: ref('stg_google_sheets__focus__school_crosswalk')
-        rows:
-          - {
-              finalsite_assigned_school: KIPP Royalty Academy,
-              focus_school_id: "0001",
-            }
+      - input: ref('int_people__location_crosswalk')
+        format: sql
+        rows: |
+          select
+            'KIPP Royalty Academy' as location_name,
+            '0001' as location_focus_school_id
       - input: ref('stg_google_sheets__focus__enrollment_code_crosswalk')
         rows:
           - { finalsite_lifecycle_action: create, focus_enrollment_code: EA1 }
@@ -249,8 +236,7 @@ unit_tests:
       that end_date is formatted as YYYYMMDD.
     model: rpt_focus__student_enrollment
     given:
-      - input:
-          source('kippmiami_finalsite', 'int_finalsite__enrollment_lifecycle')
+      - input: ref('int_finalsite__enrollment_lifecycle')
         rows:
           - {
               finalsite_enrollment_id: e2,
@@ -261,28 +247,16 @@ unit_tests:
               enrollment_start_date: 2025-08-12,
               enrollment_end_date: 2026-01-15,
               withdrawal_reason: mid_year_withdrawal,
-              enrollment_type: returning,
             }
-      - input:
-          source('kippmiami_finalsite', 'int_finalsite__contact_id_attributes')
-        format: sql
-        rows: |
-          select 'e2' as finalsite_enrollment_id, cast(null as string) as focus_student_id
-      - input: >-
-          source('kippmiami_finalsite',
-          'int_finalsite__contact_custom_attributes')
-        format: sql
-        rows: |
-          select 'e2' as finalsite_enrollment_id, false as is_latino_hispanic
       - input: ref('stg_google_sheets__focus__grade_crosswalk')
         rows:
           - { finalsite_grade_canonical_name: "07", focus_grade_id: "7" }
-      - input: ref('stg_google_sheets__focus__school_crosswalk')
-        rows:
-          - {
-              finalsite_assigned_school: KIPP Royalty Academy,
-              focus_school_id: "0001",
-            }
+      - input: ref('int_people__location_crosswalk')
+        format: sql
+        rows: |
+          select
+            'KIPP Royalty Academy' as location_name,
+            '0001' as location_focus_school_id
       - input: ref('stg_google_sheets__focus__enrollment_code_crosswalk')
         rows:
           - {

@@ -9,28 +9,16 @@ with
             l.enrollment_start_date,
             l.enrollment_end_date,
             l.withdrawal_reason,
-            idf.focus_student_id as stdt_id,
-        from
-            {{
-                source(
-                    "kippmiami_finalsite",
-                    "int_finalsite__enrollment_lifecycle",
-                )
-            }} as l
-        left join
-            {{
-                source(
-                    "kippmiami_finalsite",
-                    "int_finalsite__contact_id_attributes",
-                )
-            }} as idf on l.finalsite_enrollment_id = idf.finalsite_enrollment_id
+        from {{ ref("int_finalsite__enrollment_lifecycle") }} as l
     )
 
 -- trunk-ignore(sqlfluff/ST06): column order fixed by Focus STUDENT_ENROLLMENT contract
 select
     e.school_year_start as syear,
-    sch.focus_school_id as school_id,
-    e.stdt_id as student_id,
+    sch.location_focus_school_id as school_id,
+    -- STDT_ID is null until the Finalsite-minted student id lands in
+    -- id_attributes; repoint to int_finalsite__contact_id_attributes then.
+    cast(null as string) as student_id,
     gr.focus_grade_id as grade_id,
     format_date('%Y%m%d', e.enrollment_start_date) as start_date,
     ec.focus_enrollment_code as enrollment_code,
@@ -68,8 +56,8 @@ left join
     {{ ref("stg_google_sheets__focus__grade_crosswalk") }} as gr
     on e.grade_canonical_name = gr.finalsite_grade_canonical_name
 left join
-    {{ ref("stg_google_sheets__focus__school_crosswalk") }} as sch
-    on e.assigned_school = sch.finalsite_assigned_school
+    {{ ref("int_people__location_crosswalk") }} as sch
+    on e.assigned_school = sch.location_name
 left join
     {{ ref("stg_google_sheets__focus__enrollment_code_crosswalk") }} as ec
     on e.lifecycle_action = ec.finalsite_lifecycle_action

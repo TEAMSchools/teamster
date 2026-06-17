@@ -24,8 +24,8 @@ models:
       - name: student_id
         data_type: string
         description:
-          Focus student ID from `int_finalsite__contact_id_attributes`
-          (`focus_student_id`). Null until Focus mints an ID for the student.
+          Focus student ID. Null until Finalsite mints the student id into
+          `int_finalsite__contact_id_attributes`, then sourced from there.
         data_tests:
           - not_null
       - name: sort_order
@@ -260,20 +260,13 @@ unit_tests:
       Verifies the 51-column CONTACTS layout for one student with two guardian
       relationships — primary guardian sorts to SORT_ORDER 1, non-primary to 2.
       Asserts STUDENT_RELATION, FIRST_NAME, LAST_NAME, and CONTACT1_VALUE.
-      STUDENT_ID comes from int_finalsite__contact_id_attributes.
+      STUDENT_ID is null until the Finalsite-minted student id lands.
     model: rpt_focus__contacts
     given:
-      - input:
-          source('kippmiami_finalsite', 'int_finalsite__enrollment_lifecycle')
+      - input: ref('int_finalsite__enrollment_lifecycle')
         rows:
           - { finalsite_enrollment_id: enr-stu-001 }
-      - input:
-          source('kippmiami_finalsite', 'int_finalsite__contact_id_attributes')
-        format: sql
-        rows: |
-          select 'enr-stu-001' as finalsite_enrollment_id, 'S100001' as focus_student_id
-      - input: >-
-          source('kippmiami_finalsite', 'stg_finalsite__contact_relationships')
+      - input: ref('stg_finalsite__contact_relationships')
         rows:
           - {
               finalsite_enrollment_id: enr-stu-001,
@@ -295,7 +288,7 @@ unit_tests:
               is_financial: false,
               has_portal_access: false,
             }
-      - input: source('kippmiami_finalsite', 'stg_finalsite__contacts')
+      - input: ref('stg_finalsite__contacts')
         rows:
           - {
               finalsite_enrollment_id: enr-grd-pri,
@@ -332,7 +325,7 @@ unit_tests:
     expect:
       rows:
         - {
-            student_id: S100001,
+            student_id: null,
             student_relation: parent,
             sort_order: 1,
             first_name: Alice,
@@ -385,7 +378,7 @@ unit_tests:
             contact7_callout: null,
           }
         - {
-            student_id: S100001,
+            student_id: null,
             student_relation: guardian,
             sort_order: 2,
             first_name: Bob,

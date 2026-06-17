@@ -1,32 +1,16 @@
 with
     sibling_edges as (
         select rel.finalsite_enrollment_id, rel.rel_id,
-        from
-            {{
-                source(
-                    "kippmiami_finalsite",
-                    "stg_finalsite__contact_relationships",
-                )
-            }} as rel
+        from {{ ref("stg_finalsite__contact_relationships") }} as rel
         where rel.rel_type = 'sibling'
     ),
 
     student_ids as (
-        select l.finalsite_enrollment_id, idf.focus_student_id as stdt_id,
-        from
-            {{
-                source(
-                    "kippmiami_finalsite",
-                    "int_finalsite__enrollment_lifecycle",
-                )
-            }} as l
-        left join
-            {{
-                source(
-                    "kippmiami_finalsite",
-                    "int_finalsite__contact_id_attributes",
-                )
-            }} as idf on l.finalsite_enrollment_id = idf.finalsite_enrollment_id
+        -- STDT_ID is null until the Finalsite-minted student id lands in
+        -- id_attributes; repoint to int_finalsite__contact_id_attributes then
+        -- (until then `pairs` is empty and no links are emitted).
+        select l.finalsite_enrollment_id, cast(null as string) as stdt_id,
+        from {{ ref("int_finalsite__enrollment_lifecycle") }} as l
     ),
 
     pairs as (

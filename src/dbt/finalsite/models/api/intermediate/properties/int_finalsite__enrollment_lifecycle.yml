@@ -68,7 +68,7 @@ unit_tests:
   - name: test_enrollment_lifecycle_classification
     description:
       Classifies new/returning/withdrawn contacts and applies the eligibility
-      and school-year filters.
+      filter (in-scope status or a withdrawal date) across all school years.
     model: int_finalsite__enrollment_lifecycle
     given:
       - input: ref('stg_finalsite__contacts')
@@ -239,6 +239,18 @@ unit_tests:
             school_year_start: 2025,
             grade_canonical_name: "03",
             assigned_school: School B,
+            enrollment_start_date: null,
+            enrollment_end_date: null,
+            withdrawal_reason: null,
+            lifecycle_action: create,
+          }
+        - {
+            finalsite_enrollment_id: c_old,
+            finalsite_status: enrolled,
+            enrollment_type: new,
+            school_year_start: 2024,
+            grade_canonical_name: "04",
+            assigned_school: null,
             enrollment_start_date: null,
             enrollment_end_date: null,
             withdrawal_reason: null,

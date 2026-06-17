@@ -1,20 +1,7 @@
 with
     student as (
-        select l.finalsite_enrollment_id, idf.focus_student_id as stdt_id,
-        from
-            {{
-                source(
-                    "kippmiami_finalsite",
-                    "int_finalsite__enrollment_lifecycle",
-                )
-            }} as l
-        left join
-            {{
-                source(
-                    "kippmiami_finalsite",
-                    "int_finalsite__contact_id_attributes",
-                )
-            }} as idf on l.finalsite_enrollment_id = idf.finalsite_enrollment_id
+        select l.finalsite_enrollment_id,
+        from {{ ref("int_finalsite__enrollment_lifecycle") }} as l
     ),
 
     guardians as (
@@ -35,26 +22,18 @@ with
             g.phone_1_number,
             g.phone_2_type,
             g.phone_2_number,
-        from
-            {{
-                source(
-                    "kippmiami_finalsite",
-                    "stg_finalsite__contact_relationships",
-                )
-            }} as rel
+        from {{ ref("stg_finalsite__contact_relationships") }} as rel
         inner join
-            {{
-                source(
-                    "kippmiami_finalsite",
-                    "stg_finalsite__contacts",
-                )
-            }} as g on rel.rel_id = g.finalsite_enrollment_id
+            {{ ref("stg_finalsite__contacts") }} as g
+            on rel.rel_id = g.finalsite_enrollment_id
         where rel.rel_type in ('parent', 'guardian')
     )
 
 -- trunk-ignore(sqlfluff/ST06): column order fixed by Focus CONTACTS contract
 select
-    s.stdt_id as student_id,
+    -- STDT_ID is null until the Finalsite-minted student id lands in
+    -- id_attributes; repoint to int_finalsite__contact_id_attributes then.
+    cast(null as string) as student_id,
     g.rel_type as student_relation,
     row_number() over (
         partition by g.finalsite_enrollment_id

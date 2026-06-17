@@ -46,96 +46,29 @@ models:
                 values: [sibling, step_sibling, cousin, parent]
 
 unit_tests:
-  - name: test_linked_students_bidirectional_pair_yields_one_row
+  - name: test_linked_students_dormant_until_stdt_id
     description:
-      Two students linked as siblings via stg_finalsite__contact_relationships
-      with one relationship row per direction (A to B and B to A). Both have
-      minted Focus IDs and are in-scope in int_finalsite__enrollment_lifecycle.
-      Expects exactly one output row with primary_student_id = S100001 (lesser
-      ID) and secondary_student_id = S200002 (greater ID).
+      STDT_ID is null until the Finalsite-minted student id lands in
+      id_attributes, so `pairs` filters out every sibling edge and the extract
+      emits no rows. Restore the least/greatest normalization assertions (lesser
+      id = primary, greater = secondary) once the id source is repointed.
     model: rpt_focus__linked_students
     given:
-      - input: >-
-          source('kippmiami_finalsite', 'stg_finalsite__contact_relationships')
+      - input: ref('stg_finalsite__contact_relationships')
         rows:
           - {
               finalsite_enrollment_id: enr-stu-a,
-              relationship_id: rel-001,
               rel_id: enr-stu-b,
-              rel_name: Student B,
               rel_type: sibling,
-              is_primary: false,
-              is_financial: false,
-              has_portal_access: false,
             }
           - {
               finalsite_enrollment_id: enr-stu-b,
-              relationship_id: rel-002,
               rel_id: enr-stu-a,
-              rel_name: Student A,
               rel_type: sibling,
-              is_primary: false,
-              is_financial: false,
-              has_portal_access: false,
             }
-      - input:
-          source('kippmiami_finalsite', 'int_finalsite__enrollment_lifecycle')
+      - input: ref('int_finalsite__enrollment_lifecycle')
         rows:
           - { finalsite_enrollment_id: enr-stu-a }
           - { finalsite_enrollment_id: enr-stu-b }
-      - input:
-          source('kippmiami_finalsite', 'int_finalsite__contact_id_attributes')
-        format: sql
-        rows: |
-          select 'enr-stu-a' as finalsite_enrollment_id, 'S100001' as focus_student_id
-          union all
-          select 'enr-stu-b', 'S200002'
     expect:
-      rows:
-        - {
-            primary_student_id: S100001,
-            secondary_student_id: S200002,
-            relationship: sibling,
-          }
-
-  - name: test_linked_students_reverse_ordered_one_directional_edge_normalized
-    description:
-      One sibling edge stored in a single direction where the stored primary's
-      focus_student_id (S900009) is GREATER than the sibling's focus_student_id
-      (S100001). The least/greatest normalization must yield exactly one row
-      with primary_student_id = S100001 (the lesser ID) and secondary_student_id
-      = S900009 (the greater ID).
-    model: rpt_focus__linked_students
-    given:
-      - input: >-
-          source('kippmiami_finalsite', 'stg_finalsite__contact_relationships')
-        rows:
-          - {
-              finalsite_enrollment_id: enr-stu-c,
-              relationship_id: rel-003,
-              rel_id: enr-stu-d,
-              rel_name: Student D,
-              rel_type: sibling,
-              is_primary: false,
-              is_financial: false,
-              has_portal_access: false,
-            }
-      - input:
-          source('kippmiami_finalsite', 'int_finalsite__enrollment_lifecycle')
-        rows:
-          - { finalsite_enrollment_id: enr-stu-c }
-          - { finalsite_enrollment_id: enr-stu-d }
-      - input:
-          source('kippmiami_finalsite', 'int_finalsite__contact_id_attributes')
-        format: sql
-        rows: |
-          select 'enr-stu-c' as finalsite_enrollment_id, 'S900009' as focus_student_id
-          union all
-          select 'enr-stu-d', 'S100001'
-    expect:
-      rows:
-        - {
-            primary_student_id: S100001,
-            secondary_student_id: S900009,
-            relationship: sibling,
-          }
+      rows: []
