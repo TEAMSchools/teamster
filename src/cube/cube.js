@@ -293,17 +293,11 @@ module.exports = {
       }
     }
 
-    // Org-hierarchy filter: inject segment defined in staff cube YAML.
-    // Staff cubes and the reporting_chain segment are added in the follow-up
-    // spec (blocked on #3729 — dim_staff_work_assignments.staff_key fix).
-    const touchesStaffCube = [
-      ...(query.dimensions ?? []),
-      ...(query.measures ?? []),
-    ].some(isStaffMember);
-    if (touchesStaffCube && !groups.includes("cube-access-staff-all")) {
+    if (!groups.includes("cube-access-staff-data")) {
       query = {
         ...query,
-        segments: [...(query.segments ?? []), "staff.reporting_chain"],
+        dimensions: (query.dimensions ?? []).filter((d) => !isStaffMember(d)),
+        measures: (query.measures ?? []).filter((m) => !isStaffMember(m)),
       };
     }
 
