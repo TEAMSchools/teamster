@@ -60,7 +60,6 @@ with
             s._dbt_source_project,
             s.terms_academic_year as academic_year,
             s.school_abbreviation as school,
-            s.school_level,
             s.sections_dcid,
             s.sections_termid as termid,
             s.sections_id as sectionid,
@@ -75,15 +74,6 @@ with
             s.teachernumber as teacher_number,
             s.teacher_lastfirst as teacher_name,
 
-            r.sam_account_name as teacher_tableau_username,
-            r.reports_to_employee_number as manager_employee_number,
-            r.reports_to_formatted_name as manager_name,
-            r.reports_to_sam_account_name as manager_tableau_username,
-
-            l.head_of_school_preferred_name_lastfirst as hos,
-            l.school_leader_preferred_name_lastfirst as school_leader,
-            l.school_leader_sam_account_name as school_leader_tableau_username,
-
             t.`quarter`,
             t.semester,
             t.quarter_start_date,
@@ -94,6 +84,8 @@ with
             t.first_day_school_year,
             t.last_day_school_year,
             t.days_in_quarter,
+
+            d.school_level,
 
             initcap(regexp_extract(s._dbt_source_project, r'kipp(\w+)')) as region,
 
@@ -121,12 +113,6 @@ with
             on s.sections_schoolid = d.school_number
             and s._dbt_source_project = d._dbt_source_project
         left join
-            {{ ref("int_people__staff_roster") }} as r
-            on s.teachernumber = r.powerschool_teacher_number
-        left join
-            {{ ref("int_people__leadership_crosswalk") }} as l
-            on s.sections_schoolid = l.home_work_location_powerschool_school_id
-        left join
             {{ ref("stg_powerschool__s_nj_crs_x") }} as cx
             on s.courses_dcid = cx.coursesdcid
             and s._dbt_source_project = cx._dbt_source_project
@@ -140,6 +126,31 @@ with
         where s.sections_no_of_students != 0
     )
 
-select * except (section_quarter_count),
-from section_quarters
-where section_quarter_count >= 2
+select
+    s.* except (section_quarter_count),
+
+    r.sam_account_name as teacher_tableau_username,
+    r.reports_to_employee_number as manager_employee_number,
+    r.reports_to_formatted_name as manager_name,
+    r.reports_to_sam_account_name as manager_tableau_username,
+
+    l.head_of_school_preferred_name_lastfirst as hos,
+    l.school_leader_preferred_name_lastfirst as school_leader,
+    l.school_leader_sam_account_name as school_leader_tableau_username,
+
+    concat(s.region, s.school_level) as region_school_level,
+
+    concat(s.region, s.school_level_alt) as region_school_level_alt,
+
+    if(
+        s.school_level_alt = 'HS', s.external_expression, s.section_number
+    ) as section_or_period,
+
+from section_quarters as s
+left join
+    {{ ref("int_people__staff_roster") }} as r
+    on s.teacher_number = r.powerschool_teacher_number
+left join
+    {{ ref("int_people__leadership_crosswalk") }} as l
+    on s.schoolid = l.home_work_location_powerschool_school_id
+where s.section_quarter_count >= 2

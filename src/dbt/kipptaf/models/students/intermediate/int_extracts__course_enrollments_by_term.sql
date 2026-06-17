@@ -204,6 +204,18 @@ with
         where not e.is_pre_year_withdrawal
     )
 
-select *,
-from enrollments
-where rn = 1
+select
+    e.*,
+
+    r.sam_account_name as teacher_tableau_username,
+    r.reports_to_employee_number as manager_employee_number,
+    r.reports_to_formatted_name as manager_name,
+    r.reports_to_sam_account_name as manager_tableau_username,
+
+    concat(e.region, e.school_level_alt) as region_school_level_alt,
+
+from enrollments as e
+left join
+    {{ ref("int_people__staff_roster") }} as r
+    on e.teacher_number = r.powerschool_teacher_number
+where e.rn = 1

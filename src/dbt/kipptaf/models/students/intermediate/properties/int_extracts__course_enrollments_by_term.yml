@@ -896,6 +896,12 @@ models:
         data_type: string
       - name: region_school_level
         data_type: string
+      - name: region_school_level_alt
+        data_type: string
+        description: >
+          Region concatenated with school_level_alt. Differs from
+          region_school_level only for KIPP Sumner G5, where school_level_alt =
+          'MS' instead of 'ES' (e.g. CamdenMS instead of CamdenES).
       - name: guardian_email
         data_type: string
       - name: academic_year_display
@@ -1039,6 +1045,38 @@ models:
             source_system: PowerSchool
             source_model: base_powerschool__course_enrollments
             source_column: teacher_lastfirst
+      - name: teacher_tableau_username
+        data_type: string
+        description: Teacher's Tableau username (SAM account name).
+        config:
+          meta:
+            source_system: People
+            source_model: int_people__staff_roster
+            source_column: sam_account_name
+      - name: manager_employee_number
+        data_type: int64
+        description: Employee number of the teacher's direct manager.
+        config:
+          meta:
+            source_system: People
+            source_model: int_people__staff_roster
+            source_column: reports_to_employee_number
+      - name: manager_name
+        data_type: string
+        description: Formatted name of the teacher's direct manager.
+        config:
+          meta:
+            source_system: People
+            source_model: int_people__staff_roster
+            source_column: reports_to_formatted_name
+      - name: manager_tableau_username
+        data_type: string
+        description: Tableau username of the teacher's direct manager.
+        config:
+          meta:
+            source_system: People
+            source_model: int_people__staff_roster
+            source_column: reports_to_sam_account_name
       - name: termid
         data_type: int64
         description: Internal ID of the term the section belongs to.

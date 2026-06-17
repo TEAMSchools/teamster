@@ -329,3 +329,18 @@ models:
             source_system: PowerSchool
             source_model: stg_powerschool__s_nj_crs_x
             source_column: ap_course_subject
+      - name: region_school_level
+        data_type: string
+        description:
+          Region concatenated with school level (e.g. NewarkHS, CamdenMS).
+      - name: region_school_level_alt
+        data_type: string
+        description: >
+          Region concatenated with school_level_alt. Differs from
+          region_school_level only for KIPP Sumner G5, where school_level_alt =
+          'MS' instead of 'ES' (e.g. CamdenMS instead of CamdenES).
+      - name: section_or_period
+        data_type: string
+        description: >
+          External expression for HS sections (period/day schedule); section
+          number for non-HS sections.
