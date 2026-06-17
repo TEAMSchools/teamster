@@ -1,0 +1,75 @@
+views:
+  - name: staff_staffing_positions_summary
+    description: >-
+      Aggregated staffing positions for open-seat and recruitment planning. One
+      row per filter slice — never per position. No individual identifiers.
+      Filter to a single academic_year or a point-in-time date — without a date
+      filter, each position version fans out per day in its effective range.
+
+    cubes:
+      - join_path: staff_staffing_positions
+        includes:
+          - academic_year
+          - recruitment_group
+          - home_department_name
+          - position_title
+          - is_active
+          - status
+          - status_detail
+          - is_mid_year_hire
+          - effective_start_date
+
+      - join_path: staff_staffing_positions.dates
+        prefix: true
+        includes:
+          - date_day
+          - academic_year
+          - month_name
+
+      - join_path: staff_staffing_positions.locations
+        prefix: true
+        includes:
+          - location_name
+          - abbreviation
+          - grade_band
+          - city
+
+      - join_path: staff_staffing_positions.locations.regions
+        prefix: true
+        includes:
+          - region_name
+          - state
+
+    meta:
+      folders:
+        - name: Position
+          members:
+            - academic_year
+            - recruitment_group
+            - home_department_name
+            - position_title
+            - is_active
+            - status
+            - status_detail
+            - is_mid_year_hire
+            - effective_start_date
+        - name: Location
+          members:
+            - locations_location_name
+            - locations_abbreviation
+            - locations_grade_band
+            - locations_city
+            - regions_region_name
+            - regions_state
+        - name: Date
+          members:
+            - dates_date_day
+            - dates_academic_year
+            - dates_month_name
+
+    access_policy:
+      # No individual identifiers — position planning, location, and date
+      # dimensions only.
+      - group: summary-access
+        member_level:
+          includes: "*"

@@ -1,0 +1,71 @@
+views:
+  - name: staff_benefits_summary
+    description: >-
+      Aggregated staff benefits. One row per filter slice — never per employee.
+      No direct staff identifiers. Demographic dimensions (gender_identity,
+      race, is_hispanic) are aggregate breakdowns only. Plan details (plan_type,
+      plan_name, coverage_level) can reveal health information and require
+      cube-access-staff-benefits — see access_policy.
+
+    cubes:
+      - join_path: staff_benefits
+        includes:
+          - plan_type
+          - plan_name
+          - coverage_level
+          - enrollment_start_date
+
+      - join_path: staff_benefits.dates
+        prefix: true
+        includes:
+          - date_day
+          - academic_year
+          - month_name
+
+      - join_path: staff_benefits.staff
+        prefix: true
+        includes:
+          - gender_identity
+          - race
+          - is_hispanic
+
+    meta:
+      folders:
+        - name: Benefits
+          members:
+            - enrollment_start_date
+            - plan_type
+            - plan_name
+            - coverage_level
+        - name: Date
+          members:
+            - dates_date_day
+            - dates_academic_year
+            - dates_month_name
+        - name: Staff Demographics
+          members:
+            - staff_gender_identity
+            - staff_race
+            - staff_is_hispanic
+
+    access_policy:
+      # Purely additive: each block uses explicit includes only — no excludes.
+      # summary-access: aggregate-safe demographic and date dimensions.
+      # cube-access-staff-benefits: ADA-protected plan details, gated even in
+      # the summary view.
+      - group: summary-access
+        member_level:
+          includes:
+            - enrollment_start_date
+            - dates_date_day
+            - dates_academic_year
+            - dates_month_name
+            - staff_gender_identity
+            - staff_race
+            - staff_is_hispanic
+      - group: cube-access-staff-benefits
+        member_level:
+          includes:
+            - plan_type
+            - plan_name
+            - coverage_level

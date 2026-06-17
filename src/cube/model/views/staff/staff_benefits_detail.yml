@@ -1,0 +1,98 @@
+views:
+  - name: staff_benefits_detail
+    description: >-
+      Row-level staff benefits enrollments. One row per staff member x benefit
+      plan x enrollment period. Without a date filter, each enrollment spans its
+      full date range. Filter to a single date (enrollment_start_date or
+      dates_date_day) for a point-in-time snapshot of active enrollments.
+
+      Benefits plan fields (plan_type, plan_name, coverage_level) can reveal
+      health information and are treated as ADA-protected — see access_policy.
+      Direct staff identifiers are gated separately.
+
+    cubes:
+      - join_path: staff_benefits
+        includes:
+          - staff_key
+          - plan_type
+          - plan_name
+          - coverage_level
+          - enrollment_start_date
+          - enrollment_end_date
+
+      - join_path: staff_benefits.dates
+        prefix: true
+        includes:
+          - date_day
+          - academic_year
+          - month_name
+
+      - join_path: staff_benefits.staff
+        prefix: true
+        includes:
+          - staff_unique_id
+          - full_name
+          - first_name
+          - last_name
+          - work_email
+          - gender_identity
+          - race
+          - is_hispanic
+
+    meta:
+      folders:
+        - name: Benefits
+          members:
+            - enrollment_start_date
+            - enrollment_end_date
+            - plan_type
+            - plan_name
+            - coverage_level
+        - name: Date
+          members:
+            - dates_date_day
+            - dates_academic_year
+            - dates_month_name
+        - name: Staff
+          members:
+            - staff_key
+            - staff_staff_unique_id
+            - staff_full_name
+            - staff_first_name
+            - staff_last_name
+            - staff_work_email
+            - staff_gender_identity
+            - staff_race
+            - staff_is_hispanic
+
+    access_policy:
+      # Purely additive: each block uses explicit includes only — no excludes.
+      # detail-access: staff_key, date range, demographic, and date fields.
+      # cube-access-staff-benefits: ADA-protected plan details.
+      # cube-access-staff-pii: direct staff identifiers.
+      - group: detail-access
+        member_level:
+          includes:
+            - staff_key
+            - enrollment_start_date
+            - enrollment_end_date
+            - dates_date_day
+            - dates_academic_year
+            - dates_month_name
+            - staff_gender_identity
+            - staff_race
+            - staff_is_hispanic
+      - group: cube-access-staff-benefits
+        member_level:
+          includes:
+            - plan_type
+            - plan_name
+            - coverage_level
+      - group: cube-access-staff-pii
+        member_level:
+          includes:
+            - staff_staff_unique_id
+            - staff_full_name
+            - staff_first_name
+            - staff_last_name
+            - staff_work_email

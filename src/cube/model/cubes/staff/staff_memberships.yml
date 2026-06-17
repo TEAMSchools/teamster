@@ -1,0 +1,56 @@
+cubes:
+  - name: staff_memberships
+    public: false
+    sql_table: kipptaf_marts.fct_staff_membership_enrollments
+
+    joins:
+      - name: dates
+        sql: >
+          {dates.date_day} BETWEEN CAST({CUBE}.effective_start_date AS
+          TIMESTAMP) AND CAST({CUBE}.effective_end_date AS TIMESTAMP)
+        relationship: one_to_many
+
+      - name: staff
+        sql: "{staff.staff_key} = {CUBE}.staff_key"
+        relationship: many_to_one
+
+    dimensions:
+      - name: staff_membership_enrollment_key
+        sql: staff_membership_enrollment_key
+        type: string
+        primary_key: true
+
+      - name: staff_key
+        sql: staff_key
+        type: string
+        public: true
+
+      - name: membership_code
+        sql: membership_code
+        type: string
+        public: true
+
+      - name: membership_description
+        sql: membership_description
+        type: string
+        public: true
+
+      - name: category_code
+        sql: category_code
+        type: string
+        public: true
+
+      - name: category_description
+        sql: category_description
+        type: string
+        public: true
+
+      - name: effective_start_date
+        sql: CAST(effective_start_date AS TIMESTAMP)
+        type: time
+        public: true
+
+      - name: effective_end_date
+        sql: CAST(effective_end_date AS TIMESTAMP)
+        type: time
+        public: true

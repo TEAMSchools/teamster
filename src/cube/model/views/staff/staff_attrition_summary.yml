@@ -1,0 +1,43 @@
+views:
+  - name: staff_attrition_summary
+    description: >-
+      Aggregated staff attrition for cohort breakdowns. One row per filter slice
+      — never per employee. No direct staff identifiers. Filter to a single
+      attrition_type before comparing cohorts across years — mixing types
+      double-counts staff. Demographic dimensions (gender_identity, race,
+      is_hispanic) are aggregate breakdowns only. Coverage begins with the ADP
+      era (2021+).
+
+    cubes:
+      - join_path: staff_attrition
+        includes:
+          - academic_year
+          - attrition_type
+          - is_attrition
+
+      - join_path: staff_attrition.staff_status.staff
+        prefix: true
+        includes:
+          - gender_identity
+          - race
+          - is_hispanic
+
+    meta:
+      folders:
+        - name: Attrition
+          members:
+            - academic_year
+            - attrition_type
+            - is_attrition
+        - name: Staff
+          members:
+            - staff_gender_identity
+            - staff_race
+            - staff_is_hispanic
+
+    access_policy:
+      # No direct staff identifiers — demographic dimensions are aggregate
+      # breakdowns only. Individual termination context excluded from summary.
+      - group: summary-access
+        member_level:
+          includes: "*"

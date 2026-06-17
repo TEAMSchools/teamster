@@ -1,0 +1,96 @@
+cubes:
+  - name: staff_staffing_positions
+    public: false
+    sql_table: kipptaf_marts.dim_staffing_positions
+
+    joins:
+      - name: dates
+        sql: >
+          {dates.date_day} BETWEEN CAST({CUBE}.effective_start_date AS
+          TIMESTAMP) AND COALESCE(
+            CAST({CUBE}.effective_end_date AS TIMESTAMP),
+            CAST('9999-12-31' AS TIMESTAMP)
+          )
+        relationship: one_to_many
+
+      - name: locations
+        sql: "{locations.location_key} = {CUBE}.location_key"
+        relationship: many_to_one
+
+      # incumbent staff member filling the position; nullable for open positions
+      - name: staff
+        sql: "{staff.staff_key} = {CUBE}.incumbent_staff_key"
+        relationship: many_to_one
+
+    dimensions:
+      - name: staffing_position_key
+        sql: staffing_position_key
+        type: string
+        primary_key: true
+
+      - name: location_key
+        sql: location_key
+        type: string
+        public: true
+
+      - name: incumbent_staff_key
+        sql: incumbent_staff_key
+        type: string
+        public: true
+
+      # recruiter is exposed as a degenerate key only — no role-playing staff
+      # cube for the recruiter is in scope for this pass.
+      - name: recruiter_staff_key
+        sql: recruiter_staff_key
+        type: string
+        public: true
+
+      - name: academic_year
+        sql: academic_year
+        type: number
+        public: true
+
+      - name: recruitment_group
+        sql: recruitment_group
+        type: string
+        public: true
+
+      - name: home_department_name
+        sql: home_department_name
+        type: string
+        public: true
+
+      - name: position_title
+        sql: "`title`"
+        type: string
+        public: true
+
+      - name: is_active
+        sql: is_active
+        type: boolean
+        public: true
+
+      - name: status
+        sql: "`status`"
+        type: string
+        public: true
+
+      - name: status_detail
+        sql: status_detail
+        type: string
+        public: true
+
+      - name: is_mid_year_hire
+        sql: is_mid_year_hire
+        type: boolean
+        public: true
+
+      - name: effective_start_date
+        sql: CAST(effective_start_date AS TIMESTAMP)
+        type: time
+        public: true
+
+      - name: effective_end_date
+        sql: CAST(effective_end_date AS TIMESTAMP)
+        type: time
+        public: true
