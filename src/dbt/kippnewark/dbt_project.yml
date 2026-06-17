@@ -62,6 +62,12 @@ models:
     staging:
       stg_edplan__njsmart_powerschool_archive:
         +enabled: false
+  finalsite:
+    staging:
+      stg_finalsite__contacts:
+        +enabled: false
+      stg_finalsite__contact_relationships:
+        +enabled: false
   iready:
     +materialized: table
     staging:
@@ -139,6 +145,10 @@ sources:
           +enabled: false
     dds:
       amplify_dds:
+        +enabled: false
+  finalsite:
+    finalsite:
+      contacts:
         +enabled: false
   powerschool:
     sis:
