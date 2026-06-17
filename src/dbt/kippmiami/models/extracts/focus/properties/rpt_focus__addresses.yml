@@ -1,117 +1,29 @@
 models:
   - name: rpt_focus__addresses
-    config:
-      contract:
-        enforced: true
-    description:
-      One row per in-scope Finalsite student reshaped into the Focus `ADDRESS`
-      SFTP template layout. Joins `stg_finalsite__contacts` to
-      `int_finalsite__enrollment_lifecycle` (the in-scope filter; grain =
-      `finalsite_enrollment_id`). Produces 13 columns in `ADDRESS_LAYOUT` order.
-      Focus column header casing (`STUDENT_ID`, `ADDRESS`, etc.) is applied at
-      transport time via `file_config.format.header_replacements`; dbt column
-      names remain lowercase snake_case. Mailing address columns are always null
-      — Focus does not receive a separate mailing address from Finalsite.
     columns:
       - name: student_id
         data_type: string
-        description:
-          Focus student ID, pivoted from `id_attributes` using the var
-          `finalsite_focus_student_id_field` (default `focus_id`). Null until
-          Focus mints an ID for the student.
-        data_tests:
-          - unique
-          - not_null
       - name: address
         data_type: string
-        description: Primary street address line 1 from Finalsite (`address_1`).
       - name: address2
         data_type: string
-        description: Primary street address line 2 from Finalsite (`address_2`).
       - name: city
         data_type: string
-        description: City from Finalsite.
       - name: state
         data_type: string
-        description: State from Finalsite.
       - name: zipcode
         data_type: string
-        description: ZIP code from Finalsite (`zip`).
       - name: phone
         data_type: string
-        description: Primary phone number from Finalsite (`phone_1_number`).
       - name: mailing
         data_type: string
-        description:
-          Mailing address flag; not sourced from Finalsite — always null.
       - name: mail_address
         data_type: string
-        description:
-          Mailing street address line 1; not sourced from Finalsite — always
-          null.
       - name: mail_address2
         data_type: string
-        description:
-          Mailing street address line 2; not sourced from Finalsite — always
-          null.
       - name: mail_city
         data_type: string
-        description: Mailing city; not sourced from Finalsite — always null.
       - name: mail_state
         data_type: string
-        description: Mailing state; not sourced from Finalsite — always null.
       - name: mail_zipcode
         data_type: string
-        description: Mailing ZIP code; not sourced from Finalsite — always null.
-
-unit_tests:
-  - name: test_addresses_shape
-    description:
-      Verifies the 13-column ADDRESS layout for a single student — STUDENT_ID is
-      pivoted from id_attributes, address columns map from contacts, mailing
-      columns are always null.
-    model: rpt_focus__addresses
-    given:
-      - input: ref('stg_finalsite__contacts')
-        format: sql
-        rows: |
-          select
-            'enr-001' as finalsite_enrollment_id,
-            '123 Main St' as address_1,
-            'Apt 4B' as address_2,
-            'Miami' as city,
-            'FL' as state,
-            '33101' as zip,
-            '305-555-0100' as phone_1_number,
-            [
-              struct(
-                'id-001' as field_id,
-                'focus_id' as field_name,
-                'Focus ID' as field_display_name,
-                struct(
-                  false as boolean_value,
-                  'S123456' as string_value,
-                  cast(null as array<string>) as array_string_value
-                ) as value
-              )
-            ] as id_attributes
-      - input: ref('int_finalsite__enrollment_lifecycle')
-        rows:
-          - { finalsite_enrollment_id: enr-001 }
-    expect:
-      rows:
-        - {
-            student_id: S123456,
-            address: 123 Main St,
-            address2: Apt 4B,
-            city: Miami,
-            state: FL,
-            zipcode: "33101",
-            phone: 305-555-0100,
-            mailing: null,
-            mail_address: null,
-            mail_address2: null,
-            mail_city: null,
-            mail_state: null,
-            mail_zipcode: null,
-          }

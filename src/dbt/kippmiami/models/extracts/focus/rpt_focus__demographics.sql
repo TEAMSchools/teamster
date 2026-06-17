@@ -1,83 +1,45 @@
-with
-    demographics as (
-        select
-            c.last_name,
-            c.first_name,
-            c.middle_name,
-            c.preferred_name,
-            c.email,
-            c.gender,
-            c.birth_date,
-            c.id_attributes,
-            c.custom_attributes,
-            (
-                select av.value.string_value,
-                from unnest(c.id_attributes) as av
-                where av.field_name = '{{ var("finalsite_focus_student_id_field") }}'
-                order by av.field_id
-                limit 1
-            ) as stdt_id,
-            (
-                select av.value.boolean_value,
-                from unnest(c.custom_attributes) as av
-                where av.field_name = 'latino_hispanic_yn'
-                order by av.field_id
-                limit 1
-            ) as latino_hispanic_yn,
-        from {{ ref("stg_finalsite__contacts") }} as c
-        inner join
-            {{ ref("int_finalsite__enrollment_lifecycle") }} as l
-            on c.finalsite_enrollment_id = l.finalsite_enrollment_id
-    )
-
--- trunk-ignore(sqlfluff/ST06): column order fixed by Focus DEMOGRAPHICS contract
 select
-    d.stdt_id,
-    d.last_name,
-    d.first_name,
-    cast(null as string) as name_suffix,
-    d.middle_name,
-    d.preferred_name as nickname,
-    format_date('%Y%m%d', d.birth_date) as dt_birth,
-    case
-        when d.gender in ('M', 'Male')
-        then 'M'
-        when d.gender in ('F', 'Female')
-        then 'F'
-    end as gender,
-    cast(null as string) as lang,
-    d.email as stdt_email,
-    if(d.latino_hispanic_yn, 'Y', 'N') as ethnic_hl,
-    cast(null as string) as single_ethnic,
-    cast(null as string) as race_am_ind_ak_nat,
-    cast(null as string) as race_asian,
-    cast(null as string) as race_black,
-    cast(null as string) as race_nat_haw_pac_isl,
-    cast(null as string) as race_white,
-    cast(null as string) as residence_county,
-    cast(null as string) as contry_birth,
-    cast(null as string) as homeroom_tchr,
-    cast(null as string) as resident_st,
-    cast(null as string) as birth_loc,
-    cast(null as string) as bdate_verif,
-    cast(null as string) as immun_st,
-    cast(null as string) as primary_home_lang,
-    cast(null as string) as native_parent_lang,
-    cast(null as string) as grde_enter_dist,
-    cast(null as string) as msix_id,
-    cast(null as string) as homeroom,
-    cast(null as string) as pmrn,
-    cast(null as string) as internt_perm,
-    cast(null as string) as act_perm,
-    cast(null as string) as direct_perm,
-    cast(null as string) as screen_perm,
-    cast(null as string) as photo_vid_perm,
-    cast(null as string) as survey_perm,
-    cast(null as string) as mckay_sch_attend,
-    cast(null as string) as fhsaa_el3_ind,
-    cast(null as string) as fhsaa_el3ch_ind,
-    cast(null as string) as dt_home_lang_survey,
-    cast(null as string) as casas_track,
-    cast(null as string) as lcp_cont_stdt,
-    cast(null as string) as tide_access_code,
-from demographics as d
+    stdt_id,
+    last_name,
+    first_name,
+    name_suffix,
+    middle_name,
+    nickname,
+    dt_birth,
+    gender,
+    lang,
+    stdt_email,
+    ethnic_hl,
+    single_ethnic,
+    race_am_ind_ak_nat,
+    race_asian,
+    race_black,
+    race_nat_haw_pac_isl,
+    race_white,
+    residence_county,
+    contry_birth,
+    homeroom_tchr,
+    resident_st,
+    birth_loc,
+    bdate_verif,
+    immun_st,
+    primary_home_lang,
+    native_parent_lang,
+    grde_enter_dist,
+    msix_id,
+    homeroom,
+    pmrn,
+    internt_perm,
+    act_perm,
+    direct_perm,
+    screen_perm,
+    photo_vid_perm,
+    survey_perm,
+    mckay_sch_attend,
+    fhsaa_el3_ind,
+    fhsaa_el3ch_ind,
+    dt_home_lang_survey,
+    casas_track,
+    lcp_cont_stdt,
+    tide_access_code,
+from {{ source("kipptaf_extracts", "rpt_focus__demographics") }}

@@ -1,526 +1,105 @@
 models:
   - name: rpt_focus__contacts
-    description:
-      One row per (student, guardian) reshaped into the Focus `CONTACTS` SFTP
-      template layout. Joins `stg_finalsite__contacts` students to
-      `int_finalsite__enrollment_lifecycle` (the in-scope filter), then fans out
-      to guardian contact rows via `stg_finalsite__contact_relationships`
-      (rel_type parent/guardian only). Produces 51 columns in `CONTACTS_LAYOUT`
-      order. `SORT_ORDER` ranks guardians per student by `is_primary desc` so
-      the primary contact sorts first. Phone slots `CONTACT1_*` and `CONTACT2_*`
-      map the guardian's two phones; `CONTACT3` through `CONTACT7` are always
-      null. Focus column header casing is applied at transport time via
-      `file_config.format.header_replacements`; dbt column names remain
-      lowercase snake_case.
-    data_tests:
-      - dbt_utils.unique_combination_of_columns:
-          arguments:
-            combination_of_columns:
-              - student_id
-              - sort_order
     columns:
       - name: student_id
         data_type: string
-        description:
-          Focus student ID, pivoted from the student's `id_attributes` using the
-          var `finalsite_focus_student_id_field` (default `focus_id`). Null
-          until Focus mints an ID for the student.
-        data_tests:
-          - not_null
-      - name: sort_order
-        data_type: int64
-        description:
-          Ordinal rank of this guardian row within the student, ordered by
-          `is_primary desc` — primary contact is rank 1.
-        data_tests:
-          - not_null
-      - name: first_name
-        data_type: string
-        description: Guardian's first name from their Finalsite contact record.
-        data_tests:
-          - not_null
-      - name: last_name
-        data_type: string
-        description: Guardian's last name from their Finalsite contact record.
-        data_tests:
-          - not_null
       - name: student_relation
         data_type: string
-        description:
-          Relationship type of the guardian to the student (e.g. parent,
-          guardian) from `stg_finalsite__contact_relationships.rel_type`.
+      - name: sort_order
+        data_type: int64
+      - name: first_name
+        data_type: string
       - name: middle_name
         data_type: string
-        description: Guardian's middle name from their Finalsite contact record.
+      - name: last_name
+        data_type: string
       - name: resides_with_stud
         data_type: string
-        description:
-          Whether the guardian resides with the student; not sourced from
-          Finalsite — always null.
       - name: custody
         data_type: string
-        description: Custody flag; not sourced from Finalsite — always null.
       - name: emergency
         data_type: string
-        description:
-          Emergency contact flag; not sourced from Finalsite — always null.
       - name: pickup
         data_type: string
-        description:
-          Authorized pickup flag; not sourced from Finalsite — always null.
       - name: address
         data_type: string
-        description: Line 1 of the guardian's household address (`address_1`).
       - name: address2
         data_type: string
-        description: Line 2 of the guardian's household address (`address_2`).
       - name: city
         data_type: string
-        description: City of the guardian's household address.
       - name: state
         data_type: string
-        description: State of the guardian's household address.
       - name: zipcode
         data_type: string
-        description: ZIP code of the guardian's household address.
       - name: email
         data_type: string
-        description:
-          Guardian's email address from their Finalsite contact record.
       - name: contact1_type
         data_type: string
-        description: Type label of the guardian's first phone (`phone_1_type`).
       - name: contact1_value
         data_type: string
-        description: Number of the guardian's first phone (`phone_1_number`).
       - name: contact1_blocked
         data_type: string
-        description:
-          Block flag for first phone; not sourced from Finalsite — always null.
       - name: contact1_unlisted
         data_type: string
-        description:
-          Unlisted flag for first phone; not sourced from Finalsite — always
-          null.
       - name: contact1_callout
         data_type: string
-        description:
-          Callout flag for first phone; not sourced from Finalsite — always
-          null.
       - name: contact2_type
         data_type: string
-        description: Type label of the guardian's second phone (`phone_2_type`).
       - name: contact2_value
         data_type: string
-        description: Number of the guardian's second phone (`phone_2_number`).
       - name: contact2_blocked
         data_type: string
-        description:
-          Block flag for second phone; not sourced from Finalsite — always null.
       - name: contact2_unlisted
         data_type: string
-        description:
-          Unlisted flag for second phone; not sourced from Finalsite — always
-          null.
       - name: contact2_callout
         data_type: string
-        description:
-          Callout flag for second phone; not sourced from Finalsite — always
-          null.
       - name: contact3_type
         data_type: string
-        description:
-          Type label for third contact slot; not sourced from Finalsite — always
-          null.
       - name: contact3_value
         data_type: string
-        description:
-          Number for third contact slot; not sourced from Finalsite — always
-          null.
       - name: contact3_blocked
         data_type: string
-        description:
-          Block flag for third contact slot; not sourced from Finalsite — always
-          null.
       - name: contact3_unlisted
         data_type: string
-        description:
-          Unlisted flag for third contact slot; not sourced from Finalsite —
-          always null.
       - name: contact3_callout
         data_type: string
-        description:
-          Callout flag for third contact slot; not sourced from Finalsite —
-          always null.
       - name: contact4_type
         data_type: string
-        description:
-          Type label for fourth contact slot; not sourced from Finalsite —
-          always null.
       - name: contact4_value
         data_type: string
-        description:
-          Number for fourth contact slot; not sourced from Finalsite — always
-          null.
       - name: contact4_blocked
         data_type: string
-        description:
-          Block flag for fourth contact slot; not sourced from Finalsite —
-          always null.
       - name: contact4_unlisted
         data_type: string
-        description:
-          Unlisted flag for fourth contact slot; not sourced from Finalsite —
-          always null.
       - name: contact4_callout
         data_type: string
-        description:
-          Callout flag for fourth contact slot; not sourced from Finalsite —
-          always null.
       - name: contact5_type
         data_type: string
-        description:
-          Type label for fifth contact slot; not sourced from Finalsite — always
-          null.
       - name: contact5_value
         data_type: string
-        description:
-          Number for fifth contact slot; not sourced from Finalsite — always
-          null.
       - name: contact5_blocked
         data_type: string
-        description:
-          Block flag for fifth contact slot; not sourced from Finalsite — always
-          null.
       - name: contact5_unlisted
         data_type: string
-        description:
-          Unlisted flag for fifth contact slot; not sourced from Finalsite —
-          always null.
       - name: contact5_callout
         data_type: string
-        description:
-          Callout flag for fifth contact slot; not sourced from Finalsite —
-          always null.
       - name: contact6_type
         data_type: string
-        description:
-          Type label for sixth contact slot; not sourced from Finalsite — always
-          null.
       - name: contact6_value
         data_type: string
-        description:
-          Number for sixth contact slot; not sourced from Finalsite — always
-          null.
       - name: contact6_blocked
         data_type: string
-        description:
-          Block flag for sixth contact slot; not sourced from Finalsite — always
-          null.
       - name: contact6_unlisted
         data_type: string
-        description:
-          Unlisted flag for sixth contact slot; not sourced from Finalsite —
-          always null.
       - name: contact6_callout
         data_type: string
-        description:
-          Callout flag for sixth contact slot; not sourced from Finalsite —
-          always null.
       - name: contact7_type
         data_type: string
-        description:
-          Type label for seventh contact slot; not sourced from Finalsite —
-          always null.
       - name: contact7_value
         data_type: string
-        description:
-          Number for seventh contact slot; not sourced from Finalsite — always
-          null.
       - name: contact7_blocked
         data_type: string
-        description:
-          Block flag for seventh contact slot; not sourced from Finalsite —
-          always null.
       - name: contact7_unlisted
         data_type: string
-        description:
-          Unlisted flag for seventh contact slot; not sourced from Finalsite —
-          always null.
       - name: contact7_callout
         data_type: string
-        description:
-          Callout flag for seventh contact slot; not sourced from Finalsite —
-          always null.
-
-unit_tests:
-  - name: test_contacts_two_guardians
-    description:
-      Verifies the 51-column CONTACTS layout for one student with two guardian
-      relationships — primary guardian sorts to SORT_ORDER 1, non-primary to 2.
-      Asserts STUDENT_RELATION, FIRST_NAME, LAST_NAME, and CONTACT1_VALUE.
-    model: rpt_focus__contacts
-    given:
-      - input: ref('stg_finalsite__contacts')
-        format: sql
-        rows: |
-          select
-            'enr-stu-001' as finalsite_enrollment_id,
-            cast(null as string) as first_name,
-            cast(null as string) as middle_name,
-            cast(null as string) as last_name,
-            cast(null as string) as full_name,
-            cast(null as string) as preferred_name,
-            cast(null as string) as email,
-            cast(null as string) as gender,
-            cast(null as string) as gender_display,
-            cast(null as string) as gender_full_text,
-            cast(null as string) as status,
-            cast(null as string) as enrollment_type,
-            cast(null as string) as inquiry_submit_date,
-            cast(null as string) as application_submit_date,
-            cast(null as string) as contract_submit_date,
-            cast(null as string) as grade_canonical_name,
-            cast(null as string) as grade_name,
-            cast(null as string) as grade_school_level,
-            cast(null as string) as prospect_entry_grade_canonical_name,
-            cast(null as int64) as school_year_start,
-            cast(null as int64) as prospect_entry_year_start,
-            cast(null as string) as phone_1_type,
-            cast(null as string) as phone_1_number,
-            cast(null as string) as phone_2_type,
-            cast(null as string) as phone_2_number,
-            cast(null as string) as phone_3_type,
-            cast(null as string) as phone_3_number,
-            cast(null as array<struct<field_id string, field_name string, field_display_name string, value struct<boolean_value bool, string_value string, array_string_value array<string>>>>) as custom_attributes,
-            [
-              struct(
-                'id-001' as field_id,
-                'focus_id' as field_name,
-                'Focus ID' as field_display_name,
-                struct(
-                  false as boolean_value,
-                  'S100001' as string_value,
-                  cast(null as array<string>) as array_string_value
-                ) as value
-              )
-            ] as id_attributes,
-            cast(null as array<struct<field_id string, field_name string, field_display_name string, value struct<boolean_value bool, string_value string, array_string_value array<string>>, school_year struct<id string, name string, start_year int64, created_at string>>>) as track_attributes,
-            cast(null as date) as birth_date,
-            cast(null as string) as address_1,
-            cast(null as string) as address_2,
-            cast(null as string) as city,
-            cast(null as string) as state,
-            cast(null as string) as zip,
-            cast(null as string) as country
-          union all
-          select
-            'enr-grd-pri' as finalsite_enrollment_id,
-            'Alice' as first_name,
-            'B' as middle_name,
-            'Johnson' as last_name,
-            'Alice Johnson' as full_name,
-            cast(null as string) as preferred_name,
-            'alice@example.com' as email,
-            cast(null as string) as gender,
-            cast(null as string) as gender_display,
-            cast(null as string) as gender_full_text,
-            cast(null as string) as status,
-            cast(null as string) as enrollment_type,
-            cast(null as string) as inquiry_submit_date,
-            cast(null as string) as application_submit_date,
-            cast(null as string) as contract_submit_date,
-            cast(null as string) as grade_canonical_name,
-            cast(null as string) as grade_name,
-            cast(null as string) as grade_school_level,
-            cast(null as string) as prospect_entry_grade_canonical_name,
-            cast(null as int64) as school_year_start,
-            cast(null as int64) as prospect_entry_year_start,
-            'Home' as phone_1_type,
-            '305-555-0100' as phone_1_number,
-            'Cell' as phone_2_type,
-            '305-555-0101' as phone_2_number,
-            cast(null as string) as phone_3_type,
-            cast(null as string) as phone_3_number,
-            cast(null as array<struct<field_id string, field_name string, field_display_name string, value struct<boolean_value bool, string_value string, array_string_value array<string>>>>) as custom_attributes,
-            cast(null as array<struct<field_id string, field_name string, field_display_name string, value struct<boolean_value bool, string_value string, array_string_value array<string>>>>) as id_attributes,
-            cast(null as array<struct<field_id string, field_name string, field_display_name string, value struct<boolean_value bool, string_value string, array_string_value array<string>>, school_year struct<id string, name string, start_year int64, created_at string>>>) as track_attributes,
-            cast(null as date) as birth_date,
-            '100 Main St' as address_1,
-            cast(null as string) as address_2,
-            'Miami' as city,
-            'FL' as state,
-            '33101' as zip,
-            cast(null as string) as country
-          union all
-          select
-            'enr-grd-sec' as finalsite_enrollment_id,
-            'Bob' as first_name,
-            cast(null as string) as middle_name,
-            'Smith' as last_name,
-            'Bob Smith' as full_name,
-            cast(null as string) as preferred_name,
-            'bob@example.com' as email,
-            cast(null as string) as gender,
-            cast(null as string) as gender_display,
-            cast(null as string) as gender_full_text,
-            cast(null as string) as status,
-            cast(null as string) as enrollment_type,
-            cast(null as string) as inquiry_submit_date,
-            cast(null as string) as application_submit_date,
-            cast(null as string) as contract_submit_date,
-            cast(null as string) as grade_canonical_name,
-            cast(null as string) as grade_name,
-            cast(null as string) as grade_school_level,
-            cast(null as string) as prospect_entry_grade_canonical_name,
-            cast(null as int64) as school_year_start,
-            cast(null as int64) as prospect_entry_year_start,
-            'Work' as phone_1_type,
-            '305-555-0200' as phone_1_number,
-            cast(null as string) as phone_2_type,
-            cast(null as string) as phone_2_number,
-            cast(null as string) as phone_3_type,
-            cast(null as string) as phone_3_number,
-            cast(null as array<struct<field_id string, field_name string, field_display_name string, value struct<boolean_value bool, string_value string, array_string_value array<string>>>>) as custom_attributes,
-            cast(null as array<struct<field_id string, field_name string, field_display_name string, value struct<boolean_value bool, string_value string, array_string_value array<string>>>>) as id_attributes,
-            cast(null as array<struct<field_id string, field_name string, field_display_name string, value struct<boolean_value bool, string_value string, array_string_value array<string>>, school_year struct<id string, name string, start_year int64, created_at string>>>) as track_attributes,
-            cast(null as date) as birth_date,
-            '200 Oak Ave' as address_1,
-            cast(null as string) as address_2,
-            'Miami' as city,
-            'FL' as state,
-            '33102' as zip,
-            cast(null as string) as country
-      - input: ref('int_finalsite__enrollment_lifecycle')
-        rows:
-          - { finalsite_enrollment_id: enr-stu-001 }
-      - input: ref('stg_finalsite__contact_relationships')
-        rows:
-          - {
-              finalsite_enrollment_id: enr-stu-001,
-              relationship_id: rel-001,
-              rel_id: enr-grd-pri,
-              rel_name: Alice Johnson,
-              rel_type: parent,
-              is_primary: true,
-              is_financial: true,
-              has_portal_access: true,
-            }
-          - {
-              finalsite_enrollment_id: enr-stu-001,
-              relationship_id: rel-002,
-              rel_id: enr-grd-sec,
-              rel_name: Bob Smith,
-              rel_type: guardian,
-              is_primary: false,
-              is_financial: false,
-              has_portal_access: false,
-            }
-    expect:
-      rows:
-        - {
-            student_id: S100001,
-            student_relation: parent,
-            sort_order: 1,
-            first_name: Alice,
-            middle_name: B,
-            last_name: Johnson,
-            resides_with_stud: null,
-            custody: null,
-            emergency: null,
-            pickup: null,
-            address: 100 Main St,
-            address2: null,
-            city: Miami,
-            state: FL,
-            zipcode: "33101",
-            email: alice@example.com,
-            contact1_type: Home,
-            contact1_value: 305-555-0100,
-            contact1_blocked: null,
-            contact1_unlisted: null,
-            contact1_callout: null,
-            contact2_type: Cell,
-            contact2_value: 305-555-0101,
-            contact2_blocked: null,
-            contact2_unlisted: null,
-            contact2_callout: null,
-            contact3_type: null,
-            contact3_value: null,
-            contact3_blocked: null,
-            contact3_unlisted: null,
-            contact3_callout: null,
-            contact4_type: null,
-            contact4_value: null,
-            contact4_blocked: null,
-            contact4_unlisted: null,
-            contact4_callout: null,
-            contact5_type: null,
-            contact5_value: null,
-            contact5_blocked: null,
-            contact5_unlisted: null,
-            contact5_callout: null,
-            contact6_type: null,
-            contact6_value: null,
-            contact6_blocked: null,
-            contact6_unlisted: null,
-            contact6_callout: null,
-            contact7_type: null,
-            contact7_value: null,
-            contact7_blocked: null,
-            contact7_unlisted: null,
-            contact7_callout: null,
-          }
-        - {
-            student_id: S100001,
-            student_relation: guardian,
-            sort_order: 2,
-            first_name: Bob,
-            middle_name: null,
-            last_name: Smith,
-            resides_with_stud: null,
-            custody: null,
-            emergency: null,
-            pickup: null,
-            address: 200 Oak Ave,
-            address2: null,
-            city: Miami,
-            state: FL,
-            zipcode: "33102",
-            email: bob@example.com,
-            contact1_type: Work,
-            contact1_value: 305-555-0200,
-            contact1_blocked: null,
-            contact1_unlisted: null,
-            contact1_callout: null,
-            contact2_type: null,
-            contact2_value: null,
-            contact2_blocked: null,
-            contact2_unlisted: null,
-            contact2_callout: null,
-            contact3_type: null,
-            contact3_value: null,
-            contact3_blocked: null,
-            contact3_unlisted: null,
-            contact3_callout: null,
-            contact4_type: null,
-            contact4_value: null,
-            contact4_blocked: null,
-            contact4_unlisted: null,
-            contact4_callout: null,
-            contact5_type: null,
-            contact5_value: null,
-            contact5_blocked: null,
-            contact5_unlisted: null,
-            contact5_callout: null,
-            contact6_type: null,
-            contact6_value: null,
-            contact6_blocked: null,
-            contact6_unlisted: null,
-            contact6_callout: null,
-            contact7_type: null,
-            contact7_value: null,
-            contact7_blocked: null,
-            contact7_unlisted: null,
-            contact7_callout: null,
-          }

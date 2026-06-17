@@ -1,100 +1,53 @@
-with
-    student as (
-        select
-            c.finalsite_enrollment_id,
-            (
-                select av.value.string_value,
-                from unnest(c.id_attributes) as av
-                where av.field_name = '{{ var("finalsite_focus_student_id_field") }}'
-                order by av.field_id
-                limit 1
-            ) as stdt_id,
-        from {{ ref("stg_finalsite__contacts") }} as c
-        inner join
-            {{ ref("int_finalsite__enrollment_lifecycle") }} as l
-            on c.finalsite_enrollment_id = l.finalsite_enrollment_id
-    ),
-
-    guardians as (
-        select
-            rel.finalsite_enrollment_id,
-            rel.rel_type,
-            rel.is_primary,
-            g.first_name,
-            g.middle_name,
-            g.last_name,
-            g.email,
-            g.address_1,
-            g.address_2,
-            g.city,
-            g.state,
-            g.zip,
-            g.phone_1_type,
-            g.phone_1_number,
-            g.phone_2_type,
-            g.phone_2_number,
-        from {{ ref("stg_finalsite__contact_relationships") }} as rel
-        inner join
-            {{ ref("stg_finalsite__contacts") }} as g
-            on rel.rel_id = g.finalsite_enrollment_id
-        where rel.rel_type in ('parent', 'guardian')
-    )
-
--- trunk-ignore(sqlfluff/ST06): column order fixed by Focus CONTACTS contract
 select
-    s.stdt_id as student_id,
-    g.rel_type as student_relation,
-    row_number() over (
-        partition by g.finalsite_enrollment_id
-        order by g.is_primary desc, g.last_name asc, g.first_name asc
-    ) as sort_order,
-    g.first_name,
-    g.middle_name,
-    g.last_name,
-    cast(null as string) as resides_with_stud,
-    cast(null as string) as custody,
-    cast(null as string) as emergency,
-    cast(null as string) as pickup,
-    g.address_1 as address,
-    g.address_2 as address2,
-    g.city,
-    g.state,
-    g.zip as zipcode,
-    g.email,
-    g.phone_1_type as contact1_type,
-    g.phone_1_number as contact1_value,
-    cast(null as string) as contact1_blocked,
-    cast(null as string) as contact1_unlisted,
-    cast(null as string) as contact1_callout,
-    g.phone_2_type as contact2_type,
-    g.phone_2_number as contact2_value,
-    cast(null as string) as contact2_blocked,
-    cast(null as string) as contact2_unlisted,
-    cast(null as string) as contact2_callout,
-    cast(null as string) as contact3_type,
-    cast(null as string) as contact3_value,
-    cast(null as string) as contact3_blocked,
-    cast(null as string) as contact3_unlisted,
-    cast(null as string) as contact3_callout,
-    cast(null as string) as contact4_type,
-    cast(null as string) as contact4_value,
-    cast(null as string) as contact4_blocked,
-    cast(null as string) as contact4_unlisted,
-    cast(null as string) as contact4_callout,
-    cast(null as string) as contact5_type,
-    cast(null as string) as contact5_value,
-    cast(null as string) as contact5_blocked,
-    cast(null as string) as contact5_unlisted,
-    cast(null as string) as contact5_callout,
-    cast(null as string) as contact6_type,
-    cast(null as string) as contact6_value,
-    cast(null as string) as contact6_blocked,
-    cast(null as string) as contact6_unlisted,
-    cast(null as string) as contact6_callout,
-    cast(null as string) as contact7_type,
-    cast(null as string) as contact7_value,
-    cast(null as string) as contact7_blocked,
-    cast(null as string) as contact7_unlisted,
-    cast(null as string) as contact7_callout,
-from student as s
-inner join guardians as g on s.finalsite_enrollment_id = g.finalsite_enrollment_id
+    student_id,
+    student_relation,
+    sort_order,
+    first_name,
+    middle_name,
+    last_name,
+    resides_with_stud,
+    custody,
+    emergency,
+    pickup,
+    address,
+    address2,
+    city,
+    state,
+    zipcode,
+    email,
+    contact1_type,
+    contact1_value,
+    contact1_blocked,
+    contact1_unlisted,
+    contact1_callout,
+    contact2_type,
+    contact2_value,
+    contact2_blocked,
+    contact2_unlisted,
+    contact2_callout,
+    contact3_type,
+    contact3_value,
+    contact3_blocked,
+    contact3_unlisted,
+    contact3_callout,
+    contact4_type,
+    contact4_value,
+    contact4_blocked,
+    contact4_unlisted,
+    contact4_callout,
+    contact5_type,
+    contact5_value,
+    contact5_blocked,
+    contact5_unlisted,
+    contact5_callout,
+    contact6_type,
+    contact6_value,
+    contact6_blocked,
+    contact6_unlisted,
+    contact6_callout,
+    contact7_type,
+    contact7_value,
+    contact7_blocked,
+    contact7_unlisted,
+    contact7_callout,
+from {{ source("kipptaf_extracts", "rpt_focus__contacts") }}

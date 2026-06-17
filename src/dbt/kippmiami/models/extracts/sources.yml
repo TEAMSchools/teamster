@@ -28,41 +28,48 @@ sources:
                 - kipptaf
                 - extracts
                 - rpt_powerschool__autocomm_students_iep
-  - name: kipptaf_google_sheets
-    tables:
-      - name: stg_google_sheets__focus__grade_crosswalk
+      - name: rpt_focus__student_enrollment
         config:
           meta:
             dagster:
-              group: google_sheets
+              group: extracts
               asset_key:
                 - kipptaf
-                - google_sheets
-                - stg_google_sheets__focus__grade_crosswalk
-      - name: stg_google_sheets__focus__school_crosswalk
+                - extracts
+                - rpt_focus__student_enrollment
+      - name: rpt_focus__demographics
         config:
           meta:
             dagster:
-              group: google_sheets
+              group: extracts
               asset_key:
                 - kipptaf
-                - google_sheets
-                - stg_google_sheets__focus__school_crosswalk
-      - name: stg_google_sheets__focus__enrollment_code_crosswalk
+                - extracts
+                - rpt_focus__demographics
+      - name: rpt_focus__addresses
         config:
           meta:
             dagster:
-              group: google_sheets
+              group: extracts
               asset_key:
                 - kipptaf
-                - google_sheets
-                - stg_google_sheets__focus__enrollment_code_crosswalk
-      - name: stg_google_sheets__focus__drop_code_crosswalk
+                - extracts
+                - rpt_focus__addresses
+      - name: rpt_focus__contacts
         config:
           meta:
             dagster:
-              group: google_sheets
+              group: extracts
               asset_key:
                 - kipptaf
-                - google_sheets
-                - stg_google_sheets__focus__drop_code_crosswalk
+                - extracts
+                - rpt_focus__contacts
+      - name: rpt_focus__linked_students
+        config:
+          meta:
+            dagster:
+              group: extracts
+              asset_key:
+                - kipptaf
+                - extracts
+                - rpt_focus__linked_students
