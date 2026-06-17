@@ -1024,14 +1024,6 @@ models:
             source_system: PowerSchool
             source_model: base_powerschool__course_enrollments
             source_column: courses_excludefromgpa
-      - name: sections_no_of_students
-        data_type: int64
-        description: Number of students enrolled in the section.
-        config:
-          meta:
-            source_system: PowerSchool
-            source_model: base_powerschool__course_enrollments
-            source_column: sections_no_of_students
       - name: teacher_number
         data_type: string
         config:
@@ -1120,10 +1112,7 @@ models:
         description: True if today falls within this quarter's date range.
       - name: dateenrolled
         data_type: date
-        description: >
-          Effective enrollment start date for this section in this quarter,
-          clamped to the first day of the school year when the raw
-          cc_dateenrolled predates it.
+        description: Raw cc_dateenrolled for the enrolled course section stint.
         config:
           meta:
             source_system: PowerSchool
@@ -1131,15 +1120,32 @@ models:
             source_column: cc_dateenrolled
       - name: dateleft
         data_type: date
-        description: >
-          Effective enrollment end date for this section in this quarter,
-          clamped to the last day of the school year when the raw cc_dateleft
-          extends beyond it.
+        description: Raw cc_dateleft for the enrolled course section stint.
         config:
           meta:
             source_system: PowerSchool
             source_model: base_powerschool__course_enrollments
             source_column: cc_dateleft
+      - name: dateenrolled_alt
+        data_type: date
+        description: >
+          Effective enrollment start date. Clamps cc_dateenrolled to
+          first_day_school_year when the raw value predates the school year.
+        config:
+          meta:
+            source_system: PowerSchool
+            source_model: int_powerschool__calendar_week
+            source_column: first_day_school_year
+      - name: dateleft_alt
+        data_type: date
+        description: >
+          Effective enrollment end date. Clamps cc_dateleft to
+          last_day_school_year when the raw value extends past the school year.
+        config:
+          meta:
+            source_system: PowerSchool
+            source_model: int_powerschool__calendar_week
+            source_column: last_day_school_year
       - name: days_in_quarter
         data_type: int64
         description:
@@ -1160,8 +1166,19 @@ models:
             source_system: PowerSchool
             source_model: int_powerschool__calendar_week
             source_column: date_count
+      - name: section_or_period
+        data_type: string
+        description: >
+          Period expression for HS students (external_expression); section
+          number for non-HS students (section_number).
       - name: pct_enrolled_in_quarter
         data_type: float64
         description: >
           Ratio of days_course_enrolled to days_in_quarter. Null when
           days_in_quarter is zero.
+      - name: rn
+        data_type: int64
+        description: >
+          Row number within (project, studentid, course_number, quarter),
+          ordered by school exitdate desc then CC dateleft desc. Always 1 after
+          qualify deduplication — retained for downstream reference.

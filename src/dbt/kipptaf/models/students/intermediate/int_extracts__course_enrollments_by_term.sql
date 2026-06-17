@@ -71,7 +71,6 @@ with
             e.courses_credittype as credit_type,
             e.courses_course_name as course_name,
             e.courses_excludefromgpa as exclude_from_gpa,
-            e.sections_no_of_students,
             e.sections_termid as termid,
             e.teachernumber as teacher_number,
             e.teacher_lastfirst as teacher_name,
@@ -92,18 +91,13 @@ with
                 e.cc_dateenrolled < q.first_day_school_year,
                 q.first_day_school_year,
                 e.cc_dateenrolled
-            ) as alt_dateenrolled,
+            ) as dateenrolled_alt,
 
             if(
                 e.cc_dateleft > q.last_day_school_year,
                 q.last_day_school_year,
                 e.cc_dateleft
-            ) as alt_dateleft,
-
-            row_number() over (
-                partition by e.cc_studentid, e.cc_course_number, q.`quarter`
-                order by e.cc_dateleft desc, e.cc_sectionid desc
-            ) as rn,
+            ) as dateleft_alt,
 
         from {{ ref("base_powerschool__course_enrollments") }} as e
         inner join
@@ -113,7 +107,7 @@ with
             and e._dbt_source_project = q._dbt_source_project
             and e.cc_dateenrolled <= q.quarter_end_date_alt
             and e.cc_dateleft >= q.quarter_start_date_alt
-        where not e.is_dropped_section
+        where not e.is_dropped_section and e.sections_no_of_students != 0
     ),
 
     days_course_enrolled as (
@@ -134,9 +128,8 @@ with
             and s.cc_schoolid = c.schoolid
             and s._dbt_source_project = c._dbt_source_project
             and s.`quarter` = c.`quarter`
-            and s.alt_dateenrolled <= c.school_week_end_date
-            and s.alt_dateleft >= c.school_week_start_date
-        where s.rn = 1
+            and s.dateenrolled_alt <= c.school_week_end_date
+            and s.dateleft_alt >= c.school_week_start_date
         group by
             s._dbt_source_project,
             s.cc_academic_year,
@@ -157,7 +150,6 @@ select
     s.credit_type,
     s.course_name,
     s.exclude_from_gpa,
-    s.sections_no_of_students,
     s.termid,
     s.teacher_number,
     s.teacher_name,
@@ -171,8 +163,8 @@ select
     s.is_current_quarter,
     s.dateenrolled,
     s.dateleft,
-    s.alt_dateenrolled,
-    s.alt_dateleft,
+    s.dateenrolled_alt,
+    s.dateleft_alt,
     s.days_in_quarter,
 
     d.days_course_enrolled,
@@ -183,6 +175,11 @@ select
 
     safe_divide(d.days_course_enrolled, s.days_in_quarter) as pct_enrolled_in_quarter,
 
+    row_number() over (
+        partition by s._dbt_source_project, s.cc_studentid, s.course_number, s.`quarter`
+        order by e.exitdate desc, s.dateleft desc
+    ) as rn,
+
 from {{ ref("int_extracts__student_enrollments") }} as e
 inner join
     schedule_by_terms as s
@@ -190,9 +187,8 @@ inner join
     and e.schoolid = s.cc_schoolid
     and e.studentid = s.cc_studentid
     and e._dbt_source_project = s._dbt_source_project
-    and s.rn = 1
-    and e.entrydate <= s.alt_dateleft
-    and e.exitdate >= s.alt_dateenrolled
+    and e.entrydate <= s.dateleft_alt
+    and e.exitdate >= s.dateenrolled_alt
 left join
     days_course_enrolled as d
     on s.cc_academic_year = d.cc_academic_year
@@ -202,9 +198,4 @@ left join
     and s.`quarter` = d.`quarter`
     and s._dbt_source_project = d._dbt_source_project
 where not e.is_pre_year_withdrawal
-qualify
-    row_number() over (
-        partition by s._dbt_source_project, s.cc_studentid, s.course_number, s.`quarter`
-        order by e.exitdate desc
-    )
-    = 1
+qualify rn = 1

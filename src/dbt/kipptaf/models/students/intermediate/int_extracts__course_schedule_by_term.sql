@@ -103,6 +103,8 @@ select
         d.school_level
     ) as school_level_alt,
 
+    if(cx.ap_course_subject is not null, true, false) as is_ap_course,
+
 from {{ ref("base_powerschool__sections") }} as s
 inner join
     {{ ref("stg_powerschool__schools") }} as d
@@ -121,4 +123,5 @@ inner join
     and s._dbt_source_project = t._dbt_source_project
     and s.terms_firstday <= t.quarter_end_date
     and s.terms_lastday >= t.quarter_start_date
+where s.sections_no_of_students != 0
 qualify count(*) over (partition by s._dbt_source_project, s.sections_id) >= 2
