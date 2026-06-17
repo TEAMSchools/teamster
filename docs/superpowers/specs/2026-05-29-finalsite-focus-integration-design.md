@@ -435,9 +435,21 @@ Implications:
 1. **Ingestion (source-agnostic)** — land the chosen Finalsite source into
    BigQuery (Avro on GCS, existing patterns).
 2. **Lifecycle scope & state mapping** — a documented, configurable mapping from
-   Finalsite status / enrollment_type / year to the in-scope set **and the Focus
+   Finalsite status / enrollment*type / year to the in-scope set **and the Focus
    operation** (create / update / transfer-out / re-enroll). More than a "who
-   gets sent" gate — it classifies each record's lifecycle action.
+   gets sent" gate — it classifies each record's lifecycle action. \_Implemented
+   (PR #4198):* `int_finalsite__enrollment_lifecycle`, currently in the
+   `kippmiami` project. The classification is 100% Finalsite-derived and the
+   `create`/`re_enroll`/`transfer_out` output is **SIS-agnostic** (works for
+   both the Focus and PowerSchool receivers). **Promote this model to the shared
+   `finalsite` package** when a second region's Finalsite **contacts** ingestion
+   is wired (today only `kippmiami` materializes the contacts asset, though all
+   four districts import the package). The move is mechanical: relocate to
+   `finalsite/models/intermediate/`, switch the cross-package
+   `ref("finalsite", …)` to in-package `ref(…)`, add `current_academic_year`
+   (default `0`) to the package vars, and note the new intermediate layer in
+   `finalsite/CLAUDE.md`. The receiver-specific code mapping stays per-region
+   (Component 4).
 3. **Identity resolution + persisted crosswalk** — anchored on `student_id`,
    legacy bridge via `custom_l1482`. Resolves the Focus `uuid`/`student_id` for
    **every** in-scope record (updates and transfers, not just creates).
