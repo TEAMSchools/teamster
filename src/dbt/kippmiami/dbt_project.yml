@@ -28,6 +28,7 @@ vars:
   cloud_storage_uri_base: gs://teamster-kippmiami/dagster/kippmiami
   bigquery_external_connection_name: projects/teamster-332318/locations/us/connections/biglake-teamster-gcs
   focus_schema: dagster_kippmiami_dlt_focus
+  finalsite_focus_student_id_field: focus_id
 
 models:
   kippmiami:

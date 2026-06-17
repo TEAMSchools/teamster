@@ -28,3 +28,41 @@ sources:
                 - kipptaf
                 - extracts
                 - rpt_powerschool__autocomm_students_iep
+  - name: kipptaf_google_sheets
+    tables:
+      - name: stg_google_sheets__focus__grade_crosswalk
+        config:
+          meta:
+            dagster:
+              group: google_sheets
+              asset_key:
+                - kipptaf
+                - google_sheets
+                - stg_google_sheets__focus__grade_crosswalk
+      - name: stg_google_sheets__focus__school_crosswalk
+        config:
+          meta:
+            dagster:
+              group: google_sheets
+              asset_key:
+                - kipptaf
+                - google_sheets
+                - stg_google_sheets__focus__school_crosswalk
+      - name: stg_google_sheets__focus__enrollment_code_crosswalk
+        config:
+          meta:
+            dagster:
+              group: google_sheets
+              asset_key:
+                - kipptaf
+                - google_sheets
+                - stg_google_sheets__focus__enrollment_code_crosswalk
+      - name: stg_google_sheets__focus__drop_code_crosswalk
+        config:
+          meta:
+            dagster:
+              group: google_sheets
+              asset_key:
+                - kipptaf
+                - google_sheets
+                - stg_google_sheets__focus__drop_code_crosswalk
