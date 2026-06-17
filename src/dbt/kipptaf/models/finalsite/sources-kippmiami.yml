@@ -13,3 +13,48 @@ sources:
                 - kippmiami
                 - finalsite
                 - stg_finalsite__status_report
+      - name: stg_finalsite__contacts
+        config:
+          meta:
+            dagster:
+              group: finalsite
+              asset_key:
+                - kippmiami
+                - finalsite
+                - stg_finalsite__contacts
+      - name: stg_finalsite__contact_relationships
+        config:
+          meta:
+            dagster:
+              group: finalsite
+              asset_key:
+                - kippmiami
+                - finalsite
+                - stg_finalsite__contact_relationships
+      - name: int_finalsite__enrollment_lifecycle
+        config:
+          meta:
+            dagster:
+              group: finalsite
+              asset_key:
+                - kippmiami
+                - finalsite
+                - int_finalsite__enrollment_lifecycle
+      - name: int_finalsite__contact_id_attributes
+        config:
+          meta:
+            dagster:
+              group: finalsite
+              asset_key:
+                - kippmiami
+                - finalsite
+                - int_finalsite__contact_id_attributes
+      - name: int_finalsite__contact_custom_attributes
+        config:
+          meta:
+            dagster:
+              group: finalsite
+              asset_key:
+                - kippmiami
+                - finalsite
+                - int_finalsite__contact_custom_attributes
