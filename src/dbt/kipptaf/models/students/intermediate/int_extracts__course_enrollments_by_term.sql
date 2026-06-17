@@ -137,65 +137,73 @@ with
             s.cc_studentid,
             s.course_number,
             s.`quarter`
+    ),
+
+    enrollments as (
+        select
+            e.*,
+
+            s.sectionid,
+            s.course_number,
+            s.sections_dcid,
+            s.section_number,
+            s.external_expression,
+            s.credit_type,
+            s.course_name,
+            s.exclude_from_gpa,
+            s.termid,
+            s.teacher_number,
+            s.teacher_name,
+            s.is_ap_course,
+            s.`quarter`,
+            s.semester,
+            s.quarter_start_date,
+            s.quarter_end_date,
+            s.quarter_start_date_alt,
+            s.quarter_end_date_alt,
+            s.is_current_quarter,
+            s.dateenrolled,
+            s.dateleft,
+            s.dateenrolled_alt,
+            s.dateleft_alt,
+            s.days_in_quarter,
+
+            d.days_course_enrolled,
+
+            if(
+                e.school_level_alt = 'HS', s.external_expression, s.section_number
+            ) as section_or_period,
+
+            safe_divide(
+                d.days_course_enrolled, s.days_in_quarter
+            ) as pct_enrolled_in_quarter,
+
+            row_number() over (
+                partition by
+                    s._dbt_source_project, s.cc_studentid, s.course_number, s.`quarter`
+                order by e.exitdate desc, s.dateleft desc
+            ) as rn,
+
+        from {{ ref("int_extracts__student_enrollments") }} as e
+        inner join
+            schedule_by_terms as s
+            on e.academic_year = s.cc_academic_year
+            and e.schoolid = s.cc_schoolid
+            and e.studentid = s.cc_studentid
+            and e._dbt_source_project = s._dbt_source_project
+            and e.entrydate <= s.dateleft_alt
+            and e.exitdate >= s.dateenrolled_alt
+        left join
+            days_course_enrolled as d
+            on s.cc_academic_year = d.cc_academic_year
+            and s.cc_schoolid = d.cc_schoolid
+            and s.cc_studentid = d.cc_studentid
+            and s.course_number = d.course_number
+            and s.`quarter` = d.`quarter`
+            and s._dbt_source_project = d._dbt_source_project
+        where not e.is_pre_year_withdrawal
     )
 
-select
-    e.*,
-
-    s.sectionid,
-    s.course_number,
-    s.sections_dcid,
-    s.section_number,
-    s.external_expression,
-    s.credit_type,
-    s.course_name,
-    s.exclude_from_gpa,
-    s.termid,
-    s.teacher_number,
-    s.teacher_name,
-    s.is_ap_course,
-    s.`quarter`,
-    s.semester,
-    s.quarter_start_date,
-    s.quarter_end_date,
-    s.quarter_start_date_alt,
-    s.quarter_end_date_alt,
-    s.is_current_quarter,
-    s.dateenrolled,
-    s.dateleft,
-    s.dateenrolled_alt,
-    s.dateleft_alt,
-    s.days_in_quarter,
-
-    d.days_course_enrolled,
-
-    if(
-        e.school_level_alt = 'HS', s.external_expression, s.section_number
-    ) as section_or_period,
-
-    safe_divide(d.days_course_enrolled, s.days_in_quarter) as pct_enrolled_in_quarter,
-
-    row_number() over (
-        partition by s._dbt_source_project, s.cc_studentid, s.course_number, s.`quarter`
-        order by e.exitdate desc, s.dateleft desc
-    ) as rn,
-
-from {{ ref("int_extracts__student_enrollments") }} as e
-inner join
-    schedule_by_terms as s
-    on e.academic_year = s.cc_academic_year
-    and e.schoolid = s.cc_schoolid
-    and e.studentid = s.cc_studentid
-    and e._dbt_source_project = s._dbt_source_project
-    and e.entrydate <= s.dateleft_alt
-    and e.exitdate >= s.dateenrolled_alt
-left join
-    days_course_enrolled as d
-    on s.cc_academic_year = d.cc_academic_year
-    and s.cc_schoolid = d.cc_schoolid
-    and s.cc_studentid = d.cc_studentid
-    and s.course_number = d.course_number
-    and s.`quarter` = d.`quarter`
-    and s._dbt_source_project = d._dbt_source_project
-where not e.is_pre_year_withdrawal
-qualify rn = 1
+select *
+from enrollments
+where rn = 1
