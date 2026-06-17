@@ -82,25 +82,6 @@ cubes:
         sql: "{locations.location_key} = {CUBE}.work_location_key"
         relationship: many_to_one
 
-      # Point-in-time manager resolver. many_to_one is safe only when a date
-      # filter is applied — without one, multiple work-history periods per
-      # person each match their contemporaneous reporting relationship row.
-      # Always apply a date filter on staff_work_history queries.
-      - name: staff_reporting_relationships
-        sql: >
-          {staff_reporting_relationships.staff_key} = {CUBE}.staff_key AND
-          CAST({CUBE}.effective_start_date AS TIMESTAMP)
-            <= {staff_reporting_relationships.effective_end_date} AND
-          CAST({CUBE}.effective_end_date AS TIMESTAMP)
-            >= {staff_reporting_relationships.effective_start_date}
-        relationship: many_to_one
-
-      - name: staff_manager
-        sql: >
-          {staff_manager.staff_key} =
-          {staff_reporting_relationships.manager_staff_key}
-        relationship: many_to_one
-
     dimensions:
       - name: staff_work_history_key
         sql: >

@@ -3,27 +3,6 @@ cubes:
     public: false
     sql_table: kipptaf_marts.dim_staff
 
-    # reporting_chain bakes the requester's email at compile time
-    # (COMPILE_CONTEXT, Jinja-preprocessed by Cube). An absent email resolves
-    # to '' -> matches no manager -> default deny, the safe failure mode.
-    # cube.js injects this segment for staff queries unless the user has
-    # cube-access-staff-all. The email already arrives from a signed-JWT
-    # Workspace identity; it is also single-quote-escaped before interpolation
-    # as defense-in-depth against SQL injection.
-    segments:
-      - name: reporting_chain
-        sql: |
-          {%- set sc = COMPILE_CONTEXT.get('securityContext', {}) %}
-          {%- set user_email = sc.get('email', '') %}
-          {%- set safe_email = user_email.replace("'", "''") %}
-          {CUBE}.staff_key IN (
-            SELECT h.descendant_staff_key
-            FROM kipptaf_marts.bridge_staff_hierarchy AS h
-            INNER JOIN kipptaf_marts.dim_staff AS mgr
-              ON mgr.staff_key = h.ancestor_staff_key
-            WHERE mgr.google_email = '{{ safe_email }}'
-          )
-
     dimensions:
       - name: staff_key
         sql: staff_key
