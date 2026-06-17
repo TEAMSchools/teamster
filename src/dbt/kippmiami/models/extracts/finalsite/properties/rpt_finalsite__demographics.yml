@@ -1,0 +1,283 @@
+models:
+  - name: rpt_finalsite__demographics
+    description:
+      One row per in-scope Finalsite student reshaped into the Focus
+      `DEMOGRAPHICS` SFTP template layout. Joins `stg_finalsite__contacts` to
+      `int_finalsite__enrollment_lifecycle` (the in-scope filter; grain =
+      `finalsite_enrollment_id`). Produces 43 columns in `DEMOGRAPHICS_LAYOUT`
+      order. Focus column header casing (`STDT_ID`, `LAST_NAME`, etc.) is
+      applied at transport time via `file_config.format.header_replacements`;
+      dbt column names remain lowercase snake_case. Race columns are always null
+      pending a race-value mapping from Finalsite custom attributes. `ETHNIC_HL`
+      derives from the `latino_hispanic_yn` custom attribute boolean.
+    columns:
+      - name: stdt_id
+        data_type: string
+        description:
+          Focus student ID, pivoted from `id_attributes` using the var
+          `finalsite_focus_student_id_field` (default `focus_id`). Null until
+          Focus mints an ID for the student.
+        data_tests:
+          - unique
+          - not_null
+      - name: last_name
+        data_type: string
+        description: Student last name from Finalsite.
+      - name: first_name
+        data_type: string
+        description: Student first name from Finalsite.
+      - name: name_suffix
+        data_type: string
+        description: Name suffix; not sourced from Finalsite — always null.
+      - name: middle_name
+        data_type: string
+        description: Student middle name from Finalsite.
+      - name: nickname
+        data_type: string
+        description:
+          Student preferred/nickname from Finalsite (`preferred_name`).
+      - name: dt_birth
+        data_type: string
+        description:
+          Date of birth formatted as `YYYYMMDD` for Focus
+          (`format_date('%Y%m%d', birth_date)`).
+      - name: gender
+        data_type: string
+        description:
+          Gender mapped to Focus single-letter codes — `M` for Male/M, `F` for
+          Female/F; null for other values.
+      - name: lang
+        data_type: string
+        description: Primary language; not sourced from Finalsite — always null.
+      - name: stdt_email
+        data_type: string
+        description: Student email address from Finalsite.
+      - name: ethnic_hl
+        data_type: string
+        description:
+          Hispanic/Latino indicator derived from the `latino_hispanic_yn` custom
+          attribute boolean — `Y` if true, `N` if false.
+      - name: single_ethnic
+        data_type: string
+        description:
+          Single-race/ethnicity code; not sourced from Finalsite — always null.
+      - name: race_am_ind_ak_nat
+        data_type: string
+        description:
+          American Indian or Alaska Native race flag; pending race-value mapping
+          from Finalsite custom attributes — always null.
+      - name: race_asian
+        data_type: string
+        description:
+          Asian race flag; pending race-value mapping from Finalsite custom
+          attributes — always null.
+      - name: race_black
+        data_type: string
+        description:
+          Black or African American race flag; pending race-value mapping from
+          Finalsite custom attributes — always null.
+      - name: race_nat_haw_pac_isl
+        data_type: string
+        description:
+          Native Hawaiian or Pacific Islander race flag; pending race-value
+          mapping from Finalsite custom attributes — always null.
+      - name: race_white
+        data_type: string
+        description:
+          White race flag; pending race-value mapping from Finalsite custom
+          attributes — always null.
+      - name: residence_county
+        data_type: string
+        description: Residence county; not sourced from Finalsite — always null.
+      - name: contry_birth
+        data_type: string
+        description: Country of birth; not sourced from Finalsite — always null.
+      - name: homeroom_tchr
+        data_type: string
+        description: Homeroom teacher; not sourced from Finalsite — always null.
+      - name: resident_st
+        data_type: string
+        description: Resident state; not sourced from Finalsite — always null.
+      - name: birth_loc
+        data_type: string
+        description: Birth location; not sourced from Finalsite — always null.
+      - name: bdate_verif
+        data_type: string
+        description:
+          Birth date verification code; not sourced from Finalsite — always
+          null.
+      - name: immun_st
+        data_type: string
+        description:
+          Immunization status code; not sourced from Finalsite — always null.
+      - name: primary_home_lang
+        data_type: string
+        description:
+          Primary home language; not sourced from Finalsite — always null.
+      - name: native_parent_lang
+        data_type: string
+        description:
+          Native parent language; not sourced from Finalsite — always null.
+      - name: grde_enter_dist
+        data_type: string
+        description:
+          Grade when entering district; not sourced from Finalsite — always
+          null.
+      - name: msix_id
+        data_type: string
+        description: MSIX ID; not sourced from Finalsite — always null.
+      - name: homeroom
+        data_type: string
+        description: Homeroom code; not sourced from Finalsite — always null.
+      - name: pmrn
+        data_type: string
+        description:
+          Patient Master Record Number; not sourced from Finalsite — always
+          null.
+      - name: internt_perm
+        data_type: string
+        description:
+          Internet permission flag; not sourced from Finalsite — always null.
+      - name: act_perm
+        data_type: string
+        description:
+          Activity permission flag; not sourced from Finalsite — always null.
+      - name: direct_perm
+        data_type: string
+        description:
+          Directory permission flag; not sourced from Finalsite — always null.
+      - name: screen_perm
+        data_type: string
+        description:
+          Screening permission flag; not sourced from Finalsite — always null.
+      - name: photo_vid_perm
+        data_type: string
+        description:
+          Photo/video permission flag; not sourced from Finalsite — always null.
+      - name: survey_perm
+        data_type: string
+        description:
+          Survey permission flag; not sourced from Finalsite — always null.
+      - name: mckay_sch_attend
+        data_type: string
+        description:
+          McKay Scholarship attended school; not sourced from Finalsite — always
+          null.
+      - name: fhsaa_el3_ind
+        data_type: string
+        description:
+          FHSAA EL3 indicator; not sourced from Finalsite — always null.
+      - name: fhsaa_el3ch_ind
+        data_type: string
+        description:
+          FHSAA EL3 choice indicator; not sourced from Finalsite — always null.
+      - name: dt_home_lang_survey
+        data_type: string
+        description:
+          Home language survey date; not sourced from Finalsite — always null.
+      - name: casas_track
+        data_type: string
+        description: CASAS track code; not sourced from Finalsite — always null.
+      - name: lcp_cont_stdt
+        data_type: string
+        description:
+          LCP continuing student flag; not sourced from Finalsite — always null.
+      - name: tide_access_code
+        data_type: string
+        description: TIDE access code; not sourced from Finalsite — always null.
+
+unit_tests:
+  - name: test_demographics_shape
+    description:
+      Verifies the 43-column DEMOGRAPHICS layout for a single student — STDT_ID
+      is pivoted from id_attributes, DT_BIRTH is formatted as YYYYMMDD, GENDER
+      is mapped to single-letter code, ETHNIC_HL derives from the
+      latino_hispanic_yn custom attribute boolean.
+    model: rpt_finalsite__demographics
+    given:
+      - input: ref('stg_finalsite__contacts')
+        format: sql
+        rows: |
+          select
+            'enr-001' as finalsite_enrollment_id,
+            'Smith' as last_name,
+            'Jane' as first_name,
+            'A' as middle_name,
+            'Jay' as preferred_name,
+            'jane.smith@example.com' as email,
+            'Female' as gender,
+            date '2012-03-15' as birth_date,
+            [
+              struct(
+                'id-001' as field_id,
+                'focus_id' as field_name,
+                'Focus ID' as field_display_name,
+                struct(
+                  false as boolean_value,
+                  'S123456' as string_value,
+                  cast(null as array<string>) as array_string_value
+                ) as value
+              )
+            ] as id_attributes,
+            [
+              struct(
+                'ca-001' as field_id,
+                'latino_hispanic_yn' as field_name,
+                'Latino/Hispanic' as field_display_name,
+                struct(
+                  true as boolean_value,
+                  cast(null as string) as string_value,
+                  cast(null as array<string>) as array_string_value
+                ) as value
+              )
+            ] as custom_attributes
+      - input: ref('int_finalsite__enrollment_lifecycle')
+        rows:
+          - { finalsite_enrollment_id: enr-001 }
+    expect:
+      rows:
+        - {
+            stdt_id: S123456,
+            last_name: Smith,
+            first_name: Jane,
+            name_suffix: null,
+            middle_name: A,
+            nickname: Jay,
+            dt_birth: "20120315",
+            gender: F,
+            lang: null,
+            stdt_email: jane.smith@example.com,
+            ethnic_hl: Y,
+            single_ethnic: null,
+            race_am_ind_ak_nat: null,
+            race_asian: null,
+            race_black: null,
+            race_nat_haw_pac_isl: null,
+            race_white: null,
+            residence_county: null,
+            contry_birth: null,
+            homeroom_tchr: null,
+            resident_st: null,
+            birth_loc: null,
+            bdate_verif: null,
+            immun_st: null,
+            primary_home_lang: null,
+            native_parent_lang: null,
+            grde_enter_dist: null,
+            msix_id: null,
+            homeroom: null,
+            pmrn: null,
+            internt_perm: null,
+            act_perm: null,
+            direct_perm: null,
+            screen_perm: null,
+            photo_vid_perm: null,
+            survey_perm: null,
+            mckay_sch_attend: null,
+            fhsaa_el3_ind: null,
+            fhsaa_el3ch_ind: null,
+            dt_home_lang_survey: null,
+            casas_track: null,
+            lcp_cont_stdt: null,
+            tide_access_code: null,
+          }
