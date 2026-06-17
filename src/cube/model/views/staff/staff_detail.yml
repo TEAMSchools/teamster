@@ -138,10 +138,10 @@ views:
       # Purely additive: each block uses explicit includes only — no excludes
       # anywhere. Cube's OR semantics unions all matching blocks, so having
       # multiple groups always adds access, never blocks it.
-      # detail-access: base employment, demographic, date, and location fields.
+      # cube-access-staff-data: base employment, demographic, date, and location fields.
       # cube-access-staff-pii: direct staff identifiers.
       # cube-access-staff-compensation: wage/rate fields.
-      - group: detail-access
+      - group: cube-access-staff-data
         member_level:
           includes:
             - status_name

@@ -83,6 +83,6 @@ views:
     access_policy:
       # No direct staff identifiers — demographic dimensions are aggregate
       # breakdowns only. Compensation excluded from summary view.
-      - group: summary-access
+      - group: cube-access-staff-data
         member_level:
           includes: "*"
