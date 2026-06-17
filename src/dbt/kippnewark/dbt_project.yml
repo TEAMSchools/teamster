@@ -43,6 +43,9 @@ models:
         staging:
           +contract:
             enforced: true
+  finalsite:
+    api:
+      +enabled: false
   amplify:
     dds:
       +enabled: false

@@ -71,7 +71,7 @@ unit_tests:
       and school-year filters.
     model: int_finalsite__enrollment_lifecycle
     given:
-      - input: ref('finalsite', 'stg_finalsite__contacts')
+      - input: ref('stg_finalsite__contacts')
         rows:
           - {
               finalsite_enrollment_id: c_new,
@@ -129,7 +129,7 @@ unit_tests:
               school_year_start: 2025,
               grade_canonical_name: "07",
             }
-      - input: ref('finalsite', 'stg_finalsite__status_report')
+      - input: ref('stg_finalsite__status_report')
         rows:
           - {
               finalsite_enrollment_id: c_new,

@@ -40,6 +40,9 @@ models:
     pearson:
       +materialized: table
       +schema: pearson
+  finalsite:
+    api:
+      +enabled: false
   amplify:
     dds:
       +enabled: false

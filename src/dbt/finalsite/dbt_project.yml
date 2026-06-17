@@ -17,12 +17,22 @@ clean-targets:
 models:
   +schema: finalsite
   finalsite:
-    staging:
-      +materialized: table
-      +contract:
-        enforced: true
+    api:
+      staging:
+        +materialized: table
+        +contract:
+          enforced: true
+      intermediate:
+        +materialized: table
+    sftp:
+      staging:
+        +materialized: table
+        +contract:
+          enforced: true
 
 vars:
   cloud_storage_uri_base: null
   bigquery_external_connection_name: null
   local_timezone: null
+  current_academic_year: 0
+  finalsite_focus_student_id_field: ""

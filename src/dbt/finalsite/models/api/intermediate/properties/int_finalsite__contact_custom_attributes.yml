@@ -1,0 +1,21 @@
+models:
+  - name: int_finalsite__contact_custom_attributes
+    description:
+      One row per Finalsite contact, pivoting the repeated `custom_attributes`
+      key-value array into the typed custom fields downstream models need.
+      `is_latino_hispanic` is the boolean value of the `latino_hispanic_yn`
+      custom field. Contacts with no `custom_attributes` are absent (resolve via
+      a left join). Extend with additional custom fields (e.g. race) as
+      downstream needs grow.
+    columns:
+      - name: finalsite_enrollment_id
+        data_type: string
+        description: Finalsite contact UUID; the grain of this model.
+        data_tests:
+          - unique
+          - not_null
+      - name: is_latino_hispanic
+        data_type: boolean
+        description:
+          Boolean value of the `latino_hispanic_yn` Finalsite custom field; null
+          when unset for the contact.

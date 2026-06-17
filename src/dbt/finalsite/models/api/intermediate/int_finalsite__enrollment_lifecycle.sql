@@ -2,7 +2,7 @@ with
     status_report_latest as (
         {{
             dbt_utils.deduplicate(
-                relation=ref("finalsite", "stg_finalsite__status_report"),
+                relation=ref("stg_finalsite__status_report"),
                 partition_by="finalsite_enrollment_id",
                 order_by="_dagster_partition_key desc",
             )
@@ -16,7 +16,7 @@ with
             enrollment_type,
             school_year_start,
             grade_canonical_name,
-        from {{ ref("finalsite", "stg_finalsite__contacts") }}
+        from {{ ref("stg_finalsite__contacts") }}
         where school_year_start >= {{ var("current_academic_year") }}
     ),
 
