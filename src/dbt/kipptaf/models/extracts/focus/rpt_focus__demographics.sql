@@ -3,26 +3,36 @@ select
     -- STDT_ID is null until the Finalsite-minted student id lands in
     -- id_attributes; repoint to int_finalsite__contact_id_attributes then.
     cast(null as string) as stdt_id,
+
     c.last_name,
     c.first_name,
+
     cast(null as string) as name_suffix,
+
     c.middle_name,
     c.preferred_name as nickname,
+
     format_date('%Y%m%d', c.birth_date) as dt_birth,
+
     case
         when c.gender in ('M', 'Male')
         then 'M'
         when c.gender in ('F', 'Female')
         then 'F'
     end as gender,
+
     cca.lang_parent_ss as lang,
+
     c.email as stdt_email,
+
     -- null (not 'N') when no custom_attributes row exists, so an unknown is not
     -- silently reported as not-Hispanic for FLDOE.
     case
         when cca.latino_hispanic_yn then 'Y' when not cca.latino_hispanic_yn then 'N'
     end as ethnic_hl,
+
     cast(null as string) as single_ethnic,
+
     if('American Indian' in unnest(cca.race_ms), 'Y', null) as race_am_ind_ak_nat,
     if('Asian' in unnest(cca.race_ms), 'Y', null) as race_asian,
     if('Black' in unnest(cca.race_ms), 'Y', null) as race_black,
@@ -30,6 +40,7 @@ select
         'Native Pacific Islander' in unnest(cca.race_ms), 'Y', null
     ) as race_nat_haw_pac_isl,
     if('White' in unnest(cca.race_ms), 'Y', null) as race_white,
+
     cast(null as string) as residence_county,
     cast(null as string) as contry_birth,
     cast(null as string) as homeroom_tchr,
@@ -37,8 +48,10 @@ select
     cast(null as string) as birth_loc,
     cast(null as string) as bdate_verif,
     cast(null as string) as immun_st,
+
     cca.lang_parent_ss as primary_home_lang,
     cca.lang_parent_ss as native_parent_lang,
+
     cast(null as string) as grde_enter_dist,
     cast(null as string) as msix_id,
     cast(null as string) as homeroom,
@@ -47,7 +60,9 @@ select
     cast(null as string) as act_perm,
     cast(null as string) as direct_perm,
     cast(null as string) as screen_perm,
+
     if(cca.media_release_yn, 'Y', 'N') as photo_vid_perm,
+
     cast(null as string) as survey_perm,
     cast(null as string) as mckay_sch_attend,
     cast(null as string) as fhsaa_el3_ind,

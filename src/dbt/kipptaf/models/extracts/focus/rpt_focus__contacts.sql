@@ -3,18 +3,23 @@ select
     -- STDT_ID is null until the Finalsite-minted student id lands in
     -- id_attributes; repoint to int_finalsite__contact_id_attributes then.
     cast(null as string) as student_id,
+
     rel.rel_type as student_relation,
+
     row_number() over (
         partition by rel.finalsite_enrollment_id
         order by rel.is_primary desc, g.last_name asc, g.first_name asc
     ) as sort_order,
+
     g.first_name,
     g.middle_name,
     g.last_name,
+
     cast(null as string) as resides_with_stud,
     cast(null as string) as custody,
     cast(null as string) as emergency,
     cast(null as string) as pickup,
+
     g.address_1 as address,
     g.address_2 as address2,
     g.city,
@@ -23,11 +28,14 @@ select
     g.email,
     g.phone_1_type as contact1_type,
     g.phone_1_number as contact1_value,
+
     cast(null as string) as contact1_blocked,
     cast(null as string) as contact1_unlisted,
     cast(null as string) as contact1_callout,
+
     g.phone_2_type as contact2_type,
     g.phone_2_number as contact2_value,
+
     cast(null as string) as contact2_blocked,
     cast(null as string) as contact2_unlisted,
     cast(null as string) as contact2_callout,

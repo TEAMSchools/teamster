@@ -1,21 +1,29 @@
 -- trunk-ignore(sqlfluff/ST06): column order fixed by Focus STUDENT_ENROLLMENT contract
 select
     l.school_year_start as syear,
+
     sch.location_focus_school_id as school_id,
+
     -- STDT_ID is null until the Finalsite-minted student id lands in
     -- id_attributes; repoint to int_finalsite__contact_id_attributes then.
     cast(null as string) as student_id,
+
     if(
         l.grade_canonical_name = 'k',
         'KG',
         lpad(regexp_extract(l.grade_canonical_name, r'\d+'), 2, '0')
     ) as grade_id,
+
     format_date('%Y%m%d', l.enrollment_start_date) as start_date,
+
     ec.focus_enrollment_code as enrollment_code,
+
     -- enrollment_end_date / withdrawal_reason are already null upstream for
     -- non-transfer rows, so no transfer_out re-gating is needed here.
     format_date('%Y%m%d', l.enrollment_end_date) as end_date,
+
     dc.focus_drop_code as drop_code,
+
     cast(null as string) as calendar_id,
     cast(null as string) as prior_dist,
     cast(null as string) as prior_state,
@@ -24,9 +32,13 @@ select
     cast(null as string) as stdt_dis_affect,
     cast(null as string) as offender_transfer_stdt,
     cast(null as string) as came_from,
+
     cca.withdrawal_school_txt as moved_to,
+
     cast(null as string) as sec_sch,
+
     l.promotion_status as grde_prom_st,
+
     cast(null as string) as good_cause_exempt,
     cast(null as string) as graduation_requirement_program,
     cast(null as string) as next_school,

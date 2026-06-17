@@ -6,6 +6,7 @@
 select
     cast(null as string) as primary_student_id,
     cast(null as string) as secondary_student_id,
+
     'sibling' as relationship,
 from {{ ref("stg_finalsite__contact_relationships") }} as rel
 where rel.rel_type = 'sibling' and false

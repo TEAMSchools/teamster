@@ -3,12 +3,14 @@ select
     -- STDT_ID is null until the Finalsite-minted student id lands in
     -- id_attributes; repoint to int_finalsite__contact_id_attributes then.
     cast(null as string) as student_id,
+
     c.address_1 as address,
     c.address_2 as address2,
     c.city,
     c.state,
     c.zip as zipcode,
     c.phone_1_number as phone,
+
     cast(null as string) as mailing,
     cast(null as string) as mail_address,
     cast(null as string) as mail_address2,
