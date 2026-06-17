@@ -45,7 +45,8 @@ select
     s.stdt_id as student_id,
     g.rel_type as student_relation,
     row_number() over (
-        partition by g.finalsite_enrollment_id order by g.is_primary desc
+        partition by g.finalsite_enrollment_id
+        order by g.is_primary desc, g.last_name asc, g.first_name asc
     ) as sort_order,
     g.first_name,
     g.middle_name,
