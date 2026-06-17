@@ -1,539 +1,373 @@
-select
-    c.finalsite_enrollment_id,
+with
+    attributes as (
+        select
+            c.finalsite_enrollment_id,
+            a.field_name,
+            a.value.string_value as value_string,
+            a.value.boolean_value as value_boolean,
+            a.value.array_string_value as value_array,
+        from {{ ref("stg_finalsite__contacts") }} as c
+        cross join unnest(c.custom_attributes) as a
+    )
 
-    max(
-        if(a.field_name = 'academy_business_ss', a.value.string_value, null)
-    ) as academy_business_ss,
-    max(
-        if(a.field_name = 'academy_commercial_ss', a.value.string_value, null)
-    ) as academy_commercial_ss,
-    max(
-        if(a.field_name = 'academy_tech_ss', a.value.string_value, null)
-    ) as academy_tech_ss,
-    max(
-        if(
-            a.field_name = 'additional_phone_number_1_phone_number',
-            a.value.string_value,
-            null
+select
+    finalsite_enrollment_id,
+    s_academy_business_ss as academy_business_ss,
+    s_academy_commercial_ss as academy_commercial_ss,
+    s_academy_tech_ss as academy_tech_ss,
+    s_additional_phone_number_1_phone_number as additional_phone_number_1_phone_number,
+    b_additional_phone_number_1_phone_opt_in as additional_phone_number_1_phone_opt_in,
+    s_additional_phone_number_1_phone_type as additional_phone_number_1_phone_type,
+    a_address_verification_ms as address_verification_ms,
+    s_bsr_referral_method_ss as bsr_referral_method_ss,
+    s_bsr_referral_other_txt as bsr_referral_other_txt,
+    b_bus_interest_yn as bus_interest_yn,
+    s_categories_withdraw_reasons_ss as categories_withdraw_reasons_ss,
+    s_contact_attempts_ss as contact_attempts_ss,
+    s_current_residence_ss as current_residence_ss,
+    s_date_entered_us_school_date as date_entered_us_school_date,
+    s_decline_answer_ss as decline_answer_ss,
+    s_decline_reason_notes_txt as decline_reason_notes_txt,
+    s_decline_reasons_ss as decline_reasons_ss,
+    s_displacement_reason_ss as displacement_reason_ss,
+    s_displacement_reason_txt as displacement_reason_txt,
+    s_does_your_child_have_an_iep_ss as does_your_child_have_an_iep_ss,
+    s_does_your_child_receive_language_services_ss
+    as does_your_child_receive_language_services_ss,
+    s_employer as employer,
+    s_employment_status as employment_status,
+    s_emrg_1_email as emrg_1_email,
+    s_emrg_1_name_first_name as emrg_1_name_first_name,
+    s_emrg_1_name_last_name as emrg_1_name_last_name,
+    s_emrg_1_name_middle_name as emrg_1_name_middle_name,
+    s_emrg_1_name_name_suffix as emrg_1_name_name_suffix,
+    s_emrg_1_name_name_title as emrg_1_name_name_title,
+    s_emrg_1_name_preferred_name as emrg_1_name_preferred_name,
+    s_emrg_1_phone_1_number as emrg_1_phone_1_number,
+    b_emrg_1_phone_1_opt_in as emrg_1_phone_1_opt_in,
+    s_emrg_1_phone_1_type as emrg_1_phone_1_type,
+    s_emrg_1_phone_2_number as emrg_1_phone_2_number,
+    s_emrg_1_phone_2_type as emrg_1_phone_2_type,
+    s_emrg_1_relationship_ss as emrg_1_relationship_ss,
+    s_emrg_1_relationship_txt as emrg_1_relationship_txt,
+    s_emrg_2_email as emrg_2_email,
+    s_emrg_2_name_first_name as emrg_2_name_first_name,
+    s_emrg_2_name_last_name as emrg_2_name_last_name,
+    s_emrg_2_name_middle_name as emrg_2_name_middle_name,
+    s_emrg_2_name_name_suffix as emrg_2_name_name_suffix,
+    s_emrg_2_name_name_title as emrg_2_name_name_title,
+    s_emrg_2_name_preferred_name as emrg_2_name_preferred_name,
+    s_emrg_2_phone_1_number as emrg_2_phone_1_number,
+    b_emrg_2_phone_1_opt_in as emrg_2_phone_1_opt_in,
+    s_emrg_2_phone_1_type as emrg_2_phone_1_type,
+    s_emrg_2_phone_2_number as emrg_2_phone_2_number,
+    s_emrg_2_phone_2_type as emrg_2_phone_2_type,
+    s_emrg_2_relationship_ss as emrg_2_relationship_ss,
+    s_emrg_2_relationship_txt as emrg_2_relationship_txt,
+    s_fl_state_withdraw_codes_ss as fl_state_withdraw_codes_ss,
+    b_florida_residency_yn as florida_residency_yn,
+    s_import_description_txt as import_description_txt,
+    b_import_update_yn as import_update_yn,
+    s_intent_to_enroll_ynu_ss as intent_to_enroll_ynu_ss,
+    b_is_parent2 as is_parent2,
+    b_is_parent3 as is_parent3,
+    b_is_parent4 as is_parent4,
+    b_lang_first_nonenglish_yn as lang_first_nonenglish_yn,
+    b_lang_home_nonenglish_yn as lang_home_nonenglish_yn,
+    s_lang_parent_ss as lang_parent_ss,
+    b_lang_spoken_nonenglish_yn as lang_spoken_nonenglish_yn,
+    s_language_list as language_list,
+    b_latino_hispanic_yn as latino_hispanic_yn,
+    s_lead_source_ss as lead_source_ss,
+    s_lead_submit_date as lead_submit_date,
+    s_living_situation_ss as living_situation_ss,
+    b_mdcps_attendee_yn as mdcps_attendee_yn,
+    s_mdcps_id_txt as mdcps_id_txt,
+    s_mdcps_student_1_birth_date as mdcps_student_1_birth_date,
+    s_mdcps_student_1_grade_ss as mdcps_student_1_grade_ss,
+    s_mdcps_student_1_id_txt as mdcps_student_1_id_txt,
+    s_mdcps_student_1_name_first_name as mdcps_student_1_name_first_name,
+    s_mdcps_student_1_name_last_name as mdcps_student_1_name_last_name,
+    s_mdcps_student_1_name_middle_name as mdcps_student_1_name_middle_name,
+    s_mdcps_student_1_name_name_title as mdcps_student_1_name_name_title,
+    s_mdcps_student_1_school_txt as mdcps_student_1_school_txt,
+    b_mdcps_student_1_yn as mdcps_student_1_yn,
+    s_mdcps_student_2_birth_date as mdcps_student_2_birth_date,
+    s_mdcps_student_2_grade_ss as mdcps_student_2_grade_ss,
+    s_mdcps_student_2_id_txt as mdcps_student_2_id_txt,
+    s_mdcps_student_2_name_first_name as mdcps_student_2_name_first_name,
+    s_mdcps_student_2_name_last_name as mdcps_student_2_name_last_name,
+    s_mdcps_student_2_name_middle_name as mdcps_student_2_name_middle_name,
+    s_mdcps_student_2_name_name_title as mdcps_student_2_name_name_title,
+    s_mdcps_student_2_school_txt as mdcps_student_2_school_txt,
+    b_mdcps_student_2_yn as mdcps_student_2_yn,
+    b_mdcps_student_3_yn as mdcps_student_3_yn,
+    s_med_considerations_txt as med_considerations_txt,
+    b_med_considerations_yn as med_considerations_yn,
+    s_med_doctor_phone_number as med_doctor_phone_number,
+    s_med_doctor_txt as med_doctor_txt,
+    s_med_emrg_info_txt as med_emrg_info_txt,
+    s_med_hospital_phone_number as med_hospital_phone_number,
+    s_med_hospital_txt as med_hospital_txt,
+    b_media_release_yn as media_release_yn,
+    s_mental_health_referrals_txt as mental_health_referrals_txt,
+    b_mental_health_referrals_yn as mental_health_referrals_yn,
+    s_military_parent_branch_txt as military_parent_branch_txt,
+    b_military_parent_yn as military_parent_yn,
+    s_nonpickup_1_name_first_name as nonpickup_1_name_first_name,
+    s_nonpickup_1_name_last_name as nonpickup_1_name_last_name,
+    s_nonpickup_1_name_middle_name as nonpickup_1_name_middle_name,
+    s_nonpickup_1_name_name_suffix as nonpickup_1_name_name_suffix,
+    s_nonpickup_1_name_name_title as nonpickup_1_name_name_title,
+    s_nonpickup_1_name_preferred_name as nonpickup_1_name_preferred_name,
+    b_nonpickup_1_yn as nonpickup_1_yn,
+    s_nonpickup_2_name_first_name as nonpickup_2_name_first_name,
+    s_nonpickup_2_name_last_name as nonpickup_2_name_last_name,
+    s_nonpickup_2_name_middle_name as nonpickup_2_name_middle_name,
+    s_nonpickup_2_name_name_title as nonpickup_2_name_name_title,
+    s_nonpickup_2_name_preferred_name as nonpickup_2_name_preferred_name,
+    b_nonpickup_2_yn as nonpickup_2_yn,
+    s_nonpickup_3_name_first_name as nonpickup_3_name_first_name,
+    s_nonpickup_3_name_last_name as nonpickup_3_name_last_name,
+    s_nonpickup_3_name_middle_name as nonpickup_3_name_middle_name,
+    s_nonpickup_3_name_name_title as nonpickup_3_name_name_title,
+    s_nonpickup_3_name_preferred_name as nonpickup_3_name_preferred_name,
+    b_nonpickup_3_yn as nonpickup_3_yn,
+    s_pickup_1_name_first_name as pickup_1_name_first_name,
+    s_pickup_1_name_last_name as pickup_1_name_last_name,
+    s_pickup_1_name_middle_name as pickup_1_name_middle_name,
+    s_pickup_1_name_name_suffix as pickup_1_name_name_suffix,
+    s_pickup_1_name_name_title as pickup_1_name_name_title,
+    s_pickup_1_name_preferred_name as pickup_1_name_preferred_name,
+    s_pickup_2_name_first_name as pickup_2_name_first_name,
+    s_pickup_2_name_last_name as pickup_2_name_last_name,
+    s_pickup_2_name_middle_name as pickup_2_name_middle_name,
+    s_pickup_2_name_name_suffix as pickup_2_name_name_suffix,
+    s_pickup_2_name_name_title as pickup_2_name_name_title,
+    s_pickup_2_name_preferred_name as pickup_2_name_preferred_name,
+    s_pickup_3_name_first_name as pickup_3_name_first_name,
+    s_pickup_3_name_last_name as pickup_3_name_last_name,
+    s_pickup_3_name_middle_name as pickup_3_name_middle_name,
+    s_pickup_3_name_name_suffix as pickup_3_name_name_suffix,
+    s_pickup_3_name_name_title as pickup_3_name_name_title,
+    s_pickup_3_name_preferred_name as pickup_3_name_preferred_name,
+    b_preschool_parent_paid_yn as preschool_parent_paid_yn,
+    s_preschool_type_ss as preschool_type_ss,
+    b_preschool_yn as preschool_yn,
+    s_prev_arrested_txt as prev_arrested_txt,
+    b_prev_arrested_yn as prev_arrested_yn,
+    s_prev_expelled_txt as prev_expelled_txt,
+    b_prev_expelled_yn as prev_expelled_yn,
+    s_prev_juvenile_party_txt as prev_juvenile_party_txt,
+    b_prev_juvenile_party_yn as prev_juvenile_party_yn,
+    a_race_ms as race_ms,
+    s_school_1_ss as school_1_ss,
+    s_school_1_status_ss as school_1_status_ss,
+    s_school_1_txt as school_1_txt,
+    s_school_ops_caller_ss as school_ops_caller_ss,
+    b_self_contained_yn as self_contained_yn,
+    s_shirt_size_ss as shirt_size_ss,
+    s_sib_count_ss as sib_count_ss,
+    b_sib_enrolled_yn as sib_enrolled_yn,
+    s_sib_grade_ss as sib_grade_ss,
+    s_signature_date as signature_date,
+    s_sped_received_txt as sped_received_txt,
+    b_sped_received_yn as sped_received_yn,
+    b_staff_transport_yn as staff_transport_yn,
+    s_transfer_desired_campus_ss as transfer_desired_campus_ss,
+    s_transfer_reason_txt as transfer_reason_txt,
+    s_transfer_request_date as transfer_request_date,
+    b_unaccompanied_youth_yn as unaccompanied_youth_yn,
+    s_what_is_s_he_interested_in_txt as what_is_s_he_interested_in_txt,
+    s_what_is_your_child_excited_about_txt as what_is_your_child_excited_about_txt,
+    s_withdraw_reason_notes_txt as withdraw_reason_notes_txt,
+    s_withdrawal_last_attended_date as withdrawal_last_attended_date,
+    s_withdrawal_reason_ss as withdrawal_reason_ss,
+    s_withdrawal_school_address_city as withdrawal_school_address_city,
+    s_withdrawal_school_address_country as withdrawal_school_address_country,
+    s_withdrawal_school_address_state as withdrawal_school_address_state,
+    s_withdrawal_school_txt as withdrawal_school_txt,
+    s_withdrawal_transfer_type_ss as withdrawal_transfer_type_ss,
+from
+    attributes pivot (
+        max(value_string) as s,
+        max(value_boolean) as b,
+        any_value(value_array) as a
+        for field_name in (
+            'academy_business_ss',
+            'academy_commercial_ss',
+            'academy_tech_ss',
+            'additional_phone_number_1_phone_number',
+            'additional_phone_number_1_phone_opt_in',
+            'additional_phone_number_1_phone_type',
+            'address_verification_ms',
+            'bsr_referral_method_ss',
+            'bsr_referral_other_txt',
+            'bus_interest_yn',
+            'categories_withdraw_reasons_ss',
+            'contact_attempts_ss',
+            'current_residence_ss',
+            'date_entered_us_school_date',
+            'decline_answer_ss',
+            'decline_reason_notes_txt',
+            'decline_reasons_ss',
+            'displacement_reason_ss',
+            'displacement_reason_txt',
+            'does_your_child_have_an_iep_ss',
+            'does_your_child_receive_language_services_ss',
+            'employer',
+            'employment_status',
+            'emrg_1_email',
+            'emrg_1_name_first_name',
+            'emrg_1_name_last_name',
+            'emrg_1_name_middle_name',
+            'emrg_1_name_name_suffix',
+            'emrg_1_name_name_title',
+            'emrg_1_name_preferred_name',
+            'emrg_1_phone_1_number',
+            'emrg_1_phone_1_opt_in',
+            'emrg_1_phone_1_type',
+            'emrg_1_phone_2_number',
+            'emrg_1_phone_2_type',
+            'emrg_1_relationship_ss',
+            'emrg_1_relationship_txt',
+            'emrg_2_email',
+            'emrg_2_name_first_name',
+            'emrg_2_name_last_name',
+            'emrg_2_name_middle_name',
+            'emrg_2_name_name_suffix',
+            'emrg_2_name_name_title',
+            'emrg_2_name_preferred_name',
+            'emrg_2_phone_1_number',
+            'emrg_2_phone_1_opt_in',
+            'emrg_2_phone_1_type',
+            'emrg_2_phone_2_number',
+            'emrg_2_phone_2_type',
+            'emrg_2_relationship_ss',
+            'emrg_2_relationship_txt',
+            'fl_state_withdraw_codes_ss',
+            'florida_residency_yn',
+            'import_description_txt',
+            'import_update_yn',
+            'intent_to_enroll_ynu_ss',
+            'is_parent2',
+            'is_parent3',
+            'is_parent4',
+            'lang_first_nonenglish_yn',
+            'lang_home_nonenglish_yn',
+            'lang_parent_ss',
+            'lang_spoken_nonenglish_yn',
+            'language_list',
+            'latino_hispanic_yn',
+            'lead_source_ss',
+            'lead_submit_date',
+            'living_situation_ss',
+            'mdcps_attendee_yn',
+            'mdcps_id_txt',
+            'mdcps_student_1_birth_date',
+            'mdcps_student_1_grade_ss',
+            'mdcps_student_1_id_txt',
+            'mdcps_student_1_name_first_name',
+            'mdcps_student_1_name_last_name',
+            'mdcps_student_1_name_middle_name',
+            'mdcps_student_1_name_name_title',
+            'mdcps_student_1_school_txt',
+            'mdcps_student_1_yn',
+            'mdcps_student_2_birth_date',
+            'mdcps_student_2_grade_ss',
+            'mdcps_student_2_id_txt',
+            'mdcps_student_2_name_first_name',
+            'mdcps_student_2_name_last_name',
+            'mdcps_student_2_name_middle_name',
+            'mdcps_student_2_name_name_title',
+            'mdcps_student_2_school_txt',
+            'mdcps_student_2_yn',
+            'mdcps_student_3_yn',
+            'med_considerations_txt',
+            'med_considerations_yn',
+            'med_doctor_phone_number',
+            'med_doctor_txt',
+            'med_emrg_info_txt',
+            'med_hospital_phone_number',
+            'med_hospital_txt',
+            'media_release_yn',
+            'mental_health_referrals_txt',
+            'mental_health_referrals_yn',
+            'military_parent_branch_txt',
+            'military_parent_yn',
+            'nonpickup_1_name_first_name',
+            'nonpickup_1_name_last_name',
+            'nonpickup_1_name_middle_name',
+            'nonpickup_1_name_name_suffix',
+            'nonpickup_1_name_name_title',
+            'nonpickup_1_name_preferred_name',
+            'nonpickup_1_yn',
+            'nonpickup_2_name_first_name',
+            'nonpickup_2_name_last_name',
+            'nonpickup_2_name_middle_name',
+            'nonpickup_2_name_name_title',
+            'nonpickup_2_name_preferred_name',
+            'nonpickup_2_yn',
+            'nonpickup_3_name_first_name',
+            'nonpickup_3_name_last_name',
+            'nonpickup_3_name_middle_name',
+            'nonpickup_3_name_name_title',
+            'nonpickup_3_name_preferred_name',
+            'nonpickup_3_yn',
+            'pickup_1_name_first_name',
+            'pickup_1_name_last_name',
+            'pickup_1_name_middle_name',
+            'pickup_1_name_name_suffix',
+            'pickup_1_name_name_title',
+            'pickup_1_name_preferred_name',
+            'pickup_2_name_first_name',
+            'pickup_2_name_last_name',
+            'pickup_2_name_middle_name',
+            'pickup_2_name_name_suffix',
+            'pickup_2_name_name_title',
+            'pickup_2_name_preferred_name',
+            'pickup_3_name_first_name',
+            'pickup_3_name_last_name',
+            'pickup_3_name_middle_name',
+            'pickup_3_name_name_suffix',
+            'pickup_3_name_name_title',
+            'pickup_3_name_preferred_name',
+            'preschool_parent_paid_yn',
+            'preschool_type_ss',
+            'preschool_yn',
+            'prev_arrested_txt',
+            'prev_arrested_yn',
+            'prev_expelled_txt',
+            'prev_expelled_yn',
+            'prev_juvenile_party_txt',
+            'prev_juvenile_party_yn',
+            'race_ms',
+            'school_1_ss',
+            'school_1_status_ss',
+            'school_1_txt',
+            'school_ops_caller_ss',
+            'self_contained_yn',
+            'shirt_size_ss',
+            'sib_count_ss',
+            'sib_enrolled_yn',
+            'sib_grade_ss',
+            'signature_date',
+            'sped_received_txt',
+            'sped_received_yn',
+            'staff_transport_yn',
+            'transfer_desired_campus_ss',
+            'transfer_reason_txt',
+            'transfer_request_date',
+            'unaccompanied_youth_yn',
+            'what_is_s_he_interested_in_txt',
+            'what_is_your_child_excited_about_txt',
+            'withdraw_reason_notes_txt',
+            'withdrawal_last_attended_date',
+            'withdrawal_reason_ss',
+            'withdrawal_school_address_city',
+            'withdrawal_school_address_country',
+            'withdrawal_school_address_state',
+            'withdrawal_school_txt',
+            'withdrawal_transfer_type_ss'
         )
-    ) as additional_phone_number_1_phone_number,
-    max(
-        if(
-            a.field_name = 'additional_phone_number_1_phone_opt_in',
-            a.value.boolean_value,
-            null
-        )
-    ) as additional_phone_number_1_phone_opt_in,
-    max(
-        if(
-            a.field_name = 'additional_phone_number_1_phone_type',
-            a.value.string_value,
-            null
-        )
-    ) as additional_phone_number_1_phone_type,
-    any_value(
-        if(a.field_name = 'address_verification_ms', a.value.array_string_value, null)
-    ) as address_verification_ms,
-    max(
-        if(a.field_name = 'bsr_referral_method_ss', a.value.string_value, null)
-    ) as bsr_referral_method_ss,
-    max(
-        if(a.field_name = 'bsr_referral_other_txt', a.value.string_value, null)
-    ) as bsr_referral_other_txt,
-    max(
-        if(a.field_name = 'bus_interest_yn', a.value.boolean_value, null)
-    ) as bus_interest_yn,
-    max(
-        if(a.field_name = 'categories_withdraw_reasons_ss', a.value.string_value, null)
-    ) as categories_withdraw_reasons_ss,
-    max(
-        if(a.field_name = 'contact_attempts_ss', a.value.string_value, null)
-    ) as contact_attempts_ss,
-    max(
-        if(a.field_name = 'current_residence_ss', a.value.string_value, null)
-    ) as current_residence_ss,
-    max(
-        if(a.field_name = 'date_entered_us_school_date', a.value.string_value, null)
-    ) as date_entered_us_school_date,
-    max(
-        if(a.field_name = 'decline_answer_ss', a.value.string_value, null)
-    ) as decline_answer_ss,
-    max(
-        if(a.field_name = 'decline_reason_notes_txt', a.value.string_value, null)
-    ) as decline_reason_notes_txt,
-    max(
-        if(a.field_name = 'decline_reasons_ss', a.value.string_value, null)
-    ) as decline_reasons_ss,
-    max(
-        if(a.field_name = 'displacement_reason_ss', a.value.string_value, null)
-    ) as displacement_reason_ss,
-    max(
-        if(a.field_name = 'displacement_reason_txt', a.value.string_value, null)
-    ) as displacement_reason_txt,
-    max(
-        if(a.field_name = 'does_your_child_have_an_iep_ss', a.value.string_value, null)
-    ) as does_your_child_have_an_iep_ss,
-    max(
-        if(
-            a.field_name = 'does_your_child_receive_language_services_ss',
-            a.value.string_value,
-            null
-        )
-    ) as does_your_child_receive_language_services_ss,
-    max(if(a.field_name = 'employer', a.value.string_value, null)) as employer,
-    max(
-        if(a.field_name = 'employment_status', a.value.string_value, null)
-    ) as employment_status,
-    max(if(a.field_name = 'emrg_1_email', a.value.string_value, null)) as emrg_1_email,
-    max(
-        if(a.field_name = 'emrg_1_name_first_name', a.value.string_value, null)
-    ) as emrg_1_name_first_name,
-    max(
-        if(a.field_name = 'emrg_1_name_last_name', a.value.string_value, null)
-    ) as emrg_1_name_last_name,
-    max(
-        if(a.field_name = 'emrg_1_name_middle_name', a.value.string_value, null)
-    ) as emrg_1_name_middle_name,
-    max(
-        if(a.field_name = 'emrg_1_name_name_suffix', a.value.string_value, null)
-    ) as emrg_1_name_name_suffix,
-    max(
-        if(a.field_name = 'emrg_1_name_name_title', a.value.string_value, null)
-    ) as emrg_1_name_name_title,
-    max(
-        if(a.field_name = 'emrg_1_name_preferred_name', a.value.string_value, null)
-    ) as emrg_1_name_preferred_name,
-    max(
-        if(a.field_name = 'emrg_1_phone_1_number', a.value.string_value, null)
-    ) as emrg_1_phone_1_number,
-    max(
-        if(a.field_name = 'emrg_1_phone_1_opt_in', a.value.boolean_value, null)
-    ) as emrg_1_phone_1_opt_in,
-    max(
-        if(a.field_name = 'emrg_1_phone_1_type', a.value.string_value, null)
-    ) as emrg_1_phone_1_type,
-    max(
-        if(a.field_name = 'emrg_1_phone_2_number', a.value.string_value, null)
-    ) as emrg_1_phone_2_number,
-    max(
-        if(a.field_name = 'emrg_1_phone_2_type', a.value.string_value, null)
-    ) as emrg_1_phone_2_type,
-    max(
-        if(a.field_name = 'emrg_1_relationship_ss', a.value.string_value, null)
-    ) as emrg_1_relationship_ss,
-    max(
-        if(a.field_name = 'emrg_1_relationship_txt', a.value.string_value, null)
-    ) as emrg_1_relationship_txt,
-    max(if(a.field_name = 'emrg_2_email', a.value.string_value, null)) as emrg_2_email,
-    max(
-        if(a.field_name = 'emrg_2_name_first_name', a.value.string_value, null)
-    ) as emrg_2_name_first_name,
-    max(
-        if(a.field_name = 'emrg_2_name_last_name', a.value.string_value, null)
-    ) as emrg_2_name_last_name,
-    max(
-        if(a.field_name = 'emrg_2_name_middle_name', a.value.string_value, null)
-    ) as emrg_2_name_middle_name,
-    max(
-        if(a.field_name = 'emrg_2_name_name_suffix', a.value.string_value, null)
-    ) as emrg_2_name_name_suffix,
-    max(
-        if(a.field_name = 'emrg_2_name_name_title', a.value.string_value, null)
-    ) as emrg_2_name_name_title,
-    max(
-        if(a.field_name = 'emrg_2_name_preferred_name', a.value.string_value, null)
-    ) as emrg_2_name_preferred_name,
-    max(
-        if(a.field_name = 'emrg_2_phone_1_number', a.value.string_value, null)
-    ) as emrg_2_phone_1_number,
-    max(
-        if(a.field_name = 'emrg_2_phone_1_opt_in', a.value.boolean_value, null)
-    ) as emrg_2_phone_1_opt_in,
-    max(
-        if(a.field_name = 'emrg_2_phone_1_type', a.value.string_value, null)
-    ) as emrg_2_phone_1_type,
-    max(
-        if(a.field_name = 'emrg_2_phone_2_number', a.value.string_value, null)
-    ) as emrg_2_phone_2_number,
-    max(
-        if(a.field_name = 'emrg_2_phone_2_type', a.value.string_value, null)
-    ) as emrg_2_phone_2_type,
-    max(
-        if(a.field_name = 'emrg_2_relationship_ss', a.value.string_value, null)
-    ) as emrg_2_relationship_ss,
-    max(
-        if(a.field_name = 'emrg_2_relationship_txt', a.value.string_value, null)
-    ) as emrg_2_relationship_txt,
-    max(
-        if(a.field_name = 'fl_state_withdraw_codes_ss', a.value.string_value, null)
-    ) as fl_state_withdraw_codes_ss,
-    max(
-        if(a.field_name = 'florida_residency_yn', a.value.boolean_value, null)
-    ) as florida_residency_yn,
-    max(
-        if(a.field_name = 'import_description_txt', a.value.string_value, null)
-    ) as import_description_txt,
-    max(
-        if(a.field_name = 'import_update_yn', a.value.boolean_value, null)
-    ) as import_update_yn,
-    max(
-        if(a.field_name = 'intent_to_enroll_ynu_ss', a.value.string_value, null)
-    ) as intent_to_enroll_ynu_ss,
-    max(if(a.field_name = 'is_parent2', a.value.boolean_value, null)) as is_parent2,
-    max(if(a.field_name = 'is_parent3', a.value.boolean_value, null)) as is_parent3,
-    max(if(a.field_name = 'is_parent4', a.value.boolean_value, null)) as is_parent4,
-    max(
-        if(a.field_name = 'lang_first_nonenglish_yn', a.value.boolean_value, null)
-    ) as lang_first_nonenglish_yn,
-    max(
-        if(a.field_name = 'lang_home_nonenglish_yn', a.value.boolean_value, null)
-    ) as lang_home_nonenglish_yn,
-    max(
-        if(a.field_name = 'lang_parent_ss', a.value.string_value, null)
-    ) as lang_parent_ss,
-    max(
-        if(a.field_name = 'lang_spoken_nonenglish_yn', a.value.boolean_value, null)
-    ) as lang_spoken_nonenglish_yn,
-    max(
-        if(a.field_name = 'language_list', a.value.string_value, null)
-    ) as language_list,
-    max(
-        if(a.field_name = 'latino_hispanic_yn', a.value.boolean_value, null)
-    ) as latino_hispanic_yn,
-    max(
-        if(a.field_name = 'lead_source_ss', a.value.string_value, null)
-    ) as lead_source_ss,
-    max(
-        if(a.field_name = 'lead_submit_date', a.value.string_value, null)
-    ) as lead_submit_date,
-    max(
-        if(a.field_name = 'living_situation_ss', a.value.string_value, null)
-    ) as living_situation_ss,
-    max(
-        if(a.field_name = 'mdcps_attendee_yn', a.value.boolean_value, null)
-    ) as mdcps_attendee_yn,
-    max(if(a.field_name = 'mdcps_id_txt', a.value.string_value, null)) as mdcps_id_txt,
-    max(
-        if(a.field_name = 'mdcps_student_1_birth_date', a.value.string_value, null)
-    ) as mdcps_student_1_birth_date,
-    max(
-        if(a.field_name = 'mdcps_student_1_grade_ss', a.value.string_value, null)
-    ) as mdcps_student_1_grade_ss,
-    max(
-        if(a.field_name = 'mdcps_student_1_id_txt', a.value.string_value, null)
-    ) as mdcps_student_1_id_txt,
-    max(
-        if(a.field_name = 'mdcps_student_1_name_first_name', a.value.string_value, null)
-    ) as mdcps_student_1_name_first_name,
-    max(
-        if(a.field_name = 'mdcps_student_1_name_last_name', a.value.string_value, null)
-    ) as mdcps_student_1_name_last_name,
-    max(
-        if(
-            a.field_name = 'mdcps_student_1_name_middle_name',
-            a.value.string_value,
-            null
-        )
-    ) as mdcps_student_1_name_middle_name,
-    max(
-        if(a.field_name = 'mdcps_student_1_name_name_title', a.value.string_value, null)
-    ) as mdcps_student_1_name_name_title,
-    max(
-        if(a.field_name = 'mdcps_student_1_school_txt', a.value.string_value, null)
-    ) as mdcps_student_1_school_txt,
-    max(
-        if(a.field_name = 'mdcps_student_1_yn', a.value.boolean_value, null)
-    ) as mdcps_student_1_yn,
-    max(
-        if(a.field_name = 'mdcps_student_2_birth_date', a.value.string_value, null)
-    ) as mdcps_student_2_birth_date,
-    max(
-        if(a.field_name = 'mdcps_student_2_grade_ss', a.value.string_value, null)
-    ) as mdcps_student_2_grade_ss,
-    max(
-        if(a.field_name = 'mdcps_student_2_id_txt', a.value.string_value, null)
-    ) as mdcps_student_2_id_txt,
-    max(
-        if(a.field_name = 'mdcps_student_2_name_first_name', a.value.string_value, null)
-    ) as mdcps_student_2_name_first_name,
-    max(
-        if(a.field_name = 'mdcps_student_2_name_last_name', a.value.string_value, null)
-    ) as mdcps_student_2_name_last_name,
-    max(
-        if(
-            a.field_name = 'mdcps_student_2_name_middle_name',
-            a.value.string_value,
-            null
-        )
-    ) as mdcps_student_2_name_middle_name,
-    max(
-        if(a.field_name = 'mdcps_student_2_name_name_title', a.value.string_value, null)
-    ) as mdcps_student_2_name_name_title,
-    max(
-        if(a.field_name = 'mdcps_student_2_school_txt', a.value.string_value, null)
-    ) as mdcps_student_2_school_txt,
-    max(
-        if(a.field_name = 'mdcps_student_2_yn', a.value.boolean_value, null)
-    ) as mdcps_student_2_yn,
-    max(
-        if(a.field_name = 'mdcps_student_3_yn', a.value.boolean_value, null)
-    ) as mdcps_student_3_yn,
-    max(
-        if(a.field_name = 'med_considerations_txt', a.value.string_value, null)
-    ) as med_considerations_txt,
-    max(
-        if(a.field_name = 'med_considerations_yn', a.value.boolean_value, null)
-    ) as med_considerations_yn,
-    max(
-        if(a.field_name = 'med_doctor_phone_number', a.value.string_value, null)
-    ) as med_doctor_phone_number,
-    max(
-        if(a.field_name = 'med_doctor_txt', a.value.string_value, null)
-    ) as med_doctor_txt,
-    max(
-        if(a.field_name = 'med_emrg_info_txt', a.value.string_value, null)
-    ) as med_emrg_info_txt,
-    max(
-        if(a.field_name = 'med_hospital_phone_number', a.value.string_value, null)
-    ) as med_hospital_phone_number,
-    max(
-        if(a.field_name = 'med_hospital_txt', a.value.string_value, null)
-    ) as med_hospital_txt,
-    max(
-        if(a.field_name = 'media_release_yn', a.value.boolean_value, null)
-    ) as media_release_yn,
-    max(
-        if(a.field_name = 'mental_health_referrals_txt', a.value.string_value, null)
-    ) as mental_health_referrals_txt,
-    max(
-        if(a.field_name = 'mental_health_referrals_yn', a.value.boolean_value, null)
-    ) as mental_health_referrals_yn,
-    max(
-        if(a.field_name = 'military_parent_branch_txt', a.value.string_value, null)
-    ) as military_parent_branch_txt,
-    max(
-        if(a.field_name = 'military_parent_yn', a.value.boolean_value, null)
-    ) as military_parent_yn,
-    max(
-        if(a.field_name = 'nonpickup_1_name_first_name', a.value.string_value, null)
-    ) as nonpickup_1_name_first_name,
-    max(
-        if(a.field_name = 'nonpickup_1_name_last_name', a.value.string_value, null)
-    ) as nonpickup_1_name_last_name,
-    max(
-        if(a.field_name = 'nonpickup_1_name_middle_name', a.value.string_value, null)
-    ) as nonpickup_1_name_middle_name,
-    max(
-        if(a.field_name = 'nonpickup_1_name_name_suffix', a.value.string_value, null)
-    ) as nonpickup_1_name_name_suffix,
-    max(
-        if(a.field_name = 'nonpickup_1_name_name_title', a.value.string_value, null)
-    ) as nonpickup_1_name_name_title,
-    max(
-        if(a.field_name = 'nonpickup_1_name_preferred_name', a.value.string_value, null)
-    ) as nonpickup_1_name_preferred_name,
-    max(
-        if(a.field_name = 'nonpickup_1_yn', a.value.boolean_value, null)
-    ) as nonpickup_1_yn,
-    max(
-        if(a.field_name = 'nonpickup_2_name_first_name', a.value.string_value, null)
-    ) as nonpickup_2_name_first_name,
-    max(
-        if(a.field_name = 'nonpickup_2_name_last_name', a.value.string_value, null)
-    ) as nonpickup_2_name_last_name,
-    max(
-        if(a.field_name = 'nonpickup_2_name_middle_name', a.value.string_value, null)
-    ) as nonpickup_2_name_middle_name,
-    max(
-        if(a.field_name = 'nonpickup_2_name_name_title', a.value.string_value, null)
-    ) as nonpickup_2_name_name_title,
-    max(
-        if(a.field_name = 'nonpickup_2_name_preferred_name', a.value.string_value, null)
-    ) as nonpickup_2_name_preferred_name,
-    max(
-        if(a.field_name = 'nonpickup_2_yn', a.value.boolean_value, null)
-    ) as nonpickup_2_yn,
-    max(
-        if(a.field_name = 'nonpickup_3_name_first_name', a.value.string_value, null)
-    ) as nonpickup_3_name_first_name,
-    max(
-        if(a.field_name = 'nonpickup_3_name_last_name', a.value.string_value, null)
-    ) as nonpickup_3_name_last_name,
-    max(
-        if(a.field_name = 'nonpickup_3_name_middle_name', a.value.string_value, null)
-    ) as nonpickup_3_name_middle_name,
-    max(
-        if(a.field_name = 'nonpickup_3_name_name_title', a.value.string_value, null)
-    ) as nonpickup_3_name_name_title,
-    max(
-        if(a.field_name = 'nonpickup_3_name_preferred_name', a.value.string_value, null)
-    ) as nonpickup_3_name_preferred_name,
-    max(
-        if(a.field_name = 'nonpickup_3_yn', a.value.boolean_value, null)
-    ) as nonpickup_3_yn,
-    max(
-        if(a.field_name = 'pickup_1_name_first_name', a.value.string_value, null)
-    ) as pickup_1_name_first_name,
-    max(
-        if(a.field_name = 'pickup_1_name_last_name', a.value.string_value, null)
-    ) as pickup_1_name_last_name,
-    max(
-        if(a.field_name = 'pickup_1_name_middle_name', a.value.string_value, null)
-    ) as pickup_1_name_middle_name,
-    max(
-        if(a.field_name = 'pickup_1_name_name_suffix', a.value.string_value, null)
-    ) as pickup_1_name_name_suffix,
-    max(
-        if(a.field_name = 'pickup_1_name_name_title', a.value.string_value, null)
-    ) as pickup_1_name_name_title,
-    max(
-        if(a.field_name = 'pickup_1_name_preferred_name', a.value.string_value, null)
-    ) as pickup_1_name_preferred_name,
-    max(
-        if(a.field_name = 'pickup_2_name_first_name', a.value.string_value, null)
-    ) as pickup_2_name_first_name,
-    max(
-        if(a.field_name = 'pickup_2_name_last_name', a.value.string_value, null)
-    ) as pickup_2_name_last_name,
-    max(
-        if(a.field_name = 'pickup_2_name_middle_name', a.value.string_value, null)
-    ) as pickup_2_name_middle_name,
-    max(
-        if(a.field_name = 'pickup_2_name_name_suffix', a.value.string_value, null)
-    ) as pickup_2_name_name_suffix,
-    max(
-        if(a.field_name = 'pickup_2_name_name_title', a.value.string_value, null)
-    ) as pickup_2_name_name_title,
-    max(
-        if(a.field_name = 'pickup_2_name_preferred_name', a.value.string_value, null)
-    ) as pickup_2_name_preferred_name,
-    max(
-        if(a.field_name = 'pickup_3_name_first_name', a.value.string_value, null)
-    ) as pickup_3_name_first_name,
-    max(
-        if(a.field_name = 'pickup_3_name_last_name', a.value.string_value, null)
-    ) as pickup_3_name_last_name,
-    max(
-        if(a.field_name = 'pickup_3_name_middle_name', a.value.string_value, null)
-    ) as pickup_3_name_middle_name,
-    max(
-        if(a.field_name = 'pickup_3_name_name_suffix', a.value.string_value, null)
-    ) as pickup_3_name_name_suffix,
-    max(
-        if(a.field_name = 'pickup_3_name_name_title', a.value.string_value, null)
-    ) as pickup_3_name_name_title,
-    max(
-        if(a.field_name = 'pickup_3_name_preferred_name', a.value.string_value, null)
-    ) as pickup_3_name_preferred_name,
-    max(
-        if(a.field_name = 'preschool_parent_paid_yn', a.value.boolean_value, null)
-    ) as preschool_parent_paid_yn,
-    max(
-        if(a.field_name = 'preschool_type_ss', a.value.string_value, null)
-    ) as preschool_type_ss,
-    max(if(a.field_name = 'preschool_yn', a.value.boolean_value, null)) as preschool_yn,
-    max(
-        if(a.field_name = 'prev_arrested_txt', a.value.string_value, null)
-    ) as prev_arrested_txt,
-    max(
-        if(a.field_name = 'prev_arrested_yn', a.value.boolean_value, null)
-    ) as prev_arrested_yn,
-    max(
-        if(a.field_name = 'prev_expelled_txt', a.value.string_value, null)
-    ) as prev_expelled_txt,
-    max(
-        if(a.field_name = 'prev_expelled_yn', a.value.boolean_value, null)
-    ) as prev_expelled_yn,
-    max(
-        if(a.field_name = 'prev_juvenile_party_txt', a.value.string_value, null)
-    ) as prev_juvenile_party_txt,
-    max(
-        if(a.field_name = 'prev_juvenile_party_yn', a.value.boolean_value, null)
-    ) as prev_juvenile_party_yn,
-    any_value(
-        if(a.field_name = 'race_ms', a.value.array_string_value, null)
-    ) as race_ms,
-    max(if(a.field_name = 'school_1_ss', a.value.string_value, null)) as school_1_ss,
-    max(
-        if(a.field_name = 'school_1_status_ss', a.value.string_value, null)
-    ) as school_1_status_ss,
-    max(if(a.field_name = 'school_1_txt', a.value.string_value, null)) as school_1_txt,
-    max(
-        if(a.field_name = 'school_ops_caller_ss', a.value.string_value, null)
-    ) as school_ops_caller_ss,
-    max(
-        if(a.field_name = 'self_contained_yn', a.value.boolean_value, null)
-    ) as self_contained_yn,
-    max(
-        if(a.field_name = 'shirt_size_ss', a.value.string_value, null)
-    ) as shirt_size_ss,
-    max(if(a.field_name = 'sib_count_ss', a.value.string_value, null)) as sib_count_ss,
-    max(
-        if(a.field_name = 'sib_enrolled_yn', a.value.boolean_value, null)
-    ) as sib_enrolled_yn,
-    max(if(a.field_name = 'sib_grade_ss', a.value.string_value, null)) as sib_grade_ss,
-    max(
-        if(a.field_name = 'signature_date', a.value.string_value, null)
-    ) as signature_date,
-    max(
-        if(a.field_name = 'sped_received_txt', a.value.string_value, null)
-    ) as sped_received_txt,
-    max(
-        if(a.field_name = 'sped_received_yn', a.value.boolean_value, null)
-    ) as sped_received_yn,
-    max(
-        if(a.field_name = 'staff_transport_yn', a.value.boolean_value, null)
-    ) as staff_transport_yn,
-    max(
-        if(a.field_name = 'transfer_desired_campus_ss', a.value.string_value, null)
-    ) as transfer_desired_campus_ss,
-    max(
-        if(a.field_name = 'transfer_reason_txt', a.value.string_value, null)
-    ) as transfer_reason_txt,
-    max(
-        if(a.field_name = 'transfer_request_date', a.value.string_value, null)
-    ) as transfer_request_date,
-    max(
-        if(a.field_name = 'unaccompanied_youth_yn', a.value.boolean_value, null)
-    ) as unaccompanied_youth_yn,
-    max(
-        if(a.field_name = 'what_is_s_he_interested_in_txt', a.value.string_value, null)
-    ) as what_is_s_he_interested_in_txt,
-    max(
-        if(
-            a.field_name = 'what_is_your_child_excited_about_txt',
-            a.value.string_value,
-            null
-        )
-    ) as what_is_your_child_excited_about_txt,
-    max(
-        if(a.field_name = 'withdraw_reason_notes_txt', a.value.string_value, null)
-    ) as withdraw_reason_notes_txt,
-    max(
-        if(a.field_name = 'withdrawal_last_attended_date', a.value.string_value, null)
-    ) as withdrawal_last_attended_date,
-    max(
-        if(a.field_name = 'withdrawal_reason_ss', a.value.string_value, null)
-    ) as withdrawal_reason_ss,
-    max(
-        if(a.field_name = 'withdrawal_school_address_city', a.value.string_value, null)
-    ) as withdrawal_school_address_city,
-    max(
-        if(
-            a.field_name = 'withdrawal_school_address_country',
-            a.value.string_value,
-            null
-        )
-    ) as withdrawal_school_address_country,
-    max(
-        if(a.field_name = 'withdrawal_school_address_state', a.value.string_value, null)
-    ) as withdrawal_school_address_state,
-    max(
-        if(a.field_name = 'withdrawal_school_txt', a.value.string_value, null)
-    ) as withdrawal_school_txt,
-    max(
-        if(a.field_name = 'withdrawal_transfer_type_ss', a.value.string_value, null)
-    ) as withdrawal_transfer_type_ss,
-from {{ ref("stg_finalsite__contacts") }} as c
-cross join unnest(c.custom_attributes) as a
-group by c.finalsite_enrollment_id
+    )

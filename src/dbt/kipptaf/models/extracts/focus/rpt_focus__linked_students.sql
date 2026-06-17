@@ -1,33 +1,11 @@
-with
-    sibling_edges as (
-        select rel.finalsite_enrollment_id, rel.rel_id,
-        from {{ ref("stg_finalsite__contact_relationships") }} as rel
-        where rel.rel_type = 'sibling'
-    ),
-
-    student_ids as (
-        -- STDT_ID is null until the Finalsite-minted student id lands in
-        -- id_attributes; repoint to int_finalsite__contact_id_attributes then
-        -- (until then `pairs` is empty and no links are emitted).
-        select l.finalsite_enrollment_id, cast(null as string) as stdt_id,
-        from {{ ref("int_finalsite__enrollment_lifecycle") }} as l
-    ),
-
-    pairs as (
-        select pri.stdt_id as id_a, sec.stdt_id as id_b,
-        from sibling_edges as e
-        inner join
-            student_ids as pri
-            on e.finalsite_enrollment_id = pri.finalsite_enrollment_id
-        inner join student_ids as sec on e.rel_id = sec.finalsite_enrollment_id
-        where pri.stdt_id is not null and sec.stdt_id is not null
-    )
-
--- trunk-ignore(sqlfluff/ST06): column order fixed by Focus LINKED_STUDENTS layout
-select distinct
-    -- grain projection: each row is one unordered sibling pair; every selected
-    -- column is functionally determined by the (least, greatest) id pair
-    least(p.id_a, p.id_b) as primary_student_id,
-    greatest(p.id_a, p.id_b) as secondary_student_id,
+-- LINKED_STUDENTS pairs sibling enrollments by Focus STDT_ID. STDT_ID is null
+-- until the Finalsite-minted id lands in id_attributes, so no links are emitted
+-- yet (this returns no rows). When the id source exists, inner join
+-- int_finalsite__contact_id_attributes on rel.finalsite_enrollment_id and
+-- rel.rel_id and project least/greatest of the two student ids.
+select
+    cast(null as string) as primary_student_id,
+    cast(null as string) as secondary_student_id,
     'sibling' as relationship,
-from pairs as p
+from {{ ref("stg_finalsite__contact_relationships") }} as rel
+where rel.rel_type = 'sibling' and false

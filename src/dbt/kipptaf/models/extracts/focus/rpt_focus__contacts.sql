@@ -1,43 +1,12 @@
-with
-    student as (
-        select l.finalsite_enrollment_id,
-        from {{ ref("int_finalsite__enrollment_lifecycle") }} as l
-    ),
-
-    guardians as (
-        select
-            rel.finalsite_enrollment_id,
-            rel.rel_type,
-            rel.is_primary,
-            g.first_name,
-            g.middle_name,
-            g.last_name,
-            g.email,
-            g.address_1,
-            g.address_2,
-            g.city,
-            g.state,
-            g.zip,
-            g.phone_1_type,
-            g.phone_1_number,
-            g.phone_2_type,
-            g.phone_2_number,
-        from {{ ref("stg_finalsite__contact_relationships") }} as rel
-        inner join
-            {{ ref("stg_finalsite__contacts") }} as g
-            on rel.rel_id = g.finalsite_enrollment_id
-        where rel.rel_type in ('parent', 'guardian')
-    )
-
 -- trunk-ignore(sqlfluff/ST06): column order fixed by Focus CONTACTS contract
 select
     -- STDT_ID is null until the Finalsite-minted student id lands in
     -- id_attributes; repoint to int_finalsite__contact_id_attributes then.
     cast(null as string) as student_id,
-    g.rel_type as student_relation,
+    rel.rel_type as student_relation,
     row_number() over (
-        partition by g.finalsite_enrollment_id
-        order by g.is_primary desc, g.last_name asc, g.first_name asc
+        partition by rel.finalsite_enrollment_id
+        order by rel.is_primary desc, g.last_name asc, g.first_name asc
     ) as sort_order,
     g.first_name,
     g.middle_name,
@@ -87,5 +56,10 @@ select
     cast(null as string) as contact7_blocked,
     cast(null as string) as contact7_unlisted,
     cast(null as string) as contact7_callout,
-from student as s
-inner join guardians as g on s.finalsite_enrollment_id = g.finalsite_enrollment_id
+from {{ ref("stg_finalsite__contact_relationships") }} as rel
+inner join
+    {{ ref("stg_finalsite__contacts") }} as g on rel.rel_id = g.finalsite_enrollment_id
+inner join
+    {{ ref("int_finalsite__enrollment_lifecycle") }} as l
+    on rel.finalsite_enrollment_id = l.finalsite_enrollment_id
+where rel.rel_type in ('parent', 'guardian')

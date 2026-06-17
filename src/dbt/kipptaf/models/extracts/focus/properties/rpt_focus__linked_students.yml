@@ -66,9 +66,5 @@ unit_tests:
               rel_id: enr-stu-a,
               rel_type: sibling,
             }
-      - input: ref('int_finalsite__enrollment_lifecycle')
-        rows:
-          - { finalsite_enrollment_id: enr-stu-a }
-          - { finalsite_enrollment_id: enr-stu-b }
     expect:
       rows: []

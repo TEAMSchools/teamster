@@ -1,43 +1,23 @@
-with
-    demographics as (
-        select
-            c.last_name,
-            c.first_name,
-            c.middle_name,
-            c.preferred_name,
-            c.email,
-            c.gender,
-            c.birth_date,
-            cca.latino_hispanic_yn,
-        from {{ ref("stg_finalsite__contacts") }} as c
-        inner join
-            {{ ref("int_finalsite__enrollment_lifecycle") }} as l
-            on c.finalsite_enrollment_id = l.finalsite_enrollment_id
-        left join
-            {{ ref("int_finalsite__contact_custom_attributes") }} as cca
-            on c.finalsite_enrollment_id = cca.finalsite_enrollment_id
-    )
-
 -- trunk-ignore(sqlfluff/ST06): column order fixed by Focus DEMOGRAPHICS contract
 select
     -- STDT_ID is null until the Finalsite-minted student id lands in
     -- id_attributes; repoint to int_finalsite__contact_id_attributes then.
     cast(null as string) as stdt_id,
-    d.last_name,
-    d.first_name,
+    c.last_name,
+    c.first_name,
     cast(null as string) as name_suffix,
-    d.middle_name,
-    d.preferred_name as nickname,
-    format_date('%Y%m%d', d.birth_date) as dt_birth,
+    c.middle_name,
+    c.preferred_name as nickname,
+    format_date('%Y%m%d', c.birth_date) as dt_birth,
     case
-        when d.gender in ('M', 'Male')
+        when c.gender in ('M', 'Male')
         then 'M'
-        when d.gender in ('F', 'Female')
+        when c.gender in ('F', 'Female')
         then 'F'
     end as gender,
     cast(null as string) as lang,
-    d.email as stdt_email,
-    if(d.latino_hispanic_yn, 'Y', 'N') as ethnic_hl,
+    c.email as stdt_email,
+    if(cca.latino_hispanic_yn, 'Y', 'N') as ethnic_hl,
     cast(null as string) as single_ethnic,
     cast(null as string) as race_am_ind_ak_nat,
     cast(null as string) as race_asian,
@@ -70,4 +50,10 @@ select
     cast(null as string) as casas_track,
     cast(null as string) as lcp_cont_stdt,
     cast(null as string) as tide_access_code,
-from demographics as d
+from {{ ref("stg_finalsite__contacts") }} as c
+inner join
+    {{ ref("int_finalsite__enrollment_lifecycle") }} as l
+    on c.finalsite_enrollment_id = l.finalsite_enrollment_id
+left join
+    {{ ref("int_finalsite__contact_custom_attributes") }} as cca
+    on c.finalsite_enrollment_id = cca.finalsite_enrollment_id

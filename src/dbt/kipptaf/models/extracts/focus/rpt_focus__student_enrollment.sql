@@ -1,34 +1,24 @@
-with
-    enrollment as (
-        select
-            l.finalsite_enrollment_id,
-            l.school_year_start,
-            l.assigned_school,
-            l.grade_canonical_name,
-            l.lifecycle_action,
-            l.enrollment_start_date,
-            l.enrollment_end_date,
-            l.withdrawal_reason,
-        from {{ ref("int_finalsite__enrollment_lifecycle") }} as l
-    )
-
 -- trunk-ignore(sqlfluff/ST06): column order fixed by Focus STUDENT_ENROLLMENT contract
 select
-    e.school_year_start as syear,
+    l.school_year_start as syear,
     sch.location_focus_school_id as school_id,
     -- STDT_ID is null until the Finalsite-minted student id lands in
     -- id_attributes; repoint to int_finalsite__contact_id_attributes then.
     cast(null as string) as student_id,
-    gr.focus_grade_id as grade_id,
-    format_date('%Y%m%d', e.enrollment_start_date) as start_date,
+    if(
+        l.grade_canonical_name = 'k',
+        'KG',
+        lpad(regexp_extract(l.grade_canonical_name, r'\d+'), 2, '0')
+    ) as grade_id,
+    format_date('%Y%m%d', l.enrollment_start_date) as start_date,
     ec.focus_enrollment_code as enrollment_code,
     if(
-        e.lifecycle_action = 'transfer_out',
-        format_date('%Y%m%d', e.enrollment_end_date),
+        l.lifecycle_action = 'transfer_out',
+        format_date('%Y%m%d', l.enrollment_end_date),
         cast(null as string)
     ) as end_date,
     if(
-        e.lifecycle_action = 'transfer_out', dc.focus_drop_code, cast(null as string)
+        l.lifecycle_action = 'transfer_out', dc.focus_drop_code, cast(null as string)
     ) as drop_code,
     cast(null as string) as calendar_id,
     cast(null as string) as prior_dist,
@@ -51,16 +41,13 @@ select
     cast(null as int64) as fl_days_present,
     cast(null as int64) as fl_days_absent,
     cast(null as int64) as fl_days_absent_not_disc,
-from enrollment as e
-left join
-    {{ ref("stg_google_sheets__focus__grade_crosswalk") }} as gr
-    on e.grade_canonical_name = gr.finalsite_grade_canonical_name
+from {{ ref("int_finalsite__enrollment_lifecycle") }} as l
 left join
     {{ ref("int_people__location_crosswalk") }} as sch
-    on e.assigned_school = sch.location_name
+    on l.assigned_school = sch.location_name
 left join
     {{ ref("stg_google_sheets__focus__enrollment_code_crosswalk") }} as ec
-    on e.lifecycle_action = ec.finalsite_lifecycle_action
+    on l.lifecycle_action = ec.finalsite_lifecycle_action
 left join
     {{ ref("stg_google_sheets__focus__drop_code_crosswalk") }} as dc
-    on e.withdrawal_reason = dc.finalsite_withdrawal_reason
+    on l.withdrawal_reason = dc.finalsite_withdrawal_reason

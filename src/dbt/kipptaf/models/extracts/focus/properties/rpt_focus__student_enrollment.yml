@@ -2,12 +2,13 @@ models:
   - name: rpt_focus__student_enrollment
     description:
       One row per in-scope Finalsite enrollment reshaped into the Focus
-      `STUDENT_ENROLLMENT` SFTP template layout. Joins
-      `int_finalsite__enrollment_lifecycle` and
-      `int_finalsite__contact_id_attributes` to four Google Sheets crosswalks
-      (grade, school, enrollment code, drop code) to produce the 29-column
-      layout consumed by the Focus SFTP transport. The Focus column header
-      casing (`SYEAR`, `SCHOOL_ID`, etc.) is applied at transport time via
+      `STUDENT_ENROLLMENT` SFTP template layout, built from
+      `int_finalsite__enrollment_lifecycle`. Grade is translated inline
+      (`k`→`KG`, else zero-padded number); school maps via
+      `int_people__location_crosswalk` and enrollment/drop codes via Google
+      Sheets crosswalks — together producing the 29-column layout consumed by
+      the Focus SFTP transport. The Focus column header casing (`SYEAR`,
+      `SCHOOL_ID`, etc.) is applied at transport time via
       `file_config.format.header_replacements`; dbt column names remain
       lowercase snake_case. `end_date` and `drop_code` populate only for
       `lifecycle_action = 'transfer_out'` rows.
@@ -30,8 +31,8 @@ models:
       - name: school_id
         data_type: string
         description:
-          Focus school ID mapped from `assigned_school` via the school
-          crosswalk.
+          Focus SCH_ID mapped from `assigned_school` via
+          `int_people__location_crosswalk` (`location_focus_school_id`).
         data_tests:
           - not_null:
               config:
@@ -39,8 +40,8 @@ models:
       - name: grade_id
         data_type: string
         description:
-          Focus grade ID mapped from `grade_canonical_name` via the grade
-          crosswalk.
+          Focus grade ID translated inline from `grade_canonical_name` — `KG`
+          for `k`, otherwise the grade number zero-padded to two digits.
         data_tests:
           - not_null:
               config:
@@ -162,9 +163,9 @@ unit_tests:
   - name: test_student_enrollment_shape
     description:
       Verifies the 29-column STUDENT_ENROLLMENT layout for a new-enrollment row
-      — crosswalk joins resolve grade/school/enrollment code, student_id is null
-      (no Focus ID minted yet), and end_date/drop_code are null for a
-      non-transfer row.
+      — grade is translated inline, school/enrollment-code crosswalks resolve,
+      student_id is null (no Focus ID minted yet), and end_date/drop_code are
+      null for a non-transfer row.
     model: rpt_focus__student_enrollment
     given:
       - input: ref('int_finalsite__enrollment_lifecycle')
@@ -173,15 +174,12 @@ unit_tests:
               finalsite_enrollment_id: e1,
               lifecycle_action: create,
               school_year_start: 2025,
-              grade_canonical_name: "05",
+              grade_canonical_name: 5th,
               assigned_school: KIPP Royalty Academy,
               enrollment_start_date: 2025-08-12,
               enrollment_end_date: null,
               withdrawal_reason: null,
             }
-      - input: ref('stg_google_sheets__focus__grade_crosswalk')
-        rows:
-          - { finalsite_grade_canonical_name: "05", focus_grade_id: "5" }
       - input: ref('int_people__location_crosswalk')
         format: sql
         rows: |
@@ -203,7 +201,7 @@ unit_tests:
             syear: 2025,
             school_id: "0001",
             student_id: null,
-            grade_id: "5",
+            grade_id: "05",
             start_date: "20250812",
             enrollment_code: EA1,
             end_date: null,
@@ -242,15 +240,12 @@ unit_tests:
               finalsite_enrollment_id: e2,
               lifecycle_action: transfer_out,
               school_year_start: 2025,
-              grade_canonical_name: "07",
+              grade_canonical_name: 7th,
               assigned_school: KIPP Royalty Academy,
               enrollment_start_date: 2025-08-12,
               enrollment_end_date: 2026-01-15,
               withdrawal_reason: mid_year_withdrawal,
             }
-      - input: ref('stg_google_sheets__focus__grade_crosswalk')
-        rows:
-          - { finalsite_grade_canonical_name: "07", focus_grade_id: "7" }
       - input: ref('int_people__location_crosswalk')
         format: sql
         rows: |
@@ -275,7 +270,7 @@ unit_tests:
             syear: 2025,
             school_id: "0001",
             student_id: null,
-            grade_id: "7",
+            grade_id: "07",
             start_date: "20250812",
             enrollment_code: W01,
             end_date: "20260115",
