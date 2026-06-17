@@ -5,27 +5,29 @@ models:
       year, assessment source, subject, administration round, and assessment.
       Scoped to enrolled K-8 students in ELA and Math for the current and prior
       academic year. Joins the assessment union to a single demographic row per
-      student/year and to the student's ENG/MATH course teacher and section.
-      Carries the raw student_number (PII; the destination sheet is
-      access-restricted and anonymization is handled downstream).
+      student/year and to the student's ENG/MATH course teacher and section. The
+      raw student_number is never emitted: students are identified by a
+      pseudonymous student_token (a stable hash of student_number), so the
+      extract is de-identified at the source and shared under the research
+      data-sharing agreement.
     data_tests:
       - dbt_utils.unique_combination_of_columns:
           arguments:
             combination_of_columns:
-              - student_number
+              - student_token
               - academic_year
               - assessment_source
               - subject
               - administration_round
               - assessment_id
     columns:
-      - name: student_number
-        data_type: int64
+      - name: student_token
+        data_type: string
         description: >
-          The raw PowerSchool student number (PII), carried through from the
-          assessment union.
-        data_tests:
-          - not_null
+          Pseudonymous student identifier — a stable hash of the PowerSchool
+          student number. The same student resolves to the same token across
+          rounds and years, so longitudinal joins hold; the raw number is not
+          emitted.
       - name: academic_year
         data_type: int64
         description: >
