@@ -17,7 +17,11 @@ select
     end as gender,
     cca.lang_parent_ss as lang,
     c.email as stdt_email,
-    if(cca.latino_hispanic_yn, 'Y', 'N') as ethnic_hl,
+    -- null (not 'N') when no custom_attributes row exists, so an unknown is not
+    -- silently reported as not-Hispanic for FLDOE.
+    case
+        when cca.latino_hispanic_yn then 'Y' when not cca.latino_hispanic_yn then 'N'
+    end as ethnic_hl,
     cast(null as string) as single_ethnic,
     if('American Indian' in unnest(cca.race_ms), 'Y', null) as race_am_ind_ak_nat,
     if('Asian' in unnest(cca.race_ms), 'Y', null) as race_asian,

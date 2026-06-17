@@ -4,8 +4,9 @@ models:
       One row per Finalsite contact, pivoting every field in the repeated
       `track_attributes` key-value array into its own column, aliased to its
       original Finalsite field name (all string-valued). Contacts with no
-      `track_attributes` are absent (resolve via a left join). New track fields
-      appear here automatically once they carry data.
+      `track_attributes` are absent (resolve via a left join). The PIVOT
+      enumerates fields explicitly — add a new `track_attributes` field to the
+      PIVOT field list in the model SQL; it does not surface automatically.
     columns:
       - name: finalsite_enrollment_id
         data_type: string

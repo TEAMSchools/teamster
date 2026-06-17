@@ -2,19 +2,19 @@ models:
   - name: rpt_focus__contacts
     description:
       One row per (student, guardian) reshaped into the Focus `CONTACTS` SFTP
-      template layout. Builds the student side from
-      `int_finalsite__enrollment_lifecycle` joined to
-      `int_finalsite__contact_id_attributes` for the Focus student ID, then fans
-      out to guardian contact rows via `stg_finalsite__contact_relationships`
-      (adult relationship types — parent, guardian, grandparent, stepparent,
-      relative, aunt/uncle) inner-joined to `stg_finalsite__contacts` for
-      guardian attributes. Produces 51 columns in `CONTACTS_LAYOUT` order.
-      `SORT_ORDER` ranks guardians per student by `is_primary desc` so the
-      primary contact sorts first. Phone slots `CONTACT1_*` and `CONTACT2_*` map
-      the guardian's two phones; `CONTACT3` through `CONTACT7` are always null.
-      Focus column header casing is applied at transport time via
-      `file_config.format.header_replacements`; dbt column names remain
-      lowercase snake_case.
+      template layout. Fans out guardian contact rows from
+      `stg_finalsite__contact_relationships` (adult relationship types — parent,
+      guardian, grandparent, stepparent, relative, aunt/uncle) inner-joined to
+      `stg_finalsite__contacts` for guardian attributes, gated to in-scope
+      students via `int_finalsite__enrollment_lifecycle`. `student_id` is
+      stubbed null until the Finalsite-minted student id lands in
+      `int_finalsite__contact_id_attributes`. Produces 51 columns in
+      `CONTACTS_LAYOUT` order. `SORT_ORDER` ranks guardians per student by
+      `is_primary desc` so the primary contact sorts first. Phone slots
+      `CONTACT1_*` and `CONTACT2_*` map the guardian's two phones; `CONTACT3`
+      through `CONTACT7` are always null. Focus column header casing is applied
+      at transport time via `file_config.format.header_replacements`; dbt column
+      names remain lowercase snake_case.
     data_tests:
       - dbt_utils.unique_combination_of_columns:
           arguments:

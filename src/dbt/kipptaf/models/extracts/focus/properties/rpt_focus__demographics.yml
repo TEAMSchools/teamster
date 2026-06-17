@@ -5,10 +5,12 @@ models:
       `DEMOGRAPHICS` SFTP template layout. Joins `stg_finalsite__contacts` to
       `int_finalsite__enrollment_lifecycle` (the in-scope filter; grain =
       `finalsite_enrollment_id`), then left joins
-      `int_finalsite__contact_id_attributes` for the Focus student ID and
-      `int_finalsite__contact_custom_attributes` for the Hispanic/Latino flag.
-      Produces 43 columns in `DEMOGRAPHICS_LAYOUT` order. Focus column header
-      casing (`STDT_ID`, `LAST_NAME`, etc.) is applied at transport time via
+      `int_finalsite__contact_custom_attributes` for race, language,
+      media-release, and Hispanic/Latino fields. `stdt_id` is stubbed null until
+      the Finalsite-minted student id lands in
+      `int_finalsite__contact_id_attributes`. Produces 43 columns in
+      `DEMOGRAPHICS_LAYOUT` order. Focus column header casing (`STDT_ID`,
+      `LAST_NAME`, etc.) is applied at transport time via
       `file_config.format.header_replacements`; dbt column names remain
       lowercase snake_case. Race flags, language, photo permission, and
       `ETHNIC_HL` derive from the `int_finalsite__contact_custom_attributes`
@@ -61,8 +63,9 @@ models:
         data_type: string
         description:
           Hispanic/Latino indicator derived from
-          `int_finalsite__contact_custom_attributes.latino_hispanic_yn` — `Y` if
-          true, `N` if false.
+          `int_finalsite__contact_custom_attributes.latino_hispanic_yn` — `Y`
+          when true, `N` when false, null when no custom-attributes row exists
+          (an unknown is not coded as not-Hispanic).
       - name: single_ethnic
         data_type: string
         description:
@@ -198,10 +201,12 @@ models:
 unit_tests:
   - name: test_demographics_shape
     description:
-      Verifies the 43-column DEMOGRAPHICS layout for a single student — STDT_ID
-      is null until the Finalsite-minted student id lands, DT_BIRTH is formatted
-      as YYYYMMDD, GENDER is mapped to single-letter code, ETHNIC_HL derives
-      from int_finalsite__contact_custom_attributes.latino_hispanic_yn.
+      Verifies the 43-column DEMOGRAPHICS layout — STDT_ID is null until the
+      Finalsite-minted student id lands, DT_BIRTH is formatted as YYYYMMDD,
+      GENDER is mapped to single-letter code, ETHNIC_HL derives from
+      int_finalsite__contact_custom_attributes.latino_hispanic_yn. The second
+      student has no custom-attributes row, confirming ETHNIC_HL is null (not
+      'N') for an unknown while PHOTO_VID_PERM defaults to 'N'.
     model: rpt_focus__demographics
     given:
       - input: ref('stg_finalsite__contacts')
@@ -216,9 +221,16 @@ unit_tests:
               gender: Female,
               birth_date: 2012-03-15,
             }
+          - {
+              finalsite_enrollment_id: enr-002,
+              last_name: Doe,
+              first_name: John,
+              birth_date: 2013-05-20,
+            }
       - input: ref('int_finalsite__enrollment_lifecycle')
         rows:
           - { finalsite_enrollment_id: enr-001 }
+          - { finalsite_enrollment_id: enr-002 }
       - input: ref('int_finalsite__contact_custom_attributes')
         format: sql
         rows: |
@@ -266,6 +278,51 @@ unit_tests:
             direct_perm: null,
             screen_perm: null,
             photo_vid_perm: Y,
+            survey_perm: null,
+            mckay_sch_attend: null,
+            fhsaa_el3_ind: null,
+            fhsaa_el3ch_ind: null,
+            dt_home_lang_survey: null,
+            casas_track: null,
+            lcp_cont_stdt: null,
+            tide_access_code: null,
+          }
+        - {
+            stdt_id: null,
+            last_name: Doe,
+            first_name: John,
+            name_suffix: null,
+            middle_name: null,
+            nickname: null,
+            dt_birth: "20130520",
+            gender: null,
+            lang: null,
+            stdt_email: null,
+            ethnic_hl: null,
+            single_ethnic: null,
+            race_am_ind_ak_nat: null,
+            race_asian: null,
+            race_black: null,
+            race_nat_haw_pac_isl: null,
+            race_white: null,
+            residence_county: null,
+            contry_birth: null,
+            homeroom_tchr: null,
+            resident_st: null,
+            birth_loc: null,
+            bdate_verif: null,
+            immun_st: null,
+            primary_home_lang: null,
+            native_parent_lang: null,
+            grde_enter_dist: null,
+            msix_id: null,
+            homeroom: null,
+            pmrn: null,
+            internt_perm: null,
+            act_perm: null,
+            direct_perm: null,
+            screen_perm: null,
+            photo_vid_perm: N,
             survey_perm: null,
             mckay_sch_attend: null,
             fhsaa_el3_ind: null,

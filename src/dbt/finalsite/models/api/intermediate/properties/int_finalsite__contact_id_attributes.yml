@@ -4,9 +4,11 @@ models:
       One row per Finalsite contact, pivoting the repeated `id_attributes`
       key-value array into one column per identifier field, each aliased to its
       original Finalsite field name. Contacts with no `id_attributes` are absent
-      (resolve via a left join). When the Finalsite-minted student number (the
-      future Focus `STDT_ID`) lands as a new `id_attributes` field, it appears
-      here automatically and downstream extracts repoint to it.
+      (resolve via a left join). The PIVOT enumerates fields explicitly, so a
+      new `id_attributes` field does not surface automatically — when the
+      Finalsite-minted student number (the future Focus `STDT_ID`) lands, add it
+      to the PIVOT field list in the model SQL, then repoint downstream
+      extracts.
     columns:
       - name: finalsite_enrollment_id
         data_type: string

@@ -164,8 +164,9 @@ models:
 unit_tests:
   - name: test_student_enrollment_shape
     description:
-      Verifies the 29-column STUDENT_ENROLLMENT layout for a new-enrollment row
-      — grade is translated inline, school/enrollment-code crosswalks resolve,
+      Verifies the 29-column STUDENT_ENROLLMENT layout for new-enrollment rows —
+      grade is translated inline for both a numbered grade (`5th`→`05`) and
+      kindergarten (`k`→`KG`), school/enrollment-code crosswalks resolve,
       student_id is null (no Focus ID minted yet), and end_date/drop_code are
       null for a non-transfer row.
     model: rpt_focus__student_enrollment
@@ -177,6 +178,17 @@ unit_tests:
               lifecycle_action: create,
               school_year_start: 2025,
               grade_canonical_name: 5th,
+              assigned_school: KIPP Royalty Academy,
+              enrollment_start_date: 2025-08-12,
+              enrollment_end_date: null,
+              withdrawal_reason: null,
+              promotion_status: null,
+            }
+          - {
+              finalsite_enrollment_id: e3,
+              lifecycle_action: create,
+              school_year_start: 2025,
+              grade_canonical_name: k,
               assigned_school: KIPP Royalty Academy,
               enrollment_start_date: 2025-08-12,
               enrollment_end_date: null,
@@ -211,6 +223,37 @@ unit_tests:
             school_id: "0001",
             student_id: null,
             grade_id: "05",
+            start_date: "20250812",
+            enrollment_code: EA1,
+            end_date: null,
+            drop_code: null,
+            calendar_id: null,
+            prior_dist: null,
+            prior_state: null,
+            prior_country: null,
+            ed_choice: null,
+            stdt_dis_affect: null,
+            offender_transfer_stdt: null,
+            came_from: null,
+            moved_to: null,
+            sec_sch: null,
+            grde_prom_st: null,
+            good_cause_exempt: null,
+            graduation_requirement_program: null,
+            next_school: null,
+            next_grade: null,
+            district_ood: null,
+            sch_ood: null,
+            include_in_class_rank: null,
+            fl_days_present: null,
+            fl_days_absent: null,
+            fl_days_absent_not_disc: null,
+          }
+        - {
+            syear: 2025,
+            school_id: "0001",
+            student_id: null,
+            grade_id: KG,
             start_date: "20250812",
             enrollment_code: EA1,
             end_date: null,

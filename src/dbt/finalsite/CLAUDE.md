@@ -31,8 +31,9 @@ models/
   receivers).
 - `int_finalsite__contact_id_attributes` — pivots every `id_attributes` field to
   its own column, aliased to the original field name (`power_school_contact_id`,
-  `powerschool_student_number`). The Finalsite-minted Focus `STDT_ID` field
-  appears here automatically once it carries data.
+  `powerschool_student_number`). The PIVOT enumerates fields explicitly — add a
+  new `id_attributes` field (e.g. the Finalsite-minted Focus `STDT_ID`) to the
+  PIVOT list in the model SQL; it does not surface automatically.
 - `int_finalsite__contact_custom_attributes` — pivots every `custom_attributes`
   field to its own column, aliased to the original field name and typed by the
   populated value subtype (`_yn`/`_opt_in` booleans, `_ms` string arrays, else
