@@ -31,10 +31,11 @@ with
         where pri.stdt_id is not null and sec.stdt_id is not null
     )
 
+-- trunk-ignore(sqlfluff/ST06): column order fixed by Focus LINKED_STUDENTS layout
 select distinct
     -- grain projection: each row is one unordered sibling pair; every selected
     -- column is functionally determined by the (least, greatest) id pair
-    'sibling' as relationship,
     least(p.id_a, p.id_b) as primary_student_id,
     greatest(p.id_a, p.id_b) as secondary_student_id,
+    'sibling' as relationship,
 from pairs as p
