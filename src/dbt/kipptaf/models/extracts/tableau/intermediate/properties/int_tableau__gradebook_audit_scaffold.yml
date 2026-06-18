@@ -27,6 +27,10 @@ models:
         data_type: string
       - name: grade_level
         data_type: int64
+      - name: dateenrolled
+        data_type: date
+      - name: dateleft
+        data_type: date
       - name: salesforce_id
         data_type: string
       - name: ktc_cohort
