@@ -209,7 +209,10 @@ unit_tests:
       GENDER is mapped to single-letter code, ETHNIC_HL derives from
       int_finalsite__contact_custom_attributes.latino_hispanic_yn. The second
       student has no custom-attributes row, confirming ETHNIC_HL is null (not
-      'N') for an unknown while PHOTO_VID_PERM defaults to 'N'.
+      'N') for an unknown while PHOTO_VID_PERM defaults to 'N'. The third
+      student has a custom-attributes row whose lang_parent_ss has no crosswalk
+      entry, confirming the language columns fall through to null (not the raw
+      label).
     model: rpt_focus__demographics
     given:
       - input: ref('stg_finalsite__contacts')
@@ -230,10 +233,17 @@ unit_tests:
               first_name: John,
               birth_date: 2013-05-20,
             }
+          - {
+              finalsite_enrollment_id: enr-003,
+              last_name: Mara,
+              first_name: Worf,
+              birth_date: 2011-01-10,
+            }
       - input: ref('int_finalsite__enrollment_lifecycle')
         rows:
           - { finalsite_enrollment_id: enr-001 }
           - { finalsite_enrollment_id: enr-002 }
+          - { finalsite_enrollment_id: enr-003 }
       - input: ref('int_finalsite__contact_custom_attributes')
         format: sql
         rows: |
@@ -243,6 +253,13 @@ unit_tests:
             true as media_release_yn,
             'Spanish' as lang_parent_ss,
             ['Black', 'White'] as race_ms
+          union all
+          select
+            'enr-003',
+            false,
+            false,
+            'Klingon',
+            cast(null as array<string>)
       - input: ref('stg_google_sheets__focus__language_code_crosswalk')
         format: sql
         rows: |
@@ -306,6 +323,51 @@ unit_tests:
             lang: null,
             stdt_email: null,
             ethnic_hl: null,
+            single_ethnic: null,
+            race_am_ind_ak_nat: null,
+            race_asian: null,
+            race_black: null,
+            race_nat_haw_pac_isl: null,
+            race_white: null,
+            residence_county: null,
+            contry_birth: null,
+            homeroom_tchr: null,
+            resident_st: null,
+            birth_loc: null,
+            bdate_verif: null,
+            immun_st: null,
+            primary_home_lang: null,
+            native_parent_lang: null,
+            grde_enter_dist: null,
+            msix_id: null,
+            homeroom: null,
+            pmrn: null,
+            internt_perm: null,
+            act_perm: null,
+            direct_perm: null,
+            screen_perm: null,
+            photo_vid_perm: N,
+            survey_perm: null,
+            mckay_sch_attend: null,
+            fhsaa_el3_ind: null,
+            fhsaa_el3ch_ind: null,
+            dt_home_lang_survey: null,
+            casas_track: null,
+            lcp_cont_stdt: null,
+            tide_access_code: null,
+          }
+        - {
+            stdt_id: null,
+            last_name: Mara,
+            first_name: Worf,
+            name_suffix: null,
+            middle_name: null,
+            nickname: null,
+            dt_birth: "20110110",
+            gender: null,
+            lang: null,
+            stdt_email: null,
+            ethnic_hl: N,
             single_ethnic: null,
             race_am_ind_ak_nat: null,
             race_asian: null,

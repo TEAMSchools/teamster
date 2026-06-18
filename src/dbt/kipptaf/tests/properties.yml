@@ -194,7 +194,7 @@ data_tests:
       meta:
         dagster:
           ref:
-            name: stg_google_sheets__focus__language_code_crosswalk
+            name: int_finalsite__contact_custom_attributes
 
   - name: dim_student_section_enrollments__no_multi_stint_overlap
     description: >-
