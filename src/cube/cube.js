@@ -164,7 +164,10 @@ module.exports = {
       const region = regionGroup
         .replace(/^cube-region-/, "")
         .replace(/-(?:detail|summary)$/, "");
-      const regionName = region.charAt(0).toUpperCase() + region.slice(1);
+      const regionName = region
+        .split("-")
+        .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
+        .join(" ");
       locationFilter = {
         member: "regions.region_name",
         operator: "equals",

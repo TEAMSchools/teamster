@@ -226,8 +226,9 @@ cubes:
         type: sum
         public: false
         filters:
-          - sql: "{student_assessments.module_type} IN ('QA', 'MQQ', 'CRQ')"
+          - sql: "{student_assessments.assessment_key} IS NOT NULL"
           - sql: "{regions.region_key} IS NOT NULL"
+          - sql: "{student_assessments.module_type} IN ('QA', 'MQQ', 'CRQ')"
 
       - name: _count_scores_formative
         description: >-
@@ -236,14 +237,17 @@ cubes:
         type: count
         public: false
         filters:
-          - sql: "{student_assessments.module_type} IN ('QA', 'MQQ', 'CRQ')"
+          - sql: "{student_assessments.assessment_key} IS NOT NULL"
           - sql: "{regions.region_key} IS NOT NULL"
+          - sql: "{student_assessments.module_type} IN ('QA', 'MQQ', 'CRQ')"
 
       - name: pct_proficient_formative
         description: >-
           Proficiency rate across all formative module types (Quick Assessments,
           Multiple-Choice Quick Questions, and Constructed Response Questions).
-          Built from additive primitives so pre-aggregations roll it up.
+          CRQ is included and also available as the standalone
+          pct_proficient_crq measure. Built from additive primitives so
+          pre-aggregations roll it up.
         sql:
           "1.0 * {_sum_proficient_formative} / NULLIF({_count_scores_formative},
           0)"
@@ -259,8 +263,9 @@ cubes:
         type: sum
         public: false
         filters:
-          - sql: "{student_assessments.module_type} = 'CRQ'"
+          - sql: "{student_assessments.assessment_key} IS NOT NULL"
           - sql: "{regions.region_key} IS NOT NULL"
+          - sql: "{student_assessments.module_type} = 'CRQ'"
 
       - name: _count_scores_crq
         description: >-
@@ -269,12 +274,14 @@ cubes:
         type: count
         public: false
         filters:
-          - sql: "{student_assessments.module_type} = 'CRQ'"
+          - sql: "{student_assessments.assessment_key} IS NOT NULL"
           - sql: "{regions.region_key} IS NOT NULL"
+          - sql: "{student_assessments.module_type} = 'CRQ'"
 
       - name: pct_proficient_crq
         description: >-
-          Proficiency rate for Constructed Response Questions (CRQ). Built from
+          Proficiency rate for Constructed Response Questions (CRQ) across all
+          regions. CRQ is a subset of pct_proficient_formative. Built from
           additive primitives so pre-aggregations roll it up.
         sql: "1.0 * {_sum_proficient_crq} / NULLIF({_count_scores_crq}, 0)"
         type: number
