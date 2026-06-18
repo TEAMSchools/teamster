@@ -1,0 +1,149 @@
+views:
+  - name: staff_detail
+    description: >-
+      Row-level staff employment history. One row per employee x employment
+      period — a contiguous window during which status, job, worker type, org
+      unit, and location all held simultaneously — with point-in-time manager
+      context. Use for the staff roster, drill-down, and individual
+      investigations.
+
+      Always apply a date filter. Without one, each employment period fans out
+      to one row per calendar day in its effective range. For a current roster,
+      filter dates to today; for headcount over time, filter a date range or
+      month-ends. Filter is_primary_position = true to count each person once;
+      status_name = 'Active' filters to active employees. Use count_headcount
+      (count_distinct on staff_key) for headcounts. Contains direct staff and
+      manager identifiers.
+
+    cubes:
+      - join_path: staff_work_history
+        includes:
+          - count_headcount
+          - sum_fte
+          - status_name
+          - position_title
+          - job_code
+          - worker_type
+          - department_name
+          - business_unit_name
+          - is_primary_position
+          - is_management_position
+          - full_time_equivalency
+          - effective_start_date
+
+      - join_path: staff_work_history.dates
+        prefix: true
+        includes:
+          - date_day
+          - academic_year
+          - month_name
+          - month_number
+          - year_number
+
+      - join_path: staff_work_history.staff
+        prefix: false
+        includes:
+          - staff_key
+          - staff_unique_id
+          - full_name
+          - first_name
+          - last_name
+          - birth_date
+          - work_email
+          - google_email
+          - personal_email
+          - personal_cell_phone
+          - active_directory_username
+          - gender_identity
+          - race
+          - is_hispanic
+          - original_hire_date
+          - rehire_date
+
+      - join_path: staff_work_history.locations
+        prefix: true
+        includes:
+          - location_name
+          - abbreviation
+          - grade_band
+          - campus
+          - city
+
+      - join_path: staff_work_history.locations.regions
+        prefix: true
+        includes:
+          - region_name
+          - state
+
+      - join_path: staff_work_history.staff_manager
+        prefix: true
+        includes:
+          - staff_key
+          - full_name
+          - first_name
+          - last_name
+          - work_email
+
+    meta:
+      folders:
+        - name: Employment
+          members:
+            - status_name
+            - position_title
+            - job_code
+            - worker_type
+            - department_name
+            - business_unit_name
+            - is_primary_position
+            - is_management_position
+            - full_time_equivalency
+            - effective_start_date
+        - name: Date
+          members:
+            - dates_date_day
+            - dates_academic_year
+            - dates_month_name
+            - dates_month_number
+            - dates_year_number
+        - name: Location
+          members:
+            - locations_location_name
+            - locations_abbreviation
+            - locations_grade_band
+            - locations_campus
+            - locations_city
+            - regions_region_name
+            - regions_state
+        - name: Staff
+          members:
+            - staff_key
+            - staff_unique_id
+            - full_name
+            - first_name
+            - last_name
+            - birth_date
+            - work_email
+            - google_email
+            - personal_email
+            - personal_cell_phone
+            - active_directory_username
+            - gender_identity
+            - race
+            - is_hispanic
+            - original_hire_date
+            - rehire_date
+        - name: Manager
+          members:
+            - staff_manager_staff_key
+            - staff_manager_full_name
+            - staff_manager_first_name
+            - staff_manager_last_name
+            - staff_manager_work_email
+
+    access_policy:
+      # Single staff-data tier. The detail view is for users cleared to see
+      # identifiable staff; staff_summary is the non-PII surface. Revisit if a
+      # "see staff but not PII" sub-tier is needed later.
+      - group: cube-access-staff-data
+        member_level:
+          includes: "*"
