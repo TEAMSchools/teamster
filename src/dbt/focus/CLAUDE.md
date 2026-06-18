@@ -9,6 +9,15 @@ dbt projects (currently `kippmiami`).
 Focus Postgres → dlt `sql_database` → BigQuery (`dagster_<project>_dlt_focus`) →
 dbt staging models → dbt intermediate models
 
+## Focus field value codes
+
+A Focus custom field's allowed value codes live in
+`dagster_<district>_dlt_focus.custom_fields` (find the field by `title` /
+`column_name`) joined to `custom_field_select_options` on
+`custom_field_select_options.source_id = custom_fields.id` — `code` is the value
+Focus expects, `label` is the human name. Use this to build Finalsite→Focus
+value crosswalks.
+
 ## Model Structure
 
 ```text
