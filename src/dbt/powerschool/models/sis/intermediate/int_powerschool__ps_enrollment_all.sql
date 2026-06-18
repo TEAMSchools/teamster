@@ -13,6 +13,9 @@ with
             track,
             student_number,
         from {{ ref("stg_powerschool__students") }}
+        -- enroll_status = 1 marks an invalid student record; exclude it (and any
+        -- enrollment history attached to it) from all enrollment-derived models.
+        where enroll_status != 1
 
         union distinct
 
@@ -31,6 +34,7 @@ with
             s.student_number,
         from {{ ref("stg_powerschool__reenrollments") }} as r
         inner join {{ ref("stg_powerschool__students") }} as s on r.studentid = s.id
+        where s.enroll_status != 1
     )
 
 select
