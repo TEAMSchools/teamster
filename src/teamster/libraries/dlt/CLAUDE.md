@@ -24,8 +24,9 @@ database directly to BigQuery using `dlt`'s `sql_database` source with PyArrow
 backend.
 
 - Asset keys: `[code_location, "dlt", "focus", table_name]`
-- Uses `reflection_level="full_with_precision"` — no custom type or nullability
-  adapters
+- Uses `reflection_level="full_with_precision"` + `remove_nullability_adapter`
+  (forces all columns `NULLABLE` so upstream `NOT NULL` changes don't break the
+  `replace` load — see `focus/CLAUDE.md`)
 - Factory:
   `build_focus_dlt_assets(sql_database_credentials, code_location, table_name)`
 

@@ -181,6 +181,21 @@ data_tests:
           ref:
             name: int_collegeboard__ap_unpivot
 
+  - name: rpt_focus__demographics__language_crosswalk_resolves
+    description: >-
+      Returns one row per `int_finalsite__contact_custom_attributes` record
+      whose non-null `lang_parent_ss` has no matching `finalsite_language` in
+      `stg_google_sheets__focus__language_code_crosswalk`. Each row is a
+      Finalsite language value that falls through to a null Focus code in
+      `rpt_focus__demographics` (LANG / PRIMARY_HOME_LANG / NATIVE_PARENT_LANG).
+      Ops signal to add the missing value to the crosswalk sheet; failure rows
+      persist in `kipptaf_dbt_test__audit` for direct query.
+    config:
+      meta:
+        dagster:
+          ref:
+            name: int_finalsite__contact_custom_attributes
+
   - name: dim_student_section_enrollments__no_multi_stint_overlap
     description: >-
       Warns when a non-dropped course-enrollment (cc) record overlaps more than

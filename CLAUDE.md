@@ -552,6 +552,16 @@ Hyphenated identifiers in INFORMATION_SCHEMA paths need backticks — `region-us
 as a bare token fails with "Syntax error: Expected end of input but got '-'".
 Write `` `teamster-332318`.`region-us`.INFORMATION_SCHEMA.TABLES ``.
 
+Single quotes inside a BigQuery string literal escape with a **backslash**
+(`'O\'odham'`), not by doubling (`''`) — the doubled form fails with
+"concatenated string literals must be separated by whitespace".
+
+The BigQuery MCP service account **cannot read GOOGLE_SHEETS external tables**
+("Access Denied: ... while getting Drive credentials", 403) — it lacks Drive
+scope. To inspect a sheet-backed source's rows, build the staging model via dbt
+(`dbt build --select <stg_model> --target staging`; ADC has Drive scope), then
+query the materialized `zz_stg_*` table — a native BQ table, not Drive-backed.
+
 `bq` CLI fallback for shell contexts (Monitor poll loops): binary at
 `/usr/local/share/google-cloud-sdk/bin/bq`, `--project_id=teamster-332318`. Same
 SELECT-only constraints apply.
