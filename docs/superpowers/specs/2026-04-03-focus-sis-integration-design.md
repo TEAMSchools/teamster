@@ -175,7 +175,7 @@ Following the existing source-system project pattern (like `powerschool`,
 > data-migration gap to chase). **Recommended Phase B start:** staging models
 > for the 54 populated tables plus `int_focus__student_enrollment`; add the
 > remaining staging/intermediate models as their source tables begin carrying
-> data.
+> data. The residual (empty) tables are tracked in #4220.
 
 ### dbt: kippmiami + kipptaf integration
 
