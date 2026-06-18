@@ -73,6 +73,12 @@ file; domain specifics live in the nearest subdirectory CLAUDE.md.
   path breaks — pass an absolute script path or run it from the main repo.
   Otherwise prefer absolute paths.
 
+- **Worktree Read/Edit/Write must target the worktree path**, not the main
+  checkout: editing `/workspaces/teamster/<path>` instead of
+  `/workspaces/teamster/.worktrees/<branch>/<path>` silently leaves the worktree
+  unchanged and dirties `main` (the worktree commit then reports "nothing to
+  commit").
+
 - **Branch switch**: with an issue,
   `gh issue develop <number> --name <branch> --checkout`; if the user explicitly
   declined an issue, `git checkout -b <branch>`.
@@ -260,7 +266,7 @@ alone may be safe; combinations may not. When unsure, consult the
 
 - **Branch creation always goes through the issue-and-branch flow in _Working
   Conventions_** — no exceptions for `superpowers:brainstorming`'s "Write design
-  doc" step, `superpowers:writing-plans`' "Save plan" step, or
+  doc" step, `superpowers:writing-plans`' "Save plans to:" step, or
   `superpowers:using-git-worktrees`' worktree-consent prompt. Pause those
   skills, run the flow, then write specs to `docs/superpowers/specs/...` or
   plans to `docs/superpowers/plans/...` on the new branch. Default to
@@ -274,11 +280,10 @@ alone may be safe; combinations may not. When unsure, consult the
   pre-commit `fmt` hook; checking only the code files misses a doc-only Trunk
   failure.
 
-- **`finishing-a-development-branch` verification gate**: Skip the skill's
-  `npm test / pytest / ...` heuristic. For dbt changes,
-  `uv run dbt build --select <model>+` against the relevant project. For Python
-  changes, `uv run pytest` where tests exist. PR body uses
-  `.github/pull_request_template.md`.
+- **`finishing-a-development-branch` / `using-git-worktrees` tests & setup**:
+  this repo uses `uv`, not `poetry`/`pip`, and
+  `uv run dbt build --select <model>+` should run alongside the skills' other
+  tests.
 
 - **Before brainstorming a fix for a GitHub issue**: verify the issue's claims
   (row counts, bucket sizes, reproduce queries, named files/columns) against
@@ -286,10 +291,10 @@ alone may be safe; combinations may not. When unsure, consult the
   PRs land. Re-run the diagnostic before designing.
 
 - **Continuous execution exceptions**: `superpowers:subagent-driven-development`
-  and `superpowers:executing-plans` say "do not pause between tasks." Pause
-  anyway to ask the user before (a) opening a tracking issue, (b) creating a
-  branch or worktree, (c) modifying protected files (hook scripts,
-  `.devcontainer/scripts/`, `.claude/settings*.json`).
+  and `superpowers:executing-plans` push you to execute every task without
+  pausing to check in. Pause anyway to ask the user before (a) opening a
+  tracking issue, (b) creating a branch or worktree, (c) modifying protected
+  files (hook scripts, `.devcontainer/scripts/`, `.claude/settings*.json`).
 
 ## CLAUDE.md Editing Rules
 
@@ -549,6 +554,16 @@ still shows the OLD rows/count. Cross-check the run's materialization
 Hyphenated identifiers in INFORMATION_SCHEMA paths need backticks — `region-us`
 as a bare token fails with "Syntax error: Expected end of input but got '-'".
 Write `` `teamster-332318`.`region-us`.INFORMATION_SCHEMA.TABLES ``.
+
+Single quotes inside a BigQuery string literal escape with a **backslash**
+(`'O\'odham'`), not by doubling (`''`) — the doubled form fails with
+"concatenated string literals must be separated by whitespace".
+
+The BigQuery MCP service account **cannot read GOOGLE_SHEETS external tables**
+("Access Denied: ... while getting Drive credentials", 403) — it lacks Drive
+scope. To inspect a sheet-backed source's rows, build the staging model via dbt
+(`dbt build --select <stg_model> --target staging`; ADC has Drive scope), then
+query the materialized `zz_stg_*` table — a native BQ table, not Drive-backed.
 
 `bq` CLI fallback for shell contexts (Monitor poll loops): binary at
 `/usr/local/share/google-cloud-sdk/bin/bq`, `--project_id=teamster-332318`. Same

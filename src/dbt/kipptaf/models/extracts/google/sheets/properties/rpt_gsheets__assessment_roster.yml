@@ -1,0 +1,117 @@
+models:
+  - name: rpt_gsheets__assessment_roster
+    description: >
+      Assessment roster for Google Sheets, at one row per student, academic
+      year, assessment source, subject, administration round, and assessment.
+      Scoped to enrolled K-8 students in ELA and Math for the current and prior
+      academic year. Joins the assessment union to a single demographic row per
+      student/year and to the student's ENG/MATH course teacher and section. The
+      raw student_number is never emitted: students are identified by a
+      pseudonymous student_token (a stable hash of student_number), so the
+      extract is de-identified at the source and shared under the research
+      data-sharing agreement.
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns:
+              - student_token
+              - academic_year
+              - assessment_source
+              - subject
+              - administration_round
+              - assessment_id
+    columns:
+      - name: student_token
+        data_type: string
+        description: >
+          Pseudonymous student identifier — a stable hash of the PowerSchool
+          student number. The same student resolves to the same token across
+          rounds and years, so longitudinal joins hold; the raw number is not
+          emitted.
+      - name: academic_year
+        data_type: int64
+        description: >
+          The starting year of the academic year the assessment was administered
+          in (e.g. 2025 means the 2025-2026 school year).
+      - name: assessment_source
+        data_type: string
+        description: >
+          The assessment system the row originates from (i-Ready, FAST, DIBELS,
+          NJSLA, or Internal).
+      - name: subject
+        data_type: string
+        quote: true
+        description: The assessment subject, normalized to ELA or Math.
+      - name: administration_round
+        data_type: string
+        description: >
+          The administration round or window the assessment was given in, using
+          each source's native label.
+      - name: assessment_id
+        data_type: string
+        description: >
+          The Illuminate assessment id for internal assessments; null for the
+          benchmark and state sources, which report one score per round.
+      - name: assessment_title
+        data_type: string
+        description: >
+          The internal assessment title; null for the benchmark and state
+          sources.
+      - name: scale_score
+        data_type: numeric
+        description: >
+          The overall scale score for the benchmark and state sources; null for
+          internal assessments, which report percent correct instead.
+      - name: percent_correct
+        data_type: numeric
+        description: >
+          The percent of points earned on internal assessments; null for the
+          benchmark and state sources.
+      - name: is_proficient
+        data_type: boolean
+        description: >
+          Whether the result met the source's proficiency or mastery threshold.
+      - name: performance_band_label
+        data_type: string
+        description: >
+          The text label of the performance band the result fell into, using
+          each source's native label.
+      - name: performance_band_int
+        data_type: int64
+        description: >
+          The numeric rank of the performance band the result fell into.
+      - name: region
+        data_type: string
+        description: The student's region (Newark, Camden, Miami, or Paterson).
+      - name: school_abbreviation
+        data_type: string
+        description: The student's school abbreviation from PowerSchool.
+      - name: grade_level
+        data_type: int64
+        description: The student's grade level (K-8, encoded 0-8).
+      - name: iep_status
+        data_type: string
+        description: Whether the student has an IEP.
+      - name: status_504
+        data_type: string
+        description: Whether the student has a 504 plan.
+      - name: ml_status
+        data_type: boolean
+        description: >
+          Whether the student is a multilingual learner (LEP/EL status).
+      - name: teacher_powerschool_teacher_number
+        data_type: string
+        description: >
+          The PowerSchool teacher number of the student's ENG/MATH course
+          teacher for the matching subject; null when no course enrollment
+          matches.
+      - name: course_number
+        data_type: string
+        description: >
+          The PowerSchool course number of the matching ENG/MATH course; null
+          when no course enrollment matches.
+      - name: section_number
+        data_type: string
+        description: >
+          The PowerSchool section number of the matching ENG/MATH course; null
+          when no course enrollment matches.
