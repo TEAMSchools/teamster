@@ -21,6 +21,16 @@
   missed/lagging deploy, not a code bug. The `pull_request` `paths`
   intentionally exclude `src/dbt/**` (dbt Cloud CI covers those); only the
   `push` section needs them.
+- **The same push-`paths` drift hits shared Dagster library code**, not just dbt
+  packages: `deploy-prod-<location>.yaml` must list every
+  `src/teamster/libraries/<lib>/**` the location imports. A shared-library
+  change (e.g. the Focus dlt fix #4216) silently skipped the kippmiami deploy
+  because `src/teamster/libraries/dlt/**` was missing — only kipptaf, which
+  listed it, deployed (fixed #4219). After merging a library change, confirm the
+  consuming location actually **reloaded** before acting on the new code:
+  `mcp__dagster__get_location_load_history` → newest entry `loadStatus: LOADED`
+  with a matching `commit_hash`. A green Actions deploy job ≠ agent reloaded,
+  and a missing push-path means it never deployed at all.
 - `trunk-check.yaml` — runs Trunk linter on PRs (excludes `requirements.txt`).
 - `mkdocs-gh-deploy.yaml` — deploys docs site on push to `main`.
 - `deploy-cube-mcp.yaml` — builds and deploys the Cube MCP server to Cloud Run

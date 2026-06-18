@@ -119,6 +119,12 @@ material (keys, tokens, connection strings, high-entropy strings). Fires for
 Bash, Read, Grep, NotebookEdit, WebFetch, WebSearch, and MCP tools. Does NOT
 fire for Edit.
 
+**MCP spill files are Bash-unreadable:** a large MCP result that overflows the
+context budget dumps to `~/.claude/projects/.../tool-results/`; Bash
+(`jq`/`cat`) on that path is denied ("Cannot access sensitive path"). Use a
+subagent (as the spill message suggests) or reconstruct the data from prior tool
+output instead.
+
 ## Git authentication for new repos
 
 The Codespace `GITHUB_TOKEN` (`ghu_*`) only has access to the repo it was
