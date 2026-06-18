@@ -1,0 +1,111 @@
+cubes:
+  - name: staff
+    public: false
+    sql_table: kipptaf_marts.dim_staff
+
+    dimensions:
+      # Surrogate key derived from employee_number. Primary key. Public — it is
+      # the pre-wire join key for a future course_section_teachers bridge cube
+      # that connects staff to student/course data.
+      - name: staff_key
+        description: >-
+          Surrogate key derived from employee_number. Primary key for the staff
+          dimension and the FK target for staff-to-student bridging.
+        sql: staff_key
+        type: string
+        primary_key: true
+        public: true
+
+      # PII — employee identifier.
+      - name: staff_unique_id
+        description:
+          Employee number — KIPP's payroll/HR identifier for the staff member.
+        sql: staff_unique_id
+        type: number
+        public: true
+
+      # PII — name.
+      - name: full_name
+        description: Staff member's full name in "Last, First, Mi." format.
+        sql: full_name
+        type: string
+        public: true
+
+      # PII — name.
+      - name: first_name
+        sql: first_name
+        type: string
+        public: true
+
+      # PII — name.
+      - name: last_name
+        sql: last_name
+        type: string
+        public: true
+
+      # PII — date of birth.
+      - name: birth_date
+        sql: CAST(birth_date AS TIMESTAMP)
+        type: time
+        public: true
+
+      - name: gender_identity
+        description: Self-identified gender for the staff member.
+        sql: gender_identity
+        type: string
+        public: true
+
+      - name: race
+        description: Race/ethnicity reporting category for the staff member.
+        sql: race
+        type: string
+        public: true
+
+      - name: is_hispanic
+        description: TRUE if the staff member identifies as Hispanic/Latino.
+        sql: is_hispanic
+        type: boolean
+        public: true
+
+      # PII — contact.
+      - name: work_email
+        sql: work_email
+        type: string
+        public: true
+
+      # PII — contact.
+      - name: personal_email
+        sql: personal_email
+        type: string
+        public: true
+
+      # PII — contact.
+      - name: personal_cell_phone
+        sql: personal_cell_phone
+        type: string
+        public: true
+
+      # PII — credential/identifier.
+      - name: active_directory_username
+        description: SAM account name (Active Directory username).
+        sql: active_directory_username
+        type: string
+        public: true
+
+      # PII — contact.
+      - name: google_email
+        sql: google_email
+        type: string
+        public: true
+
+      - name: original_hire_date
+        description: Worker's original hire date.
+        sql: CAST(original_hire_date AS TIMESTAMP)
+        type: time
+        public: true
+
+      - name: rehire_date
+        description: Worker's most recent rehire date, if rehired.
+        sql: CAST(rehire_date AS TIMESTAMP)
+        type: time
+        public: true
