@@ -128,3 +128,21 @@ Any session resumes Phase B from here — no external memory needed.
 - **Wave 3 (after district staging is merged + materialized in prod):** kipptaf
   region source + `stg_kippmiami__focus__*` wrappers (kipptaf source resolves to
   prod for `target=staging` CI).
+
+## Execution order & parallelization
+
+- **Recommended order:** **C first** (proves the staging pattern + local dbt
+  build end-to-end on the simplest batch), then **A / B / G** (exercise the
+  inline-custom path), then **D / E / F / I**, then **H**. `kipptaf` is Wave 3.
+- **All staging batches are independent** — no `stg_focus__*` refs another (each
+  reads only `source(...)`), and `int_focus__student_enrollment`'s parents are
+  all within Batch B. So after C validates the pattern, the rest can run
+  **concurrently**, one worktree + branch + PR per batch.
+- **Parallel via a Workflow is viable but trade-offs apply:** each batch agent
+  needs its own worktree (`isolation: 'worktree'`); branch/PR creation needs the
+  issue-and-branch consent flow (awkward inside an autonomous run); and fan-out
+  spawns N simultaneous PRs + dbt-Cloud CI runs and forfeits the between-batch
+  review gate. Prefer: execute C with `subagent-driven-development` (review
+  gate), then parallelize the remaining **staging-only** batches (E / F / I,
+  then D) via a worktree-isolated Workflow with a verify stage; keep the custom
+  batches (A / B / G) on the reviewed path.
