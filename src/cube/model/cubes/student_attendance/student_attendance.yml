@@ -864,10 +864,10 @@ cubes:
           - sql: "{CUBE}.membership_value = 1"
         grain:
           include:
-            - student_attendance._student_enrollment_key
-            - student_attendance.attendance_date
+            - _student_enrollment_key
+            - attendance_date
           keep_only:
-            - student_attendance._student_enrollment_key
+            - _student_enrollment_key
             - dates.academic_year
             - dates.academic_year_label
             - dates.year_number
@@ -892,8 +892,8 @@ cubes:
         sql: "{count_chronically_absent}"
         grain:
           include:
-            - student_attendance._student_enrollment_key
-            - student_attendance.attendance_date
+            - _student_enrollment_key
+            - attendance_date
         filters:
           - sql: "{_eop_rank} = 1"
         public: true
@@ -908,8 +908,8 @@ cubes:
         sql: "{_count_ca_eligible_students}"
         grain:
           include:
-            - student_attendance._student_enrollment_key
-            - student_attendance.attendance_date
+            - _student_enrollment_key
+            - attendance_date
         filters:
           - sql: "{_eop_rank} = 1"
         public: false
@@ -935,8 +935,8 @@ cubes:
         sql: "{_count_tier_1_2}"
         grain:
           include:
-            - student_attendance._student_enrollment_key
-            - student_attendance.attendance_date
+            - _student_enrollment_key
+            - attendance_date
         filters:
           - sql: "{_eop_rank} = 1"
         public: false
@@ -960,8 +960,8 @@ cubes:
         sql: "{_count_tier_3}"
         grain:
           include:
-            - student_attendance._student_enrollment_key
-            - student_attendance.attendance_date
+            - _student_enrollment_key
+            - attendance_date
         filters:
           - sql: "{_eop_rank} = 1"
         public: false

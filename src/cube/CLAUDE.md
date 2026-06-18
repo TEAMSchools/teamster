@@ -234,6 +234,12 @@ example.
   entity proxy) here so `order_by` has a physical column to rank on. The
   consuming `*_eop` measures repeat the same `grain.include` so the rank filter
   is evaluated per leaf row.
+- **Reference same-cube members BARE in `grain` lists; prefix only joined
+  cubes.** Inside a cube's own `grain.include` / `grain.keep_only`, write
+  `_student_enrollment_key`, not `student_attendance._student_enrollment_key` —
+  the latter fails to compile with `student_attendance is not defined`, which
+  cascades into `_eop_rank is not defined` everywhere it is referenced.
+  Joined-cube members keep their prefix (`dates.academic_year`).
 - **Members only, no `{CUBE}.raw_column` in multi-stage** — wrap raw columns in
   a base measure/dimension first. The `*_eop` wrappers reference the existing
   base `count_*` measures (`{count_chronically_absent}`), not raw columns.
