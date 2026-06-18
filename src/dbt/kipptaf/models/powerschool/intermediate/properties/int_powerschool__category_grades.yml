@@ -92,5 +92,10 @@ models:
         data_type: string
       - name: percent_grade_y1_running
         data_type: float64
-      - name: _dbt_source_project,
+      - name: _dbt_source_project
         data_type: string
+      - name: academic_year
+        data_type: int64
+        description:
+          The academic year in which the grade was recorded, derived as yearid +
+          1990.
