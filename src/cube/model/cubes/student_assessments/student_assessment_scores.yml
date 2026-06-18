@@ -121,6 +121,12 @@ cubes:
           any grain.
         type: count
         public: true
+        # Forces joins to student_assessments and regions so all proficiency
+        # measures share one CTE, enabling side-by-side queries without
+        # BigQuery's "query too complex" multi-CTE fan-out error.
+        filters:
+          - sql: "{student_assessments.assessment_key} IS NOT NULL"
+          - sql: "{regions.region_key} IS NOT NULL"
 
       - name: count_students
         description: >-
@@ -140,6 +146,12 @@ cubes:
         sql: "IF({CUBE}.is_mastery, 1, 0)"
         type: sum
         public: false
+        # Forces joins to student_assessments and regions so all proficiency
+        # measures share one CTE, enabling side-by-side queries without
+        # BigQuery's "query too complex" multi-CTE fan-out error.
+        filters:
+          - sql: "{student_assessments.assessment_key} IS NOT NULL"
+          - sql: "{regions.region_key} IS NOT NULL"
 
       - name: pct_proficient
         description: >-
@@ -204,4 +216,67 @@ cubes:
           up.
         sql: "{_sum_scale_score} / NULLIF({_count_scale_score}, 0)"
         type: number
+        public: true
+
+      - name: _sum_proficient_formative
+        description: >-
+          Additive proficient-score count scoped to formative module types (QA,
+          MQQ, CRQ). Building block for pct_proficient_formative.
+        sql: "IF({CUBE}.is_mastery, 1, 0)"
+        type: sum
+        public: false
+        filters:
+          - sql: "{student_assessments.module_type} IN ('QA', 'MQQ', 'CRQ')"
+          - sql: "{regions.region_key} IS NOT NULL"
+
+      - name: _count_scores_formative
+        description: >-
+          Score count scoped to formative module types (QA, MQQ, CRQ). Building
+          block for pct_proficient_formative.
+        type: count
+        public: false
+        filters:
+          - sql: "{student_assessments.module_type} IN ('QA', 'MQQ', 'CRQ')"
+          - sql: "{regions.region_key} IS NOT NULL"
+
+      - name: pct_proficient_formative
+        description: >-
+          Proficiency rate across all formative module types (Quick Assessments,
+          Multiple-Choice Quick Questions, and Constructed Response Questions).
+          Built from additive primitives so pre-aggregations roll it up.
+        sql:
+          "1.0 * {_sum_proficient_formative} / NULLIF({_count_scores_formative},
+          0)"
+        type: number
+        format: percent
+        public: true
+
+      - name: _sum_proficient_crq
+        description: >-
+          Additive proficient-score count scoped to Constructed Response
+          Questions (CRQ). Building block for pct_proficient_crq.
+        sql: "IF({CUBE}.is_mastery, 1, 0)"
+        type: sum
+        public: false
+        filters:
+          - sql: "{student_assessments.module_type} = 'CRQ'"
+          - sql: "{regions.region_key} IS NOT NULL"
+
+      - name: _count_scores_crq
+        description: >-
+          Score count scoped to Constructed Response Questions (CRQ). Building
+          block for pct_proficient_crq.
+        type: count
+        public: false
+        filters:
+          - sql: "{student_assessments.module_type} = 'CRQ'"
+          - sql: "{regions.region_key} IS NOT NULL"
+
+      - name: pct_proficient_crq
+        description: >-
+          Proficiency rate for Constructed Response Questions (CRQ). Built from
+          additive primitives so pre-aggregations roll it up.
+        sql: "1.0 * {_sum_proficient_crq} / NULLIF({_count_scores_crq}, 0)"
+        type: number
+        format: percent
         public: true
