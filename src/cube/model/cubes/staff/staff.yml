@@ -19,93 +19,113 @@ cubes:
       # PII — employee identifier.
       - name: staff_unique_id
         description:
-          Employee number — KIPP's payroll/HR identifier for the staff member.
+          KIPP-assigned unique identifier for all staff members across all
+          entities.
         sql: staff_unique_id
         type: number
         public: true
 
       # PII — name.
       - name: full_name
-        description: Staff member's full name in "Last, First, Mi." format.
+        description: Staff member's preferred name in Last, First Middle format.
         sql: full_name
         type: string
         public: true
 
       # PII — name.
       - name: first_name
+        description: Staff member's preferred first name.
         sql: first_name
         type: string
         public: true
 
       # PII — name.
       - name: last_name
+        description: Staff member's preferred last name.
         sql: last_name
         type: string
         public: true
 
       # PII — date of birth.
       - name: birth_date
+        description: Staff member's date of birth.
         sql: CAST(birth_date AS TIMESTAMP)
         type: time
         public: true
 
       - name: gender_identity
-        description: Self-identified gender for the staff member.
+        description: >-
+          Staff member's preferred gender identity as reported in the staff
+          information survey, with ADP gender_code as fallback.
         sql: gender_identity
         type: string
         public: true
 
       - name: race
-        description: Race/ethnicity reporting category for the staff member.
+        description: >-
+          Staff member's racial category for reporting purposes, sourced from
+          the staff information survey with ADP as fallback.
         sql: race
         type: string
         public: true
 
       - name: is_hispanic
-        description: TRUE if the staff member identifies as Hispanic/Latino.
+        description: >-
+          TRUE if the staff member identified as Hispanic/Latino/Latinx in the
+          staff information survey or ADP ethnicity record.
         sql: is_hispanic
         type: boolean
         public: true
 
       # PII — contact.
       - name: work_email
+        description: Staff member's work email address from ADP.
         sql: work_email
         type: string
         public: true
 
       # PII — contact.
       - name: personal_email
+        description: Staff member's personal email address from ADP.
         sql: personal_email
         type: string
         public: true
 
       # PII — contact.
       - name: personal_cell_phone
+        description: Staff member's personal cell phone number from ADP.
         sql: personal_cell_phone
         type: string
         public: true
 
       # PII — credential/identifier.
       - name: active_directory_username
-        description: SAM account name (Active Directory username).
+        description: >-
+          Staff member's Active Directory username (lowercased), used as a
+          cross-system identifier.
         sql: active_directory_username
         type: string
         public: true
 
       # PII — contact.
       - name: google_email
+        description: Staff member's Google Workspace email address from LDAP.
         sql: google_email
         type: string
         public: true
 
       - name: original_hire_date
-        description: Worker's original hire date.
+        description:
+          The date the staff member was originally hired at KIPP, from
+          worker_dates in ADP.
         sql: CAST(original_hire_date AS TIMESTAMP)
         type: time
         public: true
 
       - name: rehire_date
-        description: Worker's most recent rehire date, if rehired.
+        description: >-
+          The most recent rehire date for the staff member, if rehired, from
+          worker_dates in ADP.
         sql: CAST(rehire_date AS TIMESTAMP)
         type: time
         public: true

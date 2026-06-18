@@ -11,15 +11,16 @@ views:
       to one row per calendar day in its effective range. For a current roster,
       filter dates to today; for headcount over time, filter a date range or
       month-ends. Filter is_primary_position = true to count each person once;
-      status_code = 'Active' filters to active employees. Use count_employees
-      (count_distinct on staff_key) for headcounts. Contains direct staff and
-      manager identifiers.
+      status_name = 'Active' filters to active employees (excludes Leave). Use
+      count_employees (count_distinct on staff_key) for headcounts. Contains
+      direct staff and manager identifiers.
 
     cubes:
       - join_path: staff_work_history
         includes:
           - count_employees
-          - status_code
+          - status_name
+          - status_reason
           - position_title
           - job_code
           - worker_type
@@ -87,7 +88,8 @@ views:
       folders:
         - name: Employment
           members:
-            - status_code
+            - status_name
+            - status_reason
             - position_title
             - job_code
             - worker_type
