@@ -113,3 +113,16 @@ models:
         data_type: string
       - name: _dbt_source_project
         data_type: string
+      - name: w_assign_max_score_not_10
+        data_type: boolean
+        description:
+          True when assignment category is W (Writing) and max score is not 10.
+      - name: f_assign_max_score_not_10
+        data_type: boolean
+        description:
+          True when assignment category is F (Formative) and max score is not
+          10.
+      - name: h_assign_max_score_not_10
+        data_type: boolean
+        description:
+          True when assignment category is H (Homework) and max score is not 10.
