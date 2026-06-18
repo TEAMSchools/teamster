@@ -18,6 +18,7 @@ select
     `Address` as address,
     `City` as city,
     `Postal_Code` as postal_code,
+    `Focus_School_ID` as focus_school_id,
 
     case
         `Dagster_Code_Location`

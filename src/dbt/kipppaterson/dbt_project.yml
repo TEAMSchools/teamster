@@ -40,6 +40,9 @@ models:
     pearson:
       +materialized: table
       +schema: pearson
+  finalsite:
+    api:
+      +enabled: false
   amplify:
     dds:
       +enabled: false
@@ -50,12 +53,6 @@ models:
         staging:
           stg_amplify__mclass__sftp__pm_student_summary_aimline:
             +enabled: false
-  finalsite:
-    staging:
-      stg_finalsite__contacts:
-        +enabled: false
-      stg_finalsite__contact_relationships:
-        +enabled: false
   pearson:
     +materialized: table
     staging:

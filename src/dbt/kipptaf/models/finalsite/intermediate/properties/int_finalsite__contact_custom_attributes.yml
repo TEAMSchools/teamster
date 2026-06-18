@@ -1,0 +1,15 @@
+models:
+  - name: int_finalsite__contact_custom_attributes
+    description:
+      Network-wide union of the per-region Finalsite
+      `int_finalsite__contact_custom_attributes` models (one row per contact,
+      every `custom_attributes` field pivoted to its own typed column). Enabled
+      only where the Finalsite API layer is wired (today KIPP Miami); carries
+      `_dbt_source_relation`.
+    columns:
+      - name: finalsite_enrollment_id
+        data_type: string
+        description: Finalsite contact UUID; the grain of this model.
+        data_tests:
+          - unique
+          - not_null

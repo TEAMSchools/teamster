@@ -154,6 +154,19 @@ model to a shared source package, confirm the source ingestion exists in every
 consuming district, or the promoted model builds empty there (or fails on a
 missing external).
 
+To gate an _optional_ package layer per region, split the package into
+method/source subfolders (`api/`, `sftp/` — the amplify convention) and set
+`<package>: <method>: +enabled: false` in the unwired district's
+`dbt_project.yml`. Keep network-wide feeds enabled everywhere (e.g. finalsite
+SFTP `status_report` is consumed by kipptaf in all regions; only `api` is
+Miami-only). Method subfolders don't change asset keys.
+
+**Merging `dbt_project.yml` package configs can silently duplicate a top-level
+key.** When two branches each add `models: <package>:` (or `sources:`) at
+different positions, git's line-merge keeps BOTH with no conflict marker (later
+wins; may be invalid YAML). After merging a `dbt_project.yml`, grep for
+duplicate package keys and consolidate.
+
 ## Source Schema Resolution
 
 dbt source YAML `schema:` fields render with `SchemaYamlContext`, which only
@@ -360,6 +373,12 @@ text-formatted `00000` in Sheets becomes INT64.
       data_type: STRING
 ```
 
+- **Phantom empty rows**: a Sheet's full grid (often ~1000 rows) lands as
+  null-key rows in the external table → staging `not_null`/`unique` key tests
+  fail with ~N results. Filter them in the staging model:
+  `where <key> is not null` (e.g.
+  `stg_google_sheets__finance__enrollment_targets`).
+
 ### Rebuild staging after sheet edits before testing
 
 After Ops edits a Google Sheet source or after running
@@ -524,6 +543,11 @@ fmt hook, so a locally-clean commit fails CI. Unquoted `YYYY-MM-DD` parses
 correctly for date columns. Exception: leading-zero strings (`"01"`, `"02"` —
 e.g. zero-padded grade codes) must be QUOTED, or yamllint `octal-values` fails
 at CI.
+
+Dict-format `given` rows require the mocked ref/source to already exist in the
+warehouse (dbt introspects its schema at compile). For array/struct columns
+(e.g. `id_attributes`) or a model/source not yet materialized, use input
+`format: sql` (inline SELECT) instead — dict format fails introspection.
 
 ### Date-range joins
 
@@ -697,6 +721,16 @@ the same partition.
 - **`select *` inside UNION ALL CTEs trips CV03**: sqlfluff requires a trailing
   comma after the last column, but `select *` has nothing to trail. Enumerate
   columns explicitly in each UNION branch.
+- **BigQuery `PIVOT` operator**: pivots ONE value column per aggregate. For a
+  mixed-type key-value array, use a multi-aggregate pivot —
+  `pivot(max(v_str) as s, max(v_bool) as b, any_value(v_arr) as a for field_name in ('x', ...))`
+  — then project the typed column per field (`s_x as x` / `b_x as x`). Output
+  columns are `{agg_alias}_{value}`; a SINGLE-aggregate pivot names them by the
+  bare value (`'x'` → column `x`). `max()` can't aggregate ARRAY — use
+  `any_value()` for array fields.
+- **AL09 on struct subfields**: `value.string_value as string_value` trips AL09
+  (alias equals the leaf name). Rename to a distinct alias (`as value_string`)
+  rather than dropping it when a downstream PIVOT/ref needs the column named.
 
 ### SQL column ordering in SELECT clauses (enforced by ST06)
 
@@ -716,6 +750,9 @@ alias.
 
 ### YAML conventions
 
+- **Unquoted multi-line `description:` scalars** can't start with a backtick
+  (`` `Y` when… ``) or contain `: ` (colon-space, e.g. "types: parent") — both
+  fail YAML parsing. Reword (lead with a word; use `—` not `:`).
 - **Read `properties.yml` before modifying a model.** It carries the
   authoritative `description:`, `data_tests:`, contract column types, and
   `config.meta.source_column` pointers. Copy-pasted column blocks rot here first

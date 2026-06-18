@@ -43,6 +43,9 @@ models:
         staging:
           +contract:
             enforced: true
+  finalsite:
+    api:
+      +enabled: false
   amplify:
     dds:
       +enabled: false
@@ -58,12 +61,6 @@ models:
     +materialized: table
     staging:
       stg_edplan__njsmart_powerschool_archive:
-        +enabled: false
-  finalsite:
-    staging:
-      stg_finalsite__contacts:
-        +enabled: false
-      stg_finalsite__contact_relationships:
         +enabled: false
   iready:
     +materialized: table
