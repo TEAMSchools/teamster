@@ -177,3 +177,51 @@ models:
       - name: is_expected_scored
         data_type: boolean
         description: Conditional on is_expected, score_entered.
+      - name: assign_null_score
+        data_type: boolean
+        description: True when the assignment is expected and the score is null.
+      - name: assign_score_above_max
+        data_type: boolean
+        description: True when score_entered exceeds totalpointvalue.
+      - name: assign_w_score_less_5
+        data_type: boolean
+        description: W category, not missing, and score_entered < 5.
+      - name: assign_h_score_less_5
+        data_type: boolean
+        description: H category, not missing, and score_entered < 5.
+      - name: assign_f_score_less_5
+        data_type: boolean
+        description: F category, not missing, and score_entered < 5.
+      - name: assign_w_missing_score_not_5
+        data_type: boolean
+        description:
+          W category, non-HS, missing assignment, and score_entered != 5.
+      - name: assign_h_missing_score_not_5
+        data_type: boolean
+        description:
+          H category, non-HS, missing assignment, and score_entered != 5.
+      - name: assign_f_missing_score_not_5
+        data_type: boolean
+        description:
+          F category, non-HS, missing assignment, and score_entered != 5.
+      - name: assign_w_missing_score_not_0
+        data_type: boolean
+        description: W category, HS, missing assignment, and score_entered != 0.
+      - name: assign_h_missing_score_not_0
+        data_type: boolean
+        description: H category, HS, missing assignment, and score_entered != 0.
+      - name: assign_f_missing_score_not_0
+        data_type: boolean
+        description: F category, HS, missing assignment, and score_entered != 0.
+      - name: assign_s_missing_score_not_0
+        data_type: boolean
+        description: S category, HS, missing assignment, and score_entered != 0.
+      - name: assign_s_score_less_50p
+        data_type: boolean
+        description:
+          S category, non-HS, and score_entered < half_total_point_value.
+      - name: assign_s_hs_score_less_50p
+        data_type: boolean
+        description: >
+          S category, HS, not missing, and score_entered <
+          half_total_point_value.
