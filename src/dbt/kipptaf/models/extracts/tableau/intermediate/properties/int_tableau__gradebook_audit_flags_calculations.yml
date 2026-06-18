@@ -29,6 +29,10 @@ models:
         data_type: string
       - name: grade_level
         data_type: int64
+      - name: dateenrolled
+        data_type: date
+      - name: dateleft
+        data_type: date
       - name: salesforce_id
         data_type: string
       - name: ktc_cohort
@@ -134,9 +138,77 @@ models:
         data_type: int64
       - name: notes
         data_type: string
+      - name: quarter_course_percent_grade
+        data_type: float64
+      - name: quarter_course_grade_points
+        data_type: float64
+      - name: quarter_comment_value
+        data_type: string
       - name: category_quarter_percent_grade
         data_type: float64
+      - name: assignmentid
+        data_type: int64
+      - name: assignment_name
+        data_type: string
+      - name: duedate
+        data_type: date
+      - name: scoretype
+        data_type: string
+      - name: totalpointvalue
+        data_type: float64
+      - name: scorepoints
+        data_type: float64
+      - name: is_expected_late
+        data_type: int64
+      - name: is_exempt
+        data_type: int64
+      - name: is_expected_missing
+        data_type: int64
+      - name: is_expected_zero
+        data_type: int64
+      - name: is_expected_academic_dishonesty
+        data_type: int64
+      - name: score_entered
+        data_type: float64
+      - name: assign_final_score_percent
+        data_type: float64
+      - name: assign_null_score
+        data_type: boolean
+      - name: assign_score_above_max
+        data_type: boolean
+      - name: assign_w_score_less_5
+        data_type: boolean
+      - name: assign_h_score_less_5
+        data_type: boolean
+      - name: assign_f_score_less_5
+        data_type: boolean
+      - name: assign_w_missing_score_not_5
+        data_type: boolean
+      - name: assign_f_missing_score_not_5
+        data_type: boolean
+      - name: assign_h_missing_score_not_5
+        data_type: boolean
+      - name: assign_w_missing_score_not_0
+        data_type: boolean
+      - name: assign_f_missing_score_not_0
+        data_type: boolean
+      - name: assign_h_missing_score_not_0
+        data_type: boolean
+      - name: assign_s_missing_score_not_0
+        data_type: boolean
+      - name: assign_s_score_less_50p
+        data_type: boolean
+      - name: assign_s_hs_score_less_50p
+        data_type: boolean
+      - name: w_assign_max_score_not_10
+        data_type: boolean
+      - name: f_assign_max_score_not_10
+        data_type: boolean
+      - name: h_assign_max_score_not_10
+        data_type: boolean
       - name: qt_percent_grade_greater_100
         data_type: boolean
       - name: qt_grade_70_comment_missing
         data_type: boolean
+      - name: teacher_running_total_assign_by_cat
+        data_type: int64
