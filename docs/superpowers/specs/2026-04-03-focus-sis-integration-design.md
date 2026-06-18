@@ -8,11 +8,22 @@ from Focus Postgres via dlt to BigQuery, then through dbt staging/intermediate
 models in a new `focus` source-system project, consumed by `kippmiami` as a
 local package and exposed to `kipptaf` via regional sources.
 
+> **Status — 2026-06-18 review (Phase B, #4213).** Phase A is complete: the dlt
+> extraction runs and Focus data lands in BigQuery
+> (`dagster_kippmiami_dlt_focus`; last run 2026-06-18). Phase B is unblocked.
+> Three items below are already done — the `focus` dbt project skeleton + full
+> source definitions, the `focus` local package in `kippmiami/packages.yml`, and
+> the Dagster wiring (the `dlt` module is loaded in `kippmiami/definitions.py`
+> and the schedule is registered). **54 of the 76 configured source tables carry
+> data; the other 22 are empty in Focus and produce no BigQuery table** (see
+> _Intermediate models_). Only `int_focus__student_enrollment` of the six
+> planned intermediate models is buildable from current data.
+
 ## Scope
 
 ### Phase 1 (this spec)
 
-9 domains, ~60 tables:
+9 domains, 76 tables:
 
 | Domain            | Key tables                                                                                                                                                                                                                                                                                                                                       |
 | ----------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
@@ -37,13 +48,20 @@ Generic cross-SIS data mart unifying PowerSchool and Focus -- separate project.
 
 ## Architecture
 
-### Extraction: dlt `sql_table` -> BigQuery
+### Extraction: dlt `sql_database` -> BigQuery
 
-**Approach**: Use dlt's built-in `sql_table` standalone resource (from
-`dlt.sources.sql_database`) with modern dlt 1.24.0 features. No ejected/vendored
-source code. This differs from the Illuminate pattern by using `sql_table`
-directly instead of wrapping `sql_database`, and by using
-`reflection_level="full_with_precision"` instead of custom type adapters.
+**Approach**: Use dlt's `sql_database` source (from `dlt.sources.sql_database`),
+called once per table via
+`sql_database.with_args(name="focus", parallelized=True)(table_names=[table_name], ...)`,
+with `reflection_level="full_with_precision"` instead of custom type adapters.
+No ejected/vendored source code.
+
+> **Implementation note (2026-06-18):** an earlier draft of this spec proposed
+> dlt's standalone `sql_table` resource. The shipped factory uses `sql_database`
+> with a single-element `table_names` list instead — see
+> [`src/teamster/libraries/dlt/focus/assets.py`](../../../src/teamster/libraries/dlt/focus/assets.py).
+> dlt is pinned `>=1.10` in `pyproject.toml` (1.28.0 installed at review time);
+> the original draft cited 1.24.0.
 
 **New library: `src/teamster/libraries/dlt/focus/`**
 
@@ -52,7 +70,8 @@ directly instead of wrapping `sql_database`, and by using
     `[code_location, "dlt", "focus", table_name]`
   - `build_focus_dlt_assets()` factory -- for each table in config, creates a
     `dlt_assets` definition using:
-    - `sql_table` standalone resource from `dlt.sources.sql_database`
+    - `sql_database` source from `dlt.sources.sql_database`, called per-table
+      with a single-element `table_names` list
     - `reflection_level="full_with_precision"` (no custom type/nullability
       adapters)
     - `backend="pyarrow"`
@@ -130,6 +149,32 @@ Following the existing source-system project pattern (like `powerschool`,
   report_card_grades + scales
 - Others as needed based on actual data exploration
 
+> **Data availability (2026-06-18 review).** Of the six models above, only
+> `int_focus__student_enrollment` has all its source tables populated. These
+> source tables are **empty in Focus** as of the 5-21 and 6-18 runs (the dlt
+> asset materializes successfully with no `rows_loaded` and `jobs: []`, so no
+> BigQuery table is created), which blocks the corresponding intermediate
+> models:
+>
+> | Intermediate model              | Empty source table           |
+> | ------------------------------- | ---------------------------- |
+> | `int_focus__attendance_day`     | `attendance_day`             |
+> | `int_focus__attendance_period`  | `attendance_period`          |
+> | `int_focus__schedule`           | `schedule`                   |
+> | `int_focus__gradebook_grades`   | `gradebook_grades`           |
+> | `int_focus__report_card_grades` | `student_report_card_grades` |
+>
+> Other empty tables: all `students_join_*`, `people`, `student_groups`,
+> `scheduling_teams`, `attendance_notes`, `co_teachers`,
+> `student_standard_grades`, the full discipline domain (`discipline_referrals`,
+> `discipline_incidents`, `discipline_incidents_join_referrals`,
+> `referral_code_offenses`), and `test_history_administrations` /
+> `test_history_scores`. Confirm with the Miami Focus owner whether these will
+> populate (data-migration gap) or whether Miami models these domains
+> differently before scoping their staging/intermediate models. **Recommended
+> Phase B start:** staging models for the 54 populated tables plus
+> `int_focus__student_enrollment`.
+
 ### dbt: kippmiami + kipptaf integration
 
 **kippmiami**:
@@ -139,8 +184,10 @@ Following the existing source-system project pattern (like `powerschool`,
 
 **kipptaf**:
 
-- `src/dbt/kipptaf/models/focus/sources-kippmiami.yml` -- source pointing to
-  kippmiami's Focus dataset, using the region schema pattern (dev-only prefix)
+- `src/dbt/kipptaf/models/focus/sources-kippmiami.yml` -- a `kippmiami_focus`
+  source whose tables are kippmiami's Focus **staging models** (`stg_focus__*`),
+  not the raw dlt dataset, using the region schema pattern (dev-only `zz_`
+  prefix). Mirrors `models/renlearn/sources-kippmiami.yml`.
 - Staging models in kipptaf to re-expose kippmiami Focus models for downstream
   mart consumption (e.g., `stg_kippmiami__focus__students`,
   `stg_kippmiami__focus__student_enrollment`)
@@ -216,10 +263,12 @@ a deployed environment with network access.
    migrated). dlt gives full control, no external service cost, and aligns with
    the architectural direction.
 
-2. **`sql_table` over `sql_database`** -- dlt 1.24.0's standalone `sql_table`
-   resource is more granular than wrapping `sql_database` with a single-table
-   list. Supports per-table `write_disposition`, `primary_key`, `merge_key`, and
-   `incremental` config. Cleaner pattern that can be backported to Illuminate.
+2. **Per-table `sql_database` calls** -- the factory calls `sql_database` once
+   per table (single-element `table_names`), so each table is its own
+   `dlt_assets` definition with independent write semantics and asset-level
+   lineage. (An earlier draft proposed dlt's standalone `sql_table` resource;
+   the shipped code uses `sql_database` with a one-table list, which achieves
+   the same granularity. See the implementation note under _Extraction_.)
 
 3. **`full_with_precision` reflection** -- captures precision/scale natively
    instead of using custom type adapters like Illuminate's
@@ -266,7 +315,7 @@ src/dbt/focus/
   models/
     staging/
       sources-bigquery.yml
-      stg_focus__<table>.sql + .yml  (one per Phase 1 table, ~60)
+      stg_focus__<table>.sql + .yml  (one per populated table; 54 of 76 carry data)
     intermediate/
       int_focus__student_enrollment.sql + .yml
       int_focus__attendance_day.sql + .yml
@@ -293,7 +342,11 @@ src/dbt/kippmiami/dbt_project.yml                         -- focus var overrides
 
 ## ERD reference
 
-The Focus database ERD is documented in `Focus DB Diagram.pdf` at the project
-root. It covers 19 domain areas with Crow's Foot notation showing table
-relationships. The Phase 1 domains listed above are pages 3-18 and 21-22 of that
-document.
+The Focus database ERD is documented in `Focus DB Diagram.pdf`. It covers 19
+domain areas with Crow's Foot notation showing table relationships; the Phase 1
+domains listed above are pages 3-18 and 21-22.
+
+> **Note (2026-06-18):** this PDF is not checked into the repo. Ask the original
+> author for the file, or use the live BigQuery schemas in
+> `dagster_kippmiami_dlt_focus` as the ground-truth reference for the 54
+> populated tables.
