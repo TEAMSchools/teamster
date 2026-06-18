@@ -92,9 +92,7 @@ with
             null as race_ethnicity_reporting,
             null as reports_to_employee_number,
 
-            coalesce(
-                w.job_function_code__short_name, w.job_function_code__long_name
-            ) as job_function,
+            w.job_function,
 
             if(
                 w.effective_date_start < '2021-01-01',

@@ -162,9 +162,7 @@ models:
       - name: job_function_code__code_value
         data_type: string
         description: Job function classification code for the work assignment.
-      - name: job_function_code__long_name
-        data_type: string
-      - name: job_function_code__short_name
+      - name: job_function
         data_type: string
       - name: pay_cycle_code__code_value
         data_type: string

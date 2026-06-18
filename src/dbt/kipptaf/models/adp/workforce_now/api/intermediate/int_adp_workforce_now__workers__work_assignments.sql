@@ -130,8 +130,8 @@ with
             wa.jobcode.shortname as job_code__short_name,
 
             wa.jobfunctioncode.codevalue as job_function_code__code_value,
-            wa.jobfunctioncode.longname as job_function_code__long_name,
-            wa.jobfunctioncode.shortname as job_function_code__short_name,
+            wa.jobfunctioncode.shortname as job_function_code__shortname,
+            wa.jobfunctioncode.longname as job_function_code__longname,
 
             wa.paycyclecode.codevalue as pay_cycle_code__code_value,
             wa.paycyclecode.longname as pay_cycle_code__long_name,
@@ -363,8 +363,6 @@ select
     job_code__long_name,
     job_code__short_name,
     job_function_code__code_value,
-    job_function_code__long_name,
-    job_function_code__short_name,
     pay_cycle_code__code_value,
     pay_cycle_code__long_name,
     pay_cycle_code__short_name,
@@ -468,6 +466,8 @@ select
         wage_law_coverage__wage_law_name_code__long_name,
         wage_law_coverage__wage_law_name_code__short_name
     ) as wage_law_coverage__wage_law_name_code__name,
+
+    coalesce(job_function_code__longname, job_function_code__shortname) as job_function,
 
     loc.location_key,
 from work_assignments_parsed

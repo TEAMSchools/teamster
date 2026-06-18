@@ -51,8 +51,7 @@ select
     wa.worker_time_profile__time_service_supervisor__position_id,
     wa.worker_time_profile__time_and_attendance_indicator,
     wa.worker_time_profile__time_zone_code,
-    wa.job_function_code__long_name,
-    wa.job_function_code__short_name,
+    wa.job_function,
 
     com.communication__personal_cell__formatted_number,
     com.communication__personal_email__email_uri,
