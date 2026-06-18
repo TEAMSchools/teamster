@@ -248,15 +248,19 @@ Drop model-level `dbt_utils.unique_combination_of_columns` when its column set
 equals the surrogate-key hash inputs — `unique` on the PK detects the same
 violations.
 
-## Table-materialized marts: no FK constraints
+## FK constraints declared on every mart
+
+`generate_marts_reference.py` derives FK edges **only** from literal
+`foreign_key` constraints — never inferred from `relationships` data tests. So
+every mart (view-materialized and `config.materialized: table` alike) must
+declare its outgoing FKs as column- or model-level `foreign_key` constraints, or
+they vanish from the generated reference diagram. A `relationships` data test is
+still good to keep for orphan detection, but it does not feed the diagram.
 
 A `config.materialized: table` mart renders `constraints:` into CREATE TABLE DDL
-(inert on the default view marts), and BigQuery rejects a `foreign_key` whose
-referenced parent is a view — all dims are. Omit FK constraint blocks on table
-marts and rely on `relationships` tests (`generate_marts_reference.py` reads
-those as FK edges for table marts). Keep the `primary_key` constraint but add
-`warn_unenforced: false` (not just `warn_unsupported: false`) to clear the parse
-warning.
+(inert on the default view marts). On a table mart, add `warn_unenforced: false`
+(not just `warn_unsupported: false`) on the `primary_key` constraint to clear
+the parse warning.
 
 ## Constraints are informational (views)
 
