@@ -15,11 +15,11 @@ the BQ-native Focus dlt source declared in
 `src/dbt/focus/models/staging/sources-bigquery.yml`. Light cleaning only:
 explicit column projection (drop dlt bookkeeping + audit-quad columns), a
 uniqueness + `not_null` test on each table's primary key, and a `description:`
-on the model and every column. The three wide tables (`courses` 57 cols,
-`master_courses` 109 cols, `course_periods` 289 cols) are curated to the
-FLDOE-import-mapped core plus keys/dates/names; their `custom_*` /
-`custom_field_*` / per-co-teacher long tail is intentionally excluded and
-handled by the separate Batch H custom-field unpivot. Models build inside the
+on the model and every column. The four wide tables (`course_subjects`,
+`courses`, `master_courses`, `course_periods`) project the FLDOE-import-mapped
+core plus keys/dates/names AND an inline block of the currently-populated custom
+columns (aliased to their slug) appended after the core columns. Custom columns
+that are unpopulated in the source remain out of scope. Models build inside the
 consuming district project (`kippmiami`), which sets `focus_schema` and imports
 the `focus` package.
 
@@ -42,18 +42,29 @@ cols, lowercase).
 - Staging uniqueness + `not_null` tests MUST set `config: severity: error`
   (project default is `warn`).
 - **No soft-delete in this batch.** None of these eight tables has a `deleted`
-  column, so there is NO `where deleted = 0` filter. `course_periods` carries an
-  `active STRING` flag and `master_courses` a `status INT64`; their semantics
-  are unconfirmed, so keep them as raw projected columns — do NOT filter on
-  them. Add a filter only in a later intermediate layer if a consumer needs it.
-- **Wide-table curation:** `courses`, `master_courses`, and `course_periods`
-  carry a large `custom_*` / `custom_field_*` / per-co-teacher (`co_teacher*_*`)
-  long tail that is OUT OF SCOPE here — it is handled by the Batch H
-  custom-field unpivot. Each wide staging model projects only the curated core:
-  the FLDOE-import-mapped columns (named columns + specifically-mapped
-  `custom_NNN`) plus primary/foreign keys, dates, names, and
-  `uuid`/`created_at`/`updated_at`. The exact projected column set is enumerated
-  per task below; do not add the long-tail columns.
+  column, so there is NO soft-delete filter. The repo soft-delete convention
+  (`where deleted is null` — NULL means live; NEVER `= 0`) does not apply here
+  because the column is absent. `course_periods` carries an `active STRING` flag
+  and `master_courses` a `status INT64`; their semantics are unconfirmed, so
+  keep them as raw projected columns — do NOT filter on them. Add a filter only
+  in a later intermediate layer if a consumer needs it.
+- **Wide-table custom-field handling (inline):** `course_subjects`, `courses`,
+  `master_courses`, and `course_periods` carry a `custom_*` / `custom_field_*`
+  long tail. The previously-planned Batch H unpivot was dropped. Instead, each
+  wide model projects — **in addition to** its curated non-custom core columns —
+  an inline block of the currently-populated custom columns, each aliased to its
+  slug (`<column_name> as <slug>`). The populated columns per table are
+  enumerated from pre-generated map files
+  (`.claude/scratch/focus-<table>-custom-map.md`). Columns that are unpopulated
+  in the source are NOT projected (out of scope). The per-co-teacher attribute
+  long tail on `course_periods` (`co_teacher*_custom*`, `co_teacher*_checkbox*`,
+  `co_teacher*_permissions`, `co_teacher*_report_doe`, `co_teacher*_start_date`
+  / `_end_date` / `_start_time` / `_end_time`, `co_teacher*_out_reason`) remains
+  out of scope and belongs to a future scheduling intermediate.
+- **Custom values are left encoded.** Focus select/multiple custom values are
+  stored as encoded option codes. This batch does NOT decode them — they pass
+  through as stored codes. Decoding against the `custom_fields` option catalog
+  is a deferred follow-up. Each wide model's `description:` states this.
 - Focus columns are already `snake_case`. No BigQuery reserved-word column names
   appear in these eight tables, so no backtick-quoting / `quote: true` is
   needed. Y/N-style flags and checkbox fields stay raw `STRING` (convert to
@@ -61,7 +72,8 @@ cols, lowercase).
 - Build/test context is the **kippmiami** project, not `focus` standalone.
 - BigQuery type-synonym note for contract YAML: warehouse `INT64` → YAML `int`;
   `STRING` → `string`; `NUMERIC` → `numeric`; `DATE` → `date`; `TIMESTAMP` →
-  `timestamp`. `numeric` and `float64` are NOT interchangeable.
+  `timestamp`; `TIME` → `time`; `BOOL` → `boolean`. `numeric` and `float64` are
+  NOT interchangeable.
 
 ---
 
@@ -76,11 +88,14 @@ uv run dbt deps --project-dir src/dbt/kippmiami
 
 ---
 
-### Task 1: `stg_focus__course_subjects`
+### Task 1: `stg_focus__course_subjects` (WIDE — curated + inline custom)
 
-Narrow table (17 columns). PK is `subject_id` (verified unique: 1262 / 1262
-rows). Excludes the audit-quad; `custom_1`–`custom_3` are FLDOE-mapped
-(`VOC_PRGM_NUM`, `TOTAL_HRS_PRGM`, plus one unmapped) so they stay.
+Narrow-ish table (17 columns). PK is `subject_id` (verified unique: 1262 / 1262
+rows). Excludes the audit-quad. The custom long tail (`custom_1`–`custom_3`) is
+handled inline: only `custom_1` is populated per the map
+(`.claude/scratch/focus-course_subjects-custom-map.md`), so only `custom_1` is
+projected (aliased `custom_1`); `custom_2` / `custom_3` are unpopulated and out
+of scope.
 
 **Files:**
 
@@ -103,13 +118,12 @@ select
     rollover_id,
     title,
     short_name,
-    custom_1,
-    custom_2,
-    custom_3,
     imported,
     uuid,
     created_at,
     updated_at,
+
+    custom_1 as custom_1,
 from {{ source("focus", "course_subjects") }}
 ```
 
@@ -120,7 +134,10 @@ models:
   - name: stg_focus__course_subjects
     description: >-
       Focus course subjects — one row per subject, scoped by school year and
-      school. Lookup that groups courses under a subject area.
+      school. Lookup that groups courses under a subject area. Includes the
+      currently-populated custom-field columns inline (aliased to their slug);
+      unpopulated custom slots are excluded. Select/multiple custom values
+      remain as stored Focus option codes — not decoded in this layer.
     columns:
       - name: subject_id
         description: Primary key — Focus course subject id.
@@ -147,15 +164,6 @@ models:
       - name: short_name
         description: Abbreviated subject label.
         data_type: string
-      - name: custom_1
-        description: Vocational program number (FLDOE VOC_PRGM_NUM).
-        data_type: string
-      - name: custom_2
-        description: Total hours for the program (FLDOE TOTAL_HRS_PRGM).
-        data_type: string
-      - name: custom_3
-        description: Focus custom subject attribute slot 3.
-        data_type: string
       - name: imported
         description: Y/N — whether the row originated from an import.
         data_type: string
@@ -168,6 +176,11 @@ models:
       - name: updated_at
         description: Row last-update timestamp in Focus.
         data_type: timestamp
+      - name: custom_1
+        description: >-
+          Focus generic custom slot; label not defined in the extracted
+          custom_fields catalog.
+        data_type: string
 ```
 
 - [ ] **Step 3: Build and verify**
@@ -191,8 +204,8 @@ git commit -m "feat(dbt): add stg_focus__course_subjects (#4213)"
 
 Narrow table (29 columns). PK is `id` (verified unique: 17221 / 17221 rows).
 Excludes the audit-quad. Keeps the `does_gpa_*` / `cw_checkbox_setting_*` flag
-columns (these are part of the core weight definition, not the unpivot long
-tail).
+columns (these are part of the core weight definition, not a custom long tail).
+This table has no `custom_*` slots, so no inline custom block applies.
 
 **Files:**
 
@@ -348,7 +361,8 @@ git commit -m "feat(dbt): add stg_focus__course_weights (#4213)"
 ### Task 3: `stg_focus__course_code_directory`
 
 Narrow table (35 columns). PK is `id` (standard `id` surrogate). Excludes the
-audit-quad; keeps all FLDOE course-code directory descriptor columns.
+audit-quad; keeps all FLDOE course-code directory descriptor columns. This table
+has no `custom_*` slots, so no inline custom block applies.
 
 **Files:**
 
@@ -527,7 +541,8 @@ git commit -m "feat(dbt): add stg_focus__course_code_directory (#4213)"
 
 Narrow table (17 columns). PK is `id` (verified unique: 30 / 30 rows). Excludes
 the audit-quad. The single-letter columns (`f`, `h`, `m`, `s`, `t`, `u`, `w`)
-are per-rotation-day flags keyed by weekday initial — kept as-is.
+are per-rotation-day flags keyed by weekday initial — kept as-is. This table has
+no `custom_*` slots, so no inline custom block applies.
 
 **Files:**
 
@@ -635,7 +650,8 @@ git commit -m "feat(dbt): add stg_focus__co_teacher_days (#4213)"
 ### Task 5: `stg_focus__resources`
 
 Narrow table (21 columns). PK is `id` (standard `id` surrogate). Excludes the
-audit-quad. Models rooms/resources scheduled against course periods.
+audit-quad. Models rooms/resources scheduled against course periods. This table
+has no `custom_*` slots, so no inline custom block applies.
 
 **Files:**
 
@@ -755,13 +771,15 @@ git commit -m "feat(dbt): add stg_focus__resources (#4213)"
 
 ---
 
-### Task 6: `stg_focus__courses` (WIDE — curated)
+### Task 6: `stg_focus__courses` (WIDE — curated + inline custom)
 
-`courses` has 57 columns. The `custom_1`–`custom_12` long tail is OUT OF SCOPE
-(Batch H unpivot), EXCEPT the two FLDOE-mapped slots kept by name: `custom_2`
-(WDIS OCP HOURS) and `custom_10` (CAPE). Curate to the import-mapped core plus
-the course/subject/grad keys, dates, names, length/occurrences, and
-`uuid`/`created_at`/`updated_at`. PK is `course_id` (verified unique: 16904 /
+`courses` has 57 columns. Curate to the FLDOE-import-mapped core plus the
+course/subject/grad keys, dates, names, length/occurrences, and
+`uuid`/`created_at`/`updated_at`, THEN append the inline block of populated
+custom columns. Per the map (`.claude/scratch/focus-courses-custom-map.md`) four
+custom slots are populated: `custom_4`, `custom_2`, `custom_3`, `custom_10`
+(each `STRING`); they are projected aliased to their slug. Unpopulated
+`custom_*` slots are out of scope. PK is `course_id` (verified unique: 16904 /
 16904 rows).
 
 **Files:**
@@ -808,12 +826,15 @@ select
     homeroom,
     edfi_course_level_characteristic,
     iet_program_number,
-    custom_2,
-    custom_10,
     imported,
     uuid,
     created_at,
     updated_at,
+
+    custom_4 as custom_4,
+    custom_2 as custom_2,
+    custom_3 as custom_3,
+    custom_10 as custom_10,
 from {{ source("focus", "courses") }}
 ```
 
@@ -825,8 +846,10 @@ models:
     description: >-
       Focus courses — one row per course definition, scoped by school year and
       school. Curated to the FLDOE-import-mapped core plus course/subject keys,
-      titles, prerequisites, and scheduling attributes. The custom-field long
-      tail is excluded and handled by the Batch H custom-field unpivot.
+      titles, prerequisites, and scheduling attributes, with the
+      currently-populated custom-field columns appended inline (aliased to their
+      slug). Unpopulated custom slots are excluded. Select/multiple custom
+      values remain as stored Focus option codes — not decoded in this layer.
     columns:
       - name: course_id
         description: Primary key — Focus course id.
@@ -925,12 +948,6 @@ models:
       - name: iet_program_number
         description: IET program number associated with the course.
         data_type: string
-      - name: custom_2
-        description: WDIS OCP hours (FLDOE WDIS_OCP_HRS).
-        data_type: string
-      - name: custom_10
-        description: CAPE indicator (FLDOE CAPE).
-        data_type: string
       - name: imported
         description: Y/N — whether the row originated from an import.
         data_type: string
@@ -943,6 +960,26 @@ models:
       - name: updated_at
         description: Row last-update timestamp in Focus.
         data_type: timestamp
+      - name: custom_4
+        description: >-
+          Focus generic custom slot; label not defined in the extracted
+          custom_fields catalog.
+        data_type: string
+      - name: custom_2
+        description: >-
+          Focus generic custom slot; label not defined in the extracted
+          custom_fields catalog.
+        data_type: string
+      - name: custom_3
+        description: >-
+          Focus generic custom slot; label not defined in the extracted
+          custom_fields catalog.
+        data_type: string
+      - name: custom_10
+        description: >-
+          Focus generic custom slot; label not defined in the extracted
+          custom_fields catalog.
+        data_type: string
 ```
 
 - [ ] **Step 3: Build and verify**
@@ -951,7 +988,8 @@ Run:
 `uv run dbt build --select stg_focus__courses --project-dir src/dbt/kippmiami`
 Expected: builds; `unique` + `not_null` on `course_id` PASS. If a contract
 mismatch fires, confirm each projected column's YAML `data_type` matches the
-warehouse type (`length`/`occurrences` are `numeric`, not `int`/`float64`).
+warehouse type (`length`/`occurrences` are `numeric`, not `int`/`float64`; all
+four custom slots are `string`).
 
 - [ ] **Step 4: Commit**
 
@@ -962,15 +1000,19 @@ git commit -m "feat(dbt): add stg_focus__courses (#4213)"
 
 ---
 
-### Task 7: `stg_focus__master_courses` (WIDE — curated)
+### Task 7: `stg_focus__master_courses` (WIDE — curated + inline custom)
 
-`master_courses` has 109 columns. The `custom_field_1`–`custom_field_20` long
-tail is OUT OF SCOPE (Batch H unpivot) — none of the FLDOE-mapped
-`custom_field_*` slots are kept by name here; the mapped descriptive fields
-(course level, GPA, grading scale, credits, dates, etc.) are all native columns.
-Curate to the import-mapped core plus the course/subject keys, titles, dates,
-grading, and `uuid`/`created_at`/`updated_at`. PK is `course_id` (verified
-unique: 71283 / 71283 rows).
+`master_courses` has 109 columns. The mapped descriptive fields (course level,
+GPA, grading scale, credits, dates, etc.) are native columns and are curated
+into the core projection. The `custom_field_*` slots are handled inline: per the
+map (`.claude/scratch/focus-master_courses-custom-map.md`) ten slots are
+populated — `custom_field_3`, `custom_field_4`, `custom_field_11`,
+`custom_field_5`, `custom_field_2`, `custom_field_13`, `custom_field_6`,
+`custom_field_14`, `custom_field_10`, `custom_field_1` (each `STRING`) — and are
+projected aliased to their slug. Unpopulated `custom_field_*` slots are out of
+scope. Curate the core to the import-mapped columns plus the course/subject
+keys, titles, dates, grading, and `uuid`/`created_at`/`updated_at`. PK is
+`course_id` (verified unique: 71283 / 71283 rows).
 
 **Files:**
 
@@ -1034,6 +1076,17 @@ select
     uuid,
     created_at,
     updated_at,
+
+    custom_field_3 as custom_field_3,
+    custom_field_4 as custom_field_4,
+    custom_field_11 as custom_field_11,
+    custom_field_5 as custom_field_5,
+    custom_field_2 as custom_field_2,
+    custom_field_13 as custom_field_13,
+    custom_field_6 as custom_field_6,
+    custom_field_14 as custom_field_14,
+    custom_field_10 as custom_field_10,
+    custom_field_1 as custom_field_1,
 from {{ source("focus", "master_courses") }}
 ```
 
@@ -1045,8 +1098,10 @@ models:
     description: >-
       Focus master courses — one row per master course template, scoped by
       school year. Curated to the FLDOE-import-mapped core plus course/subject
-      keys, titles, term dates, grading scheme, and credit attributes. The
-      custom-field long tail is excluded and handled by the Batch H unpivot.
+      keys, titles, term dates, grading scheme, and credit attributes, with the
+      currently-populated custom-field columns appended inline (aliased to their
+      slug). Unpopulated custom slots are excluded. Select/multiple custom
+      values remain as stored Focus option codes — not decoded in this layer.
     columns:
       - name: course_id
         description: Primary key — Focus master course id.
@@ -1198,6 +1253,56 @@ models:
       - name: updated_at
         description: Row last-update timestamp in Focus.
         data_type: timestamp
+      - name: custom_field_3
+        description: >-
+          Focus generic custom slot; label not defined in the extracted
+          custom_fields catalog.
+        data_type: string
+      - name: custom_field_4
+        description: >-
+          Focus generic custom slot; label not defined in the extracted
+          custom_fields catalog.
+        data_type: string
+      - name: custom_field_11
+        description: >-
+          Focus generic custom slot; label not defined in the extracted
+          custom_fields catalog.
+        data_type: string
+      - name: custom_field_5
+        description: >-
+          Focus generic custom slot; label not defined in the extracted
+          custom_fields catalog.
+        data_type: string
+      - name: custom_field_2
+        description: >-
+          Focus generic custom slot; label not defined in the extracted
+          custom_fields catalog.
+        data_type: string
+      - name: custom_field_13
+        description: >-
+          Focus generic custom slot; label not defined in the extracted
+          custom_fields catalog.
+        data_type: string
+      - name: custom_field_6
+        description: >-
+          Focus generic custom slot; label not defined in the extracted
+          custom_fields catalog.
+        data_type: string
+      - name: custom_field_14
+        description: >-
+          Focus generic custom slot; label not defined in the extracted
+          custom_fields catalog.
+        data_type: string
+      - name: custom_field_10
+        description: >-
+          Focus generic custom slot; label not defined in the extracted
+          custom_fields catalog.
+        data_type: string
+      - name: custom_field_1
+        description: >-
+          Focus generic custom slot; label not defined in the extracted
+          custom_fields catalog.
+        data_type: string
 ```
 
 - [ ] **Step 3: Build and verify**
@@ -1207,8 +1312,8 @@ Run:
 Expected: builds; `unique` + `not_null` on `course_id` PASS. Watch the typed
 columns: `affects_gpa` / `credits` / `total_credit` / `fee` / `allow_repeat` are
 `numeric`; `status` is `int`; the four date columns are `date` (NOT
-`timestamp`). Match the YAML to the warehouse type exactly or the contract
-fails.
+`timestamp`); all ten `custom_field_*` slots are `string`. Match the YAML to the
+warehouse type exactly or the contract fails.
 
 - [ ] **Step 4: Commit**
 
@@ -1219,20 +1324,24 @@ git commit -m "feat(dbt): add stg_focus__master_courses (#4213)"
 
 ---
 
-### Task 8: `stg_focus__course_periods` (WIDE — curated)
+### Task 8: `stg_focus__course_periods` (WIDE — curated + inline custom)
 
-`course_periods` has 289 columns. The massive long tail —
-`custom_1`–`custom_39`, `cp_checkbox_setting_*`, and the entire per-co-teacher
-family (`co_teacher_id1`–`10`, `co_teacher*_custom*`, `co_teacher*_checkbox*`,
+`course_periods` has 289 columns. Curate to the section's canonical definition:
+section/course/period keys, teacher, room/seats, the does\_\* and gpa flags,
+days/calendar/grade-scale, the lead co-teacher ids (`co_teacher_id1`–`10` ARE
+FLDOE-mapped, so keep those ten ids by name but NOT their per-co-teacher
+attribute columns), and `uuid`/`created_at`/`updated_at`. THEN append the inline
+block of populated custom columns. Per the map
+(`.claude/scratch/focus-course_periods-custom-map.md`) ten `custom_*` slots are
+populated — `custom_2`, `custom_4`, `custom_6`, `custom_25`, `custom_22`,
+`custom_33`, `custom_34`, `custom_5`, `custom_28`, `custom_3` (each `STRING`) —
+and are projected aliased to their slug. Unpopulated `custom_*` slots, the
+`cp_checkbox_setting_*` long tail, and the entire per-co-teacher attribute
+family (`co_teacher*_custom*`, `co_teacher*_checkbox*`,
 `co_teacher*_permissions`, `co_teacher*_report_doe`, `co_teacher*_start_date` /
-`_end_date` / `_start_time` / `_end_time`, `co_teacher*_out_reason`) — is OUT OF
-SCOPE here (Batch H unpivot for `custom_*`; the co-teacher columns belong to the
-`co_teacher_days` grain / a future scheduling intermediate). Curate to the
-section's canonical definition: section/course/period keys, teacher, room/seats,
-the does\_\* and gpa flags, days/calendar/grade-scale, the lead co-teacher ids
-(`co_teacher_id1`–`10` ARE FLDOE-mapped, so keep those ten ids by name but NOT
-their per-co-teacher attribute columns), and `uuid`/`created_at`/`updated_at`.
-PK is `course_period_id`.
+`_end_date` / `_start_time` / `_end_time`, `co_teacher*_out_reason`) are OUT OF
+SCOPE here (the co-teacher columns belong to the `co_teacher_days` grain / a
+future scheduling intermediate). PK is `course_period_id`.
 
 **Files:**
 
@@ -1304,6 +1413,17 @@ select
     uuid,
     created_at,
     updated_at,
+
+    custom_2 as custom_2,
+    custom_4 as custom_4,
+    custom_6 as custom_6,
+    custom_25 as custom_25,
+    custom_22 as custom_22,
+    custom_33 as custom_33,
+    custom_34 as custom_34,
+    custom_5 as custom_5,
+    custom_28 as custom_28,
+    custom_3 as custom_3,
 from {{ source("focus", "course_periods") }}
 ```
 
@@ -1316,9 +1436,11 @@ models:
       Focus course periods (sections) — one row per scheduled section, scoped by
       school year and school. Curated to the section's canonical definition:
       section/course/period/marking-period keys, the lead and ten co-teacher
-      ids, room/seats, scheduling days, and the does_* flags. The custom-field
-      long tail and the per-co-teacher attribute columns are excluded; custom_*
-      is handled by the Batch H unpivot.
+      ids, room/seats, scheduling days, and the does_* flags, with the
+      currently-populated custom-field columns appended inline (aliased to their
+      slug). Unpopulated custom slots and the per-co-teacher attribute columns
+      are excluded. Select/multiple custom values remain as stored Focus option
+      codes — not decoded in this layer.
     columns:
       - name: course_period_id
         description: Primary key — Focus course period (section) id.
@@ -1492,6 +1614,56 @@ models:
       - name: updated_at
         description: Row last-update timestamp in Focus.
         data_type: timestamp
+      - name: custom_2
+        description: >-
+          Focus generic custom slot; label not defined in the extracted
+          custom_fields catalog.
+        data_type: string
+      - name: custom_4
+        description: >-
+          Focus generic custom slot; label not defined in the extracted
+          custom_fields catalog.
+        data_type: string
+      - name: custom_6
+        description: >-
+          Focus generic custom slot; label not defined in the extracted
+          custom_fields catalog.
+        data_type: string
+      - name: custom_25
+        description: >-
+          Focus generic custom slot; label not defined in the extracted
+          custom_fields catalog.
+        data_type: string
+      - name: custom_22
+        description: >-
+          Focus generic custom slot; label not defined in the extracted
+          custom_fields catalog.
+        data_type: string
+      - name: custom_33
+        description: >-
+          Focus generic custom slot; label not defined in the extracted
+          custom_fields catalog.
+        data_type: string
+      - name: custom_34
+        description: >-
+          Focus generic custom slot; label not defined in the extracted
+          custom_fields catalog.
+        data_type: string
+      - name: custom_5
+        description: >-
+          Focus generic custom slot; label not defined in the extracted
+          custom_fields catalog.
+        data_type: string
+      - name: custom_28
+        description: >-
+          Focus generic custom slot; label not defined in the extracted
+          custom_fields catalog.
+        data_type: string
+      - name: custom_3
+        description: >-
+          Focus generic custom slot; label not defined in the extracted
+          custom_fields catalog.
+        data_type: string
 ```
 
 - [ ] **Step 3: Build and verify**
@@ -1501,7 +1673,8 @@ Run:
 Expected: builds; `unique` + `not_null` on `course_period_id` PASS. Watch the
 typed columns: `total_seats` / `filled_seats` / `sped_seats` / `availability`
 are `numeric`; `ell_seats` is `int`; `credits` is `string` (NOT numeric in this
-table). Match the YAML to the warehouse type exactly or the contract fails.
+table); all ten `custom_*` slots are `string`. Match the YAML to the warehouse
+type exactly or the contract fails.
 
 - [ ] **Step 4: Commit**
 
@@ -1548,10 +1721,18 @@ Expected: 8 models build, 16 tests (unique + not_null per model) PASS.
 
 ## Out of scope (other plans / issues)
 
-- **Custom-field unpivot (Batch H)** — the `custom_*` / `custom_field_*` long
-  tail on `courses`, `master_courses`, and `course_periods` (and the
-  per-co-teacher attribute columns on `course_periods`) unpivots to a long
-  key/value model joined to the `custom_fields` metadata crosswalk. Not here.
+- **Custom-value decoding** — Focus select/multiple custom values are projected
+  as stored option codes in this batch. Decoding them against the
+  `custom_fields` option catalog (and any label crosswalk) is a deferred
+  follow-up, layered in a later `int_focus__*` model.
+- **Unpopulated custom slots** — `custom_*` / `custom_field_*` columns with zero
+  populated rows in the source are not projected. Re-run the per-table custom
+  map and add a slot inline if it becomes populated.
+- **Per-co-teacher attribute long tail** — the `co_teacher*_custom*` /
+  `co_teacher*_checkbox*` / `co_teacher*_permissions` / `co_teacher*_report_doe`
+  / `co_teacher*_start_date` / `_end_date` / `_start_time` / `_end_time` /
+  `_out_reason` columns on `course_periods` belong to the `co_teacher_days`
+  grain / a future scheduling intermediate. Not here.
 - **Intermediate scheduling models** — joining sections to teachers, calendars,
   and the `co_teacher_days` grain belongs in a later `int_focus__*` layer.
 - **kipptaf region source + `stg_kippmiami__focus__*` wrappers** — deferred to
@@ -1560,9 +1741,9 @@ Expected: 8 models build, 16 tests (unique + not_null per model) PASS.
 
 ## Self-review checklist (run before handing off)
 
-1. **Spec coverage:** all eight Batch D tables have a staging task — narrow
-   (`course_subjects`, `course_weights`, `course_code_directory`,
-   `co_teacher_days`, `resources`) and wide-curated (`courses`,
+1. **Spec coverage:** all eight Batch D tables have a staging task — non-custom
+   (`course_weights`, `course_code_directory`, `co_teacher_days`, `resources`)
+   and wide with inline custom blocks (`course_subjects`, `courses`,
    `master_courses`, `course_periods`). ✓
 2. **Placeholder scan:** every task has complete SQL + complete YAML + exact
    build command. No TBD/TODO/"similar to". ✓
@@ -1571,18 +1752,28 @@ Expected: 8 models build, 16 tests (unique + not_null per model) PASS.
    co_teacher_days, resources), `course_id` (courses, master_courses),
    `course_period_id` (course_periods). Each has `unique` + `not_null` at
    `severity: error`. ✓
-4. **Soft-delete:** none of the eight tables has a `deleted` column; no filter
+4. **Soft-delete:** none of the eight tables has a `deleted` column; the
+   `where deleted is null` convention does not apply (column absent). No filter
    applied. `course_periods.active` and `master_courses.status` kept as raw
    columns (semantics unconfirmed). ✓
 5. **Exclusions:** every model drops `_dlt_*` and the audit-quad
    (`created_by_class`/`_id`, `updated_by_class`/`_id`); keeps
    `uuid`/`created_at`/`updated_at`. ✓
-6. **Wide curation:** `courses`/`master_courses`/`course_periods` project only
-   the import-mapped core + keys/dates/names + the kept FLDOE `custom_NNN` slots
-   (`courses.custom_2`, `courses.custom_10`) and the ten mapped
-   `course_periods.co_teacher_idN`; the `custom_*` / per-co-teacher long tail is
-   excluded and noted as Batch H. ✓
-7. **Type consistency:** each YAML `data_type` matches the warehouse type from
-   `INFORMATION_SCHEMA.COLUMNS` (int/string/numeric/date/timestamp). Re-verify
-   the typed-column warnings called out in Tasks 6–8 during build (notably
-   `course_periods.credits` = string, `master_courses` date-vs-timestamp). ✓
+6. **Inline custom blocks:** each wide table appends — after its non-custom core
+   columns, before no cast block (ST06-compliant) — every populated custom
+   column from its map, aliased to its slug: `course_subjects` (`custom_1`);
+   `courses` (`custom_4`, `custom_2`, `custom_3`, `custom_10`); `master_courses`
+   (`custom_field_3`/`_4`/`_11`/`_5`/ `_2`/`_13`/`_6`/`_14`/`_10`/`_1`);
+   `course_periods` (`custom_2`/`_4`/`_6`/
+   `_25`/`_22`/`_33`/`_34`/`_5`/`_28`/`_3`). All are `STRING` → `string`. No map
+   row omitted; no non-map custom column added; no already-projected core column
+   duplicated. ✓
+7. **Custom-value encoding:** every wide model's `description:` states that
+   select/multiple custom values remain as stored Focus option codes (not
+   decoded here); decoding is deferred. ✓
+8. **Type consistency:** each YAML `data_type` matches the warehouse type from
+   `INFORMATION_SCHEMA.COLUMNS`
+   (int/string/numeric/date/timestamp/time/boolean). Re-verify the typed-column
+   warnings called out in Tasks 6–8 during build (notably
+   `course_periods.credits` = string, `master_courses` date-vs-timestamp, all
+   inline custom slots = string). ✓

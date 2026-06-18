@@ -17,11 +17,14 @@ explicit column projection (drop dlt bookkeeping + audit-quad columns), a
 soft-delete filter where the table has a `deleted` column, a uniqueness test on
 each table's primary key, and a `description:` on the model and every column.
 `users` is a wide table (235 columns, mostly a `custom_*` long-tail) — staging
-carries only the curated core set (identity, keys, names, dates, plus the
-specific `custom_NNN` columns the FLDOE import layout maps to a named field);
-the remaining `custom_*` long-tail is out of scope here and unpivots separately
-in Batch H. Models build inside the consuming district project (`kippmiami`),
-which sets `focus_schema` and imports the `focus` package.
+carries the curated core set (identity, keys, names, dates) **plus an inline
+block of every currently-populated `custom_*` column, each aliased to its
+human-readable slug** from the extracted `custom_fields` catalog. Unpopulated
+`custom_*` columns are out of scope (they hold no data). Select/multiple coded
+custom values are left **encoded as stored codes** in this batch; decoding
+against the `custom_fields` option catalog is a deferred follow-up. Models build
+inside the consuming district project (`kippmiami`), which sets `focus_schema`
+and imports the `focus` package.
 
 **Tech Stack:** dbt (BigQuery), `dbt_utils`, dbt contracts. SQL per
 `.trunk/config/.sqlfluff` (BigQuery dialect, trailing commas, single quotes, 88
@@ -59,11 +62,20 @@ cols, lowercase).
 - Y/N-style flags stay raw `STRING`; coded `INT64` lookups stay raw `INT64`. No
   `is_` boolean conversion in this batch (convert in an intermediate layer later
   if a consumer needs it).
-- **PII:** several `users` columns are direct PII (`password`, `custom_556` =
-  SSN, `custom_100000001` = email, `first_name` / `last_name` / `middle_name`,
-  `ein`). They are projected into staging (staging mirrors the source) but never
-  echo a sampled value into any external surface (PR, commit, issue). Validation
-  output stays local.
+- **Populated custom-field block (`users` only):** every currently-populated
+  `custom_*` column is projected as `<column_name> as <slug>` and contracted
+  under its slug name. Coded values (`select` / `multiple` focus types) are kept
+  as their **stored codes** — decoding them against the `custom_fields` option
+  catalog is a deferred follow-up, NOT part of this batch. The authoritative
+  list of populated custom columns + their slugs, BigQuery types, and titles is
+  `/.claude/scratch/focus-users-custom-map.md`. Do NOT project a custom column
+  absent from that map (unpopulated = out of scope) and do NOT duplicate a
+  column already in the curated core projection.
+- **PII:** several `users` columns are direct PII (`password`,
+  `social_security_number` = SSN, `e_mail_address` = email, `first_name` /
+  `last_name` / `middle_name`, `ein`). They are projected into staging (staging
+  mirrors the source) but never echo a sampled value into any external surface
+  (PR, commit, issue). Validation output stays local.
 - Build/test context is the **kippmiami** project, not `focus` standalone.
 
 ---
@@ -498,24 +510,36 @@ git commit -m "feat(dbt): add stg_focus__user_enrollment (#4213)"
 ### Task 5: `stg_focus__users`
 
 `users` is the wide table — 235 columns, the vast majority a `custom_*`
-long-tail plus a Florida-specific HR/charter/certification block that no
-downstream layer in this phase consumes. Staging carries only the **curated core
-set**: identity/keys, names, login/identity attributes, the canonical
-date/timestamp columns, and the 13 specific `custom_NNN` columns that the FLDOE
-"Florida K-12 Import Layouts" STAFF*LAYOUT maps to a named import field (their
-descriptions below come from that mapping). The remaining
-`custom*\*`columns and the FLDOE HR/charter/certification block are **out of scope** — they unpivot to the long key/value model in **Batch H**, joined to the`custom_fields`
-metadata crosswalk. Do NOT enumerate them here.
+long-tail. Staging carries two blocks:
+
+1. The **curated core set**: identity/keys, names, login/identity attributes,
+   and the canonical date/timestamp columns.
+2. The **populated custom-field block**: every `custom_*` column that currently
+   holds data, projected as `<source_column> as <slug>` where the slug is the
+   human-readable name from the extracted `custom_fields` catalog. The
+   authoritative list is `/.claude/scratch/focus-users-custom-map.md` (10
+   populated custom columns of 93 total). Unpopulated `custom_*` columns are out
+   of scope here — they hold no data and are not projected.
+
+The custom block sits **after the core columns and before any cast block**
+(there are no casts in this model — all columns ship as plain refs — so the
+custom block is simply the last group of plain refs before `from`), per ST06.
+
+**Encoding note:** the `active` (`custom_319000004`),
+`profile_on_non_production_sites` (`custom_l790`), and `education` (`custom_2`)
+columns are `select` / `multiple` focus types. Their values remain **stored
+codes** in this staging model — decoding them to labels against the
+`custom_fields` option catalog is a deferred follow-up, not part of this batch.
 
 Soft-delete applies: `users.deleted` is `NULL` for live rows and `1` for
 deleted. The model filters `where deleted is null` and OMITS the `deleted`
 column.
 
-**Curation note — GENDER mapping discrepancy:** the import-layout mapping lists
-`GENDER` → `users.custom_59`, but `custom_59` does NOT exist in the warehouse
-`users` schema. The schema instead has a named `gender INT64` column. This plan
-projects the named `gender` column and does not project a (nonexistent)
-`custom_59`. See Open questions.
+**Curation note — GENDER mapping discrepancy:** an external import-layout
+mapping lists `GENDER` → `users.custom_59`, but `custom_59` does NOT exist in
+the warehouse `users` schema (and is not in the populated-custom map). The
+schema instead has a named `gender INT64` column. This plan projects the named
+`gender` column and does not project a (nonexistent) `custom_59`.
 
 **Files:**
 
@@ -526,13 +550,15 @@ projects the named `gender` column and does not project a (nonexistent)
 
 - Consumes: `source("focus", "users")`
 - Produces: model `stg_focus__users`, grain one row per `profile_id` (a Focus
-  staff/user account); curated columns only.
+  staff/user account); curated core columns plus the populated custom-field
+  slugs.
 
 - [ ] **Step 1: Write the model SQL**
 
 The column order follows ST06 (plain refs only here — no casts/functions): keys,
-identity/login, names, school/org context, the mapped `custom_NNN` block,
-canonical dates. The soft-delete filter lives in `WHERE`.
+identity/login, names, school/org context, then the populated custom-field block
+(each `custom_*` aliased to its slug), then the canonical dates. The soft-delete
+filter lives in `WHERE`.
 
 ```sql
 select
@@ -557,19 +583,16 @@ select
     last_name,
     name_suffix,
     homeroom,
-    custom_200000001,
-    custom_100000001,
-    custom_100000002,
-    custom_100000003,
-    custom_200000002,
-    custom_200000003,
-    custom_556,
-    custom_607,
-    custom_2,
-    custom_20120001,
-    custom_20120002,
-    custom_20120003,
-    custom_20120004,
+    custom_100000001 as e_mail_address,
+    custom_200000001 as staff_number_identifier_local,
+    custom_100000002 as phone_number,
+    custom_200000002 as experience_length_years,
+    custom_556 as social_security_number,
+    custom_319000004 as active,
+    custom_l801 as w4_allowances_under_17,
+    custom_l802 as f_3_claim_dependent_and_other,
+    custom_l790 as profile_on_non_production_sites,
+    custom_2 as education,
     uuid,
     last_login,
     last_change,
@@ -587,10 +610,12 @@ models:
   - name: stg_focus__users
     description: >-
       Focus users — one row per active staff/user account (deleted rows
-      excluded). Curated core columns only: identity, names, school/org context,
-      the FLDOE-mapped custom fields, and canonical dates. The wide custom field
-      long-tail and the Florida HR/charter/certification block are out of scope
-      here and unpivot in Batch H.
+      excluded). Carries the curated core columns (identity, names, school/org
+      context, canonical dates) plus every currently-populated custom field,
+      each aliased to its human-readable slug from the custom_fields catalog.
+      Select/multiple custom values remain as stored codes — decoding them to
+      labels is a deferred follow-up. Unpopulated custom_* columns are out of
+      scope.
     columns:
       - name: profile_id
         description: Primary key — Focus user account profile id.
@@ -662,48 +687,43 @@ models:
       - name: homeroom
         description: Homeroom assignment label for the user.
         data_type: string
-      - name: custom_200000001
-        description: Staff number identifier, local (FLDOE STAFF_TCHR_ID) — PII.
+      - name: e_mail_address
+        description: E-mail Address (populated custom field) — PII.
         data_type: string
-      - name: custom_100000001
-        description: E-mail address (FLDOE EMAIL) — PII.
+      - name: staff_number_identifier_local
+        description:
+          Staff Number Identifier, Local (populated custom field) — PII.
         data_type: string
-      - name: custom_100000002
-        description: Phone number (FLDOE PH_NUM) — PII.
+      - name: phone_number
+        description: Phone Number (populated custom field) — PII.
         data_type: string
-      - name: custom_100000003
-        description: Homeroom number (FLDOE HOMEROOM).
-        data_type: string
-      - name: custom_200000002
-        description: Experience length in years (FLDOE EXPERIENCE_YRS).
+      - name: experience_length_years
+        description: Experience Length (Years) (populated custom field).
         data_type: numeric
-      - name: custom_200000003
-        description: Florida education identifier (FLDOE FL_ED_ID) — PII.
+      - name: social_security_number
+        description: Social Security Number (populated custom field) — PII.
         data_type: string
-      - name: custom_556
-        description: Social Security Number (FLDOE SSN) — PII.
-        data_type: string
-      - name: custom_607
+      - name: active
         description:
-          Florida educators certificate number (FLDOE FL_ED_CERT_NUM).
-        data_type: string
-      - name: custom_2
-        description: Education — multi-select code list (FLDOE EDUCATION).
-        data_type: string
-      - name: custom_20120001
-        description:
-          National board certified teacher checkbox (FLDOE NB_CERT_TCHR).
-        data_type: string
-      - name: custom_20120002
-        description:
-          Athletic coaching endorsement checkbox (FLDOE ATHL_COACH_ENDORSE).
-        data_type: string
-      - name: custom_20120003
-        description: Clinical education trained checkbox (FLDOE CLIN_ED_TRAIN).
-        data_type: string
-      - name: custom_20120004
-        description: ELL certification status (FLDOE ELL_CERT_STAT).
+          Active (populated custom field) — select-coded; value left as the
+          stored code.
         data_type: int
+      - name: w4_allowances_under_17
+        description: W4 Allowances Under 17 (populated custom field).
+        data_type: numeric
+      - name: f_3_claim_dependent_and_other
+        description: 3 Claim Dependent and Other (populated custom field).
+        data_type: numeric
+      - name: profile_on_non_production_sites
+        description:
+          Profile On Non-Production Sites (populated custom field) —
+          select-coded; value left as the stored code.
+        data_type: int
+      - name: education
+        description:
+          Education (populated custom field) — multiple-select coded; value left
+          as the stored code(s).
+        data_type: string
       - name: uuid
         description: Focus global unique identifier for the row.
         data_type: string
@@ -730,10 +750,13 @@ Run:
 `uv run dbt build --select stg_focus__users --project-dir src/dbt/kippmiami`
 Expected: model builds; `unique` + `not_null` on `profile_id` PASS. Watch two
 failure modes: (a) a contract `data_type` mismatch — confirm each YAML type
-against the warehouse (`gender` and `custom_20120004` are `int`;
-`custom_200000002` is `numeric`; `last_updated_date` is `date`, not
-`timestamp`); (b) a `unique` failure on `profile_id` would mean deleted rows
-leaked — confirm the `where deleted is null` filter is present.
+against the warehouse. From the populated-custom map the custom types are:
+`experience_length_years` / `w4_allowances_under_17` /
+`f_3_claim_dependent_and_other` are `numeric`; `active` /
+`profile_on_non_production_sites` are `int`; the rest of the custom block is
+`string`. In the core block, `gender` is `int` and `last_updated_date` is
+`date`, not `timestamp`. (b) a `unique` failure on `profile_id` would mean
+deleted rows leaked — confirm the `where deleted is null` filter is present.
 
 - [ ] **Step 4: Commit**
 
@@ -775,16 +798,19 @@ Expected: 5 models build, 10 tests (unique + not_null per model) PASS.
 
 ## Out of scope (other plans / issues)
 
-- The `users` `custom_*` long-tail and the FLDOE HR/charter/certification block
-  (`charter_*`, `re_comp_*`, `reading_endorsement_*`, `aca_*`, `w4_*`, etc.) —
-  unpivot to the long key/value model in **Batch H**, joined to the
-  `custom_fields` metadata crosswalk.
+- **Decoding select/multiple custom values to labels** — `active`,
+  `profile_on_non_production_sites`, and `education` keep their stored codes in
+  this batch. Joining them to the `custom_fields` option catalog to resolve
+  human-readable labels is a deferred follow-up.
+- **Unpopulated `custom_*` columns** (83 of the 93 custom columns hold no data)
+  — not projected here; revisit only if a future Focus import begins populating
+  one.
 - kipptaf region source + `stg_kippmiami__focus__*` wrappers — deferred to the
   kipptaf-integration plan; add a wrapper only when a mart consumes one of
   these.
 - `is_` boolean conversion of Y/N STRING flags and code-value decoding of the
-  `INT64` lookups (`gender`, `custom_20120004`) — belongs in an intermediate
-  layer if a consumer needs it.
+  `INT64` lookups (`gender`, `active`, `profile_on_non_production_sites`) —
+  belongs in an intermediate layer if a consumer needs it.
 
 ## Self-review checklist (run before handing off)
 
@@ -802,10 +828,14 @@ Expected: 5 models build, 10 tests (unique + not_null per model) PASS.
    `created_at` / `updated_at` / `uuid` where present. (`permission`,
    `user_enrollment`, `user_profiles`, `users` have the audit-quad and drop it;
    `login_history` has neither.) ✓
-6. **Wide-table curation:** `users` carries the curated core + the 13 existing
-   FLDOE-mapped `custom_NNN` columns only; the custom long-tail is explicitly
-   deferred to Batch H. ✓
-7. **Type consistency:** each YAML `data_type` matches the warehouse type pulled
-   from `INFORMATION_SCHEMA.COLUMNS` — re-verify during build the `users`
-   mixed-type columns (`gender`/`custom_20120004` = int, `custom_200000002` =
-   numeric, `last_updated_date` = date vs the `timestamp` date columns).
+6. **Wide-table custom block:** `users` carries the curated core plus all 10
+   populated `custom_*` columns from `focus-users-custom-map.md`, each aliased
+   to its slug; no custom column absent from the map is projected, and no slug
+   duplicates a core column. Select/multiple values stay as stored codes. ✓
+7. **Type consistency:** each YAML `data_type` matches the warehouse type and
+   the map's `bq_type` (mapped to repo spelling: STRING→string, INT64→int,
+   NUMERIC→numeric, DATE→date, TIMESTAMP→timestamp). Re-verify during build the
+   mixed-type columns: custom `numeric` (`experience_length_years`,
+   `w4_allowances_under_17`, `f_3_claim_dependent_and_other`) and custom `int`
+   (`active`, `profile_on_non_production_sites`); core `gender` = int,
+   `last_updated_date` = date. ✓

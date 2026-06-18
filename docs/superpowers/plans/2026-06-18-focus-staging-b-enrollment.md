@@ -18,10 +18,14 @@ the BQ-native Focus dlt source declared in
 explicit column projection (drop dlt bookkeeping + audit-quad columns),
 soft-delete filtering where the table carries a `deleted` flag, a uniqueness
 test on each table's primary key, and a `description:` on the model and every
-column. A new `intermediate/` layer adds `int_focus__student_enrollment`, a
-many-to-one enrichment of enrollment rows with school, grade-level, and
-enrollment-code attributes. Models build inside the consuming district project
-(`kippmiami`), which sets `focus_schema` and imports the `focus` package.
+column. The two WIDE tables (`schools`, `student_enrollment`) additionally carry
+an inline "populated custom fields" block — every Focus `custom_*` column that
+holds at least one non-null value in the current Miami pull, projected
+`<raw> as <slug>` after the curated core. A new `intermediate/` layer adds
+`int_focus__student_enrollment`, a many-to-one enrichment of enrollment rows
+with school, grade-level, and enrollment-code attributes. Models build inside
+the consuming district project (`kippmiami`), which sets `focus_schema` and
+imports the `focus` package.
 
 **Tech Stack:** dbt (BigQuery), `dbt_utils`, dbt contracts. SQL per
 `.trunk/config/.sqlfluff` (BigQuery dialect, trailing commas, single quotes, 88
@@ -46,24 +50,31 @@ cols, lowercase).
   from every model. Keep `created_at` / `updated_at` / `uuid`.
 - Staging uniqueness + `not_null` tests MUST set `config: severity: error`
   (project default is `warn`).
-- **Soft-delete filter (CORRECTED — see Open Questions):** In this Miami Focus
-  dataset, the `deleted` column on `schools` and `student_enrollment_codes` is
-  `NULL` for live rows and `1` for deleted rows — NOT `0` for live. A
-  `where deleted = 0` filter (as the Phase B index states) returns ZERO rows.
-  Use `where deleted is null` and OMIT the `deleted` column from the projection.
-  The other five tables in this batch have no `deleted` column. (`districts`,
-  `school_gradelevels`, `attendance_calendars`, `grad_subject_programs` carry an
-  `active` / `rollover` / `default_calendar` STRING flag, NOT a delete flag —
-  keep those raw.)
-- WIDE tables (`student_enrollment` 62 cols, `schools` 85 cols): carry the
-  curated core set only — the import-layout-mapped FLDOE columns plus keys,
-  dates, names, and audit timestamps. The `custom_*` long-tail is OUT OF SCOPE
-  for this batch — it is handled by the separate Batch H custom-field unpivot
-  model (entity `custom_NNN` columns → long key/value joined to the
-  `custom_fields` metadata crosswalk). Specific meaningful `custom_NNN` columns
-  named in the import-layout mapping ARE included by name (e.g.
-  `schools.custom_327` = school number, `student_enrollment.custom_1` = prior
-  district).
+- **Soft-delete filter:** In this Miami Focus dataset, the `deleted` column on
+  `schools` and `student_enrollment_codes` is `NULL` for live rows and `1` for
+  deleted rows — NOT `0` for live. A `where deleted = 0` filter returns ZERO
+  rows. Use `where deleted is null` (NULL = live) and OMIT the `deleted` column
+  from the projection. The other five tables in this batch have no `deleted`
+  column. (`districts`, `school_gradelevels`, `attendance_calendars`,
+  `grad_subject_programs` carry an `active` / `rollover` / `default_calendar`
+  STRING flag, NOT a delete flag — keep those raw.)
+- **Populated custom fields (WIDE tables only — `schools`,
+  `student_enrollment`):** project every Focus `custom_*` column that is
+  populated (at least one non-null value) in the current Miami pull, aliased
+  `<raw_column_name> as <slug>`, placed after the curated core columns and
+  before any cast block (ST06). The authoritative set per table is the
+  pre-generated map (`.claude/scratch/focus-<table>-custom-map.md`); each map
+  row is `column_name | slug | bq_type | focus_type | populated_rows | title`.
+  - Add a custom column ONLY if it appears in the map. Unpopulated `custom_*`
+    columns (absent from the map) are OUT OF SCOPE for this batch.
+  - Do NOT duplicate a column already projected elsewhere — the custom block is
+    the single home for these `custom_*` columns; they are not also projected
+    under a different alias.
+  - **Values are left ENCODED.** `select` / `multiple` custom fields store an
+    option code, not a decoded label. Do NOT decode them here — code-to-label
+    decoding is a deferred follow-up. State this in the model description.
+  - The raw `custom_fields` JSON blob (where present) is NOT projected; it is a
+    separate concern and out of scope for this batch.
 - Focus columns are already `snake_case`. The reserved word `type` appears as a
   column in `student_enrollment_codes` — BigQuery does NOT reserve `type`, so it
   needs no backtick / `quote: true` (confirmed against the four Batch C models,
@@ -84,6 +95,7 @@ Pulled verbatim from `INFORMATION_SCHEMA.COLUMNS` of
 - `NUMERIC` → `data_type: numeric`
 - `DATE` → `data_type: date`
 - `TIMESTAMP` → `data_type: timestamp`
+- `TIME` → `data_type: time`
 - `BOOL` → `data_type: boolean`
 
 `int`/`int64`, `decimal`/`numeric`, `boolean`/`bool` are BQ synonyms; the
@@ -108,7 +120,9 @@ uv run dbt deps --project-dir src/dbt/kippmiami
 non-excluded columns. PK is `id`. No soft-delete column (`active` is a STRING
 status flag, kept raw). `seperate_site` is `BOOL` → `data_type: boolean`.
 `custom_fields` (raw JSON blob) and the per-district `custom_l1277` are kept as
-opaque STRING pass-throughs; the structured unpivot is Batch H.
+opaque STRING pass-throughs (this narrow table has no separate populated-custom
+block — the inline custom-field treatment applies only to the WIDE tables,
+`schools` and `student_enrollment`).
 
 **Files:**
 
@@ -210,8 +224,8 @@ models:
         data_type: string
       - name: custom_fields
         description: >-
-          Raw Focus custom-fields JSON blob; structured values are exposed by
-          the Batch H custom-field unpivot, not here.
+          Raw Focus custom-fields JSON blob; structured values are out of scope
+          for this batch.
         data_type: string
       - name: custom_l1277
         description: Focus custom field l1277 (district-specific).
@@ -258,19 +272,45 @@ git commit -m "feat(dbt): add stg_focus__districts (#4213)"
 
 ---
 
-### Task 2: `stg_focus__schools` (WIDE — curated)
+### Task 2: `stg_focus__schools` (WIDE — curated core + populated customs)
 
-`schools` has 85 columns (after excluding `_dlt_*`), 50+ of them `custom_*`
-fields. Curate to: the natural/foreign keys (`id`, `district_id`,
-`state_school_id`, `erp_facility_id`), the school-year bounds (`min_syear` /
-`max_syear`), `title`, geo (`latitude` / `longitude`), `sort_order`, the
-FLDOE-mapped `custom_NNN` columns from the import layout (school number,
-address, principal, school level/type, federal id, etc.), and audit timestamps +
-`uuid`. **Soft-delete:** `deleted` is `NULL` for live rows here (NOT `0`) —
-filter `where deleted is null` and OMIT `deleted`. The full `custom_*` long-tail
-(and the `custom_fields` JSON blob) is OUT OF SCOPE — Batch H. `custom_1` /
-`custom_3` / `area_code` / `custom_100000005` / `custom_l913` /
-`custom_300000005` are unmapped `NUMERIC` long-tail and dropped.
+`schools` has 85 columns (after excluding `_dlt_*`), 56 of them `custom_*`
+fields. Curate the non-custom core to: the natural/foreign keys (`id`,
+`district_id`, `state_school_id`, `erp_facility_id`), the school-year bounds
+(`min_syear` / `max_syear`), `title`, geo (`latitude` / `longitude`),
+`sort_order`, the ACT/College-Board codes, the `virtual` flag, and audit
+timestamps + `uuid`.
+
+**Populated custom fields (inline block):** the eight `custom_*` columns that
+are populated in the current Miami pull, per
+`.claude/scratch/focus-schools-custom-map.md`. Each is projected
+`<raw> as <slug>` after the core, before any cast block. The other 48 `custom_*`
+columns are unpopulated and OUT OF SCOPE. Values are left as stored codes — the
+`select`-type customs (`school_level`, `school_type`, `technical_center`) carry
+Focus option codes, not decoded labels; decoding is a deferred follow-up. The
+raw `custom_fields` JSON blob is not projected.
+
+**Soft-delete:** `deleted` is `NULL` for live rows here (NOT `0`) — filter
+`where deleted is null` and OMIT `deleted`.
+
+**Populated-custom map (verbatim from the scratch map file):**
+
+| raw column         | slug                           | bq_type | focus_type | title                        |
+| ------------------ | ------------------------------ | ------- | ---------- | ---------------------------- |
+| `custom_327`       | `school_number`                | STRING  | text       | School Number                |
+| `custom_100000001` | `district_number`              | STRING  | text       | District Number              |
+| `custom_100000004` | `school_level`                 | INT64   | select     | School Level                 |
+| `custom_200000321` | `state`                        | STRING  | text       | State                        |
+| `custom_200000326` | `school_type`                  | INT64   | select     | School Type                  |
+| `custom_50000002`  | `technical_center`             | INT64   | select     | Technical Center             |
+| `custom_319000052` | `custom_319000052`             | STRING  | None       | (none)                       |
+| `custom_200000200` | `exclude_from_state_reporting` | STRING  | checkbox   | Exclude from State Reporting |
+
+`school_level` / `school_type` / `technical_center` are `INT64`; the other five
+are `STRING`. `custom_319000052` has no catalog title — its description uses the
+generic-slot fallback. The `school` map's `state` slug (`custom_200000321`) is
+distinct from the `districts` table's own raw `state` column — no collision,
+they are different models.
 
 **Files:**
 
@@ -280,9 +320,14 @@ filter `where deleted is null` and OMIT `deleted`. The full `custom_*` long-tail
 **Interfaces:**
 
 - Consumes: `source("focus", "schools")`
-- Produces: model `stg_focus__schools`, grain one row per `id`.
+- Produces: model `stg_focus__schools`, grain one row per `id`. The intermediate
+  (Task 8) reads `id`, `title`, `state_school_id`.
 
 - [ ] **Step 1: Write the model SQL**
+
+ST06 — the curated core (plain refs) comes first, then the populated-custom
+block (plain refs aliased `<raw> as <slug>`), then the audit columns. No casts
+or functions are used, so there is no separate cast group.
 
 ```sql
 select
@@ -298,31 +343,15 @@ select
     sort_order,
     act_organization_code,
     college_board_attending_institution_code,
-    custom_327,
-    custom_200000319,
-    custom_200000320,
-    custom_200000321,
-    custom_200000322,
-    custom_200000323,
-    custom_200000324,
-    custom_200000325,
-    custom_100000004,
-    custom_100000001,
-    custom_100000002,
-    custom_100000003,
-    custom_50000000,
-    custom_50000001,
-    custom_50000002,
-    custom_200000326,
-    custom_201200001,
-    custom_2012197245,
-    custom_201300001,
-    custom_200000200,
-    custom_200000300,
-    custom_200000301,
-    custom_100000007,
-    custom_200000302,
     virtual,
+    custom_327 as school_number,
+    custom_100000001 as district_number,
+    custom_100000004 as school_level,
+    custom_200000321 as state,
+    custom_200000326 as school_type,
+    custom_50000002 as technical_center,
+    custom_319000052,
+    custom_200000200 as exclude_from_state_reporting,
     uuid,
     created_at,
     updated_at,
@@ -337,10 +366,11 @@ models:
   - name: stg_focus__schools
     description: >-
       Focus school records — one row per live school (rows flagged deleted are
-      excluded). Carries the curated core plus the FLDOE import-layout fields
-      (school number, address, principal, level/type, federal id). The full
-      Focus custom-field long-tail is exposed by the Batch H custom-field
-      unpivot, not here.
+      excluded). Carries the curated core plus every populated Focus custom
+      field, each projected under a readable slug. Select / multiple custom
+      values remain as stored Focus option codes — code-to-label decoding is a
+      deferred follow-up. Unpopulated custom fields and the raw custom_fields
+      JSON blob are out of scope for this batch.
     columns:
       - name: id
         description: Primary key — Focus school id.
@@ -385,83 +415,48 @@ models:
       - name: college_board_attending_institution_code
         description: College Board attending-institution code.
         data_type: string
-      - name: custom_327
-        description: FLDOE school number (import field SCH_ID).
-        data_type: string
-      - name: custom_200000319
-        description: School street address (import field ADDRESS_1).
-        data_type: string
-      - name: custom_200000320
-        description: School city (import field CITY).
-        data_type: string
-      - name: custom_200000321
-        description: School state (import field STATE).
-        data_type: string
-      - name: custom_200000322
-        description: School ZIP code (import field ZIP).
-        data_type: string
-      - name: custom_200000323
-        description: School phone number (import field PH_NUM).
-        data_type: string
-      - name: custom_200000324
-        description: Principal name (import field PRINCIPAL_NAME).
-        data_type: string
-      - name: custom_200000325
-        description: School web address (import field WEB_ADDRESS).
-        data_type: string
-      - name: custom_100000004
-        description: School level code (import field SCH_LVL).
-        data_type: int
-      - name: custom_100000001
-        description: District number (import field DISTRICT_NUM).
-        data_type: string
-      - name: custom_100000002
-        description: WDIS-only school flag (import field WDIS_ONLY_SCH).
-        data_type: string
-      - name: custom_100000003
-        description: McKay school flag (import field MCKAY_SCH).
-        data_type: string
-      - name: custom_50000000
-        description: IB program code (import field IB).
-        data_type: int
-      - name: custom_50000001
-        description: AIC program code (import field AIC).
-        data_type: int
-      - name: custom_50000002
-        description: Technical center code (import field TECH_CENTER).
-        data_type: int
-      - name: custom_200000326
-        description: School type code (import field SCH_TYPE).
-        data_type: int
-      - name: custom_201200001
-        description: PERT site code (import field PERT_SITE_CD).
-        data_type: string
-      - name: custom_2012197245
-        description: Summer school flag (import field SUMMER_SCH).
-        data_type: string
-      - name: custom_201300001
-        description: >-
-          Community Eligibility Provision (CEP) school flag (import field
-          CEP_SCH).
-        data_type: string
-      - name: custom_200000200
-        description: >-
-          Exclude-from-state-reporting flag (import field EXC_STATE_REPORT).
-        data_type: string
-      - name: custom_200000300
-        description: Federal school identifier (import field FED_SCH_ID).
-        data_type: string
-      - name: custom_200000301
-        description: Double-session school flag (import field DBL_SESSION_SCHL).
-        data_type: string
-      - name: custom_100000007
-        description: Total scheduled minutes (import field TOTAL_SCHED_MINS).
-        data_type: numeric
-      - name: custom_200000302
-        description: Title 1 flag (import field TITLE_1).
-        data_type: string
       - name: virtual
         description: Y/N — whether the school is virtual.
+        data_type: string
+      - name: school_number
+        description: >-
+          School Number. Populated Focus custom field (custom_327); stored value
+          left as-is.
+        data_type: string
+      - name: district_number
+        description: >-
+          District Number. Populated Focus custom field (custom_100000001);
+          stored value left as-is.
+        data_type: string
+      - name: school_level
+        description: >-
+          School Level. Populated Focus custom field (custom_100000004) of type
+          select; stored as the Focus option code, not a decoded label.
+        data_type: int
+      - name: state
+        description: >-
+          State. Populated Focus custom field (custom_200000321); stored value
+          left as-is.
+        data_type: string
+      - name: school_type
+        description: >-
+          School Type. Populated Focus custom field (custom_200000326) of type
+          select; stored as the Focus option code, not a decoded label.
+        data_type: int
+      - name: technical_center
+        description: >-
+          Technical Center. Populated Focus custom field (custom_50000002) of
+          type select; stored as the Focus option code, not a decoded label.
+        data_type: int
+      - name: custom_319000052
+        description: >-
+          Focus generic custom slot; label not defined in the extracted
+          custom_fields catalog.
+        data_type: string
+      - name: exclude_from_state_reporting
+        description: >-
+          Exclude from State Reporting. Populated Focus custom field
+          (custom_200000200) of type checkbox; stored value left as-is.
         data_type: string
       - name: uuid
         description: Focus global unique identifier for the row.
@@ -479,11 +474,11 @@ models:
 Run:
 `uv run dbt build --select stg_focus__schools --project-dir src/dbt/kippmiami`
 Expected: model builds; `unique` + `not_null` on `id` PASS. The model returns
-only live rows (10 in the current Miami pull). Watch the `int` vs `string`
-custom-field splits above — `custom_100000004` / `custom_50000000` /
-`custom_50000001` / `custom_50000002` / `custom_200000326` are `INT64` in the
-warehouse; the rest of the mapped customs are `STRING`. Match the YAML exactly
-or the contract fails.
+only live rows (10 in the current Miami pull). Watch the `int` vs `string` split
+on the custom block — `school_level` (`custom_100000004`), `school_type`
+(`custom_200000326`), and `technical_center` (`custom_50000002`) are `INT64`;
+the other five customs are `STRING`. Match the YAML exactly or the contract
+fails.
 
 - [ ] **Step 4: Commit**
 
@@ -1008,20 +1003,41 @@ git commit -m "feat(dbt): add stg_focus__grad_subject_programs (#4213)"
 
 ---
 
-### Task 7: `stg_focus__student_enrollment` (WIDE — curated)
+### Task 7: `stg_focus__student_enrollment` (WIDE — curated core + populated customs)
 
-`student_enrollment` has 62 columns (after excluding `_dlt_*`). Curate to: the
-keys (`id`, `school_id`, `student_id`, `grade_id`, `enrollment_code`,
-`drop_code`, `calendar_id`, `graduation_requirement_program`, `next_school`,
-`program_id`, `next_year_program_id`, `team_id`), the dates (`start_date` /
+`student_enrollment` has 62 columns (after excluding `_dlt_*`). Curate the
+non-custom core to: the keys (`id`, `school_id`, `student_id`, `grade_id`,
+`enrollment_code`, `drop_code`, `calendar_id`, `graduation_requirement_program`,
+`next_school`, `program_id`, `next_year_program_id`, `team_id`,
+`progression_plan_category`, `hs_progression_plan_category`,
+`planned_high_school`, `rollover_id`), `syear`, the dates (`start_date` /
 `end_date`), the FLDOE state-reporting day counts (`fl_days_present` /
-`fl_days_absent` / `fl_days_absent_not_disc`), the mapped `custom_NNN` FLDOE
-fields (prior district/state/country, ed choice, came-from / moved-to, grade
-promotion, etc.), the non-custom mapped fields (`include_in_class_rank`,
-`next_grade`, `imported`), plus audit timestamps + `uuid`. **No soft-delete
-column** on this table. The unmapped `custom_NNN` long-tail and free-text
-`notes` are OUT OF SCOPE (Batch H / not curated): `custom_10`,
-`custom_13`–`custom_15`, `custom_18`–`custom_20` are dropped.
+`fl_days_absent` / `fl_days_absent_not_disc`), the non-custom mapped fields
+(`include_in_class_rank`, `distance_from_school`, `next_grade`, `imported`,
+`first_time_indicator`, `mid_year_promotion`), plus audit timestamps + `uuid`.
+**No soft-delete column** on this table.
+
+**Populated custom fields (inline block):** the five `custom_*` columns that are
+populated in the current Miami pull, per
+`.claude/scratch/focus-student_enrollment-custom-map.md`. Each is projected
+`<raw> as <slug>` after the core, before any cast block. None resolved to a
+catalog title, so every one uses its raw `custom_N` name as the slug and the
+generic-slot fallback description. The other 15 `custom_*` columns are
+unpopulated and OUT OF SCOPE. All five are `STRING` and stored as-is (no
+decoding).
+
+**Populated-custom map (verbatim from the scratch map file):**
+
+| raw column | slug       | bq_type | focus_type | populated_rows | title  |
+| ---------- | ---------- | ------- | ---------- | -------------- | ------ |
+| `custom_1` | `custom_1` | STRING  | None       | 1276           | (none) |
+| `custom_2` | `custom_2` | STRING  | None       | 1276           | (none) |
+| `custom_3` | `custom_3` | STRING  | None       | 1276           | (none) |
+| `custom_6` | `custom_6` | STRING  | None       | 1276           | (none) |
+| `custom_4` | `custom_4` | STRING  | None       | 158            | (none) |
+
+Because slug equals the raw column name for all five, these are projected as
+plain `custom_N` (no `as` alias) — a self-alias would trip sqlfluff AL09.
 
 **Files:**
 
@@ -1036,6 +1052,10 @@ column** on this table. The unmapped `custom_NNN` long-tail and free-text
   Consumed by `int_focus__student_enrollment` (Task 8) as the base table.
 
 - [ ] **Step 1: Write the model SQL**
+
+ST06 — the curated core (plain refs) first, then the populated-custom block
+(plain refs; slug equals raw name so no `as` alias), then audit columns. No
+casts are used.
 
 ```sql
 select
@@ -1064,22 +1084,14 @@ select
     imported,
     first_time_indicator,
     mid_year_promotion,
+    fl_days_present,
+    fl_days_absent,
+    fl_days_absent_not_disc,
     custom_1,
     custom_2,
     custom_3,
     custom_4,
-    custom_5,
     custom_6,
-    custom_7,
-    custom_8,
-    custom_9,
-    custom_11,
-    custom_12,
-    custom_16,
-    custom_17,
-    fl_days_present,
-    fl_days_absent,
-    fl_days_absent_not_disc,
     uuid,
     created_at,
     updated_at,
@@ -1094,10 +1106,11 @@ models:
     description: >-
       Focus student enrollment spans — one row per enrollment record (a student
       at a school for a date range in a school year). Carries the curated core
-      plus the FLDOE import-layout fields (prior district/state/country,
-      educational choice, came-from / moved-to, grade promotion, day counts).
-      The uncurated Focus custom-field long-tail is exposed by the Batch H
-      custom-field unpivot, not here.
+      (keys, dates, FLDOE day counts) plus every populated Focus custom field.
+      The populated customs (custom_1 through custom_6) have no catalog label
+      and are passed through as stored codes — select / multiple custom values
+      remain encoded, and code-to-label decoding is a deferred follow-up.
+      Unpopulated custom fields are out of scope for this batch.
     columns:
       - name: id
         description: Primary key — Focus student enrollment id.
@@ -1162,21 +1175,19 @@ models:
         description: Source enrollment id this rolled over from.
         data_type: int
       - name: start_date
-        description: Enrollment start date (import field START_DATE).
+        description: Enrollment start date.
         data_type: date
       - name: end_date
-        description: Enrollment withdraw date (import field END_DATE).
+        description: Enrollment withdraw date.
         data_type: date
       - name: include_in_class_rank
-        description: >-
-          Y/N — whether the enrollment is included in class rank (import field
-          INCLUDE_IN_CLASS_RANK).
+        description: Y/N — whether the enrollment is included in class rank.
         data_type: string
       - name: distance_from_school
         description: Distance from the student's home to the school.
         data_type: numeric
       - name: next_grade
-        description: Next grade level (import field NEXT_GRADE).
+        description: Next grade level.
         data_type: string
       - name: imported
         description: Y/N — whether the enrollment was imported.
@@ -1187,55 +1198,40 @@ models:
       - name: mid_year_promotion
         description: Y/N — whether a mid-year promotion occurred.
         data_type: string
-      - name: custom_1
-        description: Prior district (import field PRIOR_DIST).
-        data_type: string
-      - name: custom_2
-        description: Prior state (import field PRIOR_STATE).
-        data_type: string
-      - name: custom_3
-        description: Prior country (import field PRIOR_COUNTRY).
-        data_type: string
-      - name: custom_4
-        description: Educational choice (import field ED_CHOICE).
-        data_type: string
-      - name: custom_5
-        description: Disaster-affected student (import field STDT_DIS_AFFECT).
-        data_type: string
-      - name: custom_6
-        description:
-          Student offender transfer (import field OFFENDER_TRANSFER_STDT).
-        data_type: string
-      - name: custom_7
-        description: Came from (import field CAME_FROM).
-        data_type: string
-      - name: custom_8
-        description: Moved to (import field MOVED_TO).
-        data_type: string
-      - name: custom_9
-        description: Second school (import field SEC_SCH).
-        data_type: string
-      - name: custom_11
-        description: Grade promotion status (import field GRDE_PROM_ST).
-        data_type: string
-      - name: custom_12
-        description: Good cause exemption (import field GOOD_CAUSE_EXEMPT).
-        data_type: string
-      - name: custom_16
-        description: District out-of-district (import field DISTRICT_OOD).
-        data_type: string
-      - name: custom_17
-        description: School out-of-district (import field SCH_OOD).
-        data_type: string
       - name: fl_days_present
-        description: FLDOE days present (import field FL_DAYS_PRESENT).
+        description: FLDOE days present.
         data_type: numeric
       - name: fl_days_absent
-        description: FLDOE days absent (import field FL_DAYS_ABSENT).
+        description: FLDOE days absent.
         data_type: numeric
       - name: fl_days_absent_not_disc
         description: FLDOE days absent not disciplinary.
         data_type: numeric
+      - name: custom_1
+        description: >-
+          Focus generic custom slot; label not defined in the extracted
+          custom_fields catalog.
+        data_type: string
+      - name: custom_2
+        description: >-
+          Focus generic custom slot; label not defined in the extracted
+          custom_fields catalog.
+        data_type: string
+      - name: custom_3
+        description: >-
+          Focus generic custom slot; label not defined in the extracted
+          custom_fields catalog.
+        data_type: string
+      - name: custom_4
+        description: >-
+          Focus generic custom slot; label not defined in the extracted
+          custom_fields catalog.
+        data_type: string
+      - name: custom_6
+        description: >-
+          Focus generic custom slot; label not defined in the extracted
+          custom_fields catalog.
+        data_type: string
       - name: uuid
         description: Focus global unique identifier for the row.
         data_type: string
@@ -1252,7 +1248,7 @@ models:
 Run:
 `uv run dbt build --select stg_focus__student_enrollment --project-dir src/dbt/kippmiami`
 Expected: model builds; `unique` + `not_null` on `id` PASS (9591 rows in current
-pull, all `id` distinct). All `custom_*` columns above are `STRING`;
+pull, all `id` distinct). All five `custom_*` columns are `STRING`;
 `distance_from_school` / `fl_days_*` are `NUMERIC`; the key columns are `INT64`.
 
 - [ ] **Step 4: Commit**
@@ -1318,9 +1314,8 @@ this batch.
 
 ST06 column order — plain refs grouped by source table in join order (one blank
 line between groups), then no casts/functions are needed. ST09 — ON-clause
-predicates list the earlier-referenced table on the left. No alias prefixes are
-needed only when a single table is read; this model reads four tables, so every
-column is alias-prefixed.
+predicates list the earlier-referenced table on the left. This model reads four
+tables, so every column is alias-prefixed.
 
 ```sql
 with
@@ -1432,8 +1427,8 @@ Run:
 `uv run dbt build --select int_focus__student_enrollment --project-dir src/dbt/kippmiami`
 Expected: model builds; `unique` + `not_null` on `id` PASS (9591 rows, no
 fan-out). If `unique` fails, a join fanned out — re-profile the offending
-parent's `id` uniqueness with the corrected soft-delete filter
-(`where deleted is null`, NOT `= 0`).
+parent's `id` uniqueness with the soft-delete filter (`where deleted is null`,
+NOT `= 0`).
 
 - [ ] **Step 4: Commit**
 
@@ -1480,8 +1475,14 @@ Expected: 8 models build, 16 tests (unique + not_null per model) PASS.
 
 ## Out of scope (other plans / issues)
 
-- The `custom_*` long-tail on `student_enrollment` and `schools` (and the
-  `custom_fields` JSON blobs) — Batch H custom-field unpivot.
+- The **unpopulated** `custom_*` long-tail on `student_enrollment` (15 columns)
+  and `schools` (48 columns) — no non-null values in the current pull, so not
+  projected.
+- Decoding `select` / `multiple` custom values from their stored Focus option
+  codes to human-readable labels (e.g. `schools.school_level`,
+  `schools.school_type`, `schools.technical_center`) — deferred follow-up; the
+  values land here as raw codes.
+- The raw `custom_fields` JSON blobs.
 - `rpt_*` reporting views over `int_focus__student_enrollment` and any kipptaf
   `stg_kippmiami__focus__*` wrappers — deferred to the kipptaf-integration plan
   (the kipptaf source resolves to prod for `target=staging` CI, so district
@@ -1490,21 +1491,30 @@ Expected: 8 models build, 16 tests (unique + not_null per model) PASS.
 ## Self-review checklist (run before handing off)
 
 1. **Spec coverage:** all seven Batch B tables have a staging task (Tasks 1–7)
-   and the intermediate model is Task 8. ✓
+   and the intermediate model is Task 8. The two WIDE tables (`schools`,
+   `student_enrollment`) each carry the inline populated-custom block sourced
+   from their map file. ✓
 2. **Placeholder scan:** every task carries complete SQL + complete YAML + exact
    build command. No TBD/TODO/"similar to". ✓
 3. **Type consistency:** each staging YAML `data_type` matches the warehouse
-   type from `INFORMATION_SCHEMA.COLUMNS` (int/string/numeric/date/timestamp/
-   boolean). The `schools` custom-field int-vs-string split and the
-   `school_gradelevels` `min_syear`/`max_syear` NUMERIC-vs-INT difference are
-   called out at the build step. ✓
+   type. The `schools` custom block's `INT64` trio (`school_level`,
+   `school_type`, `technical_center`) vs `STRING` quintet is called out; the
+   `student_enrollment` customs are all `STRING`; the `school_gradelevels`
+   `min_syear`/`max_syear` NUMERIC-vs-INT difference is flagged. ✓
 4. **PK correctness:** `id` for districts/schools/school_gradelevels/
    student_enrollment_codes/grad_subject_programs/student_enrollment;
    `calendar_id` for attendance_calendars (no `id` column on that table). ✓
-5. **Soft-delete:** CORRECTED to `where deleted is null` on `schools` and
-   `student_enrollment_codes` (the index's `= 0` returns zero rows — see Open
-   Questions). The other five tables have no `deleted` column. ✓
-6. **Intermediate rules:** uniqueness test present (`unique` on `id`, error
+5. **Soft-delete:** `where deleted is null` on `schools` and
+   `student_enrollment_codes` (NULL = live; `= 0` returns zero rows). The other
+   five tables have no `deleted` column. ✓
+6. **Populated customs:** every map row is projected `<raw> as <slug>` (or plain
+   `custom_N` where slug = raw name, avoiding an AL09 self-alias), placed after
+   the core and before any cast block (ST06). No map column is duplicated under
+   another alias; no off-map custom is added. Each YAML entry's `name` = slug,
+   `data_type` = mapped bq_type, `description` = title when present else the
+   generic-slot fallback. Values left encoded; descriptions note codes are not
+   decoded. ✓
+7. **Intermediate rules:** uniqueness test present (`unique` on `id`, error
    severity); no contract/`data_type` (layer not enforced); no external consumer
    (rpt\_ buffer noted as out of scope). Join cardinality documented and all
    many-to-one. ✓
