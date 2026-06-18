@@ -194,26 +194,6 @@ auto-resolve; don't add redundant intermediate-hop joins. "Column not found" in
 a filter usually means the dimension SQL references a bare column on the
 filtering cube — route through `{joined_cube.col}` instead.
 
-**Side-by-side proficiency measures: always-true anchor filters.** When a cube
-exposes multiple `pct_proficient_*` variants meant to appear in the same query
-(scorecard use case), every building-block measure (`_sum_proficient_*`,
-`_count_scores_*`) must reference the **same full set of joined cubes** via
-always-true filters. Cube Tesseract groups measures into separate CTEs by join
-path; mismatched join sets produce a multi-CTE fan-out that BigQuery rejects
-with "query too complex". Fix: add one always-true filter per joined cube to
-every building block, using the cube's primary key:
-
-```yaml
-filters:
-  - sql: "{student_assessments.assessment_key} IS NOT NULL"
-  - sql: "{regions.region_key} IS NOT NULL"
-  # ... real filter conditions follow
-  - sql: "{student_assessments.module_type} = 'CRQ'"
-```
-
-The PK anchors are semantically no-ops but force the join. Add a new anchor
-whenever a new cube is introduced in any filtered measure in the group.
-
 ## Cube can't classify an aggregate by a data-driven range
 
 Cube has no non-equi/range (BETWEEN) join, and a dimension can't reference a

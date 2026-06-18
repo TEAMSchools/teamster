@@ -164,14 +164,10 @@ module.exports = {
       const region = regionGroup
         .replace(/^cube-region-/, "")
         .replace(/-(?:detail|summary)$/, "");
-      const regionName = region
-        .split("-")
-        .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
-        .join(" ");
       locationFilter = {
-        member: "regions.region_name",
+        member: "locations.region_key",
         operator: "equals",
-        values: [regionName],
+        values: [region],
       };
     } else if (schoolGroup) {
       const slug = schoolGroup
