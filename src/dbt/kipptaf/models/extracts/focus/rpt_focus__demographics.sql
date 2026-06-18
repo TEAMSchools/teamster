@@ -21,7 +21,12 @@ select
         then 'F'
     end as gender,
 
-    cca.lang_parent_ss as lang,
+    -- LANG, PRIMARY_HOME_LANG, and NATIVE_PARENT_LANG all draw the same Focus
+    -- value code from the language crosswalk. NOTE: the Focus LANG field
+    -- (custom_200000005) historically carried a legacy 3-option set
+    -- (EN/English/Spanish); pending registrar confirmation it is assumed to
+    -- accept the same FLDOE code as the home/native-language fields.
+    lcc.focus_language_code as lang,
 
     c.email as stdt_email,
 
@@ -49,8 +54,8 @@ select
     cast(null as string) as bdate_verif,
     cast(null as string) as immun_st,
 
-    cca.lang_parent_ss as primary_home_lang,
-    cca.lang_parent_ss as native_parent_lang,
+    lcc.focus_language_code as primary_home_lang,
+    lcc.focus_language_code as native_parent_lang,
 
     cast(null as string) as grde_enter_dist,
     cast(null as string) as msix_id,
@@ -78,3 +83,6 @@ inner join
 left join
     {{ ref("int_finalsite__contact_custom_attributes") }} as cca
     on c.finalsite_enrollment_id = cca.finalsite_enrollment_id
+left join
+    {{ ref("stg_google_sheets__focus__language_code_crosswalk") }} as lcc
+    on cca.lang_parent_ss = lcc.finalsite_language

@@ -54,8 +54,9 @@ models:
       - name: lang
         data_type: string
         description:
-          Primary language from the `lang_parent_ss` Finalsite custom field
-          (e.g. English/Spanish/Creole). May need a Focus language-code mapping.
+          Focus language value code mapped from the `lang_parent_ss` Finalsite
+          custom field via `stg_google_sheets__focus__language_code_crosswalk`.
+          Null when the Finalsite value has no crosswalk entry.
       - name: stdt_email
         data_type: string
         description: Student email address from Finalsite.
@@ -122,13 +123,15 @@ models:
       - name: primary_home_lang
         data_type: string
         description:
-          Primary home language from the `lang_parent_ss` Finalsite custom
-          field.
+          Primary home language as a Focus value code mapped from the
+          `lang_parent_ss` Finalsite custom field via
+          `stg_google_sheets__focus__language_code_crosswalk`.
       - name: native_parent_lang
         data_type: string
         description:
-          Native parent language from the `lang_parent_ss` Finalsite custom
-          field.
+          Native parent language as a Focus value code mapped from the
+          `lang_parent_ss` Finalsite custom field via
+          `stg_google_sheets__focus__language_code_crosswalk`.
       - name: grde_enter_dist
         data_type: string
         description:
@@ -240,6 +243,10 @@ unit_tests:
             true as media_release_yn,
             'Spanish' as lang_parent_ss,
             ['Black', 'White'] as race_ms
+      - input: ref('stg_google_sheets__focus__language_code_crosswalk')
+        format: sql
+        rows: |
+          select 'Spanish' as finalsite_language, 'SP' as focus_language_code
     expect:
       rows:
         - {
@@ -251,7 +258,7 @@ unit_tests:
             nickname: Jay,
             dt_birth: "20120315",
             gender: F,
-            lang: Spanish,
+            lang: SP,
             stdt_email: jane.smith@example.com,
             ethnic_hl: Y,
             single_ethnic: null,
@@ -267,8 +274,8 @@ unit_tests:
             birth_loc: null,
             bdate_verif: null,
             immun_st: null,
-            primary_home_lang: Spanish,
-            native_parent_lang: Spanish,
+            primary_home_lang: SP,
+            native_parent_lang: SP,
             grde_enter_dist: null,
             msix_id: null,
             homeroom: null,
