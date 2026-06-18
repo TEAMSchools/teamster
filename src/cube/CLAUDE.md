@@ -201,57 +201,22 @@ measure (only surface one via `sub_query`). Mapping an aggregated value to a
 band via per-row threshold rows (e.g. percent_correct → performance band) can't
 be expressed in Cube — materialize that classification upstream in dbt.
 
-## Semi-additive / period-end snapshot measures (Tesseract `grain`)
+## Semi-additive / period-end snapshot measures (Tesseract `grain`) — BLOCKED
 
-For cubes built on fact tables with **cumulative daily-status flags** (a value
-re-stamped on every row — e.g. `is_chronically_absent`, `ada_tier` in
-`fct_student_attendance_daily`), counting/summing across days overcounts. The
-measure must pick **one row per period-end**. The grain-adaptive way to do this
-is a multi-stage `rank` + a `{rank} = 1` filter (the cube-js semi-additive
-recipe), which replaces both the `queryRewrite` anchor injection and the
-`_year_end`/`_month_end`/`_week_end` per-grain measure families with a single
-measure that adapts to whatever date grain the query groups by. See
-`student_attendance.yml` (`_eop_rank` + the `*_eop` measures) for the worked
-example.
+We attempted to replace the `queryRewrite` anchor injection +
+`_year_end`/`_month_end`/`_week_end` named measures with a single grain-adaptive
+multi-stage `rank` + `{rank} = 1` measure (cube-js semi-additive recipe). It is
+**blocked**: on `student_attendance`, multi-stage measures only compile when
+every referenced member is a **plain local column** — no `{CUBE}`, no
+joined-cube refs, and no partitioning across a `{CUBE}`-based join. Our cube
+reaches date grains and eligibility inputs through joins, so the measures fail
+to compile (`student_attendance is not defined` / `CUBE is not defined`).
 
-- **Tesseract only.** Requires `CUBEJS_TESSERACT_SQL_PLANNER=true`; the `grain`
-  directive is rejected on the legacy planner. Tesseract is a deployment-wide
-  planner swap — validate existing measures before relying on it in production.
-- **Keep the entity in `keep_only` — a deliberate deviation from the recipe.**
-  The published recipe drops the entity from the partition so "rank 1" is the
-  period's GLOBAL last date and an entity missing on that date contributes 0
-  (right for account balances). For per-student snapshots that is wrong — a
-  student who exits mid-period must carry their OWN last status. Keep the
-  enrollment-key proxy dimension in `grain.keep_only` so the rank is
-  per-enrollment, matching the dbt `partition by student_enrollment_key, period`
-  windows.
-- **`grain.keep_only` must enumerate EVERY date grain a query might group by**
-  (`academic_year`, `academic_year_label`, `year_number`, `quarter_number`,
-  `month_number`, `school_week_*`, `date_day`). A missing grain computes the
-  partition too coarse and **silently overcounts**; extra grains are harmless.
-  Re-check this list whenever a new date grain is exposed.
-- **`grain.include` is the leaf `GROUP BY`** — put the fine date member (and the
-  entity proxy) here so `order_by` has a physical column to rank on. The
-  consuming `*_eop` measures repeat the same `grain.include` so the rank filter
-  is evaluated per leaf row.
-- **Reference same-cube members BARE in `grain` lists; prefix only joined
-  cubes.** Inside a cube's own `grain.include` / `grain.keep_only`, write
-  `_student_enrollment_key`, not `student_attendance._student_enrollment_key` —
-  the latter fails to compile with `student_attendance is not defined`, which
-  cascades into `_eop_rank is not defined` everywhere it is referenced.
-  Joined-cube members keep their prefix (`dates.academic_year`).
-- **Members only, no `{CUBE}.raw_column` in multi-stage** — wrap raw columns in
-  a base measure/dimension first. The `*_eop` wrappers reference the existing
-  base `count_*` measures (`{count_chronically_absent}`), not raw columns.
-- **Counting at `rank = 1`.** Per-enrollment partitioning guarantees exactly one
-  `rank = 1` row per enrollment per period, so wrapping the base
-  `count_distinct` measure (`type: number, sql: "{count_...}"`) and filtering
-  `{_eop_rank} = 1` yields the distinct enrollment count without a nested
-  `count_distinct`.
-- **Migrating another snapshot cube** (e.g. truancy, or a new domain): follow
-  the same two-measure shape, and remember the `queryRewrite` `SNAPSHOT_CUBES`
-  guard in `cube.js` is the OLD mechanism — once `*_eop` measures cover a cube,
-  that cube's stems can be retired from the guard.
+Full write-up, every variation tried, exact errors, and local repro steps:
+[`docs/superpowers/specs/2026-06-18-chronic-absence-eop-tesseract-handoff.md`](../../docs/superpowers/specs/2026-06-18-chronic-absence-eop-tesseract-handoff.md).
+Do not re-attempt the multi-stage `*_eop` measures without resolving that
+constraint (see the handoff doc's options A/B). `grain` requires
+`CUBEJS_TESSERACT_SQL_PLANNER=true` and cube ≥ 1.6.59 (1.6.38 has no `grain`).
 
 ## Testing Cube measures backed by new dbt columns
 
