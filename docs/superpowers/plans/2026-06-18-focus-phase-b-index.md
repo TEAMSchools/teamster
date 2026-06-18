@@ -48,10 +48,13 @@ Residual (empty-source) tables: **#4220**.
   (`address_id`, `course_id`, `course_period_id`, `marking_period_id`,
   `period_id`, `student_id`/`profile_id`, etc.). Uniqueness test targets that
   key.
-- **Soft-delete:** `deleted INT64` where `0` = live → `where deleted = 0` (NOT
-  `is null`) on `address`, `schools`, `students`, `users`,
-  `student_enrollment_codes`, and the `custom_*` tables. Variants `inactive` /
-  `active` / `archived` on a few — confirm semantics per table.
+- **Soft-delete:** `deleted INT64` is **`NULL` for live rows and `1` for
+  deleted** — there is no `0` (verified on `students`, `users`, `schools`,
+  `address`, `student_enrollment_codes`, `custom_fields`). Filter
+  `where deleted is null` (NOT `= 0`, which matches nothing). Applies to
+  `address`, `schools`, `students`, `users`, `student_enrollment_codes`, and the
+  `custom_field*` tables. Variants `inactive` / `active` / `archived` (STRING)
+  on a few — confirm semantics per table.
 - **Build context:** `stg_focus__*` build inside the **kippmiami** project
   (`focus_schema: dagster_kippmiami_dlt_focus` set there; `focus` package
   wired). Command:
