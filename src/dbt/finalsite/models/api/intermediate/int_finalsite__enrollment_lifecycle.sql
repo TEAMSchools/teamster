@@ -2,7 +2,7 @@ with
     status_report_latest as (
         {{
             dbt_utils.deduplicate(
-                relation=ref("finalsite", "stg_finalsite__status_report"),
+                relation=ref("stg_finalsite__status_report"),
                 partition_by="finalsite_enrollment_id",
                 order_by="_dagster_partition_key desc",
             )
@@ -16,8 +16,7 @@ with
             enrollment_type,
             school_year_start,
             grade_canonical_name,
-        from {{ ref("finalsite", "stg_finalsite__contacts") }}
-        where school_year_start >= {{ var("current_academic_year") }}
+        from {{ ref("stg_finalsite__contacts") }}
     ),
 
     dated as (
@@ -30,6 +29,8 @@ with
 
             sr.assigned_school,
             sr.enrolled_date as enrollment_start_date,
+
+            trk.promotion_status_ss as promotion_status,
 
             (
                 select min(d),
@@ -55,6 +56,9 @@ with
         left join
             status_report_latest as sr
             on c.finalsite_enrollment_id = sr.finalsite_enrollment_id
+        left join
+            {{ ref("int_finalsite__contact_track_attributes") }} as trk
+            on c.finalsite_enrollment_id = trk.finalsite_enrollment_id
     ),
 
     joined as (
@@ -64,6 +68,7 @@ with
             enrollment_type,
             school_year_start,
             grade_canonical_name,
+            promotion_status,
             assigned_school,
             enrollment_start_date,
             enrollment_end_date,
@@ -81,6 +86,7 @@ select
     enrollment_type,
     school_year_start,
     grade_canonical_name,
+    promotion_status,
     assigned_school,
     enrollment_start_date,
 

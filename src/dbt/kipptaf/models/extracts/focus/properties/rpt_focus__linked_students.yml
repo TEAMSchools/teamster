@@ -1,0 +1,70 @@
+models:
+  - name: rpt_focus__linked_students
+    description:
+      One row per unordered sibling pair, normalized so the student with the
+      lexicographically-smaller minted Focus ID is always `PRIMARY_STUDENT_ID`
+      (least/greatest dedup handles both bidirectional and one-directional
+      edges). Sourced from `stg_finalsite__contact_relationships` (rel_type =
+      sibling) with both sides resolved to a minted Focus student ID via
+      `int_finalsite__contact_id_attributes`. Pairs where either side is outside
+      the pulled cohort (no lifecycle row) or has no minted ID are dropped.
+      Produces 3 columns in `LINKED_STUDENTS` contract order.
+    config:
+      contract:
+        enforced: true
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns:
+              - primary_student_id
+              - secondary_student_id
+    columns:
+      - name: primary_student_id
+        data_type: string
+        description:
+          Focus student ID of the student whose ID sorts first in the pair
+          (least of the two IDs). From `int_finalsite__contact_id_attributes`.
+        data_tests:
+          - not_null
+      - name: secondary_student_id
+        data_type: string
+        description:
+          Focus student ID of the sibling whose ID sorts second in the pair.
+          From the sibling contact's `int_finalsite__contact_id_attributes` row
+          via `rel_id`.
+        data_tests:
+          - not_null
+      - name: relationship
+        data_type: string
+        description:
+          Focus-recognised relationship type for this linked-students pair.
+          Always `sibling` for rows produced by this model.
+        data_tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: [sibling, step_sibling, cousin, parent]
+
+unit_tests:
+  - name: test_linked_students_dormant_until_stdt_id
+    description:
+      STDT_ID is null until the Finalsite-minted student id lands in
+      id_attributes, so `pairs` filters out every sibling edge and the extract
+      emits no rows. Restore the least/greatest normalization assertions (lesser
+      id = primary, greater = secondary) once the id source is repointed.
+    model: rpt_focus__linked_students
+    given:
+      - input: ref('stg_finalsite__contact_relationships')
+        rows:
+          - {
+              finalsite_enrollment_id: enr-stu-a,
+              rel_id: enr-stu-b,
+              rel_type: sibling,
+            }
+          - {
+              finalsite_enrollment_id: enr-stu-b,
+              rel_id: enr-stu-a,
+              rel_type: sibling,
+            }
+    expect:
+      rows: []

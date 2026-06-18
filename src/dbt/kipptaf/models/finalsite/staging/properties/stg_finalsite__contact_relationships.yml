@@ -1,0 +1,14 @@
+models:
+  - name: stg_finalsite__contact_relationships
+    description:
+      Network-wide union of the per-region Finalsite
+      `stg_finalsite__contact_relationships` models (one row per contact
+      relationship — parent, guardian, sibling, etc.). Enabled only where the
+      Finalsite API layer is wired (today KIPP Miami); carries
+      `_dbt_source_relation`.
+    columns:
+      - name: finalsite_enrollment_id
+        data_type: string
+        description: Finalsite contact UUID this relationship belongs to.
+        data_tests:
+          - not_null

@@ -17,12 +17,12 @@ It unifies five assessment sources (i-Ready, Miami FAST, DIBELS, NJSLA, internal
 assessments) into one schema and ties each result to the student's ELA/Math
 course enrollment (teacher, course, section) and core demographics.
 
-**PII / access basis:** the sheet carries the raw `student_number` (no in-model
-anonymization). Anonymization is handled downstream by the owner before any
-external sharing. The destination Google Sheet is access-restricted to the
-owner/team, and the owner has confirmed permission and a legitimate need. The
-sheet output therefore contains directly-identifiable student data and must be
-treated as PII (restricted access; not shared with outside researchers as-is).
+**PII / access basis:** the extract does not emit the raw `student_number`.
+Students are identified by a pseudonymous `student_token` (a stable hash of
+`student_number`), so the data is de-identified at the source. It is shared with
+outside researchers under a signed research data-sharing agreement (the FERPA
+studies exception), which is the primary control; the token is defense-in-depth.
+The raw-number → token map is not part of the extract.
 
 ## Decisions
 
@@ -31,10 +31,11 @@ treated as PII (restricted access; not shared with outside researchers as-is).
   initially built as a separate `int_assessments__roster_union` intermediate —
   Approach B — but was folded into the reporting view during PR review since it
   had exactly one consumer.)
-- **Student identifier:** the sheet carries the raw `student_number` directly.
-  In-model anonymization (salted-hash + crosswalk) was scrapped — anonymization
-  is handled downstream by the owner before external sharing. See the PII /
-  access basis in Context.
+- **Student identifier:** the extract emits a pseudonymous `student_token`
+  (`generate_surrogate_key(['student_number'])`) and never the raw number. A
+  deterministic hash is acceptable here because sharing is governed by a signed
+  research agreement (the studies exception) rather than relying on the
+  de-identification alone. See the PII / access basis in Context.
 - **Performance columns:** two columns — `performance_band_label` (string, e.g.
   "Mid or Above Grade Level") and `performance_band_int` (integer, e.g. 5). Both
   are native to each source; no new standardized scale is invented.
@@ -121,7 +122,7 @@ present in the demographics model within the two-year window.
 
 | Column                               | Source                              |
 | ------------------------------------ | ----------------------------------- |
-| `student_number`                     | union (raw PowerSchool id; PII)     |
+| `student_token`                      | hash of `student_number` (no raw)   |
 | `academic_year`                      | union                               |
 | `region`                             | demographics                        |
 | `school_abbreviation`                | demographics (`school`, aliased)    |

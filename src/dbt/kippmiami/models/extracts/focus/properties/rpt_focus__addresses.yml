@@ -1,0 +1,29 @@
+models:
+  - name: rpt_focus__addresses
+    columns:
+      - name: student_id
+        data_type: string
+      - name: address
+        data_type: string
+      - name: address2
+        data_type: string
+      - name: city
+        data_type: string
+      - name: state
+        data_type: string
+      - name: zipcode
+        data_type: string
+      - name: phone
+        data_type: string
+      - name: mailing
+        data_type: string
+      - name: mail_address
+        data_type: string
+      - name: mail_address2
+        data_type: string
+      - name: mail_city
+        data_type: string
+      - name: mail_state
+        data_type: string
+      - name: mail_zipcode
+        data_type: string

@@ -270,10 +270,20 @@ with
             rn_credittype_year = 1
             and not is_dropped_section
             and courses_credittype in ('ENG', 'MATH')
+    ),
+
+    -- pseudonymous, stable per-student token (hash of student_number). The raw
+    -- number is used for the joins below but never emitted; the extract is
+    -- de-identified at the source and shared under the research agreement.
+    roster as (
+        select
+            *,
+            {{ dbt_utils.generate_surrogate_key(["student_number"]) }} as student_token,
+        from unioned
     )
 
 select
-    ru.student_number,
+    ru.student_token,
     ru.academic_year,
     ru.assessment_source,
     ru.`subject`,
@@ -296,7 +306,7 @@ select
     c.teacher_powerschool_teacher_number,
     c.course_number,
     c.section_number,
-from unioned as ru
+from roster as ru
 -- demographics is the enrollment gate: the grade 0-8 (K-8) scope is enforced
 -- here, so this join is INNER. Assessment rows for a student with no
 -- enrollment record for that year are intentionally dropped.

@@ -1,0 +1,27 @@
+models:
+  - name: int_finalsite__contact_track_attributes
+    description:
+      One row per Finalsite contact, pivoting every field in the repeated
+      `track_attributes` key-value array into its own column, aliased to its
+      original Finalsite field name (all string-valued). Contacts with no
+      `track_attributes` are absent (resolve via a left join). The PIVOT
+      enumerates fields explicitly — add a new `track_attributes` field to the
+      PIVOT field list in the model SQL; it does not surface automatically.
+    columns:
+      - name: finalsite_enrollment_id
+        data_type: string
+        description: Finalsite contact UUID; the grain of this model.
+        data_tests:
+          - unique
+          - not_null
+      - name: assigned_school_ss
+        data_type: string
+        description: Assigned-school tracking value from `track_attributes`.
+      - name: bsr_contact_info_updated_yn
+        data_type: string
+        description:
+          BSR contact-info-updated tracking value from `track_attributes`.
+      - name: promotion_status_ss
+        data_type: string
+        description:
+          Promotion/retention status from `track_attributes` (e.g. `Retained`).
