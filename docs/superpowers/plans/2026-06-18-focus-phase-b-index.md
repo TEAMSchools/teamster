@@ -24,9 +24,10 @@ Residual (empty-source) tables: **#4220**.
 | I — Test history         | `test_history_tests`, `test_history_test_types`, `test_history_parts`, `test_history_score_types`, `test_history_score_ranges` (5)                                                                                                                                       | _tbd_                                            |
 | kipptaf integration      | `models/focus/sources-kippmiami.yml` + `stg_kippmiami__focus__*` wrappers                                                                                                                                                                                                | _tbd_                                            |
 
-54 populated tables total. The 22 empty tables (attendance*day/period, schedule,
-gradebook_grades, student_report_card_grades, discipline*_, students*join*_,
-people, etc.) are out of scope here — #4220.
+54 populated tables total. The 22 empty tables (`attendance_day` /
+`attendance_period`, `schedule`, `gradebook_grades`,
+`student_report_card_grades`, the `discipline_*` domain, `students_join_*`,
+`people`, etc.) are out of scope here — #4220.
 
 ## Resolved decisions
 
