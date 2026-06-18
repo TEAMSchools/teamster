@@ -22,11 +22,12 @@ with
                 )
             }} as student_enrollment_key,
 
-            ada.week_start_monday,
-
             ada.is_current_record,
             ada.is_enrollment_month_end_record,
             ada.is_enrollment_week_end_record,
+            ada.is_latest_record,
+            ada.is_month_end_record,
+            ada.is_week_end_record,
 
             ada.calendardate as date_key,
 
@@ -106,6 +107,10 @@ select
     is_iss,
     is_suspended,
 
+    is_latest_record,
+    is_month_end_record,
+    is_week_end_record,
+
     attendance_category,
 
     if(_running_ada is null, null, _running_ada < 0.90) as is_chronically_absent,
@@ -121,21 +126,4 @@ select
         then 'Tier 3'
         else 'Tier 4'
     end as ada_tier,
-
-    row_number() over (partition by student_enrollment_key order by date_key desc)
-    = 1 as is_latest_record,
-
-    row_number() over (
-        partition by student_enrollment_key, date_trunc(date_key, month)
-        order by if(membership_value = 1, date_key, null) desc nulls last
-    )
-    = 1
-    and membership_value = 1 as is_month_end_record,
-
-    row_number() over (
-        partition by student_enrollment_key, week_start_monday
-        order by if(membership_value = 1, date_key, null) desc nulls last
-    )
-    = 1
-    and membership_value = 1 as is_week_end_record,
 from running

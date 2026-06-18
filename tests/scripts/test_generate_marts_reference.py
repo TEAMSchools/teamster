@@ -52,17 +52,16 @@ def test_parse_fk_edges_reads_foreign_key_constraints() -> None:
     ]
 
 
-def test_parse_fk_edges_falls_back_to_relationships_for_table_marts() -> None:
+def test_parse_fk_edges_ignores_relationships_tests_on_table_marts() -> None:
     edges = gen.parse_fk_edges(FIXTURE_DIR / "sample_fct_table_materialized.yml")
 
-    # table-materialized marts cannot declare foreign_key constraints (BigQuery
-    # rejects FK DDL referencing view parents), so relationships tests provide
-    # the edges — but only for columns WITHOUT a constraint (no double-count),
-    # and only on table-materialized models (the view model yields nothing).
+    # FK edges come only from literal foreign_key constraints, never from
+    # relationships data tests — even on a table-materialized model. The fixture
+    # has one literal FK (constrained_key) plus two relationships-only columns
+    # (enrollment_key, date_key) and a relationships-only view model; only the
+    # literal constraint yields an edge.
     assert edges == [
         gen.FkEdge("fct_table_sample", "constrained_key", "dim_other"),
-        gen.FkEdge("fct_table_sample", "enrollment_key", "dim_enrollments"),
-        gen.FkEdge("fct_table_sample", "date_key", "dim_dates"),
     ]
 
 

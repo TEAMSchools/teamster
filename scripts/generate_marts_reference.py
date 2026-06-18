@@ -101,14 +101,15 @@ def parse_fk_edges(yaml_path: Path) -> list[FkEdge]:
     model-level edges (in constraint order, then column order within each
     constraint).  Non-foreign-key constraints are ignored in both locations.
 
-    For table-materialized models, column-level ``relationships`` data tests
-    provide FK edges for columns that lack a ``constraints: foreign_key`` entry.
+    FK edges come only from literal ``foreign_key`` constraints — never inferred
+    from ``relationships`` data tests.  Every mart (views and table-materialized
+    alike) declares its FKs as constraints, so the constraint blocks are the
+    single source of truth for the diagram.
     """
     doc = yaml.safe_load(yaml_path.read_text(encoding="utf-8")) or {}
     edges: list[FkEdge] = []
     for model in doc.get("models", []):
         source = model["name"]
-        constrained: set[str] = set()
 
         # Column-level FK constraints.
         for column in model.get("columns", []):
@@ -120,7 +121,6 @@ def parse_fk_edges(yaml_path: Path) -> list[FkEdge]:
                     _warn_if_legacy_expression(constraint, source)
                     continue
                 edges.append(FkEdge(source, column["name"], target))
-                constrained.add(column["name"])
 
         # Model-level FK constraints.
         for constraint in model.get("constraints", []):
@@ -132,24 +132,6 @@ def parse_fk_edges(yaml_path: Path) -> list[FkEdge]:
                 continue
             for fk_col in constraint.get("columns", []):
                 edges.append(FkEdge(source, str(fk_col), target))
-                constrained.add(str(fk_col))
-
-        # Relationships-test fallback for table-materialized models.
-        if (model.get("config") or {}).get("materialized") != "table":
-            continue
-        for column in model.get("columns", []):
-            if column["name"] in constrained:
-                continue
-            for test in column.get("data_tests") or []:
-                if not isinstance(test, Mapping):
-                    continue
-                params = test.get("relationships")
-                if not isinstance(params, Mapping):
-                    continue
-                params = params.get("arguments", params)
-                target = _extract_target(str(params.get("to", "")))
-                if target is not None:
-                    edges.append(FkEdge(source, column["name"], target))
 
     return edges
 

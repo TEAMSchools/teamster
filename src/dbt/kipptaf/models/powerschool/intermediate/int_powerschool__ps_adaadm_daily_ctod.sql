@@ -74,6 +74,15 @@ with
                 0.0
             ) as is_absent_non_susp,
 
+            -- A day that has actually occurred (<= today). The membership_reg
+            -- calendar join emits a row for every in-session day in the
+            -- enrollment span, including future year-end days; point-in-time
+            -- anchors must ignore those or they latch onto the future last day
+            -- of the year and collapse to zero once the fact filters to
+            -- calendardate <= current_date.
+            mem.calendardate
+            <= current_date('{{ var("local_timezone") }}') as is_realized,
+
         from union_relations as mem
         inner join
             {{ ref("int_powerschool__terms") }} as t
@@ -88,17 +97,19 @@ with
             and mem.calendardate between cw.week_start_monday and cw.week_end_sunday
     ),
 
-    enrollment_anchors as (
+    anchors as (
         select
             *,
 
-            -- Per-school point-in-time enrollment anchor columns. Used by
-            -- fct_student_attendance_daily to drive the student_enrollments Cube.
-            calendardate = max(calendardate) over (
+            -- Per-school point-in-time enrollment anchors. Drive the
+            -- student_enrollments Cube. Anchored on the latest *realized* (past
+            -- or today) in-session day per school so the as-of-now headcount
+            -- can't collapse onto a future year-end row the fact filters out.
+            calendardate = max(if(is_realized, calendardate, null)) over (
                 partition by schoolid, _dbt_source_project, academic_year
             ) as is_current_record,
 
-            calendardate = max(calendardate) over (
+            calendardate = max(if(is_realized, calendardate, null)) over (
                 partition by
                     schoolid,
                     _dbt_source_project,
@@ -106,9 +117,50 @@ with
                     date_trunc(calendardate, month)
             ) as is_enrollment_month_end_record,
 
-            calendardate = max(calendardate) over (
+            calendardate = max(if(is_realized, calendardate, null)) over (
                 partition by schoolid, _dbt_source_project, week_start_monday
             ) as is_enrollment_week_end_record,
+
+            -- Per-stint attendance anchors. Drive the student_attendance Cube's
+            -- latest / month-end / week-end CA snapshots. The stint is
+            -- (student_number, _dbt_source_project, academic_year, entrydate) --
+            -- the natural key behind student_enrollment_key in the fact. Latest
+            -- is the stint's last realized day; month/week-end are its last
+            -- realized *membership* day in the period.
+            calendardate = max(if(is_realized, calendardate, null)) over (
+                partition by
+                    student_number, _dbt_source_project, academic_year, entrydate
+            ) as is_latest_record,
+
+            (
+                calendardate
+                = max(
+                    if(is_realized and membershipvalue = 1, calendardate, null)
+                ) over (
+                    partition by
+                        student_number,
+                        _dbt_source_project,
+                        academic_year,
+                        entrydate,
+                        date_trunc(calendardate, month)
+                )
+                and membershipvalue = 1
+            ) as is_month_end_record,
+
+            (
+                calendardate
+                = max(
+                    if(is_realized and membershipvalue = 1, calendardate, null)
+                ) over (
+                    partition by
+                        student_number,
+                        _dbt_source_project,
+                        academic_year,
+                        entrydate,
+                        week_start_monday
+                )
+                and membershipvalue = 1
+            ) as is_week_end_record,
 
         from calcs
     ),
@@ -131,7 +183,7 @@ with
                 partition by academic_year, student_number
             ) as n_membership_student_year,
 
-        from enrollment_anchors
+        from anchors
     )
 
 select
@@ -173,6 +225,9 @@ select
     is_current_record,
     is_enrollment_month_end_record,
     is_enrollment_week_end_record,
+    is_latest_record,
+    is_month_end_record,
+    is_week_end_record,
 
     pct_absent_running_student_year * n_membership_student_year as n_absent_projected,
 
