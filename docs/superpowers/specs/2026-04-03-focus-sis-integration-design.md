@@ -72,18 +72,28 @@ No ejected/vendored source code.
     `dlt_assets` definition using:
     - `sql_database` source from `dlt.sources.sql_database`, called per-table
       with a single-element `table_names` list
-    - `reflection_level="full_with_precision"` (no custom type/nullability
-      adapters)
+    - `reflection_level="full_with_precision"` (no custom type adapters)
+    - `table_adapter_callback=remove_nullability_adapter` (required — see
+      implementation note below)
     - `backend="pyarrow"`
     - `defer_table_reflect=True`
     - `write_disposition="replace"` (daily full replace)
     - BigQuery destination with `autodetect_schema=True`
     - Dataset: `dagster_kippmiami_dlt_focus`
     - Pool: `dlt_focus_kippmiami` (limits concurrent connections)
-  - No custom callbacks unless Focus testing reveals Postgres-specific issues.
-    Start clean.
+  - One required adapter: `remove_nullability_adapter`. No other custom
+    callbacks unless Focus testing reveals further Postgres-specific issues.
 - `CLAUDE.md` -- documents the factory, IP allowlist constraint, connection
   pattern
+
+> **Implementation note (2026-06-18):** `full_with_precision` reflects Postgres
+> `NOT NULL` into BigQuery `REQUIRED` mode. BigQuery forbids both adding a
+> `REQUIRED` column and relaxing an existing one to `NULLABLE`, so any upstream
+> nullability change breaks the `replace` load (it migrates schema in place,
+> never drops the table). `table_adapter_callback=remove_nullability_adapter`
+> makes every column `NULLABLE`, sidestepping the constraint — the same fix
+> Illuminate uses. This reverses the spec's original "start clean / no custom
+> callbacks" decision (#4 below).
 
 **Code location: `src/teamster/code_locations/kippmiami/dlt/focus/`**
 
@@ -276,8 +286,11 @@ a deployed environment with network access.
    instead of using custom type adapters like Illuminate's
    `unbounded_numeric_adapter`. Reduces custom code.
 
-4. **No custom callbacks initially** -- start clean, add only if Focus testing
-   reveals Postgres-specific issues (e.g., infinity dates, exotic types).
+4. **Minimal custom callbacks** -- the only adapter is
+   `remove_nullability_adapter` (required; see the implementation note under
+   _Extraction_). Add further callbacks only if Focus testing reveals other
+   Postgres-specific issues (e.g., infinity dates, exotic types). _(Originally
+   "no custom callbacks initially"; the nullability adapter proved necessary.)_
 
 5. **Daily full-replace** -- simplest starting point. Cadence can be split later
    once Focus data volumes and change patterns are understood.
