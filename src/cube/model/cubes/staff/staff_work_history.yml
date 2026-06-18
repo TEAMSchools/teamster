@@ -2,21 +2,24 @@ cubes:
   - name: staff_work_history
     public: false
     # SCD2 period intersection: one row per work assignment x contiguous window
-    # during which the worker's status, job, worker type, org unit, and location
-    # all held simultaneously. Overlaps are anchored to the staff_status period;
-    # GREATEST/LEAST then collapse each combination to its true effective range.
-    # Periods where the children do not mutually overlap yield start > end and
-    # are silently excluded by the dates BETWEEN join (queries always filter on a
-    # date). Transformation that needs multi-table joins lives here in sql:
-    # rather than a dbt mart only because every input is already a published
-    # dim; a dedicated mart is the future home if this grows.
+    # during which the worker's status, job, worker type, org unit, location,
+    # AND point-in-time manager all held simultaneously. Overlaps are anchored to
+    # the staff_status period; GREATEST/LEAST then collapse each combination to
+    # its true effective range. Manager is folded into the intersection (not a
+    # separate cube join) so each period carries exactly one manager — a
+    # single-day query returns one row per person instead of one per manager the
+    # person ever had. Periods where children do not mutually overlap yield
+    # start > end and are silently excluded by the dates BETWEEN join (queries
+    # always filter on a date). Transformation lives here in sql: rather than a
+    # dbt mart only because every input is already a published dim; a dedicated
+    # mart is the future home if this grows.
     sql: |
       SELECT
         swa.work_assignment_key,
         swa.staff_key,
         swa.full_time_equivalency,
         swa.is_management_position,
-        ss.status_name,
+        ss.status_code,
         wj.position_title,
         wj.job_code,
         wt.worker_type_name AS worker_type,
@@ -24,19 +27,22 @@ cubes:
         wo.business_unit_name,
         wl.location_key AS work_location_key,
         wp.is_primary_position,
+        mgr.manager_staff_key,
         GREATEST(
           ss.effective_start_date,
           wj.effective_start_date,
           wt.effective_start_date,
           wo.effective_start_date,
-          wl.effective_start_date
+          wl.effective_start_date,
+          COALESCE(mgr.effective_start_date, DATE '1900-01-01')
         ) AS effective_start_date,
         LEAST(
           ss.effective_end_date,
           wj.effective_end_date,
           wt.effective_end_date,
           wo.effective_end_date,
-          wl.effective_end_date
+          wl.effective_end_date,
+          COALESCE(mgr.effective_end_date, DATE '9999-12-31')
         ) AS effective_end_date
       FROM kipptaf_marts.dim_staff_work_assignments swa
       JOIN kipptaf_marts.dim_staff_status ss
@@ -62,6 +68,30 @@ cubes:
         ON wp.work_assignment_key = swa.work_assignment_key
         AND ss.effective_start_date < wp.effective_end_date
         AND ss.effective_end_date   > wp.effective_start_date
+      -- Point-in-time manager from the primary assignment's reporting
+      -- relationship. LEFT JOIN + COALESCE in GREATEST/LEAST keeps manager-less
+      -- staff (no primary reporting row) instead of dropping them. Splitting a
+      -- period on manager changes adds rows over time (correct) but never
+      -- duplicates a person on a single day.
+      LEFT JOIN (
+        SELECT
+          swa_m.staff_key,
+          rr.manager_staff_key,
+          GREATEST(wap.effective_start_date, rr.effective_start_date) AS effective_start_date,
+          LEAST(wap.effective_end_date,      rr.effective_end_date)   AS effective_end_date
+        FROM kipptaf_marts.dim_work_assignment_primary wap
+        JOIN kipptaf_marts.dim_staff_work_assignments swa_m
+          ON wap.work_assignment_key = swa_m.work_assignment_key
+          AND swa_m.staff_key IS NOT NULL
+        JOIN kipptaf_marts.dim_work_assignment_reporting_relationships rr
+          ON rr.work_assignment_key = wap.work_assignment_key
+          AND wap.effective_start_date <= rr.effective_end_date
+          AND wap.effective_end_date   >= rr.effective_start_date
+        WHERE wap.is_primary_position
+      ) mgr
+        ON mgr.staff_key = swa.staff_key
+        AND ss.effective_start_date < mgr.effective_end_date
+        AND ss.effective_end_date   > mgr.effective_start_date
 
     joins:
       # One employment period spans many calendar days. Range (BETWEEN) join is
@@ -80,23 +110,11 @@ cubes:
         sql: "{locations.location_key} = {CUBE}.work_location_key"
         relationship: many_to_one
 
-      # Point-in-time manager resolver. many_to_one is correct only with a date
-      # filter applied (which staff queries always have): each employment period
-      # matches its contemporaneous reporting-relationship row. Without a date
-      # filter the join is effectively many_to_many.
-      - name: staff_reporting_relationships
-        sql: >
-          {staff_reporting_relationships.staff_key} = {CUBE}.staff_key AND
-          CAST({CUBE}.effective_start_date AS TIMESTAMP)
-            <= {staff_reporting_relationships.effective_end_date} AND
-          CAST({CUBE}.effective_end_date AS TIMESTAMP)
-            >= {staff_reporting_relationships.effective_start_date}
-        relationship: many_to_one
-
+      # Manager name/attributes via the staff_manager alias, keyed on the
+      # point-in-time manager_staff_key folded into the SQL above. True
+      # many_to_one — one manager per period — so no fan-out.
       - name: staff_manager
-        sql: >
-          {staff_manager.staff_key} =
-          {staff_reporting_relationships.manager_staff_key}
+        sql: "{staff_manager.staff_key} = {CUBE}.manager_staff_key"
         relationship: many_to_one
 
     dimensions:
@@ -113,11 +131,12 @@ cubes:
         type: string
         primary_key: true
 
-      - name: status_name
+      - name: status_code
         description:
-          Employment status during this period (e.g., Active, Leave,
-          Terminated).
-        sql: status_name
+          Employment status during this period (e.g., Active, Inactive,
+          Terminated). status_name is null upstream; status_code is the
+          populated field.
+        sql: status_code
         type: string
         public: true
 
@@ -187,7 +206,7 @@ cubes:
         public: true
 
     measures:
-      - name: count_headcount
+      - name: count_employees
         description: >-
           Distinct employees in scope. Counts a person once even with multiple
           concurrent assignments. Filter is_primary_position = true to count the
@@ -195,11 +214,3 @@ cubes:
         sql: staff_key
         type: count_distinct
         public: true
-
-      - name: sum_fte
-        description: Total FTE of active assignments in scope.
-        sql: full_time_equivalency
-        type: sum
-        public: true
-        filters:
-          - sql: "{CUBE}.status_name = 'Active'"

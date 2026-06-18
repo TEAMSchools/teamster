@@ -3,8 +3,11 @@ cubes:
     public: false
     # Point-in-time manager resolver. One row per staff member x contiguous
     # window during which they held a single primary-assignment reporting
-    # relationship. Helper cube only — joined by staff_work_history (and future
-    # fact cubes) for manager context; not exposed in any view.
+    # relationship. Helper cube only, not exposed in any view. staff_work_history
+    # folds this logic directly into its own SQL (so each period carries one
+    # manager); this standalone cube is retained for future fact cubes
+    # (observations, gradebook, surveys) that resolve manager point-in-time by
+    # joining on their own event date.
     sql: |
       SELECT
         swa.staff_key,
@@ -46,15 +49,20 @@ cubes:
         type: string
         public: true
 
+      # {CUBE}-qualified: this dimension is referenced in staff_work_history's
+      # date-bounded join, where an unqualified column collides with that cube's
+      # own effective_start_date. Cube only auto-qualifies bare-column sql, not
+      # columns inside an expression like CAST(...).
       - name: effective_start_date
         description: Start of the contiguous reporting-relationship period.
-        sql: CAST(effective_start_date AS TIMESTAMP)
+        sql: "CAST({CUBE}.effective_start_date AS TIMESTAMP)"
         type: time
         public: true
 
-      # Required by the date-bounded join from staff_work_history.
+      # Required by the date-bounded join from staff_work_history. {CUBE}-
+      # qualified for the same reason as effective_start_date above.
       - name: effective_end_date
         description: End of the contiguous reporting-relationship period.
-        sql: CAST(effective_end_date AS TIMESTAMP)
+        sql: "CAST({CUBE}.effective_end_date AS TIMESTAMP)"
         type: time
         public: true

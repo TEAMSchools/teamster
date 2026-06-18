@@ -7,9 +7,9 @@ views:
       breakdowns only.
 
       Always apply a date filter. Without one, each employment period fans out
-      to one row per calendar day in its effective range. Use count_headcount
+      to one row per calendar day in its effective range. Use count_employees
       (count_distinct on staff_key) for headcounts and filter
-      is_primary_position = true to count each person once; status_name =
+      is_primary_position = true to count each person once; status_code =
       'Active' filters to active employees. For headcount over time, group by a
       dates granularity (e.g. month) and filter month-ends for a point-in-time
       snapshot.
@@ -17,9 +17,8 @@ views:
     cubes:
       - join_path: staff_work_history
         includes:
-          - count_headcount
-          - sum_fte
-          - status_name
+          - count_employees
+          - status_code
           - position_title
           - job_code
           - worker_type
@@ -63,7 +62,7 @@ views:
       folders:
         - name: Employment
           members:
-            - status_name
+            - status_code
             - position_title
             - job_code
             - worker_type
