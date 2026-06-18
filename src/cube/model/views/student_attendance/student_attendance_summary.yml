@@ -50,9 +50,10 @@ views:
           - pct_chronically_absent_week_end
           - pct_tier_1_2_week_end
           - pct_tier_3_week_end
-          - _count_ca_test_year_end
-          - _count_ca_test_month_end
-          - _count_ca_test_week_end
+          - count_chronically_absent_eop
+          - pct_chronically_absent_eop
+          - pct_tier_1_2_eop
+          - pct_tier_3_eop
           - attendance_category
           - ada_tier
           - is_truant
