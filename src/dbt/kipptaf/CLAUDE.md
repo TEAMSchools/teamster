@@ -65,6 +65,11 @@ When both joined union models materialize `_dbt_source_project`, prefer
 `a._dbt_source_project = b._dbt_source_project` over the macro — same semantics,
 no `regexp_extract` per call.
 
+Produce `_dbt_source_project` on a union model with
+`select *, {{ extract_code_location("union_relations") }} as _dbt_source_project`
+`from union_relations` (the `union_relations` CTE wrapping
+`dbt_utils.union_relations`).
+
 ### Selecting from `dbt_utils.star()` models
 
 `base_` models using `star()` resolve columns from BigQuery at run time, not
@@ -89,6 +94,14 @@ view. Don't add either when creating a new one.
 **not** extracted here — regional projects source from them, filter to their
 data, and push to their own PowerSchool instance. Exposures live in regional
 projects, not kipptaf.
+
+This cross-project shape generalizes (e.g. finalsite→focus): the heavy `rpt_*`
+view lives in kipptaf sourcing district data via `source()`, and each district
+has a thin wrapper sourcing `kipptaf_extracts`. The wrapper is
+contract-columns-only — NO data tests or descriptions (those live on the kipptaf
+view). A new kipptaf region source (`sources-kipp*.yml`) needs the
+`dev`/`staging` (`zz_stg_`)/prod schema branch, or single-PR cross-project CI
+can't read it.
 
 ## `dbt_project.yml` Inherited Defaults
 

@@ -1,0 +1,12 @@
+models:
+  - name: stg_finalsite__contacts
+    description:
+      Network-wide union of the per-region Finalsite `stg_finalsite__contacts`
+      models (one row per Finalsite contact). Enabled only where the Finalsite
+      API layer is wired (today KIPP Miami); carries `_dbt_source_relation`.
+    columns:
+      - name: finalsite_enrollment_id
+        data_type: string
+        description: Finalsite contact UUID.
+        data_tests:
+          - not_null

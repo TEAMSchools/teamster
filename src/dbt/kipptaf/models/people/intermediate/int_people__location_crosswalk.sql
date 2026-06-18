@@ -9,6 +9,7 @@ select
     pl.powerschool_school_id as location_powerschool_school_id,
     pl.deanslist_school_id as location_deanslist_school_id,
     pl.reporting_school_id as location_reporting_school_id,
+    pl.focus_school_id as location_focus_school_id,
     pl.is_campus as location_is_campus,
     pl.is_pathways as location_is_pathways,
     pl.dagster_code_location as location_dagster_code_location,

@@ -40,6 +40,9 @@ models:
     pearson:
       +materialized: table
       +schema: pearson
+  finalsite:
+    api:
+      +enabled: false
   amplify:
     dds:
       +enabled: false
@@ -160,6 +163,10 @@ sources:
             +enabled: false
     dds:
       amplify_dds:
+        +enabled: false
+  finalsite:
+    finalsite:
+      contacts:
         +enabled: false
   pearson:
     pearson:

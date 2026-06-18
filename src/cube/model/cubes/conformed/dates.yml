@@ -21,9 +21,24 @@ cubes:
       - name: academic_year
         description: >-
           KIPP academic year (July start). The calendar year in which the
-          academic year begins (e.g., 2025 for the 2025-26 school year).
+          academic year begins (e.g., 2025 for the 2025-26 school year). For
+          filtering by year, prefer academic_year_label (the unambiguous
+          "2025-2026" string form) over this integer.
         sql: academic_year
         type: number
+        public: true
+
+      - name: academic_year_label
+        description: >-
+          Full span label for the academic year (e.g. "2025-2026" for the year
+          beginning July 2025). Use this as the canonical filter surface when
+          querying by year — it is unambiguous regardless of SY vs. start-year
+          notation. academic_year 2025 = academic_year_label "2025-2026" = SY26.
+          The integer academic_year is retained for sort/group/math only.
+        sql: >-
+          CONCAT(CAST(academic_year AS STRING), '-', CAST(academic_year + 1 AS
+          STRING))
+        type: string
         public: true
 
       - name: fiscal_year
