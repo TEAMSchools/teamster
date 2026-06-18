@@ -216,6 +216,11 @@ file; domain specifics live in the nearest subdirectory CLAUDE.md.
 - **Markdown headings**: increment by one level (markdownlint MD001). `#` title
   goes directly to `##` — never jump to `###`.
 
+- **Backtick identifiers in markdown prose**: trunk-fmt reads unbackticked
+  `snake_case` / `glob_*` tokens as emphasis and mangles them (`attendance_day`
+  → `attendance*day`). Wrap model/table/column names in backticks in docs,
+  specs, and plans.
+
 - **Nested triple-backticks in markdown**: when a fenced block contains a
   heredoc with its own ``` examples, promote the outer fence to 4-backticks so
   trunk-fmt doesn't mangle the structure.
