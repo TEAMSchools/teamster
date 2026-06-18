@@ -69,3 +69,39 @@ Residual (empty-source) tables: **#4220**.
   (see `src/dbt/CLAUDE.md` → "kipptaf source consumers of district columns").
 - Batch C is the pattern-proving batch (narrow, no soft-delete/booleans/custom).
   Validate it before the wide batches (A, B, D, E, G, H).
+
+## Execution runbook (resumable)
+
+Any session resumes Phase B from here — no external memory needed.
+
+1. Open #4213; pick the first unchecked **ungated** batch (gated = H, kipptaf —
+   see waves below).
+2. Gather inputs: this index (PK / soft-delete / curation / build context), the
+   import-layout mapping (`.claude/scratch/focus-import-layout-mapping.md`) for
+   wide-table curation, and `2026-06-18-focus-staging-attendance-lookups.md`
+   (Batch C) as the staging template.
+3. Extract columns: `INFORMATION_SCHEMA.COLUMNS` for the batch's tables
+   (`column_name`, `data_type`, `ordinal_position`).
+4. Write the plan via the **`superpowers:writing-plans`** skill (invoke it first
+   — it sets the plan structure), using
+   `docs/superpowers/plans/2026-06-18-focus-staging-<batch>.md` as the path and
+   the Batch C plan as the concrete template (contract YAML per column; `unique`
+   - `not_null` PK at `severity: error`; soft-delete filter where applicable;
+     exclude `_dlt_*` + the audit-quad). Subagents do not auto-load skills — a
+     dispatched plan-writer MUST be told to invoke `superpowers:writing-plans`
+     before writing. Fill the `Plan doc` column in the table above.
+5. Execute via `superpowers:subagent-driven-development`; open the PR
+   (`Refs #4213`).
+6. On merge: check the box in #4213.
+
+## Gating waves
+
+- **Wave 1 (parallel, no cross-batch deps):** staging for A, B, C (done), D, E,
+  F, G, I, plus `int_focus__student_enrollment` (self-contained in B).
+- **Wave 2 (after the entity batches + metadata land):** Batch H custom-field
+  unpivot — needs `custom_fields` metadata + entity `custom_*` columns, and the
+  open design decision on where custom values live (entity `custom_NNN` columns
+  vs `custom_field_log_entries`) and one generic model vs per-entity.
+- **Wave 3 (after district staging is merged + materialized in prod):** kipptaf
+  region source + `stg_kippmiami__focus__*` wrappers (kipptaf source resolves to
+  prod for `target=staging` CI).
