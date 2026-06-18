@@ -16,7 +16,7 @@ using dlt's `sql_database` source with PyArrow backend.
 | Aspect              | Illuminate                              | Focus                        |
 | ------------------- | --------------------------------------- | ---------------------------- |
 | Schema dimension    | Multi-schema (asset key includes it)    | Single `public` schema       |
-| Type adapters       | `unbounded_numeric_adapter`             | None (full_with_precision)   |
+| Type adapters       | `unbounded_numeric_adapter`             | None                         |
 | Query callbacks     | `filter_date_taken_callback` (optional) | None                         |
 | Nullability adapter | `remove_nullability_adapter`            | `remove_nullability_adapter` |
 
