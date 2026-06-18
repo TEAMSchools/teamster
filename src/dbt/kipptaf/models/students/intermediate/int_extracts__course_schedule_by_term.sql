@@ -96,7 +96,9 @@ with
             ) as academic_year_display,
 
             if(
-                s.school_name = 'KIPP Sumner Elementary' and s.sections_grade_level = 5,
+                s.terms_academic_year >= 2025
+                and s.school_name = 'KIPP Sumner Elementary'
+                and s.sections_grade_level = 5,
                 'MS',
                 d.school_level
             ) as school_level_alt,

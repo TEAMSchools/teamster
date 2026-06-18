@@ -300,7 +300,7 @@ select
 
     case
         when
-            e.academic_year = 2025
+            e.academic_year >= 2025
             and e.school_abbreviation = 'Sumner'
             and e.grade_level = 5
         then 'MS'
