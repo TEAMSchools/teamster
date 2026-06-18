@@ -33,8 +33,10 @@ with
 
             s.student_number,
         from {{ ref("stg_powerschool__reenrollments") }} as r
-        inner join {{ ref("stg_powerschool__students") }} as s on r.studentid = s.id
-        where s.enroll_status != 1
+        inner join
+            {{ ref("stg_powerschool__students") }} as s
+            on r.studentid = s.id
+            and s.enroll_status != 1
     )
 
 select
