@@ -1,18 +1,23 @@
 models:
   - name: rpt_gsheets__finalsite__log
     description: >
-      Latest Finalsite enrollment status per applicant for the current academic
-      year, one row per finalsite_enrollment_id. Feeds the SRE team's Finalsite
-      Log Google Sheet.
+      All status rows sharing the same date as each applicant's latest status,
+      limited to dates where two or more statuses occurred. latest_status
+      repeats the most recent status across all rows for a given applicant.
+      Feeds the SRE team's Finalsite Log Google Sheet.
     config:
       meta:
         contains_pii: true
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns:
+              - finalsite_enrollment_id
+              - detailed_status
     columns:
       - name: finalsite_enrollment_id
         data_type: string
         description: Unique identifier for a Finalsite enrollment record.
-        data_tests:
-          - unique
       - name: enrollment_academic_year_display
         data_type: string
         description:
@@ -39,15 +44,14 @@ models:
         data_type: string
         description:
           Finalsite enrollment type (e.g. New Student, Re-Enrollment).
-      - name: gender
-        data_type: string
-        description: Applicant gender as recorded in Finalsite.
-      - name: birthdate
-        data_type: date
-        description: Applicant date of birth.
       - name: status_start_date
         data_type: date
-        description: Date the applicant entered their latest enrollment status.
+        description: Date the applicant entered this enrollment status.
       - name: detailed_status
         data_type: string
-        description: Human-readable label of the latest enrollment status stage.
+        description: Enrollment status for this specific status row.
+      - name: latest_status
+        data_type: string
+        description: >
+          Most recent enrollment status for this applicant — the same value
+          across all rows for a given finalsite_enrollment_id.
