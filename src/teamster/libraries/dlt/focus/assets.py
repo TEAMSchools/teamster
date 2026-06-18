@@ -6,7 +6,7 @@ from dlt import pipeline
 from dlt.common.configuration.specs import ConnectionStringCredentials
 from dlt.common.runtime.collector import LogCollector
 from dlt.destinations import bigquery
-from dlt.sources.sql_database import sql_database
+from dlt.sources.sql_database import remove_nullability_adapter, sql_database
 
 
 class FocusDagsterDltTranslator(DagsterDltTranslator):
@@ -50,6 +50,7 @@ def build_focus_dlt_assets(
         defer_table_reflect=True,
         backend="pyarrow",
         reflection_level="full_with_precision",
+        table_adapter_callback=remove_nullability_adapter,
     )
 
     dlt_pipeline = pipeline(
