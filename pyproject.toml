@@ -19,21 +19,21 @@ dependencies = [
   "dbt-bigquery>=1.11,<1.12",
   "dbt-core",
   "beautifulsoup4>=4.12.2",
-  "cramjam>=2.7.0",
-  "dlt>=1.10.0",
-  "fastavro>=1.9.0",
-  "ldap3>=2.9.1",
-  "oracledb>=1.4.2",
+  "cramjam>=2.7",
+  "dlt>=1.10",
+  "fastavro>=1.9",
+  "ldap3>=2.9",
+  "oracledb>=1.4",
   "psycopg[binary,pool]>=3.3",
-  "py-avro-schema>=3.4.1",
-  "pycryptodome>=3.21.0",
-  "pypdf>=5.0.0",
-  "python-dateutil>=2.9.0.post0",
-  "scikit-learn>=1.4.0",
-  "sqlalchemy>=2.0.42",
+  "py-avro-schema>=3.4",
+  "pycryptodome>=3.21",
+  "pypdf>=5.0",
+  "python-dateutil>=2.9",
+  "scikit-learn>=1.4",
+  "sqlalchemy>=2.0",
   "tableauserverclient>=0.25",
-  "tenacity>=8.2.3",
-  "urllib3>=2.6.3",
+  "tenacity>=8.2",
+  "urllib3>=2.6",
 ]
 
 [dependency-groups]
@@ -41,9 +41,9 @@ dev = [
   "cron-descriptor>=1.4",
   "dagster-plus-mcp @ git+https://github.com/TEAMSchools/dagster-plus-mcp.git",
   "dagster-webserver",
-  "pytest>=8.3.4",
+  "pytest>=8.3",
 ]
-docs = ["mkdocs-material>=9.7.5"]
+docs = ["mkdocs-material>=9.7"]
 
 [build-system]
 requires = ["hatchling"]
