@@ -17,6 +17,8 @@ views:
           - count_scores
           - count_students
           - pct_proficient
+          - pct_proficient_formative
+          - pct_proficient_crq
           - avg_percent_correct
           - avg_scale_score
           - assessment_score_key
