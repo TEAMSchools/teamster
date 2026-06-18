@@ -20,13 +20,15 @@ function nextMidnightEastern() {
   return now.getTime() + (24 * 60 * 60 * 1000 - msElapsedToday);
 }
 
-// Domain membership is derived from the cube-name prefix, not a static array —
-// a query member is "<cube>.<member>", so the cube name is the prefix. Adding a
-// new domain cube requires no cube.js change as long as it follows the naming
-// convention: student-domain cube names start with "student", staff-domain with
-// "staff" (see src/cube/CLAUDE.md naming rules).
+// Student-domain membership is derived from the cube-name prefix, not a static
+// array — a query member is "<cube>.<member>", so the cube name is the prefix.
+// Student-domain cube names start with "student" (see src/cube/CLAUDE.md).
+// Staff-domain RLS was intentionally removed from cube.js: staff visibility is
+// governed by the location scope filter below plus each staff view's
+// cube-access-staff-data access policy. Manager-hierarchy scoping is deferred;
+// when it returns it must work for view queries (segment on the view, not the
+// underlying cube).
 const isStudentMember = (member) => member.startsWith("student");
-const isStaffMember = (member) => member.startsWith("staff");
 
 // Convention for snapshot cubes: cumulative daily flags that overcount without
 // a point-in-time anchor. All snapshot cubes expose these three dimensions.
@@ -291,20 +293,6 @@ module.exports = {
           values: [true],
         });
       }
-    }
-
-    // Org-hierarchy filter: inject segment defined in staff cube YAML.
-    // Staff cubes and the reporting_chain segment are added in the follow-up
-    // spec (blocked on #3729 — dim_staff_work_assignments.staff_key fix).
-    const touchesStaffCube = [
-      ...(query.dimensions ?? []),
-      ...(query.measures ?? []),
-    ].some(isStaffMember);
-    if (touchesStaffCube && !groups.includes("cube-access-staff-all")) {
-      query = {
-        ...query,
-        segments: [...(query.segments ?? []), "staff.reporting_chain"],
-      };
     }
 
     return { ...query, filters };

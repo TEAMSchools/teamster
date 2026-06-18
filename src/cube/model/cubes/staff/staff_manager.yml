@@ -1,7 +1,7 @@
 cubes:
   # Role alias for staff, used as the manager-side join target on
   # staff_work_history (and future fact cubes). Inherits all of staff's
-  # dimensions. The staff_ prefix keeps it under isStaffMember gating in cube.js.
+  # dimensions.
   - name: staff_manager
     extends: staff
     public: false
