@@ -109,9 +109,10 @@ Default-deny, group-driven. Read [`cube.js`](cube.js) before modifying.
 - **`queryRewrite`** enforces three filters:
   - Strips student-domain dims/measures (members where `isStudentMember` is
     true) for users without `cube-access-student-data`.
-  - Adds a `locations` filter based on the highest-priority scope group: network
-    (no filter) → region (`region_key`) → school (`abbreviation`). No scope
-    group → empty `IN ()` filter (default deny).
+  - Adds a location filter based on the highest-priority scope group: network
+    (no filter) → region (`regions.region_name`) → school
+    (`locations.abbreviation`). No scope group → empty `IN ()` filter (default
+    deny).
   - For queries touching a staff-domain cube (`isStaffMember`), injects the
     `staff.reporting_chain` segment unless the user has `cube-access-staff-all`.
 - **`isStudentMember` / `isStaffMember` prefix helpers.** Domain gating is
