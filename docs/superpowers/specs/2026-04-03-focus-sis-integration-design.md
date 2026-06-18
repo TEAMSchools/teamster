@@ -169,11 +169,13 @@ Following the existing source-system project pattern (like `powerschool`,
 > `student_standard_grades`, the full discipline domain (`discipline_referrals`,
 > `discipline_incidents`, `discipline_incidents_join_referrals`,
 > `referral_code_offenses`), and `test_history_administrations` /
-> `test_history_scores`. Confirm with the Miami Focus owner whether these will
-> populate (data-migration gap) or whether Miami models these domains
-> differently before scoping their staging/intermediate models. **Recommended
-> Phase B start:** staging models for the 54 populated tables plus
-> `int_focus__student_enrollment`.
+> `test_history_scores`. These domains are empty because Focus is not yet fully
+> in production in Miami — attendance, scheduling, gradebook, report cards, and
+> discipline will populate as the production rollout proceeds (not a
+> data-migration gap to chase). **Recommended Phase B start:** staging models
+> for the 54 populated tables plus `int_focus__student_enrollment`; add the
+> remaining staging/intermediate models as their source tables begin carrying
+> data.
 
 ### dbt: kippmiami + kipptaf integration
 
