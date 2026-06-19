@@ -42,6 +42,8 @@ select
 
     /* Audit-only helper columns — delete before Salesforce upload. */
     r.lastfirst as alum_name,
+    r.contact_advising_provider,
+    r.ktc_status,
     a.`name` as school_name,
 from {{ ref("int_nsc__enrollment_stints") }} as n
 left join

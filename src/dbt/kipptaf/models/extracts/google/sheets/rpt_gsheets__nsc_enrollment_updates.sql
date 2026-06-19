@@ -47,6 +47,8 @@ select
 
     /* Audit-only helper columns — delete before Salesforce upload. */
     r.lastfirst as alum_name,
+    r.contact_advising_provider,
+    r.ktc_status,
     a.`name` as school_name,
 from enrollment_latest_stint as n
 left join {{ ref("int_kippadb__roster") }} as r on n.student = r.contact_id
