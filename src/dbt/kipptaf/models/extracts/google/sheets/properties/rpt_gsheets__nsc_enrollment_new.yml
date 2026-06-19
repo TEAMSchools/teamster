@@ -43,8 +43,16 @@ models:
       - name: pursuing_degree_type__c
         data_type: string
         description: >
-          Degree type mapped from NSC two-year/four-year classification:
-          "Bachelor's (4-year)" or "Associate's (2 year)".
+          Salesforce picklist value for the credential the alum is pursuing at
+          this institution. Resolved with precedence — the credential implied by
+          the NSC class_level code from the stint's most-recent term (see
+          int_nsc__enrollment_stints.current_class_level for the full code
+          mapping), then a fallback to the Salesforce Account.type ("Public 2
+          yr" / "Private 4 yr" / etc.) for year-in-school codes (F/S/J/R) and
+          NULL class_level. NULL when no signal is available. Specific degree
+          titles (MBA, JD, etc.) are not resolved here — NSC only emits
+          degree_title on its graduation-summary row, which is not the term row
+          that current_class_level is sourced from.
       - name: source__c
         data_type: string
         description: Data source identifier; always 'NSC' for this model.
