@@ -6,6 +6,8 @@ with
     enrollment_stint_match as (
         select
             e.id as enrollment_id,
+            e.student,
+            e.school,
             e.actual_end_date,
             e.attending_status,
             e.`status`,
@@ -35,18 +37,24 @@ with
     )
 
 select
-    enrollment_id as id,
-    stint_end as actual_end_date__c,
-    derived_status as status__c,
-    current_enrollment_status as attending_status__c,
+    n.enrollment_id as id,
+    n.stint_end as actual_end_date__c,
+    n.derived_status as status__c,
+    n.current_enrollment_status as attending_status__c,
 
     true as nsc_verified__c,
     current_date('{{ var("local_timezone") }}') as date_last_verified__c,
-from enrollment_latest_stint
+
+    /* Audit-only helper columns — delete before Salesforce upload. */
+    r.lastfirst as alum_name,
+    a.`name` as school_name,
+from enrollment_latest_stint as n
+left join {{ ref("int_kippadb__roster") }} as r on n.student = r.contact_id
+left join {{ ref("stg_kippadb__account") }} as a on n.school = a.id
 where
-    not do_not_overwrite_with_nsc_data
+    not n.do_not_overwrite_with_nsc_data
     and (
-        stint_end is distinct from actual_end_date
-        or derived_status is distinct from `status`
-        or current_enrollment_status is distinct from attending_status
+        n.stint_end is distinct from n.actual_end_date
+        or n.derived_status is distinct from n.`status`
+        or n.current_enrollment_status is distinct from n.attending_status
     )

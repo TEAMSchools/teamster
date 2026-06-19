@@ -17,6 +17,9 @@ with
             and coalesce(n.stint_end, date(9999, 12, 31)) >= e.`start_date`
     )
 
+/* Audit helpers (alum_name, school_name) intentionally last so the upload
+   columns sit contiguously on the left of the sheet. */
+-- trunk-ignore(sqlfluff/ST06): audit helpers placed last for sheet-deletion
 select
     n.contact_id as student__c,
     n.account_id as school__c,
@@ -36,10 +39,16 @@ select
         when '2-year'
         then "Associate's (2 year)"
     end as pursuing_degree_type__c,
+
+    /* Audit-only helper columns — delete before Salesforce upload. */
+    r.lastfirst as alum_name,
+    a.`name` as school_name,
 from {{ ref("int_nsc__enrollment_stints") }} as n
 left join
     covered_stints as c
     on n.contact_id = c.contact_id
     and n.account_id = c.account_id
     and n.stint_num = c.stint_num
+left join {{ ref("int_kippadb__roster") }} as r on n.contact_id = r.contact_id
+left join {{ ref("stg_kippadb__account") }} as a on n.account_id = a.id
 where c.contact_id is null

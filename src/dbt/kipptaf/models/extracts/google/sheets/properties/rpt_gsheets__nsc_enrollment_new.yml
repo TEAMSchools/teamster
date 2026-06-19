@@ -55,3 +55,13 @@ models:
       - name: nsc_verified__c
         data_type: boolean
         description: Flag indicating this enrollment has been verified by NSC.
+      - name: alum_name
+        data_type: string
+        description: >
+          Audit helper — alum name in `Last, First` form from the kippadb
+          roster. Delete before Salesforce upload.
+      - name: school_name
+        data_type: string
+        description: >
+          Audit helper — school name from the kippadb account. Delete before
+          Salesforce upload.

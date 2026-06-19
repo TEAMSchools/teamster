@@ -28,3 +28,13 @@ models:
       - name: date_last_verified__c
         data_type: date
         description: Date this record was last verified against NSC data.
+      - name: alum_name
+        data_type: string
+        description: >
+          Audit helper — alum name in `Last, First` form from the kippadb
+          roster. Delete before Salesforce upload.
+      - name: school_name
+        data_type: string
+        description: >
+          Audit helper — school name from the kippadb account. Delete before
+          Salesforce upload.
