@@ -69,7 +69,7 @@ views:
           - quarter_number
           - school_week_start_date
 
-      - join_path: student_attendance.student_enrollments.locations
+      - join_path: student_attendance.student_school_enrollments.locations
         prefix: true
         includes:
           - location_name
@@ -78,20 +78,20 @@ views:
           - campus
           - city
 
-      - join_path: student_attendance.student_enrollments.locations.regions
+      - join_path: student_attendance.student_school_enrollments.locations.regions
         prefix: true
         includes:
           - region_name
           - state
 
-      - join_path: student_attendance.student_enrollments
+      - join_path: student_attendance.student_school_enrollments
         prefix: false
         includes:
           - grade_level
           - graduation_year
           - is_retained_year
 
-      - join_path: student_attendance.student_enrollments.student_enrollment_status
+      - join_path: student_attendance.student_school_enrollments.student_enrollment_status
         prefix: false
         includes:
           - is_ell
@@ -103,7 +103,7 @@ views:
           - is_meal_eligible
           - meal_eligibility
 
-      - join_path: student_attendance.student_enrollments.students
+      - join_path: student_attendance.student_school_enrollments.students
         prefix: false
         includes:
           - gender_identity
@@ -134,7 +134,6 @@ views:
             - dates_month_number
             - dates_month_name
             - dates_quarter_number
-            - dates_school_week_start_date
         - name: Term
           members:
             - terms_semester
@@ -175,6 +174,7 @@ views:
             - is_latest_record
             - is_month_end_record
             - is_week_end_record
+            - dates_school_week_start_date
 
     access_policy:
       # No PII tier — view contains no direct student identifiers.

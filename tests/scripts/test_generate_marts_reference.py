@@ -52,6 +52,19 @@ def test_parse_fk_edges_reads_foreign_key_constraints() -> None:
     ]
 
 
+def test_parse_fk_edges_ignores_relationships_tests_on_table_marts() -> None:
+    edges = gen.parse_fk_edges(FIXTURE_DIR / "sample_fct_table_materialized.yml")
+
+    # FK edges come only from literal foreign_key constraints, never from
+    # relationships data tests — even on a table-materialized model. The fixture
+    # has one literal FK (constrained_key) plus two relationships-only columns
+    # (enrollment_key, date_key) and a relationships-only view model; only the
+    # literal constraint yields an edge.
+    assert edges == [
+        gen.FkEdge("fct_table_sample", "constrained_key", "dim_other"),
+    ]
+
+
 def test_parse_fk_edges_warns_and_skips_legacy_expression(capsys) -> None:
     # An FK constraint using the legacy free-text expression: form (no to:) is
     # skipped, and a warning is emitted so the dropped FK is not silent.

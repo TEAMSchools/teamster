@@ -127,10 +127,12 @@ dbt CLI runs locally for Claude: `DBT_PROFILES_DIR` (repo `.dbt`) + ADC →
 `dbt debug` / `build` / `run-operation --target staging` connect with no
 1Password (BigQuery uses ADC, not the 1Password bootstrap). `--target prod` runs
 (`dbt build` / `run`) are blocked by the auto-mode classifier as production
-deploys even with verbal approval — hand prod runs to the user.
-`stage_external_sources --target staging` with `ext_full_refresh: true` is also
-classifier-blocked (drops/recreates shared `zz_stg` tables) — needs direct user
-authorization in the immediately-preceding turn, else hand off.
+deploys even with verbal approval — hand prod runs to the user. `dbt compile` /
+`parse --target prod` are NOT blocked (no warehouse write) — use them to
+validate model SQL/refs locally. `stage_external_sources --target staging` with
+`ext_full_refresh: true` is also classifier-blocked (drops/recreates shared
+`zz_stg` tables) — needs direct user authorization in the immediately-preceding
+turn, else hand off.
 
 `stage_external_sources --args "select: ..."` takes a
 `<source_name>.<table_name>` selector — not project-qualified. The

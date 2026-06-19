@@ -55,10 +55,13 @@ school_calendars) go in `cubes/conformed/`.
   `sql:` (Cube custom-calendar recipe). `many_to_one` fan-trap protection trusts
   your declared `relationship` + `primary_key`, so any non-overlap invariant the
   join relies on must be test-enforced upstream in dbt.
-- **Avoid diamond paths.** Two join paths to the same dim → either a compound
-  join on the canonical path (see `student_attendance.yml` → `school_calendars`)
-  or a degenerate FK with no declared join (see
-  `student_enrollments.location_key`). Comment the choice.
+- **Avoid diamond paths.** Two join paths to the same dim → resolve to one
+  canonical path. Reach deeper dims by traversing the FK chain (e.g.
+  `student_enrollments` and `student_attendance` both reach `locations` only via
+  `student_enrollment_stints.locations` — no direct second join). Alternative
+  resolutions: a compound join on the canonical path (see
+  `student_attendance.yml` → `school_calendars`), or a degenerate FK with no
+  declared join. Comment the choice.
 - **Time dimensions** must cast to `TIMESTAMP` in the dim's `sql:`; joins from
   facts cast through (`CAST({CUBE}.date_key AS TIMESTAMP)`).
 - **Hidden helper measures** prefix with `_` and set `public: false` (see
@@ -128,15 +131,26 @@ Default-deny, group-driven. Read [`cube.js`](cube.js) before modifying.
   cube needs no `cube.js` change as long as it follows the naming rule above; a
   misnamed one silently loses its guard. Staff has no equivalent `cube.js` gate
   (manager-hierarchy RLS was removed pending a view-aware rebuild).
-- **`SNAPSHOT_CUBES` / `SNAPSHOT_MEASURE_STEMS` arrays.** For cubes built on
-  fact tables with cumulative daily-status flags (values re-stamped on every row
-  — overcounts without a point-in-time anchor). `queryRewrite` auto-injects
-  `is_latest_record`, `is_month_end_record`, or `is_week_end_record` depending
-  on query granularity. To add a new domain: append the cube `name:` to
-  `SNAPSHOT_CUBES` and its snapshot measure name stems (e.g.
-  `"chronically_absent"`) to `SNAPSHOT_MEASURE_STEMS`. The cube must expose
-  `is_latest_record`, `is_month_end_record`, and `is_week_end_record`
-  dimensions.
+- **`SNAPSHOT_CUBES` / `SNAPSHOT_MEASURE_STEMS` / `SNAPSHOT_ANCHOR_OVERRIDES`.**
+  For cubes built on fact tables with cumulative daily-status flags (values
+  re-stamped on every row — overcounts without a point-in-time anchor), or a
+  `count_distinct` over a daily grain (a member appearing on N days counts N
+  without an anchor). `queryRewrite` auto-injects `is_latest_record`,
+  `is_month_end_record`, or `is_week_end_record` depending on query granularity.
+  To add a new domain: append the cube `name:` to `SNAPSHOT_CUBES` and add its
+  snapshot measure name stems under that **same cube key** in
+  `SNAPSHOT_MEASURE_STEMS` (a per-cube map — stems are NOT shared across cubes,
+  so e.g. `count_students` is a snapshot stem for `student_enrollments` but not
+  `student_attendance`, whose `count_students` is stint-keyed and
+  additive-safe). The cube must expose `is_latest_record`,
+  `is_month_end_record`, and `is_week_end_record` dimensions. To change a cube's
+  no-granularity default anchor (e.g. enrollment uses `is_current_record`, the
+  per-school period-end-as-of-now flag, instead of the `is_latest_record`
+  default), add a per-cube entry to `SNAPSHOT_ANCHOR_OVERRIDES`. **The injected
+  anchor is a query-level filter, so it constrains every measure in the query**
+  — do not put an additive measure (e.g. `avg_daily_attendance`) and a guarded
+  snapshot measure in the same request, or the additive one is wrongly anchored
+  ([#4160](https://github.com/TEAMSchools/teamster/issues/4160)).
 - **`canSwitchSqlUser`** only allows the SQL super-user to impersonate
   `@apps.teamschools.org` accounts (Superset integration). Do not broaden the
   suffix check.
@@ -220,8 +234,11 @@ before merge:
    → creates `zz_<username>_kipptaf_marts.<model>`
 2. Temporarily change `sql_table` in the cube YAML to
    `zz_<username>_kipptaf_marts.<table>` — do NOT commit or push
-3. Test in local `npm run dev` from `src/cube/` (hot-reloads on file save, no
-   push required); or commit+push for Cube Cloud Dev Mode
+3. Test in the local dev server — launch the **`Cube: Dev Server`** VS Code task
+   (`.vscode/tasks.json`; installs `src/cube/node_modules` if missing, then
+   `npm --prefix src/cube run dev`). Hot-reloads on file save, no push required.
+   Claude can't run it (long-running server) — ask the user to start the task
+   and report back. Or commit+push for Cube Cloud Dev Mode.
 4. Revert `sql_table` to `kipptaf_marts.<table>` before committing
 
 For **snowflake sub-dims** (cubes joined one-to-one from a parent), swap
@@ -230,6 +247,39 @@ stays pointed at prod; only the new sub-dim needs redirecting.
 
 The security hook flags `zz_*` schemas as an access-control regression —
 expected if you do commit the temporary change; acknowledge and revert.
+
+**`zz_*` redirect — never `git add` the whole cubes/ dir while it's live.** When
+a `sql_table` redirect to a `zz_*` dev schema is in the working tree, staging
+with `git add -A`, `git add .`, or `git add src/cube/model/cubes/` accidentally
+commits the redirect. Name files explicitly in every `git add` while any cube
+YAML is redirected.
+
+## School weeks vs ISO weeks
+
+PowerSchool's per-school school week (`week_start_monday`) is NOT a clean
+Monday-Sunday grid — weeks split at month/term boundaries (~14% of calendar days
+diverge from ISO Monday). Both topline surfaces key on school weeks:
+`int_topline__ada_running_weekly` (attendance) and
+`int_extracts__student_enrollments_weeks` (enrollment) both group by
+`week_start_monday`. Use `dim_dates.school_week_start_date` (same values, routed
+cleanly via the join) rather than a raw fact column — Cube can throw "not found"
+on a `DATE` fact column cast to `TIMESTAMP` in a BigQuery view.
+
+**Snapshot guard drives the week period off `dates_school_week_start_date`
+grouping, not Cube's native `granularity: "week"` (ISO).** The guard detects a
+weekly trend when any query member's last dotted segment equals
+`dates_school_week_start_date`; ISO `granularity: "week"` throws for snapshot
+measures. `_week_end` named measures require this grouping.
+
+## `prefix: true` join member names
+
+A member inside a `prefix: true` includes block is exposed with the last
+`join_path` segment prepended: `school_week_start_date` under
+`join_path: student_enrollments.dates` (prefix: true) surfaces as
+`dates_school_week_start_date`. A same-named fact-level dimension alongside the
+join creates ambiguity Cube can't resolve at query time. Route via the join when
+`dim_dates` carries the same value — avoids the compile error and the redundant
+fact column.
 
 ## Operational notes
 

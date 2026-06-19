@@ -32,6 +32,14 @@ same fix Illuminate uses. Adding/removing this adapter against existing tables
 that already have `REQUIRED` columns requires dropping those tables first
 (`replace` repopulates them on the next run).
 
+## Empty source tables
+
+The PyArrow backend writes NO BigQuery table for a 0-row source extract (the
+asset still SUCCEEDS — no `rows_loaded`, `jobs: []`). A configured Focus table
+absent from `dagster_<district>_dlt_focus` is therefore **empty in the source**
+(Focus is mid-rollout in Miami), not an extraction failure — confirm via the
+asset materialization metadata before investigating.
+
 ## Testing Constraints
 
 Focus uses an IP allowlist. Codespace cannot reach the database. Connection
