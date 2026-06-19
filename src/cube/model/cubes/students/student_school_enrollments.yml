@@ -1,0 +1,105 @@
+cubes:
+  - name: student_school_enrollments
+    public: false
+    sql_table: kipptaf_marts.dim_student_enrollments
+
+    joins:
+      - name: students
+        sql: "{students.student_key} = {CUBE}.student_key"
+        relationship: many_to_one
+
+      - name: locations
+        sql: "{locations.location_key} = {CUBE}.location_key"
+        relationship: many_to_one
+
+      - name: student_enrollment_status
+        sql: >
+          {student_enrollment_status.student_enrollment_key} =
+          {CUBE}.student_enrollment_key
+        relationship: one_to_one
+
+    dimensions:
+      - name: student_enrollment_key
+        description: >-
+          Surrogate key derived from student_number, _dbt_source_project,
+          academic_year, and entrydate. Primary key for this dimension — matches
+          the uniqueness grain on int_powerschool__student_enrollment_union.
+        sql: student_enrollment_key
+        type: string
+        primary_key: true
+        public: true
+
+      - name: student_key
+        description: Surrogate key derived from student_number. FK to students.
+        sql: student_key
+        type: string
+
+      - name: location_key
+        description: >-
+          Surrogate key derived from location_clean_name. FK to locations. Null
+          when schoolid does not match any location in the crosswalk (e.g.,
+          grade_level 99 placeholder schools).
+        sql: location_key
+        type: string
+
+      - name: academic_year
+        description: >-
+          KIPP academic year (July start) in which this enrollment falls. The
+          calendar year in which the academic year begins (e.g., 2025 for the
+          2025-26 school year).
+        sql: academic_year
+        type: number
+        public: true
+
+      - name: grade_level
+        description: >-
+          The grade the student is in. Since this is an integer: 0=Kindergarten,
+          -2=Preschool.
+        sql: grade_level
+        type: number
+        public: true
+
+      - name: graduation_year
+        description: Student graduation year.
+        sql: graduation_year
+        type: number
+        public: true
+
+      - name: year_in_network
+        description: >-
+          Count of years the student has been enrolled in the network. Populated
+          on the student's primary enrollment stint per academic year; null on
+          additional same-year stints.
+        sql: year_in_network
+        type: number
+        public: true
+
+      - name: entry_date
+        sql: CAST(entry_date_key AS TIMESTAMP)
+        type: time
+        public: true
+
+      - name: exit_date
+        sql: CAST(exit_date_key AS TIMESTAMP)
+        type: time
+        public: true
+
+      - name: is_retained_year
+        description: >-
+          TRUE if the student repeated this grade level in the same school
+          compared to the prior academic year.
+        sql: is_retained_year
+        type: boolean
+        public: true
+
+    measures:
+      - name: count_enrollments
+        description: >-
+          Count of enrollment records (stints), NOT a student headcount —
+          count_distinct on student_enrollment_key. Alumni-inclusive and spans
+          all academic years (a multi-stint student counts once per stint; a
+          graduate retains a placeholder stint per year). For a point-in-time
+          student headcount use the student_enrollments cube's count_students.
+        sql: student_enrollment_key
+        type: count_distinct
+        public: true

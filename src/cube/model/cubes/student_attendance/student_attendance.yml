@@ -8,18 +8,19 @@ cubes:
         sql: "{dates.date_day} = CAST({CUBE}.date_key AS TIMESTAMP)"
         relationship: many_to_one
 
-      - name: student_enrollments
+      - name: student_school_enrollments
         sql: >
-          {student_enrollments.student_enrollment_key} =
+          {student_school_enrollments.student_enrollment_key} =
           {CUBE}.student_enrollment_key
         relationship: many_to_one
 
-      # location reached via student_enrollments.location_key; calendar
+      # location reached via student_school_enrollments.location_key; calendar
       # joined on (date_key, enrollment's location_key)
       - name: school_calendars
         sql: >
           {school_calendars.date_key} = {CUBE}.date_key AND
-          {school_calendars.location_key} = {student_enrollments.location_key}
+          {school_calendars.location_key} =
+          {student_school_enrollments.location_key}
         relationship: many_to_one
 
       - name: terms
@@ -173,11 +174,11 @@ cubes:
 
       - name: is_week_end_record
         description: >-
-          TRUE on the last full membership day of each calendar week
-          (Monday–Sunday) per student enrollment. Use with timeDimensions
-          granularity "week" for week-over-week CA trends. Correctly handles
-          shortened weeks. Prefer count_chronically_absent_week_end over the
-          base measure when trending by week.
+          TRUE on the last full membership day (membership_value = 1) of each
+          PowerSchool school week per student enrollment. Group the CA weekly
+          trend (count_chronically_absent_week_end, pct_tier_*_week_end,
+          count_truants_week_end) by dates_school_week_start_date — not Cube's
+          ISO week granularity. Correctly handles shortened weeks.
         sql: is_week_end_record
         type: boolean
         public: true
@@ -611,8 +612,8 @@ cubes:
         public: true
 
       # ── Week-end named measures ───────────────────────────────────────────
-      # is_week_end_record baked in — use with timeDimensions granularity
-      # "week" for week-over-week CA trends.
+      # is_week_end_record baked in — group by dates_school_week_start_date for
+      # week-over-week CA trends (PowerSchool school weeks, not ISO weeks).
 
       - name: _count_ca_eligible_students_week_end
         sql: student_enrollment_key
@@ -652,9 +653,9 @@ cubes:
       - name: count_chronically_absent_week_end
         description: >-
           Week-end chronic absence count — students with cumulative ADA < 90% as
-          of the last school day of each calendar week. Use with timeDimensions
-          granularity "week" for week-over-week CA trends. Handles shortened
-          weeks (e.g. last school day is Wednesday).
+          of the last school day of each PowerSchool school week. Group by
+          dates_school_week_start_date for week-over-week CA trends. Handles
+          shortened weeks (e.g. last school day is Wednesday).
         sql: student_enrollment_key
         type: count_distinct
         public: true
@@ -669,8 +670,8 @@ cubes:
       - name: pct_chronically_absent_week_end
         description: >-
           Week-end chronic absence rate — count_chronically_absent_week_end /
-          eligible students at week-end. Use with timeDimensions granularity
-          "week" for week-over-week CA trends.
+          eligible students at week-end. group by dates_school_week_start_date
+          for week-over-week CA trends.
         sql: >-
           1.0 * {count_chronically_absent_week_end} /
           NULLIF({_count_ca_eligible_students_week_end}, 0)
@@ -681,7 +682,7 @@ cubes:
       - name: pct_tier_1_2_week_end
         description: >-
           Week-end percentage of CA-eligible students with cumulative ADA ≥ 90%
-          (Tier 1 or Tier 2). Use with timeDimensions granularity "week".
+          (Tier 1 or Tier 2). group by dates_school_week_start_date.
         sql: >-
           1.0 * {_count_tier_1_2_week_end} /
           NULLIF({_count_ca_eligible_students_week_end}, 0)
@@ -692,7 +693,7 @@ cubes:
       - name: pct_tier_3_week_end
         description: >-
           Week-end percentage of CA-eligible students with cumulative ADA 80–89%
-          (Tier 3). Use with timeDimensions granularity "week".
+          (Tier 3). group by dates_school_week_start_date.
         sql: >-
           1.0 * {_count_tier_3_week_end} /
           NULLIF({_count_ca_eligible_students_week_end}, 0)
@@ -778,8 +779,8 @@ cubes:
       - name: count_truants_week_end
         description: >-
           Week-end truancy count — students meeting truancy criteria as of the
-          last school day of each calendar week. Use with timeDimensions
-          granularity "week" for week-over-week truancy trends.
+          last school day of each PowerSchool school week. Group by
+          dates_school_week_start_date for week-over-week truancy trends.
         sql: student_enrollment_key
         type: count_distinct
         public: true
@@ -791,7 +792,7 @@ cubes:
       - name: pct_truant_week_end
         description: >-
           Week-end truancy rate — count_truants_week_end / eligible students at
-          week-end. Use with timeDimensions granularity "week".
+          week-end. group by dates_school_week_start_date.
         sql: >-
           1.0 * {count_truants_week_end} / NULLIF({_count_students_week_end}, 0)
         type: number
