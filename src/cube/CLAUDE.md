@@ -38,8 +38,11 @@ school_calendars) go in `cubes/conformed/`.
   `name: dates` reading `sql_table: kipptaf_marts.dim_dates`. **Domain-prefix
   rule:** student-domain cubes start with `student` (`student_attendance`,
   `student_enrollments`, `students`); staff-domain cubes start with `staff`.
-  `queryRewrite`'s `isStudentMember`/`isStaffMember` access gating keys off
-  these prefixes, so a misnamed domain cube silently loses its access guard.
+  `queryRewrite`'s `isStudentMember` access gating keys off the `student`
+  prefix, so a misnamed student-domain cube silently loses its access guard.
+  Staff cubes carry no prefix-based gate in `cube.js` — staff RLS is governed by
+  the location scope filter plus each staff view's `cube-access-staff-data`
+  access policy. The `staff` prefix is still a naming convention, not a guard.
   Conformed dims (`dates`, `locations`, `regions`, `terms`, `school_calendars`)
   are deliberately unprefixed — they carry no domain access tier. View names are
   `<domain>_<grain>` (`student_attendance_detail`,
@@ -87,6 +90,11 @@ Views own access via `access_policy:`. Two patterns:
 - **Summary views** (no direct identifiers, demographic breakdowns only): single
   `cube-access-student-data` block with `includes: "*"`. Add a comment
   explaining why no PII tier is needed.
+- **Staff views** use a single `cube-access-staff-data` block with
+  `includes: "*"` (no PII sub-tier): privacy is enforced by view choice —
+  `staff_summary` exposes aggregates/demographics only, `staff_detail` exposes
+  identifiers. Add a `cube-access-staff-pii` sub-tier only if a
+  see-staff-but-not-PII need arises.
 
 When adding a field to a detail view, decide PII status per project CLAUDE.md
 FERPA guidance. If PII, add it to the `excludes` list under the
@@ -103,26 +111,26 @@ Default-deny, group-driven. Read [`cube.js`](cube.js) before modifying.
 - **Group membership is direct-only.** Admin Directory API's
   `groups.list({userKey})` returns direct memberships; nested `cube-*` groups
   don't transitively resolve. Flat-enroll users in every `cube-*` group they
-  need (scope tier + `cube-access-student-data`, plus `cube-access-staff-all`
-  for staff cubes).
+  need: a scope tier (`cube-network-*` / `cube-region-*` / `cube-school-*`) plus
+  `cube-access-student-data` for student views and `cube-access-staff-data` for
+  staff views.
 - **Cloud Identity `searchTransitiveGroups` is edition-gated** (Workspace
   Enterprise / Education Plus / Cloud Identity Premium). On lower editions it
   returns `INVALID_ARGUMENT`, not `PERMISSION_DENIED` — don't propose it as a
   transitive-resolution fix without verifying the tenant's edition.
-- **`queryRewrite`** enforces three filters:
+- **`queryRewrite`** enforces two filters:
   - Strips student-domain dims/measures (members where `isStudentMember` is
     true) for users without `cube-access-student-data`.
   - Adds a `locations` filter based on the highest-priority scope group: network
     (no filter) → region (`region_key`) → school (`abbreviation`). No scope
-    group → empty `IN ()` filter (default deny).
-  - For queries touching a staff-domain cube (`isStaffMember`), injects the
-    `staff.reporting_chain` segment unless the user has `cube-access-staff-all`.
-- **`isStudentMember` / `isStaffMember` prefix helpers.** Domain gating is
-  derived from the cube-name prefix (`student*` / `staff*`), not a static array
-  — a query member is `<cube_name>.<member>`, so the cube name is the prefix. A
-  new domain cube needs no `cube.js` change as long as it follows the
-  domain-prefix naming rule above. A domain cube misnamed off-prefix silently
-  loses its guard.
+    group → empty `IN ()` filter (default deny). This scope filter applies to
+    staff views too (resolved through their `locations` join).
+- **`isStudentMember` prefix helper.** Student-domain gating is derived from the
+  cube-name prefix (`student*`), not a static array — a query member is
+  `<cube_name>.<member>`, so the cube name is the prefix. A new student-domain
+  cube needs no `cube.js` change as long as it follows the naming rule above; a
+  misnamed one silently loses its guard. Staff has no equivalent `cube.js` gate
+  (manager-hierarchy RLS was removed pending a view-aware rebuild).
 - **`SNAPSHOT_CUBES` / `SNAPSHOT_MEASURE_STEMS` / `SNAPSHOT_ANCHOR_OVERRIDES`.**
   For cubes built on fact tables with cumulative daily-status flags (values
   re-stamped on every row — overcounts without a point-in-time anchor), or a
