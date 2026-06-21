@@ -73,6 +73,10 @@ select
         then 'C'
     end as s_stu_x__fafsa,
 
+    if(
+        se.lepbegindate is not null and se.lependdate is null, 1, 0
+    ) as s_nj_stu_x__lep_tf,
+
 from {{ ref("int_extracts__student_enrollments") }} as se
 left join
     {{ ref("stg_powerschool__students") }} as s
