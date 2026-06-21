@@ -51,3 +51,4 @@ illuminate_extract_asset_job = define_asset_job(
     name=f"{CODE_LOCATION}__extracts__illuminate__asset_job",
     selection=illuminate_extract_assets,
 )
+
