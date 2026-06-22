@@ -1,0 +1,51 @@
+models:
+  - name: stg_focus__course_subjects
+    description: >-
+      Focus course subjects — one row per subject, scoped by school year and
+      school. Lookup that groups courses under a subject area. Includes the
+      currently-populated custom-field columns inline (aliased to their slug);
+      unpopulated custom slots are excluded. Select/multiple custom values
+      remain as stored Focus option codes — not decoded in this layer.
+    columns:
+      - name: subject_id
+        description: Primary key — Focus course subject id.
+        data_type: int
+        data_tests:
+          - unique:
+              config:
+                severity: error
+          - not_null:
+              config:
+                severity: error
+      - name: syear
+        description: Focus school year (start year, e.g. 2025 = 2025-26).
+        data_type: int
+      - name: school_id
+        description: Focus school number the subject belongs to.
+        data_type: int
+      - name: rollover_id
+        description: Source subject id this rolled over from.
+        data_type: int
+      - name: title
+        description: Full subject title.
+        data_type: string
+      - name: short_name
+        description: Abbreviated subject label.
+        data_type: string
+      - name: imported
+        description: Y/N — whether the row originated from an import.
+        data_type: string
+      - name: uuid
+        description: Focus global unique identifier for the row.
+        data_type: string
+      - name: created_at
+        description: Row creation timestamp in Focus.
+        data_type: timestamp
+      - name: updated_at
+        description: Row last-update timestamp in Focus.
+        data_type: timestamp
+      - name: custom_1
+        description: >-
+          Focus generic custom slot; label not defined in the extracted
+          custom_fields catalog.
+        data_type: string
