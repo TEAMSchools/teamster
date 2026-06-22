@@ -16,7 +16,7 @@ cubes:
         primary_key: true
         public: true
 
-      # PII — employee identifier.
+      # Staff-directory identifier — visible to all cube-access-staff-data (internally public).
       - name: staff_unique_id
         description:
           KIPP-assigned unique identifier for all staff members across all
@@ -25,34 +25,35 @@ cubes:
         type: number
         public: true
 
-      # PII — name.
+      # Staff-directory identifier — visible to all cube-access-staff-data (internally public).
       - name: full_name
         description: Staff member's preferred name in Last, First Middle format.
         sql: full_name
         type: string
         public: true
 
-      # PII — name.
+      # Staff-directory identifier — visible to all cube-access-staff-data (internally public).
       - name: first_name
         description: Staff member's preferred first name.
         sql: first_name
         type: string
         public: true
 
-      # PII — name.
+      # Staff-directory identifier — visible to all cube-access-staff-data (internally public).
       - name: last_name
         description: Staff member's preferred last name.
         sql: last_name
         type: string
         public: true
 
-      # PII — date of birth.
+      # Gated to cube-access-staff-pii — date of birth.
       - name: birth_date
         description: Staff member's date of birth.
         sql: CAST(birth_date AS TIMESTAMP)
         type: time
         public: true
 
+      # Demographic — gated to cube-access-staff-pii in staff_detail; aggregate-only breakdown in staff_summary.
       - name: gender_identity
         description: >-
           Staff member's preferred gender identity as reported in the staff
@@ -61,6 +62,7 @@ cubes:
         type: string
         public: true
 
+      # Demographic — gated to cube-access-staff-pii in staff_detail; aggregate-only breakdown in staff_summary.
       - name: race
         description: >-
           Staff member's racial category for reporting purposes, sourced from
@@ -69,6 +71,7 @@ cubes:
         type: string
         public: true
 
+      # Demographic — gated to cube-access-staff-pii in staff_detail; aggregate-only breakdown in staff_summary.
       - name: is_hispanic
         description: >-
           TRUE if the staff member identified as Hispanic/Latino/Latinx in the
@@ -77,28 +80,28 @@ cubes:
         type: boolean
         public: true
 
-      # PII — contact.
+      # Staff-directory identifier — visible to all cube-access-staff-data (internally public).
       - name: work_email
         description: Staff member's work email address from ADP.
         sql: work_email
         type: string
         public: true
 
-      # PII — contact.
+      # Gated to cube-access-staff-pii — personal contact.
       - name: personal_email
         description: Staff member's personal email address from ADP.
         sql: personal_email
         type: string
         public: true
 
-      # PII — contact.
+      # Gated to cube-access-staff-pii — personal contact.
       - name: personal_cell_phone
         description: Staff member's personal cell phone number from ADP.
         sql: personal_cell_phone
         type: string
         public: true
 
-      # PII — credential/identifier.
+      # Staff-directory identifier — visible to all cube-access-staff-data (internally public).
       - name: active_directory_username
         description: >-
           Staff member's Active Directory username (lowercased), used as a
@@ -107,7 +110,7 @@ cubes:
         type: string
         public: true
 
-      # PII — contact.
+      # Staff-directory identifier — visible to all cube-access-staff-data (internally public).
       - name: google_email
         description: Staff member's Google Workspace email address from LDAP.
         sql: google_email
