@@ -3,6 +3,14 @@ models:
     description: >-
       Focus attendance-completion records — one row per section per date marking
       that a teacher submitted attendance.
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns:
+              - course_period_id
+              - school_date
+          config:
+            severity: error
     columns:
       - name: id
         description: Primary key — Focus attendance-completed id.
@@ -29,7 +37,7 @@ models:
       - name: attendance_taken_same_day
         description: Y/N — whether attendance was submitted on the school date.
         data_type: string
-      - name: last_updated_at
+      - name: last_updated_date
         description: Source last-updated timestamp in Focus.
         data_type: timestamp
       - name: created_at
