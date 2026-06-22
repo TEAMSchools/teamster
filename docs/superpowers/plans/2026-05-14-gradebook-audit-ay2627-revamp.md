@@ -3856,3 +3856,120 @@ development-time references that are no longer current.
   git add -u
   git commit -m "docs: update gradebook audit reference doc for AY 2026-2027; trim skill"
   ```
+
+---
+
+## Task 9: Assignment validity filter for QTD count
+
+**(Post-merge — design and implementation TBD)**
+
+Stakeholders raised this requirement in the June 2026 HS all-hands. Currently
+`teacher_running_total_assign_by_cat` counts all entered assignments regardless
+of whether their scoring meets gradebook policy requirements. A teacher with a
+poorly-entered assignment still "has" it in their QTD count, suppressing flags
+that would otherwise fire. The fix: only count an assignment if it is "valid."
+
+### Background
+
+Gradebook audits run each Monday and check the previous school week. The
+`countif(a.duedate <= s.week_end_sunday)` window (added in this PR) correctly
+scopes the QTD count to completed weeks. The next improvement is scoping it to
+valid assignments only — those that meet gradebook policy requirements.
+
+### Validity definition
+
+An assignment is **invalid** (and must not count toward QTD) if ANY of the
+following are true:
+
+- Fewer than 90% of enrolled students have a score entered
+- 50% or more students taking the assignment are marked exempt
+- Any student score is null
+- Any student score exceeds the assignment's maximum point value
+- Any score on a summative (S-category) assignment is below 50%
+- Other grading policy violations per region and school level
+
+### Expected behavior
+
+Under the current model, a teacher with a poorly-entered assignment still "has"
+it in their QTD count, and 30+ individual student-score flags fire. Under the
+new model:
+
+- One flag fires at the assignment level: `assign_invalid_for_qtd_count`
+- The assignment does not count toward `teacher_running_total_assign_by_cat`
+- Teachers get an actionable checklist: fix the entry errors in PowerSchool, and
+  the assignment starts counting toward QTD
+
+### Implementation sketch
+
+- [ ] **Step 9.1: Add `is_valid_assignment` to
+      `int_powerschool__gradebook_assignments`**
+
+  Aggregate validity conditions from
+  `int_powerschool__gradebook_assignments_scores` into a single boolean per
+  `(sectionsdcid, assignmentid)`:
+
+  ```sql
+  countif(score.assign_null_score) = 0
+  and countif(score.score_entered) / nullif(count(*), 0) >= 0.9
+  and countif(score.is_exempt) / nullif(count(*), 0) < 0.5
+  and countif(score.assign_score_above_max) = 0
+  and countif(score.assign_s_score_less_50p) = 0
+  -- additional region/level policy conditions TBD
+  ```
+
+  Update the YAML to document the column and its derivation.
+
+- [ ] **Step 9.2: Update QTD `countif` in
+      `int_tableau__gradebook_audit_flags_calculations`**
+
+  In the `teacher_scaffold_assignment` branch:
+
+  ```sql
+  countif(a.duedate <= s.week_end_sunday and a.is_valid_assignment) over (
+      partition by s._dbt_source_project, s.sectionid, s.assignment_category_term
+  ) as teacher_running_total_assign_by_cat,
+  ```
+
+- [ ] **Step 9.3: Add `assign_invalid_for_qtd_count` flag**
+
+  In the `teacher_scaffold_assignment` branch of
+  `int_tableau__gradebook_audit_flags_calculations`, compute:
+
+  ```sql
+  not a.is_valid_assignment as assign_invalid_for_qtd_count,
+  ```
+
+  Add to the UNPIVOT list in `int_tableau__gradebook_audit_flags.sql`. Add to
+  the flags config sheet (`stg_google_sheets__gradebook_flags`) for applicable
+  regions and school levels.
+
+- [ ] **Step 9.4: Review score-flag consolidation**
+
+  Determine whether existing individual score-level flags (`assign_null_score`,
+  `assign_score_above_max`, etc.) should remain alongside the new
+  assignment-level flag, be consolidated, or be removed. Decision depends on
+  Tableau dashboard layout — coordinate with T&L stakeholders.
+
+- [ ] **Step 9.5: Build and verify**
+
+  ```bash
+  uv run dbt build \
+    --select \
+      int_powerschool__gradebook_assignments \
+      int_tableau__gradebook_audit_flags_calculations \
+      "int_tableau__gradebook_audit_flags+" \
+    --project-dir src/dbt/kipptaf \
+    --defer \
+    --state src/dbt/kipptaf/target/prod
+  ```
+
+- [ ] **Step 9.6: Commit**
+
+  ```bash
+  git add -u
+  git commit -m "feat(dbt): assignment validity filter for QTD count — refs #XXXX"
+  ```
+
+> ⚠️ **Implementation details TBD.** Exact validity conditions, flag naming
+> conventions, and consolidation with existing score flags to be finalized.
+> Requires coordination with T&L stakeholders and a Tableau dashboard update.

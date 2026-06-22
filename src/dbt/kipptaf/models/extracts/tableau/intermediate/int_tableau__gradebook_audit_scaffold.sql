@@ -71,6 +71,7 @@ select
     null as assignment_category_term,
     null as expectation,
     null as notes,
+    null as week_end_sunday,
 
     'teacher_scaffold_course' as scaffold_name,
 
@@ -155,6 +156,7 @@ select
     ge.assignment_category_term,
     ge.expectation,
     ge.notes,
+    ge.week_end_sunday,
 
     'teacher_scaffold_category' as scaffold_name,
 
@@ -245,6 +247,7 @@ select
     ge.assignment_category_term,
     ge.expectation,
     ge.notes,
+    ge.week_end_sunday,
 
     'teacher_scaffold_assignment' as scaffold_name,
 
@@ -335,6 +338,7 @@ select
     null as assignment_category_term,
     null as expectation,
     null as notes,
+    null as week_end_sunday,
 
     'student_scaffold_course' as scaffold_name,
 
@@ -422,6 +426,7 @@ select
     ge.assignment_category_term,
     ge.expectation,
     ge.notes,
+    ge.week_end_sunday,
 
     'student_scaffold_category' as scaffold_name,
 

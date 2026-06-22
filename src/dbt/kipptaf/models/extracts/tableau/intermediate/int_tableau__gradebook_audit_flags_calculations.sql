@@ -461,7 +461,7 @@ select
     false as qt_percent_grade_greater_100,
     false as qt_grade_70_comment_missing,
 
-    count(a.assignmentid) over (
+    countif(a.duedate <= s.week_end_sunday) over (
         partition by s._dbt_source_project, s.sectionid, s.assignment_category_term
     ) as teacher_running_total_assign_by_cat,
 

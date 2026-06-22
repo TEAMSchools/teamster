@@ -17,7 +17,8 @@ with
         from {{ ref("int_powerschool__calendar_week") }}
         where
             academic_year = {{ var("current_academic_year") }}
-            and week_start_monday <= current_date('{{ var("local_timezone") }}')
+            and week_start_monday
+            < date_trunc(current_date('{{ var("local_timezone") }}'), week(monday))
     ),
 
     current_week as (
