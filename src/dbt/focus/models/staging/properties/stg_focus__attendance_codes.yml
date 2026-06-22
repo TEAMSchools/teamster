@@ -1,0 +1,91 @@
+models:
+  - name: stg_focus__attendance_codes
+    description: >-
+      Focus attendance code definitions — one row per attendance code, scoped by
+      school year and school. Lookup for daily and period attendance marks.
+    columns:
+      - name: id
+        description: Primary key — Focus attendance code id.
+        data_type: int
+        data_tests:
+          - unique:
+              config:
+                severity: error
+          - not_null:
+              config:
+                severity: error
+      - name: syear
+        description: Focus school year (start year, e.g. 2025 = 2025-26).
+        data_type: int
+      - name: school_id
+        description: Focus school id the code belongs to.
+        data_type: int
+      - name: district_id
+        description: Focus district id.
+        data_type: int
+      - name: title
+        description: Full attendance code name.
+        data_type: string
+      - name: short_name
+        description: Abbreviated attendance code label.
+        data_type: string
+      - name: type
+        description: Attendance code type classification.
+        data_type: string
+      - name: state_code
+        description: State-reporting code mapped to this attendance code.
+        data_type: string
+      - name: default_code
+        description: Flag — whether this is the default code for its context.
+        data_type: string
+      - name: table_name
+        description: Legacy Focus internal grouping value.
+        data_type: numeric
+      - name: sort_order
+        description: Display sort order within the code list.
+        data_type: numeric
+      - name: is_daily_code
+        description: Y/N — whether the code applies to daily attendance.
+        data_type: string
+      - name: excused
+        description: Y/N — whether the code counts as an excused absence.
+        data_type: string
+      - name: tardy
+        description: Y/N — whether the code represents a tardy.
+        data_type: string
+      - name: discipline
+        description: Y/N — whether the code is discipline-related.
+        data_type: string
+      - name: not_in_class
+        description: Y/N — whether the student is counted as not in class.
+        data_type: string
+      - name: denies_credit
+        description: Y/N — whether the code denies course credit.
+        data_type: string
+      - name: chronic_absenteeism
+        description: Y/N — whether the code counts toward chronic absenteeism.
+        data_type: string
+      - name: truancy
+        description: Y/N — whether the code counts toward truancy.
+        data_type: string
+      - name: out_of_school
+        description: Y/N — whether the code represents an out-of-school absence.
+        data_type: string
+      - name: state_attendance_type
+        description: State-reporting attendance type for this code.
+        data_type: string
+      - name: color
+        description: UI display color for the code.
+        data_type: string
+      - name: sub
+        description: Legacy Focus sub-classification value.
+        data_type: string
+      - name: uuid
+        description: Focus global unique identifier for the row.
+        data_type: string
+      - name: created_at
+        description: Row creation timestamp in Focus.
+        data_type: timestamp
+      - name: updated_at
+        description: Row last-update timestamp in Focus.
+        data_type: timestamp
