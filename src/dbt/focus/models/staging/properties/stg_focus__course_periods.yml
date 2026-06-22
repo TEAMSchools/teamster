@@ -1,0 +1,234 @@
+models:
+  - name: stg_focus__course_periods
+    description: >-
+      Focus course periods (sections) — one row per scheduled section, scoped by
+      school year and school. Curated to the section's canonical definition:
+      section/course/period/marking-period keys, the lead and ten co-teacher
+      ids, room/seats, scheduling days, and the does_* flags, with the
+      currently-populated custom-field columns appended inline (aliased to their
+      slug). Unpopulated custom slots and the per-co-teacher attribute columns
+      are excluded. Select/multiple custom values remain as stored Focus option
+      codes — not decoded in this layer.
+    columns:
+      - name: course_period_id
+        description: Primary key — Focus course period (section) id.
+        data_type: int
+        data_tests:
+          - unique:
+              config:
+                severity: error
+          - not_null:
+              config:
+                severity: error
+      - name: syear
+        description: Focus school year (start year, FLDOE SYEAR).
+        data_type: int
+      - name: school_id
+        description: Focus school number (FLDOE SCHOOL_ID).
+        data_type: int
+      - name: course_id
+        description: Focus course id this section belongs to (FLDOE COURSE_ID).
+        data_type: int
+      - name: parent_id
+        description: Parent course period id for linked sections.
+        data_type: int
+      - name: rollover_id
+        description: Source course period id this rolled over from.
+        data_type: int
+      - name: period_id
+        description: Focus school period id the section meets in.
+        data_type: int
+      - name: end_period_id
+        description: Ending school period id for multi-period sections.
+        data_type: int
+      - name: marking_period_id
+        description: Focus marking period id (FLDOE MARKING_PERIOD_ID).
+        data_type: int
+      - name: teacher_id
+        description: Focus staff id of the lead teacher (FLDOE TEACHER_ID).
+        data_type: int
+      - name: co_teacher_id1
+        description: Co-teacher 1 staff id (FLDOE CO_TEACHER_ID1).
+        data_type: int
+      - name: co_teacher_id2
+        description: Co-teacher 2 staff id (FLDOE CO_TEACHER_ID2).
+        data_type: int
+      - name: co_teacher_id3
+        description: Co-teacher 3 staff id (FLDOE CO_TEACHER_ID3).
+        data_type: int
+      - name: co_teacher_id4
+        description: Co-teacher 4 staff id (FLDOE CO_TEACHER_ID4).
+        data_type: int
+      - name: co_teacher_id5
+        description: Co-teacher 5 staff id (FLDOE CO_TEACHER_ID5).
+        data_type: int
+      - name: co_teacher_id6
+        description: Co-teacher 6 staff id (FLDOE CO_TEACHER_ID6).
+        data_type: int
+      - name: co_teacher_id7
+        description: Co-teacher 7 staff id (FLDOE CO_TEACHER_ID7).
+        data_type: int
+      - name: co_teacher_id8
+        description: Co-teacher 8 staff id (FLDOE CO_TEACHER_ID8).
+        data_type: int
+      - name: co_teacher_id9
+        description: Co-teacher 9 staff id (FLDOE CO_TEACHER_ID9).
+        data_type: int
+      - name: co_teacher_id10
+        description: Co-teacher 10 staff id (FLDOE CO_TEACHER_ID10).
+        data_type: int
+      - name: calendar_id
+        description: Focus calendar id the section follows (FLDOE CALENDAR_ID).
+        data_type: int
+      - name: grade_scale_id
+        description: Grading scale id for the section (FLDOE GRADE_SCALE_ID).
+        data_type: int
+      - name: standards_grade_scale_id
+        description: Standards grading scale id for the section.
+        data_type: int
+      - name: grade_posting_scheme_id
+        description: Grade posting scheme id for the section.
+        data_type: int
+      - name: bell_schedule_id
+        description: Bell schedule id the section is tied to.
+        data_type: int
+      - name: team_id
+        description: Team id the section belongs to.
+        data_type: int
+      - name: location_id
+        description: Location id the section meets at.
+        data_type: int
+      - name: title
+        description: Full section title.
+        data_type: string
+      - name: short_name
+        description: Section number / abbreviated label (FLDOE SHORT_NAME).
+        data_type: string
+      - name: custom_title
+        description: Custom display title for the section.
+        data_type: string
+      - name: room
+        description: Room assigned to the section (FLDOE ROOM).
+        data_type: string
+      - name: display_room
+        description: Display label for the section's room.
+        data_type: string
+      - name: days
+        description: Days of the week the section meets (FLDOE DAYS).
+        data_type: string
+      - name: rotation_days
+        description: Rotation days the section meets.
+        data_type: string
+      - name: grade_levels
+        description: Grade levels the section serves.
+        data_type: string
+      - name: course_weight
+        description: Course weight label applied to the section.
+        data_type: string
+      - name: mp
+        description: Marking period scope for the section.
+        data_type: string
+      - name: course_history_term
+        description: Course history term for the section.
+        data_type: string
+      - name: total_seats
+        description: Total seats in the section (FLDOE TOTAL_SEATS).
+        data_type: numeric
+      - name: filled_seats
+        description: Currently filled seats in the section.
+        data_type: numeric
+      - name: sped_seats
+        description: SPED seats reserved in the section.
+        data_type: numeric
+      - name: ell_seats
+        description: ELL seats reserved in the section.
+        data_type: int
+      - name: credits
+        description: Credits awarded by the section.
+        data_type: string
+      - name: availability
+        description: Availability value for the section.
+        data_type: numeric
+      - name: gender_restriction
+        description:
+          Gender restriction on the section (FLDOE GENDER_RESTRICTION).
+        data_type: string
+      - name: house_restriction
+        description: House restriction on the section.
+        data_type: string
+      - name: does_attendance
+        description:
+          Y/N — whether the section takes attendance (FLDOE DOES_ATTENDANCE).
+        data_type: string
+      - name: does_grades
+        description: Y/N — whether the section is graded (FLDOE DOES_GRADES).
+        data_type: string
+      - name: does_gpa
+        description:
+          Y/N — whether the section counts toward GPA (FLDOE DOES_GPA).
+        data_type: string
+      - name: active
+        description: Y/N — whether the section is active (FLDOE ACTIVE).
+        data_type: string
+      - name: imported
+        description: Y/N — whether the row originated from an import.
+        data_type: string
+      - name: uuid
+        description: Focus global unique identifier for the row.
+        data_type: string
+      - name: created_at
+        description: Row creation timestamp in Focus.
+        data_type: timestamp
+      - name: updated_at
+        description: Row last-update timestamp in Focus.
+        data_type: timestamp
+      - name: custom_2
+        description: >-
+          Focus generic custom slot; label not defined in the extracted
+          custom_fields catalog.
+        data_type: string
+      - name: custom_4
+        description: >-
+          Focus generic custom slot; label not defined in the extracted
+          custom_fields catalog.
+        data_type: string
+      - name: custom_6
+        description: >-
+          Focus generic custom slot; label not defined in the extracted
+          custom_fields catalog.
+        data_type: string
+      - name: custom_25
+        description: >-
+          Focus generic custom slot; label not defined in the extracted
+          custom_fields catalog.
+        data_type: string
+      - name: custom_22
+        description: >-
+          Focus generic custom slot; label not defined in the extracted
+          custom_fields catalog.
+        data_type: string
+      - name: custom_33
+        description: >-
+          Focus generic custom slot; label not defined in the extracted
+          custom_fields catalog.
+        data_type: string
+      - name: custom_34
+        description: >-
+          Focus generic custom slot; label not defined in the extracted
+          custom_fields catalog.
+        data_type: string
+      - name: custom_5
+        description: >-
+          Focus generic custom slot; label not defined in the extracted
+          custom_fields catalog.
+        data_type: string
+      - name: custom_28
+        description: >-
+          Focus generic custom slot; label not defined in the extracted
+          custom_fields catalog.
+        data_type: string
+      - name: custom_3
+        description: >-
+          Focus generic custom slot; label not defined in the extracted
+          custom_fields catalog.
+        data_type: string
