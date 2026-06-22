@@ -804,6 +804,18 @@ and the UNPIVOT list in `int_tableau__gradebook_audit_flags.sql`.
 | `qt_formative_grade_missing`                     | `int_tableau__gradebook_audit_student_scaffold`    | Miami-only dead code — in 2.4      |
 | `qt_summative_grade_missing`                     | `int_tableau__gradebook_audit_student_scaffold`    | Miami-only dead code — in 2.4      |
 
+> **`qt_es_comment_missing` — moved to `rpt_tableau__gradebook_es_comments`.**
+> This flag is not in scope for
+> `int_tableau__gradebook_audit_flags_calculations` or the gradebook audit view.
+> ES comment logic lives entirely in the ES comments report.
+
+> **`w/h/f/s_percent_graded_min_not_met` and
+> `w/h/f/s_expected_assign_count_not_met` — deferred, pending new "assignment
+> will not count if" logic.** These 8 class-category flags are blocked on a
+> design decision about when an assignment should be excluded from counts. No ES
+> flags are in scope for the gradebook audit view; ES audit logic lives in
+> `rpt_tableau__gradebook_es_comments`.
+
 ---
 
 ### 6a: `int_tableau__gradebook_audit_teacher_scaffold.sql` — quarter-grain redesign

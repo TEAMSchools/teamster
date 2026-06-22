@@ -223,3 +223,5 @@ models:
         data_type: boolean
       - name: teacher_running_total_assign_by_cat
         data_type: int64
+      - name: percent_graded_min_not_met
+        data_type: boolean

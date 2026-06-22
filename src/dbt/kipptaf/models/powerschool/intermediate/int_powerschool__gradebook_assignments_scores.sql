@@ -31,10 +31,6 @@ with
                 then false
                 when a.iscountedinfinalgrade = 0
                 then false
-                when
-                    current_date('{{ var("local_timezone") }}')
-                    <= date_add(a.duedate, interval 7 day)
-                then false
                 else true
             end as is_expected,
 
