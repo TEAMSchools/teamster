@@ -2,6 +2,7 @@ select
     ev.studentid,
     ev.student_number,
     ev.schoolid,
+    ev.entrydate,
     ev.track as student_track,
     ev.fteid,
     ev.dflt_att_mode_code,

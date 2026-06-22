@@ -18,6 +18,30 @@ A Focus custom field's allowed value codes live in
 Focus expects, `label` is the human name. Use this to build Finalsite→Focus
 value crosswalks.
 
+**Custom-field storage.** Values live inline on the entity table's wide
+`custom_NNN` columns (e.g. `students.custom_100000105`), NOT in `custom_fields`
+— that is the _definition_ catalog. Join definition→entity column by
+`custom_fields.column_name` + `source_class` (`SISStudent`→students,
+`FocusUser`→users, `SISSchool`→schools). `title` is the readable name;
+`select`/`multiple` values are codes (decode via the crosswalk above);
+`log`-type values live in `custom_field_log_entries`; `computed`/`holder` are
+not stored. `course_periods`/`master_courses`/`student_enrollment` use generic
+positional `custom_N` / `custom_field_N` slots that are NOT in `custom_fields`
+(labels live in Focus config, not extracted).
+
+## Source data conventions
+
+**Soft-delete.** Focus `deleted INT64` is `NULL` for live rows and `1` for
+deleted — **never `0`**. Filter `where deleted is null` in staging (`= 0`
+matches nothing) and omit the column. Present on `students`, `users`, `schools`,
+`address`, `student_enrollment_codes`, the `custom_field*` tables; absent on
+others (e.g. `custom_field_log_entries`). `inactive`/`active`/`archived` are raw
+attributes, not delete sentinels.
+
+**Primary keys.** Most tables PK on `id`; some on `<entity>_id` (`address_id`,
+`course_id`, `course_period_id`, `marking_period_id`, `period_id`,
+students→`student_id`, users→`profile_id`).
+
 ## Model Structure
 
 ```text
