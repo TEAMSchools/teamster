@@ -41,11 +41,11 @@ back to `gradebook_and_gpa_dashboard` and note the rename is pending.
 
 Current `depends_on` list (update if the exposure changes):
 
-- `rpt_tableau__assignment_checks`
 - `rpt_tableau__gradebook_audit`
 - `rpt_tableau__gradebook_es_comments`
 - `rpt_tableau__gradebook_ms_hs_comments`
 
+`rpt_tableau__assignment_checks` was deprecated in AY 2026-2027 (PR #4132).
 There is also a disabled exposure `gradebook_audit_teacher_report` — mention it
 only if the user asks about disabled or archived workbooks.
 
@@ -261,8 +261,8 @@ intentional or a typo.
    writing any SQL.
 2. **SQL second:** add the boolean column to the source model (see reference doc
    flag inventory for which model owns each flag type), add it to the UNPIVOT
-   list in `int_tableau__gradebook_audit_flags.sql`, and update the properties
-   YAML.
+   list in `int_tableau__gradebook_audit_flags_calculations.sql`, and update the
+   properties YAML.
 3. Build only the modified model. Verify the flag appears in
    `rpt_tableau__gradebook_audit`.
 
@@ -274,7 +274,7 @@ intentional or a typo.
    Stage and rebuild. The flag stops firing immediately — no SQL needed yet.
 2. **SQL cleanup (separate commit):** remove the boolean column from the source
    model, remove it from the UNPIVOT list in
-   `int_tableau__gradebook_audit_flags.sql`, and update the YAML.
+   `int_tableau__gradebook_audit_flags_calculations.sql`, and update the YAML.
 
 ---
 
@@ -282,14 +282,16 @@ intentional or a typo.
 
 1. Add rows to `stg_google_sheets__gradebook_flags` mirroring an existing region
    at the same school level. Stage and rebuild.
-2. For expectations data: add rows to
-   `stg_google_sheets__gradebook_expectations_assignments` (legacy) OR ensure
-   the PS-native `int_powerschool__u_expectations[_unpivot]` covers the region
-   (requires the U_EXPECTATIONS plugin deployed to that PS instance — scripts at
-   [TEAMSchools/ps-plugins](https://github.com/TEAMSchools/ps-plugins)).
+2. For expectations data: ensure the PS-native
+   `int_powerschool__u_expectations_qtd_unpivot` covers the region. This
+   requires the U_EXPECTATIONS plugin deployed to that PS instance — scripts at
+   [TEAMSchools/ps-plugins](https://github.com/TEAMSchools/ps-plugins). The
+   Google Sheets expectations source
+   (`stg_google_sheets__gradebook_expectations_assignments`) was deprecated in
+   AY 2026-2027.
 3. No SQL changes needed if the region's PS data flows through
-   `base_powerschool__sections` — verify by checking sections appear in the
-   teacher scaffold after the sheet changes.
+   `int_extracts__course_schedule_by_term` — verify by checking sections appear
+   in `int_tableau__gradebook_audit_scaffold` after the sheet changes.
 
 ---
 
@@ -373,13 +375,12 @@ Check in order:
    matching allowlist row exists.
 2. **Boolean `true` in the source model?** Find which model computes the flag
    (reference doc flag inventory) and query it directly.
-3. **Section in the scaffold?** Check
-   `int_tableau__gradebook_audit_teacher_scaffold` for the section/quarter
-   combination. Two silent exclusion rules apply to both scaffolds:
-   - `sections_no_of_students != 0` — sections with zero enrolled students are
-     excluded entirely; a section that briefly had students but now shows zero
-     will disappear from the scaffold and produce no flags
-   - `_dbt_source_project != 'kippmiami'` — Miami is excluded at source
+3. **Section in the scaffold?** Check `int_tableau__gradebook_audit_scaffold`
+   for the section/quarter combination. Two silent exclusion rules apply:
+   - `_dbt_source_project != 'kippmiami'` — Miami is excluded at source (AY
+     2026-2027 onward)
+   - ES sections are excluded from teacher/assignment branches (but ES students
+     appear in student branches for EOQ flags)
 4. ~~**Active exception row?**~~ **Exceptions were deprecated for SY
    2026-2027.** `stg_google_sheets__gradebook_exceptions` is disabled and all
    exception JOINs were removed from the pipeline in this refactor. Do not check

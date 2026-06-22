@@ -29,6 +29,24 @@ The audit operates at multiple grains simultaneously:
 - **End-of-quarter (EOQ)** — during a window around the last in-session day of
   each quarter, are comments, conduct codes, and final grades correctly entered?
 
+### Dashboard coverage (AY 2026-2027)
+
+| Region   | School level | Coverage depth                              | Notes                                                |
+| -------- | ------------ | ------------------------------------------- | ---------------------------------------------------- |
+| Camden   | MS, HS       | Full audit (all applicable flags)           |                                                      |
+| Camden   | ES           | EOQ comments only (`qt_es_comment_missing`) | ES schools do not enter assignments in PS gradebook  |
+| Newark   | MS, HS       | Full audit (all applicable flags)           |                                                      |
+| Newark   | ES           | EOQ comments only (`qt_es_comment_missing`) | ES schools do not enter assignments in PS gradebook  |
+| Paterson | MS           | Full audit (mirrors Newark MS flags)        | Added AY 2026-2027; GradeBook plugin required        |
+| Paterson | ES           | EOQ comments only (`qt_es_comment_missing`) | Added AY 2026-2027                                   |
+| Miami    | n/a          | Removed                                     | Moved to Focus gradebook; excluded at scaffold level |
+
+!!! note "Paterson GradeBook plugin" Paterson's PowerSchool instance requires
+the GradeBook plugin to populate `int_powerschool__category_grades` and
+`int_powerschool__gradebook_assignments`. Until the plugin is deployed, Paterson
+teacher rows will have null `category_quarter_percent_grade` and zero assignment
+counts. Tracked: [#3908](https://github.com/TEAMSchools/teamster/issues/3908)
+
 ### Dashboard coverage (AY 2025-2026)
 
 | Region   | School level | Coverage depth                              | Notes                                               |
@@ -37,8 +55,8 @@ The audit operates at multiple grains simultaneously:
 | Camden   | ES           | EOQ comments only (`qt_es_comment_missing`) | ES schools do not enter assignments in PS gradebook |
 | Newark   | MS, HS       | Full audit (all applicable flags)           |                                                     |
 | Newark   | ES           | EOQ comments only (`qt_es_comment_missing`) | ES schools do not enter assignments in PS gradebook |
-| Miami    | ES, MS       | Full audit (all applicable flags)           | **Removing AY 2026-2027** - moving to Focus         |
-| Paterson | n/a          | Not on dashboard this year                  | **Adding AY 2026-2027**                             |
+| Miami    | ES, MS       | Full audit (all applicable flags)           | Removed AY 2026-2027 — moved to Focus               |
+| Paterson | n/a          | Not on dashboard                            | Added AY 2026-2027                                  |
 
 ## Grading policy overview
 
@@ -58,7 +76,101 @@ Summative scores for HS (non-AP) must fall on the conversion chart:
 `50, 55, 58, 60, 65, 68, 70, 75, 78, 80, 85, 88, 93, 97, 100`. AP courses are
 excluded from conversion chart enforcement.
 
-## Current data model
+## AY 2026-2027 data model
+
+### What changed from AY 2025-2026
+
+**Regions:**
+
+- Miami removed — gradebook moved to Focus; excluded in scaffold via
+  `_dbt_source_project != 'kippmiami'`
+- Paterson added — MS mirrors Newark MS flags; ES has EOQ comments only
+
+**Architecture (see [lineage diagram below](#ay-2025-2026-data-model)):**
+
+The AY 2026-2027 pipeline collapsed the old multi-model rollup chain into two
+models:
+
+| Old model (AY 2025-2026)                                | New model (AY 2026-2027)                                    |
+| ------------------------------------------------------- | ----------------------------------------------------------- |
+| `int_tableau__gradebook_audit_teacher_scaffold`         | `int_tableau__gradebook_audit_scaffold` (branch 1–3)        |
+| `int_tableau__gradebook_audit_student_scaffold`         | `int_tableau__gradebook_audit_scaffold` (branch 4–5)        |
+| `int_tableau__gradebook_audit_assignments_teacher`      | Inline in `int_tableau__gradebook_audit_flags_calculations` |
+| `int_tableau__gradebook_audit_assignments_student`      | Inline in `int_tableau__gradebook_audit_flags_calculations` |
+| `int_tableau__gradebook_audit_categories_teacher`       | Inline in `int_tableau__gradebook_audit_flags_calculations` |
+| `int_tableau__gradebook_audit_flags`                    | `int_tableau__gradebook_audit_flags_calculations`           |
+| `stg_google_sheets__gradebook_expectations_assignments` | `int_powerschool__u_expectations_qtd_unpivot`               |
+| `stg_google_sheets__gradebook_exceptions`               | Deprecated — all exception joins removed                    |
+
+**Assignment count (QTD):** `teacher_running_total_assign_by_cat` now counts
+only assignments with `duedate <= week_end_sunday` (the Sunday ending the most
+recently completed school week) rather than all assignments in the quarter. This
+gives a true quarter-to-date count as of the last completed school week, aligned
+with the Monday audit cadence.
+
+**Deprecated flags** (removed from `stg_google_sheets__gradebook_flags` for AY
+2026; boolean columns remain in SQL for future years):
+
+- `w_grade_inflation`
+- `qt_student_is_ada_80_plus_gpa_less_2`
+- `qt_teacher_s_total_greater_200` / `qt_teacher_s_total_less_200`
+- `assign_s_hs_score_not_conversion_chart_options`
+- `assign_s_ms_score_not_conversion_chart_options`
+
+**Summative max score flag** (`assign_s_missing_score_not_5` for MS) — now only
+active for MS; `assign_s_hs_score_less_50p` handles HS separately. Both flags
+remain but apply to distinct school levels.
+
+### New scaffold: `int_tableau__gradebook_audit_scaffold`
+
+Five-branch `UNION ALL`. Each branch is filtered by `scaffold_name` in
+downstream `int_tableau__gradebook_audit_flags_calculations`:
+
+| Branch | `scaffold_name`               | Has students? | Has category? | Source                                                |
+| ------ | ----------------------------- | ------------- | ------------- | ----------------------------------------------------- |
+| 1      | `teacher_scaffold_course`     | No            | No            | `int_extracts__course_schedule_by_term`               |
+| 2      | `teacher_scaffold_category`   | No            | Yes           | above + `int_powerschool__u_expectations_qtd_unpivot` |
+| 3      | `teacher_scaffold_assignment` | No            | Yes           | above + `int_powerschool__gradebook_assignments`      |
+| 4      | `student_scaffold_course`     | Yes           | No            | above + `int_extracts__student_enrollments`           |
+| 5      | `student_scaffold_category`   | Yes           | Yes           | above + `int_powerschool__category_grades`            |
+
+All branches filter:
+
+- `academic_year = current_academic_year`
+- `school_level_alt != 'ES'` (ES rows excluded from teacher/assignment branches;
+  ES students included in student branches for EOQ flags)
+- `_dbt_source_project != 'kippmiami'`
+
+The `week_end_sunday` column (from
+`int_powerschool__u_expectations_qtd_unpivot`) is populated on branches 2, 3,
+and 5; null on branches 1 and 4.
+
+### Expectations source: `int_powerschool__u_expectations_qtd_unpivot`
+
+Replaces `stg_google_sheets__gradebook_expectations_assignments`. Reads the
+PowerSchool `U_EXPECTATIONS` plugin table, which stores teacher-entered
+assignment count expectations per category per week. One row per
+`region × school_level × academic_year × quarter × week_start_monday`.
+
+`week_end_sunday` is derived as the Sunday ending the most recently completed
+school week (i.e.,
+`week_start_monday < date_trunc(current_date, week(monday))`). This value
+propagates through the scaffold and is used as the QTD assignment count cutoff
+in `int_tableau__gradebook_audit_flags_calculations`.
+
+### Flags and calculations: `int_tableau__gradebook_audit_flags_calculations`
+
+Direct source for `rpt_tableau__gradebook_audit` (replaces the old flags
+assembly model). Five UNION ALL branches, each filtered by `scaffold_name`. All
+flag boolean columns are computed inline rather than via separate rollup models,
+and the exceptions joins are removed entirely.
+
+The branch structure, flag groupings, and final extract join logic remain the
+same as AY 2025-2026 — only the source models changed.
+
+---
+
+## AY 2025-2026 data model
 
 Lineage diagram for `rpt_tableau__gradebook_audit`:
 
@@ -994,8 +1106,16 @@ Tracking issue: [#3908](https://github.com/TEAMSchools/teamster/issues/3908)
 
 ---
 
-## Upcoming changes and open questions
+## Open questions and future work
+
+- **6h.8 — exposure split**: `gradebook_audit` and `gradebook_gpa` Tableau
+  workbooks may need separate dbt exposures; pending LSID confirmation.
+- **Task 8 — anchor-row redesign**: `rpt_tableau__gradebook_audit` anchor-row
+  logic redesign is in scope for this PR but implementation is TBD.
+- **Task 9 — assignment validity filter**: A pre-filter that marks an assignment
+  as "valid" (≥ 90% scored, < 50% exempt, no null scores, no scores above max,
+  no summative < 50%) before counting it toward QTD. Design documented in the
+  [implementation plan](../superpowers/plans/2026-05-14-gradebook-audit-ay2627-revamp.md).
 
 See [GitHub issue #3908](https://github.com/TEAMSchools/teamster/issues/3908)
-for planned AY 2026-2027 work (Add Paterson, Remove Miami ES/MS) and open
-questions.
+for the full AY 2026-2027 tracking issue.
