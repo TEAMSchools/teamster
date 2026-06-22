@@ -1,0 +1,40 @@
+models:
+  - name: stg_focus__attendance_completed
+    description: >-
+      Focus attendance-completion records — one row per section per date marking
+      that a teacher submitted attendance.
+    columns:
+      - name: id
+        description: Primary key — Focus attendance-completed id.
+        data_type: int
+        data_tests:
+          - unique:
+              config:
+                severity: error
+          - not_null:
+              config:
+                severity: error
+      - name: staff_id
+        description: Focus staff id of the teacher who took attendance.
+        data_type: int
+      - name: period_id
+        description: Focus school period id.
+        data_type: int
+      - name: course_period_id
+        description: Focus course-period (section) id.
+        data_type: int
+      - name: school_date
+        description: Calendar date the attendance was taken for.
+        data_type: date
+      - name: attendance_taken_same_day
+        description: Y/N — whether attendance was submitted on the school date.
+        data_type: string
+      - name: last_updated_date
+        description: Source last-updated timestamp.
+        data_type: timestamp
+      - name: created_at
+        description: Row creation timestamp in Focus.
+        data_type: timestamp
+      - name: updated_at
+        description: Row last-update timestamp in Focus.
+        data_type: timestamp
