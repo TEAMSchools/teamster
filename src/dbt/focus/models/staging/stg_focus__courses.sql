@@ -34,8 +34,8 @@ select
     created_at,
     updated_at,
 
-    custom_4 as custom_4,
-    custom_2 as custom_2,
-    custom_3 as custom_3,
-    custom_10 as custom_10,
+    custom_4,
+    custom_2,
+    custom_3,
+    custom_10,
 from {{ source("focus", "courses") }}

@@ -10,5 +10,5 @@ select
     created_at,
     updated_at,
 
-    custom_1 as custom_1,
+    custom_1,
 from {{ source("focus", "course_subjects") }}
