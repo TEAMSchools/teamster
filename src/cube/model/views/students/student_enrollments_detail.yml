@@ -1,40 +1,38 @@
 views:
   - name: student_enrollments_detail
     description: >-
-      Student enrollment detail with enrollment-grain ELL, IEP, and meal
-      eligibility status. One row per enrollment stint including graduate
-      placeholder stints.
+      Row-level point-in-time student enrollment drill-down — one row per
+      enrolled student-day. Use for roster exports and questions like "who was
+      enrolled on October 1?" (pin a single date by filtering dates_date_day).
+      Same count_students measure as the summary view, plus the
+      student-identifier members and the enrollment_date time dimension.
 
-      Use count_students (count_distinct on student_enrollment_key) for
-      enrollment headcounts. Status fields (is_ell, is_iep, is_meal_eligible,
-      etc.) reflect the enrollment-grain aggregate — not point-in-time within
-      the stint. Point-in-time status queries should use the attendance views.
+      count_students is point-in-time (as of the most recent in-session day in
+      the query, or the pinned date). Detail-view count_students for a fixed
+      date equals the summary view's for the same filter.
 
     cubes:
       - join_path: student_enrollments
         includes:
           - count_students
+          - student_attendance_daily_key
           - student_enrollment_key
-          - academic_year
-          - grade_level
-          - graduation_year
-          - entry_date
-          - exit_date
-          - is_retained_year
+          - is_current_record
+          - is_month_end_record
+          - is_week_end_record
+          - is_latest_record
 
-      - join_path: student_enrollments.student_enrollment_status
-        prefix: false
+      - join_path: student_enrollments.dates
+        prefix: true
         includes:
-          - is_ell
-          - is_iep
-          - iep_classification
-          - special_education_code
-          - special_education_name
-          - special_education_placement
-          - is_meal_eligible
-          - meal_eligibility
+          - date_day
+          - month_number
+          - month_name
+          - quarter_number
+          - academic_year
+          - school_week_start_date
 
-      - join_path: student_enrollments.locations
+      - join_path: student_enrollments.student_school_enrollments.locations
         prefix: true
         includes:
           - location_name
@@ -43,13 +41,13 @@ views:
           - campus
           - city
 
-      - join_path: student_enrollments.locations.regions
+      - join_path: student_enrollments.student_school_enrollments.locations.regions
         prefix: true
         includes:
           - region_name
           - state
 
-      - join_path: student_enrollments.students
+      - join_path: student_enrollments.student_school_enrollments.students
         prefix: false
         includes:
           - student_key
@@ -62,16 +60,33 @@ views:
           - is_gifted
           - enrollment_status
 
+      - join_path: student_enrollments.student_school_enrollments
+        prefix: false
+        includes:
+          - grade_level
+          - graduation_year
+          - is_retained_year
+
+      - join_path: student_enrollments.student_school_enrollments.student_enrollment_status
+        prefix: false
+        includes:
+          - is_ell
+          - is_iep
+          - iep_classification
+          - special_education_code
+          - special_education_name
+          - special_education_placement
+          - is_meal_eligible
+          - meal_eligibility
+
     meta:
       folders:
         - name: Enrollment
           members:
+            - student_enrollment_daily_key
             - student_enrollment_key
-            - academic_year
             - grade_level
             - graduation_year
-            - entry_date
-            - exit_date
             - is_retained_year
         - name: Status
           members:
@@ -83,6 +98,14 @@ views:
             - special_education_placement
             - is_meal_eligible
             - meal_eligibility
+        - name: Date
+          members:
+            - dates_date_day
+            - dates_month_number
+            - dates_month_name
+            - dates_quarter_number
+            - dates_academic_year
+            - dates_school_week_start_date
         - name: Location
           members:
             - locations_location_name
@@ -103,6 +126,12 @@ views:
             - race
             - is_gifted
             - enrollment_status
+        - name: Filter
+          members:
+            - is_current_record
+            - is_month_end_record
+            - is_week_end_record
+            - is_latest_record
 
     access_policy:
       - group: cube-access-student-data
@@ -113,8 +142,6 @@ views:
             - birth_date
             - lea_student_identifier
             - state_student_identifier
-            - district_student_identifier
-            - salesforce_contact_id
       - group: cube-access-student-pii
         member_level:
           includes: "*"

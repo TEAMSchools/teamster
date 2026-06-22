@@ -87,9 +87,17 @@ select
             date_field="n.enrollment_begin", start_month=7, year_source="start"
         )
     }} as year__c,
+
+    /* Audit-only helper columns — delete before Salesforce upload. */
+    r.lastfirst as alum_name,
+    r.contact_advising_provider,
+    r.ktc_status,
+    a.`name` as school_name,
 from term_with_parent as n
 left join
     {{ ref("stg_kippadb__term") }} as t
     on n.enrollment_id = t.enrollment
     and n.enrollment_begin = t.term_start_date
+left join {{ ref("int_kippadb__roster") }} as r on n.contact_id = r.contact_id
+left join {{ ref("stg_kippadb__account") }} as a on n.account_id = a.id
 where t.id is null

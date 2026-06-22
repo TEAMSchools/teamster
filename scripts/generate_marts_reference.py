@@ -100,6 +100,11 @@ def parse_fk_edges(yaml_path: Path) -> list[FkEdge]:
     Column-level edges are emitted first (in column order), followed by
     model-level edges (in constraint order, then column order within each
     constraint).  Non-foreign-key constraints are ignored in both locations.
+
+    FK edges come only from literal ``foreign_key`` constraints — never inferred
+    from ``relationships`` data tests.  Every mart (views and table-materialized
+    alike) declares its FKs as constraints, so the constraint blocks are the
+    single source of truth for the diagram.
     """
     doc = yaml.safe_load(yaml_path.read_text(encoding="utf-8")) or {}
     edges: list[FkEdge] = []

@@ -127,10 +127,12 @@ dbt CLI runs locally for Claude: `DBT_PROFILES_DIR` (repo `.dbt`) + ADC →
 `dbt debug` / `build` / `run-operation --target staging` connect with no
 1Password (BigQuery uses ADC, not the 1Password bootstrap). `--target prod` runs
 (`dbt build` / `run`) are blocked by the auto-mode classifier as production
-deploys even with verbal approval — hand prod runs to the user.
-`stage_external_sources --target staging` with `ext_full_refresh: true` is also
-classifier-blocked (drops/recreates shared `zz_stg` tables) — needs direct user
-authorization in the immediately-preceding turn, else hand off.
+deploys even with verbal approval — hand prod runs to the user. `dbt compile` /
+`parse --target prod` are NOT blocked (no warehouse write) — use them to
+validate model SQL/refs locally. `stage_external_sources --target staging` with
+`ext_full_refresh: true` is also classifier-blocked (drops/recreates shared
+`zz_stg` tables) — needs direct user authorization in the immediately-preceding
+turn, else hand off.
 
 `stage_external_sources --args "select: ..."` takes a
 `<source_name>.<table_name>` selector — not project-qualified. The
@@ -185,12 +187,18 @@ Two inline patterns (see spec for details):
 ## kipptaf source consumers of district columns
 
 When adding a column or changing values (hash recomposition, restructure) in a
-district intermediate consumed by kipptaf via `source()`, ship in two PRs:
-district first, wait for Dagster to materialize prod, then kipptaf. The kipptaf
-source resolves to prod for `target=staging` (dbt Cloud CI), so coupling fails
-CI deterministically. Kipptaf-level test tightenings (e.g. restoring
-`severity: error` on a mart PK that depended on the upstream value change)
-belong in the follow-up PR.
+district model consumed by kipptaf via `source()`, ship in two PRs: district
+first, wait for Dagster to materialize prod, then kipptaf. kipptaf
+`sources-kipp*` resolve to the `zz_stg_*` staging copies for `target=staging`
+(dbt Cloud CI), NOT prod — and a district prod merge does NOT refresh those
+copies, so kipptaf CI keeps reading the stale `zz_stg_*` table (missing the new
+column) and fails deterministically. Refresh it before/with the kipptaf PR:
+`dbt clone --select <model> --target staging --state src/dbt/<district>/target/prod --full-refresh --project-dir src/dbt/<district>`
+per district (metadata-cheap when the prod relation is a TABLE; needs direct
+user authorization — recreates shared `zz_stg_*` tables), then trigger a fresh
+CI `dbt build` (not `dbt retry`, which replays stale compiled SQL).
+Kipptaf-level test tightenings (e.g. restoring `severity: error` on a mart PK
+that depended on the upstream value change) belong in the follow-up PR.
 
 Alternative single-PR pattern (CI schema branching + cross-project clone): see
 `src/dbt/kipptaf/CLAUDE.md` → "Single-PR cross-project workflow".

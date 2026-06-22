@@ -216,6 +216,11 @@ file; domain specifics live in the nearest subdirectory CLAUDE.md.
 - **Markdown headings**: increment by one level (markdownlint MD001). `#` title
   goes directly to `##` — never jump to `###`.
 
+- **Backtick identifiers in markdown prose**: trunk-fmt reads unbackticked
+  `snake_case` / `glob_*` tokens as emphasis and mangles them (`attendance_day`
+  → `attendance*day`). Wrap model/table/column names in backticks in docs,
+  specs, and plans.
+
 - **Nested triple-backticks in markdown**: when a fenced block contains a
   heredoc with its own ``` examples, promote the outer fence to 4-backticks so
   trunk-fmt doesn't mangle the structure.
@@ -375,6 +380,9 @@ the allowlist.
   (e.g. `<role>`, `<col>`) — **even inside inline backticks**. Use
   `{placeholder}` braces or a fenced code block (fenced blocks preserve `<`,
   `<=`, `>=`). Read the stored body back and verify after writing.
+- `mcp__github__pull_request_review_write` `method=create` requires the FULL
+  40-char `commitID` — an abbreviated SHA fails with "Could not coerce value ...
+  to GitObjectID".
 - `gh issue develop` — linked branch creation; `mcp__github__create_branch` does
   not link branches to issues.
 - `gh project item-edit --id <ITEM_ID> --project-id <PROJECT_ID> --field-id <FIELD_ID> --single-select-option-id <OPTION_ID>`
