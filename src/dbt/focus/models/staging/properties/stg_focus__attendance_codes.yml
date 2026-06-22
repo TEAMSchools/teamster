@@ -39,7 +39,9 @@ models:
         description: Flag — whether this is the default code for its context.
         data_type: string
       - name: table_name
-        description: Legacy Focus internal grouping value.
+        description: >-
+          Legacy Focus internal grouping value. Lands as NUMERIC from the
+          PostgreSQL source via dlt despite the name; reads as an integer code.
         data_type: numeric
       - name: sort_order
         description: Display sort order within the code list.

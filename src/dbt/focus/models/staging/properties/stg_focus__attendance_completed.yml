@@ -29,8 +29,8 @@ models:
       - name: attendance_taken_same_day
         description: Y/N — whether attendance was submitted on the school date.
         data_type: string
-      - name: last_updated_date
-        description: Source last-updated timestamp.
+      - name: last_updated_at
+        description: Source last-updated timestamp in Focus.
         data_type: timestamp
       - name: created_at
         description: Row creation timestamp in Focus.

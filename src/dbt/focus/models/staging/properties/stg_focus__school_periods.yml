@@ -43,7 +43,10 @@ models:
         description: Y/N — whether the period is required when scheduling.
         data_type: string
       - name: conflicts_with
-        description: Period ids this period conflicts with for scheduling.
+        description: >-
+          Period ids this period conflicts with for scheduling. Currently NULL
+          for all rows in the Focus source; storage format is unconfirmed until
+          the column populates.
         data_type: string
       - name: sort_order
         description: Display sort order.

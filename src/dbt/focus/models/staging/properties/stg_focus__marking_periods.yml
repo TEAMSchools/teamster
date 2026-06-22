@@ -2,7 +2,10 @@ models:
   - name: stg_focus__marking_periods
     description: >-
       Focus marking periods (terms) — one row per marking period, including the
-      term hierarchy (year/semester/quarter/progress) and posting windows.
+      term hierarchy (year/semester/quarter/progress) and posting windows. The
+      three posting-window end columns (post_end_date, stand_post_end_date,
+      grade12_post_end_date) are TIMESTAMP in the Focus source while their start
+      counterparts are DATE.
     columns:
       - name: marking_period_id
         description: Primary key — Focus marking period id.
@@ -33,7 +36,7 @@ models:
         description: Abbreviated marking period label.
         data_type: string
       - name: type
-        description:
+        description: >-
           Marking period type (e.g. year, semester, quarter, progress).
         data_type: string
       - name: sort_order
