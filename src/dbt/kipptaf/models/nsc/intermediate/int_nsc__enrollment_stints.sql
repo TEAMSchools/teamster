@@ -7,7 +7,7 @@ with
             n.enrollment_status,
             n.graduated,
             n.graduation_date,
-            n.two_year_four_year,
+            n.class_level,
             n.search_date,
 
             x.account_id,
@@ -38,7 +38,7 @@ with
             enrollment_begin,
             enrollment_end,
             enrollment_status,
-            two_year_four_year,
+            class_level,
 
             date_diff(
                 enrollment_begin,
@@ -61,7 +61,7 @@ with
             enrollment_begin,
             enrollment_end,
             enrollment_status,
-            two_year_four_year,
+            class_level,
 
             countif(gap_months is null or gap_months > 6) over (
                 partition by contact_id, account_id
@@ -88,7 +88,7 @@ with
             account_id,
             stint_num,
             enrollment_status as current_enrollment_status,
-            two_year_four_year as current_two_year_four_year,
+            class_level as current_class_level,
         from stint_latest_term_raw
     ),
 
@@ -171,7 +171,7 @@ select
     a.stint_end,
     a.any_withdrawn,
     l.current_enrollment_status,
-    l.current_two_year_four_year,
+    l.current_class_level,
 
     a.any_graduated,
 

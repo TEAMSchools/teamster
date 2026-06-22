@@ -216,6 +216,11 @@ file; domain specifics live in the nearest subdirectory CLAUDE.md.
 - **Markdown headings**: increment by one level (markdownlint MD001). `#` title
   goes directly to `##` — never jump to `###`.
 
+- **Backtick identifiers in markdown prose**: trunk-fmt reads unbackticked
+  `snake_case` / `glob_*` tokens as emphasis and mangles them (`attendance_day`
+  → `attendance*day`). Wrap model/table/column names in backticks in docs,
+  specs, and plans.
+
 - **Nested triple-backticks in markdown**: when a fenced block contains a
   heredoc with its own ``` examples, promote the outer fence to 4-backticks so
   trunk-fmt doesn't mangle the structure.
@@ -375,6 +380,9 @@ the allowlist.
   (e.g. `<role>`, `<col>`) — **even inside inline backticks**. Use
   `{placeholder}` braces or a fenced code block (fenced blocks preserve `<`,
   `<=`, `>=`). Read the stored body back and verify after writing.
+- `mcp__github__pull_request_review_write` `method=create` requires the FULL
+  40-char `commitID` — an abbreviated SHA fails with "Could not coerce value ...
+  to GitObjectID".
 - `gh issue develop` — linked branch creation; `mcp__github__create_branch` does
   not link branches to issues.
 - `gh project item-edit --id <ITEM_ID> --project-id <PROJECT_ID> --field-id <FIELD_ID> --single-select-option-id <OPTION_ID>`
@@ -551,6 +559,16 @@ still shows the OLD rows/count. Cross-check the run's materialization
 Hyphenated identifiers in INFORMATION_SCHEMA paths need backticks — `region-us`
 as a bare token fails with "Syntax error: Expected end of input but got '-'".
 Write `` `teamster-332318`.`region-us`.INFORMATION_SCHEMA.TABLES ``.
+
+Single quotes inside a BigQuery string literal escape with a **backslash**
+(`'O\'odham'`), not by doubling (`''`) — the doubled form fails with
+"concatenated string literals must be separated by whitespace".
+
+The BigQuery MCP service account **cannot read GOOGLE_SHEETS external tables**
+("Access Denied: ... while getting Drive credentials", 403) — it lacks Drive
+scope. To inspect a sheet-backed source's rows, build the staging model via dbt
+(`dbt build --select <stg_model> --target staging`; ADC has Drive scope), then
+query the materialized `zz_stg_*` table — a native BQ table, not Drive-backed.
 
 `bq` CLI fallback for shell contexts (Monitor poll loops): binary at
 `/usr/local/share/google-cloud-sdk/bin/bq`, `--project_id=teamster-332318`. Same

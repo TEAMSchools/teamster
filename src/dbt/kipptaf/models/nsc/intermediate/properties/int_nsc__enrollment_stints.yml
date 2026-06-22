@@ -51,11 +51,16 @@ models:
         description: >
           NSC enrollment_status from the most recent term in the stint (e.g. F =
           Full-time, H = Half-time, W = Withdrew).
-      - name: current_two_year_four_year
+      - name: current_class_level
         data_type: string
         description: >
-          NSC two_year_four_year classification from the most recent term in the
-          stint ('2-year' or '4-year').
+          NSC class_level from the most recent term in the stint. Per the
+          StudentTracker Detail Report spec, undergraduate codes are F
+          (Freshman), S (Sophomore), J (Junior), R (Senior), C (Certificate), N
+          (Unspecified); graduate codes are M (Master's), D (Doctoral), L (First
+          Professional), P (Postdoctorate), G (Unspecified graduate). Some
+          institutions emit non-spec codes A and B as shorthand for Associate's-
+          and Bachelor's-seeking, which NSC passes through unchanged.
       - name: derived_status
         data_type: string
         description: >
