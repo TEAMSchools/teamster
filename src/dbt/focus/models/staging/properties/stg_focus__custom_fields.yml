@@ -1,0 +1,102 @@
+models:
+  - name: stg_focus__custom_fields
+    description: >-
+      Focus custom field definitions — one row per custom field. Curated to the
+      decode-relevant and descriptive metadata (type, title, alias, column_name,
+      option/computed queries) that powers the deferred unpivot and code ->
+      label decode follow-up. UI, visibility, kiosk, and display-plumbing
+      columns are intentionally excluded. Live rows only (soft-deleted rows
+      filtered out).
+    columns:
+      - name: id
+        description: Primary key — Focus custom field id.
+        data_type: int
+        data_tests:
+          - unique:
+              config:
+                severity: error
+          - not_null:
+              config:
+                severity: error
+      - name: source_class
+        description: >-
+          Owning entity class for the field (e.g. SISStudent, FocusUser,
+          SISSchool, CoursePeriod, CourseCatalog) — maps the field to its host
+          table.
+        data_type: string
+      - name: type
+        description: >-
+          Field input type (e.g. select, multiple, text, date, numeric,
+          checkbox, log, computed). Drives how the stored value is decoded.
+        data_type: string
+      - name: title
+        description:
+          Human-readable field label — slug source for the unpivot alias.
+        data_type: string
+      - name: alias
+        description: >-
+          Focus field alias — raw custom_NNN for most fields, so not used as the
+          unpivot slug source.
+        data_type: string
+      - name: column_name
+        description: Underlying storage column name for the field value.
+        data_type: string
+      - name: description
+        description: Long-form description of the field.
+        data_type: string
+      - name: default_value
+        description: Default value applied when no value is entered.
+        data_type: string
+      - name: fallback_value
+        description: Fallback value used when the stored value is empty.
+        data_type: string
+      - name: option_query
+        description: >-
+          Query backing the select/multiple option list — relevant to the decode
+          follow-up.
+        data_type: string
+      - name: computed_query
+        description:
+          Query used to compute the field value for computed-type fields.
+        data_type: string
+      - name: max_length
+        description: Maximum character length allowed for the field value.
+        data_type: int
+      - name: required
+        description: Flag (0/1) — whether the field is required on entry.
+        data_type: int
+      - name: inactive
+        description: >-
+          Raw inactive flag (0/1) — a field attribute, NOT a soft-delete
+          sentinel. Inactive fields are retained.
+        data_type: int
+      - name: encrypted
+        description: Flag (0/1) — whether the stored value is encrypted.
+        data_type: int
+      - name: district_id
+        description: Focus district id the field is scoped to.
+        data_type: int
+      - name: uuid
+        description: Focus global unique identifier for the row.
+        data_type: string
+      - name: created_at
+        description: Row creation timestamp in Focus.
+        data_type: timestamp
+      - name: updated_at
+        description: Row last-update timestamp in Focus.
+        data_type: timestamp
+      - name: is_json
+        description: Boolean — whether the field stores a JSON value.
+        data_type: boolean
+      - name: is_focus_manage
+        description:
+          Boolean — whether the field is managed by Focus rather than locally.
+        data_type: boolean
+      - name: is_translate
+        description: Boolean — whether the field is eligible for translation.
+        data_type: boolean
+      - name: is_column_adopted
+        description: >-
+          Boolean — whether the field has been adopted into a dedicated storage
+          column.
+        data_type: boolean
