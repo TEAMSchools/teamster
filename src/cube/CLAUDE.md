@@ -103,8 +103,9 @@ Views own access via `access_policy:`. Two patterns:
   [#4237](https://github.com/TEAMSchools/teamster/issues/4237)).
 
 When adding a field to a detail view, decide PII status per project CLAUDE.md
-FERPA guidance. If PII, add it to the `excludes` list under the
-`cube-access-student-data` policy block.
+FERPA guidance. If PII, add it to the `excludes` list under the base-tier policy
+block — `cube-access-student-data` for student views, `cube-access-staff-data`
+for `staff_detail`.
 
 ## `cube.js` security model
 
