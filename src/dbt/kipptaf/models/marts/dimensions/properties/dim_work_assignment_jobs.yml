@@ -46,7 +46,7 @@ models:
         description: >-
           Job code value for the work assignment.
 
-      - name: job_function
+      - name: job_function_description
         data_type: string
         description: >-
           Job function label for the work assignment.

@@ -95,7 +95,7 @@ models:
         data_type: float64
       - name: benefits_eligibility_class__group_code__name
         data_type: string
-      - name: job_function
+      - name: job_function_code__name
         data_type: string
       - name: communication__personal_cell__formatted_number
         data_type: string

@@ -86,13 +86,12 @@ with
             as time_and_attendance_indicator,
             w.worker_time_profile__time_zone_code,
             w.worker_hire_date_recent,
+            w.job_function_code__name as job_function,
 
             en.employee_number,
 
             null as race_ethnicity_reporting,
             null as reports_to_employee_number,
-
-            w.job_function,
 
             if(
                 w.effective_date_start < '2021-01-01',
@@ -222,11 +221,11 @@ with
             null as time_and_attendance_indicator,
             null as worker_time_profile__time_zone_code,
             null as worker_hire_date_recent,
+            null as job_function,
 
             employee_number,
             race_ethnicity_reporting,
             manager_employee_number as reports_to_employee_number,
-            null as job_function,
             effective_start_date as effective_date_start,
             effective_start_timestamp as effective_date_start_timestamp,
         from {{ source("dayforce", "int_dayforce__employee_history") }}
