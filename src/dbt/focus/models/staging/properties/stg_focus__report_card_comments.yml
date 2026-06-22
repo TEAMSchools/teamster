@@ -1,0 +1,34 @@
+models:
+  - name: stg_focus__report_card_comments
+    description: >-
+      Focus report card comment bank — one row per canned comment per school
+      year and school. Lookup for comment codes applied to report cards.
+    columns:
+      - name: id
+        description: Primary key — Focus report card comment id.
+        data_type: int
+        data_tests:
+          - unique:
+              config:
+                severity: error
+          - not_null:
+              config:
+                severity: error
+      - name: syear
+        description: Focus school year (start year).
+        data_type: int
+      - name: school_id
+        description: Focus school id the comment belongs to.
+        data_type: int
+      - name: title
+        description: Comment text.
+        data_type: string
+      - name: code
+        description: Short code identifying the comment.
+        data_type: string
+      - name: created_at
+        description: Row creation timestamp in Focus.
+        data_type: timestamp
+      - name: updated_at
+        description: Row last-update timestamp in Focus.
+        data_type: timestamp
