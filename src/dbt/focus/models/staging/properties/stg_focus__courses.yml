@@ -1,0 +1,139 @@
+models:
+  - name: stg_focus__courses
+    description: >-
+      Focus courses — one row per course definition, scoped by school year and
+      school. Curated to the FLDOE-import-mapped core plus course/subject keys,
+      titles, prerequisites, and scheduling attributes, with the
+      currently-populated custom-field columns appended inline (aliased to their
+      slug). Unpopulated custom slots are excluded. Select/multiple custom
+      values remain as stored Focus option codes — not decoded in this layer.
+    columns:
+      - name: course_id
+        description: Primary key — Focus course id.
+        data_type: int
+        data_tests:
+          - unique:
+              config:
+                severity: error
+          - not_null:
+              config:
+                severity: error
+      - name: syear
+        description: Focus school year (start year, FLDOE SYEAR).
+        data_type: int
+      - name: subject_id
+        description: Focus course subject id (FLDOE SUBJECT_ID).
+        data_type: int
+      - name: school_id
+        description: Focus school number (FLDOE SCHOOL_ID).
+        data_type: int
+      - name: district_id
+        description: Focus district id.
+        data_type: int
+      - name: title
+        description: Full course title (FLDOE TITLE).
+        data_type: string
+      - name: short_name
+        description: Course number / abbreviated label (FLDOE SHORT_NAME).
+        data_type: string
+      - name: alternate_title
+        description: Alternate course title.
+        data_type: string
+      - name: rollover_id
+        description: Source course id this rolled over from.
+        data_type: int
+      - name: grad_subject_id
+        description: Graduation requirement subject id (FLDOE GRAD_SUBJECT_ID).
+        data_type: int
+      - name: grad_subject_id2
+        description: Second graduation requirement subject id.
+        data_type: int
+      - name: grad_subject_id3
+        description: Third graduation requirement subject id.
+        data_type: int
+      - name: mp
+        description: Marking period scope for the course (FLDOE MP).
+        data_type: string
+      - name: grade_level
+        description: Grade level the course is offered at.
+        data_type: string
+      - name: prerequisites
+        description: Course prerequisite expression.
+        data_type: string
+      - name: prerequisites_2
+        description: Second course prerequisite expression.
+        data_type: string
+      - name: prerequisites_3
+        description: Third course prerequisite expression.
+        data_type: string
+      - name: need_approval
+        description: Y/N — whether enrollment in the course needs approval.
+        data_type: string
+      - name: teacher_requestable
+        description: Y/N — whether teachers may request the course.
+        data_type: string
+      - name: requests_subject
+        description: Y/N — whether the course participates in subject requests.
+        data_type: string
+      - name: priority
+        description: Scheduling priority for the course.
+        data_type: string
+      - name: description
+        description: Free-text course description.
+        data_type: string
+      - name: length
+        description: Course length value.
+        data_type: numeric
+      - name: occurrences
+        description: Number of occurrences for the course.
+        data_type: numeric
+      - name: credit_hours
+        description: Credit hours awarded by the course.
+        data_type: numeric
+      - name: course_hours
+        description: Instructional course hours.
+        data_type: numeric
+      - name: allow_repeat
+        description: Y/N — whether the course may be repeated.
+        data_type: string
+      - name: homeroom
+        description: Y/N — whether the course is a homeroom.
+        data_type: string
+      - name: edfi_course_level_characteristic
+        description: Ed-Fi course-level characteristic code.
+        data_type: string
+      - name: iet_program_number
+        description: IET program number associated with the course.
+        data_type: string
+      - name: imported
+        description: Y/N — whether the row originated from an import.
+        data_type: string
+      - name: uuid
+        description: Focus global unique identifier for the row.
+        data_type: string
+      - name: created_at
+        description: Row creation timestamp in Focus.
+        data_type: timestamp
+      - name: updated_at
+        description: Row last-update timestamp in Focus.
+        data_type: timestamp
+      - name: custom_4
+        description: >-
+          Focus generic custom slot; label not defined in the extracted
+          custom_fields catalog.
+        data_type: string
+      - name: custom_2
+        description: >-
+          Focus generic custom slot; label not defined in the extracted
+          custom_fields catalog.
+        data_type: string
+      - name: custom_3
+        description: >-
+          Focus generic custom slot; label not defined in the extracted
+          custom_fields catalog.
+        data_type: string
+      - name: custom_10
+        description: >-
+          Focus generic custom slot; label not defined in the extracted
+          custom_fields catalog.
+        data_type: string
