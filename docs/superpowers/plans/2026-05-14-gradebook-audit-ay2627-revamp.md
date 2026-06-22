@@ -3861,7 +3861,7 @@ development-time references that are no longer current.
 
 ## Task 9: Assignment validity filter for QTD count
 
-**(Post-merge — design and implementation TBD)**
+### Post-merge — design and implementation TBD
 
 Stakeholders raised this requirement in the June 2026 HS all-hands. Currently
 `teacher_running_total_assign_by_cat` counts all entered assignments regardless

@@ -18,7 +18,7 @@ with
         where
             academic_year = {{ var("current_academic_year") }}
             and week_start_monday
-            < date_trunc(current_date('{{ var("local_timezone") }}'), week(monday))
+            < date_trunc(current_date('{{ var("local_timezone") }}'), isoweek)
     ),
 
     current_week as (
