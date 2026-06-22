@@ -1,0 +1,52 @@
+models:
+  - name: stg_focus__standard_categories_1
+    description: >-
+      Focus level-1 (root) standard categories — one row per top-level grouping
+      of learning standards, scoped by school year, school, and district.
+    columns:
+      - name: id
+        description: Primary key — Focus level-1 standard category id.
+        data_type: int
+        data_tests:
+          - unique:
+              config:
+                severity: error
+          - not_null:
+              config:
+                severity: error
+      - name: syear
+        description: Focus school year (start year).
+        data_type: int
+      - name: school_id
+        description: Focus school id.
+        data_type: int
+      - name: district_id
+        description: Focus district id.
+        data_type: int
+      - name: title
+        description: Full category name.
+        data_type: string
+      - name: short_name
+        description: Abbreviated category label.
+        data_type: string
+      - name: sort_order
+        description: Display sort order within the category list.
+        data_type: numeric
+      - name: rollover_id
+        description: Source category id this rolled over from.
+        data_type: int
+      - name: cte_import
+        description: Career and technical education import marker.
+        data_type: string
+      - name: cpalms
+        description: Florida CPALMS identifier for the category.
+        data_type: int
+      - name: guid
+        description: Focus global unique identifier for the category.
+        data_type: string
+      - name: created_at
+        description: Row creation timestamp in Focus.
+        data_type: timestamp
+      - name: updated_at
+        description: Row last-update timestamp in Focus.
+        data_type: timestamp
