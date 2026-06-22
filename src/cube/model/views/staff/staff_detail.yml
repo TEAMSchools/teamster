@@ -142,9 +142,20 @@ views:
             - staff_manager_work_email
 
     access_policy:
-      # Single staff-data tier. The detail view is for users cleared to see
-      # identifiable staff; staff_summary is the non-PII surface. Revisit if a
-      # "see staff but not PII" sub-tier is needed later.
+      # Non-PII staff tier: roster/employment structure without personal or
+      # sensitive data. Personal contact, DOB, and demographics are gated to
+      # cube-access-staff-pii. Work-directory info (names, work/google email,
+      # AD username, manager contacts) stays visible — already internally public.
       - group: cube-access-staff-data
+        member_level:
+          includes: "*"
+          excludes:
+            - personal_email
+            - personal_cell_phone
+            - birth_date
+            - gender_identity
+            - race
+            - is_hispanic
+      - group: cube-access-staff-pii
         member_level:
           includes: "*"

@@ -90,15 +90,22 @@ Views own access via `access_policy:`. Two patterns:
 - **Summary views** (no direct identifiers, demographic breakdowns only): single
   `cube-access-student-data` block with `includes: "*"`. Add a comment
   explaining why no PII tier is needed.
-- **Staff views** use a single `cube-access-staff-data` block with
-  `includes: "*"` (no PII sub-tier): privacy is enforced by view choice —
-  `staff_summary` exposes aggregates/demographics only, `staff_detail` exposes
-  identifiers. Add a `cube-access-staff-pii` sub-tier only if a
-  see-staff-but-not-PII need arises.
+- **Staff views**: `staff_summary` uses a single `cube-access-staff-data` block
+  with `includes: "*"` — aggregate demographics only, no direct identifiers.
+  `staff_detail` uses two blocks: `cube-access-staff-data` with `includes: "*"`
+  and `excludes:` the personal/sensitive fields (`personal_email`,
+  `personal_cell_phone`, `birth_date`, `gender_identity`, `race`,
+  `is_hispanic`), plus `cube-access-staff-pii` with `includes: "*"`.
+  Work-directory info (names, work/google email, AD username, `staff_unique_id`,
+  manager contacts) stays in the base tier — already internally public.
+  Demographics are gated row-level in `staff_detail` but remain valid aggregate
+  breakdowns in `staff_summary` (low-n suppression tracked separately in
+  [#4237](https://github.com/TEAMSchools/teamster/issues/4237)).
 
 When adding a field to a detail view, decide PII status per project CLAUDE.md
-FERPA guidance. If PII, add it to the `excludes` list under the
-`cube-access-student-data` policy block.
+FERPA guidance. If PII, add it to the `excludes` list under the base-tier policy
+block — `cube-access-student-data` for student views, `cube-access-staff-data`
+for `staff_detail`.
 
 ## `cube.js` security model
 
