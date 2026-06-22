@@ -1029,7 +1029,7 @@ wheels = [
 
 [[package]]
 name = "dlt"
-version = "1.28.0"
+version = "1.28.1"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "click" },
@@ -1058,9 +1058,9 @@ dependencies = [
     { name = "typing-extensions" },
     { name = "tzdata" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/28/e9/45803a93a15e901ecb29c9ecbb63e346166b6c485df123f0fa9ff482b042/dlt-1.28.0.tar.gz", hash = "sha256:8fad65ca4c2a7c74b0b78d87ebed3f974cf9ed635e6f662bf4e8dec4be14f53f", size = 1085533, upload-time = "2026-06-15T16:14:52.893Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/a2/91/d1ba83149b894628fffbfab47509627e42625e562f01c892d238d02d9501/dlt-1.28.1.tar.gz", hash = "sha256:152adddcda24b57d6321100170c0aa11dfb45dd3cd71723b616d5c9bc46d4326", size = 1085998, upload-time = "2026-06-19T19:50:34.869Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/22/73/522146bd24ca8e610b70b7ca939a2d4cbf6a9c6a124cd12063a7e290fd05/dlt-1.28.0-py3-none-any.whl", hash = "sha256:47673d39557d6a80fb02552e8ff00176a23019e7082a28e3469ac76b8c924430", size = 1363253, upload-time = "2026-06-15T16:14:55.413Z" },
+    { url = "https://files.pythonhosted.org/packages/6f/eb/cc49acdfe2beb1628b1b29bc93e6c5e78eee8641acfd5970b9d4f475c91c/dlt-1.28.1-py3-none-any.whl", hash = "sha256:d60751df25efb5c2243491b84d93ac179fa28b4766c05b3200be2caae54b5096", size = 1363623, upload-time = "2026-06-19T19:50:31.478Z" },
 ]
 
 [[package]]
@@ -3965,7 +3965,7 @@ requires-dist = [
     { name = "dagster-ssh" },
     { name = "dbt-bigquery", specifier = ">=1.11,<1.12" },
     { name = "dbt-core" },
-    { name = "dlt", specifier = ">=1.10" },
+    { name = "dlt", specifier = ">=1.28.1" },
     { name = "fastavro", specifier = ">=1.9" },
     { name = "ldap3", specifier = ">=2.9" },
     { name = "oracledb", specifier = ">=1.4" },
