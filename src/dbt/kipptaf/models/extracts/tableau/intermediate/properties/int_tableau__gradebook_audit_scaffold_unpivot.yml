@@ -1,7 +1,16 @@
 models:
-  - name: int_tableau__gradebook_audit_student_scaffold
-    config:
-      enabled: false
+  - name: int_tableau__gradebook_audit_scaffold_unpivot
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns:
+              - _dbt_source_project
+              - sectionid
+              - studentid
+              - quarter
+              - assignment_category_code
+              - assignmentid
+              - audit_flag_name
     columns:
       - name: _dbt_source_project
         data_type: string
@@ -9,11 +18,11 @@ models:
         data_type: int64
       - name: academic_year_display
         data_type: string
-      - name: yearid
-        data_type: int64
-      - name: region
+      - name: region_school_level
         data_type: string
       - name: school_level
+        data_type: string
+      - name: region
         data_type: string
       - name: schoolid
         data_type: int64
@@ -29,6 +38,10 @@ models:
         data_type: string
       - name: grade_level
         data_type: int64
+      - name: dateenrolled
+        data_type: date
+      - name: dateleft
+        data_type: date
       - name: salesforce_id
         data_type: string
       - name: ktc_cohort
@@ -42,8 +55,6 @@ models:
       - name: ethnicity
         data_type: string
       - name: advisory
-        data_type: string
-      - name: hos
         data_type: string
       - name: year_in_school
         data_type: int64
@@ -77,69 +88,56 @@ models:
         data_type: float64
       - name: ada_above_or_at_80
         data_type: boolean
-      - name: sectionid
-        data_type: int64
       - name: course_number
         data_type: string
-      - name: date_enrolled
-        data_type: date
+      - name: course_name
+        data_type: string
+      - name: credit_type
+        data_type: string
+      - name: exclude_from_gpa
+        data_type: int64
       - name: sections_dcid
+        data_type: int64
+      - name: sectionid
         data_type: int64
       - name: section_number
         data_type: string
       - name: external_expression
         data_type: string
-      - name: termid
-        data_type: int64
-      - name: credit_type
+      - name: section_or_period
         data_type: string
-      - name: course_name
-        data_type: string
-      - name: exclude_from_gpa
-        data_type: int64
       - name: teacher_number
         data_type: string
       - name: teacher_name
         data_type: string
-      - name: is_ap_course
-        data_type: boolean
-      - name: teacher_tableau_username
+      - name: school_leader
         data_type: string
       - name: manager_employee_number
         data_type: int64
       - name: manager_name
         data_type: string
-      - name: manager_tableau_username
+      - name: hos
         data_type: string
-      - name: school_leader
+      - name: teacher_tableau_username
+        data_type: string
+      - name: manager_tableau_username
         data_type: string
       - name: school_leader_tableau_username
         data_type: string
-      - name: region_school_level
-        data_type: string
       - name: quarter
         data_type: string
+        quote: true
       - name: semester
         data_type: string
       - name: quarter_start_date
         data_type: date
       - name: quarter_end_date
         data_type: date
-      - name: is_current_term
+      - name: is_current_quarter
         data_type: boolean
-      - name: section_or_period
-        data_type: string
-      - name: quarter_course_percent_grade
-        data_type: float64
-      - name: quarter_course_grade_points
-        data_type: float64
-      - name: quarter_comment_value
-        data_type: string
-      - name: scaffold_name
+      - name: assignment_category_code
         data_type: string
       - name: assignment_category_name
-        data_type: string
-      - name: assignment_category_code
         data_type: string
       - name: assignment_category_term
         data_type: string
@@ -147,11 +145,51 @@ models:
         data_type: int64
       - name: notes
         data_type: string
+      - name: week_end_sunday
+        data_type: date
+      - name: teacher_running_total_assign_by_cat
+        data_type: int64
+      - name: quarter_course_percent_grade
+        data_type: float64
+      - name: quarter_course_grade_points
+        data_type: float64
+      - name: quarter_comment_value
+        data_type: string
+      - name: cte_grouping
+        data_type: string
       - name: category_quarter_percent_grade
         data_type: float64
-      - name: qt_percent_grade_greater_100
+      - name: assignmentid
+        data_type: int64
+      - name: assignment_name
+        data_type: string
+      - name: duedate
+        data_type: date
+      - name: scoretype
+        data_type: string
+      - name: totalpointvalue
+        data_type: float64
+      - name: scorepoints
+        data_type: float64
+      - name: is_expected_late
+        data_type: int64
+      - name: is_exempt
+        data_type: int64
+      - name: is_expected_missing
+        data_type: int64
+      - name: is_expected_zero
+        data_type: int64
+      - name: is_expected_academic_dishonesty
+        data_type: int64
+      - name: score_entered
+        data_type: float64
+      - name: assign_final_score_percent
+        data_type: float64
+      - name: audit_flag_name
+        data_type: string
+      - name: audit_flag_value
         data_type: boolean
-      - name: qt_grade_70_comment_missing
-        data_type: boolean
-      - name: qt_es_comment_missing
-        data_type: boolean
+      - name: audit_category
+        data_type: string
+      - name: code_type
+        data_type: string

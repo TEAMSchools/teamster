@@ -1,6 +1,7 @@
 models:
   - name: int_tableau__gradebook_audit_flags
     config:
+      enabled: false
       cluster_by: cte_grouping
       # materialized: table
     columns:
