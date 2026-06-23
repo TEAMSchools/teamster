@@ -1,0 +1,43 @@
+models:
+  - name: stg_google_sheets__people__cube_access_department_override
+    description: >-
+      Cube access department special-access override, maintained by the data
+      team in Google Sheets. One row per ADP department whose staff receive an
+      unconditional access grant regardless of job function (network scope,
+      detail staff access). Matched on department_name; takes precedence over
+      the role crosswalk.
+    columns:
+      - name: department
+        data_type: string
+        description: ADP assigned department name (matches department_name).
+        data_tests:
+          - not_null:
+              config:
+                severity: error
+          - unique:
+              config:
+                severity: error
+      - name: scope_level
+        data_type: string
+        description: Location scope tier (network for all override rows).
+      - name: student_access_level
+        data_type: string
+        description: Student data access — detail, summary, or none.
+      - name: staff_access_level
+        data_type: string
+        description: Staff data access (detail for all override rows).
+      - name: student_pii_scope
+        data_type: string
+        description: Student PII field visibility — all or none.
+      - name: staff_pii_scope
+        data_type: string
+        description: Staff PII field visibility — all or none.
+      - name: staff_compensation_scope
+        data_type: string
+        description: Staff compensation field visibility — all or none.
+      - name: staff_benefits_scope
+        data_type: string
+        description: Staff benefits field visibility — all or none.
+      - name: staff_observations_scope
+        data_type: string
+        description: Staff observation field visibility — all or none.

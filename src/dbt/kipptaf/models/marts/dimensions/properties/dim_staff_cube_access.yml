@@ -1,0 +1,107 @@
+models:
+  - name: dim_staff_cube_access
+    description: >-
+      Cube access-control resolution, one row per active primary staff member
+      keyed on staff_key. Resolves each person's current role to a location
+      scope, student/staff access levels, and per-field visibility scopes,
+      derived from the current primary work assignment and the Google Sheets
+      access crosswalks (department special-access override taking precedence
+      over the role mapping). Read by Cube's contextToGroups, matched on
+      google_email, to build the access group list; not exposed as a Cube.
+      Unresolved roles emit 'none' (deny), never NULL.
+    columns:
+      - name: staff_key
+        data_type: string
+        description: >-
+          Primary key — generate_surrogate_key([employee_number]), matching
+          dim_staff.
+        constraints:
+          - type: primary_key
+            warn_unsupported: false
+        data_tests:
+          - unique
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('dim_staff')
+                field: staff_key
+
+      - name: google_email
+        data_type: string
+        description: >-
+          Resolve-only lookup for the Cube JWT boundary; the active+primary
+          Google email so a recycled address cannot resolve to a stale identity.
+
+      - name: job_function_code
+        data_type: string
+        description: Current ADP job function code (CHIEF, SL, TEACH, ...).
+
+      - name: job_function_level
+        data_type: int64
+        description: >-
+          Org rank from the role crosswalk (1 = Chief, 6 = Teacher); drives the
+          below-rank branch of the detail gate. NULL when the role does not
+          resolve.
+
+      - name: entity
+        data_type: string
+        description: >-
+          KTAF or Region, derived from business_unit_name (KIPP TEAM and Family
+          Schools Inc. = KTAF, all others = Region).
+
+      - name: department_type
+        data_type: string
+        description: >-
+          instructional or non-instructional, from the department rollup
+          crosswalk; NULL until the data team fills it.
+
+      - name: department_group
+        data_type: string
+        description: >-
+          Functional department grouping from the rollup crosswalk; the scope
+          key for network_department_group / region_department_group scopes.
+
+      - name: student_access_level
+        data_type: string
+        description: Student data access — detail, summary, or none.
+
+      - name: staff_access_level
+        data_type: string
+        description: >-
+          Staff data access — detail, detail_below_rank, detail_reporting_chain,
+          or none.
+
+      - name: student_pii_scope
+        data_type: string
+        description: Student PII field visibility — all or none.
+
+      - name: staff_pii_scope
+        data_type: string
+        description: >-
+          Staff PII field visibility — all, reporting_chain, teaching_staff, or
+          none.
+
+      - name: staff_compensation_scope
+        data_type: string
+        description: Staff compensation field visibility (same vocabulary).
+
+      - name: staff_benefits_scope
+        data_type: string
+        description: Staff benefits field visibility (same vocabulary).
+
+      - name: staff_observations_scope
+        data_type: string
+        description: Staff observation field visibility (same vocabulary).
+
+      - name: scope_key
+        data_type: string
+        description: >-
+          Location scope key — the 'network' sentinel, a region_key, a school
+          abbreviation, or 'none'. Never NULL.
+
+      - name: scope_level
+        data_type: string
+        description: >-
+          Location scope tier — network, region, school,
+          network_department_group, region_department_group, or none (deny).
+          Downgraded to none when a location-bound scope cannot resolve its key.

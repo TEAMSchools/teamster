@@ -52,16 +52,16 @@ For any viewer querying **staff data**, two filters compose:
 all, at summary level. Derived from `scope_level` + `scope_key` +
 `department_group`:
 
-| `scope_level`                | Visible staff rows                                   |
-| ---------------------------- | ---------------------------------------------------- |
-| `network`                    | all staff (no filter)                                |
-| `region`                     | staff whose `region_key` equals viewer's             |
-| `school`                     | staff whose `abbreviation` equals viewer's           |
-| `network + department_group` | staff whose `department_group` equals viewer's       |
-| `region + department_group`  | staff in viewer's region **AND** viewer's dept group |
-| `none`                       | nothing — default deny                               |
+| `scope_level`              | Visible staff rows                                   |
+| -------------------------- | ---------------------------------------------------- |
+| `network`                  | all staff (no filter)                                |
+| `region`                   | staff whose `region_key` equals viewer's             |
+| `school`                   | staff whose `abbreviation` equals viewer's           |
+| `network_department_group` | staff whose `department_group` equals viewer's       |
+| `region_department_group`  | staff in viewer's region **AND** viewer's dept group |
+| `none`                     | nothing — default deny                               |
 
-The compound `region + department_group` case **intersects** (AND) — a regional
+The compound `region_department_group` case **intersects** (AND) — a regional
 director sees their department group within their region only.
 
 `network` is the broadest grant and is **only ever set intentionally** by the
@@ -71,36 +71,57 @@ resolve to `scope_level = 'none'` (or no row at all), which denies. This is the
 reason `scope_key` uses an explicit `'network'` sentinel rather than NULL: a
 NULL key must never be confusable with an unmatched fallthrough.
 
-**Layer 2 — Detail (reporting-chain ∩ level).** Which of the Layer-1 rows the
-viewer sees at **detail / PII** level. A staff row is shown at detail only if
-**both**:
+**Layer 2 — Detail visibility.** Which of the Layer-1 rows the viewer sees at
+**detail / PII** level. A staff row `T` is shown at detail to viewer `V` when
+**either** branch holds — an **OR**, not an AND:
 
-- it is in the viewer's downline
-  (`reportee_staff_key IN dim_staff_reporting_chain` for the viewer as manager),
-  **AND**
-- its `job_function_level` is strictly below the viewer's (numerically greater —
-  1 = Chief is highest, 6 = Teacher is lowest).
+- **`T` reports to `V`** — `T.staff_key ∈ V`'s downline
+  (`dim_staff_reporting_chain`). True at **any** level, so a manager always sees
+  their own reports even when they share `V`'s rank (a Dean and the Teachers
+  reporting to them are both level 6). This is the "you can never be hidden from
+  your own manager" guarantee.
+- **`T` is below `V` in rank _and_ `V` holds a leadership grant** —
+  `T.job_function_level > V.job_function_level` (numerically greater = lower
+  rank; 1 = Chief, 6 = Teacher) **and**
+  `V.staff_access_level = detail_below_rank`. This lets leadership roles (CHIEF,
+  EDHOS, SL, DSO, ASL) see everyone below them within their scope — even outside
+  their chain — for observation norming and resource sharing.
 
-Rows in Layer 1 but not Layer 2 are visible at **summary** only. The
-`summary_reporting_chain` value of `staff_access_level` is exactly this pattern:
-summary across the viewer's scope, detail on the viewer's chain.
+Same-level (and higher) peers who do **not** report to `V` satisfy neither
+branch and are never shown at detail — that is what keeps Chiefs from seeing
+other Chiefs and EDHOSs from seeing other EDHOSs. Rows in Layer 1 but not Layer
+2 are visible at **summary** only.
 
-The level gate is belt-and-suspenders: in the pure reporting-chain case a
-downline report is already organizationally below the viewer, but the gate also
-protects the dept-group and region scopes (where the viewer sees same- or
-higher-level peers at summary and must never see them at detail) and guards
-against reporting-chain data gaps.
+`staff_access_level` selects the gate:
+
+<!-- markdownlint-disable MD013 -->
+
+| Value                    | Detail rows (within Layer-1 scope)                   | Roles                                |
+| ------------------------ | ---------------------------------------------------- | ------------------------------------ |
+| `detail_below_rank`      | `job_function_level` below viewer **OR** in downline | leadership (CHIEF/EDHOS/SL/DSO/ASL)  |
+| `detail_reporting_chain` | in downline only                                     | managers and individual contributors |
+| `detail`                 | every row in scope (ungated)                         | special-access departments only      |
+| `none`                   | nothing                                              | default deny                         |
+
+<!-- markdownlint-enable MD013 -->
+
+`detail` is the deliberate exception — special-access departments (HR,
+Executive, Data, …) need org-wide visibility regardless of rank or chain.
 
 **Field-scope columns gate columns on top of Layer 2.** `staff_pii_scope`,
 `staff_compensation_scope`, `staff_observations_scope` are **enums** over a
 shared vocabulary:
 
+<!-- markdownlint-disable MD013 -->
+
 | Scope value       | Field is visible for…                                        |
 | ----------------- | ------------------------------------------------------------ |
-| `all`             | every staff row in scope (Layer 1)                           |
-| `reporting_chain` | only the viewer's Layer-2 rows (chain ∩ level)               |
+| `all`             | every row the viewer sees at detail (their Layer-2 set)      |
+| `reporting_chain` | only the viewer's downline rows                              |
 | `teaching_staff`  | only staff with `job_function_code IN ('TEACH','TIR')` (ASL) |
 | `none`            | never                                                        |
+
+<!-- markdownlint-enable MD013 -->
 
 The `_scope` suffix (not `has_`) signals these are visibility tiers, not
 booleans. `all` / `none` are spelled identically across every `*_scope` column;
@@ -205,30 +226,30 @@ Column headers map to model columns: `student` = `student_access_level`, `staff`
 `staff_pii_scope`, `comp` = `staff_compensation_scope`, `benefits` =
 `staff_benefits_scope`, `obs` = `staff_observations_scope`.
 
-| code  | entity | dept_type         | level | scope_level                | student | staff                   | stu_pii | staff_pii       | comp            | benefits | obs             |
-| ----- | ------ | ----------------- | ----- | -------------------------- | ------- | ----------------------- | ------- | --------------- | --------------- | -------- | --------------- |
-| CHIEF | —      | —                 | 1     | network                    | detail  | detail                  | all     | all             | all             | none     | all             |
-| EDHOS | —      | —                 | 2     | region                     | detail  | detail                  | all     | all             | all             | none     | all             |
-| SL    | —      | —                 | 4     | school                     | detail  | detail                  | all     | all             | all             | none     | all             |
-| DSO   | —      | —                 | 4     | school                     | detail  | detail                  | all     | all             | all             | none     | all             |
-| ASL   | —      | —                 | 5     | school                     | detail  | detail                  | all     | teaching_staff  | teaching_staff  | none     | teaching_staff  |
-| DEAN  | —      | —                 | 6     | school                     | detail  | summary_reporting_chain | all     | reporting_chain | reporting_chain | none     | reporting_chain |
-| SCOPS | —      | —                 | 6     | school                     | detail  | summary_reporting_chain | all     | reporting_chain | reporting_chain | none     | reporting_chain |
-| NINST | —      | —                 | 6     | school                     | detail  | summary_reporting_chain | all     | reporting_chain | reporting_chain | none     | reporting_chain |
-| TEACH | —      | —                 | 6     | school                     | detail  | summary_reporting_chain | all     | reporting_chain | reporting_chain | none     | reporting_chain |
-| TIR   | —      | —                 | 6     | school                     | detail  | summary_reporting_chain | all     | reporting_chain | reporting_chain | none     | reporting_chain |
-| MGDIR | KTAF   | instructional     | 3     | network                    | detail  | summary_reporting_chain | all     | reporting_chain | reporting_chain | none     | reporting_chain |
-| DIR   | KTAF   | instructional     | 4     | network + department_group | detail  | summary_reporting_chain | all     | reporting_chain | reporting_chain | none     | reporting_chain |
-| KTRGS | KTAF   | instructional     | 5     | network + department_group | detail  | summary_reporting_chain | all     | reporting_chain | reporting_chain | none     | reporting_chain |
-| MGDIR | KTAF   | non-instructional | 3     | network                    | summary | summary_reporting_chain | none    | reporting_chain | reporting_chain | none     | reporting_chain |
-| DIR   | KTAF   | non-instructional | 4     | network + department_group | summary | summary_reporting_chain | none    | reporting_chain | reporting_chain | none     | reporting_chain |
-| KTRGS | KTAF   | non-instructional | 5     | network + department_group | summary | summary_reporting_chain | none    | reporting_chain | reporting_chain | none     | reporting_chain |
-| MGDIR | Region | instructional     | 3     | region                     | detail  | summary_reporting_chain | all     | reporting_chain | reporting_chain | none     | reporting_chain |
-| DIR   | Region | instructional     | 4     | region + department_group  | detail  | summary_reporting_chain | all     | reporting_chain | reporting_chain | none     | reporting_chain |
-| KTRGS | Region | instructional     | 5     | region + department_group  | detail  | summary_reporting_chain | all     | reporting_chain | reporting_chain | none     | reporting_chain |
-| MGDIR | Region | non-instructional | 3     | region                     | summary | summary_reporting_chain | none    | reporting_chain | reporting_chain | none     | reporting_chain |
-| DIR   | Region | non-instructional | 4     | region + department_group  | summary | summary_reporting_chain | none    | reporting_chain | reporting_chain | none     | reporting_chain |
-| KTRGS | Region | non-instructional | 5     | region + department_group  | summary | summary_reporting_chain | none    | reporting_chain | reporting_chain | none     | reporting_chain |
+| code  | entity | dept_type         | level | scope_level              | student | staff                  | stu_pii | staff_pii       | comp            | benefits | obs             |
+| ----- | ------ | ----------------- | ----- | ------------------------ | ------- | ---------------------- | ------- | --------------- | --------------- | -------- | --------------- |
+| CHIEF | —      | —                 | 1     | network                  | detail  | detail_below_rank      | all     | all             | all             | none     | all             |
+| EDHOS | —      | —                 | 2     | region                   | detail  | detail_below_rank      | all     | all             | all             | none     | all             |
+| SL    | —      | —                 | 4     | school                   | detail  | detail_below_rank      | all     | all             | all             | none     | all             |
+| DSO   | —      | —                 | 4     | school                   | detail  | detail_below_rank      | all     | all             | all             | none     | all             |
+| ASL   | —      | —                 | 5     | school                   | detail  | detail_below_rank      | all     | teaching_staff  | teaching_staff  | none     | teaching_staff  |
+| DEAN  | —      | —                 | 6     | school                   | detail  | detail_reporting_chain | all     | reporting_chain | reporting_chain | none     | reporting_chain |
+| SCOPS | —      | —                 | 6     | school                   | detail  | detail_reporting_chain | all     | reporting_chain | reporting_chain | none     | reporting_chain |
+| NINST | —      | —                 | 6     | school                   | detail  | detail_reporting_chain | all     | reporting_chain | reporting_chain | none     | reporting_chain |
+| TEACH | —      | —                 | 6     | school                   | detail  | detail_reporting_chain | all     | reporting_chain | reporting_chain | none     | reporting_chain |
+| TIR   | —      | —                 | 6     | school                   | detail  | detail_reporting_chain | all     | reporting_chain | reporting_chain | none     | reporting_chain |
+| MGDIR | KTAF   | instructional     | 3     | network                  | detail  | detail_reporting_chain | all     | reporting_chain | reporting_chain | none     | reporting_chain |
+| DIR   | KTAF   | instructional     | 4     | network_department_group | detail  | detail_reporting_chain | all     | reporting_chain | reporting_chain | none     | reporting_chain |
+| KTRGS | KTAF   | instructional     | 5     | network_department_group | detail  | detail_reporting_chain | all     | reporting_chain | reporting_chain | none     | reporting_chain |
+| MGDIR | KTAF   | non-instructional | 3     | network                  | summary | detail_reporting_chain | none    | reporting_chain | reporting_chain | none     | reporting_chain |
+| DIR   | KTAF   | non-instructional | 4     | network_department_group | summary | detail_reporting_chain | none    | reporting_chain | reporting_chain | none     | reporting_chain |
+| KTRGS | KTAF   | non-instructional | 5     | network_department_group | summary | detail_reporting_chain | none    | reporting_chain | reporting_chain | none     | reporting_chain |
+| MGDIR | Region | instructional     | 3     | region                   | detail  | detail_reporting_chain | all     | reporting_chain | reporting_chain | none     | reporting_chain |
+| DIR   | Region | instructional     | 4     | region_department_group  | detail  | detail_reporting_chain | all     | reporting_chain | reporting_chain | none     | reporting_chain |
+| KTRGS | Region | instructional     | 5     | region_department_group  | detail  | detail_reporting_chain | all     | reporting_chain | reporting_chain | none     | reporting_chain |
+| MGDIR | Region | non-instructional | 3     | region                   | summary | detail_reporting_chain | none    | reporting_chain | reporting_chain | none     | reporting_chain |
+| DIR   | Region | non-instructional | 4     | region_department_group  | summary | detail_reporting_chain | none    | reporting_chain | reporting_chain | none     | reporting_chain |
+| KTRGS | Region | non-instructional | 5     | region_department_group  | summary | detail_reporting_chain | none    | reporting_chain | reporting_chain | none     | reporting_chain |
 
 ### Department special-access override
 
@@ -362,13 +383,13 @@ primary staff (1,526 rows as of 2026-06-23, 1:1, 0 null).
 | `google_email`             | STRING | Resolve-only lookup for the JWT boundary; populated from the active+primary row so a recycled address can't resolve to a stale identity |
 | `job_function_code`        | STRING | From `dim_work_assignment_jobs` (prereq) — CHIEF/EDHOS/SL/…                                                                             |
 | `job_function_level`       | INT64  | Org rank 1–6 (from role crosswalk)                                                                                                      |
-| `entity`                   | STRING | `KTAF` / `Region` (from department rollup crosswalk)                                                                                    |
+| `entity`                   | STRING | `KTAF` / `Region` — derived from `business_unit_name` (`KIPP TEAM and Family Schools Inc.` → KTAF, else Region)                         |
 | `department_type`          | STRING | `instructional` / `non-instructional` (from rollup crosswalk)                                                                           |
 | `department_group`         | STRING | Rollup of `department_name` (from rollup crosswalk)                                                                                     |
-| `scope_level`              | STRING | `network` / `region` / `school` / `network+department_group` / `region+department_group` / `none` (deny)                                |
+| `scope_level`              | STRING | `network` / `region` / `school` / `network_department_group` / `region_department_group` / `none` (deny)                                |
 | `scope_key`                | STRING | sentinel `'network'`, a `region_key` (resolved via `dim_locations`), a school `abbreviation`, or `'none'` — never NULL                  |
 | `student_access_level`     | STRING | `detail` / `summary` / `none`                                                                                                           |
-| `staff_access_level`       | STRING | `detail` / `summary_reporting_chain` / `none`                                                                                           |
+| `staff_access_level`       | STRING | `detail` / `detail_below_rank` / `detail_reporting_chain` / `none` (see Layer 2)                                                        |
 | `student_pii_scope`        | STRING | enum: `all` / `none` (future `own_roster` deferred)                                                                                     |
 | `staff_pii_scope`          | STRING | enum: `all` / `reporting_chain` / `teaching_staff` / `none`                                                                             |
 | `staff_compensation_scope` | STRING | enum (same vocabulary)                                                                                                                  |
@@ -383,9 +404,13 @@ primary staff (1,526 rows as of 2026-06-23, 1:1, 0 null).
   override wins entirely when matched (no field-by-field merge). Mappings are
   Google Sheets crosswalks (see [§ Source mappings](#source-mappings)), not
   in-SQL `CASE`.
-- **`department_group`, `department_type`, `entity`** come from the department
-  rollup crosswalk keyed on `department_name`. The exact rollup is owned by the
-  data team — see open question 1.
+- **`department_group` and `department_type`** come from the department rollup
+  crosswalk keyed on `department_name`. The exact rollup is owned by the data
+  team — see open question 1.
+- **`entity`** is derived in-model from `business_unit_name` (from
+  `dim_work_assignment_organizational_units`):
+  `KIPP TEAM and Family Schools Inc.` → `KTAF`, all other business units →
+  `Region`. It only affects the MGDIR / DIR / KTRGS role rows.
 - **`scope_key` for region scope** is resolved by joining the current
   assignment's `location_key` (`dim_work_assignment_locations`) to
   `dim_locations` for `region_key` (an opaque surrogate) and the school
@@ -489,15 +514,21 @@ Replace group-name parsing with cache reads. The cached `row` and
   `scope_level` is `none` or there is no row. Detail/summary + PII column gating
   is enforced by the view `access_policy` groups.
 - **Staff cubes:** inject the **Layer-1 scope filter** (including
-  `region + department_group` as an AND of two equals filters), then the
-  **Layer-2 detail filter** (`staff.staff_key IN reporteeStaffKeys` AND
-  `job_function_level > viewer.job_function_level`). Column visibility for the
-  all/none scopes is handled by the single composite `access_policy` block;
-  `queryRewrite` handles **rows** (Layer-1 + Layer-2) and the **row-conditional
-  columns** — when a `reporting_chain` / `teaching_staff` sensitive column
-  (comp/obs/pii) is requested, narrow the result rows to the Layer-2 set (or
-  `job_function_code IN ('TEACH','TIR')` for `teaching_staff`). The staff cube
-  and detail view expose `staff_key` for this filter.
+  `region_department_group` as an AND of two equals filters), then the **Layer-2
+  detail filter** per the viewer's `staff_access_level`:
+  - `detail_below_rank` → `staff.staff_key IN reporteeStaffKeys` **OR**
+    `staff.job_function_level > viewer.job_function_level`;
+  - `detail_reporting_chain` → `staff.staff_key IN reporteeStaffKeys`;
+  - `detail` → no Layer-2 filter (all scope rows).
+
+  Column visibility for the all/none scopes is handled by the single composite
+  `access_policy` block; `queryRewrite` handles **rows** (Layer-1 + Layer-2) and
+  the **row-conditional columns** — when a `reporting_chain` / `teaching_staff`
+  sensitive column (comp/obs/pii) is requested, narrow the result rows to the
+  downline (or `job_function_code IN ('TEACH','TIR')` for `teaching_staff`). The
+  staff cube and detail view expose `staff_key` and `job_function_level` for
+  these filters.
+
 - **Snapshot anchor** logic and `canSwitchSqlUser` unchanged.
 
 ### 5. Cube renames, schema test, view policies (original issue scope)
@@ -572,7 +603,7 @@ columns, or none. We resolve this on **two axes**:
   set into a single group; each view carries one block per composite tier. This
   is #4102's own stated implication ("one resolved role … one `includes` list")
   and is the only way to avoid the intersection.
-- **Row visibility (location scope + reporting-chain ∩ level)** →
+- **Row visibility (location scope + the Layer-2 detail gate)** →
   **`queryRewrite`.** `access_policy` cannot express per-row rules; this lives
   in `queryRewrite` regardless.
 
@@ -580,27 +611,28 @@ The `reporting_chain` and `teaching_staff` scopes are **row-conditional column
 visibility** (comp for downline rows only; comp/obs for TEACH/TIR rows only) —
 not expressible in a static `access_policy`. The composite block simply
 _includes_ those columns; `queryRewrite` then narrows the query's **rows** to
-the Layer-2 set (or `job_function_code IN ('TEACH','TIR')`) when such a column
-is requested. **The composite block does not harm reporting-chain visibility** —
+the downline (or `job_function_code IN ('TEACH','TIR')`) when such a column is
+requested. **The composite block does not harm reporting-chain visibility** —
 chain enforcement is a row filter, and the single-block column model leaves it
 intact.
 
 Tradeoff (unchanged): requesting a `reporting_chain` field restricts the whole
-query's rows to the viewer's chain∩level set — a manager gets their team's comp,
-not comp spread across their wider summary scope. This matches "show me my
-team's comp." Confirm with the data team that every scope value reduces to a
-single composite tier + the row filter.
+query's rows to the viewer's downline — a manager gets their team's comp, not
+comp spread across their wider summary scope. This matches "show me my team's
+comp." Confirm with the data team that every scope value reduces to a single
+composite tier + the row filter.
 
 ---
 
 ## Open questions
 
-1. **`department_group` / `department_type` / `entity` rollup** — the mapping
-   from the 43 `department_name` values into department groups, the
-   instructional/non-instructional split, and the KTAF/Region entity is owned by
-   the data team and lives in the **department rollup crosswalk** (Google
-   Sheet). Seed it with the special-access departments handled; the data team
-   fills the remaining rollup before the model ships.
+1. **`department_group` / `department_type` rollup** — the mapping from the 41
+   `department_name` values into department groups and the
+   instructional/non-instructional split is owned by the data team and lives in
+   the **department rollup crosswalk** (Google Sheet). Seed it with the
+   special-access departments handled; the data team fills the remaining rollup
+   before the model ships. (`entity` is NOT in this rollup — it derives in-model
+   from `business_unit_name`.)
 
 2. **`job_function_code` availability** — RESOLVED. PR #4182 propagated only the
    label; the prerequisite adds `job_function_code` (the ADP `code_value`) to
@@ -612,8 +644,8 @@ single composite tier + the row filter.
    row filter) restricts the staff result set when a `reporting_chain` /
    `teaching_staff` sensitive field is requested. Confirm with the data team
    that this single-query restriction is acceptable (a viewer gets their
-   chain∩level rows when querying comp, not their full scope) before
-   implementing `cube.js` staff gating.
+   downline rows when querying comp, not their full scope) before implementing
+   `cube.js` staff gating.
 
 4. **Multi-location / itinerant staff** — coaches covering multiple schools get
    one `scope_key`; multi-location support is deferred to a follow-up.
@@ -636,8 +668,9 @@ single composite tier + the row filter.
 5. Add the tier `access_policy` blocks (one composite block per viewer;
    additive, safe to deploy independently).
 6. Rewrite `cube.js`: `contextToGroups` (two BigQuery reads, one composite staff
-   group) and `queryRewrite` (scope + chain∩level rows + row-conditional
-   columns); add `isStaffMember`; drop the static arrays.
+   group) and `queryRewrite` (scope + Layer-2 detail gate (below-OR-downline /
+   downline / ungated by `staff_access_level`) + row-conditional columns); add
+   `isStaffMember`; drop the static arrays.
 7. Add `tests/cube/test_cube_schema.py`.
 8. Document the reporting-chain gate in `src/cube/CLAUDE.md` and the staff view
    YAML (the #4092 deliverable).
