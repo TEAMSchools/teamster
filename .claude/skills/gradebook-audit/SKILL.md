@@ -29,6 +29,21 @@ and configuration behavior. The spec covers AY 2026-2027 design decisions.
 
 ---
 
+## Configurable thresholds
+
+These values are hardcoded in SQL. When the user asks to change a threshold,
+find the location below and update the literal.
+
+| Threshold                                                                                                                                                  | Current value | Location                                                                                                      |
+| ---------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------- | ------------------------------------------------------------------------------------------------------------- |
+| `min_graded_percent` — minimum fraction of expected assignments that must be scored for a section × quarter to pass the `percent_graded_min_not_met` check | `0.90` (90%)  | `section_category_quarterly_scores_agg` CTE in `int_tableau__gradebook_audit_flags_calculations.sql` line ~50 |
+
+To change `min_graded_percent`: update the literal `0.90` in the CTE SELECT and
+update the threshold comparison in the `percent_graded_min_not_met` branch
+(`safe_divide(...) < 0.9`) to match.
+
+---
+
 ## Procedure: List refs, lineage, or sources for the gradebook audit dashboard
 
 Do NOT search the codebase. Go directly to the exposure file:
