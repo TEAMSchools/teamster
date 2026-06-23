@@ -1,0 +1,50 @@
+models:
+  - name: stg_focus__grad_subject_credits
+    description: >-
+      Focus graduation subject credit requirements — one row per credit rule
+      linking a graduation subject to a graduation program and required credits.
+    columns:
+      - name: id
+        description: Primary key — Focus graduation subject credit id.
+        data_type: int
+        data_tests:
+          - unique:
+              config:
+                severity: error
+          - not_null:
+              config:
+                severity: error
+      - name: grad_subject_id
+        description: Focus graduation subject id, stored as text.
+        data_type: string
+      - name: grad_program_id
+        description: Focus graduation program id this credit rule belongs to.
+        data_type: int
+      - name: credits
+        description: Required credits for this subject within the program.
+        data_type: numeric
+      - name: sql
+        description: Optional SQL predicate scoping the credit rule.
+        data_type: string
+      - name: title
+        description: Credit rule label.
+        data_type: string
+      - name: type
+        description: Credit rule type classification.
+        data_type: string
+      - name: sort_order
+        description: Display sort order within the credit rule list.
+        data_type: int
+      - name: grade_level_short_name
+        description: Short name of the grade level the rule applies to.
+        data_type: string
+      - name: language
+        description: Language scope for the credit rule.
+        data_type: string
+        quote: true
+      - name: created_at
+        description: Row creation timestamp in Focus.
+        data_type: timestamp
+      - name: updated_at
+        description: Row last-update timestamp in Focus.
+        data_type: timestamp

@@ -1,0 +1,68 @@
+models:
+  - name: stg_focus__report_card_grades
+    description: >-
+      Focus report card grade definitions — one row per grade mark per school
+      year and school. Defines the displayable grade, its GPA value, and credit
+      behavior.
+    columns:
+      - name: id
+        description: Primary key — Focus report card grade id.
+        data_type: int
+        data_tests:
+          - unique:
+              config:
+                severity: error
+          - not_null:
+              config:
+                severity: error
+      - name: syear
+        description: Focus school year (start year, e.g. 2025 = 2025-26).
+        data_type: int
+      - name: school_id
+        description: Focus school id the grade belongs to.
+        data_type: int
+      - name: title
+        description: Displayable grade label (e.g. the letter or mark).
+        data_type: string
+      - name: sort_order
+        description: Display sort order within the grade list.
+        data_type: numeric
+      - name: gpa_value
+        description: Unweighted GPA points awarded for this grade.
+        data_type: numeric
+      - name: default_breakoff
+        description: Default minimum percent at which this grade is assigned.
+        data_type: numeric
+      - name: scale_id
+        description: Focus report card grade scale id this grade belongs to.
+        data_type: int
+      - name: credits
+        description: Credits awarded for this grade, stored as text.
+        data_type: string
+      - name: weighted_gpa_value
+        description: Weighted GPA points awarded for this grade.
+        data_type: numeric
+      - name: description
+        description: Long-form description of the grade.
+        data_type: string
+      - name: is_incomplete
+        description: Y/N — whether the grade represents an incomplete.
+        data_type: string
+      - name: exclude_grades
+        description: Y/N — whether the grade is excluded from GPA calculations.
+        data_type: string
+      - name: uuid
+        description: Focus global unique identifier for the row.
+        data_type: string
+      - name: gpa_averaging_cutoff
+        description: Percent cutoff used when averaging into this grade.
+        data_type: numeric
+      - name: gpa_averaging_points
+        description: GPA points used when averaging into this grade.
+        data_type: numeric
+      - name: created_at
+        description: Row creation timestamp in Focus.
+        data_type: timestamp
+      - name: updated_at
+        description: Row last-update timestamp in Focus.
+        data_type: timestamp

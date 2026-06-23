@@ -1,0 +1,62 @@
+models:
+  - name: stg_focus__report_card_grade_scales
+    description: >-
+      Focus report card grade scales — one row per grade scale per school year
+      and school. Groups report card grades and governs posting and proficiency
+      behavior.
+    columns:
+      - name: id
+        description: Primary key — Focus report card grade scale id.
+        data_type: int
+        data_tests:
+          - unique:
+              config:
+                severity: error
+          - not_null:
+              config:
+                severity: error
+      - name: syear
+        description: Focus school year (start year).
+        data_type: int
+      - name: school_id
+        description: Focus school id the scale belongs to.
+        data_type: int
+      - name: title
+        description: Full grade scale name.
+        data_type: string
+      - name: default_scale
+        description: Y/N — whether this is the school's default grade scale.
+        data_type: string
+      - name: rollover_id
+        description: Source grade scale id this rolled over from.
+        data_type: int
+      - name: letter_only
+        description: Y/N — whether the scale posts letter grades only.
+        data_type: string
+      - name: show_average_in_gradebook
+        description: Y/N — whether the gradebook shows a running average.
+        data_type: string
+      - name: course_level
+        description: Course level the scale applies to.
+        data_type: string
+      - name: proficiency_gradebook
+        description: Y/N — whether the scale drives a proficiency gradebook.
+        data_type: string
+      - name: max_post_percent
+        description: Maximum percent allowed when posting on this scale.
+        data_type: int
+      - name: min_post_percent
+        description: Minimum percent allowed when posting on this scale.
+        data_type: int
+      - name: suppress_numeric_proficiency_grades
+        description: Y/N — whether numeric proficiency grades are suppressed.
+        data_type: string
+      - name: uuid
+        description: Focus global unique identifier for the row.
+        data_type: string
+      - name: created_at
+        description: Row creation timestamp in Focus.
+        data_type: timestamp
+      - name: updated_at
+        description: Row last-update timestamp in Focus.
+        data_type: timestamp

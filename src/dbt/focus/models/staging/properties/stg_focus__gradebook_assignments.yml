@@ -1,0 +1,115 @@
+models:
+  - name: stg_focus__gradebook_assignments
+    description: >-
+      Focus gradebook assignments — one row per assignment, including its point
+      value, category, template lineage, and external-tool linkages.
+    columns:
+      - name: assignment_id
+        description: Primary key — Focus gradebook assignment id.
+        data_type: int
+        data_tests:
+          - unique:
+              config:
+                severity: error
+          - not_null:
+              config:
+                severity: error
+      - name: assignment_type_id
+        description: Focus gradebook assignment type id (the category).
+        data_type: int
+      - name: title
+        description: Assignment name.
+        data_type: string
+      - name: points
+        description: Total points the assignment is worth.
+        data_type: numeric
+      - name: description
+        description: Assignment description text.
+        data_type: string
+      - name: benchmarks
+        description: Standards or benchmarks tagged on the assignment.
+        data_type: string
+      - name: questions
+        description: Number of questions in the assignment.
+        data_type: int
+      - name: parent_id
+        description: Parent assignment id for nested assignments.
+        data_type: int
+      - name: prerequisite_assignment
+        description: Assignment id that must be completed first.
+        data_type: int
+      - name: template_id
+        description: Gradebook template id the assignment belongs to.
+        data_type: int
+      - name: template_assignment_id
+        description: Source template assignment id this was created from.
+        data_type: int
+      - name: rollover_id
+        description: Source assignment id this rolled over from.
+        data_type: int
+      - name: copied_from_id
+        description: Assignment id this was copied from.
+        data_type: int
+      - name: rubric_id
+        description: Rubric id attached to the assignment.
+        data_type: int
+      - name: web_page_id
+        description: Web page id attached to the assignment.
+        data_type: int
+      - name: external_api_id
+        description: External API integer id for the assignment.
+        data_type: int
+      - name: external_api_uuid
+        description: External API uuid for the assignment.
+        data_type: string
+      - name: learnosity_activity_id
+        description: Learnosity activity id linked to the assignment.
+        data_type: string
+      - name: examspark_exam_id
+        description: ExamSpark exam id linked to the assignment.
+        data_type: string
+      - name: apex_assessment_id
+        description: Apex assessment id linked to the assignment.
+        data_type: int
+      - name: last_updated_user
+        description: Identifier of the user who last updated the assignment.
+        data_type: numeric
+      - name: allow_student_upload
+        description: Whether students may upload files to the assignment.
+        data_type: boolean
+      - name: no_late_turnin
+        description: Whether late turn-ins are disallowed.
+        data_type: boolean
+      - name: hide_from_excluded
+        description: Whether the assignment is hidden from excluded students.
+        data_type: boolean
+      - name: exclude_from_average
+        description: Whether the assignment is excluded from the average.
+        data_type: boolean
+      - name: accessibility
+        description: Whether accessibility features are enabled.
+        data_type: boolean
+      - name: transfer
+        description: Whether the assignment is a transfer assignment.
+        data_type: boolean
+      - name: allow_google_drive
+        description: Whether Google Drive uploads are allowed.
+        data_type: boolean
+      - name: allow_onedrive
+        description: Whether OneDrive uploads are allowed.
+        data_type: boolean
+      - name: uuid
+        description: Focus global unique identifier for the assignment.
+        data_type: string
+      - name: last_updated_date
+        description: Source last-updated timestamp.
+        data_type: timestamp
+      - name: score_release_timestamp
+        description: Timestamp at which scores are released to students.
+        data_type: timestamp
+      - name: created_at
+        description: Row creation timestamp in Focus.
+        data_type: timestamp
+      - name: updated_at
+        description: Row last-update timestamp in Focus.
+        data_type: timestamp
