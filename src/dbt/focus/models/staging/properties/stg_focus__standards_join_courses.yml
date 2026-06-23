@@ -1,0 +1,37 @@
+models:
+  - name: stg_focus__standards_join_courses
+    description: >-
+      Focus standard-to-course links — one row per standard mapped to a course
+      number. Junction between standards and the course catalog.
+    columns:
+      - name: id
+        description: Primary key — Focus standard-course link id.
+        data_type: int
+        data_tests:
+          - unique:
+              config:
+                severity: error
+          - not_null:
+              config:
+                severity: error
+      - name: standard_id
+        description: Focus standard id (standards.id) being linked.
+        data_type: int
+      - name: course_num
+        description: Course number the standard is mapped to, stored as text.
+        data_type: string
+      - name: school_id
+        description: Focus school id.
+        data_type: int
+      - name: district_id
+        description: Focus district id.
+        data_type: int
+      - name: cpalms
+        description: Florida CPALMS identifier for the link.
+        data_type: int
+      - name: created_at
+        description: Row creation timestamp in Focus.
+        data_type: timestamp
+      - name: updated_at
+        description: Row last-update timestamp in Focus.
+        data_type: timestamp

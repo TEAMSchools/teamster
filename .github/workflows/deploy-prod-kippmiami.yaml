@@ -17,6 +17,7 @@ on:
       - uv.lock
       - src/dbt/deanslist/**
       - src/dbt/finalsite/**
+      - src/dbt/focus/**
       - src/dbt/iready/**
       - src/dbt/kippmiami/**
       - src/dbt/powerschool/**

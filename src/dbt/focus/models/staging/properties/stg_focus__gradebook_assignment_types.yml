@@ -1,0 +1,46 @@
+models:
+  - name: stg_focus__gradebook_assignment_types
+    description: >-
+      Focus gradebook assignment types — one row per assignment category used to
+      group and weight gradebook assignments.
+    columns:
+      - name: assignment_type_id
+        description: Primary key — Focus gradebook assignment type id.
+        data_type: int
+        data_tests:
+          - unique:
+              config:
+                severity: error
+          - not_null:
+              config:
+                severity: error
+      - name: title
+        description: Assignment type name.
+        data_type: string
+      - name: template_id
+        description: Gradebook template id the type belongs to.
+        data_type: int
+      - name: template_category_id
+        description: Source template category id this type was created from.
+        data_type: int
+      - name: rollover_id
+        description: Source assignment type id this rolled over from.
+        data_type: int
+      - name: copied_from_id
+        description: Assignment type id this was copied from.
+        data_type: int
+      - name: external_api_id
+        description: External API integer id for the assignment type.
+        data_type: int
+      - name: external_api_uuid
+        description: External API uuid for the assignment type.
+        data_type: string
+      - name: uuid
+        description: Focus global unique identifier for the assignment type.
+        data_type: string
+      - name: created_at
+        description: Row creation timestamp in Focus.
+        data_type: timestamp
+      - name: updated_at
+        description: Row last-update timestamp in Focus.
+        data_type: timestamp

@@ -113,6 +113,25 @@ file; domain specifics live in the nearest subdirectory CLAUDE.md.
   partway through. Scope dispatches to one file / one commit; inspect the file
   diff and `git log` before marking complete — don't trust the self-report.
 
+- **The `Workflow`-tool orchestrator is unreliable for long fan-outs in this
+  Codespace** — it stalled/died mid-run repeatedly (not OOM; 11Gi free), and a
+  window reload left a prior run orphaned-but-alive that kept spawning
+  branches/worktrees and collided with the relaunch. Prefer discrete main-loop
+  `Agent` dispatches for multi-batch work (one unit lost on failure, resumable);
+  if you must run a Workflow, after any reload/relaunch check for and kill a
+  leftover prior run BEFORE relaunching.
+
+- **Workflow run hygiene**: a dead run = its journal
+  (`~/.claude/projects/<proj>/subagents/workflows/wf_<id>/journal.jsonl`) stops
+  growing for ~2min with no live `dbt`/agent procs. Its `isolation:'worktree'`
+  dirs are `.claude/worktrees/wf_<id>-N` (NOT the repo `.worktrees/`; left
+  `locked` when orphaned — `git worktree unlock` then `remove --force`).
+  `TaskStop` only sees tasks launched in the CURRENT session — a Workflow from a
+  prior (reloaded) session isn't in the registry; clean it at the
+  process/worktree level. Concurrency cap = `min(16, cpu_cores-2)` (4-core
+  Codespace → 2; raising it needs a larger machine, whose restart kills
+  in-flight runs).
+
 - **Git resuming**: Before resuming work on an existing branch, merge `main`:
   `git fetch origin main && git merge origin/main`.
 
