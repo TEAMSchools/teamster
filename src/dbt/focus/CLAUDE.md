@@ -24,7 +24,11 @@ value crosswalks.
 `custom_fields.column_name` + `source_class`. `title` is the readable name (slug
 it for the staging alias); `select`/`multiple` values are codes (decode via the
 crosswalk above); `log`-type values live in `custom_field_log_entries`;
-`computed`/`holder` are not stored.
+`computed`/`holder` are not stored. Custom fields are NOT always named
+`custom_NNN` — some use semantic `column_name`s (e.g. `users.birth_date`,
+`charter_*`); when profiling an entity's populated custom fields, scan the FULL
+table and join the whole catalog on `lower(column_name)`, since filtering to
+`custom_*`-prefixed columns silently misses the semantic-named ones.
 
 `source_class`→entity-table map (use the catalog's own spelling, NOT the
 entity's): `SISStudent`→students, `FocusUser`→users, `SISSchool`→schools,
@@ -54,7 +58,8 @@ attributes, not delete sentinels.
 
 **Primary keys.** Most tables PK on `id`; some on `<entity>_id` (`address_id`,
 `course_id`, `course_period_id`, `marking_period_id`, `period_id`,
-students→`student_id`, users→`profile_id`).
+students→`student_id`, users→`staff_id` (`profile_id` is null for nearly all
+rows).
 
 ## Model Structure
 
