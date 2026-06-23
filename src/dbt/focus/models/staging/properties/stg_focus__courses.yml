@@ -1,12 +1,15 @@
 models:
   - name: stg_focus__courses
     description: >-
-      Focus courses — one row per course definition, scoped by school year and
-      school. Curated to the FLDOE-import-mapped core plus course/subject keys,
-      titles, prerequisites, and scheduling attributes, with the
-      currently-populated custom-field columns appended inline (aliased to their
-      slug). Unpopulated custom slots are excluded. Select/multiple custom
-      values remain as stored Focus option codes — not decoded in this layer.
+      Focus courses — one row per course_id, which is globally unique across
+      years (Focus rollover assigns a new id each year and records the prior id
+      in rollover_id), so course_id alone is the primary key even though each
+      row carries its school year and school. Curated to the FLDOE-import-mapped
+      core plus course/subject keys, titles, prerequisites, and scheduling
+      attributes, with the currently-populated custom-field columns appended
+      inline (aliased to their slug). Unpopulated custom slots are excluded.
+      Select/multiple custom values remain as stored Focus option codes — not
+      decoded in this layer.
     columns:
       - name: course_id
         description: Primary key — Focus course id.

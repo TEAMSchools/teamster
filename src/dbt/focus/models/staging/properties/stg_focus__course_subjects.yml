@@ -1,11 +1,14 @@
 models:
   - name: stg_focus__course_subjects
     description: >-
-      Focus course subjects — one row per subject, scoped by school year and
-      school. Lookup that groups courses under a subject area. Includes the
-      currently-populated custom-field columns inline (aliased to their slug);
-      unpopulated custom slots are excluded. Select/multiple custom values
-      remain as stored Focus option codes — not decoded in this layer.
+      Focus course subjects — one row per subject_id, which is globally unique
+      across years (Focus rollover assigns a new id each year and records the
+      prior id in rollover_id), so subject_id alone is the primary key even
+      though each row carries its school year and school. Lookup that groups
+      courses under a subject area. Includes the currently-populated
+      custom-field columns inline (aliased to their slug); unpopulated custom
+      slots are excluded. Select/multiple custom values remain as stored Focus
+      option codes — not decoded in this layer.
     columns:
       - name: subject_id
         description: Primary key — Focus course subject id.
