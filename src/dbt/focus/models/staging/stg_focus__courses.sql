@@ -34,8 +34,8 @@ select
     created_at,
     updated_at,
 
-    custom_4,
-    custom_2,
-    custom_3,
-    custom_10,
+    custom_4 as course_sequence,
+    custom_2 as wdis_ocp_hours,
+    custom_3 as ocp,
+    custom_10 as cape,
 from {{ source("focus", "courses") }}

@@ -120,23 +120,21 @@ models:
       - name: updated_at
         description: Row last-update timestamp in Focus.
         data_type: timestamp
-      - name: custom_4
+      - name: course_sequence
         description: >-
-          Focus generic custom slot; label not defined in the extracted
-          custom_fields catalog.
+          Course sequence — Focus custom field. Stored as an encoded select
+          option code (decode deferred).
         data_type: string
-      - name: custom_2
+      - name: wdis_ocp_hours
         description: >-
-          Focus generic custom slot; label not defined in the extracted
-          custom_fields catalog.
+          WDIS OCP hours — Focus custom field.
         data_type: string
-      - name: custom_3
+      - name: ocp
         description: >-
-          Focus generic custom slot; label not defined in the extracted
-          custom_fields catalog.
+          Occupational completion point — Focus custom field. Stored as an
+          encoded select option code (decode deferred).
         data_type: string
-      - name: custom_10
+      - name: cape
         description: >-
-          Focus generic custom slot; label not defined in the extracted
-          custom_fields catalog.
+          CAPE designation — Focus custom field.
         data_type: string

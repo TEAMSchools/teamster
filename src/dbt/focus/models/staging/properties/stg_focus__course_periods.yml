@@ -182,53 +182,52 @@ models:
       - name: updated_at
         description: Row last-update timestamp in Focus.
         data_type: timestamp
-      - name: custom_2
+      - name: fefp_number
         description: >-
-          Focus generic custom slot; label not defined in the extracted
-          custom_fields catalog.
+          FEFP number — Focus custom field. Stored as an encoded select option
+          code (decode deferred).
         data_type: string
-      - name: custom_4
+      - name: scheduling_method
         description: >-
-          Focus generic custom slot; label not defined in the extracted
-          custom_fields catalog.
+          Scheduling method — Focus custom field. Stored as an encoded select
+          option code (decode deferred).
         data_type: string
-      - name: custom_6
+      - name: facility_type
         description: >-
-          Focus generic custom slot; label not defined in the extracted
-          custom_fields catalog.
+          Facility type — Focus custom field. Stored as an encoded select option
+          code (decode deferred).
         data_type: string
-      - name: custom_25
+      - name: reading_intervention_component
         description: >-
-          Focus generic custom slot; label not defined in the extracted
-          custom_fields catalog.
+          Reading intervention component — Focus custom field. Stored as an
+          encoded select option code (decode deferred).
         data_type: string
-      - name: custom_22
+      - name: basic_skills_exam
         description: >-
-          Focus generic custom slot; label not defined in the extracted
-          custom_fields catalog.
+          Basic skills exam — Focus custom field. Stored as an encoded select
+          option code (decode deferred).
         data_type: string
-      - name: custom_33
+      - name: location_of_student
         description: >-
-          Focus generic custom slot; label not defined in the extracted
-          custom_fields catalog.
+          Location of student — Focus custom field. Stored as an encoded select
+          option code (decode deferred).
         data_type: string
-      - name: custom_34
+      - name: eoc_exam_term
         description: >-
-          Focus generic custom slot; label not defined in the extracted
-          custom_fields catalog.
+          EOC exam term — Focus custom field. Stored as an encoded select option
+          code (decode deferred).
         data_type: string
-      - name: custom_5
+      - name: highly_qualified
         description: >-
-          Focus generic custom slot; label not defined in the extracted
-          custom_fields catalog.
+          Highly qualified — Focus custom field. Stored as an encoded select
+          option code (decode deferred).
         data_type: string
-      - name: custom_28
+      - name: cert_licensure_qual_status
         description: >-
-          Focus generic custom slot; label not defined in the extracted
-          custom_fields catalog.
+          Certification, licensure, or qualification status — Focus custom
+          field. Stored as an encoded select option code (decode deferred).
         data_type: string
-      - name: custom_3
+      - name: class_minutes_weekly
         description: >-
-          Focus generic custom slot; label not defined in the extracted
-          custom_fields catalog.
+          Class minutes weekly — Focus custom field.
         data_type: string
