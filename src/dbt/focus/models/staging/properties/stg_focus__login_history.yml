@@ -24,9 +24,6 @@ models:
         description:
           Timestamp of the login attempt (TIMESTAMP despite the name).
         data_type: timestamp
-        config:
-          meta:
-            contains_pii: true
       - name: type
         description: Login event type classification.
         data_type: string
