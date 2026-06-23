@@ -1,0 +1,108 @@
+models:
+  - name: stg_focus__referral_actions
+    description: >-
+      Focus referral actions — one row per disciplinary action that can result
+      from a referral, with day-limit thresholds, grade-level bounds, and the
+      letter/profile configuration governing the action.
+    columns:
+      - name: id
+        description: Primary key — Focus referral action id.
+        data_type: int
+        data_tests:
+          - unique:
+              config:
+                severity: error
+          - not_null:
+              config:
+                severity: error
+      - name: title
+        description: Full referral action name.
+        data_type: string
+      - name: local_code
+        description: District-local code for the action.
+        data_type: string
+      - name: state_code
+        description: State-reporting code mapped to this action.
+        data_type: string
+      - name: severity
+        description: Severity ranking for the action.
+        data_type: int
+      - name: profiles_edit
+        description: User profiles permitted to edit this action.
+        data_type: string
+      - name: min_days_referral
+        description: Minimum days assignable per referral for this action.
+        data_type: int
+      - name: max_days_referral
+        description: Maximum days assignable per referral for this action.
+        data_type: int
+      - name: max_days_year
+        description: Maximum cumulative days per year for this action.
+        data_type: int
+      - name: max_days_ese
+        description: Maximum days for ESE (special education) students.
+        data_type: int
+      - name: max_days_504
+        description: Maximum days for students on a 504 plan.
+        data_type: int
+      - name: warning_level
+        description: Warning level associated with the action.
+        data_type: int
+      - name: min_grade_level
+        description: Minimum grade level the action applies to.
+        data_type: int
+      - name: max_grade_level
+        description: Maximum grade level the action applies to.
+        data_type: int
+      - name: withdraw_code
+        description:
+          Withdrawal code applied when the action withdraws a student.
+        data_type: int
+      - name: restrict_reentry
+        description: Flag (0/1) — whether the action restricts re-entry.
+        data_type: int
+      - name: school_exemptions
+        description: School ids exempted from this action.
+        data_type: string
+      - name: max_referral_days_ese
+        description: Maximum referral days for ESE students.
+        data_type: int
+      - name: max_referral_days_504
+        description: Maximum referral days for students on a 504 plan.
+        data_type: int
+      - name: override_profile
+        description: Profile permitted to override the action limits.
+        data_type: string
+      - name: warning_message
+        description: Warning message shown when the action is applied.
+        data_type: string
+      - name: start_year
+        description: First school year (start year) the action is active.
+        data_type: int
+      - name: end_year
+        description: Last school year (start year) the action is active.
+        data_type: int
+      - name: detention
+        description: Y/N — whether the action is a detention.
+        data_type: string
+      - name: district_id
+        description: Focus district id.
+        data_type: int
+      - name: letter_id
+        description: Letter template id associated with the action.
+        data_type: int
+      - name: letter_source
+        description: Source of the associated letter template.
+        data_type: string
+      - name: grade_levels
+        description: Grade levels the action applies to.
+        data_type: string
+      - name: type
+        description: Referral action type classification.
+        data_type: string
+      - name: created_at
+        description: Row creation timestamp in Focus.
+        data_type: timestamp
+      - name: updated_at
+        description: Row last-update timestamp in Focus.
+        data_type: timestamp
