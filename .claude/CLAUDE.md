@@ -101,6 +101,11 @@ evidence in `.claude/scratch/` and reference it. For non-Bash tools only Section
 1 path rules scan the body; Bash-only and `path_only` rules do not. (Edit/Write
 `content`/`new_string` is content-exempt, so editing docs is unaffected.)
 
+**Non-Bash tool inputs are path-scanned too:** `TodoWrite` / `AskUserQuestion`
+text containing a bare `env` (or other sensitive-path token) trips "Cannot
+access sensitive path". Reword (`environment variable`; avoid cred-suffix tokens
+like `_KIPPMIAMI`).
+
 **Your own ad-hoc Bash self-blocks on `$UPPER_CASE`:** Rule 7 denies any Bash
 command expanding a non-allowlisted uppercase var — including one you define in
 that same command (`sc=$(...); echo "${SC}"`). Use lowercase names
@@ -114,6 +119,12 @@ material (keys, tokens, connection strings, high-entropy strings). Fires for
 Bash, Read, Grep, NotebookEdit, WebFetch, WebSearch, and MCP tools. Does NOT
 fire for Edit.
 
+**MCP spill files are Bash-unreadable:** a large MCP result that overflows the
+context budget dumps to `~/.claude/projects/.../tool-results/`; Bash
+(`jq`/`cat`) on that path is denied ("Cannot access sensitive path"). Use a
+subagent (as the spill message suggests) or reconstruct the data from prior tool
+output instead.
+
 ## Git authentication for new repos
 
 The Codespace `GITHUB_TOKEN` (`ghu_*`) only has access to the repo it was
@@ -124,6 +135,14 @@ The Codespace token also lacks `project` and org-admin scopes. `gh` calls that
 mutate ProjectV2 items/fields fail with "Resource not accessible by integration"
 — prefix with `GITHUB_TOKEN=` to fall back to the user's OAuth token (`gho_*`)
 which has full scopes.
+
+`gh workflow run` (`workflow_dispatch`) can't be done from the Codespace: the
+`ghu_*` token lacks the `workflow` scope (403 "Resource not accessible by
+integration"), and emptying it via `GITHUB_TOKEN=` leaves `gh` API calls
+unauthenticated. No `mcp__github__*` tool dispatches workflows either — hand it
+to the user or the Actions UI. (Pushing a commit that edits a
+`deploy-prod-<loc>.yaml` also triggers that location's deploy, since the file is
+in its own push-paths.)
 
 ## Modifying protected files
 

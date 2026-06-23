@@ -1,0 +1,48 @@
+models:
+  - name: stg_finalsite__contact_relationships
+    description:
+      One row per (contact, relationship) — the family-graph edges (guardians,
+      siblings, children) attached to each Finalsite contact, unnested from the
+      `relationships` array. `rel_id` is the related person's Finalsite contact
+      UUID; join it to `stg_finalsite__contacts` for the related person's
+      details (guardians resolve there; sibling/child links to people outside
+      the pulled cohort will not match).
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns:
+              - finalsite_enrollment_id
+              - relationship_id
+          config:
+            severity: error
+    columns:
+      - name: finalsite_enrollment_id
+        data_type: string
+        description:
+          Finalsite contact UUID of the student this relationship belongs to.
+      - name: relationship_id
+        data_type: string
+        description: Finalsite relationship UUID; unique within a contact.
+      - name: rel_id
+        data_type: string
+        description:
+          Finalsite contact UUID of the related person; join to
+          `stg_finalsite__contacts` for their details.
+      - name: rel_name
+        data_type: string
+        description: Name of the related person as stored on the relationship.
+      - name: rel_type
+        data_type: string
+        description:
+          Relationship type (e.g. parent, guardian, sibling, child) — not
+          gendered.
+      - name: is_primary
+        data_type: boolean
+        description: Whether this is the primary relationship for the contact.
+      - name: is_financial
+        data_type: boolean
+        description:
+          Whether this relationship is the financially responsible party.
+      - name: has_portal_access
+        data_type: boolean
+        description: Whether the related person has Finalsite portal access.

@@ -1,0 +1,88 @@
+models:
+  - name: stg_focus__course_weights
+    description: >-
+      Focus course weights — one row per weighting of a course, holding GPA
+      multiplier, credits, and the per-course-history-term scheduling flags.
+    columns:
+      - name: id
+        description: Primary key — Focus course weight id.
+        data_type: int
+        data_tests:
+          - unique:
+              config:
+                severity: error
+          - not_null:
+              config:
+                severity: error
+      - name: syear
+        description: Focus school year (start year).
+        data_type: int
+      - name: school_id
+        description: Focus school number.
+        data_type: int
+      - name: course_id
+        description: Focus course id this weight applies to.
+        data_type: int
+      - name: course_weight
+        description: Course weight label / course-history-term identifier.
+        data_type: string
+      - name: gpa_multiplier
+        description: GPA multiplier applied for this weight.
+        data_type: numeric
+      - name: rollover_id
+        description: Source course weight id this rolled over from.
+        data_type: int
+      - name: year_fraction
+        description: Fraction of the school year this weight represents.
+        data_type: numeric
+      - name: credits
+        description: Credits per course-history term (FLDOE CREDITS).
+        data_type: numeric
+      - name: student_requestable
+        description: Y/N — whether students may request this weight.
+        data_type: string
+      - name: student_scheduleable
+        description: Y/N — whether this weight is student-schedulable.
+        data_type: string
+      - name: cw_checkbox_setting_1
+        description: Course-weight checkbox setting slot 1.
+        data_type: string
+      - name: cw_checkbox_setting_2
+        description: Course-weight checkbox setting slot 2.
+        data_type: string
+      - name: cw_checkbox_setting_3
+        description: Course-weight checkbox setting slot 3.
+        data_type: string
+      - name: cw_checkbox_setting_4
+        description: Course-weight checkbox setting slot 4.
+        data_type: string
+      - name: cw_checkbox_setting_5
+        description: Course-weight checkbox setting slot 5.
+        data_type: string
+      - name: does_gpa_1
+        description: Y/N — whether this weight counts toward GPA scheme 1.
+        data_type: string
+      - name: does_gpa_2
+        description: Y/N — whether this weight counts toward GPA scheme 2.
+        data_type: string
+      - name: does_gpa_3
+        description: Y/N — whether this weight counts toward GPA scheme 3.
+        data_type: string
+      - name: does_gpa_4
+        description: Y/N — whether this weight counts toward GPA scheme 4.
+        data_type: string
+      - name: does_gpa_5
+        description: Y/N — whether this weight counts toward GPA scheme 5.
+        data_type: string
+      - name: teacher_approve
+        description: Y/N — whether teacher approval is required for this weight.
+        data_type: string
+      - name: imported
+        description: Y/N — whether the row originated from an import.
+        data_type: string
+      - name: created_at
+        description: Row creation timestamp in Focus.
+        data_type: timestamp
+      - name: updated_at
+        description: Row last-update timestamp in Focus.
+        data_type: timestamp

@@ -1,0 +1,15 @@
+select
+    id,
+    title,
+    short_name,
+    sort_order,
+    credits,
+    rollover_id,
+    request_group,
+    ahs_subject,
+    min_syear,
+    max_syear,
+    district_id,
+    created_at,
+    updated_at,
+from {{ source("focus", "grad_subjects") }}

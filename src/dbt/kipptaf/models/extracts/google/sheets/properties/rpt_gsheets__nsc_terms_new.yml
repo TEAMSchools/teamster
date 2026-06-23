@@ -39,3 +39,24 @@ models:
       - name: verified_by_nsc__c
         data_type: boolean
         description: Flag indicating this term record was verified by NSC.
+      - name: alum_name
+        data_type: string
+        description: >
+          Audit helper — alum name in `Last, First` form from the kippadb
+          roster. Delete before Salesforce upload.
+      - name: contact_advising_provider
+        data_type: string
+        description: >
+          Audit helper — alum's post-secondary advising provider from the
+          kippadb roster. Delete before Salesforce upload.
+      - name: ktc_status
+        data_type: string
+        description: >
+          Audit helper — alum's KIPP Through College status from the kippadb
+          roster (e.g. HSG, TAF, TAFHS, or current school-level + grade). Delete
+          before Salesforce upload.
+      - name: school_name
+        data_type: string
+        description: >
+          Audit helper — school name from the kippadb account. Delete before
+          Salesforce upload.

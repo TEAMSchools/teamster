@@ -3,11 +3,10 @@ models:
     description: >-
       Enrollment-scoped assessment score fact table. One row per student x
       assessment x administration. Covers internal Illuminate assessments and
-      state assessments (NJSLA, NJGPA, FAST). Scores are linked to a student
-      (via student_key), an assessment administration (via
-      assessment_administration_key), and — for internal assessments with a
-      resolvable course-section enrollment — to the student's section enrollment
-      (via student_section_enrollment_key).
+      state assessments (NJSLA, NJGPA, FAST). Each row is linked to an
+      assessment administration (via assessment_administration_key) and to the
+      student's resolved section enrollment (via student_section_enrollment_key
+      and enrollment_resolution).
     columns:
       - name: assessment_score_key
         data_type: string
@@ -26,7 +25,6 @@ models:
           FK to dim_assessment_administrations. Identifies the scheduled
           administration (assessment definition + occurrence context: academic
           year, region, season/window) that this score belongs to.
-
         constraints:
           - type: foreign_key
             to: ref('dim_assessment_administrations')
@@ -37,35 +35,28 @@ models:
               arguments:
                 to: ref('dim_assessment_administrations')
                 field: assessment_administration_key
-      - name: student_key
+
+      - name: enrollment_resolution
         data_type: string
         description: >-
-          FK to dim_students. Hashed on student_number (PowerSchool-sourced for
-          internal Illuminate, NJ Pearson localstudentidentifier, and FL via
-          FLEID lookup in int_fldoe__all_assessments). Null when the source
-          identifier does not resolve to a row in dim_students — for state
-          assessments, a left join validates that student_number exists in
-          dim_students before hashing.
-
-        constraints:
-          - type: foreign_key
-            to: ref('dim_students')
-            to_columns: [student_key]
-            warn_unsupported: false
+          How the section enrollment was resolved: subject_section (the section
+          for the assessment's subject, active on the test date) or homeroom
+          (the student's HR section, used when no subject section resolved).
+          Filter to subject_section for course/section-level rollups.
         data_tests:
-          - relationships:
+          - accepted_values:
               arguments:
-                to: ref('dim_students')
-                field: student_key
+                values: [subject_section, homeroom]
+
       - name: student_section_enrollment_key
         data_type: string
         description: >-
           FK to dim_student_section_enrollments. The student's section
-          enrollment for the assessment's subject, resolved to the section
-          active on the date the assessment was taken (falling back to the
-          administration date). Populated only for internal assessments with a
-          resolvable course-section enrollment; null for state assessments,
-          replacement curriculum, ES Writing, and unresolved internal rows.
+          enrollment resolved by int_assessments__resolved_section_enrollments —
+          subject section active on the test date, falling back to homeroom when
+          no subject section resolves (see enrollment_resolution). Populated for
+          every row; homeroom-resolved rows are coarser-grained than
+          subject_section rows.
         constraints:
           - type: foreign_key
             to: ref('dim_student_section_enrollments')
@@ -76,11 +67,13 @@ models:
               arguments:
                 to: ref('dim_student_section_enrollments')
                 field: student_section_enrollment_key
+
       - name: test_date_key
         data_type: date
         description: >-
-          FK to dim_dates. The date the assessment was taken.
-
+          FK to dim_dates. The date the assessment was taken. Populated for
+          state assessments (now threaded from source); nullable for internal
+          rows that lack a recorded sitting date upstream.
         constraints:
           - type: foreign_key
             to: ref('dim_dates')
@@ -114,3 +107,38 @@ models:
         description: >-
           TRUE if the student met the mastery or proficiency threshold for this
           assessment.
+
+      - name: response_type
+        data_type: string
+        description: >-
+          The response type associated with the assessment score (e.g., overall,
+          strand, standard). Null for state assessments.
+
+      - name: response_type_code
+        data_type: string
+        description: >-
+          Short code identifying the response type. Null for state assessments.
+
+      - name: response_type_description
+        data_type: string
+        description: >-
+          Human-readable description of the response type. Null for state
+          assessments.
+
+      - name: response_type_root_description
+        data_type: string
+        description: >-
+          Description of the root (top-level) response type in the hierarchy.
+          Null for state assessments.
+
+      - name: is_replacement
+        data_type: boolean
+        description: >-
+          TRUE if this score is a replacement score superseding an earlier
+          attempt. Null for state assessments.
+
+      - name: performance_band_label_number
+        data_type: numeric
+        description: >-
+          Numeric ordering of the performance band label within the assessment's
+          band scale. Null for state assessments.

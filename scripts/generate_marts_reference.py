@@ -36,6 +36,11 @@ REPO_ROOT = Path(__file__).resolve().parent.parent
 MARTS_DIR = REPO_ROOT / "src/dbt/kipptaf/models/marts"
 DEFAULT_OUTPUT = REPO_ROOT / "docs/reference/marts-data-models.md"
 
+# Conformed dimensions: shared across many facts (the time / place / term
+# backbone). Omitted from the diagrams to reduce clutter — they still appear in
+# each fact's FK table.
+CONFORMED_DIMS = frozenset({"dim_dates", "dim_locations", "dim_regions", "dim_terms"})
+
 _REF_RE = re.compile(r"ref\(\s*['\"]([a-z0-9_]+)['\"]\s*\)")
 
 
@@ -95,6 +100,11 @@ def parse_fk_edges(yaml_path: Path) -> list[FkEdge]:
     Column-level edges are emitted first (in column order), followed by
     model-level edges (in constraint order, then column order within each
     constraint).  Non-foreign-key constraints are ignored in both locations.
+
+    FK edges come only from literal ``foreign_key`` constraints — never inferred
+    from ``relationships`` data tests.  Every mart (views and table-materialized
+    alike) declares its FKs as constraints, so the constraint blocks are the
+    single source of truth for the diagram.
     """
     doc = yaml.safe_load(yaml_path.read_text(encoding="utf-8")) or {}
     edges: list[FkEdge] = []
@@ -157,7 +167,9 @@ def build_adjacency(edges: Iterable[FkEdge]) -> dict[str, list[FkEdge]]:
 
 
 def snowflake_subgraph(
-    adjacency: Mapping[str, list[FkEdge]], root: str
+    adjacency: Mapping[str, list[FkEdge]],
+    root: str,
+    exclude: frozenset[str] = frozenset(),
 ) -> list[FkEdge]:
     """BFS from root, collecting every reachable FK edge (full snowflake chain).
 
@@ -165,6 +177,9 @@ def snowflake_subgraph(
     target are all kept. Shared targets (a dim reached via two paths) are visited
     once; the visited set also guards against cycles. The marts design is acyclic
     by convention.
+
+    Targets in ``exclude`` (conformed dimensions) are dropped entirely: their
+    edges are skipped and the traversal does not chain through them.
     """
     visited: set[str] = {root}
     queue: deque[str] = deque([root])
@@ -173,6 +188,8 @@ def snowflake_subgraph(
     while queue:
         node = queue.popleft()
         for edge in adjacency.get(node, []):
+            if edge.target in exclude:
+                continue
             key = (edge.source, edge.fk_column, edge.target)
             if key not in seen:
                 seen.add(key)
@@ -194,14 +211,19 @@ table holds foreign keys to its _direct_ parents only, and deeper context is
 reached by chaining one dimension to its parent dimension
 (`fct_student_attendance_daily` → `dim_student_enrollments` → `dim_students`).
 
-Each section below shows one fact table and the full snowflake chain reachable
-from it, followed by the fact's own foreign keys.
+Each section below shows one fact table and the snowflake chain reachable from
+it, followed by the fact's own foreign keys. **Conformed dimensions —
+`dim_dates`, `dim_terms`, `dim_locations`, and `dim_regions` — are omitted from
+the diagrams** to reduce clutter (they are referenced throughout and would
+otherwise appear in nearly every graph); each fact's foreign-key table below its
+diagram still lists them.
 
 > **Reading the diagrams.** Boxes are tables (`fct_*` facts, `dim_*`
 > dimensions). An edge `child }o--|| parent : "fk_column"` reads "many rows of
 > _child_ reference one row of _parent_ via _fk_column_." A fact with several
-> edges to the same dimension (e.g. `created_date_key` and `solved_date_key`
-> both to `dim_dates`) is showing role-qualified foreign keys.
+> edges to the same dimension (e.g. `submitter_staff_key` and
+> `assignee_staff_key` both to `dim_staff`) is showing role-qualified foreign
+> keys.
 """
 
 
@@ -225,7 +247,7 @@ def render_fk_table(adjacency: Mapping[str, list[FkEdge]], root: str) -> str:
 
 
 def render_fact_section(adjacency: Mapping[str, list[FkEdge]], fact: str) -> str:
-    sub = snowflake_subgraph(adjacency, fact)
+    sub = snowflake_subgraph(adjacency, fact, exclude=CONFORMED_DIMS)
     return "\n".join(
         [
             f"## {fact}",

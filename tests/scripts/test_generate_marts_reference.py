@@ -52,6 +52,19 @@ def test_parse_fk_edges_reads_foreign_key_constraints() -> None:
     ]
 
 
+def test_parse_fk_edges_ignores_relationships_tests_on_table_marts() -> None:
+    edges = gen.parse_fk_edges(FIXTURE_DIR / "sample_fct_table_materialized.yml")
+
+    # FK edges come only from literal foreign_key constraints, never from
+    # relationships data tests — even on a table-materialized model. The fixture
+    # has one literal FK (constrained_key) plus two relationships-only columns
+    # (enrollment_key, date_key) and a relationships-only view model; only the
+    # literal constraint yields an edge.
+    assert edges == [
+        gen.FkEdge("fct_table_sample", "constrained_key", "dim_other"),
+    ]
+
+
 def test_parse_fk_edges_warns_and_skips_legacy_expression(capsys) -> None:
     # An FK constraint using the legacy free-text expression: form (no to:) is
     # skipped, and a warning is emitted so the dropped FK is not silent.
@@ -90,6 +103,23 @@ def test_snowflake_subgraph_walks_full_chain() -> None:
     assert gen.FkEdge("dim_locations", "region_key", "dim_regions") in sub
     targets = {e.target for e in sub}
     assert {"dim_regions", "dim_students", "dim_dates"} <= targets
+
+
+def test_snowflake_subgraph_excludes_conformed() -> None:
+    adjacency = gen.build_adjacency(_sample_edges())
+    sub = gen.snowflake_subgraph(
+        adjacency, "fct_x", exclude=frozenset({"dim_dates", "dim_locations"})
+    )
+
+    targets = {e.target for e in sub}
+    # excluded targets drop out entirely (node + edges)...
+    assert "dim_dates" not in targets
+    assert "dim_locations" not in targets
+    # ...and the chain does not traverse through them: dim_regions was only
+    # reachable via the excluded dim_locations, so it disappears too.
+    assert "dim_regions" not in targets
+    # non-excluded structure is retained.
+    assert {"dim_enrollments", "dim_students"} <= targets
 
 
 def test_collect_fact_names_sorted_from_facts_dir() -> None:

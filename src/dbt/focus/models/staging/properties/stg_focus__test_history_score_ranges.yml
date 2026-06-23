@@ -1,0 +1,51 @@
+models:
+  - name: stg_focus__test_history_score_ranges
+    description: >-
+      Focus test-history score ranges — one row per score range, mapping a part
+      and score type to a min / max band and performance level by grade.
+    columns:
+      - name: id
+        description: Primary key — Focus test-history score range id.
+        data_type: int
+        data_tests:
+          - unique:
+              config:
+                severity: error
+          - not_null:
+              config:
+                severity: error
+      - name: part_id
+        description: Foreign key to the Focus test-history part.
+        data_type: int
+      - name: score_type_id
+        description: Foreign key to the Focus test-history score type.
+        data_type: int
+      - name: legacy
+        description: Legacy id carried over from the prior system.
+        data_type: int
+      - name: title
+        description: Full score range name.
+        data_type: string
+      - name: level
+        description: Performance level label for the range.
+        data_type: string
+      - name: gradelevel
+        description: Grade level the range applies to.
+        data_type: string
+      - name: form
+        description: Test form the range applies to.
+        data_type: string
+      - name: min
+        description: Lower bound of the score range.
+        data_type: numeric
+        quote: true
+      - name: max
+        description: Upper bound of the score range.
+        data_type: numeric
+        quote: true
+      - name: created_at
+        description: Row creation timestamp in Focus.
+        data_type: timestamp
+      - name: updated_at
+        description: Row last-update timestamp in Focus.
+        data_type: timestamp

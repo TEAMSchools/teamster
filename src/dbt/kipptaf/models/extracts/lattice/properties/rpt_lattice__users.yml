@@ -2,10 +2,12 @@ models:
   - name: rpt_lattice__users
     description: >
       Daily staff roster for Lattice SFTP import. Includes all KIPP TEAM and
-      Family Schools Inc. employees, all KIPP Paterson employees, and
-      Director/Head/Leader-tier staff in Miami, Newark, and Camden who are
-      Active or on Leave, plus any staff who met those same business unit and
-      role criteria and were terminated within the past 30 days.
+      Family Schools Inc. employees, all KIPP Paterson employees,
+      Director/Head/Leader/Dean-tier (or Room 11) staff in Miami, and Newark and
+      Camden staff in select Operations director roles or in the Technology or
+      Marketing, Comms, and Enrollment departments. Interns are excluded. Covers
+      staff who are Active or on Leave, plus any staff who met those same
+      criteria and were terminated within the past 30 days.
     columns:
       - name: external_user_id
         description: ADP employee number used as the Lattice external user ID.
@@ -49,8 +51,8 @@ models:
         description:
           Home work location abbreviation; falls back to full location name.
         data_type: string
-      - name: region
+      - name: business_unit
         description:
-          Friendly region name derived from home business unit (Newark, Camden,
-          Miami, Paterson, KTAF).
+          Friendly business unit name derived from the employee's home business
+          unit (Newark, Camden, Miami, Paterson, KTAF).
         data_type: string

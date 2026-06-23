@@ -44,17 +44,24 @@ file; domain specifics live in the nearest subdirectory CLAUDE.md.
   source systems, and `dagster`/`dbt` when applicable.
 
 - **Before creating a branch**: ask the user — worktree or branch switch? Do not
-  choose for them.
+  choose for them. When an issue isn't already required (i.e. quick fixes, not
+  specs/plans), also ask whether to anchor the branch with one, and honor a
+  decline — create the branch without an issue via the paths below.
 
 - **Before writing any file (spec, code, config)**: be on the feature branch.
 
-- **Worktree**: `gh issue develop <number> --name <branch>` (no `--checkout`),
-  then `git worktree add .worktrees/<branch> <branch>`.
+- **Worktree**: with an issue, `gh issue develop <number> --name <branch>` (no
+  `--checkout`), then `git worktree add .worktrees/<branch> <branch>`. If the
+  user explicitly declined an issue, skip `gh issue develop` and create the
+  branch directly: `git worktree add -b <branch> .worktrees/<branch>`.
 
 - **Linking an existing remote branch to an issue**:
   `mcp__github__create_branch` and GraphQL `createLinkedBranch` both no-op when
   the branch already exists. Delete the remote branch, then
   `gh issue develop <num> --name <branch>`, then re-push local commits.
+  `git push origin --delete <branch>` is classifier-blocked as a destructive git
+  action even with consent — if the delete is refused, create the branch under a
+  NEW name and `gh issue develop --name <new-name>` instead of deleting.
 
 - **Worktree commands**: Path-flag-driven tools must name the worktree
   explicitly. Use `git -C <worktree>` on every git call (bare `git` from the
@@ -64,10 +71,20 @@ file; domain specifics live in the nearest subdirectory CLAUDE.md.
   the worktree root where `dbt_project.yml` doesn't exist). For Python execution
   from the main repo, prefix `VIRTUAL_ENV=` and use
   `uv --directory <worktree> run python ...` — bare `uv run --active` reads the
-  main repo's `.venv` and misses worktree-only changes. Otherwise prefer
-  absolute paths.
+  main repo's `.venv` and misses worktree-only changes. `uv --directory` also
+  resolves a relative _script_ path under the worktree, so a main-repo script
+  path breaks — pass an absolute script path or run it from the main repo.
+  Otherwise prefer absolute paths.
 
-- **Branch switch**: `gh issue develop <number> --name <branch> --checkout`.
+- **Worktree Read/Edit/Write must target the worktree path**, not the main
+  checkout: editing `/workspaces/teamster/<path>` instead of
+  `/workspaces/teamster/.worktrees/<branch>/<path>` silently leaves the worktree
+  unchanged and dirties `main` (the worktree commit then reports "nothing to
+  commit").
+
+- **Branch switch**: with an issue,
+  `gh issue develop <number> --name <branch> --checkout`; if the user explicitly
+  declined an issue, `git checkout -b <branch>`.
 
 - **Git naming**: Commit messages and branch names use
   [conventional commits](https://www.conventionalcommits.org/en/v1.0.0/). Branch
@@ -96,6 +113,25 @@ file; domain specifics live in the nearest subdirectory CLAUDE.md.
   partway through. Scope dispatches to one file / one commit; inspect the file
   diff and `git log` before marking complete — don't trust the self-report.
 
+- **The `Workflow`-tool orchestrator is unreliable for long fan-outs in this
+  Codespace** — it stalled/died mid-run repeatedly (not OOM; 11Gi free), and a
+  window reload left a prior run orphaned-but-alive that kept spawning
+  branches/worktrees and collided with the relaunch. Prefer discrete main-loop
+  `Agent` dispatches for multi-batch work (one unit lost on failure, resumable);
+  if you must run a Workflow, after any reload/relaunch check for and kill a
+  leftover prior run BEFORE relaunching.
+
+- **Workflow run hygiene**: a dead run = its journal
+  (`~/.claude/projects/<proj>/subagents/workflows/wf_<id>/journal.jsonl`) stops
+  growing for ~2min with no live `dbt`/agent procs. Its `isolation:'worktree'`
+  dirs are `.claude/worktrees/wf_<id>-N` (NOT the repo `.worktrees/`; left
+  `locked` when orphaned — `git worktree unlock` then `remove --force`).
+  `TaskStop` only sees tasks launched in the CURRENT session — a Workflow from a
+  prior (reloaded) session isn't in the registry; clean it at the
+  process/worktree level. Concurrency cap = `min(16, cpu_cores-2)` (4-core
+  Codespace → 2; raising it needs a larger machine, whose restart kills
+  in-flight runs).
+
 - **Git resuming**: Before resuming work on an existing branch, merge `main`:
   `git fetch origin main && git merge origin/main`.
 
@@ -104,8 +140,11 @@ file; domain specifics live in the nearest subdirectory CLAUDE.md.
   out-of-band consent, re-confirm in plain text the same turn or the write will
   be denied. Common surfaces: `git worktree add -b` / `git checkout -b`,
   `git push origin main` (route through a PR or have the user push), bulk Asana
-  `create_tasks`. If the user declined tracking issues, open minimal ones anyway
-  (title + 1-2 sentences) and use `gh issue develop`.
+  `create_tasks`. If the user hasn't ruled an issue out, open a minimal one
+  (title + 1-2 sentences) and use `gh issue develop`; if the user explicitly
+  declined an issue, create the branch directly (`git worktree add -b` /
+  `git checkout -b`) and re-confirm that consent in plain text the same turn so
+  the classifier (which can't see `AskUserQuestion` answers) allows it.
   `gh issue develop --name <branch>` also fails when the branch contains trigger
   words like `log`, `auth`, `secret` — rename and retry.
 
@@ -140,6 +179,17 @@ file; domain specifics live in the nearest subdirectory CLAUDE.md.
   declaring done. Local relationships warnings absent from CI are stale-dev
   `--defer` drift; ignore. CI warnings unchanged from main are pre-existing —
   `gh search issues` for a tracker before filing.
+
+- **The `claude-review` bot asserts repo conventions that may not be enforced**
+  (this session: a `_at`-vs-`_date` column-naming rule that no model follows).
+  Verify each convention claim against existing models before applying — its
+  findings are advisory, and `git grep` settles it faster than complying.
+
+- **A PR's CI lives on two disjoint surfaces**: dbt Cloud is a commit _status_
+  (`pull_request_read get_status` / `gh api commits/<sha>/status`); Trunk /
+  CodeQL / `claude` are _check runs_ (`get_check_runs` /
+  `commits/<sha>/check-runs`). Check both before calling a PR green; the
+  `claude` check reports `skipped` on pushes where it doesn't re-run.
 
 - **Python**: Always `uv run` — never bare `python`, `python3`, or
   venv-installed tools (`dbt`, `dagster`, etc.).
@@ -179,7 +229,11 @@ file; domain specifics live in the nearest subdirectory CLAUDE.md.
   `.trunk/tools/trunk check --force <files>` to verify before claiming the
   change is lint-clean. Run from inside the worktree —
   `trunk check --force <abs-worktree-paths>` from the main repo silently returns
-  "no applicable linters".
+  "no applicable linters". The `trunk` binary lives only in the main repo
+  (`.trunk/tools/` is gitignored, absent in worktrees) — invoke the absolute
+  path `/workspaces/teamster/.trunk/tools/trunk` with cwd set to the worktree;
+  relative paths run from the main repo check the main-repo copies, not your
+  worktree edits.
 
 - **Linter**: Suppress with `trunk-ignore(linter/rule): reason` (e.g.
   `# trunk-ignore(bandit/B603): static argv, no shell`) on the line immediately
@@ -194,6 +248,11 @@ file; domain specifics live in the nearest subdirectory CLAUDE.md.
 
 - **Markdown headings**: increment by one level (markdownlint MD001). `#` title
   goes directly to `##` — never jump to `###`.
+
+- **Backtick identifiers in markdown prose**: trunk-fmt reads unbackticked
+  `snake_case` / `glob_*` tokens as emphasis and mangles them (`attendance_day`
+  → `attendance*day`). Wrap model/table/column names in backticks in docs,
+  specs, and plans.
 
 - **Nested triple-backticks in markdown**: when a fenced block contains a
   heredoc with its own ``` examples, promote the outer fence to 4-backticks so
@@ -241,22 +300,33 @@ status, IEP/504/disability), financial info (FRL status), activities. Each field
 alone may be safe; combinations may not. When unsure, consult the
 [PTAC glossary](https://studentprivacy.ed.gov/glossary) or treat as PII.
 
+PII-tagging precedent in staging (powerschool) is **narrower** than this list —
+it omits gender, race/ethnicity, and internal/student ids. For a PII-heavy new
+model, confirm scope (direct-only vs direct+indirect) with the user before
+tagging.
+
 ## Superpowers skill overrides
 
 - **Branch creation always goes through the issue-and-branch flow in _Working
   Conventions_** — no exceptions for `superpowers:brainstorming`'s "Write design
-  doc" step, `superpowers:writing-plans`' "Save plan" step, or
+  doc" step, `superpowers:writing-plans`' "Save plans to:" step, or
   `superpowers:using-git-worktrees`' worktree-consent prompt. Pause those
   skills, run the flow, then write specs to `docs/superpowers/specs/...` or
-  plans to `docs/superpowers/plans/...` on the new branch. Never
-  `git worktree add -b` or `git checkout -b` standalone — the branch must be
-  created via `gh issue develop` so it's linked to the issue.
+  plans to `docs/superpowers/plans/...` on the new branch. Default to
+  `gh issue develop` so the branch is linked to an issue; only create a branch
+  standalone (`git worktree add -b` / `git checkout -b`) when the user
+  explicitly declines an issue — re-confirm that consent in plain text the same
+  turn.
 
-- **`finishing-a-development-branch` verification gate**: Skip the skill's
-  `npm test / pytest / ...` heuristic. For dbt changes,
-  `uv run dbt build --select <model>+` against the relevant project. For Python
-  changes, `uv run pytest` where tests exist. PR body uses
-  `.github/pull_request_template.md`.
+- **`trunk check` the spec/plan `.md` you write before pushing** — markdownlint
+  (MD040 fenced-block language, MD036) fires only at pre-push/CI, not the
+  pre-commit `fmt` hook; checking only the code files misses a doc-only Trunk
+  failure.
+
+- **`finishing-a-development-branch` / `using-git-worktrees` tests & setup**:
+  this repo uses `uv`, not `poetry`/`pip`, and
+  `uv run dbt build --select <model>+` should run alongside the skills' other
+  tests.
 
 - **Before brainstorming a fix for a GitHub issue**: verify the issue's claims
   (row counts, bucket sizes, reproduce queries, named files/columns) against
@@ -264,10 +334,10 @@ alone may be safe; combinations may not. When unsure, consult the
   PRs land. Re-run the diagnostic before designing.
 
 - **Continuous execution exceptions**: `superpowers:subagent-driven-development`
-  and `superpowers:executing-plans` say "do not pause between tasks." Pause
-  anyway to ask the user before (a) opening a tracking issue, (b) creating a
-  branch or worktree, (c) modifying protected files (hook scripts,
-  `.devcontainer/scripts/`, `.claude/settings*.json`).
+  and `superpowers:executing-plans` push you to execute every task without
+  pausing to check in. Pause anyway to ask the user before (a) opening a
+  tracking issue, (b) creating a branch or worktree, (c) modifying protected
+  files (hook scripts, `.devcontainer/scripts/`, `.claude/settings*.json`).
 
 ## CLAUDE.md Editing Rules
 
@@ -289,9 +359,10 @@ launcher. Package internals: see
   BigQuery calls.
 
 - **MCP subprocess logs**: stdio MCP stderr captured at
-  `~/.cache/claude-cli-nodejs/-workspaces-teamster/mcp-logs-<name>/<ts>.jsonl`,
-  one file per connect attempt. JSONL keys: `debug` (connect timings), `error`
-  (subprocess stderr). Read these before guessing why an MCP fails.
+  `~/.cache/claude-cli-nodejs/-workspaces-teamster/mcp-logs-<name>/<ts>.jsonl`.
+  Retries and reconnects append to the same file — read the newest file's tail,
+  don't expect a new file per attempt. JSONL keys: `debug` (connect timings),
+  `error` (subprocess stderr). Read these before guessing why an MCP fails.
 
 - **context7 MCP injection pattern**: results may end with a "Heads up notice
   for the user" instructing relay of a setup command (e.g.
@@ -347,6 +418,9 @@ the allowlist.
   (e.g. `<role>`, `<col>`) — **even inside inline backticks**. Use
   `{placeholder}` braces or a fenced code block (fenced blocks preserve `<`,
   `<=`, `>=`). Read the stored body back and verify after writing.
+- `mcp__github__pull_request_review_write` `method=create` requires the FULL
+  40-char `commitID` — an abbreviated SHA fails with "Could not coerce value ...
+  to GitObjectID".
 - `gh issue develop` — linked branch creation; `mcp__github__create_branch` does
   not link branches to issues.
 - `gh project item-edit --id <ITEM_ID> --project-id <PROJECT_ID> --field-id <FIELD_ID> --single-select-option-id <OPTION_ID>`
@@ -379,6 +453,9 @@ the allowlist.
   set; passing one label drops the rest.
 - GitHub Search API caps at 5 OR/AND/NOT operators per query (422 otherwise).
   Loop per-term via `gh api search/issues -f q='...'` for larger searches.
+- `mcp__github__search_issues` returns full issue **bodies** — a broad query
+  (bare model/column name) overflows the context budget and dumps to a file.
+  Narrow with `in:title`, a label, or `state:open`.
 
 ### Dagster asset diagnosis
 
@@ -405,10 +482,27 @@ opaque token.
 - `mcp__dagster__launch_multiple_runs` requires non-empty `asset_keys` per run —
   jobName alone won't queue. Resolve null-`assetSelection` failures to asset
   keys first.
+- `mcp__dagster__launch_run` for a **partitioned** asset takes the partition via
+  `tags={"dagster/partition": "<key>"}` — there is no partition arg. The key
+  must match the asset's `partitions_def` fmt (e.g. `DailyPartitionsDefinition`
+  `%m/%d/%Y` → `05/11/2026`). Preview with `confirm=False` first.
+- A run-level **SUCCESS can still carry a FAILED asset check** (e.g.
+  `zero_api_errors`) that fired an alert — `list_runs(statuses=["FAILURE"])` and
+  day2 step_01 both miss it; check `get_asset_check_executions` (day2 step_16).
+  The check payload often lacks the offending entity id — recover it from the
+  run's `LogMessageEvent` compute logs (`context.log.info` lines).
 - `mcp__dagster__search_assets` `cursor` is the JSON-string form returned by the
   prior call (`"[\"a\",\"b\"]"`), not a bare list.
 
 ### Dagster run failure diagnosis
+
+A step failure's real exception is the **bottom of the error chain**:
+`get_run_logs(filter_types=["ExecutionStepFailureEvent"])` →
+`error.errorChain[-1].error.message`. The top-level
+`DagsterExecutionStepExecutionError` and the day2 collector's
+`errorClass`/`errorDetail` only show the wrapper — read the chain bottom before
+theorizing about cause (e.g. ADP "Code error" was a transient gateway 404, not
+rate-limiting).
 
 Step pod stdout is filtered from `k8s_container` logs. For per-step execution
 logs, use Dagster's compute log manager:
@@ -489,11 +583,30 @@ wide tables, paginate with `WHERE ordinal_position > N`.
 
 `<dataset>.__TABLES__` exposes `last_modified_time` and `type` (1=table, 2=view)
 — use it to check whether a model rebuilt or is a live view.
-`INFORMATION_SCHEMA.TABLES` has neither.
+`INFORMATION_SCHEMA.TABLES` has neither. `__TABLES__.row_count` lags — it can
+read `0` for a table that already holds rows (e.g. just after a CI rebuild);
+confirm population with `COUNT(*)`, not `__TABLES__.row_count`.
+
+Verifying a just-re-materialized partition: the external-table query can read
+the **stale pre-overwrite file for minutes even with `_FILE_NAME`**
+(file-listing lag after `create or replace`) — a re-pull that changed the data
+still shows the OLD rows/count. Cross-check the run's materialization
+`record_count` + `data_version` via `mcp__dagster__get_asset_materializations`
+(ground truth) before concluding a re-pull did or didn't change anything.
 
 Hyphenated identifiers in INFORMATION_SCHEMA paths need backticks — `region-us`
 as a bare token fails with "Syntax error: Expected end of input but got '-'".
 Write `` `teamster-332318`.`region-us`.INFORMATION_SCHEMA.TABLES ``.
+
+Single quotes inside a BigQuery string literal escape with a **backslash**
+(`'O\'odham'`), not by doubling (`''`) — the doubled form fails with
+"concatenated string literals must be separated by whitespace".
+
+The BigQuery MCP service account **cannot read GOOGLE_SHEETS external tables**
+("Access Denied: ... while getting Drive credentials", 403) — it lacks Drive
+scope. To inspect a sheet-backed source's rows, build the staging model via dbt
+(`dbt build --select <stg_model> --target staging`; ADC has Drive scope), then
+query the materialized `zz_stg_*` table — a native BQ table, not Drive-backed.
 
 `bq` CLI fallback for shell contexts (Monitor poll loops): binary at
 `/usr/local/share/google-cloud-sdk/bin/bq`, `--project_id=teamster-332318`. Same
@@ -504,7 +617,10 @@ Pre-merge queries against PR-branch schema use
 the dbt Cloud CI job ID (stable across runs); read from
 `mcp__dbt__get_job_run_details(run_id)` step name
 `"Create profile from connection BigQuery (override schema to '...')"`. Prod
-`<schema>` lacks unmerged renames.
+`<schema>` lacks unmerged renames. The PR-branch marts schema holds only
+`state:modified+` models (often just the fact) — for unmodified dimensional
+context, join the PR-branch fact to PROD dims (`kipptaf_marts.dim_*`), which are
+absent from the PR schema and unchanged anyway.
 
 Chained joins through PR-branch marts (mart-view → mart-view → upstream-view)
 hit BigQuery's 16-view nesting limit. Query materialized prod tables instead, or
@@ -534,6 +650,13 @@ queries spanning multiple districts — never manually `UNION ALL` across
 `kippnewark_*`, `kippcamden_*`, `kippmiami_*`. Extract district from
 `_dbt_source_relation` with
 `REGEXP_EXTRACT(_dbt_source_relation, r'`(kipp[^`]+\_<source>)`')`.
+
+Slow/timed-out dbt model: in `JOBS_BY_PROJECT`, same `total_bytes_processed` +
+N× `total_slot_ms` across runs of the same model = BigQuery straggler/shard
+re-execution (transient), NOT slot contention or a code/data change — confirm
+via the `timeline` array (`active_units` not starved) and low competing
+slot-minutes in the window. A cancelled BQ job ends `state=DONE` with
+`error_result.reason="stopped"`; natural completion has `error_result=null`.
 
 ### dbt MCP
 

@@ -27,6 +27,13 @@ data-team Codespaces via `npx mcp-remote`.
   Redeploy is required for changes to reach `claude.ai` users.
 - Tool surface changes (add/remove tools): edit `server.py` and add tests in
   `tests/cube/test_mcp_server.py`.
+- Validate that an `instructions=`/tool change actually helps the model with the
+  `eval/` harness (model-in-the-loop, scored). Its Claude-Agent-SDK runner
+  (`run_eval_cc.py`, subscription auth) MUST be hermetic — `tools=[]`,
+  `strict_mcp_config=True`, `setting_sources=[]`, custom `system_prompt`.
+  Without these the agent leaks into Bash/ToolSearch and the live
+  `mcp__claude_ai_Cube__*` connector (`allowed_tools` is permission-only, not an
+  availability gate). See `eval/README.md`.
 - Container changes (Python version, system deps): edit `Dockerfile`.
 
 ## Local testing

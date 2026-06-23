@@ -1,0 +1,15 @@
+select
+    id,
+    course_period_id,
+    teacher_id,
+    f,
+    h,
+    m,
+    s,
+    t,
+    u,
+    w,
+    imported,
+    created_at,
+    updated_at,
+from {{ source("focus", "co_teacher_days") }}

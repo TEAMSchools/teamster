@@ -10,6 +10,27 @@
   `deploy-prod-*.yaml` workflows. Uses `cancel-in-progress: true` grouped by
   workflow + ref + event — rapid pushes to the same branch cancel prior deploys.
   Does not prevent multiple locations deploying simultaneously from one commit.
+- **Each `deploy-prod-<location>.yaml` push-`paths` must list every dbt package
+  in that district's `src/dbt/<district>/packages.yml`** (`src/dbt/pearson/**`,
+  etc.). Drift silently skips that district's prod deploy on a shared
+  source-package change, stranding it on stale code (PR #4175: paterson omitted
+  `src/dbt/pearson/**` → failed contract enforcement while newark/camden
+  deployed). After merging a source-package change, confirm every consuming
+  district deployed (`gh run list --branch main`); a post-merge prod failure
+  whose run tags show the OLD `dagster/git_commit_hash`/image is a
+  missed/lagging deploy, not a code bug. The `pull_request` `paths`
+  intentionally exclude `src/dbt/**` (dbt Cloud CI covers those); only the
+  `push` section needs them.
+- **The same push-`paths` drift hits shared Dagster library code**, not just dbt
+  packages: `deploy-prod-<location>.yaml` must list every
+  `src/teamster/libraries/<lib>/**` the location imports. A shared-library
+  change (e.g. the Focus dlt fix #4216) silently skipped the kippmiami deploy
+  because `src/teamster/libraries/dlt/**` was missing — only kipptaf, which
+  listed it, deployed (fixed #4219). After merging a library change, confirm the
+  consuming location actually **reloaded** before acting on the new code:
+  `mcp__dagster__get_location_load_history` → newest entry `loadStatus: LOADED`
+  with a matching `commit_hash`. A green Actions deploy job ≠ agent reloaded,
+  and a missing push-path means it never deployed at all.
 - `trunk-check.yaml` — runs Trunk linter on PRs (excludes `requirements.txt`).
 - `mkdocs-gh-deploy.yaml` — deploys docs site on push to `main`.
 - `deploy-cube-mcp.yaml` — builds and deploys the Cube MCP server to Cloud Run

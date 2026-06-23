@@ -319,6 +319,7 @@ class RosterAssignment(BaseModel):
 
 
 class Roster(BaseModel):
+    AcademicYearID: str | None = None
     Active: str | None = None
     AttScanVisible: str | None = None
     CollectHW: str | None = None

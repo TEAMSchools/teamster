@@ -1,0 +1,86 @@
+cubes:
+  - name: student_section_enrollments
+    public: false
+    sql_table: kipptaf_marts.dim_student_section_enrollments
+
+    joins:
+      - name: student_school_enrollments
+        sql: >
+          {student_school_enrollments.student_enrollment_key} =
+          {CUBE}.student_enrollment_key
+        relationship: many_to_one
+
+      - name: course_sections
+        sql: "{course_sections.course_section_key} = {CUBE}.course_section_key"
+        relationship: many_to_one
+
+      - name: terms
+        sql: "{terms.term_key} = {CUBE}.term_key"
+        relationship: many_to_one
+
+    dimensions:
+      - name: student_section_enrollment_key
+        description: >-
+          Surrogate key (cc_dcid, _dbt_source_project). Primary key — one row
+          per CC record.
+        sql: student_section_enrollment_key
+        type: string
+        primary_key: true
+
+      - name: student_enrollment_key
+        description:
+          FK to student_school_enrollments (resolved school enrollment stint).
+        sql: student_enrollment_key
+        type: string
+        public: true
+
+      # FKs — descriptors come from the joined cubes.
+      - name: course_section_key
+        description: FK to course_sections.
+        sql: course_section_key
+        type: string
+
+      - name: term_key
+        description: FK to terms.
+        sql: term_key
+        type: string
+
+      - name: academic_year
+        description: >-
+          KIPP academic year (July start) the section enrollment falls in. The
+          calendar year the academic year begins (e.g., 2025 for 2025-26). This
+          is the canonical academic_year for the assessment-scores views.
+        sql: academic_year
+        type: number
+        public: true
+
+      - name: entry_date
+        description: >-
+          Date the student enrolled in this section. Cast to TIMESTAMP for Cube
+          time joins.
+        sql: CAST(entry_date AS TIMESTAMP)
+        type: time
+        public: true
+
+      - name: exit_date
+        description: >-
+          Date the student left this section. Cast to TIMESTAMP for Cube time
+          joins.
+        sql: CAST(exit_date AS TIMESTAMP)
+        type: time
+        public: true
+
+      - name: is_dropped_section
+        description: >-
+          TRUE if this section enrollment was dropped mid-term (negative section
+          id + early exit).
+        sql: is_dropped_section
+        type: boolean
+        public: true
+
+      - name: is_dropped_course
+        description: >-
+          TRUE if all enrollments for this student x course x year were dropped.
+        sql: is_dropped_course
+        type: boolean
+        public: true

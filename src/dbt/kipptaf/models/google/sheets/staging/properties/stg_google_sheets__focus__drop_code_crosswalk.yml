@@ -1,0 +1,20 @@
+models:
+  - name: stg_google_sheets__focus__drop_code_crosswalk
+    description: >
+      Crosswalk mapping a Finalsite withdrawal reason to the corresponding Focus
+      Drop code.
+    columns:
+      - name: finalsite_withdrawal_reason
+        data_type: string
+        description: Withdrawal reason value as recorded in Finalsite.
+        data_tests:
+          - not_null:
+              config:
+                severity: error
+          - unique:
+              config:
+                severity: error
+      - name: focus_drop_code
+        data_type: string
+        description:
+          Focus Drop code that corresponds to the Finalsite withdrawal reason.

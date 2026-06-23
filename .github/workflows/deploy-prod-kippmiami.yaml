@@ -17,6 +17,7 @@ on:
       - uv.lock
       - src/dbt/deanslist/**
       - src/dbt/finalsite/**
+      - src/dbt/focus/**
       - src/dbt/iready/**
       - src/dbt/kippmiami/**
       - src/dbt/powerschool/**
@@ -27,6 +28,7 @@ on:
       - src/teamster/libraries/extracts/**
       - src/teamster/libraries/dbt/**
       - src/teamster/libraries/deanslist/**
+      - src/teamster/libraries/dlt/**
       - src/teamster/libraries/finalsite/**
       - src/teamster/libraries/fldoe/**
       - src/teamster/libraries/google/drive/resources.py
@@ -48,6 +50,7 @@ on:
       - src/teamster/libraries/extracts/**
       - src/teamster/libraries/dbt/**
       - src/teamster/libraries/deanslist/**
+      - src/teamster/libraries/dlt/**
       - src/teamster/libraries/finalsite/**
       - src/teamster/libraries/fldoe/**
       - src/teamster/libraries/iready/**
@@ -61,6 +64,7 @@ on:
       - synchronize
       - reopened
       - closed
+      - ready_for_review
 
 jobs:
   dagster-cloud-deploy:

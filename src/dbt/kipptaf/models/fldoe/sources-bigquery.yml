@@ -1,0 +1,13 @@
+sources:
+  - name: kippmiami_fldoe_archive
+    schema: kippmiami_fldoe
+    tables:
+      - name: stg_fldoe__fsa
+        config:
+          meta:
+            dagster:
+              group: fldoe
+              asset_key:
+                - kippmiami
+                - fldoe
+                - stg_fldoe__fsa

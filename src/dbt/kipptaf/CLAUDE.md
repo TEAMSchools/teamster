@@ -65,6 +65,11 @@ When both joined union models materialize `_dbt_source_project`, prefer
 `a._dbt_source_project = b._dbt_source_project` over the macro — same semantics,
 no `regexp_extract` per call.
 
+Produce `_dbt_source_project` on a union model with
+`select *, {{ extract_code_location("union_relations") }} as _dbt_source_project`
+`from union_relations` (the `union_relations` CTE wrapping
+`dbt_utils.union_relations`).
+
 ### Selecting from `dbt_utils.star()` models
 
 `base_` models using `star()` resolve columns from BigQuery at run time, not
@@ -89,6 +94,14 @@ view. Don't add either when creating a new one.
 **not** extracted here — regional projects source from them, filter to their
 data, and push to their own PowerSchool instance. Exposures live in regional
 projects, not kipptaf.
+
+This cross-project shape generalizes (e.g. finalsite→focus): the heavy `rpt_*`
+view lives in kipptaf sourcing district data via `source()`, and each district
+has a thin wrapper sourcing `kipptaf_extracts`. The wrapper is
+contract-columns-only — NO data tests or descriptions (those live on the kipptaf
+view). A new kipptaf region source (`sources-kipp*.yml`) needs the
+`dev`/`staging` (`zz_stg_`)/prod schema branch, or single-PR cross-project CI
+can't read it.
 
 ## `dbt_project.yml` Inherited Defaults
 
@@ -147,7 +160,32 @@ them, and `dim_student_enrollments` stays alumni-inclusive.
 **`enroll_status` is student-level, not per-stint.** Sourced from
 `stg_powerschool__students` and copied identically to every row in
 `int_powerschool__student_enrollment_union`. Don't expect different stints for
-the same student to carry different values.
+the same student to carry different values. **For point-in-time or historical
+enrollment counts, filter by enrollment dates (`entrydate`/`exitdate` covering
+the target date), NOT `enroll_status`** — status is current-only, so a status
+filter drops a mid-year withdrawal even from dates they were still enrolled
+(~887 students network-wide for AY2025) and never reflects
+status-on-a-past-date. Topline `Total Enrollment` counts by dates, not status;
+match that for reconciliation.
+
+**Point-in-time enrollment headcount uses entry/exit dates, not
+`enroll_status`.** `count_students` in the `student_enrollments` Cube derives
+from `fct_student_attendance_daily` anchored on per-school `is_current_record` /
+`is_enrollment_month_end_record` / `is_enrollment_week_end_record`. Topline
+Total Enrollment reconciles at Oct-1 2025 = 10,637 (Camden 2,161 / Miami 1,346 /
+Newark 6,608 / Paterson 522). Break weeks (no in-session rows) return 0 by
+design — gap-fill in the BI layer. Paterson `attendance_value` is unreliable
+(upstream PS conversion-items gap, #4193) but `membership_value` is clean —
+enrollment counts include Paterson correctly.
+
+**School calendars diverge at year-end; never anchor a point-in-time count on a
+network-wide `max(date)`.** Mid-year months share a last in-session day across
+schools, but June does not (Miami ends ~Jun 4, Newark ~Jun 9, others to ~Jun
+29). Any "as of the last day of the period" computation (year/month/week-end)
+must take the per-school last in-session day
+(`max(date_value) ... group by school`), capped at `current_date` for the
+in-progress period — a global max silently drops early-ending schools (e.g. all
+of Miami).
 
 **`dim_terms.type` is KIPP-managed, not PowerSchool-derived.** Values from
 `stg_google_sheets__reporting__terms` — RT (reporting term, quarter grain), ATT
@@ -264,6 +302,15 @@ touching both a district model and a kipptaf consumer:
    `uv --directory <worktree> run dbt clone --target staging --state target/prod`
    to seed `zz_stg_<district>_*` from prod.
 3. Push; CI reads staged regional via the schema branch.
+
+`dbt clone` only seeds upstreams UNCHANGED in this PR (it copies prod schema).
+For district/package models you MODIFIED, clone gives the OLD schema — instead
+`stage_external_sources --target staging` their externals, then
+`dbt build --select <model> --target staging` into `zz_stg_`. Also clone+build
+`zz_stg_kipptaf` itself — under `--target staging` kipptaf reads its own models
+from there. Seed EVERY district that unions into the kipptaf model (e.g.
+`kipppaterson`, which feeds `stg_pearson__njsla`/`_science` via its own
+`int_pearson__*`, not the package `stg_*`).
 
 Alternative to the two-PR pattern in `src/dbt/CLAUDE.md`.
 

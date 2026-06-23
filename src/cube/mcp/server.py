@@ -218,12 +218,14 @@ mcp = FastMCP(
         "and views) via Cube Cloud's REST API.\n\n"
         "Workflow: (1) call `meta` to discover available views, measures, and "
         "dimensions — analyst-facing surfaces are views named `<domain>_<grain>` "
-        "(e.g. `attendance_detail`, `attendance_summary`); (2) build a Cube "
+        "(e.g. `student_attendance_detail`, `student_attendance_summary`); (2) "
+        "build a Cube "
         "query object (measures, dimensions, filters, timeDimensions, order, "
         "limit) and call `load` to execute, or `sql` to inspect the compiled "
         "SQL without running it. The query spec follows the Cube REST API.\n\n"
         "Member naming: every measure/dimension is dotted `<view>.<member>` "
-        "(e.g. `attendance_summary.count_students`). Bare names won't resolve.\n\n"
+        "(e.g. `student_attendance_summary.count_students`). Bare names won't "
+        "resolve.\n\n"
         "Filter operators are named, not SQL: `equals`, `notEquals`, `contains`, "
         "`gt`/`gte`/`lt`/`lte`, `set`/`notSet`, `inDateRange`, `beforeDate`, "
         "`afterDate`. SQL-style `=`/`IN`/`LIKE` won't parse. See "
@@ -240,8 +242,20 @@ mcp = FastMCP(
         "use the academic_year value whose start year matches the current "
         "calendar year (e.g. if today is May 2026, current academic_year = "
         "2025). In attendance views, the academic year is exposed as "
-        "dim_terms_academic_year (sourced from the term dimension, not the "
-        "fact).\n\n"
+        "dates_academic_year (integer) and dates_academic_year_label "
+        "(string, e.g. '2025-2026'), both sourced from the date dimension.\n\n"
+        "ACADEMIC YEAR — resolve it yourself before building any query that "
+        "names a year:\n"
+        "- academic_year is the START year; 'SY' notation uses the END year.\n"
+        "- 'SY26' -> academic_year 2025, label '2025-2026' (SY end year minus "
+        "1).\n"
+        "- '2025-26', '2025-2026', 'AY2025' -> academic_year 2025, label "
+        "'2025-2026'.\n"
+        "- bare '2026' -> treat as the START year (academic_year 2026, label "
+        "'2026-2027'); if the user's wording implies SY / end-year, note the "
+        "other reading.\n"
+        "State your interpretation inline (e.g. 'Interpreting as the 2025-2026 "
+        "school year') before showing results, then proceed.\n\n"
         "Numeric values come back as strings — cast to numeric before "
         "comparing or arithmetic. Raw `==` / `<` compare lexicographically "
         "(`'10' < '9'`).\n\n"
@@ -257,6 +271,8 @@ mcp = FastMCP(
     ),
     **_fastmcp_kwargs,
 )
+
+
 client = httpx.AsyncClient(
     base_url=CUBE_REST_URL,
     headers={"Content-Type": "application/json"},

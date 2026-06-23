@@ -1,0 +1,89 @@
+models:
+  - name: stg_focus__standards
+    description: >-
+      Focus learning standards — one row per standard, linked to up to four
+      nested standard categories and scoped by school year, school, and
+      district.
+    columns:
+      - name: id
+        description: Primary key — Focus standard id.
+        data_type: int
+        data_tests:
+          - unique:
+              config:
+                severity: error
+          - not_null:
+              config:
+                severity: error
+      - name: syear
+        description: Focus school year (start year).
+        data_type: int
+      - name: school_id
+        description: Focus school id.
+        data_type: int
+      - name: district_id
+        description: Focus district id.
+        data_type: int
+      - name: title
+        description: Full standard text.
+        data_type: string
+      - name: short_name
+        description: Abbreviated standard label or code.
+        data_type: string
+      - name: description
+        description: Long-form description of the standard.
+        data_type: string
+      - name: sort_order
+        description: Display sort order within the standard list.
+        data_type: numeric
+      - name: category_1_id
+        description: Level-1 standard category id (standard_categories_1).
+        data_type: int
+      - name: category_2_id
+        description: Level-2 standard category id (standard_categories_2).
+        data_type: int
+      - name: category_3_id
+        description: Level-3 standard category id (standard_categories_3).
+        data_type: int
+      - name: category_4_id
+        description: Level-4 standard category id (standard_categories_4).
+        data_type: int
+      - name: rollover_id
+        description: Source standard id this rolled over from.
+        data_type: int
+      - name: marking_periods
+        description: Marking periods the standard is assessed in.
+        data_type: string
+      - name: hide_on_report_card
+        description: Y/N — whether the standard is hidden on report cards.
+        data_type: string
+      - name: cte_import
+        description: Career and technical education import marker.
+        data_type: string
+      - name: cpalms
+        description: Florida CPALMS identifier for the standard.
+        data_type: int
+      - name: grade_scale_title
+        description: Grade scale title the standard is assessed on.
+        data_type: string
+      - name: guid
+        description: Focus global unique identifier for the standard.
+        data_type: string
+      - name: implementation_year
+        description: Year the standard takes effect.
+        data_type: int
+      - name: obsolete_year
+        description: Year the standard becomes obsolete.
+        data_type: int
+      - name: adopt_year
+        description: Year the standard was adopted.
+        data_type: int
+      - name: publication
+        description: Source publication the standard belongs to.
+        data_type: string
+      - name: created_at
+        description: Row creation timestamp in Focus.
+        data_type: timestamp
+      - name: updated_at
+        description: Row last-update timestamp in Focus.
+        data_type: timestamp

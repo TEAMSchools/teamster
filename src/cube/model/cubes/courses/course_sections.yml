@@ -1,0 +1,44 @@
+cubes:
+  - name: course_sections
+    public: false
+    sql_table: kipptaf_marts.dim_course_sections
+
+    joins:
+      - name: courses
+        sql: "{courses.course_key} = {CUBE}.course_key"
+        relationship: many_to_one
+
+    dimensions:
+      - name: course_section_key
+        description: >-
+          Surrogate key (sections_dcid, _dbt_source_project). Primary key.
+        sql: course_section_key
+        type: string
+        primary_key: true
+
+      # FK to courses — descriptors come from the courses cube.
+      - name: course_key
+        description: FK to courses.
+        sql: course_key
+        type: string
+
+      # Degenerate FK: NOT joined to locations (location is reached via the
+      # student enrollment; joining here would diamond against locations).
+      - name: location_key
+        description: FK to locations. Unused for joins — see comment.
+        sql: location_key
+        type: string
+
+      - name: identifier
+        description: Section number for this class.
+        sql: identifier
+        type: string
+        public: true
+
+      - name: period
+        description: >-
+          Period expression encoding the days/periods the section meets (e.g.,
+          '1(A-F)').
+        sql: period
+        type: string
+        public: true

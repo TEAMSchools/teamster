@@ -1,0 +1,62 @@
+models:
+  - name: stg_focus__people_join_contacts
+    description: >-
+      Focus person-to-contact-detail link — one row per contact detail (phone,
+      email, etc.) attached to a person. `value` holds the contact value and
+      `title` the contact-type label.
+    columns:
+      - name: id
+        description: Primary key — Focus people-join-contacts id.
+        data_type: int
+        data_tests:
+          - unique:
+              config:
+                severity: error
+          - not_null:
+              config:
+                severity: error
+      - name: person_id
+        description: Focus person id this contact detail belongs to.
+        data_type: int
+        config:
+          meta:
+            contains_pii: true
+      - name: detail_priority
+        description: Ordering priority of this contact detail for the person.
+        data_type: int
+      - name: title
+        description: Contact-type label for the detail (e.g. the contact type).
+        data_type: string
+      - name: value
+        description: Contact value (e.g. the phone number or email address).
+        data_type: string
+        config:
+          meta:
+            contains_pii: true
+      - name: imported
+        description: Y/N — whether the contact detail originated from an import.
+        data_type: string
+      - name: unlisted
+        description: Y/N — whether the contact detail is flagged unlisted.
+        data_type: string
+      - name: callout
+        description: Y/N — whether the contact detail is included in callouts.
+        data_type: string
+      - name: blocked
+        description: Y/N — whether the contact detail is blocked.
+        data_type: string
+      - name: sms
+        description: Y/N — whether the contact detail can receive SMS messages.
+        data_type: string
+      - name: unsubscribe
+        description: Y/N — whether the contact has unsubscribed from messaging.
+        data_type: string
+      - name: uuid
+        description: Focus global unique identifier for the row.
+        data_type: string
+      - name: created_at
+        description: Row creation timestamp in Focus.
+        data_type: timestamp
+      - name: updated_at
+        description: Row last-update timestamp in Focus.
+        data_type: timestamp

@@ -1,0 +1,64 @@
+models:
+  - name: stg_focus__resources
+    description: >-
+      Focus resources — one row per schedulable resource (typically a room),
+      scoped to a school and an active school-year range.
+    columns:
+      - name: id
+        description: Primary key — Focus resource id.
+        data_type: int
+        data_tests:
+          - unique:
+              config:
+                severity: error
+          - not_null:
+              config:
+                severity: error
+      - name: school_id
+        description: Focus school number the resource belongs to.
+        data_type: int
+      - name: category_id
+        description: Focus resource category id.
+        data_type: int
+      - name: title
+        description: Full resource title.
+        data_type: string
+      - name: short_name
+        description: Abbreviated resource label.
+        data_type: string
+      - name: type
+        description: Y/N — whether the resource is a room (FLDOE TYPE).
+        data_type: string
+      - name: comments
+        description: Free-text comments on the resource.
+        data_type: string
+      - name: seats
+        description: Maximum seats in the room (FLDOE SEATS).
+        data_type: numeric
+      - name: imported
+        description: Y/N — whether the row originated from an import.
+        data_type: string
+      - name: display_room
+        description: Display label for the room.
+        data_type: string
+      - name: room_description
+        description: Room description (FLDOE ROOM_DESCRIPTION).
+        data_type: string
+      - name: square_footage
+        description: Square footage of the room (FLDOE SQUARE_FOOTAGE).
+        data_type: int
+      - name: max_syear
+        description: Last school year the resource is active.
+        data_type: int
+      - name: min_syear
+        description: First school year the resource is active (FLDOE MIN_SYEAR).
+        data_type: int
+      - name: uuid
+        description: Focus global unique identifier for the row.
+        data_type: string
+      - name: created_at
+        description: Row creation timestamp in Focus.
+        data_type: timestamp
+      - name: updated_at
+        description: Row last-update timestamp in Focus.
+        data_type: timestamp

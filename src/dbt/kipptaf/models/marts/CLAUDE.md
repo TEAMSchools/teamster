@@ -248,6 +248,20 @@ Drop model-level `dbt_utils.unique_combination_of_columns` when its column set
 equals the surrogate-key hash inputs — `unique` on the PK detects the same
 violations.
 
+## FK constraints declared on every mart
+
+`generate_marts_reference.py` derives FK edges **only** from literal
+`foreign_key` constraints — never inferred from `relationships` data tests. So
+every mart (view-materialized and `config.materialized: table` alike) must
+declare its outgoing FKs as column- or model-level `foreign_key` constraints, or
+they vanish from the generated reference diagram. A `relationships` data test is
+still good to keep for orphan detection, but it does not feed the diagram.
+
+A `config.materialized: table` mart renders `constraints:` into CREATE TABLE DDL
+(inert on the default view marts). On a table mart, add `warn_unenforced: false`
+(not just `warn_unsupported: false`) on the `primary_key` constraint to clear
+the parse warning.
+
 ## Constraints are informational (views)
 
 PK/FK `constraints:` blocks on marts are not enforced (views). dbt emits a parse
@@ -309,6 +323,12 @@ from `<schema>.<fact>`
 ```
 
 Treat ≥99% NULL as a broken join, not a sparse FK.
+
+To join a mart by its surrogate key from ad-hoc BQ (verify FK population when
+the column was dropped, or compare PR vs prod), reproduce
+`generate_surrogate_key`:
+`to_hex(md5(concat(coalesce(cast(<f1> as string), '_dbt_utils_surrogate_key_null_'), '-', coalesce(cast(<f2> as string), '_dbt_utils_surrogate_key_null_'))))`.
+Validate the hash by checking the join row count reconciles before trusting it.
 
 ## Not in this layer
 

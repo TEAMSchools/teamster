@@ -1,0 +1,71 @@
+models:
+  - name: stg_focus__school_periods
+    description: >-
+      Focus school periods — one row per period definition per school year. The
+      canonical period plus its default start/end time; per-weekday time and
+      length variants are intentionally excluded.
+    columns:
+      - name: period_id
+        description: Primary key — Focus school period id.
+        data_type: int
+        data_tests:
+          - unique:
+              config:
+                severity: error
+          - not_null:
+              config:
+                severity: error
+      - name: rollover_id
+        description: Source period id this rolled over from.
+        data_type: int
+      - name: school_id
+        description: Focus school id.
+        data_type: int
+      - name: district_id
+        description: Focus district id.
+        data_type: int
+      - name: syear
+        description: Focus school year (start year).
+        data_type: int
+      - name: title
+        description: Full period name.
+        data_type: string
+      - name: short_name
+        description: Abbreviated period label.
+        data_type: string
+      - name: block
+        description: Block identifier the period belongs to.
+        data_type: string
+      - name: attendance
+        description: Y/N — whether attendance is taken in this period.
+        data_type: string
+      - name: required_for_scheduling
+        description: Y/N — whether the period is required when scheduling.
+        data_type: string
+      - name: conflicts_with
+        description: >-
+          Period ids this period conflicts with for scheduling. Currently NULL
+          for all rows in the Focus source; storage format is unconfirmed until
+          the column populates.
+        data_type: string
+      - name: sort_order
+        description: Display sort order.
+        data_type: numeric
+      - name: length
+        description: Default period length in minutes.
+        data_type: numeric
+      - name: start_time
+        description: Default period start time.
+        data_type: time
+      - name: end_time
+        description: Default period end time.
+        data_type: time
+      - name: uuid
+        description: Focus global unique identifier for the row.
+        data_type: string
+      - name: created_at
+        description: Row creation timestamp in Focus.
+        data_type: timestamp
+      - name: updated_at
+        description: Row last-update timestamp in Focus.
+        data_type: timestamp
