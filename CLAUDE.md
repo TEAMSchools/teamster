@@ -300,6 +300,11 @@ status, IEP/504/disability), financial info (FRL status), activities. Each field
 alone may be safe; combinations may not. When unsure, consult the
 [PTAC glossary](https://studentprivacy.ed.gov/glossary) or treat as PII.
 
+PII-tagging precedent in staging (powerschool) is **narrower** than this list —
+it omits gender, race/ethnicity, and internal/student ids. For a PII-heavy new
+model, confirm scope (direct-only vs direct+indirect) with the user before
+tagging.
+
 ## Superpowers skill overrides
 
 - **Branch creation always goes through the issue-and-branch flow in _Working

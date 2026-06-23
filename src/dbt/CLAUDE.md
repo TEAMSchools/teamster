@@ -729,6 +729,17 @@ the same partition.
 - **`select *` inside UNION ALL CTEs trips CV03**: sqlfluff requires a trailing
   comma after the last column, but `select *` has nothing to trail. Enumerate
   columns explicitly in each UNION branch.
+- **A standalone `select *` takes a trailing comma** (`select *,`) to satisfy
+  sqlfluff CV03 (e.g. `stg_overgrad__schools.sql`; a `source` CTE) — distinct
+  from the UNION-ALL case above, which must enumerate columns.
+- **A projected column whose name equals its source table binds to the whole-row
+  STRUCT, not the column**: a bare `address` ref in
+  `from {{ source("focus", "address") }}` resolves to the table range variable
+  (dbt's component-backtick `` `proj`.`ds`.`address` `` form), so the model
+  silently outputs one struct column and the contract fails listing every field
+  as `address.<col>`. Read through a `source` CTE
+  (`with source as (select *, from {{ source(...) }})`). A single-backtick MCP
+  repro `` `proj.ds.table` `` does NOT reproduce it — use component backticks.
 - **BigQuery `PIVOT` operator**: pivots ONE value column per aggregate. For a
   mixed-type key-value array, use a multi-aggregate pivot —
   `pivot(max(v_str) as s, max(v_bool) as b, any_value(v_arr) as a for field_name in ('x', ...))`
