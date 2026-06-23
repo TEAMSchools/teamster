@@ -1,0 +1,67 @@
+models:
+  - name: stg_focus__test_history_parts
+    description: >-
+      Focus test-history parts — one row per test part (subtest / section) of a
+      test-history test, including subject and score-type mapping.
+    columns:
+      - name: id
+        description: Primary key — Focus test-history part id.
+        data_type: int
+        data_tests:
+          - unique:
+              config:
+                severity: error
+          - not_null:
+              config:
+                severity: error
+      - name: test_id
+        description: Foreign key to the parent Focus test-history test.
+        data_type: int
+      - name: district_id
+        description: Focus district id the part belongs to.
+        data_type: int
+      - name: fas_section_id
+        description: Florida Assessment System section id mapped to this part.
+        data_type: int
+      - name: title
+        description: Full test part name.
+        data_type: string
+      - name: short_name
+        description: Abbreviated test part label.
+        data_type: string
+      - name: subject_code
+        description: Subject reporting code for the part.
+        data_type: string
+      - name: subject
+        description: Subject name for the part.
+        data_type: string
+      - name: sort_order
+        description: Display sort order within the part list.
+        data_type: numeric
+      - name: score_types
+        description: Encoded list of score-type ids associated with the part.
+        data_type: string
+      - name: transcript
+        description: Y/N — whether the part appears on the transcript.
+        data_type: string
+      - name: min_scale_score
+        description: Minimum scale score for the part.
+        data_type: int
+      - name: min_score
+        description: Minimum-score threshold or label for the part.
+        data_type: string
+      - name: max_syear
+        description: Latest Focus school year the part is valid for.
+        data_type: int
+      - name: graph_score
+        description: Flag — whether the part's score is graphed.
+        data_type: int
+      - name: uuid
+        description: Focus global unique identifier for the row.
+        data_type: string
+      - name: created_at
+        description: Row creation timestamp in Focus.
+        data_type: timestamp
+      - name: updated_at
+        description: Row last-update timestamp in Focus.
+        data_type: timestamp
