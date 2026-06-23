@@ -1,0 +1,44 @@
+models:
+  - name: stg_focus__custom_fields_join_categories
+    description: >-
+      Focus custom field to category assignments — one row per (field, category)
+      pairing. Bridges custom fields to the categories they appear under. Live
+      rows only (soft-deleted rows filtered out).
+    columns:
+      - name: id
+        description: Primary key — Focus field-category assignment id.
+        data_type: int
+        data_tests:
+          - unique:
+              config:
+                severity: error
+          - not_null:
+              config:
+                severity: error
+      - name: field_id
+        description: >-
+          Custom field id — joins to stg_focus__custom_fields.id.
+        data_type: int
+      - name: category_id
+        description: >-
+          Custom field category id — joins to
+          stg_focus__custom_field_categories.id.
+        data_type: int
+      - name: sort_order
+        description: Display sort order of the field within the category.
+        data_type: int
+      - name: imported
+        description: Flag (0/1) — whether the assignment was imported.
+        data_type: int
+      - name: field_class
+        description: Entity class of the field in the assignment.
+        data_type: string
+      - name: district_id
+        description: Focus district id the assignment is scoped to.
+        data_type: int
+      - name: created_at
+        description: Row creation timestamp in Focus.
+        data_type: timestamp
+      - name: updated_at
+        description: Row last-update timestamp in Focus.
+        data_type: timestamp
