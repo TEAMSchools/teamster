@@ -1,0 +1,59 @@
+models:
+  - name: stg_focus__login_history
+    description: >-
+      Focus login history — one row per authentication attempt, including the
+      acting user, source IP, and whether the attempt failed.
+    columns:
+      - name: id
+        description: Primary key — Focus login history id.
+        data_type: int
+        data_tests:
+          - unique:
+              config:
+                severity: error
+          - not_null:
+              config:
+                severity: error
+      - name: object_id
+        description: Focus id of the user (or object) the login attempt targets.
+        data_type: int
+        config:
+          meta:
+            contains_pii: true
+      - name: date
+        description:
+          Timestamp of the login attempt (TIMESTAMP despite the name).
+        data_type: timestamp
+        config:
+          meta:
+            contains_pii: true
+      - name: type
+        description: Login event type classification.
+        data_type: string
+      - name: failed
+        description: Y/N — whether the login attempt failed.
+        data_type: string
+      - name: ip_address
+        description: Source IP address of the login attempt.
+        data_type: string
+        config:
+          meta:
+            contains_pii: true
+      - name: user_agent
+        description: Client user-agent string for the login attempt.
+        data_type: string
+        config:
+          meta:
+            contains_pii: true
+      - name: username
+        description: Username supplied for the login attempt.
+        data_type: string
+        config:
+          meta:
+            contains_pii: true
+      - name: token_type
+        description: Authentication token type used.
+        data_type: string
+      - name: hostname
+        description: Hostname the login attempt was made against.
+        data_type: string
