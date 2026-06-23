@@ -59,6 +59,9 @@ file; domain specifics live in the nearest subdirectory CLAUDE.md.
   `mcp__github__create_branch` and GraphQL `createLinkedBranch` both no-op when
   the branch already exists. Delete the remote branch, then
   `gh issue develop <num> --name <branch>`, then re-push local commits.
+  `git push origin --delete <branch>` is classifier-blocked as a destructive git
+  action even with consent — if the delete is refused, create the branch under a
+  NEW name and `gh issue develop --name <new-name>` instead of deleting.
 
 - **Worktree commands**: Path-flag-driven tools must name the worktree
   explicitly. Use `git -C <worktree>` on every git call (bare `git` from the
@@ -157,6 +160,17 @@ file; domain specifics live in the nearest subdirectory CLAUDE.md.
   declaring done. Local relationships warnings absent from CI are stale-dev
   `--defer` drift; ignore. CI warnings unchanged from main are pre-existing —
   `gh search issues` for a tracker before filing.
+
+- **The `claude-review` bot asserts repo conventions that may not be enforced**
+  (this session: a `_at`-vs-`_date` column-naming rule that no model follows).
+  Verify each convention claim against existing models before applying — its
+  findings are advisory, and `git grep` settles it faster than complying.
+
+- **A PR's CI lives on two disjoint surfaces**: dbt Cloud is a commit _status_
+  (`pull_request_read get_status` / `gh api commits/<sha>/status`); Trunk /
+  CodeQL / `claude` are _check runs_ (`get_check_runs` /
+  `commits/<sha>/check-runs`). Check both before calling a PR green; the
+  `claude` check reports `skipped` on pushes where it doesn't re-run.
 
 - **Python**: Always `uv run` — never bare `python`, `python3`, or
   venv-installed tools (`dbt`, `dagster`, etc.).
