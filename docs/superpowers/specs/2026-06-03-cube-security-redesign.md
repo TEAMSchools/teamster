@@ -137,12 +137,15 @@ populated lookup column so `contextToGroups` can resolve the JWT claim. Each row
 resolves as:
 
 ```text
-1. Source the active, primary roster row
-   (int_people__staff_roster, worker_status_code != 'Terminated',
-    primary_indicator = true). Set staff_key from employee_number;
-    carry google_email for the boundary lookup.
+1. Assemble the current primary assignment from the marts star
+   (dim_staff_work_assignments + dim_work_assignment_{jobs,
+    organizational_units, locations, primary, status} + dim_staff),
+    all is_current = true, is_primary_position = true,
+    status_name != 'Terminated'. staff_key comes from
+    dim_staff_work_assignments; google_email from dim_staff;
+    job_function_code, department_name, location_key from the child dims.
 
-2. If assigned_department_name ∈ special-access list (8 departments):
+2. If department_name ∈ special-access list (8 departments):
      → emit the special-access row verbatim.
        scope_level = network; every *_scope is unconditional 'all' or 'none';
        staff_access_level = detail (no reporting-chain narrowing — these
@@ -164,10 +167,13 @@ broader (network scope, mostly detail), so there is no field-by-field merge.
 
 ### Department match
 
-Special-access `department` matches roster `assigned_department_name` by exact
-string equality. Verified against current data — all 8 names resolve to active
-staff (Executive, Data, Human Resources, Leadership Development, Teacher
-Development, Accounting, Finance, Compliance).
+Special-access `department` matches the current assignment's `department_name`
+(from `dim_work_assignment_organizational_units`, `assignment_type = 'home'`) by
+exact string equality. Verified against current data — all 8 names resolve to
+active staff (Executive, Data, Human Resources, Leadership Development, Teacher
+Development, Accounting, Finance, Compliance). Note `Accounting and Compliance`
+(1 active) is **not** matched by either `Accounting` or `Compliance` under exact
+equality — it falls to the role-based path; see the data-quality follow-up.
 
 ---
 
@@ -175,8 +181,16 @@ Development, Accounting, Finance, Compliance).
 
 The canonical reference for job groupings and their org levels is the
 **[job groupings explorer](https://teamschools.github.io/job_groupings/website/explorer.html)**.
-The two tables below are the access criteria derived from it; when the explorer
-changes, update these tables (and the CASE statements) to match.
+The two tables below are the access criteria derived from it. They are
+**materialized as Google Sheets crosswalks** (matching the repo's lookup-table
+convention — there are no dbt seeds; hand-maintained lookups are `GOOGLE_SHEETS`
+external sources → `stg_google_sheets__*_crosswalk` staging models). The data
+team edits the sheet; `stage_external_sources --target staging`
+
+- `dbt build` re-stage. `dim_staff_cube_access` joins the crosswalks — the
+  tables below are the authoritative content, not in-SQL `CASE` blocks. See
+  [§ Source layer](#source-layer--built-entirely-from-marts) and open
+  question 1.
 
 ### Role-based mapping — `job_function_code` × `entity` × `department_type`
 
@@ -240,32 +254,63 @@ column-header mapping as the role table above.
 
 ## Changes required
 
-### Source layer
+### Source layer — built entirely from marts
 
-Both new mart models read `int_people__staff_roster` directly. The roster is the
-one place that already carries every input the access model needs — email,
-`employee_number`, `reports_to_employee_number`, job, location, department,
-status — pre-joined to a clean active-primary grain (verified 1,490 rows, 1:1 on
-`employee_number`). `dim_staff` deliberately omits all of these; assembling them
-from `dim_staff` + the work-assignment dims would re-derive the roster's joins
-and SCD2→primary collapse.
+Both new models are assembled **intra-mart** from the existing work-assignment
+dimensional star, filtered to each staff member's **current primary**
+assignment. They do **not** `ref()` `int_people__staff_roster` —
+`marts/CLAUDE.md` forbids `ref()`-ing staging/intermediate/reporting _into_
+marts and explicitly permits intra-mart refs (e.g.
+`fct_staff_attrition → dim_staff_status`), so the marts path is the blessed one.
 
-This is a **deliberate exception** to the marts convention of not `ref()`-ing up
-into `int_*`. These are access-control infrastructure models, not analyst marts,
-and the roster is the correct single source. Document the exception inline in
-each model. `staff_key` is still derived as
-`generate_surrogate_key([employee_number])` to stay consistent with
-`dim_staff.staff_key`.
+The star (all keyed on `work_assignment_key`, all filtered `is_current = true`,
+joined to the current primary assignment):
+
+<!-- markdownlint-disable MD013 -->
+
+| Source mart                                   | Supplies                                                        |
+| --------------------------------------------- | --------------------------------------------------------------- |
+| `dim_staff_work_assignments`                  | `staff_key` ↔ `work_assignment_key`, `is_current`               |
+| `dim_staff`                                   | `google_email`, person attributes                               |
+| `dim_work_assignment_jobs`                    | `job_function_code` (see prereq below), position                |
+| `dim_work_assignment_organizational_units`    | `department_name`, `business_unit_name` (`type='home'`)         |
+| `dim_work_assignment_locations`               | `location_key` → `dim_locations` (`region_key`, `abbreviation`) |
+| `dim_work_assignment_primary`                 | `is_primary_position`                                           |
+| `dim_work_assignment_status`                  | `status_name` (active filter)                                   |
+| `dim_work_assignment_reporting_relationships` | `manager_staff_key` (per assignment)                            |
+
+<!-- markdownlint-enable MD013 -->
+
+This is the same set the `staff_work_history` Cube already SCD2-intersects — a
+proven assembly pattern. **Current role only:** access reflects the person's
+present position, never employment history; every join filters
+`is_current = true` and the primary assignment (`is_primary_position = true`).
+Active filter: `status_name != 'Terminated'` (keeps staff on Leave in their
+role). `staff_key` stays `generate_surrogate_key([employee_number])`, identical
+to `dim_staff`.
+
+#### Prerequisite: `job_function_code` on `dim_work_assignment_jobs`
+
+PR [#4182](https://github.com/TEAMSchools/teamster/pull/4182) propagated only
+the job-function **label** (`coalesce(longname, shortname)`) up to the roster
+(`job_function`) and to `dim_work_assignment_jobs` (`job_function_description`).
+The stable **code** (`job_function_code__code_value` — `CHIEF`/`SL`/`TEACH`/…)
+stops at `int_adp_workforce_now__workers__work_assignments`. Add it to
+`dim_work_assignment_jobs` as `job_function_code` (passthrough select; **not** a
+`generate_surrogate_key` input → no `work_assignment_job_key` hash churn). All
+access keys use the code, not the free-text label.
 
 ### 1. dbt model: `dim_staff_reporting_chain`
 
 **Path:**
 `src/dbt/kipptaf/models/marts/dimensions/dim_staff_reporting_chain.sql`
 
-Transitive closure of the org tree. Grain: one row per
-`(manager_staff_key, reportee_staff_key)`. Verified against current data: 7,005
-pairs, maximum depth 7, no cycles, terminates cleanly (org-root managers at the
-top).
+Transitive closure of the **current** org tree. Grain: one row per
+`(manager_staff_key, reportee_staff_key)`. Closure stats (pairs / max depth) to
+be re-verified against the marts edge set at build time; the org is a clean tree
+(no cycles) terminating at org-root managers.
+
+<!-- markdownlint-disable MD013 -->
 
 | Column               | Type   | Description                                          |
 | -------------------- | ------ | ---------------------------------------------------- |
@@ -273,29 +318,30 @@ top).
 | `reportee_staff_key` | STRING | The direct or indirect report                        |
 | `depth`              | INT64  | Hops from manager to reportee (0 = self, 1 = direct) |
 
+<!-- markdownlint-enable MD013 -->
+
 - **Key on `staff_key`, not email.** Google emails are reused (a departed
   employee's address can be reassigned to a new hire), so email is unsafe as a
   stable identity key. `staff_key` —
   `generate_surrogate_key([employee_number])`, the same surrogate `dim_staff`
   uses — is stable for the life of an employee record. Email is used in exactly
   one place: the JWT-boundary lookup in `contextToGroups` (see §3).
-- **Edge source:** `int_people__staff_roster` self-reference,
-  `reports_to_employee_number → employee_number`, each hashed to `staff_key` via
-  the single-input `generate_surrogate_key` matching `dim_staff`. (Chosen over
-  `dim_work_assignment_reporting_relationships`, which carries per-assignment
-  SCD2 fan-out.)
-- **Filter:** active staff (`worker_status_code != 'Terminated'`),
-  `primary_indicator = true`. `employee_number` is non-null and 1:1 for active
-  primary rows (verified: 1,490 rows, 1,490 distinct, 0 null).
+- **Edge source (marts, current only):** `dim_staff_work_assignments`
+  (`is_current`) joined to `dim_work_assignment_primary`
+  (`is_current, is_primary_position`) and
+  `dim_work_assignment_reporting_relationships` (`is_current`) yields the
+  current reportee→manager edge set
+  `(swa.staff_key AS reportee_staff_key, rr.manager_staff_key)`. Both sides are
+  already `staff_key` (the reporting dim carries `manager_staff_key`;
+  `dim_staff_work_assignments` carries the reportee `staff_key`) — no re-hashing
+  needed. Filtering to `is_current` makes the closure reflect today's org only.
 - **Self-pair included** (`manager_staff_key = reportee_staff_key`, `depth = 0`)
   so a single `reportee_staff_key IN (...)` filter lets a manager see their own
   row too.
 - **PK:** composite `(manager_staff_key, reportee_staff_key)` — composite
   uniqueness test. `depth` is the minimum hop count if multiple paths exist.
-- **Recursion:** recursive CTE over the
-  `employee_number → reports_to_employee_number` edge with a `depth < 20` cycle
-  backstop (data is a clean tree; the cap is defensive only); hash to
-  `staff_key` after the closure.
+- **Recursion:** recursive CTE over the current edge set with a `depth < 20`
+  cycle backstop (data is a clean tree; the cap is defensive only).
 - **Hash discipline:** `staff_key` here must hash identically to
   `dim_staff.staff_key` (single input `employee_number`). Per `marts/CLAUDE.md`,
   any change to that composition must migrate producer and all consumers
@@ -305,20 +351,22 @@ top).
 
 **Path:** `src/dbt/kipptaf/models/marts/dimensions/dim_staff_cube_access.sql`
 
-One row per active staff `staff_key`. Verified 1:1 on `employee_number` for
-active primary staff (1,490 rows, 1,490 distinct, 0 null).
+One row per active staff `staff_key`. Verified 1:1 on `staff_key` for active
+primary staff (1,526 rows as of 2026-06-23, 1:1, 0 null).
+
+<!-- markdownlint-disable MD013 -->
 
 | Column                     | Type   | Description                                                                                                                             |
 | -------------------------- | ------ | --------------------------------------------------------------------------------------------------------------------------------------- |
 | `staff_key`                | STRING | PK — `generate_surrogate_key([employee_number])`, matches `dim_staff`                                                                   |
 | `google_email`             | STRING | Resolve-only lookup for the JWT boundary; populated from the active+primary row so a recycled address can't resolve to a stale identity |
-| `job_function_code`        | STRING | From roster (CHIEF/EDHOS/SL/…)                                                                                                          |
-| `job_function_level`       | INT64  | Org rank 1–6 (CASE on `job_function_code`)                                                                                              |
-| `entity`                   | STRING | `KTAF` / `Region` (CASE)                                                                                                                |
-| `department_type`          | STRING | `instructional` / `non-instructional` (CASE on department)                                                                              |
-| `department_group`         | STRING | Rollup of `assigned_department_name` (CASE)                                                                                             |
+| `job_function_code`        | STRING | From `dim_work_assignment_jobs` (prereq) — CHIEF/EDHOS/SL/…                                                                             |
+| `job_function_level`       | INT64  | Org rank 1–6 (from role crosswalk)                                                                                                      |
+| `entity`                   | STRING | `KTAF` / `Region` (from department rollup crosswalk)                                                                                    |
+| `department_type`          | STRING | `instructional` / `non-instructional` (from rollup crosswalk)                                                                           |
+| `department_group`         | STRING | Rollup of `department_name` (from rollup crosswalk)                                                                                     |
 | `scope_level`              | STRING | `network` / `region` / `school` / `network+department_group` / `region+department_group` / `none` (deny)                                |
-| `scope_key`                | STRING | sentinel `'network'`, a `region_key`, a school `abbreviation`, or `'none'` — never NULL                                                 |
+| `scope_key`                | STRING | sentinel `'network'`, a `region_key` (resolved via `dim_locations`), a school `abbreviation`, or `'none'` — never NULL                  |
 | `student_access_level`     | STRING | `detail` / `summary` / `none`                                                                                                           |
 | `staff_access_level`       | STRING | `detail` / `summary_reporting_chain` / `none`                                                                                           |
 | `student_pii_scope`        | STRING | enum: `all` / `none` (future `own_roster` deferred)                                                                                     |
@@ -327,18 +375,33 @@ active primary staff (1,490 rows, 1,490 distinct, 0 null).
 | `staff_benefits_scope`     | STRING | enum (all rows `none` today; column kept for forward-compat)                                                                            |
 | `staff_observations_scope` | STRING | enum (same vocabulary)                                                                                                                  |
 
-- **Derivation:** department special-access override (CASE on
-  `assigned_department_name`) takes precedence; otherwise the role-based CASE on
-  `(job_function_code, entity, department_type)`. Both mappings live in-SQL as
-  CASE statements (not seeds), sourced from the committed CSVs.
-- **`department_group` and `department_type`** are CASE statements on
-  `assigned_department_name`. The exact rollup is owned by the data team — see
-  open question 1.
+<!-- markdownlint-enable MD013 -->
+
+- **Derivation:** join the department special-access crosswalk on
+  `department_name` (takes precedence when matched); otherwise join the
+  role-based crosswalk on `(job_function_code, entity, department_type)`. The
+  override wins entirely when matched (no field-by-field merge). Mappings are
+  Google Sheets crosswalks (see [§ Source mappings](#source-mappings)), not
+  in-SQL `CASE`.
+- **`department_group`, `department_type`, `entity`** come from the department
+  rollup crosswalk keyed on `department_name`. The exact rollup is owned by the
+  data team — see open question 1.
+- **`scope_key` for region scope** is resolved by joining the current
+  assignment's `location_key` (`dim_work_assignment_locations`) to
+  `dim_locations` for `region_key` (an opaque surrogate) and the school
+  `abbreviation`. An unresolved location → `scope_level = 'none'`.
 - **No-access sentinel:** the three `*_access_level` columns emit the string
   `'none'` (never NULL) when a role grants no access to that domain — `'none'`
-  reads as an intentional denial, NULL as missing data. Any CASE fall-through
+  reads as an intentional denial, NULL as missing data. Any crosswalk non-match
   must coalesce to `'none'`. A person with no resolvable row at all is a
   different case: no row is emitted, and `contextToGroups` default-denies.
+- **Default-deny population (intentional).** Some active+primary staff resolve
+  to `scope_level = 'none'` or emit no row by design: NULL `job_function` (~27
+  active+primary, 2026-06-23), NULL `google_email` (~52 — cannot be resolved by
+  the JWT boundary at all), `INTRN` (level 7, no role-table row, ~42), and the
+  unmatched `Accounting and Compliance` department. These are denied until their
+  source HR records are corrected — tracked by the data-quality issue (see
+  [§ Implementation sequence](#implementation-sequence)).
 
 ### 3. `cube.js`: `contextToGroups`
 
@@ -407,10 +470,12 @@ contextToGroups: async ({ securityContext }) => {
 
 The two reads are now sequential (the chain read needs the resolved
 `staff_key`), but both hit small tables on the cached path once per user per
-day. `buildGroups(row)` emits the view-policy group names from the resolved row:
-`cube-access-student-detail` / `-summary` / `-pii`, `cube-access-staff-detail` /
-`-summary` / `-pii` / `-compensation` / `-observations`, per the access levels
-and flags. No Google groups are read.
+day. `buildGroups(row)` emits the view-policy group names from the resolved row.
+**To avoid the `member_level` intersection trap (see § View pattern), staff
+column visibility resolves to exactly ONE composite group per viewer** — not
+additive per-field groups — so each view matches a single `access_policy` block.
+Student tiers stay `cube-access-student-detail` / `-summary` / `-pii`. No Google
+groups are read.
 
 ### 4. `cube.js`: `queryRewrite`
 
@@ -426,22 +491,40 @@ Replace group-name parsing with cache reads. The cached `row` and
 - **Staff cubes:** inject the **Layer-1 scope filter** (including
   `region + department_group` as an AND of two equals filters), then the
   **Layer-2 detail filter** (`staff.staff_key IN reporteeStaffKeys` AND
-  `job_function_level > viewer.job_function_level`) that governs which rows
-  expose PII/comp/observation columns per the `*_scope` columns. The staff cube
+  `job_function_level > viewer.job_function_level`). Column visibility for the
+  all/none scopes is handled by the single composite `access_policy` block;
+  `queryRewrite` handles **rows** (Layer-1 + Layer-2) and the **row-conditional
+  columns** — when a `reporting_chain` / `teaching_staff` sensitive column
+  (comp/obs/pii) is requested, narrow the result rows to the Layer-2 set (or
+  `job_function_code IN ('TEACH','TIR')` for `teaching_staff`). The staff cube
   and detail view expose `staff_key` for this filter.
 - **Snapshot anchor** logic and `canSwitchSqlUser` unchanged.
 
 ### 5. Cube renames, schema test, view policies (original issue scope)
 
-Per [#4102](https://github.com/TEAMSchools/teamster/issues/4102):
+Per [#4102](https://github.com/TEAMSchools/teamster/issues/4102). **Status:**
+the cube/view renames (`dim_` / `fct_` → domain-prefixed) already landed on
+`main`; the cube _names_ are clean. Remaining:
 
-- Drop `dim_` / `fct_` prefixes (`dim_staff` → `staff`, etc.); update all join
-  references in YAML.
 - Add `tests/cube/test_cube_schema.py` enforcing no `dim_` / `fct_` prefix on
-  cube names.
-- Split view `access_policy` into `-summary` / `-detail` / `-pii` group tiers.
-- Replace `STUDENT_CUBES` / `STAFF_CUBES` static arrays with `isStudentMember` /
-  `isStaffMember` prefix helpers.
+  cube names (does not exist yet).
+- Split view `access_policy` into the tier groups, resolved as **one composite
+  block per viewer** (see § View pattern — avoids the `member_level`
+  intersection bug).
+- Drop the `STUDENT_CUBES` / `STAFF_CUBES` static arrays; add `isStaffMember`
+  (`isStudentMember` already exists in `cube.js`).
+
+### 5a. No new Cubes for the access models
+
+`dim_staff_cube_access` and `dim_staff_reporting_chain` are read by `cube.js` as
+raw BigQuery tables — they _are_ the access policy. They get **no**
+`src/cube/model/` cube or view definition (exposing them as queryable Cubes
+would subject them to the very policies they encode). The only Cube-side dbt
+wiring is adding both to `cube_semantic_layer.depends_on` in
+`src/dbt/kipptaf/models/exposures/cube.yml`, per `marts/CLAUDE.md` (every mart
+Cube consumes must appear there). No new data cubes are introduced — the staff /
+student cubes and `staff_detail` / `staff_summary` views already exist on
+`main`.
 
 ### 6. Google Workspace group cleanup
 
@@ -476,46 +559,54 @@ from `dim_staff_cube_access` (`cube-access-student-detail` / `-summary` /
 `-pii`); the staff tiers add `cube-access-staff-detail` / `-summary` / `-pii` /
 `-compensation` / `-observations`.
 
-### Column gating vs. row gating
+### The `member_level` intersection constraint — and the two-axis resolution
 
-The `access_policy` group pattern gates **whole columns**: with
-`cube-access-student-pii`, a viewer sees the PII columns for every row, or for
-none. That covers the all-or-nothing scopes — `student_pii_scope` and any staff
-scope of `all` / `none` — which map cleanly onto an `excludes:` tier.
+`member_level` `access_policy` blocks **intersect, not union** (the #4102
+Finding, from PR #3755): a viewer in two blocks gets the intersection of their
+`includes` lists — often empty. So emitting separate `-pii` / `-compensation` /
+`-observations` groups per viewer would give a multi-entitled viewer _fewer_
+columns, or none. We resolve this on **two axes**:
 
-The `reporting_chain` and `teaching_staff` scopes need a column visible for some
-rows but not others (comp for downline rows only; comp/obs for TEACH/TIR rows
-only), which a whole-column `access_policy` can't express. We handle that with a
-`queryRewrite` row filter — the same mechanism as location/region scope:
+- **Column visibility (all/none scopes)** → **one composite `access_policy`
+  block per viewer.** `contextToGroups` resolves the viewer's full staff-column
+  set into a single group; each view carries one block per composite tier. This
+  is #4102's own stated implication ("one resolved role … one `includes` list")
+  and is the only way to avoid the intersection.
+- **Row visibility (location scope + reporting-chain ∩ level)** →
+  **`queryRewrite`.** `access_policy` cannot express per-row rules; this lives
+  in `queryRewrite` regardless.
 
-- `staff_compensation_scope = 'reporting_chain'` → grant the
-  `cube-access-staff-compensation` group and add a `queryRewrite` filter
-  restricting rows to the Layer-2 set (`staff.staff_key IN reporteeStaffKeys`
-  AND level-below). Comp is then visible for exactly the rows returned.
-- `staff_compensation_scope = 'teaching_staff'` (ASL) → grant the comp group
-  plus a `queryRewrite` filter `job_function_code IN ('TEACH','TIR')`.
+The `reporting_chain` and `teaching_staff` scopes are **row-conditional column
+visibility** (comp for downline rows only; comp/obs for TEACH/TIR rows only) —
+not expressible in a static `access_policy`. The composite block simply
+_includes_ those columns; `queryRewrite` then narrows the query's **rows** to
+the Layer-2 set (or `job_function_code IN ('TEACH','TIR')`) when such a column
+is requested. **The composite block does not harm reporting-chain visibility** —
+chain enforcement is a row filter, and the single-block column model leaves it
+intact.
 
-Tradeoff: when a `reporting_chain` field is requested, the result is restricted
-to those rows for the whole query — a viewer gets their downline's comp, not
-comp columns spread across their wider summary scope. This matches how a manager
-would query "my team's comp." The plan should confirm this with the data team
-and that all scope values reduce to a group + row-filter pair.
+Tradeoff (unchanged): requesting a `reporting_chain` field restricts the whole
+query's rows to the viewer's chain∩level set — a manager gets their team's comp,
+not comp spread across their wider summary scope. This matches "show me my
+team's comp." Confirm with the data team that every scope value reduces to a
+single composite tier + the row filter.
 
 ---
 
 ## Open questions
 
-1. **`department_group` and `department_type` rollup** — the exact CASE mapping
-   from the 43 `assigned_department_name` values into department groups and the
-   instructional/non-instructional split is owned by the data team. Draft the
-   CASE skeleton with the special-access departments handled; the data team
+1. **`department_group` / `department_type` / `entity` rollup** — the mapping
+   from the 43 `department_name` values into department groups, the
+   instructional/non-instructional split, and the KTAF/Region entity is owned by
+   the data team and lives in the **department rollup crosswalk** (Google
+   Sheet). Seed it with the special-access departments handled; the data team
    fills the remaining rollup before the model ships.
 
-2. **`job_function_code` availability** — the column is being added to
-   `int_people__staff_roster` (expected end of day 2026-06-05). The models
-   assume it is present. Confirm the exact code values match the CSV
-   (CHIEF/EDHOS/SL/DSO/ASL/DEAN/SCOPS/NINST/TEACH/TIR/MGDIR/DIR/KTRGS) before
-   building.
+2. **`job_function_code` availability** — RESOLVED. PR #4182 propagated only the
+   label; the prerequisite adds `job_function_code` (the ADP `code_value`) to
+   `dim_work_assignment_jobs`. Code values verified in prod (2026-06-23):
+   CHIEF/EDHOS/SL/DSO/ASL/DEAN/SCOPS/NINST/TEACH/TIR/MGDIR/DIR/KTRGS, plus INTRN
+   (no role-table row → denied). The role crosswalk keys on these codes.
 
 3. **Tristate row restriction** — the resolution above (group + `queryRewrite`
    row filter) restricts the staff result set when a `reporting_chain` /
@@ -531,16 +622,29 @@ and that all scope values reduce to a group + row-filter pair.
 
 ## Implementation sequence
 
-1. Build `dim_staff_reporting_chain` (recursive closure).
-2. Build `dim_staff_cube_access` (department override → role CASE; confirm
-   `job_function_code` values and department rollup first).
-3. Add `-summary` / `-detail` / `-pii` tiers to view `access_policy` blocks
-   (additive; safe to deploy independently).
-4. Rewrite `cube.js`: `contextToGroups` (two BigQuery reads) and `queryRewrite`
-   (scope + chain∩level filters); add `isStudentMember` / `isStaffMember`
-   helpers.
-5. Apply cube renames and add `tests/cube/test_cube_schema.py`.
-6. Validate in Dev Mode with test emails at each tier (network/region/school,
-   summary-only, manager with reportees, special-access department, no access).
-7. Deploy to production; spot-check each tier.
-8. Retire all `cube-*` Google Workspace groups.
+1. **Prereq:** add `job_function_code` to `dim_work_assignment_jobs`
+   (passthrough; no hash change) + properties yml.
+2. **Crosswalks:** create the Google Sheet (data team fills the rollup), declare
+   the `GOOGLE_SHEETS` sources in `google/sheets/sources-external.yml`, build
+   the `stg_google_sheets__people__cube_access_*` staging models, add the
+   exposure in `google-sheets.yml`.
+3. Build `dim_staff_reporting_chain` (recursive closure over current/primary
+   marts edges).
+4. Build `dim_staff_cube_access` (marts star → department override crosswalk →
+   role crosswalk → `dim_locations` for `region_key`); add both new dims to
+   `exposures/cube.yml` `depends_on`.
+5. Add the tier `access_policy` blocks (one composite block per viewer;
+   additive, safe to deploy independently).
+6. Rewrite `cube.js`: `contextToGroups` (two BigQuery reads, one composite staff
+   group) and `queryRewrite` (scope + chain∩level rows + row-conditional
+   columns); add `isStaffMember`; drop the static arrays.
+7. Add `tests/cube/test_cube_schema.py`.
+8. Document the reporting-chain gate in `src/cube/CLAUDE.md` and the staff view
+   YAML (the #4092 deliverable).
+9. Validate in Dev Mode with test emails at each tier (network/region/school,
+   summary-only, manager with reportees, special-access department, no access);
+   confirm a pii+comp viewer sees both columns (intersection fix).
+10. Deploy to production; spot-check each tier.
+11. Retire all `cube-*` Google Workspace groups.
+12. File the data-quality issue (diagnostic query, aggregate counts only — no
+    PII) for staff whose current assignment can't resolve a role.

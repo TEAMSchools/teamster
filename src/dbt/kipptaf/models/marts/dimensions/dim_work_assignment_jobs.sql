@@ -8,6 +8,7 @@ with
             wa.job_code__long_name,
             wa.job_code__short_name,
             wa.job_function_code__name,
+            wa.job_function_code__code_value,
 
             {{
                 dbt_utils.generate_surrogate_key(
@@ -38,6 +39,7 @@ with
             job_title,
             job_code__code_value as job_code,
             job_function_code__name as job_function_description,
+            job_function_code__code_value as job_function_code,
 
             coalesce(job_code__long_name, job_code__short_name) as job_code_name,
 
@@ -62,6 +64,7 @@ select
 
     job_title as position_title,
     job_code,
+    job_function_code,
     job_function_description,
     job_code_name as job_code_description,
     effective_date_start as effective_start_date,
