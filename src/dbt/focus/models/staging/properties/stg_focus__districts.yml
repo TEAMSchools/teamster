@@ -1,0 +1,86 @@
+models:
+  - name: stg_focus__districts
+    description: >-
+      Focus district records — one row per district. Carries district codes,
+      address, and PAEC transcript branding settings.
+    columns:
+      - name: id
+        description: Primary key — Focus district id.
+        data_type: int
+        data_tests:
+          - unique:
+              config:
+                severity: error
+          - not_null:
+              config:
+                severity: error
+      - name: district_element_id
+        description: Focus district element id.
+        data_type: int
+      - name: paec_school_nurse_profile
+        description: Profile id of the PAEC school nurse.
+        data_type: int
+      - name: logo_width
+        description: District logo width in pixels.
+        data_type: string
+      - name: logo_height
+        description: District logo height in pixels.
+        data_type: string
+      - name: code
+        description: District code.
+        data_type: string
+      - name: title
+        description: Full district name.
+        data_type: string
+      - name: short_name
+        description: Abbreviated district label.
+        data_type: string
+      - name: address
+        description: District street address.
+        data_type: string
+      - name: city
+        description: District city.
+        data_type: string
+      - name: state
+        description: District state.
+        data_type: string
+      - name: district_element
+        description: Focus district element value.
+        data_type: int
+      - name: active
+        description: Y/N — whether the district is active.
+        data_type: string
+      - name: logo
+        description: District logo file reference.
+        data_type: string
+      - name: custom_fields
+        description: >-
+          Raw Focus custom-fields JSON blob; structured values are out of scope
+          for this batch.
+        data_type: string
+      - name: custom_l1277
+        description: Focus custom field l1277 (district-specific).
+        data_type: string
+      - name: paec_transcript_message
+        description: PAEC transcript message text.
+        data_type: string
+      - name: paec_transcript_logo
+        description: PAEC transcript logo reference.
+        data_type: string
+      - name: paec_transcript_signature
+        description: PAEC transcript signature reference.
+        data_type: string
+      - name: uuid
+        description: Focus global unique identifier for the row.
+        data_type: string
+      - name: seperate_site
+        description: >-
+          Whether the district is configured as a separate site (Focus spelling
+          preserved).
+        data_type: boolean
+      - name: created_at
+        description: Row creation timestamp in Focus.
+        data_type: timestamp
+      - name: updated_at
+        description: Row last-update timestamp in Focus.
+        data_type: timestamp
