@@ -54,7 +54,8 @@ attributes, not delete sentinels.
 
 **Primary keys.** Most tables PK on `id`; some on `<entity>_id` (`address_id`,
 `course_id`, `course_period_id`, `marking_period_id`, `period_id`,
-students→`student_id`, users→`profile_id`).
+students→`student_id`, users→`staff_id` (`profile_id` is null for nearly all
+rows).
 
 ## Model Structure
 
