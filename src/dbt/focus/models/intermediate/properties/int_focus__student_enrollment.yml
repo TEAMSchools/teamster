@@ -3,8 +3,10 @@ models:
     description: >-
       Focus student enrollment spans enriched with school, grade-level, and
       enrollment-code attributes. One row per enrollment id; every join is
-      many-to-one so the base grain is preserved. Internal-only — a rpt_ view
-      must sit between this model and any external consumer.
+      many-to-one so the base grain is preserved. drop_code is carried as its
+      raw code id only; its label enrichment is out of scope for this model.
+      Internal-only — a rpt_ view must sit between this model and any external
+      consumer.
     columns:
       - name: id
         description: Primary key — Focus student enrollment id.
