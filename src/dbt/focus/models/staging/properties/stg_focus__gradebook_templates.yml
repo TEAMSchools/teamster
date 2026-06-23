@@ -33,7 +33,8 @@ models:
         description: Global course the template is tied to.
         data_type: string
       - name: enabled
-        description: Whether the template is enabled (1) or not.
+        description:
+          Whether the template is enabled — 1 = enabled, 0 = disabled.
         data_type: int
       - name: rollover_id
         description: Source template id this rolled over from.
