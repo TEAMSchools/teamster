@@ -148,7 +148,7 @@ models:
           meta:
             contains_pii: true
       - name: birthdate
-        description: Birthdate
+        description: Birthdate; stored as a timestamp, not a date.
         data_type: timestamp
         config:
           meta:
