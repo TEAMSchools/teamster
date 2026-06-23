@@ -1,0 +1,193 @@
+models:
+  - name: stg_focus__students
+    description: >-
+      Focus students — curated core plus the currently-populated custom fields
+      (live rows only), one row per student id. Carries identity keys, student
+      name, row-lifecycle dates/flags, and the populated `custom_*` columns
+      renamed to their human-readable slugs. Custom `select` / `checkbox` values
+      remain as the raw stored codes (integer option ids, etc.) — they are not
+      decoded to their option labels in this model. Unpopulated `custom_*`
+      columns and the `search_*` / `application_*` denormalized copies are not
+      projected.
+    columns:
+      - name: student_id
+        description: Primary key — Focus local student id.
+        data_type: int
+        data_tests:
+          - unique:
+              config:
+                severity: error
+          - not_null:
+              config:
+                severity: error
+        config:
+          meta:
+            contains_pii: true
+      - name: profile_id
+        description: Focus profile (person) id for the student.
+        data_type: int
+        config:
+          meta:
+            contains_pii: true
+      - name: university_id
+        description: Focus university id associated with the student.
+        data_type: int
+      - name: district_id
+        description: Focus district id.
+        data_type: int
+      - name: first_name
+        description: Student first name.
+        data_type: string
+        config:
+          meta:
+            contains_pii: true
+      - name: middle_name
+        description: Student middle name.
+        data_type: string
+        config:
+          meta:
+            contains_pii: true
+      - name: last_name
+        description: Student last name.
+        data_type: string
+        config:
+          meta:
+            contains_pii: true
+      - name: name_suffix
+        description: Student name suffix.
+        data_type: string
+        config:
+          meta:
+            contains_pii: true
+      - name: external_api_uuid
+        description: External API unique identifier for the student.
+        data_type: string
+        config:
+          meta:
+            contains_pii: true
+      - name: protected_student
+        description: Y/N — whether the student record is access-protected.
+        data_type: string
+      - name: incomplete
+        description: Flag — whether the student record is marked incomplete.
+        data_type: int
+      - name: last_updated_date
+        description: Source last-updated date for the student record.
+        data_type: date
+      - name: last_change
+        description: Source last-change timestamp for the student record.
+        data_type: timestamp
+      - name: uuid
+        description: Focus global unique identifier for the row.
+        data_type: string
+      - name: created_at
+        description: Row creation timestamp in Focus.
+        data_type: timestamp
+      - name: updated_at
+        description: Row last-update timestamp in Focus.
+        data_type: timestamp
+      - name: local_student_id
+        description: Local Student ID
+        data_type: string
+        config:
+          meta:
+            contains_pii: true
+      - name: race_asian
+        description: Race - Asian
+        data_type: int
+        config:
+          meta:
+            contains_pii: true
+      - name: sex
+        description: Sex
+        data_type: int
+        config:
+          meta:
+            contains_pii: true
+      - name: race_white
+        description: Race - White
+        data_type: int
+        config:
+          meta:
+            contains_pii: true
+      - name: ethnicity_hispanic_or_latino
+        description: Ethnicity - Hispanic or Latino
+        data_type: int
+        config:
+          meta:
+            contains_pii: true
+      - name: race_american_indian_or_alaska_native
+        description: Race - American Indian or Alaska Native
+        data_type: int
+        config:
+          meta:
+            contains_pii: true
+      - name: race_native_hawaiian_or_other_pacific_islander
+        description: Race - Native Hawaiian or Other Pacific Islander
+        data_type: int
+        config:
+          meta:
+            contains_pii: true
+      - name: language
+        description: Language
+        data_type: int
+        config:
+          meta:
+            contains_pii: true
+      - name: race_black_or_african_american
+        description: Race - Black or African American
+        data_type: int
+        config:
+          meta:
+            contains_pii: true
+      - name: residence_county
+        description: Residence County
+        data_type: int
+        config:
+          meta:
+            contains_pii: true
+      - name: birthdate
+        description: Birthdate
+        data_type: timestamp
+        config:
+          meta:
+            contains_pii: true
+      - name: florida_alias
+        description: Florida Alias
+        data_type: string
+        config:
+          meta:
+            contains_pii: true
+      - name: florida_student_number
+        description: Florida Student Number
+        data_type: string
+        config:
+          meta:
+            contains_pii: true
+      - name: powerschool_id
+        description: PowerSchool ID
+        data_type: numeric
+        config:
+          meta:
+            contains_pii: true
+      - name: student_e_mail_address
+        description: Student E-mail Address
+        data_type: string
+        config:
+          meta:
+            contains_pii: true
+      - name: disis_id
+        description: DISIS ID
+        data_type: numeric
+        config:
+          meta:
+            contains_pii: true
+      - name: fleid_verified
+        description: FLEID Verified
+        data_type: string
+      - name: florida_education_identifier
+        description: Florida Education Identifier
+        data_type: string
+        config:
+          meta:
+            contains_pii: true
