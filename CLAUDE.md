@@ -188,8 +188,10 @@ file; domain specifics live in the nearest subdirectory CLAUDE.md.
 - **A PR's CI lives on two disjoint surfaces**: dbt Cloud is a commit _status_
   (`pull_request_read get_status` / `gh api commits/<sha>/status`); Trunk /
   CodeQL / `claude` are _check runs_ (`get_check_runs` /
-  `commits/<sha>/check-runs`). Check both before calling a PR green; the
-  `claude` check reports `skipped` on pushes where it doesn't re-run.
+  `commits/<sha>/check-runs`). Check both before calling a PR green.
+  `claude-review` triggers only on PR `opened` / `ready_for_review` (not
+  `synchronize`) — it does NOT re-run when you push fixes, so don't wait or
+  monitor for a re-review after a fix push.
 
 - **Python**: Always `uv run` — never bare `python`, `python3`, or
   venv-installed tools (`dbt`, `dagster`, etc.).
@@ -414,10 +416,13 @@ identify the `mcp__github__*` tool that handles it; only if none exists, check
 the allowlist.
 
 - **GitHub MCP write tools HTML-sanitize body text**: `issue_write`,
-  `add_issue_comment`, and `update_pull_request` silently strip `<...>` tokens
-  (e.g. `<role>`, `<col>`) — **even inside inline backticks**. Use
-  `{placeholder}` braces or a fenced code block (fenced blocks preserve `<`,
-  `<=`, `>=`). Read the stored body back and verify after writing.
+  `add_issue_comment`, `update_pull_request`, and `create_pull_request` strip
+  `<...>` tokens (e.g. `<role>`, `<col>`) — **even inside inline backticks**.
+  Use `{placeholder}` braces or a fenced code block (fenced blocks preserve `<`,
+  `<=`, `>=`). Read the stored body back and verify after writing. They also
+  entity-encode `&`→`&amp;` and `"`→`&#34;` (not strip) — harmless in rendered
+  prose but rendered literally inside code spans and in titles, so avoid `&` /
+  `"` in PR/issue titles and code spans (use "and" / single quotes).
 - `mcp__github__pull_request_review_write` `method=create` requires the FULL
   40-char `commitID` — an abbreviated SHA fails with "Could not coerce value ...
   to GitObjectID".
