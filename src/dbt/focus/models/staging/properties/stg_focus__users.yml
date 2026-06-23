@@ -1,0 +1,195 @@
+models:
+  - name: stg_focus__users
+    description: >-
+      Focus users — one row per active staff/user account (deleted rows
+      excluded), keyed on staff_id. Carries the curated core columns (identity,
+      names, school/org context, canonical dates) plus every currently-populated
+      custom field (except Social Security Number, excluded as sensitive), each
+      aliased to its human-readable slug from the custom_fields catalog.
+      Select/multiple custom values remain as stored codes — decoding them to
+      labels is a deferred follow-up. Unpopulated custom_* columns are out of
+      scope.
+    columns:
+      - name: staff_id
+        description:
+          Primary key — Focus staff id (links to user_enrollment.staff_id).
+        data_type: int
+        data_tests:
+          - unique:
+              config:
+                severity: error
+          - not_null:
+              config:
+                severity: error
+        config:
+          meta:
+            contains_pii: true
+      - name: profile_id
+        description: Focus profile id for the user account (rarely populated).
+        data_type: int
+        config:
+          meta:
+            contains_pii: true
+      - name: parent_id
+        description: Parent user id, where the account is linked to another.
+        data_type: int
+        config:
+          meta:
+            contains_pii: true
+      - name: rollover_id
+        description: Source user id this account rolled over from.
+        data_type: int
+        config:
+          meta:
+            contains_pii: true
+      - name: erp_profile_id
+        description: ERP profile id linked to this user account.
+        data_type: int
+        config:
+          meta:
+            contains_pii: true
+      - name: university_id
+        description: University / external institution id for the user.
+        data_type: int
+      - name: current_school_id
+        description: Focus school id the user is currently assigned to.
+        data_type: int
+      - name: current_district_id
+        description: Focus district id the user is currently assigned to.
+        data_type: int
+      - name: district_id
+        description: Focus district id that owns the user record.
+        data_type: int
+      - name: syear
+        description: Focus school year (start year, e.g. 2025 = 2025-26).
+        data_type: int
+      - name: username
+        description: Login username for the account.
+        data_type: string
+        config:
+          meta:
+            contains_pii: true
+      - name: profile
+        description: Profile name string for the user.
+        data_type: string
+      - name: title
+        description: User title / job title.
+        data_type: string
+      - name: ein
+        description: Employer identification / employee number (EIN) — PII.
+        data_type: string
+        config:
+          meta:
+            contains_pii: true
+      - name: gender
+        description: Coded gender value for the user.
+        data_type: int
+        config:
+          meta:
+            contains_pii: true
+      - name: first_name
+        description: User first name (PII).
+        data_type: string
+        config:
+          meta:
+            contains_pii: true
+      - name: middle_name
+        description: User middle name (PII).
+        data_type: string
+        config:
+          meta:
+            contains_pii: true
+      - name: last_name
+        description: User last name (PII).
+        data_type: string
+        config:
+          meta:
+            contains_pii: true
+      - name: name_suffix
+        description: User name suffix (e.g. Jr., III).
+        data_type: string
+        config:
+          meta:
+            contains_pii: true
+      - name: homeroom
+        description: Homeroom assignment label for the user.
+        data_type: string
+      - name: erp_display_name
+        description: ERP display name for the staff member (PII).
+        data_type: string
+        config:
+          meta:
+            contains_pii: true
+      - name: imported
+        description: Source import marker for the user row.
+        data_type: string
+      - name: e_mail_address
+        description: E-mail Address (populated custom field) — PII.
+        data_type: string
+        config:
+          meta:
+            contains_pii: true
+      - name: staff_number_identifier_local
+        description:
+          Staff Number Identifier, Local (populated custom field) — PII.
+        data_type: string
+        config:
+          meta:
+            contains_pii: true
+      - name: phone_number
+        description: Phone Number (populated custom field) — PII.
+        data_type: string
+        config:
+          meta:
+            contains_pii: true
+      - name: experience_length_years
+        description: Experience Length (Years) (populated custom field).
+        data_type: numeric
+      - name: active
+        description:
+          Active (populated custom field) — select-coded; value left as the
+          stored code.
+        data_type: int
+      - name: w4_allowances_under_17
+        description: W4 Allowances Under 17 (populated custom field) — PII.
+        data_type: numeric
+        config:
+          meta:
+            contains_pii: true
+      - name: f_3_claim_dependent_and_other
+        description: 3 Claim Dependent and Other (populated custom field) — PII.
+        data_type: numeric
+        config:
+          meta:
+            contains_pii: true
+      - name: profile_on_non_production_sites
+        description:
+          Profile On Non-Production Sites (populated custom field) —
+          select-coded; value left as the stored code.
+        data_type: int
+      - name: education
+        description:
+          Education (populated custom field) — multiple-select coded; value left
+          as the stored code(s).
+        data_type: string
+        config:
+          meta:
+            contains_pii: true
+      - name: uuid
+        description: Focus global unique identifier for the row.
+        data_type: string
+      - name: last_login
+        description: Timestamp of the user's last login.
+        data_type: timestamp
+      - name: last_change
+        description: Timestamp of the last change to the user record.
+        data_type: timestamp
+      - name: last_updated_date
+        description: Source last-updated date for the user record.
+        data_type: date
+      - name: created_at
+        description: Row creation timestamp in Focus.
+        data_type: timestamp
+      - name: updated_at
+        description: Row last-update timestamp in Focus.
+        data_type: timestamp

@@ -1,0 +1,105 @@
+models:
+  - name: stg_focus__schools
+    description: >-
+      Focus school records — one row per live school (rows flagged deleted are
+      excluded). Carries the curated core plus every populated Focus custom
+      field, each projected under a readable slug. Select / multiple custom
+      values remain as stored Focus option codes — code-to-label decoding is a
+      deferred follow-up. Unpopulated custom fields and the raw custom_fields
+      JSON blob are out of scope for this batch.
+    columns:
+      - name: id
+        description: Primary key — Focus school id.
+        data_type: int
+        data_tests:
+          - unique:
+              config:
+                severity: error
+          - not_null:
+              config:
+                severity: error
+      - name: district_id
+        description: Focus district id the school belongs to.
+        data_type: int
+      - name: state_school_id
+        description: State-assigned school id.
+        data_type: int
+      - name: erp_facility_id
+        description: ERP facility id mapped to the school.
+        data_type: int
+      - name: min_syear
+        description: Earliest school year (start year) the school is active.
+        data_type: int
+      - name: max_syear
+        description: Latest school year (start year) the school is active.
+        data_type: int
+      - name: title
+        description: Full school name.
+        data_type: string
+      - name: latitude
+        description: School latitude.
+        data_type: numeric
+      - name: longitude
+        description: School longitude.
+        data_type: numeric
+      - name: sort_order
+        description: Display sort order in the school list.
+        data_type: numeric
+      - name: act_organization_code
+        description: ACT organization (high school) code.
+        data_type: numeric
+      - name: college_board_attending_institution_code
+        description: College Board attending-institution code.
+        data_type: string
+      - name: virtual
+        description: Y/N — whether the school is virtual.
+        data_type: string
+      - name: school_number
+        description: >-
+          School Number. Populated Focus custom field (custom_327); stored value
+          left as-is.
+        data_type: string
+      - name: district_number
+        description: >-
+          District Number. Populated Focus custom field (custom_100000001);
+          stored value left as-is.
+        data_type: string
+      - name: school_level
+        description: >-
+          School Level. Populated Focus custom field (custom_100000004) of type
+          select; stored as the Focus option code, not a decoded label.
+        data_type: int
+      - name: state
+        description: >-
+          State. Populated Focus custom field (custom_200000321); stored value
+          left as-is.
+        data_type: string
+      - name: school_type
+        description: >-
+          School Type. Populated Focus custom field (custom_200000326) of type
+          select; stored as the Focus option code, not a decoded label.
+        data_type: int
+      - name: technical_center
+        description: >-
+          Technical Center. Populated Focus custom field (custom_50000002) of
+          type select; stored as the Focus option code, not a decoded label.
+        data_type: int
+      - name: custom_319000052
+        description: >-
+          Focus generic custom slot; label not defined in the extracted
+          custom_fields catalog.
+        data_type: string
+      - name: exclude_from_state_reporting
+        description: >-
+          Exclude from State Reporting. Populated Focus custom field
+          (custom_200000200) of type checkbox; stored value left as-is.
+        data_type: string
+      - name: uuid
+        description: Focus global unique identifier for the row.
+        data_type: string
+      - name: created_at
+        description: Row creation timestamp in Focus.
+        data_type: timestamp
+      - name: updated_at
+        description: Row last-update timestamp in Focus.
+        data_type: timestamp
