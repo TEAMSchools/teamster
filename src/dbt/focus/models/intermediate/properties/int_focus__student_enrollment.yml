@@ -1,0 +1,60 @@
+models:
+  - name: int_focus__student_enrollment
+    description: >-
+      Focus student enrollment spans enriched with school, grade-level, and
+      enrollment-code attributes. One row per enrollment id; every join is
+      many-to-one so the base grain is preserved. Internal-only — a rpt_ view
+      must sit between this model and any external consumer.
+    columns:
+      - name: id
+        description: Primary key — Focus student enrollment id.
+        data_tests:
+          - unique:
+              config:
+                severity: error
+          - not_null:
+              config:
+                severity: error
+      - name: syear
+        description: Focus school year (start year, e.g. 2025 = 2025-26).
+      - name: school_id
+        description: Focus school id of the enrollment.
+      - name: student_id
+        description: Focus student id (local student id).
+        config:
+          meta:
+            contains_pii: true
+      - name: grade_id
+        description: Focus grade-level id (joins school_gradelevels.id).
+      - name: enrollment_code
+        description:
+          Focus enrollment-code id (joins student_enrollment_codes.id).
+      - name: drop_code
+        description:
+          Focus withdrawal-code id (joins student_enrollment_codes.id).
+      - name: calendar_id
+        description: Focus attendance calendar id.
+      - name: start_date
+        description: Enrollment start date.
+      - name: end_date
+        description: Enrollment withdraw date.
+      - name: school_title
+        description: Full school name from stg_focus__schools.
+      - name: school_state_school_id
+        description: State-assigned school id from stg_focus__schools.
+      - name: grade_level_title
+        description: Full grade-level name from stg_focus__school_gradelevels.
+      - name: grade_level_short_name
+        description: >-
+          Abbreviated grade-level label from stg_focus__school_gradelevels.
+      - name: enrollment_code_title
+        description: >-
+          Full enrollment-code name from stg_focus__student_enrollment_codes.
+      - name: enrollment_code_short_name
+        description: >-
+          Abbreviated enrollment-code label from
+          stg_focus__student_enrollment_codes.
+      - name: enrollment_code_type
+        description: >-
+          Enrollment-code classification from
+          stg_focus__student_enrollment_codes.
