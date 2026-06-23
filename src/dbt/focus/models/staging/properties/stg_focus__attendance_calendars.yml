@@ -1,0 +1,46 @@
+models:
+  - name: stg_focus__attendance_calendars
+    description: >-
+      Focus attendance calendars — one row per calendar per school year. Lookup
+      for the calendar_id referenced by student_enrollment.
+    columns:
+      - name: calendar_id
+        description: Primary key — Focus attendance calendar id.
+        data_type: int
+        data_tests:
+          - unique:
+              config:
+                severity: error
+          - not_null:
+              config:
+                severity: error
+      - name: school_id
+        description: Focus school id the calendar belongs to.
+        data_type: int
+      - name: syear
+        description: Focus school year (start year, e.g. 2025 = 2025-26).
+        data_type: int
+      - name: rollover_id
+        description: Source calendar id this rolled over from.
+        data_type: int
+      - name: district_id
+        description: Focus district id.
+        data_type: int
+      - name: title
+        description: Full calendar name.
+        data_type: string
+      - name: default_calendar
+        description: Y/N — whether this is the school's default calendar.
+        data_type: string
+      - name: imported
+        description: Y/N — whether the calendar was imported.
+        data_type: string
+      - name: uuid
+        description: Focus global unique identifier for the row.
+        data_type: string
+      - name: created_at
+        description: Row creation timestamp in Focus.
+        data_type: timestamp
+      - name: updated_at
+        description: Row last-update timestamp in Focus.
+        data_type: timestamp
