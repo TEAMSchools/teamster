@@ -1020,24 +1020,25 @@ non-custom core to: the keys (`id`, `school_id`, `student_id`, `grade_id`,
 **Populated custom fields (inline block):** the five `custom_*` columns that are
 populated in the current Miami pull, per
 `.claude/scratch/focus-student_enrollment-custom-map.md`. Each is projected
-`<raw> as <slug>` after the core, before any cast block. None resolved to a
-catalog title, so every one uses its raw `custom_N` name as the slug and the
-generic-slot fallback description. The other 15 `custom_*` columns are
-unpopulated and OUT OF SCOPE. All five are `STRING` and stored as-is (no
-decoding).
+`<raw> as <slug>` after the core, before any cast block. All five resolve to a
+catalog title under source*class `StudentEnrollment` (join on
+`lower(column_name)` — see `src/dbt/focus/CLAUDE.md`), so each is aliased to the
+slugified title. The other 15
+`custom*\*`columns are unpopulated and OUT OF SCOPE. All five are`STRING`; values are encoded `select`
+option codes left as-is (decode deferred to Wave 2).
 
 **Populated-custom map (verbatim from the scratch map file):**
 
-| raw column | slug       | bq_type | focus_type | populated_rows | title  |
-| ---------- | ---------- | ------- | ---------- | -------------- | ------ |
-| `custom_1` | `custom_1` | STRING  | None       | 1276           | (none) |
-| `custom_2` | `custom_2` | STRING  | None       | 1276           | (none) |
-| `custom_3` | `custom_3` | STRING  | None       | 1276           | (none) |
-| `custom_6` | `custom_6` | STRING  | None       | 1276           | (none) |
-| `custom_4` | `custom_4` | STRING  | None       | 158            | (none) |
+| raw column | slug                        | bq_type | focus_type | populated_rows | title                     |
+| ---------- | --------------------------- | ------- | ---------- | -------------- | ------------------------- |
+| `custom_1` | `prior_district`            | STRING  | select     | 1276           | Prior District            |
+| `custom_2` | `prior_state`               | STRING  | select     | 1276           | Prior State               |
+| `custom_3` | `prior_country`             | STRING  | select     | 1276           | Prior Country             |
+| `custom_6` | `student_offender_transfer` | STRING  | select     | 1276           | Student Offender Transfer |
+| `custom_4` | `educational_choice`        | STRING  | select     | 158            | Educational Choice        |
 
-Because slug equals the raw column name for all five, these are projected as
-plain `custom_N` (no `as` alias) — a self-alias would trip sqlfluff AL09.
+Each slug differs from its raw `custom_N` name, so each is projected with an
+explicit `as <slug>` alias (no AL09 self-alias concern).
 
 **Files:**
 
@@ -1054,8 +1055,7 @@ plain `custom_N` (no `as` alias) — a self-alias would trip sqlfluff AL09.
 - [ ] **Step 1: Write the model SQL**
 
 ST06 — the curated core (plain refs) first, then the populated-custom block
-(plain refs; slug equals raw name so no `as` alias), then audit columns. No
-casts are used.
+(each aliased `<raw> as <slug>`), then audit columns. No casts are used.
 
 ```sql
 select
@@ -1087,11 +1087,11 @@ select
     fl_days_present,
     fl_days_absent,
     fl_days_absent_not_disc,
-    custom_1,
-    custom_2,
-    custom_3,
-    custom_4,
-    custom_6,
+    custom_1 as prior_district,
+    custom_2 as prior_state,
+    custom_3 as prior_country,
+    custom_4 as educational_choice,
+    custom_6 as student_offender_transfer,
     uuid,
     created_at,
     updated_at,
@@ -1106,11 +1106,12 @@ models:
     description: >-
       Focus student enrollment spans — one row per enrollment record (a student
       at a school for a date range in a school year). Carries the curated core
-      (keys, dates, FLDOE day counts) plus every populated Focus custom field.
-      The populated customs (custom_1 through custom_6) have no catalog label
-      and are passed through as stored codes — select / multiple custom values
-      remain encoded, and code-to-label decoding is a deferred follow-up.
-      Unpopulated custom fields are out of scope for this batch.
+      (keys, dates, FLDOE day counts) plus every populated Focus custom field,
+      each aliased to its catalog title (prior_district, prior_state,
+      prior_country, educational_choice, student_offender_transfer). Those are
+      select-type custom values stored as encoded option codes — code-to-label
+      decoding is a deferred follow-up. Unpopulated custom fields are out of
+      scope for this batch.
     columns:
       - name: id
         description: Primary key — Focus student enrollment id.
@@ -1207,30 +1208,30 @@ models:
       - name: fl_days_absent_not_disc
         description: FLDOE days absent not disciplinary.
         data_type: numeric
-      - name: custom_1
+      - name: prior_district
         description: >-
-          Focus generic custom slot; label not defined in the extracted
-          custom_fields catalog.
+          Prior district — Focus custom field. Stored as an encoded select
+          option code (decode deferred).
         data_type: string
-      - name: custom_2
+      - name: prior_state
         description: >-
-          Focus generic custom slot; label not defined in the extracted
-          custom_fields catalog.
+          Prior state — Focus custom field. Stored as an encoded select option
+          code (decode deferred).
         data_type: string
-      - name: custom_3
+      - name: prior_country
         description: >-
-          Focus generic custom slot; label not defined in the extracted
-          custom_fields catalog.
+          Prior country — Focus custom field. Stored as an encoded select option
+          code (decode deferred).
         data_type: string
-      - name: custom_4
+      - name: educational_choice
         description: >-
-          Focus generic custom slot; label not defined in the extracted
-          custom_fields catalog.
+          Educational choice — Focus custom field. Stored as an encoded select
+          option code (decode deferred).
         data_type: string
-      - name: custom_6
+      - name: student_offender_transfer
         description: >-
-          Focus generic custom slot; label not defined in the extracted
-          custom_fields catalog.
+          Student offender transfer — Focus custom field. Stored as an encoded
+          select option code (decode deferred).
         data_type: string
       - name: uuid
         description: Focus global unique identifier for the row.
