@@ -25,7 +25,6 @@ select
     custom_200000001 as staff_number_identifier_local,
     custom_100000002 as phone_number,
     custom_200000002 as experience_length_years,
-    custom_556 as social_security_number,
     custom_319000004 as active,
     custom_l801 as w4_allowances_under_17,
     custom_l802 as f_3_claim_dependent_and_other,

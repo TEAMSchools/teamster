@@ -4,10 +4,11 @@ models:
       Focus users — one row per active staff/user account (deleted rows
       excluded), keyed on staff_id. Carries the curated core columns (identity,
       names, school/org context, canonical dates) plus every currently-populated
-      custom field, each aliased to its human-readable slug from the
-      custom_fields catalog. Select/multiple custom values remain as stored
-      codes — decoding them to labels is a deferred follow-up. Unpopulated
-      custom_* columns are out of scope.
+      custom field (except Social Security Number, excluded as sensitive), each
+      aliased to its human-readable slug from the custom_fields catalog.
+      Select/multiple custom values remain as stored codes — decoding them to
+      labels is a deferred follow-up. Unpopulated custom_* columns are out of
+      scope.
     columns:
       - name: staff_id
         description:
@@ -144,12 +145,6 @@ models:
       - name: experience_length_years
         description: Experience Length (Years) (populated custom field).
         data_type: numeric
-      - name: social_security_number
-        description: Social Security Number (populated custom field) — PII.
-        data_type: string
-        config:
-          meta:
-            contains_pii: true
       - name: active
         description:
           Active (populated custom field) — select-coded; value left as the
