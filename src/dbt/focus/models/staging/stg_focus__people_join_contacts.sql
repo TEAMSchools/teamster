@@ -1,0 +1,16 @@
+select
+    id,
+    person_id,
+    detail_priority,
+    title,
+    value,
+    imported,
+    unlisted,
+    callout,
+    blocked,
+    sms,
+    unsubscribe,
+    uuid,
+    created_at,
+    updated_at,
+from {{ source("focus", "people_join_contacts") }}
