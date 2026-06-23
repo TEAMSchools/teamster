@@ -131,6 +131,7 @@ models:
       - name: language
         description: Language
         data_type: int
+        quote: true
         config:
           meta:
             contains_pii: true

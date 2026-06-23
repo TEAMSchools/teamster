@@ -1,6 +1,6 @@
 -- a bare `address` column ref collides with the same-named table range
 -- variable (resolves to the whole-row struct), so read through a source CTE
-with source as (select * from {{ source("focus", "address") }})
+with source as (select *, from {{ source("focus", "address") }})
 
 select
     address_id,

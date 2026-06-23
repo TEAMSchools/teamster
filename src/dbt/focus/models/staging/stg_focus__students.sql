@@ -23,7 +23,7 @@ select
     custom_100000105 as ethnicity_hispanic_or_latino,
     custom_100000100 as race_american_indian_or_alaska_native,
     custom_100000103 as race_native_hawaiian_or_other_pacific_islander,
-    custom_200000005 as language,
+    custom_200000005 as `language`,
     custom_100000102 as race_black_or_african_american,
     custom_837 as residence_county,
     custom_200000004 as birthdate,
