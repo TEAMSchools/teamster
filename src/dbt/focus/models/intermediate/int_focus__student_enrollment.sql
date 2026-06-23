@@ -1,14 +1,3 @@
-with
-    enrollment as (select *, from {{ ref("stg_focus__student_enrollment") }}),
-
-    schools as (select *, from {{ ref("stg_focus__schools") }}),
-
-    grade_levels as (select *, from {{ ref("stg_focus__school_gradelevels") }}),
-
-    enrollment_codes as (
-        select *, from {{ ref("stg_focus__student_enrollment_codes") }}
-    )
-
 select
     e.id,
     e.syear,
@@ -30,7 +19,8 @@ select
     ec.title as enrollment_code_title,
     ec.short_name as enrollment_code_short_name,
     ec.type as enrollment_code_type,
-from enrollment as e
-left join schools as s on e.school_id = s.id
-left join grade_levels as g on e.grade_id = g.id
-left join enrollment_codes as ec on e.enrollment_code = ec.id
+from {{ ref("stg_focus__student_enrollment") }} as e
+left join {{ ref("stg_focus__schools") }} as s on e.school_id = s.id
+left join {{ ref("stg_focus__school_gradelevels") }} as g on e.grade_id = g.id
+left join
+    {{ ref("stg_focus__student_enrollment_codes") }} as ec on e.enrollment_code = ec.id
