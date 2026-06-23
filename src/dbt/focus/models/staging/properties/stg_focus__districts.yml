@@ -58,8 +58,10 @@ models:
           Raw Focus custom-fields JSON blob; structured values are out of scope
           for this batch.
         data_type: string
-      - name: custom_l1277
-        description: Focus custom field l1277 (district-specific).
+      - name: district_email_domain
+        description: >-
+          District email domain, entered starting with @. Focus custom field
+          (custom_l1277).
         data_type: string
       - name: paec_transcript_message
         description: PAEC transcript message text.

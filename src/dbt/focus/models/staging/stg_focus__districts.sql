@@ -14,7 +14,7 @@ select
     active,
     logo,
     custom_fields,
-    custom_l1277,
+    custom_l1277 as district_email_domain,
     paec_transcript_message,
     paec_transcript_logo,
     paec_transcript_signature,
