@@ -253,11 +253,14 @@ Reads the cached `row` + `reportingChainKeys`.
 - **Directory-only staff query** → no row filter (all staff network-wide).
 - **Staff query touching sensitive field(s)** → AND the per-field scope filters
   of every requested sensitive field (intersection). Each field's filter is
-  built from its enum value: `all_in_scope` → location ∩ department;
-  `reporting_chain_or_below_rank` → (location ∩ department ∩ `job_function_level
-  > viewer`) ∪ chain-IN; `reporting_chain`→ chain-IN;`teaching_staff`→ location ∩ department ∩`job_function_code
-  > IN ('TEACH','TIR')`; `none`→ the column is hidden by`access_policy`, never
-  > requested.
+  built from its enum value:
+  - `all_in_scope` → location ∩ department
+  - `reporting_chain_or_below_rank` → (location ∩ department ∩ ranked below
+    viewer) ∪ chain-IN
+  - `reporting_chain` → chain-IN
+  - `teaching_staff` → location ∩ department ∩ `job_function_code` in
+    `('TEACH','TIR')`
+  - `none` → the column is hidden by `access_policy`, never requested
 - **Student query** → location filter by surface (`*_detail` vs `*_summary`),
   default-deny empty `IN ()`.
 - Student-member strip, snapshot-anchor guard, and `canSwitchSqlUser` unchanged.
