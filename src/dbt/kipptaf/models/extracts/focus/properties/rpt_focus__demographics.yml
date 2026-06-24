@@ -8,7 +8,7 @@ models:
       `int_finalsite__contact_custom_attributes` for race, language,
       media-release, and Hispanic/Latino fields. `stdt_id` is stubbed null until
       the Finalsite-minted student id lands in
-      `int_finalsite__contact_id_attributes`. Produces 43 columns in
+      `int_finalsite__contact_id_attributes`. Produces 42 columns in
       `DEMOGRAPHICS_LAYOUT` order. Focus column header casing (`STDT_ID`,
       `LAST_NAME`, etc.) is applied at transport time via
       `file_config.format.header_replacements`; dbt column names remain

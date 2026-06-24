@@ -253,7 +253,7 @@ models:
 unit_tests:
   - name: test_contacts_two_guardians
     description:
-      Verifies the 51-column CONTACTS layout for one student with two guardian
+      Verifies the 50-column CONTACTS layout for one student with two guardian
       relationships — primary guardian sorts to SORT_ORDER 1, non-primary to 2.
       Asserts STUDENT_RELATION, FIRST_NAME, LAST_NAME, and CONTACT1_VALUE.
       STUDENT_ID is null until the Finalsite-minted student id lands.
