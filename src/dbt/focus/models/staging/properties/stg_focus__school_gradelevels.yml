@@ -1,0 +1,71 @@
+models:
+  - name: stg_focus__school_gradelevels
+    description: >-
+      Focus grade-level definitions — one row per grade level per school. Maps a
+      grade-level id to its title, school, and rollover linkage.
+    columns:
+      - name: id
+        description: Primary key — Focus grade-level id.
+        data_type: int
+        data_tests:
+          - unique:
+              config:
+                severity: error
+          - not_null:
+              config:
+                severity: error
+      - name: school_id
+        description: Focus school id the grade level belongs to.
+        data_type: int
+      - name: next_grade_id
+        description: Grade-level id a student rolls into the next year.
+        data_type: int
+      - name: rollover_id
+        description: Source grade-level id this rolled over from.
+        data_type: int
+      - name: min_year
+        description: Earliest calendar year the grade level is active.
+        data_type: int
+      - name: max_year
+        description: Latest calendar year the grade level is active.
+        data_type: int
+      - name: district_id
+        description: Focus district id.
+        data_type: int
+      - name: short_name
+        description: Abbreviated grade-level label.
+        data_type: string
+      - name: title
+        description: Full grade-level name.
+        data_type: string
+      - name: sort_order
+        description: Display sort order within the school's grade levels.
+        data_type: numeric
+      - name: min_syear
+        description:
+          Earliest school year (start year) the grade level is active.
+        data_type: numeric
+      - name: max_syear
+        description: Latest school year (start year) the grade level is active.
+        data_type: numeric
+      - name: rollover
+        description: Y/N — whether the grade level participates in rollover.
+        data_type: string
+      - name: uuid
+        description: Focus global unique identifier for the row.
+        data_type: string
+      - name: zoning
+        description: Y/N — whether zoning applies to the grade level.
+        data_type: string
+      - name: choice_short_name
+        description: Abbreviated label used for school-choice reporting.
+        data_type: string
+      - name: pk
+        description: Y/N — whether the grade level is pre-kindergarten.
+        data_type: string
+      - name: created_at
+        description: Row creation timestamp in Focus.
+        data_type: timestamp
+      - name: updated_at
+        description: Row last-update timestamp in Focus.
+        data_type: timestamp

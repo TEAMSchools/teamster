@@ -1,0 +1,73 @@
+models:
+  - name: stg_focus__user_enrollment
+    description: >-
+      Focus user enrollments — one row per staff enrollment span linking a staff
+      member to the schools, districts, and profiles they are enrolled in for a
+      date range. Array-like columns are kept as raw serialized strings.
+    columns:
+      - name: id
+        description: Primary key — Focus user enrollment id.
+        data_type: int
+        data_tests:
+          - unique:
+              config:
+                severity: error
+          - not_null:
+              config:
+                severity: error
+      - name: staff_id
+        description: Focus staff id (users.staff_id) this enrollment is for.
+        data_type: int
+        config:
+          meta:
+            contains_pii: true
+      - name: profiles
+        description: Serialized list of profile ids for the enrollment (raw).
+        data_type: string
+      - name: schools
+        description: Serialized list of school ids for the enrollment (raw).
+        data_type: string
+      - name: districts
+        description: Serialized list of district ids for the enrollment (raw).
+        data_type: string
+      - name: schools_array
+        description: Serialized array form of the enrollment's school ids (raw).
+        data_type: string
+      - name: profiles_array
+        description:
+          Serialized array form of the enrollment's profile ids (raw).
+        data_type: string
+      - name: erp_profiles
+        description:
+          Serialized list of ERP profile ids for the enrollment (raw).
+        data_type: string
+      - name: one_access_request_id
+        description: OneAccess provisioning request id tied to the enrollment.
+        data_type: string
+      - name: comment
+        description: Free-text comment on the enrollment.
+        data_type: string
+        config:
+          meta:
+            contains_pii: true
+      - name: imported
+        description: Source import marker for the enrollment row.
+        data_type: string
+      - name: imported1
+        description: Secondary source import marker for the enrollment row.
+        data_type: string
+      - name: start_date
+        description: First date of the enrollment span.
+        data_type: date
+      - name: end_date
+        description: Last date of the enrollment span.
+        data_type: date
+      - name: uuid
+        description: Focus global unique identifier for the row.
+        data_type: string
+      - name: created_at
+        description: Row creation timestamp in Focus.
+        data_type: timestamp
+      - name: updated_at
+        description: Row last-update timestamp in Focus.
+        data_type: timestamp

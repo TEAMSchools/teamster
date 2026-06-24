@@ -1,0 +1,57 @@
+models:
+  - name: stg_focus__student_enrollment_codes
+    description: >-
+      Focus enrollment / withdrawal code definitions — one row per live code
+      (rows flagged deleted are excluded). Lookup for the enrollment_code and
+      drop_code on student_enrollment.
+    columns:
+      - name: id
+        description: Primary key — Focus enrollment-code id.
+        data_type: int
+        data_tests:
+          - unique:
+              config:
+                severity: error
+          - not_null:
+              config:
+                severity: error
+      - name: min_syear
+        description: Earliest school year (start year) the code is valid.
+        data_type: int
+      - name: max_syear
+        description: Latest school year (start year) the code is valid.
+        data_type: int
+      - name: district_id
+        description: Focus district id.
+        data_type: int
+      - name: title
+        description: Full enrollment-code name.
+        data_type: string
+      - name: short_name
+        description: Abbreviated enrollment-code label.
+        data_type: string
+      - name: type
+        description: >-
+          Code classification — distinguishes enrollment vs withdrawal codes.
+        data_type: string
+      - name: profile_ids
+        description: Comma-delimited profile ids permitted to use the code.
+        data_type: string
+      - name: gradelevels
+        description: Comma-delimited grade-level ids the code applies to.
+        data_type: string
+      - name: grad_type
+        description: Graduation type associated with the code.
+        data_type: string
+      - name: sort_order
+        description: Display sort order within the code list.
+        data_type: numeric
+      - name: uuid
+        description: Focus global unique identifier for the row.
+        data_type: string
+      - name: created_at
+        description: Row creation timestamp in Focus.
+        data_type: timestamp
+      - name: updated_at
+        description: Row last-update timestamp in Focus.
+        data_type: timestamp

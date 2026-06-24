@@ -1,0 +1,52 @@
+models:
+  - name: stg_focus__user_profiles
+    description: >-
+      Focus user profiles — one row per permission profile (role) definition.
+      Profiles group users and drive the permission keys in
+      stg_focus__permission.
+    columns:
+      - name: id
+        description: Primary key — Focus user profile id.
+        data_type: int
+        data_tests:
+          - unique:
+              config:
+                severity: error
+          - not_null:
+              config:
+                severity: error
+      - name: district_id
+        description: Focus district id the profile belongs to.
+        data_type: int
+      - name: profile
+        description: Profile name.
+        data_type: string
+      - name: title
+        description: Display title for the profile.
+        data_type: string
+      - name: type
+        description: Profile type classification (e.g. staff, parent, student).
+        data_type: string
+      - name: super_profile
+        description: Parent / super profile this profile inherits from.
+        data_type: string
+      - name: description
+        description: Free-text description of the profile.
+        data_type: string
+      - name: inactive
+        description:
+          Y/N — whether the profile is inactive (raw flag, not a delete
+          sentinel).
+        data_type: string
+      - name: imported
+        description: Source import marker for the profile row.
+        data_type: string
+      - name: uuid
+        description: Focus global unique identifier for the row.
+        data_type: string
+      - name: created_at
+        description: Row creation timestamp in Focus.
+        data_type: timestamp
+      - name: updated_at
+        description: Row last-update timestamp in Focus.
+        data_type: timestamp
