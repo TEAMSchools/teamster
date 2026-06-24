@@ -4,9 +4,7 @@ select
 
     sch.location_focus_school_id as school_id,
 
-    -- STDT_ID is null until the Finalsite-minted student id lands in
-    -- id_attributes; repoint to int_finalsite__contact_id_attributes then.
-    cast(null as string) as student_id,
+    ida.focus_student_id as student_id,
 
     if(
         l.grade_canonical_name = 'k',
@@ -50,6 +48,9 @@ select
     cast(null as int64) as fl_days_absent,
     cast(null as int64) as fl_days_absent_not_disc,
 from {{ ref("int_finalsite__enrollment_lifecycle") }} as l
+left join
+    {{ ref("int_finalsite__contact_id_attributes") }} as ida
+    on l.finalsite_enrollment_id = ida.finalsite_enrollment_id
 left join
     {{ ref("int_finalsite__contact_custom_attributes") }} as cca
     on l.finalsite_enrollment_id = cca.finalsite_enrollment_id

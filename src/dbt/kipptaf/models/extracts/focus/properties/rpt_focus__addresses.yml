@@ -18,8 +18,9 @@ models:
       - name: student_id
         data_type: string
         description:
-          Focus student ID. Null until Finalsite mints the student id into
-          `int_finalsite__contact_id_attributes`, then sourced from there.
+          Focus student id (Focus `STDT_ID`) from
+          `int_finalsite__contact_id_attributes.focus_student_id`; null for
+          contacts where Finalsite has not minted the id.
         data_tests:
           - unique
           - not_null
@@ -69,8 +70,8 @@ unit_tests:
   - name: test_addresses_shape
     description:
       Verifies the 13-column ADDRESS layout for a single student — STUDENT_ID is
-      null until the Finalsite-minted student id lands, address columns map from
-      contacts, mailing columns are always null.
+      sourced from int_finalsite__contact_id_attributes, address columns map
+      from contacts, mailing columns are always null.
     model: rpt_focus__addresses
     given:
       - input: ref('stg_finalsite__contacts')
@@ -87,10 +88,16 @@ unit_tests:
       - input: ref('int_finalsite__enrollment_lifecycle')
         rows:
           - { finalsite_enrollment_id: enr-001 }
+      - input: ref('int_finalsite__contact_id_attributes')
+        format: sql
+        rows: |
+          select
+            'enr-001' as finalsite_enrollment_id,
+            '4004004' as focus_student_id
     expect:
       rows:
         - {
-            student_id: null,
+            student_id: "4004004",
             address: 123 Main St,
             address2: Apt 4B,
             city: Miami,

@@ -5,11 +5,10 @@ models:
       `DEMOGRAPHICS` SFTP template layout. Joins `stg_finalsite__contacts` to
       `int_finalsite__enrollment_lifecycle` (the in-scope filter; grain =
       `finalsite_enrollment_id`), then left joins
-      `int_finalsite__contact_custom_attributes` for race, language,
-      media-release, and Hispanic/Latino fields. `stdt_id` is stubbed null until
-      the Finalsite-minted student id lands in
-      `int_finalsite__contact_id_attributes`. Produces 43 columns in
-      `DEMOGRAPHICS_LAYOUT` order. Focus column header casing (`STDT_ID`,
+      `int_finalsite__contact_id_attributes` for the Focus student id
+      (`stdt_id`) and `int_finalsite__contact_custom_attributes` for race,
+      language, media-release, and Hispanic/Latino fields. Produces 43 columns
+      in `DEMOGRAPHICS_LAYOUT` order. Focus column header casing (`STDT_ID`,
       `LAST_NAME`, etc.) is applied at transport time via
       `file_config.format.header_replacements`; dbt column names remain
       lowercase snake_case. Race flags, language, photo permission, and
@@ -20,8 +19,9 @@ models:
       - name: stdt_id
         data_type: string
         description:
-          Focus student ID. Null until Finalsite mints the student id into
-          `int_finalsite__contact_id_attributes`, then sourced from there.
+          Focus student id (Focus `STDT_ID`) from
+          `int_finalsite__contact_id_attributes.focus_student_id`; null for
+          contacts where Finalsite has not minted the id.
         data_tests:
           - unique
           - not_null
@@ -204,9 +204,10 @@ models:
 unit_tests:
   - name: test_demographics_shape
     description:
-      Verifies the 43-column DEMOGRAPHICS layout — STDT_ID is null until the
-      Finalsite-minted student id lands, DT_BIRTH is formatted as YYYYMMDD,
-      GENDER is mapped to single-letter code, ETHNIC_HL derives from
+      Verifies the 43-column DEMOGRAPHICS layout — STDT_ID is sourced from
+      int_finalsite__contact_id_attributes (null for a contact with no minted
+      id), DT_BIRTH is formatted as YYYYMMDD, GENDER is mapped to single-letter
+      code, ETHNIC_HL derives from
       int_finalsite__contact_custom_attributes.latino_hispanic_yn. The second
       student has no custom-attributes row, confirming ETHNIC_HL is null (not
       'N') for an unknown while PHOTO_VID_PERM defaults to 'N'. The third
@@ -264,10 +265,16 @@ unit_tests:
         format: sql
         rows: |
           select 'Spanish' as finalsite_language, 'SP' as focus_language_code
+      - input: ref('int_finalsite__contact_id_attributes')
+        format: sql
+        rows: |
+          select
+            'enr-001' as finalsite_enrollment_id,
+            '1001001' as focus_student_id
     expect:
       rows:
         - {
-            stdt_id: null,
+            stdt_id: "1001001",
             last_name: Smith,
             first_name: Jane,
             name_suffix: null,
