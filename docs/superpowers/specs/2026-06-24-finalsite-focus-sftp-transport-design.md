@@ -11,8 +11,9 @@ Build the transport seam that renders the five Focus-shaped output models to
 coordinated CSVs and delivers them to Focus over SFTP. Component 4
 ([#4201](https://github.com/TEAMSchools/teamster/issues/4201)) built the
 `rpt_focus__*` output models; nothing yet pushes them to Focus. This component
-adds that push using the existing `build_bigquery_query_sftp_asset` factory — no
-library changes, mostly YAML config plus one new SSH resource.
+adds that push using the existing `build_bigquery_query_sftp_asset` factory (no
+library changes): YAML config, one new SSH resource, and a small trim of the
+`rpt_focus__*` models so their columns exactly match the Focus import contract.
 
 ## Context
 
@@ -42,14 +43,15 @@ Focus imports the five files as one coordinated set keyed on a caller-supplied
 
 ## Decisions
 
-| Decision          | Choice                                                                 | Rationale                                                                                                   |
-| ----------------- | ---------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------- |
-| Transport         | SFTP (5 coordinated CSVs)                                              | Named scope of #4207; factory exists; #4073 flagged the API may not be able to create the enrollment record |
-| Asset location    | `kippmiami` code location, reading `kippmiami_extracts.rpt_focus__*`   | Honors #4073; uses the existing pass-through models as designed                                             |
-| Asset structure   | Five config-driven factory assets, one daily job                       | Pure reuse of the `build_bigquery_query_sftp_asset` factory; matches the `powerschool` extracts idiom       |
-| Cadence           | Daily schedule                                                         | Focus picks up a fresh full set daily; can be scoped to the enrollment window later                         |
-| Pre-launch gating | Schedule ships STOPPED (no `default_status`)                           | No query-level gate needed; Ops enables once data and creds are ready                                       |
-| Header mapping    | Uppercase via `header_replacements`; pin column set/order via `select` | Focus header = uppercase dbt column (1:1); `select` drops extra trailing model columns and fixes order      |
+| Decision          | Choice                                                               | Rationale                                                                                                   |
+| ----------------- | -------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------- |
+| Transport         | SFTP (5 coordinated CSVs)                                            | Named scope of #4207; factory exists; #4073 flagged the API may not be able to create the enrollment record |
+| Asset location    | `kippmiami` code location, reading `kippmiami_extracts.rpt_focus__*` | Honors #4073; uses the existing pass-through models as designed                                             |
+| Asset structure   | Five config-driven factory assets, one daily job                     | Pure reuse of the `build_bigquery_query_sftp_asset` factory; matches the `powerschool` extracts idiom       |
+| Cadence           | Daily schedule                                                       | Focus picks up a fresh full set daily; can be scoped to the enrollment window later                         |
+| Pre-launch gating | Schedule ships STOPPED (no `default_status`)                         | No query-level gate needed; Ops enables once data and creds are ready                                       |
+| Header mapping    | Uppercase via `header_replacements`                                  | Focus header = uppercase dbt column (1:1)                                                                   |
+| Column set        | Trim extra columns in the `rpt_focus__*` models                      | Models become exactly the Focus contract, so the transport stays a plain pass-through (no `select` needed)  |
 
 ## Architecture
 
@@ -90,17 +92,12 @@ whoever provisions the Focus SFTP account before finalizing the field set.
 ### 2. `config/focus.yaml`
 
 New file `src/teamster/code_locations/kippmiami/extracts/config/focus.yaml`,
-following the shape of `powerschool.yaml`. One `assets:` entry per model. Two
-levers shape the output to the Focus import contract:
-
-- **`query_config.value.select`** — an explicit, ordered column list. This pins
-  the emitted columns to exactly the Focus layout fields in Focus
-  `COLUMN ORDER`, and drops the extra trailing columns the `rpt_focus__*` models
-  carry (see _File layouts_ below). Without it, the asset emits every model
-  column in model order.
-- **`file_config.format.header_replacements`** — renames each lowercase dbt
-  column to its uppercase Focus header. The mapping is mechanical: Focus header
-  = `column.upper()`.
+following the shape of `powerschool.yaml`. One `assets:` entry per model.
+Because the `rpt_focus__*` models are trimmed to exactly the Focus contract
+(Component 6), each asset is a plain pass-through of the whole table; the only
+output shaping is `file_config.format.header_replacements`, which renames each
+lowercase dbt column to its uppercase Focus header (mechanically,
+`column.upper()`).
 
 Worked example (`demographics`, abbreviated):
 
@@ -112,11 +109,6 @@ assets:
         table:
           schema: kippmiami_extracts
           name: rpt_focus__demographics
-        select:
-          - stdt_id
-          - last_name
-          - first_name
-          # ... 42 fields total, Focus order; omits trailing `tide_access_code`
     file_config:
       stem: <focus_filename> # see Open items
       suffix: csv
@@ -125,7 +117,7 @@ assets:
           stdt_id: STDT_ID
           last_name: LAST_NAME
           first_name: FIRST_NAME
-          # ... one entry per selected column -> its uppercase form
+          # ... one entry per column -> its uppercase form
     destination_config:
       name: focus
       path: <focus_incoming_dir>
@@ -133,9 +125,11 @@ assets:
   #     linked_students
 ```
 
-`header_replacements` is a pure rename of the CSV header row — it does not
-reorder or filter; `select` does that. The full per-file column lists are
-enumerated in the implementation plan from the _File layouts_ section.
+`header_replacements` is a pure rename of the CSV header row (no reorder, no
+filter). The full per-file `header_replacements` maps are enumerated in the
+implementation plan from the _File layouts_ section. CSV column order follows
+the model's `SELECT` order, which Component 6 keeps aligned to Focus
+`COLUMN ORDER`.
 
 ### 3. `assets.py`
 
@@ -182,14 +176,39 @@ dbt model via the factory's table-name dep key (no explicit `deps` needed, same
 as `powerschool`). Schema-type queries also get the branch-deploy `zz_dagster_`
 schema redirect for free.
 
+### 6. Trim `rpt_focus__*` models to the Focus contract (dbt)
+
+Each model carries one column the Focus layout does not import; remove it so the
+model output is exactly the contract (see _File layouts_):
+
+| Model                           | Column to drop              |
+| ------------------------------- | --------------------------- |
+| `rpt_focus__demographics`       | `tide_access_code`          |
+| `rpt_focus__student_enrollment` | `fl_days_absent_not_disc`   |
+| `rpt_focus__addresses`          | `mail_zipcode`              |
+| `rpt_focus__contacts`           | `contact7_callout` (verify) |
+| `rpt_focus__linked_students`    | `relationship`              |
+
+For each drop: remove the column from the SQL `SELECT`, from the contract
+`columns:` in the model's `properties` yml, and from any unit-test `expect`.
+Apply in both layers in dependency order — the authoritative **kipptaf** model
+first (`src/dbt/kipptaf/models/extracts/focus/`), then the **kippmiami**
+pass-through that selects it (`src/dbt/kippmiami/models/extracts/focus/`) — or
+the pass-through fails on a missing column.
+
+Before dropping each column, confirm no other model/exposure consumes it (these
+`rpt_focus__*` models are Focus-export-only, so the expectation is none). Three
+of these models (`demographics`, `student_enrollment`, `contacts`) are also
+edited by #4205 — coordinate so the two branches don't collide (see
+_Dependencies_).
+
 ## File layouts (Focus import contract)
 
 Source: the Focus "Florida K-12 Import Layouts" sheet (working parse in
 `.claude/scratch/focus-import-layout-mapping.md`, not committed). Each file's
 CSV columns must be exactly these fields, in this order; the CSV header is the
 **uppercase** form of each. The `rpt_focus__*` models already match this order
-but carry extra trailing columns (listed as _drop_) that the `select` list
-excludes.
+but carry one extra column each (listed as _drop_) that Component 6 removes.
 
 `demographics` (42 fields) — drop `tide_access_code`:
 
@@ -215,20 +234,21 @@ next_grade, district_ood, sch_ood, include_in_class_rank, fl_days_present,
 fl_days_absent
 ```
 
-`addresses` (12 fields) — Focus layout ends at `mail_state`:
+`addresses` (12 fields) — drop `mail_zipcode`:
 
 ```text
 student_id, address, address2, city, state, zipcode, phone, mailing,
 mail_address, mail_address2, mail_city, mail_state
 ```
 
-`contacts` (50 fields):
+`contacts` (50 fields) — drop `contact7_callout`:
 
 ```text
 student_id, student_relation, sort_order, first_name, middle_name, last_name,
 resides_with_stud, custody, emergency, pickup, address, address2, city, state,
 zipcode, email,
-then contact{1..7}_{type, value, blocked, unlisted, callout}
+then contact{1..6}_{type, value, blocked, unlisted, callout},
+contact7_{type, value, blocked, unlisted}
 ```
 
 `linked_students` (2 fields) — drop `relationship`:
@@ -237,11 +257,12 @@ then contact{1..7}_{type, value, blocked, unlisted, callout}
 primary_student_id, secondary_student_id
 ```
 
-Reconciliation items for the implementation plan: confirm the `addresses` tail
-(is `mail_zipcode` truly excluded, or is the sheet truncated at `mail_state`?)
-and the `contacts` `CONTACT7` tail (the sheet shows 50 fields, omitting
-`contact7_callout`) against the source sheet; `resides_with_stud` is a required
-computed field (no direct Focus column) — confirm its derivation.
+Notes for the implementation plan: `mail_zipcode` is confirmed excluded (absent
+from both the grouped and per-layout sheet sections). `contact7_callout` is
+omitted in the parsed layout (50 fields, and contacts 1–6 each have a callout) —
+treat as a drop but sanity-check the asymmetry against the live Focus sheet.
+`resides_with_stud` is a required computed field (no direct Focus column) —
+confirm its derivation.
 
 ## Data flow
 
@@ -288,6 +309,12 @@ These gate **enabling** the schedule, not building the transport:
   enrollment-code rule resolved. §2 (unfilled crosswalk cells) is warn-level and
   does not block.
 
+Build-time coordination: #4205 also edits `rpt_focus__demographics`,
+`rpt_focus__contacts`, and `rpt_focus__student_enrollment` (repointing the id
+stub). The Component 6 column trim touches the same models, so whichever branch
+merges second must rebase to avoid a conflict — or fold the trim into the #4205
+branch if they land together.
+
 ## Out of scope
 
 - OAuth2 Focus API transport (the swappable alternative; deferred).
@@ -297,15 +324,16 @@ These gate **enabling** the schedule, not building the transport:
 ## Open items to confirm (not blocking the build)
 
 - **Header strings — resolved.** Focus header = uppercase dbt column (see _File
-  layouts_). The per-file `select` lists and `header_replacements` maps are
-  enumerated in the implementation plan.
+  layouts_). The per-file `header_replacements` maps are enumerated in the
+  implementation plan.
 - **Filenames + format** — the delivered file name per layout (fixed, no date
   stamp, so it overwrites daily), the suffix (`csv` assumed), and any delimiter.
   The layout/tab names are the basis; confirm the exact name Focus expects on
   its SFTP server.
-- **`addresses` / `contacts` tails** — verify the `mail_zipcode` exclusion and
-  the `contact7_callout` omission against the source sheet (possible parse
-  truncation), and confirm the `resides_with_stud` derivation.
+- **`contacts` tail** — sanity-check the `contact7_callout` drop against the
+  live Focus sheet (the asymmetry is unusual), and confirm the
+  `resides_with_stud` derivation. (`mail_zipcode` is already confirmed
+  excluded.)
 - **Focus SFTP host, credentials, incoming path, auth method** (password vs key)
   — Ops/IT provision in Dagster Cloud. Incoming-directory path: relative
   preferred, per the extracts library guidance.
