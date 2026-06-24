@@ -20,7 +20,7 @@ from teamster.code_locations.kippmiami import (
     powerschool,
     renlearn,
 )
-from teamster.code_locations.kippmiami.resources import FINALSITE_RESOURCE
+from teamster.code_locations.kippmiami.resources import FINALSITE_RESOURCE, SSH_FOCUS
 from teamster.core.resources import (
     BIGQUERY_RESOURCE,
     DB_POWERSCHOOL,
@@ -29,7 +29,6 @@ from teamster.core.resources import (
     GCS_RESOURCE,
     GOOGLE_DRIVE_RESOURCE,
     SSH_COUCHDROP,
-    SSH_FOCUS,
     SSH_IREADY,
     SSH_RENLEARN,
     get_dbt_cli_resource,

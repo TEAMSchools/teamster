@@ -125,13 +125,6 @@ SSH_EDPLAN = SSHResource(
     enable_legacy_rsa=True,
 )
 
-SSH_FOCUS = SSHResource(
-    remote_host=EnvVar("FOCUS_SFTP_HOST"),
-    remote_port=22,
-    username=EnvVar("FOCUS_SFTP_USERNAME"),
-    password=EnvVar("FOCUS_SFTP_PASSWORD"),
-)
-
 SSH_IREADY = SSHResource(
     remote_host=EnvVar("IREADY_SFTP_HOST"),
     remote_port=22,

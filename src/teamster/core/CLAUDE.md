@@ -35,8 +35,8 @@ in full deployments — always check `== "1"`, never truthy.
 - `DEANSLIST_RESOURCE`, `OVERGRAD_RESOURCE`, `ZENDESK_RESOURCE`
 - `GOOGLE_DRIVE_RESOURCE`, `GOOGLE_FORMS_RESOURCE`
 - `DB_POWERSCHOOL` — Oracle ODBC resource (shared env vars)
-- `SSH_COUCHDROP`, `SSH_EDPLAN`, `SSH_FOCUS`, `SSH_IREADY`, `SSH_RENLEARN`,
-  `SSH_TITAN`, `SSH_RESOURCE_AMPLIFY` — SFTP resources
+- `SSH_COUCHDROP`, `SSH_EDPLAN`, `SSH_IREADY`, `SSH_RENLEARN`, `SSH_TITAN`,
+  `SSH_RESOURCE_AMPLIFY` — SFTP resources
 
 ### `io_managers/gcs.py` — `GCSIOManager`
 
