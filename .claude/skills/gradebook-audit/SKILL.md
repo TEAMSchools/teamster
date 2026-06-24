@@ -58,11 +58,12 @@ Current `depends_on` list (update if the exposure changes):
 
 - `rpt_tableau__gradebook_audit`
 - `rpt_tableau__gradebook_es_comments`
-- `rpt_tableau__gradebook_ms_hs_comments`
 
-`rpt_tableau__assignment_checks` was deprecated in AY 2026-2027 (PR #4132).
-There is also a disabled exposure `gradebook_audit_teacher_report` — mention it
-only if the user asks about disabled or archived workbooks.
+`rpt_tableau__gradebook_ms_hs_comments` was disabled in AY 2026-2027 and removed
+from the exposure. `rpt_tableau__assignment_checks` was deprecated in AY
+2026-2027 (refs #3908). There is also a disabled exposure
+`gradebook_audit_teacher_report` — mention it only if the user asks about
+disabled or archived workbooks.
 
 ---
 
@@ -306,7 +307,7 @@ intentional or a typo.
    AY 2026-2027.
 3. No SQL changes needed if the region's PS data flows through
    `int_extracts__course_schedule_by_term` — verify by checking sections appear
-   in `int_tableau__gradebook_audit_scaffold` after the sheet changes.
+   in `int_tableau__gradebook_audit_flags_calculations` after the sheet changes.
 
 ---
 
@@ -333,24 +334,23 @@ the `grades_type` will still produce no data.
 
 **Files to edit:**
 
-- `src/dbt/kipptaf/models/extracts/tableau/intermediate/int_tableau__gradebook_audit_scaffold.sql`
 - `src/dbt/kipptaf/models/extracts/tableau/intermediate/int_tableau__gradebook_audit_flags_calculations.sql`
+- `src/dbt/kipptaf/models/extracts/tableau/rpt_tableau__gradebook_audit.sql`
 
 **Two changes to make:**
 
-1. In `int_tableau__gradebook_audit_scaffold` — change the year filter in all 5
-   UNION branches:
+1. In `int_tableau__gradebook_audit_flags_calculations` — change the year filter
+   (appears 3 times, marked with `/* summer toggle: see skill */`):
 
    ```sql
-   -- change this (appears 5 times):
+   -- change this (appears 3 times):
    s.academic_year = {{ var("current_academic_year") }}
    -- to this:
    s.academic_year = {{ var("current_academic_year") - 1 }}
    ```
 
-2. In `int_tableau__gradebook_audit_flags_calculations`,
-   `student_scaffold_course` branch — change the `quarter_course_grades` join
-   grades type filter:
+   Also change the `quarter_course_grades` join grades type filter (appears 2
+   times, also marked with `/* summer toggle: see skill */`):
 
    ```sql
    -- change this:
@@ -363,19 +363,29 @@ the `grades_type` will still produce no data.
    archived quarter grades) instead of `base_powerschool__final_grades` (empty
    until teachers start entering grades for the new year).
 
+2. In `rpt_tableau__gradebook_audit` — change the year filter in both UNION
+   branches (appears twice in WHERE clauses):
+
+   ```sql
+   -- change this (appears 2 times):
+   s.academic_year = {{ var("current_academic_year") }}
+   -- to this:
+   s.academic_year = {{ var("current_academic_year") - 1 }}
+   ```
+
 Build and verify after both changes:
 
 ```bash
 uv run dbt build \
-  --select int_tableau__gradebook_audit_scaffold int_tableau__gradebook_audit_flags_calculations \
+  --select int_tableau__gradebook_audit_flags_calculations int_tableau__gradebook_audit_scaffold_unpivot rpt_tableau__gradebook_audit \
   --project-dir src/dbt/kipptaf \
   --defer \
   --state src/dbt/kipptaf/target/prod
 ```
 
 **When to revert:** once the new school year starts and teachers begin entering
-grades in PowerSchool (typically Q1), revert both changes:
-`current_academic_year - 1` → `current_academic_year` in the scaffold, and
+grades in PowerSchool (typically Q1), revert all changes:
+`current_academic_year - 1` → `current_academic_year` in both files, and
 `'last_year'` → `'current_year'` in flags calculations.
 
 ---
@@ -390,8 +400,9 @@ Check in order:
    matching allowlist row exists.
 2. **Boolean `true` in the source model?** Find which model computes the flag
    (reference doc flag inventory) and query it directly.
-3. **Section in the scaffold?** Check `int_tableau__gradebook_audit_scaffold`
-   for the section/quarter combination. Two silent exclusion rules apply:
+3. **Section in the scaffold?** Check
+   `int_tableau__gradebook_audit_flags_calculations` for the section/quarter
+   combination. Two silent exclusion rules apply:
    - `_dbt_source_project != 'kippmiami'` — Miami is excluded at source (AY
      2026-2027 onward)
    - ES sections are excluded from teacher/assignment branches (but ES students

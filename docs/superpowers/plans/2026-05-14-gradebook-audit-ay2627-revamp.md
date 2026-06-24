@@ -2848,6 +2848,32 @@ Complete replacement. Changes from the old model:
 **File:**
 `src/dbt/kipptaf/models/extracts/tableau/rpt_tableau__gradebook_audit.sql`
 
+> ✅ **Actual implementation diverged from the planned SQL above.** Rather than
+> rewriting the old 6a–6f intermediate models individually, the actual
+> implementation took a different approach:
+>
+> 1. Built a new consolidated
+>    `int_tableau__gradebook_audit_flags_calculations.sql` that combines
+>    scaffold logic, flag calculations, and joins to
+>    `int_powerschool__u_expectations_qtd_unpivot`. This replaces the old
+>    teacher/student scaffold + assignments/categories models.
+> 2. Built `int_tableau__gradebook_audit_scaffold_unpivot.sql` — unpivots flag
+>    booleans from `flags_calculations` into `audit_flag_name` /
+>    `audit_flag_value` rows, INNER JOINs to
+>    `stg_google_sheets__gradebook_flags` allowlist.
+> 3. **Disabled** (not deleted) the old 6a–6f intermediate models and
+>    `rpt_tableau__gradebook_ms_hs_comments` via `config: enabled: false`.
+> 4. Rewrote `rpt_tableau__gradebook_audit` using a **two-branch UNION design**
+>    (not the anchor-row + 4-branch plan below):
+>    - Branch 1: healthy sections → one `'No Flags'` row per section × quarter
+>      (INNER JOIN to `int_extracts__course_schedule_by_term` where
+>      `is_healthy_gradebook = true`)
+>    - Branch 2: unhealthy sections → actual flag rows from `scaffold_unpivot`
+>      (INNER JOIN where `not is_healthy_gradebook`, LEFT JOIN to
+>      `scaffold_unpivot`)
+>
+> The planned 6g SQL below is archived for reference only.
+
 - [x] **Step 6g.1: Rewrite the model**
 
   ```sql
@@ -3687,12 +3713,12 @@ This model is being deprecated. Disable it and archive per the standard pattern.
 **File:**
 `src/dbt/kipptaf/models/extracts/tableau/rpt_tableau__assignment_checks.sql`
 
-- [ ] **Step 6h.5.1: Disable the model**
+- [x] **Step 6h.5.1: Disable the model**
 
   Add `config(enabled=false)` and update the exposure in `tableau.yml` to remove
   the `ref("rpt_tableau__assignment_checks")` entry from `gradebook_audit`.
 
-- [ ] **Step 6h.5.2: Build and verify**
+- [x] **Step 6h.5.2: Build and verify**
 
   ```bash
   uv run dbt build \
