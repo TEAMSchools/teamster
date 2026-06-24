@@ -155,11 +155,6 @@ models:
         data_type: int64
         description:
           Florida days absent count; not sourced from Finalsite — always null.
-      - name: fl_days_absent_not_disc
-        data_type: int64
-        description:
-          Florida unexcused absent count; not sourced from Finalsite — always
-          null.
 
 unit_tests:
   - name: test_student_enrollment_shape
@@ -247,7 +242,6 @@ unit_tests:
             include_in_class_rank: null,
             fl_days_present: null,
             fl_days_absent: null,
-            fl_days_absent_not_disc: null,
           }
         - {
             syear: 2025,
@@ -278,7 +272,6 @@ unit_tests:
             include_in_class_rank: null,
             fl_days_present: null,
             fl_days_absent: null,
-            fl_days_absent_not_disc: null,
           }
   - name: test_student_enrollment_transfer_out
     description:
@@ -354,5 +347,4 @@ unit_tests:
             include_in_class_rank: null,
             fl_days_present: null,
             fl_days_absent: null,
-            fl_days_absent_not_disc: null,
           }
