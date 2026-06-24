@@ -45,6 +45,7 @@ with
         group by users.staff_id
     )
 
-select select_pivot.staff_id, select_pivot.active_label, education.education_label,
-from select_pivot
-left join education on select_pivot.staff_id = education.staff_id
+select users.staff_id, select_pivot.active_label, education.education_label,
+from {{ ref("stg_focus__users") }} as users
+left join select_pivot on users.staff_id = select_pivot.staff_id
+left join education on users.staff_id = education.staff_id
