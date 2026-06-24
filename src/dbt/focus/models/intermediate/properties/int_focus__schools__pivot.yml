@@ -1,0 +1,21 @@
+models:
+  - name: int_focus__schools__pivot
+    description: >-
+      Decoded labels for the SISSchool select custom fields, one row per Focus
+      school id. Join to stg_focus__schools on id for the codes.
+    columns:
+      - name: id
+        description: Primary key — Focus school id.
+        data_tests:
+          - unique:
+              config:
+                severity: error
+          - not_null:
+              config:
+                severity: error
+      - name: school_level_label
+        description: Decoded label for the school_level select field.
+      - name: school_type_label
+        description: Decoded label for the school_type select field.
+      - name: technical_center_label
+        description: Decoded label for the technical_center select field.

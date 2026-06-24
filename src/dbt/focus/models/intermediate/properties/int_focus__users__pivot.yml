@@ -1,0 +1,26 @@
+models:
+  - name: int_focus__users__pivot
+    description: >-
+      Decoded labels for the FocusUser custom fields, one row per staff_id. Join
+      to stg_focus__users on staff_id for the codes.
+      profile_on_non_production_sites is option_query-backed and intentionally
+      not decoded (its code stays in staging).
+    config:
+      meta:
+        contains_pii: true
+    columns:
+      - name: staff_id
+        description: Primary key — Focus staff id.
+        data_tests:
+          - unique:
+              config:
+                severity: error
+          - not_null:
+              config:
+                severity: error
+      - name: active_label
+        description: Decoded label for the active select field.
+      - name: education_label
+        description: >-
+          Decoded labels for the education multiple-select field, as an array
+          (the stored value is a JSON array of option ids).
