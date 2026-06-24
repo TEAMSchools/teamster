@@ -20,23 +20,25 @@ filter `custom_field_select_options.source_class = 'CustomField'` (or
 `'CustomFieldLogColumn'` for log-column slots) so the shared `source_id` space
 doesn't collide across owner types. `source_class` on the options table is the
 owner-type literal, never the entity class (`SISSchool`, etc.); matching the
-entity class returns zero rows. To DECODE a stored value, note the entity stores
-the select-option `id` (`custom_field_select_options.id`), NOT its `code` — join
-the stored value to `id` and read `label`. (`code` is the Focus import/export
-value; use it to build Finalsite→Focus value crosswalks.)
+entity class returns zero rows. To DECODE a stored value: the entity stores the
+select-option `id` (`custom_field_select_options.id`) for some fields and the
+`code` (e.g. `prior_state`=`FL`) for others, so match the stored value against
+BOTH `id` and `code`, then read `label`. Verify by spot-checking decoded values
+— a wrong match key returns all-null labels but still passes build, grain, and
+lint. (`code` also drives Finalsite→Focus import crosswalks.)
 
 **Custom-field storage.** Values live inline on the entity table's wide
 `custom_NNN` columns (e.g. `students.custom_100000105`), NOT in `custom_fields`
 — that is the _definition_ catalog. Join definition→entity column on
 `custom_fields.column_name` + `source_class`. `title` is the readable name (slug
-it for the staging alias); `select`/`multiple` values are stored option `id`s
-(decode to `label` via the crosswalk above); `log`-type values live in
-`custom_field_log_entries`; `computed`/`holder` are not stored. Custom fields
-are NOT always named `custom_NNN` — some use semantic `column_name`s (e.g.
-`users.birth_date`, `charter_*`); when profiling an entity's populated custom
-fields, scan the FULL table and join the whole catalog on `lower(column_name)`,
-since filtering to `custom_*`-prefixed columns silently misses the
-semantic-named ones.
+it for the staging alias); `select`/`multiple` values are stored option `id`s or
+`code`s (varies by field; decode to `label` via the crosswalk above); `log`-type
+values live in `custom_field_log_entries`; `computed`/`holder` are not stored.
+Custom fields are NOT always named `custom_NNN` — some use semantic
+`column_name`s (e.g. `users.birth_date`, `charter_*`); when profiling an
+entity's populated custom fields, scan the FULL table and join the whole catalog
+on `lower(column_name)`, since filtering to `custom_*`-prefixed columns silently
+misses the semantic-named ones.
 
 `source_class`→entity-table map (use the catalog's own spelling, NOT the
 entity's): `SISStudent`→students, `FocusUser`→users, `SISSchool`→schools,
