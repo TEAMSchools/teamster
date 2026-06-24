@@ -24,9 +24,14 @@ with
         }}
     ),
 
+    add_dbt_field as (
+        select ur.*, {{ extract_code_location("ur") }} as _dbt_source_project,
+        from union_relations as ur
+    ),
+
     course_joins as (
         select
-            ur.* except (courses_credittype),
+            a.* except (courses_credittype),
 
             cx.ap_course_subject,
             cx.block_schedule_session,
@@ -47,29 +52,27 @@ with
             cx.school_code_override,
             cx.sla_include_tf,
 
-            initcap(regexp_extract(ur._dbt_source_relation, r'kipp(\w+)_')) as region,
-
-            {{ extract_code_location("ur") }} as _dbt_source_project,
+            initcap(regexp_extract(a._dbt_source_relation, r'kipp(\w+)_')) as region,
 
             case
-                when ur.courses_credittype in ('ENG', 'ELA')
+                when a.courses_credittype in ('ENG', 'ELA')
                 then 'ENG'
-                when ur.courses_credittype in ('MATH', 'Math')
+                when a.courses_credittype in ('MATH', 'Math')
                 then 'MATH'
-                when ur.courses_credittype in ('SCI', 'Science')
+                when a.courses_credittype in ('SCI', 'Science')
                 then 'SCI'
-                when ur.courses_credittype in ('HR', 'Homeroom')
+                when a.courses_credittype in ('HR', 'Homeroom')
                 then 'HR'
-                else ur.courses_credittype
+                else a.courses_credittype
             end as courses_credittype,
 
             if(cx.ap_course_subject is not null, true, false) as is_ap_course,
 
-        from union_relations as ur
+        from add_dbt_field as a
         left join
             {{ ref("stg_powerschool__s_nj_crs_x") }} as cx
-            on ur.courses_dcid = cx.coursesdcid
-            and {{ extract_code_location("ur") }} = cx._dbt_source_project
+            on a.courses_dcid = cx.coursesdcid
+            and a._dbt_source_project = cx._dbt_source_project
 
     )
 
