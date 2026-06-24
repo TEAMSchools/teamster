@@ -174,7 +174,7 @@ with
 
     tardies_weekly as (
         select
-            _dbt_source_project
+            _dbt_source_project,
             student_number,
             academic_year,
             week_number_academic_year,
@@ -409,6 +409,7 @@ select
             order by dli.is_suspension desc
         )
     ) as rn_incident,
+
 from {{ ref("int_extracts__student_enrollments_weeks") }} as co
 left join
     {{ ref("int_deanslist__incidents__penalties") }} as dli
