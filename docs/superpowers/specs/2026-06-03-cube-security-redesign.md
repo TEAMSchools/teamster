@@ -109,15 +109,17 @@ standard "requesting a restricted field narrows the query" tradeoff.
 
 ### Location & department scopes
 
-Shared axes (decomposed — no fused enums), evaluated separately for the summary
-surface and the sensitive (detail) surface:
+Decomposed — no fused enums. Students carry a summary and a detail location
+scope (`student_summary_location_scope` / `student_detail_location_scope`);
+staff carry only the sensitive remit (`staff_location_scope` +
+`staff_department_scope`) since the staff summary and directory are open.
 
 <!-- markdownlint-disable MD013 -->
 
-| Axis                       | Values                                   | Bounds                                                                                                 |
-| -------------------------- | ---------------------------------------- | ------------------------------------------------------------------------------------------------------ |
-| `*_location_scope`         | `network` / `region` / `school` / `none` | `network` = no filter; `region` = `region_key` = mine; `school` = `abbreviation` = mine; `none` = deny |
-| `staff_*_department_scope` | `all` / `own_group` / `none`             | `all` = no filter; `own_group` = `department_group` = mine; `none` = deny                              |
+| Axis                     | Values                                   | Bounds                                                                                                 |
+| ------------------------ | ---------------------------------------- | ------------------------------------------------------------------------------------------------------ |
+| `*_location_scope`       | `network` / `region` / `school` / `none` | `network` = no filter; `region` = `region_key` = mine; `school` = `abbreviation` = mine; `none` = deny |
+| `staff_department_scope` | `all` / `own_group` / `none`             | `all` = no filter; `own_group` = `department_group` = mine; `none` = deny                              |
 
 <!-- markdownlint-enable MD013 -->
 
