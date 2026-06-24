@@ -1,0 +1,23 @@
+models:
+  - name: int_focus__master_courses__pivot
+    description: >-
+      Decoded labels for the CourseCatalog (master course) select custom fields,
+      one row per Focus course_id. Join to stg_focus__master_courses on
+      course_id.
+    columns:
+      - name: course_id
+        description: Primary key — Focus master course id.
+        data_tests:
+          - unique:
+              config:
+                severity: error
+          - not_null:
+              config:
+                severity: error
+      - name: fefp_label
+        description: Decoded label for the fefp select field.
+      - name: course_flag_1_label
+        description: Decoded label for the course_flag_1 select field.
+      - name: dual_enrollment_indicator_label
+        description:
+          Decoded label for the dual_enrollment_indicator select field.

@@ -1,0 +1,63 @@
+models:
+  - name: int_focus__custom_field_log__unpivot
+    description: >-
+      Long reshape of Focus log-type custom fields. One row per log entry per
+      populated slot: the entry keys, the slot's metadata (title/type/sort order
+      from custom_field_log_columns), the stored value, and a decoded
+      value_label for select-type slots. Currently covers the two populated
+      student log fields (Immunization Compliance, ARMS Student Field Tracker).
+    config:
+      meta:
+        contains_pii: true
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns:
+              - log_entry_id
+              - slot_column_name
+          config:
+            severity: error
+    columns:
+      - name: log_entry_id
+        description: Focus custom_field_log_entries id.
+        data_tests:
+          - not_null:
+              config:
+                severity: error
+      - name: student_id
+        description: Owning student id (custom_field_log_entries.source_id).
+      - name: school_id
+        description: School id the log entry is attached to.
+      - name: field_id
+        description: Owning log custom field id (custom_fields.id).
+      - name: log_column_id
+        description: Log column id for the slot (custom_field_log_columns.id).
+      - name: slot_column_name
+        description: Lowercased slot storage column (log_fieldN).
+        data_tests:
+          - not_null:
+              config:
+                severity: error
+      - name: slot_type
+        description: Input type of the slot (select, checkbox, text, date).
+      - name: slot_title
+        description: Human-readable slot name from custom_field_log_columns.
+      - name: slot_sort_order
+        description: Display order of the slot within the field.
+      - name: field_title
+        description:
+          Human-readable log field name (e.g. Immunization Compliance).
+      - name: value
+        description: Raw stored slot value.
+      - name: syear
+        description: Focus school year of the entry (populated for ARMS only).
+      - name: created_at
+        description: Log entry creation timestamp.
+      - name: updated_at
+        description: Log entry last-update timestamp.
+      - name: value_label
+        description: >-
+          Decoded label for select-type slots whose options are stored; null for
+          non-select slots and for option_query-backed select slots (e.g. the
+          Immunization "Vaccination" slot), where the raw value carries the
+          content.
