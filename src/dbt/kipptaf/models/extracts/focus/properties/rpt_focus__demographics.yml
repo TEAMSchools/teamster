@@ -197,14 +197,11 @@ models:
         data_type: string
         description:
           LCP continuing student flag; not sourced from Finalsite — always null.
-      - name: tide_access_code
-        data_type: string
-        description: TIDE access code; not sourced from Finalsite — always null.
 
 unit_tests:
   - name: test_demographics_shape
     description:
-      Verifies the 43-column DEMOGRAPHICS layout — STDT_ID is null until the
+      Verifies the 42-column DEMOGRAPHICS layout — STDT_ID is null until the
       Finalsite-minted student id lands, DT_BIRTH is formatted as YYYYMMDD,
       GENDER is mapped to single-letter code, ETHNIC_HL derives from
       int_finalsite__contact_custom_attributes.latino_hispanic_yn. The second
@@ -309,7 +306,6 @@ unit_tests:
             dt_home_lang_survey: null,
             casas_track: null,
             lcp_cont_stdt: null,
-            tide_access_code: null,
           }
         - {
             stdt_id: null,
@@ -354,7 +350,6 @@ unit_tests:
             dt_home_lang_survey: null,
             casas_track: null,
             lcp_cont_stdt: null,
-            tide_access_code: null,
           }
         - {
             stdt_id: null,
@@ -399,5 +394,4 @@ unit_tests:
             dt_home_lang_survey: null,
             casas_track: null,
             lcp_cont_stdt: null,
-            tide_access_code: null,
           }
