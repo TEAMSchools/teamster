@@ -11,9 +11,11 @@
   domain; location and department split apart).
 - 2026-06-24b (this revision) — **staff directory is open**; only _sensitive_
   staff fields are gated. The org-relation gate (`staff_detail_org_gate`) folds
-  into a self-contained scope enum on each sensitive field. The single term
-  **`team`** replaces "reporting chain" / "downline" throughout. Prior models
-  are in git history.
+  into a self-contained scope enum on each sensitive field. A single term
+  **`reporting_chain`** (aligned with `dim_staff_reporting_chain`) is used for
+  "the people who report up to you" — replacing the prior mix of "reporting
+  chain" / "downline" / "team". It means strictly your direct + indirect
+  reports, never same-level peers. Prior models are in git history.
 
 ## Summary
 
@@ -26,9 +28,8 @@ enrollment and the Google Admin Directory API entirely:
   Google Sheets crosswalks.
 - `dim_staff_reporting_chain` — the transitive closure of the current org tree
   (manager → every direct/indirect report), keyed on `staff_key`. It is the data
-  behind a viewer's **team** (everyone who reports up to them, directly or
-  indirectly). The model keeps its technical name; the user-facing concept is
-  "team."
+  behind a viewer's **reporting chain** (everyone who reports up to them,
+  directly or indirectly).
 
 Identity keys on `staff_key`. The JWT email claim is used in exactly one place —
 a boundary lookup resolving email → `staff_key`.
@@ -56,18 +57,19 @@ scope. A directory-only query returns all staff.
 
 ### Students: location-scoped detail + PII
 
-Students have no directory/sensitive split and no team concept — student-level
-data is inherently sensitive. A student row is shown at detail within
-`student_detail_location_scope`; aggregates within
+Students have no directory/sensitive split and no reporting-chain concept —
+student-level data is inherently sensitive. A student row is shown at detail
+within `student_detail_location_scope`; aggregates within
 `student_summary_location_scope`; `student_pii_scope` (`all`/`none`) gates the
 identifier columns on the detail view.
 
-### "team"
+### "reporting chain"
 
-A viewer's **team** is every staff member who reports up to them through the org
-tree (direct + indirect), from `dim_staff_reporting_chain`. It is **unbounded by
-location or department** — a report at another school is still on your team
-("you can never be hidden from your own manager").
+A viewer's **reporting chain** is every staff member who reports up to them
+through the org tree (direct + indirect), from `dim_staff_reporting_chain`. It
+is strictly _downward_ — never same-level peers — and **unbounded by location or
+department** — a report at another school is still in your reporting chain ("you
+can never be hidden from your own manager").
 
 ### Per-field sensitive scope enum
 
@@ -76,28 +78,29 @@ the column is visible **and** which rows it is visible for:
 
 <!-- markdownlint-disable MD013 -->
 
-| Scope value          | Column shown? | Rows the field is visible for                                             |
-| -------------------- | ------------- | ------------------------------------------------------------------------- |
-| `none`               | no            | —                                                                         |
-| `all_in_scope`       | yes           | all rows in `staff_detail_location_scope ∩ staff_detail_department_scope` |
-| `team_or_below_rank` | yes           | (in scope **∩** ranked below me) **∪** my team                            |
-| `team`               | yes           | my team only (unbounded by location/department)                           |
-| `teaching_staff`     | yes           | `job_function_code IN ('TEACH','TIR')` within scope                       |
+| Scope value                     | Column shown? | Rows the field is visible for                                             |
+| ------------------------------- | ------------- | ------------------------------------------------------------------------- |
+| `none`                          | no            | —                                                                         |
+| `all_in_scope`                  | yes           | all rows in `staff_detail_location_scope ∩ staff_detail_department_scope` |
+| `reporting_chain_or_below_rank` | yes           | (in scope **∩** ranked below me) **∪** my reporting chain                 |
+| `reporting_chain`               | yes           | my reporting chain only (unbounded by location/department)                |
+| `teaching_staff`                | yes           | `job_function_code IN ('TEACH','TIR')` within scope                       |
 
 <!-- markdownlint-enable MD013 -->
 
 `job_function_level`: numerically greater = lower rank (1 = Chief, 6 = Teacher).
-The **only union** is `team` inside `team_or_below_rank`; everything else is an
-intersection. Applied independently to `staff_pii_scope`,
-`staff_compensation_scope`, `staff_observations_scope`, `staff_benefits_scope`,
-so a viewer can, e.g., see contact info for everyone in their school
-(`all_in_scope`) but compensation only for their team (`team`).
+The **only union** is the reporting chain inside
+`reporting_chain_or_below_rank`; everything else is an intersection. Applied
+independently to `staff_pii_scope`, `staff_compensation_scope`,
+`staff_observations_scope`, `staff_benefits_scope`, so a viewer can, e.g., see
+contact info for everyone in their school (`all_in_scope`) but compensation only
+for their reporting chain (`reporting_chain`).
 
 **Multi-field queries intersect (most-restrictive wins).** A query pulling two
 sensitive fields with different scopes returns the intersection of their row
-sets — pull `pii = all_in_scope` + `comp = team` together and you get your team;
-pull `pii` alone and you get the whole school. This is the standard "requesting
-a restricted field narrows the query" tradeoff.
+sets — pull `pii = all_in_scope` + `comp = reporting_chain` together and you get
+your reporting chain; pull `pii` alone and you get the whole school. This is the
+standard "requesting a restricted field narrows the query" tradeoff.
 
 ### Location & department scopes
 
@@ -114,12 +117,12 @@ surface and the sensitive (detail) surface:
 <!-- markdownlint-enable MD013 -->
 
 `staff_detail_location_scope ∩ staff_detail_department_scope` bound the
-`all_in_scope` / `team_or_below_rank` / `teaching_staff` field values (the
-`team` value ignores them by design). `staff_summary_*` bound the aggregate
-surface. `network` is only ever set intentionally by the mapping; an unmatched
-region/school resolves to `none` (deny), never `network`. The viewer's
-`region_key`, `location_abbreviation`, and `department_group` are carried on
-`dim_staff_cube_access` so `cube.js` builds filters from the level.
+`all_in_scope` / `reporting_chain_or_below_rank` / `teaching_staff` field values
+(the `reporting_chain` value ignores them by design). `staff_summary_*` bound
+the aggregate surface. `network` is only ever set intentionally by the mapping;
+an unmatched region/school resolves to `none` (deny), never `network`. The
+viewer's `region_key`, `location_abbreviation`, and `department_group` are
+carried on `dim_staff_cube_access` so `cube.js` builds filters from the level.
 
 ### Summary (aggregate) surface
 
@@ -197,7 +200,8 @@ Accounting, Finance, Compliance.
 `staff_summary_department_scope`, `staff_detail_location_scope`,
 `staff_detail_department_scope`, `staff_pii_scope`, `staff_compensation_scope`,
 `staff_observations_scope`, `staff_benefits_scope`. (No
-`staff_detail_org_gate`.)
+`staff_detail_org_gate`.) The four `staff_*_scope` values use the per-field enum
+(`none`/`all_in_scope`/`reporting_chain_or_below_rank`/`reporting_chain`/`teaching_staff`).
 
 ### `cube_access_department_rollup`
 
@@ -218,7 +222,7 @@ prereq (landed, `f9dd839ed`). `staff_key` stays
 
 Transitive closure of the current org tree, keyed on `staff_key`; self-pair at
 `depth = 0`. `WITH RECURSIVE` → `contract: enforced: false`. Built and
-validated. Technical name retained; it is the data behind a viewer's "team."
+validated.
 
 ### `dim_staff_cube_access` — reworked to the schema above
 
@@ -231,9 +235,9 @@ non-matches to the deny value (`none`). Carry the viewer identity keys. Drop
 
 Replace the Admin Directory API with BigQuery reads, cached to midnight ET. (1)
 email → access row from `dim_staff_cube_access` (`WHERE google_email = @email`);
-(2) `staff_key` → team `staff_key`s from `dim_staff_reporting_chain`
-(`WHERE manager_staff_key = @staffKey`). Cache `{ row, teamStaffKeys, groups }`.
-`buildGroups(row)` emits column tiers:
+(2) `staff_key` → reporting-chain `staff_key`s from `dim_staff_reporting_chain`
+(`WHERE manager_staff_key = @staffKey`). Cache
+`{ row, reportingChainKeys, groups }`. `buildGroups(row)` emits column tiers:
 
 - Students: `cube-access-student-detail` / `-summary` / `-pii` by the student
   scopes.
@@ -244,16 +248,16 @@ email → access row from `dim_staff_cube_access` (`WHERE google_email = @email`
 
 ### `cube.js`: `queryRewrite`
 
-Reads the cached `row` + `teamStaffKeys`.
+Reads the cached `row` + `reportingChainKeys`.
 
 - **Directory-only staff query** → no row filter (all staff network-wide).
 - **Staff query touching sensitive field(s)** → AND the per-field scope filters
   of every requested sensitive field (intersection). Each field's filter is
   built from its enum value: `all_in_scope` → location ∩ department;
-  `team_or_below_rank` → (location ∩ department ∩ `job_function_level > viewer`)
-  ∪ team-IN; `team` → team-IN; `teaching_staff` → location ∩ department ∩
-  `job_function_code IN ('TEACH','TIR')`; `none` → the column is hidden by
-  `access_policy`, never requested.
+  `reporting_chain_or_below_rank` → (location ∩ department ∩ `job_function_level
+  > viewer`) ∪ chain-IN; `reporting_chain`→ chain-IN;`teaching_staff`→ location ∩ department ∩`job_function_code
+  > IN ('TEACH','TIR')`; `none`→ the column is hidden by`access_policy`, never
+  > requested.
 - **Student query** → location filter by surface (`*_detail` vs `*_summary`),
   default-deny empty `IN ()`.
 - Student-member strip, snapshot-anchor guard, and `canSwitchSqlUser` unchanged.
@@ -318,7 +322,7 @@ internal).
 7. `tests/cube/test_cube_schema.py` — DONE.
 8. Docs: `src/cube/CLAUDE.md` + staff view YAML (the #4092 gate).
 9. Validate in Dev Mode per tier (directory open; sensitive fields scoped;
-   team-only vs in-scope vs below-rank; summary breadth > sensitive).
+   reporting-chain-only vs in-scope vs below-rank; summary breadth > sensitive).
 10. Deploy; spot-check.
 11. Retire `cube-*` Workspace groups.
 12. Data-quality follow-up (#4260) — aggregate counts only, no PII.

@@ -28,8 +28,9 @@ owns I/O and caching.
 > against the earlier per-axis model that included `staff_detail_org_gate`. The
 > spec has since refolded to: **staff directory open** (only sensitive fields
 > gated), the org-gate **folded into a self-contained per-field scope enum**
-> (`none` / `all_in_scope` / `team_or_below_rank` / `team` / `teaching_staff`),
-> and the term **`team`** replacing "reporting chain" / "downline". Tasks **1,
+> (`none` / `all_in_scope` / `reporting_chain_or_below_rank` / `reporting_chain`
+> / `teaching_staff`), and the single term **`reporting_chain`** (aligned with
+> `dim_staff_reporting_chain`) for "the people who report up to you". Tasks **1,
 > 2, 4, 6, 7** must be regenerated against the current spec before execution —
 > and the already-committed Task 6 `access.js` (`3b06b542f`) encodes the OLD
 > model, so it will be reworked on resume. Tasks **5** (student view renames)
