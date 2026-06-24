@@ -245,6 +245,13 @@ A newly-created worktree has no `dbt_packages/`. Run
 `dbt build` / `test` / `clone` there — otherwise it errors with "N package(s)
 specified in packages.yml, but only 0 package(s) installed".
 
+## Building a source-system package model locally
+
+Source-system package models (`focus`, `amplify`, etc.) have no resolvable vars
+standalone — build/test them via a **consuming district** project-dir with that
+district's prod manifest for `--defer` (e.g. focus → kippmiami):
+`uv run dbt build --select <model> --project-dir src/dbt/kippmiami --defer --state src/dbt/kippmiami/target/prod --target dev`.
+
 ## Dev `--defer` for unstaged externals
 
 Dev builds depending on GCS externals (`stg_google_sheets__*` etc.) fail with
@@ -747,6 +754,12 @@ the same partition.
   columns are `{agg_alias}_{value}`; a SINGLE-aggregate pivot names them by the
   bare value (`'x'` → column `x`). `max()` can't aggregate ARRAY — use
   `any_value()` for array fields.
+- **BigQuery `UNPIVOT` excludes null rows** — an entity whose unpivoted columns
+  are all null drops out of the result. Harmless for a pure decode companion (a
+  left join from staging yields null labels anyway), but when the model also
+  LEFT JOINs a separately-computed field (e.g. a `multiple`/array decode), drive
+  the final `SELECT` from the full entity list or that field is lost for
+  all-null-unpivoted entities.
 - **AL09 on struct subfields**: `value.string_value as string_value` trips AL09
   (alias equals the leaf name). Rename to a distinct alias (`as value_string`)
   rather than dropping it when a downstream PIVOT/ref needs the column named.

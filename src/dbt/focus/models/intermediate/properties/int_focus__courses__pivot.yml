@@ -1,0 +1,19 @@
+models:
+  - name: int_focus__courses__pivot
+    description: >-
+      Decoded labels for the Course select custom fields, one row per Focus
+      course_id. Join to stg_focus__courses on course_id for the codes.
+    columns:
+      - name: course_id
+        description: Primary key — Focus course id.
+        data_tests:
+          - unique:
+              config:
+                severity: error
+          - not_null:
+              config:
+                severity: error
+      - name: course_sequence_label
+        description: Decoded label for the course_sequence select field.
+      - name: ocp_label
+        description: Decoded label for the ocp select field.
