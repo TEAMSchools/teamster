@@ -15,8 +15,13 @@ A Focus custom field's allowed value codes live in
 `dagster_<district>_dlt_focus.custom_fields` (find the field by `title` /
 `column_name`) joined to `custom_field_select_options` on
 `custom_field_select_options.source_id = custom_fields.id` — `code` is the value
-Focus expects, `label` is the human name. Use this to build Finalsite→Focus
-value crosswalks.
+Focus expects, `label` is the human name. The join is `source_id` only — also
+filter `custom_field_select_options.source_class = 'CustomField'` (or
+`'CustomFieldLogColumn'` for log-column slots) so the shared `source_id` space
+doesn't collide across owner types. `source_class` on the options table is the
+owner-type literal, never the entity class (`SISSchool`, etc.); matching the
+entity class returns zero rows. Use this to build Finalsite→Focus value
+crosswalks.
 
 **Custom-field storage.** Values live inline on the entity table's wide
 `custom_NNN` columns (e.g. `students.custom_100000105`), NOT in `custom_fields`
