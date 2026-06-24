@@ -18,7 +18,7 @@ with
     ),
 
     decoded as (
-        select unpivoted.course_id, unpivoted.column_name, options.label,
+        select unpivoted.course_id, unpivoted.column_name, `options`.label,
         from unpivoted
         left join
             {{ ref("int_focus__custom_field_options") }} as `options`
