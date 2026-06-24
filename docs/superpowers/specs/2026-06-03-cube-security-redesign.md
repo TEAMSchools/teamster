@@ -9,13 +9,18 @@
   `*_access_level` tiers.
 - 2026-06-24a — decomposed into independent axes (summary vs detail scope per
   domain; location and department split apart).
-- 2026-06-24b (this revision) — **staff directory is open**; only _sensitive_
-  staff fields are gated. The org-relation gate (`staff_detail_org_gate`) folds
-  into a self-contained scope enum on each sensitive field. A single term
+- 2026-06-24b — **staff directory is open**; only _sensitive_ staff fields are
+  gated. The org-relation gate (`staff_detail_org_gate`) folds into a
+  self-contained scope enum on each sensitive field. A single term
   **`reporting_chain`** (aligned with `dim_staff_reporting_chain`) is used for
   "the people who report up to you" — replacing the prior mix of "reporting
   chain" / "downline" / "team". It means strictly your direct + indirect
-  reports, never same-level peers. Prior models are in git history.
+  reports, never same-level peers.
+- 2026-06-24c (this revision) — staff **summary aggregates are open** too (no
+  `staff_summary_*` scope columns; staff aggregates, like the directory, are
+  unscoped). The sensitive remit columns drop the now-misleading `detail`
+  prefix: `staff_location_scope` + `staff_department_scope`. They constrain rows
+  only in conjunction with a sensitive field. Prior models are in git history.
 
 ## Summary
 
@@ -78,13 +83,13 @@ the column is visible **and** which rows it is visible for:
 
 <!-- markdownlint-disable MD013 -->
 
-| Scope value                     | Column shown? | Rows the field is visible for                                             |
-| ------------------------------- | ------------- | ------------------------------------------------------------------------- |
-| `none`                          | no            | —                                                                         |
-| `all_in_scope`                  | yes           | all rows in `staff_detail_location_scope ∩ staff_detail_department_scope` |
-| `reporting_chain_or_below_rank` | yes           | (in scope **∩** ranked below me) **∪** my reporting chain                 |
-| `reporting_chain`               | yes           | my reporting chain only (unbounded by location/department)                |
-| `teaching_staff`                | yes           | `job_function_code IN ('TEACH','TIR')` within scope                       |
+| Scope value                     | Column shown? | Rows the field is visible for                               |
+| ------------------------------- | ------------- | ----------------------------------------------------------- |
+| `none`                          | no            | —                                                           |
+| `all_in_scope`                  | yes           | all rows in `staff_location_scope ∩ staff_department_scope` |
+| `reporting_chain_or_below_rank` | yes           | (in scope **∩** ranked below me) **∪** my reporting chain   |
+| `reporting_chain`               | yes           | my reporting chain only (unbounded by location/department)  |
+| `teaching_staff`                | yes           | `job_function_code IN ('TEACH','TIR')` within scope         |
 
 <!-- markdownlint-enable MD013 -->
 
@@ -116,25 +121,27 @@ surface and the sensitive (detail) surface:
 
 <!-- markdownlint-enable MD013 -->
 
-`staff_detail_location_scope ∩ staff_detail_department_scope` bound the
-`all_in_scope` / `reporting_chain_or_below_rank` / `teaching_staff` field values
-(the `reporting_chain` value ignores them by design). `staff_summary_*` bound
-the aggregate surface. `network` is only ever set intentionally by the mapping;
-an unmatched region/school resolves to `none` (deny), never `network`. The
-viewer's `region_key`, `location_abbreviation`, and `department_group` are
-carried on `dim_staff_cube_access` so `cube.js` builds filters from the level.
+`staff_location_scope ∩ staff_department_scope` bound the `all_in_scope` /
+`reporting_chain_or_below_rank` / `teaching_staff` field values (the
+`reporting_chain` value ignores them by design). They constrain rows **only in
+conjunction with a sensitive field** — a directory-only query, and the aggregate
+summary, are never bounded by them. `network` is only ever set intentionally by
+the mapping; an unmatched region/school resolves to `none` (deny), never
+`network`. The viewer's `region_key`, `location_abbreviation`, and
+`department_group` are carried on `dim_staff_cube_access` so `cube.js` builds
+filters from the level.
 
 ### Summary (aggregate) surface
 
 `staff_summary` exposes aggregate demographics and headcount/FTE breakdowns — no
-row-level identifiers — bounded by
-`staff_summary_location_scope ∩ staff_summary_department_scope`, deliberately
-broader than the sensitive scope so a leader can benchmark against
-region/network. Low-N suppression is tracked in
-[#4237](https://github.com/TEAMSchools/teamster/issues/4237). (Open question:
-with the directory open at row level, the summary surface's unique remaining job
-is aggregate demographics — whether to keep it as a distinct view or fold it is
-deferred.)
+row-level identifiers — and is **open network-wide to every staff viewer** (no
+location/department scope), so a leader can benchmark against region/network.
+Low-N suppression is tracked in
+[#4237](https://github.com/TEAMSchools/teamster/issues/4237). There are
+therefore **no `staff_summary_*` scope columns** — staff aggregates, like the
+directory, are unscoped. (Open question: with the directory open at row level,
+whether to keep `staff_summary` as a distinct view or fold it into the directory
+is deferred.)
 
 ### Survey access — out of scope
 
@@ -160,10 +167,8 @@ student_summary_location_scope     -- network / region / school / none
 student_detail_location_scope      -- network / region / school / none
 student_pii_scope                  -- all / none
 
-staff_summary_location_scope       -- network / region / school / none
-staff_summary_department_scope     -- all / own_group / none
-staff_detail_location_scope        -- sensitive bound: network/region/school/none
-staff_detail_department_scope      -- sensitive bound: all/own_group/none
+staff_location_scope               -- sensitive bound: network/region/school/none
+staff_department_scope             -- sensitive bound: all/own_group/none
 staff_pii_scope                    -- sensitive scope enum (5 values; see table)
 staff_compensation_scope           -- (same vocabulary)
 staff_observations_scope           -- (same vocabulary)
@@ -196,12 +201,13 @@ Accounting, Finance, Compliance.
 ### Access columns (both tabs)
 
 `student_summary_location_scope`, `student_detail_location_scope`,
-`student_pii_scope`, `staff_summary_location_scope`,
-`staff_summary_department_scope`, `staff_detail_location_scope`,
-`staff_detail_department_scope`, `staff_pii_scope`, `staff_compensation_scope`,
-`staff_observations_scope`, `staff_benefits_scope`. (No
-`staff_detail_org_gate`.) The four `staff_*_scope` values use the per-field enum
-(`none`/`all_in_scope`/`reporting_chain_or_below_rank`/`reporting_chain`/`teaching_staff`).
+`student_pii_scope`, `staff_location_scope`, `staff_department_scope`,
+`staff_pii_scope`, `staff_compensation_scope`, `staff_observations_scope`,
+`staff_benefits_scope`. (No `staff_summary_*` and no `staff_detail_org_gate`.)
+The four `staff_*_scope` field values use the per-field enum
+(`none`/`all_in_scope`/`reporting_chain_or_below_rank`/`reporting_chain`/`teaching_staff`);
+`staff_location_scope` + `staff_department_scope` are the shared remit that
+bounds them.
 
 ### `cube_access_department_rollup`
 
@@ -292,8 +298,9 @@ exception: the `staff` cube reads `job_function_level`, `job_function_code`,
     aggregate tier.
 - **`staff` cube**: inline `sql:` `LEFT JOIN dim_staff_cube_access` on
   `staff_key` exposing `job_function_level`, `job_function_code`,
-  `department_group`; expose on `staff_detail` (and `department_group` on
-  `staff_summary`).
+  `department_group`; expose all three on `staff_detail` for the sensitive-field
+  filters. `staff_summary` needs none of them for gating (it's open);
+  `department_group` may optionally be exposed there as an aggregate breakdown.
 
 ### Google Workspace group cleanup
 
