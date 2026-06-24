@@ -8,7 +8,6 @@ with
 
             sum(is_successful_int) as successful_comms_sum,
             count(is_successful_int) as required_comms_count,
-
         from {{ ref("int_topline__attendance_contacts") }}
         where
             is_enrolled_week and academic_year >= {{ var("current_academic_year") - 1 }}
@@ -28,5 +27,4 @@ select
     sum(required_comms_count) over (
         partition by academic_year, student_number order by week_start_monday asc
     ) as required_comms_count_running,
-
 from comm_by_week

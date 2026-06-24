@@ -15,7 +15,6 @@ with
             row_number() over (
                 partition by student_number, school_level order by exitdate desc
             ) as rn,
-
         from {{ ref("base_powerschool__student_enrollments") }}
     ),
 

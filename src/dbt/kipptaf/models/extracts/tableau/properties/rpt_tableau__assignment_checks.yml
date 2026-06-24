@@ -1,7 +1,5 @@
 models:
   - name: rpt_tableau__assignment_checks
-    config:
-      enabled: false
     columns:
       - name: _dbt_source_relation
         data_type: string

@@ -32,7 +32,6 @@ select
 
     sat.test_type,
     sat.score,
-
 from {{ ref("int_extracts__student_enrollments_weeks") }} as co
 left join
     deduplicate as sat

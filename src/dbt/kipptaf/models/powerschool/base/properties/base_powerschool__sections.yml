@@ -5,6 +5,8 @@ models:
     columns:
       - name: _dbt_source_relation
         data_type: string
+      - name: _dbt_source_project
+        data_type: string
         description: >-
           District code-location extracted once from `_dbt_source_relation`
           (e.g., `kippnewark`, `kippcamden`). Materialized join key for
@@ -395,5 +397,3 @@ models:
       - name: is_ap_course
         data_type: boolean
         description: Conditional on ap_course_subject.
-      - name: _dbt_source_project
-        data_type: string
