@@ -1,4 +1,5 @@
 select
+    _dbt_source_project,
     studentid,
     academic_year,
 
@@ -39,8 +40,6 @@ select
     + coalesce(sum_absences_term_q3, 0)
     + coalesce(sum_absences_term_q4, 0) as sum_absences_year,
 
-    {{ extract_code_location("src") }} as _dbt_source_project,
-
 from
     {{ ref("int_powerschool__ada_term") }} pivot (
         max(ada_term) as ada_term,
@@ -57,4 +56,4 @@ from
         max(sum_absences_term) as sum_absences_term,
         max(count_attendance_value_term) as count_attendance_value_term
         for term in ('Q1', 'Q2', 'Q3', 'Q4')
-    ) as src
+    )
