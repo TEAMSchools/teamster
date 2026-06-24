@@ -6,7 +6,7 @@ models:
       `int_finalsite__enrollment_lifecycle`. Grade is translated inline
       (`k`→`KG`, else zero-padded number); school maps via
       `int_people__location_crosswalk` and enrollment/drop codes via Google
-      Sheets crosswalks — together producing the 29-column layout consumed by
+      Sheets crosswalks — together producing the 28-column layout consumed by
       the Focus SFTP transport. The Focus column header casing (`SYEAR`,
       `SCHOOL_ID`, etc.) is applied at transport time via
       `file_config.format.header_replacements`; dbt column names remain
@@ -155,16 +155,11 @@ models:
         data_type: int64
         description:
           Florida days absent count; not sourced from Finalsite — always null.
-      - name: fl_days_absent_not_disc
-        data_type: int64
-        description:
-          Florida unexcused absent count; not sourced from Finalsite — always
-          null.
 
 unit_tests:
   - name: test_student_enrollment_shape
     description:
-      Verifies the 29-column STUDENT_ENROLLMENT layout for new-enrollment rows —
+      Verifies the 28-column STUDENT_ENROLLMENT layout for new-enrollment rows —
       grade is translated inline for both a numbered grade (`5th`→`05`) and
       kindergarten (`k`→`KG`), school/enrollment-code crosswalks resolve,
       student_id is null (no Focus ID minted yet), and end_date/drop_code are
@@ -247,7 +242,6 @@ unit_tests:
             include_in_class_rank: null,
             fl_days_present: null,
             fl_days_absent: null,
-            fl_days_absent_not_disc: null,
           }
         - {
             syear: 2025,
@@ -278,7 +272,6 @@ unit_tests:
             include_in_class_rank: null,
             fl_days_present: null,
             fl_days_absent: null,
-            fl_days_absent_not_disc: null,
           }
   - name: test_student_enrollment_transfer_out
     description:
@@ -354,5 +347,4 @@ unit_tests:
             include_in_class_rank: null,
             fl_days_present: null,
             fl_days_absent: null,
-            fl_days_absent_not_disc: null,
           }

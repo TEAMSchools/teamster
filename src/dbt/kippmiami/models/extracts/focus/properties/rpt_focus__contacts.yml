@@ -101,5 +101,3 @@ models:
         data_type: string
       - name: contact7_unlisted
         data_type: string
-      - name: contact7_callout
-        data_type: string

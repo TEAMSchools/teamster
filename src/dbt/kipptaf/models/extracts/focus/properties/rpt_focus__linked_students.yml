@@ -8,7 +8,7 @@ models:
       sibling) with both sides resolved to a minted Focus student ID via
       `int_finalsite__contact_id_attributes`. Pairs where either side is outside
       the pulled cohort (no lifecycle row) or has no minted ID are dropped.
-      Produces 3 columns in `LINKED_STUDENTS` contract order.
+      Produces 2 columns in `LINKED_STUDENTS` contract order.
     config:
       contract:
         enforced: true
@@ -34,17 +34,6 @@ models:
           via `rel_id`.
         data_tests:
           - not_null
-      - name: relationship
-        data_type: string
-        description:
-          Focus-recognised relationship type for this linked-students pair.
-          Always `sibling` for rows produced by this model.
-        data_tests:
-          - not_null
-          - accepted_values:
-              arguments:
-                values: [sibling, step_sibling, cousin, parent]
-
 unit_tests:
   - name: test_linked_students_dormant_until_stdt_id
     description:
