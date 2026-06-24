@@ -110,6 +110,13 @@ SSH_COUCHDROP = SSHResource(
     password=EnvVar("COUCHDROP_SFTP_PASSWORD"),
 )
 
+SSH_FOCUS = SSHResource(
+    remote_host=EnvVar("FOCUS_SFTP_HOST"),
+    remote_port=22,
+    username=EnvVar("FOCUS_SFTP_USERNAME"),
+    password=EnvVar("FOCUS_SFTP_PASSWORD"),
+)
+
 SSH_EDPLAN = SSHResource(
     remote_host=EnvVar("EDPLAN_SFTP_HOST"),
     remote_port=22,
