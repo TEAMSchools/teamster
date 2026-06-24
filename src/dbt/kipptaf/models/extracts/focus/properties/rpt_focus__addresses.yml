@@ -9,7 +9,7 @@ models:
       `int_finalsite__enrollment_lifecycle` (the in-scope filter; grain =
       `finalsite_enrollment_id`), then left joins
       `int_finalsite__contact_id_attributes` for the Focus student ID. Produces
-      13 columns in `ADDRESS_LAYOUT` order. Focus column header casing
+      12 columns in `ADDRESS_LAYOUT` order. Focus column header casing
       (`STUDENT_ID`, `ADDRESS`, etc.) is applied at transport time via
       `file_config.format.header_replacements`; dbt column names remain
       lowercase snake_case. Mailing address columns are always null — Focus does
@@ -61,14 +61,11 @@ models:
       - name: mail_state
         data_type: string
         description: Mailing state; not sourced from Finalsite — always null.
-      - name: mail_zipcode
-        data_type: string
-        description: Mailing ZIP code; not sourced from Finalsite — always null.
 
 unit_tests:
   - name: test_addresses_shape
     description:
-      Verifies the 13-column ADDRESS layout for a single student — STUDENT_ID is
+      Verifies the 12-column ADDRESS layout for a single student — STUDENT_ID is
       null until the Finalsite-minted student id lands, address columns map from
       contacts, mailing columns are always null.
     model: rpt_focus__addresses
@@ -102,5 +99,4 @@ unit_tests:
             mail_address2: null,
             mail_city: null,
             mail_state: null,
-            mail_zipcode: null,
           }
