@@ -31,6 +31,8 @@ select
 
     if(l.location_name is null, true, false) as is_transfer_grade,
 
+    regexp_extract(u._dbt_source_relation, r'(kipp\w+)_') as _dbt_source_project,
+
 from union_relations as u
 left join
     {{ ref("int_people__location_crosswalk") }} as l on u.schoolname = l.location_name

@@ -146,3 +146,5 @@ models:
         data_type: string
       - name: is_transfer_grade
         data_type: boolean
+      - name: _dbt_source_project
+        data_type: string
