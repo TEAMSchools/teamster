@@ -421,12 +421,12 @@ left join
     {{ ref("int_powerschool__ada_term_pivot") }} as ada
     on e.studentid = ada.studentid
     and e.academic_year = ada.academic_year
-    and {{ union_dataset_join_clause(left_alias="e", right_alias="ada") }}
+    and e._dbt_source_project = ada._dbt_source_project
 left join
     {{ ref("int_powerschool__ada_term_pivot") }} as adapy
     on e.studentid = adapy.studentid
     and e.academic_year = (adapy.academic_year + 1)
-    and {{ union_dataset_join_clause(left_alias="e", right_alias="adapy") }}
+    and e._dbt_source_project = adapy._dbt_source_project
 left join
     gpa_bands as gc
     on e.studentid = gc.studentid
