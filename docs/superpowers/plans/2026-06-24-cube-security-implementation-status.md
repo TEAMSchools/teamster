@@ -51,9 +51,10 @@ Crosswalk Google Sheet:
 
 ## Operational notes for PR time
 
-- **Stage the new externals to shared staging** before dbt Cloud CI:
-  `uv run dbt run-operation stage_external_sources --args 'select: google_sheets.src_google_sheets__people__cube_access_role google_sheets.src_google_sheets__people__cube_access_department_override google_sheets.src_google_sheets__people__cube_access_department_rollup' --target staging --project-dir src/dbt/kipptaf`
-  (classifier-blocked for Claude — user runs it).
+- ~~Stage the new externals to shared staging before dbt Cloud CI~~ **DONE
+  2026-06-24** — all three `src_google_sheets__people__cube_access_*` created in
+  `zz_stg_kipptaf_google_sheets`. Re-run if the `zz_stg` tables get reset:
+  `uv run dbt run-operation stage_external_sources --args 'select: google_sheets.src_google_sheets__people__cube_access_role google_sheets.src_google_sheets__people__cube_access_department_override google_sheets.src_google_sheets__people__cube_access_department_rollup' --target staging --project-dir src/dbt/kipptaf`.
 - **Add #4260 to project board #4** (Codespace token lacks `project` scope):
   `gh project item-add 4 --owner TEAMSchools --url https://github.com/TEAMSchools/teamster/issues/4260`.
 - **Active-set gap:** marts current-primary = 1,495 vs roster active-primary
