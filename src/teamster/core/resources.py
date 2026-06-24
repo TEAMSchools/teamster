@@ -110,13 +110,6 @@ SSH_COUCHDROP = SSHResource(
     password=EnvVar("COUCHDROP_SFTP_PASSWORD"),
 )
 
-SSH_FOCUS = SSHResource(
-    remote_host=EnvVar("FOCUS_SFTP_HOST"),
-    remote_port=22,
-    username=EnvVar("FOCUS_SFTP_USERNAME"),
-    password=EnvVar("FOCUS_SFTP_PASSWORD"),
-)
-
 SSH_EDPLAN = SSHResource(
     remote_host=EnvVar("EDPLAN_SFTP_HOST"),
     remote_port=22,
@@ -130,6 +123,13 @@ SSH_EDPLAN = SSHResource(
     # (SHA-1 RSA) host keys. paramiko 5.0 dropped ssh-rsa from defaults; opt
     # back in for this host only.
     enable_legacy_rsa=True,
+)
+
+SSH_FOCUS = SSHResource(
+    remote_host=EnvVar("FOCUS_SFTP_HOST"),
+    remote_port=22,
+    username=EnvVar("FOCUS_SFTP_USERNAME"),
+    password=EnvVar("FOCUS_SFTP_PASSWORD"),
 )
 
 SSH_IREADY = SSHResource(
