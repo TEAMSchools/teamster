@@ -31,6 +31,8 @@ select
 
     if(l.location_name is null, true, false) as is_transfer_grade,
 
+    {{ extract_code_location("u") }} as _dbt_source_project,
+
 from union_relations as u
 left join
     {{ ref("int_people__location_crosswalk") }} as l on u.schoolname = l.location_name

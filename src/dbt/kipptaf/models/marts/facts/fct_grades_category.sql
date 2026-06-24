@@ -1,7 +1,6 @@
 with
     course_enrollments as (
         select
-            _dbt_source_relation,
             _dbt_source_project,
             cc_studentid,
             cc_abs_sectionid,
@@ -78,7 +77,7 @@ inner join
     on cg.studentid = ce.cc_studentid
     and cg.sectionid = ce.cc_abs_sectionid
     and cg.yearid = ce.cc_yearid
-    and {{ union_dataset_join_clause(left_alias="cg", right_alias="ce") }}
+    and cg._dbt_source_project = ce._dbt_source_project
 left join
     reporting_terms as rt
     on cg.storecode = rt.name

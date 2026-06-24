@@ -31,9 +31,6 @@ with
         select
             *,
 
-            -- materialized region-prefix discriminator for downstream surrogate-key
-            -- composition; replaces per-consumer extract_code_location() per #3142.
-            -- code_location is the prior name; both will collapse when #3142 ships.
             regexp_extract(_dbt_source_relation, r'(kipp\w+)_') as _dbt_source_project,
             regexp_extract(_dbt_source_relation, r'(kipp\w+)_') as code_location,
 
@@ -182,6 +179,7 @@ select
         then '<2.00'
         else 'No GPA'
     end as salesforce_contact_college_match_gpa_band,
+
     if(
         extract(
             month
@@ -203,15 +201,15 @@ from with_region as ar
 left join
     {{ ref("stg_powerschool__u_studentsuserfields") }} as suf
     on ar.students_dcid = suf.studentsdcid
-    and {{ union_dataset_join_clause(left_alias="ar", right_alias="suf") }}
+    and ar._dbt_source_project = suf._dbt_source_project
 left join
     {{ ref("stg_powerschool__s_nj_stu_x") }} as njs
     on ar.students_dcid = njs.studentsdcid
-    and {{ union_dataset_join_clause(left_alias="ar", right_alias="njs") }}
+    and ar._dbt_source_project = njs._dbt_source_project
 left join
     {{ ref("stg_powerschool__s_nj_ren_x") }} as njr
     on ar.reenrollments_dcid = njr.reenrollmentsdcid
-    and {{ union_dataset_join_clause(left_alias="ar", right_alias="njr") }}
+    and ar._dbt_source_project = njr._dbt_source_project
 left join
     {{ ref("stg_powerschool__student_email") }} as se
     on ar.student_number = se.student_number
@@ -225,18 +223,18 @@ left join
     {{ ref("int_edplan__njsmart_powerschool_union") }} as sped
     on ar.student_number = sped.student_number
     and ar.academic_year = sped.academic_year
-    and {{ union_dataset_join_clause(left_alias="ar", right_alias="sped") }}
+    and ar._dbt_source_project = sped._dbt_source_project
     and sped.rn_student_year_desc = 1
 left join
     {{ ref("stg_titan__person_data") }} as tpd
     on ar.student_number = tpd.person_identifier
     and ar.academic_year = tpd.academic_year
-    and {{ union_dataset_join_clause(left_alias="ar", right_alias="tpd") }}
+    and ar._dbt_source_project = tpd._dbt_source_project
 left join
     {{ ref("int_fldoe__fte_pivot") }} as fte
     on ar.state_studentnumber = fte.student_id
     and ar.academic_year = fte.academic_year
-    and {{ union_dataset_join_clause(left_alias="ar", right_alias="fte") }}
+    and ar._dbt_source_project = fte._dbt_source_project
 left join
     {{ ref("stg_kippadb__contact") }} as adb
     on ar.student_number = adb.school_specific_id
