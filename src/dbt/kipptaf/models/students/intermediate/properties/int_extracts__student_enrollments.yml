@@ -869,6 +869,13 @@ models:
           True when the student's ADA is at or above 80% (using weighted ADA for
           HS starting AY 2025) and their cumulative year-to-date GPA
           (cumulative_y1_gpa) is below 2.0. False otherwise.
+      - name: is_pre_year_withdrawal
+        data_type: boolean
+        description: >
+          True when the student's exitdate falls before August 1st of the
+          academic year — a registration that was cancelled before the school
+          year began (summer melt or pre-year transfer). These stints have no
+          course enrollments and should be excluded from course-level reporting.
       - name: aligned_gender
         data_type: string
         description: >

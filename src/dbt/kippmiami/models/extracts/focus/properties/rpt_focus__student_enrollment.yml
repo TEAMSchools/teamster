@@ -57,5 +57,3 @@ models:
         data_type: int64
       - name: fl_days_absent
         data_type: int64
-      - name: fl_days_absent_not_disc
-        data_type: int64

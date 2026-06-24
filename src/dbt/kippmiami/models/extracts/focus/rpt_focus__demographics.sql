@@ -41,5 +41,4 @@ select
     dt_home_lang_survey,
     casas_track,
     lcp_cont_stdt,
-    tide_access_code,
 from {{ source("kipptaf_extracts", "rpt_focus__demographics") }}

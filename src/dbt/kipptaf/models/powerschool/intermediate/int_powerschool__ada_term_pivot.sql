@@ -1,4 +1,5 @@
 select
+    _dbt_source_project,
     studentid,
     academic_year,
 
@@ -38,8 +39,6 @@ select
     + coalesce(sum_absences_term_q2, 0)
     + coalesce(sum_absences_term_q3, 0)
     + coalesce(sum_absences_term_q4, 0) as sum_absences_year,
-
-    regexp_extract(_dbt_source_relation, r'(kipp\w+)_') as _dbt_source_project,
 
 from
     {{ ref("int_powerschool__ada_term") }} pivot (

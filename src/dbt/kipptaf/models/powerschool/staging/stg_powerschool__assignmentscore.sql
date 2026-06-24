@@ -11,6 +11,5 @@ with
         }}
     )
 
--- trunk-ignore(sqlfluff/AM04)
-select *, regexp_extract(_dbt_source_relation, r'(kipp\w+)_') as _dbt_source_project,
-from union_relations
+select ur.*, {{ extract_code_location("ur") }} as _dbt_source_project,
+from union_relations as ur

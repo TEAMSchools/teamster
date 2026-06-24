@@ -8,7 +8,7 @@ models:
       `stg_finalsite__contacts` for guardian attributes, gated to in-scope
       students via `int_finalsite__enrollment_lifecycle`. `student_id` is
       stubbed null until the Finalsite-minted student id lands in
-      `int_finalsite__contact_id_attributes`. Produces 51 columns in
+      `int_finalsite__contact_id_attributes`. Produces 50 columns in
       `CONTACTS_LAYOUT` order. `SORT_ORDER` ranks guardians per student by
       `is_primary desc` so the primary contact sorts first. Phone slots
       `CONTACT1_*` and `CONTACT2_*` map the guardian's two phones; `CONTACT3`
@@ -249,16 +249,11 @@ models:
         description:
           Unlisted flag for seventh contact slot; not sourced from Finalsite —
           always null.
-      - name: contact7_callout
-        data_type: string
-        description:
-          Callout flag for seventh contact slot; not sourced from Finalsite —
-          always null.
 
 unit_tests:
   - name: test_contacts_two_guardians
     description:
-      Verifies the 51-column CONTACTS layout for one student with two guardian
+      Verifies the 50-column CONTACTS layout for one student with two guardian
       relationships — primary guardian sorts to SORT_ORDER 1, non-primary to 2.
       Asserts STUDENT_RELATION, FIRST_NAME, LAST_NAME, and CONTACT1_VALUE.
       STUDENT_ID is null until the Finalsite-minted student id lands.
@@ -376,7 +371,6 @@ unit_tests:
             contact7_value: null,
             contact7_blocked: null,
             contact7_unlisted: null,
-            contact7_callout: null,
           }
         - {
             student_id: null,
@@ -429,5 +423,4 @@ unit_tests:
             contact7_value: null,
             contact7_blocked: null,
             contact7_unlisted: null,
-            contact7_callout: null,
           }

@@ -113,3 +113,4 @@ models:
         data_type: string
       - name: _dbt_source_project
         data_type: string
+        description: District code location derived from `_dbt_source_relation`.

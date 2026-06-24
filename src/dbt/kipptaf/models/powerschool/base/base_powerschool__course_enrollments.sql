@@ -22,10 +22,15 @@ with
                 ]
             )
         }}
+    ),
+
+    add_dbt_field as (
+        select ur.*, {{ extract_code_location("ur") }} as _dbt_source_project,
+        from union_relations as ur
     )
 
 select
-    ur.* except (courses_credittype),
+    a.* except (courses_credittype),
 
     cx.ap_course_subject,
     cx.block_schedule_session,
@@ -51,39 +56,34 @@ select
     csc.is_advanced_math,
     csc.discipline,
 
-    -- materialized region-prefix discriminator for downstream surrogate-key
-    -- composition; replaces per-consumer extract_code_location() per #3142
-    regexp_extract(ur._dbt_source_relation, r'(kipp\w+)_') as _dbt_source_project,
-
-    initcap(regexp_extract(ur._dbt_source_relation, r'kipp(\w+)_')) as region,
-
-    if(cx.ap_course_subject is not null, true, false) as is_ap_course,
+    {{ extract_region("a") }} as region,
 
     case
-        when ur.courses_credittype in ('ENG', 'ELA')
+        when a.courses_credittype in ('ENG', 'ELA')
         then 'ENG'
-        when ur.courses_credittype in ('MATH', 'Math')
+        when a.courses_credittype in ('MATH', 'Math')
         then 'MATH'
-        when ur.courses_credittype in ('SCI', 'Science')
+        when a.courses_credittype in ('SCI', 'Science')
         then 'SCI'
-        when ur.courses_credittype in ('HR', 'Homeroom')
+        when a.courses_credittype in ('HR', 'Homeroom')
         then 'HR'
-        else ur.courses_credittype
+        else a.courses_credittype
     end as courses_credittype,
+
+    if(cx.ap_course_subject is not null, true, false) as is_ap_course,
 
     if(csc.discipline = 'SOC', 'Civics', csc.discipline) as standardized_discipline,
 
     row_number() over (
-        partition by
-            ur._dbt_source_relation, ur.cc_studyear, csc.illuminate_subject_area
-        order by ur.cc_termid desc, ur.cc_dateenrolled desc, ur.cc_dateleft desc
+        partition by a._dbt_source_relation, a.cc_studyear, csc.illuminate_subject_area
+        order by a.cc_termid desc, a.cc_dateenrolled desc, a.cc_dateleft desc
     ) as rn_student_year_illuminate_subject_desc,
 
-from union_relations as ur
+from add_dbt_field as a
 left join
     {{ ref("stg_powerschool__s_nj_crs_x") }} as cx
-    on ur.courses_dcid = cx.coursesdcid
-    and {{ extract_code_location("ur") }} = cx._dbt_source_project
+    on a.courses_dcid = cx.coursesdcid
+    and a._dbt_source_project = cx._dbt_source_project
 left join
     {{ ref("stg_google_sheets__assessments__course_subject_crosswalk") }} as csc
-    on ur.cc_course_number = csc.powerschool_course_number
+    on a.cc_course_number = csc.powerschool_course_number
