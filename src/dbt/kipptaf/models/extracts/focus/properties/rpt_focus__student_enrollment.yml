@@ -5,10 +5,11 @@ models:
       `STUDENT_ENROLLMENT` SFTP template layout, built from
       `int_finalsite__enrollment_lifecycle`. Grade is translated inline
       (`k`→`KG`, else zero-padded number); school maps via
-      `int_people__location_crosswalk` and enrollment/drop codes via Google
-      Sheets crosswalks — together producing the 28-column layout consumed by
-      the Focus SFTP transport. The Focus column header casing (`SYEAR`,
-      `SCHOOL_ID`, etc.) is applied at transport time via
+      `int_people__location_crosswalk`, the Focus student id (`student_id`) via
+      `int_finalsite__contact_id_attributes`, and enrollment/drop codes via
+      Google Sheets crosswalks — together producing the 28-column layout
+      consumed by the Focus SFTP transport. The Focus column header casing
+      (`SYEAR`, `SCHOOL_ID`, etc.) is applied at transport time via
       `file_config.format.header_replacements`; dbt column names remain
       lowercase snake_case. `end_date` and `drop_code` populate only for
       `lifecycle_action = 'transfer_out'` rows.
@@ -16,8 +17,9 @@ models:
       - name: student_id
         data_type: string
         description:
-          Focus student ID. Null until Finalsite mints the student id into
-          `int_finalsite__contact_id_attributes`, then sourced from there.
+          Focus student id (Focus `STDT_ID`) from
+          `int_finalsite__contact_id_attributes.focus_student_id`; null for
+          enrollments where Finalsite has not minted the id.
         data_tests:
           - unique
           - not_null
@@ -162,8 +164,8 @@ unit_tests:
       Verifies the 28-column STUDENT_ENROLLMENT layout for new-enrollment rows —
       grade is translated inline for both a numbered grade (`5th`→`05`) and
       kindergarten (`k`→`KG`), school/enrollment-code crosswalks resolve,
-      student_id is null (no Focus ID minted yet), and end_date/drop_code are
-      null for a non-transfer row.
+      student_id is sourced from int_finalsite__contact_id_attributes, and
+      end_date/drop_code are null for a non-transfer row.
     model: rpt_focus__student_enrollment
     given:
       - input: ref('int_finalsite__enrollment_lifecycle')
@@ -211,12 +213,22 @@ unit_tests:
               finalsite_withdrawal_reason: mid_year_withdrawal,
               focus_drop_code: W05,
             }
+      - input: ref('int_finalsite__contact_id_attributes')
+        format: sql
+        rows: |
+          select
+            'e1' as finalsite_enrollment_id,
+            '3003001' as focus_student_id
+          union all
+          select
+            'e3' as finalsite_enrollment_id,
+            '3003003' as focus_student_id
     expect:
       rows:
         - {
             syear: 2025,
             school_id: "0001",
-            student_id: null,
+            student_id: "3003001",
             grade_id: "05",
             start_date: "20250812",
             enrollment_code: EA1,
@@ -246,7 +258,7 @@ unit_tests:
         - {
             syear: 2025,
             school_id: "0001",
-            student_id: null,
+            student_id: "3003003",
             grade_id: KG,
             start_date: "20250812",
             enrollment_code: EA1,
@@ -316,12 +328,18 @@ unit_tests:
               finalsite_withdrawal_reason: mid_year_withdrawal,
               focus_drop_code: W05,
             }
+      - input: ref('int_finalsite__contact_id_attributes')
+        format: sql
+        rows: |
+          select
+            'e2' as finalsite_enrollment_id,
+            '3003002' as focus_student_id
     expect:
       rows:
         - {
             syear: 2025,
             school_id: "0001",
-            student_id: null,
+            student_id: "3003002",
             grade_id: "07",
             start_date: "20250812",
             enrollment_code: W01,
