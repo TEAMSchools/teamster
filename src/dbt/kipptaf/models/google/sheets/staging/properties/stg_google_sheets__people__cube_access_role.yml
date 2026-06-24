@@ -3,10 +3,10 @@ models:
     description: >-
       Cube access role crosswalk, maintained by the data team in Google Sheets.
       One row per (job_function_code, entity, department_type) tuple, mapping
-      each role to its location scope, student/staff access levels, and
-      per-field visibility scopes. The sentinel `any` in entity /
-      department_type matches any value for codes whose access does not vary by
-      those dimensions.
+      each role to its student location scopes, the staff sensitive-field remit
+      (location + department), and the per-field sensitive scopes. The sentinel
+      `any` in entity / department_type matches any value for codes whose access
+      does not vary by those dimensions.
     data_tests:
       - dbt_utils.unique_combination_of_columns:
           arguments:
@@ -41,33 +41,105 @@ models:
       - name: job_function_level
         data_type: int64
         description: Org rank for the role (1 = Chief, 6 = Teacher, 7 = Intern).
-      - name: scope_level
+      - name: student_summary_location_scope
         data_type: string
-        description: >-
-          Location scope tier — network, region, school,
-          network_department_group, region_department_group, or none.
-      - name: student_access_level
+        description: Student aggregate location breadth.
+        data_tests:
+          - accepted_values:
+              arguments:
+                values: [network, region, school, none]
+              config:
+                severity: error
+      - name: student_detail_location_scope
         data_type: string
-        description: Student data access — detail, summary, or none.
-      - name: staff_access_level
-        data_type: string
-        description: >-
-          Staff data access — detail, detail_below_rank, detail_reporting_chain,
-          or none.
+        description: Student row-level location breadth.
+        data_tests:
+          - accepted_values:
+              arguments:
+                values: [network, region, school, none]
+              config:
+                severity: error
       - name: student_pii_scope
         data_type: string
-        description: Student PII field visibility — all or none.
+        description: Student PII field visibility.
+        data_tests:
+          - accepted_values:
+              arguments:
+                values: [all, none]
+              config:
+                severity: error
+      - name: staff_location_scope
+        data_type: string
+        description: Location remit bounding the staff sensitive fields.
+        data_tests:
+          - accepted_values:
+              arguments:
+                values: [network, region, school, none]
+              config:
+                severity: error
+      - name: staff_department_scope
+        data_type: string
+        description: Department remit bounding the staff sensitive fields.
+        data_tests:
+          - accepted_values:
+              arguments:
+                values: [all, own_group, none]
+              config:
+                severity: error
       - name: staff_pii_scope
         data_type: string
-        description: >-
-          Staff PII field visibility — all, reporting_chain, teaching_staff, or
-          none.
+        description:
+          Staff PII field visibility (per-field sensitive scope enum).
+        data_tests:
+          - accepted_values:
+              arguments:
+                values:
+                  - none
+                  - all_in_scope
+                  - reporting_chain_or_below_rank
+                  - reporting_chain
+                  - teaching_staff
+              config:
+                severity: error
       - name: staff_compensation_scope
         data_type: string
         description: Staff compensation field visibility (same vocabulary).
-      - name: staff_benefits_scope
-        data_type: string
-        description: Staff benefits field visibility (same vocabulary).
+        data_tests:
+          - accepted_values:
+              arguments:
+                values:
+                  - none
+                  - all_in_scope
+                  - reporting_chain_or_below_rank
+                  - reporting_chain
+                  - teaching_staff
+              config:
+                severity: error
       - name: staff_observations_scope
         data_type: string
         description: Staff observation field visibility (same vocabulary).
+        data_tests:
+          - accepted_values:
+              arguments:
+                values:
+                  - none
+                  - all_in_scope
+                  - reporting_chain_or_below_rank
+                  - reporting_chain
+                  - teaching_staff
+              config:
+                severity: error
+      - name: staff_benefits_scope
+        data_type: string
+        description: Staff benefits field visibility (same vocabulary).
+        data_tests:
+          - accepted_values:
+              arguments:
+                values:
+                  - none
+                  - all_in_scope
+                  - reporting_chain_or_below_rank
+                  - reporting_chain
+                  - teaching_staff
+              config:
+                severity: error

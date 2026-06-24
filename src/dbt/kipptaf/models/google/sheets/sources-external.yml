@@ -1836,21 +1836,23 @@ sources:
             data_type: string
           - name: job_function_level
             data_type: int64
-          - name: scope_level
+          - name: student_summary_location_scope
             data_type: string
-          - name: student_access_level
-            data_type: string
-          - name: staff_access_level
+          - name: student_detail_location_scope
             data_type: string
           - name: student_pii_scope
+            data_type: string
+          - name: staff_location_scope
+            data_type: string
+          - name: staff_department_scope
             data_type: string
           - name: staff_pii_scope
             data_type: string
           - name: staff_compensation_scope
             data_type: string
-          - name: staff_benefits_scope
-            data_type: string
           - name: staff_observations_scope
+            data_type: string
+          - name: staff_benefits_scope
             data_type: string
         config:
           meta:
@@ -1872,21 +1874,23 @@ sources:
         columns:
           - name: department
             data_type: string
-          - name: scope_level
+          - name: student_summary_location_scope
             data_type: string
-          - name: student_access_level
-            data_type: string
-          - name: staff_access_level
+          - name: student_detail_location_scope
             data_type: string
           - name: student_pii_scope
+            data_type: string
+          - name: staff_location_scope
+            data_type: string
+          - name: staff_department_scope
             data_type: string
           - name: staff_pii_scope
             data_type: string
           - name: staff_compensation_scope
             data_type: string
-          - name: staff_benefits_scope
-            data_type: string
           - name: staff_observations_scope
+            data_type: string
+          - name: staff_benefits_scope
             data_type: string
         config:
           meta:

@@ -2,10 +2,10 @@ models:
   - name: stg_google_sheets__people__cube_access_department_override
     description: >-
       Cube access department special-access override, maintained by the data
-      team in Google Sheets. One row per ADP department whose staff receive an
-      unconditional access grant regardless of job function (network scope,
-      detail staff access). Matched on department_name; takes precedence over
-      the role crosswalk.
+      team in Google Sheets. One row per ADP department whose staff receive a
+      broad access grant regardless of job function. Matched on department_name;
+      takes precedence over the role crosswalk. Sensitive-field scopes use the
+      per-field enum; location/department scopes bound them.
     columns:
       - name: department
         data_type: string
@@ -17,27 +17,105 @@ models:
           - unique:
               config:
                 severity: error
-      - name: scope_level
+      - name: student_summary_location_scope
         data_type: string
-        description: Location scope tier (network for all override rows).
-      - name: student_access_level
+        description: Student aggregate location breadth.
+        data_tests:
+          - accepted_values:
+              arguments:
+                values: [network, region, school, none]
+              config:
+                severity: error
+      - name: student_detail_location_scope
         data_type: string
-        description: Student data access — detail, summary, or none.
-      - name: staff_access_level
-        data_type: string
-        description: Staff data access (detail for all override rows).
+        description: Student row-level location breadth.
+        data_tests:
+          - accepted_values:
+              arguments:
+                values: [network, region, school, none]
+              config:
+                severity: error
       - name: student_pii_scope
         data_type: string
-        description: Student PII field visibility — all or none.
+        description: Student PII field visibility.
+        data_tests:
+          - accepted_values:
+              arguments:
+                values: [all, none]
+              config:
+                severity: error
+      - name: staff_location_scope
+        data_type: string
+        description: Location remit bounding the staff sensitive fields.
+        data_tests:
+          - accepted_values:
+              arguments:
+                values: [network, region, school, none]
+              config:
+                severity: error
+      - name: staff_department_scope
+        data_type: string
+        description: Department remit bounding the staff sensitive fields.
+        data_tests:
+          - accepted_values:
+              arguments:
+                values: [all, own_group, none]
+              config:
+                severity: error
       - name: staff_pii_scope
         data_type: string
-        description: Staff PII field visibility — all or none.
+        description:
+          Staff PII field visibility (per-field sensitive scope enum).
+        data_tests:
+          - accepted_values:
+              arguments:
+                values:
+                  - none
+                  - all_in_scope
+                  - reporting_chain_or_below_rank
+                  - reporting_chain
+                  - teaching_staff
+              config:
+                severity: error
       - name: staff_compensation_scope
         data_type: string
-        description: Staff compensation field visibility — all or none.
-      - name: staff_benefits_scope
-        data_type: string
-        description: Staff benefits field visibility — all or none.
+        description: Staff compensation field visibility (same vocabulary).
+        data_tests:
+          - accepted_values:
+              arguments:
+                values:
+                  - none
+                  - all_in_scope
+                  - reporting_chain_or_below_rank
+                  - reporting_chain
+                  - teaching_staff
+              config:
+                severity: error
       - name: staff_observations_scope
         data_type: string
-        description: Staff observation field visibility — all or none.
+        description: Staff observation field visibility (same vocabulary).
+        data_tests:
+          - accepted_values:
+              arguments:
+                values:
+                  - none
+                  - all_in_scope
+                  - reporting_chain_or_below_rank
+                  - reporting_chain
+                  - teaching_staff
+              config:
+                severity: error
+      - name: staff_benefits_scope
+        data_type: string
+        description: Staff benefits field visibility (same vocabulary).
+        data_tests:
+          - accepted_values:
+              arguments:
+                values:
+                  - none
+                  - all_in_scope
+                  - reporting_chain_or_below_rank
+                  - reporting_chain
+                  - teaching_staff
+              config:
+                severity: error
