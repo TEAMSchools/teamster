@@ -52,7 +52,7 @@ with
             cx.school_code_override,
             cx.sla_include_tf,
 
-            initcap(regexp_extract(a._dbt_source_relation, r'kipp(\w+)_')) as region,
+            {{ extract_region("a") }} as region,
 
             case
                 when a.courses_credittype in ('ENG', 'ELA')
