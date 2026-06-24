@@ -14,4 +14,4 @@ left join
     {{ ref("int_focus__custom_field_options") }} as o
     on expected.source_class = o.source_class
     and expected.column_name = o.column_name
-where o.code is null
+where o.option_id is null

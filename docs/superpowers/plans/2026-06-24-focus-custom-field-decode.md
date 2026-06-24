@@ -30,15 +30,18 @@ from the design spec
 - **No staging changes.** All new files live under
   `src/dbt/focus/models/intermediate/`. The `stg_focus__*` models and their
   contracts are not touched.
-- **Decode join.** Join `int_focus__custom_field_options` on
-  `(source_class, column_name, code)`. The crosswalk itself joins
-  `select_options.source_id = custom_fields.id` **with**
+- **Decode join.** The entity stores the select-option **id**
+  (`select_options.id`), NOT its `code`. Join `int_focus__custom_field_options`
+  on `(source_class, column_name, option_id)` where `option_id` is the stored
+  value. The crosswalk exposes `option_id = cast(select_options.id as string)`
+  and joins `select_options.source_id = custom_fields.id` **with**
   `select_options.source_class = 'CustomField'`. Never match the entity class
-  against `select_options.source_class`.
-- **Storage formats.** `select` = bare code (string after cast). `multiple` =
-  JSON-array string (`["2795"]`) — parse with `json_value_array`, explode, map
-  each element, re-aggregate to `array<string>`. The only in-scope `multiple`
-  field is `users.education`.
+  against `select_options.source_class`. (`code` is the Focus import/export
+  value and `label` the human name; decode returns `label`.)
+- **Storage formats.** `select` = a single option id (int; cast to string for
+  the unpivot). `multiple` = JSON-array string of option ids (`["2795"]`) —
+  parse with `json_value_array`, explode, map each id to its label, re-aggregate
+  to `array<string>`. The only in-scope `multiple` field is `users.education`.
 - **`column_name` join keys.** The catalog stores `column_name` UPPERCASE
   (`CUSTOM_FIELD_3`); the crosswalk lowercases it. All decode joins use
   lowercase literals (e.g. `'custom_100000004'`), which grep back to the staging
@@ -50,8 +53,8 @@ from the design spec
   wide-to-long log model = `int_focus__custom_field_log__unpivot`; the crosswalk
   = `int_focus__custom_field_options`.
 - **Tests.** Every intermediate model needs a uniqueness test (repo convention).
-  Crosswalk grain `(source_class, column_name, code)` at `severity: error`. Each
-  pivot: PK `unique` + `not_null`. Log: `unique_combination_of_columns` on
+  Crosswalk grain `option_id` (`unique` at `severity: error`). Each pivot: PK
+  `unique` + `not_null`. Log: `unique_combination_of_columns` on
   `(log_entry_id, slot_column_name)`.
 - **Descriptions.** Every new model and every column needs a `description:` in
   `properties/`.
@@ -141,9 +144,11 @@ touched.
 - Consumes: `stg_focus__custom_fields` (`id`, `source_class`, `column_name`),
   `stg_focus__custom_field_select_options` (`source_id`, `source_class`, `code`,
   `label`).
-- Produces: a table with columns `source_class string`, `column_name string`
-  (lowercased), `code string`, `label string`. Grain
-  `(source_class, column_name, code)`. Consumed by every `__pivot` model.
+- Produces: a table with columns `option_id string` (the stored select-option id
+  — the decode join key), `source_class string`, `column_name string`
+  (lowercased), `code string`, `label string`. Grain `option_id` (globally
+  unique). Consumed by every `__pivot` model, which joins
+  `entity_value = option_id`.
 
 - [ ] **Step 1: Write the failing guard test**
 
@@ -164,7 +169,7 @@ from expected
 left join {{ ref("int_focus__custom_field_options") }} as o
     on o.source_class = expected.source_class
     and o.column_name = expected.column_name
-where o.code is null
+where o.option_id is null
 ```
 
 - [ ] **Step 2: Run it to verify it fails**
@@ -188,6 +193,7 @@ with
 
     opt as (
         select
+            cast(id as string) as option_id,
             source_id,
             code,
             label,
@@ -196,6 +202,7 @@ with
     )
 
 select
+    opt.option_id,
     cf.source_class,
     cf.column_name,
     opt.code,
@@ -212,24 +219,27 @@ inner join cf on opt.source_id = cf.id
 models:
   - name: int_focus__custom_field_options
     description: >-
-      Code-to-label crosswalk for Focus select/multiple custom fields. Joins the
-      custom-field catalog to its stored select options on
-      select_options.source_id = custom_fields.id with source_class
-      'CustomField' (the owner-type literal, never the entity class). One row
-      per field option; inactive options are retained so historical stored codes
-      still decode.
+      Crosswalk for Focus select/multiple custom fields, keyed by option_id (the
+      value the entity stores). Joins the custom-field catalog to its stored
+      select options on select_options.source_id = custom_fields.id with
+      source_class 'CustomField' (the owner-type literal, never the entity
+      class). One row per option; inactive options are retained so historical
+      stored ids still decode. label is the human name; code is the Focus
+      import/export value.
     config:
       materialized: table
-    data_tests:
-      - dbt_utils.unique_combination_of_columns:
-          arguments:
-            combination_of_columns:
-              - source_class
-              - column_name
-              - code
-          config:
-            severity: error
     columns:
+      - name: option_id
+        description: >-
+          Stored select-option id — the value persisted on the entity record and
+          the decode join key.
+        data_tests:
+          - unique:
+              config:
+                severity: error
+          - not_null:
+              config:
+                severity: error
       - name: source_class
         description: Owning entity class of the custom field (e.g. SISStudent).
         data_tests:
@@ -244,17 +254,10 @@ models:
               config:
                 severity: error
       - name: code
-        description: Stored option code persisted on the entity record.
-        data_tests:
-          - not_null:
-              config:
-                severity: error
+        description:
+          Focus import/export code for the option (not the stored value).
       - name: label
-        description: Human-readable label for the option code.
-        data_tests:
-          - not_null:
-              config:
-                severity: error
+        description: Human-readable label for the option.
 ```
 
 - [ ] **Step 5: Clarify the decode join in `src/dbt/focus/CLAUDE.md`**
@@ -263,17 +266,14 @@ In the "Focus field value codes" section, after the sentence ending "`label` is
 the human name.", add:
 
 ```text
-The join is `source_id` only — also filter `custom_field_select_options.source_class = 'CustomField'` (or `'CustomFieldLogColumn'` for log-column slots) so the shared `source_id` space doesn't collide across owner types. `source_class` on the options table is the owner-type literal, never the entity class (`SISSchool`, etc.); matching the entity class returns zero rows.
+The join is `source_id` only — also filter `custom_field_select_options.source_class = 'CustomField'` (or `'CustomFieldLogColumn'` for log-column slots) so the shared `source_id` space doesn't collide across owner types. `source_class` on the options table is the owner-type literal, never the entity class (`SISSchool`, etc.); matching the entity class returns zero rows. To DECODE a stored entity value: the entity stores the select-option `id` (`custom_field_select_options.id`), NOT its `code` — join the stored value to `id` and read `label`. (`code` is the Focus import/export value, used for the Finalsite→Focus direction.)
 ```
 
 - [ ] **Step 6: Build and run tests against real data**
 
 Run: `dbtb int_focus__custom_field_options` Expected: PASS — model builds; the
-`unique_combination_of_columns` test and the `known_fields` guard pass. If the
-uniqueness test fails on `(source_class, column_name, code)`, wrap `opt`
-selection in
-`dbt_utils.deduplicate(partition_by="source_id, code", order_by="updated_at desc")`
-(add `updated_at` to the `opt` select), then rebuild.
+`unique` test on `option_id` and the `known_fields` guard pass. `option_id` is
+the select-option PK (globally unique, non-null), so no dedupe is needed.
 
 - [ ] **Step 7: Spot-check decode correctness**
 
@@ -281,13 +281,13 @@ Run via BigQuery MCP (`mcp__bigquery__execute_sql`), substituting your dev
 schema:
 
 ```sql
-select code, label
+select option_id, code, label
 from `teamster-332318`.<your_dev_schema>.int_focus__custom_field_options
 where source_class = 'SISSchool' and column_name = 'custom_100000004'
-order by code
+order by option_id
 ```
 
-Expected: 5 rows, e.g. `E` → `E - Elementary`, `H` → `H - High`.
+Expected: 5 rows mapping `option_id` (e.g. `5538`) → `label` (`E - Elementary`).
 
 - [ ] **Step 8: Lint and commit**
 
@@ -351,9 +351,9 @@ with
     ),
 
     unpivoted as (
-        select student_id, column_name, code
+        select student_id, column_name, option_id
         from encoded unpivot (
-            code for column_name in (
+            option_id for column_name in (
                 custom_100000105,
                 custom_100000104,
                 custom_100000102,
@@ -375,7 +375,7 @@ with
         from unpivoted
         left join {{ ref("int_focus__custom_field_options") }} as options
             on unpivoted.column_name = options.column_name
-            and unpivoted.code = options.code
+            and unpivoted.option_id = options.option_id
             and options.source_class = 'SISStudent'
     )
 
@@ -531,9 +531,9 @@ with
     ),
 
     unpivoted as (
-        select id, column_name, code
+        select id, column_name, option_id
         from encoded unpivot (
-            code for column_name in (
+            option_id for column_name in (
                 custom_100000004, custom_200000326, custom_50000002
             )
         )
@@ -547,7 +547,7 @@ with
         from unpivoted
         left join {{ ref("int_focus__custom_field_options") }} as options
             on unpivoted.column_name = options.column_name
-            and unpivoted.code = options.code
+            and unpivoted.option_id = options.option_id
             and options.source_class = 'SISSchool'
     )
 
@@ -649,9 +649,9 @@ with
     ),
 
     unpivoted as (
-        select id, column_name, code
+        select id, column_name, option_id
         from encoded unpivot (
-            code for column_name in (
+            option_id for column_name in (
                 custom_1, custom_2, custom_3, custom_4, custom_6
             )
         )
@@ -665,7 +665,7 @@ with
         from unpivoted
         left join {{ ref("int_focus__custom_field_options") }} as options
             on unpivoted.column_name = options.column_name
-            and unpivoted.code = options.code
+            and unpivoted.option_id = options.option_id
             and options.source_class = 'StudentEnrollment'
     )
 
@@ -772,8 +772,8 @@ with
     ),
 
     unpivoted as (
-        select staff_id, column_name, code
-        from encoded unpivot (code for column_name in (custom_319000004))
+        select staff_id, column_name, option_id
+        from encoded unpivot (option_id for column_name in (custom_319000004))
     ),
 
     decoded as (
@@ -784,7 +784,7 @@ with
         from unpivoted
         left join {{ ref("int_focus__custom_field_options") }} as options
             on unpivoted.column_name = options.column_name
-            and unpivoted.code = options.code
+            and unpivoted.option_id = options.option_id
             and options.source_class = 'FocusUser'
     ),
 
@@ -797,18 +797,18 @@ with
         )
     ),
 
-    -- multiple: education is a JSON-array string like '["2795"]'; explode, map
-    -- each element, re-aggregate. CTE form avoids a correlated subquery.
+    -- multiple: education is a JSON array of option ids like '["2795"]'; explode,
+    -- map each id to its label, re-aggregate. CTE form avoids a correlated subquery.
     education as (
         select
             users.staff_id,
             array_agg(options.label ignore nulls order by options.label)
                 as education_label,
         from {{ ref("stg_focus__users") }} as users
-        cross join unnest(json_value_array(users.education)) as code
+        cross join unnest(json_value_array(users.education)) as element_id
         left join {{ ref("int_focus__custom_field_options") }} as options
-            on options.column_name = 'custom_2'
-            and options.code = code
+            on element_id = options.option_id
+            and options.column_name = 'custom_2'
             and options.source_class = 'FocusUser'
         group by users.staff_id
     )
@@ -924,9 +924,9 @@ with
     ),
 
     unpivoted as (
-        select course_period_id, column_name, code
+        select course_period_id, column_name, option_id
         from encoded unpivot (
-            code for column_name in (
+            option_id for column_name in (
                 custom_2,
                 custom_4,
                 custom_6,
@@ -948,7 +948,7 @@ with
         from unpivoted
         left join {{ ref("int_focus__custom_field_options") }} as options
             on unpivoted.column_name = options.column_name
-            and unpivoted.code = options.code
+            and unpivoted.option_id = options.option_id
             and options.source_class = 'CoursePeriod'
     )
 
@@ -1067,9 +1067,9 @@ with
     ),
 
     unpivoted as (
-        select course_id, column_name, code
+        select course_id, column_name, option_id
         from encoded unpivot (
-            code for column_name in (
+            option_id for column_name in (
                 custom_field_5, custom_field_6, custom_field_13
             )
         )
@@ -1083,7 +1083,7 @@ with
         from unpivoted
         left join {{ ref("int_focus__custom_field_options") }} as options
             on unpivoted.column_name = options.column_name
-            and unpivoted.code = options.code
+            and unpivoted.option_id = options.option_id
             and options.source_class = 'CourseCatalog'
     )
 
@@ -1181,8 +1181,8 @@ with
     ),
 
     unpivoted as (
-        select course_id, column_name, code
-        from encoded unpivot (code for column_name in (custom_4, custom_3))
+        select course_id, column_name, option_id
+        from encoded unpivot (option_id for column_name in (custom_4, custom_3))
     ),
 
     decoded as (
@@ -1193,7 +1193,7 @@ with
         from unpivoted
         left join {{ ref("int_focus__custom_field_options") }} as options
             on unpivoted.column_name = options.column_name
-            and unpivoted.code = options.code
+            and unpivoted.option_id = options.option_id
             and options.source_class = 'Course'
     )
 
@@ -1372,8 +1372,8 @@ with
 
     options as (
         select
+            cast(id as string) as option_id,
             source_id,
-            code,
             label,
         from {{ ref("stg_focus__custom_field_select_options") }}
         where source_class = 'CustomFieldLogColumn'
@@ -1402,7 +1402,7 @@ inner join columns_meta
 left join fields_meta on unpivoted.field_id = fields_meta.field_id
 left join options
     on columns_meta.log_column_id = options.source_id
-    and unpivoted.value = options.code
+    and unpivoted.value = options.option_id
 ```
 
 - [ ] **Step 2: Write the properties yml**

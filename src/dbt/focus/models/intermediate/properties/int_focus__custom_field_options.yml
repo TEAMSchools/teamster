@@ -1,24 +1,27 @@
 models:
   - name: int_focus__custom_field_options
     description: >-
-      Code-to-label crosswalk for Focus select/multiple custom fields. Joins the
-      custom-field catalog to its stored select options on
-      select_options.source_id = custom_fields.id with source_class
-      'CustomField' (the owner-type literal, never the entity class). One row
-      per field option; inactive options are retained so historical stored codes
-      still decode.
+      Crosswalk for Focus select/multiple custom fields, keyed by option_id (the
+      value the entity stores). Joins the custom-field catalog to its stored
+      select options on select_options.source_id = custom_fields.id with
+      source_class 'CustomField' (the owner-type literal, never the entity
+      class). One row per option; inactive options are retained so historical
+      stored ids still decode. label is the human name; code is the Focus
+      import/export value.
     config:
       materialized: table
-    data_tests:
-      - dbt_utils.unique_combination_of_columns:
-          arguments:
-            combination_of_columns:
-              - source_class
-              - column_name
-              - code
-          config:
-            severity: error
     columns:
+      - name: option_id
+        description: >-
+          Stored select-option id — the value persisted on the entity record and
+          the decode join key.
+        data_tests:
+          - unique:
+              config:
+                severity: error
+          - not_null:
+              config:
+                severity: error
       - name: source_class
         description: Owning entity class of the custom field (e.g. SISStudent).
         data_tests:
@@ -33,14 +36,7 @@ models:
               config:
                 severity: error
       - name: code
-        description: Stored option code persisted on the entity record.
-        data_tests:
-          - not_null:
-              config:
-                severity: error
+        description:
+          Focus import/export code for the option (not the stored value).
       - name: label
-        description: Human-readable label for the option code.
-        data_tests:
-          - not_null:
-              config:
-                severity: error
+        description: Human-readable label for the option.
