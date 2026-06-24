@@ -73,7 +73,6 @@ with
             {{ ref("stg_powerschool__s_nj_crs_x") }} as cx
             on a.courses_dcid = cx.coursesdcid
             and a._dbt_source_project = cx._dbt_source_project
-
     )
 
 select
