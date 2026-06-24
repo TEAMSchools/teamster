@@ -1,7 +1,30 @@
 with
+    category_grades as (
+        select
+            _dbt_source_relation,
+            yearid,
+            studentid,
+            sectionid,
+            storecode,
+            percent_grade as category_quarter_percent_grade,
+
+            round(
+                avg(percent_grade) over (
+                    partition by _dbt_source_relation, studentid, yearid, storecode
+                ),
+                2
+            ) as category_quarter_average_all_courses,
+
+        from {{ ref("int_powerschool__category_grades") }}
+        where
+            -- change 1991 to 1990 when ready, for cy
+            yearid = {{ var("current_academic_year") - 1990 }}
+            and termbin_start_date <= current_date('{{ var("local_timezone") }}')
+    ),
+
     quarter_course_grades as (
         select
-            _dbt_source_project,
+            _dbt_source_relation,
             academic_year,
             yearid,
             studentid,
@@ -10,6 +33,7 @@ with
             termbin_start_date,
             term_percent_grade_adjusted as quarter_course_percent_grade,
             term_grade_points as quarter_course_grade_points,
+            citizenship as quarter_conduct,
             comment_value as quarter_comment_value,
 
             'current_year' as grades_type,
@@ -19,7 +43,7 @@ with
         union all
 
         select
-            _dbt_source_project,
+            _dbt_source_relation,
             academic_year,
             yearid,
             studentid,
@@ -28,6 +52,7 @@ with
             null as termbin_start_date,
             `percent` as quarter_course_percent_grade,
             gpa_points as quarter_course_grade_points,
+            behavior as quarter_conduct,
             comment_value as quarter_comment_value,
 
             'last_year' as grades_type,
@@ -40,7 +65,7 @@ with
     )
 
 select
-    s._dbt_source_project,
+    s._dbt_source_relation,
     s.academic_year,
     s.academic_year_display,
     s.yearid,
@@ -93,9 +118,6 @@ select
     ce.is_ap_course,
 
     sec.teacher_tableau_username,
-    sec.manager_employee_number,
-    sec.manager_name,
-    sec.manager_tableau_username,
     sec.school_leader,
     sec.school_leader_tableau_username,
     sec.region_school_level,
@@ -104,10 +126,21 @@ select
     sec.quarter_start_date,
     sec.quarter_end_date,
     sec.is_current_term,
+    sec.is_quarter_end_date_range,
+    sec.week_start_date,
+    sec.week_end_date,
+    sec.week_start_monday,
+    sec.week_end_sunday,
+    sec.school_week_start_date_lead,
+    sec.quarter_end_date_insession,
+    sec.week_number_academic_year,
+    sec.week_number_quarter,
+    sec.is_current_week,
     sec.section_or_period,
 
     qg.quarter_course_percent_grade,
     qg.quarter_course_grade_points,
+    qg.quarter_conduct,
     qg.quarter_comment_value,
 
     'student_scaffold' as scaffold_name,
@@ -119,13 +152,26 @@ select
     null as notes,
 
     null as category_quarter_percent_grade,
+    null as category_quarter_average_all_courses,
 
+    -- gpa and ada tag
+    if(
+        s.school_level_alt != 'ES'
+        and s.ada_above_or_at_80
+        and qg.quarter_course_grade_points < 2.0,
+        true,
+        false
+    ) as qt_student_is_ada_80_plus_gpa_less_2,
+
+    -- quarter course grade above 100
     if(
         qg.quarter_course_percent_grade > 100, true, false
     ) as qt_percent_grade_greater_100,
 
+    -- course comments
     if(
         s.school_level_alt != 'ES'
+        and sec.is_quarter_end_date_range
         and qg.quarter_course_percent_grade < 70
         and qg.quarter_comment_value is null,
         true,
@@ -133,37 +179,102 @@ select
     ) as qt_grade_70_comment_missing,
 
     if(
-        sec.region_school_level in ('CamdenES', 'NewarkES', 'PatersonES')
+        sec.region_school_level = 'MiamiES'
+        and sec.is_quarter_end_date_range
+        and qg.quarter_comment_value is null,
+        true,
+        false
+    ) as qt_comment_missing,
+
+    if(
+        sec.region_school_level in ('CamdenES', 'NewarkES')
+        and sec.is_quarter_end_date_range
         and ce.courses_credittype in ('HR', 'MATH', 'ENG', 'RHET')
         and qg.quarter_comment_value is null,
         true,
         false
     ) as qt_es_comment_missing,
 
+    -- conduct codes
+    if(
+        s.region = 'Miami'
+        and s.grade_level != 0
+        and sec.is_quarter_end_date_range
+        and ce.courses_course_name != 'HR'
+        and qg.quarter_conduct is null,
+        true,
+        false
+    ) as qt_g1_g8_conduct_code_missing,
+
+    if(
+        s.region = 'Miami'
+        and s.grade_level != 0
+        and sec.is_quarter_end_date_range
+        and ce.courses_course_name != 'HR'
+        and qg.quarter_conduct not in ('A', 'B', 'C', 'D', 'E', 'F'),
+        true,
+        false
+    ) as qt_g1_g8_conduct_code_incorrect,
+
+    if(
+        sec.region_school_level = 'MiamiES'
+        and s.grade_level = 0
+        and sec.is_quarter_end_date_range
+        and ce.courses_course_name = 'HR'
+        and qg.quarter_conduct is null,
+        true,
+        false
+    ) as qt_kg_conduct_code_missing,
+
+    if(
+        sec.region_school_level = 'MiamiES'
+        and s.grade_level = 0
+        and sec.is_quarter_end_date_range
+        and ce.courses_course_name = 'HR'
+        and qg.quarter_conduct not in ('E', 'G', 'S', 'M'),
+        true,
+        false
+    ) as qt_kg_conduct_code_incorrect,
+
+    if(
+        sec.region_school_level = 'MiamiES'
+        and s.grade_level = 0
+        and sec.is_quarter_end_date_range
+        and ce.courses_course_name != 'HR'
+        and qg.quarter_conduct is not null,
+        true,
+        false
+    ) as qt_kg_conduct_code_not_hr,
+
+    null as w_grade_inflation,
+    null as qt_effort_grade_missing,
+    null as qt_formative_grade_missing,
+    null as qt_summative_grade_missing,
+
 from {{ ref("int_extracts__student_enrollments") }} as s
 inner join
     {{ ref("base_powerschool__course_enrollments") }} as ce
     on s.studentid = ce.cc_studentid
     and s.yearid = ce.terms_yearid
-    and s._dbt_source_project = ce._dbt_source_project
+    and {{ union_dataset_join_clause(left_alias="s", right_alias="ce") }}
     and not ce.is_dropped_section
     and ce.sections_no_of_students != 0
 inner join
     {{ ref("int_tableau__gradebook_audit_teacher_scaffold") }} as sec
     on ce.terms_yearid = sec.yearid
     and ce.cc_sectionid = sec.sectionid
-    and ce._dbt_source_project = sec._dbt_source_project
+    and {{ union_dataset_join_clause(left_alias="ce", right_alias="sec") }}
     and sec.scaffold_name = 'teacher_scaffold'
 left join
     quarter_course_grades as qg
     on ce.terms_yearid = qg.yearid
     and ce.cc_studentid = qg.studentid
     and ce.cc_sectionid = qg.sectionid
-    and ce._dbt_source_project = qg._dbt_source_project
+    and {{ union_dataset_join_clause(left_alias="ce", right_alias="qg") }}
     and sec.quarter = qg.storecode
-    and sec._dbt_source_project = qg._dbt_source_project
+    and {{ union_dataset_join_clause(left_alias="sec", right_alias="qg") }}
     and qg.termbin_start_date <= current_date('{{ var("local_timezone") }}')
-    and qg.grades_type = 'current_year'  /* summer toggle: see skill */
+    and qg.grades_type = 'current_year'
 where
     s.academic_year = {{ var("current_academic_year") }}
     and s.rn_year = 1
@@ -173,7 +284,7 @@ where
 union all
 
 select
-    s._dbt_source_project,
+    s._dbt_source_relation,
     s.academic_year,
     s.academic_year_display,
     s.yearid,
@@ -226,9 +337,6 @@ select
     ce.is_ap_course,
 
     sec.teacher_tableau_username,
-    sec.manager_employee_number,
-    sec.manager_name,
-    sec.manager_tableau_username,
     sec.school_leader,
     sec.school_leader_tableau_username,
     sec.region_school_level,
@@ -237,61 +345,123 @@ select
     sec.quarter_start_date,
     sec.quarter_end_date,
     sec.is_current_term,
+    sec.is_quarter_end_date_range,
+    sec.week_start_date,
+    sec.week_end_date,
+    sec.week_start_monday,
+    sec.week_end_sunday,
+    sec.school_week_start_date_lead,
+    sec.quarter_end_date_insession,
+    sec.week_number_academic_year,
+    sec.week_number_quarter,
+    sec.is_current_week,
     sec.section_or_period,
-
     qg.quarter_course_percent_grade,
     qg.quarter_course_grade_points,
+    qg.quarter_conduct,
     qg.quarter_comment_value,
 
     'student_category_scaffold' as scaffold_name,
 
-    sec.assignment_category_name,
-    sec.assignment_category_code,
-    sec.assignment_category_term,
-    sec.expectation,
-    sec.notes,
+    ge.assignment_category_name,
+    ge.assignment_category_code,
+    ge.assignment_category_term,
+    ge.expectation,
+    ge.notes,
 
-    cg.percent_grade as category_quarter_percent_grade,
+    cg.category_quarter_percent_grade,
+    cg.category_quarter_average_all_courses,
 
+    null as qt_student_is_ada_80_plus_gpa_less_2,
     null as qt_percent_grade_greater_100,
     null as qt_grade_70_comment_missing,
+    null as qt_comment_missing,
     null as qt_es_comment_missing,
+    null as qt_g1_g8_conduct_code_missing,
+    null as qt_g1_g8_conduct_code_incorrect,
+    null as qt_kg_conduct_code_missing,
+    null as qt_kg_conduct_code_incorrect,
+    null as qt_kg_conduct_code_not_hr,
+
+    if(
+        ge.assignment_category_code = 'W'
+        and s.school_level_alt != 'ES'
+        and abs(
+            round(cg.category_quarter_average_all_courses, 2)
+            - round(cg.category_quarter_percent_grade, 2)
+        )
+        >= 30,
+        true,
+        false
+    ) as w_grade_inflation,
+
+    if(
+        s.region = 'Miami'
+        and ge.assignment_category_code = 'W'
+        and cg.category_quarter_percent_grade is null
+        and sec.is_quarter_end_date_range,
+        true,
+        false
+    ) as qt_effort_grade_missing,
+
+    if(
+        s.region_school_level = 'MiamiES'
+        and ge.assignment_category_code = 'F'
+        and cg.category_quarter_percent_grade is null
+        and sec.is_quarter_end_date_range,
+        true,
+        false
+    ) as qt_formative_grade_missing,
+
+    if(
+        s.region_school_level = 'MiamiES'
+        and sec.credit_type not in ('ENG', 'MATH')
+        and ge.assignment_category_code = 'S'
+        and cg.category_quarter_percent_grade is null
+        and sec.is_quarter_end_date_range,
+        true,
+        false
+    ) as qt_summative_grade_missing,
 
 from {{ ref("int_extracts__student_enrollments") }} as s
 inner join
     {{ ref("base_powerschool__course_enrollments") }} as ce
     on s.studentid = ce.cc_studentid
     and s.yearid = ce.terms_yearid
-    and s._dbt_source_project = ce._dbt_source_project
+    and {{ union_dataset_join_clause(left_alias="s", right_alias="ce") }}
     and not ce.is_dropped_section
     and ce.sections_no_of_students != 0
 inner join
     {{ ref("int_tableau__gradebook_audit_teacher_scaffold") }} as sec
     on ce.terms_yearid = sec.yearid
     and ce.cc_sectionid = sec.sectionid
-    and ce._dbt_source_project = sec._dbt_source_project
+    and {{ union_dataset_join_clause(left_alias="ce", right_alias="sec") }}
     and sec.scaffold_name = 'teacher_category_scaffold'
+inner join
+    {{ ref("stg_google_sheets__gradebook_expectations_assignments") }} as ge
+    on sec.region = ge.region
+    and sec.school_level = ge.school_level
+    and sec.academic_year = ge.academic_year
+    and sec.quarter = ge.quarter
+    and sec.week_number_quarter = ge.week_number
+    and sec.assignment_category_code = ge.assignment_category_code
 left join
     quarter_course_grades as qg
     on ce.terms_yearid = qg.yearid
     and ce.cc_studentid = qg.studentid
     and ce.cc_sectionid = qg.sectionid
-    and ce._dbt_source_project = qg._dbt_source_project
+    and {{ union_dataset_join_clause(left_alias="ce", right_alias="qg") }}
     and sec.quarter = qg.storecode
-    and sec._dbt_source_project = qg._dbt_source_project
+    and {{ union_dataset_join_clause(left_alias="sec", right_alias="qg") }}
     and qg.termbin_start_date <= current_date('{{ var("local_timezone") }}')
-    and qg.grades_type = 'current_year'  /* summer toggle: see skill */
+    and qg.grades_type = 'current_year'
 left join
-    {{ ref("int_powerschool__category_grades") }} as cg
+    category_grades as cg
     on ce.terms_yearid = cg.yearid
     and ce.cc_studentid = cg.studentid
     and ce.cc_sectionid = cg.sectionid
-    and ce._dbt_source_project = cg._dbt_source_project
-    and sec.assignment_category_term = cg.storecode
-    and cg.termbin_start_date <= current_date('{{ var("local_timezone") }}')
-    /* summer toggle: change -1990 to -1991 after PS academic year rollover
-       in July until new-year grade data is available; revert when ready */
-    and cg.yearid = {{ var("current_academic_year") - 1990 }}
+    and {{ union_dataset_join_clause(left_alias="ce", right_alias="cg") }}
+    and ge.assignment_category_term = cg.storecode
 where
     s.academic_year = {{ var("current_academic_year") }}
     and s.rn_year = 1
