@@ -2,13 +2,15 @@ models:
   - name: dim_staff_cube_access
     description: >-
       Cube access-control resolution, one row per active primary staff member
-      keyed on staff_key. Resolves each person's current role to a location
-      scope, student/staff access levels, and per-field visibility scopes,
-      derived from the current primary work assignment and the Google Sheets
-      access crosswalks (department special-access override taking precedence
-      over the role mapping). Read by Cube's contextToGroups, matched on
-      google_email, to build the access group list; not exposed as a Cube.
-      Unresolved roles emit 'none' (deny), never NULL.
+      keyed on staff_key. Resolves each person's current role to the student
+      location scopes, the staff sensitive-field remit (location + department),
+      and the per-field sensitive scopes, derived from the current primary work
+      assignment and the Google Sheets access crosswalks (department
+      special-access override taking precedence over the role mapping). Read by
+      Cube's contextToGroups, matched on google_email, to build the access group
+      list and queryRewrite filters; not exposed as a Cube. The staff directory
+      and aggregate summary are open — these scopes only constrain sensitive
+      fields. Unresolved roles emit 'none' (deny), never NULL.
     columns:
       - name: staff_key
         data_type: string
@@ -32,6 +34,36 @@ models:
           Resolve-only lookup for the Cube JWT boundary; the active+primary
           Google email so a recycled address cannot resolve to a stale identity.
 
+      - name: region_key
+        data_type: string
+        description: >-
+          Viewer's region identity key (from dim_locations). cube.js filters on
+          this for a region location scope. NULL when location does not resolve.
+
+      - name: location_abbreviation
+        data_type: string
+        description: >-
+          Viewer's school abbreviation (from dim_locations). cube.js filters on
+          this for a school location scope. NULL when location does not resolve.
+
+      - name: department_group
+        data_type: string
+        description: >-
+          Viewer's functional department grouping from the rollup crosswalk;
+          cube.js filters on this for an own_group department scope.
+
+      - name: department_type
+        data_type: string
+        description: >-
+          instructional or non-instructional, from the department rollup
+          crosswalk; NULL until the data team fills it.
+
+      - name: entity
+        data_type: string
+        description: >-
+          KTAF or Region, derived from business_unit_name (KIPP TEAM and Family
+          Schools Inc. = KTAF, all others = Region).
+
       - name: job_function_code
         data_type: string
         description: Current ADP job function code (CHIEF, SL, TEACH, ...).
@@ -40,68 +72,105 @@ models:
         data_type: int64
         description: >-
           Org rank from the role crosswalk (1 = Chief, 6 = Teacher); drives the
-          below-rank branch of the detail gate. NULL when the role does not
-          resolve.
+          below-rank branch of reporting_chain_or_below_rank. NULL when the role
+          does not resolve.
 
-      - name: entity
+      - name: student_summary_location_scope
         data_type: string
-        description: >-
-          KTAF or Region, derived from business_unit_name (KIPP TEAM and Family
-          Schools Inc. = KTAF, all others = Region).
+        description: Student aggregate location breadth.
+        data_tests:
+          - accepted_values:
+              arguments:
+                values: [network, region, school, none]
 
-      - name: department_type
+      - name: student_detail_location_scope
         data_type: string
-        description: >-
-          instructional or non-instructional, from the department rollup
-          crosswalk; NULL until the data team fills it.
-
-      - name: department_group
-        data_type: string
-        description: >-
-          Functional department grouping from the rollup crosswalk; the scope
-          key for network_department_group / region_department_group scopes.
-
-      - name: student_access_level
-        data_type: string
-        description: Student data access — detail, summary, or none.
-
-      - name: staff_access_level
-        data_type: string
-        description: >-
-          Staff data access — detail, detail_below_rank, detail_reporting_chain,
-          or none.
+        description: Student row-level location breadth.
+        data_tests:
+          - accepted_values:
+              arguments:
+                values: [network, region, school, none]
 
       - name: student_pii_scope
         data_type: string
         description: Student PII field visibility — all or none.
+        data_tests:
+          - accepted_values:
+              arguments:
+                values: [all, none]
+
+      - name: staff_location_scope
+        data_type: string
+        description: >-
+          Location remit bounding the staff sensitive fields — network, region,
+          school, or none. Constrains rows only when a sensitive field is
+          queried.
+        data_tests:
+          - accepted_values:
+              arguments:
+                values: [network, region, school, none]
+
+      - name: staff_department_scope
+        data_type: string
+        description: >-
+          Department remit bounding the staff sensitive fields — all, own_group,
+          or none.
+        data_tests:
+          - accepted_values:
+              arguments:
+                values: [all, own_group, none]
 
       - name: staff_pii_scope
         data_type: string
         description: >-
-          Staff PII field visibility — all, reporting_chain, teaching_staff, or
-          none.
+          Staff PII field visibility — per-field sensitive scope enum (none,
+          all_in_scope, reporting_chain_or_below_rank, reporting_chain,
+          teaching_staff).
+        data_tests:
+          - accepted_values:
+              arguments:
+                values:
+                  - none
+                  - all_in_scope
+                  - reporting_chain_or_below_rank
+                  - reporting_chain
+                  - teaching_staff
 
       - name: staff_compensation_scope
         data_type: string
         description: Staff compensation field visibility (same vocabulary).
-
-      - name: staff_benefits_scope
-        data_type: string
-        description: Staff benefits field visibility (same vocabulary).
+        data_tests:
+          - accepted_values:
+              arguments:
+                values:
+                  - none
+                  - all_in_scope
+                  - reporting_chain_or_below_rank
+                  - reporting_chain
+                  - teaching_staff
 
       - name: staff_observations_scope
         data_type: string
         description: Staff observation field visibility (same vocabulary).
+        data_tests:
+          - accepted_values:
+              arguments:
+                values:
+                  - none
+                  - all_in_scope
+                  - reporting_chain_or_below_rank
+                  - reporting_chain
+                  - teaching_staff
 
-      - name: scope_key
+      - name: staff_benefits_scope
         data_type: string
-        description: >-
-          Location scope key — the 'network' sentinel, a region_key, a school
-          abbreviation, or 'none'. Never NULL.
-
-      - name: scope_level
-        data_type: string
-        description: >-
-          Location scope tier — network, region, school,
-          network_department_group, region_department_group, or none (deny).
-          Downgraded to none when a location-bound scope cannot resolve its key.
+        description: Staff benefits field visibility (same vocabulary).
+        data_tests:
+          - accepted_values:
+              arguments:
+                values:
+                  - none
+                  - all_in_scope
+                  - reporting_chain_or_below_rank
+                  - reporting_chain
+                  - teaching_staff

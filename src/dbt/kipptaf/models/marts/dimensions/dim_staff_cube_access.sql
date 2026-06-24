@@ -1,10 +1,14 @@
 {#-
   One row per active, primary staff member, keyed on staff_key. Resolves each
-  person's current role to the Cube access model: location scope, student/staff
-  access levels, and per-field visibility scopes. Read by Cube's contextToGroups
-  (by google_email) to build the access group list. Assembled intra-mart from
-  the current primary work assignment; mappings come from the Google Sheets
-  crosswalks. entity (KTAF/Region) is derived from business_unit_name. Rows that
+  person's current role to the Cube access model: the student location scopes,
+  the staff sensitive-field remit (location + department), and the per-field
+  sensitive scopes. Read by Cube's contextToGroups (by google_email) to build
+  the access group list and the queryRewrite filters; not exposed as a Cube.
+  Assembled intra-mart from the current primary work assignment; mappings come
+  from the Google Sheets crosswalks (department override wins over the role
+  mapping). entity (KTAF/Region) is derived from business_unit_name. The viewer
+  identity keys (region_key, location_abbreviation, department_group) are carried
+  so cube.js builds location/department filters from the scope level. Rows that
   resolve to no role emit 'none' (deny) rather than NULL.
 -#}
 with
@@ -97,26 +101,35 @@ with
         select
             e.staff_key,
             e.google_email,
-            e.job_function_code,
-            e.entity,
-            e.department_type,
-            e.department_group,
             e.region_key,
             e.location_abbreviation,
+            e.department_group,
+            e.department_type,
+            e.entity,
+            e.job_function_code,
 
             rl.job_function_level,
 
-            coalesce(ovr.scope_level, rl.scope_level, 'none') as scope_level,
-
             coalesce(
-                ovr.student_access_level, rl.student_access_level, 'none'
-            ) as student_access_level,
+                ovr.student_summary_location_scope,
+                rl.student_summary_location_scope,
+                'none'
+            ) as student_summary_location_scope,
             coalesce(
-                ovr.staff_access_level, rl.staff_access_level, 'none'
-            ) as staff_access_level,
+                ovr.student_detail_location_scope,
+                rl.student_detail_location_scope,
+                'none'
+            ) as student_detail_location_scope,
             coalesce(
                 ovr.student_pii_scope, rl.student_pii_scope, 'none'
             ) as student_pii_scope,
+
+            coalesce(
+                ovr.staff_location_scope, rl.staff_location_scope, 'none'
+            ) as staff_location_scope,
+            coalesce(
+                ovr.staff_department_scope, rl.staff_department_scope, 'none'
+            ) as staff_department_scope,
             coalesce(
                 ovr.staff_pii_scope, rl.staff_pii_scope, 'none'
             ) as staff_pii_scope,
@@ -124,11 +137,11 @@ with
                 ovr.staff_compensation_scope, rl.staff_compensation_scope, 'none'
             ) as staff_compensation_scope,
             coalesce(
-                ovr.staff_benefits_scope, rl.staff_benefits_scope, 'none'
-            ) as staff_benefits_scope,
-            coalesce(
                 ovr.staff_observations_scope, rl.staff_observations_scope, 'none'
             ) as staff_observations_scope,
+            coalesce(
+                ovr.staff_benefits_scope, rl.staff_benefits_scope, 'none'
+            ) as staff_benefits_scope,
         from enriched as e
         left join
             {{ ref("stg_google_sheets__people__cube_access_department_override") }}
@@ -139,43 +152,27 @@ with
             on e.job_function_code = rl.job_function_code
             and rl.entity in ('any', e.entity)
             and rl.department_type in ('any', e.department_type)
-    ),
-
-    scoped as (
-        select
-            *,
-
-            case
-                when scope_level in ('network', 'network_department_group')
-                then 'network'
-                when scope_level in ('region', 'region_department_group')
-                then region_key
-                when scope_level = 'school'
-                then location_abbreviation
-                else 'none'
-            end as scope_key_raw,
-        from matched
     )
 
 select
     staff_key,
     google_email,
+    region_key,
+    location_abbreviation,
+    department_group,
+    department_type,
+    entity,
     job_function_code,
     job_function_level,
-    entity,
-    department_type,
-    department_group,
 
-    student_access_level,
-    staff_access_level,
+    student_summary_location_scope,
+    student_detail_location_scope,
     student_pii_scope,
+
+    staff_location_scope,
+    staff_department_scope,
     staff_pii_scope,
     staff_compensation_scope,
-    staff_benefits_scope,
     staff_observations_scope,
-
-    coalesce(scope_key_raw, 'none') as scope_key,
-
-    -- downgrade to deny when a location-bound scope can't resolve its key
-    if(scope_key_raw is null, 'none', scope_level) as scope_level,
-from scoped
+    staff_benefits_scope,
+from matched
