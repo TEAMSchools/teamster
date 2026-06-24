@@ -49,5 +49,7 @@ models:
         description: Log entry last-update timestamp.
       - name: value_label
         description: >-
-          Decoded label for select-type slots; null for non-select slots (the
-          raw value carries the readable content).
+          Decoded label for select-type slots whose options are stored; null for
+          non-select slots and for option_query-backed select slots (e.g. the
+          Immunization "Vaccination" slot), where the raw value carries the
+          content.
