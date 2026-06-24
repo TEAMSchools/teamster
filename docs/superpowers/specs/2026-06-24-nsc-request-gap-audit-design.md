@@ -14,16 +14,24 @@ permanent audit model (candidate: `qa_kippadb__nsc_gaps`).
 
 ## Sources
 
-| Model                        | Role                                          | Key fields used                                                                                                             |
-| ---------------------------- | --------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------- |
-| `base_kippadb__contact`      | Alum universe                                 | `contact_id`, `contact_graduation_year`, `contact_advising_provider`, `actual_hs_graduation_date`, `expected_hs_graduation` |
-| `stg_nsc__student_tracker`   | Existing NSC pull records                     | `contact_id`, `record_found_y_n`                                                                                            |
-| `stg_kippadb__term`          | Salesforce postsecondary terms                | `student` (contact FK), `verified_by_nsc`, `term_end_date`, `nsc_enrollment_end`                                            |
-| `int_nsc__enrollment_stints` | Derived NSC stints (for completion flag only) | `contact_id`, `derived_status`                                                                                              |
+| Model                        | Role                                          | Key fields used                                                                                                                             |
+| ---------------------------- | --------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------- |
+| `int_kippadb__roster`        | Alum universe (KTC-tracked)                   | `contact_id`, `contact_graduation_year`, `contact_advising_provider`, `contact_actual_hs_graduation_date`, `contact_expected_hs_graduation` |
+| `stg_nsc__student_tracker`   | Existing NSC pull records                     | `contact_id`, `record_found_y_n`                                                                                                            |
+| `stg_kippadb__term`          | Salesforce postsecondary terms                | `student` (contact FK), `verified_by_nsc`, `term_end_date`, `nsc_enrollment_end`                                                            |
+| `int_nsc__enrollment_stints` | Derived NSC stints (for completion flag only) | `contact_id`, `derived_status`                                                                                                              |
 
 Note `stg_kippadb__term.student` is the contact id FK (joins to
-`base_kippadb__contact.contact_id`). `stg_nsc__student_tracker.contact_id` is
-the canonical mixed-case Salesforce contact id recovered in staging.
+`int_kippadb__roster.contact_id`). `stg_nsc__student_tracker.contact_id` is the
+canonical mixed-case Salesforce contact id recovered in staging.
+
+`int_kippadb__roster` is grained one row per `student_number` (its `unique` key)
+— the KTC-tracked roster (`ktc_status is not null`, grades 8–12, most recent
+undergrad enrollment), with `contact_*` fields left-joined from
+`base_kippadb__contact`. The audit aggregates the roster to one row per
+`contact_id`, dropping rows with a NULL `contact_id` (non-alumni / no Salesforce
+contact). Sourcing the roster instead of raw `base_kippadb__contact` scopes the
+universe to KTC-tracked alumni from the start.
 
 ## Universe
 
@@ -69,7 +77,7 @@ The end-date anchor prefers `term_end_date` and falls back to
 | `forward_gap`     | has `verified_by_nsc` terms, latest verified term has ended     | `latest_verified_term_end` |
 
 HS graduation date =
-`coalesce(actual_hs_graduation_date, expected_hs_graduation)`.
+`coalesce(contact_actual_hs_graduation_date, contact_expected_hs_graduation)`.
 
 An alum matches exactly one `gap_type`. An alum with verified terms whose latest
 term has **not** ended (currently enrolled per the verified record) is not a gap
