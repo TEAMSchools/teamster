@@ -46,7 +46,6 @@ select
     cast(null as string) as include_in_class_rank,
     cast(null as int64) as fl_days_present,
     cast(null as int64) as fl_days_absent,
-    cast(null as int64) as fl_days_absent_not_disc,
 from {{ ref("int_finalsite__enrollment_lifecycle") }} as l
 left join
     {{ ref("int_finalsite__contact_id_attributes") }} as ida

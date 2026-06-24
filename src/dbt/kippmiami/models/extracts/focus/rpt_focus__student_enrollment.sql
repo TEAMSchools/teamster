@@ -27,5 +27,4 @@ select
     include_in_class_rank,
     fl_days_present,
     fl_days_absent,
-    fl_days_absent_not_disc,
 from {{ source("kipptaf_extracts", "rpt_focus__student_enrollment") }}

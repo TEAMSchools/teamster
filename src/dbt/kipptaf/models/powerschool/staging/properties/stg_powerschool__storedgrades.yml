@@ -7,7 +7,7 @@ models:
       - dbt_utils.unique_combination_of_columns:
           arguments:
             combination_of_columns:
-              - _dbt_source_relation
+              - _dbt_source_project
               - dcid
           config:
             severity: error
@@ -146,3 +146,6 @@ models:
         data_type: string
       - name: is_transfer_grade
         data_type: boolean
+      - name: _dbt_source_project
+        data_type: string
+        description: District code location derived from `_dbt_source_relation`.

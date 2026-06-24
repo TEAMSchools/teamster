@@ -11,5 +11,4 @@ select
     mail_address2,
     mail_city,
     mail_state,
-    mail_zipcode,
 from {{ source("kipptaf_extracts", "rpt_focus__addresses") }}

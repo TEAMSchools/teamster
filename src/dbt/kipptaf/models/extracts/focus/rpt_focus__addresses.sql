@@ -14,7 +14,6 @@ select
     cast(null as string) as mail_address2,
     cast(null as string) as mail_city,
     cast(null as string) as mail_state,
-    cast(null as string) as mail_zipcode,
 from {{ ref("stg_finalsite__contacts") }} as c
 inner join
     {{ ref("int_finalsite__enrollment_lifecycle") }} as l

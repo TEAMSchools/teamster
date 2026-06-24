@@ -61,7 +61,6 @@ select
     cast(null as string) as contact7_value,
     cast(null as string) as contact7_blocked,
     cast(null as string) as contact7_unlisted,
-    cast(null as string) as contact7_callout,
 from {{ ref("stg_finalsite__contact_relationships") }} as rel
 inner join
     {{ ref("stg_finalsite__contacts") }} as g on rel.rel_id = g.finalsite_enrollment_id

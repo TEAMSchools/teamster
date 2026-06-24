@@ -49,5 +49,4 @@ select
     contact7_value,
     contact7_blocked,
     contact7_unlisted,
-    contact7_callout,
 from {{ source("kipptaf_extracts", "rpt_focus__contacts") }}

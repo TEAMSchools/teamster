@@ -378,6 +378,14 @@ spec:
 apiVersion: onepassword.com/v1
 kind: OnePasswordItem
 metadata:
+  name: op-focus-sftp-kippmiami
+  namespace: dagster-cloud
+spec:
+  itemPath: vaults/Data Team/items/Focus SFTP
+---
+apiVersion: onepassword.com/v1
+kind: OnePasswordItem
+metadata:
   name: op-finalsite-api-kippmiami
   namespace: dagster-cloud
 spec:

@@ -73,7 +73,6 @@ select
     cast(null as string) as dt_home_lang_survey,
     cast(null as string) as casas_track,
     cast(null as string) as lcp_cont_stdt,
-    cast(null as string) as tide_access_code,
 from {{ ref("stg_finalsite__contacts") }} as c
 inner join
     {{ ref("int_finalsite__enrollment_lifecycle") }} as l
