@@ -23,4 +23,4 @@ models:
       - name: education_label
         description: >-
           Decoded labels for the education multiple-select field, as an array
-          (the stored value is a JSON array of option codes).
+          (the stored value is a JSON array of option ids).

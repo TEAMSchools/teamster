@@ -20,6 +20,10 @@ models:
     columns:
       - name: log_entry_id
         description: Focus custom_field_log_entries id.
+        data_tests:
+          - not_null:
+              config:
+                severity: error
       - name: student_id
         description: Owning student id (custom_field_log_entries.source_id).
       - name: school_id
@@ -30,6 +34,10 @@ models:
         description: Log column id for the slot (custom_field_log_columns.id).
       - name: slot_column_name
         description: Lowercased slot storage column (log_fieldN).
+        data_tests:
+          - not_null:
+              config:
+                severity: error
       - name: slot_type
         description: Input type of the slot (select, checkbox, text, date).
       - name: slot_title
