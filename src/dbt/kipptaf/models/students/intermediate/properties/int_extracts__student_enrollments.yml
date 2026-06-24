@@ -911,13 +911,6 @@ models:
             source_system: PowerSchool
             source_model: stg_powerschool__students
             source_column: state
-      - name: is_pre_year_withdrawal
-        data_type: boolean
-        description: >
-          True when the student's exitdate falls before August 1st of the
-          academic year — a registration that was cancelled before the school
-          year began (summer melt or pre-year transfer). These stints have no
-          course enrollments and should be excluded from course-level reporting.
       - name: ada_above_or_at_80
         data_type: boolean
         description:
