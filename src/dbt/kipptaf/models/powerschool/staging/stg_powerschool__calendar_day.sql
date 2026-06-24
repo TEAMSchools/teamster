@@ -14,7 +14,6 @@ with
         }}
     )
 
--- trunk-ignore(sqlfluff/AM04): union_relations expands at compile time
 select
     * except (date_value),
 

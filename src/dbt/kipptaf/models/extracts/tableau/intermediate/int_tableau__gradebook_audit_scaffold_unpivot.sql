@@ -189,6 +189,15 @@ select
     f.audit_category,
     f.code_type,
 
+    max(audit_flag_value) over (
+        partition by
+            u._dbt_source_project,
+            u.academic_year,
+            u.schoolid,
+            u.teacher_number,
+            u.`quarter`
+    ) as is_healthy_gradebook,
+
 from
     flags_combined unpivot (
         audit_flag_value for audit_flag_name in (

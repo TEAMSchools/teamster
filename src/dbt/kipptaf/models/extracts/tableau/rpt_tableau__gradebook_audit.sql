@@ -1,18 +1,3 @@
-with
-    gradebook_health_status_calc as (
-        select
-            _dbt_source_project,
-            academic_year,
-            schoolid,
-            sections_dcid,
-            `quarter`,
-
-            max(audit_flag_value) as is_healthy_gradebook,
-
-        from {{ ref("int_tableau__gradebook_audit_scaffold_unpivot") }}
-        group by _dbt_source_project, academic_year, schoolid, sections_dcid, `quarter`
-    )
-
 select
     s._dbt_source_project,
     s.academic_year,
@@ -76,13 +61,13 @@ select
 
 from {{ ref("int_extracts__course_schedule_by_term") }} as s
 inner join
-    gradebook_health_status_calc as c
-    on s._dbt_source_project = c._dbt_source_project
-    and s.academic_year = c.academic_year
-    and s.schoolid = c.schoolid
-    and s.sections_dcid = c.sections_dcid
-    and s.`quarter` = c.`quarter`
-    and c.is_healthy_gradebook
+    {{ ref("int_tableau__gradebook_audit_scaffold_unpivot") }} as f
+    on s._dbt_source_project = f._dbt_source_project
+    and s.academic_year = f.academic_year
+    and s.schoolid = f.schoolid
+    and s.teacher_number = f.teacher_number
+    and s.`quarter` = f.`quarter`
+    and not f.is_healthy_gradebook
 where
     s.academic_year = {{ var("current_academic_year") }}
     and s.school_level_alt != 'ES'
@@ -153,20 +138,13 @@ select
 
 from {{ ref("int_extracts__course_schedule_by_term") }} as s
 inner join
-    gradebook_health_status_calc as c
-    on s._dbt_source_project = c._dbt_source_project
-    and s.academic_year = c.academic_year
-    and s.schoolid = c.schoolid
-    and s.sections_dcid = c.sections_dcid
-    and s.`quarter` = c.`quarter`
-    and not c.is_healthy_gradebook
-left join
     {{ ref("int_tableau__gradebook_audit_scaffold_unpivot") }} as f
     on s._dbt_source_project = f._dbt_source_project
     and s.academic_year = f.academic_year
     and s.schoolid = f.schoolid
-    and s.sections_dcid = f.sections_dcid
+    and s.teacher_number = f.teacher_number
     and s.`quarter` = f.`quarter`
+    and not f.is_healthy_gradebook
 where
     s.academic_year = {{ var("current_academic_year") }}
     and s.school_level_alt != 'ES'
