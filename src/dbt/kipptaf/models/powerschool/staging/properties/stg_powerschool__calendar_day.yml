@@ -7,3 +7,7 @@ models:
               date_value is null or date_value >= '2000-01-01'
           config:
             severity: warn
+    columns:
+      - name: _dbt_source_project
+        data_type: string
+        description: District code location derived from `_dbt_source_relation`.

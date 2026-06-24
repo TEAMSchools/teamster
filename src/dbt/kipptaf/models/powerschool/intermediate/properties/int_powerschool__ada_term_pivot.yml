@@ -96,3 +96,4 @@ models:
           Derived from ada_year_q1, ada_year_q2, ada_year_q3, ada_year_q4.
       - name: _dbt_source_project
         data_type: string
+        description: District code location derived from `_dbt_source_relation`.

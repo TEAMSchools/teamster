@@ -418,7 +418,7 @@ left join
     and co.academic_year = dli.create_ts_academic_year
     and extract(date from dli.create_ts_date)
     between co.week_start_monday and co.week_end_sunday
-    and {{ union_dataset_join_clause(left_alias="co", right_alias="dli") }}
+    and co._dbt_source_project = dli._dbt_source_project
 left join
     ssds_period as s
     on dli.create_ts_date between s.period_start_date and s.period_end_date

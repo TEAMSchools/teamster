@@ -29,7 +29,7 @@ with
 select
     *,
 
-    regexp_extract(_dbt_source_relation, r'(kipp\w+)_') as _dbt_source_project,
+    {{ extract_code_location("union_relations") }} as _dbt_source_project,
     yearid + 1990 as academic_year,
 
 from union_relations

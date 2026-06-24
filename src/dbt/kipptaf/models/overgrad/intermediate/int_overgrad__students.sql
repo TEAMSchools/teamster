@@ -39,7 +39,7 @@ select
     c.second_choice_school,
     c.third_choice_school,
 
-    regexp_extract(ur._dbt_source_relation, r'(kipp\w+)_') as _dbt_source_project,
+    {{ extract_code_location("ur") }} as _dbt_source_project,
 
 from union_relations as ur
 left join choices_pivot as c on ur.id = c.student__id
