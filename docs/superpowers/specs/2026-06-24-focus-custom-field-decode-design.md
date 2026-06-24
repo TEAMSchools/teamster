@@ -22,13 +22,15 @@ there is no prod-materialization gate.
 These reframe the issue and `focus/CLAUDE.md`, and are load-bearing for the
 design:
 
-1. **The documented decode join is wrong.**
-   `custom_field_select_options.source_class` is the literal polymorphic value
-   `CustomField` (for entity fields) or `CustomFieldLogColumn` (for log-column
-   slots) — **not** the entity class (`SISSchool`, etc.). Joining on the entity
-   class returns zero matches. The correct join is
-   `select_options.source_id = custom_fields.id` alone, with
-   `select_options.source_class = 'CustomField'`.
+1. **The decode join needs the owner-type filter.** The documented join
+   (`custom_field_select_options.source_id = custom_fields.id`) is correct but
+   under-specified: `select_options.source_class` is a polymorphic owner type —
+   the literal `CustomField` for entity fields, `CustomFieldLogColumn` for
+   log-column slots — and the same numeric `source_id` occurs under both. Add
+   `select_options.source_class = 'CustomField'` (or `'CustomFieldLogColumn'`
+   for log slots) so the two owner types don't collide. Do **not** match the
+   entity class (`SISSchool`, etc.) — `source_class` is never the entity class,
+   so that filter returns zero rows (the trap that surfaced this).
 
 2. **`select` and `multiple` store differently.** `select` stores a **bare
    code** (`5539`, `E`). `multiple` stores a **JSON-array string** (`["2795"]`).
@@ -136,7 +138,7 @@ Pattern, shown for `int_focus__schools__pivot`:
 with
     encoded as (
         select
-            school_id,
+            id,
             cast(school_level as string) as custom_100000004,
             cast(school_type as string) as custom_200000326,
             cast(technical_center as string) as custom_50000002,
@@ -144,7 +146,7 @@ with
     ),
 
     unpivoted as (
-        select school_id, column_name, code
+        select id, column_name, code
         from encoded unpivot (
             code for column_name in (
                 custom_100000004, custom_200000326, custom_50000002
@@ -153,7 +155,7 @@ with
     ),
 
     decoded as (
-        select unpivoted.school_id, unpivoted.column_name, options.label
+        select unpivoted.id, unpivoted.column_name, options.label
         from unpivoted
         left join {{ ref("int_focus__custom_field_options") }} as options
             on options.source_class = 'SISSchool'
@@ -309,11 +311,11 @@ type each slot, then decode `select`-type slots via
 - **Descriptions.** Every new model and every column gets a `description:` in
   `properties/`. Describe decoded columns by their logic (decoded label for the
   named field). Data/column semantics go in descriptions, not CLAUDE.md.
-- **Docs fix.** Correct the "Focus field value codes" section of
-  `src/dbt/focus/CLAUDE.md`: the join is
-  `select_options.source_id = custom_fields.id` with
-  `select_options.source_class = 'CustomField'` (or `'CustomFieldLogColumn'` for
-  log slots), **not** a match on the entity `source_class`.
+- **Docs clarification.** Augment the "Focus field value codes" section of
+  `src/dbt/focus/CLAUDE.md`: keep `select_options.source_id = custom_fields.id`,
+  but add `select_options.source_class = 'CustomField'` (or
+  `'CustomFieldLogColumn'` for log slots) to prevent `source_id` collisions
+  across owner types, and note that `source_class` is never the entity class.
 
 ## Out of scope / follow-ups
 
