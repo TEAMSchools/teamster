@@ -24,7 +24,6 @@ with
 
             if(start_date < date '2000-01-01', null, start_date) as start_date,
             if(end_date < date '2000-01-01', null, end_date) as end_date,
-
         from union_relations
     )
 

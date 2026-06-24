@@ -1,6 +1,5 @@
 with
     enrollment_union as (
-
         select
             e.id as enrollment_id,
             e.student,
