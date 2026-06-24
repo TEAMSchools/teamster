@@ -135,7 +135,7 @@ with
             and co.academic_year = dli.create_ts_academic_year
             and extract(date from dli.create_ts_date)
             between co.week_start_monday and co.week_end_sunday
-            and {{ union_dataset_join_clause(left_alias="co", right_alias="dli") }}
+            and co._dbt_source_project = dli._dbt_source_project
         group by co.student_number, co.academic_year, co.schoolid
     ),
 
@@ -165,7 +165,7 @@ with
         -- model; every column is functionally determined by the partition key,
         -- not a mask for upstream duplicates
         select distinct
-            _dbt_source_relation,
+            _dbt_source_project,
             student_number,
             academic_year,
             week_number_academic_year,
@@ -209,7 +209,7 @@ with
             on sw.student_number = tw.student_number
             and sw.academic_year = tw.academic_year
             and sw.week_number_academic_year = tw.week_number_academic_year
-            and {{ union_dataset_join_clause(left_alias="sw", right_alias="tw") }}
+            and sw._dbt_source_project = tw._dbt_source_project
     )
 
 select
