@@ -87,7 +87,7 @@ Nine intermediate models:
 | `int_focus__course_periods__pivot`     | Decoded labels for CoursePeriod select fields         |
 | `int_focus__master_courses__pivot`     | Decoded labels for CourseCatalog select fields        |
 | `int_focus__courses__pivot`            | Decoded labels for Course select fields               |
-| `int_focus__custom_field_log`          | Long reshape of the two populated log-type fields     |
+| `int_focus__custom_field_log__unpivot` | Wide-to-long reshape of the two log-type fields       |
 
 The existing `int_focus__student_enrollment` (title enrichment) is unchanged;
 the new `int_focus__student_enrollment__pivot` is a separate decode-only model.
@@ -264,7 +264,7 @@ Excluded (in-scope entity, but not decodable): `FocusUser`
 `profile_on_non_production_sites` (`custom_l790`, field 790) —
 `option_query`-only.
 
-### `int_focus__custom_field_log` (long reshape)
+### `int_focus__custom_field_log__unpivot` (wide-to-long reshape)
 
 `UNPIVOT` `log_field1..log_field30` (nulls dropped), inner-join
 `stg_focus__custom_field_log_columns` on `(field_id, LOG_FIELDn)` to label and
@@ -287,18 +287,25 @@ type each slot, then decode `select`-type slots via
 
 ## Cross-cutting
 
-- **Naming.** Decode models use the `int_focus__<entity>__pivot` convention.
-  Label columns use the `<slug>_label` suffix.
+- **Naming.** Decode-to-wide models use the `int_focus__<entity>__pivot`
+  convention with `<slug>_label` columns; the wide-to-long log model uses the
+  `__unpivot` suffix.
 - **Tests.** Uniqueness test on every model (intermediate-layer requirement):
   entity PK on each `__pivot`, `(source_class, column_name, code)` on the
   crosswalk, `(log_entry_id, slot_column_name)` on the log model. Tests are
   warn-level unless a stronger signal is warranted; the crosswalk grain is
   `error` (a duplicate there silently corrupts every decode).
-- **PII.** Student- and staff-level pivot models and the log model carry PII via
-  their entity keys and some decoded values (e.g. `sex`, `race_*`, `language`,
-  residence/birth-linked attributes). Tag `config.meta.contains_pii: true`
-  consistent with the existing Focus staging precedent; confirm direct-only vs
-  direct+indirect scope with the field owner before finalizing tags.
+- **PII.** Every pivot model and the log model is keyed by a student/staff
+  identifier (a FERPA direct identifier), so each carries
+  `config.meta.contains_pii: true` at the model level regardless of which
+  columns are tagged. Decoded attributes — `sex`, `race_*`, `language`,
+  residence/birth-linked values — are FERPA _indirect_ identifiers (PII under
+  the "linked or linkable" standard, which applies here because they sit
+  alongside the student key). FERPA-aligned tagging is therefore **broad** (tag
+  these columns). The existing Focus staging precedent is narrower (omits
+  gender/race/IDs); reconcile the two and confirm direct-only vs direct+indirect
+  scope with People Operations before finalizing tags — this is a compliance
+  call, not settled by this spec.
 - **Descriptions.** Every new model and every column gets a `description:` in
   `properties/`. Describe decoded columns by their logic (decoded label for the
   named field). Data/column semantics go in descriptions, not CLAUDE.md.
