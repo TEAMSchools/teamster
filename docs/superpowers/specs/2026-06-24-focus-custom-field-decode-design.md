@@ -36,11 +36,15 @@ design:
    delimiter. In the current pull every `multiple` value is single-element, but
    the format is a real JSON array, so decode handles N elements generically.
 
-3. **A minority of fields decode only via a dynamic `option_query`** (no rows in
-   `custom_field_select_options`). Among the in-scope projected fields, exactly
-   **one** is `option_query`-only: `FocusUser.profile_on_non_production_sites`
-   (`custom_l790`). It is excluded from decode and documented; all other
-   in-scope fields resolve via stored options.
+3. **A minority of fields back their option list with a dynamic `option_query`**
+   (no rows in `custom_field_select_options`; Focus builds the list at render
+   time from other tables). Among the in-scope projected fields, exactly **one**
+   is `option_query`-backed: `FocusUser.profile_on_non_production_sites`
+   (`custom_l790`). It is decodable — its query is
+   `select id, title as label from user_profiles`, and `user_profiles` is staged
+   — but skipped as low-value (12 of 181 users, one distinct code). All other
+   in-scope fields resolve via stored options. See _Out of scope_ for the full
+   `option_query` inventory.
 
 4. **The `log` reshape is narrow.** All 24,224 `custom_field_log_entries` rows
    are `SISStudent`, across just **two** fields — `Immunization Compliance`
@@ -63,8 +67,8 @@ design:
   foundation only. (Repo convention: an `rpt_` must sit between an intermediate
   model and any external consumer; one gets added when a concrete consumer
   appears.)
-- No decode of `option_query`-only fields (would require running the live Focus
-  query).
+- No decode of `option_query`-backed fields (inventoried under _Out of scope_;
+  the one in-scope field is skipped as low-value).
 - No decode of non-`select`/`multiple` customs (`checkbox` Y/N, `text`,
   `numeric`, `date` are already human-readable).
 - No staging changes.
@@ -208,9 +212,12 @@ education as (
 )
 ```
 
-`profile_on_non_production_sites` (`custom_l790`) is `option_query`-only and is
-**omitted** from the pivot (it cannot decode from the static table). Its code
-remains available in staging; a SQL comment documents why it is excluded.
+`profile_on_non_production_sites` (`custom_l790`) is `option_query`-backed and
+is **omitted** from the pivot. It is decodable via a join to
+`stg_focus__user_profiles` (`custom_l790 = user_profiles.id`, then `title`), but
+skipped as low-value (12 of 181 users, one distinct code). Its code remains in
+staging; a SQL comment documents the skip. See _Out of scope_ for the full
+`option_query` inventory.
 
 #### In-scope decode inventory
 
@@ -303,9 +310,58 @@ type each slot, then decode `select`-type slots via
 
 ## Out of scope / follow-ups
 
-- `option_query`-backed dynamic option lists (one in-scope field today).
+- `option_query`-backed dynamic option lists (inventoried below).
 - Any `rpt_` / mart / extract consuming these models.
 - Other districts (only `kippmiami` ingests Focus).
+
+### `option_query`-backed fields (not decoded)
+
+These `select` fields generate their option list from a live Focus query against
+other tables instead of `custom_field_select_options`, so they do not decode via
+the crosswalk. Only `FocusUser.profile_on_non_production_sites` (`custom_l790`)
+is projected in staging today, and it is skipped as low-value; the rest are not
+projected. Recorded here so the set is captured if a future consumer needs one.
+
+| source_class  | column_name                             | title                              | label source                                   |
+| ------------- | --------------------------------------- | ---------------------------------- | ---------------------------------------------- |
+| FocusUser     | `custom_l790`                           | Profile On Non-Production Sites    | `user_profiles` (projected; skipped)           |
+| FocusUser     | `check_location`                        | Check Location                     | `gl_facilities`                                |
+| FocusUser     | `charter_final_eval`                    | Final Evaluation Code              | `gl_pr_personnel_evaluation_codes`             |
+| FocusUser     | `charter_eval_msp`                      | MSP                                | `gl_pr_measures_of_student_learning_growth`    |
+| FocusUser     | `charter_mid_eval`                      | Midpoint Evaluation (new teachers) | `gl_pr_personnel_evaluation_codes`             |
+| FocusUser     | `charter_prim_job`                      | Primary Job Code                   | `gl_pr_jobs_state`                             |
+| FocusUser     | `charter_prim_schl`                     | Primary School                     | `gl_facilities`                                |
+| FocusUser     | `custom_l1472`                          | Site Assignment (Primary)          | `schools`                                      |
+| SISStudent    | `custom_fl_biliteracy_aappl`            | ACTFL AAPPL                        | options table (syear-scoped)                   |
+| SISStudent    | `custom_fl_biliteracy_opi`              | ACTFL OPI                          | options table (syear-scoped)                   |
+| SISStudent    | `custom_fl_biliteracy_asl`              | SLPI:ASL                           | options table (syear-scoped)                   |
+| SISStudent    | `custom_fl_biliteracy_stamp4s`          | STAMP4S (Grade 7-Adult)            | options table (syear-scoped)                   |
+| SISStudent    | `custom_fl_biliteracy_bcpo`             | Biliteracy Seal Portfolio Option   | options table (syear-scoped)                   |
+| SISStudent    | `application_courses_selected_course_1` | Application Courses Selected 1     | `course_periods` + `courses` (syear-scoped)    |
+| SISStudent    | `application_courses_selected_course_2` | Application Courses Selected 2     | `course_periods` + `courses` (syear-scoped)    |
+| SISStudent    | `application_courses_selected_course_3` | Application Courses Selected 3     | `course_periods` + `courses` (syear-scoped)    |
+| SISStudent    | `custom_992012001`                      | Bus Driver Name AM                 | `custom_field_log_entries`                     |
+| SISStudent    | `custom_992012002`                      | Bus Driver Name PM                 | `custom_field_log_entries`                     |
+| SISStudent    | `custom_l1216`                          | Future ESE Model Choice            | `custom_field_select_options` (source_id 1042) |
+| CourseCatalog | `custom_field_15`                       | Industry Certification ID          | `florida_industry_certifications` (syear)      |
+| CourseCatalog | `custom_field_16`                       | 2nd Industry Certification ID      | `florida_industry_certifications` (syear)      |
+| CourseCatalog | `custom_field_18`                       | 3rd Industry Certification ID      | `florida_industry_certifications` (syear)      |
+
+`SISSchool`, `StudentEnrollment`, `CoursePeriod`, and `Course` have none. The
+catalog is the live source of truth — regenerate the current set with:
+
+```sql
+select cf.source_class, cf.column_name, cf.title, cf.option_query
+from {{ ref("stg_focus__custom_fields") }} as cf
+left join (
+    select distinct source_id
+    from {{ ref("stg_focus__custom_field_select_options") }}
+    where source_class = 'CustomField'
+) as o on cf.id = o.source_id
+where cf.type in ('select', 'multiple')
+    and cf.option_query is not null
+    and o.source_id is null
+```
 
 ## Open implementation checks
 
