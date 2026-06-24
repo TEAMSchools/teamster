@@ -9,10 +9,10 @@ with
     ),
 
     unpivoted as (
-        select id, column_name, option_id,
+        select id, column_name, stored_value,
         from
             encoded unpivot (
-                option_id for column_name
+                stored_value for column_name
                 in (custom_100000004, custom_200000326, custom_50000002)
             )
     ),
@@ -23,7 +23,7 @@ with
         left join
             {{ ref("int_focus__custom_field_options") }} as `options`
             on unpivoted.column_name = `options`.column_name
-            and unpivoted.option_id = `options`.option_id
+            and unpivoted.stored_value in (`options`.option_id, `options`.code)
             and `options`.source_class = 'SISSchool'
     )
 

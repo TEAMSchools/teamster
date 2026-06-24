@@ -32,12 +32,13 @@ design:
    entity class (`SISSchool`, etc.) — `source_class` is never the entity class,
    so that filter returns zero rows (the trap that surfaced this).
 
-2. **The entity stores the option `id`, not the `code`.** A `select` value is a
-   single select-option **id** (e.g. `5538` → label `E - Elementary`), stored as
-   an int. A `multiple` value is a **JSON-array string of option ids**
-   (`["2795"]`). Decode joins the stored id to `select_options.id` and reads
-   `label` (the `code` — `E`, `M` — is the Focus import/export value, never the
-   stored value). `multiple` means parse-JSON + map each id, not split on a
+2. **The stored value is the option `id` OR its `code` — it varies by field.**
+   `school_level`/`sex` store the select-option **id** (`5538`, `2789`);
+   `prior_state` stores the **`code`** (`FL`). So decode matches the stored
+   value against **either** `select_options.id` or `select_options.code`
+   (`unpivoted.stored_value in (options.option_id, options.code)`), filtered to
+   the field; it reads `label`. A `multiple` value is a JSON-array string of
+   those values (`["2795"]`) — parse-JSON + match each, not split on a
    delimiter. Every current `multiple` value is single-element, but the format
    is a real JSON array, so decode handles N elements generically.
 
@@ -128,9 +129,9 @@ inner join cf on opt.source_id = cf.id
 
 - Grain / uniqueness: `option_id` (the select-option PK — globally unique,
   non-null, so no dedupe needed).
-- The entity stores the option **id**, not its `code`; pivots join the stored
-  value to `option_id`. `code` is the Focus import/export value and `label` the
-  human name (the decode output).
+- The stored value is the option `id` for some fields, the `code` for others;
+  pivots match it against `option_id` OR `code`. `code` is the Focus
+  import/export value and `label` the human name (the decode output).
 - `inactive` options are kept — a stored value can reference an option later
   marked inactive.
 
@@ -150,9 +151,9 @@ with
     ),
 
     unpivoted as (
-        select id, column_name, option_id
+        select id, column_name, stored_value
         from encoded unpivot (
-            option_id for column_name in (
+            stored_value for column_name in (
                 custom_100000004, custom_200000326, custom_50000002
             )
         )
@@ -164,7 +165,7 @@ with
         left join {{ ref("int_focus__custom_field_options") }} as options
             on options.source_class = 'SISSchool'
             and options.column_name = unpivoted.column_name
-            and options.option_id = unpivoted.option_id
+            and unpivoted.stored_value in (options.option_id, options.code)
     )
 
 select *
@@ -211,7 +212,7 @@ education as (
     from {{ ref("stg_focus__users") }} as users
     cross join unnest(json_value_array(users.education)) as element_id
     left join {{ ref("int_focus__custom_field_options") }} as options
-        on element_id = options.option_id
+        on element_id in (options.option_id, options.code)
         and options.source_class = 'FocusUser'
         and options.column_name = 'custom_2'
     group by users.staff_id
@@ -378,11 +379,12 @@ where cf.type in ('select', 'multiple')
 
 ## Open implementation checks
 
-1. **Decode key is the option id.** Entities store `select_options.id`, not
-   `code`; the crosswalk keys on `option_id` (the option PK), so it is naturally
-   unique and needs no dedupe. Spot-check that each pivot decodes (non-null
-   labels where the entity value is set) — a regression to code-keying shows up
-   as all-null labels.
+1. **Decode matches id OR code.** The stored value is the option id for some
+   fields, the code for others, so pivots match
+   `stored_value in (option_id, code)`. The crosswalk keys on `option_id` (the
+   option PK — unique, no dedupe). Spot-check that each pivot decodes (non-null
+   labels where the entity value is set); all-null labels signal a match-key
+   mismatch for that entity.
 2. **`multiple` multi-element.** Current data is single-element; the `array_agg`
    decode handles N elements regardless. No additional work unless a
    multi-element value needs ordering guarantees beyond `order by label`.
