@@ -815,12 +815,17 @@ with
         group by users.staff_id
     )
 
+-- drive from the full staff list: the active UNPIVOT drops staff with null
+-- active, which would lose education_label for staff who have education but no
+-- active. (Pure-select pivots don't need this — dropped all-null rows have
+-- nothing to decode.)
 select
-    select_pivot.staff_id,
+    users.staff_id,
     select_pivot.active_label,
     education.education_label,
-from select_pivot
-left join education on select_pivot.staff_id = education.staff_id
+from {{ ref("stg_focus__users") }} as users
+left join select_pivot on users.staff_id = select_pivot.staff_id
+left join education on users.staff_id = education.staff_id
 ```
 
 - [ ] **Step 2: Write the properties yml**
