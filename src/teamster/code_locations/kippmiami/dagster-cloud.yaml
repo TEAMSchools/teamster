@@ -176,7 +176,7 @@ locations:
                 valueFrom:
                   secretKeyRef:
                     name: op-focus-sftp-kippmiami
-                    key: url
+                    key: URL
               - name: FOCUS_SFTP_USERNAME
                 valueFrom:
                   secretKeyRef:
@@ -204,7 +204,7 @@ locations:
                 valueFrom:
                   secretKeyRef:
                     name: op-focus-sftp-kippmiami
-                    key: url
+                    key: URL
               - name: FOCUS_SFTP_USERNAME
                 valueFrom:
                   secretKeyRef:
