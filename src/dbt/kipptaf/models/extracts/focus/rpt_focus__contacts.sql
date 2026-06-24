@@ -1,8 +1,6 @@
 -- trunk-ignore(sqlfluff/ST06): column order fixed by Focus CONTACTS contract
 select
-    -- STDT_ID is null until the Finalsite-minted student id lands in
-    -- id_attributes; repoint to int_finalsite__contact_id_attributes then.
-    cast(null as string) as student_id,
+    ida.focus_student_id as student_id,
 
     rel.rel_type as student_relation,
 
@@ -69,6 +67,9 @@ inner join
 inner join
     {{ ref("int_finalsite__enrollment_lifecycle") }} as l
     on rel.finalsite_enrollment_id = l.finalsite_enrollment_id
+left join
+    {{ ref("int_finalsite__contact_id_attributes") }} as ida
+    on rel.finalsite_enrollment_id = ida.finalsite_enrollment_id
 where
     rel.rel_type
     in ('parent', 'guardian', 'grandparent', 'stepparent', 'relative', 'aunt/uncle')

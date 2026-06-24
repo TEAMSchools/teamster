@@ -5,10 +5,8 @@ models:
       key-value array into one column per identifier field, each aliased to its
       original Finalsite field name. Contacts with no `id_attributes` are absent
       (resolve via a left join). The PIVOT enumerates fields explicitly, so a
-      new `id_attributes` field does not surface automatically — when the
-      Finalsite-minted student number (the future Focus `STDT_ID`) lands, add it
-      to the PIVOT field list in the model SQL, then repoint downstream
-      extracts.
+      new `id_attributes` field must be added to the PIVOT field list in the
+      model SQL to surface — it does not appear automatically.
     columns:
       - name: finalsite_enrollment_id
         data_type: string
@@ -22,3 +20,8 @@ models:
       - name: powerschool_student_number
         data_type: string
         description: PowerSchool student number from the `id_attributes` array.
+      - name: focus_student_id
+        data_type: string
+        description:
+          Finalsite-minted Focus student id (the Focus `STDT_ID`) from the
+          `id_attributes` array.
