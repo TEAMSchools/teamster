@@ -25,11 +25,11 @@ with
         }}
     )
 
--- trunk-ignore(sqlfluff/AM04)
 select
-    *,
+    ur.*,
 
-    {{ extract_code_location("union_relations") }} as _dbt_source_project,
-    yearid + 1990 as academic_year,
+    {{ extract_code_location("ur") }} as _dbt_source_project,
 
-from union_relations
+    ur.yearid + 1990 as academic_year,
+
+from union_relations as ur

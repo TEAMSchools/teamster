@@ -12,7 +12,6 @@ with
         }}
     )
 
--- trunk-ignore(sqlfluff/AM04)
-select *, {{ extract_code_location("union_relations") }} as _dbt_source_project,
+select ur.*, {{ extract_code_location("ur") }} as _dbt_source_project,
 
-from union_relations
+from union_relations as ur

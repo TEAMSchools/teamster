@@ -31,7 +31,6 @@ with
             )
     )
 
--- trunk-ignore(sqlfluff/AM04)
 select
     ur.*,
 
