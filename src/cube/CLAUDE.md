@@ -123,10 +123,7 @@ Default-deny, HR-derived, group-driven. Read [`cube.js`](cube.js) and
   and `dim_staff_reporting_chain` (transitive closure of org tree). The access
   row is fed to `access.buildGroups(row)` which emits HR-derived tier strings
   (e.g. `student-detail`, `staff-directory`, `staff-pii`). Results are cached
-  until next midnight ET. `CUBE_GROUP_MAP` (local dev only, gated on
-  `NODE_ENV !== "production"`) is the sole bypass; when set, `row` stays null so
-  `queryRewrite` row filters default-deny — unset it to exercise real row-level
-  scoping.
+  until next midnight ET.
 - **Tier strings** (emitted by `buildGroups`):
   - `student-summary` / `student-detail` / `student-pii` — student access tiers
   - `staff-directory` — always emitted for any resolved staff viewer (open)
@@ -172,6 +169,14 @@ Default-deny, HR-derived, group-driven. Read [`cube.js`](cube.js) and
   — do not put an additive measure (e.g. `avg_daily_attendance`) and a guarded
   snapshot measure in the same request, or the additive one is wrongly anchored
   ([#4160](https://github.com/TEAMSchools/teamster/issues/4160)).
+- **`access_policy` blocks, it does not strip.** When a user requests a member
+  their tier excludes, Cube denies the whole query — it does not silently drop
+  the column and return the rest. BI tools connected via the SQL API (Superset)
+  avoid this because the field list is filtered per-user at connection time. In
+  Tableau, a workbook published by someone with broader access may error at
+  query time for viewers with narrower access. A `queryRewrite` member-strip
+  approach (detect and remove inaccessible members before execution) is tracked
+  in [#4268](https://github.com/TEAMSchools/teamster/issues/4268).
 - **`canSwitchSqlUser`** only allows the SQL super-user to impersonate
   `@apps.teamschools.org` accounts (Superset integration). Do not broaden the
   suffix check.
@@ -211,9 +216,12 @@ The `cube` MCP wraps Cube Cloud's REST API. Auth path that works:
   endpoint. Only Dev Mode surfaces server `console.log` in the playground logs
   panel — staging has no log UI. Debug `cube.js` code paths on Dev Mode.
 - **Branch staging configuration doesn't fully inherit from production.** Before
-  diagnosing API errors on a branch staging env, verify
-  `GOOGLE_DIRECTORY_SA_KEY` / `GOOGLE_DIRECTORY_SA_SUBJECT` (and any other
-  required secrets) are set on that environment.
+  diagnosing API errors on a branch staging env, verify the BigQuery connection
+  variables (`CUBEJS_DB_TYPE`, `CUBEJS_DB_BQ_PROJECT_ID`,
+  `CUBEJS_DB_BQ_CREDENTIALS`) are set on that environment. Also verify
+  `dim_staff_cube_access` and `dim_staff_reporting_chain` exist in prod
+  `kipptaf_marts` — branch staging reads prod, so identity resolution fails
+  silently (default deny) if those models haven't been deployed yet.
 - **Validate a cube against a Tableau dashboard from the workbook extract**:
   `unzip <workbook>.twbx`, then query `Data/Extracts/*.hyper` with
   `uv run --with tableauhyperapi python` (the data table is
@@ -253,27 +261,39 @@ before merge:
 1. Build in your dev schema:
    `uv run dbt run --select <model> --project-dir src/dbt/kipptaf --target dev`
    → creates `zz_<username>_kipptaf_marts.<model>`
-2. Temporarily change `sql_table` in the cube YAML to
-   `zz_<username>_kipptaf_marts.<table>` — do NOT commit or push
+2. Temporarily redirect the cube YAML to the dev schema — do NOT commit or push:
+   - For `sql_table` cubes: change `sql_table: kipptaf_marts.<table>` to
+     `sql_table: zz_<username>_kipptaf_marts.<table>`
+   - For inline `sql:` cubes (e.g. `staff`, which LEFT JOINs
+     `dim_staff_cube_access`): change the dataset reference(s) inside the `sql:`
+     block. If `cube.js` also reads the same table directly (e.g.
+     `dim_staff_cube_access` for identity resolution), redirect those queries
+     too.
 3. Test in the local dev server — launch the **`Cube: Dev Server`** VS Code task
    (`.vscode/tasks.json`; installs `src/cube/node_modules` if missing, then
    `npm --prefix src/cube run dev`). Hot-reloads on file save, no push required.
    Claude can't run it (long-running server) — ask the user to start the task
    and report back. Or commit+push for Cube Cloud Dev Mode.
-4. Revert `sql_table` to `kipptaf_marts.<table>` before committing
+4. Revert all dev-schema redirects to `kipptaf_marts.<table>` before committing.
+   Verify with `grep -r "zz_" src/cube/` before pushing.
 
-For **snowflake sub-dims** (cubes joined one-to-one from a parent), swap
-`sql_table` on the sub-dim cube file, not the parent. The parent's `sql_table`
-stays pointed at prod; only the new sub-dim needs redirecting.
+For **snowflake sub-dims** (cubes joined one-to-one from a parent), swap the
+dataset reference on the sub-dim cube file, not the parent.
 
 The security hook flags `zz_*` schemas as an access-control regression —
 expected if you do commit the temporary change; acknowledge and revert.
 
 **`zz_*` redirect — never `git add` the whole cubes/ dir while it's live.** When
-a `sql_table` redirect to a `zz_*` dev schema is in the working tree, staging
-with `git add -A`, `git add .`, or `git add src/cube/model/cubes/` accidentally
-commits the redirect. Name files explicitly in every `git add` while any cube
-YAML is redirected.
+a dev-schema redirect is in the working tree, staging with `git add -A`,
+`git add .`, or `git add src/cube/model/cubes/` accidentally commits the
+redirect. Name files explicitly in every `git add` while any cube YAML is
+redirected.
+
+**Never `bq cp` a dev-schema table into `kipptaf_marts` to unblock testing.**
+`kipptaf_marts` is the live prod dataset read by all dashboards, the Cube
+semantic layer, and dbt downstream models. Overwriting a mart table corrupts
+prod for all consumers with no rollback path. Use the dev-schema redirect above
+instead.
 
 ## School weeks vs ISO weeks
 

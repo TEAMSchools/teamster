@@ -147,27 +147,38 @@ When a business user needs to validate changes before merge:
 
 ## Local Dev
 
-1. `cp src/cube/.env.example src/cube/.env`
-2. Fill in `CUBE_GROUP_MAP` with your email and the groups you want to simulate:
-   ```text
-   CUBE_GROUP_MAP='{"you@apps.teamschools.org":["student-detail","student-summary","staff-directory","staff-pii"]}'
-   ```
+1. `cp src/cube/.env.example src/cube/.env` and fill in the BigQuery connection
+   variables (already pre-filled in `.env.example` for the teamster project — no
+   credentials needed, ADC handles auth)
+2. Run the **GCloud: Application Default Login** VS Code task if your ADC token
+   is stale
 3. Run the **Cube: Dev Server** VS Code task (`Ctrl+Shift+P` → Tasks: Run Task)
 4. Playground opens at `http://localhost:4000`
-
-ADC is used for BigQuery auth locally — run the **GCloud: Application Default
-Login** VS Code task first if you haven't already.
+5. Click **Edit Security Context** and set
+   `{"email": "you@apps.teamschools.org"}` — Cube resolves your real access row
+   from `kipptaf_marts.dim_staff_cube_access`. Change the email to test as
+   another user.
 
 ## Warnings
 
-Do **not** set `CUBE_GROUP_MAP` in Cube Cloud — it bypasses the BigQuery
-identity reads entirely and must only be used for local dev. The `cube.js` guard
-relies on `NODE_ENV !== "production"` as a second line of defense, but the
-variable should never be configured in Cube Cloud in the first place.
+Do **not** set `CUBE_GROUP_MAP` in Cube Cloud. This variable is a dev bypass
+that short-circuits BigQuery identity reads; it must never be configured in
+production.
 
 Do **not** use the Cube Playground **Models** tab in dev mode. It overwrites
 YAML files in `model/cubes/` and `model/views/` with auto-generated content,
 discarding hand-authored definitions.
+
+When a user requests a field their access tier excludes, Cube **blocks the
+entire query** — it does not silently drop the column and return the rest. In
+practice this only surfaces in Tableau, where a workbook published by someone
+with broad access (e.g. `staff-pii`) may error at query time for viewers with
+narrower access. BI tools that connect via Cube's SQL API (Superset) avoid this
+because each user's field list is filtered at connection time. A member-strip
+approach that drops inaccessible fields transparently is tracked in
+[#4268](https://github.com/TEAMSchools/teamster/issues/4268). Until then, build
+Tableau workbooks using only the fields your least-privileged audience can see,
+or publish separate workbooks per access tier.
 
 ## Using Cube with Claude
 
