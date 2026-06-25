@@ -15,6 +15,7 @@ with
                     [
                         "wa.job_title",
                         "wa.job_function_code__name",
+                        "wa.job_function_code__code_value",
                         "wa.job_code__code_value",
                     ]
                 )
