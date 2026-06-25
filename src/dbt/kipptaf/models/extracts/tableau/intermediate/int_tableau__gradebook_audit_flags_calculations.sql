@@ -35,7 +35,91 @@ with
             academic_year = {{ var("current_academic_year") - 1 }}
             and storecode_type = 'Q'
             and not is_transfer_grade
-    )
+    ),
+
+    teacher_flags_calcs as (
+        select
+            s._dbt_source_project,
+            s.academic_year,
+            s.academic_year_display,
+            s.region_school_level_alt as region_school_level,
+            s.school_level_alt as school_level,
+            s.region,
+            s.schoolid,
+            s.school,
+
+            s.course_number,
+            s.course_name,
+            s.credit_type,
+            s.exclude_from_gpa,
+            s.sections_dcid,
+            s.sectionid,
+            s.section_number,
+            s.external_expression,
+            s.section_or_period,
+            s.teacher_number,
+            s.teacher_name,
+            s.school_leader,
+            s.manager_employee_number,
+            s.manager_name,
+            s.hos,
+
+            s.teacher_tableau_username,
+            s.manager_tableau_username,
+            s.school_leader_tableau_username,
+
+            s.`quarter`,
+            s.semester,
+            s.quarter_start_date,
+            s.quarter_end_date,
+            s.is_current_quarter,
+
+            ge.assignment_category_code,
+            ge.assignment_category_name,
+            ge.assignment_category_term,
+            ge.expectation,
+            ge.notes,
+            ge.week_end_sunday,
+
+            qg.quarter_course_percent_grade,
+            qg.quarter_course_grade_points,
+            qg.quarter_comment_value,
+
+            'assignment_teacher' as cte_grouping,
+            'Teacher Gradebook Flags' as audit_category,
+
+            r.assignmentid,
+            r.assignment_name,
+            r.duedate,
+            r.scoretype,
+            r.totalpointvalue,
+
+            r.assignment_has_flags,
+
+            countif(r.duedate <= ge.week_end_sunday) over (
+                partition by
+                    s._dbt_source_project, s.sectionid, ge.assignment_category_term
+            ) as teacher_running_total_assign_by_cat,
+
+        from {{ ref("int_extracts__course_schedule_by_term") }} as s
+        inner join
+            {{ ref("int_powerschool__u_expectations_qtd_unpivot") }} as ge
+            on s.region = ge.region
+            and s.school_level_alt = ge.school_level
+            and s.academic_year = ge.academic_year
+            and s.`quarter` = ge.`quarter`
+        left join
+            {{ ref("int_powerschool__gradebook_assignment_scores_rollup") }} as r
+            on s._dbt_source_project = r._dbt_source_project
+            and s.sections_dcid = r.sectionsdcid
+            and ge.assignment_category_code = r.category_code
+            and r.duedate between s.quarter_start_date and s.quarter_end_date
+            and r.scoretype in ('POINTS', 'PERCENT')
+        where
+            s.academic_year = {{ var("current_academic_year") }}
+            and s.school_level_alt != 'ES'
+            and s._dbt_source_project != 'kippmiami'
+    ),
 
 -- student_course flags: qt_grade_70_comment_missing and qt_percent_grade_greater_100
 select
@@ -105,7 +189,6 @@ select
     s.quarter_end_date,
     s.is_current_quarter,
 
-    -- these values will be null
     '' as assignment_category_code,
     '' as assignment_category_name,
     '' as assignment_category_term,
@@ -118,41 +201,13 @@ select
     qg.quarter_comment_value,
 
     'student_course' as cte_grouping,
-
-    cast(null as float64) as category_quarter_percent_grade,
+    'EOQ' as audit_category,
 
     null as assignmentid,
     '' as assignment_name,
     cast(null as date) as duedate,
     '' as scoretype,
     cast(null as float64) as totalpointvalue,
-
-    cast(null as float64) as scorepoints,
-    null as is_expected_late,
-    null as is_exempt,
-    null as is_expected_missing,
-    null as is_expected_zero,
-    null as is_expected_academic_dishonesty,
-    cast(null as float64) as score_entered,
-    cast(null as float64) as assign_final_score_percent,
-
-    false as assign_null_score,
-    false as assign_score_above_max,
-    false as assign_w_score_less_5,
-    false as assign_h_score_less_5,
-    false as assign_f_score_less_5,
-    false as assign_w_missing_score_not_5,
-    false as assign_f_missing_score_not_5,
-    false as assign_h_missing_score_not_5,
-    false as assign_w_missing_score_not_0,
-    false as assign_f_missing_score_not_0,
-    false as assign_h_missing_score_not_0,
-    false as assign_s_missing_score_not_0,
-    false as assign_s_score_less_50p,
-    false as assign_s_hs_score_less_50p,
-
-    false as assign_max_score_not_10,
-    false as overly_exempt_assignment,
 
     if(
         qg.quarter_course_percent_grade > 100, true, false
@@ -164,7 +219,7 @@ select
         false
     ) as qt_grade_70_comment_missing,
 
-    false as percent_graded_min_not_met,
+    assignment_has_flags,
 
     null as teacher_running_total_assign_by_cat,
 
@@ -188,8 +243,7 @@ where
 
 union all
 
-/* assignment_teacher flags: assign_max_score_not_10, percent_graded_min_not_met,
-   expected_assign_count_not_met */
+-- assignment_teacher flags: expected_assign_count_not_met 
 select
     s._dbt_source_project,
     s.academic_year,
@@ -199,37 +253,6 @@ select
     s.region,
     s.schoolid,
     s.school,
-
-    null as students_dcid,
-    null as studentid,
-    null as student_number,
-    '' as student_name,
-    null as grade_level,
-    cast(null as date) as dateenrolled,
-    cast(null as date) as dateleft,
-    '' as salesforce_id,
-    null as ktc_cohort,
-    null as enroll_status,
-    null as cohort,
-    '' as gender,
-    '' as ethnicity,
-    '' as advisory,
-    null as year_in_school,
-    null as year_in_network,
-    null as rn_undergrad,
-    cast(null as boolean) as is_out_of_district,
-    cast(null as boolean) as is_self_contained,
-    cast(null as boolean) as is_retained_year,
-    cast(null as boolean) as is_retained_ever,
-    '' as lunch_status,
-    '' as gifted_and_talented,
-    '' as iep_status,
-    cast(null as boolean) as lep_status,
-    cast(null as boolean) as is_504,
-    null as is_counseling_services,
-    null as is_student_athlete,
-    cast(null as float64) as `ada`,
-    cast(null as boolean) as ada_above_or_at_80,
 
     s.course_number,
     s.course_name,
@@ -264,13 +287,12 @@ select
     ge.notes,
     ge.week_end_sunday,
 
-    cast(null as float64) as quarter_course_percent_grade,
-    cast(null as float64) as quarter_course_grade_points,
-    '' as quarter_comment_value,
+    qg.quarter_course_percent_grade,
+    qg.quarter_course_grade_points,
+    qg.quarter_comment_value,
 
     'assignment_teacher' as cte_grouping,
-
-    cast(null as float64) as category_quarter_percent_grade,
+    'Teacher Gradebook Flags' as audit_category,
 
     r.assignmentid,
     r.assignment_name,
@@ -278,37 +300,9 @@ select
     r.scoretype,
     r.totalpointvalue,
 
-    cast(null as float64) as scorepoints,
-    null as is_expected_late,
-    null as is_exempt,
-    null as is_expected_missing,
-    null as is_expected_zero,
-    null as is_expected_academic_dishonesty,
-    cast(null as float64) as score_entered,
-    cast(null as float64) as assign_final_score_percent,
-
-    false as assign_null_score,
-    false as assign_score_above_max,
-    false as assign_w_score_less_5,
-    false as assign_h_score_less_5,
-    false as assign_f_score_less_5,
-    false as assign_w_missing_score_not_5,
-    false as assign_f_missing_score_not_5,
-    false as assign_h_missing_score_not_5,
-    false as assign_w_missing_score_not_0,
-    false as assign_f_missing_score_not_0,
-    false as assign_h_missing_score_not_0,
-    false as assign_s_missing_score_not_0,
-    false as assign_s_score_less_50p,
-    false as assign_s_hs_score_less_50p,
-
-    r.assign_max_score_not_10,
-    r.overly_exempt_assignment,
-
     false as qt_percent_grade_greater_100,
     false as qt_grade_70_comment_missing,
-
-    if(r.assign_percent_graded < 0.90, true, false) as percent_graded_min_not_met,
+    r.assignment_has_flags,
 
     countif(r.duedate <= ge.week_end_sunday) over (
         partition by s._dbt_source_project, s.sectionid, ge.assignment_category_term
@@ -322,156 +316,6 @@ inner join
     and s.academic_year = ge.academic_year
     and s.`quarter` = ge.`quarter`
 left join
-    {{ ref("int_powerschool__gradebook_assignment_score_rollup") }} as r
-    on s._dbt_source_project = r._dbt_source_project
-    and s.sections_dcid = r.sectionsdcid
-    and ge.assignment_category_code = r.category_code
-    and r.duedate between s.quarter_start_date and s.quarter_end_date
-    and r.scoretype in ('POINTS', 'PERCENT')
-where
-    s.academic_year = {{ var("current_academic_year") }}
-    and s.school_level_alt != 'ES'
-    and s._dbt_source_project != 'kippmiami'
-
-union all
-
-/* assignment_student flags: assign_null_score,assign_score_above_max,
-   assign_w_score_less_5,assign_h_score_less_5,assign_f_score_less_5,
-   assign_w_missing_score_not_5,assign_f_missing_score_not_5
-   assign_h_missing_score_not_5,assign_w_missing_score_not_0,
-   assign_f_missing_score_not_0,assign_h_missing_score_not_0,
-   assign_s_missing_score_not_0,assign_s_score_less_50p,
-   assign_s_hs_score_less_50p */
-select
-    s._dbt_source_project,
-    s.academic_year,
-    s.academic_year_display,
-    s.region_school_level_alt as region_school_level,
-    s.school_level_alt as school_level,
-    s.region,
-    s.schoolid,
-    s.school,
-
-    s.students_dcid,
-    s.studentid,
-    s.student_number,
-    s.student_name,
-    s.grade_level,
-    s.dateenrolled,
-    s.dateleft,
-    s.salesforce_id,
-    s.ktc_cohort,
-    s.enroll_status,
-    s.cohort,
-    s.gender,
-    s.ethnicity,
-    s.advisory,
-    s.year_in_school,
-    s.year_in_network,
-    s.rn_undergrad,
-    s.is_out_of_district,
-    s.is_self_contained,
-    s.is_retained_year,
-    s.is_retained_ever,
-    s.lunch_status,
-    s.gifted_and_talented,
-    s.iep_status,
-    s.lep_status,
-    s.is_504,
-    s.is_counseling_services,
-    s.is_student_athlete,
-    s.`ada`,
-    s.ada_above_or_at_80,
-
-    s.course_number,
-    s.course_name,
-    s.credit_type,
-    s.exclude_from_gpa,
-    s.sections_dcid,
-    s.sectionid,
-    s.section_number,
-    s.external_expression,
-    s.section_or_period,
-    s.teacher_number,
-    s.teacher_name,
-    s.school_leader,
-    s.manager_employee_number,
-    s.manager_name,
-    s.hos,
-
-    s.teacher_tableau_username,
-    s.manager_tableau_username,
-    s.school_leader_tableau_username,
-
-    s.`quarter`,
-    s.semester,
-    s.quarter_start_date,
-    s.quarter_end_date,
-    s.is_current_quarter,
-
-    ge.assignment_category_code,
-    ge.assignment_category_name,
-    ge.assignment_category_term,
-    ge.expectation,
-    ge.notes,
-    ge.week_end_sunday,
-
-    qg.quarter_course_percent_grade,
-    qg.quarter_course_grade_points,
-    qg.quarter_comment_value,
-
-    'assignment_student' as cte_grouping,
-
-    cg.percent_grade as category_quarter_percent_grade,
-
-    a.assignmentid,
-    a.assignment_name,
-    a.duedate,
-    a.scoretype,
-    a.totalpointvalue,
-
-    a.scorepoints,
-    a.is_expected_late,
-    a.is_exempt,
-    a.is_expected_missing,
-    a.is_expected_zero,
-    a.is_expected_academic_dishonesty,
-    a.score_entered,
-    a.assign_final_score_percent,
-
-    a.assign_null_score,
-    a.assign_score_above_max,
-    a.assign_w_score_less_5,
-    a.assign_h_score_less_5,
-    a.assign_f_score_less_5,
-    a.assign_w_missing_score_not_5,
-    a.assign_f_missing_score_not_5,
-    a.assign_h_missing_score_not_5,
-    a.assign_w_missing_score_not_0,
-    a.assign_f_missing_score_not_0,
-    a.assign_h_missing_score_not_0,
-    a.assign_s_missing_score_not_0,
-    a.assign_s_score_less_50p,
-    a.assign_s_hs_score_less_50p,
-
-    false as assign_max_score_not_10,
-    false as overly_exempt_assignment,
-
-    false as qt_percent_grade_greater_100,
-    false as qt_grade_70_comment_missing,
-
-    false as percent_graded_min_not_met,
-
-    null as teacher_running_total_assign_by_cat,
-
-from {{ ref("int_extracts__course_enrollments_by_term") }} as s
-inner join
-    {{ ref("int_powerschool__u_expectations_qtd_unpivot") }} as ge
-    on s.region = ge.region
-    and s.school_level_alt = ge.school_level
-    and s.academic_year = ge.academic_year
-    and s.`quarter` = ge.`quarter`
-left join
     quarter_course_grades as qg
     on s.academic_year = qg.academic_year
     and s.studentid = qg.studentid
@@ -481,27 +325,13 @@ left join
     and s.quarter_start_date <= current_date('{{ var("local_timezone") }}')
     and qg.grades_type = 'current_year'  /* summer toggle: see skill */
 left join
-    {{ ref("int_powerschool__category_grades") }} as cg
-    on s.academic_year = cg.academic_year
-    and s.studentid = cg.studentid
-    and s.sectionid = cg.sectionid
-    and s._dbt_source_project = cg._dbt_source_project
-    and s.`quarter` = cg.storecode
-    and s.quarter_start_date <= current_date('{{ var("local_timezone") }}')
-left join
-    {{ ref("int_powerschool__gradebook_assignments_scores") }} as a
-    on s.sections_dcid = a.sectionsdcid
-    and s.students_dcid = a.students_dcid
-    and ge.assignment_category_code = a.category_code
-    and a.duedate between s.quarter_start_date and s.quarter_end_date
-    and s.dateenrolled <= a.duedate
-    and s._dbt_source_project = a._dbt_source_project
-    and a.iscountedinfinalgrade = 1
-    and a.scoretype in ('POINTS', 'PERCENT')
+    {{ ref("int_powerschool__gradebook_assignment_scores_rollup") }} as r
+    on s._dbt_source_project = r._dbt_source_project
+    and s.sections_dcid = r.sectionsdcid
+    and ge.assignment_category_code = r.category_code
+    and r.duedate between s.quarter_start_date and s.quarter_end_date
+    and r.scoretype in ('POINTS', 'PERCENT')
 where
     s.academic_year = {{ var("current_academic_year") }}
-    and s.rn_year = 1
-    and s.enroll_status = 0
     and s.school_level_alt != 'ES'
     and s._dbt_source_project != 'kippmiami'
-    and not s.is_out_of_district

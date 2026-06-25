@@ -157,104 +157,54 @@ select
 
     if(is_expected_null = 1, true, false) as assign_null_score,
 
-    if(score_entered > totalpointvalue, true, false) as assign_score_above_max,
+    if(
+        is_expected and score_entered > totalpointvalue, true, false
+    ) as assign_score_above_max,
 
     if(
-        category_code = 'W' and is_expected_missing = 0 and score_entered < 5,
+        category_code in ('H', 'W', 'F')
+        and is_expected
+        and is_missing = 0
+        and score_entered < 5,
         true,
         false
-    ) as assign_w_score_less_5,
+    ) as assign_mh_hwf_score_less_5,
 
     if(
-        category_code = 'H' and is_expected_missing = 0 and score_entered < 5,
-        true,
-        false
-    ) as assign_h_score_less_5,
-
-    if(
-        category_code = 'F' and is_expected_missing = 0 and score_entered < 5,
-        true,
-        false
-    ) as assign_f_score_less_5,
-
-    if(
-        category_code = 'W'
-        and school_level_alt != 'HS'
+        category_code in ('H', 'W', 'F')
+        and school_level_alt = 'MS'
         and is_expected_missing = 1
         and score_entered != 5,
         true,
         false
-    ) as assign_w_missing_score_not_5,
+    ) as assign_ms_hwf_missing_score_not_5,
 
     if(
-        category_code = 'H'
-        and school_level_alt != 'HS'
-        and is_expected_missing = 1
-        and score_entered != 5,
-        true,
-        false
-    ) as assign_h_missing_score_not_5,
-
-    if(
-        category_code = 'F'
-        and school_level_alt != 'HS'
-        and is_expected_missing = 1
-        and score_entered != 5,
-        true,
-        false
-    ) as assign_f_missing_score_not_5,
-
-    if(
-        category_code = 'W'
+        category_code in ('H', 'W', 'F', 'S')
         and school_level_alt = 'HS'
         and is_expected_missing = 1
         and score_entered != 0,
         true,
         false
-    ) as assign_w_missing_score_not_0,
-
-    if(
-        category_code = 'H'
-        and school_level_alt = 'HS'
-        and is_expected_missing = 1
-        and score_entered != 0,
-        true,
-        false
-    ) as assign_h_missing_score_not_0,
-
-    if(
-        category_code = 'F'
-        and school_level_alt = 'HS'
-        and is_expected_missing = 1
-        and score_entered != 0,
-        true,
-        false
-    ) as assign_f_missing_score_not_0,
+    ) as assign_hs_hwfs_missing_score_not_0,
 
     if(
         category_code = 'S'
-        and school_level_alt = 'HS'
-        and is_expected_missing = 1
-        and score_entered != 0,
-        true,
-        false
-    ) as assign_s_missing_score_not_0,
-
-    if(
-        category_code = 'S'
-        and school_level_alt != 'HS'
+        and school_level_alt = 'MS'
+        and is_expected
         and score_entered < half_total_point_value,
         true,
         false
-    ) as assign_s_score_less_50p,
+    ) as assign_ms_s_score_less_50p,
 
     if(
         category_code = 'S'
         and school_level_alt = 'HS'
+        and is_expected
         and is_missing = 0
         and score_entered < half_total_point_value,
         true,
         false
-    ) as assign_s_hs_score_less_50p,
+    ) as assign_hs_s_score_less_50p,
 
 from assignment_coding
