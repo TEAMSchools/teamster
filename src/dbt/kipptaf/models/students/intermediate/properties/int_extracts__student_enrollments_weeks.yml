@@ -14,6 +14,9 @@ models:
     columns:
       - name: _dbt_source_project
         data_type: string
+        description:
+          Dagster code location (district) extracted from the union source
+          relation.
       - name: studentid
         data_type: int64
         description:
