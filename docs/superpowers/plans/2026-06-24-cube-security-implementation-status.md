@@ -1,5 +1,11 @@
 # Cube Security Redesign — Implementation Status / Handoff
 
+> **⚠️ SUPERSEDED (2026-06-25).** This describes the original single-scope
+> model, which has since been redesigned (open directory + per-field
+> `reporting_chain` scopes) and partially implemented. Use
+> [`2026-06-25-cube-security-handoff.md`](2026-06-25-cube-security-handoff.md)
+> and the revised spec instead.
+
 **Date:** 2026-06-24 **Branch:**
 `cristinabaldor/feat/claude-cube-security-redesign` (not yet a PR) **Issues:**
 [#4102](https://github.com/TEAMSchools/teamster/issues/4102) (redesign),
