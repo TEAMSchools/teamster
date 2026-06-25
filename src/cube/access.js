@@ -24,9 +24,9 @@ const DENY_FILTER = {
 };
 
 // Sensitive staff-detail leaf → the access row's scope column that gates it.
-// v1 has only PII columns; compensation/observation/benefits members slot in
-// here (mapped to their *_scope columns) when those cubes are built, and the
-// multi-field intersection in staffSensitiveFilters handles them automatically.
+// PII columns are live (staff_detail view exists). Compensation/observation/
+// benefits members are registered here now (forward-compat) but gate nothing
+// until their cubes + views are built — no access_policy consumes them yet.
 const STAFF_SENSITIVE_SCOPE_BY_MEMBER = {
   personal_email: "staff_pii_scope",
   personal_cell_phone: "staff_pii_scope",
@@ -34,6 +34,7 @@ const STAFF_SENSITIVE_SCOPE_BY_MEMBER = {
   gender_identity: "staff_pii_scope",
   race: "staff_pii_scope",
   is_hispanic: "staff_pii_scope",
+  salary: "staff_compensation_scope",
 };
 
 // The six sensitive columns excluded from the open staff directory tier (the
@@ -238,9 +239,19 @@ function staffSensitiveFilters(query, row, reporteeStaffKeys) {
   if (!scopeCols.size) return [];
   if (!row) return [DENY_FILTER];
 
+  // Collect filters per scope column, then dedupe by JSON key so two scope
+  // columns that resolve to the same remit filter (e.g. PII + compensation both
+  // at all_in_scope school/all) don't inject the same location filter twice.
+  const seen = new Set();
   const filters = [];
   for (const col of scopeCols) {
-    filters.push(...staffScopeFilter(row[col], row, reporteeStaffKeys));
+    for (const f of staffScopeFilter(row[col], row, reporteeStaffKeys)) {
+      const key = JSON.stringify(f);
+      if (!seen.has(key)) {
+        seen.add(key);
+        filters.push(f);
+      }
+    }
   }
   return filters;
 }

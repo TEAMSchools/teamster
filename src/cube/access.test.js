@@ -286,7 +286,67 @@ test("staffSensitiveFilters: two PII fields share one scope → not doubled", ()
   );
 });
 
-test("STAFF_PII_MEMBERS lists the six gated columns", () => {
+test("staffSensitiveFilters: null row + non-sensitive field → no filter", () => {
+  // full_name is not in STAFF_SENSITIVE_SCOPE_BY_MEMBER — directory-only field.
+  // A null row must not deny when no sensitive field is requested.
+  assert.deepEqual(
+    a.staffSensitiveFilters(
+      { dimensions: ["staff_detail.full_name"] },
+      null,
+      [],
+    ),
+    [],
+  );
+});
+
+test("staffSensitiveFilters: PII + compensation simultaneously → both scope filters ANDed", () => {
+  // birth_date → staff_pii_scope; salary → staff_compensation_scope.
+  // A viewer with all_in_scope PII (school/all remit) but no compensation
+  // access should get a location filter for PII AND a deny for compensation.
+  // The two are independent scope columns — staffSensitiveFilters must emit
+  // filters for both, not collapse them into one.
+  const piiOnlyViewer = { ...SL, staff_compensation_scope: "none" };
+  const filters = a.staffSensitiveFilters(
+    { dimensions: ["staff_detail.birth_date", "staff_detail.salary"] },
+    piiOnlyViewer,
+    [],
+  );
+  // compensation deny fires → whole filter set includes DENY_FILTER
+  assert.ok(
+    filters.some(
+      (f) => f.member === "locations.abbreviation" && f.values.length === 0,
+    ),
+    "DENY_FILTER present for compensation scope=none",
+  );
+});
+
+test("staffSensitiveFilters: PII + compensation both granted → both scope filters emitted without deny", () => {
+  // A viewer with both PII and compensation access (school/all remit for both)
+  // should get a location filter for PII and no deny for compensation.
+  const bothGranted = {
+    ...SL,
+    staff_pii_scope: "all_in_scope",
+    staff_compensation_scope: "all_in_scope",
+  };
+  const filters = a.staffSensitiveFilters(
+    { dimensions: ["staff_detail.birth_date", "staff_detail.salary"] },
+    bothGranted,
+    [],
+  );
+  assert.ok(
+    !filters.some(
+      (f) => f.member === "locations.abbreviation" && f.values.length === 0,
+    ),
+    "no DENY_FILTER when both scopes are granted",
+  );
+  // Both scope columns resolve to the same school remit → one location filter
+  // (the Set dedup collapses two calls to the same scope column result).
+  assert.deepEqual(filters, [
+    { member: "locations.abbreviation", operator: "equals", values: ["ABC"] },
+  ]);
+});
+
+test("STAFF_PII_MEMBERS lists all gated sensitive columns", () => {
   assert.deepEqual(a.STAFF_PII_MEMBERS.sort(), [
     "birth_date",
     "gender_identity",
@@ -294,5 +354,6 @@ test("STAFF_PII_MEMBERS lists the six gated columns", () => {
     "personal_cell_phone",
     "personal_email",
     "race",
+    "salary",
   ]);
 });
