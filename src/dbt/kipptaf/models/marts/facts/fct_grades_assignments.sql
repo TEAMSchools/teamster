@@ -1,7 +1,6 @@
 with
     course_enrollments as (
         select
-            _dbt_source_relation,
             _dbt_source_project,
             cc_studentid,
             cc_academic_year,
@@ -19,7 +18,6 @@ with
 
     student_enrollments as (
         select
-            _dbt_source_relation,
             _dbt_source_project,
             studentid,
             schoolid,
@@ -100,7 +98,7 @@ inner join
     and asg.students_dcid = ce.students_dcid
     and asg.duedate >= ce.cc_dateenrolled
     and asg.duedate < ce.cc_dateleft
-    and {{ union_dataset_join_clause(left_alias="asg", right_alias="ce") }}
+    and asg._dbt_source_project = ce._dbt_source_project
 -- retained as a row-population filter (assignment must fall within a covering
 -- school enrollment); enrollment linkage now flows via
 -- student_section_enrollment_key -> dim_student_section_enrollments

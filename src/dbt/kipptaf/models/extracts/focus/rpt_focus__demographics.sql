@@ -1,8 +1,6 @@
 -- trunk-ignore(sqlfluff/ST06): column order fixed by Focus DEMOGRAPHICS contract
 select
-    -- STDT_ID is null until the Finalsite-minted student id lands in
-    -- id_attributes; repoint to int_finalsite__contact_id_attributes then.
-    cast(null as string) as stdt_id,
+    ida.focus_student_id as stdt_id,
 
     c.last_name,
     c.first_name,
@@ -75,11 +73,13 @@ select
     cast(null as string) as dt_home_lang_survey,
     cast(null as string) as casas_track,
     cast(null as string) as lcp_cont_stdt,
-    cast(null as string) as tide_access_code,
 from {{ ref("stg_finalsite__contacts") }} as c
 inner join
     {{ ref("int_finalsite__enrollment_lifecycle") }} as l
     on c.finalsite_enrollment_id = l.finalsite_enrollment_id
+left join
+    {{ ref("int_finalsite__contact_id_attributes") }} as ida
+    on c.finalsite_enrollment_id = ida.finalsite_enrollment_id
 left join
     {{ ref("int_finalsite__contact_custom_attributes") }} as cca
     on c.finalsite_enrollment_id = cca.finalsite_enrollment_id

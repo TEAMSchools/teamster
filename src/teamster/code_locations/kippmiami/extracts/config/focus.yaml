@@ -1,0 +1,205 @@
+assets:
+  - query_config:
+      type: schema
+      value:
+        table:
+          schema: kippmiami_extracts
+          name: rpt_focus__demographics
+    file_config:
+      stem: demographics
+      suffix: csv
+      format:
+        header_replacements:
+          stdt_id: STDT_ID
+          last_name: LAST_NAME
+          first_name: FIRST_NAME
+          name_suffix: NAME_SUFFIX
+          middle_name: MIDDLE_NAME
+          nickname: NICKNAME
+          dt_birth: DT_BIRTH
+          gender: GENDER
+          lang: LANG
+          stdt_email: STDT_EMAIL
+          ethnic_hl: ETHNIC_HL
+          single_ethnic: SINGLE_ETHNIC
+          race_am_ind_ak_nat: RACE_AM_IND_AK_NAT
+          race_asian: RACE_ASIAN
+          race_black: RACE_BLACK
+          race_nat_haw_pac_isl: RACE_NAT_HAW_PAC_ISL
+          race_white: RACE_WHITE
+          residence_county: RESIDENCE_COUNTY
+          contry_birth: CONTRY_BIRTH
+          homeroom_tchr: HOMEROOM_TCHR
+          resident_st: RESIDENT_ST
+          birth_loc: BIRTH_LOC
+          bdate_verif: BDATE_VERIF
+          immun_st: IMMUN_ST
+          primary_home_lang: PRIMARY_HOME_LANG
+          native_parent_lang: NATIVE_PARENT_LANG
+          grde_enter_dist: GRDE_ENTER_DIST
+          msix_id: MSIX_ID
+          homeroom: HOMEROOM
+          pmrn: PMRN
+          internt_perm: INTERNT_PERM
+          act_perm: ACT_PERM
+          direct_perm: DIRECT_PERM
+          screen_perm: SCREEN_PERM
+          photo_vid_perm: PHOTO_VID_PERM
+          survey_perm: SURVEY_PERM
+          mckay_sch_attend: MCKAY_SCH_ATTEND
+          fhsaa_el3_ind: FHSAA_EL3_IND
+          fhsaa_el3ch_ind: FHSAA_EL3CH_IND
+          dt_home_lang_survey: DT_HOME_LANG_SURVEY
+          casas_track: CASAS_TRACK
+          lcp_cont_stdt: LCP_CONT_STDT
+    destination_config:
+      name: focus
+      path: incoming
+  - query_config:
+      type: schema
+      value:
+        table:
+          schema: kippmiami_extracts
+          name: rpt_focus__student_enrollment
+    file_config:
+      stem: student_enrollment
+      suffix: csv
+      format:
+        header_replacements:
+          syear: SYEAR
+          school_id: SCHOOL_ID
+          student_id: STUDENT_ID
+          grade_id: GRADE_ID
+          start_date: START_DATE
+          enrollment_code: ENROLLMENT_CODE
+          end_date: END_DATE
+          drop_code: DROP_CODE
+          calendar_id: CALENDAR_ID
+          prior_dist: PRIOR_DIST
+          prior_state: PRIOR_STATE
+          prior_country: PRIOR_COUNTRY
+          ed_choice: ED_CHOICE
+          stdt_dis_affect: STDT_DIS_AFFECT
+          offender_transfer_stdt: OFFENDER_TRANSFER_STDT
+          came_from: CAME_FROM
+          moved_to: MOVED_TO
+          sec_sch: SEC_SCH
+          grde_prom_st: GRDE_PROM_ST
+          good_cause_exempt: GOOD_CAUSE_EXEMPT
+          graduation_requirement_program: GRADUATION_REQUIREMENT_PROGRAM
+          next_school: NEXT_SCHOOL
+          next_grade: NEXT_GRADE
+          district_ood: DISTRICT_OOD
+          sch_ood: SCH_OOD
+          include_in_class_rank: INCLUDE_IN_CLASS_RANK
+          fl_days_present: FL_DAYS_PRESENT
+          fl_days_absent: FL_DAYS_ABSENT
+    destination_config:
+      name: focus
+      path: incoming
+  - query_config:
+      type: schema
+      value:
+        table:
+          schema: kippmiami_extracts
+          name: rpt_focus__addresses
+    file_config:
+      stem: addresses
+      suffix: csv
+      format:
+        header_replacements:
+          student_id: STUDENT_ID
+          address: ADDRESS
+          address2: ADDRESS2
+          city: CITY
+          state: STATE
+          zipcode: ZIPCODE
+          phone: PHONE
+          mailing: MAILING
+          mail_address: MAIL_ADDRESS
+          mail_address2: MAIL_ADDRESS2
+          mail_city: MAIL_CITY
+          mail_state: MAIL_STATE
+    destination_config:
+      name: focus
+      path: incoming
+  - query_config:
+      type: schema
+      value:
+        table:
+          schema: kippmiami_extracts
+          name: rpt_focus__contacts
+    file_config:
+      stem: contacts
+      suffix: csv
+      format:
+        header_replacements:
+          student_id: STUDENT_ID
+          student_relation: STUDENT_RELATION
+          sort_order: SORT_ORDER
+          first_name: FIRST_NAME
+          middle_name: MIDDLE_NAME
+          last_name: LAST_NAME
+          resides_with_stud: RESIDES_WITH_STUD
+          custody: CUSTODY
+          emergency: EMERGENCY
+          pickup: PICKUP
+          address: ADDRESS
+          address2: ADDRESS2
+          city: CITY
+          state: STATE
+          zipcode: ZIPCODE
+          email: EMAIL
+          contact1_type: CONTACT1_TYPE
+          contact1_value: CONTACT1_VALUE
+          contact1_blocked: CONTACT1_BLOCKED
+          contact1_unlisted: CONTACT1_UNLISTED
+          contact1_callout: CONTACT1_CALLOUT
+          contact2_type: CONTACT2_TYPE
+          contact2_value: CONTACT2_VALUE
+          contact2_blocked: CONTACT2_BLOCKED
+          contact2_unlisted: CONTACT2_UNLISTED
+          contact2_callout: CONTACT2_CALLOUT
+          contact3_type: CONTACT3_TYPE
+          contact3_value: CONTACT3_VALUE
+          contact3_blocked: CONTACT3_BLOCKED
+          contact3_unlisted: CONTACT3_UNLISTED
+          contact3_callout: CONTACT3_CALLOUT
+          contact4_type: CONTACT4_TYPE
+          contact4_value: CONTACT4_VALUE
+          contact4_blocked: CONTACT4_BLOCKED
+          contact4_unlisted: CONTACT4_UNLISTED
+          contact4_callout: CONTACT4_CALLOUT
+          contact5_type: CONTACT5_TYPE
+          contact5_value: CONTACT5_VALUE
+          contact5_blocked: CONTACT5_BLOCKED
+          contact5_unlisted: CONTACT5_UNLISTED
+          contact5_callout: CONTACT5_CALLOUT
+          contact6_type: CONTACT6_TYPE
+          contact6_value: CONTACT6_VALUE
+          contact6_blocked: CONTACT6_BLOCKED
+          contact6_unlisted: CONTACT6_UNLISTED
+          contact6_callout: CONTACT6_CALLOUT
+          contact7_type: CONTACT7_TYPE
+          contact7_value: CONTACT7_VALUE
+          contact7_blocked: CONTACT7_BLOCKED
+          contact7_unlisted: CONTACT7_UNLISTED
+    destination_config:
+      name: focus
+      path: incoming
+  - query_config:
+      type: schema
+      value:
+        table:
+          schema: kippmiami_extracts
+          name: rpt_focus__linked_students
+    file_config:
+      stem: linked_students
+      suffix: csv
+      format:
+        header_replacements:
+          primary_student_id: PRIMARY_STUDENT_ID
+          secondary_student_id: SECONDARY_STUDENT_ID
+    destination_config:
+      name: focus
+      path: incoming

@@ -31,7 +31,14 @@ with
             )
     )
 
--- trunk-ignore(sqlfluff/AM04)
-select ur.*, c.first_choice_school, c.second_choice_school, c.third_choice_school,
+select
+    ur.*,
+
+    c.first_choice_school,
+    c.second_choice_school,
+    c.third_choice_school,
+
+    {{ extract_code_location("ur") }} as _dbt_source_project,
+
 from union_relations as ur
 left join choices_pivot as c on ur.id = c.student__id
