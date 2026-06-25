@@ -340,7 +340,6 @@ exposures:
     owner:
       name: Data Team - grangel
     depends_on:
-      - ref("rpt_tableau__gradebook_audit")
       - ref("rpt_tableau__gradebook_gpa")
       - ref("rpt_tableau__gradebook_gpa_cumulative")
       - ref("rpt_tableau__gradebook_es_comments")
