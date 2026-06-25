@@ -237,7 +237,7 @@ views:
             - dates_school_week_start_date
 
     access_policy:
-      - group: cube-access-student-data
+      - group: student-detail
         member_level:
           includes: "*"
           excludes:
@@ -247,6 +247,6 @@ views:
             - state_student_identifier
             - salesforce_contact_id
             - district_student_identifier
-      - group: cube-access-student-pii
+      - group: student-pii
         member_level:
           includes: "*"

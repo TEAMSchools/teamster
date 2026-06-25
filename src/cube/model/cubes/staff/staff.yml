@@ -1,7 +1,19 @@
 cubes:
   - name: staff
     public: false
-    sql_table: kipptaf_marts.dim_staff
+    # LEFT JOIN brings job_function_level/code + department_group from
+    # dim_staff_cube_access — these are current-role attributes used by
+    # staffSensitiveFilters in cube.js (reporting_chain_or_below_rank rank
+    # comparison and teaching_staff job_function_code filter).
+    sql: |
+      SELECT
+        s.*,
+        ca.job_function_level,
+        ca.job_function_code,
+        ca.department_group
+      FROM kipptaf_marts.dim_staff s
+      LEFT JOIN kipptaf_marts.dim_staff_cube_access ca
+        ON ca.staff_key = s.staff_key
 
     dimensions:
       # Surrogate key derived from employee_number. Primary key. Public — it is
@@ -131,4 +143,33 @@ cubes:
           worker_dates in ADP.
         sql: CAST(rehire_date AS TIMESTAMP)
         type: time
+        public: true
+
+      # Current-role attributes from dim_staff_cube_access — used by
+      # staffSensitiveFilters for rank-based and job-function scope checks.
+      - name: job_function_level
+        description: >-
+          Numeric seniority level for the staff member's current job function
+          (higher = more senior). Used for reporting_chain_or_below_rank scope:
+          viewers see staff with a level numerically greater than their own.
+        sql: job_function_level
+        type: number
+        public: true
+
+      - name: job_function_code
+        description: >-
+          Short code for the staff member's current job function category (e.g.
+          TEACH, TIR). Used for teaching_staff scope to restrict access to
+          classroom teachers and teacher-in-residence.
+        sql: job_function_code
+        type: string
+        public: true
+
+      - name: department_group
+        description: >-
+          Broad department grouping for the staff member's current role (e.g.
+          Academics, Ops). Used as the department axis of the shared staff
+          sensitive remit (staff_department_scope = own_group).
+        sql: department_group
+        type: string
         public: true

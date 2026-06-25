@@ -96,6 +96,6 @@ views:
 
     access_policy:
       # No direct identifiers — demographic breakdowns only.
-      - group: cube-access-staff-data
+      - group: staff-directory
         member_level:
           includes: "*"

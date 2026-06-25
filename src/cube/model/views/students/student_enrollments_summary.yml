@@ -131,6 +131,6 @@ views:
       # No PII tier — view contains no direct student identifiers.
       # Demographic dimensions (race, gender_identity, is_gifted) are
       # aggregate breakdowns only.
-      - group: cube-access-student-data
+      - group: student-summary
         member_level:
           includes: "*"
