@@ -3,7 +3,12 @@ const test = require("node:test");
 const assert = require("node:assert/strict");
 const a = require("./access");
 
+// Refold-c access row: open staff directory + summary, sensitive staff fields
+// gated by the shared remit (staff_location_scope ∩ staff_department_scope) plus
+// a per-field scope enum. SL = a school leader (school location, all-dept remit,
+// all_in_scope PII).
 const SL = {
+  staff_key: "self",
   region_key: "R1",
   location_abbreviation: "ABC",
   department_group: "Ops",
@@ -11,16 +16,20 @@ const SL = {
   student_summary_location_scope: "network",
   student_detail_location_scope: "school",
   student_pii_scope: "all",
-  staff_summary_location_scope: "network",
-  staff_summary_department_scope: "all",
-  staff_detail_location_scope: "school",
-  staff_detail_department_scope: "all",
-  staff_detail_org_gate: "below_rank_or_downline",
-  staff_pii_scope: "all",
+  staff_location_scope: "school",
+  staff_department_scope: "all",
+  staff_pii_scope: "all_in_scope",
   staff_compensation_scope: "none",
   staff_observations_scope: "none",
   staff_benefits_scope: "none",
 };
+
+test("isStudentMember / isStaffMember key off the view prefix", () => {
+  assert.ok(a.isStudentMember("student_attendance_detail.x"));
+  assert.ok(!a.isStudentMember("staff_detail.x"));
+  assert.ok(a.isStaffMember("staff_summary.race"));
+  assert.ok(!a.isStaffMember("student_enrollments_detail.x"));
+});
 
 test("surfaceOf reads the view suffix", () => {
   assert.equal(
@@ -34,14 +43,51 @@ test("surfaceOf reads the view suffix", () => {
   assert.equal(a.surfaceOf({ dimensions: ["dates.date_day"] }), null);
 });
 
-test("buildGroups: SL gets detail+summary+pii for both domains", () => {
+test("buildGroups: SL gets student detail+summary+pii and staff directory+pii", () => {
   const g = a.buildGroups(SL);
-  assert.ok(g.includes("cube-access-student-detail"));
-  assert.ok(g.includes("cube-access-student-summary"));
-  assert.ok(g.includes("cube-access-student-pii"));
-  assert.ok(g.includes("cube-access-staff-detail"));
-  assert.ok(g.includes("cube-access-staff-summary"));
-  assert.ok(g.includes("cube-access-staff-pii"));
+  assert.ok(g.includes("student-detail"));
+  assert.ok(g.includes("student-summary"));
+  assert.ok(g.includes("student-pii"));
+  assert.ok(g.includes("staff-directory"));
+  assert.ok(g.includes("staff-pii"));
+  // No detail/summary split on the open staff surface.
+  assert.ok(!g.includes("staff-detail"));
+  assert.ok(!g.includes("staff-summary"));
+  // SL has none-valued comp/obs/benefits scopes → those tiers are not emitted.
+  assert.ok(!g.includes("staff-compensation"));
+  assert.ok(!g.includes("staff-observations"));
+  assert.ok(!g.includes("staff-benefits"));
+});
+
+test("buildGroups: a sensitive tier is emitted per scope != none", () => {
+  const g = a.buildGroups({
+    ...SL,
+    staff_compensation_scope: "reporting_chain",
+    staff_observations_scope: "all_in_scope",
+    staff_benefits_scope: "none",
+  });
+  assert.ok(g.includes("staff-compensation"));
+  assert.ok(g.includes("staff-observations"));
+  assert.ok(!g.includes("staff-benefits"));
+});
+
+test("buildGroups: directory is open to every staff viewer, even full-deny", () => {
+  const denied = {
+    ...SL,
+    student_summary_location_scope: "none",
+    student_detail_location_scope: "none",
+    student_pii_scope: "none",
+    staff_location_scope: "none",
+    staff_department_scope: "none",
+    staff_pii_scope: "none",
+  };
+  assert.deepEqual(a.buildGroups(denied), ["staff-directory"]);
+});
+
+test("buildGroups: staff_pii_scope none → directory but no pii tier", () => {
+  const g = a.buildGroups({ ...SL, staff_pii_scope: "none" });
+  assert.ok(g.includes("staff-directory"));
+  assert.ok(!g.includes("staff-pii"));
 });
 
 test("buildGroups: summary-only student viewer gets no student-detail", () => {
@@ -50,9 +96,9 @@ test("buildGroups: summary-only student viewer gets no student-detail", () => {
     student_detail_location_scope: "none",
     student_pii_scope: "none",
   });
-  assert.ok(g.includes("cube-access-student-summary"));
-  assert.ok(!g.includes("cube-access-student-detail"));
-  assert.ok(!g.includes("cube-access-student-pii"));
+  assert.ok(g.includes("student-summary"));
+  assert.ok(!g.includes("student-detail"));
+  assert.ok(!g.includes("student-pii"));
 });
 
 test("buildGroups: null row → no groups", () => {
@@ -60,8 +106,7 @@ test("buildGroups: null row → no groups", () => {
 });
 
 test("studentRowFilters: detail=school → abbreviation filter", () => {
-  const f = a.studentRowFilters(SL, "detail");
-  assert.deepEqual(f, [
+  assert.deepEqual(a.studentRowFilters(SL, "detail"), [
     { member: "locations.abbreviation", operator: "equals", values: ["ABC"] },
   ]);
 });
@@ -71,22 +116,99 @@ test("studentRowFilters: summary=network → no filter", () => {
 });
 
 test("studentRowFilters: none → deny", () => {
-  const f = a.studentRowFilters(
-    { ...SL, student_detail_location_scope: "none" },
-    "detail",
+  assert.deepEqual(
+    a.studentRowFilters(
+      { ...SL, student_detail_location_scope: "none" },
+      "detail",
+    ),
+    [a.DENY_FILTER],
   );
-  assert.deepEqual(f, [a.DENY_FILTER]);
 });
 
-test("staffRowFilters summary: network ∩ all-dept → no filter", () => {
-  assert.deepEqual(a.staffRowFilters(SL, [], "summary"), []);
+// ---- staffSensitiveFilters: the open directory + per-field gating ----
+
+test("staffSensitiveFilters: directory-only staff query → no filter", () => {
+  assert.deepEqual(
+    a.staffSensitiveFilters({ dimensions: ["staff_detail.full_name"] }, SL, []),
+    [],
+  );
 });
 
-test("staffRowFilters detail below_rank_or_downline: OR(scope∧rank, downline)", () => {
-  const f = a.staffRowFilters(SL, ["k1", "k2"], "detail");
+test("staffSensitiveFilters: staff_summary demographic is an open aggregate (no gate)", () => {
+  // race is a STAFF_PII_MEMBER leaf, but on the summary view it is an open
+  // aggregate breakdown — only staff_detail occurrences are gated.
+  assert.deepEqual(
+    a.staffSensitiveFilters({ dimensions: ["staff_summary.race"] }, SL, []),
+    [],
+  );
+});
+
+test("staffSensitiveFilters: all_in_scope + school/all → school filter", () => {
+  assert.deepEqual(
+    a.staffSensitiveFilters(
+      { dimensions: ["staff_detail.personal_email"] },
+      SL,
+      [],
+    ),
+    [{ member: "locations.abbreviation", operator: "equals", values: ["ABC"] }],
+  );
+});
+
+test("staffSensitiveFilters: all_in_scope + network/all → no filter", () => {
+  const exec = {
+    ...SL,
+    staff_location_scope: "network",
+    staff_department_scope: "all",
+  };
+  assert.deepEqual(
+    a.staffSensitiveFilters({ dimensions: ["staff_detail.race"] }, exec, []),
+    [],
+  );
+});
+
+test("staffSensitiveFilters: all_in_scope + region/own_group → region ∩ dept", () => {
+  const r = {
+    ...SL,
+    staff_location_scope: "region",
+    staff_department_scope: "own_group",
+  };
+  assert.deepEqual(
+    a.staffSensitiveFilters({ dimensions: ["staff_detail.birth_date"] }, r, []),
+    [
+      { member: "locations.region_key", operator: "equals", values: ["R1"] },
+      { member: "staff.department_group", operator: "equals", values: ["Ops"] },
+    ],
+  );
+});
+
+test("staffSensitiveFilters: reporting_chain → chain IN only", () => {
+  const r = { ...SL, staff_pii_scope: "reporting_chain" };
+  assert.deepEqual(
+    a.staffSensitiveFilters(
+      { dimensions: ["staff_detail.personal_email"] },
+      r,
+      ["k1", "k2"],
+    ),
+    [{ member: "staff.staff_key", operator: "equals", values: ["k1", "k2"] }],
+  );
+});
+
+test("staffSensitiveFilters: reporting_chain + empty chain → deny", () => {
+  const r = { ...SL, staff_pii_scope: "reporting_chain" };
+  assert.deepEqual(
+    a.staffSensitiveFilters({ dimensions: ["staff_detail.race"] }, r, []),
+    [a.DENY_FILTER],
+  );
+});
+
+test("staffSensitiveFilters: reporting_chain_or_below_rank → OR(scope∧rank, chain)", () => {
+  const r = { ...SL, staff_pii_scope: "reporting_chain_or_below_rank" };
+  const f = a.staffSensitiveFilters({ dimensions: ["staff_detail.race"] }, r, [
+    "k1",
+  ]);
   assert.equal(f.length, 1);
   assert.ok(f[0].or, "top-level OR");
-  const [scope, downline] = f[0].or;
+  const [scope, chain] = f[0].or;
   assert.ok(scope.and.some((c) => c.member === "locations.abbreviation"));
   assert.ok(
     scope.and.some(
@@ -96,64 +218,81 @@ test("staffRowFilters detail below_rank_or_downline: OR(scope∧rank, downline)"
         c.values[0] === "4",
     ),
   );
-  assert.deepEqual(downline, {
+  assert.deepEqual(chain, {
     member: "staff.staff_key",
     operator: "equals",
-    values: ["k1", "k2"],
+    values: ["k1"],
   });
 });
 
-test("staffRowFilters detail downline_only: just the downline IN", () => {
-  const f = a.staffRowFilters(
-    { ...SL, staff_detail_org_gate: "downline_only" },
-    ["k1"],
-    "detail",
-  );
-  assert.deepEqual(f, [
-    { member: "staff.staff_key", operator: "equals", values: ["k1"] },
-  ]);
-});
-
-test("staffRowFilters detail all_in_scope + network → no filter (all in scope)", () => {
-  const exec = {
+test("staffSensitiveFilters: reporting_chain_or_below_rank, network scope, no chain → rank only", () => {
+  const r = {
     ...SL,
-    staff_detail_org_gate: "all_in_scope",
-    staff_detail_location_scope: "network",
-    staff_detail_department_scope: "all",
+    staff_pii_scope: "reporting_chain_or_below_rank",
+    staff_location_scope: "network",
+    staff_department_scope: "all",
   };
-  assert.deepEqual(a.staffRowFilters(exec, [], "detail"), []);
+  assert.deepEqual(
+    a.staffSensitiveFilters({ dimensions: ["staff_detail.race"] }, r, []),
+    [{ member: "staff.job_function_level", operator: "gt", values: ["4"] }],
+  );
 });
 
-test("staffRowFilters detail org_gate none → deny", () => {
+test("staffSensitiveFilters: teaching_staff → remit ∩ TEACH/TIR", () => {
+  const r = { ...SL, staff_pii_scope: "teaching_staff" };
   assert.deepEqual(
-    a.staffRowFilters({ ...SL, staff_detail_org_gate: "none" }, [], "detail"),
+    a.staffSensitiveFilters(
+      { dimensions: ["staff_detail.personal_cell_phone"] },
+      r,
+      [],
+    ),
+    [
+      { member: "locations.abbreviation", operator: "equals", values: ["ABC"] },
+      {
+        member: "staff.job_function_code",
+        operator: "equals",
+        values: ["TEACH", "TIR"],
+      },
+    ],
+  );
+});
+
+test("staffSensitiveFilters: scope none → deny", () => {
+  assert.deepEqual(
+    a.staffSensitiveFilters(
+      { dimensions: ["staff_detail.race"] },
+      { ...SL, staff_pii_scope: "none" },
+      [],
+    ),
     [a.DENY_FILTER],
   );
 });
 
-test("staffColumnNarrowing: reporting_chain PII request narrows to downline", () => {
-  const row = { ...SL, staff_pii_scope: "reporting_chain" };
-  const q = { dimensions: ["staff_detail.personal_email"] };
-  const f = a.staffColumnNarrowing(q, row, ["k1"]);
-  assert.deepEqual(f, [
-    { member: "staff.staff_key", operator: "equals", values: ["k1"] },
-  ]);
+test("staffSensitiveFilters: null row + sensitive request → deny", () => {
+  assert.deepEqual(
+    a.staffSensitiveFilters({ dimensions: ["staff_detail.race"] }, null, []),
+    [a.DENY_FILTER],
+  );
 });
 
-test("staffColumnNarrowing: teaching_staff PII request narrows to TEACH/TIR", () => {
-  const row = { ...SL, staff_pii_scope: "teaching_staff" };
-  const q = { dimensions: ["staff_detail.race"] };
-  const f = a.staffColumnNarrowing(q, row, []);
-  assert.deepEqual(f, [
-    {
-      member: "staff.job_function_code",
-      operator: "equals",
-      values: ["TEACH", "TIR"],
-    },
-  ]);
+test("staffSensitiveFilters: two PII fields share one scope → not doubled", () => {
+  assert.deepEqual(
+    a.staffSensitiveFilters(
+      { dimensions: ["staff_detail.personal_email", "staff_detail.race"] },
+      SL,
+      [],
+    ),
+    [{ member: "locations.abbreviation", operator: "equals", values: ["ABC"] }],
+  );
 });
 
-test("staffColumnNarrowing: pii_scope=all → no extra filter", () => {
-  const q = { dimensions: ["staff_detail.personal_email"] };
-  assert.deepEqual(a.staffColumnNarrowing(q, SL, ["k1"]), []);
+test("STAFF_PII_MEMBERS lists the six gated columns", () => {
+  assert.deepEqual(a.STAFF_PII_MEMBERS.sort(), [
+    "birth_date",
+    "gender_identity",
+    "is_hispanic",
+    "personal_cell_phone",
+    "personal_email",
+    "race",
+  ]);
 });
