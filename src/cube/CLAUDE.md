@@ -41,14 +41,14 @@ school_calendars) go in `cubes/conformed/`.
   `queryRewrite`'s `isStudentMember` access gating keys off the `student`
   prefix, so a misnamed student-domain cube silently loses its access guard.
   Staff cubes carry no prefix-based gate in `cube.js` — staff RLS is governed by
-  the location scope filter plus each staff view's `cube-access-staff-data`
-  access policy. The `staff` prefix is still a naming convention, not a guard.
-  Conformed dims (`dates`, `locations`, `regions`, `terms`, `school_calendars`)
-  are deliberately unprefixed — they carry no domain access tier. View names are
-  `<domain>_<grain>` (`student_attendance_detail`,
-  `student_attendance_summary`). `sql_table` always points at
-  `kipptaf_marts.<table>` (the warehouse table keeps its `dim_`/`fct_` prefix) —
-  cubes never read district datasets directly.
+  the per-field scope filters in `staffSensitiveFilters` plus each staff view's
+  `staff-directory` access policy. The `staff` prefix is still a naming
+  convention, not a guard. Conformed dims (`dates`, `locations`, `regions`,
+  `terms`, `school_calendars`) are deliberately unprefixed — they carry no
+  domain access tier. View names are `<domain>_<grain>`
+  (`student_attendance_detail`, `student_attendance_summary`). `sql_table`
+  always points at `kipptaf_marts.<table>` (the warehouse table keeps its
+  `dim_`/`fct_` prefix) — cubes never read district datasets directly.
 - **Joins use cube-reference syntax** (`{students.col} = {CUBE}.col`), not raw
   identifiers. Dim joins from facts set `relationship: many_to_one`.
 - **Range/non-equi join predicates** (`BETWEEN`, `>=`) are valid in a join
@@ -81,63 +81,77 @@ school_calendars) go in `cubes/conformed/`.
 
 ## View access policies
 
-Views own access via `access_policy:`. Two patterns:
+Views own access via `access_policy:`. Tier names (short, no prefix):
 
-- **Detail views** (row-level, contain student identifiers): two policy blocks —
-  `cube-access-student-data` with `member_level.excludes` listing PII fields
+- **Student detail views** (row-level, contain student identifiers): two policy
+  blocks — `student-detail` with `member_level.excludes` listing PII fields
   (names, DOB, all `*_student_identifier`, `salesforce_contact_id`), and
-  `cube-access-student-pii` with `includes: "*"`.
-- **Summary views** (no direct identifiers, demographic breakdowns only): single
-  `cube-access-student-data` block with `includes: "*"`. Add a comment
+  `student-pii` with `includes: "*"`.
+- **Student summary views** (no direct identifiers, demographic breakdowns
+  only): single `student-summary` block with `includes: "*"`. Add a comment
   explaining why no PII tier is needed.
-- **Staff views**: `staff_summary` uses a single `cube-access-staff-data` block
-  with `includes: "*"` — aggregate demographics only, no direct identifiers.
-  `staff_detail` uses two blocks: `cube-access-staff-data` with `includes: "*"`
-  and `excludes:` the personal/sensitive fields (`personal_email`,
-  `personal_cell_phone`, `birth_date`, `gender_identity`, `race`,
-  `is_hispanic`), plus `cube-access-staff-pii` with `includes: "*"`.
-  Work-directory info (names, work/google email, AD username, `staff_unique_id`,
-  manager contacts) stays in the base tier — already internally public.
-  Demographics are gated row-level in `staff_detail` but remain valid aggregate
-  breakdowns in `staff_summary` (low-n suppression tracked separately in
+- **Staff views**: `staff_summary` uses a single `staff-directory` block with
+  `includes: "*"` — aggregate demographics only, no direct identifiers.
+  `staff_detail` uses two blocks: `staff-directory` with `includes: "*"` and
+  `excludes:` the sensitive fields (`personal_email`, `personal_cell_phone`,
+  `birth_date`, `gender_identity`, `race`, `is_hispanic`), plus `staff-pii` with
+  `includes: "*"`. Work-directory info (names, work/google email, AD username,
+  `staff_unique_id`, manager contacts) stays in the base tier — already
+  internally public. Demographics are gated row-level in `staff_detail` but
+  remain valid aggregate breakdowns in `staff_summary` (low-n suppression
+  tracked separately in
   [#4237](https://github.com/TEAMSchools/teamster/issues/4237)).
+- **Forward-compatible staff tiers**: `staff-compensation`,
+  `staff-observations`, `staff-benefits` are emitted by `buildGroups` when the
+  corresponding `*_scope` column is non-`none`, but no view has an
+  `access_policy` block for them yet. Wire them when those cubes/views are
+  built.
 
 When adding a field to a detail view, decide PII status per project CLAUDE.md
 FERPA guidance. If PII, add it to the `excludes` list under the base-tier policy
-block — `cube-access-student-data` for student views, `cube-access-staff-data`
-for `staff_detail`.
+block — `student-detail` for student views, `staff-directory` for
+`staff_detail`.
 
 ## `cube.js` security model
 
-Default-deny, group-driven. Read [`cube.js`](cube.js) before modifying.
+Default-deny, HR-derived, group-driven. Read [`cube.js`](cube.js) and
+[`access.js`](access.js) before modifying. All pure access helpers live in
+`access.js` (unit-tested); `cube.js` owns only BigQuery reads + cache.
 
-- **`contextToGroups`** resolves the requester's email to `cube-*` Google
-  Workspace groups via the Admin Directory API, cached until next midnight ET.
-  `CUBE_GROUP_MAP` (local dev only, gated on `NODE_ENV !== "production"`) is the
-  sole bypass.
-- **Group membership is direct-only.** Admin Directory API's
-  `groups.list({userKey})` returns direct memberships; nested `cube-*` groups
-  don't transitively resolve. Flat-enroll users in every `cube-*` group they
-  need: a scope tier (`cube-network-*` / `cube-region-*` / `cube-school-*`) plus
-  `cube-access-student-data` for student views and `cube-access-staff-data` for
-  staff views.
-- **Cloud Identity `searchTransitiveGroups` is edition-gated** (Workspace
-  Enterprise / Education Plus / Cloud Identity Premium). On lower editions it
-  returns `INVALID_ARGUMENT`, not `PERMISSION_DENIED` — don't propose it as a
-  transitive-resolution fix without verifying the tenant's edition.
-- **`queryRewrite`** enforces two filters:
-  - Strips student-domain dims/measures (members where `isStudentMember` is
-    true) for users without `cube-access-student-data`.
-  - Adds a `locations` filter based on the highest-priority scope group: network
-    (no filter) → region (`region_key`) → school (`abbreviation`). No scope
-    group → empty `IN ()` filter (default deny). This scope filter applies to
-    staff views too (resolved through their `locations` join).
+- **`contextToGroups`** resolves the requester's email via two BigQuery reads:
+  `dim_staff_cube_access` (one active+primary row with per-field scope enums)
+  and `dim_staff_reporting_chain` (transitive closure of org tree). The access
+  row is fed to `access.buildGroups(row)` which emits HR-derived tier strings
+  (e.g. `student-detail`, `staff-directory`, `staff-pii`). Results are cached
+  until next midnight ET. `CUBE_GROUP_MAP` (local dev only, gated on
+  `NODE_ENV !== "production"`) is the sole bypass; when set, `row` stays null so
+  `queryRewrite` row filters default-deny — unset it to exercise real row-level
+  scoping.
+- **Tier strings** (emitted by `buildGroups`):
+  - `student-summary` / `student-detail` / `student-pii` — student access tiers
+  - `staff-directory` — always emitted for any resolved staff viewer (open)
+  - `staff-pii` / `staff-compensation` / `staff-observations` / `staff-benefits`
+    — emitted when the corresponding `*_scope` column is non-`none`
+- **`queryRewrite`** reads `row` and `reporteeStaffKeys` from the group cache
+  (same midnight expiry) and calls two pure helpers:
+  - `access.studentRowFilters(row, surface)` — adds a `locations` filter for
+    student queries: network → no filter, region → `region_key`, school →
+    `abbreviation`, none → deny. `surface` is `"detail"` or `"summary"`.
+    Student-domain dims/measures are stripped first for users with no student
+    access (`student-detail` or `student-summary` absent from groups).
+  - `access.staffSensitiveFilters(query, row, reporteeStaffKeys)` — per-field
+    gating for sensitive `staff_detail.*` members only (ignores
+    `staff_summary.*`, which are open aggregates). Resolves each sensitive field
+    to its `*_scope` column and calls `staffScopeFilter`: `all_in_scope` →
+    location ∩ dept remit; `reporting_chain` → staff IN list; `teaching_staff` →
+    remit ∩ TEACH/TIR; `reporting_chain_or_below_rank` → OR(remit ∩ rank,
+    chain). `none` or null row → deny. Multiple sensitive fields sharing one
+    scope produce one filter (no duplication).
 - **`isStudentMember` prefix helper.** Student-domain gating is derived from the
   cube-name prefix (`student*`), not a static array — a query member is
   `<cube_name>.<member>`, so the cube name is the prefix. A new student-domain
   cube needs no `cube.js` change as long as it follows the naming rule above; a
-  misnamed one silently loses its guard. Staff has no equivalent `cube.js` gate
-  (manager-hierarchy RLS was removed pending a view-aware rebuild).
+  misnamed one silently loses its guard.
 - **`SNAPSHOT_CUBES` / `SNAPSHOT_MEASURE_STEMS` / `SNAPSHOT_ANCHOR_OVERRIDES`.**
   For cubes built on fact tables with cumulative daily-status flags (values
   re-stamped on every row — overcounts without a point-in-time anchor), or a
