@@ -1,10 +1,16 @@
 cubes:
   - name: staff
     public: false
-    # LEFT JOIN brings job_function_level/code + department_group from
-    # dim_staff_cube_access — these are current-role attributes used by
-    # staffSensitiveFilters in cube.js (reporting_chain_or_below_rank rank
-    # comparison and teaching_staff job_function_code filter).
+    # Inline LEFT JOIN is intentional: job_function_level/code and
+    # department_group are access-control attributes from dim_staff_cube_access
+    # that cube.js needs on every staff row for staffSensitiveFilters
+    # (reporting_chain_or_below_rank rank comparison, teaching_staff
+    # job_function_code filter). They live in dim_staff_cube_access, not
+    # dim_staff, because they are derived from the role crosswalk and belong to
+    # the access model — adding them to dim_staff would bleed access-control
+    # semantics into the identity dim. This is the same pattern as Cube's
+    # documented range-join use case for SCD2 period-intersection: a join that
+    # cannot be pre-materialized in dbt without coupling two distinct concerns.
     sql: |
       SELECT
         s.*,
