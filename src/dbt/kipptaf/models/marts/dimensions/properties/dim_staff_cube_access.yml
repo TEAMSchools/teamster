@@ -33,6 +33,13 @@ models:
         description: >-
           Resolve-only lookup for the Cube JWT boundary; the active+primary
           Google email so a recycled address cannot resolve to a stale identity.
+        data_tests:
+          - not_null:
+              config:
+                severity: warn
+          - unique:
+              config:
+                severity: warn
 
       - name: region_key
         data_type: string

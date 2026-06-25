@@ -8,6 +8,17 @@
   Uses WITH RECURSIVE, so this model sets contract: enforced: false — contract
   validation wraps the model SQL in a subquery, and BigQuery only allows
   WITH RECURSIVE at the top level of a statement.
+
+  Isolated-node gap: all_staff derives exclusively from edges
+  (dim_work_assignment_reporting_relationships). A staff member with no reporting
+  relationship row at all — no manager, no direct reports — will not appear in
+  all_staff and therefore receives no self-pair. For cube.js reporting_chain
+  scope, this means reporteeStaffKeys resolves to [] and the scope filter denies
+  access as if they had no downline. In practice virtually all KTAF staff have at
+  least one reporting relationship, but a newly-hired executive before their
+  direct reports are loaded, or an ADP data-quality gap, will hit this silently.
+  Debug by checking dim_work_assignment_reporting_relationships for the affected
+  staff_key.
 -#}
 with recursive
     -- trunk-ignore(sqlfluff/ST03): referenced via dbt_utils.deduplicate below

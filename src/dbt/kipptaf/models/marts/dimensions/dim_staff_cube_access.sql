@@ -10,6 +10,15 @@
   identity keys (region_key, location_abbreviation, department_group) are carried
   so cube.js builds location/department filters from the scope level. Rows that
   resolve to no role emit 'none' (deny) rather than NULL.
+
+  Role crosswalk fan-out invariant: the cube_access_role sheet must never carry
+  both a wildcard row (entity='any' or department_type='any') and a specific row
+  for the same job_function_code — the matched CTE's LEFT JOIN would produce two
+  rows per affected staff member and the unique test on staff_key would fail CI.
+  The sheet-level unique_combination_of_columns(job_function_code, entity,
+  department_type) test guards exact-duplicate rows but does not prevent the
+  wildcard+specific overlap. Keep wildcard rows as the fallback only; specific
+  rows should fully replace the wildcard for that code, not supplement it.
 -#}
 with
     -- one current primary work assignment per staff (dedup'd below)
