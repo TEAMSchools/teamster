@@ -1,4 +1,6 @@
-const groupCache = new Map(); // email → { groups, expiresAt }
+const access = require("./access");
+
+const groupCache = new Map(); // email → { groups, row, reporteeStaffKeys, expiresAt }
 
 function nextMidnightEastern() {
   const now = new Date();
@@ -20,15 +22,9 @@ function nextMidnightEastern() {
   return now.getTime() + (24 * 60 * 60 * 1000 - msElapsedToday);
 }
 
-// Student-domain membership is derived from the cube-name prefix, not a static
-// array — a query member is "<cube>.<member>", so the cube name is the prefix.
-// Student-domain cube names start with "student" (see src/cube/CLAUDE.md).
-// Staff-domain RLS was intentionally removed from cube.js: staff visibility is
-// governed by the location scope filter below plus each staff view's
-// cube-access-staff-data access policy. Manager-hierarchy scoping is deferred;
-// when it returns it must work for view queries (segment on the view, not the
-// underlying cube).
-const isStudentMember = (member) => member.startsWith("student");
+// All access-resolution logic (isStudentMember / isStaffMember, group building,
+// per-surface row filters) lives in access.js (pure, unit-tested). cube.js owns
+// only the BigQuery identity reads + cache below.
 
 // Convention for snapshot cubes: cumulative daily flags that overcount without
 // a point-in-time anchor. All snapshot cubes expose these three dimensions.
@@ -90,13 +86,21 @@ module.exports = {
       securityContext?.cubeCloud?.userAttributes?.email;
     if (!email) return [];
 
-    // Local dev only: CUBE_GROUP_MAP bypasses Directory API.
-    // Must never be set in Cube Cloud — see docs/guides/cube.md.
+    // Local dev only: CUBE_GROUP_MAP bypasses the BigQuery reads, supplying the
+    // column-visibility tiers directly. row stays null, so the queryRewrite
+    // row filters default-deny — unset CUBE_GROUP_MAP to exercise real
+    // row-level scoping against kipptaf_marts. Never set in Cube Cloud
+    // (see docs/guides/cube.md).
     if (process.env.NODE_ENV !== "production" && process.env.CUBE_GROUP_MAP) {
       try {
         const map = JSON.parse(process.env.CUBE_GROUP_MAP);
-        const groups = (map[email] ?? []).filter((g) => g.startsWith("cube-"));
-        groupCache.set(email, { groups, expiresAt: nextMidnightEastern() });
+        const groups = map[email] ?? [];
+        groupCache.set(email, {
+          groups,
+          row: null,
+          reporteeStaffKeys: [],
+          expiresAt: nextMidnightEastern(),
+        });
         return groups;
       } catch (err) {
         console.error("CUBE_GROUP_MAP is not valid JSON:", err.message);
@@ -104,49 +108,67 @@ module.exports = {
       }
     }
 
-    // Check cache
     const cached = groupCache.get(email);
     if (cached && cached.expiresAt > Date.now()) return cached.groups;
 
-    // Call Admin Directory API.
-    // GOOGLE_DIRECTORY_SA_KEY: base64-encoded service account JSON with
-    //   domain-wide delegation granted by GOOGLE_DIRECTORY_SA_SUBJECT.
-    // GOOGLE_DIRECTORY_SA_SUBJECT: email of the Workspace admin that granted
-    //   delegation (must be a super-admin in apps.teamschools.org).
+    // HR-derived access: resolve the viewer's email to their current-role
+    // access row (dim_staff_cube_access) and their reporting chain
+    // (dim_staff_reporting_chain). access.js turns these into Cube groups +
+    // queryRewrite filters. No Google Admin Directory API.
     try {
-      const { google } = require("googleapis");
-      const auth = new google.auth.GoogleAuth({
-        credentials: JSON.parse(
-          Buffer.from(process.env.GOOGLE_DIRECTORY_SA_KEY, "base64").toString(),
-        ),
-        scopes: [
-          "https://www.googleapis.com/auth/admin.directory.group.readonly",
-        ],
-        clientOptions: {
-          subject: process.env.GOOGLE_DIRECTORY_SA_SUBJECT,
-        },
+      const { BigQuery } = require("@google-cloud/bigquery");
+      const bq = new BigQuery();
+
+      // 1. email → access row (one active+primary row, keyed on staff_key).
+      const [accessRows] = await bq.query({
+        query: `
+          SELECT
+            staff_key,
+            region_key,
+            location_abbreviation,
+            department_group,
+            job_function_level,
+            student_summary_location_scope,
+            student_detail_location_scope,
+            student_pii_scope,
+            staff_location_scope,
+            staff_department_scope,
+            staff_pii_scope,
+            staff_compensation_scope,
+            staff_observations_scope,
+            staff_benefits_scope
+          FROM kipptaf_marts.dim_staff_cube_access
+          WHERE google_email = @email
+          LIMIT 1`,
+        params: { email },
       });
-      const admin = google.admin({ version: "directory_v1", auth });
+      const row = accessRows[0] ?? null;
 
-      let groups = [];
-      let pageToken;
-      do {
-        const res = await admin.groups.list({ userKey: email, pageToken });
-        groups = groups.concat(
-          (res.data.groups ?? []).map((g) => (g.email ?? "").split("@")[0]),
-        );
-        pageToken = res.data.nextPageToken;
-      } while (pageToken);
+      // 2. reporting chain (direct + indirect reports, incl. the depth-0 self
+      //    pair) keyed on the resolved staff_key.
+      let reporteeStaffKeys = [];
+      if (row?.staff_key) {
+        const [reporteeRows] = await bq.query({
+          query: `
+            SELECT reportee_staff_key
+            FROM kipptaf_marts.dim_staff_reporting_chain
+            WHERE manager_staff_key = @staffKey`,
+          params: { staffKey: row.staff_key },
+        });
+        reporteeStaffKeys = reporteeRows.map((r) => r.reportee_staff_key);
+      }
 
-      const cubeGroups = groups.filter((g) => g.startsWith("cube-"));
+      const groups = access.buildGroups(row);
       groupCache.set(email, {
-        groups: cubeGroups,
+        groups,
+        row,
+        reporteeStaffKeys,
         expiresAt: nextMidnightEastern(),
       });
-      return cubeGroups;
+      return groups;
     } catch (err) {
       console.error(`contextToGroups failed for ${email}:`, err);
-      return []; // default deny on API failure
+      return []; // default deny on failure
     }
   },
 
@@ -155,63 +177,38 @@ module.exports = {
       securityContext?.email ??
       securityContext?.cubeCloud?.userAttributes?.email;
     const cached = email ? groupCache.get(email) : null;
-    const groups = cached?.expiresAt > Date.now() ? cached.groups : [];
+    const fresh = cached && cached.expiresAt > Date.now() ? cached : null;
+    const row = fresh?.row ?? null;
+    const reporteeStaffKeys = fresh?.reporteeStaffKeys ?? [];
+    const groups = fresh?.groups ?? [];
 
-    if (!groups.includes("cube-access-student-data")) {
+    // Strip student members entirely when the viewer has no student access.
+    const hasStudentAccess =
+      groups.includes("student-detail") || groups.includes("student-summary");
+    if (!hasStudentAccess) {
       query = {
         ...query,
-        dimensions: (query.dimensions ?? []).filter((d) => !isStudentMember(d)),
-        measures: (query.measures ?? []).filter((m) => !isStudentMember(m)),
+        dimensions: (query.dimensions ?? []).filter(
+          (d) => !access.isStudentMember(d),
+        ),
+        measures: (query.measures ?? []).filter(
+          (m) => !access.isStudentMember(m),
+        ),
       };
     }
 
-    // Location scope — evaluate in priority order
-    const networkGroup = groups.find((g) => g.startsWith("cube-network-"));
-    const regionGroup = groups.find((g) =>
-      /^cube-region-[a-z0-9][a-z0-9-]*-(?:detail|summary)$/.test(g),
-    );
-    const schoolGroup = groups.find((g) =>
-      /^cube-school-[a-z0-9][a-z0-9-]*-(?:detail|summary)$/.test(g),
-    );
-
-    let locationFilter = null;
-
-    if (networkGroup) {
-      // No location filter
-    } else if (regionGroup) {
-      const region = regionGroup
-        .replace(/^cube-region-/, "")
-        .replace(/-(?:detail|summary)$/, "");
-      locationFilter = {
-        member: "locations.region_key",
-        operator: "equals",
-        values: [region],
-      };
-    } else if (schoolGroup) {
-      const slug = schoolGroup
-        .replace(/^cube-school-/, "")
-        .replace(/-(?:detail|summary)$/, "");
-      locationFilter = {
-        member: "locations.abbreviation",
-        operator: "equals",
-        values: [slug],
-      };
-    } else {
-      // Default deny — no scope group
-      return {
-        ...query,
-        filters: [
-          {
-            member: "locations.abbreviation",
-            operator: "equals",
-            values: [],
-          },
-        ],
-      };
-    }
-
+    const members = access.queryMembers(query);
+    const surface = access.surfaceOf(query);
     const filters = [...(query.filters ?? [])];
-    if (locationFilter) filters.push(locationFilter);
+
+    if (members.some(access.isStudentMember)) {
+      filters.push(...access.studentRowFilters(row, surface));
+    }
+    if (members.some(access.isStaffMember)) {
+      filters.push(
+        ...access.staffSensitiveFilters(query, row, reporteeStaffKeys),
+      );
+    }
 
     // Snapshot anchor guard: for cubes with cumulative daily flags, inject
     // the appropriate period-end anchor when the query has none.
