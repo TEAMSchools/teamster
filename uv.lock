@@ -3864,7 +3864,7 @@ wheels = [
 
 [[package]]
 name = "tableauserverclient"
-version = "0.40"
+version = "0.41"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "defusedxml" },
@@ -3873,9 +3873,9 @@ dependencies = [
     { name = "typing-extensions" },
     { name = "urllib3" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/d4/57/4e661856ceb051acf97998cb0e75ab5300aaa29cd36937c1eca18ea3921b/tableauserverclient-0.40.tar.gz", hash = "sha256:544f38b9d4b46846ebe98b668d249e303bc5e73403fd966513918a12ce59db02", size = 630725, upload-time = "2026-02-03T20:21:08.907Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/6e/28/7a2263194b8aca4efb77705c1255370c0cb2dc94b3b62ed16e01d659a028/tableauserverclient-0.41.tar.gz", hash = "sha256:e491975b9f0e19467fb6423b814511a9f549c22bce78c868079a25fbe81a0e95", size = 639331, upload-time = "2026-06-25T23:41:19.292Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/6b/70/580952c49ded142c48cfe3999d8b4ff657f412f1c9616fbcdb6d6b3a6cec/tableauserverclient-0.40-py3-none-any.whl", hash = "sha256:346e092ae8a5237309c0638107074f6d84312dca7ca73f16fd26ac75d1ebe2fc", size = 214090, upload-time = "2026-02-03T20:21:07.222Z" },
+    { url = "https://files.pythonhosted.org/packages/8b/b6/3a91c755bf64c07f29a50bad69006a98606da122491894e047a475c81979/tableauserverclient-0.41-py3-none-any.whl", hash = "sha256:c1d5bed75d22899847f44c7ee0fdf9b12cf8f4a855c49d6100f2f6c6ea4fe2a3", size = 214856, upload-time = "2026-06-25T23:41:18.095Z" },
 ]
 
 [[package]]
@@ -3956,7 +3956,7 @@ requires-dist = [
     { name = "python-dateutil", specifier = ">=2.9" },
     { name = "scikit-learn", specifier = ">=1.4" },
     { name = "sqlalchemy", specifier = ">=2.0" },
-    { name = "tableauserverclient", specifier = ">=0.25" },
+    { name = "tableauserverclient", specifier = ">=0.41" },
     { name = "tenacity", specifier = ">=8.2" },
     { name = "urllib3", specifier = ">=2.6" },
 ]
