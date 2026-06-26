@@ -1,5 +1,14 @@
 models:
   - name: rpt_tableau__gradebook_audit_v4
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns:
+              - _dbt_source_project
+              - sectionid
+              - quarter
+              - audit_flag_name
+              - cte_grouping
     columns:
       - name: _dbt_source_project
         data_type: string

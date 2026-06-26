@@ -107,7 +107,8 @@ with
             audit_flag_name,
             audit_flag_value,
 
-            max(audit_flag_value) over (
+            -- fix: negate max so TRUE means no flags fired
+            not max(audit_flag_value) over (
                 partition by
                     _dbt_source_project,
                     academic_year,
@@ -194,6 +195,7 @@ inner join
     on s._dbt_source_project = f._dbt_source_project
     and s.academic_year = f.academic_year
     and s.schoolid = f.schoolid
+    and s.sectionid = f.sectionid
     and s.teacher_number = f.teacher_number
     and s.`quarter` = f.`quarter`
     and f.is_healthy_gradebook
@@ -272,6 +274,7 @@ inner join
     on s._dbt_source_project = f._dbt_source_project
     and s.academic_year = f.academic_year
     and s.schoolid = f.schoolid
+    and s.sectionid = f.sectionid
     and s.teacher_number = f.teacher_number
     and s.`quarter` = f.`quarter`
     and not f.is_healthy_gradebook

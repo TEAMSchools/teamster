@@ -248,12 +248,19 @@ resolved when reviewing those models.
 
 ## Out of scope for this implementation
 
-### Anchor-row / "in the clear" redesign
+### ~~Anchor-row / "in the clear" redesign~~ (implemented)
 
-Replace the current design (one row per possible flag slot, `flag_value = 0` for
-non-fired flags) with a leaner pattern: rows for active flags only plus one
-anchor row per teacher per class. Required for the school-level classroom
-percentage summary view. Needs a separate spec and plan.
+Originally deferred, this was implemented as a two-branch UNION in
+`rpt_tableau__gradebook_audit_v4`:
+
+- **Branch 1** (`and f.is_healthy_gradebook`): one
+  `audit_flag_name = 'No Flags'` anchor row per section × quarter for teachers
+  where at least one flag fired
+- **Branch 2** (`and not f.is_healthy_gradebook`): full `flags_unpivot` rows for
+  teachers where no flags fired
+
+`is_healthy_gradebook = max(audit_flag_value) over (partition by teacher × school × quarter)`
+— `true` when at least one of the three audit flags fired that quarter.
 
 ## Open questions
 

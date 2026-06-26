@@ -284,19 +284,24 @@ remain available for diagnostic drill-down.
 
 ### Flags and calculations: `int_tableau__gradebook_audit_flags_calculations`
 
-!!! warning "In progress" This model is being refactored as part of the AY
-2026-2027 revamp. Full documentation will be added once stable.
+A `UNION ALL` of two branches, both filtering `school_level_alt != 'ES'`,
+`_dbt_source_project != 'kippmiami'`, and `exclude_from_gpa = 0`.
 
-    **Known changes from AY 2025-2026:**
+| Branch | `cte_grouping`       | Source                                     | Flags produced                                                                                                           |
+| ------ | -------------------- | ------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------ |
+| 1      | `student_course`     | `int_extracts__course_enrollments_by_term` | `qt_percent_grade_greater_100`, `qt_grade_70_comment_missing`                                                            |
+| 2      | `assignment_teacher` | `int_extracts__course_schedule_by_term`    | `assignment_has_flags`, `total_assign_count_qtd_by_cat_section_actual`, `total_assign_count_qtd_by_cat_section_no_flags` |
 
-    - Replaces `int_tableau__gradebook_audit_flags` (the old six-branch UNION
-      ALL assembly model) and both scaffold models
-    - Joins `int_extracts__course_schedule_by_term` and
-      `int_extracts__course_enrollments_by_term` directly — no upstream scaffold
-    - Joins `int_powerschool__gradebook_assignment_scores_rollup` directly for
-      assignment-level rollup counts
-    - All `stg_google_sheets__gradebook_exceptions` joins removed (deprecated)
-    - Outputs feed `rpt_tableau__gradebook_audit_v4`
+Branch 2 inner-joins `int_powerschool__u_expectations_qtd_unpivot` (on
+`region × school_level × academic_year × quarter`) and left-joins
+`int_powerschool__gradebook_assignment_scores_rollup` for per-assignment rollup
+counts. Sections with no matching expectations row produce no
+`assignment_teacher` rows for that region — Paterson is in this state until the
+PS plugin is deployed there.
+
+The `exclude_from_gpa = 0` filter intentionally excludes teachers who teach only
+GPA-excluded courses (~22 teachers per quarter in AY 2025 data). Those sections
+do not appear in `rpt_tableau__gradebook_audit_v4`.
 
 ### Deleted: `int_tableau__gradebook_audit_scaffold_unpivot`
 
@@ -314,15 +319,21 @@ function — unpivoting flag columns into rows and computing
 
 ### Final extract: `rpt_tableau__gradebook_audit_v4`
 
-Two-branch `UNION ALL`, both sourcing `int_extracts__course_schedule_by_term`,
-filtered to sections where `not is_healthy_gradebook` (computed in the
-`flags_unpivot` CTE):
+Two-branch `UNION ALL`, both sourcing `int_extracts__course_schedule_by_term`
+joined to `flags_unpivot` on
+`_dbt_source_project × academic_year × schoolid × teacher_number × quarter`.
 
-- **Branch 1** — anchor rows (`audit_flag_name = 'No Flags'`,
-  `audit_flag_value = false`) — one row per teacher × quarter × class for the
-  Tableau health-score denominator
-- **Branch 2** — flag rows from `flags_unpivot` with full flag and assignment
-  metadata
+`is_healthy_gradebook` is computed in the `flags_unpivot` CTE as
+`max(audit_flag_value) over (partition by _dbt_source_project, academic_year, schoolid, teacher_number, quarter)`
+— `true` when at least one of the three audit flags fired for that teacher that
+quarter.
+
+- **Branch 1** — `and f.is_healthy_gradebook` — one anchor row per section ×
+  quarter for teachers where at least one flag fired
+  (`audit_flag_name = 'No Flags'`, `audit_flag_value = false`)
+- **Branch 2** — `and not f.is_healthy_gradebook` — full `flags_unpivot` rows
+  (all three flag names, `audit_flag_value = false`) for teachers where no flags
+  fired
 
 ---
 
@@ -984,14 +995,15 @@ Tracking issue: [#3908](https://github.com/TEAMSchools/teamster/issues/3908)
 
 ## Open questions and future work
 
-- **`flags_calculations` and `rpt_v4`**: Documentation finalized for AY
-  2026-2027.
-- **6h.8 — exposure split**: `gradebook_audit` and `gradebook_gpa` Tableau
-  workbooks may need separate dbt exposures; pending LSID confirmation.
 - **Task 9 — assignment validity filter**: A pre-filter that marks an assignment
   as "valid" (`assignment_has_flags = false`) before counting it toward QTD.
   Design documented in the
   [implementation plan](../superpowers/plans/2026-05-14-gradebook-audit-ay2627-revamp.md).
+- **Paterson expectations**: Paterson is excluded from category-level audit rows
+  (`assignment_teacher` branch) until the KIPP NJ Gradebook Audit PS plugin is
+  deployed to the Paterson instance. EOQ flags for Paterson ES are unaffected.
+  Deploy via
+  [TEAMSchools/ps-plugins](https://github.com/TEAMSchools/ps-plugins).
 - **Version rename**: Once stable, `_v4` suffix will be dropped from model names
   and the prior version renamed `_v3`. No version numbers in AY 2026-2027 model
   names.

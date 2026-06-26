@@ -54,14 +54,10 @@ back to `gradebook_and_gpa_dashboard` and note the rename is pending.
 
 Current `depends_on` list (update if the exposure changes):
 
-- `rpt_tableau__gradebook_audit`
-- `rpt_tableau__gradebook_es_comments`
+- `rpt_tableau__gradebook_audit_v4`
 
-`rpt_tableau__gradebook_ms_hs_comments` was disabled in AY 2026-2027 and removed
-from the exposure. `rpt_tableau__assignment_checks` was deprecated in AY
-2026-2027 (refs #3908). There is also a disabled exposure
-`gradebook_audit_teacher_report` — mention it only if the user asks about
-disabled or archived workbooks.
+There is also a disabled exposure `gradebook_audit_teacher_report` — mention it
+only if the user asks about disabled or archived workbooks.
 
 ---
 
