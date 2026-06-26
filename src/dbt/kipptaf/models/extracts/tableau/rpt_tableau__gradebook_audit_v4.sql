@@ -104,6 +104,9 @@ with
             total_assign_count_qtd_by_cat_section_actual,
             total_assign_count_qtd_by_cat_section_no_flags,
 
+            audit_flag_name,
+            audit_flag_value,
+
             max(audit_flag_value) over (
                 partition by
                     _dbt_source_project,
@@ -169,11 +172,13 @@ select
     null as quarter_course_grade_points,
     null as quarter_comment_value,
     null as cte_grouping,
+
     null as assignmentid,
     null as assignment_name,
     null as duedate,
     null as scoretype,
     null as totalpointvalue,
+    null as assignment_has_flags,
 
     'No Flags' as audit_flag_name,
     false as audit_flag_value,
@@ -240,11 +245,13 @@ select
     f.quarter_course_grade_points,
     f.quarter_comment_value,
     f.cte_grouping,
+
     f.assignmentid,
     f.assignment_name,
     f.duedate,
     f.scoretype,
     f.totalpointvalue,
+    f.assignment_has_flags,
 
     f.audit_flag_name,
     f.audit_flag_value,
