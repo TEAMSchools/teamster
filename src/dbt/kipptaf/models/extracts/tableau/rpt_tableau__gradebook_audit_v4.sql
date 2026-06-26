@@ -89,7 +89,7 @@ with
 
             null as quarter_course_percent_grade,
             null as quarter_course_grade_points,
-            null as quarter_comment_value,
+            cast(null as string) as quarter_comment_value,
 
             cte_grouping,
             audit_category,
@@ -170,7 +170,7 @@ select
 
     0.0 as quarter_course_percent_grade,
     0.0 as quarter_course_grade_points,
-    null as quarter_comment_value,
+    cast(null as string) as quarter_comment_value,
     f.cte_grouping,
 
     null as assignmentid,
