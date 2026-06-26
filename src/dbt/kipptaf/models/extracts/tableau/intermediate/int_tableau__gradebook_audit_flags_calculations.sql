@@ -149,7 +149,7 @@ left join
     and s.quarter_start_date <= current_date('{{ var("local_timezone") }}')
     and qg.grades_type = 'current_year'  /* summer toggle: see skill */
 where
-    s.academic_year = {{ var("current_academic_year") }}
+    s.academic_year = {{ var("current_academic_year") }}  /* summer toggle: see skill */
     and s.rn_year = 1
     and s.enroll_status = 0
     and s.school_level_alt != 'ES'
@@ -272,6 +272,6 @@ left join
     and r.duedate between s.quarter_start_date and s.quarter_end_date
     and r.scoretype in ('POINTS', 'PERCENT')
 where
-    s.academic_year = {{ var("current_academic_year") }}
+    s.academic_year = {{ var("current_academic_year") }}  /* summer toggle: see skill */
     and s.school_level_alt != 'ES'
     and s._dbt_source_project != 'kippmiami'

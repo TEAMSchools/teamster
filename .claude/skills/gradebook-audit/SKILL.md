@@ -155,8 +155,8 @@ the `grades_type` will still produce no data.
    s.academic_year = {{ var("current_academic_year") - 1 }}
    ```
 
-   Also change the `quarter_course_grades` join grades type filter (appears 2
-   times, also marked with `/* summer toggle: see skill */`):
+   Also change the `quarter_course_grades` join grades type filter (appears 1
+   time, also marked with `/* summer toggle: see skill */`):
 
    ```sql
    -- change this:
