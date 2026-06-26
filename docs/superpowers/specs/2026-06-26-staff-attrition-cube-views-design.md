@@ -24,9 +24,12 @@ reference is the `cube.yml` exposure pre-wire — so a grain change is safe.
    daily-grained fact and **rename** to `fct_staff_attrition_daily`, mirroring
    `fct_student_attendance_daily`. The final-period row equals the end-of-year
    outcome, so one fact powers both the static rate and the trend.
-3. **Daily grain with `is_*_record` anchor flags**, registered in `cube.js`
-   `SNAPSHOT_CUBES`; the guard auto-injects the right period-end anchor by query
-   granularity (mirrors attendance / enrollment).
+3. **Period-end-snapshot grain with `is_*_record` anchor flags**, registered in
+   `cube.js` `SNAPSHOT_CUBES`; the guard auto-injects the right period-end
+   anchor by query granularity (mirrors attendance / enrollment). **Optimized**:
+   only rows carrying at least one anchor flag are materialized (the daily spine
+   is expanded transiently in-query to compute flags, then filtered away), so
+   the Cube-facing table is roughly 6x smaller than true daily grain.
 4. **As-of-exit characteristics resolved in dbt**: `work_location_key` FK to
    `dim_locations` (traverses to `dim_regions`) plus degenerate work-assignment
    attributes, all resolved as of the outcome-determination date. Demographics
@@ -77,6 +80,11 @@ generate_date_array(
 )
 ```
 
+The daily spine is expanded only to compute the anchor flags; the final `SELECT`
+keeps just the rows where at least one anchor flag is true (see the optimization
+note in Decisions). The cumulative `is_attrition_to_date` is evaluated per
+retained anchor day, so dropping in-between days loses nothing.
+
 ### Cumulative outcome flag
 
 `is_attrition_to_date` (`INT64` 0/1) per spine day `d`:
@@ -93,14 +101,48 @@ All partitioned by `(employee_number, academic_year, attrition_type)` over the
 spine:
 
 - `is_current_record` — `d` equals the latest spine day (`<= today`). **Default
-  anchor** (no grouping / year granularity gives the as-of-now rate).
-- `is_month_end_record` — `d` equals the max spine day within its calendar month
-  (`date_trunc(d, month)`).
-- `is_week_end_record` — `d` equals the max spine day within its ISO week
+  anchor** (no grouping gives the as-of-now rate).
+- `is_month_end_record` — `d` equals the `max` spine day within its calendar
+  month (`date_trunc(d, month)`).
+- `is_week_end_record` — `d` equals the `max` spine day within its ISO week
   (`date_trunc(d, week(monday))`, aligned to Cube's native
   `granularity:"week"`).
 - `is_latest_record` — `d` equals the window-close day (final outcome; present
   only for completed years).
+
+Each anchor is defined as `max(spine_day)` within its period partition, so a day
+may carry several flags at once (a window-close that is also a month-end and a
+week-end) and is materialized once.
+
+### Period-boundary alignment
+
+The window start/close dates (`9/1`, `4/30`, `6/30`, `8/31`) do not fall on ISO
+week boundaries, but the `max`-within-partition definition handles this without
+distortion:
+
+- A partial first week anchors on the Sunday that closes it; a partial final
+  week anchors on the **window-close date** (the spine is capped there, so it is
+  the `max` spine day in that ISO week). Cube buckets that row into the ISO week
+  containing the close date — correct, with no later row in the week to collide.
+- All members of the same `(academic_year, type)` share one identical spine, so
+  their week-end dates are identical and counts align cleanly within a type.
+  Cross-type mixing in a single week bucket is already meaningless (different
+  windows) and is guarded by the "filter to one `type`" usage note.
+- Attrition is event-based, not a per-day rate, so partial first/last weeks
+  carry no distortion — the cumulative count as of that boundary is exact. The
+  only visible effect is that the first and last weekly points represent partial
+  weeks.
+- The three window-close dates are all calendar month-ends, so month granularity
+  aligns exactly; only weekly has partial endpoints.
+
+### Supported query granularities (consequence of the optimization)
+
+Because only anchor rows are materialized, the fact has no arbitrary mid-period
+days. Supported shapes: no date grouping (→ `is_current_record` as-of-now
+snapshot, or a past year's final outcome when filtered by `academic_year`), and
+`week` / `month` trends. **`day` granularity and single arbitrary-date pins are
+not supported** — the `cube.js` guard errors on them for `staff_attrition` with
+guidance, rather than silently returning a date with no anchor row.
 
 ### As-of-exit characteristics
 
@@ -205,9 +247,11 @@ access policy mirroring `staff_detail`:
 - `cube-access-staff-pii` `includes: "*"`.
 
 Both views: usage notes in `description:` instruct filtering to a single `type`
-(otherwise the three methodologies blend) and to a date / anchor for a
-point-in-time rate, and explain that the trend is read by grouping a `dates`
-granularity (the anchor guard handles the snapshot).
+(otherwise the three methodologies blend), explain that the current/as-of rate
+comes from omitting the date grouping (optionally filtered by `academic_year`
+for a past year's final outcome) and the trend from grouping a `week` / `month`
+granularity (the anchor guard handles the snapshot), and note that `day`
+granularity and arbitrary single-date pins are not supported.
 
 ## `cube.js` snapshot-guard registration
 
@@ -227,6 +271,13 @@ Drafted as a code block for manual application (security-model file).
   named-measure `ok` check to accept `granularity === "week"` for
   non-school-week cubes (no staff `_week_end` named measures exist yet, but keep
   it correct).
+- New `SNAPSHOT_ANCHOR_ONLY_CUBES` set = `{ "staff_attrition" }` (cubes whose
+  fact materializes only anchor rows, so arbitrary days have no row). For these,
+  the guard errors on `granularity:"day"` and on a single arbitrary-date pin
+  (single-element `dateRange`, equal-bounds range, or a `dates_date_day`
+  dimension / equals filter), directing users to omit the date for the current
+  snapshot or use `week` / `month`. This replaces, for these cubes, the day-pin
+  "already anchored" branch that assumes a daily row exists.
 
 ## Exposures / contracts
 
@@ -250,10 +301,10 @@ Drafted as a code block for manual application (security-model file).
 
 ## Open items / risks
 
-- **Daily fan-out size**: roughly staff x 3 types x window-days x history years.
-  Comparable to `fct_student_attendance_daily`; acceptable for BigQuery. An
-  optional optimization (emit only anchor days, not every calendar day) is
-  deferred — it would diverge from the attendance/enrollment pattern and break
-  day-granularity base queries.
+- **Materialized fan-out**: anchor rows only — roughly staff x 3 types x (~52
+  week-ends + ~12 month-ends, deduped) x history years, about 6x smaller than
+  true daily. The transient daily expansion is a build-time compute cost, not a
+  stored one. Tradeoff: no `day`-granularity or arbitrary single-date queries
+  (guard-enforced; see "Supported query granularities").
 - **Null work-assignment resolution** for pre-2021 Dayforce staff (#3744) — FKs
   are nullable by design.
