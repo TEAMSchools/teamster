@@ -2,6 +2,17 @@
 
 Issue: [#4275](https://github.com/TEAMSchools/teamster/issues/4275)
 
+## Starting point for a new session
+
+- Branch: `cristinabaldor/feat/claude-staff-attrition-cube-views` (pushed).
+- Status: design approved; **next step is the writing-plans skill** to turn this
+  spec into a task-by-task implementation plan. No implementation has started.
+- Before implementing, read the subdirectory CLAUDE.md files for
+  `src/dbt/kipptaf/models/marts/` and `src/cube/`, plus the reference models
+  this spec names: `fct_student_attendance_daily`, `student_enrollments` /
+  `student_attendance` cubes, `staff_work_history`, the existing `staff_detail`
+  / `staff_summary` views, and `cube.js` (snapshot-guard machinery).
+
 ## Motivation
 
 KTAF needs to analyze staff attrition in the Cube semantic layer: the attrition
