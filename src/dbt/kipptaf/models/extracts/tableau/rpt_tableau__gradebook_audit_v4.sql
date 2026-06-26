@@ -136,7 +136,9 @@ with
             teacher_number,
             `quarter`,
             cte_grouping,
+
             not bool_or(audit_flag_value) as is_healthy_gradebook,
+
         from flags_unpivot
         group by
             _dbt_source_project,
@@ -157,20 +159,31 @@ with
             teacher_number,
             `quarter`,
             cte_grouping,
+
+            bool_or(audit_flag_value) as audit_flag_value,
+
             any_value(assignment_category_code) as assignment_category_code,
+
             any_value(assignment_category_name) as assignment_category_name,
+
             any_value(assignment_category_term) as assignment_category_term,
+
             any_value(expectation) as expectation,
+
             any_value(notes) as notes,
+
             any_value(
                 total_assign_count_qtd_by_cat_section_actual
             ) as total_assign_count_qtd_by_cat_section_actual,
+
             any_value(
                 total_assign_count_qtd_by_cat_section_no_flags
             ) as total_assign_count_qtd_by_cat_section_no_flags,
+
             audit_flag_name,
-            bool_or(audit_flag_value) as audit_flag_value,
+
             any_value(is_healthy_gradebook) as is_healthy_gradebook,
+
         from flags_unpivot
         where cte_grouping = 'student_course'
         group by
