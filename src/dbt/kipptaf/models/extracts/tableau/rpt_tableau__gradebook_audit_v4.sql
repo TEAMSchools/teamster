@@ -196,7 +196,7 @@ inner join
     and s.schoolid = f.schoolid
     and s.teacher_number = f.teacher_number
     and s.`quarter` = f.`quarter`
-    and not f.is_healthy_gradebook
+    and f.is_healthy_gradebook
 where
     s.academic_year = {{ var("current_academic_year") }}  /* summer toggle: see skill */
     and s.school_level_alt != 'ES'
