@@ -96,3 +96,5 @@ models:
         data_type: string
       - name: audit_flag_value
         data_type: boolean
+      - name: assignment_has_flags
+        data_type: boolean

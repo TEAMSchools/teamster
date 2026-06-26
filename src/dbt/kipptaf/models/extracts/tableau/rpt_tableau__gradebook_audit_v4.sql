@@ -168,9 +168,9 @@ select
     null as expectation,
     null as notes,
 
-    null as quarter_course_percent_grade,
-    null as quarter_course_grade_points,
-    null as quarter_comment_value,
+    0.0 as quarter_course_percent_grade,
+    0.0 as quarter_course_grade_points,
+    'NA' as quarter_comment_value,
     null as cte_grouping,
 
     null as assignmentid,
