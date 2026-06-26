@@ -54,6 +54,9 @@ class PMStudentSummary(SFTPFile):
     secondary_student_id_stateid: str | None = None
     additional_student_id_primarysisid: str | None = None
     additional_student_id_sisid: str | None = None
+    aimline_value_by_date: str | None = None
+    aimline_status: str | None = None
+    growth_goal_set: str | None = None
 
 
 class BenchmarkStudentSummary(SFTPFile):
