@@ -125,76 +125,6 @@ with
                     expected_assign_count_not_met
                 )
             )
-    ),
-
-    section_health as (
-        select
-            _dbt_source_project,
-            academic_year,
-            schoolid,
-            sectionid,
-            teacher_number,
-            `quarter`,
-            cte_grouping,
-
-            not bool_or(audit_flag_value) as is_healthy_gradebook,
-
-        from flags_unpivot
-        group by
-            _dbt_source_project,
-            academic_year,
-            schoolid,
-            sectionid,
-            teacher_number,
-            `quarter`,
-            cte_grouping
-    ),
-
-    section_course_flags as (
-        select
-            _dbt_source_project,
-            academic_year,
-            schoolid,
-            sectionid,
-            teacher_number,
-            `quarter`,
-            cte_grouping,
-
-            bool_or(audit_flag_value) as audit_flag_value,
-
-            any_value(assignment_category_code) as assignment_category_code,
-
-            any_value(assignment_category_name) as assignment_category_name,
-
-            any_value(assignment_category_term) as assignment_category_term,
-
-            any_value(expectation) as expectation,
-
-            any_value(notes) as notes,
-
-            any_value(
-                total_assign_count_qtd_by_cat_section_actual
-            ) as total_assign_count_qtd_by_cat_section_actual,
-
-            any_value(
-                total_assign_count_qtd_by_cat_section_no_flags
-            ) as total_assign_count_qtd_by_cat_section_no_flags,
-
-            audit_flag_name,
-
-            any_value(is_healthy_gradebook) as is_healthy_gradebook,
-
-        from flags_unpivot
-        where cte_grouping = 'student_course'
-        group by
-            _dbt_source_project,
-            academic_year,
-            schoolid,
-            sectionid,
-            teacher_number,
-            `quarter`,
-            cte_grouping,
-            audit_flag_name
     )
 
 select
@@ -261,7 +191,7 @@ select
 
 from {{ ref("int_extracts__course_schedule_by_term") }} as s
 inner join
-    section_health as f
+    flags_unpivot as f
     on s._dbt_source_project = f._dbt_source_project
     and s.academic_year = f.academic_year
     and s.schoolid = f.schoolid
@@ -276,87 +206,6 @@ where
 
 union all
 
--- branch 2a: student_course flag rows, pre-aggregated to section x flag grain
-select
-    s._dbt_source_project,
-    s.academic_year,
-    s.academic_year_display,
-    s.region_school_level,
-    s.region,
-    s.school_level,
-    s.schoolid,
-    s.school,
-
-    s.course_number,
-    s.course_name,
-    s.credit_type,
-    s.exclude_from_gpa,
-    s.sections_dcid,
-    s.sectionid,
-    s.section_number,
-    s.external_expression,
-    s.section_or_period,
-    s.teacher_number,
-    s.teacher_name,
-    s.school_leader,
-    s.manager_employee_number,
-    s.manager_name,
-    s.hos,
-
-    s.teacher_tableau_username,
-    s.manager_tableau_username,
-    s.school_leader_tableau_username,
-
-    s.`quarter`,
-    s.semester,
-    s.quarter_start_date,
-    s.quarter_end_date,
-    s.is_current_quarter,
-
-    f.assignment_category_code,
-    f.assignment_category_name,
-    f.assignment_category_term,
-    f.expectation,
-    f.notes,
-
-    null as quarter_course_percent_grade,
-    null as quarter_course_grade_points,
-    cast(null as string) as quarter_comment_value,
-    f.cte_grouping,
-
-    null as assignmentid,
-    null as assignment_name,
-    null as duedate,
-    null as scoretype,
-    null as totalpointvalue,
-    null as assignment_has_flags,
-
-    f.total_assign_count_qtd_by_cat_section_actual,
-    f.total_assign_count_qtd_by_cat_section_no_flags,
-
-    f.audit_flag_name,
-    f.audit_flag_value,
-
-    f.is_healthy_gradebook,
-
-from {{ ref("int_extracts__course_schedule_by_term") }} as s
-inner join
-    section_course_flags as f
-    on s._dbt_source_project = f._dbt_source_project
-    and s.academic_year = f.academic_year
-    and s.schoolid = f.schoolid
-    and s.sectionid = f.sectionid
-    and s.teacher_number = f.teacher_number
-    and s.`quarter` = f.`quarter`
-    and not f.is_healthy_gradebook
-where
-    s.academic_year = {{ var("current_academic_year") }}  /* summer toggle: see skill */
-    and s.school_level_alt != 'ES'
-    and s._dbt_source_project != 'kippmiami'
-
-union all
-
--- branch 2b: assignment_teacher flag rows (one row per assignment x flag)
 select
     s._dbt_source_project,
     s.academic_year,
@@ -431,6 +280,5 @@ inner join
     and not f.is_healthy_gradebook
 where
     s.academic_year = {{ var("current_academic_year") }}  /* summer toggle: see skill */
-    and f.cte_grouping = 'assignment_teacher'
     and s.school_level_alt != 'ES'
     and s._dbt_source_project != 'kippmiami'
