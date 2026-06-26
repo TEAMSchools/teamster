@@ -180,6 +180,9 @@ select
     null as totalpointvalue,
     null as assignment_has_flags,
 
+    null as total_assign_count_qtd_by_cat_section_actual,
+    null as total_assign_count_qtd_by_cat_section_no_flags,
+
     'No Flags' as audit_flag_name,
     false as audit_flag_value,
 
@@ -252,6 +255,9 @@ select
     f.scoretype,
     f.totalpointvalue,
     f.assignment_has_flags,
+
+    f.total_assign_count_qtd_by_cat_section_actual,
+    f.total_assign_count_qtd_by_cat_section_no_flags,
 
     f.audit_flag_name,
     f.audit_flag_value,
