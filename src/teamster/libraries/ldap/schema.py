@@ -30,6 +30,7 @@ class UserPerson(BaseModel):
     employeeID: str | None = None
     employeeNumber: str | None = None
     employeeType: str | None = None
+    extensionAttribute1: str | None = None
     extensionAttribute13: str | None = None
     extensionAttribute14: str | None = None
     extensionAttribute15: str | None = None

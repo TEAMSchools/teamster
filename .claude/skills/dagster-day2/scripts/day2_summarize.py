@@ -160,7 +160,7 @@ def _print_details(data: dict) -> None:
     failures = data.get("step_01_failed_runs", {}).get("failures", [])
     print(f"\n[step_01] failures ({len(failures)}):")
     for f in failures:
-        run_id = (f.get("runId") or "?")[:8]
+        run_id = f.get("runId") or "?"
         print(
             f"  {run_id} job={f.get('jobName')} loc={f.get('locationName')} "
             f"cat={f.get('category')} start={f.get('startTime')} end={f.get('endTime')}"
@@ -172,8 +172,8 @@ def _print_details(data: dict) -> None:
     retries = data.get("step_02_retries", {}).get("retries", [])
     print(f"\n[step_02] retries ({len(retries)}):")
     for r in retries:
-        parent = (r.get("parentRunId") or "?")[:8]
-        retry = (r.get("retryRunId") or "?")[:8]
+        parent = r.get("parentRunId") or "?"
+        retry = r.get("retryRunId") or "?"
         print(f"  parent={parent} retry={retry} status={r.get('retryStatus')}")
 
     sensor = data.get("step_03_sensor_ticks", {})
@@ -217,12 +217,18 @@ def _print_details(data: dict) -> None:
     )
     for label, groups in (("inWindow", in_window), ("staleOpen", stale_open)):
         for g in groups:
-            rep = g.get("representative", {}) if isinstance(g, dict) else {}
+            if not isinstance(g, dict):
+                continue
             print(
                 f"  [{label}] count={g.get('count')} "
-                f"first={g.get('firstSeenTime')} last={g.get('lastSeenTime')}"
+                f"first={g.get('firstSeenTime')} last={g.get('lastSeenTime')} "
+                f"cat={g.get('category')}"
             )
-            print(f"    msg: {_trunc(rep.get('message'), 180)}")
+            print(f"    exception:     {_trunc(g.get('exception'), 180)}")
+            print(f"    exceptionLine: {_trunc(g.get('exceptionLine'), 180)}")
+            cpe = g.get("correlatedPodEvent")
+            if cpe:
+                print(f"    correlatedPodEvent: {_trunc(cpe, 180)}")
 
     queued = data.get("step_14_queued_runs", {}).get("runs", [])
     if queued:
@@ -278,7 +284,7 @@ def _print_details(data: dict) -> None:
                 f"across {len(by_run)} failing runs:"
             )
             for entry in by_run:
-                rid = (entry.get("runId") or "?")[:8]
+                rid = entry.get("runId") or "?"
                 print(
                     f"  run={rid} endTime={entry.get('endTime')} count={entry.get('count')}"
                 )
