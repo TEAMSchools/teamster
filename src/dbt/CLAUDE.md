@@ -423,6 +423,11 @@ deployments. Developers use `<repo-root>/.dbt/profiles.yml` (not
   successful auto-retry's output with staler data. Routine models run <=330s
   network-wide (affected models' p99 <=78s), so 900s won't false-kill legit
   work.
+- A dbt **`409 Already Exists: Job <id>`** failure is a `job_retries` collision
+  (the original submit succeeded server-side but the response was lost; the
+  retry re-sends the same job_id). The job usually **succeeded** — confirm via
+  `JOBS_BY_PROJECT` (`state=DONE`, `error_result IS NULL`) before treating it as
+  real. The Dagster run-retry absorbs it.
 
 ## Model Conventions
 
