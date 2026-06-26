@@ -141,7 +141,7 @@ the `grades_type` will still produce no data.
 **Files to edit:**
 
 - `src/dbt/kipptaf/models/extracts/tableau/intermediate/int_tableau__gradebook_audit_flags_calculations.sql`
-- `src/dbt/kipptaf/models/extracts/tableau/rpt_tableau__gradebook_audit.sql`
+- `src/dbt/kipptaf/models/extracts/tableau/rpt_tableau__gradebook_audit_v4.sql`
 
 **Two changes to make:**
 
@@ -169,8 +169,9 @@ the `grades_type` will still produce no data.
    archived quarter grades) instead of `base_powerschool__final_grades` (empty
    until teachers start entering grades for the new year).
 
-2. In `rpt_tableau__gradebook_audit` — change the year filter in both UNION
-   branches (appears twice in WHERE clauses):
+2. In `rpt_tableau__gradebook_audit_v4` — change the year filter in both UNION
+   branches (appears twice in WHERE clauses, marked with
+   `/* summer toggle: see skill */`):
 
    ```sql
    -- change this (appears 2 times):
@@ -183,10 +184,10 @@ Build and verify after both changes:
 
 ```bash
 uv run dbt build \
-  --select int_tableau__gradebook_audit_flags_calculations rpt_tableau__gradebook_audit \
+  --select int_tableau__gradebook_audit_flags_calculations rpt_tableau__gradebook_audit_v4 \
   --project-dir src/dbt/kipptaf \
   --defer \
-  --state src/dbt/kipptaf/target/prod
+  --state target/prod
 ```
 
 **When to revert:** once the new school year starts and teachers begin entering

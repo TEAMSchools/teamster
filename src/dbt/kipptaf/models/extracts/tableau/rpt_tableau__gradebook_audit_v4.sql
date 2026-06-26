@@ -193,7 +193,7 @@ inner join
     and s.`quarter` = f.`quarter`
     and not f.is_healthy_gradebook
 where
-    s.academic_year = {{ var("current_academic_year") }}
+    s.academic_year = {{ var("current_academic_year") }}  /* summer toggle: see skill */
     and s.school_level_alt != 'ES'
     and s._dbt_source_project != 'kippmiami'
 
@@ -266,6 +266,6 @@ inner join
     and s.`quarter` = f.`quarter`
     and not f.is_healthy_gradebook
 where
-    s.academic_year = {{ var("current_academic_year") }}
+    s.academic_year = {{ var("current_academic_year") }}  /* summer toggle: see skill */
     and s.school_level_alt != 'ES'
     and s._dbt_source_project != 'kippmiami'

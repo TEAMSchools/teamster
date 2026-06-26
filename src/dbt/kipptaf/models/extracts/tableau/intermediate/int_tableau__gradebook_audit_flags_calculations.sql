@@ -232,8 +232,8 @@ select
     ge.expectation,
     ge.notes,
 
-    cast(null as float64) as quarter_course_percent_grade,
-    cast(null as float64) as quarter_course_grade_points,
+    0.0 as quarter_course_percent_grade,
+    0.0 as quarter_course_grade_points,
     cast(null as string) as quarter_comment_value,
 
     'assignment_teacher' as cte_grouping,
