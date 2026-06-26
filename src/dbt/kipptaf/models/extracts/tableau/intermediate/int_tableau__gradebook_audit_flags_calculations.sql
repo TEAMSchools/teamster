@@ -155,6 +155,7 @@ where
     and s.school_level_alt != 'ES'
     and s._dbt_source_project != 'kippmiami'
     and not s.is_out_of_district
+    and not s.exclude_from_gpa
 
 union all
 
@@ -275,3 +276,4 @@ where
     s.academic_year = {{ var("current_academic_year") }}  /* summer toggle: see skill */
     and s.school_level_alt != 'ES'
     and s._dbt_source_project != 'kippmiami'
+    and not s.exclude_from_gpa
