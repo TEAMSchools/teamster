@@ -1,7 +1,9 @@
 with
     count_not_met_flag as (
         select
-            *,
+            * except (quarter_comment_value),
+
+            cast(quarter_comment_value as string) as quarter_comment_value,
 
             if(
                 total_assign_count_qtd_by_cat_section_actual
@@ -171,7 +173,7 @@ select
     0.0 as quarter_course_percent_grade,
     0.0 as quarter_course_grade_points,
     'NA' as quarter_comment_value,
-    null as cte_grouping,
+    f.cte_grouping,
 
     null as assignmentid,
     null as assignment_name,
