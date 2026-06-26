@@ -352,6 +352,21 @@ exposures:
             metadata:
               id: 5046a976-ed0e-4c77-93fe-78b732cb5548
               cron_schedule: 0 4 * * *
+  - name: gradebook_audit
+    label: Gradebook Audit Dashboard
+    type: dashboard
+    owner:
+      name: Data Team - grangel
+    depends_on:
+      - ref("rpt_tableau__gradebook_audit_v4")
+    config:
+      meta:
+        dagster:
+          kinds:
+            - tableau
+          asset:
+            metadata:
+              id: f06a1938-9082-4c02-a0e4-f450b687dc43
   - name: gradebook_audit_teacher_report
     label: Gradebook Audit - Teacher Report
     type: dashboard
