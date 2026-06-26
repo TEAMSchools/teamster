@@ -186,6 +186,8 @@ select
     'No Flags' as audit_flag_name,
     false as audit_flag_value,
 
+    f.is_healthy_gradebook,
+
 from {{ ref("int_extracts__course_schedule_by_term") }} as s
 inner join
     flags_unpivot as f
@@ -261,6 +263,8 @@ select
 
     f.audit_flag_name,
     f.audit_flag_value,
+
+    f.is_healthy_gradebook,
 
 from {{ ref("int_extracts__course_schedule_by_term") }} as s
 inner join

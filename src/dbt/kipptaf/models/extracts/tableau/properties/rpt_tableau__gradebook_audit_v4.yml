@@ -102,3 +102,5 @@ models:
         data_type: int64
       - name: total_assign_count_qtd_by_cat_section_no_flags
         data_type: int64
+      - name: is_healthy_gradebook
+        data_type: boolean
