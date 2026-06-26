@@ -155,8 +155,10 @@ models:
       - name: cte_grouping
         data_type: string
         description: >
-          Identifies which UNION branch produced the row: student_course or
-          assignment_teacher.
+          Identifies which UNION branch produced the row: sections_teacher
+          (anchor rows, one per section x quarter), assignment_teacher
+          (per-assignment rows), or student_course (per-student grade and
+          comment flag rows).
       - name: audit_category
         data_type: string
       - name: assignmentid

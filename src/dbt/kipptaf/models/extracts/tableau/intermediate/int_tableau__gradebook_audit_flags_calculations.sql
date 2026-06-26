@@ -37,47 +37,47 @@ with
             and not is_transfer_grade
     )
 
--- student_course flags: qt_grade_70_comment_missing and qt_percent_grade_greater_100
+-- teacher x section for healthy
 select
     s._dbt_source_project,
     s.academic_year,
     s.academic_year_display,
     s.region_school_level_alt as region_school_level,
-    s.school_level_alt as school_level,
     s.region,
+    s.school_level_alt as school_level,
     s.schoolid,
     s.school,
 
-    s.students_dcid,
-    s.studentid,
-    s.student_number,
-    s.student_name,
-    s.grade_level,
-    s.dateenrolled,
-    s.dateleft,
-    s.salesforce_id,
-    s.ktc_cohort,
-    s.enroll_status,
-    s.cohort,
-    s.gender,
-    s.ethnicity,
-    s.advisory,
-    s.year_in_school,
-    s.year_in_network,
-    s.rn_undergrad,
-    s.is_out_of_district,
-    s.is_self_contained,
-    s.is_retained_year,
-    s.is_retained_ever,
-    s.lunch_status,
-    s.gifted_and_talented,
-    s.iep_status,
-    s.lep_status,
-    s.is_504,
-    s.is_counseling_services,
-    s.is_student_athlete,
-    s.`ada`,
-    s.ada_above_or_at_80,
+    null as students_dcid,
+    null as studentid,
+    null as student_number,
+    cast(null as string) as student_name,
+    null as grade_level,
+    cast(null as date) as dateenrolled,
+    cast(null as date) as dateleft,
+    cast(null as string) as salesforce_id,
+    null as ktc_cohort,
+    null as enroll_status,
+    null as cohort,
+    cast(null as string) as gender,
+    cast(null as string) as ethnicity,
+    cast(null as string) as advisory,
+    null as year_in_school,
+    null as year_in_network,
+    null as rn_undergrad,
+    cast(null as bool) as is_out_of_district,
+    cast(null as bool) as is_self_contained,
+    cast(null as bool) as is_retained_year,
+    cast(null as bool) as is_retained_ever,
+    cast(null as string) as lunch_status,
+    cast(null as string) as gifted_and_talented,
+    cast(null as string) as iep_status,
+    cast(null as bool) as lep_status,
+    cast(null as bool) as is_504,
+    null as is_counseling_services,
+    null as is_student_athlete,
+    cast(null as float64) as `ada`,
+    cast(null as bool) as ada_above_or_at_80,
 
     s.course_number,
     s.course_name,
@@ -111,50 +111,31 @@ select
     0 as expectation,
     'No Notes' as notes,
 
-    qg.quarter_course_percent_grade,
-    qg.quarter_course_grade_points,
-    qg.quarter_comment_value,
+    0.0 as quarter_course_percent_grade,
+    0.0 as quarter_course_grade_points,
+    cast(null as string) as quarter_comment_value,
 
-    'student_course' as cte_grouping,
-    'EOQ' as audit_category,
+    'sections_teacher' as cte_grouping,
+    'No Flags' as audit_category,
 
-    0 as assignmentid,
-    'No Assignment' as assignment_name,
-    cast(null as date) as duedate,
-    'No Scoretype' as scoretype,
-    0 as totalpointvalue,
-    cast(null as bool) as assignment_has_flags,
+    null as assignmentid,
+    null as assignment_name,
+    null as duedate,
+    null as scoretype,
+    null as totalpointvalue,
+    null as assignment_has_flags,
 
-    if(
-        qg.quarter_course_percent_grade > 100, true, false
-    ) as qt_percent_grade_greater_100,
-
-    if(
-        qg.quarter_course_percent_grade < 70 and qg.quarter_comment_value is null,
-        true,
-        false
-    ) as qt_grade_70_comment_missing,
+    false as qt_percent_grade_greater_100,
+    false as qt_grade_70_comment_missing,
 
     null as total_assign_count_qtd_by_cat_section_actual,
     null as total_assign_count_qtd_by_cat_section_no_flags,
 
-from {{ ref("int_extracts__course_enrollments_by_term") }} as s
-left join
-    quarter_course_grades as qg
-    on s.academic_year = qg.academic_year
-    and s.studentid = qg.studentid
-    and s.sectionid = qg.sectionid
-    and s._dbt_source_project = qg._dbt_source_project
-    and s.`quarter` = qg.storecode
-    and s.quarter_start_date <= current_date('{{ var("local_timezone") }}')
-    and qg.grades_type = 'current_year'  /* summer toggle: see skill */
+from {{ ref("int_extracts__course_schedule_by_term") }} as s
 where
     s.academic_year = {{ var("current_academic_year") }}  /* summer toggle: see skill */
-    and s.rn_year = 1
-    and s.enroll_status = 0
     and s.school_level_alt != 'ES'
     and s._dbt_source_project != 'kippmiami'
-    and not s.is_out_of_district
     and s.exclude_from_gpa = 0
 
 union all
@@ -276,4 +257,126 @@ where
     s.academic_year = {{ var("current_academic_year") }}  /* summer toggle: see skill */
     and s.school_level_alt != 'ES'
     and s._dbt_source_project != 'kippmiami'
+    and s.exclude_from_gpa = 0
+
+union all
+
+-- student_course flags: qt_grade_70_comment_missing and qt_percent_grade_greater_100
+select
+    s._dbt_source_project,
+    s.academic_year,
+    s.academic_year_display,
+    s.region_school_level_alt as region_school_level,
+    s.school_level_alt as school_level,
+    s.region,
+    s.schoolid,
+    s.school,
+
+    s.students_dcid,
+    s.studentid,
+    s.student_number,
+    s.student_name,
+    s.grade_level,
+    s.dateenrolled,
+    s.dateleft,
+    s.salesforce_id,
+    s.ktc_cohort,
+    s.enroll_status,
+    s.cohort,
+    s.gender,
+    s.ethnicity,
+    s.advisory,
+    s.year_in_school,
+    s.year_in_network,
+    s.rn_undergrad,
+    s.is_out_of_district,
+    s.is_self_contained,
+    s.is_retained_year,
+    s.is_retained_ever,
+    s.lunch_status,
+    s.gifted_and_talented,
+    s.iep_status,
+    s.lep_status,
+    s.is_504,
+    s.is_counseling_services,
+    s.is_student_athlete,
+    s.`ada`,
+    s.ada_above_or_at_80,
+
+    s.course_number,
+    s.course_name,
+    s.credit_type,
+    s.exclude_from_gpa,
+    s.sections_dcid,
+    s.sectionid,
+    s.section_number,
+    s.external_expression,
+    s.section_or_period,
+    s.teacher_number,
+    s.teacher_name,
+    s.school_leader,
+    s.manager_employee_number,
+    s.manager_name,
+    s.hos,
+
+    s.teacher_tableau_username,
+    s.manager_tableau_username,
+    s.school_leader_tableau_username,
+
+    s.`quarter`,
+    s.semester,
+    s.quarter_start_date,
+    s.quarter_end_date,
+    s.is_current_quarter,
+
+    'NC' as assignment_category_code,
+    'No Category' as assignment_category_name,
+    'NC' as assignment_category_term,
+    0 as expectation,
+    'No Notes' as notes,
+
+    qg.quarter_course_percent_grade,
+    qg.quarter_course_grade_points,
+    qg.quarter_comment_value,
+
+    'student_course' as cte_grouping,
+    'EOQ' as audit_category,
+
+    0 as assignmentid,
+    'No Assignment' as assignment_name,
+    cast(null as date) as duedate,
+    'No Score Type' as scoretype,
+    0 as totalpointvalue,
+    cast(null as bool) as assignment_has_flags,
+
+    if(
+        qg.quarter_course_percent_grade > 100, true, false
+    ) as qt_percent_grade_greater_100,
+
+    if(
+        qg.quarter_course_percent_grade < 70 and qg.quarter_comment_value is null,
+        true,
+        false
+    ) as qt_grade_70_comment_missing,
+
+    null as total_assign_count_qtd_by_cat_section_actual,
+    null as total_assign_count_qtd_by_cat_section_no_flags,
+
+from {{ ref("int_extracts__course_enrollments_by_term") }} as s
+left join
+    quarter_course_grades as qg
+    on s.academic_year = qg.academic_year
+    and s.studentid = qg.studentid
+    and s.sectionid = qg.sectionid
+    and s._dbt_source_project = qg._dbt_source_project
+    and s.`quarter` = qg.storecode
+    and s.quarter_start_date <= current_date('{{ var("local_timezone") }}')
+    and qg.grades_type = 'current_year'  /* summer toggle: see skill */
+where
+    s.academic_year = {{ var("current_academic_year") }}  /* summer toggle: see skill */
+    and s.rn_year = 1
+    and s.enroll_status = 0
+    and s.school_level_alt != 'ES'
+    and s._dbt_source_project != 'kippmiami'
+    and not s.is_out_of_district
     and s.exclude_from_gpa = 0
