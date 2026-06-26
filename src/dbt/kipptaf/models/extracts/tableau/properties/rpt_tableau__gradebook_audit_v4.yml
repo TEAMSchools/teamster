@@ -9,6 +9,7 @@ models:
               - quarter
               - audit_flag_name
               - cte_grouping
+              - assignmentid
     columns:
       - name: _dbt_source_project
         data_type: string
