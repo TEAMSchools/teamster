@@ -74,10 +74,6 @@ models:
         data_type: int64
       - name: notes
         data_type: string
-      - name: week_end_sunday
-        data_type: date
-      - name: teacher_running_total_assign_by_cat
-        data_type: int64
       - name: quarter_course_percent_grade
         data_type: float64
       - name: quarter_course_grade_points
@@ -86,8 +82,6 @@ models:
         data_type: string
       - name: cte_grouping
         data_type: string
-      - name: category_quarter_percent_grade
-        data_type: float64
       - name: assignmentid
         data_type: int64
       - name: assignment_name
@@ -102,7 +96,3 @@ models:
         data_type: string
       - name: audit_flag_value
         data_type: boolean
-      - name: audit_category
-        data_type: string
-      - name: code_type
-        data_type: string

@@ -136,13 +136,6 @@ models:
         data_type: date
       - name: is_current_quarter
         data_type: boolean
-      - name: week_end_sunday
-        data_type: date
-      - name: cte_grouping
-        data_type: string
-        description: >
-          Identifies which UNION branch produced the row: student_course,
-          assignment_student, or assignment_teacher.
       - name: assignment_category_code
         data_type: string
       - name: assignment_category_name
@@ -159,8 +152,13 @@ models:
         data_type: float64
       - name: quarter_comment_value
         data_type: string
-      - name: category_quarter_percent_grade
-        data_type: float64
+      - name: cte_grouping
+        data_type: string
+        description: >
+          Identifies which UNION branch produced the row: student_course or
+          assignment_teacher.
+      - name: audit_category
+        data_type: string
       - name: assignmentid
         data_type: int64
       - name: assignment_name
@@ -171,59 +169,13 @@ models:
         data_type: string
       - name: totalpointvalue
         data_type: float64
-      - name: scorepoints
-        data_type: float64
-      - name: is_expected_late
-        data_type: int64
-      - name: is_exempt
-        data_type: int64
-      - name: is_expected_missing
-        data_type: int64
-      - name: is_expected_zero
-        data_type: int64
-      - name: is_expected_academic_dishonesty
-        data_type: int64
-      - name: score_entered
-        data_type: float64
-      - name: assign_final_score_percent
-        data_type: float64
-      - name: assign_null_score
-        data_type: boolean
-      - name: assign_score_above_max
-        data_type: boolean
-      - name: assign_w_score_less_5
-        data_type: boolean
-      - name: assign_h_score_less_5
-        data_type: boolean
-      - name: assign_f_score_less_5
-        data_type: boolean
-      - name: assign_w_missing_score_not_5
-        data_type: boolean
-      - name: assign_f_missing_score_not_5
-        data_type: boolean
-      - name: assign_h_missing_score_not_5
-        data_type: boolean
-      - name: assign_w_missing_score_not_0
-        data_type: boolean
-      - name: assign_f_missing_score_not_0
-        data_type: boolean
-      - name: assign_h_missing_score_not_0
-        data_type: boolean
-      - name: assign_s_missing_score_not_0
-        data_type: boolean
-      - name: assign_s_score_less_50p
-        data_type: boolean
-      - name: assign_s_hs_score_less_50p
-        data_type: boolean
-      - name: assign_max_score_not_10
-        data_type: boolean
-      - name: overly_exempt_assignment
+      - name: assignment_has_flags
         data_type: boolean
       - name: qt_percent_grade_greater_100
         data_type: boolean
       - name: qt_grade_70_comment_missing
         data_type: boolean
-      - name: teacher_running_total_assign_by_cat
+      - name: total_assign_count_qtd_by_cat_section_actual
         data_type: int64
-      - name: percent_graded_min_not_met
-        data_type: boolean
+      - name: total_assign_count_qtd_by_cat_section_no_flags
+        data_type: int64

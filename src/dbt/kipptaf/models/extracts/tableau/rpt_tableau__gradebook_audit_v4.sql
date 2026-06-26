@@ -1,3 +1,128 @@
+with
+    count_not_met_flag as (
+        select
+            *,
+
+            if(
+                total_assign_count_qtd_by_cat_section_actual
+                != total_assign_count_qtd_by_cat_section_no_flags,
+                true,
+                false
+            ) as expected_assign_count_not_met,
+
+        from {{ ref("int_tableau__gradebook_audit_flags_calculations") }}
+    ),
+
+    flags_unpivot as (
+        select
+            _dbt_source_project,
+            academic_year,
+            academic_year_display,
+            region_school_level,
+            school_level,
+            region,
+            schoolid,
+            school,
+
+            students_dcid,
+            studentid,
+            student_number,
+            student_name,
+            grade_level,
+            dateenrolled,
+            dateleft,
+            salesforce_id,
+            ktc_cohort,
+            enroll_status,
+            cohort,
+            gender,
+            ethnicity,
+            advisory,
+            year_in_school,
+            year_in_network,
+            rn_undergrad,
+            is_out_of_district,
+            is_self_contained,
+            is_retained_year,
+            is_retained_ever,
+            lunch_status,
+            gifted_and_talented,
+            iep_status,
+            lep_status,
+            is_504,
+            is_counseling_services,
+            is_student_athlete,
+            `ada`,
+            ada_above_or_at_80,
+
+            course_number,
+            course_name,
+            credit_type,
+            exclude_from_gpa,
+            sections_dcid,
+            sectionid,
+            section_number,
+            external_expression,
+            section_or_period,
+            teacher_number,
+            teacher_name,
+            school_leader,
+            manager_employee_number,
+            manager_name,
+            hos,
+
+            teacher_tableau_username,
+            manager_tableau_username,
+            school_leader_tableau_username,
+
+            `quarter`,
+            semester,
+            quarter_start_date,
+            quarter_end_date,
+            is_current_quarter,
+
+            assignment_category_code,
+            assignment_category_name,
+            assignment_category_term,
+            expectation,
+            notes,
+
+            null as quarter_course_percent_grade,
+            null as quarter_course_grade_points,
+            null as quarter_comment_value,
+
+            cte_grouping,
+            audit_category,
+
+            assignmentid,
+            assignment_name,
+            duedate,
+            scoretype,
+            totalpointvalue,
+            assignment_has_flags,
+
+            total_assign_count_qtd_by_cat_section_actual,
+            total_assign_count_qtd_by_cat_section_no_flags,
+
+            max(audit_flag_value) over (
+                partition by
+                    _dbt_source_project,
+                    academic_year,
+                    schoolid,
+                    teacher_number,
+                    `quarter`
+            ) as is_healthy_gradebook,
+
+        from
+            count_not_met_flag unpivot (
+                audit_flag_value for audit_flag_name in (
+                    qt_percent_grade_greater_100,
+                    qt_grade_70_comment_missing,
+                    expected_assign_count_not_met
+                )
+            )
+    )
+
 select
     s._dbt_source_project,
     s.academic_year,
@@ -39,14 +164,11 @@ select
     null as assignment_category_term,
     null as expectation,
     null as notes,
-    null as week_end_sunday,
 
-    null as teacher_running_total_assign_by_cat,
     null as quarter_course_percent_grade,
     null as quarter_course_grade_points,
     null as quarter_comment_value,
     null as cte_grouping,
-    null as category_quarter_percent_grade,
     null as assignmentid,
     null as assignment_name,
     null as duedate,
@@ -56,12 +178,9 @@ select
     'No Flags' as audit_flag_name,
     false as audit_flag_value,
 
-    'No Flags' as audit_category,
-    'NF' as code_type,
-
 from {{ ref("int_extracts__course_schedule_by_term") }} as s
 inner join
-    {{ ref("int_tableau__gradebook_audit_scaffold_unpivot") }} as f
+    flags_unpivot as f
     on s._dbt_source_project = f._dbt_source_project
     and s.academic_year = f.academic_year
     and s.schoolid = f.schoolid
@@ -116,14 +235,11 @@ select
     f.assignment_category_term,
     f.expectation,
     f.notes,
-    f.week_end_sunday,
 
-    f.teacher_running_total_assign_by_cat,
     f.quarter_course_percent_grade,
     f.quarter_course_grade_points,
     f.quarter_comment_value,
     f.cte_grouping,
-    f.category_quarter_percent_grade,
     f.assignmentid,
     f.assignment_name,
     f.duedate,
@@ -133,12 +249,9 @@ select
     f.audit_flag_name,
     f.audit_flag_value,
 
-    f.audit_category,
-    f.code_type,
-
 from {{ ref("int_extracts__course_schedule_by_term") }} as s
 inner join
-    {{ ref("int_tableau__gradebook_audit_scaffold_unpivot") }} as f
+    flags_unpivot as f
     on s._dbt_source_project = f._dbt_source_project
     and s.academic_year = f.academic_year
     and s.schoolid = f.schoolid

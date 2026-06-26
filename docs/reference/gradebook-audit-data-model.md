@@ -14,7 +14,7 @@ gradebook audit.
 
 KIPP TAF schools require teachers to maintain PowerSchool gradebooks that follow
 the network's grading policy. The gradebook audit dashboard gives school leaders
-and instructional coaches a weekly view of compliance across every section,
+and instructional coaches a per-quarter view of compliance across every section,
 flagging deviations from policy so they can be addressed before the end of the
 quarter.
 
@@ -26,8 +26,8 @@ The audit operates at multiple grains simultaneously:
   assignments in this category this week? Are scores being entered on time?
 - **Student-course** — does this student's category grade meet policy thresholds
   (grade inflation, effort/formative/summative missing)?
-- **End-of-quarter (EOQ)** — during a window around the last in-session day of
-  each quarter, are comments, conduct codes, and final grades correctly entered?
+- **End-of-quarter (EOQ)** — are comments and final grades correctly entered by
+  the end of each quarter?
 
 ### Dashboard coverage (AY 2026-2027)
 
@@ -62,19 +62,12 @@ counts. Tracked: [#3908](https://github.com/TEAMSchools/teamster/issues/3908)
 
 KIPP TAF teachers use four assignment categories in PowerSchool:
 
-| Code | Name              | Policy: max score per assignment | Policy: quarterly total                  | Policy: missing score           |
-| ---- | ----------------- | -------------------------------- | ---------------------------------------- | ------------------------------- |
-| `W`  | Work Habits       | 10 pts                           | n/a                                      | 5 (non-HS) / 0 (HS)             |
-| `H`  | Homework          | 10 pts                           | n/a                                      | 5 (non-HS) / 0 (HS)             |
-| `F`  | Formative Mastery | 10 pts                           | n/a                                      | 5 (non-HS) / 0 (HS)             |
-| `S`  | Summative Mastery | No per-assignment max            | 200 pts (Camden/Newark); 100 pts (Miami) | 0 (HS); min 50% of max (non-HS) |
-
-Summative scores for MS must fall on the conversion chart:
-`50, 55, 58, 60, 65, 68, 70, 75, 78, 80, 85, 88, 90, 95, 100`.
-
-Summative scores for HS (non-AP) must fall on the conversion chart:
-`50, 55, 58, 60, 65, 68, 70, 75, 78, 80, 85, 88, 93, 97, 100`. AP courses are
-excluded from conversion chart enforcement.
+| Code | Name              | Policy: max score per assignment | Policy: quarterly total | Policy: missing score           |
+| ---- | ----------------- | -------------------------------- | ----------------------- | ------------------------------- |
+| `W`  | Work Habits       | 10 pts                           | n/a                     | 5 (non-HS) / 0 (HS)             |
+| `H`  | Homework          | 10 pts                           | n/a                     | 5 (non-HS) / 0 (HS)             |
+| `F`  | Formative Mastery | 10 pts                           | n/a                     | 5 (non-HS) / 0 (HS)             |
+| `S`  | Summative Mastery | No per-assignment max            | 200 pts                 | 0 (HS); min 50% of max (non-HS) |
 
 ## AY 2026-2027 data model
 
@@ -88,25 +81,25 @@ excluded from conversion chart enforcement.
 
 **Architecture:**
 
-The AY 2026-2027 pipeline collapsed the old multi-model rollup chain into two
-models:
+The AY 2026-2027 pipeline eliminated both scaffold models and collapsed the
+multi-rollup chain into two new intermediates:
 
-| Old model (AY 2025-2026)                                | New model (AY 2026-2027)                                    |
-| ------------------------------------------------------- | ----------------------------------------------------------- |
-| `int_tableau__gradebook_audit_teacher_scaffold`         | `int_tableau__gradebook_audit_scaffold` (branch 1–3)        |
-| `int_tableau__gradebook_audit_student_scaffold`         | `int_tableau__gradebook_audit_scaffold` (branch 4–5)        |
-| `int_tableau__gradebook_audit_assignments_teacher`      | Inline in `int_tableau__gradebook_audit_flags_calculations` |
-| `int_tableau__gradebook_audit_assignments_student`      | Inline in `int_tableau__gradebook_audit_flags_calculations` |
-| `int_tableau__gradebook_audit_categories_teacher`       | Inline in `int_tableau__gradebook_audit_flags_calculations` |
-| `int_tableau__gradebook_audit_flags`                    | `int_tableau__gradebook_audit_flags_calculations`           |
-| `stg_google_sheets__gradebook_expectations_assignments` | `int_powerschool__u_expectations_qtd_unpivot`               |
-| `stg_google_sheets__gradebook_exceptions`               | Deprecated — all exception joins removed                    |
+| Old model (AY 2025-2026)                                | New model (AY 2026-2027)                                                                    |
+| ------------------------------------------------------- | ------------------------------------------------------------------------------------------- |
+| `int_tableau__gradebook_audit_teacher_scaffold`         | Eliminated — `flags_calculations` joins `int_extracts__course_schedule_by_term` directly    |
+| `int_tableau__gradebook_audit_student_scaffold`         | Eliminated — `flags_calculations` joins `int_extracts__course_enrollments_by_term` directly |
+| `int_tableau__gradebook_audit_assignments_teacher`      | Inline in `int_tableau__gradebook_audit_flags_calculations`                                 |
+| `int_tableau__gradebook_audit_assignments_student`      | Inline in `int_tableau__gradebook_audit_flags_calculations`                                 |
+| `int_tableau__gradebook_audit_categories_teacher`       | Inline in `int_tableau__gradebook_audit_flags_calculations`                                 |
+| `int_tableau__gradebook_audit_flags`                    | Deleted — UNPIVOT now inline in `rpt_tableau__gradebook_audit_v4`'s `flags_unpivot` CTE     |
+| `stg_google_sheets__gradebook_expectations_assignments` | `int_powerschool__u_expectations_qtd_unpivot`                                               |
+| `stg_google_sheets__gradebook_exceptions`               | Deprecated — all exception joins removed                                                    |
+| `stg_google_sheets__gradebook_flags`                    | Deprecated — per-flag allowlist no longer needed (see below)                                |
 
-**Assignment count (QTD):** `teacher_running_total_assign_by_cat` now counts
-only assignments with `duedate <= week_end_sunday` (the Sunday ending the most
-recently completed school week) rather than all assignments in the quarter. This
-gives a true quarter-to-date count as of the last completed school week, aligned
-with the Monday audit cadence.
+**Assignment count (QTD):** the audit now operates at quarter-grain (one row per
+section × quarter × category) rather than week-grain. Q1 and Q2 are restored —
+the prior `term not in ('Q1', 'Q2')` volume workaround is removed. All four
+quarters are covered.
 
 **Deprecated flags** (removed from `stg_google_sheets__gradebook_flags` for AY
 2026; boolean columns remain in SQL for future years):
@@ -122,29 +115,37 @@ columns were consolidated to 5 merged flags. See
 [`int_powerschool__gradebook_assignments_scores`](#int_powerschool__gradebook_assignments_scores)
 below.
 
-### New scaffold: `int_tableau__gradebook_audit_scaffold`
+### Pipeline overview (AY 2026-2027)
 
-Five-branch `UNION ALL`. Each branch is filtered by `scaffold_name` in
-downstream `int_tableau__gradebook_audit_flags_calculations`:
+The old scaffold models (`int_tableau__gradebook_audit_teacher_scaffold` and
+`int_tableau__gradebook_audit_student_scaffold`) were eliminated. Their sources
+are now joined directly inside
+`int_tableau__gradebook_audit_flags_calculations`. The new pipeline:
 
-| Branch | `scaffold_name`               | Has students? | Has category? | Source                                                |
-| ------ | ----------------------------- | ------------- | ------------- | ----------------------------------------------------- |
-| 1      | `teacher_scaffold_course`     | No            | No            | `int_extracts__course_schedule_by_term`               |
-| 2      | `teacher_scaffold_category`   | No            | Yes           | above + `int_powerschool__u_expectations_qtd_unpivot` |
-| 3      | `teacher_scaffold_assignment` | No            | Yes           | above + `int_powerschool__gradebook_assignments`      |
-| 4      | `student_scaffold_course`     | Yes           | No            | above + `int_extracts__student_enrollments`           |
-| 5      | `student_scaffold_category`   | Yes           | Yes           | above + `int_powerschool__category_grades`            |
+```text
+int_extracts__course_schedule_by_term  ──────────────────────────┐
+int_powerschool__u_expectations_qtd_unpivot ─────────────────────┤
+int_powerschool__gradebook_assignment_scores_rollup ─────────────┤
+int_extracts__course_enrollments_by_term ────────────────────────┤
+base_powerschool__final_grades / stg_powerschool__storedgrades ──┘
+                                     │
+                                     ▼
+              int_tableau__gradebook_audit_flags_calculations
+                                     │
+                                     ▼
+                   rpt_tableau__gradebook_audit_v4
+                (count_not_met_flag → flags_unpivot CTEs)
+```
 
-All branches filter:
+`flags_calculations` is a `UNION ALL` of two branches:
 
-- `academic_year = current_academic_year`
-- `school_level_alt != 'ES'` (ES rows excluded from teacher/assignment branches;
-  ES students included in student branches for EOQ flags)
-- `_dbt_source_project != 'kippmiami'`
+| Branch | `cte_grouping`       | Source                                     | Flags produced                                                                                                           |
+| ------ | -------------------- | ------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------ |
+| 1      | `student_course`     | `int_extracts__course_enrollments_by_term` | `qt_percent_grade_greater_100`, `qt_grade_70_comment_missing`                                                            |
+| 2      | `assignment_teacher` | `int_extracts__course_schedule_by_term`    | `assignment_has_flags`, `total_assign_count_qtd_by_cat_section_actual`, `total_assign_count_qtd_by_cat_section_no_flags` |
 
-The `week_end_sunday` column (from
-`int_powerschool__u_expectations_qtd_unpivot`) is populated on branches 2, 3,
-and 5; null on branches 1 and 4.
+Both branches filter `school_level_alt != 'ES'` and
+`_dbt_source_project != 'kippmiami'`.
 
 ### Expectations source: `int_powerschool__u_expectations_qtd_unpivot`
 
@@ -155,9 +156,9 @@ assignment count expectations per category per week. One row per
 
 `week_end_sunday` is derived as the Sunday ending the most recently completed
 school week (i.e.,
-`week_start_monday < date_trunc(current_date, week(monday))`). This value
-propagates through the scaffold and is used as the QTD assignment count cutoff
-in `int_tableau__gradebook_audit_flags_calculations`.
+`week_start_monday < date_trunc(current_date, week(monday))`). It is used
+internally in `int_tableau__gradebook_audit_flags_calculations` as the QTD
+assignment count cutoff — it does not appear in the model's output columns.
 
 ### Assignment and category rollup layer
 
@@ -289,37 +290,43 @@ remain available for diagnostic drill-down.
     **Known changes from AY 2025-2026:**
 
     - Replaces `int_tableau__gradebook_audit_flags` (the old six-branch UNION
-      ALL assembly model)
+      ALL assembly model) and both scaffold models
+    - Joins `int_extracts__course_schedule_by_term` and
+      `int_extracts__course_enrollments_by_term` directly — no upstream scaffold
     - Joins `int_powerschool__gradebook_assignment_scores_rollup` directly for
-      assignment-level rollup counts instead of computing them inline
+      assignment-level rollup counts
     - All `stg_google_sheets__gradebook_exceptions` joins removed (deprecated)
-    - Outputs feed `int_tableau__gradebook_audit_scaffold_unpivot`
+    - Outputs feed `rpt_tableau__gradebook_audit_v4`
 
-### Scaffold unpivot: `int_tableau__gradebook_audit_scaffold_unpivot`
+### Deleted: `int_tableau__gradebook_audit_scaffold_unpivot`
 
-!!! warning "In progress" This model is being refactored as part of the AY
-2026-2027 revamp. Full documentation will be added once stable.
+`int_tableau__gradebook_audit_scaffold_unpivot` was deleted in AY 2026-2027. Its
+function — unpivoting flag columns into rows and computing
+`is_healthy_gradebook` — is now performed inline by two CTEs inside
+`rpt_tableau__gradebook_audit_v4.sql`:
 
-    **Known changes from AY 2025-2026:**
+- **`count_not_met_flag`** — adds `expected_assign_count_not_met` (true when
+  `total_assign_count_qtd_by_cat_section_actual != total_assign_count_qtd_by_cat_section_no_flags`)
+- **`flags_unpivot`** — unpivots `qt_percent_grade_greater_100`,
+  `qt_grade_70_comment_missing`, `expected_assign_count_not_met` into
+  `audit_flag_name / audit_flag_value` rows and computes `is_healthy_gradebook`
+  as `max(audit_flag_value) over (teacher × school × quarter)`
 
-    - UNPIVOT list reduced from ~17 flags to ~10 flags (5 unchanged + 5
-      consolidated from 12 AY 2025-2026 flags)
-    - Student-level dimensional columns removed from final SELECT
+### Final extract: `rpt_tableau__gradebook_audit_v4`
 
-### Final extract: `rpt_tableau__gradebook_audit`
+Two-branch `UNION ALL`, both sourcing `int_extracts__course_schedule_by_term`,
+filtered to sections where `not is_healthy_gradebook` (computed in the
+`flags_unpivot` CTE):
 
-!!! warning "In progress" This model is being refactored as part of the AY
-2026-2027 revamp. Full documentation will be added once stable.
-
-    **Known issues under investigation:**
-
-    - Branch 2 logic flag: `and not f.is_healthy_gradebook` may need to be
-      `and f.is_healthy_gradebook` — pending confirmation.
+- **Branch 1** — anchor rows (`audit_flag_name = 'No Flags'`,
+  `audit_flag_value = false`) — one row per teacher × quarter × class for the
+  Tableau health-score denominator
+- **Branch 2** — flag rows from `flags_unpivot` with full flag and assignment
+  metadata
 
 ---
 
-??? note "AY 2025-2026 data model" Lineage diagram for
-`rpt_tableau__gradebook_audit`:
+??? note "AY 2025-2026 data model"
 
     ```mermaid
     flowchart TD
@@ -898,9 +905,25 @@ remain available for diagnostic drill-down.
 
 ## Configuration: `stg_google_sheets__gradebook_flags`
 
-The flag allowlist. A flag only appears in the dashboard if a matching row
-exists in this table — making it the primary on/off switch for every audit
-check.
+!!! warning "Deprecated in AY 2026-2027" This model is disabled
+(`config: enabled: false`) as of AY 2026-2027.
+
+    **Why it was removed:** the AY 2026-2027 refactor consolidated all
+    individual flag signals into a single binary, `is_healthy_gradebook`.
+    The audit no longer calculates a per-flag gradebook score or reports
+    individual flags to Tableau — it surfaces only whether a teacher's
+    gradebook is healthy or not. With no per-flag filtering needed, the
+    per-flag allowlist sheet became vestigial.
+
+    The source sheet, staging SQL, and YAML remain in the repository in case
+    the per-flag reporting approach is restored in a future year. The INNER
+    JOIN to this model was removed from the pipeline in AY 2026-2027, and the
+    `audit_category` and `code_type` columns it provided were dropped from
+    `rpt_tableau__gradebook_audit_v4`.
+
+Previously, this was the flag allowlist. A flag only appeared in the dashboard
+if a matching row existed in this table, making it the primary on/off switch for
+every audit check.
 
 **Grain**: one row per
 `academic_year × region × school_level × code × audit_flag_name`.
@@ -915,108 +938,35 @@ check.
 | `grade_level`     | Set only for conduct code flags that require a grade-level-specific join                 |
 | `alt_code`        | Computed in staging; maps student-category flags to their category code for joining      |
 
-Activating a new flag for a region requires adding a row here. Deactivating a
-flag removes or disables its row. There is no validation that `audit_flag_name`
-values in this sheet match the column names in the SQL — a typo silently
-excludes all rows for that flag without raising an error.
-
 ---
 
 ## Start-of-year procedure
 
-At the start of each academic year, the flags configuration sheet must be
-updated before the audit will produce data for the new year.
+As of AY 2026-2027, there is no flags configuration sheet to roll over. The
+`stg_google_sheets__gradebook_flags` model is disabled. The four active audit
+flags are hardcoded in `rpt_tableau__gradebook_audit_v4`'s `flags_unpivot` CTE
+and require no annual configuration.
 
-### Step 1 — Update `stg_google_sheets__gradebook_flags`
+### Step 1 — Confirm assignment expectations are updated in PowerSchool
 
-Add rows for the new `academic_year`. The process is:
+The expectations data that drives `expected_assign_count_not_met` comes from
+`int_powerschool__u_expectations_qtd_unpivot`, which reads the `U_EXPECTATIONS`
+table populated by the **KIPP NJ Gradebook Audit** PowerSchool plugin. The
+`U_EXPECTATIONS` table does not have an `academic_year` field — it reflects the
+current state of expectations in PowerSchool. Until the T&L team member
+responsible for gradebook expectations updates the table for the new year, the
+audit will continue to report against the prior year's expectation values.
 
-1. **Generate the new rows** by running the query below against the current prod
-   staging table. It copies all prior-year rows for active regions, bumps
-   `academic_year` to the new year, and excludes any flags that were deprecated
-   for the new year. It also generates Paterson rows from the Newark template.
-   The query output can be pasted directly into the Google Sheet as
-   tab-separated values.
+Plugin source and update instructions:
+[TEAMSchools/ps-plugins](https://github.com/TEAMSchools/ps-plugins)
 
-2. **Verify with T&L** that no flags should be added or removed before pasting.
+### Step 2 — Revert the summer toggle (if applied)
 
-3. **Paste** the output into the sheet starting at the first empty row.
-
-```sql
--- Generate AY 2027 flag rows (adjust the academic_year values each rollover)
-SELECT * FROM (
-
-  -- Camden and Newark: copy prior year, bump academic_year
-  -- Column order matches the sheet: academic_year, region, school_level,
-  -- grade_level, code_type, code, audit_category, audit_flag_name, cte_grouping
-  SELECT
-    2027 AS academic_year,
-    region,
-    school_level,
-    grade_level,
-    code_type,
-    code,
-    audit_category,
-    audit_flag_name,
-    cte_grouping,
-  FROM `teamster-332318.kipptaf_google_sheets.stg_google_sheets__gradebook_flags`
-  WHERE region IN ('Newark', 'Camden')
-    AND academic_year = 2026
-    AND audit_flag_name NOT IN (
-      -- list any flags being deprecated for the new year here
-    )
-
-  UNION ALL
-
-  -- Paterson MS: mirror Newark MS
-  SELECT
-    2027 AS academic_year,
-    'Paterson' AS region,
-    school_level,
-    grade_level,
-    code_type,
-    code,
-    audit_category,
-    audit_flag_name,
-    cte_grouping,
-  FROM `teamster-332318.kipptaf_google_sheets.stg_google_sheets__gradebook_flags`
-  WHERE region = 'Newark'
-    AND school_level = 'MS'
-    AND academic_year = 2026
-    AND audit_flag_name NOT IN (
-      -- same deprecated list
-    )
-
-  UNION ALL
-
-  -- Paterson ES: EOQ comments only (Q3 and Q4)
-  SELECT
-    2027 AS academic_year,
-    'Paterson' AS region,
-    'ES' AS school_level,
-    grade_level,
-    code_type,
-    code,
-    audit_category,
-    audit_flag_name,
-    cte_grouping,
-  FROM `teamster-332318.kipptaf_google_sheets.stg_google_sheets__gradebook_flags`
-  WHERE region = 'Newark'
-    AND school_level = 'ES'
-    AND academic_year = 2026
-    AND code IN ('Q3', 'Q4')
-
-)
-ORDER BY region, school_level, code_type, code, audit_flag_name
-```
-
-The `grade_level` column will be blank for all rows unless grade-level-specific
-flags (e.g., conduct code flags) are active. That is expected.
-
-!!! warning "Empty flags sheet blocks the audit" If
-`stg_google_sheets__gradebook_flags` has no rows for the new academic year, the
-teacher category scaffold produces no rows (inner join fails) and the entire
-audit is empty — no error, just no data.
+If the summer toggle was applied to
+`int_tableau__gradebook_audit_flags_calculations` during the off-season
+(switching year filters to `current_academic_year - 1` and grades type to
+`'last_year'`), revert both changes before the new school year begins. See the
+`gradebook-audit` skill for the exact lines.
 
 ---
 
@@ -1034,9 +984,8 @@ Tracking issue: [#3908](https://github.com/TEAMSchools/teamster/issues/3908)
 
 ## Open questions and future work
 
-- **`flags_calculations` and `scaffold_unpivot`**: Both models are still being
-  refactored (see in-progress stubs above). Documentation will be finalized once
-  the models are stable.
+- **`flags_calculations` and `rpt_v4`**: Documentation finalized for AY
+  2026-2027.
 - **6h.8 — exposure split**: `gradebook_audit` and `gradebook_gpa` Tableau
   workbooks may need separate dbt exposures; pending LSID confirmation.
 - **Task 9 — assignment validity filter**: A pre-filter that marks an assignment

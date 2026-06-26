@@ -71,10 +71,11 @@ MCP for spot-checks, `uv run dbt` CLI, branch
 Deprecated sources are disabled (`config: enabled: false`) rather than deleted,
 pending any new operational decisions taking effect July 1st.
 
-| File                                                        | Task | Change                       |
-| ----------------------------------------------------------- | ---- | ---------------------------- |
-| `stg_google_sheets__gradebook_expectations_assignments.yml` | 2    | Set `config: enabled: false` |
-| `stg_google_sheets__gradebook_exceptions.yml`               | 6    | Set `config: enabled: false` |
+| File                                                        | Task | Change                                                             |
+| ----------------------------------------------------------- | ---- | ------------------------------------------------------------------ |
+| `stg_google_sheets__gradebook_expectations_assignments.yml` | 2    | Set `config: enabled: false`                                       |
+| `stg_google_sheets__gradebook_exceptions.yml`               | 6    | Set `config: enabled: false`                                       |
+| `stg_google_sheets__gradebook_flags.yml`                    | n/a  | Set `config: enabled: false` — per-flag allowlist no longer needed |
 
 ### Documentation
 
