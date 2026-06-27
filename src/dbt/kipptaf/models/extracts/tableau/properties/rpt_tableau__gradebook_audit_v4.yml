@@ -1,11 +1,20 @@
 models:
   - name: rpt_tableau__gradebook_audit_v4
+    description: >
+      Three-branch UNION ALL Tableau extract for the gradebook audit dashboard.
+      Branch 1 (sections_teacher): one anchor row per section x quarter for
+      healthy teachers (is_healthy_gradebook = true, audit_flag_name = 'No
+      Flags'). Branch 2 (assignment_teacher): one row per assignment where
+      expected_assign_count_not_met fired for an unhealthy teacher. Branch 3
+      (student_course): one row per student x section x quarter x fired flag
+      (qt_percent_grade_greater_100, qt_grade_70_comment_missing).
     data_tests:
       - dbt_utils.unique_combination_of_columns:
           arguments:
             combination_of_columns:
               - _dbt_source_project
               - sectionid
+              - studentid
               - quarter
               - audit_flag_name
               - cte_grouping
@@ -315,5 +324,5 @@ models:
         data_type: boolean
         description: >
           True if no audit flags fired for this teacher x school x quarter.
-          Drives the two-branch UNION: Branch 1 (anchor rows) when true, Branch
-          2 (flag rows) when false.
+          Drives the three-branch UNION: Branch 1 (anchor rows) when true;
+          Branches 2 and 3 (flag rows) when false.

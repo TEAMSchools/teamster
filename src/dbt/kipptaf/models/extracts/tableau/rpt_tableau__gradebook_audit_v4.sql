@@ -252,7 +252,7 @@ select
     s.total_assign_count_qtd_by_cat_section_no_flags,
 
     'expected_assign_count_not_met' as audit_flag_name,
-    false as audit_flag_value,
+    true as audit_flag_value,
 
     h.is_healthy_gradebook,
 

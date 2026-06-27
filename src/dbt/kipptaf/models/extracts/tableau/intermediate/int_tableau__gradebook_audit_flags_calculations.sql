@@ -146,8 +146,8 @@ select
     s.academic_year,
     s.academic_year_display,
     s.region_school_level_alt as region_school_level,
-    s.school_level_alt as school_level,
     s.region,
+    s.school_level_alt as school_level,
     s.schoolid,
     s.school,
 
@@ -267,8 +267,8 @@ select
     s.academic_year,
     s.academic_year_display,
     s.region_school_level_alt as region_school_level,
-    s.school_level_alt as school_level,
     s.region,
+    s.school_level_alt as school_level,
     s.schoolid,
     s.school,
 
