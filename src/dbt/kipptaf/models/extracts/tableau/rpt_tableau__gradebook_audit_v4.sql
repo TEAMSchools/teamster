@@ -142,7 +142,7 @@ select
 
     f.is_healthy_gradebook,
 
-from {{ ref("int_extracts__course_schedule_by_term") }} as s
+from {{ ref("int_tableau__gradebook_audit_flags_calculations") }} as s
 inner join
     health_calc as h
     on s._dbt_source_project = h._dbt_source_project

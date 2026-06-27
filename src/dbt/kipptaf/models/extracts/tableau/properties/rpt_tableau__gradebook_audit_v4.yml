@@ -133,19 +133,31 @@ models:
         description: Notes on the expectation value. Null for anchor rows.
       - name: quarter_course_percent_grade
         data_type: float64
-        description: Quarter course percent grade. Null in this model.
+        description: >
+          Quarter course percent grade. Populated for student_course rows; null
+          for anchor and assignment_teacher rows.
       - name: quarter_course_grade_points
         data_type: float64
-        description: Quarter course grade points. Null in this model.
+        description: >
+          Quarter course grade points. Populated for student_course rows; null
+          for anchor and assignment_teacher rows.
       - name: quarter_comment_value
         data_type: string
-        description: PowerSchool quarter comment text. Null in this model.
+        description: >
+          PowerSchool quarter comment text. Populated for student_course rows;
+          null for anchor and assignment_teacher rows.
       - name: cte_grouping
         data_type: string
         description: >
           Source branch from int_tableau__gradebook_audit_flags_calculations —
-          student_course (grade and comment flags) or assignment_teacher
-          (assignment count flag).
+          sections_teacher (anchor rows), assignment_teacher (assignment count
+          flag), or student_course (grade and comment flags).
+      - name: audit_category
+        data_type: string
+        description: >
+          Audit category label from
+          int_tableau__gradebook_audit_flags_calculations (e.g. 'No Flags',
+          'Teacher Gradebook Flags', 'EOQ').
       - name: assignmentid
         data_type: int64
         description: >
