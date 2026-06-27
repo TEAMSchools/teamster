@@ -37,6 +37,109 @@ models:
       - name: school
         data_type: string
         description: School abbreviation.
+      - name: students_dcid
+        data_type: int64
+        description: PowerSchool students DCID. Null for anchor rows.
+      - name: studentid
+        data_type: int64
+        description: PowerSchool student ID. Null for anchor rows.
+      - name: student_number
+        data_type: int64
+        description: PowerSchool student number. Null for anchor rows.
+      - name: student_name
+        data_type: string
+        description: Student full name. Null for anchor rows.
+      - name: grade_level
+        data_type: int64
+        description: Student grade level. Null for anchor rows.
+      - name: dateenrolled
+        data_type: date
+        description: Section enrollment start date. Null for anchor rows.
+      - name: dateleft
+        data_type: date
+        description: Section enrollment end date. Null for anchor rows.
+      - name: salesforce_id
+        data_type: string
+        description: Salesforce contact ID. Null for anchor rows.
+      - name: ktc_cohort
+        data_type: int64
+        description: KIPP Through College cohort year. Null for anchor rows.
+      - name: enroll_status
+        data_type: int64
+        description: PowerSchool enrollment status code. Null for anchor rows.
+      - name: cohort
+        data_type: int64
+        description: Student graduation cohort year. Null for anchor rows.
+      - name: gender
+        data_type: string
+        description: Student gender. Null for anchor rows.
+      - name: ethnicity
+        data_type: string
+        description: Student ethnicity code. Null for anchor rows.
+      - name: advisory
+        data_type: string
+        description: Advisory group name. Null for anchor rows.
+      - name: year_in_school
+        data_type: int64
+        description:
+          Number of years enrolled at the current school. Null for anchor rows.
+      - name: year_in_network
+        data_type: int64
+        description:
+          Number of years enrolled in the KIPP network. Null for anchor rows.
+      - name: rn_undergrad
+        data_type: int64
+        description: >
+          Row number within undergrad enrollment records. Null for anchor rows.
+      - name: is_out_of_district
+        data_type: boolean
+        description:
+          True if the student is an out-of-district placement. Null for anchor
+          rows.
+      - name: is_self_contained
+        data_type: boolean
+        description:
+          True if the student is in a self-contained special education class.
+          Null for anchor rows.
+      - name: is_retained_year
+        data_type: boolean
+        description:
+          True if the student was retained this year. Null for anchor rows.
+      - name: is_retained_ever
+        data_type: boolean
+        description:
+          True if the student has ever been retained. Null for anchor rows.
+      - name: lunch_status
+        data_type: string
+        description:
+          Free/reduced lunch eligibility status. Null for anchor rows.
+      - name: gifted_and_talented
+        data_type: string
+        description: Gifted and talented program status. Null for anchor rows.
+      - name: iep_status
+        data_type: string
+        description: IEP status code. Null for anchor rows.
+      - name: lep_status
+        data_type: boolean
+        description:
+          True if the student has limited English proficiency. Null for anchor
+          rows.
+      - name: is_504
+        data_type: boolean
+        description: True if the student has a 504 plan. Null for anchor rows.
+      - name: is_counseling_services
+        data_type: int64
+        description: Counseling services indicator. Null for anchor rows.
+      - name: is_student_athlete
+        data_type: int64
+        description: Student athlete indicator. Null for anchor rows.
+      - name: ada
+        data_type: float64
+        description: Average daily attendance rate. Null for anchor rows.
+      - name: ada_above_or_at_80
+        data_type: boolean
+        description:
+          True if the student's ADA is at or above 80%. Null for anchor rows.
       - name: course_number
         data_type: string
         description: PowerSchool course number.

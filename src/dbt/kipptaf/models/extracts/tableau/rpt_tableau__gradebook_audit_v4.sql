@@ -43,7 +43,7 @@ with
                 audit_flag_value for audit_flag_name
                 in (qt_percent_grade_greater_100, qt_grade_70_comment_missing)
             )
-        where cte_grouping = 'student_course'
+        where cte_grouping = 'student_course' and audit_flag_value
     )
 
 -- quarter x teacher x section - healthy only
@@ -140,7 +140,7 @@ select
     'No Flags' as audit_flag_name,
     false as audit_flag_value,
 
-    f.is_healthy_gradebook,
+    h.is_healthy_gradebook,
 
 from {{ ref("int_tableau__gradebook_audit_flags_calculations") }} as s
 inner join
@@ -153,13 +153,14 @@ inner join
     and h.is_healthy_gradebook
 where
     s.academic_year = {{ var("current_academic_year") }}  /* summer toggle: see skill */
-    and s.school_level_alt != 'ES'
+    and s.school_level != 'ES'
     and s._dbt_source_project != 'kippmiami'
     and s.cte_grouping = 'sections_teacher'
 
 union all
 
--- quarter x teacher x section x assignment - not-healthy
+/* quarter x teacher x section x assignment - not-healthy -
+   expected_assign_count_not_met */
 select
     s._dbt_source_project,
     s.academic_year,
@@ -250,32 +251,31 @@ select
     s.total_assign_count_qtd_by_cat_section_actual,
     s.total_assign_count_qtd_by_cat_section_no_flags,
 
-    'No Flags' as audit_flag_name,
+    'expected_assign_count_not_met' as audit_flag_name,
     false as audit_flag_value,
 
-    f.is_healthy_gradebook,
+    h.is_healthy_gradebook,
 
-from {{ ref("int_tableau__gradebook_audit_flags_calculations") }} as s
+from count_not_met_flag as s
 inner join
-    flags_unpivot as f
-    on s._dbt_source_project = f._dbt_source_project
-    and s.academic_year = f.academic_year
-    and s.schoolid = f.schoolid
-    and s.sectionid = f.sectionid
-    and s.teacher_number = f.teacher_number
-    and s.`quarter` = f.`quarter`
-    and s.assignment_category_code = f.assigment_category_code
-    and s.assignmentid = f.assignmentid
-    and not f.is_healthy_gradebook
+    health_calc as h
+    on s._dbt_source_project = h._dbt_source_project
+    and s.academic_year = h.academic_year
+    and s.schoolid = h.schoolid
+    and s.teacher_number = h.teacher_number
+    and s.`quarter` = h.`quarter`
+    and not h.is_healthy_gradebook
 where
     s.academic_year = {{ var("current_academic_year") }}  /* summer toggle: see skill */
-    and s.school_level_alt != 'ES'
+    and s.school_level != 'ES'
     and s._dbt_source_project != 'kippmiami'
     and s.cte_grouping = 'assignment_teacher'
+    and s.expected_assign_count_not_met
 
 union all
 
--- quarter x teacher x student
+/* quarter x teacher x student: qt_percent_grade_greater_100,
+   qt_grade_70_comment_missing */
 select
     s._dbt_source_project,
     s.academic_year,
@@ -353,6 +353,7 @@ select
     f.quarter_course_grade_points,
     f.quarter_comment_value,
     f.cte_grouping,
+    f.audit_category,
 
     f.assignmentid,
     f.assignment_name,
@@ -367,21 +368,6 @@ select
     f.audit_flag_name,
     f.audit_flag_value,
 
-    f.is_healthy_gradebook,
+    false as is_healthy_gradebook,
 
-from {{ ref("int_tableau__gradebook_audit_flags_calculations") }} as s
-inner join
-    flags_unpivot as f
-    on s._dbt_source_project = f._dbt_source_project
-    and s.academic_year = f.academic_year
-    and s.schoolid = f.schoolid
-    and s.sectionid = f.sectionid
-    and s.teacher_number = f.teacher_number
-    and s.student_number = f.student_number
-    and s.`quarter` = f.`quarter`
-    and not f.is_healthy_gradebook
-where
-    s.academic_year = {{ var("current_academic_year") }}  /* summer toggle: see skill */
-    and s.school_level_alt != 'ES'
-    and s._dbt_source_project != 'kippmiami'
-    and s.cte_grouping = 'student_course'
+from flags_unpivot as s
