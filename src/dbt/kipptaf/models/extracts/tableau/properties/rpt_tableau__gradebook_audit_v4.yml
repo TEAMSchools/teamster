@@ -324,5 +324,7 @@ models:
         data_type: boolean
         description: >
           True if no audit flags fired for this teacher x school x quarter.
-          Drives the three-branch UNION: Branch 1 (anchor rows) when true;
-          Branches 2 and 3 (flag rows) when false.
+          Partitioned at teacher level by design: if any section for a teacher
+          has a flag, all their sections are unhealthy and only appear in
+          Branches 2 and 3. Drives the three-branch UNION: Branch 1 (anchor
+          rows) when true; Branches 2 and 3 (flag rows) when false.
