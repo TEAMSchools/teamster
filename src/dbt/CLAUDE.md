@@ -833,5 +833,7 @@ All SQL follows `.trunk/config/.sqlfluff`. Key enforced rules:
   equals the source column, including backticked reserved words
 - **String literals**: single quotes only (no double quotes)
 - **Line length**: 88 characters max
+- **Block comments**: use `/* ... */` for multi-line explanations, not `--`
+  chained across lines. Single-line `--` is fine for brief end-of-line notes.
 
 Do not flag code that follows these rules.

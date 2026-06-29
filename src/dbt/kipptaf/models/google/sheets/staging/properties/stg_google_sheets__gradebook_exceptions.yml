@@ -1,5 +1,7 @@
 models:
   - name: stg_google_sheets__gradebook_exceptions
+    config:
+      enabled: false
     columns:
       - name: academic_year
         data_type: int64
