@@ -1,0 +1,286 @@
+models:
+  - name: int_finalsite__enrollment_lifecycle
+    description:
+      One row per Finalsite contact that is in scope to push to Focus (KIPP
+      Miami), with the intended Focus enrollment action. Built from
+      `stg_finalsite__contacts` joined to the latest-partition snapshot of
+      `stg_finalsite__status_report` on `finalsite_enrollment_id`. In scope = an
+      active accepted-to-enrolled status (`accepted`, `enrollment_in_progress`,
+      `assigned_school`, `enrolled`, `retained`) in the current or a forward
+      school year, OR a previously-enrolled student who now has a withdrawal
+      date (so Focus can be end-dated). `lifecycle_action` reflects the
+      Finalsite-side intent only — whether a `create` is actually an update of
+      an existing Focus student is resolved downstream by the identity
+      crosswalk. A null `enrollment_type` defaults to `create`.
+    columns:
+      - name: finalsite_enrollment_id
+        data_type: string
+        description: Finalsite contact UUID; the grain of this model.
+        data_tests:
+          - unique
+          - not_null
+      - name: lifecycle_action
+        data_type: string
+        description:
+          Intended Focus enrollment action — `create` (new enrollee),
+          `re_enroll` (returning student, new enrollment row), or `transfer_out`
+          (previously enrolled, now withdrawn — end-date the Focus enrollment).
+        data_tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: [create, re_enroll, transfer_out]
+      - name: finalsite_status
+        data_type: string
+        description: Current Finalsite enrollment-workflow status.
+      - name: enrollment_type
+        data_type: string
+        description: Finalsite enrollment type — `new` or `returning`.
+      - name: school_year_start
+        data_type: int64
+        description: Start year of the contact's Finalsite school year.
+      - name: grade_canonical_name
+        data_type: string
+        description: Finalsite canonical grade name for the enrollment.
+      - name: promotion_status
+        data_type: string
+        description:
+          Promotion/retention status (e.g. `Retained`), joined from
+          `int_finalsite__contact_track_attributes.promotion_status_ss`; null
+          when unset.
+      - name: assigned_school
+        data_type: string
+        description:
+          School assigned in the Status Report; the Focus enrollment school
+          before crosswalk mapping.
+      - name: enrollment_start_date
+        data_type: date
+        description:
+          Enrolled date from the Status Report (= Focus `START_DATE`); null
+          until the student reaches the enrolled status.
+      - name: enrollment_end_date
+        data_type: date
+        description:
+          Earliest withdrawal date (mid-year, summer, or not-enrolling) for a
+          previously-enrolled student; null unless this is a transfer-out.
+      - name: withdrawal_reason
+        data_type: string
+        description:
+          Which withdrawal date drove `enrollment_end_date`
+          (`mid_year_withdrawal`, `summer_withdraw`, or `not_enrolling`); null
+          unless this is a transfer-out.
+
+unit_tests:
+  - name: test_enrollment_lifecycle_classification
+    description:
+      Classifies new/returning/withdrawn contacts and applies the eligibility
+      filter (in-scope status or a withdrawal date) across all school years.
+    model: int_finalsite__enrollment_lifecycle
+    given:
+      - input: ref('stg_finalsite__contacts')
+        rows:
+          - {
+              finalsite_enrollment_id: c_new,
+              status: enrolled,
+              enrollment_type: new,
+              school_year_start: 2025,
+              grade_canonical_name: KF,
+            }
+          - {
+              finalsite_enrollment_id: c_ret,
+              status: enrolled,
+              enrollment_type: returning,
+              school_year_start: 2025,
+              grade_canonical_name: "01",
+            }
+          - {
+              finalsite_enrollment_id: c_xfer,
+              status: enrolled,
+              enrollment_type: returning,
+              school_year_start: 2025,
+              grade_canonical_name: "02",
+            }
+          - {
+              finalsite_enrollment_id: c_null,
+              status: assigned_school,
+              enrollment_type: null,
+              school_year_start: 2025,
+              grade_canonical_name: "03",
+            }
+          - {
+              finalsite_enrollment_id: c_old,
+              status: enrolled,
+              enrollment_type: new,
+              school_year_start: 2024,
+              grade_canonical_name: "04",
+            }
+          - {
+              finalsite_enrollment_id: c_denied,
+              status: denied,
+              enrollment_type: new,
+              school_year_start: 2025,
+              grade_canonical_name: "05",
+            }
+          - {
+              finalsite_enrollment_id: c_notenroll,
+              status: not_enrolling,
+              enrollment_type: new,
+              school_year_start: 2025,
+              grade_canonical_name: "06",
+            }
+          - {
+              finalsite_enrollment_id: c_lapsed,
+              status: mid_year_withdrawal,
+              enrollment_type: returning,
+              school_year_start: 2025,
+              grade_canonical_name: "07",
+            }
+      - input: ref('stg_finalsite__status_report')
+        rows:
+          - {
+              finalsite_enrollment_id: c_new,
+              _dagster_partition_key: 2026-06-15,
+              enrolled_date: 2025-08-15,
+              mid_year_withdrawal_date: null,
+              summer_withdraw_date: null,
+              not_enrolling_date: null,
+              assigned_school: School A,
+            }
+          - {
+              finalsite_enrollment_id: c_ret,
+              _dagster_partition_key: 2026-06-15,
+              enrolled_date: 2025-08-15,
+              mid_year_withdrawal_date: null,
+              summer_withdraw_date: null,
+              not_enrolling_date: null,
+              assigned_school: School A,
+            }
+          - {
+              finalsite_enrollment_id: c_xfer,
+              _dagster_partition_key: 2026-06-10,
+              enrolled_date: 2025-08-15,
+              mid_year_withdrawal_date: null,
+              summer_withdraw_date: null,
+              not_enrolling_date: null,
+              assigned_school: School A,
+            }
+          - {
+              finalsite_enrollment_id: c_xfer,
+              _dagster_partition_key: 2026-06-15,
+              enrolled_date: 2025-08-15,
+              mid_year_withdrawal_date: 2026-01-10,
+              summer_withdraw_date: null,
+              not_enrolling_date: null,
+              assigned_school: School A,
+            }
+          - {
+              finalsite_enrollment_id: c_null,
+              _dagster_partition_key: 2026-06-15,
+              enrolled_date: null,
+              mid_year_withdrawal_date: null,
+              summer_withdraw_date: null,
+              not_enrolling_date: null,
+              assigned_school: School B,
+            }
+          - {
+              finalsite_enrollment_id: c_notenroll,
+              _dagster_partition_key: 2026-06-15,
+              enrolled_date: null,
+              mid_year_withdrawal_date: null,
+              summer_withdraw_date: null,
+              not_enrolling_date: 2025-07-01,
+              assigned_school: null,
+            }
+          - {
+              finalsite_enrollment_id: c_lapsed,
+              _dagster_partition_key: 2026-06-15,
+              enrolled_date: 2025-08-15,
+              mid_year_withdrawal_date: 2026-02-01,
+              summer_withdraw_date: null,
+              not_enrolling_date: null,
+              assigned_school: School C,
+            }
+      - input: ref('int_finalsite__contact_track_attributes')
+        format: sql
+        rows: |
+          select 'c_new' as finalsite_enrollment_id, 'Retained' as promotion_status_ss
+    expect:
+      rows:
+        - {
+            finalsite_enrollment_id: c_new,
+            finalsite_status: enrolled,
+            enrollment_type: new,
+            school_year_start: 2025,
+            grade_canonical_name: KF,
+            promotion_status: Retained,
+            assigned_school: School A,
+            enrollment_start_date: 2025-08-15,
+            enrollment_end_date: null,
+            withdrawal_reason: null,
+            lifecycle_action: create,
+          }
+        - {
+            finalsite_enrollment_id: c_ret,
+            finalsite_status: enrolled,
+            enrollment_type: returning,
+            school_year_start: 2025,
+            grade_canonical_name: "01",
+            promotion_status: null,
+            assigned_school: School A,
+            enrollment_start_date: 2025-08-15,
+            enrollment_end_date: null,
+            withdrawal_reason: null,
+            lifecycle_action: re_enroll,
+          }
+        - {
+            finalsite_enrollment_id: c_xfer,
+            finalsite_status: enrolled,
+            enrollment_type: returning,
+            school_year_start: 2025,
+            grade_canonical_name: "02",
+            promotion_status: null,
+            assigned_school: School A,
+            enrollment_start_date: 2025-08-15,
+            enrollment_end_date: 2026-01-10,
+            withdrawal_reason: mid_year_withdrawal,
+            lifecycle_action: transfer_out,
+          }
+        - {
+            finalsite_enrollment_id: c_null,
+            finalsite_status: assigned_school,
+            enrollment_type: null,
+            school_year_start: 2025,
+            grade_canonical_name: "03",
+            promotion_status: null,
+            assigned_school: School B,
+            enrollment_start_date: null,
+            enrollment_end_date: null,
+            withdrawal_reason: null,
+            lifecycle_action: create,
+          }
+        - {
+            finalsite_enrollment_id: c_old,
+            finalsite_status: enrolled,
+            enrollment_type: new,
+            school_year_start: 2024,
+            grade_canonical_name: "04",
+            promotion_status: null,
+            assigned_school: null,
+            enrollment_start_date: null,
+            enrollment_end_date: null,
+            withdrawal_reason: null,
+            lifecycle_action: create,
+          }
+        - {
+            finalsite_enrollment_id: c_lapsed,
+            finalsite_status: mid_year_withdrawal,
+            enrollment_type: returning,
+            school_year_start: 2025,
+            grade_canonical_name: "07",
+            promotion_status: null,
+            assigned_school: School C,
+            enrollment_start_date: 2025-08-15,
+            enrollment_end_date: 2026-02-01,
+            withdrawal_reason: mid_year_withdrawal,
+            lifecycle_action: transfer_out,
+          }

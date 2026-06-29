@@ -1,0 +1,30 @@
+models:
+  - name: int_focus__student_enrollment__pivot
+    description: >-
+      Decoded labels for the StudentEnrollment select custom fields, one row per
+      Focus enrollment id. Join to stg_focus__student_enrollment on id for
+      codes.
+    config:
+      meta:
+        contains_pii: true
+    columns:
+      - name: id
+        description: Primary key — Focus student enrollment id.
+        data_tests:
+          - unique:
+              config:
+                severity: error
+          - not_null:
+              config:
+                severity: error
+      - name: prior_district_label
+        description: Decoded label for the prior_district select field.
+      - name: prior_state_label
+        description: Decoded label for the prior_state select field.
+      - name: prior_country_label
+        description: Decoded label for the prior_country select field.
+      - name: educational_choice_label
+        description: Decoded label for the educational_choice select field.
+      - name: student_offender_transfer_label
+        description:
+          Decoded label for the student_offender_transfer select field.

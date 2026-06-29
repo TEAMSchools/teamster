@@ -6,14 +6,15 @@ models:
       - dbt_utils.unique_combination_of_columns:
           arguments:
             combination_of_columns:
-              - _dbt_source_relation
+              - _dbt_source_project
               - studentid
               - academic_year
           config:
             severity: error
     columns:
-      - name: _dbt_source_relation
+      - name: _dbt_source_project
         data_type: string
+        description: District code location derived from `_dbt_source_relation`.
       - name: studentid
         data_type: int64
         description:
@@ -96,3 +97,6 @@ models:
         data_type: float64
         description:
           Derived from ada_year_q1, ada_year_q2, ada_year_q3, ada_year_q4.
+      - name: sum_absences_year
+        data_type: int64
+        description: Sum of unexcused absences across all four quarters.

@@ -12,6 +12,13 @@ on GKE Autopilot.
 
 ## Helm
 
+- **`.k8s/setup.sh` is the prerequisite bootstrap for
+  `.k8s/dagster/install.sh`** — it installs the
+  helm/kubectl/gke-gcloud-auth-plugin toolchain to `~/.local/bin` (no root;
+  checksum-verified), runs `gcloud auth login`, fetches cluster credentials, and
+  creates the `dagster-cloud` namespace. install.sh is deploy-only;
+  `helm: command not found` or `cluster unreachable` means setup.sh wasn't run —
+  don't add bootstrap logic to install.sh.
 - `values.yaml` is auto-downloaded from Helm — never edit. All customizations go
   in `values-override.yaml`.
 - **Helm deploy is manual** — editing `values-override.yaml` is fine, but
@@ -61,10 +68,11 @@ on GKE Autopilot.
   `safe-to-evict: "false"`. Code-server spot reclaim triggers full agent
   reconciliation cascade (cold start + ClusterIP churn) — factor into cost
   analysis.
-- **Agent topology spread** uses `ScheduleAnyway` across
-  `topology.kubernetes.io/zone` via `additionalPodSpecConfig` — prefers
+- **Code server topology spread** uses `ScheduleAnyway` across
+  `topology.kubernetes.io/zone` via `serverK8sConfig.podSpecConfig` — prefers
   cross-zone but allows same-zone during capacity exhaustion (do not switch to
-  `DoNotSchedule`, which would block agent rollouts when one zone is full).
+  `DoNotSchedule`, which would block code-server rollouts when one zone is
+  full).
 
 ## 1Password Connect secret keys
 
@@ -315,3 +323,7 @@ sensor/schedule timeouts (default 300s) ARE configurable.
 `run_monitoring.start_timeout_seconds` only fires for runs in `STARTING` /
 `NOT_STARTED` status — does NOT catch dispatch-to-pod-confirmed stalls (run is
 already `STARTED` at LAUNCH_RUN dispatch, before pod confirmation).
+
+`run_monitoring.max_runtime_seconds` (the run-level ceiling, currently
+**1800s**) is a deployment-wide default — NOT set per-job in `src/teamster`
+(grep finds nothing). Override one job via a `dagster/max_runtime` run tag.

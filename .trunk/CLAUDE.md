@@ -13,20 +13,25 @@ linter-native disable syntax (`# shellcheck disable=`, `# noqa`, `-- noqa`):
 subprocess.run(["git", "status"])
 ```
 
+`trunk-ignore-all` is a comment directive — it cannot suppress findings in JSON
+(no comment syntax); drop/relocate the file or add a `lint.ignore` path rule in
+`trunk.yaml`. A directive naming a rule that wouldn't have fired trips
+`trunk/ignore-does-nothing`.
+
 ## Enabled Linters
 
-| Category | Linters                               |
-| -------- | ------------------------------------- |
-| Python   | ruff, pyright, bandit, isort          |
-| SQL      | sqlfluff, sqlfmt                      |
-| Shell    | shellcheck, shfmt                     |
-| YAML     | yamllint                              |
-| Markdown | markdownlint                          |
-| CI       | actionlint                            |
-| Docker   | hadolint                              |
-| Security | gitleaks, git-diff-check, osv-scanner |
-| Config   | prettier, taplo                       |
-| Images   | oxipng, svgo                          |
+| Category | Linters                                      |
+| -------- | -------------------------------------------- |
+| Python   | ruff, pyright, bandit, isort                 |
+| SQL      | sqlfluff, sqlfmt                             |
+| Shell    | shellcheck, shfmt                            |
+| YAML     | yamllint                                     |
+| Markdown | markdownlint                                 |
+| CI       | actionlint                                   |
+| Docker   | hadolint                                     |
+| Security | grype, gitleaks, git-diff-check, osv-scanner |
+| Config   | prettier, taplo                              |
+| Images   | oxipng, svgo                                 |
 
 ## Ignore Rules
 

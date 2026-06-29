@@ -1,0 +1,77 @@
+models:
+  - name: stg_focus__test_history_score_types
+    description: >-
+      Focus test-history score types — one row per score type, scoped by
+      district. Defines how a test or part is scored, including up to four
+      banded min/max score ranges.
+    columns:
+      - name: id
+        description: Primary key — Focus test-history score type id.
+        data_type: int
+        data_tests:
+          - unique:
+              config:
+                severity: error
+          - not_null:
+              config:
+                severity: error
+      - name: district_id
+        description: Focus district id the score type belongs to.
+        data_type: int
+      - name: title
+        description: Full score type name.
+        data_type: string
+      - name: short_name
+        description: Abbreviated score type label.
+        data_type: string
+      - name: data_type
+        description: Underlying data type of the score (e.g. numeric, select).
+        data_type: string
+      - name: summary_type
+        description: How the score type rolls up in summaries.
+        data_type: string
+      - name: select_options
+        description: Encoded select-option values when the score is a picklist.
+        data_type: string
+      - name: transcript
+        description: Y/N — whether the score type appears on the transcript.
+        data_type: string
+      - name: sort_order
+        description: Display sort order within the score type list.
+        data_type: numeric
+      - name: min_score
+        description: Minimum valid score for the primary band.
+        data_type: numeric
+      - name: max_score
+        description: Maximum valid score for the primary band.
+        data_type: numeric
+      - name: min_score1
+        description: Minimum valid score for band 1.
+        data_type: numeric
+      - name: max_score1
+        description: Maximum valid score for band 1.
+        data_type: numeric
+      - name: min_score2
+        description: Minimum valid score for band 2.
+        data_type: numeric
+      - name: max_score2
+        description: Maximum valid score for band 2.
+        data_type: numeric
+      - name: min_score3
+        description: Minimum valid score for band 3.
+        data_type: numeric
+      - name: max_score3
+        description: Maximum valid score for band 3.
+        data_type: numeric
+      - name: min_score4
+        description: Minimum valid score for band 4.
+        data_type: numeric
+      - name: max_score4
+        description: Maximum valid score for band 4.
+        data_type: numeric
+      - name: created_at
+        description: Row creation timestamp in Focus.
+        data_type: timestamp
+      - name: updated_at
+        description: Row last-update timestamp in Focus.
+        data_type: timestamp

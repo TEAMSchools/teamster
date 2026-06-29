@@ -10,7 +10,11 @@ with
             rr.response_type,
             rr.response_type_id,
             rr.response_type_code,
+            rr.response_type_description,
+            rr.response_type_root_description,
+            rr.is_replacement,
             rr.performance_band_label,
+            rr.performance_band_label_number,
             rr.is_mastery,
             rr.n_assessments,
             rr.percent_correct,
@@ -47,6 +51,7 @@ with
             localstudentidentifier as student_number,
             academic_year,
             subject_area,
+            illuminate_subject,
             discipline,
             module_code,
             administration_period,
@@ -63,7 +68,7 @@ with
 
             assessment_name as title,
 
-            cast(null as date) as test_date,
+            test_date,
             cast(null as numeric) as percent_correct,
 
             'state_nj' as score_source,
@@ -78,6 +83,7 @@ with
             student_number,
             academic_year,
             assessment_subject as subject_area,
+            illuminate_subject,
             discipline,
             test_code as module_code,
             scale_score,
@@ -95,7 +101,7 @@ with
 
             cast(assessment_grade as int) as grade_level,
 
-            cast(null as date) as test_date,
+            test_date,
             cast(null as numeric) as percent_correct,
 
             'state_fl' as score_source,
@@ -109,6 +115,7 @@ with
             state_student_id,
             academic_year,
             subject_area,
+            illuminate_subject,
             discipline,
             module_code,
             grade_level,
@@ -132,6 +139,7 @@ with
             state_student_id,
             academic_year,
             subject_area,
+            illuminate_subject,
             discipline,
             module_code,
             grade_level,
@@ -189,7 +197,7 @@ select
         )
     }} as assessment_administration_key,
 
-    {{ dbt_utils.generate_surrogate_key(["ia.student_number"]) }} as student_key,
+    sr.student_section_enrollment_key,
 
     ia.test_date as test_date_key,
 
@@ -197,7 +205,25 @@ select
     ia.percent_correct,
     ia.proficiency_level,
     ia.is_mastery,
+    ia.response_type,
+    ia.response_type_code,
+    ia.response_type_description,
+    ia.response_type_root_description,
+    ia.is_replacement,
+    ia.performance_band_label_number,
+
+    sr.resolution_type as enrollment_resolution,
 from internal_assessments as ia
+-- ia.assessment_id is canonical-grain: int_assessments__response_rollup aliases
+-- canonical_assessment_id as assessment_id, so it matches the resolver's
+-- canonical_assessment_id join key. INNER drops internal scores with no
+-- resolved section (out of scope) -- the resolver is the scope of record.
+inner join
+    {{ ref("int_assessments__resolved_section_enrollments") }} as sr
+    on ia.student_number = sr.powerschool_student_number
+    and ia.assessment_id = sr.canonical_assessment_id
+    and ia._dbt_source_project = sr._dbt_source_project
+    and sr.source_type = 'internal'
 
 union all
 
@@ -230,19 +256,33 @@ select
         )
     }} as assessment_administration_key,
 
-    if(
-        ds.lea_student_identifier is not null,
-        {{ dbt_utils.generate_surrogate_key(["su.student_number"]) }},
-        cast(null as string)
-    ) as student_key,
+    sr.student_section_enrollment_key,
 
     su.test_date as test_date_key,
 
     su.scale_score,
     su.percent_correct,
     su.performance_band as proficiency_level,
-
     su.is_proficient as is_mastery,
+
+    cast(null as string) as response_type,
+    cast(null as string) as response_type_code,
+    cast(null as string) as response_type_description,
+    cast(null as string) as response_type_root_description,
+    cast(null as bool) as is_replacement,
+    cast(null as numeric) as performance_band_label_number,
+
+    sr.resolution_type as enrollment_resolution,
 from state_union as su
-left join
-    {{ ref("dim_students") }} as ds on su.student_number = ds.lea_student_identifier
+-- the resolver keys state scores on illuminate_subject (the state->course
+-- subject mapping), not the raw subject_area the assessment_score_key hashes.
+-- join on su.illuminate_subject = sr.subject_area or every row drops.
+-- INNER scopes the fact to state scores with a resolved section.
+inner join
+    {{ ref("int_assessments__resolved_section_enrollments") }} as sr
+    on su.student_number = sr.powerschool_student_number
+    and su.academic_year = sr.academic_year
+    and su.administration_period = sr.administration_period
+    and su.illuminate_subject = sr.subject_area
+    and su._dbt_source_project = sr._dbt_source_project
+    and sr.source_type in ('state_nj', 'state_fl')

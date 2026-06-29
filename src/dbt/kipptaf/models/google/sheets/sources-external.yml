@@ -64,13 +64,6 @@ sources:
                 - sheets
                 - student_graduation_path_cutoffs
       - name: src_google_sheets__state_test_comparison
-        external:
-          options:
-            format: GOOGLE_SHEETS
-            uris:
-              - https://docs.google.com/spreadsheets/d/1yS6xU7ygiOrrtc29pUc3jr590qk7ttag3RuzVHaPOv8
-            sheet_range: src_google_sheets__state_test_comparison
-            skip_leading_rows: 1
         config:
           meta:
             dagster:
@@ -79,13 +72,20 @@ sources:
                 - google
                 - sheets
                 - state_test_comparison
+        external:
+          options:
+            format: GOOGLE_SHEETS
+            uris:
+              - https://docs.google.com/spreadsheets/d/1yS6xU7ygiOrrtc29pUc3jr590qk7ttag3RuzVHaPOv8
+            sheet_range: src_google_sheets__state_test_comparison
+            skip_leading_rows: 1
       - name: src_google_sheets__state_test_comparison_demographics
         external:
           options:
             format: GOOGLE_SHEETS
             uris:
               - https://docs.google.com/spreadsheets/d/1yS6xU7ygiOrrtc29pUc3jr590qk7ttag3RuzVHaPOv8
-            sheet_range: src_google_sheets__state_test_comparison_demographics
+            sheet_range: src_google_sheets__state_test_comparison_demographics_v2
             skip_leading_rows: 1
         config:
           meta:
@@ -1171,7 +1171,7 @@ sources:
             format: GOOGLE_SHEETS
             uris:
               - https://docs.google.com/spreadsheets/d/1FCc28XWxFj3gSfItGGJ2tVU0C1fYD1JxKRxuSFqisMo
-            sheet_range: src_google_sheets__people__locations
+            sheet_range: src_google_sheets__people__locations_v2
             skip_leading_rows: 1
         config:
           meta:
@@ -1216,6 +1216,8 @@ sources:
           - name: City
             data_type: STRING
           - name: Postal_Code
+            data_type: STRING
+          - name: Focus_School_ID
             data_type: STRING
       - name: src_google_sheets__people__campus_crosswalk
         external:
@@ -1751,3 +1753,69 @@ sources:
                 - sheets
                 - kfwd
                 - career_launch_bulk_add
+      - name: src_google_sheets__focus__enrollment_code_crosswalk
+        external:
+          options:
+            format: GOOGLE_SHEETS
+            uris:
+              - https://docs.google.com/spreadsheets/d/16l2loYxWINL7MG7eE1xzO2piVdKx5vvgavxntEMRSLk
+            sheet_range: src_focus__enrollment_code_crosswalk
+            skip_leading_rows: 1
+        columns:
+          - name: finalsite_lifecycle_action
+            data_type: string
+          - name: focus_enrollment_code
+            data_type: string
+        config:
+          meta:
+            dagster:
+              asset_key:
+                - kipptaf
+                - google
+                - sheets
+                - focus
+                - enrollment_code_crosswalk
+      - name: src_google_sheets__focus__drop_code_crosswalk
+        external:
+          options:
+            format: GOOGLE_SHEETS
+            uris:
+              - https://docs.google.com/spreadsheets/d/16l2loYxWINL7MG7eE1xzO2piVdKx5vvgavxntEMRSLk
+            sheet_range: src_focus__drop_code_crosswalk
+            skip_leading_rows: 1
+        columns:
+          - name: finalsite_withdrawal_reason
+            data_type: string
+          - name: focus_drop_code
+            data_type: string
+        config:
+          meta:
+            dagster:
+              asset_key:
+                - kipptaf
+                - google
+                - sheets
+                - focus
+                - drop_code_crosswalk
+      - name: src_google_sheets__focus__language_code_crosswalk
+        external:
+          options:
+            format: GOOGLE_SHEETS
+            uris:
+              - https://docs.google.com/spreadsheets/d/16l2loYxWINL7MG7eE1xzO2piVdKx5vvgavxntEMRSLk
+            sheet_range: src_focus__language_code_crosswalk
+            skip_leading_rows: 1
+        columns:
+          - name: finalsite_language
+            data_type: string
+          - name: focus_language_code
+            data_type: string
+        config:
+          meta:
+            dagster:
+              asset_key:
+                - kipptaf
+                - google
+                - sheets
+                - focus
+                - language_code_crosswalk

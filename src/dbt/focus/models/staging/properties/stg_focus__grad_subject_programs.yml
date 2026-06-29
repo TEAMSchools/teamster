@@ -1,0 +1,83 @@
+models:
+  - name: stg_focus__grad_subject_programs
+    description: >-
+      Focus graduation subject programs — one row per program. Defines the
+      graduation-requirement program a student enrollment can be assigned to.
+    columns:
+      - name: id
+        description: Primary key — Focus grad subject program id.
+        data_type: int
+        data_tests:
+          - unique:
+              config:
+                severity: error
+          - not_null:
+              config:
+                severity: error
+      - name: school_id
+        description: Focus school id the program belongs to.
+        data_type: int
+      - name: rollover_id
+        description: Source program id this rolled over from.
+        data_type: int
+      - name: district_id
+        description: Focus district id.
+        data_type: int
+      - name: min_syear
+        description: Earliest school year (start year) the program is active.
+        data_type: int
+      - name: max_syear
+        description: Latest school year (start year) the program is active.
+        data_type: int
+      - name: title
+        description: Full program name.
+        data_type: string
+      - name: short_name
+        description: Abbreviated program label.
+        data_type: string
+      - name: default_category
+        description: Default subject category for the program.
+        data_type: string
+      - name: sort_order
+        description: Display sort order.
+        data_type: numeric
+      - name: weight_by_credits
+        description: Y/N — whether the program weights GPA by credits.
+        data_type: string
+      - name: cte
+        description:
+          Y/N — whether the program is career and technical education.
+        data_type: string
+      - name: hide_merit
+        description: Y/N — whether the merit seal is hidden for the program.
+        data_type: string
+      - name: hide_biliteracy
+        description: Y/N — whether the biliteracy seal is hidden.
+        data_type: string
+      - name: hide_scholar
+        description: Y/N — whether the scholar designation is hidden.
+        data_type: string
+      - name: hide_header
+        description: Y/N — whether the program header is hidden.
+        data_type: string
+      - name: hide_industry
+        description: Y/N — whether the industry certification is hidden.
+        data_type: string
+      - name: hide_finearts
+        description: Y/N — whether the fine-arts designation is hidden.
+        data_type: string
+      - name: hide_ag
+        description: Y/N — whether the agriculture designation is hidden.
+        data_type: string
+      - name: schools
+        description: Comma-delimited list of school ids the program applies to.
+        data_type: string
+      - name: uuid
+        description: Focus global unique identifier for the row.
+        data_type: string
+      - name: created_at
+        description: Row creation timestamp in Focus.
+        data_type: timestamp
+      - name: updated_at
+        description: Row last-update timestamp in Focus.
+        data_type: timestamp

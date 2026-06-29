@@ -1,0 +1,7 @@
+models:
+  - name: rpt_focus__linked_students
+    columns:
+      - name: primary_student_id
+        data_type: string
+      - name: secondary_student_id
+        data_type: string

@@ -1,0 +1,80 @@
+models:
+  - name: stg_focus__gradebook_templates
+    description: >-
+      Focus gradebook templates — one row per template defining the category,
+      assignment, and standard structure a gradebook inherits.
+    columns:
+      - name: id
+        description: Primary key — Focus gradebook template id.
+        data_type: int
+        data_tests:
+          - unique:
+              config:
+                severity: error
+          - not_null:
+              config:
+                severity: error
+      - name: title
+        description: Template name.
+        data_type: string
+      - name: syear
+        description: Focus school year (start year).
+        data_type: int
+      - name: district_id
+        description: Focus district id.
+        data_type: int
+      - name: staff_id
+        description: Focus staff id that owns the template.
+        data_type: int
+      - name: schools
+        description: Schools the template applies to.
+        data_type: string
+      - name: global_course
+        description: Global course the template is tied to.
+        data_type: string
+      - name: enabled
+        description:
+          Whether the template is enabled — 1 = enabled, 0 = disabled.
+        data_type: int
+      - name: rollover_id
+        description: Source template id this rolled over from.
+        data_type: int
+      - name: drop_lowest_grade
+        description: Number of lowest grades dropped per category.
+        data_type: numeric
+      - name: force_weighting
+        description: Whether category weighting is forced on inheriting books.
+        data_type: boolean
+      - name: add_category
+        description: Whether inheriting gradebooks may add categories.
+        data_type: string
+      - name: modify_category
+        description: Whether inheriting gradebooks may modify categories.
+        data_type: string
+      - name: modify_category_title
+        description: Whether inheriting gradebooks may rename categories.
+        data_type: string
+      - name: add_assignment
+        description: Whether inheriting gradebooks may add assignments.
+        data_type: string
+      - name: modify_assignment
+        description: Whether inheriting gradebooks may modify assignments.
+        data_type: string
+      - name: add_standard
+        description: Whether inheriting gradebooks may add standards.
+        data_type: string
+      - name: modify_standard
+        description: Whether inheriting gradebooks may modify standards.
+        data_type: string
+      - name: created
+        description: Template creation date.
+        data_type: date
+      - name: modified
+        description: Template last-modified date.
+        data_type: date
+      - name: created_at
+        description: Row creation timestamp in Focus.
+        data_type: timestamp
+      - name: updated_at
+        description: Row last-update timestamp in Focus.
+        data_type: timestamp

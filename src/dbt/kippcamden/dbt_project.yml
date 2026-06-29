@@ -41,6 +41,9 @@ models:
         staging:
           +contract:
             enforced: true
+  finalsite:
+    api:
+      +enabled: false
   deanslist:
     +materialized: table
     staging:
@@ -98,8 +101,6 @@ models:
             +enabled: false
           stg_powerschool__u_def_ext_students:
             +enabled: false
-          stg_powerschool__u_expectations:
-            +enabled: false
   titan:
     +materialized: table
     staging:
@@ -107,6 +108,10 @@ models:
         +enabled: false
 
 sources:
+  finalsite:
+    finalsite:
+      contacts:
+        +enabled: false
   powerschool:
     sis:
       staging:
@@ -143,8 +148,6 @@ sources:
             src_powerschool__sced_code_mapping:
               +enabled: false
             src_powerschool__u_def_ext_students:
-              +enabled: false
-            src_powerschool__u_expectations:
               +enabled: false
   titan:
     titan:

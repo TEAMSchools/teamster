@@ -54,6 +54,7 @@ data_tests:
       source — most often caused by EdPlan emitting two snapshot rows with
       overlapping date ranges and different `spedlep` values.
     config:
+      severity: error
       meta:
         dagster:
           ref:
@@ -67,6 +68,7 @@ data_tests:
       student — typically the primary `lepbegindate` and a secondary
       `lepbegindate2` with overlapping ranges.
     config:
+      severity: error
       meta:
         dagster:
           ref:
@@ -79,6 +81,7 @@ data_tests:
       day-before-next-row's-start so academic-year boundary overlaps don't
       surface in the dim.
     config:
+      severity: error
       meta:
         dagster:
           ref:
@@ -147,6 +150,22 @@ data_tests:
           ref:
             name: stg_kippadb__contact_note
 
+  - name: int_assessments__resolved_section_enrollments__unique_per_score
+    description: >-
+      Asserts that int_assessments__resolved_section_enrollments contains one
+      row per score. The score grain spans all three source branches (internal,
+      state_nj, state_fl): (powerschool_student_number, _dbt_source_project,
+      source_type, canonical_assessment_id, academic_year,
+      administration_period, subject_area). NULL-safe via format("%T|...") so
+      NULL canonical_assessment_id on state rows and NULL
+      academic_year/administration_period on internal rows do not collapse the
+      distinct count.
+    config:
+      meta:
+        dagster:
+          ref:
+            name: int_assessments__resolved_section_enrollments
+
   - name: int_collegeboard__ap_unpivot__crosswalk_resolves
     description: >-
       Returns one row per `stg_collegeboard__ap.ap_number_ap_id` that has no
@@ -161,3 +180,32 @@ data_tests:
         dagster:
           ref:
             name: int_collegeboard__ap_unpivot
+
+  - name: rpt_focus__demographics__language_crosswalk_resolves
+    description: >-
+      Returns one row per `int_finalsite__contact_custom_attributes` record
+      whose non-null `lang_parent_ss` has no matching `finalsite_language` in
+      `stg_google_sheets__focus__language_code_crosswalk`. Each row is a
+      Finalsite language value that falls through to a null Focus code in
+      `rpt_focus__demographics` (LANG / PRIMARY_HOME_LANG / NATIVE_PARENT_LANG).
+      Ops signal to add the missing value to the crosswalk sheet; failure rows
+      persist in `kipptaf_dbt_test__audit` for direct query.
+    config:
+      meta:
+        dagster:
+          ref:
+            name: int_finalsite__contact_custom_attributes
+
+  - name: dim_student_section_enrollments__no_multi_stint_overlap
+    description: >-
+      Warns when a non-dropped course-enrollment (cc) record overlaps more than
+      one school enrollment stint. dim_student_section_enrollments resolves
+      these to a single stint (covering-first, else earliest), so a nonzero
+      count is a known, monitored condition (baseline ~147, almost all genuine
+      mid-year drop/re-enroll) rather than a failure. Growth signals new
+      boundary-spanning sections to review.
+    config:
+      meta:
+        dagster:
+          ref:
+            name: dim_student_section_enrollments

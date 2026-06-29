@@ -1,0 +1,56 @@
+models:
+  - name: fct_table_sample
+    config:
+      materialized: table
+
+    columns:
+      - name: table_sample_key
+        data_type: string
+        constraints:
+          - type: primary_key
+            warn_unsupported: false
+            warn_unenforced: false
+        data_tests:
+          - unique
+          - not_null
+
+      - name: constrained_key
+        data_type: string
+        constraints:
+          - type: foreign_key
+            to: ref('dim_other')
+            to_columns: [constrained_key]
+            warn_unsupported: false
+        data_tests:
+          - relationships:
+              arguments:
+                to: ref('dim_other')
+                field: constrained_key
+
+      - name: enrollment_key
+        data_type: string
+        data_tests:
+          - not_null
+
+          - relationships:
+              arguments:
+                to: ref('dim_enrollments')
+                field: enrollment_key
+
+      - name: date_key
+        data_type: date
+        data_tests:
+          - relationships:
+              arguments:
+                to: ref('dim_dates')
+                field: date_key
+
+  - name: fct_view_sample
+    columns:
+      - name: enrollment_key
+        data_type: string
+        data_tests:
+          - relationships:
+              arguments:
+                to: ref('dim_enrollments')
+                field: enrollment_key

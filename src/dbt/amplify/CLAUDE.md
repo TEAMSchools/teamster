@@ -13,14 +13,14 @@ product lines with different ingestion paths:
 models/
   dds/
     staging/
+    sources-external.yml
   mclass/
     api/
       staging/
+      sources-external.yml
     sftp/
       staging/
-  sources-dds.yml
-  sources-mclass-api.yml
-  sources-mclass-sftp.yml
+      sources-external.yml
 ```
 
 Both `dds` and `mclass/api` can be independently enabled/disabled per school in
@@ -28,6 +28,7 @@ the consuming project's `dbt_project.yml`.
 
 ## Cross-Project Usage
 
-Referenced by `kippnewark`, `kipppaterson`, and `kipptaf`. District projects
-selectively enable only the Amplify products they use — for example,
+Referenced as a dbt package by `kippnewark` and `kipppaterson` (`kipptaf` keeps
+its own native amplify models rather than packaging this project). District
+projects selectively enable only the Amplify products they use — for example,
 `kipppaterson` disables both `dds` and `mclass/api`.

@@ -31,6 +31,10 @@ with
             coalesce(performance_level, achievement_level_int) as performance_level,
             coalesce(student_id, fleid) as student_id,
 
+            coalesce(
+                safe_cast(date_taken as date), safe.parse_date('%m/%d/%Y', date_taken)
+            ) as test_date,
+
             regexp_extract(
                 _dbt_source_relation, r'stg_fldoe__(\w+)'
             ) as assessment_name,
@@ -64,8 +68,32 @@ select
 
     fl.student_number,
 
+    'Actual' as results_type,
+    'KTAF FL' as district_state,
+
+    t.administration_window as `admin`,
+    t.assessment_subject as `subject`,
+
     if(
         t.assessment_name = 'science', 'Science', upper(t.assessment_name)
     ) as assessment_name,
+
+    case
+        when t.assessment_subject like 'English Language Arts%'
+        then 'Text Study'
+        when t.assessment_subject in ('Algebra I', 'Algebra II', 'Geometry')
+        then 'Mathematics'
+        else t.assessment_subject
+    end as illuminate_subject,
+
+    case
+        when t.performance_level = 1
+        then 'Below/Far Below'
+        when t.performance_level = 2
+        then 'Approaching'
+        when t.performance_level >= 3
+        then 'At/Above'
+    end as fast_aggregated_proficiency,
+
 from transformed as t
 left join fleid_lookup as fl on t.student_id = fl.fleid

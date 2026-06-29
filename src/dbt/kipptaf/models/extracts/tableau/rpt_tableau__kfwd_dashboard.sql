@@ -1,3 +1,4 @@
+{%- set max_awards = 10 -%}
 with
     year_scaffold as (
         select {{ var("current_academic_year") }} as academic_year
@@ -212,6 +213,38 @@ with
         from {{ ref("int_kippadb__persistence") }}
         where rn_enrollment_year = 1 and pursuing_degree_type = "Bachelor's (4-year)"
         group by sf_contact_id
+    ),
+
+    aid_awards as (
+        select
+            student as sf_contact_id,
+            academic_year,
+            `name` as aid_name,
+            amount,
+            is_maher,
+
+            row_number() over (
+                partition by student, academic_year
+                order by `date` asc, created_date asc, id asc
+            ) as rn_award,
+        from {{ ref("stg_kippadb__kipp_aid") }}
+    ),
+
+    aid_pivot as (
+        select
+            sf_contact_id,
+            academic_year,
+
+            sum(amount) as total_aid_amount,
+
+            count(*) as aid_award_count,
+            {%- for i in range(1, max_awards + 1) %}
+                max(if(rn_award = {{ i }}, aid_name, null)) as award_{{ i }}_name,
+                max(if(rn_award = {{ i }}, amount, null)) as award_{{ i }}_amount,
+                max(if(rn_award = {{ i }}, is_maher, null)) as award_{{ i }}_is_maher,
+            {%- endfor %}
+        from aid_awards
+        group by sf_contact_id, academic_year
     )
 
 select
@@ -520,6 +553,12 @@ select
 
     ba.n_ba_enrolled_semesters,
 
+    kar.total_aid_amount,
+    kar.aid_award_count,
+    {%- for i in range(1, max_awards + 1) %}
+        kar.award_{{ i }}_name, kar.award_{{ i }}_amount, kar.award_{{ i }}_is_maher,
+    {%- endfor %}
+
     if(
         c.contact_kipp_region_name = 'KIPP Miami' and c.ktc_status like 'TAF%',
         'Miami TAF',
@@ -742,6 +781,10 @@ left join ba_semesters_enrolled as ba on c.contact_id = ba.sf_contact_id
 left join
     {{ ref("int_overgrad__choice_counts") }} as ogc on c.contact_id = ogc.contact_id
 left join {{ ref("int_overgrad__top_choices") }} as otc on c.contact_id = otc.contact_id
+left join
+    aid_pivot as kar
+    on c.contact_id = kar.sf_contact_id
+    and ay.academic_year = kar.academic_year
 where
     c.ktc_status in ('HS9', 'HS10', 'HS11', 'HS12', 'HSG', 'TAF', 'TAFHS')
     and c.contact_id is not null

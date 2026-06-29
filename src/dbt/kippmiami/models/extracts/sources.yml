@@ -28,3 +28,48 @@ sources:
                 - kipptaf
                 - extracts
                 - rpt_powerschool__autocomm_students_iep
+      - name: rpt_focus__student_enrollment
+        config:
+          meta:
+            dagster:
+              group: extracts
+              asset_key:
+                - kipptaf
+                - extracts
+                - rpt_focus__student_enrollment
+      - name: rpt_focus__demographics
+        config:
+          meta:
+            dagster:
+              group: extracts
+              asset_key:
+                - kipptaf
+                - extracts
+                - rpt_focus__demographics
+      - name: rpt_focus__addresses
+        config:
+          meta:
+            dagster:
+              group: extracts
+              asset_key:
+                - kipptaf
+                - extracts
+                - rpt_focus__addresses
+      - name: rpt_focus__contacts
+        config:
+          meta:
+            dagster:
+              group: extracts
+              asset_key:
+                - kipptaf
+                - extracts
+                - rpt_focus__contacts
+      - name: rpt_focus__linked_students
+        config:
+          meta:
+            dagster:
+              group: extracts
+              asset_key:
+                - kipptaf
+                - extracts
+                - rpt_focus__linked_students

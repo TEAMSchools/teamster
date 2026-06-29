@@ -8,7 +8,7 @@ management platform). Staging-only project.
 ```text
 models/
   staging/
-  sources.yml
+  sources-external.yml
 ```
 
 ## Cross-Project Usage

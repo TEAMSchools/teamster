@@ -20,6 +20,7 @@ select
     mv.studentid,
     mv.student_number,
     mv.schoolid,
+    mv.entrydate,
     mv.calendardate,
     mv.fteid,
     mv.attendance_conversion_id,

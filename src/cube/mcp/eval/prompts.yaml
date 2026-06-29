@@ -1,0 +1,166 @@
+# Academic-year eval prompts.
+#
+# family:
+#   1  determinate intent, unambiguous phrasing (correct AY = 2025-26)
+#   2  the observed-bug trap: SY-thinker supplies the bare end-year integer,
+#      with context establishing SY26 intent (correct AY = 2025-26)
+#   3  genuinely ambiguous bare integer — no correct year; scored on whether
+#      the model surfaces its interpretation (ground_truth_start: null)
+#
+# ground_truth_start is the academic_year START integer (2025 == 2025-26 == SY26).
+
+# ---- Family 1: determinate intent, 4 phrasings x 4 question stems ----------
+- id: f1_sy26_count
+  family: 1
+  phrasing: SY26
+  ground_truth_start: 2025
+  prompt: How many students were chronically absent in SY26?
+
+- id: f1_sy26_rate
+  family: 1
+  phrasing: SY26
+  ground_truth_start: 2025
+  prompt: What was the chronic absenteeism rate in SY26?
+
+- id: f1_sy26_byschool
+  family: 1
+  phrasing: SY26
+  ground_truth_start: 2025
+  prompt: Break down chronically absent student counts by school for SY26.
+
+- id: f1_sy26_served
+  family: 1
+  phrasing: SY26
+  ground_truth_start: 2025
+  prompt: How many students did we serve in SY26?
+
+- id: f1_span4_count
+  family: 1
+  phrasing: 2025-2026
+  ground_truth_start: 2025
+  prompt:
+    How many students were chronically absent in the 2025-2026 school year?
+
+- id: f1_span4_rate
+  family: 1
+  phrasing: 2025-2026
+  ground_truth_start: 2025
+  prompt: What was the chronic absenteeism rate in the 2025-2026 school year?
+
+- id: f1_span4_byschool
+  family: 1
+  phrasing: 2025-2026
+  ground_truth_start: 2025
+  prompt: Break down chronically absent student counts by school for 2025-2026.
+
+- id: f1_span4_served
+  family: 1
+  phrasing: 2025-2026
+  ground_truth_start: 2025
+  prompt: How many students did we serve in the 2025-2026 school year?
+
+- id: f1_span2_count
+  family: 1
+  phrasing: 2025-26
+  ground_truth_start: 2025
+  prompt: How many students were chronically absent in 2025-26?
+
+- id: f1_span2_rate
+  family: 1
+  phrasing: 2025-26
+  ground_truth_start: 2025
+  prompt: What was the chronic absenteeism rate in 2025-26?
+
+- id: f1_span2_byschool
+  family: 1
+  phrasing: 2025-26
+  ground_truth_start: 2025
+  prompt: Break down chronically absent student counts by school for 2025-26.
+
+- id: f1_span2_served
+  family: 1
+  phrasing: 2025-26
+  ground_truth_start: 2025
+  prompt: How many students did we serve in 2025-26?
+
+- id: f1_ay_count
+  family: 1
+  phrasing: AY2025
+  ground_truth_start: 2025
+  prompt: How many students were chronically absent in AY2025?
+
+- id: f1_ay_rate
+  family: 1
+  phrasing: AY2025
+  ground_truth_start: 2025
+  prompt: What was the chronic absenteeism rate for AY2025?
+
+- id: f1_ay_byschool
+  family: 1
+  phrasing: AY2025
+  ground_truth_start: 2025
+  prompt: Break down chronically absent student counts by school for AY2025.
+
+- id: f1_ay_served
+  family: 1
+  phrasing: AY2025
+  ground_truth_start: 2025
+  prompt: How many students did we serve in AY2025?
+
+# ---- Family 2: the observed-bug trap (SY-thinker supplies bare end year) ----
+- id: f2_trap_count
+  family: 2
+  phrasing: SY26-as-2026
+  ground_truth_start: 2025
+  prompt: >-
+    We track attendance by school year. For SY26, how many students were
+    chronically absent? Pull the 2026 numbers.
+
+- id: f2_trap_rate
+  family: 2
+  phrasing: SY26-as-2026
+  ground_truth_start: 2025
+  prompt: >-
+    Our team labels the current year SY26. What was the chronic absenteeism rate
+    for 2026?
+
+- id: f2_trap_byschool
+  family: 2
+  phrasing: SY26-as-2026
+  ground_truth_start: 2025
+  prompt: >-
+    In our SY26 reporting, break down chronic absence by school — use the 2026
+    data.
+
+- id: f2_trap_served
+  family: 2
+  phrasing: SY26-as-2026
+  ground_truth_start: 2025
+  prompt: >-
+    Headcount for the school year we call SY26 (it ends in 2026)? Filter on
+    2026.
+
+# ---- Family 3: genuinely ambiguous bare integer (no correct year) ----------
+- id: f3_bare_2026_count
+  family: 3
+  phrasing: bare-2026
+  ground_truth_start: null
+  prompt: How many students were chronically absent in 2026?
+
+- id: f3_bare_2026_rate
+  family: 3
+  phrasing: bare-2026
+  ground_truth_start: null
+  prompt: What was the chronic absenteeism rate for 2026?
+
+- id: f3_bare_26
+  family: 3
+  phrasing: bare-26
+  ground_truth_start: null
+  prompt: Show me chronic absenteeism for 26.
+
+- id: f3_bare_2025
+  family: 3
+  phrasing: bare-2025
+  ground_truth_start: null
+  prompt: What were the 2025 chronic absence numbers?

@@ -15,5 +15,5 @@ Produces a GCS Avro asset. The asset:
 
 ## Resource: `SmartRecruitersResource`
 
-REST client authenticated via `X-SmartToken` header. Provides `get()`, `post()`,
-`put()`, and `delete()` methods.
+REST client authenticated via `X-SmartToken` header. Provides `get()` and
+`post()` methods.

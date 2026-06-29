@@ -50,6 +50,9 @@ models:
         data_type: boolean
       - name: voluntary_indicator
         data_type: boolean
+      - name: rehire_eligible_indicator
+        data_type: boolean
+        description: Whether a terminated worker is eligible for rehire.
       - name: full_time_equivalence_ratio
         data_type: float64
       - name: assignment_status__status_code__code_value
@@ -155,6 +158,11 @@ models:
       - name: job_code__long_name
         data_type: string
       - name: job_code__short_name
+        data_type: string
+      - name: job_function_code__code_value
+        data_type: string
+        description: Job function classification code for the work assignment.
+      - name: job_function_code__name
         data_type: string
       - name: pay_cycle_code__code_value
         data_type: string
@@ -284,7 +292,7 @@ models:
           ARRAY<STRUCT<itemID STRING, effectiveDate STRING, nameCode STRUCT<codeValue STRING, longName STRING, shortName STRING, effectiveDate STRING>, rate STRUCT<amountValue FLOAT64, currencyCode STRING, nameCode STRUCT<codeValue STRING, longName STRING, shortName STRING, effectiveDate STRING>>>>
       - name: assigned_work_locations
         data_type: |
-          ARRAY<STRUCT<address STRUCT<cityName STRING, countryCode STRING, itemID STRING, lineOne STRING, lineTwo STRING, lineThree STRING, postalCode STRING, countrySubdivisionLevel1 STRUCT<codeValue STRING, longName STRING, shortName STRING, effectiveDate STRING, subdivisionType STRING>, countrySubdivisionLevel2 STRUCT<codeValue STRING, longName STRING, shortName STRING, effectiveDate STRING, subdivisionType STRING>, nameCode STRUCT<codeValue STRING, longName STRING, shortName STRING, effectiveDate STRING>, typeCode STRUCT<codeValue STRING, longName STRING, shortName STRING, effectiveDate STRING>>, nameCode STRUCT<codeValue STRING, longName STRING, shortName STRING, effectiveDate STRING>>>
+          ARRAY<STRUCT<address STRUCT<cityName STRING, countryCode STRING, itemID STRING, lineOne STRING, lineTwo STRING, lineThree STRING, postalCode STRING, deliveryPoint STRING, countrySubdivisionLevel1 STRUCT<codeValue STRING, longName STRING, shortName STRING, effectiveDate STRING, subdivisionType STRING>, countrySubdivisionLevel2 STRUCT<codeValue STRING, longName STRING, shortName STRING, effectiveDate STRING, subdivisionType STRING>, nameCode STRUCT<codeValue STRING, longName STRING, shortName STRING, effectiveDate STRING>, typeCode STRUCT<codeValue STRING, longName STRING, shortName STRING, effectiveDate STRING>>, nameCode STRUCT<codeValue STRING, longName STRING, shortName STRING, effectiveDate STRING>>>
       - name: custom_field_group__code_fields
         data_type: |
           ARRAY<STRUCT<codeValue STRING, longName STRING, shortName STRING, effectiveDate STRING, itemID STRING, nameCode STRUCT<codeValue STRING, longName STRING, shortName STRING, effectiveDate STRING>>>

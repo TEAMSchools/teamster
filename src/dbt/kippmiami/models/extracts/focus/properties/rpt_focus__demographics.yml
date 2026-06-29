@@ -1,0 +1,87 @@
+models:
+  - name: rpt_focus__demographics
+    columns:
+      - name: stdt_id
+        data_type: string
+      - name: last_name
+        data_type: string
+      - name: first_name
+        data_type: string
+      - name: name_suffix
+        data_type: string
+      - name: middle_name
+        data_type: string
+      - name: nickname
+        data_type: string
+      - name: dt_birth
+        data_type: string
+      - name: gender
+        data_type: string
+      - name: lang
+        data_type: string
+      - name: stdt_email
+        data_type: string
+      - name: ethnic_hl
+        data_type: string
+      - name: single_ethnic
+        data_type: string
+      - name: race_am_ind_ak_nat
+        data_type: string
+      - name: race_asian
+        data_type: string
+      - name: race_black
+        data_type: string
+      - name: race_nat_haw_pac_isl
+        data_type: string
+      - name: race_white
+        data_type: string
+      - name: residence_county
+        data_type: string
+      - name: contry_birth
+        data_type: string
+      - name: homeroom_tchr
+        data_type: string
+      - name: resident_st
+        data_type: string
+      - name: birth_loc
+        data_type: string
+      - name: bdate_verif
+        data_type: string
+      - name: immun_st
+        data_type: string
+      - name: primary_home_lang
+        data_type: string
+      - name: native_parent_lang
+        data_type: string
+      - name: grde_enter_dist
+        data_type: string
+      - name: msix_id
+        data_type: string
+      - name: homeroom
+        data_type: string
+      - name: pmrn
+        data_type: string
+      - name: internt_perm
+        data_type: string
+      - name: act_perm
+        data_type: string
+      - name: direct_perm
+        data_type: string
+      - name: screen_perm
+        data_type: string
+      - name: photo_vid_perm
+        data_type: string
+      - name: survey_perm
+        data_type: string
+      - name: mckay_sch_attend
+        data_type: string
+      - name: fhsaa_el3_ind
+        data_type: string
+      - name: fhsaa_el3ch_ind
+        data_type: string
+      - name: dt_home_lang_survey
+        data_type: string
+      - name: casas_track
+        data_type: string
+      - name: lcp_cont_stdt
+        data_type: string

@@ -177,7 +177,7 @@ select
         0
     ) as gr3_retention_flag,
 
-    case ft.is_proficient when true then 1.0 when false then 0.0 end as is_proficient,
+    ft.is_proficient_int as is_proficient,
 
     case
         when
@@ -233,7 +233,7 @@ left join
     {{ ref("int_fldoe__all_assessments") }} as ft
     on co.fleid = ft.student_id
     and co.academic_year = ft.academic_year
-    and co.fast_subject = ft.assessment_subject
+    and co.discipline = ft.discipline
     and administration_window = ft.administration_window
 left join
     {{ ref("int_assessments__fast_previous_year") }} as p

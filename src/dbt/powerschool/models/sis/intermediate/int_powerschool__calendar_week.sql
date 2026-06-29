@@ -55,6 +55,10 @@ with
                 partition by schoolid, yearid
             ) as last_week_start_school_year,
 
+            max(school_week_end_date) over (
+                partition by schoolid, yearid
+            ) as last_day_school_year,
+
             lead(school_week_start_date) over (
                 partition by schoolid, yearid order by week_start_date asc
             ) as school_week_start_date_lead,
@@ -65,6 +69,7 @@ with
             row_number() over (
                 partition by schoolid, yearid, `quarter` order by week_start_date asc
             ) as week_number_quarter,
+
         from week_rollup
     )
 
@@ -77,8 +82,13 @@ select
             and current_date('{{ var("local_timezone") }}')
             between week_start_monday and week_end_sunday
         then true
-        when week_start_monday = last_week_start_school_year
+        when
+            academic_year = {{ var("current_academic_year") }}
+            and current_date('{{ var("local_timezone") }}')
+            > date_add(last_week_start_school_year, interval 6 day)
+            and week_start_monday = last_week_start_school_year
         then true
         else false
     end as is_current_week_mon_sun,
+
 from window_calcs

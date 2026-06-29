@@ -435,6 +435,13 @@ models:
         data_type: int64
       - name: rn_course_number_year
         data_type: int64
+      - name: _dbt_source_project
+        data_type: string
+        description: |
+          Region prefix extracted from `_dbt_source_relation` via
+          `regexp_extract(..., r'(kipp\w+)_')`. Used as a region discriminator
+          in downstream surrogate keys, consistent across all upstream union
+          tables.
       - name: ap_course_subject
         data_type: string
       - name: block_schedule_session
@@ -479,13 +486,6 @@ models:
         data_type: boolean
       - name: discipline
         data_type: string
-      - name: _dbt_source_project
-        data_type: string
-        description: |
-          Region prefix extracted from `_dbt_source_relation` via
-          `regexp_extract(..., r'(kipp\w+)_')`. Used as a region discriminator
-          in downstream surrogate keys, consistent across all upstream union
-          tables.
       - name: region
         data_type: string
         description: Derived from _dbt_source_relation.
@@ -498,6 +498,11 @@ models:
           → SCI, Homeroom → HR) caused by a 2023 PowerSchool plugin glitch in
           one region that produced non-standard values for that year's records.
         data_type: string
+      - name: standardized_discipline
+        data_type: string
+        description: >
+          Course subject discipline with 'SOC' normalized to 'Civics'; all other
+          discipline values pass through unchanged.
       - name: rn_student_year_illuminate_subject_desc
         data_type: int64
         description:

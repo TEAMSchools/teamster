@@ -1,0 +1,27 @@
+models:
+  - name: int_finalsite__contact_id_attributes
+    description:
+      One row per Finalsite contact, pivoting the repeated `id_attributes`
+      key-value array into one column per identifier field, each aliased to its
+      original Finalsite field name. Contacts with no `id_attributes` are absent
+      (resolve via a left join). The PIVOT enumerates fields explicitly, so a
+      new `id_attributes` field must be added to the PIVOT field list in the
+      model SQL to surface — it does not appear automatically.
+    columns:
+      - name: finalsite_enrollment_id
+        data_type: string
+        description: Finalsite contact UUID; the grain of this model.
+        data_tests:
+          - unique
+          - not_null
+      - name: power_school_contact_id
+        data_type: string
+        description: PowerSchool contact id from the `id_attributes` array.
+      - name: powerschool_student_number
+        data_type: string
+        description: PowerSchool student number from the `id_attributes` array.
+      - name: focus_student_id
+        data_type: string
+        description:
+          Finalsite-minted Focus student id (the Focus `STDT_ID`) from the
+          `id_attributes` array.

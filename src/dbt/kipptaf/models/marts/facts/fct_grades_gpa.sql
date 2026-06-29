@@ -1,7 +1,6 @@
 with
     student_enrollments as (
         select
-            _dbt_source_relation,
             _dbt_source_project,
             studentid,
             schoolid,
@@ -29,7 +28,7 @@ with
 
     gpa_term as (
         select
-            gt._dbt_source_relation,
+            gt._dbt_source_project,
             gt.studentid,
             gt.schoolid,
             gt.yearid,
@@ -52,10 +51,8 @@ with
             gc.earned_credits_cum,
             gc.potential_credits_cum,
 
-            initcap(regexp_extract(gt._dbt_source_relation, r'kipp(\w+)_')) as region,
-
             row_number() over (
-                partition by gt._dbt_source_relation, gt.studentid, gt.schoolid
+                partition by gt._dbt_source_project, gt.studentid, gt.schoolid
                 order by
                     gt.yearid desc,
                     case
@@ -71,12 +68,13 @@ with
                         else 0
                     end desc
             ) as rn_current,
+
         from {{ ref("int_powerschool__gpa_term") }} as gt
         left join
             {{ ref("int_powerschool__gpa_cumulative") }} as gc
             on gt.studentid = gc.studentid
             and gt.schoolid = gc.schoolid
-            and {{ union_dataset_join_clause(left_alias="gt", right_alias="gc") }}
+            and gt._dbt_source_project = gc._dbt_source_project
     )
 
 select
@@ -148,7 +146,7 @@ inner join
     on gt.studentid = enr.studentid
     and gt.schoolid = enr.schoolid
     and gt.yearid = enr.yearid
-    and {{ union_dataset_join_clause(left_alias="gt", right_alias="enr") }}
+    and gt._dbt_source_project = enr._dbt_source_project
 left join
     reporting_terms as rt
     on gt.term_name = rt.`name`

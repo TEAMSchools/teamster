@@ -28,6 +28,7 @@ disabled.
   `stg_pearson__njgpa`, `stg_pearson__parcc`, `stg_pearson__student_test_update`
   disabled in `dbt_project.yml`
 - `amplify` — both `dds` and `mclass/api` disabled
+- `finalsite`
 
 ## Models in package-named directories
 

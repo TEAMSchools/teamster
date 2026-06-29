@@ -306,3 +306,9 @@ models:
         data_type: int64
       - name: gradescale_name_unweighted
         data_type: string
+        description: >
+          Unweighted equivalent of gradescale_name. Weighted honors scales are
+          mapped to their unweighted counterparts (e.g., `KIPP NJ 2024 (5-12)
+          Weighted - Honors` and `KIPP NJ 2019 (5-12) Weighted` both map to
+          `KIPP NJ 2019 (5-12) Unweighted`). Non-weighted scales pass through
+          unchanged.

@@ -403,9 +403,14 @@ models:
         data_type: string
       - name: testperformancelevel_text
         data_type: string
-      # - name: homeless_primary_nighttime_residence
-      #   data_type: string
-      # - name: multilinguallearneraccommodatedresponse
-      #   data_type: string
-      # - name: requiredhighschoolmathassessment
-      #   data_type: string
+      - name: test_date
+        data_type: date
+        description: >-
+          Date the student took the assessment, derived from the earliest online
+          unit start datetime, falling back to the paper attempt create date.
+      - name: homeless_primary_nighttime_residence
+        data_type: string
+      - name: multilinguallearneraccommodatedresponse
+        data_type: string
+      - name: requiredhighschoolmathassessment
+        data_type: string

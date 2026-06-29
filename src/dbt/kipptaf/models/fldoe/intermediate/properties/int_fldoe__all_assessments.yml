@@ -5,7 +5,10 @@ models:
       kippmiami source relations, sourced from the kippmiami
       int_fldoe__all_assessments intermediate which resolves student_number via
       the FLEID lookup. Joined to the iReady scale-score crosswalk to expose
-      sublevel and points-to-proficiency / points-to-growth derivations.
+      sublevel and points-to-proficiency / points-to-growth derivations. Carries
+      standardized metadata columns (results_type, district_state,
+      illuminate_subject, fast_aggregated_proficiency) from the district
+      intermediate.
     data_tests:
       - dbt_utils.unique_combination_of_columns:
           arguments:
@@ -18,32 +21,74 @@ models:
     columns:
       - name: _dbt_source_relation
         data_type: string
+        description: Source relation identifier from dbt_utils.union_relations.
+
+      - name: _dbt_source_project
+        data_type: string
+        description: >-
+          Dagster code-location identifier derived via extract_code_location()
+          from _dbt_source_relation; identifies the district source project
+          (e.g. kippmiami).
+
       - name: test_code
         data_type: string
+        description: State assessment test code (e.g. ELA03, ALG01, ELAGP).
+
       - name: academic_year
         data_type: int64
+        description: Academic year the assessment was administered.
+
       - name: administration_window
         data_type: string
+        description: Assessment administration window (PM1, PM2, or PM3).
+
       - name: season
         data_type: string
+        description: >
+          Testing season derived from administration window (Fall, Winter,
+          Spring). We only use Spring for official reporting.
+
       - name: discipline
         data_type: string
+        description: Subject discipline category (Math, ELA, Science, etc.).
+
       - name: assessment_subject
         data_type: string
+        description: Full assessment subject name as reported by FLDOE.
+
       - name: scale_score
         data_type: int64
+        description: Student's raw scale score on the assessment.
+
       - name: achievement_level
         data_type: string
+        description: >
+          Achievement level label as reported by FLDOE (e.g. 'Level 1', 'Level
+          3').
+
       - name: is_proficient
         data_type: boolean
+        description:
+          Whether the student scored at or above the proficiency threshold.
+
       - name: assessment_grade
         data_type: string
+        description: >
+          Grade level of the assessment. Ideally, it should match a student's
+          enrolled grade.
+
       - name: performance_level
         data_type: int64
+        description: Numeric performance level from the source data.
+
       - name: student_id
         data_type: string
+        description: Student identifier from the source system.
+
       - name: assessment_name
         data_type: string
+        description: Full assessment name (e.g. FAST, FSA, EOC).
+
       - name: student_number
         data_type: int64
         description: >-
@@ -51,29 +96,120 @@ models:
           int_fldoe__all_assessments model by joining FLDOE student_id (FLEID)
           to stg_powerschool__u_studentsuserfields.fleid. Null when no PS Miami
           student carries the matching FLEID.
+
+      - name: test_date
+        data_type: date
+        description: >-
+          Date the student took the assessment (per-student testing date,
+          derived from date_taken in the upstream source). Null for legacy
+          records that carry no recorded testing date.
+
       - name: sublevel_number
         data_type: int64
+        description: >
+          iReady crosswalk sublevel number for the student's scale score band;
+          null if no crosswalk match.
+
       - name: sublevel_name
         data_type: string
+        description: >
+          iReady crosswalk sublevel name for the student's scale score band;
+          null if no crosswalk match.
+
+      - name: results_type
+        data_type: string
+        description: Always 'Actual' for FLDOE results (no preliminary scores).
+
+      - name: district_state
+        data_type: string
+        description:
+          Network district/state identifier; always 'KTAF FL' for this model.
+
       - name: achievement_level_int
         data_type: int64
-      - name: scale_for_proficiency
-        data_type: int64
-        description: Conditional on scale_low, sublevel_number.
-      - name: points_to_proficiency
-        data_type: int64
-        description: Conditional on scale_low, scale_score, sublevel_number.
-      - name: scale_for_growth
-        data_type: int64
-        description: Conditional on scale_high, sublevel_number.
-      - name: points_to_growth
-        data_type: int64
-        description: Conditional on scale_high, scale_score, sublevel_number.
-      - name: scale_score_prev
+        description: >
+          Numeric achievement level extracted from the achievement_level label
+          (e.g. 3 from 'Level 3').
+
+      - name: aligned_level_test_code
+        data_type: string
+        description: >
+          Test code adjusted for school level — ALG01 grade 8 is suffixed with
+          '_MS', grades 9-12 with '_HS'; all other test codes pass through
+          unchanged.
+
+      - name: illuminate_subject
+        data_type: string
+        description: >
+          Standardized subject label for Illuminate/reporting — ELA subjects map
+          to 'Text Study'; Algebra I, Algebra II, and Geometry map to
+          'Mathematics'; all others pass through unchanged.
+
+      - name: fast_aggregated_proficiency
+        data_type: string
+        description: >
+          Aggregated proficiency band: level 1 = 'Below/Far Below', level 2 =
+          'Approaching', level 3+ = 'At/Above'.
+
+      - name: is_proficient_int
         data_type: int64
         description:
-          LAG of scale_score partitioned by student_id, academic_year,
-          assessment_subject ordered by administration_window.
+          Integer representation of is_proficient (1 = true, 0 = false).
+
+      - name: scale_for_proficiency
+        data_type: int64
+        description: >
+          Minimum scale score required to reach proficiency (sublevel 6) for
+          this subject and grade; null if already at or above sublevel 6.
+
+      - name: points_to_proficiency
+        data_type: int64
+        description: >
+          Points needed to reach proficiency (scale_for_proficiency minus
+          scale_score); null if already at or above sublevel 6.
+
+      - name: scale_for_growth
+        data_type: int64
+        description: >
+          Minimum scale score for the next sublevel (scale_high + 1 of current
+          sublevel); null if already at the highest sublevel (8).
+
+      - name: points_to_growth
+        data_type: int64
+        description: >
+          Points needed to reach the next sublevel (scale_for_growth minus
+          scale_score); null if already at the highest sublevel (8).
+
+      - name: fast_performance_band_group_label
+        data_type: string
+        description: >
+          Performance band group label for FAST: level 1 = 'Not Proficient (1)',
+          level 2 = 'Bubble (2)', level 3+ = 'Proficient (3-5)'.
+
+      - name: aligned_performance_band_group
+        data_type: string
+        description: >
+          Aligned performance band group using level labels (e.g. Lvl 1–Lvl 5)
+          derived from achievement_level strings.
+
+      - name: is_approaching_int
+        data_type: int64
+        description: >
+          Integer flag for approaching proficiency (1 = approaching, 0 =
+          otherwise) — performance_level = 2.
+
+      - name: is_below_int
+        data_type: int64
+        description: >
+          Integer flag for below proficiency (1 = below, 0 = otherwise) —
+          performance_level < 2.
+
+      - name: scale_score_prev
+        data_type: int64
+        description: >
+          Student's scale score from the prior administration window within the
+          same academic year and subject, ordered by administration_window.
+
       - name: assessment_type
         data_type: string
         description: >-

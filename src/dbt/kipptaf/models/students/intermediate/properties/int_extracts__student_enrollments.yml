@@ -7,14 +7,14 @@ models:
       - dbt_utils.unique_combination_of_columns:
           arguments:
             combination_of_columns:
-              - _dbt_source_relation
+              - _dbt_source_project
               - student_number
               - academic_year
               - entrydate
           config:
             severity: error
     columns:
-      - name: _dbt_source_relation
+      - name: _dbt_source_project
         data_type: string
       - name: studentid
         data_type: int64
@@ -863,6 +863,24 @@ models:
           GPA band than their current unweighted GPA
           (cumulative_y1_gpa_unweighted). False if bands are equal, improving,
           or either GPA value is null.
+      - name: is_ada_above_or_at_80_cum_gpa_less_2
+        data_type: boolean
+        description: >
+          True when the student's ADA is at or above 80% (using weighted ADA for
+          HS starting AY 2025) and their cumulative year-to-date GPA
+          (cumulative_y1_gpa) is below 2.0. False otherwise.
+      - name: is_pre_year_withdrawal
+        data_type: boolean
+        description: >
+          True when the student's exitdate falls before August 1st of the
+          academic year — a registration that was cancelled before the school
+          year began (summer melt or pre-year transfer). These stints have no
+          course enrollments and should be excluded from course-level reporting.
+      - name: aligned_gender
+        data_type: string
+        description: >
+          Full-word gender label derived from gender: 'F' = 'Female', 'M' =
+          'Male', 'X' = 'Non-Binary'.
       - name: enroll_status_string
         data_type: string
         description:

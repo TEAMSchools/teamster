@@ -2,13 +2,13 @@
 
 ## Overview
 
-Fifteen dbt projects organized into three tiers:
+Sixteen dbt projects organized into three tiers:
 
-| Tier                  | Projects                                                                                                           | Purpose                                                       |
-| --------------------- | ------------------------------------------------------------------------------------------------------------------ | ------------------------------------------------------------- |
-| **Source-system**     | `amplify`, `deanslist`, `edplan`, `finalsite`, `iready`, `overgrad`, `pearson`, `powerschool`, `renlearn`, `titan` | Clean and contract-enforce raw data from one source system    |
-| **District-specific** | `kippnewark`, `kippcamden`, `kippmiami`, `kipppaterson`                                                            | Combine source packages for a single district                 |
-| **Network analytics** | `kipptaf`                                                                                                          | Cross-district marts, reporting, and extracts for the network |
+| Tier                  | Projects                                                                                                                    | Purpose                                                       |
+| --------------------- | --------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------- |
+| **Source-system**     | `amplify`, `deanslist`, `edplan`, `finalsite`, `focus`, `iready`, `overgrad`, `pearson`, `powerschool`, `renlearn`, `titan` | Clean and contract-enforce raw data from one source system    |
+| **District-specific** | `kippnewark`, `kippcamden`, `kippmiami`, `kipppaterson`                                                                     | Combine source packages for a single district                 |
+| **Network analytics** | `kipptaf`                                                                                                                   | Cross-district marts, reporting, and extracts for the network |
 
 ## Project Dependency Map
 
@@ -16,7 +16,8 @@ Fifteen dbt projects organized into three tiers:
 amplify ──────┐
 deanslist ────┤
 edplan ───────┤
-finalsite ────┤                ┌─ kippnewark ──┐
+finalsite ────┤
+focus ────────┤                ┌─ kippnewark ──┐
 iready ───────┼── (packages) ─┼─ kippcamden ───┼── (sources) ── kipptaf
 overgrad ─────┤                ├─ kippmiami ───┤
 pearson ──────┤                └─ kipppaterson ─┘
@@ -27,6 +28,11 @@ titan ────────┘
 
 Not every district uses every source package. See each district project's
 CLAUDE.md for its active packages.
+
+Authoritative consumer list for a source-system package:
+`grep -l 'local: ../<pkg>' src/dbt/*/packages.yml`. The district "Active Source
+Packages" prose drifts; `packages.yml` is ground truth. `kipptaf` consumes most
+source data via `source()`, not as a package.
 
 ## District Variable Defaults
 
@@ -41,8 +47,10 @@ All district projects share these variables (override via `dbt_project.yml`):
   `external.location` template)
 
 Exceptions: `kippnewark` adds `iready_schema: kippnj_iready` and
-`renlearn_schema: kippnj_renlearn`. `kipptaf` has
-`bigquery_external_connection_name` — see its CLAUDE.md.
+`renlearn_schema: kippnj_renlearn`. All five `kipp*` projects (the four
+districts plus `kipptaf`) set `bigquery_external_connection_name` to the
+`biglake-teamster-gcs` connection; source-system projects default it to `null`.
+See `kipptaf`'s CLAUDE.md.
 
 ## Variable Override Pattern
 
@@ -55,15 +63,111 @@ Consuming district projects override these in their own `dbt_project.yml`.
 When a PR adds or modifies an external source, flag that the developer must
 stage it with `--target staging` before the dbt Cloud CI job will pass.
 
+**AVRO external tables autodetect schema from the LAST ALPHABETICAL file.** To
+evolve an Avro source's schema, the new-schema file must sort last — materialize
+the MAX partition (latest hive `_dagster_partition_date=`). Mixed old/new files
+otherwise pick up the old (earlier-sorting) schema.
+
+**A metadata-cached Avro external can read a field NULL downstream though the
+GCS file is correct — two distinct failure modes, both surfaced by #4151:**
+
+- _Schema heterogeneity (deterministic)._ After a schema add + partial backfill,
+  old-schema files (field absent) and new-schema files (field present) coexist.
+  A query scanning both resolves one Avro reader schema and drops the new field
+  for the WHOLE scan — even the new files that hold it. The field still
+  _declares_ fine (autodetect from the last-alphabetical file) so it queries
+  without error and null-fills on old-only scans, but a `stg_*` model that scans
+  full partition history always includes old files, so the column reads NULL
+  everywhere. A cache refresh / rebuild does NOT fix it — only homogenizing the
+  files does (`scripts/reencode_avro_partitions.py` re-encodes every partition).
+- _Cache staleness (intermittent)._ `build_dbt_assets`
+  (stage→refresh→`dbt build`) races BigLake metadata-cache convergence after a
+  `create or replace` / overwrite-in-place: the
+  `refresh_external_metadata_cache` `CALL` returning DONE does NOT mean
+  queryable-fresh (lag seconds→hours, non-monotonic), so a just-materialized
+  partition reads NULL downstream.
+
+Verifying: `bq --nouse_cache` exposes the TRUE cached state (the BQ results
+cache and the BigQuery MCP otherwise return stale-but-fresh-looking counts).
+Selecting `_FILE_NAME` forces a live read that BYPASSES the metadata cache
+(ground truth vs. staleness) but does NOT bypass schema heterogeneity (a
+mixed-schema scan still drops the field), and it contaminates the whole query to
+a live read. So `_FILE_NAME` is ground truth only within a single-schema scan
+(one partition); never mix it into a cached-path check.
+
+dbt Cloud CI runs `dbt build` only (never `stage_external_sources`) → it reads
+the existing `zz_stg` external table as-is. To make CI see a new schema before
+prod Avro is updated: materialize the max partition locally (the Avro IO manager
+uploads to GCS even with `test=True` →
+`gs://teamster-test/dagster/<asset_key>/`), then
+`stage_external_sources --target staging --vars '{cloud_storage_uri_base: gs://teamster-test/dagster/<project>, ext_full_refresh: true}'`.
+Re-stage to the prod location only post-merge once the prod re-pull lands — a
+pre-merge re-stage reverts CI to the old (narrow) schema.
+`stage_external_sources` SKIPs an existing table unless
+`ext_full_refresh: true`.
+
+Re-pulling a source asset refreshes the **prod** external
+(`<district>_<source>.src_*`) but NOT the `zz_stg_*` staging external that
+`--target staging` builds and dbt Cloud CI read — those stay frozen until
+`stage_external_sources --target staging` re-runs. A BigQuery MCP query against
+the prod external passing does NOT mean a staging build / CI will; verify
+against `zz_stg_*`.
+
+Contract enforcement matches columns by **name + type, not YAML order** — new
+contract columns may be added anywhere in `properties.yml`. Regenerate a large
+struct `data_type` by pulling it verbatim from `INFORMATION_SCHEMA.COLUMNS` of
+the staged table; don't hand-transcribe.
+
+A multi-type Avro union (e.g. a Pydantic `bool | str | list[str]` field) lands
+in a BigQuery external table as a named
+`STRUCT<boolean_value, string_value, array_string_value>`, not a scalar — read
+the typed subfield (`.string_value` / `.array_string_value` / `.boolean_value`).
+
+dbt CLI runs locally for Claude: `DBT_PROFILES_DIR` (repo `.dbt`) + ADC →
+`dbt debug` / `build` / `run-operation --target staging` connect with no
+1Password (BigQuery uses ADC, not the 1Password bootstrap). `--target prod` runs
+(`dbt build` / `run`) are blocked by the auto-mode classifier as production
+deploys even with verbal approval — hand prod runs to the user. `dbt compile` /
+`parse --target prod` are NOT blocked (no warehouse write) — use them to
+validate model SQL/refs locally. `stage_external_sources --target staging` with
+`ext_full_refresh: true` is also classifier-blocked (drops/recreates shared
+`zz_stg` tables) — needs direct user authorization in the immediately-preceding
+turn, else hand off.
+
 `stage_external_sources --args "select: ..."` takes a
 `<source_name>.<table_name>` selector — not project-qualified. The
 project-prefix form (e.g. `kipptaf.google_sheets.<table>`) silently matches zero
-sources.
+sources. Multiple space-separated selectors work in one call:
+`select: pearson.src_pearson__njsla pearson.src_pearson__njsla_science`.
 
 `stage_external_sources` is a `dbt run-operation` — `--threads` doesn't apply.
 Running it in parallel across all 5 district projects exhausts BigQuery's
 `INFORMATION_SCHEMA.simple_rate.user` quota (429). Serialize across projects, or
 run only the project you need.
+
+## Source-package staging builds in every consuming district
+
+A source-system package's staging models build in **every** district that
+imports it, but only carry data where that source's Dagster ingestion is wired
+per code location — e.g. `stg_finalsite__contacts` builds in all four districts
+(all import the `finalsite` package) but only `kippmiami` materializes the
+contacts asset; the other three build it empty. Before promoting a district
+model to a shared source package, confirm the source ingestion exists in every
+consuming district, or the promoted model builds empty there (or fails on a
+missing external).
+
+To gate an _optional_ package layer per region, split the package into
+method/source subfolders (`api/`, `sftp/` — the amplify convention) and set
+`<package>: <method>: +enabled: false` in the unwired district's
+`dbt_project.yml`. Keep network-wide feeds enabled everywhere (e.g. finalsite
+SFTP `status_report` is consumed by kipptaf in all regions; only `api` is
+Miami-only). Method subfolders don't change asset keys.
+
+**Merging `dbt_project.yml` package configs can silently duplicate a top-level
+key.** When two branches each add `models: <package>:` (or `sources:`) at
+different positions, git's line-merge keeps BOTH with no conflict marker (later
+wins; may be invalid YAML). After merging a `dbt_project.yml`, grep for
+duplicate package keys and consolidate.
 
 ## Source Schema Resolution
 
@@ -83,12 +187,18 @@ Two inline patterns (see spec for details):
 ## kipptaf source consumers of district columns
 
 When adding a column or changing values (hash recomposition, restructure) in a
-district intermediate consumed by kipptaf via `source()`, ship in two PRs:
-district first, wait for Dagster to materialize prod, then kipptaf. The kipptaf
-source resolves to prod for `target=staging` (dbt Cloud CI), so coupling fails
-CI deterministically. Kipptaf-level test tightenings (e.g. restoring
-`severity: error` on a mart PK that depended on the upstream value change)
-belong in the follow-up PR.
+district model consumed by kipptaf via `source()`, ship in two PRs: district
+first, wait for Dagster to materialize prod, then kipptaf. kipptaf
+`sources-kipp*` resolve to the `zz_stg_*` staging copies for `target=staging`
+(dbt Cloud CI), NOT prod — and a district prod merge does NOT refresh those
+copies, so kipptaf CI keeps reading the stale `zz_stg_*` table (missing the new
+column) and fails deterministically. Refresh it before/with the kipptaf PR:
+`dbt clone --select <model> --target staging --state src/dbt/<district>/target/prod --full-refresh --project-dir src/dbt/<district>`
+per district (metadata-cheap when the prod relation is a TABLE; needs direct
+user authorization — recreates shared `zz_stg_*` tables), then trigger a fresh
+CI `dbt build` (not `dbt retry`, which replays stale compiled SQL).
+Kipptaf-level test tightenings (e.g. restoring `severity: error` on a mart PK
+that depended on the upstream value change) belong in the follow-up PR.
 
 Alternative single-PR pattern (CI schema branching + cross-project clone): see
 `src/dbt/kipptaf/CLAUDE.md` → "Single-PR cross-project workflow".
@@ -134,6 +244,13 @@ A newly-created worktree has no `dbt_packages/`. Run
 `uv run dbt deps --project-dir <worktree>/src/dbt/<project>` once before any
 `dbt build` / `test` / `clone` there — otherwise it errors with "N package(s)
 specified in packages.yml, but only 0 package(s) installed".
+
+## Building a source-system package model locally
+
+Source-system package models (`focus`, `amplify`, etc.) have no resolvable vars
+standalone — build/test them via a **consuming district** project-dir with that
+district's prod manifest for `--defer` (e.g. focus → kippmiami):
+`uv run dbt build --select <model> --project-dir src/dbt/kippmiami --defer --state src/dbt/kippmiami/target/prod --target dev`.
 
 ## Dev `--defer` for unstaged externals
 
@@ -186,6 +303,16 @@ Compiles to the column intersection from source-table
 surface at kipptaf-level consumers until district projects rebuild prod. For
 single-PR refactors, add transformations at the kipptaf-level wrapper, not at
 package level.
+
+## Editing a `sources-kipp*.yml` schema fans out `state:modified+`
+
+Changing a source's schema (e.g. adding a `target=staging` branch) marks the
+WHOLE source `state:modified` — CI's `state:modified+` builds EVERY kipptaf
+model reading it, not just your target. A district model dropped from code but
+lingering as a stale prod table is absent from the prod manifest → clone-skipped
+→ its kipptaf consumer fails CI `Table not found`. Fix such frozen/retired
+tables by declaring them a BQ-native source (`sources-bigquery.yml`, plain
+hardcoded schema, no target branch) so kipptaf reads prod regardless of target.
 
 ## Stale dev tables shadow `--defer`
 
@@ -261,6 +388,12 @@ text-formatted `00000` in Sheets becomes INT64.
       data_type: STRING
 ```
 
+- **Phantom empty rows**: a Sheet's full grid (often ~1000 rows) lands as
+  null-key rows in the external table → staging `not_null`/`unique` key tests
+  fail with ~N results. Filter them in the staging model:
+  `where <key> is not null` (e.g.
+  `stg_google_sheets__finance__enrollment_targets`).
+
 ### Rebuild staging after sheet edits before testing
 
 After Ops edits a Google Sheet source or after running
@@ -281,6 +414,20 @@ deployments. Developers use `<repo-root>/.dbt/profiles.yml` (not
   sustained transient 503s on `client.list_datasets()` at adapter init. Set
   `job_retries: 3` on the `prod` output. Set on all district profiles and
   kipptaf.
+- **`job_execution_timeout_seconds`**: Set to `900` on the `prod` output of all
+  five kipp\* profiles. Caps each BigQuery job server-side (`job_timeout_ms`) so
+  a runaway single model is cancelled by BigQuery before Dagster's run-level
+  `max_runtime` (1800s). Without it, a killed dbt run leaves the in-flight BQ
+  job orphaned — dbt does NOT cancel on termination (upstream limitation,
+  dbt-core #5275/#9639) — and the zombie `create or replace` can overwrite a
+  successful auto-retry's output with staler data. Routine models run <=330s
+  network-wide (affected models' p99 <=78s), so 900s won't false-kill legit
+  work.
+- A dbt **`409 Already Exists: Job <id>`** failure is a `job_retries` collision
+  (the original submit succeeded server-side but the response was lost; the
+  retry re-sends the same job_id). The job usually **succeeded** — confirm via
+  `JOBS_BY_PROJECT` (`state=DONE`, `error_result IS NULL`) before treating it as
+  real. The Dagster run-retry absorbs it.
 
 ## Model Conventions
 
@@ -338,6 +485,17 @@ data_tests:
 
 ### Test config defaults
 
+- **A test/asset-check re-runs only when its host model materializes, and the
+  data-change automation condition re-materializes only TABLE models, not
+  views.** To make a check refresh regularly, anchor it to a table-materialized
+  model — only `staging/` is table by default; other layers need
+  `config: materialized: table` in properties yml (e.g.
+  `int_people__staff_roster`). `store_failures_as: table` does NOT affect
+  refresh cadence — it only relocates failure rows.
+- **Before adding a data-quality test, read the target model's existing
+  `data_tests:`.** This repo commonly uses `config.where`-scoped `not_null` /
+  `expression_is_true` to flag null-column / drop-from-extract conditions, so
+  the coverage you want may already exist and already fire as a warn.
 - Project-level `data_tests:` defaults flow through to singular tests too. Drop
   redundant `severity` / `store_failures` / `store_failures_as` from
   singular-test `config()`; keep only per-test fields (`meta.dagster.ref`).
@@ -396,6 +554,20 @@ The flat form (without `arguments:`) triggers a deprecation warning:
     arguments:
       values: [a, b]
 ```
+
+### dbt unit-test fixtures
+
+`given`/`expect` dict scalars must be UNQUOTED — yamllint `quoted-strings` flags
+quoted dates/strings as redundant. It fires at pre-push/CI, NOT the pre-commit
+fmt hook, so a locally-clean commit fails CI. Unquoted `YYYY-MM-DD` parses
+correctly for date columns. Exception: leading-zero strings (`"01"`, `"02"` —
+e.g. zero-padded grade codes) must be QUOTED, or yamllint `octal-values` fails
+at CI.
+
+Dict-format `given` rows require the mocked ref/source to already exist in the
+warehouse (dbt introspects its schema at compile). For array/struct columns
+(e.g. `id_attributes`) or a model/source not yet materialized, use input
+`format: sql` (inline SELECT) instead — dict format fails introspection.
 
 ### Date-range joins
 
@@ -496,6 +668,10 @@ the same partition.
   `ON` clauses. Deleted rows should never reach intermediate or mart models.
   Omit columns whose value is predetermined by the WHERE filter (e.g.,
   `deleted_at` after `WHERE deleted_at IS NULL`) — they add no signal.
+- **SFTP `source_file_name`**: drop in the staging model with
+  `select * except (source_file_name)` — the SFTP IO adds it to every row
+  (`core/utils/functions.py`); a contracted `stg_*` that doesn't except it fails
+  the contract on the next re-pull after the ingestion change.
 - **Google Sheets external-table case**: `select *,` in a staging model inherits
   the sheet header case (often PascalCase). Contract-enforced YAML column names
   must match that case, or use explicit `<raw> as <renamed>` aliasing in the
@@ -513,6 +689,12 @@ the same partition.
   `grain projection: every selected column is functionally determined / by the partition key; not a mask for upstream duplicates`.
   If any projected column varies within the partition (`min()`, `first_value()`,
   etc.), use `dbt_utils.deduplicate()` instead.
+- **Least/earliest of N nullable columns**:
+  `(select min(x) from unnest([c1, c2, ...]) as x)` — aggregate `min` ignores
+  NULLs, unlike `least()` (which returns NULL if any arg is NULL). Avoids the
+  nested `coalesce(..., sentinel)` + outer-guard pyramid. sqlfluff CV03 wants a
+  trailing comma on the inner `select min(x),`; the `unnest([...])` array
+  literal must NOT have one (BigQuery rejects a trailing comma in an array).
 - **`dbt_utils.generate_surrogate_key` coerces nulls internally** —
   `cast(null as <type>)` and bare `null` hash identically. Don't add the cast.
 - **No `GROUP BY ALL`** — list grouping columns explicitly. `GROUP BY ALL`
@@ -559,6 +741,33 @@ the same partition.
 - **`select *` inside UNION ALL CTEs trips CV03**: sqlfluff requires a trailing
   comma after the last column, but `select *` has nothing to trail. Enumerate
   columns explicitly in each UNION branch.
+- **A standalone `select *` takes a trailing comma** (`select *,`) to satisfy
+  sqlfluff CV03 (e.g. `stg_overgrad__schools.sql`; a `source` CTE) — distinct
+  from the UNION-ALL case above, which must enumerate columns.
+- **A projected column whose name equals its source table binds to the whole-row
+  STRUCT, not the column**: a bare `address` ref in
+  `from {{ source("focus", "address") }}` resolves to the table range variable
+  (dbt's component-backtick `` `proj`.`ds`.`address` `` form), so the model
+  silently outputs one struct column and the contract fails listing every field
+  as `address.<col>`. Read through a `source` CTE
+  (`with source as (select *, from {{ source(...) }})`). A single-backtick MCP
+  repro `` `proj.ds.table` `` does NOT reproduce it — use component backticks.
+- **BigQuery `PIVOT` operator**: pivots ONE value column per aggregate. For a
+  mixed-type key-value array, use a multi-aggregate pivot —
+  `pivot(max(v_str) as s, max(v_bool) as b, any_value(v_arr) as a for field_name in ('x', ...))`
+  — then project the typed column per field (`s_x as x` / `b_x as x`). Output
+  columns are `{agg_alias}_{value}`; a SINGLE-aggregate pivot names them by the
+  bare value (`'x'` → column `x`). `max()` can't aggregate ARRAY — use
+  `any_value()` for array fields.
+- **BigQuery `UNPIVOT` excludes null rows** — an entity whose unpivoted columns
+  are all null drops out of the result. Harmless for a pure decode companion (a
+  left join from staging yields null labels anyway), but when the model also
+  LEFT JOINs a separately-computed field (e.g. a `multiple`/array decode), drive
+  the final `SELECT` from the full entity list or that field is lost for
+  all-null-unpivoted entities.
+- **AL09 on struct subfields**: `value.string_value as string_value` trips AL09
+  (alias equals the leaf name). Rename to a distinct alias (`as value_string`)
+  rather than dropping it when a downstream PIVOT/ref needs the column named.
 
 ### SQL column ordering in SELECT clauses (enforced by ST06)
 
@@ -578,6 +787,9 @@ alias.
 
 ### YAML conventions
 
+- **Unquoted multi-line `description:` scalars** can't start with a backtick
+  (`` `Y` when… ``) or contain `: ` (colon-space, e.g. "types: parent") — both
+  fail YAML parsing. Reword (lead with a word; use `—` not `:`).
 - **Read `properties.yml` before modifying a model.** It carries the
   authoritative `description:`, `data_tests:`, contract column types, and
   `config.meta.source_column` pointers. Copy-pasted column blocks rot here first

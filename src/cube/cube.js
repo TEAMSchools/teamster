@@ -20,20 +20,63 @@ function nextMidnightEastern() {
   return now.getTime() + (24 * 60 * 60 * 1000 - msElapsedToday);
 }
 
-// STUDENT_CUBES: cubes that require cube-access-student-data.
-// Add cube name: here when adding a new student-data cube.
-const STUDENT_CUBES = [
-  "attendance",
-  "dim_student_ell_status",
-  "dim_student_iep_status",
-  "dim_student_meal_eligibility_status",
+// Student-domain membership is derived from the cube-name prefix, not a static
+// array — a query member is "<cube>.<member>", so the cube name is the prefix.
+// Student-domain cube names start with "student" (see src/cube/CLAUDE.md).
+// Staff-domain RLS was intentionally removed from cube.js: staff visibility is
+// governed by the location scope filter below plus each staff view's
+// cube-access-staff-data access policy. Manager-hierarchy scoping is deferred;
+// when it returns it must work for view queries (segment on the view, not the
+// underlying cube).
+const isStudentMember = (member) => member.startsWith("student");
+
+// Convention for snapshot cubes: cumulative daily flags that overcount without
+// a point-in-time anchor. All snapshot cubes expose these three dimensions.
+const SNAPSHOT_ANCHOR_DIMENSIONS = {
+  default: "is_latest_record",
+  month: "is_month_end_record",
+  week: "is_week_end_record",
+};
+
+// Per-cube override of the no-granularity default anchor. Enrollment's default
+// is the per-school period-end-as-of-now flag (is_current_record), not the
+// per-student-last-day flag (is_latest_record = "served"). Falls back to
+// SNAPSHOT_ANCHOR_DIMENSIONS for any cube not listed here, so attendance's
+// resolved anchor map is byte-for-byte unchanged.
+const SNAPSHOT_ANCHOR_OVERRIDES = {
+  student_enrollments: { default: "is_current_record" },
+};
+const SNAPSHOT_SELF_ANCHORED_SUFFIXES = [
+  "_year_end",
+  "_month_end",
+  "_week_end",
 ];
 
-const STAFF_CUBES = [
-  "dim_staff",
-  "fct_staff_attrition",
-  "fct_staff_observations",
-];
+// Add a cube name here when it exposes is_latest_record / is_month_end_record
+// / is_week_end_record and its measures need the anchor guard. Also add the
+// cube's snapshot measure stems under the same key in SNAPSHOT_MEASURE_STEMS
+// below — a cube in this list with no stems entry matches nothing (guard no-op).
+const SNAPSHOT_CUBES = ["student_attendance", "student_enrollments"];
+
+// Per-cube measure-name stems that mark a snapshot measure needing the
+// period-end anchor guard. Keyed per cube (like SNAPSHOT_ANCHOR_OVERRIDES) so a
+// stem matches ONLY its own cube — a flat shared list substring-matches across
+// cubes (e.g. "count_students" would wrongly catch student_attendance's
+// count_students too). Which measures need the guard, by cube:
+//   student_attendance: chronic absence / ADA tiers / truancy are cumulative
+//     daily flags (re-stamped each row) — count_distinct over a range without an
+//     anchor overcounts. Its ADDITIVE measures (avg_daily_attendance,
+//     count_students, pct_tardy, pct_ontime, count_absent_days) are NOT listed —
+//     they are point-in-time safe and must stay unanchored.
+//   student_enrollments: count_students is count_distinct(student_key) over the
+//     attendance daily fact; a student enrolled across N in-session days appears
+//     in N rows, so an unanchored count over a range overcounts — needs the guard.
+// Both cubes' weekly trends are driven by a school_week_start_date grouping
+// (PowerSchool school weeks), not Cube's ISO granularity: "week".
+const SNAPSHOT_MEASURE_STEMS = {
+  student_attendance: ["chronically_absent", "tier_1_2", "tier_3", "truant"],
+  student_enrollments: ["count_students"],
+};
 
 module.exports = {
   driverFactory: () => ({
@@ -117,12 +160,8 @@ module.exports = {
     if (!groups.includes("cube-access-student-data")) {
       query = {
         ...query,
-        dimensions: (query.dimensions ?? []).filter(
-          (d) => !STUDENT_CUBES.some((c) => d.startsWith(c)),
-        ),
-        measures: (query.measures ?? []).filter(
-          (m) => !STUDENT_CUBES.some((c) => m.startsWith(c)),
-        ),
+        dimensions: (query.dimensions ?? []).filter((d) => !isStudentMember(d)),
+        measures: (query.measures ?? []).filter((m) => !isStudentMember(m)),
       };
     }
 
@@ -144,7 +183,7 @@ module.exports = {
         .replace(/^cube-region-/, "")
         .replace(/-(?:detail|summary)$/, "");
       locationFilter = {
-        member: "dim_locations.region_key",
+        member: "locations.region_key",
         operator: "equals",
         values: [region],
       };
@@ -153,7 +192,7 @@ module.exports = {
         .replace(/^cube-school-/, "")
         .replace(/-(?:detail|summary)$/, "");
       locationFilter = {
-        member: "dim_locations.abbreviation",
+        member: "locations.abbreviation",
         operator: "equals",
         values: [slug],
       };
@@ -163,7 +202,7 @@ module.exports = {
         ...query,
         filters: [
           {
-            member: "dim_locations.abbreviation",
+            member: "locations.abbreviation",
             operator: "equals",
             values: [],
           },
@@ -174,18 +213,125 @@ module.exports = {
     const filters = [...(query.filters ?? [])];
     if (locationFilter) filters.push(locationFilter);
 
-    // Org-hierarchy filter: inject segment defined in staff cube YAML.
-    // Staff cubes and the reporting_chain segment are added in the follow-up
-    // spec (blocked on #3729 — dim_staff_work_assignments.staff_key fix).
-    const touchesStaffCube = [
-      ...(query.dimensions ?? []),
-      ...(query.measures ?? []),
-    ].some((m) => STAFF_CUBES.some((c) => m.startsWith(c)));
-    if (touchesStaffCube && !groups.includes("cube-access-staff-all")) {
-      query = {
-        ...query,
-        segments: [...(query.segments ?? []), "dim_staff.reporting_chain"],
+    // Snapshot anchor guard: for cubes with cumulative daily flags, inject
+    // the appropriate period-end anchor when the query has none.
+    // Named measures (_year_end, _month_end, _week_end) have anchors baked in
+    // but require matching granularity — _month_end without grouping by month
+    // returns "CA at any month-end during the range," which is meaningless.
+    for (const cubePrefix of SNAPSHOT_CUBES) {
+      const stems = SNAPSHOT_MEASURE_STEMS[cubePrefix] ?? [];
+      const measures = (query.measures ?? []).filter(
+        (m) =>
+          m.startsWith(cubePrefix) && stems.some((stem) => m.includes(stem)),
+      );
+      if (!measures.length) continue;
+
+      const dateDayTd = (query.timeDimensions ?? []).find((td) =>
+        td.dimension?.endsWith("dates_date_day"),
+      );
+      const granularity = dateDayTd?.granularity ?? null;
+
+      const groupsBySchoolWeek = [
+        ...(query.dimensions ?? []),
+        ...(query.timeDimensions ?? []).map((td) => td.dimension),
+      ].some((m) => m && m.split(".").pop() === "dates_school_week_start_date");
+
+      // School weeks (PowerSchool week_start_monday, via dim_dates) replace Cube's
+      // ISO week for snapshot measures: the *_week_end anchors are school-week-based,
+      // so weekly trends MUST group by dates_school_week_start_date. Treat that
+      // grouping as the "week" period; Cube's native granularity drives only day/month.
+      const period = groupsBySchoolWeek ? "week" : granularity;
+
+      if (granularity === "week" && !groupsBySchoolWeek) {
+        throw new Error(
+          "Weekly snapshot trends use school weeks — group by " +
+            '<view>.dates_school_week_start_date, not Cube\'s granularity: "week" ' +
+            "(ISO Monday weeks do not match PowerSchool school weeks).",
+        );
+      }
+
+      // Named period-end measures must be grouped by the matching period.
+      // Without it, the result is "CA at any period-end during the range."
+      for (const { suffix, ok, hint } of [
+        {
+          suffix: "_month_end",
+          ok: granularity === "month",
+          hint: 'timeDimensions granularity: "month"',
+        },
+        {
+          suffix: "_week_end",
+          ok: groupsBySchoolWeek,
+          hint: "a dates_school_week_start_date grouping",
+        },
+      ]) {
+        if (measures.some((m) => m.endsWith(suffix)) && !ok) {
+          throw new Error(
+            `${suffix} measures must be grouped by ${hint}. Without it, the ` +
+              `result counts students across all period-ends in the date range, ` +
+              `not a per-period breakdown.`,
+          );
+        }
+      }
+
+      const hasUnanchoredMeasure = measures.some(
+        (m) => !SNAPSHOT_SELF_ANCHORED_SUFFIXES.some((s) => m.endsWith(s)),
+      );
+      if (!hasUnanchoredMeasure) continue;
+
+      if (granularity && !["day", "week", "month"].includes(granularity)) {
+        throw new Error(
+          `Snapshot measures (e.g. pct_chronically_absent) do not support ` +
+            `"${granularity}" granularity. Use the day-level base measure, ` +
+            `or the _week_end / _month_end named measures for week/month ` +
+            `trends, or omit timeDimensions for a year-end snapshot.`,
+        );
+      }
+
+      if (period === "day") continue;
+
+      const anchorMap = {
+        ...SNAPSHOT_ANCHOR_DIMENSIONS,
+        ...(SNAPSHOT_ANCHOR_OVERRIDES[cubePrefix] ?? {}),
       };
+      const anchorDimension = anchorMap[period] ?? anchorMap.default;
+      const anchorMember = `${cubePrefix}.${anchorDimension}`;
+
+      const alreadyAnchored =
+        filters.some(
+          (f) =>
+            Object.values(anchorMap).some((d) => f.member?.endsWith(d)) &&
+            f.operator === "equals" &&
+            [true, "true", "1"].includes(f.values?.[0]),
+        ) ||
+        filters.some(
+          (f) =>
+            f.member?.endsWith("dates_date_day") &&
+            f.operator === "equals" &&
+            Array.isArray(f.values) &&
+            f.values.length === 1,
+        ) ||
+        (query.dimensions ?? []).some((d) => d.endsWith("dates_date_day")) ||
+        // A point-in-time pin expressed via timeDimensions counts as anchored
+        // only when it is a single day — a single-element dateRange or
+        // granularity "day". A wider dateRange with null granularity is NOT
+        // anchored (injecting the period-end snapshot is correct there;
+        // treating it as anchored would re-open the "ever-CA-in-range"
+        // overcount). Reuse dateDayTd found above rather than re-scanning.
+        // A single-day dateRange is either one element (["2025-01-15"], which
+        // Cube treats as start === end) or two equal elements.
+        (dateDayTd &&
+          ((Array.isArray(dateDayTd.dateRange) &&
+            (dateDayTd.dateRange.length === 1 ||
+              dateDayTd.dateRange[0] === dateDayTd.dateRange[1])) ||
+            dateDayTd.granularity === "day"));
+
+      if (!alreadyAnchored) {
+        filters.push({
+          member: anchorMember,
+          operator: "equals",
+          values: [true],
+        });
+      }
     }
 
     return { ...query, filters };

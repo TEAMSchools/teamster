@@ -172,9 +172,59 @@ locations:
                     key: port
               - name: FOCUS_DB__CREDENTIALS__QUERY__SSLMODE
                 value: require
+              - name: FOCUS_SFTP_HOST
+                valueFrom:
+                  secretKeyRef:
+                    name: op-focus-sftp-kippmiami
+                    key: URL
+              - name: FOCUS_SFTP_USERNAME
+                valueFrom:
+                  secretKeyRef:
+                    name: op-focus-sftp-kippmiami
+                    key: username
+              - name: FOCUS_SFTP_PASSWORD
+                valueFrom:
+                  secretKeyRef:
+                    name: op-focus-sftp-kippmiami
+                    key: password
+              - name: FINALSITE_CREDENTIAL_ID
+                valueFrom:
+                  secretKeyRef:
+                    name: op-finalsite-api-kippmiami
+                    key: username
+              - name: FINALSITE_SECRET
+                valueFrom:
+                  secretKeyRef:
+                    name: op-finalsite-api-kippmiami
+                    key: password
         run_k8s_config:
           container_config:
             env:
+              - name: FOCUS_SFTP_HOST
+                valueFrom:
+                  secretKeyRef:
+                    name: op-focus-sftp-kippmiami
+                    key: URL
+              - name: FOCUS_SFTP_USERNAME
+                valueFrom:
+                  secretKeyRef:
+                    name: op-focus-sftp-kippmiami
+                    key: username
+              - name: FOCUS_SFTP_PASSWORD
+                valueFrom:
+                  secretKeyRef:
+                    name: op-focus-sftp-kippmiami
+                    key: password
+              - name: FINALSITE_CREDENTIAL_ID
+                valueFrom:
+                  secretKeyRef:
+                    name: op-finalsite-api-kippmiami
+                    key: username
+              - name: FINALSITE_SECRET
+                valueFrom:
+                  secretKeyRef:
+                    name: op-finalsite-api-kippmiami
+                    key: password
               - name: COUCHDROP_SFTP_PASSWORD
                 valueFrom:
                   secretKeyRef:
