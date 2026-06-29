@@ -113,22 +113,28 @@ KTAF's data-privacy posture and the project working conventions:
   so they are PII too: the intern resolves errors row-level in the BigQuery
   console / VS Code, and only the de-identified taxonomy (error type, count,
   which query catches it) goes into the cowork project.
+- The provided Staff Management export (`ref_state_staff`) includes
+  `SocialSecurityNumber`; drop it at load time — the audit never needs it, and
+  it must not land in any table or worklist.
 
 ## Reference data (setup, in `cokafor`)
 
-| Table                                | Built from                                                  | Purpose                                                                           |
-| ------------------------------------ | ----------------------------------------------------------- | --------------------------------------------------------------------------------- |
-| `cokafor.stg_staff_extract`          | loaded Staff CSV                                            | the staff extract under audit                                                     |
-| `cokafor.stg_student_extract`        | loaded Student CSV                                          | the student extract under audit                                                   |
-| `cokafor.ref_sced_codes`             | `NJSLEDS_SCED-Course-Codes.xlsx`                            | valid `SubjectArea` + `CourseIdentifier`, prior-to-secondary vs secondary flag    |
-| `cokafor.ref_state_staff` (optional) | compliance-provided NJ SLEDS Staff Management / SMID export | the state's current staff record, to diff against the staff extract (see check 2) |
+| Table                         | Built from                                                                    | Purpose                                                                                                                      |
+| ----------------------------- | ----------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------- |
+| `cokafor.stg_staff_extract`   | loaded Staff CSV                                                              | the staff extract under audit                                                                                                |
+| `cokafor.stg_student_extract` | loaded Student CSV                                                            | the student extract under audit                                                                                              |
+| `cokafor.ref_sced_codes`      | `NJSLEDS_SCED-Course-Codes.xlsx`                                              | valid `SubjectArea` + `CourseIdentifier`, prior-to-secondary vs secondary flag                                               |
+| `cokafor.ref_state_staff`     | NJ SLEDS Staff Management Submission export (provided; 85 cols, ~1,053 staff) | the state's current staff record, to diff against the staff extract (check 2); load IDs/names/DOB/six CDS slots, exclude SSN |
 
-`ref_state_staff` depends on the compliance team exporting the current Staff
-Management / SMID snapshot, since the intern cannot access state systems. If it
-can be obtained, it turns the combination-error predictor (check 2) into a true
-extract-vs-state diff — catching the mismatches that actually error — rather
-than only an extract-vs-PowerSchool consistency check. Confirming the export is
-obtainable and its format is an open item below.
+`ref_state_staff` is sourced from the NJ SLEDS Staff Management Submission
+export (now provided — an 85-column CSV with ~1,053 staff). It makes the
+combination-error predictor (check 2) a true extract-vs-state diff — catching
+the mismatches that actually error. The six `CountyCodeAssigned` /
+`DistrictCodeAssigned` / `SchoolCodeAssigned` slots in this export are exactly
+the "six values in Staff Management" the Handbook's CDS rule references. The
+export also carries `SocialSecurityNumber`, which **must be dropped at load** —
+the audit needs only `LocalStaffIdentifier`, `StaffMemberIdentifier`,
+`FirstName` / `LastName`, `DateofBirth`, and the six CDS slots.
 
 There is **no `ref_cds_codes` table**: the CDS expectation is just two known
 rows (KTAF reports each region under a single County-District-School combo), so
@@ -158,12 +164,13 @@ and why.
 - **2. Combination-error predictor** — the spine of the staff submission. The
   Handbook fails a row unless `LSID` + `SMID` + `FirstName` + `LastName` +
   `DateOfBirth` all match the Staff Management Snapshot exactly, with that
-  snapshot record free of Error/Sync/Unresolved. When `ref_state_staff` is
-  available, diff the extract against it on all five fields — a true predictor
-  of the state error; otherwise diff against the warehouse
-  (`int_powerschool__teachers`) to at least catch extract-vs-PowerSchool drift.
-  Flag any mismatch before the state does. Fix-owner: intern (PS override
-  fields) or compliance (state SIS for name/DOB).
+  snapshot record free of Error/Sync/Unresolved. Diff the extract against
+  `ref_state_staff` (the provided Staff Management export) on all five fields —
+  `LocalStaffIdentifier`, `StaffMemberIdentifier`, `FirstName`, `LastName`,
+  `DateofBirth` — a true predictor of the state error. (Fall back to the
+  warehouse `int_powerschool__teachers` only if the export is stale.) Flag any
+  mismatch before the state does. Fix-owner: intern (PS override fields) or
+  compliance (state SIS for name/DOB).
 - **3. Duplicate LSID** — same `LSID` on more than one staff member. Fix-owner:
   intern.
 - **4. Name rule violations** — periods or invalid special characters (only
@@ -174,8 +181,10 @@ and why.
   future. Fix-owner: intern.
 - **6. CDS code validity** — `CountyCodeAssigned` / `DistrictCodeAssigned` /
   `SchoolCodeAssigned` exact-match per region against the inlined literal
-  (Newark `80-7325-965`, Camden `07-1799-111`), leading zeros present.
-  Fix-owner: intern.
+  (Newark `80-7325-965`, Camden `07-1799-111`), leading zeros present. The state
+  itself validates each roster CDS against the staff member's six configured CDS
+  slots in `ref_state_staff`, which for KTAF resolve to those two regional
+  combos. Fix-owner: intern.
 
 ### Group B — Course/section SCED code validity (Newark + Camden)
 
@@ -294,11 +303,10 @@ someone who is out.
   drop the check if it is genuinely N/A for KTAF.
 - Confirm the Group C student-side validation specifics (SID format, required
   fields, dropped-course handling) against the Student Course Roster Handbook.
-- Confirm whether the compliance team can export the current NJ SLEDS Staff
-  Management / SMID snapshot for `ref_state_staff`, and in what format. If yes,
-  the combination-error predictor (check 2) diffs against it; if no, it falls
-  back to the warehouse (`int_powerschool__teachers`). Confirm the exact staff
-  source model and field names for whichever join is used.
+- Map the join keys between the staff extract and the provided `ref_state_staff`
+  export (`LocalStaffIdentifier`, `StaffMemberIdentifier`, `FirstName`,
+  `LastName`, `DateofBirth`) and confirm SSN is excluded at load. The export is
+  in hand (85 cols, ~1,053 staff), so check 2 diffs against it directly.
 - Trace the root cause of the student `SchoolCodeAssigned` = `732` (should be
   `965`) once the extract is loaded into BigQuery. The `Alternate_School_Number`
   fallback hypothesis is already ruled out by warehouse data; `732` resembles
