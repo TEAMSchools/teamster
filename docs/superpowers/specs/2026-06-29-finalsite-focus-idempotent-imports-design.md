@@ -164,8 +164,20 @@ normalized values drives the keep predicate; unmatched students
   `start_date` is a `DATE` (`2024-07-01`) and the export emits `YYYYMMDD`, so
   the join normalizes one side
   (`format_date('%Y%m%d', fe.start_date) = e.start_date`).
-- **Keep** a row when unmatched OR any non-code field (`grade_id`, `syear`,
-  `school_id`, `end_date`) differs from the Focus enrollment.
+- **Keep** a row when unmatched OR `end_date` differs from the Focus enrollment
+  (normalize:
+  `e.end_date is not null and e.end_date is distinct from format_date('%Y%m%d', fe.end_date)`).
+  `end_date` is the meaningful change signal (a withdrawal landing on an
+  existing enrollment). `grade_id` and `school_id` are deliberately **excluded**
+  from the diff: verified against live data, the export emits Focus import codes
+  (`school_id` like `2332A`, `grade_id` like `01`) while
+  `stg_focus__student_enrollment` stores internal numeric ids — comparing them
+  would mark every matched row changed. Comparing them would require a
+  grade/school decode that is out of scope. `syear` is excluded as redundant
+  with the `start_date` key. (Note: the current export cohort has `start_date`
+  NULL for all rows — not-yet-enrolled students — so nothing matches today and
+  every row is kept as unmatched; the diff and import-once gating begin to bite
+  once Focus start dates are present.)
 - **ENROLLMENT_CODE / DROP_CODE import-once:** emit the computed code only when
   the matched Focus enrollment does not already carry one; otherwise emit `NULL`
   so Focus never overwrites:
@@ -250,11 +262,12 @@ gates the rest of req 1.
 
 1. **Enrollment match grain — RESOLVED.** `(student_id, start_date)` is the
    unique grain (9,591/9,591); `syear`/`school_id`/`grade_id` are attributes.
-2. **School-id alignment.** `school_id` is now a compared attribute (not a join
-   key). Export `school_id` (`location_focus_school_id`) and
-   `stg_focus__student_enrollment.school_id` must share the same value domain or
-   the diff will treat every matched row as changed; verify during
-   implementation.
+2. **School-id / grade-id alignment — RESOLVED (excluded).** Verified against
+   live data: the export emits Focus import codes (`school_id` `2332A`,
+   `grade_id` `01`) while `stg_focus__student_enrollment` stores internal
+   numeric ids. Domains differ, so both are excluded from the diff predicate;
+   `end_date` is the sole compared non-code field. Mapping them for comparison
+   is a future enhancement.
 3. **Enrollment code scope.** Assumed purely grade-based for all entries
    (re-enrollers included). Confirm with registrar if re-enrollers should keep
    an R-code instead of `E01`.
