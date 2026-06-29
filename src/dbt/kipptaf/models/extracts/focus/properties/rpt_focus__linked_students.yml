@@ -63,4 +63,4 @@ unit_tests:
           select 'enr-stu-b' as finalsite_enrollment_id, '100' as focus_student_id
     expect:
       rows:
-        - { primary_student_id: "100", secondary_student_id: "900" }
+        - { primary_student_id: "8400100", secondary_student_id: "8400900" }

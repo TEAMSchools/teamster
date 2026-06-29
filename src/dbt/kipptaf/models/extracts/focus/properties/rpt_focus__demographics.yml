@@ -271,7 +271,7 @@ unit_tests:
     expect:
       rows:
         - {
-            stdt_id: "1001001",
+            stdt_id: "84001001001",
             last_name: Smith,
             first_name: Jane,
             name_suffix: null,

@@ -94,7 +94,7 @@ unit_tests:
     expect:
       rows:
         - {
-            student_id: "4004004",
+            student_id: "84004004004",
             address: 123 Main St,
             address2: Apt 4B,
             city: Miami,

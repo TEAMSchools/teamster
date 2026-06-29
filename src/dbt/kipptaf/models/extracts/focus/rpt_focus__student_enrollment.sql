@@ -4,7 +4,7 @@ select
 
     sch.location_focus_school_id as school_id,
 
-    ida.focus_student_id as student_id,
+    concat('8400', ida.focus_student_id) as student_id,
 
     if(
         l.grade_canonical_name = 'k',

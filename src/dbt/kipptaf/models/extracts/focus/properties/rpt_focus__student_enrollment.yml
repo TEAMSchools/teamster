@@ -228,7 +228,7 @@ unit_tests:
         - {
             syear: 2025,
             school_id: "0001",
-            student_id: "3003001",
+            student_id: "84003003001",
             grade_id: "05",
             start_date: "20250812",
             enrollment_code: EA1,
@@ -258,7 +258,7 @@ unit_tests:
         - {
             syear: 2025,
             school_id: "0001",
-            student_id: "3003003",
+            student_id: "84003003003",
             grade_id: KG,
             start_date: "20250812",
             enrollment_code: EA1,
@@ -339,7 +339,7 @@ unit_tests:
         - {
             syear: 2025,
             school_id: "0001",
-            student_id: "3003002",
+            student_id: "84003003002",
             grade_id: "07",
             start_date: "20250812",
             enrollment_code: W01,
