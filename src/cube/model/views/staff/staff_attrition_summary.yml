@@ -1,0 +1,144 @@
+views:
+  - name: staff_attrition_summary
+    description: >-
+      Aggregate staff attrition rates by methodology, termination reason/type,
+      work-context breakdowns, and trend. No direct staff identifiers.
+
+      Each methodology uses a different cohort window and denominator —
+      foundation (9/1-4/30), nj_compliance (7/1-6/30), recruitment (9/1-8/31).
+      Use the per-methodology measures (e.g., attrition_rate_foundation) rather
+      than mixing methodologies in one query. Filter academic_year for a single
+      year; omit period grouping for a final-outcome rate, or group by
+      attrition_periods_calendar_week_end_date /
+      attrition_periods_school_week_end_date / attrition_periods_date_day (with
+      granularity month) for a cumulative trend.
+
+      About 25% of attritors have null termination_reason — treat null as an
+      Unknown bucket in reason/type breakdowns.
+
+    cubes:
+      - join_path: staff_attrition
+        includes:
+          - count_cohort_foundation
+          - count_attritors_foundation
+          - attrition_rate_foundation
+          - retention_rate_foundation
+          - count_cohort_nj_compliance
+          - count_attritors_nj_compliance
+          - attrition_rate_nj_compliance
+          - retention_rate_nj_compliance
+          - count_cohort_recruitment
+          - count_attritors_recruitment
+          - attrition_rate_recruitment
+          - retention_rate_recruitment
+          - termination_reason
+          - termination_type
+          - termination_effective_date
+          - is_attrition
+          - academic_year
+
+      - join_path: staff_attrition.attrition_periods
+        prefix: true
+        includes:
+          - date_day
+          - academic_year
+          - month_name
+          - month_number
+          - calendar_week_end_date
+          - school_week_end_date
+
+      - join_path: staff_attrition.staff_work_history
+        includes:
+          - position_title
+          - job_code
+          - worker_type
+          - department_name
+          - business_unit_name
+          - is_management_position
+
+      - join_path: staff_attrition.staff_work_history.staff
+        prefix: false
+        includes:
+          - gender_identity
+          - race
+          - is_hispanic
+
+      - join_path: staff_attrition.staff_work_history.locations
+        prefix: true
+        includes:
+          - location_name
+          - abbreviation
+          - grade_band
+          - campus
+          - city
+
+      - join_path: staff_attrition.staff_work_history.locations.regions
+        prefix: true
+        includes:
+          - region_name
+          - state
+
+    meta:
+      folders:
+        - name: Foundation
+          members:
+            - count_cohort_foundation
+            - count_attritors_foundation
+            - attrition_rate_foundation
+            - retention_rate_foundation
+        - name: NJ Compliance
+          members:
+            - count_cohort_nj_compliance
+            - count_attritors_nj_compliance
+            - attrition_rate_nj_compliance
+            - retention_rate_nj_compliance
+        - name: Recruitment
+          members:
+            - count_cohort_recruitment
+            - count_attritors_recruitment
+            - attrition_rate_recruitment
+            - retention_rate_recruitment
+        - name: Termination
+          members:
+            - termination_reason
+            - termination_type
+            - termination_effective_date
+            - is_attrition
+        - name: Period
+          members:
+            - academic_year
+            - attrition_periods_date_day
+            - attrition_periods_academic_year
+            - attrition_periods_month_name
+            - attrition_periods_month_number
+            - attrition_periods_calendar_week_end_date
+            - attrition_periods_school_week_end_date
+        - name: Work Context
+          members:
+            - position_title
+            - job_code
+            - worker_type
+            - department_name
+            - business_unit_name
+            - is_management_position
+        - name: Location
+          members:
+            - locations_location_name
+            - locations_abbreviation
+            - locations_grade_band
+            - locations_campus
+            - locations_city
+            - regions_region_name
+            - regions_state
+        - name: Staff
+          members:
+            - gender_identity
+            - race
+            - is_hispanic
+
+    access_policy:
+      # No direct identifiers — demographic breakdowns only.
+      # Low-n suppression tracked at #4237.
+      - group: cube-access-staff-data
+        member_level:
+          includes: "*"
