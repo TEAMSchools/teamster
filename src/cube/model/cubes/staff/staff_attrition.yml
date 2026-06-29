@@ -1,0 +1,247 @@
+cubes:
+  - name: staff_attrition
+    public: false
+    sql_table: kipptaf_marts.fct_staff_attrition
+
+    joins:
+      # Point-in-time exit context — the staff-domain hub cube.
+      # All work/location/region/manager/demographic context traverses from
+      # here, exactly as staff_detail composes them. many_to_one: one exit
+      # period per attrition row (capped by as_of_exit_date).
+      - name: staff_work_history
+        relationship: many_to_one
+        sql: >
+          {staff_work_history.staff_key} = {CUBE}.staff_key AND
+          {CUBE}.as_of_exit_date
+            BETWEEN CAST({staff_work_history.effective_start_date} AS DATE)
+            AND CAST({staff_work_history.effective_end_date} AS DATE)
+          AND {staff_work_history.is_primary_position} = true
+
+      # Trend axis — attrition_periods extends dates, so it is a distinct cube
+      # from staff_work_history.dates. one_to_many: one cohort row fans out
+      # across all dates in its window; count_distinct(staff_key) deduplicates.
+      - name: attrition_periods
+        relationship: one_to_many
+        sql: >
+          CAST({attrition_periods.date_day} AS DATE)
+            BETWEEN {CUBE}.window_start_date
+            AND LEAST({CUBE}.window_close_date, CURRENT_DATE())
+
+    dimensions:
+      - name: attrition_methodology
+        description: >-
+          Attrition methodology — foundation, nj_compliance, or recruitment.
+          Each methodology uses a different cohort window and return-check date.
+          Never mix methodologies in one calculation — use the per-methodology
+          measures instead.
+        sql: "{CUBE}.type"
+        type: string
+        public: true
+
+      - name: termination_reason
+        description: >-
+          Full compound reason string for the first real termination within the
+          window (e.g., "Resignation - Regrettable - Career Change"). Null for
+          retained staff or when only artifact reasons exist. About 25% of
+          attritors have a null reason (no captured T-status row) — treat null
+          as an Unknown bucket in any reason breakdown.
+        sql: termination_reason
+        type: string
+        public: true
+
+      - name: termination_type
+        description: >-
+          Leading token of termination_reason — Resignation, Termination,
+          Non-Renewal, or Other. Null follows the same rule as
+          termination_reason.
+        sql: termination_type
+        type: string
+        public: true
+
+      - name: termination_effective_date
+        description: >-
+          Date of the first real termination event within the window. Null for
+          retained staff or no-T-row attritors.
+        sql: CAST(termination_effective_date AS TIMESTAMP)
+        type: time
+        public: true
+
+      - name: is_attrition
+        description: >-
+          TRUE if the staff member did not return by the methodology's
+          return-check date. The denominator for all attrition rates includes
+          both TRUE and FALSE rows (the full cohort).
+        sql: is_attrition
+        type: boolean
+        public: true
+
+      - name: academic_year
+        description: >-
+          Academic year of the attrition window (July start; 2024 = 2024-25
+          school year). Filter to a single academic_year for point-in-time
+          rates.
+        sql: academic_year
+        type: number
+        public: true
+
+      # Backing dimensions — support joins, not analyst-facing
+      - name: staff_key
+        description: Surrogate key to dim_staff and staff_work_history.
+        sql: staff_key
+        type: string
+        primary_key: true
+
+      - name: window_start_date
+        description:
+          First day of the attrition window. Backs the attrition_periods join.
+        sql: CAST(window_start_date AS TIMESTAMP)
+        type: time
+
+      - name: window_close_date
+        description:
+          Last day of the attrition window. Backs the attrition_periods join.
+        sql: CAST(window_close_date AS TIMESTAMP)
+        type: time
+
+      - name: as_of_exit_date
+        description: Pin date for the staff_work_history point-in-time join.
+        sql: CAST(as_of_exit_date AS TIMESTAMP)
+        type: time
+
+    measures:
+      # ── Foundation ─────────────────────────────────────────────────────────
+      - name: count_cohort_foundation
+        description: >-
+          Foundation cohort size — staff active between 9/1 and 4/30 of the
+          academic year (the denominator for foundation attrition rate).
+        sql: staff_key
+        type: count_distinct
+        filters:
+          - sql: "{CUBE}.type = 'foundation'"
+        public: true
+
+      - name: count_attritors_foundation
+        description: >-
+          Foundation attritors to date — cohort members who did not return by
+          9/1 of the following year and whose termination date falls on or
+          before the queried period. With no period grouping, equals the
+          final-year count.
+        sql: staff_key
+        type: count_distinct
+        filters:
+          - sql: >
+              {CUBE}.type = 'foundation' AND {CUBE}.is_attrition = true AND (
+                {CUBE}.termination_effective_date IS NULL
+                OR {CUBE}.termination_effective_date
+                  <= CAST({attrition_periods.date_day} AS DATE)
+              )
+        public: true
+
+      - name: attrition_rate_foundation
+        description: >-
+          Foundation attrition rate — count_attritors_foundation /
+          count_cohort_foundation. Add attrition_periods granularity for a
+          cumulative trend; omit for final-outcome rate.
+        sql: >
+          {count_attritors_foundation} / NULLIF({count_cohort_foundation}, 0)
+        type: number
+        format: percent
+        public: true
+
+      - name: retention_rate_foundation
+        description:
+          Foundation retention rate — 1 minus attrition_rate_foundation.
+        sql: "1 - {attrition_rate_foundation}"
+        type: number
+        format: percent
+        public: true
+
+      # ── NJ Compliance ──────────────────────────────────────────────────────
+      - name: count_cohort_nj_compliance
+        description: >-
+          NJ Compliance cohort size — staff active between 7/1 and 6/30 of the
+          academic year (denominator for nj_compliance attrition rate).
+        sql: staff_key
+        type: count_distinct
+        filters:
+          - sql: "{CUBE}.type = 'nj_compliance'"
+        public: true
+
+      - name: count_attritors_nj_compliance
+        description: >-
+          NJ Compliance attritors to date — same semantics as
+          count_attritors_foundation but scoped to the nj_compliance
+          methodology.
+        sql: staff_key
+        type: count_distinct
+        filters:
+          - sql: >
+              {CUBE}.type = 'nj_compliance' AND {CUBE}.is_attrition = true AND (
+                {CUBE}.termination_effective_date IS NULL
+                OR {CUBE}.termination_effective_date
+                  <= CAST({attrition_periods.date_day} AS DATE)
+              )
+        public: true
+
+      - name: attrition_rate_nj_compliance
+        description: >-
+          NJ Compliance attrition rate — count_attritors_nj_compliance /
+          count_cohort_nj_compliance.
+        sql: >
+          {count_attritors_nj_compliance} / NULLIF({count_cohort_nj_compliance},
+          0)
+        type: number
+        format: percent
+        public: true
+
+      - name: retention_rate_nj_compliance
+        description:
+          NJ Compliance retention rate — 1 minus attrition_rate_nj_compliance.
+        sql: "1 - {attrition_rate_nj_compliance}"
+        type: number
+        format: percent
+        public: true
+
+      # ── Recruitment ────────────────────────────────────────────────────────
+      - name: count_cohort_recruitment
+        description: >-
+          Recruitment cohort size — staff active between 9/1 and 8/31 of the
+          academic year (denominator for recruitment attrition rate).
+        sql: staff_key
+        type: count_distinct
+        filters:
+          - sql: "{CUBE}.type = 'recruitment'"
+        public: true
+
+      - name: count_attritors_recruitment
+        description: >-
+          Recruitment attritors to date — same semantics as
+          count_attritors_foundation but scoped to the recruitment methodology.
+        sql: staff_key
+        type: count_distinct
+        filters:
+          - sql: >
+              {CUBE}.type = 'recruitment' AND {CUBE}.is_attrition = true AND (
+                {CUBE}.termination_effective_date IS NULL
+                OR {CUBE}.termination_effective_date
+                  <= CAST({attrition_periods.date_day} AS DATE)
+              )
+        public: true
+
+      - name: attrition_rate_recruitment
+        description: >-
+          Recruitment attrition rate — count_attritors_recruitment /
+          count_cohort_recruitment.
+        sql: >
+          {count_attritors_recruitment} / NULLIF({count_cohort_recruitment}, 0)
+        type: number
+        format: percent
+        public: true
+
+      - name: retention_rate_recruitment
+        description:
+          Recruitment retention rate — 1 minus attrition_rate_recruitment.
+        sql: "1 - {attrition_rate_recruitment}"
+        type: number
+        format: percent
+        public: true
