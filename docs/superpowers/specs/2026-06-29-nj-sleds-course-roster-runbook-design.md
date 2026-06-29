@@ -38,7 +38,7 @@ errors.
 These were settled during brainstorming and drive the whole design:
 
 1. **Intern access:** BigQuery plus Google Sheets, **and** PowerSchool admin.
-   The intern fixes sked codes, staff state-ID override fields, and SMID entry
+   The intern fixes SCED codes, staff state-ID override fields, and SMID entry
    directly in PowerSchool. The intern does **not** touch state systems.
 2. **Cleaning model: source-fix only.** Defects are corrected at the source in
    PowerSchool so the native extract comes out clean. We do **not** rewrite or
@@ -66,10 +66,11 @@ Source-fix-only makes this an **iterative loop**, not a one-pass cleanup:
 
 ```text
 1. PS admin generates Staff + Student Course Roster extracts (Camden, Newark)
-2. Intern loads both CSVs into BigQuery (cokafor staging tables)
+2. Intern loads both CSVs into BigQuery (cokafor staging tables); also load the
+   state Staff Management / SMID export if compliance can provide it
 3. Intern runs the helper-query pack -> defect worklists (Google Sheets)
 4. Intern fixes what they own in PowerSchool:
-     - sked codes (S_NJ_CRS_X / S_NJ_SEC_X)
+     - SCED codes (S_NJ_CRS_X / S_NJ_SEC_X)
      - staff state-ID override fields + SMID entry (S_NJ_USR_X)
      - duplicate / orphan section + schedule cleanup
 5. Items the intern cannot own -> compliance-team handoff sheet:
@@ -118,23 +119,32 @@ KTAF's data-privacy posture and the project working conventions:
 
 ## Reference data (setup, in `cokafor`)
 
-| Table                         | Built from                       | Purpose                                                                        |
-| ----------------------------- | -------------------------------- | ------------------------------------------------------------------------------ |
-| `cokafor.stg_staff_extract`   | loaded Staff CSV                 | the staff extract under audit                                                  |
-| `cokafor.stg_student_extract` | loaded Student CSV               | the student extract under audit                                                |
-| `cokafor.ref_sced_codes`      | `NJSLEDS_SCED-Course-Codes.xlsx` | valid `SubjectArea` + `CourseIdentifier`, prior-to-secondary vs secondary flag |
-| `cokafor.ref_cds_codes`       | literal (below)                  | the valid County/District/School combo per region                              |
+| Table                                | Built from                                                  | Purpose                                                                           |
+| ------------------------------------ | ----------------------------------------------------------- | --------------------------------------------------------------------------------- |
+| `cokafor.stg_staff_extract`          | loaded Staff CSV                                            | the staff extract under audit                                                     |
+| `cokafor.stg_student_extract`        | loaded Student CSV                                          | the student extract under audit                                                   |
+| `cokafor.ref_sced_codes`             | `NJSLEDS_SCED-Course-Codes.xlsx`                            | valid `SubjectArea` + `CourseIdentifier`, prior-to-secondary vs secondary flag    |
+| `cokafor.ref_state_staff` (optional) | compliance-provided NJ SLEDS Staff Management / SMID export | the state's current staff record, to diff against the staff extract (see check 2) |
 
-`ref_cds_codes` is a two-row literal — KTAF reports each region under a single
-County-District-School combo, so there is no statewide CDS file to obtain:
+`ref_state_staff` depends on the compliance team exporting the current Staff
+Management / SMID snapshot, since the intern cannot access state systems. If it
+can be obtained, it turns the combination-error predictor (check 2) into a true
+extract-vs-state diff — catching the mismatches that actually error — rather
+than only an extract-vs-PowerSchool consistency check. Confirming the export is
+obtainable and its format is an open item below.
+
+There is **no `ref_cds_codes` table**: the CDS expectation is just two known
+rows (KTAF reports each region under a single County-District-School combo), so
+the values are inlined directly in the CDS-validity check rather than
+materialized:
 
 | Region | County | District | School |
 | ------ | ------ | -------- | ------ |
 | Newark | `80`   | `7325`   | `965`  |
 | Camden | `07`   | `1799`   | `111`  |
 
-The CDS check is therefore an **exact-match-per-region** rule with mandatory
-leading zeros (`07`, `965`, `111`).
+The CDS check is an **exact-match-per-region** rule with mandatory leading zeros
+(`07`, `965`, `111`).
 
 ## Audit taxonomy (helper-query catalog)
 
@@ -151,10 +161,12 @@ and why.
 - **2. Combination-error predictor** — the spine of the staff submission. The
   Handbook fails a row unless `LSID` + `SMID` + `FirstName` + `LastName` +
   `DateOfBirth` all match the Staff Management Snapshot exactly, with that
-  snapshot record free of Error/Sync/Unresolved. Join the extract to the staff
-  source (`int_powerschool__teachers` / Staff Management source) on all five
-  fields and flag any mismatch before the state does. Fix-owner: intern (PS
-  override fields) or compliance (state SIS for name/DOB).
+  snapshot record free of Error/Sync/Unresolved. When `ref_state_staff` is
+  available, diff the extract against it on all five fields — a true predictor
+  of the state error; otherwise diff against the warehouse
+  (`int_powerschool__teachers`) to at least catch extract-vs-PowerSchool drift.
+  Flag any mismatch before the state does. Fix-owner: intern (PS override
+  fields) or compliance (state SIS for name/DOB).
 - **3. Duplicate LSID** — same `LSID` on more than one staff member. Fix-owner:
   intern.
 - **4. Name rule violations** — periods or invalid special characters (only
@@ -164,12 +176,13 @@ and why.
   within the current school year, entry on or before exit, exit not in the
   future. Fix-owner: intern.
 - **6. CDS code validity** — `CountyCodeAssigned` / `DistrictCodeAssigned` /
-  `SchoolCodeAssigned` exact-match per region against `ref_cds_codes`, leading
-  zeros present. Fix-owner: intern.
+  `SchoolCodeAssigned` exact-match per region against the inlined literal
+  (Newark `80-7325-965`, Camden `07-1799-111`), leading zeros present.
+  Fix-owner: intern.
 
 ### Group B — Course/section SCED code validity (Newark + Camden)
 
-This is the "valid sked codes for every course" audit.
+This is the "valid SCED codes for every course" audit.
 
 - **7. Missing SCED codes** — `SubjectArea` / `CourseIdentifier` / `CourseLevel`
   blank on the course or section. Fix-owner: intern (PS).
@@ -224,7 +237,7 @@ This is the "valid sked codes for every course" audit.
 ### Roles
 
 - **Intern (`cokafor`)** — runs audits, builds and maintains worklists, fixes
-  intern-owned items in PowerSchool (sked codes, staff state-ID override fields,
+  intern-owned items in PowerSchool (SCED codes, staff state-ID override fields,
   SMID entry, duplicate/orphan cleanup), keeps the convergence tracker.
 - **Compliance team** — state-side-only actions: generate new SMIDs, push
   name/DOB changes into Staff Management / state SIS, clear Snapshot
@@ -234,16 +247,23 @@ This is the "valid sked codes for every course" audit.
 - **Data team / owner** — reviews worklists, settles judgment calls, signs off
   the PII approach.
 
-### Phases (about one month)
+### Timeline
 
-| Phase                  | Window    | Work                                                                                                                                                       |
-| ---------------------- | --------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| 0 — Setup              | Week 1    | Provision access; load `ref_sced_codes` + `ref_cds_codes`; load first Camden + Newark extracts; intern SQL/Sheets onboarding; grade-mapping one-time check |
-| 1 — Staff + sked codes | Weeks 1–2 | Groups A + B; front-load the compliance handoff (new SMIDs, name/DOB) for maximum lead time before vacations                                               |
-| 2 — Student            | Weeks 2–3 | Group C (SID, CDS, dates)                                                                                                                                  |
-| 3 — Parity             | Week 3    | Group D orphans/junk                                                                                                                                       |
-| 4 — Converge           | Weeks 3–4 | Re-extract, re-run pack, defect rollup to zero, clean files to uploader                                                                                    |
-| 5 — State errors       | Week 4+   | Triage returned errors, loop until accepted                                                                                                                |
+**Key dates:** the state hard deadline is **Mon Aug 3**. The internal target is
+to finish everything — including state error resolution — by **Mon Jul 27**,
+leaving the full Jul 27 – Aug 3 week as contingency for state-side system issues
+(historically necessary to absorb state-side weirdness). Work starts the week of
+**Mon Jun 29**.
+
+| Phase                  | Window          | Work                                                                                                                                                                                     |
+| ---------------------- | --------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 0 — Setup              | Jun 29 – Jul 3  | Provision access; load `ref_sced_codes` + the first Camden + Newark extracts (+ `ref_state_staff` if compliance provides it); intern SQL/Sheets onboarding; grade-mapping one-time check |
+| 1 — Staff + SCED codes | Jul 6 – Jul 10  | Groups A + B; front-load the compliance handoff (new SMIDs, name/DOB) immediately — the long pole, and July vacations compress it                                                        |
+| 2 — Student            | Jul 13 – Jul 17 | Group C (SID, CDS, dates); staff fixes continue in parallel                                                                                                                              |
+| 3 — Parity             | Jul 15 – Jul 22 | Group D orphans/junk (overlaps Phase 2)                                                                                                                                                  |
+| 4 — Converge           | by Jul 22       | Re-extract, re-run pack, defect rollup to zero, clean files to the uploader                                                                                                              |
+| 5 — State errors       | Jul 22 – Jul 27 | Triage returned errors, loop until accepted — finish by the Jul 27 internal target                                                                                                       |
+| Contingency            | Jul 27 – Aug 3  | Reserved buffer for state-side system issues; do not plan work here                                                                                                                      |
 
 **Vacation navigation:** identify each role's availability up front; schedule
 the handoff-dependent items earliest (compliance-team SMID generation is the
@@ -272,8 +292,11 @@ someone who is out.
   drop the check if it is genuinely N/A for KTAF.
 - Confirm the Group C student-side validation specifics (SID format, required
   fields, dropped-course handling) against the Student Course Roster Handbook.
-- Confirm the exact staff source model and field names for the combination-error
-  predictor join (`int_powerschool__teachers` plus the Staff Management source).
+- Confirm whether the compliance team can export the current NJ SLEDS Staff
+  Management / SMID snapshot for `ref_state_staff`, and in what format. If yes,
+  the combination-error predictor (check 2) diffs against it; if no, it falls
+  back to the warehouse (`int_powerschool__teachers`). Confirm the exact staff
+  source model and field names for whichever join is used.
 - Confirm the section-level CDS override root cause for the student
   `SchoolCodeAssigned` fallback observed in the sample.
 - Confirm whether the intern's VS Code Claude plugin / dev environment will be
