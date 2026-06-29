@@ -160,9 +160,17 @@ models:
         data_type: string
       - name: advising_provider
         data_type: string
-      - name: contact_owner
+      - name: contact_owner_name
         data_type: string
       - name: postsec_advisor
         data_type: string
       - name: advisor
         data_type: string
+      - name: high_school_graduated_from
+        data_type: string
+      - name: is_special_education
+        data_type: boolean
+      - name: middle_school_attended
+        data_type: string
+      - name: most_recent_iep_date
+        data_type: date
