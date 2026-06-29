@@ -4,15 +4,17 @@ models:
       One row per in-scope Finalsite enrollment reshaped into the Focus
       `STUDENT_ENROLLMENT` SFTP template layout, built from
       `int_finalsite__enrollment_lifecycle`. Grade is translated inline
-      (`k`→`KG`, else zero-padded number); school maps via
-      `int_people__location_crosswalk`, the Focus student id (`student_id`) via
-      `int_finalsite__contact_id_attributes`, and enrollment/drop codes via
-      Google Sheets crosswalks — together producing the 28-column layout
-      consumed by the Focus SFTP transport. The Focus column header casing
-      (`SYEAR`, `SCHOOL_ID`, etc.) is applied at transport time via
-      `file_config.format.header_replacements`; dbt column names remain
-      lowercase snake_case. `end_date` and `drop_code` populate only for
-      `lifecycle_action = 'transfer_out'` rows.
+      (`k`→`KG`, else zero-padded number); enrollment_code is derived from grade
+      (`E05` for KG, `E01` otherwise, null for transfer_out); school maps via
+      `int_people__location_crosswalk`; Focus student id (`student_id`) via
+      `int_finalsite__contact_id_attributes`; and the raw Florida state
+      withdrawal label from `int_finalsite__contact_custom_attributes` —
+      together producing the 28-column layout consumed by the Focus SFTP
+      transport. The Focus column header casing (`SYEAR`, `SCHOOL_ID`, etc.) is
+      applied at transport time via `file_config.format.header_replacements`;
+      dbt column names remain lowercase snake_case. `end_date` and
+      `state_withdraw_label` populate only for `lifecycle_action =
+      'transfer_out'` rows.
     columns:
       - name: student_id
         data_type: string
@@ -60,18 +62,20 @@ models:
       - name: enrollment_code
         data_type: string
         description:
-          Focus enrollment action code mapped from `lifecycle_action` via the
-          enrollment-code crosswalk (e.g. `EA1` for a new enrollment).
+          Focus enrollment action code derived from grade — `E05` for
+          kindergarten (`grade_canonical_name = 'k'`), `E01` for all other
+          grades; null for `transfer_out` rows.
       - name: end_date
         data_type: string
         description:
           Enrollment end date formatted as `YYYYMMDD`; populated only for
           `transfer_out` rows.
-      - name: drop_code
+      - name: state_withdraw_label
         data_type: string
         description:
-          Focus drop/withdrawal code mapped from `withdrawal_reason` via the
-          drop-code crosswalk; populated only for `transfer_out` rows.
+          Raw Florida state withdrawal code label from the Finalsite
+          `fl_state_withdraw_codes_ss` custom attribute (e.g. `(W02) In District
+          Transfer`); populated only for `transfer_out` rows, null otherwise.
       - name: calendar_id
         data_type: string
         description:
@@ -163,9 +167,9 @@ unit_tests:
     description:
       Verifies the 28-column STUDENT_ENROLLMENT layout for new-enrollment rows —
       grade is translated inline for both a numbered grade (`5th`→`05`) and
-      kindergarten (`k`→`KG`), school/enrollment-code crosswalks resolve,
-      student_id is sourced from int_finalsite__contact_id_attributes, and
-      end_date/drop_code are null for a non-transfer row.
+      kindergarten (`k`→`KG`); enrollment_code is E05 for KG and E01 otherwise;
+      student_id is sourced from int_finalsite__contact_id_attributes; and
+      end_date/state_withdraw_label are null for non-transfer rows.
     model: rpt_focus__student_enrollment
     given:
       - input: ref('int_finalsite__enrollment_lifecycle')
@@ -197,22 +201,19 @@ unit_tests:
         rows: |
           select
             'e1' as finalsite_enrollment_id,
-            cast(null as string) as withdrawal_school_txt
+            cast(null as string) as withdrawal_school_txt,
+            cast(null as string) as fl_state_withdraw_codes_ss
+          union all
+          select
+            'e3' as finalsite_enrollment_id,
+            cast(null as string) as withdrawal_school_txt,
+            cast(null as string) as fl_state_withdraw_codes_ss
       - input: ref('int_people__location_crosswalk')
         format: sql
         rows: |
           select
             'KIPP Royalty Academy' as location_name,
             '0001' as location_focus_school_id
-      - input: ref('stg_google_sheets__focus__enrollment_code_crosswalk')
-        rows:
-          - { finalsite_lifecycle_action: create, focus_enrollment_code: EA1 }
-      - input: ref('stg_google_sheets__focus__drop_code_crosswalk')
-        rows:
-          - {
-              finalsite_withdrawal_reason: mid_year_withdrawal,
-              focus_drop_code: W05,
-            }
       - input: ref('int_finalsite__contact_id_attributes')
         format: sql
         rows: |
@@ -231,9 +232,9 @@ unit_tests:
             student_id: "84003003001",
             grade_id: "05",
             start_date: "20250812",
-            enrollment_code: EA1,
+            enrollment_code: E01,
             end_date: null,
-            drop_code: null,
+            state_withdraw_label: null,
             calendar_id: null,
             prior_dist: null,
             prior_state: null,
@@ -261,9 +262,9 @@ unit_tests:
             student_id: "84003003003",
             grade_id: KG,
             start_date: "20250812",
-            enrollment_code: EA1,
+            enrollment_code: E05,
             end_date: null,
-            drop_code: null,
+            state_withdraw_label: null,
             calendar_id: null,
             prior_dist: null,
             prior_state: null,
@@ -287,8 +288,10 @@ unit_tests:
           }
   - name: test_student_enrollment_transfer_out
     description:
-      Verifies that end_date and drop_code populate for a transfer_out row, and
-      that end_date is formatted as YYYYMMDD.
+      Verifies that end_date and state_withdraw_label populate for a
+      transfer_out row, that enrollment_code is null for transfer_out, that
+      end_date is formatted as YYYYMMDD, and that state_withdraw_label carries
+      the raw fl_state_withdraw_codes_ss value.
     model: rpt_focus__student_enrollment
     given:
       - input: ref('int_finalsite__enrollment_lifecycle')
@@ -309,25 +312,14 @@ unit_tests:
         rows: |
           select
             'e2' as finalsite_enrollment_id,
-            'Prior Elementary' as withdrawal_school_txt
+            'Prior Elementary' as withdrawal_school_txt,
+            '(W02) In District Transfer' as fl_state_withdraw_codes_ss
       - input: ref('int_people__location_crosswalk')
         format: sql
         rows: |
           select
             'KIPP Royalty Academy' as location_name,
             '0001' as location_focus_school_id
-      - input: ref('stg_google_sheets__focus__enrollment_code_crosswalk')
-        rows:
-          - {
-              finalsite_lifecycle_action: transfer_out,
-              focus_enrollment_code: W01,
-            }
-      - input: ref('stg_google_sheets__focus__drop_code_crosswalk')
-        rows:
-          - {
-              finalsite_withdrawal_reason: mid_year_withdrawal,
-              focus_drop_code: W05,
-            }
       - input: ref('int_finalsite__contact_id_attributes')
         format: sql
         rows: |
@@ -342,9 +334,9 @@ unit_tests:
             student_id: "84003003002",
             grade_id: "07",
             start_date: "20250812",
-            enrollment_code: W01,
+            enrollment_code: null,
             end_date: "20260115",
-            drop_code: W05,
+            state_withdraw_label: (W02) In District Transfer,
             calendar_id: null,
             prior_dist: null,
             prior_state: null,

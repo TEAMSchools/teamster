@@ -14,13 +14,19 @@ select
 
     format_date('%Y%m%d', l.enrollment_start_date) as start_date,
 
-    ec.focus_enrollment_code as enrollment_code,
+    case
+        when l.lifecycle_action = 'transfer_out'
+        then cast(null as string)
+        when l.grade_canonical_name = 'k'
+        then 'E05'
+        else 'E01'
+    end as enrollment_code,
 
     -- enrollment_end_date / withdrawal_reason are already null upstream for
     -- non-transfer rows, so no transfer_out re-gating is needed here.
     format_date('%Y%m%d', l.enrollment_end_date) as end_date,
 
-    dc.focus_drop_code as drop_code,
+    cca.fl_state_withdraw_codes_ss as state_withdraw_label,
 
     cast(null as string) as calendar_id,
     cast(null as string) as prior_dist,
@@ -56,9 +62,3 @@ left join
 left join
     {{ ref("int_people__location_crosswalk") }} as sch
     on l.assigned_school = sch.location_name
-left join
-    {{ ref("stg_google_sheets__focus__enrollment_code_crosswalk") }} as ec
-    on l.lifecycle_action = ec.finalsite_lifecycle_action
-left join
-    {{ ref("stg_google_sheets__focus__drop_code_crosswalk") }} as dc
-    on l.withdrawal_reason = dc.finalsite_withdrawal_reason
