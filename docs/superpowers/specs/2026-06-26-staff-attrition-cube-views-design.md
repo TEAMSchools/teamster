@@ -2,19 +2,76 @@
 
 Issue: [#4275](https://github.com/TEAMSchools/teamster/issues/4275)
 
+## Design revision (2026-06-29) — single weekly-grain fact
+
+> **This section supersedes the cohort-grain + `attrition_periods` spine design
+> described below.** The sections from _dbt: `fct_staff_attrition`_ onward are
+> retained for the reasoning trail but no longer describe what was built. What
+> shipped:
+
+**One model, weekly grain.** `fct_staff_attrition` and the originally-planned
+`attrition_periods` date-spine cube were both dropped in favor of a single
+materialized table, **`fct_staff_attrition_weekly`** — one row per
+`(employee × academic_year × attrition_type × Monday-Sunday week)` within the
+measurement window (~1.3M rows). It carries all the cohort-level attrition logic
+(the CTEs below, unchanged) plus a weekly expansion.
+
+**Why not the spine.** The original design kept the fact at cohort grain and did
+the week expansion at query time via a `one_to_many` join to an
+`attrition_periods` (`extends dates`) cube. Cube activates that join on _every_
+query, so final-outcome queries fanned out across the whole date spine (slow),
+the `academic_year` filter bound to the spine's copy (full `dim_dates` scan),
+and the ratio measure tripped Cube's fan-trap guard ("rewrite using sub query").
+Per `src/cube/CLAUDE.md`, a period-intersection grain belongs in dbt, not a
+query-time Cube join — so the expansion moved into the dbt mart.
+
+**Cumulative trend mechanic.** The fact has `is_attritor_as_of` — a monotonic
+flag, true from the week a departure lands onward. `count_distinct(staff_key)`
+filtered to it, grouped by `week_end_date`, gives the cumulative trend;
+**ungrouped it collapses to the exact final-outcome count** (verified: AY2023
+foundation 1573 cohort / 316 attritors, identical to `is_attrition`). So the
+rate measures are fan-safe on one table, and **no `SNAPSHOT_CUBES` anchor is
+needed** — count_distinct over the monotonic flag is idempotent, unlike the
+re-stamped daily-status snapshot cubes.
+
+**Foundation window bug fixed.** Investigating "~25% of attritors have a null
+termination" revealed it was **59% of _foundation_** attritors, not 25% overall
+— a window bug: the `terminations` capture closed at the cohort window-close
+(4/30) but attrition is measured to the 9/1 return check, so summer (esp. June
+end-of-year) departures were flagged `is_attrition` with their `T`-date dropped.
+The capture window now extends to the **return-check date**
+(`measure_end_date`), recovering ~1014 foundation termination dates and
+collapsing the genuinely-null population to **<1%** (intern/artifact edge
+cases). The trend axis also runs to `measure_end_date`, so the June exodus shows
+up (AY2023 foundation jumps 8.5% → 17.9% at the 6/30 week).
+
+**Weeks are Monday-Sunday.** `dim_dates.calendar_week_*` is Sun-Sat and
+`school_week_*` splits at term boundaries, so neither is a clean Mon-Sun grid;
+`week_end_date` (Sunday) is derived in-model via
+`date_trunc(d, week(monday)) + 6 days`.
+
+**Residual nulls → year-end.** The <1% of attritors with no captured termination
+date are parked at the final week of their window so the trend's last point
+reconciles with the final-outcome count.
+
+**`staff_work_history` cube** gained two additive backing members (`staff_key`,
+`effective_end_date`) so the point-in-time join from `staff_attrition` resolves
+— they existed as raw columns but not as referenceable Cube members.
+
+**Phase 1 still aggregate-only**: the `staff_attrition_summary` view ships;
+per-methodology detail views remain deferred. The summary view now also exposes
+`week_end_date` for the weekly/monthly trend.
+
 ## Starting point for a new session
 
-- Branch: `cristinabaldor/feat/claude-staff-attrition-cube-views` (pushed).
-- Status: design approved; **next step is the writing-plans skill**. No
-  implementation has started.
-- Before implementing, read the subdirectory CLAUDE.md files for
-  `src/dbt/kipptaf/models/marts/` and `src/cube/`, plus the reference models
-  this spec names: `fct_staff_attrition` (refactored in place), `dim_dates`, the
-  `dim_work_assignment_*` family, and especially the existing
-  `staff_work_history` cube and `staff_detail` / `staff_summary` views (the
-  traversal pattern this spec mirrors).
-- The **DRY 3-window CTE refactor** (below) must be reviewed with the user
-  before implementation.
+- Branch: `cristinabaldor/feat/claude-staff-attrition-cube-views`.
+- Status: **implemented and prototype-validated** against the dev schema (V1-V7
+  in the Cube dev server). Read the _Design revision_ above first — it, not the
+  sections below, describes what was built.
+- Key files: `fct_staff_attrition_weekly.sql` (+ properties),
+  `src/cube/model/cubes/staff/staff_attrition.yml`,
+  `src/cube/model/cubes/staff/staff_work_history.yml` (additive members),
+  `src/cube/model/views/staff/staff_attrition_summary.yml`.
 
 ## Motivation
 

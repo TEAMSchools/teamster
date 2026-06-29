@@ -1,9 +1,0 @@
-cubes:
-  - name: attrition_periods
-    public: false
-    # Trend-axis alias for the staff_attrition cube. Extends dates so it
-    # inherits all dim_dates dimensions (calendar_week_end_date,
-    # school_week_end_date, academic_year, month_name, etc.) while remaining
-    # a distinct cube entity — staff_work_history already joins the original
-    # dates cube, so routing the trend through this alias avoids a diamond.
-    extends: dates

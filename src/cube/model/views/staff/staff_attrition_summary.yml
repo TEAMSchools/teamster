@@ -2,19 +2,18 @@ views:
   - name: staff_attrition_summary
     description: >-
       Aggregate staff attrition rates by methodology, termination reason/type,
-      work-context breakdowns, and trend. No direct staff identifiers.
+      work-context breakdowns, and cumulative weekly/monthly trend. No direct
+      staff identifiers.
 
       Each methodology uses a different cohort window and denominator —
       foundation (9/1-4/30), nj_compliance (7/1-6/30), recruitment (9/1-8/31).
       Use the per-methodology measures (e.g., attrition_rate_foundation) rather
       than mixing methodologies in one query. Filter academic_year for a single
-      year; omit period grouping for a final-outcome rate, or group by
-      attrition_periods_calendar_week_end_date /
-      attrition_periods_school_week_end_date / attrition_periods_date_day (with
-      granularity month) for a cumulative trend.
+      year; omit week_end_date for a final-outcome rate, or group by it (week or
+      month granularity) for a cumulative trend.
 
-      About 25% of attritors have null termination_reason — treat null as an
-      Unknown bucket in reason/type breakdowns.
+      About 0.5% of attritors have a null termination_reason (intern/artifact
+      edge cases) — treat null as an Unknown bucket in reason/type breakdowns.
 
     cubes:
       - join_path: staff_attrition
@@ -36,16 +35,7 @@ views:
           - termination_effective_date
           - is_attrition
           - academic_year
-
-      - join_path: staff_attrition.attrition_periods
-        prefix: true
-        includes:
-          - date_day
-          - academic_year
-          - month_name
-          - month_number
-          - calendar_week_end_date
-          - school_week_end_date
+          - week_end_date
 
       - join_path: staff_attrition.staff_work_history
         includes:
@@ -107,12 +97,7 @@ views:
         - name: Period
           members:
             - academic_year
-            - attrition_periods_date_day
-            - attrition_periods_academic_year
-            - attrition_periods_month_name
-            - attrition_periods_month_number
-            - attrition_periods_calendar_week_end_date
-            - attrition_periods_school_week_end_date
+            - week_end_date
         - name: Work Context
           members:
             - position_title

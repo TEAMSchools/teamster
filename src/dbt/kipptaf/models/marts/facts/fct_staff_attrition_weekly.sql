@@ -98,7 +98,12 @@ with
     ),
 
     -- first REAL termination within the window (artifact reasons excluded so a
-    -- genuine reason wins the rn=1 pick when both exist)
+    -- genuine reason wins the rn=1 pick when both exist). The capture window
+    -- extends to the return-check date, NOT the cohort window close: foundation
+    -- closes 4/30 but measures attrition by the 9/1 return check, so summer
+    -- (May-Aug) departures are flagged is_attrition yet their T-status date
+    -- falls in the 5/1-8/31 gap. Capturing to the check date recovers them
+    -- (~1k foundation rows); +1 day for nj_compliance/recruitment (negligible).
     terminations as (
         select
             w.attrition_type,
@@ -116,7 +121,7 @@ with
             teammate_history as th
             on th.assignment_status_effective_date
             between date(ay.academic_year, w.start_month, w.start_day) and date(
-                ay.academic_year + 1, w.close_month, w.close_day
+                ay.academic_year + 1, w.check_month, w.check_day
             )
         where
             th.status_code = 'T'
@@ -163,9 +168,11 @@ with
             yc.staff_key,
             ao.as_of_exit_date,
 
-            -- window bounds drive the period-spine join in Cube
+            -- window start (cohort membership) and the measurement-end date
+            -- (the return-check date) that bounds the weekly trend axis:
+            -- departures count through the check date, not the window close.
             date(yc.academic_year, w.start_month, w.start_day) as window_start_date,
-            date(yc.academic_year + 1, w.close_month, w.close_day) as window_close_date,
+            date(yc.academic_year + 1, w.check_month, w.check_day) as measure_end_date,
 
             if(rc.employee_number is null, true, false) as is_attrition,
             if(
@@ -174,11 +181,6 @@ with
             if(
                 rc.employee_number is null, t.termination_reason, null
             ) as termination_reason,
-            if(
-                rc.employee_number is null,
-                t.termination_effective_date,
-                date(yc.academic_year + 1, w.close_month, w.close_day)
-            ) as attrition_cutoff_date,
         from year_cohort as yc
         inner join windows as w on yc.attrition_type = w.attrition_type
         left join
@@ -218,25 +220,105 @@ with
                 else 'Other'
             end as termination_type,
         from attrition
+    ),
+
+    -- cap the measurement end at today for in-progress windows, so the spine
+    -- never runs past the current date. Computed as a plain column so the
+    -- date_trunc(..., week(monday)) calls below take a simple argument.
+    capped as (
+        select
+            *,
+            least(
+                measure_end_date, current_date('{{ var("local_timezone") }}')
+            ) as capped_end_date,
+        from classified
+    ),
+
+    -- Monday that starts each boundary week. Standalone date_trunc (not nested
+    -- in date_add) so sqlfluff keeps the week(monday) datepart grammar.
+    week_starts as (
+        select
+            *,
+            -- trunk-ignore(sqlfluff/LT01): week(monday) is a datepart, not a call
+            date_trunc(window_start_date, week(monday)) as first_week_start_date,
+            -- trunk-ignore(sqlfluff/LT01): week(monday) is a datepart, not a call
+            date_trunc(capped_end_date, week(monday)) as final_week_start_date,
+        from capped
+    ),
+
+    /* Monday-anchored week-end bounds (Sunday = Monday start + 6) per cohort
+       row: the first Sunday on/after window_start, and the Sunday of the week
+       holding capped_end_date. Spine runs to measure_end_date (the return-check
+       date), NOT window_close: foundation departures run through the summer (to
+       the 9/1 check), so the trend axis must reach there. dim_dates' calendar
+       week is Sun-Sat and its school week splits at term/month boundaries, so
+       neither is a clean Mon-Sun grid — derive it here. */
+    bounds as (
+        select
+            *,
+            date_add(first_week_start_date, interval 6 day) as first_week_end_date,
+            date_add(final_week_start_date, interval 6 day) as final_week_end_date,
+        from week_starts
+    ),
+
+    expanded as (
+        select
+            b.employee_number,
+            b.staff_key,
+            b.academic_year,
+            b.attrition_type,
+            b.as_of_exit_date,
+            b.termination_effective_date,
+            b.termination_reason,
+            b.termination_type,
+            b.is_attrition,
+            b.final_week_end_date,
+            week_end_date,
+        from bounds as b
+        cross join
+            unnest(
+                generate_date_array(
+                    b.first_week_end_date, b.final_week_end_date, interval 7 day
+                )
+            ) as week_end_date
     )
 
 select
     {{
         dbt_utils.generate_surrogate_key(
-            ["c.employee_number", "c.academic_year", "c.attrition_type"]
+            [
+                "e.employee_number",
+                "e.academic_year",
+                "e.attrition_type",
+                "e.week_end_date",
+            ]
         )
-    }} as staff_attrition_key,
+    }} as staff_attrition_weekly_key,
 
-    c.staff_key,
+    e.staff_key,
+    e.academic_year,
+    e.attrition_type as `type`,
+    e.week_end_date,
+    e.as_of_exit_date,
+    e.termination_effective_date,
+    e.termination_reason,
+    e.termination_type,
+    e.is_attrition,
 
-    c.academic_year,
-    c.attrition_type as `type`,
-    c.window_start_date,
-    c.window_close_date,
-    c.as_of_exit_date,
-    c.attrition_cutoff_date as cutoff_date,
-    c.is_attrition,
-    c.termination_effective_date,
-    c.termination_reason,
-    c.termination_type,
-from classified as c
+    -- cumulative as-of flag: an attritor is counted from the week their
+    -- termination falls in onward. The ~0.5% of attritors with no captured
+    -- termination date (intern/artifact edge cases) are parked at the final
+    -- week of their window so the trend's last point reconciles with the
+    -- final-outcome count.
+    e.is_attrition
+    and (
+        (
+            e.termination_effective_date is not null
+            and e.termination_effective_date <= e.week_end_date
+        )
+        or (
+            e.termination_effective_date is null
+            and e.week_end_date = e.final_week_end_date
+        )
+    ) as is_attritor_as_of,
+from expanded as e

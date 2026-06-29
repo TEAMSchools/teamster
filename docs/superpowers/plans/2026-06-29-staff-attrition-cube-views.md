@@ -1,5 +1,14 @@
 # Staff Attrition Cube Views Implementation Plan
 
+> **Superseded during prototype validation (2026-06-29).** This plan describes
+> the cohort-grain + `attrition_periods` date-spine design. Prototype testing in
+> the Cube dev server forced a pivot to a single weekly-grain fact
+> (`fct_staff_attrition_weekly`) plus a foundation termination-window bug fix —
+> see the **Design revision** section at the top of
+> `docs/superpowers/specs/2026-06-26-staff-attrition-cube-views-design.md` for
+> what actually shipped. Tasks 1-4 below were executed as written, then revised;
+> Tasks 5-6 (validation, push) reflect the final design.
+
 > **For agentic workers:** REQUIRED SUB-SKILL: Use
 > superpowers:subagent-driven-development (recommended) or
 > superpowers:executing-plans to implement this plan task-by-task. Steps use
