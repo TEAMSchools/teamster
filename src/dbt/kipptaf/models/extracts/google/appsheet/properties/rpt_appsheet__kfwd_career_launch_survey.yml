@@ -40,7 +40,14 @@ models:
         data_type: timestamp
       - name: contact_owner
         data_type: string
+        description: Name of the Salesforce contact owner for the alumnus.
       - name: postsec_advisor
         data_type: string
+        description:
+          Postsecondary advisor assigned to the alumnus on their Salesforce
+          contact record.
       - name: advisor
         data_type: string
+        description:
+          Effective advisor for the alumnus — the postsecondary advisor when the
+          advising provider is KIPP NYC, otherwise the Salesforce contact owner.

@@ -160,17 +160,33 @@ models:
         data_type: string
       - name: advising_provider
         data_type: string
-      - name: contact_owner_name
-        data_type: string
       - name: postsec_advisor
         data_type: string
+        description:
+          Postsecondary advisor assigned to the alumnus on their Salesforce
+          contact record.
       - name: advisor
         data_type: string
+        description:
+          Effective advisor for the alumnus — the postsecondary advisor when the
+          advising provider is KIPP NYC, otherwise the Salesforce contact owner.
       - name: high_school_graduated_from
         data_type: string
+        description:
+          High school the alumnus graduated from, from their Salesforce contact
+          record.
       - name: is_special_education
         data_type: boolean
+        description:
+          Whether the alumnus has a recorded IEP date, used as a
+          special-education indicator.
       - name: middle_school_attended
         data_type: string
+        description:
+          Middle school the alumnus attended, from their Salesforce contact
+          record.
       - name: most_recent_iep_date
         data_type: date
+        description:
+          Date of the alumnus's most recent IEP on their Salesforce contact
+          record.
