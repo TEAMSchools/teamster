@@ -5,72 +5,121 @@ Issue: [#4275](https://github.com/TEAMSchools/teamster/issues/4275)
 ## Starting point for a new session
 
 - Branch: `cristinabaldor/feat/claude-staff-attrition-cube-views` (pushed).
-- Status: design approved; **next step is the writing-plans skill** to turn this
-  spec into a task-by-task implementation plan. No implementation has started.
+- Status: design approved; **next step is the writing-plans skill**. No
+  implementation has started.
 - Before implementing, read the subdirectory CLAUDE.md files for
   `src/dbt/kipptaf/models/marts/` and `src/cube/`, plus the reference models
-  this spec names: `fct_student_attendance_daily`, `student_enrollments` /
-  `student_attendance` cubes, `staff_work_history`, the existing `staff_detail`
-  / `staff_summary` views, and `cube.js` (snapshot-guard machinery).
+  this spec names: `fct_staff_attrition` (refactored in place), `dim_dates`, the
+  `dim_work_assignment_*` family, and especially the existing
+  `staff_work_history` cube and `staff_detail` / `staff_summary` views (the
+  traversal pattern this spec mirrors).
+- The **DRY 3-window CTE refactor** (below) must be reviewed with the user
+  before implementation.
 
 ## Motivation
 
 KTAF needs to analyze staff attrition in the Cube semantic layer: the attrition
-rate for each methodology type, broken down by termination reason and by staff
-characteristics (demographics, title, location, department, worker type) **as of
-the time they left**, and tracked **over the course of the year** the way
-`int_topline__staff_retention` tracks weekly retention.
+rate for each methodology, broken down by termination reason / type and by staff
+characteristics (demographics, title, location, department, worker type,
+manager) **as of the time they left**, and tracked **over the course of the
+year**.
 
 The existing mart `fct_staff_attrition` is a final-outcome fact: one row per
-`(employee, academic_year, attrition_type)`. It answers "did this person attrite
-this year" but cannot express a cumulative attrition rate that climbs across the
-year. It currently has **no downstream dbt model consumers** — the only
-reference is the `cube.yml` exposure pre-wire — so a grain change is safe.
+`(employee, academic_year, attrition_type)` with a boolean `is_attrition`. Its
+methodology is the one KTAF wants — it is the **canonical** definition of
+attrition for the network. It has no downstream dbt model consumers today (only
+the `cube.yml` exposure pre-wire), so it is safe to restructure in place.
+
+### Canonical-engine decision
+
+There are two independent attrition definitions in the warehouse today:
+
+|               | **Engine A** — `fct_staff_attrition` (this spec)    | **Engine B** — `int_people__staff_attrition_details` → `int_topline__staff_retention` |
+| ------------- | --------------------------------------------------- | ------------------------------------------------------------------------------------- |
+| Source        | `dim_work_assignment_status` + work-assignment dims | `int_people__staff_roster_history`                                                    |
+| "Left" test   | `status_code = 'T'`                                 | `assignment_status in ('Terminated','Deceased')`                                      |
+| Methodologies | 3 (foundation / nj_compliance / recruitment)        | 1 (≈ recruitment window)                                                              |
+| Weekly grain  | ISO/calendar weeks                                  | per-school PowerSchool weeks                                                          |
+
+**Engine A is canonical.** Engine B (the current topline weekly retention) is
+flawed and incomplete and will be migrated onto Engine A in a follow-on phase
+(see _Phasing_). Validation therefore targets the **existing
+`fct_staff_attrition` output**, not topline.
 
 ## Decisions
 
-1. **Deliverables**: both a summary (aggregate rates) view and a detail
-   (row-per-cohort-member) view, mirroring `staff_summary` / `staff_detail`.
-2. **One period-grained fact**, not two. Refactor `fct_staff_attrition` to a
-   daily-grained fact and **rename** to `fct_staff_attrition_daily`, mirroring
-   `fct_student_attendance_daily`. The final-period row equals the end-of-year
-   outcome, so one fact powers both the static rate and the trend.
-3. **Period-end-snapshot grain with `is_*_record` anchor flags**, registered in
-   `cube.js` `SNAPSHOT_CUBES`; the guard auto-injects the right period-end
-   anchor by query granularity (mirrors attendance / enrollment). **Optimized**:
-   only rows carrying at least one anchor flag are materialized (the daily spine
-   is expanded transiently in-query to compute flags, then filtered away), so
-   the Cube-facing table is roughly 6x smaller than true daily grain.
-4. **As-of-exit characteristics resolved in dbt**: `work_location_key` FK to
-   `dim_locations` (traverses to `dim_regions`) plus degenerate work-assignment
-   attributes, all resolved as of the outcome-determination date. Demographics
-   traverse `staff_status` (worker status) and `staff` (the staff dimension).
-5. **Weekly is in scope** using ISO weeks (staff attrition is calendar-based,
-   not PowerSchool school weeks). A `cube.js` change scopes the existing
-   school-week rule to student cubes only.
+1. **Grain unchanged.** `fct_staff_attrition` stays one row per
+   `(employee_number, academic_year, attrition_type)` — attrition is a step
+   function (no per-day signal), so the trend is computed at query time, not
+   materialized daily. **No rename**, no daily spine, no anchor flags. It gains
+   `window_start_date` / `window_close_date` (trend spine), `as_of_exit_date`
+   (the `staff_work_history` pin), `staff_key` (the join key to
+   `staff_work_history` and the `count_distinct` measure key), and a derived
+   `termination_type` column.
+2. **DRY the methodology.** Collapse the 9 near-identical CTEs into a single
+   `windows` definition joined once to one cohort / one returner / one
+   termination CTE. Pure SQL, no Jinja codegen. **Review before implementing.**
+3. **No denormalization — traverse `staff_work_history`.** All as-of-exit
+   dimensional context (title, job, department, business unit, worker type, FTE,
+   management flag, location/region, manager, demographics, identity) is reached
+   by a **point-in-time join to the existing `staff_work_history` cube** on
+   `as_of_exit_date BETWEEN effective_start AND effective_end`, exactly as
+   `staff_detail` composes the staff domain. The fact carries **no**
+   work-assignment attributes and **no** direct `staff` / `locations` /
+   `staff_status` FKs.
+4. **Trend axis via an `extends: dates` cube — no new warehouse model.** Because
+   `staff_work_history` already joins `dates`, routing the trend through `dates`
+   too would be a diamond. Resolve it the canonical Cube way: an
+   `attrition_periods` cube that **`extends: dates`** (reuses `dim_dates`, so
+   one calendar source). It is a distinct cube, so the attrition fact joins it
+   for the trend while `staff_work_history` keeps joining the original `dates` —
+   no diamond, nothing added to the warehouse. All measures are
+   `count_distinct(staff_key)` (fan-out-safe).
+5. **Termination slicing.** Keep the full `termination_reason` string and derive
+   `termination_type` (`Resignation` / `Termination` / `Non-Renewal` / `Other`,
+   normalizing the `NonRenewal` spelling). No separate `is_regrettable` flag
+   (the regrettable signal stays embedded in the reason string for filtering).
+6. **Exclude artifact reasons from the termination pick.**
+   `Import Created Action`, `Upgrade Created Action`, and `Internship Ended` are
+   ADP status artifacts, not departures. Exclude them from the `rn = 1`
+   termination-row candidate set so a real reason wins when both exist;
+   standalone artifacts fall to a null reason. Attrition **counts are
+   unchanged** (≈8 reason labels move), because `is_attrition` is driven by
+   non-return, not by the termination row.
+7. **No `cube.js` change.** Trends group by plain `dim_dates` columns
+   (`calendar_week_end_date`, the Monday-based `school_week_end_date`, or month)
+   with `count_distinct` — none of which needs the snapshot guard or its
+   school-week rule (that rule is for the PowerSchool _per-school in-session_
+   week grid, which this cube deliberately does not use). See _cube.js_.
+8. **Methodology is structurally enforced — no blended rate.** A blended rate
+   across the three methodologies (different cohorts, windows, denominators) is
+   meaningless, so it must be impossible, not just discouraged by a note. All
+   measures live on the **one `staff_attrition` cube**: the summary exposes only
+   **per-methodology measures** (`*_attrition_rate` etc., each hard-filtered on
+   `type`) with no generic blendable measure. Detail views (per-methodology,
+   row-locked via a static `row_level` access-policy filter) are deferred to a
+   follow-on phase — Phase 1 is aggregate only.
 
-## Key semantic difference from attendance / enrollment
+## dbt: `fct_staff_attrition` (refactor in place)
 
-In enrollment, a student leaves the daily fact at their exit date. For a
-**cumulative attrition rate the denominator must stay fixed**: every cohort
-member remains in the daily spine for the full window, and
-`is_attrition_to_date` flips `0` to `1` once `termination_effective_date`
-passes. An attritor who has already left is still counted in the denominator;
-only the numerator grows. This mirrors the `is_retention` logic in
-`int_topline__staff_retention`.
+### Grain, keys, and columns
 
-## dbt: `fct_staff_attrition_daily`
+- Grain: one row per `(employee_number, academic_year, attrition_type)`.
+- PK `staff_attrition_key` (unchanged inputs) =
+  `generate_surrogate_key(["employee_number", "academic_year", "attrition_type"])`.
+- Columns: `staff_attrition_key` (PK); `staff_key` (=
+  `generate_surrogate_key(["employee_number"])`, the join key to
+  `staff_work_history` and the `count_distinct` measure key); `academic_year`;
+  `type` (methodology — surfaced as `attrition_methodology` in views to avoid
+  confusion with `termination_type`); `window_start_date`; `window_close_date`;
+  `as_of_exit_date` (last active assignment record — the `staff_work_history`
+  pin); `is_attrition`; `termination_effective_date`; `termination_reason`;
+  `termination_type` (derived); `cutoff_date`.
+- No FK columns for `staff` / `locations` / `staff_status` and no
+  work-assignment attributes — all reached via the `staff_work_history` join in
+  Cube.
 
-### Grain and keys
-
-- Grain: one row per `(employee_number, academic_year, attrition_type, date)`
-  across each type's cohort window, capped at `current_date`.
-- Primary key `staff_attrition_daily_key` =
-  `generate_surrogate_key(["employee_number", "academic_year", "attrition_type", "date_key"])`.
-- The `(employee_number, academic_year, attrition_type)` tuple remains as a
-  degenerate cohort grouping (no longer the PK).
-
-### Cohort windows (unchanged methodology)
+### Cohort windows
 
 | Type            | Window start  | Window close        | Return check       |
 | --------------- | ------------- | ------------------- | ------------------ |
@@ -78,244 +127,495 @@ only the numerator grows. This mirrors the `is_retention` logic in
 | `nj_compliance` | `7/1` of year | `6/30` of year `+1` | `7/1` of year `+1` |
 | `recruitment`   | `9/1` of year | `8/31` of year `+1` | `9/1` of year `+1` |
 
-Keep the existing cohort / returner / termination CTEs that produce one row per
-`(employee, year, type)` with `is_attrition`, `termination_effective_date`,
-`cutoff_date`, and `outcome_determination_date`. Cross each with a per-type date
-spine:
+### DRY 3-window refactor (review target)
+
+The `teammate_history` CTE (sources `dim_work_assignment_status` joined to
+`dim_work_assignment_primary`, `dim_work_assignment_jobs`,
+`dim_staff_work_assignments`, `dim_staff`) is **unchanged**. Downstream, the 9
+CTEs + 3-branch `union all` collapse to a `windows` row-set, one `year_cohort`,
+one `returner_cohort`, one `terminations`, and a single `attrition` join.
 
 ```sql
-generate_date_array(
-  <window_start>,
-  least(<window_close>, current_date('{{ var("local_timezone") }}')),
-  interval 1 day
+-- one row per methodology; the only thing that differs between types
+windows as (
+    select *
+    from
+        unnest(
+            [
+                struct(
+                    'foundation' as attrition_type,
+                    9 as start_month, 1 as start_day,
+                    4 as close_month, 30 as close_day,
+                    9 as check_month, 1 as check_day
+                ),
+                struct('nj_compliance', 7, 1, 6, 30, 7, 1),
+                struct('recruitment', 9, 1, 8, 31, 9, 1)
+            ]
+        )
+),
+
+-- distinct academic years present in the history (replaces the vestigial
+-- (employee_number, academic_year) academic_years CTE — employee_number was
+-- never a join key there, only the year set was used)
+academic_years as (select distinct academic_year from teammate_history),
+
+-- denominator: active (non-'T') with effective span overlapping the window
+year_cohort as (
+    select distinct w.attrition_type, ay.academic_year, th.employee_number,
+    from academic_years as ay
+    cross join windows as w
+    inner join
+        teammate_history as th
+        on th.effective_date_start
+        <= date(ay.academic_year + 1, w.close_month, w.close_day)
+        and th.effective_date_end
+        >= date(ay.academic_year, w.start_month, w.start_day)
+    where th.status_code != 'T'
+),
+
+-- returners: active (non-'T') on the type's return-check date
+returner_cohort as (
+    select distinct w.attrition_type, ay.academic_year, th.employee_number,
+    from academic_years as ay
+    cross join windows as w
+    inner join
+        teammate_history as th
+        on date(ay.academic_year + 1, w.check_month, w.check_day)
+        between th.effective_date_start and th.effective_date_end
+    where th.status_code != 'T'
+),
+
+-- first REAL termination within the window (artifact reasons excluded so a
+-- genuine reason wins the rn=1 pick when both exist)
+terminations as (
+    select
+        w.attrition_type,
+        ay.academic_year,
+        th.employee_number,
+        th.reason_name as termination_reason,
+        th.assignment_status_effective_date as termination_effective_date,
+        row_number() over (
+            partition by w.attrition_type, ay.academic_year, th.employee_number
+            order by th.assignment_status_effective_date asc
+        ) as rn,
+    from academic_years as ay
+    cross join windows as w
+    inner join
+        teammate_history as th
+        on th.assignment_status_effective_date
+        between date(ay.academic_year, w.start_month, w.start_day)
+        and date(ay.academic_year + 1, w.close_month, w.close_day)
+    where
+        th.status_code = 'T'
+        and coalesce(th.reason_name, '') not in (
+            'Import Created Action', 'Upgrade Created Action', 'Internship Ended'
+        )
+),
+
+-- last ACTIVE primary-assignment start on/before departure: the anchor for
+-- resolving as-of-exit work context. Assignment-level (aligns with
+-- staff_work_history periods) and capped at the term date so a stray
+-- post-termination "active" row can't win.
+as_of as (
+    select
+        yc.attrition_type,
+        yc.academic_year,
+        yc.employee_number,
+        max(th.effective_date_start) as as_of_exit_date,
+    from year_cohort as yc
+    inner join windows as w on yc.attrition_type = w.attrition_type
+    left join
+        terminations as t
+        on yc.attrition_type = t.attrition_type
+        and yc.employee_number = t.employee_number
+        and yc.academic_year = t.academic_year
+        and t.rn = 1
+    inner join
+        teammate_history as th
+        on th.employee_number = yc.employee_number
+        and th.status_code != 'T'
+        and th.effective_date_start
+        between date(yc.academic_year, w.start_month, w.start_day) and coalesce(
+            t.termination_effective_date,
+            date(yc.academic_year + 1, w.close_month, w.close_day)
+        )
+    group by yc.attrition_type, yc.academic_year, yc.employee_number
+),
+
+attrition as (
+    select
+        yc.attrition_type,
+        yc.academic_year,
+        yc.employee_number,
+
+        if(rc.employee_number is null, true, false) as is_attrition,
+
+        -- NEW: window bounds drive the period-spine join
+        date(yc.academic_year, w.start_month, w.start_day) as window_start_date,
+        date(
+            yc.academic_year + 1, w.close_month, w.close_day
+        ) as window_close_date,
+
+        if(
+            rc.employee_number is null, t.termination_effective_date, null
+        ) as termination_effective_date,
+        if(
+            rc.employee_number is null, t.termination_reason, null
+        ) as termination_reason,
+        if(
+            rc.employee_number is null,
+            t.termination_effective_date,
+            date(yc.academic_year + 1, w.close_month, w.close_day)
+        ) as attrition_cutoff_date,
+
+        ao.as_of_exit_date,
+    from year_cohort as yc
+    inner join windows as w on yc.attrition_type = w.attrition_type
+    left join
+        returner_cohort as rc
+        on yc.attrition_type = rc.attrition_type
+        and yc.employee_number = rc.employee_number
+        and yc.academic_year = rc.academic_year
+    left join
+        terminations as t
+        on yc.attrition_type = t.attrition_type
+        and yc.employee_number = t.employee_number
+        and yc.academic_year = t.academic_year
+        and t.rn = 1
+    left join
+        as_of as ao
+        on yc.attrition_type = ao.attrition_type
+        and yc.employee_number = ao.employee_number
+        and yc.academic_year = ao.academic_year
+),
+
+-- derive termination_type from the leading token of the reason string;
+-- a named CTE (not inline CASE in a select list) per marts conventions
+classified as (
+    select
+        *,
+        case
+            when termination_reason is null then null
+            when starts_with(termination_reason, 'Resignation') then 'Resignation'
+            when starts_with(termination_reason, 'Termination') then 'Termination'
+            when
+                starts_with(termination_reason, 'Non-Renewal')
+                or starts_with(termination_reason, 'NonRenewal')
+            then 'Non-Renewal'
+            else 'Other'
+        end as termination_type,
+    from attrition
 )
 ```
 
-The daily spine is expanded only to compute the anchor flags; the final `SELECT`
-keeps just the rows where at least one anchor flag is true (see the optimization
-note in Decisions). The cumulative `is_attrition_to_date` is evaluated per
-retained anchor day, so dropping in-between days loses nothing.
+The final `select` projects the PK, `staff_key`, `academic_year`, `type`,
+`window_start_date`, `window_close_date`, `as_of_exit_date`, `is_attrition`,
+`termination_effective_date`, `termination_reason`, `termination_type`, and
+`cutoff_date` (= `attrition_cutoff_date`).
 
-### Cumulative outcome flag
+Behavioral equivalence to the current model must be exact for completed years
+**except** the ≈8 artifact-reason rows (whose reason becomes null / a real
+fallback) — attrition counts are otherwise identical.
 
-`is_attrition_to_date` (`INT64` 0/1) per spine day `d`:
+> Implementation lint notes (not design changes): sqlfluff ST09 wants the
+> earlier-referenced table on the left of `on` predicates; the `unnest([...])`
+> struct array and `between`/`>=` range predicates are fine; `termination_type`
+> derivation belongs in the named `classified` CTE, not inline in the final
+> select list. Run trunk before pushing.
 
-- retained (`is_attrition` is false): always `0`
-- attritor with a `termination_effective_date`: `1` when
-  `termination_effective_date <= d`, else `0`
-- attritor with a null `termination_effective_date`: `1` for the whole window
-  (mirrors the topline null-term-date case)
+### Dimensional context (traversal, not columns)
 
-### Anchor flags
+Reached in Cube via the `staff_work_history` point-in-time join, pinned on
+`as_of_exit_date` (the last active assignment record — see Decisions). The
+**work context** (title, job, department, business unit, worker type, FTE,
+management flag, location/region, manager) is period-dependent and resolves to
+that record; **demographics/identity** (`gender_identity`, `race`, `birth_date`,
+names) come from `dim_staff` via `staff_work_history.staff` and are
+current-state, so the anchor date does not change them.
 
-All partitioned by `(employee_number, academic_year, attrition_type)` over the
-spine:
+Because the attrition cohort is itself ADP-only (built from the same
+work-assignment dims that feed `staff_work_history`), **every attrition row is
+guaranteed a matching work-history period**, so no row loses its context.
+Coverage limitation unchanged (pre-2021 NJ Dayforce staff excluded, tracked at
+[#3744](https://github.com/TEAMSchools/teamster/issues/3744)).
 
-- `is_current_record` — `d` equals the latest spine day (`<= today`). **Default
-  anchor** (no grouping gives the as-of-now rate).
-- `is_month_end_record` — `d` equals the `max` spine day within its calendar
-  month (`date_trunc(d, month)`).
-- `is_week_end_record` — `d` equals the `max` spine day within its ISO week
-  (`date_trunc(d, week(monday))`, aligned to Cube's native
-  `granularity:"week"`).
-- `is_latest_record` — `d` equals the window-close day (final outcome; present
-  only for completed years).
+### Data-quality caveat (document, don't fix here)
 
-Each anchor is defined as `max(spine_day)` within its period partition, so a day
-may carry several flags at once (a window-close that is also a month-end and a
-week-end) and is materialized once.
-
-### Period-boundary alignment
-
-The window start/close dates (`9/1`, `4/30`, `6/30`, `8/31`) do not fall on ISO
-week boundaries, but the `max`-within-partition definition handles this without
-distortion:
-
-- A partial first week anchors on the Sunday that closes it; a partial final
-  week anchors on the **window-close date** (the spine is capped there, so it is
-  the `max` spine day in that ISO week). Cube buckets that row into the ISO week
-  containing the close date — correct, with no later row in the week to collide.
-- All members of the same `(academic_year, type)` share one identical spine, so
-  their week-end dates are identical and counts align cleanly within a type.
-  Cross-type mixing in a single week bucket is already meaningless (different
-  windows) and is guarded by the "filter to one `type`" usage note.
-- Attrition is event-based, not a per-day rate, so partial first/last weeks
-  carry no distortion — the cumulative count as of that boundary is exact. The
-  only visible effect is that the first and last weekly points represent partial
-  weeks.
-- The three window-close dates are all calendar month-ends, so month granularity
-  aligns exactly; only weekly has partial endpoints.
-
-### Supported query granularities (consequence of the optimization)
-
-Because only anchor rows are materialized, the fact has no arbitrary mid-period
-days. Supported shapes: no date grouping (→ `is_current_record` as-of-now
-snapshot, or a past year's final outcome when filtered by `academic_year`), and
-`week` / `month` trends. **`day` granularity and single arbitrary-date pins are
-not supported** — the `cube.js` guard errors on them for `staff_attrition` with
-guidance, rather than silently returning a date with no anchor row.
-
-### As-of-exit characteristics
-
-Resolved as of `outcome_determination_date` (the same anchor the existing
-`staff_status_key` FK uses), constant across the spine for each cohort row:
-
-- `staff_key` — FK to `dim_staff`
-  (`generate_surrogate_key(["employee_number"])`). Powers demographics and
-  identity. New structural FK.
-- `work_location_key` — FK to `dim_locations` (traverses to `dim_regions`),
-  resolved from `dim_work_assignment_locations` for the primary assignment
-  covering the determination date. Nullable; wrap with the
-  `if(col is not null, generate_surrogate_key, cast(null as string))` pattern.
-- Degenerate columns from the work-assignment SCD2 dims (primary assignment,
-  intersection covering the determination date, same join shape as
-  `staff_work_history` but pinned to one date): `position_title`, `job_code`,
-  `department_name`, `business_unit_name`, `worker_type`,
-  `is_management_position`, `full_time_equivalency`.
-- Retained: `staff_status_key` FK, `termination_reason`,
-  `termination_effective_date`, `type`, `cutoff_date`.
-
-Coverage limitation is unchanged (ADP-only; pre-2021 NJ Dayforce staff excluded,
-tracked at #3744) — work-assignment resolution may be null for those rows.
+~25% of attritors (≈1,040) are non-returners with no captured `'T'` row → null
+`termination_reason` / `termination_type`. They are genuine attrition (by
+non-return) and belong in an explicit **Unknown** bucket in any reason/type
+slice. This is inherent to the non-return methodology, not fixable in this spec.
 
 ### Tests
 
-- `staff_attrition_daily_key`: `unique`, `not_null`.
-- Anchor-existence + one-per-period singular tests mirroring the
-  `fct_student_attendance_daily__*_anchor_exists` / `__one_*_per_*` suite: at
-  least one `is_current_record` per cohort tuple, one `is_month_end_record` per
-  cohort-month, one `is_week_end_record` per cohort-ISO-week.
-- `relationships` FKs to `dim_dates` (`date_key`), `dim_locations`
-  (`work_location_key`), `dim_staff` (`staff_key`), `dim_staff_status`
-  (`staff_status_key`).
-- `foreign_key` constraints declared on each FK column (feeds the marts
-  reference diagram).
+- `staff_attrition_key`: `unique`, `not_null`.
+- `relationships` FK to `dim_staff` (`staff_key`) — the only structural FK left;
+  declare it as a `foreign_key` constraint (`warn_unsupported: false`).
+- `accepted_values` on `termination_type` (`Resignation` / `Termination` /
+  `Non-Renewal` / `Other`, plus null).
+- Behavioral-equivalence singular test against the pre-refactor output (see
+  _Validation_) is run during development, not shipped.
 
-### Rename mechanics
+## Cube: `attrition_periods` (extends `dates`)
 
-- Rename the model file and `properties` yml to `fct_staff_attrition_daily`.
-- Update `cube.yml` exposure `depends_on` ref (line 67).
-- Grep `fct_staff_attrition` across `*.sql`, `*.yml`, `*.md` to catch
-  stragglers.
+A cube-layer-only trend axis — **no dbt model**:
 
-## Cube: cubes (`src/cube/model/cubes/staff/`)
+```yaml
+cubes:
+  - name: attrition_periods
+    public: false
+    extends: dates # reuses dim_dates + all its dimensions / TIMESTAMP casts
+```
 
-### `staff_attrition`
+- Distinct from `dates`, so the attrition fact joins it while
+  `staff_work_history` joins the original `dates` — the diamond is resolved by
+  aliasing.
+- Inherits all `dim_dates` dimensions, so the trend can be grouped by any period
+  grid and `count_distinct(staff_key)` stays correct for each:
+  `calendar_week_end_date` (ISO/Sunday weeks), `school_week_end_date` (the
+  Monday-based school-week grid — the same one student snapshots use, year-round
+  so summer attrition still buckets), or `date_day` at `granularity: month`. No
+  invented `period_grain` column; `current_date` capping is handled in the Cube
+  join.
+- PowerSchool _per-school in-session_ weeks (`int_powerschool__calendar_week`,
+  the topline ADA/enrollment grid) are intentionally **not** used: they have no
+  summer coverage and would require binding each staffer to one school's
+  calendar. Out of scope.
+- One-line check at implementation: confirm `dates` declares no outward joins
+  (conformed leaf) so the `extends` copy inherits nothing unwanted.
 
-`public: false`, `sql_table: kipptaf_marts.fct_staff_attrition_daily`. Joins
-(all `many_to_one`, one FK route each — no diamond to `staff`):
+## Cube: `staff_attrition` cube (`src/cube/model/cubes/staff/`)
 
-- `dates` on `date_key`
-- `staff` on `staff_key` — demographics + identity
-- `locations` on `work_location_key` — location, traverses to `regions`
-- `staff_status` on `staff_status_key` — `status_name` only; this cube does
-  **not** re-join `staff` (avoids a diamond to `staff`)
+`public: false`, `sql_table: kipptaf_marts.fct_staff_attrition`. Two joins:
 
-Dimensions: the four anchor flags, plus `type`, `termination_reason`,
-`position_title`, `job_code`, `department_name`, `business_unit_name`,
-`worker_type`, `is_management_position`, `full_time_equivalency`,
-`termination_effective_date`, `is_attrition_to_date`.
+```yaml
+joins:
+  # as-of-exit dimensional context — the staff-domain hub cube, point-in-time.
+  # All staff / locations / regions / manager / job attrs traverse from here,
+  # exactly as staff_detail composes them. many_to_one (one exit period).
+  - name: staff_work_history
+    relationship: many_to_one
+    sql: >
+      {staff_work_history.staff_key} = {CUBE}.staff_key AND
+      {CUBE}.as_of_exit_date
+        BETWEEN {staff_work_history.effective_start_date}
+        AND {staff_work_history.effective_end_date}
+      AND {staff_work_history.is_primary_position} = true
 
-Measures (all `count_distinct(staff_key)` based, anchor-guarded):
+  # trend axis — attrition_periods extends dates, so it's a distinct cube from
+  # staff_work_history.dates. one_to_many; count_distinct(staff_key) is
+  # fan-out-safe (absorbs the daily ~365/yr fan-out).
+  - name: attrition_periods
+    relationship: one_to_many
+    sql: >
+      CAST({attrition_periods.date_day} AS DATE)
+        BETWEEN {CUBE}.window_start_date
+        AND LEAST({CUBE}.window_close_date, CURRENT_DATE())
+```
 
-- `count_cohort` — `count_distinct(staff_key)`. Denominator.
-- `count_attritors` — `count_distinct(staff_key)` filtered
-  `is_attrition_to_date = 1`.
-- `attrition_rate` — `count_attritors / count_cohort`.
-- `retention_rate` — `1 - attrition_rate`.
+No diamond: `staff` / `locations` / `dates` are reachable only via
+`staff_work_history`; the trend axis is reachable only via `attrition_periods`.
 
-### `staff_status` (new minimal cube)
+Dimensions: `attrition_methodology` (the `type` column), `termination_reason`,
+`termination_type`, `termination_effective_date`, `is_attrition`,
+`academic_year`. `window_*` / `as_of_exit_date` / `staff_key` back the joins and
+need not be public.
 
-`public: false`, `sql_table: kipptaf_marts.dim_staff_status`. Exposes
-`staff_status_key` (PK) and `status_name`. No join to `staff`.
+Measures — **per methodology, no blendable generic** (the methodology filter is
+baked into every measure, so a cross-methodology rate cannot be constructed).
+For each methodology `T` in {`foundation`, `nj_compliance`, `recruitment`}, four
+`count_distinct(staff_key)`-based measures (shown for `foundation`; the other
+two mirror it):
+
+- `count_cohort_foundation` — `count_distinct(staff_key)`, `filters:`
+  `{CUBE}.type = 'foundation'`. Denominator.
+- `count_attritors_foundation` — `count_distinct(staff_key)`, `filters:`
+
+  ```sql
+  {CUBE}.type = 'foundation'
+  AND {CUBE}.is_attrition = true
+  AND (
+    {CUBE}.termination_effective_date IS NULL
+    OR {CUBE}.termination_effective_date <= CAST({attrition_periods.date_day} AS DATE)
+  )
+  ```
+
+- `attrition_rate_foundation` —
+  `count_attritors_foundation / count_cohort_foundation`.
+- `retention_rate_foundation` — `1 - attrition_rate_foundation`.
+
+There is deliberately **no** generic `attrition_rate` — that omission is the
+guardrail. Analysts can still chart `attrition_rate_foundation` and
+`attrition_rate_recruitment` side by side (distinct series, each with its own
+correct denominator) — comparison without blending.
+
+Semantics carried by every measure:
+
+- The `is null` arm preserves the current convention (an attritor with a null
+  termination date counts for the whole window).
+- Filtering on `{attrition_periods.date_day}` makes the cumulative step
+  granularity-agnostic; `count_distinct` dedups the daily fan-out (a member
+  becomes an attritor in the first week/month bucket containing their
+  termination day), and with no period grouping it collapses to the
+  final-outcome count.
+- The `count_attritors_*` measures reference `attrition_periods`, so they
+  activate the spine join; the `count_cohort_*` measures and per-member dims do
+  not, so a detail-style query stays join-free on the spine.
 
 ## Cube: views (`src/cube/model/views/staff/`)
 
 ### `staff_attrition_summary`
 
-Aggregate rates and breakdowns — no direct identifiers. Members: the four
-measures; `type`, `termination_reason`, work-assignment dims (`position_title`,
-`department_name`, `worker_type`, `is_management_position`),
-`staff_status.status_name`; demographics (`gender_identity`, `race`,
-`is_hispanic`) as aggregate breakdowns; `locations` + `regions` descriptors;
-`dates` (`academic_year`, `month_name`, `month_number`, `year_number`,
-`date_day`) and the anchor dims. Folders group dimensions (Attrition, Date,
-Location, Staff, Status). Single `cube-access-staff-data` policy,
-`includes: "*"` (no PII tier — aggregate demographics only; low-n suppression
-tracked at #4237).
+Aggregate rates + trend — no direct identifiers, **no blendable measure**.
+Members: the per-methodology measures (`*_attrition_rate`, `*_retention_rate`,
+`count_cohort_*`, `count_attritors_*` for each of the three methodologies);
+`termination_reason`, `termination_type`, `is_attrition`; work/exit breakdowns
+via `staff_work_history.*` (`position_title`, `department_name`,
+`business_unit_name`, `worker_type`, `is_management_position`, `status_name`);
+demographics via `staff_work_history.staff` (`gender_identity`, `race`,
+`is_hispanic`) as aggregate breakdowns; `staff_work_history.locations` +
+`.locations.regions` descriptors; the trend axis via `attrition_periods`
+(`date_day`, `calendar_week_end_date`, `school_week_end_date`, `academic_year`,
+`month_name`, `month_number`). `attrition_methodology` is **not** exposed as a
+free dimension — it is encoded in the measure names, so no blended denominator
+is reachable. Folders group dimensions. Single `cube-access-staff-data` policy,
+`includes: "*"` (aggregate demographics only; low-n suppression tracked at
+[#4237](https://github.com/TEAMSchools/teamster/issues/4237)).
 
-### `staff_attrition_detail`
+Usage notes in `description:`: filter to a single `academic_year`; the as-of-now
+rate comes from omitting the period grouping, and the trend from grouping
+`attrition_periods.calendar_week_end_date` (ISO weeks),
+`attrition_periods.school_week_end_date` (school-calendar weeks, year-round), or
+`attrition_periods.date_day` at `granularity: month` (monthly). Methodology no
+longer needs a usage note — it is structurally enforced by the measure names.
 
-Row-level, one row per cohort member when anchor-filtered. Members: staff
-identity (`staff_key`, `staff_unique_id`, `full_name`, `first_name`,
-`last_name`, work/google email, AD username), demographics + DOB,
-`termination_reason`, `termination_effective_date`, `is_attrition_to_date`,
-work-assignment exit traits, `status_name`, location/region, dates. Two-tier
-access policy mirroring `staff_detail`:
+### Per-methodology detail views (deferred)
 
-- `cube-access-staff-data` `includes: "*"`, `excludes:` `personal_email`,
-  `personal_cell_phone`, `birth_date`, `gender_identity`, `race`, `is_hispanic`.
-- `cube-access-staff-pii` `includes: "*"`.
+Three row-level `staff_attrition_<type>_detail` views (one per methodology, each
+row-locked via a static `row_level` access-policy filter) are out of scope for
+Phase 1. When implemented they will read the single `staff_attrition` cube and
+expose no `attrition_periods` members (no spine fan-out), with two-tier PII
+policies mirroring `staff_detail`.
 
-Both views: usage notes in `description:` instruct filtering to a single `type`
-(otherwise the three methodologies blend), explain that the current/as-of rate
-comes from omitting the date grouping (optionally filtered by `academic_year`
-for a past year's final outcome) and the trend from grouping a `week` / `month`
-granularity (the anchor guard handles the snapshot), and note that `day`
-granularity and arbitrary single-date pins are not supported.
+## `cube.js`
 
-## `cube.js` snapshot-guard registration
+**No changes required.** No snapshot-guard machinery is needed:
 
-Drafted as a code block for manual application (security-model file).
+- **Not** added to `SNAPSHOT_CUBES` / `SNAPSHOT_MEASURE_STEMS` /
+  `SNAPSHOT_ANCHOR_OVERRIDES` — `count_distinct(staff_key)` is correct per
+  period bucket without a point-in-time anchor.
+- **No** `SNAPSHOT_SCHOOL_WEEK_CUBES` carve-out — the school-week grouping uses
+  the plain `dim_dates.school_week_end_date` column (not the PowerSchool
+  per-school in-session grid the snapshot guard's school-week rule governs), so
+  it never collides with that rule.
+- **No** `SNAPSHOT_ANCHOR_ONLY_CUBES` — there are no anchor rows; all
+  granularities are valid because the trend is a live range join.
 
-- `SNAPSHOT_CUBES`: append `"staff_attrition"`.
-- `SNAPSHOT_MEASURE_STEMS.staff_attrition`:
-  `["count_cohort", "count_attritors", "attrition_rate", "retention_rate"]`.
-- `SNAPSHOT_ANCHOR_OVERRIDES.staff_attrition`:
-  `{ default: "is_current_record" }`.
-- New `SNAPSHOT_SCHOOL_WEEK_CUBES` set =
-  `{ "student_attendance", "student_enrollments" }`. In the guard loop, derive
-  `usesSchoolWeek = SNAPSHOT_SCHOOL_WEEK_CUBES.has(cubePrefix)`; only compute
-  `groupsBySchoolWeek` and throw on ISO `granularity:"week"` when
-  `usesSchoolWeek`. For calendar cubes, `period = granularity`, so
-  `granularity:"week"` maps to `is_week_end_record`. Update the `_week_end`
-  named-measure `ok` check to accept `granularity === "week"` for
-  non-school-week cubes (no staff `_week_end` named measures exist yet, but keep
-  it correct).
-- New `SNAPSHOT_ANCHOR_ONLY_CUBES` set = `{ "staff_attrition" }` (cubes whose
-  fact materializes only anchor rows, so arbitrary days have no row). For these,
-  the guard errors on `granularity:"day"` and on a single arbitrary-date pin
-  (single-element `dateRange`, equal-bounds range, or a `dates_date_day`
-  dimension / equals filter), directing users to omit the date for the current
-  snapshot or use `week` / `month`. This replaces, for these cubes, the day-pin
-  "already anchored" branch that assumes a daily row exists.
+Staff RLS still applies automatically: the location scope filter routes through
+the `staff_work_history.locations` join, and the view access policies gate
+fields.
 
 ## Exposures / contracts
 
-- The `cube.yml` exposure already lists the fact (rename the ref). Add the new
-  views to the Cube exposure surface as appropriate.
-- Confirm the marts FK-constraint and uniqueness conventions
-  (`src/dbt/kipptaf/models/marts/CLAUDE.md`) are satisfied on the new fact.
+- Update the `cube.yml` exposure: the fact keeps its name `fct_staff_attrition`,
+  so add `staff_attrition_summary` to the Cube exposure surface. No new mart
+  model (`attrition_periods` extends `dates`; the `staff_attrition` cube reads
+  the existing fact).
+- Satisfy marts FK-constraint / uniqueness conventions on the refactored fact
+  (only the `staff_key` `foreign_key` constraint remains).
+
+## Implementation order
+
+1. **Cube range-join prototype (de-risk first).** Validate in a Cube dev/branch
+   env that: (a) the `attrition_periods` spine groups and
+   `count_distinct`-dedups correctly — weekly trend monotonic, equal to the
+   final-outcome count at the last in-window period; (b) no-period-grouping
+   equals the final outcome; (c) the in-progress year caps at `CURRENT_DATE()`;
+   (d) the `staff_work_history` point-in-time join returns exactly one exit
+   period per attrition row and the detail view (no spine members) returns one
+   row per member; (e) no diamond — confirm `staff` / `locations` / `dates`
+   resolve only through `staff_work_history`, and the trend only through
+   `attrition_periods`.
+2. dbt: DRY CTE refactor (review with user first) + `termination_type` +
+   artifact exclusion + window / `staff_key` / `as_of_exit_date` columns +
+   tests.
+3. Cube: the single `staff_attrition` cube (per-methodology measures);
+   `attrition_periods` (extends `dates`); `staff_attrition_summary` view;
+   `cube.yml` exposure.
 
 ## Validation plan
 
-- Build the fact in a dev schema; verify PK uniqueness and FK population
-  (`countif(<fk> is null)` < 1%).
-- Reconcile a completed-year static rate (anchor = `is_current_record`, single
-  `type`) against the prior final-outcome `fct_staff_attrition` numbers.
-- Spot-check the monthly and weekly trend: cumulative `count_attritors` is
-  monotonically non-decreasing across periods and equals the final-outcome count
-  at the last period.
-- Validate the snapshot guard: a year / month / week query auto-anchors;
-  `attrition_rate` without a date pin returns the as-of-now rate; an ISO-week
-  staff query no longer throws the school-week error.
+- Build the fact in a dev schema; verify PK uniqueness and `staff_key` FK
+  population.
+- **Behavioral equivalence**: the refactored fact's
+  `(type, academic_year, employee_number, is_attrition, termination_effective_date)`
+  rows match the current `fct_staff_attrition` exactly for completed years; the
+  only reason deltas are the ≈8 artifact-reason rows.
+- Via Cube: a completed-year per-methodology rate (e.g.
+  `attrition_rate_foundation`, no period grouping) equals the prior
+  final-outcome rate; the weekly/monthly trend is monotonically non-decreasing
+  and equals the final-outcome count at the last period.
+- **Do not** reconcile against topline weekly retention (Engine B is flawed; it
+  migrates onto this fact in Phase 2).
+
+## Phasing
+
+- **Phase 1 (this spec)**: canonical `fct_staff_attrition` refactor +
+  `staff_attrition` cube + `attrition_periods` (extends `dates`) +
+  `staff_attrition_summary` view (aggregate only; detail views deferred).
+- **Phase 2 (follow-on issue to open)**: migrate `int_topline__staff_retention`
+  off Engine B onto this fact (recruitment-window mapping; ISO vs per-school
+  weeks decision; attribute parity).
+- **Phase 3 (follow-on issue, #3744)**: union pre-2021 Dayforce history into the
+  work-assignment dims so the canonical engine covers full history.
+
+## Alternatives considered
+
+Brief record of approaches weighed and not chosen, for reviewers:
+
+- **Daily / anchor-row snapshot fact** (rename to `fct_staff_attrition_daily`,
+  materialize period-end rows, register in the `cube.js` snapshot guard) —
+  rejected: attrition is a step function with no per-day signal, so cohort grain
+  - query-time trend is leaner and scales for a future student analog.
+- **Cube Tesseract** (`rolling_window: to_date` / `multi_stage` measures) for
+  the cumulative trend — rejected: not enabled in this deployment (a
+  deployment-wide planner switch), and a poor fit for a fixed denominator with a
+  fiscal (non-calendar) window. `count_distinct` + the spine join covers it.
+- **Denormalizing as-of-exit work attributes onto the fact** — rejected:
+  `staff_work_history` already models them point-in-time; traverse it (as
+  `staff_detail` does) instead of duplicating columns.
+- **Trend joined directly to `dim_dates`** — rejected: diamond with
+  `staff_work_history.dates`; aliased via `attrition_periods extends dates`.
+- **Dedicated period-end-only spine model** — not chosen (kept as a fallback if
+  the daily range join proves too heavy): `extends: dates` adds no warehouse
+  model and supports multiple week grids.
+- **`is_regrettable` flag** — dropped: the regrettable signal stays embedded in
+  `termination_reason` for filtering.
+- **PowerSchool per-school in-session weeks** for the trend — rejected: no
+  summer coverage and awkward school-binding for staff; use the `dim_dates`
+  Monday grid.
+- **Anchoring exit attributes on `outcome_determination_date` or
+  `termination_effective_date`** — rejected: post-termination rows and
+  worker-vs-assignment date misalignment; use `as_of_exit_date` (last active
+  assignment start, capped at the termination date).
+- **Validating against topline retention** — rejected: Engine B is flawed;
+  validate against the existing `fct_staff_attrition` output.
+- **A single blendable `attrition_rate` with a "filter by methodology" usage
+  note** — rejected: not foolproof; replaced by per-methodology named measures.
+- **Per-methodology `extends` cubes (`WHERE type = '…'`) to lock detail** —
+  rejected: keeps all measures on one cube; when detail views are built, rows
+  are locked via a static `row_level` access-policy filter instead.
 
 ## Open items / risks
 
-- **Materialized fan-out**: anchor rows only — roughly staff x 3 types x (~52
-  week-ends + ~12 month-ends, deduped) x history years, about 6x smaller than
-  true daily. The transient daily expansion is a build-time compute cost, not a
-  stored one. Tradeoff: no `day`-granularity or arbitrary single-date queries
-  (guard-enforced; see "Supported query granularities").
-- **Null work-assignment resolution** for pre-2021 Dayforce staff (#3744) — FKs
-  are nullable by design.
+- **Cube range-join modeling** is the central risk — two range joins (point-in-
+  time `staff_work_history`, one_to_many `attrition_periods`) + `count_distinct`
+  correctness/performance + diamond avoidance. De-risked by the prototype (task
+  1).
+- **`staff_work_history` anchor sub-choice**: `as_of_exit_date` pins to the last
+  active status period; if that period splits into multiple `staff_work_history`
+  intersection sub-periods (a job/location change on the final day), confirm in
+  the prototype that the date pin lands on the intended sub-period — if not,
+  resolve the exact `staff_work_history` record in dbt instead.
+- **Null-reason attritors (~25%)** land in an Unknown bucket for every
+  reason/type slice — documented caveat, not a defect.
