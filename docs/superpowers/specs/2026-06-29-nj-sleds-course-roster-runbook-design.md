@@ -113,9 +113,6 @@ KTAF's data-privacy posture and the project working conventions:
   so they are PII too: the intern resolves errors row-level in the BigQuery
   console / VS Code, and only the de-identified taxonomy (error type, count,
   which query catches it) goes into the cowork project.
-- The PII approach for an intern using an external AI tool should get a quick
-  sign-off from the data-privacy / People Operations owner; this spec is not the
-  final word on that.
 
 ## Reference data (setup, in `cokafor`)
 
@@ -201,11 +198,17 @@ This is the "valid SCED codes for every course" audit.
 
 - **11. Missing/invalid SID** (`State_StudentNumber`). Fix-owner: intern /
   compliance.
-- **12. Same SCED / date / CDS checks** as staff, student-side. The provided
-  sample already fails the Newark CDS rule (blank `CountyCodeAssigned`, and
-  `SchoolCodeAssigned` of `732` instead of `965`) — a likely section-level CDS
-  override gap where PowerSchool falls back to a school's
-  `Alternate_School_Number`. Fix-owner: intern (confirm the root cause in PS).
+- **12. Same SCED / date / CDS checks** as staff, student-side. The sample
+  extract _file_ (not yet in BigQuery) fails the Newark CDS rule (blank
+  `CountyCodeAssigned`, and `SchoolCodeAssigned` of `732` instead of `965`). The
+  root cause is unconfirmed and must be traced once the extract is loaded. Note:
+  the warehouse shows every Newark school carrying
+  `alternate_school_number = 965`, so a simple `Alternate_School_Number`
+  fallback is **ruled out**; `732` instead matches the leading digits of the
+  internal `school_number` (e.g. `73252`, `732510`). Also note `S_NJ_SEC_X`
+  (where section-level overrides live) is **not staged** in the warehouse, so
+  section-level codes can only be inspected via the loaded extract. Fix-owner:
+  intern (trace and fix in PS).
 
 ### Group D — Cross-extract parity (the core reconciliation)
 
@@ -244,8 +247,7 @@ This is the "valid SCED codes for every course" audit.
   Error/Sync/Unresolved flags.
 - **State-access uploader** — uploads the clean extract, returns the error
   report.
-- **Data team / owner** — reviews worklists, settles judgment calls, signs off
-  the PII approach.
+- **Data team / owner** — reviews worklists and settles judgment calls.
 
 ### Timeline
 
@@ -297,8 +299,11 @@ someone who is out.
   the combination-error predictor (check 2) diffs against it; if no, it falls
   back to the warehouse (`int_powerschool__teachers`). Confirm the exact staff
   source model and field names for whichever join is used.
-- Confirm the section-level CDS override root cause for the student
-  `SchoolCodeAssigned` fallback observed in the sample.
+- Trace the root cause of the student `SchoolCodeAssigned` = `732` (should be
+  `965`) once the extract is loaded into BigQuery. The `Alternate_School_Number`
+  fallback hypothesis is already ruled out by warehouse data; `732` resembles
+  the internal `school_number` prefix. `S_NJ_SEC_X` is not staged, so this needs
+  the loaded extract to investigate.
 - Confirm whether the intern's VS Code Claude plugin / dev environment will be
   provisioned, or whether Phase 0 should assume the console-only fallback.
 
