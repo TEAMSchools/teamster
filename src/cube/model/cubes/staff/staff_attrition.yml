@@ -19,7 +19,7 @@ cubes:
         relationship: many_to_one
         sql: >
           {staff_work_history.staff_key} = {CUBE}.staff_key AND
-          {CUBE}.as_of_exit_date
+          CAST({CUBE}.as_of_exit_date AS DATE)
             BETWEEN CAST({staff_work_history.effective_start_date} AS DATE)
             AND CAST({staff_work_history.effective_end_date} AS DATE)
           AND {staff_work_history.is_primary_position} = true

@@ -243,12 +243,13 @@ cubes:
         type: time
         public: true
 
+      # Backing member for point-in-time joins (e.g. staff_attrition). Not
+      # public — exposed only where a view explicitly needs the period end.
       - name: effective_end_date
         description:
           End of the contiguous period (intersection of all SCD2 children).
         sql: CAST(effective_end_date AS TIMESTAMP)
         type: time
-        public: true
 
     measures:
       - name: count_employees

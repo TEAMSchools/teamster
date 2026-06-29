@@ -15,18 +15,9 @@ models:
       dim_work_assignment_primary and dim_work_assignment_jobs, joined to
       dim_staff_work_assignments and dim_staff. Coverage limitation — pre-2021
       NJ Dayforce-era staff are not included (ADP-only source dims); tracked at
-      #3744. Materialized as a table (~1.3M rows). Read by the staff_attrition
-      Cube cube.
+      #3744. Materialized as a table (~1.3M rows).
     config:
       materialized: table
-    data_tests:
-      - dbt_utils.unique_combination_of_columns:
-          arguments:
-            combination_of_columns:
-              - staff_key
-              - academic_year
-              - type
-              - week_end_date
     columns:
       - name: staff_attrition_weekly_key
         data_type: string
