@@ -17,6 +17,7 @@ with
             wast.effective_end_date as effective_date_end,
             wast.effective_start_date as assignment_status_effective_date,
             ds.staff_unique_id as employee_number,
+            {{ dbt_utils.generate_surrogate_key(["ds.staff_unique_id"]) }} as staff_key,
             wast.status_code,
             wast.reason_name,
 
@@ -46,302 +47,196 @@ with
         inner join {{ ref("dim_staff") }} as ds on swa.staff_key = ds.staff_key
     ),
 
-    academic_years as (
-        select distinct employee_number, academic_year, from teammate_history
+    -- one row per methodology; the only thing that differs between types
+    windows as (
+        select *,
+        from
+            unnest(
+                [
+                    struct(
+                        'foundation' as attrition_type,
+                        9 as start_month,
+                        1 as start_day,
+                        4 as close_month,
+                        30 as close_day,
+                        9 as check_month,
+                        1 as check_day
+                    ),
+                    struct('nj_compliance', 7, 1, 6, 30, 7, 1),
+                    struct('recruitment', 9, 1, 8, 31, 9, 1)
+                ]
+            )
     ),
 
-    /* Foundation Attrition: latest record for staff not  */
-    /* in an inactive status between 9/1 and 4/30 of an academic year  */
-    foundation_year_cohort as (
-        select
-            ay.academic_year,
+    academic_years as (select distinct academic_year, from teammate_history),
 
-            th.employee_number,
-
-            max(th.effective_date_start) as max_effective_date_start,
+    -- denominator: active (non-'T') with effective span overlapping the window
+    year_cohort as (
+        select distinct
+            w.attrition_type, ay.academic_year, th.employee_number, th.staff_key,
         from academic_years as ay
+        cross join windows as w
         inner join
             teammate_history as th
-            on th.effective_date_start <= date(ay.academic_year + 1, 4, 30)
-            and th.effective_date_end >= date(ay.academic_year, 9, 1)
+            on th.effective_date_start
+            <= date(ay.academic_year + 1, w.close_month, w.close_day)
+            and th.effective_date_end
+            >= date(ay.academic_year, w.start_month, w.start_day)
         where th.status_code != 'T'
-        group by ay.academic_year, th.employee_number
     ),
 
-    /* Foundation Attrition: any staff not in terminated or deceased status  */
-    /* on 9/1 of the following academic year  */
-    foundation_returner_cohort as (
-        select distinct ay.academic_year, th.employee_number,
+    -- returners: active (non-'T') on the type's return-check date
+    returner_cohort as (
+        select distinct w.attrition_type, ay.academic_year, th.employee_number,
         from academic_years as ay
+        cross join windows as w
         inner join
             teammate_history as th
-            on date(ay.academic_year + 1, 9, 1)
+            on date(ay.academic_year + 1, w.check_month, w.check_day)
             between th.effective_date_start and th.effective_date_end
         where th.status_code != 'T'
     ),
 
-    /* Foundation Attrition: first termination record within the window  */
-    foundation_terminations as (
+    -- first REAL termination within the window (artifact reasons excluded so a
+    -- genuine reason wins the rn=1 pick when both exist)
+    terminations as (
         select
+            w.attrition_type,
             ay.academic_year,
-
             th.employee_number,
             th.reason_name as termination_reason,
             th.assignment_status_effective_date as termination_effective_date,
-
             row_number() over (
-                partition by ay.academic_year, th.employee_number
+                partition by w.attrition_type, ay.academic_year, th.employee_number
                 order by th.assignment_status_effective_date asc
             ) as rn,
         from academic_years as ay
+        cross join windows as w
         inner join
             teammate_history as th
             on th.assignment_status_effective_date
-            between date(ay.academic_year, 9, 1) and date(ay.academic_year + 1, 4, 30)
-        where th.status_code = 'T'
+            between date(ay.academic_year, w.start_month, w.start_day) and date(
+                ay.academic_year + 1, w.close_month, w.close_day
+            )
+        where
+            th.status_code = 'T'
+            and coalesce(th.reason_name, '') not in (
+                'Import Created Action', 'Upgrade Created Action', 'Internship Ended'
+            )
     ),
 
-    /* New Jersey Compliance Attrition: latest record for staff  */
-    /* not in an inactive status between 7/1 and 6/30 of an academic year  */
-    nj_year_cohort as (
+    -- last ACTIVE primary-assignment start on/before departure: the anchor for
+    -- resolving as-of-exit work context. Assignment-level (aligns with
+    -- staff_work_history periods) and capped at the term date so a stray
+    -- post-termination "active" row can't win.
+    as_of as (
         select
-            ay.academic_year,
-
-            th.employee_number,
-
-            max(th.effective_date_start) as max_effective_date_start,
-        from academic_years as ay
+            yc.attrition_type,
+            yc.academic_year,
+            yc.employee_number,
+            max(th.effective_date_start) as as_of_exit_date,
+        from year_cohort as yc
+        inner join windows as w on yc.attrition_type = w.attrition_type
+        left join
+            terminations as t
+            on yc.attrition_type = t.attrition_type
+            and yc.employee_number = t.employee_number
+            and yc.academic_year = t.academic_year
+            and t.rn = 1
         inner join
             teammate_history as th
-            on th.effective_date_start <= date(ay.academic_year + 1, 6, 30)
-            and th.effective_date_end >= date(ay.academic_year, 7, 1)
-        where th.status_code != 'T'
-        group by ay.academic_year, th.employee_number
+            on yc.employee_number = th.employee_number
+            and th.status_code != 'T'
+            and th.effective_date_start
+            between date(yc.academic_year, w.start_month, w.start_day) and coalesce(
+                t.termination_effective_date,
+                date(yc.academic_year + 1, w.close_month, w.close_day)
+            )
+        group by yc.attrition_type, yc.academic_year, yc.employee_number
     ),
 
-    /* New Jersey Compliance Attrition: any staff not in  */
-    /* terminated or deceased status on 7/1 of the following academic year  */
-    nj_returner_cohort as (
-        select distinct ay.academic_year, th.employee_number,
-        from academic_years as ay
-        inner join
-            teammate_history as th
-            on date(ay.academic_year + 1, 7, 1)
-            between th.effective_date_start and th.effective_date_end
-        where th.status_code != 'T'
-    ),
-
-    /* NJ Compliance: first termination record within the window  */
-    nj_terminations as (
-        select
-            ay.academic_year,
-
-            th.employee_number,
-            th.reason_name as termination_reason,
-            th.assignment_status_effective_date as termination_effective_date,
-
-            row_number() over (
-                partition by ay.academic_year, th.employee_number
-                order by th.assignment_status_effective_date asc
-            ) as rn,
-        from academic_years as ay
-        inner join
-            teammate_history as th
-            on th.assignment_status_effective_date
-            between date(ay.academic_year, 7, 1) and date(ay.academic_year + 1, 6, 30)
-        where th.status_code = 'T'
-    ),
-
-    /* Recruitment Attrition: latest record for staff not in an  */
-    /* inactive status between 9/1 and 8/31 of an academic year  */
-    recruitment_year_cohort as (
-        select
-            ay.academic_year,
-
-            th.employee_number,
-
-            max(th.effective_date_start) as max_effective_date_start,
-        from academic_years as ay
-        inner join
-            teammate_history as th
-            on th.effective_date_start <= date(ay.academic_year + 1, 8, 31)
-            and th.effective_date_end >= date(ay.academic_year, 9, 1)
-        where th.status_code != 'T'
-        group by ay.academic_year, th.employee_number
-    ),
-
-    /* Recruitment Attrition: any staff not in terminated or deceased  */
-    /* status on 9/1 of the following academic year  */
-    recruitment_returner_cohort as (
-        select distinct ay.academic_year, th.employee_number,
-        from academic_years as ay
-        inner join
-            teammate_history as th
-            on date(ay.academic_year + 1, 9, 1)
-            between th.effective_date_start and th.effective_date_end
-        where th.status_code != 'T'
-    ),
-
-    /* Recruitment: first termination record within the window  */
-    recruitment_terminations as (
-        select
-            ay.academic_year,
-
-            th.employee_number,
-            th.reason_name as termination_reason,
-            th.assignment_status_effective_date as termination_effective_date,
-
-            row_number() over (
-                partition by ay.academic_year, th.employee_number
-                order by th.assignment_status_effective_date asc
-            ) as rn,
-        from academic_years as ay
-        inner join
-            teammate_history as th
-            on th.assignment_status_effective_date
-            between date(ay.academic_year, 9, 1) and date(ay.academic_year + 1, 8, 31)
-        where th.status_code = 'T'
-    ),
-
-    /* left joins to compare prior year to following year rosters  */
     attrition as (
         select
-            fyc.academic_year,
-            fyc.employee_number,
+            yc.attrition_type,
+            yc.academic_year,
+            yc.employee_number,
+            yc.staff_key,
+            ao.as_of_exit_date,
 
-            'foundation' as attrition_type,
+            -- window bounds drive the period-spine join in Cube
+            date(yc.academic_year, w.start_month, w.start_day) as window_start_date,
+            date(yc.academic_year + 1, w.close_month, w.close_day) as window_close_date,
 
-            if(frc.employee_number is null, true, false) as is_attrition,
-
+            if(rc.employee_number is null, true, false) as is_attrition,
             if(
-                frc.employee_number is null, ft.termination_effective_date, null
+                rc.employee_number is null, t.termination_effective_date, null
             ) as termination_effective_date,
-
             if(
-                frc.employee_number is null, ft.termination_reason, null
+                rc.employee_number is null, t.termination_reason, null
             ) as termination_reason,
-
             if(
-                frc.employee_number is null,
-                ft.termination_effective_date,
-                date(fyc.academic_year + 1, 4, 30)
+                rc.employee_number is null,
+                t.termination_effective_date,
+                date(yc.academic_year + 1, w.close_month, w.close_day)
             ) as attrition_cutoff_date,
-
-            if(
-                frc.employee_number is null,
-                ft.termination_effective_date,
-                date(fyc.academic_year + 1, 9, 1)
-            ) as outcome_determination_date,
-        from foundation_year_cohort as fyc
+        from year_cohort as yc
+        inner join windows as w on yc.attrition_type = w.attrition_type
         left join
-            foundation_returner_cohort as frc
-            on fyc.employee_number = frc.employee_number
-            and fyc.academic_year = frc.academic_year
+            returner_cohort as rc
+            on yc.attrition_type = rc.attrition_type
+            and yc.employee_number = rc.employee_number
+            and yc.academic_year = rc.academic_year
         left join
-            foundation_terminations as ft
-            on fyc.employee_number = ft.employee_number
-            and fyc.academic_year = ft.academic_year
-            and ft.rn = 1
+            terminations as t
+            on yc.attrition_type = t.attrition_type
+            and yc.employee_number = t.employee_number
+            and yc.academic_year = t.academic_year
+            and t.rn = 1
+        left join
+            as_of as ao
+            on yc.attrition_type = ao.attrition_type
+            and yc.employee_number = ao.employee_number
+            and yc.academic_year = ao.academic_year
+    ),
 
-        union all
-
+    -- derive termination_type from the leading token of the reason string;
+    -- a named CTE (not inline CASE in a select list) per marts conventions
+    classified as (
         select
-            njyc.academic_year,
-            njyc.employee_number,
-
-            'nj_compliance' as attrition_type,
-
-            if(njrc.employee_number is null, true, false) as is_attrition,
-
-            if(
-                njrc.employee_number is null, njt.termination_effective_date, null
-            ) as termination_effective_date,
-
-            if(
-                njrc.employee_number is null, njt.termination_reason, null
-            ) as termination_reason,
-
-            if(
-                njrc.employee_number is null,
-                njt.termination_effective_date,
-                date(njyc.academic_year + 1, 6, 30)
-            ) as attrition_cutoff_date,
-
-            if(
-                njrc.employee_number is null,
-                njt.termination_effective_date,
-                date(njyc.academic_year + 1, 7, 1)
-            ) as outcome_determination_date,
-        from nj_year_cohort as njyc
-        left join
-            nj_returner_cohort as njrc
-            on njyc.employee_number = njrc.employee_number
-            and njyc.academic_year = njrc.academic_year
-        left join
-            nj_terminations as njt
-            on njyc.employee_number = njt.employee_number
-            and njyc.academic_year = njt.academic_year
-            and njt.rn = 1
-
-        union all
-
-        select
-            ryc.academic_year,
-            ryc.employee_number,
-
-            'recruitment' as attrition_type,
-
-            if(rrc.employee_number is null, true, false) as is_attrition,
-
-            if(
-                rrc.employee_number is null, rt.termination_effective_date, null
-            ) as termination_effective_date,
-
-            if(
-                rrc.employee_number is null, rt.termination_reason, null
-            ) as termination_reason,
-
-            if(
-                rrc.employee_number is null,
-                rt.termination_effective_date,
-                date(ryc.academic_year + 1, 8, 31)
-            ) as attrition_cutoff_date,
-
-            if(
-                rrc.employee_number is null,
-                rt.termination_effective_date,
-                date(ryc.academic_year + 1, 9, 1)
-            ) as outcome_determination_date,
-        from recruitment_year_cohort as ryc
-        left join
-            recruitment_returner_cohort as rrc
-            on ryc.employee_number = rrc.employee_number
-            and ryc.academic_year = rrc.academic_year
-        left join
-            recruitment_terminations as rt
-            on ryc.employee_number = rt.employee_number
-            and ryc.academic_year = rt.academic_year
-            and rt.rn = 1
+            *,
+            case
+                when termination_reason is null
+                then null
+                when starts_with(termination_reason, 'Resignation')
+                then 'Resignation'
+                when starts_with(termination_reason, 'Termination')
+                then 'Termination'
+                when
+                    starts_with(termination_reason, 'Non-Renewal')
+                    or starts_with(termination_reason, 'NonRenewal')
+                then 'Non-Renewal'
+                else 'Other'
+            end as termination_type,
+        from attrition
     )
 
 select
     {{
         dbt_utils.generate_surrogate_key(
-            ["a.employee_number", "a.academic_year", "a.attrition_type"]
+            ["c.employee_number", "c.academic_year", "c.attrition_type"]
         )
     }} as staff_attrition_key,
 
-    ss.staff_status_key,
+    c.staff_key,
 
-    a.academic_year,
-    a.attrition_type as `type`,
-    a.attrition_cutoff_date as cutoff_date,
-    a.is_attrition,
-    a.termination_reason,
-    a.termination_effective_date,
-from attrition as a
-left join
-    {{ ref("dim_staff_status") }} as ss
-    on {{ dbt_utils.generate_surrogate_key(["a.employee_number"]) }} = ss.staff_key
-    and a.outcome_determination_date >= ss.effective_start_date
-    and a.outcome_determination_date <= ss.effective_end_date
+    c.academic_year,
+    c.attrition_type as `type`,
+    c.window_start_date,
+    c.window_close_date,
+    c.as_of_exit_date,
+    c.attrition_cutoff_date as cutoff_date,
+    c.is_attrition,
+    c.termination_effective_date,
+    c.termination_reason,
+    c.termination_type,
+from classified as c
