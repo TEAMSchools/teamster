@@ -156,10 +156,16 @@ normalized values drives the keep predicate; unmatched students
 `kippmiami/.../rpt_focus__student_enrollment.sql`:
 
 - Match a desired enrollment to a Focus enrollment on
-  `(student_id, syear, school_id)`. (Open item: confirm whether `start_date`
-  must join the key for same-year re-entries; see Open questions.)
-- **Keep** a row when unmatched OR any non-code field (`grade_id`, `start_date`,
-  `end_date`) differs from the Focus enrollment.
+  `(student_id, start_date)`. This is the natural grain of
+  `stg_focus__student_enrollment`: verified `(student_id, start_date)` is unique
+  (9,591 of 9,591 rows), while `(student_id, syear, school_id)` collides (9,487)
+  because a student can have multiple spans in one year+school. `syear`,
+  `school_id`, and `grade_id` are enrollment attributes, not key. Focus
+  `start_date` is a `DATE` (`2024-07-01`) and the export emits `YYYYMMDD`, so
+  the join normalizes one side
+  (`format_date('%Y%m%d', fe.start_date) = e.start_date`).
+- **Keep** a row when unmatched OR any non-code field (`grade_id`, `syear`,
+  `school_id`, `end_date`) differs from the Focus enrollment.
 - **ENROLLMENT_CODE / DROP_CODE import-once:** emit the computed code only when
   the matched Focus enrollment does not already carry one; otherwise emit `NULL`
   so Focus never overwrites:
@@ -242,11 +248,13 @@ gates the rest of req 1.
 
 ## Open questions / assumptions
 
-1. **Enrollment match grain.** `(student_id, syear, school_id)` assumed; confirm
-   whether `start_date` is needed for same-year re-entries.
-2. **School-id alignment.** Export `school_id` (`location_focus_school_id`) must
-   equal `stg_focus__student_enrollment.school_id`; verify before trusting the
-   enrollment match.
+1. **Enrollment match grain — RESOLVED.** `(student_id, start_date)` is the
+   unique grain (9,591/9,591); `syear`/`school_id`/`grade_id` are attributes.
+2. **School-id alignment.** `school_id` is now a compared attribute (not a join
+   key). Export `school_id` (`location_focus_school_id`) and
+   `stg_focus__student_enrollment.school_id` must share the same value domain or
+   the diff will treat every matched row as changed; verify during
+   implementation.
 3. **Enrollment code scope.** Assumed purely grade-based for all entries
    (re-enrollers included). Confirm with registrar if re-enrollers should keep
    an R-code instead of `E01`.
