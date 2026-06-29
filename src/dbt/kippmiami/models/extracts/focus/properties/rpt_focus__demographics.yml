@@ -1,5 +1,14 @@
 models:
   - name: rpt_focus__demographics
+    description: >-
+      Demographics export for Focus SIS — emits only rows whose student is
+      absent from Focus or whose populated export fields differ from current
+      Focus state. Idempotent import guard: a fully-matching row is suppressed.
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns:
+              - stdt_id
     columns:
       - name: stdt_id
         data_type: string
@@ -85,3 +94,279 @@ models:
         data_type: string
       - name: lcp_cont_stdt
         data_type: string
+
+unit_tests:
+  - name: diff_keeps_unmatched_and_changed_drops_identical
+    description: >-
+      Unmatched student (no Focus row) and student with changed first_name are
+      kept; student whose every populated field matches Focus is dropped.
+    model: rpt_focus__demographics
+    given:
+      - input: source("kipptaf_extracts", "rpt_focus__demographics")
+        format: sql
+        rows: |
+          select
+              '8400000001' as stdt_id,
+              'Jones' as last_name,
+              'Charlie' as first_name,
+              cast(null as string) as name_suffix,
+              cast(null as string) as middle_name,
+              cast(null as string) as nickname,
+              cast(null as string) as dt_birth,
+              cast(null as string) as gender,
+              cast(null as string) as lang,
+              cast(null as string) as stdt_email,
+              cast(null as string) as ethnic_hl,
+              cast(null as string) as single_ethnic,
+              cast(null as string) as race_am_ind_ak_nat,
+              cast(null as string) as race_asian,
+              cast(null as string) as race_black,
+              cast(null as string) as race_nat_haw_pac_isl,
+              cast(null as string) as race_white,
+              cast(null as string) as residence_county,
+              cast(null as string) as contry_birth,
+              cast(null as string) as homeroom_tchr,
+              cast(null as string) as resident_st,
+              cast(null as string) as birth_loc,
+              cast(null as string) as bdate_verif,
+              cast(null as string) as immun_st,
+              cast(null as string) as primary_home_lang,
+              cast(null as string) as native_parent_lang,
+              cast(null as string) as grde_enter_dist,
+              cast(null as string) as msix_id,
+              cast(null as string) as homeroom,
+              cast(null as string) as pmrn,
+              cast(null as string) as internt_perm,
+              cast(null as string) as act_perm,
+              cast(null as string) as direct_perm,
+              cast(null as string) as screen_perm,
+              cast(null as string) as photo_vid_perm,
+              cast(null as string) as survey_perm,
+              cast(null as string) as mckay_sch_attend,
+              cast(null as string) as fhsaa_el3_ind,
+              cast(null as string) as fhsaa_el3ch_ind,
+              cast(null as string) as dt_home_lang_survey,
+              cast(null as string) as casas_track,
+              cast(null as string) as lcp_cont_stdt
+          union all
+          select
+              '8400000002' as stdt_id,
+              'Smith' as last_name,
+              'Alice' as first_name,
+              cast(null as string) as name_suffix,
+              cast(null as string) as middle_name,
+              cast(null as string) as nickname,
+              '20100515' as dt_birth,
+              'F' as gender,
+              'English' as lang,
+              'alice@school.edu' as stdt_email,
+              'N' as ethnic_hl,
+              cast(null as string) as single_ethnic,
+              cast(null as string) as race_am_ind_ak_nat,
+              cast(null as string) as race_asian,
+              cast(null as string) as race_black,
+              cast(null as string) as race_nat_haw_pac_isl,
+              'Y' as race_white,
+              cast(null as string) as residence_county,
+              cast(null as string) as contry_birth,
+              cast(null as string) as homeroom_tchr,
+              cast(null as string) as resident_st,
+              cast(null as string) as birth_loc,
+              cast(null as string) as bdate_verif,
+              cast(null as string) as immun_st,
+              cast(null as string) as primary_home_lang,
+              cast(null as string) as native_parent_lang,
+              cast(null as string) as grde_enter_dist,
+              cast(null as string) as msix_id,
+              cast(null as string) as homeroom,
+              cast(null as string) as pmrn,
+              cast(null as string) as internt_perm,
+              cast(null as string) as act_perm,
+              cast(null as string) as direct_perm,
+              cast(null as string) as screen_perm,
+              cast(null as string) as photo_vid_perm,
+              cast(null as string) as survey_perm,
+              cast(null as string) as mckay_sch_attend,
+              cast(null as string) as fhsaa_el3_ind,
+              cast(null as string) as fhsaa_el3ch_ind,
+              cast(null as string) as dt_home_lang_survey,
+              cast(null as string) as casas_track,
+              cast(null as string) as lcp_cont_stdt
+          union all
+          select
+              '8400000003' as stdt_id,
+              'Doe' as last_name,
+              'Bobby' as first_name,
+              cast(null as string) as name_suffix,
+              cast(null as string) as middle_name,
+              cast(null as string) as nickname,
+              '20110920' as dt_birth,
+              'M' as gender,
+              'Spanish' as lang,
+              'bob@school.edu' as stdt_email,
+              'Y' as ethnic_hl,
+              cast(null as string) as single_ethnic,
+              cast(null as string) as race_am_ind_ak_nat,
+              cast(null as string) as race_asian,
+              cast(null as string) as race_black,
+              cast(null as string) as race_nat_haw_pac_isl,
+              cast(null as string) as race_white,
+              cast(null as string) as residence_county,
+              cast(null as string) as contry_birth,
+              cast(null as string) as homeroom_tchr,
+              cast(null as string) as resident_st,
+              cast(null as string) as birth_loc,
+              cast(null as string) as bdate_verif,
+              cast(null as string) as immun_st,
+              cast(null as string) as primary_home_lang,
+              cast(null as string) as native_parent_lang,
+              cast(null as string) as grde_enter_dist,
+              cast(null as string) as msix_id,
+              cast(null as string) as homeroom,
+              cast(null as string) as pmrn,
+              cast(null as string) as internt_perm,
+              cast(null as string) as act_perm,
+              cast(null as string) as direct_perm,
+              cast(null as string) as screen_perm,
+              cast(null as string) as photo_vid_perm,
+              cast(null as string) as survey_perm,
+              cast(null as string) as mckay_sch_attend,
+              cast(null as string) as fhsaa_el3_ind,
+              cast(null as string) as fhsaa_el3ch_ind,
+              cast(null as string) as dt_home_lang_survey,
+              cast(null as string) as casas_track,
+              cast(null as string) as lcp_cont_stdt
+      - input: ref("stg_focus__students")
+        format: sql
+        rows: |
+          select
+              8400000002 as student_id,
+              'Alice' as first_name,
+              'Smith' as last_name,
+              cast(null as string) as middle_name,
+              'alice@school.edu' as student_e_mail_address,
+              timestamp('2010-05-15') as birthdate
+          union all
+          select
+              8400000003 as student_id,
+              'Bob' as first_name,
+              'Doe' as last_name,
+              cast(null as string) as middle_name,
+              'bob@school.edu' as student_e_mail_address,
+              timestamp('2011-09-20') as birthdate
+      - input: ref("int_focus__students__pivot")
+        format: sql
+        rows: |
+          select
+              8400000002 as student_id,
+              'Female [F]' as sex_label,
+              'English' as language_label,
+              'No' as ethnicity_hispanic_or_latino_label,
+              cast(null as string) as race_american_indian_or_alaska_native_label,
+              cast(null as string) as race_asian_label,
+              cast(null as string) as race_black_or_african_american_label,
+              cast(null as string)
+                  as race_native_hawaiian_or_other_pacific_islander_label,
+              'Yes' as race_white_label
+          union all
+          select
+              8400000003 as student_id,
+              'Male [M]' as sex_label,
+              'Spanish' as language_label,
+              'Yes' as ethnicity_hispanic_or_latino_label,
+              cast(null as string) as race_american_indian_or_alaska_native_label,
+              cast(null as string) as race_asian_label,
+              cast(null as string) as race_black_or_african_american_label,
+              cast(null as string)
+                  as race_native_hawaiian_or_other_pacific_islander_label,
+              cast(null as string) as race_white_label
+    expect:
+      format: sql
+      rows: |
+        select
+            '8400000001' as stdt_id,
+            'Jones' as last_name,
+            'Charlie' as first_name,
+            cast(null as string) as name_suffix,
+            cast(null as string) as middle_name,
+            cast(null as string) as nickname,
+            cast(null as string) as dt_birth,
+            cast(null as string) as gender,
+            cast(null as string) as lang,
+            cast(null as string) as stdt_email,
+            cast(null as string) as ethnic_hl,
+            cast(null as string) as single_ethnic,
+            cast(null as string) as race_am_ind_ak_nat,
+            cast(null as string) as race_asian,
+            cast(null as string) as race_black,
+            cast(null as string) as race_nat_haw_pac_isl,
+            cast(null as string) as race_white,
+            cast(null as string) as residence_county,
+            cast(null as string) as contry_birth,
+            cast(null as string) as homeroom_tchr,
+            cast(null as string) as resident_st,
+            cast(null as string) as birth_loc,
+            cast(null as string) as bdate_verif,
+            cast(null as string) as immun_st,
+            cast(null as string) as primary_home_lang,
+            cast(null as string) as native_parent_lang,
+            cast(null as string) as grde_enter_dist,
+            cast(null as string) as msix_id,
+            cast(null as string) as homeroom,
+            cast(null as string) as pmrn,
+            cast(null as string) as internt_perm,
+            cast(null as string) as act_perm,
+            cast(null as string) as direct_perm,
+            cast(null as string) as screen_perm,
+            cast(null as string) as photo_vid_perm,
+            cast(null as string) as survey_perm,
+            cast(null as string) as mckay_sch_attend,
+            cast(null as string) as fhsaa_el3_ind,
+            cast(null as string) as fhsaa_el3ch_ind,
+            cast(null as string) as dt_home_lang_survey,
+            cast(null as string) as casas_track,
+            cast(null as string) as lcp_cont_stdt
+        union all
+        select
+            '8400000003' as stdt_id,
+            'Doe' as last_name,
+            'Bobby' as first_name,
+            cast(null as string) as name_suffix,
+            cast(null as string) as middle_name,
+            cast(null as string) as nickname,
+            '20110920' as dt_birth,
+            'M' as gender,
+            'Spanish' as lang,
+            'bob@school.edu' as stdt_email,
+            'Y' as ethnic_hl,
+            cast(null as string) as single_ethnic,
+            cast(null as string) as race_am_ind_ak_nat,
+            cast(null as string) as race_asian,
+            cast(null as string) as race_black,
+            cast(null as string) as race_nat_haw_pac_isl,
+            cast(null as string) as race_white,
+            cast(null as string) as residence_county,
+            cast(null as string) as contry_birth,
+            cast(null as string) as homeroom_tchr,
+            cast(null as string) as resident_st,
+            cast(null as string) as birth_loc,
+            cast(null as string) as bdate_verif,
+            cast(null as string) as immun_st,
+            cast(null as string) as primary_home_lang,
+            cast(null as string) as native_parent_lang,
+            cast(null as string) as grde_enter_dist,
+            cast(null as string) as msix_id,
+            cast(null as string) as homeroom,
+            cast(null as string) as pmrn,
+            cast(null as string) as internt_perm,
+            cast(null as string) as act_perm,
+            cast(null as string) as direct_perm,
+            cast(null as string) as screen_perm,
+            cast(null as string) as photo_vid_perm,
+            cast(null as string) as survey_perm,
+            cast(null as string) as mckay_sch_attend,
+            cast(null as string) as fhsaa_el3_ind,
+            cast(null as string) as fhsaa_el3ch_ind,
+            cast(null as string) as dt_home_lang_survey,
+            cast(null as string) as casas_track,
+            cast(null as string) as lcp_cont_stdt
