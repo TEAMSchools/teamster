@@ -58,9 +58,13 @@ unit_tests:
       - input: ref('int_finalsite__contact_id_attributes')
         format: sql
         rows: |
-          select 'enr-stu-a' as finalsite_enrollment_id, '900' as focus_student_id
+          select
+              'enr-stu-a' as finalsite_enrollment_id,
+              '8400900' as focus_student_id_prefixed
           union all
-          select 'enr-stu-b' as finalsite_enrollment_id, '100' as focus_student_id
+          select
+              'enr-stu-b' as finalsite_enrollment_id,
+              '8400100' as focus_student_id_prefixed
     expect:
       rows:
         - { primary_student_id: "8400100", secondary_student_id: "8400900" }

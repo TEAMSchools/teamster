@@ -38,18 +38,16 @@ with
             {{ ref("int_focus__students__pivot") }} as p on s.student_id = p.student_id
     ),
 
-    -- Emit a row only when the student is absent from Focus or any populated
-    -- export field differs. The surrogate key compares the two sides as a unit;
-    -- coalescing each export field to its Focus value means a null export field
-    -- (not populated in Finalsite) never registers as a difference, so it never
-    -- triggers a re-import.
-    diffed as (
-        select d.*,
-        from {{ source("kipptaf_extracts", "rpt_focus__demographics") }} as d
-        left join focus_state as f on d.stdt_id = f.student_id
-        where
-            f.student_id is null
-            or
+    -- Compute the comparison keys upstream. export_key hashes each export field
+    -- coalesced to its Focus value, so a null export field (not populated in
+    -- Finalsite) adopts the Focus value and never registers as a difference;
+    -- focus_key hashes the current Focus values.
+    keyed as (
+        select
+            d.*,
+
+            f.student_id as focus_student_id,
+
             {{
                 dbt_utils.generate_surrogate_key(
                     [
@@ -69,7 +67,8 @@ with
                     ]
                 )
             }}
-            != {{
+            as export_key,
+            {{
                 dbt_utils.generate_surrogate_key(
                     [
                         "f.first_name",
@@ -87,7 +86,15 @@ with
                         "f.race_white_focus",
                     ]
                 )
-            }}
+            }} as focus_key,
+        from {{ source("kipptaf_extracts", "rpt_focus__demographics") }} as d
+        left join focus_state as f on d.stdt_id = f.student_id
+    ),
+
+    -- Emit a row only when the student is absent from Focus or any populated
+    -- export field differs (the two keys diverge).
+    diffed as (
+        select *, from keyed where focus_student_id is null or export_key != focus_key
     )
 
 select
