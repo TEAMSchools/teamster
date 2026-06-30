@@ -13,10 +13,3 @@ models:
         data_tests:
           - unique
           - not_null
-      - name: focus_student_id_prefixed
-        data_type: string
-        description:
-          Focus student id with the FLDOE district number (8400) prepended to
-          the unioned `focus_student_id`. Equals Focus `students.student_id`
-          directly and is the value every Focus SFTP extract emits as the
-          student id.
