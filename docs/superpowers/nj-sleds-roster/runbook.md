@@ -51,7 +51,7 @@ DOB + SMID together; the student side carries SID + name + DOB.
   (`cokafor`) and Google Sheets** (in-tenant) only. Never copy identified rows
   to the cowork project, a chat, a commit, or any other external surface.
 - **The cowork project works on rules, error categories, counts, and
-  de-identified samples only.** The defect-count rollup (check 16) is the only
+  de-identified samples only.** The defect-count rollup (check 17) is the only
   artifact from this runbook that goes into the cowork project — counts only, no
   PII.
 - **State error reports are PII.** The state's returned error reports name
@@ -85,8 +85,8 @@ typical submission requires two to four loops before the extract is clean.
 7. Clean extract handed to the state-access uploader; errors returned -> step 3.
 ```
 
-Check 16 (defect-count rollup) is the de-identified artifact that shows
-progress. Paste the check-16 output into the convergence tracker tab each loop
+Check 17 (defect-count rollup) is the de-identified artifact that shows
+progress. Paste the check-17 output into the convergence tracker tab each loop
 so stakeholders can watch totals trend toward zero without seeing any identified
 data.
 
@@ -97,68 +97,213 @@ fresh extract to audit).
 
 ### Step 1 — build the reference CSVs
 
-Run the two prep scripts from the project root. Both scripts take input and
-output paths as arguments; no PII-bearing file is committed to the repo.
+The network runs two regions (Newark, Camden) with two separate PowerSchool
+instances. Each region produces its own extract CSVs. Three prep scripts
+generate the reference files needed before loading.
+
+Run all three from the project root. Scripts take input and output paths as
+arguments; no PII-bearing file is committed to the repo.
 
 ```bash
 cd /workspaces/teamster
 
 # Build the SCED reference CSV from the NJSLEDS SCED xlsx workbook.
+# Single statewide file — run once.
 uv run --with openpyxl python \
   docs/superpowers/nj-sleds-roster/setup/build_ref_sced_codes.py \
   ".claude/scratch/NJ SLEDS/CRS docs/NJSLEDS_SCED-Course-Codes.xlsx" \
   ".claude/scratch/NJ SLEDS/ref_sced_codes.csv"
 
 # Project the Staff Management export down to audit columns, dropping SSN.
+# Run once per region — produces two CSVs.
 uv run python \
   docs/superpowers/nj-sleds-roster/setup/build_ref_state_staff.py \
-  ".claude/scratch/NJ SLEDS/CRS docs/Export- Staff Management Submission.csv" \
-  ".claude/scratch/NJ SLEDS/ref_state_staff.csv"
+  ".claude/scratch/NJ SLEDS/CRS docs/Export- Staff Management Submission Newark.csv" \
+  ".claude/scratch/NJ SLEDS/ref_state_staff_newark.csv"
+
+uv run python \
+  docs/superpowers/nj-sleds-roster/setup/build_ref_state_staff.py \
+  ".claude/scratch/NJ SLEDS/CRS docs/Export- Staff Management Submission Camden.csv" \
+  ".claude/scratch/NJ SLEDS/ref_state_staff_camden.csv"
+
+# Project the state student record export down to audit columns.
+# Run once per region — produces two CSVs.
+uv run python \
+  docs/superpowers/nj-sleds-roster/setup/build_ref_state_student.py \
+  ".claude/scratch/NJ SLEDS/CRS docs/Export- State Student Record Newark.csv" \
+  ".claude/scratch/NJ SLEDS/ref_state_student_newark.csv"
+
+uv run python \
+  docs/superpowers/nj-sleds-roster/setup/build_ref_state_student.py \
+  ".claude/scratch/NJ SLEDS/CRS docs/Export- State Student Record Camden.csv" \
+  ".claude/scratch/NJ SLEDS/ref_state_student_camden.csv"
 ```
+
+The Staff/Student Course Roster extracts come straight from PowerSchool per
+region (no prep script needed — just copy them to stable filenames as shown in
+Step 2).
 
 Expected output:
 
 - `build_ref_sced_codes.py`: prints `wrote <N> SCED rows` where N is roughly
   2,060 (approximately 600 prior-to-secondary plus 1,460 secondary).
-- `build_ref_state_staff.py`: prints `wrote 1053 staff rows (24 cols, no SSN)`.
-  Confirm the output header contains no `SocialSecurityNumber` column.
+- `build_ref_state_staff.py` (each run): prints
+  `wrote <N> staff rows (24 cols, no SSN)`. Confirm the output header contains
+  no `SocialSecurityNumber` column.
+- `build_ref_state_student.py` (each run): prints `wrote <N> student rows`.
 
-### Step 2 — load all four tables into BigQuery
+### Step 2 — load region base tables and create union views
 
-All four tables use **explicit STRING schemas**. Do not use `--autodetect` for
+#### Why this load shape (not append)
+
+Loading per-region base tables and unioning them into views keeps re-loads
+clean: each `--replace` overwrites only one region's base table, and the views
+auto-update — appending (`--noreplace`) would double-load and inflate counts
+each cycle. The `region` column stamped by the view tells the intern which
+PowerSchool instance to fix, which is critical for blank-CDS defects where
+region cannot be inferred from the CDS value alone.
+
+#### Explicit STRING schemas — mandatory
+
+All base tables use **explicit STRING schemas**. Do not use `--autodetect` for
 any table, including the reference tables: autodetect re-coerces zero-padded
 `subject_area`, `course_identifier`, and CDS codes to `INT64` and strips leading
 zeros, breaking the joins in checks 2 and 8.
+
+#### Load the base tables
 
 ```bash
 cd "/workspaces/teamster/.claude/scratch/NJ SLEDS"
 
 # Stable filenames avoid the spaces in the original extract filenames.
-cp "NJ_Staff_Course_Submission (21).csv" staff_extract.csv
-cp "NJ_Student_Course_Submission (13).csv" student_extract.csv
+cp "NJ_Staff_Course_Submission Newark.csv"  staff_extract_newark.csv
+cp "NJ_Staff_Course_Submission Camden.csv"  staff_extract_camden.csv
+cp "NJ_Student_Course_Submission Newark.csv" student_extract_newark.csv
+cp "NJ_Student_Course_Submission Camden.csv" student_extract_camden.csv
 
-BQ=/usr/local/share/google-cloud-sdk/bin/bq
+bq=/usr/local/share/google-cloud-sdk/bin/bq
 
-STAFF="LocalStaffIdentifier:STRING,StaffMemberIdentifier:STRING,FirstName:STRING,LastName:STRING,DateOfBirth:STRING,CountyCodeAssigned:STRING,DistrictCodeAssigned:STRING,SchoolCodeAssigned:STRING,SectionEntryDate:STRING,SectionExitDate:STRING,SubjectArea:STRING,CourseIdentifier:STRING,CourseLevel:STRING,GradeSpan:STRING,AvailableCredit:STRING,CourseSequence:STRING,LocalCourseTitle:STRING,LocalCourseCode:STRING,LocalSectionCode:STRING"
-$BQ load --project_id=teamster-332318 --source_format=CSV --skip_leading_rows=1 \
-  --replace cokafor.stg_staff_extract staff_extract.csv "$STAFF"
+staff_schema="LocalStaffIdentifier:STRING,StaffMemberIdentifier:STRING,\
+FirstName:STRING,LastName:STRING,DateOfBirth:STRING,\
+CountyCodeAssigned:STRING,DistrictCodeAssigned:STRING,SchoolCodeAssigned:STRING,\
+SectionEntryDate:STRING,SectionExitDate:STRING,SubjectArea:STRING,\
+CourseIdentifier:STRING,CourseLevel:STRING,GradeSpan:STRING,\
+AvailableCredit:STRING,CourseSequence:STRING,LocalCourseTitle:STRING,\
+LocalCourseCode:STRING,LocalSectionCode:STRING"
 
-STUDENT="LocalIdentificationNumber:STRING,StateIdentificationNumber:STRING,FirstName:STRING,LastName:STRING,DateOfBirth:STRING,CountyCodeAssigned:STRING,DistrictCodeAssigned:STRING,SchoolCodeAssigned:STRING,SectionEntryDate:STRING,SectionExitDate:STRING,SubjectArea:STRING,CourseIdentifier:STRING,CourseLevel:STRING,GradeSpan:STRING,AvailableCredit:STRING,CourseSequence:STRING,LocalCourseTitle:STRING,LocalCourseCode:STRING,LocalSectionCode:STRING,CreditsEarned:STRING,NumericGradeEarned:STRING,AlphaGradeEarned:STRING,CompletionStatus:STRING,CourseType:STRING,DualInstitution:STRING"
-$BQ load --project_id=teamster-332318 --source_format=CSV --skip_leading_rows=1 \
-  --replace cokafor.stg_student_extract student_extract.csv "$STUDENT"
+$bq load --project_id=teamster-332318 --source_format=CSV \
+  --skip_leading_rows=1 --replace \
+  cokafor.stg_staff_extract_newark staff_extract_newark.csv "$staff_schema"
 
-SCED="sced_level:STRING,sced_code:STRING,subject_area:STRING,course_identifier:STRING,subject_area_name:STRING,sced_course_name:STRING"
-$BQ load --project_id=teamster-332318 --source_format=CSV --skip_leading_rows=1 \
-  --replace cokafor.ref_sced_codes ref_sced_codes.csv "$SCED"
+$bq load --project_id=teamster-332318 --source_format=CSV \
+  --skip_leading_rows=1 --replace \
+  cokafor.stg_staff_extract_camden staff_extract_camden.csv "$staff_schema"
 
-STATE="LocalStaffIdentifier:STRING,StaffMemberIdentifier:STRING,FirstName:STRING,MiddleName:STRING,LastName:STRING,DateofBirth:STRING,CountyCodeAssigned1:STRING,CountyCodeAssigned2:STRING,CountyCodeAssigned3:STRING,CountyCodeAssigned4:STRING,CountyCodeAssigned5:STRING,CountyCodeAssigned6:STRING,DistrictCodeAssigned1:STRING,DistrictCodeAssigned2:STRING,DistrictCodeAssigned3:STRING,DistrictCodeAssigned4:STRING,DistrictCodeAssigned5:STRING,DistrictCodeAssigned6:STRING,SchoolCodeAssigned1:STRING,SchoolCodeAssigned2:STRING,SchoolCodeAssigned3:STRING,SchoolCodeAssigned4:STRING,SchoolCodeAssigned5:STRING,SchoolCodeAssigned6:STRING"
-$BQ load --project_id=teamster-332318 --source_format=CSV --skip_leading_rows=1 \
-  --replace cokafor.ref_state_staff ref_state_staff.csv "$STATE"
+student_schema="LocalIdentificationNumber:STRING,StateIdentificationNumber:STRING,\
+FirstName:STRING,LastName:STRING,DateOfBirth:STRING,\
+CountyCodeAssigned:STRING,DistrictCodeAssigned:STRING,SchoolCodeAssigned:STRING,\
+SectionEntryDate:STRING,SectionExitDate:STRING,SubjectArea:STRING,\
+CourseIdentifier:STRING,CourseLevel:STRING,GradeSpan:STRING,\
+AvailableCredit:STRING,CourseSequence:STRING,LocalCourseTitle:STRING,\
+LocalCourseCode:STRING,LocalSectionCode:STRING,CreditsEarned:STRING,\
+NumericGradeEarned:STRING,AlphaGradeEarned:STRING,CompletionStatus:STRING,\
+CourseType:STRING,DualInstitution:STRING"
+
+$bq load --project_id=teamster-332318 --source_format=CSV \
+  --skip_leading_rows=1 --replace \
+  cokafor.stg_student_extract_newark student_extract_newark.csv "$student_schema"
+
+$bq load --project_id=teamster-332318 --source_format=CSV \
+  --skip_leading_rows=1 --replace \
+  cokafor.stg_student_extract_camden student_extract_camden.csv "$student_schema"
+
+sced_schema="sced_level:STRING,sced_code:STRING,subject_area:STRING,\
+course_identifier:STRING,subject_area_name:STRING,sced_course_name:STRING"
+
+$bq load --project_id=teamster-332318 --source_format=CSV \
+  --skip_leading_rows=1 --replace \
+  cokafor.ref_sced_codes ref_sced_codes.csv "$sced_schema"
+
+state_staff_schema="LocalStaffIdentifier:STRING,StaffMemberIdentifier:STRING,\
+FirstName:STRING,MiddleName:STRING,LastName:STRING,DateofBirth:STRING,\
+CountyCodeAssigned1:STRING,CountyCodeAssigned2:STRING,\
+CountyCodeAssigned3:STRING,CountyCodeAssigned4:STRING,\
+CountyCodeAssigned5:STRING,CountyCodeAssigned6:STRING,\
+DistrictCodeAssigned1:STRING,DistrictCodeAssigned2:STRING,\
+DistrictCodeAssigned3:STRING,DistrictCodeAssigned4:STRING,\
+DistrictCodeAssigned5:STRING,DistrictCodeAssigned6:STRING,\
+SchoolCodeAssigned1:STRING,SchoolCodeAssigned2:STRING,\
+SchoolCodeAssigned3:STRING,SchoolCodeAssigned4:STRING,\
+SchoolCodeAssigned5:STRING,SchoolCodeAssigned6:STRING"
+
+$bq load --project_id=teamster-332318 --source_format=CSV \
+  --skip_leading_rows=1 --replace \
+  cokafor.ref_state_staff_newark ref_state_staff_newark.csv "$state_staff_schema"
+
+$bq load --project_id=teamster-332318 --source_format=CSV \
+  --skip_leading_rows=1 --replace \
+  cokafor.ref_state_staff_camden ref_state_staff_camden.csv "$state_staff_schema"
+
+state_student_schema="LocalIdentificationNumber:STRING,\
+StateIdentificationNumber:STRING,FirstName:STRING,LastName:STRING,\
+DateOfBirth:STRING"
+
+$bq load --project_id=teamster-332318 --source_format=CSV \
+  --skip_leading_rows=1 --replace \
+  cokafor.ref_state_student_newark ref_state_student_newark.csv \
+  "$state_student_schema"
+
+$bq load --project_id=teamster-332318 --source_format=CSV \
+  --skip_leading_rows=1 --replace \
+  cokafor.ref_state_student_camden ref_state_student_camden.csv \
+  "$state_student_schema"
 ```
+
+#### Create the union views
+
+Run these `CREATE OR REPLACE VIEW` statements in the BigQuery console query
+editor — no terminal needed. The views union the two region base tables and
+stamp a `region` column. All 17 checks query these view names unchanged.
+
+```sql
+create or replace view `teamster-332318.cokafor.stg_student_extract` as
+select *, 'newark' as region
+from `teamster-332318.cokafor.stg_student_extract_newark`
+union all
+select *, 'camden' as region
+from `teamster-332318.cokafor.stg_student_extract_camden`;
+```
+
+Apply the same pattern to create the remaining three views:
+
+```sql
+create or replace view `teamster-332318.cokafor.stg_staff_extract` as
+select *, 'newark' as region
+from `teamster-332318.cokafor.stg_staff_extract_newark`
+union all
+select *, 'camden' as region
+from `teamster-332318.cokafor.stg_staff_extract_camden`;
+
+create or replace view `teamster-332318.cokafor.ref_state_staff` as
+select *, 'newark' as region
+from `teamster-332318.cokafor.ref_state_staff_newark`
+union all
+select *, 'camden' as region
+from `teamster-332318.cokafor.ref_state_staff_camden`;
+
+create or replace view `teamster-332318.cokafor.ref_state_student` as
+select *, 'newark' as region
+from `teamster-332318.cokafor.ref_state_student_newark`
+union all
+select *, 'camden' as region
+from `teamster-332318.cokafor.ref_state_student_camden`;
+```
+
+`ref_sced_codes` is a single statewide table — no union view needed.
 
 ### Step 3 — verify row counts
 
-Run this in the BigQuery console to confirm all four tables loaded correctly:
+Run this in the BigQuery console to confirm all views are non-empty:
 
 ```sql
 select 'staff' as t, count(*) as n
@@ -168,13 +313,15 @@ from `teamster-332318.cokafor.stg_student_extract`
 union all select 'sced', count(*)
 from `teamster-332318.cokafor.ref_sced_codes`
 union all select 'state_staff', count(*)
-from `teamster-332318.cokafor.ref_state_staff`;
+from `teamster-332318.cokafor.ref_state_staff`
+union all select 'state_student', count(*)
+from `teamster-332318.cokafor.ref_state_student`;
 ```
 
-Expected (current Newark sample): `staff` = 291, `student` = 3581, `state_staff`
-= 1053, `sced` ≈ 2060. These counts are not invariants — they change every cycle
-as you re-load fresh extracts; the check is that each table is non-empty and in
-the right order of magnitude, not that it hits these exact numbers.
+Expected (current Newark sample only): `staff` ≈ 291, `student` ≈ 3,581,
+`state_staff` ≈ 1,053, `sced` ≈ 2,060. With both regions loaded, counts will be
+roughly double. These are not invariants — they change every cycle; the check is
+that each table is non-empty and in the right order of magnitude.
 
 Also confirm leading zeros survived — run:
 
@@ -637,11 +784,13 @@ Clean. Re-run against `stg_student_extract` before submission._
 
 ## Group C — student field validity
 
-The two checks below validate student-specific identity and CDS fields in
-`cokafor.stg_student_extract` (3,581 rows). Check 11 flags students whose state
-ID is missing or malformed; check 12 flags CDS combinations not on the approved
-list. **Before running these checks, also re-run Group B checks 7–10 against
-`stg_student_extract`** by swapping `stg_staff_extract` for
+The three checks below validate student-specific identity and CDS fields in
+`cokafor.stg_student_extract` (3,581 rows for the Newark sample). Check 11 flags
+students whose state ID is missing or malformed; check 12 flags students whose
+identity tuple in the course extract does not match the state's student record
+(the combination-error spine check); check 13 flags CDS combinations not on the
+approved list. **Before running these checks, also re-run Group B checks 7–10
+against `stg_student_extract`** by swapping `stg_staff_extract` for
 `stg_student_extract` in each query — the Group B intro explains the swap. All
 course/section columns are present in both extracts.
 
@@ -681,7 +830,70 @@ where StateIdentificationNumber is null
 _Validation result (2025-26 Newark sample): 0 rows — all 3,581 students carry a
 10-digit numeric `StateIdentificationNumber`. Clean._
 
-### Check 12 — student CDS code validity (known defect)
+### Check 12 — student combination-error predictor (spine check)
+
+**What it catches:** Students in the course roster whose identity tuple
+(`StateIdentificationNumber`, `FirstName`, `LastName`, `DateOfBirth`) does not
+match the state's student record in `ref_state_student`. Like the staff spine
+check (check 2), these are the mismatches that block a student's roster lines.
+
+**Why it happens:** A name or DOB corrected in the SIS but not propagated to the
+state student record (or vice versa), or a local ID not yet linked to the right
+state record.
+
+**How to fix:** For name/DOB mismatches, compare the course-extract value to the
+state value and correct whichever source is wrong; escalate state-record
+corrections to the registrar / NJ SMART, and SIS-side values in PowerSchool.
+
+**Owner:** Registrar / SIS (state record); Data team (extract corrections).
+
+**Note:** `DateOfBirth` is `YYYYMMDD` in both `stg_student_extract` and
+`ref_state_student` (capital `O` in both) — compare directly, no normalization.
+Join on `LocalIdentificationNumber`; if `ref_state_student` has duplicate local
+IDs (a state-record quirk — the sample had 3), dedup it first.
+
+```sql
+with extract_student as (
+  select distinct
+    LocalIdentificationNumber,
+    StateIdentificationNumber,
+    FirstName,
+    LastName,
+    DateOfBirth,
+  from `teamster-332318.cokafor.stg_student_extract`
+)
+select
+  e.LocalIdentificationNumber,
+  e.StateIdentificationNumber,
+  e.FirstName,
+  e.LastName,
+  case
+    when r.LocalIdentificationNumber is null then 'no local-ID match in state'
+    when e.StateIdentificationNumber != r.StateIdentificationNumber
+      then 'SID mismatch'
+    when upper(e.FirstName) != upper(r.FirstName) then 'first name mismatch'
+    when upper(e.LastName) != upper(r.LastName) then 'last name mismatch'
+    when e.DateOfBirth != r.DateOfBirth then 'DOB mismatch'
+  end as mismatch_reason,
+from extract_student as e
+left join (
+  select *
+  from `teamster-332318.cokafor.ref_state_student`
+  qualify row_number() over (partition by LocalIdentificationNumber) = 1
+) as r
+  on e.LocalIdentificationNumber = r.LocalIdentificationNumber
+where r.LocalIdentificationNumber is null
+  or e.StateIdentificationNumber != r.StateIdentificationNumber
+  or upper(e.FirstName) != upper(r.FirstName)
+  or upper(e.LastName) != upper(r.LastName)
+  or e.DateOfBirth != r.DateOfBirth;
+```
+
+_Validation result (2025-26 Newark sample): 12 students flagged — 5 last-name, 5
+DOB, and 2 first-name mismatches; all 578 distinct course students otherwise
+matched the state record by local ID._
+
+### Check 13 — student CDS code validity (known defect)
 
 **What it catches:** Rows whose `CountyCodeAssigned` / `DistrictCodeAssigned` /
 `SchoolCodeAssigned` combination is not on the approved list for this
@@ -754,7 +966,7 @@ removing the phantom section. Do not edit the extract file directly to mask
 these gaps; doing so breaks the audit trail and may cause downstream SLEDS
 reconciliation errors.
 
-### Check 13 — sections with a staff row but no enrolled students
+### Check 14 — sections with a staff row but no enrolled students
 
 **What it catches:** `LocalSectionCode` values that appear in
 `stg_staff_extract` (a teacher is assigned) but have no matching row in
@@ -798,7 +1010,7 @@ to it; the remaining 12 are "General Elective Gr5" sections (`SEM72250G1`) with
 no enrolled students. All are staff-only orphans requiring investigation in
 PowerSchool._
 
-### Check 14 — sections with enrolled students but no teacher
+### Check 15 — sections with enrolled students but no teacher
 
 **What it catches:** `LocalSectionCode` values that appear in
 `stg_student_extract` (students are enrolled) but have no matching row in
@@ -838,23 +1050,23 @@ group by sd.LocalSectionCode;
 _Validation result (2025-26 Newark sample): 0 rows — every section with enrolled
 students has at least one teacher row in the staff extract. Clean._
 
-### Check 15 — full-outer-join parity summary
+### Check 16 — full-outer-join parity summary
 
-**What it catches:** The combined view of checks 13 and 14. A full outer join
+**What it catches:** The combined view of checks 14 and 15. A full outer join
 across the two extracts' distinct `LocalSectionCode` sets, filtered to only
 one-sided sections, shows at a glance which sections are staff-only
 (`in_staff_extract = true`, `in_student_extract = false`) and which are
 student-only (`in_staff_extract = false`, `in_student_extract = true`). This is
 the single query to run when you want a complete picture of cross-extract
-mismatches without running checks 13 and 14 separately.
+mismatches without running checks 14 and 15 separately.
 
-**Why it matters:** Checks 13 and 14 each catch one side of the mismatch. Check
-15 is the union of both — it confirms the total count of orphan sections and
-makes it easy to verify that fixes applied after checks 13 and 14 have fully
-closed the gap (when check 15 returns 0 rows, the two extracts are in parity).
+**Why it matters:** Checks 14 and 15 each catch one side of the mismatch. Check
+16 is the union of both — it confirms the total count of orphan sections and
+makes it easy to verify that fixes applied after checks 14 and 15 have fully
+closed the gap (when check 16 returns 0 rows, the two extracts are in parity).
 
-**How to fix:** Apply the same source-fix-only approach described in checks 13
-and 14: trace each flagged section in PowerSchool and resolve the missing
+**How to fix:** Apply the same source-fix-only approach described in checks 14
+and 15: trace each flagged section in PowerSchool and resolve the missing
 enrollment or teacher assignment at the source. Re-export both extracts together
 and re-run this check until it returns 0 rows.
 
@@ -879,25 +1091,31 @@ where a.LocalSectionCode is null or b.LocalSectionCode is null;
 
 _Validation result (2025-26 Newark sample): 13 rows, all with
 `in_staff_extract = true` and `in_student_extract = false`. This is the expected
-result given that check 13 found 13 distinct staff-only sections and check 14
+result given that check 14 found 13 distinct staff-only sections and check 15
 found 0 student-only sections. The 13 orphan sections must be resolved in
 PowerSchool before submission._
 
 ## Group E — convergence rollup
 
-Check 16 is a single `union all` query that collapses every individual check
+Check 17 is a single `union all` query that collapses every individual check
 into one row per check with a violation count. It is the de-identified artifact
 (counts only, no PII) that feeds the cowork project tracker and the convergence
 tracker: paste the output into the shared sheet each loop so stakeholders can
 watch totals trend toward zero without seeing any student or staff data.
 
-### Check 16 — defect-count rollup
+### Check 17 — defect-count rollup
 
 **What it does:** Runs a representative subset of the Group A–D checks in a
 single query, returning one row per check with its violation count. When all
 counts reach zero, the extract is ready to submit.
 
-**How to extend:** The starter below includes two checks. Before the first
+**Region breakdown:** Because the views now carry a `region` column, you can
+track convergence per region by adding `region` to each inner select and
+grouping by it — or by adding `region` to the outer select. This tells the
+intern which PowerSchool instance needs the fix, which is critical for blank-CDS
+defects where region cannot be inferred from the data alone.
+
+**How to extend:** The starter below includes three checks. Before the first
 convergence loop, extend the `union all` with the remaining checks by copying
 the `where` clause from each individual check above:
 
@@ -915,9 +1133,10 @@ the `where` clause from each individual check above:
 - `B10_domain_violations_staff` — check 10 against `stg_staff_extract`
 - `B10_domain_violations_student` — check 10 rerun against `stg_student_extract`
 - `C11_missing_sid` — check 11's `where` predicate
-- `D13_staff_only_sections` — check 13's left-join
+- `C12_student_combo` — check 12's full left-join `where` predicate
+- `D14_staff_only_sections` — check 14's left-join
   `where sd.LocalSectionCode is null`
-- `D14_student_only_sections` — check 14's left-join
+- `D15_student_only_sections` — check 15's left-join
   `where st.LocalSectionCode is null`
 
 Each new block follows the same shape:
@@ -938,7 +1157,32 @@ from (
     or not regexp_contains(StaffMemberIdentifier, r'^[0-9]{8}$')
 )
 union all
-select 'C12_student_cds', count(*) as violations
+select 'C12_student_combo', count(*) as violations
+from (
+  with extract_student as (
+    select distinct
+      LocalIdentificationNumber,
+      StateIdentificationNumber,
+      FirstName,
+      LastName,
+      DateOfBirth,
+    from `teamster-332318.cokafor.stg_student_extract`
+  )
+  select 1
+  from extract_student as e
+  left join (
+    select * from `teamster-332318.cokafor.ref_state_student`
+    qualify row_number() over (partition by LocalIdentificationNumber) = 1
+  ) as r
+    on e.LocalIdentificationNumber = r.LocalIdentificationNumber
+  where r.LocalIdentificationNumber is null
+    or e.StateIdentificationNumber != r.StateIdentificationNumber
+    or upper(e.FirstName) != upper(r.FirstName)
+    or upper(e.LastName) != upper(r.LastName)
+    or e.DateOfBirth != r.DateOfBirth
+)
+union all
+select 'C13_student_cds', count(*) as violations
 from (
   select 1
   from `teamster-332318.cokafor.stg_student_extract`
@@ -955,12 +1199,13 @@ order by check_name;
 
 _Validation result (2025-26 Newark sample, starter rows only):_
 
-| `check_name`      | `violations` |
-| ----------------- | ------------ |
-| `A1_missing_smid` | 22           |
-| `C12_student_cds` | 1 475        |
+| `check_name`        | `violations` |
+| ------------------- | ------------ |
+| `A1_missing_smid`   | 22           |
+| `C12_student_combo` | 12           |
+| `C13_student_cds`   | 1 475        |
 
-_Both counts match the individual checks above, confirming the rollup logic is
+_All counts match the individual checks above, confirming the rollup logic is
 correct. Extend the `union all` before the first convergence loop._
 
 ### Grade-mapping one-time check
@@ -1040,22 +1285,22 @@ as early as possible in Phase 1 so the compliance team can start immediately.
 ### Convergence tracker tab
 
 Add a tab named `convergence-tracker` to each district Sheet. Paste the output
-of check 16 here at the start of each loop.
+of check 17 here at the start of each loop.
 
 | Column       | Content                                           |
 | ------------ | ------------------------------------------------- |
 | `loop`       | Loop number (1, 2, 3, …)                          |
 | `date`       | Date of this run                                  |
-| `check_name` | From the check-16 rollup (e.g. `A1_missing_smid`) |
+| `check_name` | From the check-17 rollup (e.g. `A1_missing_smid`) |
 | `violations` | Count from the rollup                             |
 
 This is the only tab that feeds the cowork project — it contains counts only, no
 identified data. Share the tab (or a screenshot of it) with the cowork project
 at the start of each state-error triage session.
 
-To break out violations by district or school, extend check 16 to include a
-`district` or `school` grouping column, then use a pivot table here with
-`check_name` as rows and `district` as columns.
+To break out violations by region, add `region` to the select and grouping in
+check 17 (the views now carry a `region` column), then use a pivot table here
+with `check_name` as rows and `region` as columns.
 
 ## Timeline and roles
 
@@ -1108,9 +1353,9 @@ patterns, and draft handoff notes without opening BigQuery.
   and cross-extract parity rules.
 - **SCED code list** — the authority for valid subject-area, course-level, and
   available-credits codes (Groups B checks).
-- **This runbook** — all 16 checks with their SQL, the error taxonomy, and the
+- **This runbook** — all 17 checks with their SQL, the error taxonomy, and the
   remediation steps.
-- **De-identified convergence rollup** — the check-16 counts sheet (error
+- **De-identified convergence rollup** — the check-17 counts sheet (error
   category and count only; no identified rows).
 
 ### What it is used for
