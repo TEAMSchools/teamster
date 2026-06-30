@@ -99,7 +99,10 @@ unit_tests:
   - name: diff_keeps_unmatched_and_changed_drops_identical
     description: >-
       Unmatched student (no Focus row) and student with changed first_name are
-      kept; student whose every populated field matches Focus is dropped.
+      kept; student whose every populated field matches Focus is dropped. Focus
+      stores the legacy language labels (English/Spanish), which the diff
+      normalizes to the FLDOE code (EN/SP) before comparing, so a matching
+      language does not re-emit.
     model: rpt_focus__demographics
     given:
       - input: source("kipptaf_extracts", "rpt_focus__demographics")
@@ -260,7 +263,7 @@ unit_tests:
           select
               8400000002 as student_id,
               'Female [F]' as sex_label,
-              'EN' as language_label,
+              'English' as language_label,
               'No' as ethnicity_hispanic_or_latino_label,
               cast(null as string) as race_american_indian_or_alaska_native_label,
               cast(null as string) as race_asian_label,
@@ -272,7 +275,7 @@ unit_tests:
           select
               8400000003 as student_id,
               'Male [M]' as sex_label,
-              'SP' as language_label,
+              'Spanish' as language_label,
               'Yes' as ethnicity_hispanic_or_latino_label,
               cast(null as string) as race_american_indian_or_alaska_native_label,
               cast(null as string) as race_asian_label,

@@ -6,13 +6,22 @@ with
             s.middle_name,
             s.student_e_mail_address,
 
-            p.language_label,
-
             cast(s.student_id as string) as student_id,
 
             format_date('%Y%m%d', date(s.birthdate)) as dt_birth_focus,
             regexp_extract(p.sex_label, r'\[(.+)\]') as gender_focus,
 
+            -- normalize the legacy LANG label options (English/Spanish) to the
+            -- FLDOE code the export emits, so the language diff compares
+            -- like-for-like; 'EN' and any other value pass through unchanged.
+            case
+                p.language_label
+                when 'English'
+                then 'EN'
+                when 'Spanish'
+                then 'SP'
+                else p.language_label
+            end as language_label,
             case
                 p.ethnicity_hispanic_or_latino_label
                 when 'Yes'
