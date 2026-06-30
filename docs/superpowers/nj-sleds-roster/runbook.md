@@ -555,3 +555,149 @@ students. This is the known defect: `CountyCodeAssigned` is NULL (should be
 corrected in PowerSchool's state-reporting fields before submission. The
 `Alternate_School_Number` fallback hypothesis is ruled out — trace the `732`
 source in the loaded extract and PowerSchool directly._
+
+## Group D — cross-extract parity
+
+The three checks below compare the staff and student extracts against each other
+using `LocalSectionCode` as the join key. A section present in only one extract
+is an orphan: either a teacher is assigned to a section with no enrolled
+students, or students are enrolled in a section with no teacher. Both conditions
+are meaningful signal — they reflect the "noisy PowerSchool extract" problem
+where phantom or misconfigured sections make it through the pull. Returning rows
+from these checks is expected; the goal is to surface the orphans so they can be
+traced and fixed at the source. Run all three checks before every submission.
+
+**Source-fix-only principle:** orphan sections must be resolved in PowerSchool —
+either by enrolling the missing students, assigning the missing teacher, or
+removing the phantom section. Do not edit the extract file directly to mask
+these gaps; doing so breaks the audit trail and may cause downstream SLEDS
+reconciliation errors.
+
+### Check 13 — sections with a staff row but no enrolled students
+
+**What it catches:** `LocalSectionCode` values that appear in
+`stg_staff_extract` (a teacher is assigned) but have no matching row in
+`stg_student_extract` (no students enrolled). SLEDS will reject a teacher
+assignment for a section that carries no enrollment, or the section will appear
+as a zero-enrolment ghost that inflates the district's reported section count.
+
+**Why it happens:** PowerSchool sometimes exports teacher-section assignments
+for sections that were created but never populated — planning sections, dropped
+electives, or sections that were merged into another code without removing the
+original assignment. The "General Elective" pattern in the sample is a common
+culprit.
+
+**How to fix:** For each flagged `LocalSectionCode`, confirm in PowerSchool
+whether the section genuinely has no students. If it is a phantom, inactivate
+the section or remove the teacher assignment in the SIS and re-export. If
+students are enrolled but missing from the extract, investigate the student pull
+filter and correct it there.
+
+**Owner:** School registrar (section enrollment); Data team (extract
+verification).
+
+```sql
+select distinct
+  st.LocalSectionCode,
+  st.LocalCourseCode,
+  st.LocalCourseTitle,
+  st.StaffMemberIdentifier,
+from `teamster-332318.cokafor.stg_staff_extract` as st
+left join (
+  select distinct LocalSectionCode
+  from `teamster-332318.cokafor.stg_student_extract`
+) as sd
+  on st.LocalSectionCode = sd.LocalSectionCode
+where sd.LocalSectionCode is null;
+```
+
+_Validation result (2025-26 Newark sample): 14 rows across 13 distinct sections.
+Section `35253` ("i-Ready Gr5") appears twice because two teachers are assigned
+to it; the remaining 12 are "General Elective Gr5" sections (`SEM72250G1`) with
+no enrolled students. All are staff-only orphans requiring investigation in
+PowerSchool._
+
+### Check 14 — sections with enrolled students but no teacher
+
+**What it catches:** `LocalSectionCode` values that appear in
+`stg_student_extract` (students are enrolled) but have no matching row in
+`stg_staff_extract` (no teacher assigned). A section with enrolled students and
+no teacher cannot be submitted to SLEDS — the state requires a staff record for
+every course section that carries enrollment.
+
+**Why it happens:** A teacher assignment was not entered in PowerSchool, the
+teacher's record failed an earlier extract filter (e.g. a SMID issue from check
+1 caused the row to be excluded), or the section was assigned to a substitute or
+leave-coverage arrangement that the SIS does not capture as a formal assignment.
+
+**How to fix:** For each flagged `LocalSectionCode`, identify who is teaching
+the section and create or correct the teacher assignment in PowerSchool. If the
+root cause is an upstream extract filter (e.g. the teacher's row was excluded
+due to a SMID problem), resolve the upstream check first and re-export both
+extracts together before re-running this check.
+
+**Owner:** School registrar (teacher assignment); Data team (extract
+verification).
+
+```sql
+select
+  sd.LocalSectionCode,
+  any_value(sd.LocalCourseTitle) as course_title,
+  count(distinct sd.LocalIdentificationNumber) as students,
+from `teamster-332318.cokafor.stg_student_extract` as sd
+left join (
+  select distinct LocalSectionCode
+  from `teamster-332318.cokafor.stg_staff_extract`
+) as st
+  on sd.LocalSectionCode = st.LocalSectionCode
+where st.LocalSectionCode is null
+group by sd.LocalSectionCode;
+```
+
+_Validation result (2025-26 Newark sample): 0 rows — every section with enrolled
+students has at least one teacher row in the staff extract. Clean._
+
+### Check 15 — full-outer-join parity summary
+
+**What it catches:** The combined view of checks 13 and 14. A full outer join
+across the two extracts' distinct `LocalSectionCode` sets, filtered to only
+one-sided sections, shows at a glance which sections are staff-only
+(`in_staff_extract = true`, `in_student_extract = false`) and which are
+student-only (`in_staff_extract = false`, `in_student_extract = true`). This is
+the single query to run when you want a complete picture of cross-extract
+mismatches without running checks 13 and 14 separately.
+
+**Why it matters:** Checks 13 and 14 each catch one side of the mismatch. Check
+15 is the union of both — it confirms the total count of orphan sections and
+makes it easy to verify that fixes applied after checks 13 and 14 have fully
+closed the gap (when check 15 returns 0 rows, the two extracts are in parity).
+
+**How to fix:** Apply the same source-fix-only approach described in checks 13
+and 14: trace each flagged section in PowerSchool and resolve the missing
+enrollment or teacher assignment at the source. Re-export both extracts together
+and re-run this check until it returns 0 rows.
+
+**Owner:** School registrar (section setup); Data team (extract verification).
+
+```sql
+select
+  coalesce(a.LocalSectionCode, b.LocalSectionCode) as section,
+  a.LocalSectionCode is not null as in_staff_extract,
+  b.LocalSectionCode is not null as in_student_extract,
+from (
+  select distinct LocalSectionCode
+  from `teamster-332318.cokafor.stg_staff_extract`
+) as a
+full outer join (
+  select distinct LocalSectionCode
+  from `teamster-332318.cokafor.stg_student_extract`
+) as b
+  on a.LocalSectionCode = b.LocalSectionCode
+where a.LocalSectionCode is null or b.LocalSectionCode is null;
+```
+
+_Validation result (2025-26 Newark sample): 13 rows, all with
+`in_staff_extract = true` and `in_student_extract = false`. This is the expected
+result given that check 13 found 13 distinct staff-only sections and check 14
+found 0 student-only sections. The 13 orphan sections must be resolved in
+PowerSchool before submission._
