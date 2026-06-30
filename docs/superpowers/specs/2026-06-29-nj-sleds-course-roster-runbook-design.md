@@ -113,9 +113,10 @@ KTAF's data-privacy posture and the project working conventions:
   so they are PII too: the intern resolves errors row-level in the BigQuery
   console / VS Code, and only the de-identified taxonomy (error type, count,
   which query catches it) goes into the cowork project.
-- The provided Staff Management export (`ref_state_staff`) includes
-  `SocialSecurityNumber`; drop it at load time — the audit never needs it, and
-  it must not land in any table or worklist.
+- The provided Staff Management export (`ref_state_staff`) includes a
+  `SocialSecurityNumber` column, but NJSLEDS masks its values in the export, so
+  it is not a live-PII concern. The projection drops it anyway as hygiene — the
+  audit never needs it, and the loaded table stays scoped to the audit columns.
 
 ## Reference data (setup, in `cokafor`)
 
@@ -132,9 +133,10 @@ combination-error predictor (check 2) a true extract-vs-state diff — catching
 the mismatches that actually error. The six `CountyCodeAssigned` /
 `DistrictCodeAssigned` / `SchoolCodeAssigned` slots in this export are exactly
 the "six values in Staff Management" the Handbook's CDS rule references. The
-export also carries `SocialSecurityNumber`, which **must be dropped at load** —
-the audit needs only `LocalStaffIdentifier`, `StaffMemberIdentifier`,
-`FirstName` / `LastName`, `DateofBirth`, and the six CDS slots.
+export also carries a `SocialSecurityNumber` column (NJSLEDS-masked in the
+export, so not a live-PII concern); the projection drops it as hygiene — the
+audit needs only `LocalStaffIdentifier`, `StaffMemberIdentifier`, `FirstName` /
+`LastName`, `DateofBirth`, and the six CDS slots.
 
 There is **no `ref_cds_codes` table**: the CDS expectation is just two known
 rows (KTAF reports each region under a single County-District-School combo), so

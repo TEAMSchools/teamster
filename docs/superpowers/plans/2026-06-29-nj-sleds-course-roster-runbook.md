@@ -41,8 +41,10 @@ Markdown.
   Claude surface.
 - **PII stays in-tenant.** Row-level data with names/DOB/IDs lives only in
   BigQuery (`cokafor`) and Google Sheets. **Drop `SocialSecurityNumber` at
-  load** — it must never land in any table or worklist. The cowork project gets
-  de-identified categories/counts only.
+  load** as hygiene — NJSLEDS masks its values in the export, so it is not a
+  live-PII concern, but the audit never needs it and the loaded table stays
+  scoped to the audit columns. The cowork project gets de-identified
+  categories/counts only.
 - **Dataset:** all loaded tables and views live in `teamster-332318.cokafor`,
   reading `kipptaf_powerschool.*` read-only.
 - **Load everything as `STRING`.** Autodetect would coerce codes to integers and
@@ -181,8 +183,9 @@ Expected: prints `wrote <N> SCED rows` where N is roughly 600
 # docs/superpowers/nj-sleds-roster/setup/build_ref_state_staff.py
 """Project the NJ SLEDS Staff Management export down to audit columns only.
 
-Explicitly excludes SocialSecurityNumber and all HR/compensation fields so PII
-beyond what the roster audit needs never lands in BigQuery.
+Keeps only the IDs/names/DOB/CDS slots the roster audit needs. The export's
+SocialSecurityNumber column (NJSLEDS-masked, so not live PII) and all
+HR/compensation fields are excluded as hygiene, not as a PII safeguard.
 """
 
 import csv
