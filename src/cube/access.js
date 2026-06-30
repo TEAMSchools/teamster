@@ -9,7 +9,9 @@
 //   - Only sensitive staff fields are gated, by the shared remit
 //     (staff_location_scope ∩ staff_department_scope) plus a per-field scope
 //     enum. The remit constrains rows ONLY when a sensitive field is queried.
-//   - Students keep location-scoped detail/summary + a PII tier.
+//   - Students have a single location-scoped tier: a viewer with a non-none
+//     student_location_scope sees every student view and all fields, PII
+//     included. Location is the only axis (no summary/detail or PII split).
 
 // A query member is "<view>.<member>"; the domain is the leading token.
 const isStudentMember = (member) => member.startsWith("student");
@@ -62,16 +64,6 @@ function queryMembers(query) {
   ];
 }
 
-// "detail" | "summary" | null — by the view-name suffix on the query's members.
-function surfaceOf(query) {
-  for (const m of queryMembers(query)) {
-    const view = m.split(".")[0];
-    if (view.endsWith("_detail")) return "detail";
-    if (view.endsWith("_summary")) return "summary";
-  }
-  return null;
-}
-
 // Column-visibility tiers the views gate on. The staff directory + summary are
 // open to every staff viewer (any resolved row), so a single staff-directory
 // tier covers both staff views; a sensitive tier is added per *_scope != none.
@@ -79,12 +71,12 @@ function buildGroups(row) {
   if (!row) return [];
   const groups = [];
 
-  if (row.student_detail_location_scope !== "none") {
-    groups.push("student-detail", "student-summary");
-  } else if (row.student_summary_location_scope !== "none") {
-    groups.push("student-summary");
+  // Single student tier: any non-none location scope grants every student view
+  // (summary + detail) and all fields, PII included. Row-level scoping is
+  // applied in studentRowFilters.
+  if (row.student_location_scope && row.student_location_scope !== "none") {
+    groups.push("student");
   }
-  if (row.student_pii_scope === "all") groups.push("student-pii");
 
   // Open staff directory + summary for every staff viewer.
   groups.push("staff-directory");
@@ -133,14 +125,10 @@ function departmentScopeFilter(scope, departmentGroup) {
   return { deny: true };
 }
 
-function studentRowFilters(row, surface) {
+function studentRowFilters(row) {
   if (!row) return [DENY_FILTER];
-  const level =
-    surface === "detail"
-      ? row.student_detail_location_scope
-      : row.student_summary_location_scope;
   const loc = locationScopeFilter(
-    level,
+    row.student_location_scope,
     row.region_key,
     row.location_abbreviation,
   );
@@ -260,7 +248,6 @@ module.exports = {
   isStudentMember,
   isStaffMember,
   queryMembers,
-  surfaceOf,
   buildGroups,
   studentRowFilters,
   staffSensitiveFilters,

@@ -17,31 +17,15 @@ models:
           - unique:
               config:
                 severity: error
-      - name: student_summary_location_scope
+      - name: student_location_scope
         data_type: string
-        description: Student aggregate location breadth.
+        description: >-
+          Student data location breadth. A non-none scope grants every student
+          view and all fields, including PII.
         data_tests:
           - accepted_values:
               arguments:
                 values: [network, region, school, none]
-              config:
-                severity: error
-      - name: student_detail_location_scope
-        data_type: string
-        description: Student row-level location breadth.
-        data_tests:
-          - accepted_values:
-              arguments:
-                values: [network, region, school, none]
-              config:
-                severity: error
-      - name: student_pii_scope
-        data_type: string
-        description: Student PII field visibility.
-        data_tests:
-          - accepted_values:
-              arguments:
-                values: [all, none]
               config:
                 severity: error
       - name: staff_location_scope

@@ -3,7 +3,7 @@ models:
     description: >-
       Cube access-control resolution, one row per active primary staff member
       keyed on staff_key. Resolves each person's current role to the student
-      location scopes, the staff sensitive-field remit (location + department),
+      location scope, the staff sensitive-field remit (location + department),
       and the per-field sensitive scopes, derived from the current primary work
       assignment and the Google Sheets access crosswalks (department
       special-access override taking precedence over the role mapping). Read by
@@ -59,12 +59,6 @@ models:
           Viewer's functional department grouping from the rollup crosswalk;
           cube.js filters on this for an own_group department scope.
 
-      - name: department_type
-        data_type: string
-        description: >-
-          instructional or non-instructional, from the department rollup
-          crosswalk; NULL until the data team fills it.
-
       - name: entity
         data_type: string
         description: >-
@@ -82,29 +76,16 @@ models:
           below-rank branch of reporting_chain_or_below_rank. NULL when the role
           does not resolve.
 
-      - name: student_summary_location_scope
+      - name: student_location_scope
         data_type: string
-        description: Student aggregate location breadth.
+        description: >-
+          Student data location breadth — network, region, school, or none. The
+          only gating on student data: a viewer with a non-none scope sees every
+          student view and all fields, including PII.
         data_tests:
           - accepted_values:
               arguments:
                 values: [network, region, school, none]
-
-      - name: student_detail_location_scope
-        data_type: string
-        description: Student row-level location breadth.
-        data_tests:
-          - accepted_values:
-              arguments:
-                values: [network, region, school, none]
-
-      - name: student_pii_scope
-        data_type: string
-        description: Student PII field visibility — all or none.
-        data_tests:
-          - accepted_values:
-              arguments:
-                values: [all, none]
 
       - name: staff_location_scope
         data_type: string

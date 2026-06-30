@@ -1,6 +1,6 @@
 {#-
   One row per active, primary staff member, keyed on staff_key. Resolves each
-  person's current role to the Cube access model: the student location scopes,
+  person's current role to the Cube access model: the student location scope,
   the staff sensitive-field remit (location + department), and the per-field
   sensitive scopes. Read by Cube's contextToGroups (by google_email) to build
   the access group list and the queryRewrite filters; not exposed as a Cube.
@@ -12,13 +12,13 @@
   resolve to no role emit 'none' (deny) rather than NULL.
 
   Role crosswalk fan-out invariant: the cube_access_role sheet must never carry
-  both a wildcard row (entity='any' or department_type='any') and a specific row
-  for the same job_function_code — the matched CTE's LEFT JOIN would produce two
-  rows per affected staff member and the unique test on staff_key would fail CI.
-  The sheet-level unique_combination_of_columns(job_function_code, entity,
-  department_type) test guards exact-duplicate rows but does not prevent the
-  wildcard+specific overlap. Keep wildcard rows as the fallback only; specific
-  rows should fully replace the wildcard for that code, not supplement it.
+  both a wildcard row (entity='any') and a specific row for the same
+  job_function_code — the matched CTE's LEFT JOIN would produce two rows per
+  affected staff member and the unique test on staff_key would fail CI. The
+  sheet-level unique_combination_of_columns(job_function_code, entity) test
+  guards exact-duplicate rows but does not prevent the wildcard+specific overlap.
+  Keep wildcard rows as the fallback only; specific rows should fully replace the
+  wildcard for that code, not supplement it.
 -#}
 with
     -- one current primary work assignment per staff (dedup'd below)
@@ -99,7 +99,6 @@ with
             ca.location_abbreviation,
 
             dr.department_group,
-            dr.department_type,
         from current_assignment as ca
         left join
             {{ ref("stg_google_sheets__people__cube_access_department_rollup") }} as dr
@@ -113,25 +112,14 @@ with
             e.region_key,
             e.location_abbreviation,
             e.department_group,
-            e.department_type,
             e.entity,
             e.job_function_code,
 
             rl.job_function_level,
 
             coalesce(
-                ovr.student_summary_location_scope,
-                rl.student_summary_location_scope,
-                'none'
-            ) as student_summary_location_scope,
-            coalesce(
-                ovr.student_detail_location_scope,
-                rl.student_detail_location_scope,
-                'none'
-            ) as student_detail_location_scope,
-            coalesce(
-                ovr.student_pii_scope, rl.student_pii_scope, 'none'
-            ) as student_pii_scope,
+                ovr.student_location_scope, rl.student_location_scope, 'none'
+            ) as student_location_scope,
 
             coalesce(
                 ovr.staff_location_scope, rl.staff_location_scope, 'none'
@@ -160,7 +148,6 @@ with
             {{ ref("stg_google_sheets__people__cube_access_role") }} as rl
             on e.job_function_code = rl.job_function_code
             and rl.entity in ('any', e.entity)
-            and rl.department_type in ('any', e.department_type)
     )
 
 select
@@ -169,14 +156,11 @@ select
     region_key,
     location_abbreviation,
     department_group,
-    department_type,
     entity,
     job_function_code,
     job_function_level,
 
-    student_summary_location_scope,
-    student_detail_location_scope,
-    student_pii_scope,
+    student_location_scope,
 
     staff_location_scope,
     staff_department_scope,

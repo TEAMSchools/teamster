@@ -298,9 +298,9 @@ Cube resolves each user's access at query time via two BigQuery reads against
 `kipptaf_marts` (no Google Admin Directory API):
 
 1. **`dim_staff_cube_access`** — one row per active+primary staff member, keyed
-   on `google_email`. Carries per-field scope enums
-   (`student_detail_location_scope`, `staff_pii_scope`, etc.) that `cube.js`
-   translates into Cube group strings via `access.buildGroups(row)`.
+   on `google_email`. Carries per-field scope enums (`student_location_scope`,
+   `staff_pii_scope`, etc.) that `cube.js` translates into Cube group strings
+   via `access.buildGroups(row)`.
 2. **`dim_staff_reporting_chain`** — transitive closure of the org tree, keyed
    on `(manager_staff_key, reportee_staff_key)`. Used to resolve the viewer's
    direct and indirect reports for `reporting_chain` and
@@ -315,16 +315,18 @@ list and sees no data (default deny).
 `buildGroups(row)` emits the following tier strings based on the access row's
 scope columns:
 
-| Tier                 | Emitted when                               |
-| -------------------- | ------------------------------------------ |
-| `student-summary`    | `student_summary_location_scope != 'none'` |
-| `student-detail`     | `student_detail_location_scope != 'none'`  |
-| `student-pii`        | `student_pii_scope == 'all'`               |
-| `staff-directory`    | always (every resolved viewer)             |
-| `staff-pii`          | `staff_pii_scope != 'none'`                |
-| `staff-compensation` | `staff_compensation_scope != 'none'`       |
-| `staff-observations` | `staff_observations_scope != 'none'`       |
-| `staff-benefits`     | `staff_benefits_scope != 'none'`           |
+| Tier                 | Emitted when                         |
+| -------------------- | ------------------------------------ |
+| `student`            | `student_location_scope != 'none'`   |
+| `staff-directory`    | always (every resolved viewer)       |
+| `staff-pii`          | `staff_pii_scope != 'none'`          |
+| `staff-compensation` | `staff_compensation_scope != 'none'` |
+| `staff-observations` | `staff_observations_scope != 'none'` |
+| `staff-benefits`     | `staff_benefits_scope != 'none'`     |
+
+The single `student` tier grants every student view (summary + detail) and all
+fields, including PII. Row-level location scoping (network / region / school) is
+applied in `queryRewrite`.
 
 ### Cube Cloud One-Time Setup
 

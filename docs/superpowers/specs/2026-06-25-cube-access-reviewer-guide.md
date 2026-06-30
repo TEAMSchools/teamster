@@ -31,16 +31,14 @@ Cube views use `access_policy` blocks to gate which fields are visible. A staff
 member either has a tier or they do not — there is no partial visibility within
 a tier.
 
-| Tier                 | What it unlocks                                                                              |
-| -------------------- | -------------------------------------------------------------------------------------------- |
-| `staff-directory`    | Every staff member gets this automatically. Name, email, title, location, work contact info. |
-| `staff-pii`          | Personal email, personal cell, date of birth, gender identity, race/ethnicity.               |
-| `staff-compensation` | Compensation fields (no cube/view built yet — reserved).                                     |
-| `staff-observations` | Observation scores and feedback (no cube/view built yet — reserved).                         |
-| `staff-benefits`     | Benefits enrollment data (no cube/view built yet — reserved).                                |
-| `student-summary`    | Aggregate student metrics (ADA, assessment scores by cohort, enrollment counts).             |
-| `student-detail`     | Row-level student data. Includes `student-summary` automatically.                            |
-| `student-pii`        | Student names, contact info, and other direct identifiers.                                   |
+| Tier                 | What it unlocks                                                                                                                                |
+| -------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------- |
+| `staff-directory`    | Every staff member gets this automatically. Name, email, title, location, work contact info.                                                   |
+| `staff-pii`          | Personal email, personal cell, date of birth, gender identity, race/ethnicity.                                                                 |
+| `staff-compensation` | Compensation fields (no cube/view built yet — reserved).                                                                                       |
+| `staff-observations` | Observation scores and feedback (no cube/view built yet — reserved).                                                                           |
+| `staff-benefits`     | Benefits enrollment data (no cube/view built yet — reserved).                                                                                  |
+| `student`            | All student data — every student view (summary + detail), all fields incl. names, contact info, and other direct identifiers. Location-scoped. |
 
 ### Row-level scope (who they can see within a view)
 
@@ -59,8 +57,7 @@ restrictive field in a query wins.
 
 ### Location scope (student and staff)
 
-Used by: `student_summary_location_scope`, `student_detail_location_scope`,
-`staff_location_scope`
+Used by: `student_location_scope`, `staff_location_scope`
 
 | Value     | What rows are returned                     |
 | --------- | ------------------------------------------ |
@@ -99,14 +96,9 @@ all their filters — the intersection is what the viewer sees.
 | `reporting_chain_or_below_rank` | Their reporting chain _plus_ anyone in their remit with a higher `job_function_level` number (i.e. more junior). Level 6 = most junior; level 1 = most senior. |
 | `none`                          | No access to this sensitive field.                                                                                                                             |
 
-### Student PII scope
-
-Used by: `student_pii_scope`
-
-| Value  | Meaning                                                                      |
-| ------ | ---------------------------------------------------------------------------- |
-| `all`  | Student PII fields are visible (subject to the student location row filter). |
-| `none` | Student PII is not visible.                                                  |
+There is no separate student PII scope. A non-`none` `student_location_scope`
+grants the single `student` tier, which sees all student fields (including PII)
+subject only to the location row filter.
 
 ## Department groups (reference)
 
@@ -149,8 +141,8 @@ determine who a viewer can see sensitive data about.
 - **`staff_pii_scope` = `all_in_scope` for HR/Talent**: intentional — HR staff
   need to see PII for their department's staff. Confirm the department override
   row in the spreadsheet covers the right departments.
-- **`student_detail_location_scope` = `none` for a regional ops leader**: may be
-  intentional (ops directors don't need student row data) — check against their
+- **`student_location_scope` = `none` for a regional ops leader**: may be
+  intentional (ops directors don't need student data) — check against their
   role.
 - **`null` `job_function_level`**: the role exists but has no level assigned in
   the role sheet. Access will still be granted from the other scope columns, but

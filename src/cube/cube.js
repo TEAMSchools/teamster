@@ -23,8 +23,8 @@ function nextMidnightEastern() {
 }
 
 // All access-resolution logic (isStudentMember / isStaffMember, group building,
-// per-surface row filters) lives in access.js (pure, unit-tested). cube.js owns
-// only the BigQuery identity reads + cache below.
+// row filters) lives in access.js (pure, unit-tested). cube.js owns only the
+// BigQuery identity reads + cache below.
 
 // Convention for snapshot cubes: cumulative daily flags that overcount without
 // a point-in-time anchor. All snapshot cubes expose these three dimensions.
@@ -128,9 +128,7 @@ module.exports = {
             location_abbreviation,
             department_group,
             job_function_level,
-            student_summary_location_scope,
-            student_detail_location_scope,
-            student_pii_scope,
+            student_location_scope,
             staff_location_scope,
             staff_department_scope,
             staff_pii_scope,
@@ -183,8 +181,7 @@ module.exports = {
     const groups = fresh?.groups ?? [];
 
     // Strip student members entirely when the viewer has no student access.
-    const hasStudentAccess =
-      groups.includes("student-detail") || groups.includes("student-summary");
+    const hasStudentAccess = groups.includes("student");
     if (!hasStudentAccess) {
       query = {
         ...query,
@@ -198,11 +195,10 @@ module.exports = {
     }
 
     const members = access.queryMembers(query);
-    const surface = access.surfaceOf(query);
     const filters = [...(query.filters ?? [])];
 
     if (members.some(access.isStudentMember)) {
-      filters.push(...access.studentRowFilters(row, surface));
+      filters.push(...access.studentRowFilters(row));
     }
     if (members.some(access.isStaffMember)) {
       filters.push(

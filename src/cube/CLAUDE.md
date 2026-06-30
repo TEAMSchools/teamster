@@ -83,13 +83,11 @@ school_calendars) go in `cubes/conformed/`.
 
 Views own access via `access_policy:`. Tier names (short, no prefix):
 
-- **Student detail views** (row-level, contain student identifiers): two policy
-  blocks — `student-detail` with `member_level.excludes` listing PII fields
-  (names, DOB, all `*_student_identifier`, `salesforce_contact_id`), and
-  `student-pii` with `includes: "*"`.
-- **Student summary views** (no direct identifiers, demographic breakdowns
-  only): single `student-summary` block with `includes: "*"`. Add a comment
-  explaining why no PII tier is needed.
+- **Student views** (detail = row-level with identifiers; summary = aggregate
+  breakdowns): single `student` block with `includes: "*"` on every student
+  view. One location-scoped tier — a viewer with student access sees all fields,
+  including PII. No summary/detail or PII split; row-level location scoping is
+  applied in `queryRewrite`.
 - **Staff views**: `staff_summary` uses a single `staff-directory` block with
   `includes: "*"` — aggregate demographics only, no direct identifiers.
   `staff_detail` uses two blocks: `staff-directory` with `includes: "*"` and
@@ -107,10 +105,10 @@ Views own access via `access_policy:`. Tier names (short, no prefix):
   `access_policy` block for them yet. Wire them when those cubes/views are
   built.
 
-When adding a field to a detail view, decide PII status per project CLAUDE.md
-FERPA guidance. If PII, add it to the `excludes` list under the base-tier policy
-block — `student-detail` for student views, `staff-directory` for
-`staff_detail`.
+When adding a sensitive field to `staff_detail`, decide PII status per project
+CLAUDE.md FERPA guidance. If PII, add it to the `excludes` list under the
+`staff-directory` block and wire its per-field scope in `access.js`. Student
+views have no `excludes` — the single `student` tier sees every field.
 
 ## `cube.js` security model
 
@@ -122,20 +120,22 @@ Default-deny, HR-derived, group-driven. Read [`cube.js`](cube.js) and
   `dim_staff_cube_access` (one active+primary row with per-field scope enums)
   and `dim_staff_reporting_chain` (transitive closure of org tree). The access
   row is fed to `access.buildGroups(row)` which emits HR-derived tier strings
-  (e.g. `student-detail`, `staff-directory`, `staff-pii`). Results are cached
-  until next midnight ET.
+  (e.g. `student`, `staff-directory`, `staff-pii`). Results are cached until
+  next midnight ET.
 - **Tier strings** (emitted by `buildGroups`):
-  - `student-summary` / `student-detail` / `student-pii` — student access tiers
+  - `student` — single student access tier, emitted when
+    `student_location_scope` is non-`none`. Grants every student view and all
+    fields, including PII.
   - `staff-directory` — always emitted for any resolved staff viewer (open)
   - `staff-pii` / `staff-compensation` / `staff-observations` / `staff-benefits`
     — emitted when the corresponding `*_scope` column is non-`none`
 - **`queryRewrite`** reads `row` and `reporteeStaffKeys` from the group cache
   (same midnight expiry) and calls two pure helpers:
-  - `access.studentRowFilters(row, surface)` — adds a `locations` filter for
-    student queries: network → no filter, region → `region_key`, school →
-    `abbreviation`, none → deny. `surface` is `"detail"` or `"summary"`.
-    Student-domain dims/measures are stripped first for users with no student
-    access (`student-detail` or `student-summary` absent from groups).
+  - `access.studentRowFilters(row)` — adds a `locations` filter for student
+    queries off `student_location_scope`: network → no filter, region →
+    `region_key`, school → `abbreviation`, none → deny. Student-domain
+    dims/measures are stripped first for users with no student access (the
+    `student` group absent from groups).
   - `access.staffSensitiveFilters(query, row, reporteeStaffKeys)` — per-field
     gating for sensitive `staff_detail.*` members only (ignores
     `staff_summary.*`, which are open aggregates). Resolves each sensitive field

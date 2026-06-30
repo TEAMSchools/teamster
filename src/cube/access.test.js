@@ -13,9 +13,7 @@ const SL = {
   location_abbreviation: "ABC",
   department_group: "Ops",
   job_function_level: 4,
-  student_summary_location_scope: "network",
-  student_detail_location_scope: "school",
-  student_pii_scope: "all",
+  student_location_scope: "school",
   staff_location_scope: "school",
   staff_department_scope: "all",
   staff_pii_scope: "all_in_scope",
@@ -31,23 +29,13 @@ test("isStudentMember / isStaffMember key off the view prefix", () => {
   assert.ok(!a.isStaffMember("student_enrollments_detail.x"));
 });
 
-test("surfaceOf reads the view suffix", () => {
-  assert.equal(
-    a.surfaceOf({ dimensions: ["staff_detail.full_name"] }),
-    "detail",
-  );
-  assert.equal(
-    a.surfaceOf({ measures: ["staff_summary.count_employees"] }),
-    "summary",
-  );
-  assert.equal(a.surfaceOf({ dimensions: ["dates.date_day"] }), null);
-});
-
-test("buildGroups: SL gets student detail+summary+pii and staff directory+pii", () => {
+test("buildGroups: SL gets the single student tier and staff directory+pii", () => {
   const g = a.buildGroups(SL);
-  assert.ok(g.includes("student-detail"));
-  assert.ok(g.includes("student-summary"));
-  assert.ok(g.includes("student-pii"));
+  assert.ok(g.includes("student"));
+  // No summary/detail/pii split — one student tier.
+  assert.ok(!g.includes("student-detail"));
+  assert.ok(!g.includes("student-summary"));
+  assert.ok(!g.includes("student-pii"));
   assert.ok(g.includes("staff-directory"));
   assert.ok(g.includes("staff-pii"));
   // No detail/summary split on the open staff surface.
@@ -74,9 +62,7 @@ test("buildGroups: a sensitive tier is emitted per scope != none", () => {
 test("buildGroups: directory is open to every staff viewer, even full-deny", () => {
   const denied = {
     ...SL,
-    student_summary_location_scope: "none",
-    student_detail_location_scope: "none",
-    student_pii_scope: "none",
+    student_location_scope: "none",
     staff_location_scope: "none",
     staff_department_scope: "none",
     staff_pii_scope: "none",
@@ -90,39 +76,45 @@ test("buildGroups: staff_pii_scope none → directory but no pii tier", () => {
   assert.ok(!g.includes("staff-pii"));
 });
 
-test("buildGroups: summary-only student viewer gets no student-detail", () => {
-  const g = a.buildGroups({
-    ...SL,
-    student_detail_location_scope: "none",
-    student_pii_scope: "none",
-  });
-  assert.ok(g.includes("student-summary"));
-  assert.ok(!g.includes("student-detail"));
-  assert.ok(!g.includes("student-pii"));
+test("buildGroups: student_location_scope none → no student tier", () => {
+  const g = a.buildGroups({ ...SL, student_location_scope: "none" });
+  assert.ok(!g.includes("student"));
+  assert.ok(g.includes("staff-directory"));
 });
 
 test("buildGroups: null row → no groups", () => {
   assert.deepEqual(a.buildGroups(null), []);
 });
 
-test("studentRowFilters: detail=school → abbreviation filter", () => {
-  assert.deepEqual(a.studentRowFilters(SL, "detail"), [
+test("studentRowFilters: school → abbreviation filter", () => {
+  assert.deepEqual(a.studentRowFilters(SL), [
     { member: "locations.abbreviation", operator: "equals", values: ["ABC"] },
   ]);
 });
 
-test("studentRowFilters: summary=network → no filter", () => {
-  assert.deepEqual(a.studentRowFilters(SL, "summary"), []);
+test("studentRowFilters: region → region_key filter", () => {
+  assert.deepEqual(
+    a.studentRowFilters({ ...SL, student_location_scope: "region" }),
+    [{ member: "locations.region_key", operator: "equals", values: ["R1"] }],
+  );
+});
+
+test("studentRowFilters: network → no filter", () => {
+  assert.deepEqual(
+    a.studentRowFilters({ ...SL, student_location_scope: "network" }),
+    [],
+  );
 });
 
 test("studentRowFilters: none → deny", () => {
   assert.deepEqual(
-    a.studentRowFilters(
-      { ...SL, student_detail_location_scope: "none" },
-      "detail",
-    ),
+    a.studentRowFilters({ ...SL, student_location_scope: "none" }),
     [a.DENY_FILTER],
   );
+});
+
+test("studentRowFilters: null row → deny", () => {
+  assert.deepEqual(a.studentRowFilters(null), [a.DENY_FILTER]);
 });
 
 // ---- staffSensitiveFilters: the open directory + per-field gating ----

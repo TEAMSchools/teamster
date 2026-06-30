@@ -184,9 +184,8 @@ views:
             - is_dropped_course
 
     access_policy:
-      # No PII tier — view contains no direct student identifiers.
-      # Demographic dimensions (race, gender_identity, etc.) are
-      # aggregate breakdowns only.
-      - group: student-summary
+      # Single student tier — location-scoped via queryRewrite. This view holds
+      # only aggregate breakdowns (no direct identifiers).
+      - group: student
         member_level:
           includes: "*"

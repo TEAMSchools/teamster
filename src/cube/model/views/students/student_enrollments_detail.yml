@@ -134,14 +134,8 @@ views:
             - is_latest_record
 
     access_policy:
-      - group: student-detail
-        member_level:
-          includes: "*"
-          excludes:
-            - full_name
-            - birth_date
-            - lea_student_identifier
-            - state_student_identifier
-      - group: student-pii
+      # Single student tier — location-scoped via queryRewrite. Any viewer with
+      # student access sees all fields, including PII (no separate PII tier).
+      - group: student
         member_level:
           includes: "*"
