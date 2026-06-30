@@ -120,12 +120,13 @@ KTAF's data-privacy posture and the project working conventions:
 
 ## Reference data (setup, in `cokafor`)
 
-| Table                         | Built from                                                                    | Purpose                                                                                                                      |
-| ----------------------------- | ----------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------- |
-| `cokafor.stg_staff_extract`   | loaded Staff CSV                                                              | the staff extract under audit                                                                                                |
-| `cokafor.stg_student_extract` | loaded Student CSV                                                            | the student extract under audit                                                                                              |
-| `cokafor.ref_sced_codes`      | `NJSLEDS_SCED-Course-Codes.xlsx`                                              | valid `SubjectArea` + `CourseIdentifier`, prior-to-secondary vs secondary flag                                               |
-| `cokafor.ref_state_staff`     | NJ SLEDS Staff Management Submission export (provided; 85 cols, ~1,053 staff) | the state's current staff record, to diff against the staff extract (check 2); load IDs/names/DOB/six CDS slots, exclude SSN |
+| Table                         | Built from                                                                    | Purpose                                                                                                                                                                                    |
+| ----------------------------- | ----------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `cokafor.stg_staff_extract`   | loaded Staff CSV                                                              | the staff extract under audit                                                                                                                                                              |
+| `cokafor.stg_student_extract` | loaded Student CSV                                                            | the student extract under audit                                                                                                                                                            |
+| `cokafor.ref_sced_codes`      | `NJSLEDS_SCED-Course-Codes.xlsx`                                              | valid `SubjectArea` + `CourseIdentifier`, prior-to-secondary vs secondary flag                                                                                                             |
+| `cokafor.ref_state_staff`     | NJ SLEDS Staff Management Submission export (provided; 85 cols, ~1,053 staff) | the state's current staff record, to diff against the staff extract (check 2); load IDs/names/DOB/six CDS slots, exclude SSN                                                               |
+| `cokafor.ref_state_student`   | NJ SLEDS Student Submission export (provided; ~100 cols)                      | the state's current student record, to diff against the student extract (check 12, the student spine check); load IDs/names/DOB/attending CDS + grade, drop all demographic/program fields |
 
 `ref_state_staff` is sourced from the NJ SLEDS Staff Management Submission
 export (now provided — an 85-column CSV with ~1,053 staff). It makes the
@@ -137,6 +138,16 @@ export also carries a `SocialSecurityNumber` column (NJSLEDS-masked in the
 export, so not a live-PII concern); the projection drops it as hygiene — the
 audit needs only `LocalStaffIdentifier`, `StaffMemberIdentifier`, `FirstName` /
 `LastName`, `DateofBirth`, and the six CDS slots.
+
+**Two regions, one view per table.** Newark and Camden run separate PowerSchool
+instances, so each extract and each state export arrives as two CSVs. They load
+into per-region base tables (`*_newark`, `*_camden`, all `STRING`) and a
+`CREATE OR REPLACE VIEW` per logical table unions them and stamps a `region`
+column; the checks query the view names unchanged. This beats appending on
+upload — each cycle's re-load overwrites one region's base table cleanly (no
+double-load), and `region` routes each defect to the right PowerSchool instance,
+which matters most for the blank-CDS rows where region can't be inferred from
+the data. `ref_sced_codes` is statewide and stays a single table.
 
 There is **no `ref_cds_codes` table**: the CDS expectation is just two known
 rows (KTAF reports each region under a single County-District-School combo), so
@@ -209,8 +220,15 @@ This is the "valid SCED codes for every course" audit.
 
 - **11. Missing/invalid SID** (`State_StudentNumber`). Fix-owner: intern /
   compliance.
-- **12. Same SCED / date / CDS checks** as staff, student-side. The sample
-  extract _file_ (not yet in BigQuery) fails the Newark CDS rule (blank
+- **Combination-error predictor (student spine)** — diff the student extract
+  against `ref_state_student` on SID + name + DOB (the student analog of staff
+  check 2); the mismatches that block a student's roster lines. Fix-owner:
+  registrar / SIS + data team. _(Added after the state Student Submission export
+  was provided; the canonical, renumbered check list lives in the runbook — this
+  check is Check 12 there, shifting the CDS and parity checks down by one to a
+  17-check total.)_
+- **Same SCED / date / CDS checks** as staff, student-side. The sample extract
+  _file_ (not yet in BigQuery) fails the Newark CDS rule (blank
   `CountyCodeAssigned`, and `SchoolCodeAssigned` of `732` instead of `965`). The
   root cause is unconfirmed and must be traced once the extract is loaded. Note:
   the warehouse shows every Newark school carrying
