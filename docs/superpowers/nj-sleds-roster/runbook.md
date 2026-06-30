@@ -1444,12 +1444,18 @@ _Validation result (2025-26 EOY): 3 students (Newark 1, Camden 2)._
 
 ### Staff — populate the SMID, with override fields
 
-Staff are finicky: a staff member missing an SMID may also need their local ID
-or name **overridden** in PowerSchool's state-reporting fields so the
-regenerated extract matches NJ SLEDS exactly. This query supplies all of it in
-one row. It matches the NJ SLEDS record by local staff ID first, then by name +
-DOB (so it still finds the person when the local ID has drifted), and populates
-an override column **only when that field actually differs**:
+Staff are the finicky case, and **keying this upload wrong can create duplicate
+user records in PowerSchool** — multiple rows in the users table for one staff
+member, which is a host-level cleanup. To make the import match the existing
+record instead of inserting a new one, every row carries the staff member's
+**home school**, with a `schoolid` set **identical to `homeschoolid`**. Never
+upload a row whose `homeschoolid` is blank (see the validation note) — resolve
+the home school by hand first, or you reintroduce the duplicate risk.
+
+This query supplies everything in one row. It matches the NJ SLEDS record by
+local staff ID first, then by name + DOB (so it still finds the person when the
+local ID has drifted), populates an override column **only when that field
+actually differs**, and attaches the home school from PowerSchool:
 
 - `njsleds_smid` — the SMID to enter (the staff is missing it).
 - `override_local_id` — set only when NJ SLEDS' local ID differs from
@@ -1457,8 +1463,14 @@ an override column **only when that field actually differs**:
 - `override_first_name` / `override_last_name` — set only when the PowerSchool
   name differs from NJ SLEDS; these are the name overrides to add so the
   combination check (check 2) passes.
+- `homeschoolid` / `schoolid` — the staff member's home school, with `schoolid`
+  forced identical to `homeschoolid`. These two are what prevent the
+  duplicate-record insert.
 
-A blank override column means leave that field unchanged.
+A blank override column means leave that field unchanged. The home school is
+resolved to one value per teacher (the non-zero `homeschoolid` from their
+PowerSchool record), so the join cannot multiply rows — which would itself be
+the duplicate problem.
 
 ```sql
 with missing as (
@@ -1480,6 +1492,17 @@ state_by_name as (
     row_number()
       over (partition by upper(FirstName), upper(LastName), DateofBirth, region) = 1
 ),
+home_school as (
+  select
+    case regexp_extract(_dbt_source_relation, r'(kipp\w+)_powerschool')
+      when 'kippnewark' then 'newark'
+      when 'kippcamden' then 'camden'
+    end as region,
+    teachernumber,
+    max(nullif(homeschoolid, 0)) as homeschoolid,
+  from `teamster-332318.kipptaf_powerschool.int_powerschool__teachers`
+  group by region, teachernumber
+),
 matched as (
   select
     m.region,
@@ -1490,6 +1513,7 @@ matched as (
     coalesce(l.LocalStaffIdentifier, n.LocalStaffIdentifier) as state_lsid,
     coalesce(l.FirstName, n.FirstName) as state_first,
     coalesce(l.LastName, n.LastName) as state_last,
+    h.homeschoolid,
   from missing as m
   left join state_by_lsid as l
     on m.LocalStaffIdentifier = l.LocalStaffIdentifier
@@ -1499,6 +1523,9 @@ matched as (
     and upper(m.LastName) = upper(n.LastName)
     and m.DateOfBirth = n.DateofBirth
     and m.region = n.region
+  left join home_school as h
+    on m.region = h.region
+    and m.LocalStaffIdentifier = h.teachernumber
 )
 select
   region,
@@ -1511,15 +1538,19 @@ select
     as override_first_name,
   if(upper(state_last) != upper(ps_last_name), state_last, null)
     as override_last_name,
+  homeschoolid,
+  homeschoolid as schoolid,
 from matched
 where njsleds_smid is not null;
 ```
 
-_Validation result (2025-26 EOY): 181 staff populatable (Newark 138, Camden 43);
-of those 3 need a local-ID override, 7 a first-name override, 7 a last-name
-override. A further 13 staff (Newark 10, Camden 3) are missing an SMID and match
-NJ SLEDS on no key at all — they are **not** in this list; they need a new SMID
-generated (the compliance handoff, not a populate)._
+_Validation result (2025-26 EOY): 181 staff populatable (Newark 138, Camden 43),
+one row each — no row multiplication. Of those, 3 need a local-ID override, 7 a
+first-name override, 7 a last-name override; and **3 have no home school set in
+PowerSchool** (`homeschoolid` blank) — exclude those from the bulk upload and
+set the home school by hand. A further 13 staff (Newark 10, Camden 3) match NJ
+SLEDS on no key at all — they need a new SMID generated (the compliance
+handoff), not a populate._
 
 ## Course SCED completeness — an upload file that fills gaps without blanking
 
