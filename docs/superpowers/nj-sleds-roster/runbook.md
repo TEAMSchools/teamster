@@ -1521,6 +1521,84 @@ override. A further 13 staff (Newark 10, Camden 3) are missing an SMID and match
 NJ SLEDS on no key at all — they are **not** in this list; they need a new SMID
 generated (the compliance handoff, not a populate)._
 
+## Course SCED completeness — an upload file that fills gaps without blanking
+
+Accurate SCED and level codes on every course are a prerequisite for the whole
+submission. This query produces a **course-level upload file** to populate the
+missing pieces — and its key behavior is that it **carries forward every value
+that already exists** so a course import never overwrites a good field with a
+blank. The example case the network hits: a course already has its grade range
+but not its subject; the file keeps the grade range in place and leaves only the
+subject blank to fill, then applies the same rule to every SCED field.
+
+How the preserve logic works: a course can span many section rows, and a value
+might be set on some and blank on others. For each field the query takes
+`max(nullif(<field>, ''))` — any non-blank value found on **any** of the
+course's rows is carried forward, and a cell is blank **only when the field is
+missing everywhere**. One row per course, and only courses still missing a
+required element (`SubjectArea`, `CourseIdentifier`, `CourseLevel`) are listed;
+the `fill_in` column names what's left to enter.
+
+```sql
+with course_rows as (
+  select
+    region, LocalCourseCode, LocalCourseTitle,
+    SubjectArea, CourseIdentifier, CourseLevel, GradeSpan, AvailableCredit,
+  from `teamster-332318.cokafor.stg_staff_extract`
+  union all
+  select
+    region, LocalCourseCode, LocalCourseTitle,
+    SubjectArea, CourseIdentifier, CourseLevel, GradeSpan, AvailableCredit,
+  from `teamster-332318.cokafor.stg_student_extract`
+),
+course as (
+  select
+    region,
+    LocalCourseCode,
+    max(nullif(LocalCourseTitle, '')) as LocalCourseTitle,
+    max(nullif(SubjectArea, '')) as SubjectArea,
+    max(nullif(CourseIdentifier, '')) as CourseIdentifier,
+    max(nullif(CourseLevel, '')) as CourseLevel,
+    max(nullif(GradeSpan, '')) as GradeSpan,
+    max(nullif(AvailableCredit, '')) as AvailableCredit,
+  from course_rows
+  group by region, LocalCourseCode
+)
+select
+  region,
+  LocalCourseCode,
+  LocalCourseTitle,
+  SubjectArea,
+  CourseIdentifier,
+  CourseLevel,
+  GradeSpan,
+  AvailableCredit,
+  trim(
+    concat(
+      if(SubjectArea is null, 'SubjectArea ', ''),
+      if(CourseIdentifier is null, 'CourseIdentifier ', ''),
+      if(CourseLevel is null, 'CourseLevel ', '')
+    )
+  ) as fill_in,
+from course
+where SubjectArea is null
+  or CourseIdentifier is null
+  or CourseLevel is null
+order by region, LocalCourseCode;
+```
+
+What to do with it: export to CSV; the populated columns are already correct and
+must stay as-is (that's what stops the overwrite); fill the blank cells named in
+`fill_in` with the correct SCED values from the SCED master / Handbook (a
+missing `SubjectArea` can't be auto-derived — a course identifier maps under
+multiple subjects, so it's a mapping decision), then upload to the course's NJ
+state-reporting fields (`S_NJ_CRS_X`). `CourseSequence` is a section-level
+attribute, not a course one, so it is intentionally excluded here.
+
+_Validation result (2025-26 EOY): 5 courses (Newark 2, Camden 3) missing a
+required element, and no course had conflicting non-blank values across its
+sections — so every carried-forward value is unambiguous._
+
 ## Worklist and tracker sheets
 
 ### Worklist tabs (one per check group)
