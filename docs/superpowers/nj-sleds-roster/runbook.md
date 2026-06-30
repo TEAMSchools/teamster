@@ -519,6 +519,14 @@ within the SY 2025-26 window (`20250701`–`20260630`).
 **Why it happens:** Exit dates entered before the entry date due to data-entry
 error, or an exit date exported in a non-`YYYYMMDD` format.
 
+**Why entry dates aren't validated here:** PowerSchool's UI blocks entry and
+exit dates outside the current school year at the point of entry, so
+out-of-window or malformed _entry_ dates cannot reach the extract — validating
+them would be dead logic. The one ordering error the date pickers don't prevent
+is an exit date that precedes the entry date (two valid in-year dates in the
+wrong order), which is what this check targets. Do not re-add entry-date
+validation thinking it is missing.
+
 **How to fix:** Correct the exit date in the source SIS. Update the window
 constants (`20250701` / `20260630`) each year to the actual first and last
 instructional days.
