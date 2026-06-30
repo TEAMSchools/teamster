@@ -1646,6 +1646,41 @@ _Validation result (2025-26 EOY): 5 courses (Newark 2, Camden 3) missing a
 required element, and no course had conflicting non-blank values across its
 sections — so every carried-forward value is unambiguous._
 
+## Identifying dual-enrollment courses and sections
+
+_Identification is ready; the validation/coding rule is an open item (below)._
+Dual-enrollment courses — high-school courses that also carry college credit —
+are flagged in the extract by `CourseType = 'C'` (the standard type is `S1`),
+and `DualInstitution` names the partner college on those same rows. This query
+lists the distinct dual-enrollment courses and sections so they can be reviewed
+and coded correctly before submission:
+
+```sql
+select distinct
+  region,
+  LocalCourseCode,
+  LocalCourseTitle,
+  LocalSectionCode,
+  CourseType,
+  DualInstitution,
+from `teamster-332318.cokafor.stg_student_extract`
+where CourseType = 'C'
+  or (DualInstitution is not null and DualInstitution != '')
+order by region, LocalCourseCode, LocalSectionCode;
+```
+
+_Validation result (2025-26 EOY): 194 rows — Newark 4 courses / 9 sections,
+Camden 2 courses / 2 sections._
+
+**Open — pending direction.** What the audit should _enforce_ for these is not
+defined yet. Candidate rules to confirm against the Handbook and KTAF practice:
+which `CourseType` value(s) count as dual; whether `DualInstitution` must be
+populated (and to a valid institution) whenever `CourseType = 'C'`; the expected
+`CourseLevel` and `AvailableCredit` for dual courses; and whether the staff side
+needs matching treatment (the staff extract carries neither `CourseType` nor
+`DualInstitution`). Once the rule is set, this graduates from an identification
+list to a validation check.
+
 ## Worklist and tracker sheets
 
 ### Worklist tabs (one per check group)
