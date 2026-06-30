@@ -453,3 +453,105 @@ where CourseLevel not in ('B', 'G', 'E', 'H', 'X')
 _Validation result (2025-26 Newark staff sample): 0 rows — all `CourseLevel`
 values are in the allowed set and all `CourseSequence` values are well-formed.
 Clean. Re-run against `stg_student_extract` before submission._
+
+## Group C — student field validity
+
+The two checks below validate student-specific identity and CDS fields in
+`cokafor.stg_student_extract` (3,581 rows). Check 11 flags students whose state
+ID is missing or malformed; check 12 flags CDS combinations not on the approved
+list. **Before running these checks, also re-run Group B checks 7–10 against
+`stg_student_extract`** by swapping `stg_staff_extract` for
+`stg_student_extract` in each query — the Group B intro explains the swap. All
+course/section columns are present in both extracts.
+
+### Check 11 — missing or invalid student state ID (SID)
+
+**What it catches:** Students whose `StateIdentificationNumber` is NULL, blank,
+or not exactly 10 digits. SLEDS requires a valid 10-digit numeric NJ state
+student ID on every enrollment row; a missing or malformed SID causes the row to
+reject.
+
+**Why it happens:** New students enrolled mid-year before the state has issued
+an ID, or IDs stored as placeholders (e.g. locally-assigned temporary numbers
+that are not 10 digits). PowerSchool's `State_StudentNumber` field is the
+expected source; if it is blank the extract will produce a NULL.
+
+**How to fix:** Look up the student in the NJ Student Learning Registry (NJSLR)
+or contact the state's student data helpdesk to obtain the correct 10-digit SID.
+If the student is newly enrolled and the state ID is pending, hold the row until
+the ID is issued. Do not substitute a local ID or truncate/pad a non-10-digit
+value.
+
+**Owner:** Registrar / school data manager (SID lookup); Data team (extract
+correction).
+
+```sql
+select distinct
+  LocalIdentificationNumber,
+  StateIdentificationNumber,
+  FirstName,
+  LastName,
+from `teamster-332318.cokafor.stg_student_extract`
+where StateIdentificationNumber is null
+  or StateIdentificationNumber = ''
+  or not regexp_contains(StateIdentificationNumber, r'^[0-9]{10}$');
+```
+
+_Validation result (2025-26 Newark sample): 0 rows — all 3,581 students carry a
+10-digit numeric `StateIdentificationNumber`. Clean._
+
+### Check 12 — student CDS code validity (known defect)
+
+**What it catches:** Rows whose `CountyCodeAssigned` / `DistrictCodeAssigned` /
+`SchoolCodeAssigned` combination is not on the approved list for this
+submission. An unexpected CDS combo means the enrollment will be attributed to
+the wrong school in the state system.
+
+**Why it happens:** The same root cause as the staff-side CDS defect in check 6:
+`SchoolCodeAssigned` is populated with `732` instead of the approved Newark code
+`965`, and `CountyCodeAssigned` is NULL instead of `80`. The
+`Alternate_School_Number` fallback hypothesis is ruled out — see the spec. The
+source must be traced in the loaded extract and corrected in PowerSchool's
+state-reporting fields.
+
+**How to fix:** Identify which PowerSchool field populates `SchoolCodeAssigned`
+in the extract and verify whether the value `732` is stored there directly or
+computed. Correct the field to `965` (Newark) or `111` (Camden) for all
+applicable students and re-export. Also populate `CountyCodeAssigned` with `80`
+(Newark) or `07` (Camden) as appropriate. Add new approved CDS combos to the
+`having` allowlist each year as schools are added or codes change.
+
+**Owner:** Data team (CDS mapping and PowerSchool field audit); School ops
+confirms correct NJDOE school codes.
+
+**Note:** The brief's original query uses `rows` as a column alias, which is a
+reserved word in BigQuery. The query below uses `row_count` instead — use this
+corrected version.
+
+**Expected result:** This check is designed to return rows. The `null/7325/732`
+combination below is the known defect; its presence confirms the check is
+working. Do not treat a non-zero result here as a query error — it is the signal
+the check is intended to surface.
+
+```sql
+select
+  CountyCodeAssigned,
+  DistrictCodeAssigned,
+  SchoolCodeAssigned,
+  count(*) as row_count,
+from `teamster-332318.cokafor.stg_student_extract`
+group by 1, 2, 3
+having not (
+  (CountyCodeAssigned = '80' and DistrictCodeAssigned = '7325'
+    and SchoolCodeAssigned = '965')
+  or (CountyCodeAssigned = '07' and DistrictCodeAssigned = '1799'
+    and SchoolCodeAssigned = '111')
+);
+```
+
+_Validation result (2025-26 Newark sample): 1 row — `null/7325/732` with 1,475
+students. This is the known defect: `CountyCodeAssigned` is NULL (should be
+`80`) and `SchoolCodeAssigned` is `732` (should be `965`). Both must be
+corrected in PowerSchool's state-reporting fields before submission. The
+`Alternate_School_Number` fallback hypothesis is ruled out — trace the `732`
+source in the loaded extract and PowerSchool directly._
