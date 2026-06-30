@@ -3,10 +3,10 @@
 -- distinct collapses; not a mask for upstream duplicates.
 select distinct
     least(
-        concat('8400', ida_a.focus_student_id), concat('8400', ida_b.focus_student_id)
+        ida_a.focus_student_id_prefixed, ida_b.focus_student_id_prefixed
     ) as primary_student_id,
     greatest(
-        concat('8400', ida_a.focus_student_id), concat('8400', ida_b.focus_student_id)
+        ida_a.focus_student_id_prefixed, ida_b.focus_student_id_prefixed
     ) as secondary_student_id,
 from {{ ref("stg_finalsite__contact_relationships") }} as rel
 inner join

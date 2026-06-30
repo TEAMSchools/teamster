@@ -1,15 +1,23 @@
 with
-    desired as (
-        select *, from {{ source("kipptaf_extracts", "rpt_focus__student_enrollment") }}
-    ),
-
     decoded as (
         select d.*, dc.short_name as drop_code_decoded,
-        from desired as d
+        from {{ source("kipptaf_extracts", "rpt_focus__student_enrollment") }} as d
         left join
             {{ ref("stg_focus__student_enrollment_codes") }} as dc
-            on d.state_withdraw_label = dc.title
+            on d.drop_code = dc.title
             and dc.type = 'Drop'
+    ),
+
+    -- pre-format the Focus join keys to the export string shapes so the join
+    -- below compares plain columns (no one-sided casts in the ON clause).
+    focus_enrollment as (
+        select
+            enrollment_code,
+            drop_code,
+            cast(student_id as string) as student_id,
+            format_date('%Y%m%d', start_date) as start_date,
+            format_date('%Y%m%d', end_date) as end_date,
+        from {{ ref("stg_focus__student_enrollment") }}
     ),
 
     matched as (
@@ -17,18 +25,14 @@ with
             e.*,
             fe.enrollment_code as focus_enrollment_code,
             fe.drop_code as focus_drop_code,
-            fe.end_date as focus_end_date,
         from decoded as e
         left join
-            {{ ref("stg_focus__student_enrollment") }} as fe
-            on cast(e.student_id as int64) = fe.student_id
-            and e.start_date = format_date('%Y%m%d', fe.start_date)
+            focus_enrollment as fe
+            on e.student_id = fe.student_id
+            and e.start_date = fe.start_date
         where
             fe.student_id is null
-            or (
-                e.end_date is not null
-                and e.end_date is distinct from format_date('%Y%m%d', fe.end_date)
-            )
+            or (e.end_date is not null and e.end_date is distinct from fe.end_date)
     )
 
 -- trunk-ignore(sqlfluff/ST06): column order fixed by Focus STUDENT_ENROLLMENT contract

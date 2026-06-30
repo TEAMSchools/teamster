@@ -1,6 +1,6 @@
 -- trunk-ignore(sqlfluff/ST06): column order fixed by Focus DEMOGRAPHICS contract
 select
-    concat('8400', ida.focus_student_id) as stdt_id,
+    ida.focus_student_id_prefixed as stdt_id,
 
     c.last_name,
     c.first_name,

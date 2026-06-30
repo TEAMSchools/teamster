@@ -3,7 +3,7 @@ models:
     description: >-
       Focus STUDENT_ENROLLMENT import feed for KIPP Miami — emits only rows
       absent from Focus or whose end_date differs from current Focus state.
-      Decodes state_withdraw_label to drop_code via
+      Decodes the raw drop_code label to the Focus short_name via
       stg_focus__student_enrollment_codes. enrollment_code and drop_code are
       nulled when Focus already carries them (import-once guard).
     columns:
@@ -82,7 +82,7 @@ unit_tests:
               '20250812' as start_date,
               'E01' as enrollment_code,
               cast(null as string) as end_date,
-              '(W02) In District Transfer' as state_withdraw_label,
+              '(W02) In District Transfer' as drop_code,
               cast(null as string) as calendar_id,
               cast(null as string) as prior_dist,
               cast(null as string) as prior_state,
@@ -170,7 +170,7 @@ unit_tests:
               '20250812' as start_date,
               'E01' as enrollment_code,
               cast(null as string) as end_date,
-              cast(null as string) as state_withdraw_label,
+              cast(null as string) as drop_code,
               cast(null as string) as calendar_id,
               cast(null as string) as prior_dist,
               cast(null as string) as prior_state,
@@ -246,7 +246,7 @@ unit_tests:
     description: >-
       Matched row where export end_date is populated but Focus end_date is null
       — row is kept; enrollment_code is nulled (Focus already has it); drop_code
-      is decoded from state_withdraw_label and emitted.
+      is decoded from the raw drop_code label and emitted.
     model: rpt_focus__student_enrollment
     given:
       - input: source("kipptaf_extracts", "rpt_focus__student_enrollment")
@@ -260,7 +260,7 @@ unit_tests:
               '20250812' as start_date,
               cast(null as string) as enrollment_code,
               '20260115' as end_date,
-              '(W02) In District Transfer' as state_withdraw_label,
+              '(W02) In District Transfer' as drop_code,
               cast(null as string) as calendar_id,
               cast(null as string) as prior_dist,
               cast(null as string) as prior_state,

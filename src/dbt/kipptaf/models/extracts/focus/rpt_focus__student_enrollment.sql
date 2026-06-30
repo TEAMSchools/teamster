@@ -4,7 +4,7 @@ select
 
     sch.location_focus_school_id as school_id,
 
-    concat('8400', ida.focus_student_id) as student_id,
+    ida.focus_student_id_prefixed as student_id,
 
     if(
         l.grade_canonical_name = 'k',
@@ -15,27 +15,26 @@ select
 
     format_date('%Y%m%d', l.enrollment_start_date) as start_date,
 
-    case
-        when l.lifecycle_action = 'transfer_out'
-        then cast(null as string)
-        when l.grade_canonical_name = 'k'
-        then 'E05'
-        else 'E01'
-    end as enrollment_code,
+    -- enrollment_code is the entry action and does not change on transfer_out;
+    -- a withdrawal is expressed by drop_code + end_date, not by clearing the
+    -- entry code.
+    case when l.grade_canonical_name = 'k' then 'E05' else 'E01' end as enrollment_code,
 
     -- enrollment_end_date is gated to transfer_out upstream in
     -- int_finalsite__enrollment_lifecycle, so end_date needs no re-gating.
     format_date('%Y%m%d', l.enrollment_end_date) as end_date,
 
-    -- fl_state_withdraw_codes_ss is a raw contact custom attribute (NOT gated
-    -- upstream), so gate it to transfer_out here — a withdraw code is only
-    -- meaningful for a withdrawal, and an ungated value would emit a drop code
-    -- for a still-enrolled student downstream.
+    -- Focus import header is drop_code; this carries the raw Finalsite withdraw
+    -- label, which the kippmiami reconciliation layer decodes to the Focus
+    -- short_name. fl_state_withdraw_codes_ss is a raw contact custom attribute
+    -- (NOT gated upstream), so gate it to transfer_out here — a withdraw code is
+    -- only meaningful for a withdrawal, and an ungated value would emit a drop
+    -- code for a still-enrolled student downstream.
     if(
         l.lifecycle_action = 'transfer_out',
         cca.fl_state_withdraw_codes_ss,
         cast(null as string)
-    ) as state_withdraw_label,
+    ) as drop_code,
 
     cast(null as string) as calendar_id,
     cast(null as string) as prior_dist,
