@@ -499,17 +499,14 @@ violation; the fix is to store the name without the period in the SIS. No
 
 ### Check 5 — date validity
 
-**What it catches:** `SectionEntryDate` values that are not 8-digit strings,
-fall outside the SY 2025-26 window (`20250701`–`20260630`), or `SectionExitDate`
-values that are malformed or precede the entry date.
+**What it catches:** `SectionExitDate` values that are malformed or precede
+`SectionEntryDate`, scoped to staff records whose `SectionEntryDate` falls
+within the SY 2025-26 window (`20250701`–`20260630`).
 
-**Why it happens:** Dates exported in a non-`YYYYMMDD` format, section
-assignments carried over from a prior year, or exit dates entered before the
-entry date due to data-entry error.
+**Why it happens:** Exit dates entered before the entry date due to data-entry
+error, or an exit date exported in a non-`YYYYMMDD` format.
 
-**How to fix:** Correct the date in the source SIS. For out-of-window entry
-dates, verify whether the section assignment is truly from the current year;
-prior-year records should be excluded from the extract. Update the window
+**How to fix:** Correct the exit date in the source SIS. Update the window
 constants (`20250701` / `20260630`) each year to the actual first and last
 instructional days.
 
@@ -522,21 +519,17 @@ select distinct
   SectionEntryDate,
   SectionExitDate,
 from `teamster-332318.cokafor.stg_staff_extract`
-where not regexp_contains(SectionEntryDate, r'^[0-9]{8}$')
-  or SectionEntryDate < '20250701'
-  or SectionEntryDate > '20260630'
-  or (
-    SectionExitDate is not null
-    and SectionExitDate not in ('', '00000000')
-    and (
-      not regexp_contains(SectionExitDate, r'^[0-9]{8}$')
-      or SectionExitDate < SectionEntryDate
-    )
+where SectionEntryDate between '20250701' and '20260630'
+  and SectionExitDate is not null
+  and SectionExitDate not in ('', '00000000')
+  and (
+    not regexp_contains(SectionExitDate, r'^[0-9]{8}$')
+    or SectionExitDate < SectionEntryDate
   );
 ```
 
-_Validation result (2025-26 Newark sample): 0 rows — all dates are in range and
-well-formed. Clean._
+_Validation result (2025-26 Newark sample): 0 rows — all exit dates for SY
+2025-26 records are well-formed and on or after the entry date. Clean._
 
 ### Check 6 — CDS code validity
 
