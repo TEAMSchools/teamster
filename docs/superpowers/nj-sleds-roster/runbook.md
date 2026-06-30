@@ -1099,12 +1099,23 @@ original assignment. The "General Elective" pattern in the sample is a common
 culprit.
 
 **How to fix:** For each flagged `LocalSectionCode`, confirm in PowerSchool
-whether the section genuinely has no students. If it is a phantom, inactivate
-the section or remove the teacher assignment in the SIS and re-export. If
-students are enrolled but missing from the extract, investigate the student pull
-filter and correct it there.
+whether the section genuinely has no students.
 
-**Owner:** School registrar (section enrollment); Data team (extract
+- **Genuinely empty ("zombie") section** — open the section's **Course
+  Submission Information** panel and check **"Exclude from Course Roster
+  Reports."** That drops the section from the next extract cleanly, without
+  deleting the section or disturbing schedules or historical grades. This is the
+  preferred disposition for planning sections, dropped electives, and
+  merged-but-not-removed sections (the "General Elective" pattern). The flag is
+  stored in `S_NJ_SEC_X`.
+- **Students should be enrolled but aren't** — do **not** exclude it; the
+  enrollment is the defect. Investigate the student pull filter / enrollment
+  records and correct them, then re-export both extracts together.
+
+After excluding or fixing, re-extract and re-run — the section drops out of
+checks 14 and 16.
+
+**Owner:** School registrar (enrollment); Data team (exclude flag / extract
 verification).
 
 ```sql
@@ -1187,10 +1198,11 @@ mismatches without running checks 14 and 15 separately.
 makes it easy to verify that fixes applied after checks 14 and 15 have fully
 closed the gap (when check 16 returns 0 rows, the two extracts are in parity).
 
-**How to fix:** Apply the same source-fix-only approach described in checks 14
-and 15: trace each flagged section in PowerSchool and resolve the missing
-enrollment or teacher assignment at the source. Re-export both extracts together
-and re-run this check until it returns 0 rows.
+**How to fix:** Apply the same dispositions described in checks 14 and 15: a
+genuinely empty section gets **"Exclude from Course Roster Reports"** checked on
+its Course Submission Information panel; a section that should have enrollment
+or a teacher gets that fixed at the source. Re-export both extracts together and
+re-run this check until it returns 0 rows.
 
 **Owner:** School registrar (section setup); Data team (extract verification).
 
@@ -1622,9 +1634,13 @@ What to do with it: export to CSV; the populated columns are already correct and
 must stay as-is (that's what stops the overwrite); fill the blank cells named in
 `fill_in` with the correct SCED values from the SCED master / Handbook (a
 missing `SubjectArea` can't be auto-derived — a course identifier maps under
-multiple subjects, so it's a mapping decision), then upload to the course's NJ
-state-reporting fields (`S_NJ_CRS_X`). `CourseSequence` is a section-level
-attribute, not a course one, so it is intentionally excluded here.
+multiple subjects, so it's a mapping decision). The values go in the course's
+**Course Submission Information** panel — the **NCES Subject Area / Course
+Identifier / Course Level / Grade Span — Course Override** dropdowns (stored in
+`S_NJ_CRS_X`). Each override is a true override: the panel shows "if blank, this
+course value will be used," so an override only needs setting where the base
+course value is wrong or absent. `CourseSequence` is a section-level attribute,
+not a course one, so it is intentionally excluded here.
 
 _Validation result (2025-26 EOY): 5 courses (Newark 2, Camden 3) missing a
 required element, and no course had conflicting non-blank values across its
