@@ -64,7 +64,7 @@ exposures:
       - ref("fct_grades_gpa")
       - ref("fct_grades_term")
       - ref("fct_job_candidate_applications")
-      - ref("fct_staff_attrition")
+      - ref("fct_staff_attrition_weekly")
       - ref("fct_staff_benefits_enrollments")
       - ref("fct_staff_membership_enrollments")
       - ref("fct_staff_observation_goals")
