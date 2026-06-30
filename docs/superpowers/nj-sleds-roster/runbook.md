@@ -442,10 +442,59 @@ where r.LocalStaffIdentifier is null
   or e.DateOfBirth != r.DateofBirth;
 ```
 
-_Validation result (2025-26 Newark sample): 17 rows — mix of
-`no LSID match in state` (staff not yet registered) and name mismatches. This is
-expected signal given that only 67 distinct LSIDs match the state file; the
-mismatch reasons are sensible._
+_Validation result (2025-26 EOY, both regions): 186 rows — a mix of
+`no LSID match in state` and name/DOB mismatches. Use the companion query below
+to split the no-match rows into stale-LSID overrides (a quick PowerSchool fix)
+versus staff genuinely absent from the state record (a compliance handoff)._
+
+#### Companion — resolve "no LSID match in state" (stale-LSID override)
+
+A `no LSID match in state` result has two causes with opposite fixes. This query
+separates them by joining the extract to `ref_state_staff` on the
+**`StaffMemberIdentifier` (SMID)** instead of the LSID. A staff member whose
+SMID matches but whose `LocalStaffIdentifier` differs is the **same person with
+a drifted local ID** — the recurring "stale staff ID" case. The fix is not to
+register them with the state; it is to set PowerSchool's state-reporting LSID
+override (`S_NJ_USR_X`) to the `njsleds_lsid` value so the next extract emits
+the matching LSID. (Staff who match on neither LSID nor SMID are genuinely
+absent from the state record and need an SMID generated — that is the compliance
+handoff, not this fix.)
+
+**Owner:** Data team / intern (PowerSchool LSID override).
+
+```sql
+with extract_staff as (
+  select distinct
+    region,
+    LocalStaffIdentifier,
+    StaffMemberIdentifier,
+    FirstName,
+    LastName,
+  from `teamster-332318.cokafor.stg_staff_extract`
+  where regexp_contains(StaffMemberIdentifier, r'^[0-9]{8}$')
+)
+select
+  e.region,
+  e.StaffMemberIdentifier,
+  e.LocalStaffIdentifier as powerschool_lsid,
+  r.LocalStaffIdentifier as njsleds_lsid,
+  e.FirstName,
+  e.LastName,
+from extract_staff as e
+join (
+  select *
+  from `teamster-332318.cokafor.ref_state_staff`
+  qualify row_number() over (partition by StaffMemberIdentifier, region) = 1
+) as r
+  on e.StaffMemberIdentifier = r.StaffMemberIdentifier
+  and e.region = r.region
+where e.LocalStaffIdentifier != r.LocalStaffIdentifier;
+```
+
+_Validation result (2025-26 EOY, both regions): 75 staff (Newark 55, Camden 20)
+— SMID matches, LSID differs. These are stale-LSID overrides, not new
+registrations. Of Check 2's 141 `no LSID match` staff, 75 are fixable this way;
+the remaining 66 are genuinely absent from the state record._
 
 ### Check 3 — duplicate LSID
 
