@@ -1402,6 +1402,125 @@ edits. Section-level overrides live in `S_NJ_SEC_X`, which is not in the
 warehouse; if a section override is in play it is a second possible input,
 though the school-setup gaps above fully explain the observed defects.
 
+## State-ID population — staff SMID and student SID
+
+These two queries turn the "missing ID" checks into ready-to-key worklists. Both
+are scoped to records **missing the state ID in PowerSchool** and join to NJ
+SLEDS to supply the value to enter. They are region-aware, so the first column
+tells the intern which PowerSchool server to open.
+
+### Students — populate the state SID
+
+For students whose `StateIdentificationNumber` is blank or invalid in the
+extract, this returns the SID held by NJ SLEDS (the student is matched on the
+local student number). Enter `njsleds_sid` on the student's State/Province — NJ
+page in PowerSchool. (For students the state ID is the **SID** from NJ SMART,
+not an SMID.)
+
+```sql
+with missing as (
+  select distinct region, LocalIdentificationNumber
+  from `teamster-332318.cokafor.stg_student_extract`
+  where StateIdentificationNumber is null
+    or StateIdentificationNumber = ''
+    or not regexp_contains(StateIdentificationNumber, r'^[0-9]{10}$')
+),
+state as (
+  select *
+  from `teamster-332318.cokafor.ref_state_student`
+  qualify row_number() over (partition by LocalIdentificationNumber, region) = 1
+)
+select
+  m.region,
+  m.LocalIdentificationNumber as student_number,
+  s.StateIdentificationNumber as njsleds_sid,
+from missing as m
+join state as s
+  on m.LocalIdentificationNumber = s.LocalIdentificationNumber
+  and m.region = s.region;
+```
+
+_Validation result (2025-26 EOY): 3 students (Newark 1, Camden 2)._
+
+### Staff — populate the SMID, with override fields
+
+Staff are finicky: a staff member missing an SMID may also need their local ID
+or name **overridden** in PowerSchool's state-reporting fields so the
+regenerated extract matches NJ SLEDS exactly. This query supplies all of it in
+one row. It matches the NJ SLEDS record by local staff ID first, then by name +
+DOB (so it still finds the person when the local ID has drifted), and populates
+an override column **only when that field actually differs**:
+
+- `njsleds_smid` — the SMID to enter (the staff is missing it).
+- `override_local_id` — set only when NJ SLEDS' local ID differs from
+  PowerSchool's; this is the LSID override to add (`S_NJ_USR_X`).
+- `override_first_name` / `override_last_name` — set only when the PowerSchool
+  name differs from NJ SLEDS; these are the name overrides to add so the
+  combination check (check 2) passes.
+
+A blank override column means leave that field unchanged.
+
+```sql
+with missing as (
+  select distinct region, LocalStaffIdentifier, FirstName, LastName, DateOfBirth
+  from `teamster-332318.cokafor.stg_staff_extract`
+  where StaffMemberIdentifier is null
+    or StaffMemberIdentifier = ''
+    or not regexp_contains(StaffMemberIdentifier, r'^[0-9]{8}$')
+),
+state_by_lsid as (
+  select *
+  from `teamster-332318.cokafor.ref_state_staff`
+  qualify row_number() over (partition by LocalStaffIdentifier, region) = 1
+),
+state_by_name as (
+  select *
+  from `teamster-332318.cokafor.ref_state_staff`
+  qualify
+    row_number()
+      over (partition by upper(FirstName), upper(LastName), DateofBirth, region) = 1
+),
+matched as (
+  select
+    m.region,
+    m.LocalStaffIdentifier as ps_teacher_number,
+    m.FirstName as ps_first_name,
+    m.LastName as ps_last_name,
+    coalesce(l.StaffMemberIdentifier, n.StaffMemberIdentifier) as njsleds_smid,
+    coalesce(l.LocalStaffIdentifier, n.LocalStaffIdentifier) as state_lsid,
+    coalesce(l.FirstName, n.FirstName) as state_first,
+    coalesce(l.LastName, n.LastName) as state_last,
+  from missing as m
+  left join state_by_lsid as l
+    on m.LocalStaffIdentifier = l.LocalStaffIdentifier
+    and m.region = l.region
+  left join state_by_name as n
+    on upper(m.FirstName) = upper(n.FirstName)
+    and upper(m.LastName) = upper(n.LastName)
+    and m.DateOfBirth = n.DateofBirth
+    and m.region = n.region
+)
+select
+  region,
+  ps_teacher_number,
+  ps_first_name,
+  ps_last_name,
+  njsleds_smid,
+  if(state_lsid != ps_teacher_number, state_lsid, null) as override_local_id,
+  if(upper(state_first) != upper(ps_first_name), state_first, null)
+    as override_first_name,
+  if(upper(state_last) != upper(ps_last_name), state_last, null)
+    as override_last_name,
+from matched
+where njsleds_smid is not null;
+```
+
+_Validation result (2025-26 EOY): 181 staff populatable (Newark 138, Camden 43);
+of those 3 need a local-ID override, 7 a first-name override, 7 a last-name
+override. A further 13 staff (Newark 10, Camden 3) are missing an SMID and match
+NJ SLEDS on no key at all — they are **not** in this list; they need a new SMID
+generated (the compliance handoff, not a populate)._
+
 ## Worklist and tracker sheets
 
 ### Worklist tabs (one per check group)
