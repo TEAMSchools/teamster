@@ -304,6 +304,15 @@ surface at kipptaf-level consumers until district projects rebuild prod. For
 single-PR refactors, add transformations at the kipptaf-level wrapper, not at
 package level.
 
+**Value-only vs column change**: a value-only edit to a package model needs no
+staging — the column set is unchanged, so kipptaf CI compiles and corrected
+values land after the next prod rebuild. A column ADD/rename DOES: an unmodified
+kipptaf union wrapper is `--defer`'d to the Staging env (not `zz_stg`), so the
+new column never appears and downstream models fail `Name <col> not found`. To
+land it single-PR, force the wrapper `state:modified` (a doc comment is enough)
+AND `dbt build --select <pkg-model> --project-dir <district> --target staging`
+into `zz_stg_<district>_<source>` so CI's wrapper rebuild sees the column.
+
 ## Editing a `sources-kipp*.yml` schema fans out `state:modified+`
 
 Changing a source's schema (e.g. adding a `target=staging` branch) marks the
@@ -568,6 +577,12 @@ Dict-format `given` rows require the mocked ref/source to already exist in the
 warehouse (dbt introspects its schema at compile). For array/struct columns
 (e.g. `id_attributes`) or a model/source not yet materialized, use input
 `format: sql` (inline SELECT) instead — dict format fails introspection.
+
+After a column/contract rename, run the WHOLE directory's unit tests
+(`--select "test_type:unit,<fqn.dir>"`, e.g. `test_type:unit,extracts.focus`),
+not just the changed model — sibling models mock the same `ref()`/`source()`, so
+their `given`/`expect` rows break on the same rename and CI catches what a
+single-model run misses.
 
 ### Date-range joins
 
