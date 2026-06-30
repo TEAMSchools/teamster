@@ -26,6 +26,8 @@ KEEP = [
 def main(in_path: str, out_path: str) -> None:
     with Path(in_path).open(newline="", encoding="utf-8-sig") as fh:
         reader = csv.DictReader(fh)
+        if reader.fieldnames is None:
+            raise SystemExit("export file is empty or has no header row")
         missing = [c for c in KEEP if c not in reader.fieldnames]
         if missing:
             raise SystemExit(f"export is missing expected columns: {missing}")

@@ -208,6 +208,8 @@ KEEP = [
 def main(in_path: str, out_path: str) -> None:
     with Path(in_path).open(newline="", encoding="utf-8-sig") as fh:
         reader = csv.DictReader(fh)
+        if reader.fieldnames is None:
+            raise SystemExit("export file is empty or has no header row")
         missing = [c for c in KEEP if c not in reader.fieldnames]
         if missing:
             raise SystemExit(f"export is missing expected columns: {missing}")
@@ -256,14 +258,19 @@ STUDENT="LocalIdentificationNumber:STRING,StateIdentificationNumber:STRING,First
 $BQ load --project_id=teamster-332318 --source_format=CSV --skip_leading_rows=1 \
   --replace cokafor.stg_student_extract student_extract.csv "$STUDENT"
 
+SCED="sced_level:STRING,sced_code:STRING,subject_area:STRING,course_identifier:STRING,subject_area_name:STRING,sced_course_name:STRING"
 $BQ load --project_id=teamster-332318 --source_format=CSV --skip_leading_rows=1 \
-  --autodetect --replace cokafor.ref_sced_codes ref_sced_codes.csv
+  --replace cokafor.ref_sced_codes ref_sced_codes.csv "$SCED"
+
+STATE="LocalStaffIdentifier:STRING,StaffMemberIdentifier:STRING,FirstName:STRING,MiddleName:STRING,LastName:STRING,DateofBirth:STRING,CountyCodeAssigned1:STRING,CountyCodeAssigned2:STRING,CountyCodeAssigned3:STRING,CountyCodeAssigned4:STRING,CountyCodeAssigned5:STRING,CountyCodeAssigned6:STRING,DistrictCodeAssigned1:STRING,DistrictCodeAssigned2:STRING,DistrictCodeAssigned3:STRING,DistrictCodeAssigned4:STRING,DistrictCodeAssigned5:STRING,DistrictCodeAssigned6:STRING,SchoolCodeAssigned1:STRING,SchoolCodeAssigned2:STRING,SchoolCodeAssigned3:STRING,SchoolCodeAssigned4:STRING,SchoolCodeAssigned5:STRING,SchoolCodeAssigned6:STRING"
 $BQ load --project_id=teamster-332318 --source_format=CSV --skip_leading_rows=1 \
-  --autodetect --replace cokafor.ref_state_staff ref_state_staff.csv
+  --replace cokafor.ref_state_staff ref_state_staff.csv "$STATE"
 ```
 
-(`ref_sced_codes` / `ref_state_staff` use `--autodetect` because the prep
-scripts already wrote codes as zero-padded strings.)
+(All four tables use **explicit STRING schemas** — `--autodetect` must NOT be
+used even on the ref tables: it re-coerces the zero-padded `subject_area` /
+`course_identifier` / CDS codes back to `INT64` and strips the leading zeros,
+breaking the joins in checks 2 and 8.)
 
 - [ ] **Step 6: Verify load row counts**
 
