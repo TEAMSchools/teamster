@@ -1346,6 +1346,62 @@ is written here — the exact allowed codes and their mappings must be drawn fro
 the Handbook directly, not inferred from sample data. This is an open item to
 revisit when posted grades are available in the extract.
 
+## Setup-level fixes — when a defect is systemic
+
+Some defects are not per-record errors; they trace to a single shared
+PowerSchool **setup** field, so one fix corrects thousands of rows at once.
+Before treating a high-volume check result as record-by-record work, ask whether
+one setup value drives all of it. **CDS (checks 6 and 13) is the textbook case**
+— the EOY data had every Camden row and a block of Newark rows off-spec, but the
+cause was a handful of school-setup fields, not the records.
+
+### What feeds the CDS columns
+
+The three CDS fields in both extracts come from three different places:
+
+| Extract column         | Source (PowerSchool school setup)                                                                                                                                |
+| ---------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `SchoolCodeAssigned`   | the school's **Alternate School Number** (`alternate_school_number`); falls back to the internal school number when unset — the source of stray codes like `732` |
+| `CountyCodeAssigned`   | the school's **County code** (`countynbr`) on the State Information page                                                                                         |
+| `DistrictCodeAssigned` | a **district-level** state setting (not the school table) — already correct (`7325` Newark / `1799` Camden)                                                      |
+
+Fix location: **PowerSchool → School Setup → State Information**, per school.
+Set the Alternate School Number to the region's state school code (`965` Newark
+/ `111` Camden) and the County code (`80` Newark / `07` Camden) on every
+reporting school.
+
+### Find the schools to fix
+
+Run per region (swap the dataset and the expected `965` / `80` for Camden's
+`111` / `07`). This reads the shared `kippnewark_powerschool` /
+`kippcamden_powerschool` staging models, not `cokafor`. Only reporting schools
+are listed; excluded schools are skipped.
+
+```sql
+select
+  school_number,
+  alternate_school_number,
+  countynbr,
+from `teamster-332318.kippnewark_powerschool.stg_powerschool__schools`
+where state_excludefromreporting = 0
+  and (
+    alternate_school_number is distinct from 965
+    or countynbr is distinct from '80'
+  );
+```
+
+_Validation result (2025-26 EOY): Newark returns 3 schools (Alternate School
+Number unset); Camden returns all 5 reporting schools (Alternate School Number
+unset, county mostly blank) — which is why every Camden row was off-spec on CDS.
+One school-setup pass clears the entire CDS defect for the region._
+
+**Caveats.** The column-to-extract mapping above was inferred from the data
+(state code `965` / `111` tracks `alternate_school_number`; county tracks
+`countynbr`) — confirm it against the NJ State Reporting setup before mass
+edits. Section-level overrides live in `S_NJ_SEC_X`, which is not in the
+warehouse; if a section override is in play it is a second possible input,
+though the school-setup gaps above fully explain the observed defects.
+
 ## Worklist and tracker sheets
 
 ### Worklist tabs (one per check group)
