@@ -613,19 +613,22 @@ violation; the fix is to store the name without the period in the SIS. No
 
 ### Check 5 — date validity
 
-**What it catches:** `SectionExitDate` values that are malformed or precede
-`SectionEntryDate`, scoped to staff records whose `SectionEntryDate` falls
-within the SY 2025-26 window (`20250701`–`20260630`).
+**What it catches:** `SectionExitDate` values that are malformed, precede
+`SectionEntryDate`, or fall after today (a future exit date — the Handbook
+errors on an exit date later than the submission date), scoped to staff records
+whose `SectionEntryDate` falls within the SY 2025-26 window
+(`20250701`–`20260630`).
 
 **Why it happens:** Exit dates entered before the entry date due to data-entry
-error, or an exit date exported in a non-`YYYYMMDD` format.
+error, a future exit date keyed by mistake, or an exit date exported in a
+non-`YYYYMMDD` format.
 
 **Why entry dates aren't validated here:** PowerSchool's UI blocks entry and
 exit dates outside the current school year at the point of entry, so
 out-of-window or malformed _entry_ dates cannot reach the extract — validating
-them would be dead logic. The one ordering error the date pickers don't prevent
-is an exit date that precedes the entry date (two valid in-year dates in the
-wrong order), which is what this check targets. Do not re-add entry-date
+them would be dead logic. What the date pickers don't prevent are an exit date
+that precedes the entry date and an exit date in the future (after the
+submission date) — which is what this check targets. Do not re-add entry-date
 validation thinking it is missing.
 
 **How to fix:** Correct the exit date in the source SIS. Update the window
@@ -647,6 +650,7 @@ where SectionEntryDate between '20250701' and '20260630'
   and (
     not regexp_contains(SectionExitDate, r'^[0-9]{8}$')
     or SectionExitDate < SectionEntryDate
+    or SectionExitDate > format_date('%Y%m%d', current_date())
   );
 ```
 
@@ -855,14 +859,15 @@ _Validation result (2025-26 Newark staff sample): 0 rows — no credit/level/
 grade-span contradictions found. Clean. Re-run against `stg_student_extract`
 before submission._
 
-### Check 10 — domain checks (CourseLevel and CourseSequence)
+### Check 10 — domain and format checks (CourseLevel, CourseSequence, AvailableCredit, GradeSpan)
 
 **What it catches:** Rows where `CourseLevel` is not one of the five allowed
-values (`B` Basic, `G` General, `E` Advanced/Enriched, `H` Honors, `X` Gifted),
-or where `CourseSequence` is not a two-digit string in the range `11`–`99`, or
-where the first digit of `CourseSequence` exceeds the second (i.e. the sequence
-number of this section is greater than the total sections in the sequence, which
-is logically impossible).
+values (`B` Basic, `G` General, `E` Enriched/Advanced, `H` Honors, `X` no
+specified level); `CourseSequence` is not a two-digit `11`–`99` string or has a
+first digit greater than its second (the part number can't exceed the total); a
+populated `AvailableCredit` is non-numeric or outside `0.000`–`35.000`; or a
+populated `GradeSpan` is not a valid 4-character code — two grade tokens drawn
+from `PK`, `KG`, and `01`–`12` (e.g. `KG01`, `0404`).
 
 **Why it happens:** `CourseLevel` values may come from a free-text SIS field
 where staff enter inconsistent codes (`h` instead of `H`, or `REG` instead of
@@ -875,7 +880,10 @@ correct allowed code and update the SIS. For `CourseSequence` violations,
 confirm the intended sequence with the registrar (e.g. a two-semester course
 should be `12` and `22`) and update accordingly. Note that `CourseSequence` must
 be a two-character string of digits — leading zeros and single-character values
-both fail the pattern check.
+both fail the pattern check. For `AvailableCredit`, correct the value to a
+number in `0.000`–`35.000`. For `GradeSpan`, restore the full 4-character code —
+the `202` / `303` / `404` rows are missing their leading zero and should read
+`0202` / `0303` / `0404`.
 
 **Owner:** Registrar (course metadata); Data team (extract correction).
 
@@ -884,18 +892,34 @@ select distinct
   LocalCourseCode,
   CourseLevel,
   CourseSequence,
+  AvailableCredit,
+  GradeSpan,
 from `teamster-332318.cokafor.stg_staff_extract`
 where CourseLevel not in ('B', 'G', 'E', 'H', 'X')
   or CourseSequence is null
   or CourseSequence = ''
   or not regexp_contains(CourseSequence, r'^[1-9][1-9]$')
   or cast(substr(CourseSequence, 1, 1) as int64)
-    > cast(substr(CourseSequence, 2, 1) as int64);
+    > cast(substr(CourseSequence, 2, 1) as int64)
+  or (
+    AvailableCredit is not null and AvailableCredit != ''
+    and (
+      safe_cast(AvailableCredit as float64) is null
+      or safe_cast(AvailableCredit as float64) < 0
+      or safe_cast(AvailableCredit as float64) > 35
+    )
+  )
+  or (
+    GradeSpan is not null and GradeSpan != ''
+    and not regexp_contains(GradeSpan, r'^(PK|KG|0[1-9]|1[0-2]){2}$')
+  );
 ```
 
-_Validation result (2025-26 Newark staff sample): 0 rows — all `CourseLevel`
-values are in the allowed set and all `CourseSequence` values are well-formed.
-Clean. Re-run against `stg_student_extract` before submission._
+_Validation result (2025-26 EOY, staff): 3 distinct rows — the `GradeSpan`
+values `202`, `303`, `404` (≈19 section-rows underneath), each stored as 3
+characters instead of the required 4 (`0202` / `0303` / `0404`); the leading
+zero was stripped. `CourseLevel`, `CourseSequence`, and `AvailableCredit` were
+clean. Re-run against `stg_student_extract` before submission._
 
 ## Group C — student field validity
 
@@ -1145,9 +1169,12 @@ PowerSchool._
 
 **What it catches:** `LocalSectionCode` values that appear in
 `stg_student_extract` (students are enrolled) but have no matching row in
-`stg_staff_extract` (no teacher assigned). A section with enrolled students and
-no teacher cannot be submitted to SLEDS — the state requires a staff record for
-every course section that carries enrollment.
+`stg_staff_extract` (no teacher assigned) — **scoped to standard course types
+(`CourseType` `S1` / `S2`)**, which are the only ones that require a staff
+record. Course types `R` (remote), `C` (dual-enrollment / college), and `O`
+(online) are taught by staff who may not be assigned to your district, so the
+Handbook expects them to have **no** staff record; including them here would be
+a false positive, so the check excludes them.
 
 **Why it happens:** A teacher assignment was not entered in PowerSchool, the
 teacher's record failed an earlier extract filter (e.g. a SMID issue from check
@@ -1177,6 +1204,7 @@ left join (
   on sd.LocalSectionCode = st.LocalSectionCode
   and sd.region = st.region
 where st.LocalSectionCode is null
+  and sd.CourseType in ('S1', 'S2')
 group by sd.region, sd.LocalSectionCode;
 ```
 
@@ -1646,14 +1674,17 @@ _Validation result (2025-26 EOY): 5 courses (Newark 2, Camden 3) missing a
 required element, and no course had conflicting non-blank values across its
 sections — so every carried-forward value is unambiguous._
 
-## Identifying dual-enrollment courses and sections
+## Dual-enrollment and course-type validation
 
-_Identification is ready; the validation/coding rule is an open item (below)._
-Dual-enrollment courses — high-school courses that also carry college credit —
-are flagged in the extract by `CourseType = 'C'` (the standard type is `S1`),
-and `DualInstitution` names the partner college on those same rows. This query
-lists the distinct dual-enrollment courses and sections so they can be reviewed
-and coded correctly before submission:
+`CourseType` is mandatory on every student record and is the master switch for
+several rules. Its values (Student Course Roster Handbook): `S1` standard
+single-teacher, `S2` standard co-taught, `R` remote, `C` college-level
+dual-enrollment / dual-credit, `O` online. Two consequences are already baked
+into the checks: only `S1` / `S2` require a staff record (check 15 is scoped to
+them), and `C` marks dual enrollment.
+
+**Identify** the dual-enrollment courses and sections — `CourseType = 'C'`, with
+`DualInstitution` (the college's 8-digit OPE ID) populated on those rows:
 
 ```sql
 select distinct
@@ -1672,14 +1703,49 @@ order by region, LocalCourseCode, LocalSectionCode;
 _Validation result (2025-26 EOY): 194 rows — Newark 4 courses / 9 sections,
 Camden 2 courses / 2 sections._
 
-**Open — pending direction.** What the audit should _enforce_ for these is not
-defined yet. Candidate rules to confirm against the Handbook and KTAF practice:
-which `CourseType` value(s) count as dual; whether `DualInstitution` must be
-populated (and to a valid institution) whenever `CourseType = 'C'`; the expected
-`CourseLevel` and `AvailableCredit` for dual courses; and whether the staff side
-needs matching treatment (the staff extract carries neither `CourseType` nor
-`DualInstitution`). Once the rule is set, this graduates from an identification
-list to a validation check.
+**Validate** the coding. This flags the rows that will error in NJ SLEDS: a
+blank or out-of-domain `CourseType`; a `C` (dual) row missing its
+`DualInstitution`; a `DualInstitution` populated on a non-`C` row; or a
+`DualInstitution` that isn't an 8-digit OPE ID:
+
+```sql
+select *
+from (
+  select
+    region,
+    LocalIdentificationNumber,
+    LocalCourseCode,
+    LocalSectionCode,
+    CourseType,
+    DualInstitution,
+    case
+      when CourseType is null or CourseType = '' then 'CourseType blank'
+      when CourseType not in ('S1', 'S2', 'R', 'C', 'O')
+        then 'CourseType not a valid value'
+      when CourseType = 'C' and (DualInstitution is null or DualInstitution = '')
+        then 'dual-enrollment (C) but no DualInstitution'
+      when CourseType != 'C'
+        and DualInstitution is not null and DualInstitution != ''
+        then 'DualInstitution populated on a non-C course'
+      when DualInstitution is not null and DualInstitution != ''
+        and not regexp_contains(DualInstitution, r'^[0-9]{8}$')
+        then 'DualInstitution is not an 8-digit OPE ID'
+    end as issue,
+  from `teamster-332318.cokafor.stg_student_extract`
+)
+where issue is not null;
+```
+
+_Validation result (2025-26 EOY): 0 rows — `CourseType` is always `S1` or `C`,
+every `C` row carries an 8-digit `DualInstitution`, and no non-`C` row does.
+Clean this cycle; the check guards future ones._
+
+**One gap to close:** the Handbook also errors when the OPE ID is not on the
+official NJSLEDS **OPE ID List**, so this check confirms the 8-digit format but
+not that each ID is a real institution. That list isn't loaded here; load it as
+a small reference table (like `ref_sced_codes`) and the membership check is a
+one-line `left join`. Policy note: `CourseType = 'C'` should only be used where
+an articulation agreement with the college exists — not data-checkable here.
 
 ## Worklist and tracker sheets
 
