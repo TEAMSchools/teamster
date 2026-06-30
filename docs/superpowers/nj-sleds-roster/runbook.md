@@ -256,3 +256,200 @@ Newark county is `80`), and `SchoolCodeAssigned` is `732` rather than the
 approved `965`. Both must be corrected in PowerSchool's state-reporting fields
 before submission; trace the `732` source in the loaded extract (the
 `Alternate_School_Number` fallback hypothesis is ruled out — see the spec)._
+
+## Group B — course/section SCED validity
+
+The four checks below validate the course and section metadata that SLEDS uses
+to categorize instruction. Checks 7–10 apply to both the staff and student
+extracts — run each query as written against `cokafor.stg_staff_extract` (291
+rows), then re-run by swapping `stg_staff_extract` for `stg_student_extract` (3
+581 rows, same SCED columns). The SCED reference table `cokafor.ref_sced_codes`
+(2 069 rows) is the authoritative code list; all joins use string-typed columns
+with leading zeros intact (`subject_area` is 2-digit, `course_identifier` is
+3-digit) so no casting or zero-padding is needed.
+
+### Check 7 — missing SCED codes
+
+**What it catches:** Course/section rows where `SubjectArea`,
+`CourseIdentifier`, or `CourseLevel` is NULL or blank. All three fields are
+required by SLEDS; a missing value on any one of them causes the row to reject
+outright.
+
+**Why it happens:** Courses added to the SIS without a complete SCED mapping, or
+sections loaded from a template where the SCED fields were never populated.
+`CourseLevel` is particularly prone to being left blank when a course is flagged
+as non-credit-bearing during setup.
+
+**How to fix:** For each flagged `LocalCourseCode`, look up the correct SCED
+subject area, course identifier, and level in the
+[SCED manual](https://nces.ed.gov/forum/sced.asp) or the district's master
+course list. Update the course record in the SIS and re-export the extract.
+
+**Owner:** Registrar / curriculum coordinator (SCED assignment); Data team
+(extract correction).
+
+```sql
+select distinct
+  SubjectArea,
+  CourseIdentifier,
+  CourseLevel,
+  LocalCourseCode,
+  LocalCourseTitle,
+from `teamster-332318.cokafor.stg_staff_extract`
+where SubjectArea is null or SubjectArea = ''
+  or CourseIdentifier is null or CourseIdentifier = ''
+  or CourseLevel is null or CourseLevel = '';
+```
+
+_Validation result (2025-26 Newark staff sample): 0 rows — all course/section
+rows carry a `SubjectArea`, `CourseIdentifier`, and `CourseLevel`. Clean. Re-run
+against `stg_student_extract` before submission._
+
+### Check 8 — invalid SCED subject area / course identifier
+
+**What it catches:** `SubjectArea` + `CourseIdentifier` pairs that do not appear
+in `ref_sced_codes`. SLEDS validates against the national SCED master list; an
+unrecognised pair causes the roster line to reject.
+
+**Why it happens:** A locally-invented course code that was never mapped to a
+real SCED pair, a transcription error (e.g. swapped digits), or an outdated code
+that was retired in a newer SCED edition.
+
+**How to fix:** Look up the correct `SubjectArea`/`CourseIdentifier` for the
+flagged `LocalCourseTitle` in the SCED manual. If the code was recently revised,
+check whether the district is using an older edition and update to the current
+one. Correct the SIS and re-export.
+
+**Owner:** Registrar / curriculum coordinator (SCED mapping); Data team (extract
+correction).
+
+**Sanity check:** The pair `51`/`033` (Physical Education — Elementary) appears
+in `ref_sced_codes` and is present in the Newark extract. It does **not** appear
+in the invalid list below, confirming that the join resolves correctly for
+known-good codes. All 8 distinct `SubjectArea`/`CourseIdentifier` pairs in the
+staff extract matched the reference table.
+
+```sql
+select distinct
+  e.SubjectArea,
+  e.CourseIdentifier,
+  e.LocalCourseCode,
+  e.LocalCourseTitle,
+from `teamster-332318.cokafor.stg_staff_extract` as e
+left join `teamster-332318.cokafor.ref_sced_codes` as r
+  on e.SubjectArea = r.subject_area
+  and e.CourseIdentifier = r.course_identifier
+where r.subject_area is null
+  and e.SubjectArea is not null
+  and e.SubjectArea != '';
+```
+
+_Validation result (2025-26 Newark staff sample): 0 rows — all 8 distinct SCED
+pairs in the extract match `ref_sced_codes`. Clean. Re-run against
+`stg_student_extract` before submission._
+
+### Check 9 — prior-to-secondary vs secondary level consistency
+
+**What it catches:** Rows where the SCED level of the course
+(`prior_to_secondary` or `secondary`, from `ref_sced_codes.sced_level`) is
+inconsistent with the credit and grade-span fields. Secondary courses must carry
+a non-zero `AvailableCredit` and must have a blank `GradeSpan`;
+prior-to-secondary courses must have a zero or absent `AvailableCredit` and must
+have `GradeSpan` populated. SLEDS uses these combinations to place the course in
+the correct instructional tier; a mismatch causes reporting errors downstream.
+
+**Why it happens:** A course that was reclassified between SCED levels without
+updating the credit or grade-span fields, or a template that defaulted credit to
+`0` for all courses regardless of level.
+
+**How to fix:** The `inconsistency` column names the specific contradiction.
+Correct the field that is wrong: update `AvailableCredit` in the SIS for
+secondary courses that lack it, clear `GradeSpan` for secondary courses that
+have it populated, or vice versa for prior-to-secondary courses. Re-export after
+correcting the source.
+
+**Owner:** Registrar (credit and grade-span data); Data team (extract
+correction).
+
+**Note:** The original brief's check 9 uses a `QUALIFY` clause to filter on the
+`inconsistency` alias. BigQuery requires an analytic function to be present when
+`QUALIFY` is used; since `inconsistency` is a scalar `CASE` expression, the
+query was rewritten as a subquery with an outer `WHERE` filter. The logic is
+identical.
+
+```sql
+select *
+from (
+  select distinct
+    e.LocalCourseCode,
+    e.SubjectArea,
+    e.CourseIdentifier,
+    e.AvailableCredit,
+    e.GradeSpan,
+    r.sced_level,
+    case
+      when r.sced_level = 'secondary'
+        and (e.AvailableCredit is null or e.AvailableCredit = ''
+          or safe_cast(e.AvailableCredit as float64) = 0)
+        then 'secondary code but no credit'
+      when r.sced_level = 'secondary'
+        and e.GradeSpan is not null and e.GradeSpan != ''
+        then 'secondary code but GradeSpan populated'
+      when r.sced_level = 'prior_to_secondary'
+        and safe_cast(e.AvailableCredit as float64) > 0
+        then 'prior-to-secondary code but has credit'
+      when r.sced_level = 'prior_to_secondary'
+        and (e.GradeSpan is null or e.GradeSpan = '')
+        then 'prior-to-secondary code but GradeSpan blank'
+    end as inconsistency,
+  from `teamster-332318.cokafor.stg_staff_extract` as e
+  left join `teamster-332318.cokafor.ref_sced_codes` as r
+    on e.SubjectArea = r.subject_area
+    and e.CourseIdentifier = r.course_identifier
+)
+where inconsistency is not null;
+```
+
+_Validation result (2025-26 Newark staff sample): 0 rows — no credit/level/
+grade-span contradictions found. Clean. Re-run against `stg_student_extract`
+before submission._
+
+### Check 10 — domain checks (CourseLevel and CourseSequence)
+
+**What it catches:** Rows where `CourseLevel` is not one of the five allowed
+values (`B` Basic, `G` General, `E` Advanced/Enriched, `H` Honors, `X` Gifted),
+or where `CourseSequence` is not a two-digit string in the range `11`–`99`, or
+where the first digit of `CourseSequence` exceeds the second (i.e. the sequence
+number of this section is greater than the total sections in the sequence, which
+is logically impossible).
+
+**Why it happens:** `CourseLevel` values may come from a free-text SIS field
+where staff enter inconsistent codes (`h` instead of `H`, or `REG` instead of
+`G`). `CourseSequence` errors typically arise when sections are added for a
+multi-part course without following the `XY` convention (where X = part number
+and Y = total parts in the sequence).
+
+**How to fix:** For `CourseLevel` violations, map the flagged value to the
+correct allowed code and update the SIS. For `CourseSequence` violations,
+confirm the intended sequence with the registrar (e.g. a two-semester course
+should be `12` and `22`) and update accordingly. Note that `CourseSequence` must
+be a two-character string of digits — leading zeros and single-character values
+both fail the pattern check.
+
+**Owner:** Registrar (course metadata); Data team (extract correction).
+
+```sql
+select distinct
+  LocalCourseCode,
+  CourseLevel,
+  CourseSequence,
+from `teamster-332318.cokafor.stg_staff_extract`
+where CourseLevel not in ('B', 'G', 'E', 'H', 'X')
+  or not regexp_contains(CourseSequence, r'^[1-9][1-9]$')
+  or cast(substr(CourseSequence, 1, 1) as int64)
+    > cast(substr(CourseSequence, 2, 1) as int64);
+```
+
+_Validation result (2025-26 Newark staff sample): 0 rows — all `CourseLevel`
+values are in the allowed set and all `CourseSequence` values are well-formed.
+Clean. Re-run against `stg_student_extract` before submission._
