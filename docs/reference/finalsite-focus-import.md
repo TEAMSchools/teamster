@@ -89,6 +89,26 @@ enrollment never carries a previous year's drop code or end date** — a
 withdrawal dated before the current enrollment's start is treated as belonging
 to the prior enrollment and is ignored.
 
+## Where to make corrections
+
+For some fields Finalsite is the source of truth — the nightly run keeps Focus
+matched to Finalsite, so an edit made **only in Focus is overwritten the next
+night**. Others are sent once and never overwritten, so a Focus edit sticks.
+Make each correction in the system that owns the field:
+
+| Field                                                                      | Correct it in | A Focus-only edit                     |
+| -------------------------------------------------------------------------- | ------------- | ------------------------------------- |
+| Names, student email, date of birth, gender, home language, ethnicity/race | Finalsite     | is overwritten next run               |
+| Withdraw code (`DROP_CODE`)                                                | Finalsite     | is overwritten next run               |
+| Entry code (`ENROLLMENT_CODE`)                                             | Focus         | sticks (sent once, never overwritten) |
+| Address, contacts                                                          | Focus         | sticks (sent once, never overwritten) |
+| Other demographics fields (suffix, nickname, permissions, county, …)       | Focus         | sticks (not compared)                 |
+
+**A blank in Finalsite never overwrites Focus.** If a field is empty in
+Finalsite, the run keeps whatever Focus already has — a blank can't wipe a
+populated value. Finalsite only overwrites where it holds a different, non-blank
+value.
+
 ## Known limitations
 
 > **Finalsite holds current enrollment only — not history.** Finalsite tracks a
