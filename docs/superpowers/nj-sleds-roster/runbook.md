@@ -701,3 +701,97 @@ _Validation result (2025-26 Newark sample): 13 rows, all with
 result given that check 13 found 13 distinct staff-only sections and check 14
 found 0 student-only sections. The 13 orphan sections must be resolved in
 PowerSchool before submission._
+
+## Group E — convergence rollup
+
+Check 16 is a single `union all` query that collapses every individual check
+into one row per check with a violation count. It is the de-identified artifact
+(counts only, no PII) that feeds the cowork project tracker and the convergence
+tracker: paste the output into the shared sheet each loop so stakeholders can
+watch totals trend toward zero without seeing any student or staff data.
+
+### Check 16 — defect-count rollup
+
+**What it does:** Runs a representative subset of the Group A–D checks in a
+single query, returning one row per check with its violation count. When all
+counts reach zero, the extract is ready to submit.
+
+**How to extend:** The starter below includes two checks. Before the first
+convergence loop, extend the `union all` with the remaining checks by copying
+the `where` clause from each individual check above:
+
+- `A2_spine_mismatch` — check 2's left-join `where` predicate
+- `A3_duplicate_lsid` — check 3's `having distinct_people > 1` subquery
+- `A4_name_violations` — check 4's `regexp_contains` predicates
+- `A5_date_violations` — check 5's date-range and format predicates
+- `A6_staff_cds` — check 6's `having not (...)` subquery
+- `B7_missing_sced_staff` — check 7 against `stg_staff_extract`
+- `B7_missing_sced_student` — check 7 rerun against `stg_student_extract`
+- `B8_invalid_sced_staff` — check 8 against `stg_staff_extract`
+- `B8_invalid_sced_student` — check 8 rerun against `stg_student_extract`
+- `B9_level_inconsistency_staff` — check 9 against `stg_staff_extract`
+- `B9_level_inconsistency_student` — check 9 rerun against `stg_student_extract`
+- `B10_domain_violations_staff` — check 10 against `stg_staff_extract`
+- `B10_domain_violations_student` — check 10 rerun against `stg_student_extract`
+- `C11_missing_sid` — check 11's `where` predicate
+- `D13_staff_only_sections` — check 13's left-join
+  `where sd.LocalSectionCode is null`
+- `D14_student_only_sections` — check 14's left-join
+  `where st.LocalSectionCode is null`
+
+Each new block follows the same shape:
+`select '<label>', count(*) from (... <where clause from the individual check> )`.
+
+**Owner:** Data team (run at the start of each convergence loop).
+
+```sql
+select 'A1_missing_smid' as check_name, count(*) as violations
+from (
+  select distinct
+    LocalStaffIdentifier,
+    StaffMemberIdentifier,
+    FirstName,
+    LastName,
+  from `teamster-332318.cokafor.stg_staff_extract`
+  where StaffMemberIdentifier is null
+    or not regexp_contains(StaffMemberIdentifier, r'^[0-9]{8}$')
+)
+union all
+select 'C12_student_cds', count(*) as violations
+from (
+  select 1
+  from `teamster-332318.cokafor.stg_student_extract`
+  where not (
+    (CountyCodeAssigned = '80' and DistrictCodeAssigned = '7325'
+      and SchoolCodeAssigned = '965')
+    or (CountyCodeAssigned = '07' and DistrictCodeAssigned = '1799'
+      and SchoolCodeAssigned = '111')
+  )
+)
+-- extend here: add one union all block per remaining check
+order by check_name;
+```
+
+_Validation result (2025-26 Newark sample, starter rows only):_
+
+| `check_name`      | `violations` |
+| ----------------- | ------------ |
+| `A1_missing_smid` | 22           |
+| `C12_student_cds` | 1 475        |
+
+_Both counts match the individual checks above, confirming the rollup logic is
+correct. Extend the `union all` before the first convergence loop._
+
+### Grade-mapping one-time check
+
+The sample student extract has blank `NumericGradeEarned`, `AlphaGradeEarned`,
+and `CompletionStatus` fields on all rows, consistent with a mid-year pull where
+grades have not yet been posted. Grade-mapping gaps are therefore likely N/A for
+KTAF for the current submission cycle.
+
+**Before the year-end run**, confirm against the Student Course Roster Handbook
+that every stored-grade code in use in the SIS has a corresponding NJ Grade
+Scale mapping. Until that mapping is verified against the Handbook, no SQL check
+is written here — the exact allowed codes and their mappings must be drawn from
+the Handbook directly, not inferred from sample data. This is an open item to
+revisit when posted grades are available in the extract.
