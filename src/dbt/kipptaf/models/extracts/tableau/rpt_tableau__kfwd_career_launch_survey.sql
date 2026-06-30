@@ -54,9 +54,13 @@ with
             r.contact_actual_college_graduation_date as actual_college_grad_date,
             r.contact_current_kipp_student as current_kipp_student,
             r.contact_owner_name,
+            r.contact_postsec_advisor as postsec_advisor,
             r.es_graduated,
             r.tier,
             r.contact_advising_provider as advising_provider,
+            r.contact_most_recent_iep_date as most_recent_iep_date,
+            r.contact_middle_school_attended as middle_school_attended,
+            r.contact_high_school_graduated_from as high_school_graduated_from,
 
             e.pursuing_degree_type,
             e.type,
@@ -257,6 +261,10 @@ select
     r.es_graduated,
     r.tier,
     r.advising_provider,
+    r.postsec_advisor,
+    r.most_recent_iep_date,
+    r.middle_school_attended,
+    r.high_school_graduated_from,
 
     sp.survey_id,
     sp.survey_title,
@@ -290,7 +298,7 @@ select
     sp.annual_income_clean,
 
     if(
-        r.actual_end_date_month < 7,
+        r.expected_grad_date_month < 7,
         concat('Spring ', r.expected_grad_date_year),
         concat('Fall ', r.expected_grad_date_year)
     ) as season_label_expected,
@@ -302,6 +310,12 @@ select
     ) as season_label,
 
     if(r.contact_id is null, true, false) as is_unmatched_response,
+
+    if(r.most_recent_iep_date is not null, true, false) as is_special_education,
+
+    if(
+        r.advising_provider = 'KIPP NYC', r.postsec_advisor, r.contact_owner_name
+    ) as advisor,
 
     if(
         r.contact_id is not null,
