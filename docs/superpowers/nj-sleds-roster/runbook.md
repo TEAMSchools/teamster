@@ -171,13 +171,21 @@ union all select 'state_staff', count(*)
 from `teamster-332318.cokafor.ref_state_staff`;
 ```
 
-Expected: `staff` = 291, `student` = 3581, `state_staff` = 1053, `sced` ≈ 2060.
+Expected (current Newark sample): `staff` = 291, `student` = 3581, `state_staff`
+= 1053, `sced` ≈ 2060. These counts are not invariants — they change every cycle
+as you re-load fresh extracts; the check is that each table is non-empty and in
+the right order of magnitude, not that it hits these exact numbers.
 
-Also confirm leading zeros survived — run
-`select distinct CountyCodeAssigned from teamster-332318.cokafor.stg_student_extract`
-and verify the result contains `''` (blank) and `80`, not `0` or `80.0`. If you
-see integer-looking values, the load used autodetect or a wrong schema — re-run
-Step 2 with the explicit schema strings above.
+Also confirm leading zeros survived — run:
+
+```sql
+select distinct CountyCodeAssigned
+from `teamster-332318.cokafor.stg_student_extract`;
+```
+
+Verify the result contains `''` (blank) and `80`, not `0` or `80.0`. If you see
+integer-looking values, the load used autodetect or a wrong schema — re-run Step
+2 with the explicit schema strings above.
 
 ## Group A — staff field validity
 
@@ -616,6 +624,8 @@ select distinct
   CourseSequence,
 from `teamster-332318.cokafor.stg_staff_extract`
 where CourseLevel not in ('B', 'G', 'E', 'H', 'X')
+  or CourseSequence is null
+  or CourseSequence = ''
   or not regexp_contains(CourseSequence, r'^[1-9][1-9]$')
   or cast(substr(CourseSequence, 1, 1) as int64)
     > cast(substr(CourseSequence, 2, 1) as int64);
