@@ -1083,3 +1083,44 @@ Mon Jun 29.
 the handoff-dependent items earliest — compliance-team SMID generation is the
 long pole. Sequence intern-owned PowerSchool fixes so they never block waiting
 on someone who is out.
+
+## Cowork project setup
+
+A shared cowork project serves as the institutional knowledge store for the
+SLEDS Course Roster cycle — a place to look up handbook rules, triage error
+patterns, and draft handoff notes without opening BigQuery.
+
+### What to load
+
+- **NJ SLEDS Staff Course Roster Handbook** — the primary reference for field
+  definitions, SCED validation rules, and submission format.
+- **NJ SLEDS Student Course Roster Handbook** — student-side field definitions
+  and cross-extract parity rules.
+- **SCED code list** — the authority for valid subject-area, course-level, and
+  available-credits codes (Groups B checks).
+- **This runbook** — all 16 checks with their SQL, the error taxonomy, and the
+  remediation steps.
+- **De-identified convergence rollup** — the check-16 counts sheet (error
+  category and count only; no identified rows).
+
+### What it is used for
+
+- **Handbook Q&A** — look up field requirements and valid-values rules without
+  opening a PDF.
+- **Error-log triage** — classify state-returned errors by category and count;
+  map them to the check that catches them.
+- **Compliance handoff drafting** — compose the handoff note (new-SMID requests,
+  name/DOB correction lists) using counts and rule references rather than raw
+  records.
+- **Institutional continuity** — persist the audit logic, decision rationale,
+  and cycle timeline across interns and annual cycles.
+
+### Firm boundary
+
+Rules, counts, and de-identified samples only — never identified rows.
+
+State error reports list records by SID, SMID, or name; triage them in BigQuery
+or VS Code. Only the de-identified taxonomy (error type, count, which check
+catches it) goes into the cowork project. `SocialSecurityNumber` is dropped at
+load and never present; row-level worklists with names, DOBs, and IDs stay in
+BigQuery and Google Sheets (in-tenant) only.
