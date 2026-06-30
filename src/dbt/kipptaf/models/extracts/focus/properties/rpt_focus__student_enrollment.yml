@@ -12,9 +12,15 @@ models:
       together producing the 28-column layout consumed by the Focus SFTP
       transport. The Focus column header casing (`SYEAR`, `SCHOOL_ID`, etc.) is
       applied at transport time via `file_config.format.header_replacements`;
-      dbt column names remain lowercase snake_case. `end_date` and
-      `state_withdraw_label` populate only for `lifecycle_action =
-      'transfer_out'` rows.
+      dbt column names remain lowercase snake_case. `end_date`,
+      `state_withdraw_label`, and `moved_to` populate only for `lifecycle_action
+      = 'transfer_out'` rows.
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns:
+              - student_id
+              - start_date
     columns:
       - name: student_id
         data_type: string
@@ -23,7 +29,6 @@ models:
           `int_finalsite__contact_id_attributes.focus_student_id`; null for
           enrollments where Finalsite has not minted the id.
         data_tests:
-          - unique
           - not_null
       - name: syear
         data_type: int64

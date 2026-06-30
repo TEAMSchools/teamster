@@ -9,6 +9,7 @@ select
     if(
         l.grade_canonical_name = 'k',
         'KG',
+        -- non-digit grade names (e.g. pk) yield null here; Miami is K-9 today
         lpad(regexp_extract(l.grade_canonical_name, r'\d+'), 2, '0')
     ) as grade_id,
 
@@ -22,11 +23,19 @@ select
         else 'E01'
     end as enrollment_code,
 
-    -- enrollment_end_date / withdrawal_reason are already null upstream for
-    -- non-transfer rows, so no transfer_out re-gating is needed here.
+    -- enrollment_end_date is gated to transfer_out upstream in
+    -- int_finalsite__enrollment_lifecycle, so end_date needs no re-gating.
     format_date('%Y%m%d', l.enrollment_end_date) as end_date,
 
-    cca.fl_state_withdraw_codes_ss as state_withdraw_label,
+    -- fl_state_withdraw_codes_ss is a raw contact custom attribute (NOT gated
+    -- upstream), so gate it to transfer_out here — a withdraw code is only
+    -- meaningful for a withdrawal, and an ungated value would emit a drop code
+    -- for a still-enrolled student downstream.
+    if(
+        l.lifecycle_action = 'transfer_out',
+        cca.fl_state_withdraw_codes_ss,
+        cast(null as string)
+    ) as state_withdraw_label,
 
     cast(null as string) as calendar_id,
     cast(null as string) as prior_dist,
@@ -37,7 +46,11 @@ select
     cast(null as string) as offender_transfer_stdt,
     cast(null as string) as came_from,
 
-    cca.withdrawal_school_txt as moved_to,
+    if(
+        l.lifecycle_action = 'transfer_out',
+        cca.withdrawal_school_txt,
+        cast(null as string)
+    ) as moved_to,
 
     cast(null as string) as sec_sch,
 
