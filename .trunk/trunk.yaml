@@ -20,8 +20,8 @@ lint:
     - osv-scanner@2.4.0
     - oxipng@10.1.1
     - prettier@3.8.4
-    - pyright@1.1.410
-    - ruff@0.15.18
+    - pyright@1.1.411
+    - ruff@0.15.20
     - shellcheck@0.11.0
     - shfmt@3.6.0
     - sqlfluff@4.2.2
