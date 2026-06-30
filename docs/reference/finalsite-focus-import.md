@@ -56,12 +56,13 @@ by clearing the entry code.
 
 ### Withdraw / drop codes
 
-When a student transfers out, Finalsite records the withdrawal reason as the
-full FLDOE label — e.g. `(W02) In District Transfer`. Focus's import wants the
-short code (`W02`), not the label, so the pipeline looks the label up in Focus's
-own withdrawal-code list and sends the matching short code in the `DROP_CODE`
-column along with the end date. Drop codes are only sent for transfer-out
-records — a still-enrolled student never receives one.
+When a student transfers out, Finalsite records the withdrawal reason in its
+`fl_state_withdraw_codes_ss` field as the full FLDOE label — e.g.
+`(W02) In District Transfer`. Focus's import wants the short code (`W02`), not
+the label, so the pipeline looks the label up in Focus's own withdrawal-code
+list and sends the matching short code in the `DROP_CODE` column along with the
+end date. Drop codes are only sent for transfer-out records — a still-enrolled
+student never receives one.
 
 ### What counts as a change
 
