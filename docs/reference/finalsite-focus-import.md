@@ -10,8 +10,8 @@ and is validated by automated tests.
 
 ## What the pipeline does
 
-Each scheduled run builds four files from current Finalsite data and delivers
-them to Focus over SFTP, matching Focus's import templates:
+Each **nightly** run (3 a.m.) builds four files from current Finalsite data and
+delivers them to Focus over SFTP, matching Focus's import templates:
 
 | File               | Focus template       | Status |
 | ------------------ | -------------------- | ------ |
@@ -20,9 +20,10 @@ them to Focus over SFTP, matching Focus's import templates:
 | Addresses          | `ADDRESS`            | Active |
 | Contacts           | `CONTACTS`           | Active |
 
-The pipeline is **idempotent**: a run only sends records that are new to Focus
-or have changed. A student whose Focus record already matches is not re-sent.
-This keeps the imports small and avoids overwriting good data in Focus.
+The pipeline is **idempotent**: a run only sends what Focus needs — records that
+are new, plus (for the feeds that allow updates) records that changed. A student
+whose Focus record already matches is not re-sent. This keeps the imports small
+and avoids overwriting good data in Focus.
 
 ## Key design decisions
 
@@ -52,7 +53,9 @@ The entry code is derived from grade level:
 
 The entry code reflects how the student **entered** and does not change when a
 student withdraws — a withdrawal is expressed by the drop code and end date, not
-by clearing the entry code.
+by clearing the entry code. It is written to Focus **once**; because it's
+derived from grade, the pipeline never resends it, so a wrong entry code must be
+corrected manually in Focus.
 
 ### Withdraw / drop codes
 
@@ -62,7 +65,9 @@ When a student transfers out, Finalsite records the withdrawal reason in its
 the label, so the pipeline looks the label up in Focus's own withdrawal-code
 list and sends the matching short code in the `DROP_CODE` column along with the
 end date. Drop codes are only sent for transfer-out records — a still-enrolled
-student never receives one.
+student never receives one. Unlike the entry code, the drop code **updates on
+change**: if the withdrawal reason in Finalsite changes, the next run resends
+the corrected code.
 
 ### What counts as a change
 
@@ -75,19 +80,6 @@ student never receives one.
 - **Addresses and Contacts** — a student's address / contacts are sent only if
   Focus does not already have one for that student (import once); once Focus has
   them, the pipeline does not resend or overwrite.
-
-### Entry codes vs withdraw codes
-
-- **Entry code** (`ENROLLMENT_CODE` — `E05`/`E01`) is written to Focus **once**.
-  It's generated from the student's grade, so once Focus has it the pipeline
-  doesn't resend it.
-- **Withdraw code** (`DROP_CODE`) **updates on change** — if the withdrawal
-  reason in Finalsite changes, the pipeline resends the corrected code.
-
-> **A wrong _entry_ code must be fixed manually in Focus.** Because the entry
-> code imports only once, re-running the pipeline won't correct it. A wrong
-> _withdraw_ code, by contrast, self-corrects on the next run once it's fixed in
-> Finalsite.
 
 ### Forward-moving enrollments are protected
 
