@@ -10,16 +10,15 @@ and is validated by automated tests.
 
 ## What the pipeline does
 
-Each scheduled run builds five files from current Finalsite data and delivers
+Each scheduled run builds four files from current Finalsite data and delivers
 them to Focus over SFTP, matching Focus's import templates:
 
-| File               | Focus template       | Status                      |
-| ------------------ | -------------------- | --------------------------- |
-| Demographics       | `DEMOGRAPHICS`       | Active                      |
-| Student Enrollment | `STUDENT_ENROLLMENT` | Active                      |
-| Addresses          | `ADDRESS`            | Active                      |
-| Contacts           | `CONTACTS`           | Active                      |
-| Linked Students    | `LINKED_STUDENTS`    | Disabled for v1 (see below) |
+| File               | Focus template       | Status |
+| ------------------ | -------------------- | ------ |
+| Demographics       | `DEMOGRAPHICS`       | Active |
+| Student Enrollment | `STUDENT_ENROLLMENT` | Active |
+| Addresses          | `ADDRESS`            | Active |
+| Contacts           | `CONTACTS`           | Active |
 
 The pipeline is **idempotent**: a run only sends records that are new to Focus
 or have changed. A student whose Focus record already matches is not re-sent.
@@ -27,17 +26,20 @@ This keeps the imports small and avoids overwriting good data in Focus.
 
 ## Key design decisions
 
-### Student ID — the `8400` prefix
+### Student ID — minted in Finalsite
 
-Every student is sent to Focus with a student ID of `8400` followed by the
-Finalsite-minted ID (for example, Finalsite `3003001` is sent as `84003003001`).
-`8400` is the Florida district number, and the prefixed value matches the Focus
-`students.student_id` exactly, which is how each record is matched to Focus.
+Finalsite mints a new, auto-incrementing **6-digit student ID for every new
+contact**. That ID is what identifies the student in Focus, and the pipeline
+reads it straight from the contact record.
 
 > **A student needs a minted Finalsite ID to be sent.** If Finalsite has not yet
-> minted a student ID for a contact, that student is not included in the import.
-> Ensure the Finalsite ID is assigned before expecting the student to flow to
-> Focus.
+> minted an ID for a contact, that student is not included in the import. Make
+> sure the ID is assigned before expecting the student to flow to Focus.
+
+Focus stores the ID with a fixed `8400` district prefix, so the 6-digit
+Finalsite ID becomes a 10-digit Focus `student_id` (e.g. `303197` →
+`8400303197`). The pipeline applies that prefix, and the prefixed value is what
+each record matches on in Focus.
 
 ### Enrollment codes (entry)
 
@@ -54,10 +56,12 @@ by clearing the entry code.
 
 ### Withdraw / drop codes
 
-When a student transfers out, the withdrawal reason recorded in Finalsite
-(`fl_state_withdraw_codes_ss`) is translated into the matching Focus drop code
-and sent in the `DROP_CODE` column along with the end date. Drop codes are only
-sent for transfer-out records — a still-enrolled student never receives one.
+When a student transfers out, Finalsite records the withdrawal reason as the
+full FLDOE label — e.g. `(W02) In District Transfer`. Focus's import wants the
+short code (`W02`), not the label, so the pipeline looks the label up in Focus's
+own withdrawal-code list and sends the matching short code in the `DROP_CODE`
+column along with the end date. Drop codes are only sent for transfer-out
+records — a still-enrolled student never receives one.
 
 ### What counts as a change
 
@@ -65,16 +69,24 @@ sent for transfer-out records — a still-enrolled student never receives one.
   populated field differs from what Focus currently holds. A field left blank in
   Finalsite is never treated as a change, so a blank value will not overwrite
   data already in Focus.
-- **Student enrollment** — a record is re-sent only if it is new to Focus or its
-  end date has changed.
+- **Student enrollment** — a record is re-sent only if it is new to Focus, its
+  end date has changed, or its withdraw code has changed.
+- **Addresses and Contacts** — a student's address / contacts are sent only if
+  Focus does not already have one for that student (import once); once Focus has
+  them, the pipeline does not resend or overwrite.
 
-### Codes import once
+### Entry codes vs withdraw codes
 
-> **Entry and withdraw codes are written to Focus only once.** Once Focus holds
-> an enrollment's entry code or drop code, the pipeline will not overwrite it on
-> later runs. If a wrong code is imported the first time (for example, the wrong
-> withdrawal reason), the correction must be made manually in Focus — re-running
-> the pipeline will not fix it.
+- **Entry code** (`ENROLLMENT_CODE` — `E05`/`E01`) is written to Focus **once**.
+  It's generated from the student's grade, so once Focus has it the pipeline
+  doesn't resend it.
+- **Withdraw code** (`DROP_CODE`) **updates on change** — if the withdrawal
+  reason in Finalsite changes, the pipeline resends the corrected code.
+
+> **A wrong _entry_ code must be fixed manually in Focus.** Because the entry
+> code imports only once, re-running the pipeline won't correct it. A wrong
+> _withdraw_ code, by contrast, self-corrects on the next run once it's fixed in
+> Finalsite.
 
 ### Forward-moving enrollments are protected
 
@@ -93,25 +105,21 @@ to the prior enrollment and is ignored.
 > record. Focus retains prior years from earlier imports; Finalsite is not the
 > system of record for enrollment history.
 
-- **Addresses / Contacts / Linked Students "import once" is not yet active.**
-  The Focus tables that track these links are currently empty, so this guard
-  cannot be applied yet. It turns on automatically once those Focus modules hold
-  data. (Tracked as requirement 1 of the project.)
-- **Linked Students is turned off for v1.** The sibling-link file is not
-  generated yet; the logic is in place and dormant.
 - **Home language** is sent as the FLDOE language code (e.g. `EN`). This matches
   what Focus stores today, so language values will not churn on every run.
-- **A few contacts have more than one withdrawal date recorded.** When multiple
-  withdrawal dates are present on one contact, the pipeline uses the
-  **earliest**. This affects a very small number of students; the registrar
-  should confirm which date should win in those cases.
+- **A few contacts have more than one withdrawal date recorded.** A contact can
+  carry up to three withdrawal-date fields — `mid_year_withdrawal_date`,
+  `summer_withdraw_date`, and `not_enrolling_date`. When more than one is set,
+  the pipeline uses the **earliest**. This affects a very small number of
+  students; the registrar should confirm which date should win in those cases.
 
 ## What the enrollment team should watch for
 
 - **Mint the Finalsite student ID** before expecting a student in Focus —
   records without one are skipped.
-- **Corrections to entry or withdraw codes** after the first import must be made
-  directly in Focus; the pipeline will not re-send them.
+- **A wrong entry code** after the first import must be fixed directly in Focus
+  — the pipeline won't resend it. (A wrong withdraw code self-corrects on the
+  next run once fixed in Finalsite.)
 - **Flag students with multiple withdrawal dates** so the correct date can be
   confirmed.
 
