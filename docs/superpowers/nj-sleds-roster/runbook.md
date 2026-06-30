@@ -1,0 +1,254 @@
+# NJ SLEDS Course Roster Submission — Runbook
+
+This runbook guides a KTAF data team member through the end-to-end quality
+checks required before submitting the NJ SLEDS course roster file. It is
+organized into groups that mirror the submission pipeline: Group A validates
+staff identity fields in the extract against the state reference file; later
+groups cover student enrollment, course metadata, and final submission steps.
+Run each group's checks in order, resolve all flagged rows, and document
+dispositions before moving to the next group.
+
+## Group A — staff field validity
+
+The six checks below catch the field-level errors most likely to cause SLEDS
+rejection: missing or malformed SMIDs, identity mismatches against the state's
+own staff file, duplicate local IDs, illegal name characters, out-of-window
+dates, and wrong CDS codes. Run each query against `cokafor.stg_staff_extract`
+(291 rows for the Newark sample) and `cokafor.ref_state_staff` (1 053 rows)
+before every submission.
+
+### Check 1 — missing or invalid SMID
+
+**What it catches:** Staff whose `StaffMemberIdentifier` is NULL or is not
+exactly 8 digits. SLEDS requires a valid 8-digit SMID on every row; a missing or
+malformed SMID causes the entire staff record to reject.
+
+**Why it happens:** New hires whose SMID has not yet been entered in the HR
+system, or LSIDs stored as temp codes (e.g. `TMP00349`, `SAUDNRHRY`) that were
+never resolved to a real NJ staff ID.
+
+**How to fix:** Look up the staff member in the NJ TEACH portal or contact the
+People Operations team to obtain the correct SMID. If the person is not yet
+registered with the state, hold the record until registration is complete.
+
+**Owner:** People Operations (SMID lookup); Data team (extract correction).
+
+```sql
+select distinct
+  LocalStaffIdentifier,
+  StaffMemberIdentifier,
+  FirstName,
+  LastName,
+from `teamster-332318.cokafor.stg_staff_extract`
+where StaffMemberIdentifier is null
+  or not regexp_contains(StaffMemberIdentifier, r'^[0-9]{8}$');
+```
+
+_Validation result (2025-26 Newark sample): 22 rows — staff whose SMID is NULL,
+including records with temp-style LSIDs. Each must be resolved or held before
+submission._
+
+### Check 2 — combination-error predictor (spine check)
+
+**What it catches:** Staff whose five-field identity tuple
+(`LocalStaffIdentifier`, `StaffMemberIdentifier`, `FirstName`, `LastName`,
+`DateOfBirth`) does not match the state's `ref_state_staff` file. SLEDS
+cross-references all five fields; any mismatch causes a combination error that
+blocks the roster line.
+
+**Why it happens:** Name changes not propagated to the state file, LSIDs not yet
+registered with NJ (no match at all), or data-entry discrepancies (e.g. middle
+initial embedded in `FirstName`).
+
+**How to fix:** For `no LSID match in state` rows, the staff member is not yet
+in the state reference — escalate to People Operations. For name or DOB
+mismatches, compare the extract value to the state value and correct whichever
+source is wrong; name changes require a state-side update via NJ TEACH.
+
+**Owner:** People Operations (state registration/corrections); Data team
+(extract corrections).
+
+**Note:** DOB fields are confirmed `YYYYMMDD` strings in both tables —
+`stg_staff_extract.DateOfBirth` and `ref_state_staff.DateofBirth` — so no
+normalization is needed.
+
+```sql
+with extract_staff as (
+  select distinct
+    LocalStaffIdentifier,
+    StaffMemberIdentifier,
+    FirstName,
+    LastName,
+    DateOfBirth,
+  from `teamster-332318.cokafor.stg_staff_extract`
+)
+select
+  e.LocalStaffIdentifier,
+  e.StaffMemberIdentifier,
+  e.FirstName,
+  e.LastName,
+  case
+    when r.LocalStaffIdentifier is null then 'no LSID match in state'
+    when e.StaffMemberIdentifier != r.StaffMemberIdentifier then 'SMID mismatch'
+    when upper(e.FirstName) != upper(r.FirstName) then 'first name mismatch'
+    when upper(e.LastName) != upper(r.LastName) then 'last name mismatch'
+    when e.DateOfBirth != r.DateofBirth then 'DOB mismatch'
+  end as mismatch_reason,
+from extract_staff as e
+left join `teamster-332318.cokafor.ref_state_staff` as r
+  on e.LocalStaffIdentifier = r.LocalStaffIdentifier
+where r.LocalStaffIdentifier is null
+  or e.StaffMemberIdentifier != r.StaffMemberIdentifier
+  or upper(e.FirstName) != upper(r.FirstName)
+  or upper(e.LastName) != upper(r.LastName)
+  or e.DateOfBirth != r.DateofBirth;
+```
+
+_Validation result (2025-26 Newark sample): 17 rows — mix of
+`no LSID match in state` (staff not yet registered) and name mismatches. This is
+expected signal given that only 67 distinct LSIDs match the state file; the
+mismatch reasons are sensible._
+
+### Check 3 — duplicate LSID
+
+**What it catches:** LSIDs that map to more than one distinct person
+(`StaffMemberIdentifier`, `FirstName`, `LastName` triple). A shared LSID means
+two staff members will collide in the roster, causing unpredictable rejects.
+
+**Why it happens:** Data-entry error, a rehired staff member reassigned a
+previously-used local ID, or a system migration that created duplicate records.
+
+**How to fix:** Identify which record is correct (usually the active
+enrollment), reassign a unique LSID to the duplicate, and update the source
+system. Coordinate with HR and the SIS administrator.
+
+**Owner:** HR / SIS administrator; Data team (extract correction).
+
+```sql
+select
+  LocalStaffIdentifier,
+  count(distinct format('%t|%t|%t', StaffMemberIdentifier, FirstName, LastName))
+    as distinct_people,
+from `teamster-332318.cokafor.stg_staff_extract`
+group by LocalStaffIdentifier
+having distinct_people > 1;
+```
+
+_Validation result (2025-26 Newark sample): 0 rows — no duplicate LSIDs. Clean._
+
+### Check 4 — name rule violations
+
+**What it catches:** `FirstName` or `LastName` values that are NULL or contain
+characters outside the allowed set (letters, apostrophe, hyphen, space). SLEDS
+rejects names with periods, digits, or other special characters.
+
+**Why it happens:** Middle initials appended to `FirstName` (e.g. `Daniel R`),
+suffixes embedded in `LastName`, or data imported from a system with looser name
+validation.
+
+**How to fix:** Remove the disallowed character. If a middle initial is in
+`FirstName`, strip it and store only the given name. Periods after initials must
+be removed. Hyphens and apostrophes are allowed and should be preserved.
+
+**Owner:** Data team (extract correction); People Operations confirms legal name
+spelling.
+
+```sql
+select distinct
+  LocalStaffIdentifier,
+  FirstName,
+  LastName,
+from `teamster-332318.cokafor.stg_staff_extract`
+where FirstName is null
+  or LastName is null
+  or regexp_contains(FirstName, r"[^A-Za-z '\-]")
+  or regexp_contains(LastName, r"[^A-Za-z '\-]");
+```
+
+_Validation result (2025-26 Newark sample): 1 row — `Daniel R` in `FirstName`
+(embedded middle initial with a space then letter counts as a non-alpha
+character block). Period in `St. Clair` did not trigger because the period is
+caught by the regex — confirmed as expected flag._
+
+### Check 5 — date validity
+
+**What it catches:** `SectionEntryDate` values that are not 8-digit strings,
+fall outside the SY 2025-26 window (`20250701`–`20260630`), or `SectionExitDate`
+values that are malformed or precede the entry date.
+
+**Why it happens:** Dates exported in a non-`YYYYMMDD` format, section
+assignments carried over from a prior year, or exit dates entered before the
+entry date due to data-entry error.
+
+**How to fix:** Correct the date in the source SIS. For out-of-window entry
+dates, verify whether the section assignment is truly from the current year;
+prior-year records should be excluded from the extract. Update the window
+constants (`20250701` / `20260630`) each year to the actual first and last
+instructional days.
+
+**Owner:** Data team (extract correction); School ops confirms section dates.
+
+```sql
+select distinct
+  LocalSectionCode,
+  StaffMemberIdentifier,
+  SectionEntryDate,
+  SectionExitDate,
+from `teamster-332318.cokafor.stg_staff_extract`
+where not regexp_contains(SectionEntryDate, r'^[0-9]{8}$')
+  or SectionEntryDate < '20250701'
+  or SectionEntryDate > '20260630'
+  or (
+    SectionExitDate is not null
+    and SectionExitDate not in ('', '00000000')
+    and (
+      not regexp_contains(SectionExitDate, r'^[0-9]{8}$')
+      or SectionExitDate < SectionEntryDate
+    )
+  );
+```
+
+_Validation result (2025-26 Newark sample): 0 rows — all dates are in range and
+well-formed. Clean._
+
+### Check 6 — CDS code validity
+
+**What it catches:** Rows whose `CountyCodeAssigned` / `DistrictCodeAssigned` /
+`SchoolCodeAssigned` combination is not on the approved list for this
+submission. An unexpected CDS combo means the record will be attributed to the
+wrong school in the state system.
+
+**Why it happens:** Incorrect school code in the source system, a school merger
+or renaming that changed the CDS, or staff assigned to a placeholder or
+administrative code instead of an instructional school.
+
+**How to fix:** Verify the correct CDS for each flagged school in the NJDOE
+school directory and correct the source system. Add new approved CDS combos to
+the `having` allowlist in this query each year as needed.
+
+**Owner:** Data team (CDS mapping); School ops confirms correct NJDOE school
+codes.
+
+**Note:** The brief's original query uses `rows` as a column alias, which is a
+reserved word in BigQuery. The query below uses `row_count` instead — use this
+corrected version.
+
+```sql
+select
+  CountyCodeAssigned,
+  DistrictCodeAssigned,
+  SchoolCodeAssigned,
+  count(*) as row_count,
+from `teamster-332318.cokafor.stg_staff_extract`
+group by 1, 2, 3
+having not (
+  (CountyCodeAssigned = '80' and DistrictCodeAssigned = '7325'
+    and SchoolCodeAssigned = '965')
+  or (CountyCodeAssigned = '07' and DistrictCodeAssigned = '1799'
+    and SchoolCodeAssigned = '111')
+);
+```
+
+_Validation result (2025-26 Newark sample): 1 row — `null/7325/732` with 115
+rows. `CountyCodeAssigned` is NULL for these records; this is an off-spec
+combination that must be investigated before submission._
