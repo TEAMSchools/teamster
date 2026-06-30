@@ -16,11 +16,23 @@
   "the people who report up to you" — replacing the prior mix of "reporting
   chain" / "downline" / "team". It means strictly your direct + indirect
   reports, never same-level peers.
-- 2026-06-24c (this revision) — staff **summary aggregates are open** too (no
-  `staff_summary_*` scope columns; staff aggregates, like the directory, are
-  unscoped). The sensitive remit columns drop the now-misleading `detail`
-  prefix: `staff_location_scope` + `staff_department_scope`. They constrain rows
-  only in conjunction with a sensitive field. Prior models are in git history.
+- 2026-06-24c — staff **summary aggregates are open** too (no `staff_summary_*`
+  scope columns; staff aggregates, like the directory, are unscoped). The
+  sensitive remit columns drop the now-misleading `detail` prefix:
+  `staff_location_scope` + `staff_department_scope`. They constrain rows only in
+  conjunction with a sensitive field. Prior models are in git history.
+- 2026-06-30 (this revision) — **students collapse to a single location-scoped
+  tier.** The summary/detail location split and the separate `student_pii_scope`
+  are removed in favor of one `student_location_scope`; any non-`none` value
+  grants the single `student` tier, which sees every student view (summary +
+  detail) and all fields, **PII included**. Location is the only student gating
+  axis. Separately, **`department_type` (instructional/non-instructional) is
+  dropped** from the role crosswalk, the rollup, and `dim_staff_cube_access` —
+  role matching is now keyed on `(job_function_code, entity)`. (The
+  `department_group` / `staff_department_scope` `own_group` staff remit is
+  unchanged.) Tier names are the short forms used in the merged code (`student`,
+  `staff-directory`, `staff-pii`, …), not the `cube-access-*` prefixes this spec
+  originally described.
 
 ## Summary
 
@@ -60,13 +72,15 @@ So there is no "is the staff row visible" gate — the row gate fires **only whe
 a query touches a sensitive field**, and then only restricts to that field's
 scope. A directory-only query returns all staff.
 
-### Students: location-scoped detail + PII
+### Students: a single location-scoped tier
 
 Students have no directory/sensitive split and no reporting-chain concept —
-student-level data is inherently sensitive. A student row is shown at detail
-within `student_detail_location_scope`; aggregates within
-`student_summary_location_scope`; `student_pii_scope` (`all`/`none`) gates the
-identifier columns on the detail view.
+student-level data is inherently sensitive. There is one axis,
+`student_location_scope` (`network`/`region`/`school`/`none`). Any non-`none`
+value grants the single `student` tier, which exposes **every** student view
+(detail and summary) and **all** fields, PII included — there is no separate
+summary/detail or PII gate. Rows are filtered to the location scope in
+`queryRewrite`.
 
 ### "reporting chain"
 
@@ -109,10 +123,10 @@ standard "requesting a restricted field narrows the query" tradeoff.
 
 ### Location & department scopes
 
-Decomposed — no fused enums. Students carry a summary and a detail location
-scope (`student_summary_location_scope` / `student_detail_location_scope`);
-staff carry only the sensitive remit (`staff_location_scope` +
-`staff_department_scope`) since the staff summary and directory are open.
+Decomposed — no fused enums. Students carry a single location scope
+(`student_location_scope`); staff carry only the sensitive remit
+(`staff_location_scope` + `staff_department_scope`) since the staff summary and
+directory are open.
 
 <!-- markdownlint-disable MD013 -->
 
@@ -160,14 +174,11 @@ google_email                       -- JWT-boundary lookup only
 region_key                         -- viewer identity (filter key)
 location_abbreviation              -- viewer identity (filter key)
 department_group                   -- viewer identity (filter key)
-department_type                    -- instructional / non-instructional
 entity                             -- KTAF / Region
 job_function_code
 job_function_level                 -- org rank 1-6
 
-student_summary_location_scope     -- network / region / school / none
-student_detail_location_scope      -- network / region / school / none
-student_pii_scope                  -- all / none
+student_location_scope             -- network / region / school / none
 
 staff_location_scope               -- sensitive bound: network/region/school/none
 staff_department_scope             -- sensitive bound: all/own_group/none
@@ -190,9 +201,8 @@ mapping when matched.
 
 ### `cube_access_role` columns
 
-`job_function_code`, `entity` (`KTAF`/`Region`/`any`), `department_type`
-(`instructional`/`non-instructional`/`any`), `job_function_level` (1-7), then
-the access columns below. Keyed on the 3-part tuple.
+`job_function_code`, `entity` (`KTAF`/`Region`/`any`), `job_function_level`
+(1-7), then the access columns below. Keyed on `(job_function_code, entity)`.
 
 ### `cube_access_department_override` columns
 
@@ -202,8 +212,7 @@ Accounting, Finance, Compliance.
 
 ### Access columns (both tabs)
 
-`student_summary_location_scope`, `student_detail_location_scope`,
-`student_pii_scope`, `staff_location_scope`, `staff_department_scope`,
+`student_location_scope`, `staff_location_scope`, `staff_department_scope`,
 `staff_pii_scope`, `staff_compensation_scope`, `staff_observations_scope`,
 `staff_benefits_scope`. (No `staff_summary_*` and no `staff_detail_org_gate`.)
 The four `staff_*_scope` field values use the per-field enum
@@ -213,7 +222,8 @@ bounds them.
 
 ### `cube_access_department_rollup`
 
-Unchanged: `department_name` → `department_group` + `department_type`.
+`department_name` → `department_group` (the `own_group` remit). The former
+`department_type` column is removed.
 
 ## Changes required
 
@@ -247,12 +257,10 @@ email → access row from `dim_staff_cube_access` (`WHERE google_email = @email`
 (`WHERE manager_staff_key = @staffKey`). Cache
 `{ row, reportingChainKeys, groups }`. `buildGroups(row)` emits column tiers:
 
-- Students: `cube-access-student-detail` / `-summary` / `-pii` by the student
-  scopes.
-- Staff: `cube-access-staff-directory` for **every** staff viewer (the open
-  directory); a sensitive column tier per the `*_scope` enums (`!= none`). In v1
-  the only sensitive columns are PII → `cube-access-staff-pii` when
-  `staff_pii_scope != none`.
+- Students: the single `student` tier when `student_location_scope != none`.
+- Staff: `staff-directory` for **every** staff viewer (the open directory); a
+  sensitive column tier per the `*_scope` enums (`!= none`). In v1 the only
+  sensitive columns are PII → `staff-pii` when `staff_pii_scope != none`.
 
 ### `cube.js`: `queryRewrite`
 
@@ -269,8 +277,8 @@ Reads the cached `row` + `reportingChainKeys`.
   - `teaching_staff` → location ∩ department ∩ `job_function_code` in
     `('TEACH','TIR')`
   - `none` → the column is hidden by `access_policy`, never requested
-- **Student query** → location filter by surface (`*_detail` vs `*_summary`),
-  default-deny empty `IN ()`.
+- **Student query** → location filter from `student_location_scope` (one tier,
+  no per-surface distinction), default-deny empty `IN ()`.
 - Student-member strip, snapshot-anchor guard, and `canSwitchSqlUser` unchanged.
 
 The staff views expose `staff.staff_key`, `staff.job_function_level`,
@@ -291,13 +299,12 @@ exception: the `staff` cube reads `job_function_level`, `job_function_code`,
 
 ### View access policies + `staff` cube join
 
-- **Student views** (6): `cube-access-student-detail` (detail) / `-summary`
-  (summary) / `-pii`.
-- **Staff views**: `staff_detail` carries `cube-access-staff-directory`
-  (`includes: "*"`, `excludes:` the sensitive fields — `personal_email`,
-  `personal_cell_phone`, `birth_date`, `gender_identity`, `race`, `is_hispanic`)
-  - `cube-access-staff-pii` (`includes: "*"`). `staff_summary` keeps a single
-    aggregate tier.
+- **Student views** (6): a single `student` tier (`includes: "*"`) on every view
+  — no detail/summary or PII split.
+- **Staff views**: `staff_detail` carries `staff-directory` (`includes: "*"`,
+  `excludes:` the sensitive fields — `personal_email`, `personal_cell_phone`,
+  `birth_date`, `gender_identity`, `race`, `is_hispanic`) + `staff-pii`
+  (`includes: "*"`). `staff_summary` keeps a single aggregate tier.
 - **`staff` cube**: inline `sql:` `LEFT JOIN dim_staff_cube_access` on
   `staff_key` exposing `job_function_level`, `job_function_code`,
   `department_group`; expose all three on `staff_detail` for the sensitive-field
@@ -311,7 +318,8 @@ internal).
 
 ## Open questions
 
-1. Department rollup (`department_name` → group / type) owned by the data team.
+1. Department rollup (`department_name` → `department_group`) owned by the data
+   team.
 2. `job_function_code` — RESOLVED (prereq landed).
 3. Multi-location / itinerant staff — one `location_abbreviation`; deferred.
 4. Whether to keep `staff_summary` as a distinct view or fold it into the open
@@ -326,7 +334,7 @@ internal).
 3. Confirm both dims in `exposures/cube.yml` `depends_on`.
 4. `staff` cube inline join (`job_function_level` / `job_function_code` /
    `department_group`).
-5. View `access_policy`: student `-detail`/`-summary`/`-pii`; staff
+5. View `access_policy`: students a single `student` tier; staff
    `-directory`/`-pii`.
 6. `cube.js` / `access.js`: BigQuery `contextToGroups`; `queryRewrite` with open
    directory + per-field sensitive scopes (intersection across requested
