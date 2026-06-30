@@ -493,8 +493,60 @@ where e.LocalStaffIdentifier != r.LocalStaffIdentifier;
 
 _Validation result (2025-26 EOY, both regions): 75 staff (Newark 55, Camden 20)
 — SMID matches, LSID differs. These are stale-LSID overrides, not new
-registrations. Of Check 2's 141 `no LSID match` staff, 75 are fixable this way;
-the remaining 66 are genuinely absent from the state record._
+registrations. Staff who match the state on no identifier at all are a separate
+bucket with the opposite fix — see the companion below._
+
+#### Companion — staff likely missing from NJSLEDS (register a new SMID)
+
+If a staff member matches the state record on **none** of LSID, SMID, or name +
+DOB, they are almost certainly not registered with the state at all — the
+recurring "new staff need an SMID generated" case. This is the opposite of the
+stale-LSID fix: there is no override to set, because there is no state record to
+point at. These go on the compliance-team handoff sheet for SMID generation,
+with as much lead time as possible (it is the long pole in the submission).
+
+**Owner:** Compliance team (state SMID generation); intern stages the list.
+
+```sql
+with extract_staff as (
+  select distinct
+    region,
+    LocalStaffIdentifier,
+    StaffMemberIdentifier,
+    FirstName,
+    LastName,
+    DateOfBirth,
+  from `teamster-332318.cokafor.stg_staff_extract`
+)
+select
+  e.region,
+  e.LocalStaffIdentifier,
+  e.StaffMemberIdentifier,
+  e.FirstName,
+  e.LastName,
+  e.DateOfBirth,
+from extract_staff as e
+left join `teamster-332318.cokafor.ref_state_staff` as by_lsid
+  on e.LocalStaffIdentifier = by_lsid.LocalStaffIdentifier
+  and e.region = by_lsid.region
+left join `teamster-332318.cokafor.ref_state_staff` as by_smid
+  on e.StaffMemberIdentifier = by_smid.StaffMemberIdentifier
+  and e.region = by_smid.region
+left join `teamster-332318.cokafor.ref_state_staff` as by_name
+  on upper(e.FirstName) = upper(by_name.FirstName)
+  and upper(e.LastName) = upper(by_name.LastName)
+  and e.DateOfBirth = by_name.DateofBirth
+  and e.region = by_name.region
+where by_lsid.LocalStaffIdentifier is null
+  and by_smid.StaffMemberIdentifier is null
+  and by_name.LocalStaffIdentifier is null;
+```
+
+_Validation result (2025-26 EOY, both regions): 76 staff (Newark 10, Camden 66)
+— no match on LSID, SMID, or name + DOB. These are the likely-unregistered staff
+to hand to compliance for SMID generation. Staff who miss on LSID and SMID but
+match on name + DOB are in the state under different IDs — a small
+manual-reconciliation remainder, not part of this list._
 
 ### Check 3 — duplicate LSID
 
