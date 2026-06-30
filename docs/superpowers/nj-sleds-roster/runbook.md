@@ -165,10 +165,11 @@ where FirstName is null
   or regexp_contains(LastName, r"[^A-Za-z '\-]");
 ```
 
-_Validation result (2025-26 Newark sample): 1 row — `Daniel R` in `FirstName`
-(embedded middle initial with a space then letter counts as a non-alpha
-character block). Period in `St. Clair` did not trigger because the period is
-caught by the regex — confirmed as expected flag._
+_Validation result (2025-26 Newark sample): 1 row — `St. Clair` in `LastName`,
+flagged on the period (`.`). NJ SLEDS allows only letters, apostrophe, hyphen,
+and space in name fields, so the abbreviation's period is the violation; the fix
+is to store the name without the period (`St Clair`) in the SIS. No `FirstName`
+violations were found._
 
 ### Check 5 — date validity
 
@@ -250,5 +251,8 @@ having not (
 ```
 
 _Validation result (2025-26 Newark sample): 1 row — `null/7325/732` with 115
-rows. `CountyCodeAssigned` is NULL for these records; this is an off-spec
-combination that must be investigated before submission._
+rows. Two distinct defects in the same combo: `CountyCodeAssigned` is NULL (the
+Newark county is `80`), and `SchoolCodeAssigned` is `732` rather than the
+approved `965`. Both must be corrected in PowerSchool's state-reporting fields
+before submission; trace the `732` source in the loaded extract (the
+`Alternate_School_Number` fallback hypothesis is ruled out — see the spec)._
