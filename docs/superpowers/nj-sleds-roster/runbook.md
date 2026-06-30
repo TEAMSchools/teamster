@@ -195,8 +195,8 @@ exactly 8 digits. SLEDS requires a valid 8-digit SMID on every row; a missing or
 malformed SMID causes the entire staff record to reject.
 
 **Why it happens:** New hires whose SMID has not yet been entered in the HR
-system, or LSIDs stored as temp codes (e.g. `TMP00349`, `SAUDNRHRY`) that were
-never resolved to a real NJ staff ID.
+system, or LSIDs stored as temp codes (e.g. a `TMP`-prefixed placeholder or an
+all-alpha stub) that were never resolved to a real NJ staff ID.
 
 **How to fix:** Look up the staff member in the NJ TEACH portal or contact the
 People Operations team to obtain the correct SMID. If the person is not yet
@@ -313,9 +313,9 @@ _Validation result (2025-26 Newark sample): 0 rows — no duplicate LSIDs. Clean
 characters outside the allowed set (letters, apostrophe, hyphen, space). SLEDS
 rejects names with periods, digits, or other special characters.
 
-**Why it happens:** Middle initials appended to `FirstName` (e.g. `Daniel R`),
-suffixes embedded in `LastName`, or data imported from a system with looser name
-validation.
+**Why it happens:** Middle initials appended to `FirstName` (e.g. a first name
+stored as `Firstname M`), suffixes embedded in `LastName`, or data imported from
+a system with looser name validation.
 
 **How to fix:** Remove the disallowed character. If a middle initial is in
 `FirstName`, strip it and store only the given name. Periods after initials must
@@ -336,11 +336,11 @@ where FirstName is null
   or regexp_contains(LastName, r"[^A-Za-z '\-]");
 ```
 
-_Validation result (2025-26 Newark sample): 1 row — `St. Clair` in `LastName`,
-flagged on the period (`.`). NJ SLEDS allows only letters, apostrophe, hyphen,
-and space in name fields, so the abbreviation's period is the violation; the fix
-is to store the name without the period (`St Clair`) in the SIS. No `FirstName`
-violations were found._
+_Validation result (2025-26 Newark sample): 1 row — a `LastName` containing a
+period in an abbreviated surname (e.g. an `St.`-style prefix). NJ SLEDS allows
+only letters, apostrophe, hyphen, and space in name fields, so the period is the
+violation; the fix is to store the name without the period in the SIS. No
+`FirstName` violations were found._
 
 ### Check 5 — date validity
 
