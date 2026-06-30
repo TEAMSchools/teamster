@@ -32,6 +32,11 @@ with
 
             trk.promotion_status_ss as promotion_status,
 
+            -- Only count a withdrawal that falls on/after the current
+            -- enrollment start. A withdrawal date before enrolled_date belongs
+            -- to a prior enrollment on this (reused) Finalsite contact, so it
+            -- must not end-date or transfer-out the forward enrollment — that
+            -- would carry a stale drop code and end date onto the new start.
             (
                 select min(d),
                 from
@@ -42,6 +47,7 @@ with
                             sr.not_enrolling_date
                         ]
                     ) as d
+                where d >= sr.enrolled_date
             ) as enrollment_end_date,
 
             case

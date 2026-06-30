@@ -284,3 +284,83 @@ unit_tests:
             withdrawal_reason: mid_year_withdrawal,
             lifecycle_action: transfer_out,
           }
+  - name: test_enrollment_lifecycle_stale_withdrawal_not_carried_forward
+    description:
+      A withdrawal date before the current enrolled_date belongs to a prior
+      enrollment on the same reused Finalsite contact and must not end-date or
+      transfer-out the forward enrollment (c_stale stays re_enroll with a null
+      end_date). A withdrawal on or after the current start still transfers out
+      (c_current).
+    model: int_finalsite__enrollment_lifecycle
+    given:
+      - input: ref('stg_finalsite__contacts')
+        rows:
+          - {
+              finalsite_enrollment_id: c_stale,
+              status: enrolled,
+              enrollment_type: returning,
+              school_year_start: 2026,
+              grade_canonical_name: "02",
+            }
+          - {
+              finalsite_enrollment_id: c_current,
+              status: enrolled,
+              enrollment_type: returning,
+              school_year_start: 2026,
+              grade_canonical_name: "03",
+            }
+      - input: ref('stg_finalsite__status_report')
+        rows:
+          - {
+              finalsite_enrollment_id: c_stale,
+              _dagster_partition_key: 2026-08-20,
+              enrolled_date: 2026-08-15,
+              mid_year_withdrawal_date: 2026-01-10,
+              summer_withdraw_date: null,
+              not_enrolling_date: null,
+              assigned_school: School A,
+            }
+          - {
+              finalsite_enrollment_id: c_current,
+              _dagster_partition_key: 2026-08-20,
+              enrolled_date: 2025-08-15,
+              mid_year_withdrawal_date: 2026-01-10,
+              summer_withdraw_date: null,
+              not_enrolling_date: null,
+              assigned_school: School A,
+            }
+      - input: ref('int_finalsite__contact_track_attributes')
+        format: sql
+        rows: |
+          select
+            cast(null as string) as finalsite_enrollment_id,
+            cast(null as string) as promotion_status_ss
+          from (select 1) where false
+    expect:
+      rows:
+        - {
+            finalsite_enrollment_id: c_stale,
+            finalsite_status: enrolled,
+            enrollment_type: returning,
+            school_year_start: 2026,
+            grade_canonical_name: "02",
+            promotion_status: null,
+            assigned_school: School A,
+            enrollment_start_date: 2026-08-15,
+            enrollment_end_date: null,
+            withdrawal_reason: null,
+            lifecycle_action: re_enroll,
+          }
+        - {
+            finalsite_enrollment_id: c_current,
+            finalsite_status: enrolled,
+            enrollment_type: returning,
+            school_year_start: 2026,
+            grade_canonical_name: "03",
+            promotion_status: null,
+            assigned_school: School A,
+            enrollment_start_date: 2025-08-15,
+            enrollment_end_date: 2026-01-10,
+            withdrawal_reason: mid_year_withdrawal,
+            lifecycle_action: transfer_out,
+          }
