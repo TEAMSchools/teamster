@@ -8,6 +8,177 @@ groups cover student enrollment, course metadata, and final submission steps.
 Run each group's checks in order, resolve all flagged rows, and document
 dispositions before moving to the next group.
 
+## How to use this runbook
+
+**Goal:** Produce a clean Staff Course Roster and Student Course Roster extract
+for Newark and Camden that passes NJ SLEDS validation without any
+post-processing of the CSV files. Every defect is fixed at the source in
+PowerSchool so the regenerated native extract comes out clean.
+
+### Three surfaces
+
+The work spans three surfaces. Only the first is required.
+
+1. **BigQuery console + Google Sheets — the critical path.** Load the extracts
+   into `cokafor`, run the documented SQL by hand in the
+   [BigQuery console](https://console.cloud.google.com/bigquery), build
+   worklists in Sheets. You can execute this entire runbook with zero Claude
+   access. All row-level data stays in-tenant on these two surfaces.
+
+2. **VS Code Claude Code plugin — optional accelerant.** Available to help draft
+   or debug a query when the intern wants it, but never required; the documented
+   SQL is always the fallback. This is the only governed AI-plus-BigQuery path:
+   the BigQuery console is not reachable from Claude Desktop.
+
+3. **Shared cowork project (claude.ai / Desktop) — optional accelerant.** Loaded
+   with both Handbooks, the SCED list, the runbook, and a de-identified
+   error/issue catalog. Useful for handbook Q&A, error-log triage by category
+   and count, drafting compliance-team handoff notes, and persisting
+   institutional knowledge. Shareable with the compliance team and the
+   state-access uploader. **Never paste identified rows here** — counts and
+   categories only.
+
+You can do everything in this runbook with zero Claude access. Claude is an
+optional accelerant; no step may depend on a Claude surface that could hit a
+usage limit and stall progress.
+
+## PII rules
+
+This work is PII-dense: resolving a staff combination error requires name +
+DOB + SMID together; the student side carries SID + name + DOB.
+
+- **Row-level worklists with real names, DOBs, and IDs stay in BigQuery
+  (`cokafor`) and Google Sheets** (in-tenant) only. Never copy identified rows
+  to the cowork project, a chat, a commit, or any other external surface.
+- **The cowork project works on rules, error categories, counts, and
+  de-identified samples only.** The defect-count rollup (check 16) is the only
+  artifact from this runbook that goes into the cowork project — counts only, no
+  PII.
+- **State error reports are PII.** The state's returned error reports name
+  records by SID, SMID, or name. Triage them row-level in the BigQuery console
+  or VS Code. Only the de-identified taxonomy (error type, count, which query
+  catches it) goes into the cowork project.
+- **`SocialSecurityNumber` is never loaded.** The Staff Management export
+  includes a `SocialSecurityNumber` column, but NJSLEDS masks its values in the
+  export so it is not a live-PII concern. The `build_ref_state_staff.py` prep
+  script drops it at load as hygiene — the audit never needs it, and the loaded
+  `ref_state_staff` table contains no SSN column.
+
+## The audit loop
+
+Source-fix-only means this is an iterative loop, not a one-pass cleanup. A
+typical submission requires two to four loops before the extract is clean.
+
+```text
+1. PS admin generates Staff + Student Course Roster extracts (Camden, Newark).
+2. Intern loads both CSVs into BigQuery (cokafor staging tables); also load the
+   state Staff Management / SMID export if compliance can provide it.
+3. Intern runs the helper-query pack -> defect worklists (Google Sheets).
+4. Intern fixes what they own in PowerSchool:
+     - SCED codes (S_NJ_CRS_X / S_NJ_SEC_X)
+     - staff state-ID override fields + SMID entry (S_NJ_USR_X)
+     - duplicate / orphan section + schedule cleanup
+5. Items the intern cannot own -> compliance-team handoff sheet:
+     - generate NEW state SMIDs for new staff
+     - push name/DOB changes into Staff Management / state SIS
+6. Re-extract -> re-load -> re-run pack -> defects trend toward zero.
+7. Clean extract handed to the state-access uploader; errors returned -> step 3.
+```
+
+Check 16 (defect-count rollup) is the de-identified artifact that shows
+progress. Paste the check-16 output into the convergence tracker tab each loop
+so stakeholders can watch totals trend toward zero without seeing any identified
+data.
+
+## Phase 0 — setup
+
+Run these steps once before the first loop (and again each time you receive a
+fresh extract to audit).
+
+### Step 1 — build the reference CSVs
+
+Run the two prep scripts from the project root. Both scripts take input and
+output paths as arguments; no PII-bearing file is committed to the repo.
+
+```bash
+cd /workspaces/teamster
+
+# Build the SCED reference CSV from the NJSLEDS SCED xlsx workbook.
+uv run --with openpyxl python \
+  docs/superpowers/nj-sleds-roster/setup/build_ref_sced_codes.py \
+  ".claude/scratch/NJ SLEDS/CRS docs/NJSLEDS_SCED-Course-Codes.xlsx" \
+  ".claude/scratch/NJ SLEDS/ref_sced_codes.csv"
+
+# Project the Staff Management export down to audit columns, dropping SSN.
+uv run python \
+  docs/superpowers/nj-sleds-roster/setup/build_ref_state_staff.py \
+  ".claude/scratch/NJ SLEDS/CRS docs/Export- Staff Management Submission.csv" \
+  ".claude/scratch/NJ SLEDS/ref_state_staff.csv"
+```
+
+Expected output:
+
+- `build_ref_sced_codes.py`: prints `wrote <N> SCED rows` where N is roughly
+  2,060 (approximately 600 prior-to-secondary plus 1,460 secondary).
+- `build_ref_state_staff.py`: prints `wrote 1053 staff rows (24 cols, no SSN)`.
+  Confirm the output header contains no `SocialSecurityNumber` column.
+
+### Step 2 — load all four tables into BigQuery
+
+All four tables use **explicit STRING schemas**. Do not use `--autodetect` for
+any table, including the reference tables: autodetect re-coerces zero-padded
+`subject_area`, `course_identifier`, and CDS codes to `INT64` and strips leading
+zeros, breaking the joins in checks 2 and 8.
+
+```bash
+cd "/workspaces/teamster/.claude/scratch/NJ SLEDS"
+
+# Stable filenames avoid the spaces in the original extract filenames.
+cp "NJ_Staff_Course_Submission (21).csv" staff_extract.csv
+cp "NJ_Student_Course_Submission (13).csv" student_extract.csv
+
+BQ=/usr/local/share/google-cloud-sdk/bin/bq
+
+STAFF="LocalStaffIdentifier:STRING,StaffMemberIdentifier:STRING,FirstName:STRING,LastName:STRING,DateOfBirth:STRING,CountyCodeAssigned:STRING,DistrictCodeAssigned:STRING,SchoolCodeAssigned:STRING,SectionEntryDate:STRING,SectionExitDate:STRING,SubjectArea:STRING,CourseIdentifier:STRING,CourseLevel:STRING,GradeSpan:STRING,AvailableCredit:STRING,CourseSequence:STRING,LocalCourseTitle:STRING,LocalCourseCode:STRING,LocalSectionCode:STRING"
+$BQ load --project_id=teamster-332318 --source_format=CSV --skip_leading_rows=1 \
+  --replace cokafor.stg_staff_extract staff_extract.csv "$STAFF"
+
+STUDENT="LocalIdentificationNumber:STRING,StateIdentificationNumber:STRING,FirstName:STRING,LastName:STRING,DateOfBirth:STRING,CountyCodeAssigned:STRING,DistrictCodeAssigned:STRING,SchoolCodeAssigned:STRING,SectionEntryDate:STRING,SectionExitDate:STRING,SubjectArea:STRING,CourseIdentifier:STRING,CourseLevel:STRING,GradeSpan:STRING,AvailableCredit:STRING,CourseSequence:STRING,LocalCourseTitle:STRING,LocalCourseCode:STRING,LocalSectionCode:STRING,CreditsEarned:STRING,NumericGradeEarned:STRING,AlphaGradeEarned:STRING,CompletionStatus:STRING,CourseType:STRING,DualInstitution:STRING"
+$BQ load --project_id=teamster-332318 --source_format=CSV --skip_leading_rows=1 \
+  --replace cokafor.stg_student_extract student_extract.csv "$STUDENT"
+
+SCED="sced_level:STRING,sced_code:STRING,subject_area:STRING,course_identifier:STRING,subject_area_name:STRING,sced_course_name:STRING"
+$BQ load --project_id=teamster-332318 --source_format=CSV --skip_leading_rows=1 \
+  --replace cokafor.ref_sced_codes ref_sced_codes.csv "$SCED"
+
+STATE="LocalStaffIdentifier:STRING,StaffMemberIdentifier:STRING,FirstName:STRING,MiddleName:STRING,LastName:STRING,DateofBirth:STRING,CountyCodeAssigned1:STRING,CountyCodeAssigned2:STRING,CountyCodeAssigned3:STRING,CountyCodeAssigned4:STRING,CountyCodeAssigned5:STRING,CountyCodeAssigned6:STRING,DistrictCodeAssigned1:STRING,DistrictCodeAssigned2:STRING,DistrictCodeAssigned3:STRING,DistrictCodeAssigned4:STRING,DistrictCodeAssigned5:STRING,DistrictCodeAssigned6:STRING,SchoolCodeAssigned1:STRING,SchoolCodeAssigned2:STRING,SchoolCodeAssigned3:STRING,SchoolCodeAssigned4:STRING,SchoolCodeAssigned5:STRING,SchoolCodeAssigned6:STRING"
+$BQ load --project_id=teamster-332318 --source_format=CSV --skip_leading_rows=1 \
+  --replace cokafor.ref_state_staff ref_state_staff.csv "$STATE"
+```
+
+### Step 3 — verify row counts
+
+Run this in the BigQuery console to confirm all four tables loaded correctly:
+
+```sql
+select 'staff' as t, count(*) as n
+from `teamster-332318.cokafor.stg_staff_extract`
+union all select 'student', count(*)
+from `teamster-332318.cokafor.stg_student_extract`
+union all select 'sced', count(*)
+from `teamster-332318.cokafor.ref_sced_codes`
+union all select 'state_staff', count(*)
+from `teamster-332318.cokafor.ref_state_staff`;
+```
+
+Expected: `staff` = 291, `student` = 3581, `state_staff` = 1053, `sced` ≈ 2060.
+
+Also confirm leading zeros survived — run
+`select distinct CountyCodeAssigned from teamster-332318.cokafor.stg_student_extract`
+and verify the result contains `''` (blank) and `80`, not `0` or `80.0`. If you
+see integer-looking values, the load used autodetect or a wrong schema — re-run
+Step 2 with the explicit schema strings above.
+
 ## Group A — staff field validity
 
 The six checks below catch the field-level errors most likely to cause SLEDS
@@ -795,3 +966,120 @@ Scale mapping. Until that mapping is verified against the Handbook, no SQL check
 is written here — the exact allowed codes and their mappings must be drawn from
 the Handbook directly, not inferred from sample data. This is an open item to
 revisit when posted grades are available in the extract.
+
+## Worklist and tracker sheets
+
+### Worklist tabs (one per check group)
+
+Create one Google Sheet per district (Newark, Camden) with the following tab
+structure. Each tab covers one check group and holds the row-level defect
+worklist for that group. Row-level data stays in this Sheet; do not paste
+identified rows into the cowork project.
+
+#### Columns for every worklist tab
+
+| Column               | Content                                                                                |
+| -------------------- | -------------------------------------------------------------------------------------- |
+| `defect_key`         | Stable identifier for the row (e.g. `A1-LSID-12345` — group + check + local ID)        |
+| `identifying_fields` | The non-name fields needed to locate the record (LSID, SMID, `LocalSectionCode`, etc.) |
+| `fix_owner`          | `intern`, `compliance`, or `data_team`                                                 |
+| `status`             | Data-validation dropdown: `open`, `fixed-in-PS`, `handoff-sent`, `verified`            |
+| `notes`              | Free text — what was found, what was done                                              |
+
+Add rows by pasting the output of each individual check from the BigQuery
+console. Do not paste `FirstName`, `LastName`, `DateOfBirth`, SID, or any other
+direct identifier — use `LocalStaffIdentifier`, `LocalIdentificationNumber`,
+`StaffMemberIdentifier`, and `LocalSectionCode` as the identifying fields.
+
+#### QUERY tip
+
+Use the Sheets `QUERY` function to pull subtotals without a pivot table:
+
+```text
+=QUERY(A:E, "select D, count(A) where E = 'open' group by D label D 'owner', count(A) 'open count'", 1)
+```
+
+This groups open defects by `fix_owner`. Adjust column letters to match your
+sheet layout.
+
+#### Pivot-table tip
+
+Insert a pivot table (Insert → Pivot table) with `status` as rows and
+`fix_owner` as columns to get a one-glance count matrix. Refresh it after each
+loop to track progress without re-running the SQL.
+
+### Compliance handoff tab
+
+Add a tab named `compliance-handoff` to each district Sheet. This tab holds only
+the items the intern cannot resolve — items that require state-side action by
+the compliance team.
+
+| Column               | Content                                                                      |
+| -------------------- | ---------------------------------------------------------------------------- |
+| `item_type`          | `new-SMID` or `name-DOB-correction`                                          |
+| `identifying_fields` | `LocalStaffIdentifier` and `StaffMemberIdentifier` (no names in this column) |
+| `current_value`      | What the extract holds                                                       |
+| `correct_value`      | What it should be (from the HR system or the intern's investigation)         |
+| `requested_by`       | Date the intern added this row                                               |
+| `needed_by`          | Lead-time date — allow at least one week for the compliance team to act      |
+| `status`             | `pending`, `in-progress`, `complete`                                         |
+
+New-SMID requests are the long pole in the timeline — generate the handoff sheet
+as early as possible in Phase 1 so the compliance team can start immediately.
+
+### Convergence tracker tab
+
+Add a tab named `convergence-tracker` to each district Sheet. Paste the output
+of check 16 here at the start of each loop.
+
+| Column       | Content                                           |
+| ------------ | ------------------------------------------------- |
+| `loop`       | Loop number (1, 2, 3, …)                          |
+| `date`       | Date of this run                                  |
+| `check_name` | From the check-16 rollup (e.g. `A1_missing_smid`) |
+| `violations` | Count from the rollup                             |
+
+This is the only tab that feeds the cowork project — it contains counts only, no
+identified data. Share the tab (or a screenshot of it) with the cowork project
+at the start of each state-error triage session.
+
+To break out violations by district or school, extend check 16 to include a
+`district` or `school` grouping column, then use a pivot table here with
+`check_name` as rows and `district` as columns.
+
+## Timeline and roles
+
+### Roles
+
+| Role                  | Who                     | Responsibilities                                                                                                                                                                                       |
+| --------------------- | ----------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Intern (`cokafor`)    | Data intern             | Runs audits; builds and maintains worklists; fixes intern-owned items in PowerSchool (SCED codes, staff state-ID override fields, SMID entry, duplicate/orphan cleanup); keeps the convergence tracker |
+| Compliance team       | State-access staff      | State-side-only actions: generate new SMIDs, push name/DOB changes into Staff Management / state SIS, clear Snapshot Error/Sync/Unresolved flags                                                       |
+| State-access uploader | Designated staff member | Uploads the clean extract; returns the state error report                                                                                                                                              |
+| Data team / owner     | KTAF data team          | Reviews worklists; settles judgment calls; escalates blockers                                                                                                                                          |
+
+The intern cannot access state systems. The compliance team does not touch
+PowerSchool. These lanes are firm.
+
+### Timeline
+
+**Key dates:** the state hard deadline is Mon Aug 3. The internal target is to
+finish everything — including state error resolution — by Mon Jul 27, leaving
+the full Jul 27 – Aug 3 week as contingency for state-side system issues
+(historically necessary to absorb state-side weirdness). Work starts the week of
+Mon Jun 29.
+
+| Phase                  | Window          | Work                                                                                                                                                                                     |
+| ---------------------- | --------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 0 — Setup              | Jun 29 – Jul 3  | Provision access; load `ref_sced_codes` + the first Camden + Newark extracts (+ `ref_state_staff` if compliance provides it); intern SQL/Sheets onboarding; grade-mapping one-time check |
+| 1 — Staff + SCED codes | Jul 6 – Jul 10  | Groups A + B; front-load the compliance handoff (new SMIDs, name/DOB) immediately — the long pole, and July vacations compress it                                                        |
+| 2 — Student            | Jul 13 – Jul 17 | Group C (SID, CDS, dates); staff fixes continue in parallel                                                                                                                              |
+| 3 — Parity             | Jul 15 – Jul 22 | Group D orphans/junk (overlaps Phase 2)                                                                                                                                                  |
+| 4 — Converge           | by Jul 22       | Re-extract, re-run pack, defect rollup to zero, clean files to the uploader                                                                                                              |
+| 5 — State errors       | Jul 22 – Jul 27 | Triage returned errors, loop until accepted — finish by the Jul 27 internal target                                                                                                       |
+| Contingency            | Jul 27 – Aug 3  | Reserved buffer for state-side system issues; do not plan work here                                                                                                                      |
+
+**Vacation navigation:** identify each role's availability up front. Schedule
+the handoff-dependent items earliest — compliance-team SMID generation is the
+long pole. Sequence intern-owned PowerSchool fixes so they never block waiting
+on someone who is out.
