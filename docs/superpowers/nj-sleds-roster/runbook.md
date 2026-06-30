@@ -163,6 +163,15 @@ each cycle. The `region` column stamped by the view tells the intern which
 PowerSchool instance to fix, which is critical for blank-CDS defects where
 region cannot be inferred from the CDS value alone.
 
+**The combination and parity checks join _within region_.** Local identifiers
+are only unique inside a district — a `LocalStaffIdentifier`, student
+`LocalIdentificationNumber`, or `LocalSectionCode` can repeat across Newark and
+Camden (the real EOY data had one shared staff LSID and 33 shared student local
+IDs). So checks 2, 3, 12, 14, 15, and 16 match on the local key **and** `region`
+together; joining on the local key alone would manufacture false cross-region
+matches. The field-validity checks (1, 4–11, 13) are per-row and need no region
+qualifier, but they carry `region` through so every worklist row is routable.
+
 #### Explicit STRING schemas — mandatory
 
 All base tables use **explicit STRING schemas**. Do not use `--autodetect` for
@@ -401,6 +410,7 @@ normalization is needed.
 ```sql
 with extract_staff as (
   select distinct
+    region,
     LocalStaffIdentifier,
     StaffMemberIdentifier,
     FirstName,
@@ -409,6 +419,7 @@ with extract_staff as (
   from `teamster-332318.cokafor.stg_staff_extract`
 )
 select
+  e.region,
   e.LocalStaffIdentifier,
   e.StaffMemberIdentifier,
   e.FirstName,
@@ -423,6 +434,7 @@ select
 from extract_staff as e
 left join `teamster-332318.cokafor.ref_state_staff` as r
   on e.LocalStaffIdentifier = r.LocalStaffIdentifier
+  and e.region = r.region
 where r.LocalStaffIdentifier is null
   or e.StaffMemberIdentifier != r.StaffMemberIdentifier
   or upper(e.FirstName) != upper(r.FirstName)
@@ -452,11 +464,12 @@ system. Coordinate with HR and the SIS administrator.
 
 ```sql
 select
+  region,
   LocalStaffIdentifier,
   count(distinct format('%t|%t|%t', StaffMemberIdentifier, FirstName, LastName))
     as distinct_people,
 from `teamster-332318.cokafor.stg_staff_extract`
-group by LocalStaffIdentifier
+group by region, LocalStaffIdentifier
 having distinct_people > 1;
 ```
 
@@ -848,6 +861,7 @@ IDs (a state-record quirk — the sample had 3), dedup it first.
 ```sql
 with extract_student as (
   select distinct
+    region,
     LocalIdentificationNumber,
     StateIdentificationNumber,
     FirstName,
@@ -856,6 +870,7 @@ with extract_student as (
   from `teamster-332318.cokafor.stg_student_extract`
 )
 select
+  e.region,
   e.LocalIdentificationNumber,
   e.StateIdentificationNumber,
   e.FirstName,
@@ -872,9 +887,10 @@ from extract_student as e
 left join (
   select *
   from `teamster-332318.cokafor.ref_state_student`
-  qualify row_number() over (partition by LocalIdentificationNumber) = 1
+  qualify row_number() over (partition by LocalIdentificationNumber, region) = 1
 ) as r
   on e.LocalIdentificationNumber = r.LocalIdentificationNumber
+  and e.region = r.region
 where r.LocalIdentificationNumber is null
   or e.StateIdentificationNumber != r.StateIdentificationNumber
   or upper(e.FirstName) != upper(r.FirstName)
@@ -984,16 +1000,18 @@ verification).
 
 ```sql
 select distinct
+  st.region,
   st.LocalSectionCode,
   st.LocalCourseCode,
   st.LocalCourseTitle,
   st.StaffMemberIdentifier,
 from `teamster-332318.cokafor.stg_staff_extract` as st
 left join (
-  select distinct LocalSectionCode
+  select distinct LocalSectionCode, region
   from `teamster-332318.cokafor.stg_student_extract`
 ) as sd
   on st.LocalSectionCode = sd.LocalSectionCode
+  and st.region = sd.region
 where sd.LocalSectionCode is null;
 ```
 
@@ -1027,17 +1045,19 @@ verification).
 
 ```sql
 select
+  sd.region,
   sd.LocalSectionCode,
   any_value(sd.LocalCourseTitle) as course_title,
   count(distinct sd.LocalIdentificationNumber) as students,
 from `teamster-332318.cokafor.stg_student_extract` as sd
 left join (
-  select distinct LocalSectionCode
+  select distinct LocalSectionCode, region
   from `teamster-332318.cokafor.stg_staff_extract`
 ) as st
   on sd.LocalSectionCode = st.LocalSectionCode
+  and sd.region = st.region
 where st.LocalSectionCode is null
-group by sd.LocalSectionCode;
+group by sd.region, sd.LocalSectionCode;
 ```
 
 _Validation result (2025-26 Newark sample): 0 rows — every section with enrolled
@@ -1067,18 +1087,20 @@ and re-run this check until it returns 0 rows.
 
 ```sql
 select
+  coalesce(a.region, b.region) as region,
   coalesce(a.LocalSectionCode, b.LocalSectionCode) as section,
   a.LocalSectionCode is not null as in_staff_extract,
   b.LocalSectionCode is not null as in_student_extract,
 from (
-  select distinct LocalSectionCode
+  select distinct LocalSectionCode, region
   from `teamster-332318.cokafor.stg_staff_extract`
 ) as a
 full outer join (
-  select distinct LocalSectionCode
+  select distinct LocalSectionCode, region
   from `teamster-332318.cokafor.stg_student_extract`
 ) as b
   on a.LocalSectionCode = b.LocalSectionCode
+  and a.region = b.region
 where a.LocalSectionCode is null or b.LocalSectionCode is null;
 ```
 
