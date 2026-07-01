@@ -1,5 +1,4 @@
 with
-    -- trunk-ignore(sqlfluff/ST03): referenced via dbt_utils.deduplicate below
     homeroom_sections as (
         select
             cc.cc_studentid,
