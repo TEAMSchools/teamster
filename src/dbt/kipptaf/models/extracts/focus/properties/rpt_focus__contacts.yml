@@ -7,12 +7,13 @@ models:
       guardian, grandparent, stepparent, relative, aunt/uncle) inner-joined to
       `stg_finalsite__contacts` for guardian attributes, gated to in-scope
       students via `int_finalsite__enrollment_lifecycle`. The student's Focus id
-      (`student_id`) is left-joined from `int_finalsite__contact_id_attributes`.
-      Produces 50 columns in `CONTACTS_LAYOUT` order. `SORT_ORDER` ranks
-      guardians per student by `is_primary desc` so the primary contact sorts
-      first. Phone slots `CONTACT1_*` and `CONTACT2_*` map the guardian's two
-      phones; `CONTACT3` through `CONTACT7` are always null. Focus column header
-      casing is applied at transport time via
+      (`student_id`) is inner-joined from
+      `int_finalsite__contact_id_attributes`, excluding students without a
+      minted Focus id. Produces 50 columns in `CONTACTS_LAYOUT` order.
+      `SORT_ORDER` ranks guardians per student by `is_primary desc` so the
+      primary contact sorts first. Phone slots `CONTACT1_*` and `CONTACT2_*` map
+      the guardian's two phones; `CONTACT3` through `CONTACT7` are always null.
+      Focus column header casing is applied at transport time via
       `file_config.format.header_replacements`; dbt column names remain
       lowercase snake_case.
     data_tests:
@@ -26,10 +27,12 @@ models:
         data_type: string
         description:
           Focus student id of the student this guardian belongs to, from
-          `int_finalsite__contact_id_attributes.focus_student_id`; null where
-          Finalsite has not minted the id.
+          `int_finalsite__contact_id_attributes.focus_student_id_prefixed`. Rows
+          for students without a minted Focus id are excluded from this extract.
         data_tests:
-          - not_null
+          - not_null:
+              config:
+                severity: error
       - name: sort_order
         data_type: int64
         description:

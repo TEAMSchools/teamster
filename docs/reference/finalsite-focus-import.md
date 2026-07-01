@@ -82,6 +82,18 @@ date and drop code only when Focus does not already have a withdrawal on that
 enrollment. If Focus already shows the student as withdrawn, the pipeline leaves
 it alone — a later change to the code or date must be made in Focus directly.
 
+### Enrollment feed — enrolled students only
+
+A student appears in the **Student Enrollment** file only once Finalsite has an
+enrollment **start date** for them — that is, once they are actually enrolled.
+Students who are still accepted, in progress, or only assigned a school (with no
+start date yet) are held back and not sent until they enroll.
+
+> **A student can be in Demographics, Address, and Contacts but not yet in
+> Student Enrollment.** Those three files are sent as soon as the student has a
+> minted ID; the enrollment record waits for the start date. This is expected —
+> the enrollment flows to Focus once Finalsite records the start date.
+
 ### What gets sent
 
 Every feed follows the same import-once rule — a record is sent only when Focus
@@ -89,8 +101,9 @@ does not already have it, and nothing is ever overwritten:
 
 - **Demographics** — a student's demographics are sent only if the student is
   not yet in Focus.
-- **Student enrollment** — an enrollment is sent when it is new to Focus; a
-  withdrawal (end date + drop code) is filled in once when Focus has none yet.
+- **Student enrollment** — an enrollment is sent when it is new to Focus **and
+  the student is enrolled** (has a start date); a withdrawal (end date + drop
+  code) is filled in once when Focus has none yet.
 - **Addresses and Contacts** — a student's address / contacts are sent only if
   Focus does not already have them for that student.
 
@@ -145,6 +158,10 @@ pipeline will not reconcile them for you.
 
 - **Mint the Finalsite student ID** before expecting a student in Focus —
   records without one are skipped.
+- **An enrollment needs a start date.** A student reaches Focus's Student
+  Enrollment file only once Finalsite has an enrollment start date; accepted or
+  in-progress students wait until they enroll (they can still appear in
+  Demographics, Address, and Contacts in the meantime).
 - **Set the last-attended date** in Finalsite when a student withdraws — it is
   what triggers the end date and drop code being sent.
 - **Corrections after the first import are manual.** A wrong entry code, drop

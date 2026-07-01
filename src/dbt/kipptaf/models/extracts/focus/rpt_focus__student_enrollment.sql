@@ -59,12 +59,17 @@ select
     cast(null as int64) as fl_days_present,
     cast(null as int64) as fl_days_absent,
 from {{ ref("int_finalsite__enrollment_lifecycle") }} as l
-left join
+inner join
     {{ ref("int_finalsite__contact_id_attributes") }} as ida
     on l.finalsite_enrollment_id = ida.finalsite_enrollment_id
+    and ida.focus_student_id_prefixed is not null
 left join
     {{ ref("int_finalsite__contact_custom_attributes") }} as cca
     on l.finalsite_enrollment_id = cca.finalsite_enrollment_id
 left join
     {{ ref("int_people__location_crosswalk") }} as sch
     on l.assigned_school = sch.location_name
+-- enrolled-only: pre-enrollment statuses (enrollment_in_progress, assigned_school)
+-- carry no enrolled_date; Focus enrollment records require an entry date, so
+-- defer these students until Finalsite mints enrollment_start_date. See #4291.
+where l.enrollment_start_date is not null
