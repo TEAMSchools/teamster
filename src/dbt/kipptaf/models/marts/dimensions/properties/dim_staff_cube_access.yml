@@ -5,12 +5,15 @@ models:
       keyed on staff_key. Resolves each person's current role to the student
       location scope, the staff sensitive-field remit (location + department),
       and the per-field sensitive scopes, derived from the current primary work
-      assignment and the Google Sheets access crosswalks (department
-      special-access override taking precedence over the role mapping). Read by
-      Cube's contextToGroups, matched on google_email, to build the access group
-      list and queryRewrite filters; not exposed as a Cube. The staff directory
-      and aggregate summary are open — these scopes only constrain sensitive
-      fields. Unresolved roles emit 'none' (deny), never NULL.
+      assignment and three Google Sheets crosswalks. Override priority (highest
+      wins): (1) individual exception keyed on employee_number, (2) department
+      override keyed on department_name, (3) role crosswalk keyed on
+      job_function_code + entity. A NULL scope column in a higher-priority tier
+      falls through to the next. Read by Cube's contextToGroups, matched on
+      google_email, to build the access group list and queryRewrite filters; not
+      exposed as a Cube. The staff directory and aggregate summary are open —
+      these scopes only constrain sensitive fields. Unresolved roles emit 'none'
+      (deny), never NULL.
     columns:
       - name: staff_key
         data_type: string

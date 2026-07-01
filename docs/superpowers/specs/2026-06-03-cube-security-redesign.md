@@ -196,8 +196,20 @@ access criteria.
 ## Source mappings (Google Sheets crosswalks)
 
 The data team edits the sheet; `dim_staff_cube_access` joins the staged
-crosswalks. Special-access `department` override wins entirely over the role
-mapping when matched.
+crosswalks. Override priority (highest wins):
+
+1. **Individual exception** — `cube_access_individual_exceptions`, keyed on
+   `employee_number`. For a specific person whose access differs from their role
+   or department. A NULL scope column falls through to the next tier.
+2. **Department override** — `cube_access_department_override`, keyed on
+   `department_name`. Grants a broad access level to an entire department
+   regardless of job function.
+3. **Role crosswalk** — `cube_access_role`, keyed on
+   `(job_function_code, entity)`. The default mapping for all staff.
+
+All three sheets live in the same spreadsheet. `dim_staff_cube_access`
+`COALESCE`s in this order and falls back to `'none'` (deny) when no tier
+resolves a scope column.
 
 ### `cube_access_role` columns
 
@@ -224,6 +236,15 @@ bounds them.
 
 `department_name` → `department_group` (the `own_group` remit). The former
 `department_type` column is removed.
+
+### `cube_access_individual_exceptions` columns
+
+`employee_number` (ADP employee number, keyed unique), then the same access
+columns as the role and department override tabs, plus a `notes` column
+(free-text reason for the exception — not read by `dim_staff_cube_access`,
+audit use only). NULL scope columns fall through to the next tier. Maintained
+by the data team; each row should carry a `notes` entry explaining the
+business reason and who approved it.
 
 ## Changes required
 

@@ -1913,3 +1913,39 @@ sources:
                 - sheets
                 - people
                 - cube_access_department_rollup
+      - name: src_google_sheets__people__cube_access_individual_exceptions
+        external:
+          options:
+            format: GOOGLE_SHEETS
+            uris:
+              - https://docs.google.com/spreadsheets/d/1TuH7e2AuxP-_dUImtHrWCXJ_S_KD_eYCRqWhbGcD2V4
+            sheet_range: cube_access_individual_exceptions
+            skip_leading_rows: 1
+        columns:
+          - name: employee_number
+            data_type: string
+          - name: student_location_scope
+            data_type: string
+          - name: staff_location_scope
+            data_type: string
+          - name: staff_department_scope
+            data_type: string
+          - name: staff_pii_scope
+            data_type: string
+          - name: staff_compensation_scope
+            data_type: string
+          - name: staff_observations_scope
+            data_type: string
+          - name: staff_benefits_scope
+            data_type: string
+          - name: notes
+            data_type: string
+        config:
+          meta:
+            dagster:
+              asset_key:
+                - kipptaf
+                - google
+                - sheets
+                - people
+                - cube_access_individual_exceptions

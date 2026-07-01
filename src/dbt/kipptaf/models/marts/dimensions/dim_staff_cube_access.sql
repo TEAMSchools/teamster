@@ -5,10 +5,14 @@
   sensitive scopes. Read by Cube's contextToGroups (by google_email) to build
   the access group list and the queryRewrite filters; not exposed as a Cube.
   Assembled intra-mart from the current primary work assignment; mappings come
-  from the Google Sheets crosswalks (department override wins over the role
-  mapping). entity (KTAF/Region) is derived from business_unit_name. The viewer
-  identity keys (region_key, location_abbreviation, department_group) are carried
-  so cube.js builds location/department filters from the scope level. Rows that
+  from the Google Sheets crosswalks. Override priority (highest wins):
+    1. Individual exception (stg_...cube_access_individual_exceptions, by employee_number)
+    2. Department override  (stg_...cube_access_department_override, by department_name)
+    3. Role crosswalk       (stg_...cube_access_role, by job_function_code + entity)
+  A NULL scope column in a higher-priority tier falls through to the next.
+  entity (KTAF/Region) is derived from business_unit_name. The viewer identity
+  keys (region_key, location_abbreviation, department_group) are carried so
+  cube.js builds location/department filters from the scope level. Rows that
   resolve to no role emit 'none' (deny) rather than NULL.
 
   Role crosswalk fan-out invariant: the cube_access_role sheet must never carry
@@ -55,6 +59,7 @@ with
             pd.staff_key,
 
             s.google_email,
+            s.employee_number,
 
             j.job_function_code,
 
@@ -92,6 +97,7 @@ with
         select
             ca.staff_key,
             ca.google_email,
+            ca.employee_number,
             ca.job_function_code,
             ca.department_name,
             ca.entity,
@@ -118,28 +124,53 @@ with
             rl.job_function_level,
 
             coalesce(
-                ovr.student_location_scope, rl.student_location_scope, 'none'
+                exc.student_location_scope,
+                ovr.student_location_scope,
+                rl.student_location_scope,
+                'none'
             ) as student_location_scope,
 
             coalesce(
-                ovr.staff_location_scope, rl.staff_location_scope, 'none'
+                exc.staff_location_scope,
+                ovr.staff_location_scope,
+                rl.staff_location_scope,
+                'none'
             ) as staff_location_scope,
             coalesce(
-                ovr.staff_department_scope, rl.staff_department_scope, 'none'
+                exc.staff_department_scope,
+                ovr.staff_department_scope,
+                rl.staff_department_scope,
+                'none'
             ) as staff_department_scope,
             coalesce(
-                ovr.staff_pii_scope, rl.staff_pii_scope, 'none'
+                exc.staff_pii_scope,
+                ovr.staff_pii_scope,
+                rl.staff_pii_scope,
+                'none'
             ) as staff_pii_scope,
             coalesce(
-                ovr.staff_compensation_scope, rl.staff_compensation_scope, 'none'
+                exc.staff_compensation_scope,
+                ovr.staff_compensation_scope,
+                rl.staff_compensation_scope,
+                'none'
             ) as staff_compensation_scope,
             coalesce(
-                ovr.staff_observations_scope, rl.staff_observations_scope, 'none'
+                exc.staff_observations_scope,
+                ovr.staff_observations_scope,
+                rl.staff_observations_scope,
+                'none'
             ) as staff_observations_scope,
             coalesce(
-                ovr.staff_benefits_scope, rl.staff_benefits_scope, 'none'
+                exc.staff_benefits_scope,
+                ovr.staff_benefits_scope,
+                rl.staff_benefits_scope,
+                'none'
             ) as staff_benefits_scope,
         from enriched as e
+        left join
+            {{ ref("stg_google_sheets__people__cube_access_individual_exceptions") }}
+            as exc
+            on e.employee_number = exc.employee_number
         left join
             {{ ref("stg_google_sheets__people__cube_access_department_override") }}
             as ovr
