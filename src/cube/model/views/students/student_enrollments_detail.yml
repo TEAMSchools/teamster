@@ -66,6 +66,14 @@ views:
           - grade_level
           - graduation_year
           - is_retained_year
+          - homeroom_teacher_staff_key
+
+      - join_path: student_enrollments.student_school_enrollments.staff
+        prefix: true
+        includes:
+          - full_name
+          - first_name
+          - last_name
 
       - join_path: student_enrollments.student_school_enrollments.student_enrollment_status
         prefix: false
@@ -132,6 +140,12 @@ views:
             - is_month_end_record
             - is_week_end_record
             - is_latest_record
+        - name: Teacher
+          members:
+            - homeroom_teacher_staff_key
+            - staff_full_name
+            - staff_first_name
+            - staff_last_name
 
     access_policy:
       - group: cube-access-student-data
