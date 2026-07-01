@@ -112,6 +112,14 @@ views:
           - entry_date
           - exit_date
           - is_retained_year
+          - homeroom_teacher_staff_key
+
+      - join_path: student_attendance.student_school_enrollments.staff
+        prefix: true
+        includes:
+          - full_name
+          - first_name
+          - last_name
 
       - join_path: student_attendance.student_school_enrollments.student_enrollment_status
         prefix: false
@@ -225,6 +233,12 @@ views:
             - entry_date
             - exit_date
             - is_retained_year
+        - name: Teacher
+          members:
+            - homeroom_teacher_staff_key
+            - staff_full_name
+            - staff_first_name
+            - staff_last_name
         - name: Calendar
           members:
             - school_calendars_is_in_session
