@@ -183,28 +183,30 @@ unit_tests:
       end_date/drop_code are null for non-transfer rows.
     model: rpt_focus__student_enrollment
     given:
+      # format: sql (not dict) — is_transfer_out is added in this PR, so the
+      # deferred lifecycle relation lacks it and dict introspection fails in CI.
       - input: ref('int_finalsite__enrollment_lifecycle')
-        rows:
-          - {
-              finalsite_enrollment_id: e1,
-              is_transfer_out: false,
-              school_year_start: 2025,
-              grade_canonical_name: 5th,
-              assigned_school: KIPP Royalty Academy,
-              enrollment_start_date: 2025-08-12,
-              enrollment_end_date: null,
-              promotion_status: null,
-            }
-          - {
-              finalsite_enrollment_id: e3,
-              is_transfer_out: false,
-              school_year_start: 2025,
-              grade_canonical_name: k,
-              assigned_school: KIPP Royalty Academy,
-              enrollment_start_date: 2025-08-12,
-              enrollment_end_date: null,
-              promotion_status: null,
-            }
+        format: sql
+        rows: |
+          select
+            'e1' as finalsite_enrollment_id,
+            2025 as school_year_start,
+            '5th' as grade_canonical_name,
+            cast(null as string) as promotion_status,
+            'KIPP Royalty Academy' as assigned_school,
+            date '2025-08-12' as enrollment_start_date,
+            cast(null as date) as enrollment_end_date,
+            false as is_transfer_out
+          union all
+          select
+            'e3',
+            2025,
+            'k',
+            cast(null as string),
+            'KIPP Royalty Academy',
+            date '2025-08-12',
+            cast(null as date),
+            false
       - input: ref('int_finalsite__contact_custom_attributes')
         format: sql
         rows: |
@@ -303,18 +305,20 @@ unit_tests:
       fl_state_withdraw_codes_ss value.
     model: rpt_focus__student_enrollment
     given:
+      # format: sql (not dict) — is_transfer_out is added in this PR, so the
+      # deferred lifecycle relation lacks it and dict introspection fails in CI.
       - input: ref('int_finalsite__enrollment_lifecycle')
-        rows:
-          - {
-              finalsite_enrollment_id: e2,
-              is_transfer_out: true,
-              school_year_start: 2025,
-              grade_canonical_name: 7th,
-              assigned_school: KIPP Royalty Academy,
-              enrollment_start_date: 2025-08-12,
-              enrollment_end_date: 2026-01-15,
-              promotion_status: Retained,
-            }
+        format: sql
+        rows: |
+          select
+            'e2' as finalsite_enrollment_id,
+            2025 as school_year_start,
+            '7th' as grade_canonical_name,
+            'Retained' as promotion_status,
+            'KIPP Royalty Academy' as assigned_school,
+            date '2025-08-12' as enrollment_start_date,
+            date '2026-01-15' as enrollment_end_date,
+            true as is_transfer_out
       - input: ref('int_finalsite__contact_custom_attributes')
         format: sql
         rows: |
