@@ -128,9 +128,8 @@ views:
             - is_latest_record
 
     access_policy:
-      # No PII tier — view contains no direct student identifiers.
-      # Demographic dimensions (race, gender_identity, is_gifted) are
-      # aggregate breakdowns only.
-      - group: cube-access-student-data
+      # Single student tier — location-scoped via queryRewrite. This view holds
+      # only aggregate breakdowns (no direct identifiers).
+      - group: student
         member_level:
           includes: "*"

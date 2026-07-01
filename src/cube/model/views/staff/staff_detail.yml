@@ -59,6 +59,9 @@ views:
           - is_hispanic
           - original_hire_date
           - rehire_date
+          - job_function_level
+          - job_function_code
+          - department_group
 
       - join_path: staff_work_history.locations
         prefix: true
@@ -142,11 +145,11 @@ views:
             - staff_manager_work_email
 
     access_policy:
-      # Non-PII staff tier: roster/employment structure without personal or
-      # sensitive data. Personal contact, DOB, and demographics are gated to
-      # cube-access-staff-pii. Work-directory info (names, work/google email,
-      # AD username, manager contacts) stays visible — already internally public.
-      - group: cube-access-staff-data
+      # Open staff-directory tier: roster/employment structure without personal
+      # or sensitive data. Personal contact, DOB, and demographics are gated to
+      # staff-pii. Work-directory info (names, work/google email, AD username,
+      # manager contacts) stays visible — already internally public.
+      - group: staff-directory
         member_level:
           includes: "*"
           excludes:
@@ -156,6 +159,6 @@ views:
             - gender_identity
             - race
             - is_hispanic
-      - group: cube-access-staff-pii
+      - group: staff-pii
         member_level:
           includes: "*"

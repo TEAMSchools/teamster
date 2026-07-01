@@ -1,7 +1,25 @@
 cubes:
   - name: staff
     public: false
-    sql_table: kipptaf_marts.dim_staff
+    # Inline LEFT JOIN is intentional: job_function_level/code and
+    # department_group are access-control attributes from dim_staff_cube_access
+    # that cube.js needs on every staff row for staffSensitiveFilters
+    # (reporting_chain_or_below_rank rank comparison, teaching_staff
+    # job_function_code filter). They live in dim_staff_cube_access, not
+    # dim_staff, because they are derived from the role crosswalk and belong to
+    # the access model — adding them to dim_staff would bleed access-control
+    # semantics into the identity dim. This is the same pattern as Cube's
+    # documented range-join use case for SCD2 period-intersection: a join that
+    # cannot be pre-materialized in dbt without coupling two distinct concerns.
+    sql: |
+      SELECT
+        s.*,
+        ca.job_function_level,
+        ca.job_function_code,
+        ca.department_group
+      FROM kipptaf_marts.dim_staff s
+      LEFT JOIN kipptaf_marts.dim_staff_cube_access ca
+        ON ca.staff_key = s.staff_key
 
     dimensions:
       # Surrogate key derived from employee_number. Primary key. Public — it is
@@ -16,7 +34,7 @@ cubes:
         primary_key: true
         public: true
 
-      # Staff-directory identifier — visible to all cube-access-staff-data (internally public).
+      # Staff-directory identifier — visible to all staff-directory tier (internally public).
       - name: staff_unique_id
         description:
           KIPP-assigned unique identifier for all staff members across all
@@ -25,35 +43,35 @@ cubes:
         type: number
         public: true
 
-      # Staff-directory identifier — visible to all cube-access-staff-data (internally public).
+      # Staff-directory identifier — visible to all staff-directory tier (internally public).
       - name: full_name
         description: Staff member's preferred name in Last, First Middle format.
         sql: full_name
         type: string
         public: true
 
-      # Staff-directory identifier — visible to all cube-access-staff-data (internally public).
+      # Staff-directory identifier — visible to all staff-directory tier (internally public).
       - name: first_name
         description: Staff member's preferred first name.
         sql: first_name
         type: string
         public: true
 
-      # Staff-directory identifier — visible to all cube-access-staff-data (internally public).
+      # Staff-directory identifier — visible to all staff-directory tier (internally public).
       - name: last_name
         description: Staff member's preferred last name.
         sql: last_name
         type: string
         public: true
 
-      # Gated to cube-access-staff-pii — date of birth.
+      # Gated to staff-pii — date of birth.
       - name: birth_date
         description: Staff member's date of birth.
         sql: CAST(birth_date AS TIMESTAMP)
         type: time
         public: true
 
-      # Demographic — gated to cube-access-staff-pii in staff_detail; aggregate-only breakdown in staff_summary.
+      # Demographic — gated to staff-pii in staff_detail; aggregate-only breakdown in staff_summary.
       - name: gender_identity
         description: >-
           Staff member's preferred gender identity as reported in the staff
@@ -62,7 +80,7 @@ cubes:
         type: string
         public: true
 
-      # Demographic — gated to cube-access-staff-pii in staff_detail; aggregate-only breakdown in staff_summary.
+      # Demographic — gated to staff-pii in staff_detail; aggregate-only breakdown in staff_summary.
       - name: race
         description: >-
           Staff member's racial category for reporting purposes, sourced from
@@ -71,7 +89,7 @@ cubes:
         type: string
         public: true
 
-      # Demographic — gated to cube-access-staff-pii in staff_detail; aggregate-only breakdown in staff_summary.
+      # Demographic — gated to staff-pii in staff_detail; aggregate-only breakdown in staff_summary.
       - name: is_hispanic
         description: >-
           TRUE if the staff member identified as Hispanic/Latino/Latinx in the
@@ -80,28 +98,28 @@ cubes:
         type: boolean
         public: true
 
-      # Staff-directory identifier — visible to all cube-access-staff-data (internally public).
+      # Staff-directory identifier — visible to all staff-directory tier (internally public).
       - name: work_email
         description: Staff member's work email address from ADP.
         sql: work_email
         type: string
         public: true
 
-      # Gated to cube-access-staff-pii — personal contact.
+      # Gated to staff-pii — personal contact.
       - name: personal_email
         description: Staff member's personal email address from ADP.
         sql: personal_email
         type: string
         public: true
 
-      # Gated to cube-access-staff-pii — personal contact.
+      # Gated to staff-pii — personal contact.
       - name: personal_cell_phone
         description: Staff member's personal cell phone number from ADP.
         sql: personal_cell_phone
         type: string
         public: true
 
-      # Staff-directory identifier — visible to all cube-access-staff-data (internally public).
+      # Staff-directory identifier — visible to all staff-directory tier (internally public).
       - name: active_directory_username
         description: >-
           Staff member's Active Directory username (lowercased), used as a
@@ -110,7 +128,7 @@ cubes:
         type: string
         public: true
 
-      # Staff-directory identifier — visible to all cube-access-staff-data (internally public).
+      # Staff-directory identifier — visible to all staff-directory tier (internally public).
       - name: google_email
         description: Staff member's Google Workspace email address from LDAP.
         sql: google_email
@@ -131,4 +149,33 @@ cubes:
           worker_dates in ADP.
         sql: CAST(rehire_date AS TIMESTAMP)
         type: time
+        public: true
+
+      # Current-role attributes from dim_staff_cube_access — used by
+      # staffSensitiveFilters for rank-based and job-function scope checks.
+      - name: job_function_level
+        description: >-
+          Numeric seniority level for the staff member's current job function
+          (higher = more senior). Used for reporting_chain_or_below_rank scope:
+          viewers see staff with a level numerically greater than their own.
+        sql: job_function_level
+        type: number
+        public: true
+
+      - name: job_function_code
+        description: >-
+          Short code for the staff member's current job function category (e.g.
+          TEACH, TIR). Used for teaching_staff scope to restrict access to
+          classroom teachers and teacher-in-residence.
+        sql: job_function_code
+        type: string
+        public: true
+
+      - name: department_group
+        description: >-
+          Broad department grouping for the staff member's current role (e.g.
+          Academics, Ops). Used as the department axis of the shared staff
+          sensitive remit (staff_department_scope = own_group).
+        sql: department_group
+        type: string
         public: true

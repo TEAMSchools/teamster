@@ -25,6 +25,8 @@ exposures:
       - ref("dim_regions")
       - ref("dim_school_calendars")
       - ref("dim_staff")
+      - ref("dim_staff_cube_access")
+      - ref("dim_staff_reporting_chain")
       - ref("dim_staff_observation_expectations")
       - ref("dim_staff_observation_goal_types")
       - ref("dim_staff_observation_rubric_measurements")

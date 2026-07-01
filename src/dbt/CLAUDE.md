@@ -227,6 +227,15 @@ conversions with either an explicit
 `DROP TABLE IF EXISTS <project>.<dataset>.<model>` at deploy time, or run
 `dbt build --select <model> --full-refresh` once after merge.
 
+## `WITH RECURSIVE` needs `contract: enforced: false`
+
+BigQuery allows `WITH RECURSIVE` only at the top level of a statement, but dbt's
+contract validation (and the table CTAS) wrap the model SQL in a subquery — so a
+recursive model fails with "WITH RECURSIVE is only allowed at the top level".
+Set `contract: enforced: false` on the model and keep `relationships`/uniqueness
+data tests for coverage. A bounded Jinja unroll is the alternative but hits
+"query is too complex" when it re-expands view upstreams once per level.
+
 ## dbt Cloud CI state comparison
 
 `state:modified+` hashes every source node through `{{ target.name }}`
@@ -338,6 +347,12 @@ a dev relationships warning on a FK, include the parent in `--select` or
 Same trap applies to mart PK `unique` tests — a stale dev parent fans out a
 date-range join. Query prod before filing upstream bugs or adding defensive
 dedupe from a dev mart-test failure.
+
+A stale dev copy missing a NEW column breaks the BUILD too ("Name <col> not
+found inside <alias>"), not just relationships tests.
+`dbt build --favor-state --defer --state <prod>` resolves every unselected
+upstream to prod regardless of stale dev copies — cleaner than enumerating
+parents in `--select`.
 
 ## Column-rename refactors strand dependent prod views
 

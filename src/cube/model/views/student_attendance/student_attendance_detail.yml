@@ -237,16 +237,8 @@ views:
             - dates_school_week_start_date
 
     access_policy:
-      - group: cube-access-student-data
-        member_level:
-          includes: "*"
-          excludes:
-            - full_name
-            - birth_date
-            - lea_student_identifier
-            - state_student_identifier
-            - salesforce_contact_id
-            - district_student_identifier
-      - group: cube-access-student-pii
+      # Single student tier — location-scoped via queryRewrite. Any viewer with
+      # student access sees all fields, including PII (no separate PII tier).
+      - group: student
         member_level:
           includes: "*"
