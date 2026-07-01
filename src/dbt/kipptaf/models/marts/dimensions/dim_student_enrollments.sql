@@ -1,21 +1,69 @@
 with
     -- trunk-ignore(sqlfluff/ST03): referenced via dbt_utils.deduplicate below
-    homeroom as (
+    homeroom_sections as (
         select
-            student_enrollment_key,
-            entry_date,
+            cc.cc_studentid,
+            cc.cc_yearid,
+            cc.sections_schoolid,
+            cc._dbt_source_project,
+            cc.cc_dateenrolled,
+            cc.cc_dateleft,
 
-            lead_teacher_staff_key as homeroom_teacher_staff_key,
-        from {{ ref("dim_student_section_enrollments") }}
-        where is_homeroom and student_enrollment_key is not null
+            {{
+                dbt_utils.generate_surrogate_key(
+                    ["cc.sections_dcid", "cc._dbt_source_project"]
+                )
+            }} as course_section_key,
+        from {{ ref("base_powerschool__course_enrollments") }} as cc
+        where
+            cc.courses_credittype in ('HR', 'Homeroom')
+            and not cc.is_dropped_section
+            and not cc.is_dropped_course
+    ),
+
+    -- trunk-ignore(sqlfluff/ST03): referenced via dbt_utils.deduplicate below
+    homeroom_teacher as (
+        select
+            hs.cc_dateenrolled,
+
+            bcst.effective_start_date,
+            bcst.staff_key as homeroom_teacher_staff_key,
+
+            {{
+                dbt_utils.generate_surrogate_key(
+                    [
+                        "s.student_number",
+                        "s._dbt_source_project",
+                        "s.academic_year",
+                        "s.entrydate",
+                    ]
+                )
+            }} as student_enrollment_key,
+        from homeroom_sections as hs
+        inner join
+            {{ ref("int_powerschool__student_enrollment_union") }} as s
+            on hs.cc_studentid = s.studentid
+            and hs.sections_schoolid = s.schoolid
+            and hs.cc_yearid = s.yearid
+            and hs._dbt_source_project = s._dbt_source_project
+            and hs.cc_dateenrolled >= s.entrydate
+            and hs.cc_dateenrolled < s.exitdate
+        left join
+            {{ ref("bridge_course_section_teachers") }} as bcst
+            on hs.course_section_key = bcst.course_section_key
+            and bcst.`role` = 'Lead Teacher'
+            and bcst.effective_start_date
+            < coalesce(hs.cc_dateleft, cast('9999-12-31' as date))
+            and hs.cc_dateenrolled
+            < coalesce(bcst.effective_end_date, cast('9999-12-31' as date))
     ),
 
     homeroom_resolved as (
         {{
             dbt_utils.deduplicate(
-                relation="homeroom",
+                relation="homeroom_teacher",
                 partition_by="student_enrollment_key",
-                order_by="entry_date desc",
+                order_by="cc_dateenrolled desc, effective_start_date desc",
             )
         }}
     ),
