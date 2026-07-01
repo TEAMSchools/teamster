@@ -145,6 +145,8 @@ views:
             - is_retained_year
 
     access_policy:
+      # Teacher fields (staff_* names, lead_teacher_staff_key) are intentionally
+      # NOT in excludes — staff base-tier / a staff FK, not student PII.
       - group: cube-access-student-data
         member_level:
           includes: "*"
