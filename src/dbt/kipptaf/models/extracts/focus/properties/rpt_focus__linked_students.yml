@@ -25,7 +25,9 @@ models:
           Focus student ID of the student whose ID sorts first in the pair
           (least of the two IDs). From `int_finalsite__contact_id_attributes`.
         data_tests:
-          - not_null
+          - not_null:
+              config:
+                severity: error
       - name: secondary_student_id
         data_type: string
         description:
@@ -33,7 +35,9 @@ models:
           From the sibling contact's `int_finalsite__contact_id_attributes` row
           via `rel_id`.
         data_tests:
-          - not_null
+          - not_null:
+              config:
+                severity: error
 unit_tests:
   - name: test_linked_students_normalizes_pair
     description:

@@ -67,9 +67,10 @@ inner join
 inner join
     {{ ref("int_finalsite__enrollment_lifecycle") }} as l
     on rel.finalsite_enrollment_id = l.finalsite_enrollment_id
-left join
+inner join
     {{ ref("int_finalsite__contact_id_attributes") }} as ida
     on rel.finalsite_enrollment_id = ida.finalsite_enrollment_id
+    and ida.focus_student_id_prefixed is not null
 where
     rel.rel_type
     in ('parent', 'guardian', 'grandparent', 'stepparent', 'relative', 'aunt/uncle')

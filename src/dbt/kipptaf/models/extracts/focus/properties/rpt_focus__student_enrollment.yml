@@ -3,11 +3,13 @@ models:
     description:
       One row per in-scope Finalsite enrollment reshaped into the Focus
       `STUDENT_ENROLLMENT` SFTP template layout, built from
-      `int_finalsite__enrollment_lifecycle`. Grade is translated inline
-      (`k`→`KG`, else zero-padded number); enrollment_code is derived from grade
-      (`E05` for KG, `E01` otherwise) and does not change on transfer-out;
-      school maps via `int_people__location_crosswalk`; Focus student id
-      (`student_id`) via
+      `int_finalsite__enrollment_lifecycle`. Filtered to enrollments with a
+      minted Focus id and a start date — pre-enrollment students
+      (`enrollment_in_progress`, `assigned_school`) carry no `enrolled_date` and
+      are excluded until they enroll. Grade is translated inline (`k`→`KG`, else
+      zero-padded number); enrollment_code is derived from grade (`E05` for KG,
+      `E01` otherwise) and does not change on transfer-out; school maps via
+      `int_people__location_crosswalk`; Focus student id (`student_id`) via
       `int_finalsite__contact_id_attributes.focus_student_id_prefixed`; and the
       raw Florida state withdrawal label (carried as `drop_code`) from
       `int_finalsite__contact_custom_attributes` — together producing the
@@ -28,10 +30,13 @@ models:
         data_type: string
         description:
           Focus student id (Focus `STDT_ID`) from
-          `int_finalsite__contact_id_attributes.focus_student_id_prefixed`; null
-          for enrollments where Finalsite has not minted the id.
+          `int_finalsite__contact_id_attributes.focus_student_id_prefixed`. Rows
+          for enrollments without a minted Focus id are excluded from this
+          extract.
         data_tests:
-          - not_null
+          - not_null:
+              config:
+                severity: error
       - name: syear
         data_type: int64
         description: School year start year (e.g. 2025 for the 2025-26 year).
@@ -47,7 +52,7 @@ models:
         data_tests:
           - not_null:
               config:
-                severity: warn
+                severity: error
       - name: grade_id
         data_type: string
         description:
@@ -60,12 +65,13 @@ models:
       - name: start_date
         data_type: string
         description:
-          Enrollment start date formatted as `YYYYMMDD` for Focus. Null until
-          the student reaches enrolled status.
+          Enrollment start date formatted as `YYYYMMDD` for Focus. This extract
+          is filtered to enrollments that have a start date (pre-enrollment
+          students without an `enrolled_date` are excluded).
         data_tests:
           - not_null:
               config:
-                severity: warn
+                severity: error
       - name: enrollment_code
         data_type: string
         description:
@@ -180,7 +186,9 @@ unit_tests:
       kindergarten (`k`→`KG`); enrollment_code is E05 for KG and E01 otherwise;
       student_id is sourced from
       int_finalsite__contact_id_attributes.focus_student_id_prefixed; and
-      end_date/drop_code are null for non-transfer rows.
+      end_date/drop_code are null for non-transfer rows. A third enrollment with
+      a minted Focus id but no enrollment_start_date (pre-enrollment) is
+      excluded by the enrolled-only filter.
     model: rpt_focus__student_enrollment
     given:
       # format: sql (not dict) — is_transfer_out is added in this PR, so the
@@ -205,6 +213,16 @@ unit_tests:
             cast(null as string),
             'KIPP Royalty Academy',
             date '2025-08-12',
+            cast(null as date),
+            false
+          union all
+          select
+            'e4',
+            2025,
+            '6th',
+            cast(null as string),
+            'KIPP Royalty Academy',
+            cast(null as date),
             cast(null as date),
             false
       - input: ref('int_finalsite__contact_custom_attributes')
@@ -235,6 +253,10 @@ unit_tests:
           select
             'e3' as finalsite_enrollment_id,
             '84003003003' as focus_student_id_prefixed
+          union all
+          select
+            'e4' as finalsite_enrollment_id,
+            '84003003004' as focus_student_id_prefixed
     expect:
       rows:
         - {
