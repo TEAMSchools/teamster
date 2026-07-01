@@ -4,24 +4,33 @@ models:
       One row per in-scope Finalsite enrollment reshaped into the Focus
       `STUDENT_ENROLLMENT` SFTP template layout, built from
       `int_finalsite__enrollment_lifecycle`. Grade is translated inline
-      (`k`→`KG`, else zero-padded number); school maps via
-      `int_people__location_crosswalk`, the Focus student id (`student_id`) via
-      `int_finalsite__contact_id_attributes`, and enrollment/drop codes via
-      Google Sheets crosswalks — together producing the 28-column layout
-      consumed by the Focus SFTP transport. The Focus column header casing
-      (`SYEAR`, `SCHOOL_ID`, etc.) is applied at transport time via
-      `file_config.format.header_replacements`; dbt column names remain
-      lowercase snake_case. `end_date` and `drop_code` populate only for
-      `lifecycle_action = 'transfer_out'` rows.
+      (`k`→`KG`, else zero-padded number); enrollment_code is derived from grade
+      (`E05` for KG, `E01` otherwise) and does not change on transfer-out;
+      school maps via `int_people__location_crosswalk`; Focus student id
+      (`student_id`) via
+      `int_finalsite__contact_id_attributes.focus_student_id_prefixed`; and the
+      raw Florida state withdrawal label (carried as `drop_code`) from
+      `int_finalsite__contact_custom_attributes` — together producing the
+      28-column layout consumed by the Focus SFTP transport. The Focus column
+      header casing (`SYEAR`, `SCHOOL_ID`, etc.) is applied at transport time
+      via `file_config.format.header_replacements`; dbt column names remain
+      lowercase snake_case. `end_date`, `drop_code`, and `moved_to` populate
+      only for transfer-out rows
+      (`int_finalsite__enrollment_lifecycle.is_transfer_out`).
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns:
+              - student_id
+              - start_date
     columns:
       - name: student_id
         data_type: string
         description:
           Focus student id (Focus `STDT_ID`) from
-          `int_finalsite__contact_id_attributes.focus_student_id`; null for
-          enrollments where Finalsite has not minted the id.
+          `int_finalsite__contact_id_attributes.focus_student_id_prefixed`; null
+          for enrollments where Finalsite has not minted the id.
         data_tests:
-          - unique
           - not_null
       - name: syear
         data_type: int64
@@ -60,8 +69,10 @@ models:
       - name: enrollment_code
         data_type: string
         description:
-          Focus enrollment action code mapped from `lifecycle_action` via the
-          enrollment-code crosswalk (e.g. `EA1` for a new enrollment).
+          Focus enrollment action code derived from grade — `E05` for
+          kindergarten (`grade_canonical_name = 'k'`), `E01` for all other
+          grades. Always populated; the entry code does not change on
+          transfer-out.
       - name: end_date
         data_type: string
         description:
@@ -70,8 +81,11 @@ models:
       - name: drop_code
         data_type: string
         description:
-          Focus drop/withdrawal code mapped from `withdrawal_reason` via the
-          drop-code crosswalk; populated only for `transfer_out` rows.
+          Raw Florida state withdrawal code label from the Finalsite
+          `fl_state_withdraw_codes_ss` custom attribute (e.g. `(W02) In District
+          Transfer`); populated only for `transfer_out` rows, null otherwise.
+          The kippmiami reconciliation layer decodes this label to the Focus
+          `short_name` before import.
       - name: calendar_id
         data_type: string
         description:
@@ -163,75 +177,73 @@ unit_tests:
     description:
       Verifies the 28-column STUDENT_ENROLLMENT layout for new-enrollment rows —
       grade is translated inline for both a numbered grade (`5th`→`05`) and
-      kindergarten (`k`→`KG`), school/enrollment-code crosswalks resolve,
-      student_id is sourced from int_finalsite__contact_id_attributes, and
-      end_date/drop_code are null for a non-transfer row.
+      kindergarten (`k`→`KG`); enrollment_code is E05 for KG and E01 otherwise;
+      student_id is sourced from
+      int_finalsite__contact_id_attributes.focus_student_id_prefixed; and
+      end_date/drop_code are null for non-transfer rows.
     model: rpt_focus__student_enrollment
     given:
+      # format: sql (not dict) — is_transfer_out is added in this PR, so the
+      # deferred lifecycle relation lacks it and dict introspection fails in CI.
       - input: ref('int_finalsite__enrollment_lifecycle')
-        rows:
-          - {
-              finalsite_enrollment_id: e1,
-              lifecycle_action: create,
-              school_year_start: 2025,
-              grade_canonical_name: 5th,
-              assigned_school: KIPP Royalty Academy,
-              enrollment_start_date: 2025-08-12,
-              enrollment_end_date: null,
-              withdrawal_reason: null,
-              promotion_status: null,
-            }
-          - {
-              finalsite_enrollment_id: e3,
-              lifecycle_action: create,
-              school_year_start: 2025,
-              grade_canonical_name: k,
-              assigned_school: KIPP Royalty Academy,
-              enrollment_start_date: 2025-08-12,
-              enrollment_end_date: null,
-              withdrawal_reason: null,
-              promotion_status: null,
-            }
+        format: sql
+        rows: |
+          select
+            'e1' as finalsite_enrollment_id,
+            2025 as school_year_start,
+            '5th' as grade_canonical_name,
+            cast(null as string) as promotion_status,
+            'KIPP Royalty Academy' as assigned_school,
+            date '2025-08-12' as enrollment_start_date,
+            cast(null as date) as enrollment_end_date,
+            false as is_transfer_out
+          union all
+          select
+            'e3',
+            2025,
+            'k',
+            cast(null as string),
+            'KIPP Royalty Academy',
+            date '2025-08-12',
+            cast(null as date),
+            false
       - input: ref('int_finalsite__contact_custom_attributes')
         format: sql
         rows: |
           select
             'e1' as finalsite_enrollment_id,
-            cast(null as string) as withdrawal_school_txt
+            cast(null as string) as withdrawal_school_txt,
+            cast(null as string) as fl_state_withdraw_codes_ss
+          union all
+          select
+            'e3' as finalsite_enrollment_id,
+            cast(null as string) as withdrawal_school_txt,
+            cast(null as string) as fl_state_withdraw_codes_ss
       - input: ref('int_people__location_crosswalk')
         format: sql
         rows: |
           select
             'KIPP Royalty Academy' as location_name,
             '0001' as location_focus_school_id
-      - input: ref('stg_google_sheets__focus__enrollment_code_crosswalk')
-        rows:
-          - { finalsite_lifecycle_action: create, focus_enrollment_code: EA1 }
-      - input: ref('stg_google_sheets__focus__drop_code_crosswalk')
-        rows:
-          - {
-              finalsite_withdrawal_reason: mid_year_withdrawal,
-              focus_drop_code: W05,
-            }
       - input: ref('int_finalsite__contact_id_attributes')
         format: sql
         rows: |
           select
             'e1' as finalsite_enrollment_id,
-            '3003001' as focus_student_id
+            '84003003001' as focus_student_id_prefixed
           union all
           select
             'e3' as finalsite_enrollment_id,
-            '3003003' as focus_student_id
+            '84003003003' as focus_student_id_prefixed
     expect:
       rows:
         - {
             syear: 2025,
             school_id: "0001",
-            student_id: "3003001",
+            student_id: "84003003001",
             grade_id: "05",
             start_date: "20250812",
-            enrollment_code: EA1,
+            enrollment_code: E01,
             end_date: null,
             drop_code: null,
             calendar_id: null,
@@ -258,10 +270,10 @@ unit_tests:
         - {
             syear: 2025,
             school_id: "0001",
-            student_id: "3003003",
+            student_id: "84003003003",
             grade_id: KG,
             start_date: "20250812",
-            enrollment_code: EA1,
+            enrollment_code: E05,
             end_date: null,
             drop_code: null,
             calendar_id: null,
@@ -287,64 +299,56 @@ unit_tests:
           }
   - name: test_student_enrollment_transfer_out
     description:
-      Verifies that end_date and drop_code populate for a transfer_out row, and
-      that end_date is formatted as YYYYMMDD.
+      Verifies that end_date and drop_code populate for a transfer_out row, that
+      enrollment_code keeps its entry value (E01) on transfer_out, that end_date
+      is formatted as YYYYMMDD, and that drop_code carries the raw
+      fl_state_withdraw_codes_ss value.
     model: rpt_focus__student_enrollment
     given:
+      # format: sql (not dict) — is_transfer_out is added in this PR, so the
+      # deferred lifecycle relation lacks it and dict introspection fails in CI.
       - input: ref('int_finalsite__enrollment_lifecycle')
-        rows:
-          - {
-              finalsite_enrollment_id: e2,
-              lifecycle_action: transfer_out,
-              school_year_start: 2025,
-              grade_canonical_name: 7th,
-              assigned_school: KIPP Royalty Academy,
-              enrollment_start_date: 2025-08-12,
-              enrollment_end_date: 2026-01-15,
-              withdrawal_reason: mid_year_withdrawal,
-              promotion_status: Retained,
-            }
+        format: sql
+        rows: |
+          select
+            'e2' as finalsite_enrollment_id,
+            2025 as school_year_start,
+            '7th' as grade_canonical_name,
+            'Retained' as promotion_status,
+            'KIPP Royalty Academy' as assigned_school,
+            date '2025-08-12' as enrollment_start_date,
+            date '2026-01-15' as enrollment_end_date,
+            true as is_transfer_out
       - input: ref('int_finalsite__contact_custom_attributes')
         format: sql
         rows: |
           select
             'e2' as finalsite_enrollment_id,
-            'Prior Elementary' as withdrawal_school_txt
+            'Prior Elementary' as withdrawal_school_txt,
+            '(W02) In District Transfer' as fl_state_withdraw_codes_ss
       - input: ref('int_people__location_crosswalk')
         format: sql
         rows: |
           select
             'KIPP Royalty Academy' as location_name,
             '0001' as location_focus_school_id
-      - input: ref('stg_google_sheets__focus__enrollment_code_crosswalk')
-        rows:
-          - {
-              finalsite_lifecycle_action: transfer_out,
-              focus_enrollment_code: W01,
-            }
-      - input: ref('stg_google_sheets__focus__drop_code_crosswalk')
-        rows:
-          - {
-              finalsite_withdrawal_reason: mid_year_withdrawal,
-              focus_drop_code: W05,
-            }
       - input: ref('int_finalsite__contact_id_attributes')
         format: sql
         rows: |
           select
             'e2' as finalsite_enrollment_id,
-            '3003002' as focus_student_id
+            '84003003002' as focus_student_id_prefixed
     expect:
       rows:
         - {
             syear: 2025,
             school_id: "0001",
-            student_id: "3003002",
+            student_id: "84003003002",
             grade_id: "07",
             start_date: "20250812",
-            enrollment_code: W01,
+            enrollment_code: E01,
             end_date: "20260115",
-            drop_code: W05,
+            drop_code: (W02) In District Transfer,
             calendar_id: null,
             prior_dist: null,
             prior_state: null,

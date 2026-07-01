@@ -267,11 +267,11 @@ unit_tests:
         rows: |
           select
             'enr-001' as finalsite_enrollment_id,
-            '1001001' as focus_student_id
+            '84001001001' as focus_student_id_prefixed
     expect:
       rows:
         - {
-            stdt_id: "1001001",
+            stdt_id: "84001001001",
             last_name: Smith,
             first_name: Jane,
             name_suffix: null,

@@ -325,11 +325,11 @@ unit_tests:
         rows: |
           select
             'enr-stu-001' as finalsite_enrollment_id,
-            '2002002' as focus_student_id
+            '84002002002' as focus_student_id_prefixed
     expect:
       rows:
         - {
-            student_id: "2002002",
+            student_id: "84002002002",
             student_relation: parent,
             sort_order: 1,
             first_name: Alice,
@@ -381,7 +381,7 @@ unit_tests:
             contact7_unlisted: null,
           }
         - {
-            student_id: "2002002",
+            student_id: "84002002002",
             student_relation: guardian,
             sort_order: 2,
             first_name: Bob,

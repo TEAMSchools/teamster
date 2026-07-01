@@ -1,6 +1,6 @@
 -- trunk-ignore(sqlfluff/ST06): column order fixed by Focus ADDRESS contract
 select
-    ida.focus_student_id as student_id,
+    ida.focus_student_id_prefixed as student_id,
 
     c.address_1 as address,
     c.address_2 as address2,
