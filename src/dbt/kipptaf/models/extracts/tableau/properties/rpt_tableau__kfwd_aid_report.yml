@@ -287,3 +287,8 @@ models:
         description:
           Provider of postsecondary counseling (either KIPP NYC or NULL, NULL
           value means KIPP TAF)
+      - name: graduation_year
+        data_type: int64
+        description:
+          Year of high school graduation derived from actual HS grad date or
+          projected
