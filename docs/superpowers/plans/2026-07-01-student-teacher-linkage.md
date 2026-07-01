@@ -297,13 +297,20 @@ git commit -m "feat(dbt): add lead teacher + is_homeroom to dim_student_section_
 
 **Interfaces:**
 
-- Consumes: `dim_student_section_enrollments` (`student_enrollment_key`,
-  `lead_teacher_staff_key`, `is_homeroom`, `entry_date`) from Task 1.
+- Consumes: `base_powerschool__course_enrollments` (HR-credit sections),
+  `bridge_course_section_teachers` (Lead Teacher), and
+  `int_powerschool__student_enrollment_union` (stints) — resolved independently,
+  NOT by reffing `dim_student_section_enrollments`.
 - Produces: one new column `homeroom_teacher_staff_key` (nullable string FK to
   `dim_staff.staff_key`). Grain unchanged: one row per `student_enrollment_key`.
-- Note: this `ref()` does not create a cycle — `dim_student_section_enrollments`
-  only _tests_ (relationships) against `dim_student_enrollments`, it does not
-  `ref()` it in SQL, so there is no model-build cycle.
+- **Cycle avoidance:** `dim_student_section_enrollments` declares a
+  `foreign_key` constraint `to: ref('dim_student_enrollments')`, and in this dbt
+  version a `to: ref(...)` FK constraint DOES create a model-build DAG edge
+  (section dim depends on enrollment dim). So `dim_student_enrollments` must NOT
+  `ref()` the section dim — that would cycle. It resolves the homeroom teacher
+  directly from `base_powerschool__course_enrollments` +
+  `bridge_course_section_teachers` + the stint union instead, leaving the
+  section dim's FK constraint (and its ERD edge) intact.
 
 - [ ] **Step 1: Add homeroom-resolution CTEs and wrap the existing SELECT**
 
@@ -314,22 +321,70 @@ prepend the homeroom CTEs. Final file shape:
 ```sql
 with
     -- trunk-ignore(sqlfluff/ST03): referenced via dbt_utils.deduplicate below
-    homeroom as (
+    homeroom_sections as (
         select
-            student_enrollment_key,
-            entry_date,
+            cc.cc_studentid,
+            cc.cc_yearid,
+            cc.sections_schoolid,
+            cc._dbt_source_project,
+            cc.cc_dateenrolled,
+            cc.cc_dateleft,
 
-            lead_teacher_staff_key as homeroom_teacher_staff_key,
-        from {{ ref("dim_student_section_enrollments") }}
-        where is_homeroom and student_enrollment_key is not null
+            {{
+                dbt_utils.generate_surrogate_key(
+                    ["cc.sections_dcid", "cc._dbt_source_project"]
+                )
+            }} as course_section_key,
+        from {{ ref("base_powerschool__course_enrollments") }} as cc
+        where
+            cc.courses_credittype in ('HR', 'Homeroom')
+            and not cc.is_dropped_section
+            and not cc.is_dropped_course
+    ),
+
+    -- trunk-ignore(sqlfluff/ST03): referenced via dbt_utils.deduplicate below
+    homeroom_teacher as (
+        select
+            hs.cc_dateenrolled,
+
+            bcst.effective_start_date,
+            bcst.staff_key as homeroom_teacher_staff_key,
+
+            {{
+                dbt_utils.generate_surrogate_key(
+                    [
+                        "s.student_number",
+                        "s._dbt_source_project",
+                        "s.academic_year",
+                        "s.entrydate",
+                    ]
+                )
+            }} as student_enrollment_key,
+        from homeroom_sections as hs
+        inner join
+            {{ ref("int_powerschool__student_enrollment_union") }} as s
+            on hs.cc_studentid = s.studentid
+            and hs.sections_schoolid = s.schoolid
+            and hs.cc_yearid = s.yearid
+            and hs._dbt_source_project = s._dbt_source_project
+            and hs.cc_dateenrolled >= s.entrydate
+            and hs.cc_dateenrolled < s.exitdate
+        left join
+            {{ ref("bridge_course_section_teachers") }} as bcst
+            on hs.course_section_key = bcst.course_section_key
+            and bcst.`role` = 'Lead Teacher'
+            and bcst.effective_start_date
+            < coalesce(hs.cc_dateleft, cast('9999-12-31' as date))
+            and hs.cc_dateenrolled
+            < coalesce(bcst.effective_end_date, cast('9999-12-31' as date))
     ),
 
     homeroom_resolved as (
         {{
             dbt_utils.deduplicate(
-                relation="homeroom",
+                relation="homeroom_teacher",
                 partition_by="student_enrollment_key",
-                order_by="entry_date desc",
+                order_by="cc_dateenrolled desc, effective_start_date desc",
             )
         }}
     ),
