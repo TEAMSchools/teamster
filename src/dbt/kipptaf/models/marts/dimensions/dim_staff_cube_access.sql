@@ -143,10 +143,7 @@ with
                 'none'
             ) as staff_department_scope,
             coalesce(
-                exc.staff_pii_scope,
-                ovr.staff_pii_scope,
-                rl.staff_pii_scope,
-                'none'
+                exc.staff_pii_scope, ovr.staff_pii_scope, rl.staff_pii_scope, 'none'
             ) as staff_pii_scope,
             coalesce(
                 exc.staff_compensation_scope,

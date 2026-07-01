@@ -241,10 +241,10 @@ bounds them.
 
 `employee_number` (ADP employee number, keyed unique), then the same access
 columns as the role and department override tabs, plus a `notes` column
-(free-text reason for the exception — not read by `dim_staff_cube_access`,
-audit use only). NULL scope columns fall through to the next tier. Maintained
-by the data team; each row should carry a `notes` entry explaining the
-business reason and who approved it.
+(free-text reason for the exception — not read by `dim_staff_cube_access`, audit
+use only). NULL scope columns fall through to the next tier. Maintained by the
+data team; each row should carry a `notes` entry explaining the business reason
+and who approved it.
 
 ## Changes required
 

@@ -3,11 +3,12 @@ models:
     description: >-
       Cube access individual-exception overrides, maintained by the data team in
       Google Sheets. One row per staff member (keyed on employee_number) who
-      requires an access grant that differs from their role or department mapping.
-      Takes precedence over both the department override and the role crosswalk.
-      Scope columns follow the same vocabulary as the other access crosswalks; a
-      NULL scope column falls through to the next tier. The notes column is
-      free-text documentation only — it is not read by dim_staff_cube_access.
+      requires an access grant that differs from their role or department
+      mapping. Takes precedence over both the department override and the role
+      crosswalk. Scope columns follow the same vocabulary as the other access
+      crosswalks; a NULL scope column falls through to the next tier. The notes
+      column is free-text documentation only — it is not read by
+      dim_staff_cube_access.
     columns:
       - name: employee_number
         data_type: string
@@ -55,7 +56,8 @@ models:
                 severity: error
       - name: staff_pii_scope
         data_type: string
-        description: Staff PII field visibility (per-field sensitive scope enum).
+        description:
+          Staff PII field visibility (per-field sensitive scope enum).
         data_tests:
           - accepted_values:
               arguments:
