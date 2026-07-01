@@ -282,3 +282,8 @@ models:
         description:
           True when the student has a most-recent IEP date on the Salesforce
           contact.
+      - name: advising_provider
+        data_type: string
+        description:
+          Provider of postsecondary counseling (either KIPP NYC or NULL, NULL
+          value means KIPP TAF)
