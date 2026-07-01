@@ -1,0 +1,1935 @@
+# NJ SLEDS Course Roster Submission — Runbook
+
+This runbook guides a KTAF data team member through the end-to-end quality
+checks required before submitting the NJ SLEDS course roster file. It is
+organized into groups that mirror the submission pipeline: Group A validates
+staff identity fields in the extract against the state reference file; later
+groups cover student enrollment, course metadata, and final submission steps.
+Run each group's checks in order, resolve all flagged rows, and document
+dispositions before moving to the next group.
+
+## What these submissions are
+
+Each year New Jersey requires two paired **Course Roster** submissions to the
+state's longitudinal data system (NJSLEDS) — a **Staff Course Roster** and a
+**Student Course Roster** — which KTAF files for Newark and Camden. NJDOE uses
+them _together_ to establish accurate student–teacher assignments, meet federal
+and state reporting requirements, drive funding and accountability
+determinations (including teachers' median Student Growth Percentiles), and
+support equity and long-term planning. Filing is a formal **certification** that
+the data is accurate — knowingly submitting bad data can trigger state
+corrective action. That's what this audit protects against.
+
+**The shape.** The two files describe the same course sections from opposite
+sides:
+
+- **Staff Course Roster** — one row per **teacher, per section** taught (19
+  fields): who taught what, where, and when.
+- **Student Course Roster** — one row per **student, per section** enrolled (25
+  fields): who took what, plus grade, credit, and completion.
+
+They have to reconcile. A standard section (`CourseType` S1/S2) with enrolled
+students must also carry a teacher record sharing the same course-identifying
+fields, and vice versa. Every person is matched against the state's own records
+— **staff** to the _Staff Management_ snapshot (the five-field combination),
+**students** to their _NJ SMART_ State ID — and every course is coded with
+**NCES SCED** codes and located by its **County-District-School (CDS)** code.
+Everything below is about getting those identities, codes, and cross-file links
+to line up _before_ you certify.
+
+## How to use this runbook
+
+**Goal:** Produce a clean Staff Course Roster and Student Course Roster extract
+for Newark and Camden that passes NJ SLEDS validation without any
+post-processing of the CSV files. Every defect is fixed at the source in
+PowerSchool so the regenerated native extract comes out clean.
+
+### Three surfaces
+
+The work spans three surfaces. Only the first is required.
+
+1. **BigQuery console + Google Sheets — the critical path.** Load the extracts
+   into `cokafor`, run the documented SQL by hand in the
+   [BigQuery console](https://console.cloud.google.com/bigquery), build
+   worklists in Sheets. You can execute this entire runbook with zero Claude
+   access. All row-level data stays in-tenant on these two surfaces.
+
+2. **VS Code Claude Code plugin — optional accelerant.** Available to help draft
+   or debug a query when the intern wants it, but never required; the documented
+   SQL is always the fallback. This is the only governed AI-plus-BigQuery path:
+   the BigQuery console is not reachable from Claude Desktop.
+
+3. **Shared cowork project (claude.ai / Desktop) — optional accelerant.** Loaded
+   with both Handbooks, the SCED list, the runbook, and a de-identified
+   error/issue catalog. Useful for handbook Q&A, error-log triage by category
+   and count, drafting compliance-team handoff notes, and persisting
+   institutional knowledge. Shareable with the compliance team and the
+   state-access uploader. **Never paste identified rows here** — counts and
+   categories only.
+
+You can do everything in this runbook with zero Claude access. Claude is an
+optional accelerant; no step may depend on a Claude surface that could hit a
+usage limit and stall progress.
+
+## PII rules
+
+This work is PII-dense: resolving a staff combination error requires name +
+DOB + SMID together; the student side carries SID + name + DOB.
+
+- **Row-level worklists with real names, DOBs, and IDs stay in BigQuery
+  (`cokafor`) and Google Sheets** (in-tenant) only. Never copy identified rows
+  to the cowork project, a chat, a commit, or any other external surface.
+- **The cowork project works on rules, error categories, counts, and
+  de-identified samples only.** The defect-count rollup (check 17) is the only
+  artifact from this runbook that goes into the cowork project — counts only, no
+  PII.
+- **State error reports are PII.** The state's returned error reports name
+  records by SID, SMID, or name. Triage them row-level in the BigQuery console
+  or VS Code. Only the de-identified taxonomy (error type, count, which query
+  catches it) goes into the cowork project.
+- **`SocialSecurityNumber` is never loaded.** The Staff Management export
+  includes a `SocialSecurityNumber` column, but NJSLEDS masks its values in the
+  export so it is not a live-PII concern. The `build_ref_state_staff.py` prep
+  script drops it at load as hygiene — the audit never needs it, and the loaded
+  `ref_state_staff` table contains no SSN column.
+
+## The audit loop
+
+Source-fix-only means this is an iterative loop, not a one-pass cleanup. A
+typical submission requires two to four loops before the extract is clean.
+
+```text
+1. PS admin generates Staff + Student Course Roster extracts (Camden, Newark).
+2. Intern loads both CSVs into BigQuery (cokafor staging tables); also load the
+   state Staff Management / SMID export if compliance can provide it.
+3. Intern runs the helper-query pack -> defect worklists (Google Sheets).
+4. Intern fixes what they own in PowerSchool:
+     - SCED codes (S_NJ_CRS_X / S_NJ_SEC_X)
+     - staff state-ID override fields + SMID entry (S_NJ_USR_X)
+     - duplicate / orphan section + schedule cleanup
+5. Items the intern cannot own -> compliance-team handoff sheet:
+     - generate NEW state SMIDs for new staff
+     - push name/DOB changes into Staff Management / state SIS
+6. Re-extract -> re-load -> re-run pack -> defects trend toward zero.
+7. Clean extract handed to the state-access uploader; errors returned -> step 3.
+```
+
+Check 17 (defect-count rollup) is the de-identified artifact that shows
+progress. Paste the check-17 output into the convergence tracker tab each loop
+so stakeholders can watch totals trend toward zero without seeing any identified
+data.
+
+## Phase 0 — setup
+
+Run these steps once before the first loop (and again each time you receive a
+fresh extract to audit).
+
+### Step 1 — build the reference CSVs
+
+The network runs two regions (Newark, Camden) with two separate PowerSchool
+instances. Each region produces its own extract CSVs. Three prep scripts
+generate the reference files needed before loading.
+
+Run all three from the project root. Scripts take input and output paths as
+arguments; no PII-bearing file is committed to the repo.
+
+```bash
+cd /workspaces/teamster
+
+# Build the SCED reference CSV from the NJSLEDS SCED xlsx workbook.
+# Single statewide file — run once.
+uv run --with openpyxl python \
+  docs/superpowers/nj-sleds-roster/setup/build_ref_sced_codes.py \
+  ".claude/scratch/NJ SLEDS/CRS docs/NJSLEDS_SCED-Course-Codes.xlsx" \
+  ".claude/scratch/NJ SLEDS/ref_sced_codes.csv"
+
+# Project the Staff Management export down to audit columns, dropping SSN.
+# Run once per region — produces two CSVs.
+uv run python \
+  docs/superpowers/nj-sleds-roster/setup/build_ref_state_staff.py \
+  ".claude/scratch/NJ SLEDS/CRS docs/Export- Staff Management Submission Newark.csv" \
+  ".claude/scratch/NJ SLEDS/ref_state_staff_newark.csv"
+
+uv run python \
+  docs/superpowers/nj-sleds-roster/setup/build_ref_state_staff.py \
+  ".claude/scratch/NJ SLEDS/CRS docs/Export- Staff Management Submission Camden.csv" \
+  ".claude/scratch/NJ SLEDS/ref_state_staff_camden.csv"
+
+# Project the state student record export down to audit columns.
+# Run once per region — produces two CSVs.
+uv run python \
+  docs/superpowers/nj-sleds-roster/setup/build_ref_state_student.py \
+  ".claude/scratch/NJ SLEDS/CRS docs/Export- State Student Record Newark.csv" \
+  ".claude/scratch/NJ SLEDS/ref_state_student_newark.csv"
+
+uv run python \
+  docs/superpowers/nj-sleds-roster/setup/build_ref_state_student.py \
+  ".claude/scratch/NJ SLEDS/CRS docs/Export- State Student Record Camden.csv" \
+  ".claude/scratch/NJ SLEDS/ref_state_student_camden.csv"
+```
+
+The Staff/Student Course Roster extracts come straight from PowerSchool per
+region (no prep script needed — just copy them to stable filenames as shown in
+Step 2).
+
+Expected output:
+
+- `build_ref_sced_codes.py`: prints `wrote <N> SCED rows` where N is roughly
+  2,060 (approximately 600 prior-to-secondary plus 1,460 secondary).
+- `build_ref_state_staff.py` (each run): prints
+  `wrote <N> staff rows (24 cols, no SSN)`. Confirm the output header contains
+  no `SocialSecurityNumber` column.
+- `build_ref_state_student.py` (each run): prints `wrote <N> student rows`.
+
+### Step 2 — load region base tables and create union views
+
+#### Why this load shape (not append)
+
+Loading per-region base tables and unioning them into views keeps re-loads
+clean: each `--replace` overwrites only one region's base table, and the views
+auto-update — appending (`--noreplace`) would double-load and inflate counts
+each cycle. The `region` column stamped by the view tells the intern which
+PowerSchool instance to fix, which is critical for blank-CDS defects where
+region cannot be inferred from the CDS value alone.
+
+**The combination and parity checks join _within region_.** Local identifiers
+are only unique inside a district — a `LocalStaffIdentifier`, student
+`LocalIdentificationNumber`, or `LocalSectionCode` can repeat across Newark and
+Camden (the real EOY data had one shared staff LSID and 33 shared student local
+IDs). So checks 2, 3, 12, 14, 15, and 16 match on the local key **and** `region`
+together; joining on the local key alone would manufacture false cross-region
+matches. The field-validity checks (1, 4–11, 13) are per-row and need no region
+qualifier, but they carry `region` through so every worklist row is routable.
+
+#### Explicit STRING schemas — mandatory
+
+All base tables use **explicit STRING schemas**. Do not use `--autodetect` for
+any table, including the reference tables: autodetect re-coerces zero-padded
+`subject_area`, `course_identifier`, and CDS codes to `INT64` and strips leading
+zeros, breaking the joins in checks 2 and 8.
+
+#### Load the base tables
+
+```bash
+cd "/workspaces/teamster/.claude/scratch/NJ SLEDS"
+
+# Stable filenames avoid the spaces in the original extract filenames.
+cp "NJ_Staff_Course_Submission Newark.csv"  staff_extract_newark.csv
+cp "NJ_Staff_Course_Submission Camden.csv"  staff_extract_camden.csv
+cp "NJ_Student_Course_Submission Newark.csv" student_extract_newark.csv
+cp "NJ_Student_Course_Submission Camden.csv" student_extract_camden.csv
+
+bq=/usr/local/share/google-cloud-sdk/bin/bq
+
+staff_schema="LocalStaffIdentifier:STRING,StaffMemberIdentifier:STRING,\
+FirstName:STRING,LastName:STRING,DateOfBirth:STRING,\
+CountyCodeAssigned:STRING,DistrictCodeAssigned:STRING,SchoolCodeAssigned:STRING,\
+SectionEntryDate:STRING,SectionExitDate:STRING,SubjectArea:STRING,\
+CourseIdentifier:STRING,CourseLevel:STRING,GradeSpan:STRING,\
+AvailableCredit:STRING,CourseSequence:STRING,LocalCourseTitle:STRING,\
+LocalCourseCode:STRING,LocalSectionCode:STRING"
+
+$bq load --project_id=teamster-332318 --source_format=CSV \
+  --skip_leading_rows=1 --replace \
+  cokafor.stg_staff_extract_newark staff_extract_newark.csv "$staff_schema"
+
+$bq load --project_id=teamster-332318 --source_format=CSV \
+  --skip_leading_rows=1 --replace \
+  cokafor.stg_staff_extract_camden staff_extract_camden.csv "$staff_schema"
+
+student_schema="LocalIdentificationNumber:STRING,StateIdentificationNumber:STRING,\
+FirstName:STRING,LastName:STRING,DateOfBirth:STRING,\
+CountyCodeAssigned:STRING,DistrictCodeAssigned:STRING,SchoolCodeAssigned:STRING,\
+SectionEntryDate:STRING,SectionExitDate:STRING,SubjectArea:STRING,\
+CourseIdentifier:STRING,CourseLevel:STRING,GradeSpan:STRING,\
+AvailableCredit:STRING,CourseSequence:STRING,LocalCourseTitle:STRING,\
+LocalCourseCode:STRING,LocalSectionCode:STRING,CreditsEarned:STRING,\
+NumericGradeEarned:STRING,AlphaGradeEarned:STRING,CompletionStatus:STRING,\
+CourseType:STRING,DualInstitution:STRING"
+
+$bq load --project_id=teamster-332318 --source_format=CSV \
+  --skip_leading_rows=1 --replace \
+  cokafor.stg_student_extract_newark student_extract_newark.csv "$student_schema"
+
+$bq load --project_id=teamster-332318 --source_format=CSV \
+  --skip_leading_rows=1 --replace \
+  cokafor.stg_student_extract_camden student_extract_camden.csv "$student_schema"
+
+sced_schema="sced_level:STRING,sced_code:STRING,subject_area:STRING,\
+course_identifier:STRING,subject_area_name:STRING,sced_course_name:STRING"
+
+$bq load --project_id=teamster-332318 --source_format=CSV \
+  --skip_leading_rows=1 --replace \
+  cokafor.ref_sced_codes ref_sced_codes.csv "$sced_schema"
+
+state_staff_schema="LocalStaffIdentifier:STRING,StaffMemberIdentifier:STRING,\
+FirstName:STRING,MiddleName:STRING,LastName:STRING,DateofBirth:STRING,\
+CountyCodeAssigned1:STRING,CountyCodeAssigned2:STRING,\
+CountyCodeAssigned3:STRING,CountyCodeAssigned4:STRING,\
+CountyCodeAssigned5:STRING,CountyCodeAssigned6:STRING,\
+DistrictCodeAssigned1:STRING,DistrictCodeAssigned2:STRING,\
+DistrictCodeAssigned3:STRING,DistrictCodeAssigned4:STRING,\
+DistrictCodeAssigned5:STRING,DistrictCodeAssigned6:STRING,\
+SchoolCodeAssigned1:STRING,SchoolCodeAssigned2:STRING,\
+SchoolCodeAssigned3:STRING,SchoolCodeAssigned4:STRING,\
+SchoolCodeAssigned5:STRING,SchoolCodeAssigned6:STRING"
+
+$bq load --project_id=teamster-332318 --source_format=CSV \
+  --skip_leading_rows=1 --replace \
+  cokafor.ref_state_staff_newark ref_state_staff_newark.csv "$state_staff_schema"
+
+$bq load --project_id=teamster-332318 --source_format=CSV \
+  --skip_leading_rows=1 --replace \
+  cokafor.ref_state_staff_camden ref_state_staff_camden.csv "$state_staff_schema"
+
+state_student_schema="LocalIdentificationNumber:STRING,\
+StateIdentificationNumber:STRING,FirstName:STRING,LastName:STRING,\
+DateOfBirth:STRING"
+
+$bq load --project_id=teamster-332318 --source_format=CSV \
+  --skip_leading_rows=1 --replace \
+  cokafor.ref_state_student_newark ref_state_student_newark.csv \
+  "$state_student_schema"
+
+$bq load --project_id=teamster-332318 --source_format=CSV \
+  --skip_leading_rows=1 --replace \
+  cokafor.ref_state_student_camden ref_state_student_camden.csv \
+  "$state_student_schema"
+```
+
+#### Create the union views
+
+Run these `CREATE OR REPLACE VIEW` statements in the BigQuery console query
+editor — no terminal needed. The views union the two region base tables and
+stamp a `region` column. All 17 checks query these view names unchanged.
+
+```sql
+create or replace view `teamster-332318.cokafor.stg_student_extract` as
+select *, 'newark' as region
+from `teamster-332318.cokafor.stg_student_extract_newark`
+union all
+select *, 'camden' as region
+from `teamster-332318.cokafor.stg_student_extract_camden`;
+```
+
+Apply the same pattern to create the remaining three views:
+
+```sql
+create or replace view `teamster-332318.cokafor.stg_staff_extract` as
+select *, 'newark' as region
+from `teamster-332318.cokafor.stg_staff_extract_newark`
+union all
+select *, 'camden' as region
+from `teamster-332318.cokafor.stg_staff_extract_camden`;
+
+create or replace view `teamster-332318.cokafor.ref_state_staff` as
+select *, 'newark' as region
+from `teamster-332318.cokafor.ref_state_staff_newark`
+union all
+select *, 'camden' as region
+from `teamster-332318.cokafor.ref_state_staff_camden`;
+
+create or replace view `teamster-332318.cokafor.ref_state_student` as
+select *, 'newark' as region
+from `teamster-332318.cokafor.ref_state_student_newark`
+union all
+select *, 'camden' as region
+from `teamster-332318.cokafor.ref_state_student_camden`;
+```
+
+`ref_sced_codes` is a single statewide table — no union view needed.
+
+### Step 3 — verify row counts
+
+Run this in the BigQuery console to confirm all views are non-empty:
+
+```sql
+select 'staff' as t, count(*) as n
+from `teamster-332318.cokafor.stg_staff_extract`
+union all select 'student', count(*)
+from `teamster-332318.cokafor.stg_student_extract`
+union all select 'sced', count(*)
+from `teamster-332318.cokafor.ref_sced_codes`
+union all select 'state_staff', count(*)
+from `teamster-332318.cokafor.ref_state_staff`
+union all select 'state_student', count(*)
+from `teamster-332318.cokafor.ref_state_student`;
+```
+
+Expected (current Newark sample only): `staff` ≈ 291, `student` ≈ 3,581,
+`state_staff` ≈ 1,053, `sced` ≈ 2,060. With both regions loaded, counts will be
+roughly double. These are not invariants — they change every cycle; the check is
+that each table is non-empty and in the right order of magnitude.
+
+Also confirm leading zeros survived — run:
+
+```sql
+select distinct CountyCodeAssigned
+from `teamster-332318.cokafor.stg_student_extract`;
+```
+
+Verify the result contains `''` (blank) and `80`, not `0` or `80.0`. If you see
+integer-looking values, the load used autodetect or a wrong schema — re-run Step
+2 with the explicit schema strings above.
+
+## Group A — staff field validity
+
+The six checks below catch the field-level errors most likely to cause SLEDS
+rejection: missing or malformed SMIDs, identity mismatches against the state's
+own staff file, duplicate local IDs, illegal name characters, out-of-window
+dates, and wrong CDS codes. Run each query against `cokafor.stg_staff_extract`
+(291 rows for the Newark sample) and `cokafor.ref_state_staff` (1 053 rows)
+before every submission.
+
+### Check 1 — missing or invalid SMID
+
+**What it catches:** Staff whose `StaffMemberIdentifier` is NULL or is not
+exactly 8 digits. SLEDS requires a valid 8-digit SMID on every row; a missing or
+malformed SMID causes the entire staff record to reject.
+
+**Why it happens:** New hires whose SMID has not yet been entered in the HR
+system, or LSIDs stored as temp codes (e.g. a `TMP`-prefixed placeholder or an
+all-alpha stub) that were never resolved to a real NJ staff ID.
+
+**How to fix:** Look up the staff member in the NJ TEACH portal or contact the
+People Operations team to obtain the correct SMID. If the person is not yet
+registered with the state, hold the record until registration is complete.
+
+**Owner:** People Operations (SMID lookup); Data team (extract correction).
+
+```sql
+select distinct
+  LocalStaffIdentifier,
+  StaffMemberIdentifier,
+  FirstName,
+  LastName,
+from `teamster-332318.cokafor.stg_staff_extract`
+where StaffMemberIdentifier is null
+  or not regexp_contains(StaffMemberIdentifier, r'^[0-9]{8}$');
+```
+
+_Validation result (2025-26 Newark sample): 22 rows — staff whose SMID is NULL,
+including records with temp-style LSIDs. Each must be resolved or held before
+submission._
+
+### Check 2 — combination-error predictor (spine check)
+
+**What it catches:** Staff whose five-field identity tuple
+(`LocalStaffIdentifier`, `StaffMemberIdentifier`, `FirstName`, `LastName`,
+`DateOfBirth`) does not match the state's `ref_state_staff` file. SLEDS
+cross-references all five fields; any mismatch causes a combination error that
+blocks the roster line.
+
+**Why it happens:** Name changes not propagated to the state file, LSIDs not yet
+registered with NJ (no match at all), or data-entry discrepancies (e.g. middle
+initial embedded in `FirstName`).
+
+**How to fix:** For `no LSID match in state` rows, the staff member is not yet
+in the state reference — escalate to People Operations. For name or DOB
+mismatches, compare the extract value to the state value and correct whichever
+source is wrong; name changes require a state-side update via NJ TEACH.
+
+**Owner:** People Operations (state registration/corrections); Data team
+(extract corrections).
+
+**Note:** DOB fields are confirmed `YYYYMMDD` strings in both tables —
+`stg_staff_extract.DateOfBirth` and `ref_state_staff.DateofBirth` — so no
+normalization is needed.
+
+```sql
+with extract_staff as (
+  select distinct
+    region,
+    LocalStaffIdentifier,
+    StaffMemberIdentifier,
+    FirstName,
+    LastName,
+    DateOfBirth,
+  from `teamster-332318.cokafor.stg_staff_extract`
+)
+select
+  e.region,
+  e.LocalStaffIdentifier,
+  e.StaffMemberIdentifier,
+  e.FirstName,
+  e.LastName,
+  case
+    when r.LocalStaffIdentifier is null then 'no LSID match in state'
+    when e.StaffMemberIdentifier != r.StaffMemberIdentifier then 'SMID mismatch'
+    when upper(e.FirstName) != upper(r.FirstName) then 'first name mismatch'
+    when upper(e.LastName) != upper(r.LastName) then 'last name mismatch'
+    when e.DateOfBirth != r.DateofBirth then 'DOB mismatch'
+  end as mismatch_reason,
+from extract_staff as e
+left join `teamster-332318.cokafor.ref_state_staff` as r
+  on e.LocalStaffIdentifier = r.LocalStaffIdentifier
+  and e.region = r.region
+where r.LocalStaffIdentifier is null
+  or e.StaffMemberIdentifier != r.StaffMemberIdentifier
+  or upper(e.FirstName) != upper(r.FirstName)
+  or upper(e.LastName) != upper(r.LastName)
+  or e.DateOfBirth != r.DateofBirth;
+```
+
+_Validation result (2025-26 EOY, both regions): 186 rows — a mix of
+`no LSID match in state` and name/DOB mismatches. Use the companion query below
+to split the no-match rows into stale-LSID overrides (a quick PowerSchool fix)
+versus staff genuinely absent from the state record (a compliance handoff)._
+
+#### Companion — resolve "no LSID match in state" (stale-LSID override)
+
+A `no LSID match in state` result has two causes with opposite fixes. This query
+separates them by joining the extract to `ref_state_staff` on the
+**`StaffMemberIdentifier` (SMID)** instead of the LSID. A staff member whose
+SMID matches but whose `LocalStaffIdentifier` differs is the **same person with
+a drifted local ID** — the recurring "stale staff ID" case. The fix is not to
+register them with the state; it is to set PowerSchool's state-reporting LSID
+override (`S_NJ_USR_X`) to the `njsleds_lsid` value so the next extract emits
+the matching LSID. (Staff who match on neither LSID nor SMID are genuinely
+absent from the state record and need an SMID generated — that is the compliance
+handoff, not this fix.)
+
+**Owner:** Data team / intern (PowerSchool LSID override).
+
+```sql
+with extract_staff as (
+  select distinct
+    region,
+    LocalStaffIdentifier,
+    StaffMemberIdentifier,
+    FirstName,
+    LastName,
+  from `teamster-332318.cokafor.stg_staff_extract`
+  where regexp_contains(StaffMemberIdentifier, r'^[0-9]{8}$')
+)
+select
+  e.region,
+  e.StaffMemberIdentifier,
+  e.LocalStaffIdentifier as powerschool_lsid,
+  r.LocalStaffIdentifier as njsleds_lsid,
+  e.FirstName,
+  e.LastName,
+from extract_staff as e
+join (
+  select *
+  from `teamster-332318.cokafor.ref_state_staff`
+  qualify row_number() over (partition by StaffMemberIdentifier, region) = 1
+) as r
+  on e.StaffMemberIdentifier = r.StaffMemberIdentifier
+  and e.region = r.region
+where e.LocalStaffIdentifier != r.LocalStaffIdentifier;
+```
+
+_Validation result (2025-26 EOY, both regions): 75 staff (Newark 55, Camden 20)
+— SMID matches, LSID differs. These are stale-LSID overrides, not new
+registrations. Staff who match the state on no identifier at all are a separate
+bucket with the opposite fix — see the companion below._
+
+#### Companion — staff likely missing from NJSLEDS (register a new SMID)
+
+If a staff member matches the state record on **none** of LSID, SMID, or name +
+DOB, they are almost certainly not registered with the state at all — the
+recurring "new staff need an SMID generated" case. This is the opposite of the
+stale-LSID fix: there is no override to set, because there is no state record to
+point at. These go on the compliance-team handoff sheet for SMID generation,
+with as much lead time as possible (it is the long pole in the submission).
+
+**Owner:** Compliance team (state SMID generation); intern stages the list.
+
+```sql
+with extract_staff as (
+  select distinct
+    region,
+    LocalStaffIdentifier,
+    StaffMemberIdentifier,
+    FirstName,
+    LastName,
+    DateOfBirth,
+  from `teamster-332318.cokafor.stg_staff_extract`
+)
+select
+  e.region,
+  e.LocalStaffIdentifier,
+  e.StaffMemberIdentifier,
+  e.FirstName,
+  e.LastName,
+  e.DateOfBirth,
+from extract_staff as e
+left join `teamster-332318.cokafor.ref_state_staff` as by_lsid
+  on e.LocalStaffIdentifier = by_lsid.LocalStaffIdentifier
+  and e.region = by_lsid.region
+left join `teamster-332318.cokafor.ref_state_staff` as by_smid
+  on e.StaffMemberIdentifier = by_smid.StaffMemberIdentifier
+  and e.region = by_smid.region
+left join `teamster-332318.cokafor.ref_state_staff` as by_name
+  on upper(e.FirstName) = upper(by_name.FirstName)
+  and upper(e.LastName) = upper(by_name.LastName)
+  and e.DateOfBirth = by_name.DateofBirth
+  and e.region = by_name.region
+where by_lsid.LocalStaffIdentifier is null
+  and by_smid.StaffMemberIdentifier is null
+  and by_name.LocalStaffIdentifier is null;
+```
+
+_Validation result (2025-26 EOY, both regions): 76 staff (Newark 10, Camden 66)
+— no match on LSID, SMID, or name + DOB. These are the likely-unregistered staff
+to hand to compliance for SMID generation. Staff who miss on LSID and SMID but
+match on name + DOB are in the state under different IDs — a small
+manual-reconciliation remainder, not part of this list._
+
+### Check 3 — duplicate LSID
+
+**What it catches:** LSIDs that map to more than one distinct person
+(`StaffMemberIdentifier`, `FirstName`, `LastName` triple). A shared LSID means
+two staff members will collide in the roster, causing unpredictable rejects.
+
+**Why it happens:** Data-entry error, a rehired staff member reassigned a
+previously-used local ID, or a system migration that created duplicate records.
+
+**How to fix:** Identify which record is correct (usually the active
+enrollment), reassign a unique LSID to the duplicate, and update the source
+system. Coordinate with HR and the SIS administrator.
+
+**Owner:** HR / SIS administrator; Data team (extract correction).
+
+```sql
+select
+  region,
+  LocalStaffIdentifier,
+  count(distinct format('%t|%t|%t', StaffMemberIdentifier, FirstName, LastName))
+    as distinct_people,
+from `teamster-332318.cokafor.stg_staff_extract`
+group by region, LocalStaffIdentifier
+having distinct_people > 1;
+```
+
+_Validation result (2025-26 Newark sample): 0 rows — no duplicate LSIDs. Clean._
+
+### Check 4 — name rule violations
+
+**What it catches:** `FirstName` or `LastName` values that are NULL or contain
+characters outside the allowed set (letters, apostrophe, hyphen, space). SLEDS
+rejects names with periods, digits, or other special characters.
+
+**Why it happens:** Middle initials appended to `FirstName` (e.g. a first name
+stored as `Firstname M`), suffixes embedded in `LastName`, or data imported from
+a system with looser name validation.
+
+**How to fix:** Remove the disallowed character. If a middle initial is in
+`FirstName`, strip it and store only the given name. Periods after initials must
+be removed. Hyphens and apostrophes are allowed and should be preserved.
+
+**Owner:** Data team (extract correction); People Operations confirms legal name
+spelling.
+
+```sql
+select distinct
+  LocalStaffIdentifier,
+  FirstName,
+  LastName,
+from `teamster-332318.cokafor.stg_staff_extract`
+where FirstName is null
+  or LastName is null
+  or regexp_contains(FirstName, r"[^A-Za-z '\-]")
+  or regexp_contains(LastName, r"[^A-Za-z '\-]");
+```
+
+_Validation result (2025-26 Newark sample): 1 row — a `LastName` containing a
+period in an abbreviated surname (e.g. an `St.`-style prefix). NJ SLEDS allows
+only letters, apostrophe, hyphen, and space in name fields, so the period is the
+violation; the fix is to store the name without the period in the SIS. No
+`FirstName` violations were found._
+
+### Check 5 — date validity
+
+**What it catches:** `SectionExitDate` values that are malformed, precede
+`SectionEntryDate`, or fall after today (a future exit date — the Handbook
+errors on an exit date later than the submission date), scoped to staff records
+whose `SectionEntryDate` falls within the SY 2025-26 window
+(`20250701`–`20260630`).
+
+**Why it happens:** Exit dates entered before the entry date due to data-entry
+error, a future exit date keyed by mistake, or an exit date exported in a
+non-`YYYYMMDD` format.
+
+**Why entry dates aren't validated here:** PowerSchool's UI blocks entry and
+exit dates outside the current school year at the point of entry, so
+out-of-window or malformed _entry_ dates cannot reach the extract — validating
+them would be dead logic. What the date pickers don't prevent are an exit date
+that precedes the entry date and an exit date in the future (after the
+submission date) — which is what this check targets. Do not re-add entry-date
+validation thinking it is missing.
+
+**How to fix:** Correct the exit date in the source SIS. Update the window
+constants (`20250701` / `20260630`) each year to the actual first and last
+instructional days.
+
+**Owner:** Data team (extract correction); School ops confirms section dates.
+
+```sql
+select distinct
+  LocalSectionCode,
+  StaffMemberIdentifier,
+  SectionEntryDate,
+  SectionExitDate,
+from `teamster-332318.cokafor.stg_staff_extract`
+where SectionEntryDate between '20250701' and '20260630'
+  and SectionExitDate is not null
+  and SectionExitDate not in ('', '00000000')
+  and (
+    not regexp_contains(SectionExitDate, r'^[0-9]{8}$')
+    or SectionExitDate < SectionEntryDate
+    or SectionExitDate > format_date('%Y%m%d', current_date())
+  );
+```
+
+_Validation result (2025-26 Newark sample): 0 rows — all exit dates for SY
+2025-26 records are well-formed and on or after the entry date. Clean._
+
+### Check 6 — CDS code validity
+
+**What it catches:** Rows whose `CountyCodeAssigned` / `DistrictCodeAssigned` /
+`SchoolCodeAssigned` combination is not on the approved list for this
+submission. An unexpected CDS combo means the record will be attributed to the
+wrong school in the state system.
+
+**Why it happens:** Incorrect school code in the source system, a school merger
+or renaming that changed the CDS, or staff assigned to a placeholder or
+administrative code instead of an instructional school.
+
+**How to fix:** Verify the correct CDS for each flagged school in the NJDOE
+school directory and correct the source system. Add new approved CDS combos to
+the `having` allowlist in this query each year as needed.
+
+**Owner:** Data team (CDS mapping); School ops confirms correct NJDOE school
+codes.
+
+**Note:** The brief's original query uses `rows` as a column alias, which is a
+reserved word in BigQuery. The query below uses `row_count` instead — use this
+corrected version.
+
+```sql
+select
+  CountyCodeAssigned,
+  DistrictCodeAssigned,
+  SchoolCodeAssigned,
+  count(*) as row_count,
+from `teamster-332318.cokafor.stg_staff_extract`
+group by 1, 2, 3
+having not (
+  (CountyCodeAssigned = '80' and DistrictCodeAssigned = '7325'
+    and SchoolCodeAssigned = '965')
+  or (CountyCodeAssigned = '07' and DistrictCodeAssigned = '1799'
+    and SchoolCodeAssigned = '111')
+);
+```
+
+_Validation result (2025-26 Newark sample): 1 row — `null/7325/732` with 115
+rows. Two distinct defects in the same combo: `CountyCodeAssigned` is NULL (the
+Newark county is `80`), and `SchoolCodeAssigned` is `732` rather than the
+approved `965`. Both must be corrected in PowerSchool's state-reporting fields
+before submission; trace the `732` source in the loaded extract (the
+`Alternate_School_Number` fallback hypothesis is ruled out — see the spec)._
+
+## Group B — course/section SCED validity
+
+The four checks below validate the course and section metadata that SLEDS uses
+to categorize instruction. Checks 7–10 apply to both the staff and student
+extracts — run each query as written against `cokafor.stg_staff_extract` (291
+rows), then re-run by swapping `stg_staff_extract` for `stg_student_extract` (3
+581 rows, same SCED columns). The SCED reference table `cokafor.ref_sced_codes`
+(2 069 rows) is the authoritative code list; all joins use string-typed columns
+with leading zeros intact (`subject_area` is 2-digit, `course_identifier` is
+3-digit) so no casting or zero-padding is needed.
+
+### Check 7 — missing SCED codes
+
+**What it catches:** Course/section rows where `SubjectArea`,
+`CourseIdentifier`, or `CourseLevel` is NULL or blank. All three fields are
+required by SLEDS; a missing value on any one of them causes the row to reject
+outright.
+
+**Why it happens:** Courses added to the SIS without a complete SCED mapping, or
+sections loaded from a template where the SCED fields were never populated.
+`CourseLevel` is particularly prone to being left blank when a course is flagged
+as non-credit-bearing during setup.
+
+**How to fix:** For each flagged `LocalCourseCode`, look up the correct SCED
+subject area, course identifier, and level in the
+[SCED manual](https://nces.ed.gov/forum/sced.asp) or the district's master
+course list. Update the course record in the SIS and re-export the extract.
+
+**Owner:** Registrar / curriculum coordinator (SCED assignment); Data team
+(extract correction).
+
+```sql
+select distinct
+  SubjectArea,
+  CourseIdentifier,
+  CourseLevel,
+  LocalCourseCode,
+  LocalCourseTitle,
+from `teamster-332318.cokafor.stg_staff_extract`
+where SubjectArea is null or SubjectArea = ''
+  or CourseIdentifier is null or CourseIdentifier = ''
+  or CourseLevel is null or CourseLevel = '';
+```
+
+_Validation result (2025-26 Newark staff sample): 0 rows — all course/section
+rows carry a `SubjectArea`, `CourseIdentifier`, and `CourseLevel`. Clean. Re-run
+against `stg_student_extract` before submission._
+
+### Check 8 — invalid SCED subject area / course identifier
+
+**What it catches:** `SubjectArea` + `CourseIdentifier` pairs that do not appear
+in `ref_sced_codes`. SLEDS validates against the national SCED master list; an
+unrecognised pair causes the roster line to reject.
+
+**Why it happens:** A locally-invented course code that was never mapped to a
+real SCED pair, a transcription error (e.g. swapped digits), or an outdated code
+that was retired in a newer SCED edition.
+
+**How to fix:** Look up the correct `SubjectArea`/`CourseIdentifier` for the
+flagged `LocalCourseTitle` in the SCED manual. If the code was recently revised,
+check whether the district is using an older edition and update to the current
+one. Correct the SIS and re-export.
+
+**Owner:** Registrar / curriculum coordinator (SCED mapping); Data team (extract
+correction).
+
+**Sanity check:** The pair `51`/`033` (Physical Education — Elementary) appears
+in `ref_sced_codes` and is present in the Newark extract. It does **not** appear
+in the invalid list below, confirming that the join resolves correctly for
+known-good codes. All 8 distinct `SubjectArea`/`CourseIdentifier` pairs in the
+staff extract matched the reference table.
+
+```sql
+select distinct
+  e.SubjectArea,
+  e.CourseIdentifier,
+  e.LocalCourseCode,
+  e.LocalCourseTitle,
+from `teamster-332318.cokafor.stg_staff_extract` as e
+left join `teamster-332318.cokafor.ref_sced_codes` as r
+  on e.SubjectArea = r.subject_area
+  and e.CourseIdentifier = r.course_identifier
+where r.subject_area is null
+  and e.SubjectArea is not null
+  and e.SubjectArea != '';
+```
+
+_Validation result (2025-26 Newark staff sample): 0 rows — all 8 distinct SCED
+pairs in the extract match `ref_sced_codes`. Clean. Re-run against
+`stg_student_extract` before submission._
+
+### Check 9 — prior-to-secondary vs secondary level consistency
+
+**What it catches:** Rows where the SCED level of the course
+(`prior_to_secondary` or `secondary`, from `ref_sced_codes.sced_level`) is
+inconsistent with the credit and grade-span fields. Secondary courses must carry
+a non-zero `AvailableCredit` and must have a blank `GradeSpan`;
+prior-to-secondary courses must have a zero or absent `AvailableCredit` and must
+have `GradeSpan` populated. SLEDS uses these combinations to place the course in
+the correct instructional tier; a mismatch causes reporting errors downstream.
+
+**Why it happens:** A course that was reclassified between SCED levels without
+updating the credit or grade-span fields, or a template that defaulted credit to
+`0` for all courses regardless of level.
+
+**How to fix:** The `inconsistency` column names the specific contradiction.
+Correct the field that is wrong: update `AvailableCredit` in the SIS for
+secondary courses that lack it, clear `GradeSpan` for secondary courses that
+have it populated, or vice versa for prior-to-secondary courses. Re-export after
+correcting the source.
+
+**Owner:** Registrar (credit and grade-span data); Data team (extract
+correction).
+
+**Note:** The original brief's check 9 uses a `QUALIFY` clause to filter on the
+`inconsistency` alias. BigQuery requires an analytic function to be present when
+`QUALIFY` is used; since `inconsistency` is a scalar `CASE` expression, the
+query was rewritten as a subquery with an outer `WHERE` filter. The logic is
+identical.
+
+```sql
+select *
+from (
+  select distinct
+    e.LocalCourseCode,
+    e.SubjectArea,
+    e.CourseIdentifier,
+    e.AvailableCredit,
+    e.GradeSpan,
+    r.sced_level,
+    case
+      when r.sced_level = 'secondary'
+        and (e.AvailableCredit is null or e.AvailableCredit = ''
+          or safe_cast(e.AvailableCredit as float64) = 0)
+        then 'secondary code but no credit'
+      when r.sced_level = 'secondary'
+        and e.GradeSpan is not null and e.GradeSpan != ''
+        then 'secondary code but GradeSpan populated'
+      when r.sced_level = 'prior_to_secondary'
+        and safe_cast(e.AvailableCredit as float64) > 0
+        then 'prior-to-secondary code but has credit'
+      when r.sced_level = 'prior_to_secondary'
+        and (e.GradeSpan is null or e.GradeSpan = '')
+        then 'prior-to-secondary code but GradeSpan blank'
+    end as inconsistency,
+  from `teamster-332318.cokafor.stg_staff_extract` as e
+  left join `teamster-332318.cokafor.ref_sced_codes` as r
+    on e.SubjectArea = r.subject_area
+    and e.CourseIdentifier = r.course_identifier
+)
+where inconsistency is not null;
+```
+
+_Validation result (2025-26 Newark staff sample): 0 rows — no credit/level/
+grade-span contradictions found. Clean. Re-run against `stg_student_extract`
+before submission._
+
+### Check 10 — domain and format checks (CourseLevel, CourseSequence, AvailableCredit, GradeSpan)
+
+**What it catches:** Rows where `CourseLevel` is not one of the five allowed
+values (`B` Basic, `G` General, `E` Enriched/Advanced, `H` Honors, `X` no
+specified level); `CourseSequence` is not a two-digit `11`–`99` string or has a
+first digit greater than its second (the part number can't exceed the total); a
+populated `AvailableCredit` is non-numeric or outside `0.000`–`35.000`; or a
+populated `GradeSpan` is not a valid 4-character code — two grade tokens drawn
+from `PK`, `KG`, and `01`–`12` (e.g. `KG01`, `0404`).
+
+**Why it happens:** `CourseLevel` values may come from a free-text SIS field
+where staff enter inconsistent codes (`h` instead of `H`, or `REG` instead of
+`G`). `CourseSequence` errors typically arise when sections are added for a
+multi-part course without following the `XY` convention (where X = part number
+and Y = total parts in the sequence).
+
+**How to fix:** For `CourseLevel` violations, map the flagged value to the
+correct allowed code and update the SIS. For `CourseSequence` violations,
+confirm the intended sequence with the registrar (e.g. a two-semester course
+should be `12` and `22`) and update accordingly. Note that `CourseSequence` must
+be a two-character string of digits — leading zeros and single-character values
+both fail the pattern check. For `AvailableCredit`, correct the value to a
+number in `0.000`–`35.000`. For `GradeSpan`, restore the full 4-character code —
+the `202` / `303` / `404` rows are missing their leading zero and should read
+`0202` / `0303` / `0404`.
+
+**Owner:** Registrar (course metadata); Data team (extract correction).
+
+```sql
+select distinct
+  LocalCourseCode,
+  CourseLevel,
+  CourseSequence,
+  AvailableCredit,
+  GradeSpan,
+from `teamster-332318.cokafor.stg_staff_extract`
+where CourseLevel not in ('B', 'G', 'E', 'H', 'X')
+  or CourseSequence is null
+  or CourseSequence = ''
+  or not regexp_contains(CourseSequence, r'^[1-9][1-9]$')
+  or cast(substr(CourseSequence, 1, 1) as int64)
+    > cast(substr(CourseSequence, 2, 1) as int64)
+  or (
+    AvailableCredit is not null and AvailableCredit != ''
+    and (
+      safe_cast(AvailableCredit as float64) is null
+      or safe_cast(AvailableCredit as float64) < 0
+      or safe_cast(AvailableCredit as float64) > 35
+    )
+  )
+  or (
+    GradeSpan is not null and GradeSpan != ''
+    and not regexp_contains(GradeSpan, r'^(PK|KG|0[1-9]|1[0-2]){2}$')
+  );
+```
+
+_Validation result (2025-26 EOY, staff): 3 distinct rows — the `GradeSpan`
+values `202`, `303`, `404` (≈19 section-rows underneath), each stored as 3
+characters instead of the required 4 (`0202` / `0303` / `0404`); the leading
+zero was stripped. `CourseLevel`, `CourseSequence`, and `AvailableCredit` were
+clean. Re-run against `stg_student_extract` before submission._
+
+## Group C — student field validity
+
+The three checks below validate student-specific identity and CDS fields in
+`cokafor.stg_student_extract` (3,581 rows for the Newark sample). Check 11 flags
+students whose state ID is missing or malformed; check 12 flags students whose
+identity tuple in the course extract does not match the state's student record
+(the combination-error spine check); check 13 flags CDS combinations not on the
+approved list. **Before running these checks, also re-run Group B checks 7–10
+against `stg_student_extract`** by swapping `stg_staff_extract` for
+`stg_student_extract` in each query — the Group B intro explains the swap. All
+course/section columns are present in both extracts.
+
+### Check 11 — missing or invalid student state ID (SID)
+
+**What it catches:** Students whose `StateIdentificationNumber` is NULL, blank,
+or not exactly 10 digits. SLEDS requires a valid 10-digit numeric NJ state
+student ID on every enrollment row; a missing or malformed SID causes the row to
+reject.
+
+**Why it happens:** New students enrolled mid-year before the state has issued
+an ID, or IDs stored as placeholders (e.g. locally-assigned temporary numbers
+that are not 10 digits). PowerSchool's `State_StudentNumber` field is the
+expected source; if it is blank the extract will produce a NULL.
+
+**How to fix:** Look up the student in the NJ Student Learning Registry (NJSLR)
+or contact the state's student data helpdesk to obtain the correct 10-digit SID.
+If the student is newly enrolled and the state ID is pending, hold the row until
+the ID is issued. Do not substitute a local ID or truncate/pad a non-10-digit
+value.
+
+**Owner:** Registrar / school data manager (SID lookup); Data team (extract
+correction).
+
+```sql
+select distinct
+  LocalIdentificationNumber,
+  StateIdentificationNumber,
+  FirstName,
+  LastName,
+from `teamster-332318.cokafor.stg_student_extract`
+where StateIdentificationNumber is null
+  or StateIdentificationNumber = ''
+  or not regexp_contains(StateIdentificationNumber, r'^[0-9]{10}$');
+```
+
+_Validation result (2025-26 Newark sample): 0 rows — all 3,581 students carry a
+10-digit numeric `StateIdentificationNumber`. Clean._
+
+### Check 12 — student combination-error predictor (spine check)
+
+**What it catches:** Students in the course roster whose identity tuple
+(`StateIdentificationNumber`, `FirstName`, `LastName`, `DateOfBirth`) does not
+match the state's student record in `ref_state_student`. Like the staff spine
+check (check 2), these are the mismatches that block a student's roster lines.
+
+**Why it happens:** A name or DOB corrected in the SIS but not propagated to the
+state student record (or vice versa), or a local ID not yet linked to the right
+state record.
+
+**How to fix:** For name/DOB mismatches, compare the course-extract value to the
+state value and correct whichever source is wrong; escalate state-record
+corrections to the registrar / NJ SMART, and SIS-side values in PowerSchool.
+
+**Owner:** Registrar / SIS (state record); Data team (extract corrections).
+
+**Note:** `DateOfBirth` is `YYYYMMDD` in both `stg_student_extract` and
+`ref_state_student` (capital `O` in both) — compare directly, no normalization.
+Join on `LocalIdentificationNumber`; if `ref_state_student` has duplicate local
+IDs (a state-record quirk — the sample had 3), dedup it first.
+
+```sql
+with extract_student as (
+  select distinct
+    region,
+    LocalIdentificationNumber,
+    StateIdentificationNumber,
+    FirstName,
+    LastName,
+    DateOfBirth,
+  from `teamster-332318.cokafor.stg_student_extract`
+)
+select
+  e.region,
+  e.LocalIdentificationNumber,
+  e.StateIdentificationNumber,
+  e.FirstName,
+  e.LastName,
+  case
+    when r.LocalIdentificationNumber is null then 'no local-ID match in state'
+    when e.StateIdentificationNumber != r.StateIdentificationNumber
+      then 'SID mismatch'
+    when upper(e.FirstName) != upper(r.FirstName) then 'first name mismatch'
+    when upper(e.LastName) != upper(r.LastName) then 'last name mismatch'
+    when e.DateOfBirth != r.DateOfBirth then 'DOB mismatch'
+  end as mismatch_reason,
+from extract_student as e
+left join (
+  select *
+  from `teamster-332318.cokafor.ref_state_student`
+  qualify row_number() over (partition by LocalIdentificationNumber, region) = 1
+) as r
+  on e.LocalIdentificationNumber = r.LocalIdentificationNumber
+  and e.region = r.region
+where r.LocalIdentificationNumber is null
+  or e.StateIdentificationNumber != r.StateIdentificationNumber
+  or upper(e.FirstName) != upper(r.FirstName)
+  or upper(e.LastName) != upper(r.LastName)
+  or e.DateOfBirth != r.DateOfBirth;
+```
+
+_Validation result (2025-26 Newark sample): 12 students flagged — 5 last-name, 5
+DOB, and 2 first-name mismatches; all 578 distinct course students otherwise
+matched the state record by local ID._
+
+### Check 13 — student CDS code validity (known defect)
+
+**What it catches:** Rows whose `CountyCodeAssigned` / `DistrictCodeAssigned` /
+`SchoolCodeAssigned` combination is not on the approved list for this
+submission. An unexpected CDS combo means the enrollment will be attributed to
+the wrong school in the state system.
+
+**Why it happens:** The same root cause as the staff-side CDS defect in check 6:
+`SchoolCodeAssigned` is populated with `732` instead of the approved Newark code
+`965`, and `CountyCodeAssigned` is NULL instead of `80`. The
+`Alternate_School_Number` fallback hypothesis is ruled out — see the spec. The
+source must be traced in the loaded extract and corrected in PowerSchool's
+state-reporting fields.
+
+**How to fix:** Identify which PowerSchool field populates `SchoolCodeAssigned`
+in the extract and verify whether the value `732` is stored there directly or
+computed. Correct the field to `965` (Newark) or `111` (Camden) for all
+applicable students and re-export. Also populate `CountyCodeAssigned` with `80`
+(Newark) or `07` (Camden) as appropriate. Add new approved CDS combos to the
+`having` allowlist each year as schools are added or codes change.
+
+**Owner:** Data team (CDS mapping and PowerSchool field audit); School ops
+confirms correct NJDOE school codes.
+
+**Note:** The brief's original query uses `rows` as a column alias, which is a
+reserved word in BigQuery. The query below uses `row_count` instead — use this
+corrected version.
+
+**Expected result:** This check is designed to return rows. The `null/7325/732`
+combination below is the known defect; its presence confirms the check is
+working. Do not treat a non-zero result here as a query error — it is the signal
+the check is intended to surface.
+
+```sql
+select
+  CountyCodeAssigned,
+  DistrictCodeAssigned,
+  SchoolCodeAssigned,
+  count(*) as row_count,
+from `teamster-332318.cokafor.stg_student_extract`
+group by 1, 2, 3
+having not (
+  (CountyCodeAssigned = '80' and DistrictCodeAssigned = '7325'
+    and SchoolCodeAssigned = '965')
+  or (CountyCodeAssigned = '07' and DistrictCodeAssigned = '1799'
+    and SchoolCodeAssigned = '111')
+);
+```
+
+_Validation result (2025-26 Newark sample): 1 row — `null/7325/732` with 1,475
+students. This is the known defect: `CountyCodeAssigned` is NULL (should be
+`80`) and `SchoolCodeAssigned` is `732` (should be `965`). Both must be
+corrected in PowerSchool's state-reporting fields before submission. The
+`Alternate_School_Number` fallback hypothesis is ruled out — trace the `732`
+source in the loaded extract and PowerSchool directly._
+
+## Group D — cross-extract parity
+
+The three checks below compare the staff and student extracts against each other
+using `LocalSectionCode` as the join key. A section present in only one extract
+is an orphan: either a teacher is assigned to a section with no enrolled
+students, or students are enrolled in a section with no teacher. Both conditions
+are meaningful signal — they reflect the "noisy PowerSchool extract" problem
+where phantom or misconfigured sections make it through the pull. Returning rows
+from these checks is expected; the goal is to surface the orphans so they can be
+traced and fixed at the source. Run all three checks before every submission.
+
+**Source-fix-only principle:** orphan sections must be resolved in PowerSchool —
+either by enrolling the missing students, assigning the missing teacher, or
+removing the phantom section. Do not edit the extract file directly to mask
+these gaps; doing so breaks the audit trail and may cause downstream SLEDS
+reconciliation errors.
+
+### Check 14 — sections with a staff row but no enrolled students
+
+**What it catches:** `LocalSectionCode` values that appear in
+`stg_staff_extract` (a teacher is assigned) but have no matching row in
+`stg_student_extract` (no students enrolled). SLEDS will reject a teacher
+assignment for a section that carries no enrollment, or the section will appear
+as a zero-enrolment ghost that inflates the district's reported section count.
+
+**Why it happens:** PowerSchool sometimes exports teacher-section assignments
+for sections that were created but never populated — planning sections, dropped
+electives, or sections that were merged into another code without removing the
+original assignment. The "General Elective" pattern in the sample is a common
+culprit.
+
+**How to fix:** For each flagged `LocalSectionCode`, confirm in PowerSchool
+whether the section genuinely has no students.
+
+- **Genuinely empty ("zombie") section** — open the section's **Course
+  Submission Information** panel and check **"Exclude from Course Roster
+  Reports."** That drops the section from the next extract cleanly, without
+  deleting the section or disturbing schedules or historical grades. This is the
+  preferred disposition for planning sections, dropped electives, and
+  merged-but-not-removed sections (the "General Elective" pattern). The flag is
+  stored in `S_NJ_SEC_X`.
+- **Students should be enrolled but aren't** — do **not** exclude it; the
+  enrollment is the defect. Investigate the student pull filter / enrollment
+  records and correct them, then re-export both extracts together.
+
+After excluding or fixing, re-extract and re-run — the section drops out of
+checks 14 and 16.
+
+**Owner:** School registrar (enrollment); Data team (exclude flag / extract
+verification).
+
+```sql
+select distinct
+  st.region,
+  st.LocalSectionCode,
+  st.LocalCourseCode,
+  st.LocalCourseTitle,
+  st.StaffMemberIdentifier,
+from `teamster-332318.cokafor.stg_staff_extract` as st
+left join (
+  select distinct LocalSectionCode, region
+  from `teamster-332318.cokafor.stg_student_extract`
+) as sd
+  on st.LocalSectionCode = sd.LocalSectionCode
+  and st.region = sd.region
+where sd.LocalSectionCode is null;
+```
+
+_Validation result (2025-26 Newark sample): 14 rows across 13 distinct sections.
+Section `35253` ("i-Ready Gr5") appears twice because two teachers are assigned
+to it; the remaining 12 are "General Elective Gr5" sections (`SEM72250G1`) with
+no enrolled students. All are staff-only orphans requiring investigation in
+PowerSchool._
+
+### Check 15 — sections with enrolled students but no teacher
+
+**What it catches:** `LocalSectionCode` values that appear in
+`stg_student_extract` (students are enrolled) but have no matching row in
+`stg_staff_extract` (no teacher assigned) — **scoped to standard course types
+(`CourseType` `S1` / `S2`)**, which are the only ones that require a staff
+record. Course types `R` (remote), `C` (dual-enrollment / college), and `O`
+(online) are taught by staff who may not be assigned to your district, so the
+Handbook expects them to have **no** staff record; including them here would be
+a false positive, so the check excludes them.
+
+**Why it happens:** A teacher assignment was not entered in PowerSchool, the
+teacher's record failed an earlier extract filter (e.g. a SMID issue from check
+1 caused the row to be excluded), or the section was assigned to a substitute or
+leave-coverage arrangement that the SIS does not capture as a formal assignment.
+
+**How to fix:** For each flagged `LocalSectionCode`, identify who is teaching
+the section and create or correct the teacher assignment in PowerSchool. If the
+root cause is an upstream extract filter (e.g. the teacher's row was excluded
+due to a SMID problem), resolve the upstream check first and re-export both
+extracts together before re-running this check.
+
+**Owner:** School registrar (teacher assignment); Data team (extract
+verification).
+
+```sql
+select
+  sd.region,
+  sd.LocalSectionCode,
+  any_value(sd.LocalCourseTitle) as course_title,
+  count(distinct sd.LocalIdentificationNumber) as students,
+from `teamster-332318.cokafor.stg_student_extract` as sd
+left join (
+  select distinct LocalSectionCode, region
+  from `teamster-332318.cokafor.stg_staff_extract`
+) as st
+  on sd.LocalSectionCode = st.LocalSectionCode
+  and sd.region = st.region
+where st.LocalSectionCode is null
+  and sd.CourseType in ('S1', 'S2')
+group by sd.region, sd.LocalSectionCode;
+```
+
+_Validation result (2025-26 Newark sample): 0 rows — every section with enrolled
+students has at least one teacher row in the staff extract. Clean._
+
+### Check 16 — full-outer-join parity summary
+
+**What it catches:** The combined view of checks 14 and 15. A full outer join
+across the two extracts' distinct `LocalSectionCode` sets, filtered to only
+one-sided sections, shows at a glance which sections are staff-only
+(`in_staff_extract = true`, `in_student_extract = false`) and which are
+student-only (`in_staff_extract = false`, `in_student_extract = true`). This is
+the single query to run when you want a complete picture of cross-extract
+mismatches without running checks 14 and 15 separately.
+
+**Why it matters:** Checks 14 and 15 each catch one side of the mismatch. Check
+16 is the union of both — it confirms the total count of orphan sections and
+makes it easy to verify that fixes applied after checks 14 and 15 have fully
+closed the gap (when check 16 returns 0 rows, the two extracts are in parity).
+
+**How to fix:** Apply the same dispositions described in checks 14 and 15: a
+genuinely empty section gets **"Exclude from Course Roster Reports"** checked on
+its Course Submission Information panel; a section that should have enrollment
+or a teacher gets that fixed at the source. Re-export both extracts together and
+re-run this check until it returns 0 rows.
+
+**Owner:** School registrar (section setup); Data team (extract verification).
+
+```sql
+select
+  coalesce(a.region, b.region) as region,
+  coalesce(a.LocalSectionCode, b.LocalSectionCode) as section,
+  a.LocalSectionCode is not null as in_staff_extract,
+  b.LocalSectionCode is not null as in_student_extract,
+from (
+  select distinct LocalSectionCode, region
+  from `teamster-332318.cokafor.stg_staff_extract`
+) as a
+full outer join (
+  select distinct LocalSectionCode, region
+  from `teamster-332318.cokafor.stg_student_extract`
+) as b
+  on a.LocalSectionCode = b.LocalSectionCode
+  and a.region = b.region
+where a.LocalSectionCode is null or b.LocalSectionCode is null;
+```
+
+_Validation result (2025-26 Newark sample): 13 rows, all with
+`in_staff_extract = true` and `in_student_extract = false`. This is the expected
+result given that check 14 found 13 distinct staff-only sections and check 15
+found 0 student-only sections. The 13 orphan sections must be resolved in
+PowerSchool before submission._
+
+## Group E — convergence rollup
+
+Check 17 is a single `union all` query that collapses every individual check
+into one row per check with a violation count. It is the de-identified artifact
+(counts only, no PII) that feeds the cowork project tracker and the convergence
+tracker: paste the output into the shared sheet each loop so stakeholders can
+watch totals trend toward zero without seeing any student or staff data.
+
+### Check 17 — defect-count rollup
+
+**What it does:** Runs a representative subset of the Group A–D checks in a
+single query, returning one row per check with its violation count. When all
+counts reach zero, the extract is ready to submit.
+
+**Region breakdown:** Because the views now carry a `region` column, you can
+track convergence per region by adding `region` to each inner select and
+grouping by it — or by adding `region` to the outer select. This tells the
+intern which PowerSchool instance needs the fix, which is critical for blank-CDS
+defects where region cannot be inferred from the data alone.
+
+**How to extend:** The starter below includes three checks. Before the first
+convergence loop, extend the `union all` with the remaining checks by copying
+the `where` clause from each individual check above:
+
+- `A2_spine_mismatch` — check 2's left-join `where` predicate
+- `A3_duplicate_lsid` — check 3's `having distinct_people > 1` subquery
+- `A4_name_violations` — check 4's `regexp_contains` predicates
+- `A5_date_violations` — check 5's date-range and format predicates
+- `A6_staff_cds` — check 6's `having not (...)` subquery
+- `B7_missing_sced_staff` — check 7 against `stg_staff_extract`
+- `B7_missing_sced_student` — check 7 rerun against `stg_student_extract`
+- `B8_invalid_sced_staff` — check 8 against `stg_staff_extract`
+- `B8_invalid_sced_student` — check 8 rerun against `stg_student_extract`
+- `B9_level_inconsistency_staff` — check 9 against `stg_staff_extract`
+- `B9_level_inconsistency_student` — check 9 rerun against `stg_student_extract`
+- `B10_domain_violations_staff` — check 10 against `stg_staff_extract`
+- `B10_domain_violations_student` — check 10 rerun against `stg_student_extract`
+- `C11_missing_sid` — check 11's `where` predicate
+- `C12_student_combo` — check 12's full left-join `where` predicate
+- `D14_staff_only_sections` — check 14's left-join
+  `where sd.LocalSectionCode is null`
+- `D15_student_only_sections` — check 15's left-join
+  `where st.LocalSectionCode is null`
+
+Each new block follows the same shape:
+`select '<label>', count(*) from (... <where clause from the individual check> )`.
+
+**Owner:** Data team (run at the start of each convergence loop).
+
+```sql
+select 'A1_missing_smid' as check_name, count(*) as violations
+from (
+  select distinct
+    LocalStaffIdentifier,
+    StaffMemberIdentifier,
+    FirstName,
+    LastName,
+  from `teamster-332318.cokafor.stg_staff_extract`
+  where StaffMemberIdentifier is null
+    or not regexp_contains(StaffMemberIdentifier, r'^[0-9]{8}$')
+)
+union all
+select 'C12_student_combo', count(*) as violations
+from (
+  with extract_student as (
+    select distinct
+      LocalIdentificationNumber,
+      StateIdentificationNumber,
+      FirstName,
+      LastName,
+      DateOfBirth,
+    from `teamster-332318.cokafor.stg_student_extract`
+  )
+  select 1
+  from extract_student as e
+  left join (
+    select * from `teamster-332318.cokafor.ref_state_student`
+    qualify row_number() over (partition by LocalIdentificationNumber) = 1
+  ) as r
+    on e.LocalIdentificationNumber = r.LocalIdentificationNumber
+  where r.LocalIdentificationNumber is null
+    or e.StateIdentificationNumber != r.StateIdentificationNumber
+    or upper(e.FirstName) != upper(r.FirstName)
+    or upper(e.LastName) != upper(r.LastName)
+    or e.DateOfBirth != r.DateOfBirth
+)
+union all
+select 'C13_student_cds', count(*) as violations
+from (
+  select 1
+  from `teamster-332318.cokafor.stg_student_extract`
+  where not (
+    (CountyCodeAssigned = '80' and DistrictCodeAssigned = '7325'
+      and SchoolCodeAssigned = '965')
+    or (CountyCodeAssigned = '07' and DistrictCodeAssigned = '1799'
+      and SchoolCodeAssigned = '111')
+  )
+)
+-- extend here: add one union all block per remaining check
+order by check_name;
+```
+
+_Validation result (2025-26 Newark sample, starter rows only):_
+
+| `check_name`        | `violations` |
+| ------------------- | ------------ |
+| `A1_missing_smid`   | 22           |
+| `C12_student_combo` | 12           |
+| `C13_student_cds`   | 1 475        |
+
+_All counts match the individual checks above, confirming the rollup logic is
+correct. Extend the `union all` before the first convergence loop._
+
+### Grade-mapping one-time check
+
+The sample student extract has blank `NumericGradeEarned`, `AlphaGradeEarned`,
+and `CompletionStatus` fields on all rows, consistent with a mid-year pull where
+grades have not yet been posted. Grade-mapping gaps are therefore likely N/A for
+KTAF for the current submission cycle.
+
+**Before the year-end run**, confirm against the Student Course Roster Handbook
+that every stored-grade code in use in the SIS has a corresponding NJ Grade
+Scale mapping. Until that mapping is verified against the Handbook, no SQL check
+is written here — the exact allowed codes and their mappings must be drawn from
+the Handbook directly, not inferred from sample data. This is an open item to
+revisit when posted grades are available in the extract.
+
+## Setup-level fixes — when a defect is systemic
+
+Some defects are not per-record errors; they trace to a single shared
+PowerSchool **setup** field, so one fix corrects thousands of rows at once.
+Before treating a high-volume check result as record-by-record work, ask whether
+one setup value drives all of it. **CDS (checks 6 and 13) is the textbook case**
+— the EOY data had every Camden row and a block of Newark rows off-spec, but the
+cause was a handful of school-setup fields, not the records.
+
+### What feeds the CDS columns
+
+The three CDS fields in both extracts come from three different places:
+
+| Extract column         | Source (PowerSchool school setup)                                                                                                                                |
+| ---------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `SchoolCodeAssigned`   | the school's **Alternate School Number** (`alternate_school_number`); falls back to the internal school number when unset — the source of stray codes like `732` |
+| `CountyCodeAssigned`   | the school's **County code** (`countynbr`) on the State Information page                                                                                         |
+| `DistrictCodeAssigned` | a **district-level** state setting (not the school table) — already correct (`7325` Newark / `1799` Camden)                                                      |
+
+Fix location: **PowerSchool → School Setup → State Information**, per school.
+Set the Alternate School Number to the region's state school code (`965` Newark
+/ `111` Camden) and the County code (`80` Newark / `07` Camden) on every
+reporting school.
+
+### Find the schools to fix
+
+Run per region (swap the dataset and the expected `965` / `80` for Camden's
+`111` / `07`). This reads the shared `kippnewark_powerschool` /
+`kippcamden_powerschool` staging models, not `cokafor`. Only reporting schools
+are listed; excluded schools are skipped.
+
+```sql
+select
+  school_number,
+  alternate_school_number,
+  countynbr,
+from `teamster-332318.kippnewark_powerschool.stg_powerschool__schools`
+where state_excludefromreporting = 0
+  and (
+    alternate_school_number is distinct from 965
+    or countynbr is distinct from '80'
+  );
+```
+
+_Validation result (2025-26 EOY): Newark returns 3 schools (Alternate School
+Number unset); Camden returns all 5 reporting schools (Alternate School Number
+unset, county mostly blank) — which is why every Camden row was off-spec on CDS.
+One school-setup pass clears the entire CDS defect for the region._
+
+**Caveats.** The column-to-extract mapping above was inferred from the data
+(state code `965` / `111` tracks `alternate_school_number`; county tracks
+`countynbr`) — confirm it against the NJ State Reporting setup before mass
+edits. Section-level overrides live in `S_NJ_SEC_X`, which is not in the
+warehouse; if a section override is in play it is a second possible input,
+though the school-setup gaps above fully explain the observed defects.
+
+## State-ID population — staff SMID and student SID
+
+These two queries turn the "missing ID" checks into ready-to-key worklists. Both
+are scoped to records **missing the state ID in PowerSchool** and join to NJ
+SLEDS to supply the value to enter. They are region-aware, so the first column
+tells the intern which PowerSchool server to open.
+
+### Students — populate the state SID
+
+For students whose `StateIdentificationNumber` is blank or invalid in the
+extract, this returns the SID held by NJ SLEDS (the student is matched on the
+local student number). Enter `njsleds_sid` on the student's State/Province — NJ
+page in PowerSchool. (For students the state ID is the **SID** from NJ SMART,
+not an SMID.)
+
+```sql
+with missing as (
+  select distinct region, LocalIdentificationNumber
+  from `teamster-332318.cokafor.stg_student_extract`
+  where StateIdentificationNumber is null
+    or StateIdentificationNumber = ''
+    or not regexp_contains(StateIdentificationNumber, r'^[0-9]{10}$')
+),
+state as (
+  select *
+  from `teamster-332318.cokafor.ref_state_student`
+  qualify row_number() over (partition by LocalIdentificationNumber, region) = 1
+)
+select
+  m.region,
+  m.LocalIdentificationNumber as student_number,
+  s.StateIdentificationNumber as njsleds_sid,
+from missing as m
+join state as s
+  on m.LocalIdentificationNumber = s.LocalIdentificationNumber
+  and m.region = s.region;
+```
+
+_Validation result (2025-26 EOY): 3 students (Newark 1, Camden 2)._
+
+### Staff — populate the SMID, with override fields
+
+Staff are the finicky case, and **keying this upload wrong can create duplicate
+user records in PowerSchool** — multiple rows in the users table for one staff
+member, which is a host-level cleanup. To make the import match the existing
+record instead of inserting a new one, every row carries the staff member's
+**home school**, with a `schoolid` set **identical to `homeschoolid`**. Never
+upload a row whose `homeschoolid` is blank (see the validation note) — resolve
+the home school by hand first, or you reintroduce the duplicate risk.
+
+This query supplies everything in one row. It matches the NJ SLEDS record by
+local staff ID first, then by name + DOB (so it still finds the person when the
+local ID has drifted), populates an override column **only when that field
+actually differs**, and attaches the home school from PowerSchool:
+
+- `njsleds_smid` — the SMID to enter (the staff is missing it).
+- `override_local_id` — set only when NJ SLEDS' local ID differs from
+  PowerSchool's; this is the LSID override to add (`S_NJ_USR_X`).
+- `override_first_name` / `override_last_name` — set only when the PowerSchool
+  name differs from NJ SLEDS; these are the name overrides to add so the
+  combination check (check 2) passes.
+- `homeschoolid` / `schoolid` — the staff member's home school, with `schoolid`
+  forced identical to `homeschoolid`. These two are what prevent the
+  duplicate-record insert.
+
+A blank override column means leave that field unchanged. The home school is
+resolved to one value per teacher (the non-zero `homeschoolid` from their
+PowerSchool record), so the join cannot multiply rows — which would itself be
+the duplicate problem.
+
+```sql
+with missing as (
+  select distinct region, LocalStaffIdentifier, FirstName, LastName, DateOfBirth
+  from `teamster-332318.cokafor.stg_staff_extract`
+  where StaffMemberIdentifier is null
+    or StaffMemberIdentifier = ''
+    or not regexp_contains(StaffMemberIdentifier, r'^[0-9]{8}$')
+),
+state_by_lsid as (
+  select *
+  from `teamster-332318.cokafor.ref_state_staff`
+  qualify row_number() over (partition by LocalStaffIdentifier, region) = 1
+),
+state_by_name as (
+  select *
+  from `teamster-332318.cokafor.ref_state_staff`
+  qualify
+    row_number()
+      over (partition by upper(FirstName), upper(LastName), DateofBirth, region) = 1
+),
+home_school as (
+  select
+    case regexp_extract(_dbt_source_relation, r'(kipp\w+)_powerschool')
+      when 'kippnewark' then 'newark'
+      when 'kippcamden' then 'camden'
+    end as region,
+    teachernumber,
+    max(nullif(homeschoolid, 0)) as homeschoolid,
+  from `teamster-332318.kipptaf_powerschool.int_powerschool__teachers`
+  group by region, teachernumber
+),
+matched as (
+  select
+    m.region,
+    m.LocalStaffIdentifier as ps_teacher_number,
+    m.FirstName as ps_first_name,
+    m.LastName as ps_last_name,
+    coalesce(l.StaffMemberIdentifier, n.StaffMemberIdentifier) as njsleds_smid,
+    coalesce(l.LocalStaffIdentifier, n.LocalStaffIdentifier) as state_lsid,
+    coalesce(l.FirstName, n.FirstName) as state_first,
+    coalesce(l.LastName, n.LastName) as state_last,
+    h.homeschoolid,
+  from missing as m
+  left join state_by_lsid as l
+    on m.LocalStaffIdentifier = l.LocalStaffIdentifier
+    and m.region = l.region
+  left join state_by_name as n
+    on upper(m.FirstName) = upper(n.FirstName)
+    and upper(m.LastName) = upper(n.LastName)
+    and m.DateOfBirth = n.DateofBirth
+    and m.region = n.region
+  left join home_school as h
+    on m.region = h.region
+    and m.LocalStaffIdentifier = h.teachernumber
+)
+select
+  region,
+  ps_teacher_number,
+  ps_first_name,
+  ps_last_name,
+  njsleds_smid,
+  if(state_lsid != ps_teacher_number, state_lsid, null) as override_local_id,
+  if(upper(state_first) != upper(ps_first_name), state_first, null)
+    as override_first_name,
+  if(upper(state_last) != upper(ps_last_name), state_last, null)
+    as override_last_name,
+  homeschoolid,
+  homeschoolid as schoolid,
+from matched
+where njsleds_smid is not null;
+```
+
+_Validation result (2025-26 EOY): 181 staff populatable (Newark 138, Camden 43),
+one row each — no row multiplication. Of those, 3 need a local-ID override, 7 a
+first-name override, 7 a last-name override; and **3 have no home school set in
+PowerSchool** (`homeschoolid` blank) — exclude those from the bulk upload and
+set the home school by hand. A further 13 staff (Newark 10, Camden 3) match NJ
+SLEDS on no key at all — they need a new SMID generated (the compliance
+handoff), not a populate._
+
+## Course SCED completeness — an upload file that fills gaps without blanking
+
+Accurate SCED and level codes on every course are a prerequisite for the whole
+submission. This query produces a **course-level upload file** to populate the
+missing pieces — and its key behavior is that it **carries forward every value
+that already exists** so a course import never overwrites a good field with a
+blank. The example case the network hits: a course already has its grade range
+but not its subject; the file keeps the grade range in place and leaves only the
+subject blank to fill, then applies the same rule to every SCED field.
+
+How the preserve logic works: a course can span many section rows, and a value
+might be set on some and blank on others. For each field the query takes
+`max(nullif(<field>, ''))` — any non-blank value found on **any** of the
+course's rows is carried forward, and a cell is blank **only when the field is
+missing everywhere**. One row per course, and only courses still missing a
+required element (`SubjectArea`, `CourseIdentifier`, `CourseLevel`) are listed;
+the `fill_in` column names what's left to enter.
+
+```sql
+with course_rows as (
+  select
+    region, LocalCourseCode, LocalCourseTitle,
+    SubjectArea, CourseIdentifier, CourseLevel, GradeSpan, AvailableCredit,
+  from `teamster-332318.cokafor.stg_staff_extract`
+  union all
+  select
+    region, LocalCourseCode, LocalCourseTitle,
+    SubjectArea, CourseIdentifier, CourseLevel, GradeSpan, AvailableCredit,
+  from `teamster-332318.cokafor.stg_student_extract`
+),
+course as (
+  select
+    region,
+    LocalCourseCode,
+    max(nullif(LocalCourseTitle, '')) as LocalCourseTitle,
+    max(nullif(SubjectArea, '')) as SubjectArea,
+    max(nullif(CourseIdentifier, '')) as CourseIdentifier,
+    max(nullif(CourseLevel, '')) as CourseLevel,
+    max(nullif(GradeSpan, '')) as GradeSpan,
+    max(nullif(AvailableCredit, '')) as AvailableCredit,
+  from course_rows
+  group by region, LocalCourseCode
+)
+select
+  region,
+  LocalCourseCode,
+  LocalCourseTitle,
+  SubjectArea,
+  CourseIdentifier,
+  CourseLevel,
+  GradeSpan,
+  AvailableCredit,
+  trim(
+    concat(
+      if(SubjectArea is null, 'SubjectArea ', ''),
+      if(CourseIdentifier is null, 'CourseIdentifier ', ''),
+      if(CourseLevel is null, 'CourseLevel ', '')
+    )
+  ) as fill_in,
+from course
+where SubjectArea is null
+  or CourseIdentifier is null
+  or CourseLevel is null
+order by region, LocalCourseCode;
+```
+
+What to do with it: export to CSV; the populated columns are already correct and
+must stay as-is (that's what stops the overwrite); fill the blank cells named in
+`fill_in` with the correct SCED values from the SCED master / Handbook (a
+missing `SubjectArea` can't be auto-derived — a course identifier maps under
+multiple subjects, so it's a mapping decision). The values go in the course's
+**Course Submission Information** panel — the **NCES Subject Area / Course
+Identifier / Course Level / Grade Span — Course Override** dropdowns (stored in
+`S_NJ_CRS_X`). Each override is a true override: the panel shows "if blank, this
+course value will be used," so an override only needs setting where the base
+course value is wrong or absent. `CourseSequence` is a section-level attribute,
+not a course one, so it is intentionally excluded here.
+
+_Validation result (2025-26 EOY): 5 courses (Newark 2, Camden 3) missing a
+required element, and no course had conflicting non-blank values across its
+sections — so every carried-forward value is unambiguous._
+
+## Dual-enrollment and course-type validation
+
+`CourseType` is mandatory on every student record and is the master switch for
+several rules. Its values (Student Course Roster Handbook): `S1` standard
+single-teacher, `S2` standard co-taught, `R` remote, `C` college-level
+dual-enrollment / dual-credit, `O` online. Two consequences are already baked
+into the checks: only `S1` / `S2` require a staff record (check 15 is scoped to
+them), and `C` marks dual enrollment.
+
+**Identify** the dual-enrollment courses and sections — `CourseType = 'C'`, with
+`DualInstitution` (the college's 8-digit OPE ID) populated on those rows:
+
+```sql
+select distinct
+  region,
+  LocalCourseCode,
+  LocalCourseTitle,
+  LocalSectionCode,
+  CourseType,
+  DualInstitution,
+from `teamster-332318.cokafor.stg_student_extract`
+where CourseType = 'C'
+  or (DualInstitution is not null and DualInstitution != '')
+order by region, LocalCourseCode, LocalSectionCode;
+```
+
+_Validation result (2025-26 EOY): 194 rows — Newark 4 courses / 9 sections,
+Camden 2 courses / 2 sections._
+
+**Validate** the coding. This flags the rows that will error in NJ SLEDS: a
+blank or out-of-domain `CourseType`; a `C` (dual) row missing its
+`DualInstitution`; a `DualInstitution` populated on a non-`C` row; or a
+`DualInstitution` that isn't an 8-digit OPE ID:
+
+```sql
+select *
+from (
+  select
+    region,
+    LocalIdentificationNumber,
+    LocalCourseCode,
+    LocalSectionCode,
+    CourseType,
+    DualInstitution,
+    case
+      when CourseType is null or CourseType = '' then 'CourseType blank'
+      when CourseType not in ('S1', 'S2', 'R', 'C', 'O')
+        then 'CourseType not a valid value'
+      when CourseType = 'C' and (DualInstitution is null or DualInstitution = '')
+        then 'dual-enrollment (C) but no DualInstitution'
+      when CourseType != 'C'
+        and DualInstitution is not null and DualInstitution != ''
+        then 'DualInstitution populated on a non-C course'
+      when DualInstitution is not null and DualInstitution != ''
+        and not regexp_contains(DualInstitution, r'^[0-9]{8}$')
+        then 'DualInstitution is not an 8-digit OPE ID'
+    end as issue,
+  from `teamster-332318.cokafor.stg_student_extract`
+)
+where issue is not null;
+```
+
+_Validation result (2025-26 EOY): 0 rows — `CourseType` is always `S1` or `C`,
+every `C` row carries an 8-digit `DualInstitution`, and no non-`C` row does.
+Clean this cycle; the check guards future ones._
+
+**One gap to close:** the Handbook also errors when the OPE ID is not on the
+official NJSLEDS **OPE ID List**, so this check confirms the 8-digit format but
+not that each ID is a real institution. That list isn't loaded here; load it as
+a small reference table (like `ref_sced_codes`) and the membership check is a
+one-line `left join`. Policy note: `CourseType = 'C'` should only be used where
+an articulation agreement with the college exists — not data-checkable here.
+
+## Worklist and tracker sheets
+
+### Worklist tabs (one per check group)
+
+Create one Google Sheet per district (Newark, Camden) with the following tab
+structure. Each tab covers one check group and holds the row-level defect
+worklist for that group. Row-level data stays in this Sheet; do not paste
+identified rows into the cowork project.
+
+#### Columns for every worklist tab
+
+| Column               | Content                                                                                |
+| -------------------- | -------------------------------------------------------------------------------------- |
+| `defect_key`         | Stable identifier for the row (e.g. `A1-LSID-12345` — group + check + local ID)        |
+| `identifying_fields` | The non-name fields needed to locate the record (LSID, SMID, `LocalSectionCode`, etc.) |
+| `fix_owner`          | `intern`, `compliance`, or `data_team`                                                 |
+| `status`             | Data-validation dropdown: `open`, `fixed-in-PS`, `handoff-sent`, `verified`            |
+| `notes`              | Free text — what was found, what was done                                              |
+
+Add rows by pasting the output of each individual check from the BigQuery
+console. Do not paste `FirstName`, `LastName`, `DateOfBirth`, SID, or any other
+direct identifier — use `LocalStaffIdentifier`, `LocalIdentificationNumber`,
+`StaffMemberIdentifier`, and `LocalSectionCode` as the identifying fields.
+
+#### QUERY tip
+
+Use the Sheets `QUERY` function to pull subtotals without a pivot table:
+
+```text
+=QUERY(A:E, "select D, count(A) where E = 'open' group by D label D 'owner', count(A) 'open count'", 1)
+```
+
+This groups open defects by `fix_owner`. Adjust column letters to match your
+sheet layout.
+
+#### Pivot-table tip
+
+Insert a pivot table (Insert → Pivot table) with `status` as rows and
+`fix_owner` as columns to get a one-glance count matrix. Refresh it after each
+loop to track progress without re-running the SQL.
+
+### Compliance handoff tab
+
+Add a tab named `compliance-handoff` to each district Sheet. This tab holds only
+the items the intern cannot resolve — items that require state-side action by
+the compliance team.
+
+| Column               | Content                                                                      |
+| -------------------- | ---------------------------------------------------------------------------- |
+| `item_type`          | `new-SMID` or `name-DOB-correction`                                          |
+| `identifying_fields` | `LocalStaffIdentifier` and `StaffMemberIdentifier` (no names in this column) |
+| `current_value`      | What the extract holds                                                       |
+| `correct_value`      | What it should be (from the HR system or the intern's investigation)         |
+| `requested_by`       | Date the intern added this row                                               |
+| `needed_by`          | Lead-time date — allow at least one week for the compliance team to act      |
+| `status`             | `pending`, `in-progress`, `complete`                                         |
+
+New-SMID requests are the long pole in the timeline — generate the handoff sheet
+as early as possible in Phase 1 so the compliance team can start immediately.
+
+### Convergence tracker tab
+
+Add a tab named `convergence-tracker` to each district Sheet. Paste the output
+of check 17 here at the start of each loop.
+
+| Column       | Content                                           |
+| ------------ | ------------------------------------------------- |
+| `loop`       | Loop number (1, 2, 3, …)                          |
+| `date`       | Date of this run                                  |
+| `check_name` | From the check-17 rollup (e.g. `A1_missing_smid`) |
+| `violations` | Count from the rollup                             |
+
+This is the only tab that feeds the cowork project — it contains counts only, no
+identified data. Share the tab (or a screenshot of it) with the cowork project
+at the start of each state-error triage session.
+
+To break out violations by region, add `region` to the select and grouping in
+check 17 (the views now carry a `region` column), then use a pivot table here
+with `check_name` as rows and `region` as columns.
+
+## Timeline and roles
+
+### Roles
+
+| Role                  | Who                     | Responsibilities                                                                                                                                                                                       |
+| --------------------- | ----------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Intern (`cokafor`)    | Data intern             | Runs audits; builds and maintains worklists; fixes intern-owned items in PowerSchool (SCED codes, staff state-ID override fields, SMID entry, duplicate/orphan cleanup); keeps the convergence tracker |
+| Compliance team       | State-access staff      | State-side-only actions: generate new SMIDs, push name/DOB changes into Staff Management / state SIS, clear Snapshot Error/Sync/Unresolved flags                                                       |
+| State-access uploader | Designated staff member | Uploads the clean extract; returns the state error report                                                                                                                                              |
+| Data team / owner     | KTAF data team          | Reviews worklists; settles judgment calls; escalates blockers                                                                                                                                          |
+
+The intern cannot access state systems. The compliance team does not touch
+PowerSchool. These lanes are firm.
+
+### Timeline
+
+**Key dates:** the state hard deadline is Mon Aug 3. The internal target is to
+finish everything — including state error resolution — by Mon Jul 27, leaving
+the full Jul 27 – Aug 3 week as contingency for state-side system issues
+(historically necessary to absorb state-side weirdness). Work starts the week of
+Mon Jun 29.
+
+| Phase                  | Window          | Work                                                                                                                                                                                     |
+| ---------------------- | --------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 0 — Setup              | Jun 29 – Jul 3  | Provision access; load `ref_sced_codes` + the first Camden + Newark extracts (+ `ref_state_staff` if compliance provides it); intern SQL/Sheets onboarding; grade-mapping one-time check |
+| 1 — Staff + SCED codes | Jul 6 – Jul 10  | Groups A + B; front-load the compliance handoff (new SMIDs, name/DOB) immediately — the long pole, and July vacations compress it                                                        |
+| 2 — Student            | Jul 13 – Jul 17 | Group C (SID, CDS, dates); staff fixes continue in parallel                                                                                                                              |
+| 3 — Parity             | Jul 15 – Jul 22 | Group D orphans/junk (overlaps Phase 2)                                                                                                                                                  |
+| 4 — Converge           | by Jul 22       | Re-extract, re-run pack, defect rollup to zero, clean files to the uploader                                                                                                              |
+| 5 — State errors       | Jul 22 – Jul 27 | Triage returned errors, loop until accepted — finish by the Jul 27 internal target                                                                                                       |
+| Contingency            | Jul 27 – Aug 3  | Reserved buffer for state-side system issues; do not plan work here                                                                                                                      |
+
+**Vacation navigation:** identify each role's availability up front. Schedule
+the handoff-dependent items earliest — compliance-team SMID generation is the
+long pole. Sequence intern-owned PowerSchool fixes so they never block waiting
+on someone who is out.
+
+## Cowork project setup
+
+A shared cowork project serves as the institutional knowledge store for the
+SLEDS Course Roster cycle — a place to look up handbook rules, triage error
+patterns, and draft handoff notes without opening BigQuery.
+
+### What to load
+
+- **NJ SLEDS Staff Course Roster Handbook** — the primary reference for field
+  definitions, SCED validation rules, and submission format.
+- **NJ SLEDS Student Course Roster Handbook** — student-side field definitions
+  and cross-extract parity rules.
+- **SCED code list** — the authority for valid subject-area, course-level, and
+  available-credits codes (Groups B checks).
+- **This runbook** — all 17 checks with their SQL, the error taxonomy, and the
+  remediation steps.
+- **De-identified convergence rollup** — the check-17 counts sheet (error
+  category and count only; no identified rows).
+
+### What it is used for
+
+- **Handbook Q&A** — look up field requirements and valid-values rules without
+  opening a PDF.
+- **Error-log triage** — classify state-returned errors by category and count;
+  map them to the check that catches them.
+- **Compliance handoff drafting** — compose the handoff note (new-SMID requests,
+  name/DOB correction lists) using counts and rule references rather than raw
+  records.
+- **Institutional continuity** — persist the audit logic, decision rationale,
+  and cycle timeline across interns and annual cycles.
+
+### Firm boundary
+
+Rules, counts, and de-identified samples only — never identified rows.
+
+State error reports list records by SID, SMID, or name; triage them in BigQuery
+or VS Code. Only the de-identified taxonomy (error type, count, which check
+catches it) goes into the cowork project. `SocialSecurityNumber` is dropped at
+load and never present; row-level worklists with names, DOBs, and IDs stay in
+BigQuery and Google Sheets (in-tenant) only.
