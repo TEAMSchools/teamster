@@ -1,14 +1,12 @@
 models:
   - name: rpt_focus__student_enrollment
     description: >-
-      Focus STUDENT_ENROLLMENT import feed for KIPP Miami — emits only rows
-      absent from Focus, whose end_date differs from current Focus state, or
-      whose drop_code differs from Focus. Decodes the raw drop_code label to the
-      Focus short_name and translates Focus's stored numeric drop_code id back
-      to its short code (both via stg_focus__student_enrollment_codes) to
-      compare like-for-like. drop_code updates on change; enrollment_code is
-      import-once (emitted only when Focus has none, since it is generated on
-      the fly from grade).
+      Focus STUDENT_ENROLLMENT import feed for KIPP Miami — import-once: emits
+      an enrollment only when it is new to Focus, plus a one-time withdrawal
+      fill (end_date + drop_code) when Focus has no withdrawal yet. Existing
+      Focus values are never overwritten; enrollment ops harmonize later changes
+      manually. Decodes the raw drop_code label to the Focus short_name via
+      stg_focus__student_enrollment_codes.
     columns:
       - name: syear
         data_type: int64
@@ -343,12 +341,12 @@ unit_tests:
             cast(null as int64) as fl_days_present,
             cast(null as int64) as fl_days_absent
 
-  - name: enrollment_diff_matched_drop_code_changed_updates
+  - name: enrollment_diff_matched_existing_withdrawal_not_overwritten
     description: >-
-      Matched row whose end_date is unchanged but whose decoded drop_code
-      differs from Focus (Focus has W01, export resolves to W02) — the row is
-      kept on the code change alone and the new drop_code is emitted;
-      enrollment_code is nulled because Focus already has it (import-once).
+      Matched row where Focus already has a withdrawal (end_date + drop_code) is
+      suppressed entirely — the export never overwrites an existing Focus
+      withdrawal (import-once; the one-time fill only applies when Focus has
+      none).
     model: rpt_focus__student_enrollment
     given:
       - input: source("kipptaf_extracts", "rpt_focus__student_enrollment")
@@ -416,14 +414,14 @@ unit_tests:
       format: sql
       rows: |
         select
-            2025 as syear,
-            '2332A' as school_id,
-            '8400000004' as student_id,
-            '09' as grade_id,
-            '20250812' as start_date,
+            cast(null as int64) as syear,
+            cast(null as string) as school_id,
+            cast(null as string) as student_id,
+            cast(null as string) as grade_id,
+            cast(null as string) as start_date,
             cast(null as string) as enrollment_code,
-            '20260115' as end_date,
-            'W02' as drop_code,
+            cast(null as string) as end_date,
+            cast(null as string) as drop_code,
             cast(null as string) as calendar_id,
             cast(null as string) as prior_dist,
             cast(null as string) as prior_state,
@@ -444,3 +442,4 @@ unit_tests:
             cast(null as string) as include_in_class_rank,
             cast(null as int64) as fl_days_present,
             cast(null as int64) as fl_days_absent
+        from (select 1) where false

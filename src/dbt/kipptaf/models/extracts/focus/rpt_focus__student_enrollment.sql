@@ -31,9 +31,7 @@ select
     -- only meaningful for a withdrawal, and an ungated value would emit a drop
     -- code for a still-enrolled student downstream.
     if(
-        l.lifecycle_action = 'transfer_out',
-        cca.fl_state_withdraw_codes_ss,
-        cast(null as string)
+        l.is_transfer_out, cca.fl_state_withdraw_codes_ss, cast(null as string)
     ) as drop_code,
 
     cast(null as string) as calendar_id,
@@ -45,11 +43,7 @@ select
     cast(null as string) as offender_transfer_stdt,
     cast(null as string) as came_from,
 
-    if(
-        l.lifecycle_action = 'transfer_out',
-        cca.withdrawal_school_txt,
-        cast(null as string)
-    ) as moved_to,
+    if(l.is_transfer_out, cca.withdrawal_school_txt, cast(null as string)) as moved_to,
 
     cast(null as string) as sec_sch,
 

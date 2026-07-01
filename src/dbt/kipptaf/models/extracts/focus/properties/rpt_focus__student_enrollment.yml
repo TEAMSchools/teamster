@@ -15,7 +15,8 @@ models:
       header casing (`SYEAR`, `SCHOOL_ID`, etc.) is applied at transport time
       via `file_config.format.header_replacements`; dbt column names remain
       lowercase snake_case. `end_date`, `drop_code`, and `moved_to` populate
-      only for `lifecycle_action = 'transfer_out'` rows.
+      only for transfer-out rows
+      (`int_finalsite__enrollment_lifecycle.is_transfer_out`).
     data_tests:
       - dbt_utils.unique_combination_of_columns:
           arguments:
@@ -186,24 +187,22 @@ unit_tests:
         rows:
           - {
               finalsite_enrollment_id: e1,
-              lifecycle_action: create,
+              is_transfer_out: false,
               school_year_start: 2025,
               grade_canonical_name: 5th,
               assigned_school: KIPP Royalty Academy,
               enrollment_start_date: 2025-08-12,
               enrollment_end_date: null,
-              withdrawal_reason: null,
               promotion_status: null,
             }
           - {
               finalsite_enrollment_id: e3,
-              lifecycle_action: create,
+              is_transfer_out: false,
               school_year_start: 2025,
               grade_canonical_name: k,
               assigned_school: KIPP Royalty Academy,
               enrollment_start_date: 2025-08-12,
               enrollment_end_date: null,
-              withdrawal_reason: null,
               promotion_status: null,
             }
       - input: ref('int_finalsite__contact_custom_attributes')
@@ -308,13 +307,12 @@ unit_tests:
         rows:
           - {
               finalsite_enrollment_id: e2,
-              lifecycle_action: transfer_out,
+              is_transfer_out: true,
               school_year_start: 2025,
               grade_canonical_name: 7th,
               assigned_school: KIPP Royalty Academy,
               enrollment_start_date: 2025-08-12,
               enrollment_end_date: 2026-01-15,
-              withdrawal_reason: mid_year_withdrawal,
               promotion_status: Retained,
             }
       - input: ref('int_finalsite__contact_custom_attributes')
