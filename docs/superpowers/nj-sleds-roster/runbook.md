@@ -8,6 +8,35 @@ groups cover student enrollment, course metadata, and final submission steps.
 Run each group's checks in order, resolve all flagged rows, and document
 dispositions before moving to the next group.
 
+## What these submissions are
+
+Each year New Jersey requires two paired **Course Roster** submissions to the
+state's longitudinal data system (NJSLEDS) — a **Staff Course Roster** and a
+**Student Course Roster** — which KTAF files for Newark and Camden. NJDOE uses
+them _together_ to establish accurate student–teacher assignments, meet federal
+and state reporting requirements, drive funding and accountability
+determinations (including teachers' median Student Growth Percentiles), and
+support equity and long-term planning. Filing is a formal **certification** that
+the data is accurate — knowingly submitting bad data can trigger state
+corrective action. That's what this audit protects against.
+
+**The shape.** The two files describe the same course sections from opposite
+sides:
+
+- **Staff Course Roster** — one row per **teacher, per section** taught (19
+  fields): who taught what, where, and when.
+- **Student Course Roster** — one row per **student, per section** enrolled (25
+  fields): who took what, plus grade, credit, and completion.
+
+They have to reconcile. A standard section (`CourseType` S1/S2) with enrolled
+students must also carry a teacher record sharing the same course-identifying
+fields, and vice versa. Every person is matched against the state's own records
+— **staff** to the _Staff Management_ snapshot (the five-field combination),
+**students** to their _NJ SMART_ State ID — and every course is coded with
+**NCES SCED** codes and located by its **County-District-School (CDS)** code.
+Everything below is about getting those identities, codes, and cross-file links
+to line up _before_ you certify.
+
 ## How to use this runbook
 
 **Goal:** Produce a clean Staff Course Roster and Student Course Roster extract
