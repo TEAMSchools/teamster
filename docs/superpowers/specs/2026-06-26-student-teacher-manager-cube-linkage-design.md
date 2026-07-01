@@ -7,19 +7,25 @@
 ## Context
 
 Analysts need to slice student-data views by the **responsible teacher**
-(point-in-time):
+(point-in-time) and to answer teacher-roster questions:
 
 - **Attendance** → the student's **homeroom/advisory** teacher.
 - **Assessments** → the **subject-area section lead** for each kid.
+- **Headcount** → "how many students does this teacher teach?" (homeroom and
+  section).
+- **Class roster** → the student list for a teacher's section(s).
 - Later (out of scope here, but the primitive is reused): gradebooks and other
   section-scoped student data.
 
-The teacher's **manager and reporting chain** (direct manager, AP, School
-Leader) are **deferred** — see [Deferred](#deferred-blocked-on-4269) below.
+The teacher's **manager and reporting chain** are deferred
+([Deferred](#deferred-blocked-on-4269)); the **co-lead / co-teacher** breakdown
+is a separate follow-up
+([Follow-up](#follow-up-co-taught--multi-lead-sections)).
 
 Confirmed decisions: both domains in one spec; Lead Teacher only;
-enrollment-grain anchor; bridge as the teacher source; teacher only this PR
-(manager/chain deferred).
+enrollment-grain anchor; bridge as the teacher source; single lead teacher this
+PR (co-teacher breakdown and manager/chain deferred); headcount + roster folded
+into this PR.
 
 ## Why the resolution must live in dbt, not a Cube join
 
@@ -94,7 +100,7 @@ administration date — but it would be a new, divergent per-fact measurement, n
 a reusable dimension, and would be far heavier on the daily attendance fact for
 a vanishingly small set of mid-year-handoff days. Enrollment-grain replicates
 the established behavior and yields one reusable column per dim (also feeding
-the future gradebook use case).
+the headcount, roster, and future gradebook use cases).
 
 Handoff sections (>1 lead overlapping the enrollment — ~5.5% of academic-section
 enrollments when weighted by students) collapse to one value by
@@ -114,10 +120,14 @@ teacher).
 - `dim_student_section_enrollments` (grain `student_section_enrollment_key`):
   FKs `student_enrollment_key`, `course_section_key`; `entry_date`, `exit_date`,
   `is_dropped_section`. Already reads `base_powerschool__course_enrollments` and
-  is read by the `student_section_enrollments` cube.
-  `dim_courses.credit_type = 'HR'` marks homeroom courses.
+  is read by the `student_section_enrollments` cube — which has **no measures
+  today**. `dim_courses.credit_type = 'HR'` marks homeroom courses.
 - `dim_student_enrollments` (grain `student_enrollment_key`): the school-stint
-  dim. Already read by the `student_school_enrollments` cube.
+  dim. Read by the `student_school_enrollments` cube (which has
+  `count_enrollments`, a stint count — not a headcount).
+- `student_enrollments` cube reads `fct_student_attendance_daily` and owns
+  `count_students` (the point-in-time headcount, `count_distinct`); it backs the
+  existing `student_enrollments_detail` / `student_enrollments_summary` views.
 - `fct_assessment_scores_enrollment_scoped`: FK `student_section_enrollment_key`
   (already subject-resolved) plus `enrollment_resolution` value
   `subject_section` or `homeroom`. Its cube already joins `many_to_one` to
@@ -131,9 +141,9 @@ teacher).
 
 ## Design
 
-Three layers. Everything reads tables already in `kipptaf_marts`. **No new dbt
-models, no new cubes, no new fact-cube joins** — the fact-to-enrollment joins
-already exist.
+Everything reads tables already in `kipptaf_marts`. **No new dbt models, no new
+cubes** — the fact-to-enrollment joins already exist. One **new roster view** is
+added (§4).
 
 ### 1. dbt — resolve one teacher per enrollment
 
@@ -166,42 +176,65 @@ unchanged: one row per `student_enrollment_key`):
   `relationships` test to `dim_staff.staff_key`; existing PK `unique` test is
   the fan-out guard.
 
-### 2. Cube — widen the two existing dim cubes
+### 2. Cube — widen the two existing dim cubes (+ one measure)
 
 No new cubes. Each existing dim cube exposes the teacher FK and gains one
 `many_to_one` join to `staff` for the teacher name.
 
 - **`student_section_enrollments`** — add dims `lead_teacher_staff_key` (FK,
   degenerate) and `teacher_role`; add join `many_to_one` to `staff` on
-  `lead_teacher_staff_key`. Prefix the join so members read `staff_full_name`
-  etc.
+  `lead_teacher_staff_key` (prefixed so members read `staff_full_name` etc.).
+  **Add a `count_students` measure** (`count_distinct` on the student, reached
+  via the existing `student_school_enrollments` join) — this is what answers
+  "how many students does this section teacher teach?" and is fan-safe.
 - **`student_school_enrollments`** (reads `dim_student_enrollments`) — add dim
   `homeroom_teacher_staff_key`; add the same `many_to_one` join to `staff`.
 
-The fact cubes (`student_attendance`, `student_assessment_scores`) are
-**unchanged** — they already join to these enrollment cubes.
+The fact cubes (`student_attendance`, `student_assessment_scores`,
+`student_enrollments`) are **unchanged** — they already join to these enrollment
+cubes.
 
-### 3. Cube — view edits
+### 3. Cube — edits to existing views
 
-View `join_path` includes surface the teacher (prefix the `staff` join so
-members read `staff_full_name`, etc.). New `Teacher` folder on each view.
+Add teacher members (prefix the `staff` join so members read `staff_full_name`,
+etc.). New `Teacher` folder on each view. All under the view's existing
+`cube-access-student-data` scope.
 
-- **`student_attendance_detail` / `student_assessment_scores_detail`**: teacher
-  `staff_key`, `full_name`, `first_name`, `last_name`, plus `teacher_role`.
-- **`student_attendance_summary` / `student_assessment_scores_summary`**: only
-  non-PII groupers — teacher `staff_key` and `teacher_role`. Names excluded
-  (summary carries no PII).
+- **`student_attendance_detail` / `..._summary`** — homeroom teacher (detail:
+  name + `staff_key`; summary: `staff_key` grouper).
+- **`student_assessment_scores_detail` / `..._summary`** — section lead teacher
+  (detail: name + `staff_key` + `teacher_role`; summary: `staff_key` +
+  `teacher_role`).
+- **`student_enrollments_detail` / `..._summary`** — homeroom teacher. With the
+  cube's existing `count_students`, this answers homeroom headcount ("students
+  in this teacher's advisory") and, via detail, the **advisory roster**.
 
-**Access policy**: teacher dimensions follow the same access rules as all other
-student data for the school — they sit under the view's existing
-`cube-access-student-data` scope; no separate staff-PII tier.
+### 4. Cube — new `student_section_enrollments` roster view
+
+A per-teacher **class roster** and section headcount need a section-grained
+analyst surface, which does not exist today. Add
+`student_section_enrollments_detail` and `student_section_enrollments_summary`
+(`src/cube/model/views/students/`):
+
+- **Detail**: section (course/section descriptors via existing joins), lead
+  teacher (name + `staff_key` + `teacher_role`), student identity, `entry_date`
+  / `exit_date`, `is_dropped_section`, and the new `count_students` measure.
+  Filtering to a teacher yields their class roster; grouping by teacher yields
+  per-teacher headcount. Carries student PII → two access blocks
+  (`cube-access-student-data` with PII excludes + `cube-access-student-pii`),
+  per the detail-view pattern.
+- **Summary**: non-PII groupers (teacher `staff_key`, `teacher_role`, section,
+  `academic_year`) + `count_students`. Single `cube-access-student-data` block.
 
 ### Fan-out and measure safety (the key risk)
 
-- Fact-to-teacher is `many_to_one` (one value per enrollment after dbt
-  resolution) → **no fan-out**; `count_students` / `count_scores` /
+- Fact/enrollment-to-teacher is `many_to_one` (one value per enrollment after
+  dbt resolution) → **no fan-out**; `count_students` / `count_scores` /
   `avg_daily_attendance` unchanged whether or not the teacher dim is in the
   query.
+- The new section `count_students` is `count_distinct` on the student, so it is
+  correct at every grouping (per-teacher and grand total) even before the
+  co-teacher follow-up introduces fan.
 - `student_attendance` is a SNAPSHOT cube (#4160). We add **dimensions only, no
   measures**, and the join is row-preserving, so the snapshot anchor injection
   is unaffected. Verify a snapshot measure (e.g.
@@ -218,10 +251,12 @@ student data for the school — they sit under the view's existing
 | ------ | ----------------------------------------------------------------------------------- |
 | Modify | `dim_student_section_enrollments.sql` plus its `.yml` (marts/dimensions)            |
 | Modify | `dim_student_enrollments.sql` plus its `.yml` (marts/dimensions)                    |
-| Modify | `src/cube/model/cubes/students/student_section_enrollments.yml`                     |
-| Modify | `src/cube/model/cubes/students/student_school_enrollments.yml`                      |
+| Modify | `src/cube/model/cubes/students/student_section_enrollments.yml` (dims, join, count) |
+| Modify | `src/cube/model/cubes/students/student_school_enrollments.yml` (dim, join)          |
 | Modify | `views/student_attendance/student_attendance_detail.yml`, `..._summary.yml`         |
 | Modify | `views/student_assessments/student_assessment_scores_detail.yml`, `..._summary.yml` |
+| Modify | `views/students/student_enrollments_detail.yml`, `..._summary.yml`                  |
+| Create | `views/students/student_section_enrollments_detail.yml`, `..._summary.yml`          |
 
 Possibly one new `int_` helper model feeding the homeroom resolution
 (implementation-plan call). No `cube.js` change (existing student-prefixed cubes
@@ -233,8 +268,10 @@ keep their `isStudentMember` gating; no new SNAPSHOT cube).
    `dim_student_section_enrollments`, then `homeroom_teacher_staff_key` on
    `dim_student_enrollments` (plus properties, tests).
    `uv run dbt build --select dim_student_section_enrollments dim_student_enrollments --project-dir src/dbt/kipptaf --target dev`.
-2. Cube: widen `student_section_enrollments` and `student_school_enrollments`.
-3. View edits plus folders.
+2. Cube: widen `student_section_enrollments` (+ `count_students`) and
+   `student_school_enrollments`.
+3. Edit the six existing views; create the two new roster views with access
+   policies and folders.
 
 ## Verification
 
@@ -245,38 +282,51 @@ keep their `isStudentMember` gating; no new SNAPSHOT cube).
   null-teacher share is in the expected ~4–8% band (not a broken join).
 - **Cube** (point cube `sql_table` at the dev `zz_<user>_kipptaf_marts` copies
   per `src/cube/CLAUDE.md`, revert before commit): `/sql` compiles the teacher
-  members; `/load` returns the teacher for a sample student.
-- **Measure safety**: via the cube MCP, confirm `count_students` (attendance)
-  and `count_scores` (assessments) are **identical** grouped-by-teacher vs.
-  ungrouped over the same filter; repeat for one snapshot measure.
-- **Access**: confirm the teacher block is hidden without
-  `cube-access-student-data`, exactly like the rest of the student data on the
-  view.
+  members and the section `count_students`; `/load` returns the teacher and a
+  class roster for a sample teacher.
+- **Measure safety**: via the cube MCP, confirm `count_students` (attendance,
+  enrollments, section) and `count_scores` (assessments) are **identical**
+  grouped-by-teacher vs. ungrouped over the same filter; repeat for one snapshot
+  measure.
+- **Access**: confirm the teacher block and the new roster detail view are
+  hidden without `cube-access-student-data`, and roster PII without
+  `cube-access-student-pii`.
 
 ## Follow-up: co-taught / multi-lead sections
 
 This spec resolves **one** Lead Teacher per enrollment (most-recent on a
-handoff). That is correct for single-teacher rooms but under-represents
-**co-taught / multi-lead sections**, which is exactly where Cube diverges from
-the Tableau dashboards (~2% of homeroom, ~2–5% of academic-section enrollments;
-~5.5% of academic-section enrollments sit in a >1-lead section when weighted by
-students). Two things to revisit when co-taught sections are tackled as their
-own piece of work:
+handoff), which under-represents **co-taught / multi-lead sections** — exactly
+where Cube diverges from the Tableau dashboards (~2% homeroom, ~2–5% academic;
+~5.5% of academic-section enrollments sit in a >1-lead section). Analysts want
+both to **group by** every teacher (incl. co-teachers, by role) and to
+**filter** to a teacher's sections. Design worked out for that follow-up:
 
-- **Surface all teachers, not just the collapsed lead** — e.g. a co-teacher
-  dimension or a many-to-many teacher exposure, so co-taught rooms attribute to
-  every responsible adult rather than one. This is a grain change (fan-out
-  risk), so it needs its own measure-safety design.
-- **Reconciliation with the assessment dashboard** — decide whether Cube should
-  tie out to `rpt_tableau__assessment_dashboard` in these sections or whether
-  the role-aware bridge value is accepted as the more precise answer of record.
+- **Isolate the fan.** Keep the existing views on the single-lead `many_to_one`
+  field (fully additive, no fan). Add a **dedicated teacher-attribution view per
+  domain**, backed by a new **many-to-many bridge cube** (section-enrollment ×
+  teacher × `role`, `one_to_many` from the enrollment). Do NOT put the fanning
+  join on the ADA/average-bearing views.
+- **One surface serves both needs.** A single-teacher _filter_ on the bridge
+  view does not fan (only that teacher's rows match → each student once → all
+  measures correct, including averages). Fan-out only bites a genuine _group-by_
+  across teachers, and only in cross-teacher totals.
+- **Measure audit on the bridge view.** Reformulate every flag/count additive to
+  `count_distinct(fact_PK)` filtered by the flag (`count_scores` →
+  `count_distinct(assessment_score_key)`; `count_absent_days` →
+  `count_distinct(student_attendance_daily_key)` filtered `is_absent = 1`;
+  `_sum_proficient` / `_sum_tardy` / `_count_present_days` likewise). Because
+  the PK is unique these return identical values on the non-fan path — a pure
+  robustness upgrade — and stay correct under fan. Reformulate numerator and
+  denominator of each ratio together.
+- **Residue to decide.** Continuous-sum ratios (`avg_daily_attendance`,
+  `avg_scale_score`, `avg_percent_correct`) cannot be count-distinct'd. They are
+  correct per-teacher and for single-teacher filters, but their cross-teacher
+  grand total is fan-weighted. Either expose with a "don't read the all-teachers
+  total" description or omit them from the teacher-attribution view.
+- **Pre-agg note.** Exact `count_distinct` is non-additive for pre-aggregations;
+  switch to `count_distinct_approx` (HLL) if those views get pre-aggregated.
 
-Reproduction of the divergence measurement (bridge `Lead Teacher` vs legacy
-teacher-of-record, enrollment-weighted, split HR vs non-HR) is captured in the
-[Teacher source](#teacher-source-bridge_course_section_teachers-validated) table
-above; the query joins `bridge_course_section_teachers` (role-filtered) and
-`base_powerschool__course_enrollments` (via `int_people__staff_roster` for
-`staff_key`) to `dim_student_section_enrollments`.
+Track this as its own issue (linked to #4273) with the fan-out analysis above.
 
 ## Deferred (blocked on #4269)
 
