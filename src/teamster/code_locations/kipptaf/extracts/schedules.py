@@ -9,6 +9,7 @@ from teamster.code_locations.kipptaf.extracts.jobs import (
     egencia_extract_asset_job,
     idauto_extract_asset_job,
     illuminate_extract_asset_job,
+    lattice_extract_asset_job,
     littlesis_extract_asset_job,
 )
 
@@ -54,6 +55,12 @@ illuminate_extract_assets_schedule = ScheduleDefinition(
     execution_timezone=str(LOCAL_TIMEZONE),
 )
 
+lattice_extract_assets_schedule = ScheduleDefinition(
+    job=lattice_extract_asset_job,
+    cron_schedule="0 3 * * *",
+    execution_timezone=str(LOCAL_TIMEZONE),
+)
+
 littlesis_extract_assets_schedule = ScheduleDefinition(
     job=littlesis_extract_asset_job,
     cron_schedule="0 3 * * *",
@@ -68,5 +75,6 @@ schedules = [
     egencia_extract_assets_schedule,
     idauto_extract_assets_schedule,
     illuminate_extract_assets_schedule,
+    lattice_extract_assets_schedule,
     littlesis_extract_assets_schedule,
 ]
