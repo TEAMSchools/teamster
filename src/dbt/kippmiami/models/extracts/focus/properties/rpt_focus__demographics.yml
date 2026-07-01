@@ -1,9 +1,11 @@
 models:
   - name: rpt_focus__demographics
     description: >-
-      Demographics export for Focus SIS — emits only rows whose student is
-      absent from Focus or whose populated export fields differ from current
-      Focus state. Idempotent import guard: a fully-matching row is suppressed.
+      Demographics export for Focus SIS — import-once: emits a student's
+      demographics only when the student is absent from Focus (anti-join on
+      stg_focus__students). Existing Focus values are never overwritten, so a
+      later Finalsite change does not re-emit; enrollment ops harmonize
+      post-import changes manually.
     data_tests:
       - dbt_utils.unique_combination_of_columns:
           arguments:

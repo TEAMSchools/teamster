@@ -1,5 +1,10 @@
 models:
   - name: rpt_focus__addresses
+    description: >-
+      Address export for Focus SIS — import-once: emits a student's address only
+      when the student has no address linked in Focus yet (anti-join on
+      stg_focus__students_join_address). Existing Focus addresses are never
+      overwritten; enrollment ops harmonize post-import changes manually.
     columns:
       - name: student_id
         data_type: string

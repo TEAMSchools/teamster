@@ -1,5 +1,11 @@
 models:
   - name: rpt_focus__contacts
+    description: >-
+      Contacts export for Focus SIS — import-once: emits a student's contacts
+      only when the student has no contact (person) linked in Focus yet
+      (anti-join on stg_focus__students_join_people). Existing Focus contacts
+      are never overwritten; enrollment ops harmonize post-import changes
+      manually.
     columns:
       - name: student_id
         data_type: string
