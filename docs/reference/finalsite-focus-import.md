@@ -20,10 +20,17 @@ delivers them to Focus over SFTP, matching Focus's import templates:
 | Addresses          | `ADDRESS`            | Active |
 | Contacts           | `CONTACTS`           | Active |
 
-The pipeline is **idempotent**: a run only sends what Focus needs — records that
-are new, plus (for the feeds that allow updates) records that changed. A student
-whose Focus record already matches is not re-sent. This keeps the imports small
-and avoids overwriting good data in Focus.
+The pipeline is **import-once**: each run sends only records that Focus does not
+already have. Once a record has been imported, the pipeline never re-sends or
+overwrites it. This keeps the imports small and — importantly — means the
+pipeline never clobbers an edit made in Focus.
+
+> **Finalsite is the source of truth only for the first import.** After a record
+> lands in Focus, neither system automatically wins. The pipeline will not push
+> later Finalsite changes over an existing Focus record, and it will not pull
+> Focus changes back. Until a clearer process is defined, the enrollment team is
+> expected to **keep the two systems aligned by hand** — a correction made after
+> the initial import must be made in both Finalsite and Focus.
 
 ## Key design decisions
 
@@ -59,55 +66,60 @@ corrected manually in Focus.
 
 ### Withdraw / drop codes
 
-When a student transfers out, Finalsite records the withdrawal reason in its
-`fl_state_withdraw_codes_ss` field as the full FLDOE label — e.g.
-`(W02) In District Transfer`. Focus's import wants the short code (`W02`), not
-the label, so the pipeline looks the label up in Focus's own withdrawal-code
-list and sends the matching short code in the `DROP_CODE` column along with the
-end date. Drop codes are only sent for transfer-out records — a still-enrolled
-student never receives one. Unlike the entry code, the drop code **updates on
-change**: if the withdrawal reason in Finalsite changes, the next run resends
-the corrected code.
+A withdrawal is recognized from a single Finalsite signal: **the last-attended
+date** (`withdrawal_last_attended_date`). A student is treated as withdrawn only
+when that date is populated and falls on or after the enrollment's start date.
+When it is, the pipeline sends the end date together with the drop code.
 
-### What counts as a change
+The drop code itself comes from Finalsite's `fl_state_withdraw_codes_ss` field
+as the full FLDOE label — e.g. `(W02) In District Transfer`. Focus's import
+wants the short code (`W02`), not the label, so the pipeline looks the label up
+in Focus's own withdrawal-code list and sends the matching short code in the
+`DROP_CODE` column.
 
-- **Demographics** — a student is re-sent only if they are new to Focus or a
-  populated field differs from what Focus currently holds. A field left blank in
-  Finalsite is never treated as a change, so a blank value will not overwrite
-  data already in Focus.
-- **Student enrollment** — a record is re-sent only if it is new to Focus, its
-  end date has changed, or its withdraw code has changed.
+Like everything else, a withdrawal is a **one-time push**: it fills in an end
+date and drop code only when Focus does not already have a withdrawal on that
+enrollment. If Focus already shows the student as withdrawn, the pipeline leaves
+it alone — a later change to the code or date must be made in Focus directly.
+
+### What gets sent
+
+Every feed follows the same import-once rule — a record is sent only when Focus
+does not already have it, and nothing is ever overwritten:
+
+- **Demographics** — a student's demographics are sent only if the student is
+  not yet in Focus.
+- **Student enrollment** — an enrollment is sent when it is new to Focus; a
+  withdrawal (end date + drop code) is filled in once when Focus has none yet.
 - **Addresses and Contacts** — a student's address / contacts are sent only if
-  Focus does not already have one for that student (import once); once Focus has
-  them, the pipeline does not resend or overwrite.
+  Focus does not already have them for that student.
 
 ### Forward-moving enrollments are protected
 
 A Finalsite contact is reused year to year (re-enrollment keeps the same
 Finalsite ID and moves the start date forward). The pipeline ensures a **new
 enrollment never carries a previous year's drop code or end date** — a
-withdrawal dated before the current enrollment's start is treated as belonging
+last-attended date before the current enrollment's start is treated as belonging
 to the prior enrollment and is ignored.
 
 ## Where to make corrections
 
-For some fields Finalsite is the source of truth — the nightly run keeps Focus
-matched to Finalsite, so an edit made **only in Focus is overwritten the next
-night**. Others are sent once and never overwritten, so a Focus edit sticks.
-Make each correction in the system that owns the field:
+After the initial import, **the pipeline never overwrites Focus** — so any
+correction you make in Focus sticks. The trade-off is that the pipeline also
+won't carry a later Finalsite correction into Focus. Until a clearer sync
+process exists, treat the two systems as independent after the first import and
+harmonize them by hand:
 
-| Field                                                                      | Correct it in | A Focus-only edit                     |
-| -------------------------------------------------------------------------- | ------------- | ------------------------------------- |
-| Names, student email, date of birth, gender, home language, ethnicity/race | Finalsite     | is overwritten next run               |
-| Withdraw code (`DROP_CODE`)                                                | Finalsite     | is overwritten next run               |
-| Entry code (`ENROLLMENT_CODE`)                                             | Focus         | sticks (sent once, never overwritten) |
-| Address, contacts                                                          | Focus         | sticks (sent once, never overwritten) |
-| Other demographics fields (suffix, nickname, permissions, county, …)       | Focus         | sticks (not compared)                 |
+| Field                          | After initial import                                                        |
+| ------------------------------ | --------------------------------------------------------------------------- |
+| Demographics (all fields)      | Sent once. A Focus edit sticks; a later Finalsite change is **not** pushed. |
+| Entry code (`ENROLLMENT_CODE`) | Sent once (derived from grade). A wrong code must be fixed in Focus.        |
+| Withdraw code / end date       | Filled once when Focus has none. A later change must be made in Focus.      |
+| Address, contacts              | Sent once. A Focus edit sticks.                                             |
 
-**A blank in Finalsite never overwrites Focus.** If a field is empty in
-Finalsite, the run keeps whatever Focus already has — a blank can't wipe a
-populated value. Finalsite only overwrites where it holds a different, non-blank
-value.
+**Correct after the first import in both systems.** Fix the record in Focus so
+Focus is right today, and update Finalsite too so the two stay aligned — the
+pipeline will not reconcile them for you.
 
 ## Known limitations
 
@@ -118,23 +130,26 @@ value.
 > record. Focus retains prior years from earlier imports; Finalsite is not the
 > system of record for enrollment history.
 
-- **Home language** is sent as the FLDOE language code (e.g. `EN`). This matches
-  what Focus stores today, so language values will not churn on every run.
-- **A few contacts have more than one withdrawal date recorded.** A contact can
-  carry up to three withdrawal-date fields — `mid_year_withdrawal_date`,
-  `summer_withdraw_date`, and `not_enrolling_date`. When more than one is set,
-  the pipeline uses the **earliest**. This affects a very small number of
-  students; the registrar should confirm which date should win in those cases.
+- **Home language** is sent as the FLDOE language code (e.g. `EN`), matching
+  what Focus stores.
+- **A withdrawal depends on the last-attended date being set in Finalsite.** If
+  `withdrawal_last_attended_date` is blank, the student is treated as still
+  enrolled and no end date or drop code is sent — even if other withdrawal notes
+  exist in Finalsite. Make sure the last-attended date is recorded when a
+  student withdraws.
+- **No changes flow after the first import.** Because every feed is import-once,
+  a later Finalsite edit will not reach Focus and a Focus edit will not reach
+  Finalsite. The two systems are kept aligned manually.
 
 ## What the enrollment team should watch for
 
 - **Mint the Finalsite student ID** before expecting a student in Focus —
   records without one are skipped.
-- **A wrong entry code** after the first import must be fixed directly in Focus
-  — the pipeline won't resend it. (A wrong withdraw code self-corrects on the
-  next run once fixed in Finalsite.)
-- **Flag students with multiple withdrawal dates** so the correct date can be
-  confirmed.
+- **Set the last-attended date** in Finalsite when a student withdraws — it is
+  what triggers the end date and drop code being sent.
+- **Corrections after the first import are manual.** A wrong entry code, drop
+  code, or demographic field must be fixed in Focus, and the same fix made in
+  Finalsite to keep the systems aligned — the pipeline won't resend it.
 
 ## Questions or issues
 
