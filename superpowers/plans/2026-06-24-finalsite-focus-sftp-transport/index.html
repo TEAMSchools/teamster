@@ -1,0 +1,2288 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+        <meta name="description" content="Data engineering platform for KIPP TEAM & Family Schools">
+      
+      
+      
+      
+      
+      
+        
+      
+      
+      <link rel="icon" href="../../../images/truck.svg">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.6">
+    
+    
+      
+        <title>Finalsite → Focus SFTP transport Implementation Plan - teamster</title>
+      
+    
+    
+      <link rel="stylesheet" href="../../../assets/stylesheets/main.484c7ddc.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+    <script>__md_scope=new URL("../../..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+  </head>
+  
+  
+    <body dir="ltr">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#finalsite-focus-sftp-transport-implementation-plan" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+  
+
+<header class="md-header md-header--shadow md-header--lifted" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href="../../.." title="teamster" class="md-header__button md-logo" aria-label="teamster" data-md-component="logo">
+      
+  <img src="../../../images/truck.svg" alt="logo">
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            teamster
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              Finalsite → Focus SFTP transport Implementation Plan
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+        <div class="md-search__suggest" data-md-component="search-suggest"></div>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      
+    
+    
+      <div class="md-header__source">
+        <a href="https://github.com/TEAMSchools/teamster" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M173.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6m-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3m44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9M252.8 8C114.1 8 8 113.3 8 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C436.2 457.8 504 362.9 504 252 504 113.3 391.5 8 252.8 8M105.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1m-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7m32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1m-11.4-14.7c-1.6 1-1.6 3.6 0 5.9s4.3 3.3 5.6 2.3c1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2"/></svg>
+  </div>
+  <div class="md-source__repository">
+    TEAMSchools/teamster
+  </div>
+</a>
+      </div>
+    
+  </nav>
+  
+    
+      
+<nav class="md-tabs" aria-label="Tabs" data-md-component="tabs">
+  <div class="md-grid">
+    <ul class="md-tabs__list">
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../../.." class="md-tabs__link">
+        
+  
+  
+    
+  
+  Home
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../../guides/" class="md-tabs__link">
+          
+  
+  
+    
+  
+  Guides
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../../troubleshooting/dagster/" class="md-tabs__link">
+          
+  
+  
+    
+  
+  Troubleshooting
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../../reference/architecture/" class="md-tabs__link">
+          
+  
+  
+    
+  
+  Reference
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../../../reference/automations/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  Automations
+
+      </a>
+    </li>
+  
+
+      
+    </ul>
+  </div>
+</nav>
+    
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+  
+
+
+<nav class="md-nav md-nav--primary md-nav--lifted" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href="../../.." title="teamster" class="md-nav__button md-logo" aria-label="teamster" data-md-component="logo">
+      
+  <img src="../../../images/truck.svg" alt="logo">
+
+    </a>
+    teamster
+  </label>
+  
+    <div class="md-nav__source">
+      <a href="https://github.com/TEAMSchools/teamster" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M173.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6m-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3m44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9M252.8 8C114.1 8 8 113.3 8 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C436.2 457.8 504 362.9 504 252 504 113.3 391.5 8 252.8 8M105.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1m-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7m32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1m-11.4-14.7c-1.6 1-1.6 3.6 0 5.9s4.3 3.3 5.6 2.3c1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2"/></svg>
+  </div>
+  <div class="md-source__repository">
+    TEAMSchools/teamster
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../.." class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Home
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+          
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2" >
+        
+          
+          <div class="md-nav__link md-nav__container">
+            <a href="../../../guides/" class="md-nav__link ">
+              
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Guides
+  
+
+    
+  </span>
+  
+  
+
+            </a>
+            
+              
+              <label class="md-nav__link " for="__nav_2" id="__nav_2_label" tabindex="0">
+                <span class="md-nav__icon md-icon"></span>
+              </label>
+            
+          </div>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_2_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_2">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Guides
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/codespaces/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Codespaces
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/local-development/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Local Development
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/dagster/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Dagster
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/google-sheets/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Google Sheets & Forms
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/adp-location-renames/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ADP Location Renames
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/dbt-development/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    dbt Development
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/sftp-integration/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    SFTP Integration
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/superpowers/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Claude Code & Superpowers
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/cube/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Cube
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/claude-cube-connector/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Claude + Cube Connector
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3" >
+        
+          
+          <label class="md-nav__link" for="__nav_3" id="__nav_3_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Troubleshooting
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_3">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Troubleshooting
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../troubleshooting/dagster/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Dagster
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../troubleshooting/dbt/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    dbt
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../troubleshooting/vscode/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    VS Code
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4" >
+        
+          
+          <label class="md-nav__link" for="__nav_4" id="__nav_4_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Reference
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_4_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_4">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Reference
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/architecture/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Architecture
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/adding-an-integration/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Adding an Integration
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/io-managers/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    IO Managers
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/fiscal-year-partitioning/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Fiscal Year & Partitioning
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/dbt-conventions/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    dbt Conventions
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/finalsite-focus-import/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Finalsite to Focus Import
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/marts-data-models/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Marts Data Models
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/automation-conditions/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Automation Conditions
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/automations/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Automations
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#global-constraints" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Global Constraints
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Global Constraints">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#task-1-ssh_focus-resource" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Task 1: SSH_FOCUS resource
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#task-2-trim-rpt_focus__demographics-drop-tide_access_code" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Task 2: Trim rpt_focus__demographics (drop tide_access_code)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#task-3-trim-rpt_focus__student_enrollment-drop-fl_days_absent_not_disc" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Task 3: Trim rpt_focus__student_enrollment (drop fl_days_absent_not_disc)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#task-4-trim-rpt_focus__addresses-drop-mail_zipcode" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Task 4: Trim rpt_focus__addresses (drop mail_zipcode)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#task-5-trim-rpt_focus__contacts-drop-contact7_callout" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Task 5: Trim rpt_focus__contacts (drop contact7_callout)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#task-6-trim-rpt_focus__linked_students-drop-relationship" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Task 6: Trim rpt_focus__linked_students (drop relationship)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#task-7-focus-sftp-extract-assets" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Task 7: Focus SFTP extract assets
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#post-implementation-out-of-plan-scope-do-not-enable-yet" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Post-implementation (out of plan scope, do not enable yet)
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+  
+    <a href="https://github.com/TEAMSchools/teamster/edit/main/docs/superpowers/plans/2026-06-24-finalsite-focus-sftp-transport.md" title="Edit this page" class="md-content__button md-icon" rel="edit">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M10 20H6V4h7v5h5v3.1l2-2V8l-6-6H6c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h4zm10.2-7c.1 0 .3.1.4.2l1.3 1.3c.2.2.2.6 0 .8l-1 1-2.1-2.1 1-1c.1-.1.2-.2.4-.2m0 3.9L14.1 23H12v-2.1l6.1-6.1z"/></svg>
+    </a>
+  
+  
+
+
+<h1 id="finalsite-focus-sftp-transport-implementation-plan">Finalsite → Focus SFTP transport Implementation Plan</h1>
+<blockquote>
+<p><strong>For agentic workers:</strong> REQUIRED SUB-SKILL: Use
+superpowers:subagent-driven-development (recommended) or
+superpowers:executing-plans to implement this plan task-by-task. Steps use
+checkbox (<code>- [ ]</code>) syntax for tracking.</p>
+</blockquote>
+<p><strong>Goal:</strong> Deliver the five <code>rpt_focus__*</code> models to Focus as a coordinated daily
+SFTP drop of CSVs, with each model trimmed to exactly the Focus import contract.</p>
+<p><strong>Architecture:</strong> Reuse the existing <code>build_bigquery_query_sftp_asset</code> factory.
+Five config-driven extract assets in the <code>kippmiami</code> code location read the
+<code>kippmiami_extracts.rpt_focus__*</code> pass-through tables and push uppercase-headed
+CSVs to a Focus SFTP destination via a new <code>SSH_FOCUS</code> resource, on a daily
+(initially STOPPED) schedule. The <code>rpt_focus__*</code> models are first trimmed to
+drop the columns Focus does not import.</p>
+<p><strong>Tech Stack:</strong> Python 3.13, Dagster, dbt (BigQuery), <code>uv</code>.</p>
+<h2 id="global-constraints">Global Constraints</h2>
+<ul>
+<li><strong>Worktree:</strong> all work is in
+  <code>.worktrees/cbini-feat-claude-focus-sftp-transport</code> on branch
+  <code>cbini/feat/claude-focus-sftp-transport</code>. Treat that as the repo root (<code>cwd</code>)
+  for every command below; Read/Edit/Write must target paths under it.</li>
+<li><strong>dbt in a worktree:</strong> worktrees have no <code>dbt_packages/</code>. Once, before any dbt
+  build, run <code>uv run dbt deps --project-dir src/dbt/kipptaf</code> and
+  <code>uv run dbt deps --project-dir src/dbt/kippmiami</code>. Pass <code>--defer</code> with an
+  <strong>absolute</strong> <code>--state</code> pointing at the MAIN repo's prod manifest:
+  <code>/workspaces/teamster/src/dbt/&lt;project&gt;/target/prod</code>.</li>
+<li><strong>No <code>--target prod</code></strong> dbt runs (classifier-blocked). Local builds use the
+  default/dev target with <code>--defer</code>.</li>
+<li><strong>Python:</strong> always <code>uv run</code>; never bare <code>python</code>/<code>dbt</code>/<code>dagster</code>.</li>
+<li><strong>SQL style</strong> (<code>.trunk/config/.sqlfluff</code>): BigQuery dialect, trailing comma
+  required on the last <code>SELECT</code> column, single quotes, 88-char lines. The
+  <code>rpt_focus__*</code> models carry <code>-- trunk-ignore(sqlfluff/ST06)</code> on line 1 to keep
+  Focus column order — preserve it.</li>
+<li><strong>dbt contracts:</strong> every <code>rpt_focus__*</code> model is contract-enforced; the
+  <code>properties</code> yml <code>columns:</code> list must match the model's output columns by name
+  and type, or the build fails.</li>
+<li><strong>dbt unit-test yaml:</strong> <code>given</code>/<code>expect</code> scalars are UNQUOTED except
+  leading-zero strings; do not add quotes when editing expects.</li>
+<li><strong>Trunk:</strong> do not run <code>trunk fmt</code>/<code>check</code> manually for code; the pre-commit
+  hook formats. For any <code>.md</code> you add, run
+  <code>/workspaces/teamster/.trunk/tools/trunk check --force &lt;file&gt;</code> from inside the
+  worktree before pushing.</li>
+<li><strong>Drop-column safety (pre-verified):</strong> <code>tide_access_code</code>,
+  <code>fl_days_absent_not_disc</code>, and <code>contact7_callout</code> appear only in
+  <code>extracts/focus/</code> (the <code>fl_days_absent_not_disc</code> hit in <code>stg_focus__*</code> is the
+  unrelated inbound Focus source). <code>mail_zipcode</code> and <code>relationship</code> are
+  consumed only by the kippmiami wrappers trimmed in the same task.</li>
+<li><strong>#4205 overlap:</strong> #4205 also edits <code>rpt_focus__demographics</code>,
+  <code>rpt_focus__contacts</code>, and <code>rpt_focus__student_enrollment</code> (repointing the
+  <code>STDT_ID</code> stub). If that branch is open, whichever merges second rebases to
+  avoid a conflict. Before starting,
+  <code>git fetch origin main &amp;&amp; git merge origin/main</code>.</li>
+<li><strong>Commit messages:</strong> conventional commits; end the body with
+  <code>Co-Authored-By: Claude Opus 4.8 (1M context) &lt;noreply@anthropic.com&gt;</code>.</li>
+</ul>
+<hr />
+<h3 id="task-1-ssh_focus-resource">Task 1: <code>SSH_FOCUS</code> resource</h3>
+<p><strong>Files:</strong></p>
+<ul>
+<li>Modify: <code>src/teamster/core/resources.py</code> (after the <code>SSH_COUCHDROP</code> block,
+  ~line 111)</li>
+<li>Modify: <code>src/teamster/code_locations/kippmiami/definitions.py</code> (imports ~line
+  24-39; resources dict ~line 73-89)</li>
+</ul>
+<p><strong>Interfaces:</strong></p>
+<ul class="task-list">
+<li>
+<p>Produces: <code>SSH_FOCUS</code> (an <code>SSHResource</code>) importable from
+  <code>teamster.core.resources</code>, wired into the kippmiami <code>Definitions.resources</code>
+  under key <code>"ssh_focus"</code>. The Focus extract assets (Task 7) require the
+  <code>ssh_focus</code> resource key at runtime.</p>
+</li>
+<li class="task-list-item">
+<p><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 1: Add the resource in <code>core/resources.py</code></strong></p>
+</li>
+</ul>
+<p>Insert immediately after the <code>SSH_COUCHDROP = SSHResource(...)</code> block (it ends
+at the line <code>)</code> on ~line 111):</p>
+<div class="highlight"><pre><span></span><code><span class="n">SSH_FOCUS</span> <span class="o">=</span> <span class="n">SSHResource</span><span class="p">(</span>
+    <span class="n">remote_host</span><span class="o">=</span><span class="n">EnvVar</span><span class="p">(</span><span class="s2">&quot;FOCUS_SFTP_HOST&quot;</span><span class="p">),</span>
+    <span class="n">remote_port</span><span class="o">=</span><span class="mi">22</span><span class="p">,</span>
+    <span class="n">username</span><span class="o">=</span><span class="n">EnvVar</span><span class="p">(</span><span class="s2">&quot;FOCUS_SFTP_USERNAME&quot;</span><span class="p">),</span>
+    <span class="n">password</span><span class="o">=</span><span class="n">EnvVar</span><span class="p">(</span><span class="s2">&quot;FOCUS_SFTP_PASSWORD&quot;</span><span class="p">),</span>
+<span class="p">)</span>
+</code></pre></div>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 2: Import it in <code>kippmiami/definitions.py</code></strong></li>
+</ul>
+<p>In the <code>from teamster.core.resources import (...)</code> block, add <code>SSH_FOCUS</code> to the
+alphabetical list (before <code>SSH_COUCHDROP</code>):</p>
+<div class="highlight"><pre><span></span><code>    <span class="n">SSH_FOCUS</span><span class="p">,</span>
+    <span class="n">SSH_COUCHDROP</span><span class="p">,</span>
+    <span class="n">SSH_IREADY</span><span class="p">,</span>
+    <span class="n">SSH_RENLEARN</span><span class="p">,</span>
+</code></pre></div>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 3: Wire it into the resources dict</strong></li>
+</ul>
+<p>In the <code>resources={...}</code> dict, add the <code>ssh_focus</code> entry (keep keys ordered):</p>
+<div class="highlight"><pre><span></span><code>        <span class="s2">&quot;ssh_couchdrop&quot;</span><span class="p">:</span> <span class="n">SSH_COUCHDROP</span><span class="p">,</span>
+        <span class="s2">&quot;ssh_focus&quot;</span><span class="p">:</span> <span class="n">SSH_FOCUS</span><span class="p">,</span>
+        <span class="s2">&quot;ssh_iready&quot;</span><span class="p">:</span> <span class="n">SSH_IREADY</span><span class="p">,</span>
+</code></pre></div>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 4: Verify the module imports</strong></li>
+</ul>
+<p>Run: <code>uv run python -c "import teamster.code_locations.kippmiami.definitions"</code>
+Expected: exits 0, no traceback. (<code>SSH_FOCUS</code> referencing undefined env vars is
+fine — <code>EnvVar</code> is lazy and only resolved at run time.)</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 5: Commit</strong></li>
+</ul>
+<div class="highlight"><pre><span></span><code>git<span class="w"> </span>add<span class="w"> </span>src/teamster/core/resources.py<span class="w"> </span>src/teamster/code_locations/kippmiami/definitions.py
+git<span class="w"> </span>commit<span class="w"> </span>-m<span class="w"> </span><span class="s2">&quot;feat(dagster): add SSH_FOCUS resource for Focus SFTP transport&quot;</span>
+</code></pre></div>
+<hr />
+<h3 id="task-2-trim-rpt_focus__demographics-drop-tide_access_code">Task 2: Trim <code>rpt_focus__demographics</code> (drop <code>tide_access_code</code>)</h3>
+<p><strong>Files:</strong></p>
+<ul>
+<li>Modify: <code>src/dbt/kipptaf/models/extracts/focus/rpt_focus__demographics.sql:78</code></li>
+<li>Modify:
+  <code>src/dbt/kipptaf/models/extracts/focus/properties/rpt_focus__demographics.yml</code>
+  (contract col ~line 200; unit-test expects ~lines 312, 357, 402)</li>
+<li>Modify:
+  <code>src/dbt/kippmiami/models/extracts/focus/rpt_focus__demographics.sql:44</code></li>
+<li>Modify:
+  <code>src/dbt/kippmiami/models/extracts/focus/properties/rpt_focus__demographics.yml</code>
+  (the <code>tide_access_code</code> contract entry)</li>
+</ul>
+<p><strong>Interfaces:</strong></p>
+<ul class="task-list">
+<li>
+<p>Produces: <code>rpt_focus__demographics</code> now outputs exactly the 42 Focus
+  <code>DEMOGRAPHICS_LAYOUT</code> columns (Task 7's <code>header_replacements</code> map relies on
+  this set).</p>
+</li>
+<li class="task-list-item">
+<p><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 1: Drop the column from the kipptaf SQL</strong></p>
+</li>
+</ul>
+<p>Delete line 78 of
+<code>src/dbt/kipptaf/models/extracts/focus/rpt_focus__demographics.sql</code>:</p>
+<div class="highlight"><pre><span></span><code><span class="w">    </span><span class="k">cast</span><span class="p">(</span><span class="k">null</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">string</span><span class="p">)</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">tide_access_code</span><span class="p">,</span>
+</code></pre></div>
+<p>The new last column is <code>cast(null as string) as lcp_cont_stdt,</code> (line 77) — it
+keeps its trailing comma before <code>from</code>.</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 2: Drop the contract column + unit-test expects in the kipptaf
+      yml</strong></li>
+</ul>
+<p>In
+<code>src/dbt/kipptaf/models/extracts/focus/properties/rpt_focus__demographics.yml</code>:</p>
+<ul class="task-list">
+<li>Delete the entire <code>- name: tide_access_code</code> block from <code>columns:</code> (~line 200)
+  — its <code>name</code>, <code>data_type</code>, and <code>description</code> lines.</li>
+<li>
+<p>Delete the <code>tide_access_code: null,</code> line from each of the three <code>expect</code> rows
+  in <code>unit_tests</code> (~lines 312, 357, 402).</p>
+</li>
+<li class="task-list-item">
+<p><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 3: Drop the column from the kippmiami wrapper SQL</strong></p>
+</li>
+</ul>
+<p>Delete line 44 of
+<code>src/dbt/kippmiami/models/extracts/focus/rpt_focus__demographics.sql</code>:</p>
+<div class="highlight"><pre><span></span><code><span class="w">    </span><span class="n">tide_access_code</span><span class="p">,</span>
+</code></pre></div>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 4: Drop the contract column in the kippmiami wrapper yml</strong></li>
+</ul>
+<p>In
+<code>src/dbt/kippmiami/models/extracts/focus/properties/rpt_focus__demographics.yml</code>,
+delete the <code>tide_access_code</code> entry:</p>
+<div class="highlight"><pre><span></span><code><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">tide_access_code</span>
+<span class="w">  </span><span class="nt">data_type</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">string</span>
+</code></pre></div>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 5: Build + unit-test the kipptaf model</strong></li>
+</ul>
+<p>Run:
+<code>uv run dbt build --select rpt_focus__demographics --project-dir src/dbt/kipptaf --defer --state /workspaces/teamster/src/dbt/kipptaf/target/prod</code>
+Expected: PASS — model builds (contract satisfied with 42 columns) and
+<code>test_demographics_shape</code> passes.</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 6: Build the kippmiami wrapper</strong></li>
+</ul>
+<p>Run:
+<code>uv run dbt build --select rpt_focus__demographics --project-dir src/dbt/kippmiami --defer --state /workspaces/teamster/src/dbt/kippmiami/target/prod</code>
+Expected: PASS.</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 7: Commit</strong></li>
+</ul>
+<div class="highlight"><pre><span></span><code>git<span class="w"> </span>add<span class="w"> </span>src/dbt/kipptaf/models/extracts/focus/rpt_focus__demographics.sql<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>src/dbt/kipptaf/models/extracts/focus/properties/rpt_focus__demographics.yml<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>src/dbt/kippmiami/models/extracts/focus/rpt_focus__demographics.sql<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>src/dbt/kippmiami/models/extracts/focus/properties/rpt_focus__demographics.yml
+git<span class="w"> </span>commit<span class="w"> </span>-m<span class="w"> </span><span class="s2">&quot;refactor(dbt): drop tide_access_code from rpt_focus__demographics (#4207)&quot;</span>
+</code></pre></div>
+<hr />
+<h3 id="task-3-trim-rpt_focus__student_enrollment-drop-fl_days_absent_not_disc">Task 3: Trim <code>rpt_focus__student_enrollment</code> (drop <code>fl_days_absent_not_disc</code>)</h3>
+<p><strong>Files:</strong></p>
+<ul>
+<li>Modify:
+  <code>src/dbt/kipptaf/models/extracts/focus/rpt_focus__student_enrollment.sql:51</code></li>
+<li>Modify:
+  <code>src/dbt/kipptaf/models/extracts/focus/properties/rpt_focus__student_enrollment.yml</code>
+  (contract col ~line 158; unit-test expects ~lines 250, 281, 357)</li>
+<li>Modify:
+  <code>src/dbt/kippmiami/models/extracts/focus/rpt_focus__student_enrollment.sql:30</code></li>
+<li>Modify:
+  <code>src/dbt/kippmiami/models/extracts/focus/properties/rpt_focus__student_enrollment.yml</code></li>
+</ul>
+<p><strong>Interfaces:</strong></p>
+<ul class="task-list">
+<li>
+<p>Produces: <code>rpt_focus__student_enrollment</code> outputs exactly the 28 Focus
+  <code>STUDENT_ENROLLMENT_LAYOUT</code> columns.</p>
+</li>
+<li class="task-list-item">
+<p><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 1: Drop the column from the kipptaf SQL</strong></p>
+</li>
+</ul>
+<p>Delete line 51 of <code>.../kipptaf/.../rpt_focus__student_enrollment.sql</code>:</p>
+<div class="highlight"><pre><span></span><code><span class="w">    </span><span class="k">cast</span><span class="p">(</span><span class="k">null</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">int64</span><span class="p">)</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">fl_days_absent_not_disc</span><span class="p">,</span>
+</code></pre></div>
+<p>New last column: <code>cast(null as int64) as fl_days_absent,</code> (line 50).</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 2: Drop the contract column + unit-test expects in the kipptaf
+      yml</strong></li>
+</ul>
+<p>In <code>.../kipptaf/.../properties/rpt_focus__student_enrollment.yml</code>:</p>
+<ul class="task-list">
+<li>Delete the <code>- name: fl_days_absent_not_disc</code> contract block (~line 158).</li>
+<li>
+<p>Delete <code>fl_days_absent_not_disc: null,</code> from each of the three <code>expect</code> rows
+  (~lines 250, 281, 357) across <code>test_student_enrollment_shape</code> and
+  <code>test_student_enrollment_transfer_out</code>.</p>
+</li>
+<li class="task-list-item">
+<p><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 3: Drop the column from the kippmiami wrapper SQL</strong></p>
+</li>
+</ul>
+<p>Delete line 30 of <code>.../kippmiami/.../rpt_focus__student_enrollment.sql</code>:</p>
+<div class="highlight"><pre><span></span><code><span class="w">    </span><span class="n">fl_days_absent_not_disc</span><span class="p">,</span>
+</code></pre></div>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 4: Drop the contract column in the kippmiami wrapper yml</strong></li>
+</ul>
+<p>Delete the <code>fl_days_absent_not_disc</code> entry from
+<code>.../kippmiami/.../properties/rpt_focus__student_enrollment.yml</code>:</p>
+<div class="highlight"><pre><span></span><code><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">fl_days_absent_not_disc</span>
+<span class="w">  </span><span class="nt">data_type</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">int64</span>
+</code></pre></div>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 5: Build + unit-test the kipptaf model</strong></li>
+</ul>
+<p>Run:
+<code>uv run dbt build --select rpt_focus__student_enrollment --project-dir src/dbt/kipptaf --defer --state /workspaces/teamster/src/dbt/kipptaf/target/prod</code>
+Expected: PASS — both unit tests pass, contract satisfied with 28 columns.</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 6: Build the kippmiami wrapper</strong></li>
+</ul>
+<p>Run:
+<code>uv run dbt build --select rpt_focus__student_enrollment --project-dir src/dbt/kippmiami --defer --state /workspaces/teamster/src/dbt/kippmiami/target/prod</code>
+Expected: PASS.</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 7: Commit</strong></li>
+</ul>
+<div class="highlight"><pre><span></span><code>git<span class="w"> </span>add<span class="w"> </span>src/dbt/kipptaf/models/extracts/focus/rpt_focus__student_enrollment.sql<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>src/dbt/kipptaf/models/extracts/focus/properties/rpt_focus__student_enrollment.yml<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>src/dbt/kippmiami/models/extracts/focus/rpt_focus__student_enrollment.sql<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>src/dbt/kippmiami/models/extracts/focus/properties/rpt_focus__student_enrollment.yml
+git<span class="w"> </span>commit<span class="w"> </span>-m<span class="w"> </span><span class="s2">&quot;refactor(dbt): drop fl_days_absent_not_disc from rpt_focus__student_enrollment (#4207)&quot;</span>
+</code></pre></div>
+<hr />
+<h3 id="task-4-trim-rpt_focus__addresses-drop-mail_zipcode">Task 4: Trim <code>rpt_focus__addresses</code> (drop <code>mail_zipcode</code>)</h3>
+<p><strong>Files:</strong></p>
+<ul>
+<li>Modify: <code>src/dbt/kipptaf/models/extracts/focus/rpt_focus__addresses.sql:19</code></li>
+<li>Modify:
+  <code>src/dbt/kipptaf/models/extracts/focus/properties/rpt_focus__addresses.yml</code>
+  (contract col ~line 64; unit-test expect ~line 105)</li>
+<li>Modify: <code>src/dbt/kippmiami/models/extracts/focus/rpt_focus__addresses.sql:14</code></li>
+<li>Modify:
+  <code>src/dbt/kippmiami/models/extracts/focus/properties/rpt_focus__addresses.yml:28-29</code></li>
+</ul>
+<p><strong>Interfaces:</strong></p>
+<ul class="task-list">
+<li>
+<p>Produces: <code>rpt_focus__addresses</code> outputs exactly the 12 Focus <code>ADDRESS_LAYOUT</code>
+  columns.</p>
+</li>
+<li class="task-list-item">
+<p><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 1: Drop the column from the kipptaf SQL</strong></p>
+</li>
+</ul>
+<p>Delete line 19 of <code>.../kipptaf/.../rpt_focus__addresses.sql</code>:</p>
+<div class="highlight"><pre><span></span><code><span class="w">    </span><span class="k">cast</span><span class="p">(</span><span class="k">null</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">string</span><span class="p">)</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">mail_zipcode</span><span class="p">,</span>
+</code></pre></div>
+<p>New last column: <code>cast(null as string) as mail_state,</code> (line 18).</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 2: Drop the contract column + unit-test expect in the kipptaf yml</strong></li>
+</ul>
+<p>In <code>.../kipptaf/.../properties/rpt_focus__addresses.yml</code>:</p>
+<ul class="task-list">
+<li>Delete the <code>- name: mail_zipcode</code> contract block (~line 64).</li>
+<li>
+<p>Delete <code>mail_zipcode: null,</code> from the <code>test_addresses_shape</code> expect row (~line
+  105).</p>
+</li>
+<li class="task-list-item">
+<p><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 3: Drop the column from the kippmiami wrapper SQL</strong></p>
+</li>
+</ul>
+<p>Delete line 14 of <code>.../kippmiami/.../rpt_focus__addresses.sql</code>:</p>
+<div class="highlight"><pre><span></span><code><span class="w">    </span><span class="n">mail_zipcode</span><span class="p">,</span>
+</code></pre></div>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 4: Drop the contract column in the kippmiami wrapper yml</strong></li>
+</ul>
+<p>Delete lines 28-29 of <code>.../kippmiami/.../properties/rpt_focus__addresses.yml</code>:</p>
+<div class="highlight"><pre><span></span><code><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">mail_zipcode</span>
+<span class="w">  </span><span class="nt">data_type</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">string</span>
+</code></pre></div>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 5: Build + unit-test the kipptaf model</strong></li>
+</ul>
+<p>Run:
+<code>uv run dbt build --select rpt_focus__addresses --project-dir src/dbt/kipptaf --defer --state /workspaces/teamster/src/dbt/kipptaf/target/prod</code>
+Expected: PASS.</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 6: Build the kippmiami wrapper</strong></li>
+</ul>
+<p>Run:
+<code>uv run dbt build --select rpt_focus__addresses --project-dir src/dbt/kippmiami --defer --state /workspaces/teamster/src/dbt/kippmiami/target/prod</code>
+Expected: PASS.</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 7: Commit</strong></li>
+</ul>
+<div class="highlight"><pre><span></span><code>git<span class="w"> </span>add<span class="w"> </span>src/dbt/kipptaf/models/extracts/focus/rpt_focus__addresses.sql<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>src/dbt/kipptaf/models/extracts/focus/properties/rpt_focus__addresses.yml<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>src/dbt/kippmiami/models/extracts/focus/rpt_focus__addresses.sql<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>src/dbt/kippmiami/models/extracts/focus/properties/rpt_focus__addresses.yml
+git<span class="w"> </span>commit<span class="w"> </span>-m<span class="w"> </span><span class="s2">&quot;refactor(dbt): drop mail_zipcode from rpt_focus__addresses (#4207)&quot;</span>
+</code></pre></div>
+<hr />
+<h3 id="task-5-trim-rpt_focus__contacts-drop-contact7_callout">Task 5: Trim <code>rpt_focus__contacts</code> (drop <code>contact7_callout</code>)</h3>
+<p><strong>Files:</strong></p>
+<ul>
+<li>Modify: <code>src/dbt/kipptaf/models/extracts/focus/rpt_focus__contacts.sql:66</code></li>
+<li>Modify:
+  <code>src/dbt/kipptaf/models/extracts/focus/properties/rpt_focus__contacts.yml</code>
+  (description ~line 11; contract col ~lines 252-256; unit-test expects ~lines
+  379, 432)</li>
+<li>Modify: <code>src/dbt/kippmiami/models/extracts/focus/rpt_focus__contacts.sql</code>
+  (last column line, <code>contact7_callout,</code>)</li>
+<li>Modify:
+  <code>src/dbt/kippmiami/models/extracts/focus/properties/rpt_focus__contacts.yml</code></li>
+</ul>
+<p><strong>Interfaces:</strong></p>
+<ul>
+<li>Produces: <code>rpt_focus__contacts</code> outputs exactly the 50 Focus <code>CONTACTS_LAYOUT</code>
+  columns.</li>
+</ul>
+<blockquote>
+<p>Note: <code>contact7_callout</code> is dropped per the parsed Focus layout (50 fields;
+contacts 1–6 have a callout, contact 7 does not). Per the spec this asymmetry
+is flagged for a Focus sanity-check; proceed with the drop and raise it if the
+sanity-check later contradicts.</p>
+</blockquote>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 1: Drop the column from the kipptaf SQL</strong></li>
+</ul>
+<p>Delete line 66 of <code>.../kipptaf/.../rpt_focus__contacts.sql</code>:</p>
+<div class="highlight"><pre><span></span><code><span class="w">    </span><span class="k">cast</span><span class="p">(</span><span class="k">null</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">string</span><span class="p">)</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">contact7_callout</span><span class="p">,</span>
+</code></pre></div>
+<p>New last column: <code>cast(null as string) as contact7_unlisted,</code> (line 65).</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 2: Update the kipptaf yml — description, contract, unit-test
+      expects</strong></li>
+</ul>
+<p>In <code>.../kipptaf/.../properties/rpt_focus__contacts.yml</code>:</p>
+<ul class="task-list">
+<li>In the model <code>description</code> (~line 11), change "Produces 51 columns in" to
+  "Produces 50 columns in".</li>
+<li>Delete the <code>- name: contact7_callout</code> contract block (~lines 252-256).</li>
+<li>
+<p>Delete <code>contact7_callout: null,</code> from both <code>expect</code> rows in
+  <code>test_contacts_two_guardians</code> (~lines 379, 432).</p>
+</li>
+<li class="task-list-item">
+<p><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 3: Drop the column from the kippmiami wrapper SQL</strong></p>
+</li>
+</ul>
+<p>In <code>.../kippmiami/.../rpt_focus__contacts.sql</code>, delete the last column line:</p>
+<div class="highlight"><pre><span></span><code><span class="w">    </span><span class="n">contact7_callout</span><span class="p">,</span>
+</code></pre></div>
+<p>New last column: <code>contact7_unlisted,</code>.</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 4: Drop the contract column in the kippmiami wrapper yml</strong></li>
+</ul>
+<p>Delete the <code>contact7_callout</code> entry from
+<code>.../kippmiami/.../properties/rpt_focus__contacts.yml</code>:</p>
+<div class="highlight"><pre><span></span><code><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">contact7_callout</span>
+<span class="w">  </span><span class="nt">data_type</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">string</span>
+</code></pre></div>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 5: Build + unit-test the kipptaf model</strong></li>
+</ul>
+<p>Run:
+<code>uv run dbt build --select rpt_focus__contacts --project-dir src/dbt/kipptaf --defer --state /workspaces/teamster/src/dbt/kipptaf/target/prod</code>
+Expected: PASS — <code>test_contacts_two_guardians</code> passes with 50-column expect
+rows.</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 6: Build the kippmiami wrapper</strong></li>
+</ul>
+<p>Run:
+<code>uv run dbt build --select rpt_focus__contacts --project-dir src/dbt/kippmiami --defer --state /workspaces/teamster/src/dbt/kippmiami/target/prod</code>
+Expected: PASS.</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 7: Commit</strong></li>
+</ul>
+<div class="highlight"><pre><span></span><code>git<span class="w"> </span>add<span class="w"> </span>src/dbt/kipptaf/models/extracts/focus/rpt_focus__contacts.sql<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>src/dbt/kipptaf/models/extracts/focus/properties/rpt_focus__contacts.yml<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>src/dbt/kippmiami/models/extracts/focus/rpt_focus__contacts.sql<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>src/dbt/kippmiami/models/extracts/focus/properties/rpt_focus__contacts.yml
+git<span class="w"> </span>commit<span class="w"> </span>-m<span class="w"> </span><span class="s2">&quot;refactor(dbt): drop contact7_callout from rpt_focus__contacts (#4207)&quot;</span>
+</code></pre></div>
+<hr />
+<h3 id="task-6-trim-rpt_focus__linked_students-drop-relationship">Task 6: Trim <code>rpt_focus__linked_students</code> (drop <code>relationship</code>)</h3>
+<p><strong>Files:</strong></p>
+<ul>
+<li>Modify:
+  <code>src/dbt/kipptaf/models/extracts/focus/rpt_focus__linked_students.sql:10</code></li>
+<li>Modify:
+  <code>src/dbt/kipptaf/models/extracts/focus/properties/rpt_focus__linked_students.yml</code>
+  (contract col ~line 37)</li>
+<li>Modify:
+  <code>src/dbt/kippmiami/models/extracts/focus/rpt_focus__linked_students.sql:1</code></li>
+<li>Modify:
+  <code>src/dbt/kippmiami/models/extracts/focus/properties/rpt_focus__linked_students.yml</code></li>
+</ul>
+<p><strong>Interfaces:</strong></p>
+<ul>
+<li>Produces: <code>rpt_focus__linked_students</code> outputs exactly the 2 Focus
+  <code>LINKED_STUDENTS</code> columns.</li>
+</ul>
+<blockquote>
+<p>Note: the model is dormant (<code>where ... and false</code>, returns no rows) and its
+unit test <code>test_linked_students_dormant_until_stdt_id</code> expects zero rows — so
+no <code>expect</code>-row edit is needed, only the SQL and contract.</p>
+</blockquote>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 1: Drop the column from the kipptaf SQL</strong></li>
+</ul>
+<p>Delete line 10 of <code>.../kipptaf/.../rpt_focus__linked_students.sql</code>:</p>
+<div class="highlight"><pre><span></span><code><span class="w">    </span><span class="s1">&#39;sibling&#39;</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">relationship</span><span class="p">,</span>
+</code></pre></div>
+<p>New last column: <code>cast(null as string) as secondary_student_id,</code> (line 8).</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 2: Drop the contract column in the kipptaf yml</strong></li>
+</ul>
+<p>In <code>.../kipptaf/.../properties/rpt_focus__linked_students.yml</code>, delete the
+<code>- name: relationship</code> contract block (~lines 37-40, includes its description).
+Confirm no <code>expect</code> row references <code>relationship</code>
+(<code>grep -n "relationship" &lt;file&gt;</code> should show only the model-level description
+and the input ref).</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 3: Drop the column from the kippmiami wrapper SQL</strong></li>
+</ul>
+<p>Edit line 1 of <code>.../kippmiami/.../rpt_focus__linked_students.sql</code>:</p>
+<div class="highlight"><pre><span></span><code><span class="k">select</span><span class="w"> </span><span class="n">primary_student_id</span><span class="p">,</span><span class="w"> </span><span class="n">secondary_student_id</span><span class="p">,</span>
+</code></pre></div>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 4: Drop the contract column in the kippmiami wrapper yml</strong></li>
+</ul>
+<p>Delete the <code>relationship</code> entry from
+<code>.../kippmiami/.../properties/rpt_focus__linked_students.yml</code>:</p>
+<div class="highlight"><pre><span></span><code><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">relationship</span>
+<span class="w">  </span><span class="nt">data_type</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">string</span>
+</code></pre></div>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 5: Build + unit-test the kipptaf model</strong></li>
+</ul>
+<p>Run:
+<code>uv run dbt build --select rpt_focus__linked_students --project-dir src/dbt/kipptaf --defer --state /workspaces/teamster/src/dbt/kipptaf/target/prod</code>
+Expected: PASS — dormant unit test passes, contract satisfied with 2 columns.</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 6: Build the kippmiami wrapper</strong></li>
+</ul>
+<p>Run:
+<code>uv run dbt build --select rpt_focus__linked_students --project-dir src/dbt/kippmiami --defer --state /workspaces/teamster/src/dbt/kippmiami/target/prod</code>
+Expected: PASS.</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 7: Commit</strong></li>
+</ul>
+<div class="highlight"><pre><span></span><code>git<span class="w"> </span>add<span class="w"> </span>src/dbt/kipptaf/models/extracts/focus/rpt_focus__linked_students.sql<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>src/dbt/kipptaf/models/extracts/focus/properties/rpt_focus__linked_students.yml<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>src/dbt/kippmiami/models/extracts/focus/rpt_focus__linked_students.sql<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>src/dbt/kippmiami/models/extracts/focus/properties/rpt_focus__linked_students.yml
+git<span class="w"> </span>commit<span class="w"> </span>-m<span class="w"> </span><span class="s2">&quot;refactor(dbt): drop relationship from rpt_focus__linked_students (#4207)&quot;</span>
+</code></pre></div>
+<hr />
+<h3 id="task-7-focus-sftp-extract-assets">Task 7: Focus SFTP extract assets</h3>
+<p><strong>Files:</strong></p>
+<ul>
+<li>Create: <code>src/teamster/code_locations/kippmiami/extracts/config/focus.yaml</code></li>
+<li>Modify: <code>src/teamster/code_locations/kippmiami/extracts/assets.py</code></li>
+<li>Modify: <code>src/teamster/code_locations/kippmiami/extracts/jobs.py</code></li>
+<li>Modify: <code>src/teamster/code_locations/kippmiami/extracts/schedules.py</code></li>
+</ul>
+<p><strong>Interfaces:</strong></p>
+<ul>
+<li>Consumes: the <code>ssh_focus</code> resource (Task 1); the trimmed
+  <code>kippmiami_extracts.rpt_focus__*</code> tables (Tasks 2-6).</li>
+<li>Produces: five assets <code>kippmiami/extracts/focus/&lt;stem&gt;_csv</code>, a job
+  <code>kippmiami__extracts__focus__asset_job</code>, and a STOPPED schedule
+  <code>focus_extract_assets_schedule</code>, all auto-collected by <code>definitions.py</code> via
+  <code>extracts.schedules</code> and <code>load_assets_from_modules</code>.</li>
+</ul>
+<blockquote>
+<p><strong>Filename + path are unconfirmed (Open items in the spec).</strong> The values below
+(<code>stem</code> = lowercase layout name, <code>path: incoming</code>) are working defaults.
+Confirm the exact filenames Focus expects and the incoming directory with
+Ops/registrar before the schedule is enabled; they are trivial YAML edits. The
+schedule ships STOPPED, so these defaults cannot push anything until someone
+enables it.</p>
+</blockquote>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 1: Create <code>config/focus.yaml</code></strong></li>
+</ul>
+<p>Create <code>src/teamster/code_locations/kippmiami/extracts/config/focus.yaml</code>:</p>
+<div class="highlight"><pre><span></span><code><span class="nt">assets</span><span class="p">:</span>
+<span class="w">  </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">query_config</span><span class="p">:</span>
+<span class="w">      </span><span class="nt">type</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">schema</span>
+<span class="w">      </span><span class="nt">value</span><span class="p">:</span>
+<span class="w">        </span><span class="nt">table</span><span class="p">:</span>
+<span class="w">          </span><span class="nt">schema</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">kippmiami_extracts</span>
+<span class="w">          </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">rpt_focus__demographics</span>
+<span class="w">    </span><span class="nt">file_config</span><span class="p">:</span>
+<span class="w">      </span><span class="nt">stem</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">demographics</span>
+<span class="w">      </span><span class="nt">suffix</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">csv</span>
+<span class="w">      </span><span class="nt">format</span><span class="p">:</span>
+<span class="w">        </span><span class="nt">header_replacements</span><span class="p">:</span>
+<span class="w">          </span><span class="nt">stdt_id</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">STDT_ID</span>
+<span class="w">          </span><span class="nt">last_name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">LAST_NAME</span>
+<span class="w">          </span><span class="nt">first_name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">FIRST_NAME</span>
+<span class="w">          </span><span class="nt">name_suffix</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">NAME_SUFFIX</span>
+<span class="w">          </span><span class="nt">middle_name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">MIDDLE_NAME</span>
+<span class="w">          </span><span class="nt">nickname</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">NICKNAME</span>
+<span class="w">          </span><span class="nt">dt_birth</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">DT_BIRTH</span>
+<span class="w">          </span><span class="nt">gender</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">GENDER</span>
+<span class="w">          </span><span class="nt">lang</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">LANG</span>
+<span class="w">          </span><span class="nt">stdt_email</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">STDT_EMAIL</span>
+<span class="w">          </span><span class="nt">ethnic_hl</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">ETHNIC_HL</span>
+<span class="w">          </span><span class="nt">single_ethnic</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">SINGLE_ETHNIC</span>
+<span class="w">          </span><span class="nt">race_am_ind_ak_nat</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">RACE_AM_IND_AK_NAT</span>
+<span class="w">          </span><span class="nt">race_asian</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">RACE_ASIAN</span>
+<span class="w">          </span><span class="nt">race_black</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">RACE_BLACK</span>
+<span class="w">          </span><span class="nt">race_nat_haw_pac_isl</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">RACE_NAT_HAW_PAC_ISL</span>
+<span class="w">          </span><span class="nt">race_white</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">RACE_WHITE</span>
+<span class="w">          </span><span class="nt">residence_county</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">RESIDENCE_COUNTY</span>
+<span class="w">          </span><span class="nt">contry_birth</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">CONTRY_BIRTH</span>
+<span class="w">          </span><span class="nt">homeroom_tchr</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">HOMEROOM_TCHR</span>
+<span class="w">          </span><span class="nt">resident_st</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">RESIDENT_ST</span>
+<span class="w">          </span><span class="nt">birth_loc</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">BIRTH_LOC</span>
+<span class="w">          </span><span class="nt">bdate_verif</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">BDATE_VERIF</span>
+<span class="w">          </span><span class="nt">immun_st</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">IMMUN_ST</span>
+<span class="w">          </span><span class="nt">primary_home_lang</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">PRIMARY_HOME_LANG</span>
+<span class="w">          </span><span class="nt">native_parent_lang</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">NATIVE_PARENT_LANG</span>
+<span class="w">          </span><span class="nt">grde_enter_dist</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">GRDE_ENTER_DIST</span>
+<span class="w">          </span><span class="nt">msix_id</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">MSIX_ID</span>
+<span class="w">          </span><span class="nt">homeroom</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">HOMEROOM</span>
+<span class="w">          </span><span class="nt">pmrn</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">PMRN</span>
+<span class="w">          </span><span class="nt">internt_perm</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">INTERNT_PERM</span>
+<span class="w">          </span><span class="nt">act_perm</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">ACT_PERM</span>
+<span class="w">          </span><span class="nt">direct_perm</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">DIRECT_PERM</span>
+<span class="w">          </span><span class="nt">screen_perm</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">SCREEN_PERM</span>
+<span class="w">          </span><span class="nt">photo_vid_perm</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">PHOTO_VID_PERM</span>
+<span class="w">          </span><span class="nt">survey_perm</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">SURVEY_PERM</span>
+<span class="w">          </span><span class="nt">mckay_sch_attend</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">MCKAY_SCH_ATTEND</span>
+<span class="w">          </span><span class="nt">fhsaa_el3_ind</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">FHSAA_EL3_IND</span>
+<span class="w">          </span><span class="nt">fhsaa_el3ch_ind</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">FHSAA_EL3CH_IND</span>
+<span class="w">          </span><span class="nt">dt_home_lang_survey</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">DT_HOME_LANG_SURVEY</span>
+<span class="w">          </span><span class="nt">casas_track</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">CASAS_TRACK</span>
+<span class="w">          </span><span class="nt">lcp_cont_stdt</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">LCP_CONT_STDT</span>
+<span class="w">    </span><span class="nt">destination_config</span><span class="p">:</span>
+<span class="w">      </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">focus</span>
+<span class="w">      </span><span class="nt">path</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">incoming</span>
+<span class="w">  </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">query_config</span><span class="p">:</span>
+<span class="w">      </span><span class="nt">type</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">schema</span>
+<span class="w">      </span><span class="nt">value</span><span class="p">:</span>
+<span class="w">        </span><span class="nt">table</span><span class="p">:</span>
+<span class="w">          </span><span class="nt">schema</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">kippmiami_extracts</span>
+<span class="w">          </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">rpt_focus__student_enrollment</span>
+<span class="w">    </span><span class="nt">file_config</span><span class="p">:</span>
+<span class="w">      </span><span class="nt">stem</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">student_enrollment</span>
+<span class="w">      </span><span class="nt">suffix</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">csv</span>
+<span class="w">      </span><span class="nt">format</span><span class="p">:</span>
+<span class="w">        </span><span class="nt">header_replacements</span><span class="p">:</span>
+<span class="w">          </span><span class="nt">syear</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">SYEAR</span>
+<span class="w">          </span><span class="nt">school_id</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">SCHOOL_ID</span>
+<span class="w">          </span><span class="nt">student_id</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">STUDENT_ID</span>
+<span class="w">          </span><span class="nt">grade_id</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">GRADE_ID</span>
+<span class="w">          </span><span class="nt">start_date</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">START_DATE</span>
+<span class="w">          </span><span class="nt">enrollment_code</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">ENROLLMENT_CODE</span>
+<span class="w">          </span><span class="nt">end_date</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">END_DATE</span>
+<span class="w">          </span><span class="nt">drop_code</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">DROP_CODE</span>
+<span class="w">          </span><span class="nt">calendar_id</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">CALENDAR_ID</span>
+<span class="w">          </span><span class="nt">prior_dist</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">PRIOR_DIST</span>
+<span class="w">          </span><span class="nt">prior_state</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">PRIOR_STATE</span>
+<span class="w">          </span><span class="nt">prior_country</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">PRIOR_COUNTRY</span>
+<span class="w">          </span><span class="nt">ed_choice</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">ED_CHOICE</span>
+<span class="w">          </span><span class="nt">stdt_dis_affect</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">STDT_DIS_AFFECT</span>
+<span class="w">          </span><span class="nt">offender_transfer_stdt</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">OFFENDER_TRANSFER_STDT</span>
+<span class="w">          </span><span class="nt">came_from</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">CAME_FROM</span>
+<span class="w">          </span><span class="nt">moved_to</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">MOVED_TO</span>
+<span class="w">          </span><span class="nt">sec_sch</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">SEC_SCH</span>
+<span class="w">          </span><span class="nt">grde_prom_st</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">GRDE_PROM_ST</span>
+<span class="w">          </span><span class="nt">good_cause_exempt</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">GOOD_CAUSE_EXEMPT</span>
+<span class="w">          </span><span class="nt">graduation_requirement_program</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">GRADUATION_REQUIREMENT_PROGRAM</span>
+<span class="w">          </span><span class="nt">next_school</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">NEXT_SCHOOL</span>
+<span class="w">          </span><span class="nt">next_grade</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">NEXT_GRADE</span>
+<span class="w">          </span><span class="nt">district_ood</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">DISTRICT_OOD</span>
+<span class="w">          </span><span class="nt">sch_ood</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">SCH_OOD</span>
+<span class="w">          </span><span class="nt">include_in_class_rank</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">INCLUDE_IN_CLASS_RANK</span>
+<span class="w">          </span><span class="nt">fl_days_present</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">FL_DAYS_PRESENT</span>
+<span class="w">          </span><span class="nt">fl_days_absent</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">FL_DAYS_ABSENT</span>
+<span class="w">    </span><span class="nt">destination_config</span><span class="p">:</span>
+<span class="w">      </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">focus</span>
+<span class="w">      </span><span class="nt">path</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">incoming</span>
+<span class="w">  </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">query_config</span><span class="p">:</span>
+<span class="w">      </span><span class="nt">type</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">schema</span>
+<span class="w">      </span><span class="nt">value</span><span class="p">:</span>
+<span class="w">        </span><span class="nt">table</span><span class="p">:</span>
+<span class="w">          </span><span class="nt">schema</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">kippmiami_extracts</span>
+<span class="w">          </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">rpt_focus__addresses</span>
+<span class="w">    </span><span class="nt">file_config</span><span class="p">:</span>
+<span class="w">      </span><span class="nt">stem</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">addresses</span>
+<span class="w">      </span><span class="nt">suffix</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">csv</span>
+<span class="w">      </span><span class="nt">format</span><span class="p">:</span>
+<span class="w">        </span><span class="nt">header_replacements</span><span class="p">:</span>
+<span class="w">          </span><span class="nt">student_id</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">STUDENT_ID</span>
+<span class="w">          </span><span class="nt">address</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">ADDRESS</span>
+<span class="w">          </span><span class="nt">address2</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">ADDRESS2</span>
+<span class="w">          </span><span class="nt">city</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">CITY</span>
+<span class="w">          </span><span class="nt">state</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">STATE</span>
+<span class="w">          </span><span class="nt">zipcode</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">ZIPCODE</span>
+<span class="w">          </span><span class="nt">phone</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">PHONE</span>
+<span class="w">          </span><span class="nt">mailing</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">MAILING</span>
+<span class="w">          </span><span class="nt">mail_address</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">MAIL_ADDRESS</span>
+<span class="w">          </span><span class="nt">mail_address2</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">MAIL_ADDRESS2</span>
+<span class="w">          </span><span class="nt">mail_city</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">MAIL_CITY</span>
+<span class="w">          </span><span class="nt">mail_state</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">MAIL_STATE</span>
+<span class="w">    </span><span class="nt">destination_config</span><span class="p">:</span>
+<span class="w">      </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">focus</span>
+<span class="w">      </span><span class="nt">path</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">incoming</span>
+<span class="w">  </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">query_config</span><span class="p">:</span>
+<span class="w">      </span><span class="nt">type</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">schema</span>
+<span class="w">      </span><span class="nt">value</span><span class="p">:</span>
+<span class="w">        </span><span class="nt">table</span><span class="p">:</span>
+<span class="w">          </span><span class="nt">schema</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">kippmiami_extracts</span>
+<span class="w">          </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">rpt_focus__contacts</span>
+<span class="w">    </span><span class="nt">file_config</span><span class="p">:</span>
+<span class="w">      </span><span class="nt">stem</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">contacts</span>
+<span class="w">      </span><span class="nt">suffix</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">csv</span>
+<span class="w">      </span><span class="nt">format</span><span class="p">:</span>
+<span class="w">        </span><span class="nt">header_replacements</span><span class="p">:</span>
+<span class="w">          </span><span class="nt">student_id</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">STUDENT_ID</span>
+<span class="w">          </span><span class="nt">student_relation</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">STUDENT_RELATION</span>
+<span class="w">          </span><span class="nt">sort_order</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">SORT_ORDER</span>
+<span class="w">          </span><span class="nt">first_name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">FIRST_NAME</span>
+<span class="w">          </span><span class="nt">middle_name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">MIDDLE_NAME</span>
+<span class="w">          </span><span class="nt">last_name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">LAST_NAME</span>
+<span class="w">          </span><span class="nt">resides_with_stud</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">RESIDES_WITH_STUD</span>
+<span class="w">          </span><span class="nt">custody</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">CUSTODY</span>
+<span class="w">          </span><span class="nt">emergency</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">EMERGENCY</span>
+<span class="w">          </span><span class="nt">pickup</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">PICKUP</span>
+<span class="w">          </span><span class="nt">address</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">ADDRESS</span>
+<span class="w">          </span><span class="nt">address2</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">ADDRESS2</span>
+<span class="w">          </span><span class="nt">city</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">CITY</span>
+<span class="w">          </span><span class="nt">state</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">STATE</span>
+<span class="w">          </span><span class="nt">zipcode</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">ZIPCODE</span>
+<span class="w">          </span><span class="nt">email</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">EMAIL</span>
+<span class="w">          </span><span class="nt">contact1_type</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">CONTACT1_TYPE</span>
+<span class="w">          </span><span class="nt">contact1_value</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">CONTACT1_VALUE</span>
+<span class="w">          </span><span class="nt">contact1_blocked</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">CONTACT1_BLOCKED</span>
+<span class="w">          </span><span class="nt">contact1_unlisted</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">CONTACT1_UNLISTED</span>
+<span class="w">          </span><span class="nt">contact1_callout</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">CONTACT1_CALLOUT</span>
+<span class="w">          </span><span class="nt">contact2_type</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">CONTACT2_TYPE</span>
+<span class="w">          </span><span class="nt">contact2_value</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">CONTACT2_VALUE</span>
+<span class="w">          </span><span class="nt">contact2_blocked</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">CONTACT2_BLOCKED</span>
+<span class="w">          </span><span class="nt">contact2_unlisted</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">CONTACT2_UNLISTED</span>
+<span class="w">          </span><span class="nt">contact2_callout</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">CONTACT2_CALLOUT</span>
+<span class="w">          </span><span class="nt">contact3_type</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">CONTACT3_TYPE</span>
+<span class="w">          </span><span class="nt">contact3_value</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">CONTACT3_VALUE</span>
+<span class="w">          </span><span class="nt">contact3_blocked</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">CONTACT3_BLOCKED</span>
+<span class="w">          </span><span class="nt">contact3_unlisted</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">CONTACT3_UNLISTED</span>
+<span class="w">          </span><span class="nt">contact3_callout</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">CONTACT3_CALLOUT</span>
+<span class="w">          </span><span class="nt">contact4_type</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">CONTACT4_TYPE</span>
+<span class="w">          </span><span class="nt">contact4_value</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">CONTACT4_VALUE</span>
+<span class="w">          </span><span class="nt">contact4_blocked</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">CONTACT4_BLOCKED</span>
+<span class="w">          </span><span class="nt">contact4_unlisted</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">CONTACT4_UNLISTED</span>
+<span class="w">          </span><span class="nt">contact4_callout</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">CONTACT4_CALLOUT</span>
+<span class="w">          </span><span class="nt">contact5_type</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">CONTACT5_TYPE</span>
+<span class="w">          </span><span class="nt">contact5_value</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">CONTACT5_VALUE</span>
+<span class="w">          </span><span class="nt">contact5_blocked</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">CONTACT5_BLOCKED</span>
+<span class="w">          </span><span class="nt">contact5_unlisted</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">CONTACT5_UNLISTED</span>
+<span class="w">          </span><span class="nt">contact5_callout</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">CONTACT5_CALLOUT</span>
+<span class="w">          </span><span class="nt">contact6_type</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">CONTACT6_TYPE</span>
+<span class="w">          </span><span class="nt">contact6_value</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">CONTACT6_VALUE</span>
+<span class="w">          </span><span class="nt">contact6_blocked</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">CONTACT6_BLOCKED</span>
+<span class="w">          </span><span class="nt">contact6_unlisted</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">CONTACT6_UNLISTED</span>
+<span class="w">          </span><span class="nt">contact6_callout</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">CONTACT6_CALLOUT</span>
+<span class="w">          </span><span class="nt">contact7_type</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">CONTACT7_TYPE</span>
+<span class="w">          </span><span class="nt">contact7_value</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">CONTACT7_VALUE</span>
+<span class="w">          </span><span class="nt">contact7_blocked</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">CONTACT7_BLOCKED</span>
+<span class="w">          </span><span class="nt">contact7_unlisted</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">CONTACT7_UNLISTED</span>
+<span class="w">    </span><span class="nt">destination_config</span><span class="p">:</span>
+<span class="w">      </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">focus</span>
+<span class="w">      </span><span class="nt">path</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">incoming</span>
+<span class="w">  </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">query_config</span><span class="p">:</span>
+<span class="w">      </span><span class="nt">type</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">schema</span>
+<span class="w">      </span><span class="nt">value</span><span class="p">:</span>
+<span class="w">        </span><span class="nt">table</span><span class="p">:</span>
+<span class="w">          </span><span class="nt">schema</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">kippmiami_extracts</span>
+<span class="w">          </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">rpt_focus__linked_students</span>
+<span class="w">    </span><span class="nt">file_config</span><span class="p">:</span>
+<span class="w">      </span><span class="nt">stem</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">linked_students</span>
+<span class="w">      </span><span class="nt">suffix</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">csv</span>
+<span class="w">      </span><span class="nt">format</span><span class="p">:</span>
+<span class="w">        </span><span class="nt">header_replacements</span><span class="p">:</span>
+<span class="w">          </span><span class="nt">primary_student_id</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">PRIMARY_STUDENT_ID</span>
+<span class="w">          </span><span class="nt">secondary_student_id</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">SECONDARY_STUDENT_ID</span>
+<span class="w">    </span><span class="nt">destination_config</span><span class="p">:</span>
+<span class="w">      </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">focus</span>
+<span class="w">      </span><span class="nt">path</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">incoming</span>
+</code></pre></div>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 2: Wire the assets in <code>assets.py</code></strong></li>
+</ul>
+<p>Replace the contents of
+<code>src/teamster/code_locations/kippmiami/extracts/assets.py</code> with:</p>
+<div class="highlight"><pre><span></span><code><span class="kn">import</span><span class="w"> </span><span class="nn">pathlib</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">dagster</span><span class="w"> </span><span class="kn">import</span> <span class="n">config_from_files</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">teamster.code_locations.kippmiami</span><span class="w"> </span><span class="kn">import</span> <span class="n">CODE_LOCATION</span><span class="p">,</span> <span class="n">LOCAL_TIMEZONE</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">teamster.libraries.extracts.assets</span><span class="w"> </span><span class="kn">import</span> <span class="n">build_bigquery_query_sftp_asset</span>
+
+<span class="n">config_dir</span> <span class="o">=</span> <span class="n">pathlib</span><span class="o">.</span><span class="n">Path</span><span class="p">(</span><span class="vm">__file__</span><span class="p">)</span><span class="o">.</span><span class="n">parent</span> <span class="o">/</span> <span class="s2">&quot;config&quot;</span>
+
+<span class="n">powerschool_extract_assets</span> <span class="o">=</span> <span class="p">[</span>
+    <span class="n">build_bigquery_query_sftp_asset</span><span class="p">(</span>
+        <span class="n">code_location</span><span class="o">=</span><span class="n">CODE_LOCATION</span><span class="p">,</span> <span class="n">timezone</span><span class="o">=</span><span class="n">LOCAL_TIMEZONE</span><span class="p">,</span> <span class="o">**</span><span class="n">a</span>
+    <span class="p">)</span>
+    <span class="k">for</span> <span class="n">a</span> <span class="ow">in</span> <span class="n">config_from_files</span><span class="p">([</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">config_dir</span><span class="si">}</span><span class="s2">/powerschool.yaml&quot;</span><span class="p">])[</span><span class="s2">&quot;assets&quot;</span><span class="p">]</span>
+<span class="p">]</span>
+
+<span class="n">focus_extract_assets</span> <span class="o">=</span> <span class="p">[</span>
+    <span class="n">build_bigquery_query_sftp_asset</span><span class="p">(</span>
+        <span class="n">code_location</span><span class="o">=</span><span class="n">CODE_LOCATION</span><span class="p">,</span> <span class="n">timezone</span><span class="o">=</span><span class="n">LOCAL_TIMEZONE</span><span class="p">,</span> <span class="o">**</span><span class="n">a</span>
+    <span class="p">)</span>
+    <span class="k">for</span> <span class="n">a</span> <span class="ow">in</span> <span class="n">config_from_files</span><span class="p">([</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">config_dir</span><span class="si">}</span><span class="s2">/focus.yaml&quot;</span><span class="p">])[</span><span class="s2">&quot;assets&quot;</span><span class="p">]</span>
+<span class="p">]</span>
+
+<span class="n">assets</span> <span class="o">=</span> <span class="p">[</span>
+    <span class="o">*</span><span class="n">powerschool_extract_assets</span><span class="p">,</span>
+    <span class="o">*</span><span class="n">focus_extract_assets</span><span class="p">,</span>
+<span class="p">]</span>
+</code></pre></div>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 3: Add the job in <code>jobs.py</code></strong></li>
+</ul>
+<p>Append to <code>src/teamster/code_locations/kippmiami/extracts/jobs.py</code>:</p>
+<div class="highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">teamster.code_locations.kippmiami.extracts.assets</span><span class="w"> </span><span class="kn">import</span> <span class="n">focus_extract_assets</span>
+
+<span class="n">focus_extract_asset_job</span> <span class="o">=</span> <span class="n">define_asset_job</span><span class="p">(</span>
+    <span class="n">name</span><span class="o">=</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">CODE_LOCATION</span><span class="si">}</span><span class="s2">__extracts__focus__asset_job&quot;</span><span class="p">,</span>
+    <span class="n">selection</span><span class="o">=</span><span class="n">focus_extract_assets</span><span class="p">,</span>
+<span class="p">)</span>
+</code></pre></div>
+<p>(Merge the new <code>import</code> with the existing
+<code>from ...extracts.assets import powerschool_extract_assets</code> line into one import
+statement.)</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 4: Add the schedule in <code>schedules.py</code></strong></li>
+</ul>
+<p>In <code>src/teamster/code_locations/kippmiami/extracts/schedules.py</code>, import the new
+job and append the schedule to the <code>schedules</code> list:</p>
+<div class="highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">dagster</span><span class="w"> </span><span class="kn">import</span> <span class="n">ScheduleDefinition</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">teamster.code_locations.kippmiami</span><span class="w"> </span><span class="kn">import</span> <span class="n">LOCAL_TIMEZONE</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">teamster.code_locations.kippmiami.extracts.jobs</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
+    <span class="n">focus_extract_asset_job</span><span class="p">,</span>
+    <span class="n">powerschool_extract_asset_job</span><span class="p">,</span>
+<span class="p">)</span>
+
+<span class="n">powerschool_extract_assets_schedule</span> <span class="o">=</span> <span class="n">ScheduleDefinition</span><span class="p">(</span>
+    <span class="n">job</span><span class="o">=</span><span class="n">powerschool_extract_asset_job</span><span class="p">,</span>
+    <span class="n">cron_schedule</span><span class="o">=</span><span class="s2">&quot;0 3 * * *&quot;</span><span class="p">,</span>
+    <span class="n">execution_timezone</span><span class="o">=</span><span class="nb">str</span><span class="p">(</span><span class="n">LOCAL_TIMEZONE</span><span class="p">),</span>
+<span class="p">)</span>
+
+<span class="n">focus_extract_assets_schedule</span> <span class="o">=</span> <span class="n">ScheduleDefinition</span><span class="p">(</span>
+    <span class="n">job</span><span class="o">=</span><span class="n">focus_extract_asset_job</span><span class="p">,</span>
+    <span class="n">cron_schedule</span><span class="o">=</span><span class="s2">&quot;0 3 * * *&quot;</span><span class="p">,</span>
+    <span class="n">execution_timezone</span><span class="o">=</span><span class="nb">str</span><span class="p">(</span><span class="n">LOCAL_TIMEZONE</span><span class="p">),</span>
+<span class="p">)</span>
+
+<span class="n">schedules</span> <span class="o">=</span> <span class="p">[</span>
+    <span class="n">powerschool_extract_assets_schedule</span><span class="p">,</span>
+    <span class="n">focus_extract_assets_schedule</span><span class="p">,</span>
+<span class="p">]</span>
+</code></pre></div>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 5: Verify the module imports and definitions load</strong></li>
+</ul>
+<p>Run: <code>uv run python -c "import teamster.code_locations.kippmiami.definitions"</code>
+Expected: exits 0, no traceback.</p>
+<p>Run:
+<code>uv run dagster definitions validate -m teamster.code_locations.kippmiami.definitions</code>
+Expected: validation passes. If it errors only on missing env vars (codespace
+has no <code>FOCUS_SFTP_*</code>), that is the known false positive — the import check
+above is authoritative.</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 6: Confirm the five asset keys exist</strong></li>
+</ul>
+<p>Run:
+<code>uv run python -c "from teamster.code_locations.kippmiami.extracts.assets import focus_extract_assets; print([a.key.to_user_string() for a in focus_extract_assets])"</code>
+Expected: prints five keys — <code>kippmiami/extracts/focus/demographics_csv</code>,
+<code>.../student_enrollment_csv</code>, <code>.../addresses_csv</code>, <code>.../contacts_csv</code>,
+<code>.../linked_students_csv</code>.</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 7: Commit</strong></li>
+</ul>
+<div class="highlight"><pre><span></span><code>git<span class="w"> </span>add<span class="w"> </span>src/teamster/code_locations/kippmiami/extracts/config/focus.yaml<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>src/teamster/code_locations/kippmiami/extracts/assets.py<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>src/teamster/code_locations/kippmiami/extracts/jobs.py<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>src/teamster/code_locations/kippmiami/extracts/schedules.py
+git<span class="w"> </span>commit<span class="w"> </span>-m<span class="w"> </span><span class="s2">&quot;feat(dagster): add Focus SFTP extract assets and daily schedule (#4207)&quot;</span>
+</code></pre></div>
+<hr />
+<h2 id="post-implementation-out-of-plan-scope-do-not-enable-yet">Post-implementation (out of plan scope, do not enable yet)</h2>
+<p>The schedule ships STOPPED. Before Ops enables it in Dagster Cloud, these must
+be in place (see spec <em>Dependencies</em> and <em>Open items</em>):</p>
+<ul>
+<li><code>STDT_ID</code> populated (#4205) and the E05/E02 enrollment-code rule resolved
+  (#4208).</li>
+<li><code>FOCUS_SFTP_HOST</code> / <code>FOCUS_SFTP_USERNAME</code> / <code>FOCUS_SFTP_PASSWORD</code> provisioned
+  in Dagster Cloud (confirm password vs key auth).</li>
+<li>Confirmed Focus filenames + incoming-directory path (update <code>stem</code> / <code>path</code> in
+  <code>focus.yaml</code>).</li>
+<li>Focus sanity-check on the <code>contact7_callout</code> drop and the <code>resides_with_stud</code>
+  required-but-null field.</li>
+</ul>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+          <button type="button" class="md-top md-icon" data-md-component="top" hidden>
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8z"/></svg>
+  Back to top
+</button>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+    <div class="md-copyright__highlight">
+      Copyright &copy; KIPP TEAM & Family Schools
+    </div>
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      
+      <script id="__config" type="application/json">{"annotate": null, "base": "../../..", "features": ["content.action.edit", "content.code.copy", "navigation.instant", "navigation.indexes", "navigation.sections", "navigation.tabs", "navigation.tabs.sticky", "navigation.top", "search.highlight", "search.suggest", "toc.follow"], "search": "../../../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+    
+    
+      <script src="../../../assets/javascripts/bundle.79ae519e.min.js"></script>
+      
+    
+  </body>
+</html>

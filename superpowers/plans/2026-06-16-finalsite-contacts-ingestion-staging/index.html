@@ -1,0 +1,2366 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+        <meta name="description" content="Data engineering platform for KIPP TEAM & Family Schools">
+      
+      
+      
+      
+      
+      
+        
+      
+      
+      <link rel="icon" href="../../../images/truck.svg">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.6">
+    
+    
+      
+        <title>Finalsite Contacts Ingestion + Staging Implementation Plan - teamster</title>
+      
+    
+    
+      <link rel="stylesheet" href="../../../assets/stylesheets/main.484c7ddc.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+    <script>__md_scope=new URL("../../..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+  </head>
+  
+  
+    <body dir="ltr">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#finalsite-contacts-ingestion-staging-implementation-plan" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+  
+
+<header class="md-header md-header--shadow md-header--lifted" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href="../../.." title="teamster" class="md-header__button md-logo" aria-label="teamster" data-md-component="logo">
+      
+  <img src="../../../images/truck.svg" alt="logo">
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            teamster
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              Finalsite Contacts Ingestion + Staging Implementation Plan
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+        <div class="md-search__suggest" data-md-component="search-suggest"></div>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      
+    
+    
+      <div class="md-header__source">
+        <a href="https://github.com/TEAMSchools/teamster" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M173.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6m-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3m44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9M252.8 8C114.1 8 8 113.3 8 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C436.2 457.8 504 362.9 504 252 504 113.3 391.5 8 252.8 8M105.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1m-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7m32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1m-11.4-14.7c-1.6 1-1.6 3.6 0 5.9s4.3 3.3 5.6 2.3c1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2"/></svg>
+  </div>
+  <div class="md-source__repository">
+    TEAMSchools/teamster
+  </div>
+</a>
+      </div>
+    
+  </nav>
+  
+    
+      
+<nav class="md-tabs" aria-label="Tabs" data-md-component="tabs">
+  <div class="md-grid">
+    <ul class="md-tabs__list">
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../../.." class="md-tabs__link">
+        
+  
+  
+    
+  
+  Home
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../../guides/" class="md-tabs__link">
+          
+  
+  
+    
+  
+  Guides
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../../troubleshooting/dagster/" class="md-tabs__link">
+          
+  
+  
+    
+  
+  Troubleshooting
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../../reference/architecture/" class="md-tabs__link">
+          
+  
+  
+    
+  
+  Reference
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../../../reference/automations/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  Automations
+
+      </a>
+    </li>
+  
+
+      
+    </ul>
+  </div>
+</nav>
+    
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+  
+
+
+<nav class="md-nav md-nav--primary md-nav--lifted" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href="../../.." title="teamster" class="md-nav__button md-logo" aria-label="teamster" data-md-component="logo">
+      
+  <img src="../../../images/truck.svg" alt="logo">
+
+    </a>
+    teamster
+  </label>
+  
+    <div class="md-nav__source">
+      <a href="https://github.com/TEAMSchools/teamster" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M173.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6m-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3m44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9M252.8 8C114.1 8 8 113.3 8 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C436.2 457.8 504 362.9 504 252 504 113.3 391.5 8 252.8 8M105.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1m-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7m32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1m-11.4-14.7c-1.6 1-1.6 3.6 0 5.9s4.3 3.3 5.6 2.3c1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2"/></svg>
+  </div>
+  <div class="md-source__repository">
+    TEAMSchools/teamster
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../.." class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Home
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+          
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2" >
+        
+          
+          <div class="md-nav__link md-nav__container">
+            <a href="../../../guides/" class="md-nav__link ">
+              
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Guides
+  
+
+    
+  </span>
+  
+  
+
+            </a>
+            
+              
+              <label class="md-nav__link " for="__nav_2" id="__nav_2_label" tabindex="0">
+                <span class="md-nav__icon md-icon"></span>
+              </label>
+            
+          </div>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_2_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_2">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Guides
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/codespaces/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Codespaces
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/local-development/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Local Development
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/dagster/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Dagster
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/google-sheets/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Google Sheets & Forms
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/adp-location-renames/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ADP Location Renames
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/dbt-development/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    dbt Development
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/sftp-integration/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    SFTP Integration
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/superpowers/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Claude Code & Superpowers
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/cube/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Cube
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/claude-cube-connector/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Claude + Cube Connector
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3" >
+        
+          
+          <label class="md-nav__link" for="__nav_3" id="__nav_3_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Troubleshooting
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_3">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Troubleshooting
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../troubleshooting/dagster/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Dagster
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../troubleshooting/dbt/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    dbt
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../troubleshooting/vscode/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    VS Code
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4" >
+        
+          
+          <label class="md-nav__link" for="__nav_4" id="__nav_4_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Reference
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_4_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_4">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Reference
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/architecture/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Architecture
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/adding-an-integration/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Adding an Integration
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/io-managers/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    IO Managers
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/fiscal-year-partitioning/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Fiscal Year & Partitioning
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/dbt-conventions/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    dbt Conventions
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/finalsite-focus-import/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Finalsite to Focus Import
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/marts-data-models/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Marts Data Models
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/automation-conditions/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Automation Conditions
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/automations/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Automations
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#scope-boundaries" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Scope &amp; boundaries
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#design-decision-attribute-value-is-coerced-to-a-string-at-ingestion" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Design decision: attribute value is coerced to a string at ingestion
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#file-structure" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        File Structure
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#task-1-capture-expanded-guardians-narrow-the-attribute-value-type-pydantic" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Task 1: Capture expanded guardians + narrow the attribute value type (Pydantic)
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#task-2-generate-the-contacts-avro-schema" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Task 2: Generate the contacts Avro schema
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#task-3-add-the-contacts-asset-factory" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Task 3: Add the contacts asset factory
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#task-4-define-the-miami-finalsite-resource" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Task 4: Define the Miami Finalsite resource
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#task-5-wire-the-contacts-asset-resource-into-the-miami-code-location" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Task 5: Wire the contacts asset + resource into the Miami code location
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#task-6-add-the-dbt-external-source-for-contacts" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Task 6: Add the dbt external source for contacts
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#task-7-staging-model-stg_finalsite__contacts-student-grain" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Task 7: Staging model — stg_finalsite__contacts (student grain)
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#task-8-staging-model-stg_finalsite__contact_relationships-guardian-grain" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Task 8: Staging model — stg_finalsite__contact_relationships (guardian grain)
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#task-9-end-to-end-materialization-lint-push" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Task 9: End-to-end materialization + lint + push
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#self-review" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Self-Review
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+  
+    <a href="https://github.com/TEAMSchools/teamster/edit/main/docs/superpowers/plans/2026-06-16-finalsite-contacts-ingestion-staging.md" title="Edit this page" class="md-content__button md-icon" rel="edit">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M10 20H6V4h7v5h5v3.1l2-2V8l-6-6H6c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h4zm10.2-7c.1 0 .3.1.4.2l1.3 1.3c.2.2.2.6 0 .8l-1 1-2.1-2.1 1-1c.1-.1.2-.2.4-.2m0 3.9L14.1 23H12v-2.1l6.1-6.1z"/></svg>
+    </a>
+  
+  
+
+
+<h1 id="finalsite-contacts-ingestion-staging-implementation-plan">Finalsite Contacts Ingestion + Staging Implementation Plan</h1>
+<blockquote>
+<p><strong>For agentic workers:</strong> REQUIRED SUB-SKILL: Use
+superpowers:subagent-driven-development (recommended) or
+superpowers:executing-plans to implement this plan task-by-task. Steps use
+checkbox (<code>- [ ]</code>) syntax for tracking.</p>
+</blockquote>
+<p><strong>Goal:</strong> Land KIPP Miami's Finalsite Enrollment <strong>contacts</strong> (with expanded
+guardians) from the REST API into BigQuery as Avro, and expose them as
+normalized, contract-enforced dbt staging models.</p>
+<p><strong>Architecture:</strong> Reuse the dormant <code>build_finalsite_asset</code> /
+<code>FinalsiteResource</code>. Add a contacts-specific asset factory that resolves the
+current school year (via <code>/school_years</code>) and pages <code>/contacts</code> with the
+<code>contacts.relationships.contact</code> expansion. Generate the Avro schema from the
+existing <code>Contact</code> Pydantic model via <code>py_avro_schema</code> (the house pattern). Wire
+Miami's resource + asset, add the dbt external source, and build two staging
+models (student grain + guardian grain). This is <strong>Plan 1 of 3</strong> for the
+Finalsite → Focus integration (issue
+<a href="https://github.com/TEAMSchools/teamster/issues/4073">#4073</a>); Plan 2 =
+eligibility + identity crosswalk, Plan 3 = Focus output models + SFTP transport.
+See <code>docs/superpowers/specs/2026-05-29-finalsite-focus-integration-design.md</code>.</p>
+<p><strong>Tech Stack:</strong> Python 3.13, Dagster (<code>@asset</code>, <code>ConfigurableResource</code>),
+<code>fastavro</code> + <code>py_avro_schema</code>, BigQuery external tables (<code>dbt-external-tables</code>),
+dbt (contract-enforced staging models, BigQuery dialect).</p>
+<hr />
+<h2 id="scope-boundaries">Scope &amp; boundaries</h2>
+<p><strong>In scope:</strong> ingestion of the <code>contacts</code> endpoint → landed Avro → queryable
+BigQuery external table → two normalized staging models. Every field here was
+live-validated against Miami in the design phase (100% export reproduction).</p>
+<p><strong>Explicitly out of scope (later plans):</strong></p>
+<ul>
+<li>Eligibility filtering, lifecycle state mapping, identity resolution /
+  crosswalk (Plan 2).</li>
+<li>The join to <code>stg_finalsite__status_report</code> for <code>enrolled_date</code> / status
+  timeline (Plan 2 — it produces the integrated roster, not raw staging).</li>
+<li>Focus-shaped output models + SFTP transport (Plan 3).</li>
+<li><strong>Medical columns</strong> (<code>med_doctor_txt</code>, <code>med_hospital_txt</code>, etc.) are
+  deliberately <strong>NOT</strong> surfaced in staging here. The medical-destination gate is
+  unresolved; the PII-minimization default is to not propagate medical data
+  until Focus is confirmed as its home. They are added in Plan 3 only if that
+  gate resolves to "Focus."</li>
+</ul>
+<p><strong>External dependency (not a code task — flag to ops before running the
+asset):</strong> the cluster must hold the secrets <code>FINALSITE_CREDENTIAL_ID_KIPPMIAMI</code>
+and <code>FINALSITE_SECRET_KIPPMIAMI</code> (1Password → k8s secret-volume, same mechanism
+as other resources). The design phase validated these creds locally; confirm
+they are deployed before materializing the asset in branch/prod.</p>
+<hr />
+<h2 id="design-decision-attribute-value-is-coerced-to-a-string-at-ingestion">Design decision: attribute <code>value</code> is coerced to a string at ingestion</h2>
+<p><code>Contact.custom_attributes</code> / <code>track_attributes</code> / <code>id_attributes</code> items carry a
+<code>value</code> typed <code>bool | str | list[str]</code> (e.g. <code>race_ms</code> is a list). A multi-type
+Avro union loads badly into a BigQuery external table. <strong>Decision:</strong> narrow
+<code>CustomAttribute.value</code> to <code>str | None</code> and JSON-encode non-scalar values in the
+asset before the Avro write. The landed column is a clean nullable <code>STRING</code>;
+list-valued fields (<code>race_ms</code>) round-trip as a JSON array string and are parsed
+in staging. This is the single design choice in this plan; it is implemented in
+Tasks 1 and 3.</p>
+<hr />
+<h2 id="file-structure">File Structure</h2>
+<table>
+<thead>
+<tr>
+<th>File</th>
+<th>Action</th>
+<th>Responsibility</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>src/teamster/libraries/finalsite/api/schema.py</code></td>
+<td>Modify</td>
+<td>Narrow <code>CustomAttribute.value</code> to <code>str</code>; add <code>RelatedContact</code> model + <code>contact</code> field on <code>Relationship</code> (captures expanded guardians, non-recursive).</td>
+</tr>
+<tr>
+<td><code>src/teamster/libraries/finalsite/api/assets.py</code></td>
+<td>Modify</td>
+<td>Add <code>build_finalsite_contacts_asset</code> (school-year resolution + paged expansion call + value coercion).</td>
+</tr>
+<tr>
+<td><code>src/teamster/code_locations/kippmiami/finalsite/schema.py</code></td>
+<td>Modify</td>
+<td>Generate <code>CONTACTS_SCHEMA</code> from the <code>Contact</code> Pydantic model.</td>
+</tr>
+<tr>
+<td><code>src/teamster/core/resources.py</code></td>
+<td>Modify</td>
+<td>Define <code>FINALSITE_RESOURCE</code> (Miami server + EnvVar creds).</td>
+</tr>
+<tr>
+<td><code>src/teamster/code_locations/kippmiami/definitions.py</code></td>
+<td>Modify</td>
+<td>Register <code>"finalsite"</code> resource.</td>
+</tr>
+<tr>
+<td><code>src/teamster/code_locations/kippmiami/finalsite/assets.py</code></td>
+<td>Modify</td>
+<td>Wire the contacts asset into the code location.</td>
+</tr>
+<tr>
+<td><code>src/dbt/finalsite/models/sources-external.yml</code></td>
+<td>Modify</td>
+<td>Add the <code>contacts</code> external Avro source + Dagster asset_key meta.</td>
+</tr>
+<tr>
+<td><code>src/dbt/finalsite/models/staging/stg_finalsite__contacts.sql</code></td>
+<td>Create</td>
+<td>Student-grain normalization (one row per contact).</td>
+</tr>
+<tr>
+<td><code>src/dbt/finalsite/models/staging/properties/stg_finalsite__contacts.yml</code></td>
+<td>Create</td>
+<td>Contract + grain test for the above.</td>
+</tr>
+<tr>
+<td><code>src/dbt/finalsite/models/staging/stg_finalsite__contact_relationships.sql</code></td>
+<td>Create</td>
+<td>Guardian-grain normalization (one row per relationship).</td>
+</tr>
+<tr>
+<td><code>src/dbt/finalsite/models/staging/properties/stg_finalsite__contact_relationships.yml</code></td>
+<td>Create</td>
+<td>Contract + grain test for the above.</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="task-1-capture-expanded-guardians-narrow-the-attribute-value-type-pydantic">Task 1: Capture expanded guardians + narrow the attribute value type (Pydantic)</h2>
+<p><strong>Files:</strong></p>
+<ul>
+<li>Modify: <code>src/teamster/libraries/finalsite/api/schema.py</code></li>
+</ul>
+<p>The <code>contacts.relationships.contact</code> expansion inlines each guardian's full
+contact under <code>relationships[].contact</code>. The current <code>Relationship</code> model has no
+<code>contact</code> field, so <code>fastavro</code> would silently drop it. Add a <strong>bounded,
+non-recursive</strong> <code>RelatedContact</code> (it must NOT reference
+<code>Relationship</code>/<code>Contact</code>, or the generated Avro schema recurses infinitely).
+Also narrow <code>CustomAttribute.value</code> to <code>str | None</code> per the design decision
+above.</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 1: Narrow <code>CustomAttribute.value</code></strong></li>
+</ul>
+<p>In <code>src/teamster/libraries/finalsite/api/schema.py</code>, change the
+<code>CustomAttribute</code> class body from:</p>
+<div class="highlight"><pre><span></span><code><span class="k">class</span><span class="w"> </span><span class="nc">CustomAttribute</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
+    <span class="n">field_id</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="n">field_name</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="n">field_display_name</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
+
+    <span class="n">value</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">|</span> <span class="nb">str</span> <span class="o">|</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
+</code></pre></div>
+<p>to:</p>
+<div class="highlight"><pre><span></span><code><span class="k">class</span><span class="w"> </span><span class="nc">CustomAttribute</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
+    <span class="n">field_id</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="n">field_name</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="n">field_display_name</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
+
+    <span class="c1"># value is coerced to a string at ingestion (lists JSON-encoded) to avoid a</span>
+    <span class="c1"># multi-type Avro union that BigQuery external tables handle poorly.</span>
+    <span class="n">value</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
+</code></pre></div>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 2: Add the <code>RelatedContact</code> model</strong></li>
+</ul>
+<p>Insert this class immediately <strong>above</strong> the existing <code>Relationship</code> class:</p>
+<div class="highlight"><pre><span></span><code><span class="k">class</span><span class="w"> </span><span class="nc">RelatedContact</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
+    <span class="nb">id</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="n">first_name</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="n">middle_name</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="n">last_name</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="n">full_name</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="n">preferred_name</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="n">email</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="n">gender</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
+
+    <span class="n">phone_1</span><span class="p">:</span> <span class="n">Phone</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="n">phone_2</span><span class="p">:</span> <span class="n">Phone</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="n">phone_3</span><span class="p">:</span> <span class="n">Phone</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
+
+    <span class="n">households</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="n">Household</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="n">custom_attributes</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="n">CustomAttribute</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="n">id_attributes</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="n">CustomAttribute</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
+</code></pre></div>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 3: Add the <code>contact</code> field to <code>Relationship</code></strong></li>
+</ul>
+<p>Add one field to the existing <code>Relationship</code> class (after <code>portal_access</code>):</p>
+<div class="highlight"><pre><span></span><code>    <span class="n">contact</span><span class="p">:</span> <span class="n">RelatedContact</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
+</code></pre></div>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 4: Verify the module imports and the Avro schema generates without
+      recursion</strong></li>
+</ul>
+<p>Run:</p>
+<div class="highlight"><pre><span></span><code><span class="nv">VIRTUAL_ENV</span><span class="o">=</span><span class="w"> </span>uv<span class="w"> </span>--directory<span class="w"> </span>/workspaces/teamster/.worktrees/cbini/feat/claude-finalsite-focus-integration<span class="w"> </span>run<span class="w"> </span>python<span class="w"> </span>-c<span class="w"> </span><span class="s2">&quot;</span>
+<span class="s2">import json, py_avro_schema</span>
+<span class="s2">from teamster.libraries.finalsite.api.schema import Contact</span>
+<span class="s2">opts = py_avro_schema.Option.NO_DOC | py_avro_schema.Option.NO_AUTO_NAMESPACE</span>
+<span class="s2">s = json.loads(py_avro_schema.generate(py_type=Contact, options=opts))</span>
+<span class="s2">print(&#39;fields:&#39;, len(s[&#39;fields&#39;]))</span>
+<span class="s2">&quot;</span>
+</code></pre></div>
+<p>Expected: prints <code>fields: &lt;n&gt;</code> (a positive integer) with no <code>RecursionError</code> and
+no exception.</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 5: Commit</strong></li>
+</ul>
+<div class="highlight"><pre><span></span><code>git<span class="w"> </span>-C<span class="w"> </span>/workspaces/teamster/.worktrees/cbini/feat/claude-finalsite-focus-integration<span class="w"> </span>add<span class="w"> </span>src/teamster/libraries/finalsite/api/schema.py
+git<span class="w"> </span>-C<span class="w"> </span>/workspaces/teamster/.worktrees/cbini/feat/claude-finalsite-focus-integration<span class="w"> </span>commit<span class="w"> </span>-m<span class="w"> </span><span class="s2">&quot;feat(finalsite): capture expanded guardians, stringify attribute values&quot;</span>
+</code></pre></div>
+<hr />
+<h2 id="task-2-generate-the-contacts-avro-schema">Task 2: Generate the contacts Avro schema</h2>
+<p><strong>Files:</strong></p>
+<ul>
+<li>Modify: <code>src/teamster/code_locations/kippmiami/finalsite/schema.py</code></li>
+</ul>
+<p>Follow the existing <code>STATUS_REPORT_SCHEMA</code> pattern (and <code>deanslist/schema.py</code>):
+generate the Avro schema dict from the Pydantic model via <code>py_avro_schema</code>.</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 1: Add the schema generation</strong></li>
+</ul>
+<p>The file currently reads:</p>
+<div class="highlight"><pre><span></span><code><span class="kn">import</span><span class="w"> </span><span class="nn">json</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">py_avro_schema</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">teamster.libraries.finalsite.sftp.schema</span><span class="w"> </span><span class="kn">import</span> <span class="n">StatusReport</span>
+
+<span class="n">pas_options</span> <span class="o">=</span> <span class="n">py_avro_schema</span><span class="o">.</span><span class="n">Option</span><span class="o">.</span><span class="n">NO_DOC</span> <span class="o">|</span> <span class="n">py_avro_schema</span><span class="o">.</span><span class="n">Option</span><span class="o">.</span><span class="n">NO_AUTO_NAMESPACE</span>
+
+<span class="n">STATUS_REPORT_SCHEMA</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">loads</span><span class="p">(</span>
+    <span class="n">py_avro_schema</span><span class="o">.</span><span class="n">generate</span><span class="p">(</span><span class="n">py_type</span><span class="o">=</span><span class="n">StatusReport</span><span class="p">,</span> <span class="n">options</span><span class="o">=</span><span class="n">pas_options</span><span class="p">)</span>
+<span class="p">)</span>
+</code></pre></div>
+<p>Add an import for <code>Contact</code> and a <code>CONTACTS_SCHEMA</code> generation. The final file:</p>
+<div class="highlight"><pre><span></span><code><span class="kn">import</span><span class="w"> </span><span class="nn">json</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">py_avro_schema</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">teamster.libraries.finalsite.api.schema</span><span class="w"> </span><span class="kn">import</span> <span class="n">Contact</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">teamster.libraries.finalsite.sftp.schema</span><span class="w"> </span><span class="kn">import</span> <span class="n">StatusReport</span>
+
+<span class="n">pas_options</span> <span class="o">=</span> <span class="n">py_avro_schema</span><span class="o">.</span><span class="n">Option</span><span class="o">.</span><span class="n">NO_DOC</span> <span class="o">|</span> <span class="n">py_avro_schema</span><span class="o">.</span><span class="n">Option</span><span class="o">.</span><span class="n">NO_AUTO_NAMESPACE</span>
+
+<span class="n">STATUS_REPORT_SCHEMA</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">loads</span><span class="p">(</span>
+    <span class="n">py_avro_schema</span><span class="o">.</span><span class="n">generate</span><span class="p">(</span><span class="n">py_type</span><span class="o">=</span><span class="n">StatusReport</span><span class="p">,</span> <span class="n">options</span><span class="o">=</span><span class="n">pas_options</span><span class="p">)</span>
+<span class="p">)</span>
+
+<span class="n">CONTACTS_SCHEMA</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">loads</span><span class="p">(</span>
+    <span class="n">py_avro_schema</span><span class="o">.</span><span class="n">generate</span><span class="p">(</span><span class="n">py_type</span><span class="o">=</span><span class="n">Contact</span><span class="p">,</span> <span class="n">options</span><span class="o">=</span><span class="n">pas_options</span><span class="p">)</span>
+<span class="p">)</span>
+</code></pre></div>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 2: Verify it imports</strong></li>
+</ul>
+<p>Run:</p>
+<div class="highlight"><pre><span></span><code><span class="nv">VIRTUAL_ENV</span><span class="o">=</span><span class="w"> </span>uv<span class="w"> </span>--directory<span class="w"> </span>/workspaces/teamster/.worktrees/cbini/feat/claude-finalsite-focus-integration<span class="w"> </span>run<span class="w"> </span>python<span class="w"> </span>-c<span class="w"> </span><span class="s2">&quot;</span>
+<span class="s2">from teamster.code_locations.kippmiami.finalsite.schema import CONTACTS_SCHEMA</span>
+<span class="s2">print(&#39;type:&#39;, CONTACTS_SCHEMA[&#39;type&#39;], &#39;name:&#39;, CONTACTS_SCHEMA[&#39;name&#39;])</span>
+<span class="s2">&quot;</span>
+</code></pre></div>
+<p>Expected: prints <code>type: record name: Contact</code> (or similar record name) with no
+exception.</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 3: Commit</strong></li>
+</ul>
+<div class="highlight"><pre><span></span><code>git<span class="w"> </span>-C<span class="w"> </span>/workspaces/teamster/.worktrees/cbini/feat/claude-finalsite-focus-integration<span class="w"> </span>add<span class="w"> </span>src/teamster/code_locations/kippmiami/finalsite/schema.py
+git<span class="w"> </span>-C<span class="w"> </span>/workspaces/teamster/.worktrees/cbini/feat/claude-finalsite-focus-integration<span class="w"> </span>commit<span class="w"> </span>-m<span class="w"> </span><span class="s2">&quot;feat(finalsite): generate contacts avro schema&quot;</span>
+</code></pre></div>
+<hr />
+<h2 id="task-3-add-the-contacts-asset-factory">Task 3: Add the contacts asset factory</h2>
+<p><strong>Files:</strong></p>
+<ul>
+<li>Modify: <code>src/teamster/libraries/finalsite/api/assets.py</code></li>
+</ul>
+<p>Add <code>build_finalsite_contacts_asset</code>. It resolves the current school year (the
+design-validated pattern: list <code>/school_years</code>, sort by <code>start_year</code> desc, pick
+the first that returns contacts), pages <code>/contacts</code> with the expansion, coerces
+attribute <code>value</code>s to strings, then yields the Avro output + schema-validity
+check. Keep the existing <code>build_finalsite_asset</code> untouched.</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 1: Add the factory and value-coercion helper</strong></li>
+</ul>
+<p>Append to <code>src/teamster/libraries/finalsite/api/assets.py</code> (the existing imports
+at the top — <code>AssetExecutionContext</code>, <code>Output</code>, <code>asset</code>, the asset-check
+helpers, <code>FinalsiteResource</code> — already cover everything except <code>json</code>; add
+<code>import json</code> at the top of the file):</p>
+<div class="highlight"><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">_coerce_attr_values</span><span class="p">(</span><span class="n">record</span><span class="p">:</span> <span class="nb">dict</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Stringify custom/track/id attribute values (lists -&gt; JSON) in place.</span>
+
+<span class="sd">    A multi-type Avro union for the attribute ``value`` field loads poorly into a</span>
+<span class="sd">    BigQuery external table, so the asset narrows every value to a string before</span>
+<span class="sd">    the Avro write. Recurses into expanded guardian contacts under</span>
+<span class="sd">    ``relationships[].contact``.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="p">(</span><span class="s2">&quot;custom_attributes&quot;</span><span class="p">,</span> <span class="s2">&quot;track_attributes&quot;</span><span class="p">,</span> <span class="s2">&quot;id_attributes&quot;</span><span class="p">):</span>
+        <span class="k">for</span> <span class="n">attr</span> <span class="ow">in</span> <span class="n">record</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">key</span><span class="p">)</span> <span class="ow">or</span> <span class="p">[]:</span>
+            <span class="n">value</span> <span class="o">=</span> <span class="n">attr</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;value&quot;</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">value</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">or</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
+                <span class="k">continue</span>
+            <span class="n">attr</span><span class="p">[</span><span class="s2">&quot;value&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span>
+                <span class="n">json</span><span class="o">.</span><span class="n">dumps</span><span class="p">(</span><span class="n">value</span><span class="p">)</span> <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="nb">list</span><span class="p">)</span> <span class="k">else</span> <span class="nb">str</span><span class="p">(</span><span class="n">value</span><span class="p">)</span>
+            <span class="p">)</span>
+
+    <span class="k">for</span> <span class="n">rel</span> <span class="ow">in</span> <span class="n">record</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;relationships&quot;</span><span class="p">)</span> <span class="ow">or</span> <span class="p">[]:</span>
+        <span class="n">contact</span> <span class="o">=</span> <span class="n">rel</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;contact&quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">contact</span><span class="p">:</span>
+            <span class="n">_coerce_attr_values</span><span class="p">(</span><span class="n">contact</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">record</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">build_finalsite_contacts_asset</span><span class="p">(</span><span class="n">code_location</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">schema</span><span class="p">):</span>
+    <span class="n">key</span> <span class="o">=</span> <span class="p">[</span><span class="n">code_location</span><span class="p">,</span> <span class="s2">&quot;finalsite&quot;</span><span class="p">,</span> <span class="s2">&quot;contacts&quot;</span><span class="p">]</span>
+
+    <span class="nd">@asset</span><span class="p">(</span>
+        <span class="n">key</span><span class="o">=</span><span class="n">key</span><span class="p">,</span>
+        <span class="n">io_manager_key</span><span class="o">=</span><span class="s2">&quot;io_manager_gcs_avro&quot;</span><span class="p">,</span>
+        <span class="n">check_specs</span><span class="o">=</span><span class="p">[</span><span class="n">build_check_spec_avro_schema_valid</span><span class="p">(</span><span class="n">key</span><span class="p">)],</span>
+        <span class="n">group_name</span><span class="o">=</span><span class="s2">&quot;finalsite&quot;</span><span class="p">,</span>
+        <span class="n">kinds</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;python&quot;</span><span class="p">},</span>
+    <span class="p">)</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_asset</span><span class="p">(</span><span class="n">context</span><span class="p">:</span> <span class="n">AssetExecutionContext</span><span class="p">,</span> <span class="n">finalsite</span><span class="p">:</span> <span class="n">FinalsiteResource</span><span class="p">):</span>
+        <span class="n">school_years</span> <span class="o">=</span> <span class="n">finalsite</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">path</span><span class="o">=</span><span class="s2">&quot;school_years&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">json</span><span class="p">()</span><span class="o">.</span><span class="n">get</span><span class="p">(</span>
+            <span class="s2">&quot;school_years&quot;</span><span class="p">,</span> <span class="p">[]</span>
+        <span class="p">)</span>
+
+        <span class="n">data</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">dict</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="n">chosen_year</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="k">for</span> <span class="n">year</span> <span class="ow">in</span> <span class="nb">sorted</span><span class="p">(</span>
+            <span class="n">school_years</span><span class="p">,</span> <span class="n">key</span><span class="o">=</span><span class="k">lambda</span> <span class="n">y</span><span class="p">:</span> <span class="n">y</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;start_year&quot;</span><span class="p">)</span> <span class="ow">or</span> <span class="mi">0</span><span class="p">,</span> <span class="n">reverse</span><span class="o">=</span><span class="kc">True</span>
+        <span class="p">):</span>
+            <span class="n">data</span> <span class="o">=</span> <span class="n">finalsite</span><span class="o">.</span><span class="n">list</span><span class="p">(</span>
+                <span class="n">path</span><span class="o">=</span><span class="s2">&quot;contacts&quot;</span><span class="p">,</span>
+                <span class="n">params</span><span class="o">=</span><span class="p">{</span>
+                    <span class="s2">&quot;school_year_id&quot;</span><span class="p">:</span> <span class="n">year</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;id&quot;</span><span class="p">),</span>
+                    <span class="s2">&quot;count&quot;</span><span class="p">:</span> <span class="mi">25</span><span class="p">,</span>
+                    <span class="s2">&quot;includes&quot;</span><span class="p">:</span> <span class="s2">&quot;contacts.relationships.contact&quot;</span><span class="p">,</span>
+                <span class="p">},</span>
+            <span class="p">)</span>
+            <span class="k">if</span> <span class="n">data</span><span class="p">:</span>
+                <span class="n">chosen_year</span> <span class="o">=</span> <span class="n">year</span>
+                <span class="k">break</span>
+
+        <span class="n">data</span> <span class="o">=</span> <span class="p">[</span><span class="n">_coerce_attr_values</span><span class="p">(</span><span class="n">record</span><span class="p">)</span> <span class="k">for</span> <span class="n">record</span> <span class="ow">in</span> <span class="n">data</span><span class="p">]</span>
+
+        <span class="n">context</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span>
+            <span class="sa">f</span><span class="s2">&quot;school_year start=</span><span class="si">{</span><span class="n">chosen_year</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;start_year&#39;</span><span class="p">)</span><span class="w"> </span><span class="k">if</span><span class="w"> </span><span class="n">chosen_year</span><span class="w"> </span><span class="k">else</span><span class="w"> </span><span class="kc">None</span><span class="si">}</span><span class="s2">; &quot;</span>
+            <span class="sa">f</span><span class="s2">&quot;contacts=</span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">data</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span>
+        <span class="p">)</span>
+
+        <span class="k">yield</span> <span class="n">Output</span><span class="p">(</span><span class="n">value</span><span class="o">=</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">schema</span><span class="p">),</span> <span class="n">metadata</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;record_count&quot;</span><span class="p">:</span> <span class="nb">len</span><span class="p">(</span><span class="n">data</span><span class="p">)})</span>
+        <span class="k">yield</span> <span class="n">check_avro_schema_valid</span><span class="p">(</span>
+            <span class="n">asset_key</span><span class="o">=</span><span class="n">context</span><span class="o">.</span><span class="n">asset_key</span><span class="p">,</span> <span class="n">records</span><span class="o">=</span><span class="n">data</span><span class="p">,</span> <span class="n">schema</span><span class="o">=</span><span class="n">schema</span>
+        <span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">_asset</span>
+</code></pre></div>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 2: Verify the module imports</strong></li>
+</ul>
+<p>Run:</p>
+<div class="highlight"><pre><span></span><code><span class="nv">VIRTUAL_ENV</span><span class="o">=</span><span class="w"> </span>uv<span class="w"> </span>--directory<span class="w"> </span>/workspaces/teamster/.worktrees/cbini/feat/claude-finalsite-focus-integration<span class="w"> </span>run<span class="w"> </span>python<span class="w"> </span>-c<span class="w"> </span><span class="s2">&quot;</span>
+<span class="s2">from teamster.libraries.finalsite.api.assets import build_finalsite_contacts_asset, _coerce_attr_values</span>
+<span class="s2">r = _coerce_attr_values({&#39;custom_attributes&#39;: [{&#39;field_name&#39;: &#39;race_ms&#39;, &#39;value&#39;: [&#39;A&#39;, &#39;B&#39;]}, {&#39;field_name&#39;: &#39;x&#39;, &#39;value&#39;: True}]})</span>
+<span class="s2">print(r[&#39;custom_attributes&#39;][0][&#39;value&#39;], &#39;|&#39;, r[&#39;custom_attributes&#39;][1][&#39;value&#39;])</span>
+<span class="s2">&quot;</span>
+</code></pre></div>
+<p>Expected: prints <code>["A", "B"] | True</code> (the list became a JSON string, the bool
+became <code>"True"</code>).</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 3: Commit</strong></li>
+</ul>
+<div class="highlight"><pre><span></span><code>git<span class="w"> </span>-C<span class="w"> </span>/workspaces/teamster/.worktrees/cbini/feat/claude-finalsite-focus-integration<span class="w"> </span>add<span class="w"> </span>src/teamster/libraries/finalsite/api/assets.py
+git<span class="w"> </span>-C<span class="w"> </span>/workspaces/teamster/.worktrees/cbini/feat/claude-finalsite-focus-integration<span class="w"> </span>commit<span class="w"> </span>-m<span class="w"> </span><span class="s2">&quot;feat(finalsite): add contacts asset factory with school-year resolution&quot;</span>
+</code></pre></div>
+<hr />
+<h2 id="task-4-define-the-miami-finalsite-resource">Task 4: Define the Miami Finalsite resource</h2>
+<p><strong>Files:</strong></p>
+<ul>
+<li>Modify: <code>src/teamster/core/resources.py</code></li>
+</ul>
+<p>Add a <code>FINALSITE_RESOURCE</code> singleton following the <code>OVERGRAD_RESOURCE</code> /
+<code>DEANSLIST_RESOURCE</code> pattern. Miami is the only consumer today; the <code>server</code> is
+the tenant subdomain (<code>kippmiami</code>), creds come from EnvVar (names match the
+design-phase harness: <code>FINALSITE_CREDENTIAL_ID_KIPPMIAMI</code> /
+<code>FINALSITE_SECRET_KIPPMIAMI</code>).</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 1: Import the resource class</strong></li>
+</ul>
+<p>Add to the imports at the top of <code>src/teamster/core/resources.py</code> (alongside the
+other resource-class imports — match the existing import grouping):</p>
+<div class="highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">teamster.libraries.finalsite.api.resources</span><span class="w"> </span><span class="kn">import</span> <span class="n">FinalsiteResource</span>
+</code></pre></div>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 2: Add the resource singleton</strong></li>
+</ul>
+<p>Add after the <code>DEANSLIST_RESOURCE</code> definition (near line 90):</p>
+<div class="highlight"><pre><span></span><code><span class="n">FINALSITE_RESOURCE</span> <span class="o">=</span> <span class="n">FinalsiteResource</span><span class="p">(</span>
+    <span class="n">server</span><span class="o">=</span><span class="s2">&quot;kippmiami&quot;</span><span class="p">,</span>
+    <span class="n">credential_id</span><span class="o">=</span><span class="n">EnvVar</span><span class="p">(</span><span class="s2">&quot;FINALSITE_CREDENTIAL_ID_KIPPMIAMI&quot;</span><span class="p">),</span>
+    <span class="n">secret</span><span class="o">=</span><span class="n">EnvVar</span><span class="p">(</span><span class="s2">&quot;FINALSITE_SECRET_KIPPMIAMI&quot;</span><span class="p">),</span>
+<span class="p">)</span>
+</code></pre></div>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 3: Verify it imports</strong></li>
+</ul>
+<p>Run:</p>
+<div class="highlight"><pre><span></span><code><span class="nv">VIRTUAL_ENV</span><span class="o">=</span><span class="w"> </span>uv<span class="w"> </span>--directory<span class="w"> </span>/workspaces/teamster/.worktrees/cbini/feat/claude-finalsite-focus-integration<span class="w"> </span>run<span class="w"> </span>python<span class="w"> </span>-c<span class="w"> </span><span class="s2">&quot;</span>
+<span class="s2">from teamster.core.resources import FINALSITE_RESOURCE</span>
+<span class="s2">print(&#39;server:&#39;, FINALSITE_RESOURCE.server)</span>
+<span class="s2">&quot;</span>
+</code></pre></div>
+<p>Expected: prints <code>server: kippmiami</code> with no exception.</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 4: Commit</strong></li>
+</ul>
+<div class="highlight"><pre><span></span><code>git<span class="w"> </span>-C<span class="w"> </span>/workspaces/teamster/.worktrees/cbini/feat/claude-finalsite-focus-integration<span class="w"> </span>add<span class="w"> </span>src/teamster/core/resources.py
+git<span class="w"> </span>-C<span class="w"> </span>/workspaces/teamster/.worktrees/cbini/feat/claude-finalsite-focus-integration<span class="w"> </span>commit<span class="w"> </span>-m<span class="w"> </span><span class="s2">&quot;feat(finalsite): define kippmiami finalsite api resource&quot;</span>
+</code></pre></div>
+<hr />
+<h2 id="task-5-wire-the-contacts-asset-resource-into-the-miami-code-location">Task 5: Wire the contacts asset + resource into the Miami code location</h2>
+<p><strong>Files:</strong></p>
+<ul class="task-list">
+<li>Modify: <code>src/teamster/code_locations/kippmiami/finalsite/assets.py</code></li>
+<li>
+<p>Modify: <code>src/teamster/code_locations/kippmiami/definitions.py</code></p>
+</li>
+<li class="task-list-item">
+<p><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 1: Build the contacts asset</strong></p>
+</li>
+</ul>
+<p><code>src/teamster/code_locations/kippmiami/finalsite/assets.py</code> currently imports
+only the SFTP pieces. Replace its contents with:</p>
+<div class="highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">teamster.code_locations.kippmiami</span><span class="w"> </span><span class="kn">import</span> <span class="n">CODE_LOCATION</span><span class="p">,</span> <span class="n">CURRENT_FISCAL_YEAR</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">teamster.code_locations.kippmiami.finalsite.schema</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
+    <span class="n">CONTACTS_SCHEMA</span><span class="p">,</span>
+    <span class="n">STATUS_REPORT_SCHEMA</span><span class="p">,</span>
+<span class="p">)</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">teamster.libraries.finalsite.api.assets</span><span class="w"> </span><span class="kn">import</span> <span class="n">build_finalsite_contacts_asset</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">teamster.libraries.finalsite.sftp.assets</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
+    <span class="n">get_finalsite_school_year_partition_keys</span><span class="p">,</span>
+<span class="p">)</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">teamster.libraries.sftp.assets</span><span class="w"> </span><span class="kn">import</span> <span class="n">build_sftp_file_asset</span>
+
+<span class="n">status_report</span> <span class="o">=</span> <span class="n">build_sftp_file_asset</span><span class="p">(</span>
+    <span class="n">asset_key</span><span class="o">=</span><span class="p">[</span><span class="n">CODE_LOCATION</span><span class="p">,</span> <span class="s2">&quot;finalsite&quot;</span><span class="p">,</span> <span class="s2">&quot;status_report&quot;</span><span class="p">],</span>
+    <span class="n">remote_dir_regex</span><span class="o">=</span><span class="sa">rf</span><span class="s2">&quot;/data-team/</span><span class="si">{</span><span class="n">CODE_LOCATION</span><span class="si">}</span><span class="s2">/finalsite/status_report&quot;</span><span class="p">,</span>
+    <span class="n">remote_file_regex</span><span class="o">=</span><span class="p">(</span>
+        <span class="sa">rf</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">CODE_LOCATION</span><span class="si">}</span><span class="s2">_SwissArmyExport_SFTP_Export___&quot;</span>
+        <span class="sa">r</span><span class="s2">&quot;Status_Report_SFTP_Status_Export___&quot;</span>
+        <span class="sa">r</span><span class="s2">&quot;(?P&lt;school_year&gt;\d+_\d+)\.csv&quot;</span>
+    <span class="p">),</span>
+    <span class="n">partitions_def</span><span class="o">=</span><span class="n">get_finalsite_school_year_partition_keys</span><span class="p">(</span>
+        <span class="n">start_year</span><span class="o">=</span><span class="mi">2025</span><span class="p">,</span> <span class="n">end_year</span><span class="o">=</span><span class="n">CURRENT_FISCAL_YEAR</span><span class="o">.</span><span class="n">fiscal_year</span>
+    <span class="p">),</span>
+    <span class="n">avro_schema</span><span class="o">=</span><span class="n">STATUS_REPORT_SCHEMA</span><span class="p">,</span>
+    <span class="n">ssh_resource_key</span><span class="o">=</span><span class="s2">&quot;ssh_couchdrop&quot;</span><span class="p">,</span>
+<span class="p">)</span>
+
+<span class="n">contacts</span> <span class="o">=</span> <span class="n">build_finalsite_contacts_asset</span><span class="p">(</span>
+    <span class="n">code_location</span><span class="o">=</span><span class="n">CODE_LOCATION</span><span class="p">,</span> <span class="n">schema</span><span class="o">=</span><span class="n">CONTACTS_SCHEMA</span>
+<span class="p">)</span>
+
+<span class="n">assets</span> <span class="o">=</span> <span class="p">[</span>
+    <span class="n">status_report</span><span class="p">,</span>
+    <span class="n">contacts</span><span class="p">,</span>
+<span class="p">]</span>
+</code></pre></div>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 2: Register the resource in <code>definitions.py</code></strong></li>
+</ul>
+<p>In <code>src/teamster/code_locations/kippmiami/definitions.py</code>, add
+<code>FINALSITE_RESOURCE</code> to the <code>from teamster.core.resources import (...)</code> block
+(keep alphabetical-ish grouping with the other resources):</p>
+<div class="highlight"><pre><span></span><code>    <span class="n">FINALSITE_RESOURCE</span><span class="p">,</span>
+</code></pre></div>
+<p>Then add one entry to the <code>resources={...}</code> dict (after the <code>"dlt"</code> / <code>"gcs"</code>
+entries, before <code>"google_drive"</code> — keep it grouped with the other named
+resources):</p>
+<div class="highlight"><pre><span></span><code>        <span class="s2">&quot;finalsite&quot;</span><span class="p">:</span> <span class="n">FINALSITE_RESOURCE</span><span class="p">,</span>
+</code></pre></div>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 3: Verify definitions load</strong></li>
+</ul>
+<p>Run:</p>
+<div class="highlight"><pre><span></span><code><span class="nv">VIRTUAL_ENV</span><span class="o">=</span><span class="w"> </span>uv<span class="w"> </span>--directory<span class="w"> </span>/workspaces/teamster/.worktrees/cbini/feat/claude-finalsite-focus-integration<span class="w"> </span>run<span class="w"> </span>python<span class="w"> </span>-c<span class="w"> </span><span class="s2">&quot;</span>
+<span class="s2">from teamster.code_locations.kippmiami.definitions import defs</span>
+<span class="s2">keys = [a.key.to_user_string() for a in defs.get_asset_graph().assets_defs if &#39;finalsite&#39; in a.key.to_user_string()]</span>
+<span class="s2">print(sorted(set(keys)))</span>
+<span class="s2">&quot;</span>
+</code></pre></div>
+<p>Expected: the printed list includes <code>kippmiami/finalsite/contacts</code> and
+<code>kippmiami/finalsite/status_report</code>, with no resource-binding error (a missing
+<code>"finalsite"</code> resource would raise <code>DagsterInvalidDefinitionError</code> at load).</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 4: Commit</strong></li>
+</ul>
+<div class="highlight"><pre><span></span><code>git<span class="w"> </span>-C<span class="w"> </span>/workspaces/teamster/.worktrees/cbini/feat/claude-finalsite-focus-integration<span class="w"> </span>add<span class="w"> </span>src/teamster/code_locations/kippmiami/finalsite/assets.py<span class="w"> </span>src/teamster/code_locations/kippmiami/definitions.py
+git<span class="w"> </span>-C<span class="w"> </span>/workspaces/teamster/.worktrees/cbini/feat/claude-finalsite-focus-integration<span class="w"> </span>commit<span class="w"> </span>-m<span class="w"> </span><span class="s2">&quot;feat(finalsite): wire contacts asset into kippmiami&quot;</span>
+</code></pre></div>
+<hr />
+<h2 id="task-6-add-the-dbt-external-source-for-contacts">Task 6: Add the dbt external source for contacts</h2>
+<p><strong>Files:</strong></p>
+<ul>
+<li>Modify: <code>src/dbt/finalsite/models/sources-external.yml</code></li>
+</ul>
+<p>Mirror the existing <code>status_report</code> external-table entry. The contacts asset is
+<strong>non-partitioned</strong>, so the location is a flat <code>contacts/*</code> glob (no
+<code>hive_partition_uri_prefix</code>).</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 1: Add the <code>contacts</code> table</strong></li>
+</ul>
+<p>Under the <code>tables:</code> list in <code>src/dbt/finalsite/models/sources-external.yml</code>
+(after the <code>status_report</code> entry), add:</p>
+<div class="highlight"><pre><span></span><code><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">contacts</span>
+<span class="w">  </span><span class="nt">external</span><span class="p">:</span>
+<span class="w">    </span><span class="nt">location</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;{{</span><span class="nv"> </span><span class="s">var(&#39;cloud_storage_uri_base&#39;)</span><span class="nv"> </span><span class="s">}}/finalsite/contacts/*&quot;</span>
+<span class="w">    </span><span class="nt">options</span><span class="p">:</span>
+<span class="w">      </span><span class="nt">connection_name</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;{{</span><span class="nv"> </span><span class="s">var(&#39;bigquery_external_connection_name&#39;)</span><span class="nv"> </span><span class="s">}}&quot;</span>
+<span class="w">      </span><span class="nt">metadata_cache_mode</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">MANUAL</span>
+<span class="w">      </span><span class="nt">max_staleness</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">INTERVAL 7 DAY</span>
+<span class="w">      </span><span class="nt">format</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">AVRO</span>
+<span class="w">      </span><span class="nt">enable_logical_types</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">true</span>
+<span class="w">  </span><span class="nt">config</span><span class="p">:</span>
+<span class="w">    </span><span class="nt">meta</span><span class="p">:</span>
+<span class="w">      </span><span class="nt">dagster</span><span class="p">:</span>
+<span class="w">        </span><span class="nt">asset_key</span><span class="p">:</span>
+<span class="w">          </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="s">&quot;{{</span><span class="nv"> </span><span class="s">project_name</span><span class="nv"> </span><span class="s">}}&quot;</span>
+<span class="w">          </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">finalsite</span>
+<span class="w">          </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">contacts</span>
+</code></pre></div>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 2: Verify the YAML parses and the source resolves</strong></li>
+</ul>
+<p>Run (from the kippmiami project, which imports the finalsite package):</p>
+<div class="highlight"><pre><span></span><code><span class="nv">VIRTUAL_ENV</span><span class="o">=</span><span class="w"> </span>uv<span class="w"> </span>--directory<span class="w"> </span>/workspaces/teamster/.worktrees/cbini/feat/claude-finalsite-focus-integration<span class="w"> </span>run<span class="w"> </span>dbt<span class="w"> </span>parse<span class="w"> </span>--project-dir<span class="w"> </span>/workspaces/teamster/.worktrees/cbini/feat/claude-finalsite-focus-integration/src/dbt/kippmiami
+</code></pre></div>
+<p>Expected: <code>dbt parse</code> completes without error (it loads and validates
+<code>sources-external.yml</code>).</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 3: Commit</strong></li>
+</ul>
+<div class="highlight"><pre><span></span><code>git<span class="w"> </span>-C<span class="w"> </span>/workspaces/teamster/.worktrees/cbini/feat/claude-finalsite-focus-integration<span class="w"> </span>add<span class="w"> </span>src/dbt/finalsite/models/sources-external.yml
+git<span class="w"> </span>-C<span class="w"> </span>/workspaces/teamster/.worktrees/cbini/feat/claude-finalsite-focus-integration<span class="w"> </span>commit<span class="w"> </span>-m<span class="w"> </span><span class="s2">&quot;feat(finalsite): add contacts external source&quot;</span>
+</code></pre></div>
+<hr />
+<h2 id="task-7-staging-model-stg_finalsite__contacts-student-grain">Task 7: Staging model — <code>stg_finalsite__contacts</code> (student grain)</h2>
+<p><strong>Files:</strong></p>
+<ul>
+<li>Create: <code>src/dbt/finalsite/models/staging/stg_finalsite__contacts.sql</code></li>
+<li>Create:
+  <code>src/dbt/finalsite/models/staging/properties/stg_finalsite__contacts.yml</code></li>
+</ul>
+<p>One row per contact. Scalars are projected directly; named custom/track/id
+attributes are pulled via correlated <code>unnest</code> subqueries (each references only
+the same row's array — a lateral correlation BigQuery supports); the single
+household is flattened from offset 0. <strong>No medical columns</strong> (see Scope). The
+model is materialized as a table with an <strong>enforced contract</strong>, so the SQL
+output columns must match the YAML exactly.</p>
+<blockquote>
+<p><strong>Avro→BigQuery note before writing the SQL:</strong> confirm the landed
+external-table column names/types once data exists (Task 9 materializes the
+asset). Run <code>bq show --schema teamster-332318:kippmiami_finalsite.contacts</code>
+(or the BigQuery MCP <code>get_table_info</code>). The <code>birth_date</code> source field is a
+string and is cast to <code>date</code>; <code>school_year</code> and <code>grade</code> land as <code>STRUCT</code>s;
+<code>households</code>/<code>relationships</code>/<code>*_attributes</code> land as <code>ARRAY&lt;STRUCT&gt;</code>. If a
+struct/array field name differs from the Pydantic field name, adjust the
+references below to match the observed schema. This is a verification of the
+generated schema, not a redesign.</p>
+</blockquote>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 1: Write the model</strong></li>
+</ul>
+<p>Create <code>src/dbt/finalsite/models/staging/stg_finalsite__contacts.sql</code>:</p>
+<div class="highlight"><pre><span></span><code><span class="k">select</span>
+<span class="w">    </span><span class="n">id</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">finalsite_enrollment_id</span><span class="p">,</span>
+<span class="w">    </span><span class="n">first_name</span><span class="p">,</span>
+<span class="w">    </span><span class="n">middle_name</span><span class="p">,</span>
+<span class="w">    </span><span class="n">last_name</span><span class="p">,</span>
+<span class="w">    </span><span class="n">gender</span><span class="p">,</span>
+<span class="w">    </span><span class="n">status</span><span class="p">,</span>
+<span class="w">    </span><span class="n">enrollment_type</span><span class="p">,</span>
+
+<span class="w">    </span><span class="n">grade</span><span class="p">.</span><span class="n">canonical_name</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">grade_canonical_name</span><span class="p">,</span>
+<span class="w">    </span><span class="n">school_year</span><span class="p">.</span><span class="n">start_year</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">school_year_start</span><span class="p">,</span>
+
+<span class="w">    </span><span class="n">safe_cast</span><span class="p">(</span><span class="n">birth_date</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nb">date</span><span class="p">)</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">birth_date</span><span class="p">,</span>
+
+<span class="w">    </span><span class="n">households</span><span class="p">[</span><span class="n">safe_offset</span><span class="p">(</span><span class="mi">0</span><span class="p">)].</span><span class="n">address_1</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">address_1</span><span class="p">,</span>
+<span class="w">    </span><span class="n">households</span><span class="p">[</span><span class="n">safe_offset</span><span class="p">(</span><span class="mi">0</span><span class="p">)].</span><span class="n">address_2</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">address_2</span><span class="p">,</span>
+<span class="w">    </span><span class="n">households</span><span class="p">[</span><span class="n">safe_offset</span><span class="p">(</span><span class="mi">0</span><span class="p">)].</span><span class="n">city</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">city</span><span class="p">,</span>
+<span class="w">    </span><span class="n">households</span><span class="p">[</span><span class="n">safe_offset</span><span class="p">(</span><span class="mi">0</span><span class="p">)].</span><span class="k">state</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="k">state</span><span class="p">,</span>
+<span class="w">    </span><span class="n">households</span><span class="p">[</span><span class="n">safe_offset</span><span class="p">(</span><span class="mi">0</span><span class="p">)].</span><span class="n">zip</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">zip</span><span class="p">,</span>
+
+<span class="w">    </span><span class="p">(</span>
+<span class="w">        </span><span class="k">select</span><span class="w"> </span><span class="n">any_value</span><span class="p">(</span><span class="n">av</span><span class="p">.</span><span class="n">value</span><span class="p">),</span>
+<span class="w">        </span><span class="k">from</span><span class="w"> </span><span class="k">unnest</span><span class="p">(</span><span class="n">custom_attributes</span><span class="p">)</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">av</span>
+<span class="w">        </span><span class="k">where</span><span class="w"> </span><span class="n">av</span><span class="p">.</span><span class="n">field_name</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s1">&#39;race_ms&#39;</span>
+<span class="w">    </span><span class="p">)</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">race_ms</span><span class="p">,</span>
+<span class="w">    </span><span class="p">(</span>
+<span class="w">        </span><span class="k">select</span><span class="w"> </span><span class="n">any_value</span><span class="p">(</span><span class="n">av</span><span class="p">.</span><span class="n">value</span><span class="p">),</span>
+<span class="w">        </span><span class="k">from</span><span class="w"> </span><span class="k">unnest</span><span class="p">(</span><span class="n">custom_attributes</span><span class="p">)</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">av</span>
+<span class="w">        </span><span class="k">where</span><span class="w"> </span><span class="n">av</span><span class="p">.</span><span class="n">field_name</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s1">&#39;latino_hispanic_yn&#39;</span>
+<span class="w">    </span><span class="p">)</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">latino_hispanic_yn</span><span class="p">,</span>
+<span class="w">    </span><span class="p">(</span>
+<span class="w">        </span><span class="k">select</span><span class="w"> </span><span class="n">any_value</span><span class="p">(</span><span class="n">av</span><span class="p">.</span><span class="n">value</span><span class="p">),</span>
+<span class="w">        </span><span class="k">from</span><span class="w"> </span><span class="k">unnest</span><span class="p">(</span><span class="n">custom_attributes</span><span class="p">)</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">av</span>
+<span class="w">        </span><span class="k">where</span><span class="w"> </span><span class="n">av</span><span class="p">.</span><span class="n">field_name</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s1">&#39;assigned_school_ss&#39;</span>
+<span class="w">    </span><span class="p">)</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">assigned_school_ss</span><span class="p">,</span>
+<span class="w">    </span><span class="p">(</span>
+<span class="w">        </span><span class="k">select</span><span class="w"> </span><span class="n">any_value</span><span class="p">(</span><span class="n">av</span><span class="p">.</span><span class="n">value</span><span class="p">),</span>
+<span class="w">        </span><span class="k">from</span><span class="w"> </span><span class="k">unnest</span><span class="p">(</span><span class="n">custom_attributes</span><span class="p">)</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">av</span>
+<span class="w">        </span><span class="k">where</span><span class="w"> </span><span class="n">av</span><span class="p">.</span><span class="n">field_name</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s1">&#39;sped_received_yn&#39;</span>
+<span class="w">    </span><span class="p">)</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">sped_received_yn</span><span class="p">,</span>
+<span class="w">    </span><span class="p">(</span>
+<span class="w">        </span><span class="k">select</span><span class="w"> </span><span class="n">any_value</span><span class="p">(</span><span class="n">av</span><span class="p">.</span><span class="n">value</span><span class="p">),</span>
+<span class="w">        </span><span class="k">from</span><span class="w"> </span><span class="k">unnest</span><span class="p">(</span><span class="n">id_attributes</span><span class="p">)</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">av</span>
+<span class="w">        </span><span class="k">where</span><span class="w"> </span><span class="n">av</span><span class="p">.</span><span class="n">field_name</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s1">&#39;mdcps_id_txt&#39;</span>
+<span class="w">    </span><span class="p">)</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">mdcps_id_txt</span><span class="p">,</span>
+<span class="w">    </span><span class="p">(</span>
+<span class="w">        </span><span class="k">select</span><span class="w"> </span><span class="n">any_value</span><span class="p">(</span><span class="n">av</span><span class="p">.</span><span class="n">value</span><span class="p">),</span>
+<span class="w">        </span><span class="k">from</span><span class="w"> </span><span class="k">unnest</span><span class="p">(</span><span class="n">id_attributes</span><span class="p">)</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">av</span>
+<span class="w">        </span><span class="k">where</span><span class="w"> </span><span class="n">av</span><span class="p">.</span><span class="n">field_name</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s1">&#39;powerschool_student_number&#39;</span>
+<span class="w">    </span><span class="p">)</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">powerschool_student_number</span><span class="p">,</span>
+<span class="k">from</span><span class="w"> </span><span class="err">{{</span><span class="w"> </span><span class="k">source</span><span class="p">(</span><span class="ss">&quot;finalsite&quot;</span><span class="p">,</span><span class="w"> </span><span class="ss">&quot;contacts&quot;</span><span class="p">)</span><span class="w"> </span><span class="err">}}</span>
+</code></pre></div>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 2: Write the contract + grain test</strong></li>
+</ul>
+<p>Create
+<code>src/dbt/finalsite/models/staging/properties/stg_finalsite__contacts.yml</code>:</p>
+<div class="highlight"><pre><span></span><code><span class="nt">models</span><span class="p">:</span>
+<span class="w">  </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">stg_finalsite__contacts</span>
+<span class="w">    </span><span class="nt">data_tests</span><span class="p">:</span>
+<span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">dbt_utils.unique_combination_of_columns</span><span class="p">:</span>
+<span class="w">          </span><span class="nt">arguments</span><span class="p">:</span>
+<span class="w">            </span><span class="nt">combination_of_columns</span><span class="p">:</span>
+<span class="w">              </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">finalsite_enrollment_id</span>
+<span class="w">          </span><span class="nt">config</span><span class="p">:</span>
+<span class="w">            </span><span class="nt">severity</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">error</span>
+<span class="w">    </span><span class="nt">columns</span><span class="p">:</span>
+<span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">finalsite_enrollment_id</span>
+<span class="w">        </span><span class="nt">data_type</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">string</span>
+<span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">first_name</span>
+<span class="w">        </span><span class="nt">data_type</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">string</span>
+<span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">middle_name</span>
+<span class="w">        </span><span class="nt">data_type</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">string</span>
+<span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">last_name</span>
+<span class="w">        </span><span class="nt">data_type</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">string</span>
+<span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">gender</span>
+<span class="w">        </span><span class="nt">data_type</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">string</span>
+<span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">status</span>
+<span class="w">        </span><span class="nt">data_type</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">string</span>
+<span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">enrollment_type</span>
+<span class="w">        </span><span class="nt">data_type</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">string</span>
+<span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">grade_canonical_name</span>
+<span class="w">        </span><span class="nt">data_type</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">string</span>
+<span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">school_year_start</span>
+<span class="w">        </span><span class="nt">data_type</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">int64</span>
+<span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">birth_date</span>
+<span class="w">        </span><span class="nt">data_type</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">date</span>
+<span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">address_1</span>
+<span class="w">        </span><span class="nt">data_type</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">string</span>
+<span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">address_2</span>
+<span class="w">        </span><span class="nt">data_type</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">string</span>
+<span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">city</span>
+<span class="w">        </span><span class="nt">data_type</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">string</span>
+<span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">state</span>
+<span class="w">        </span><span class="nt">data_type</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">string</span>
+<span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">zip</span>
+<span class="w">        </span><span class="nt">data_type</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">string</span>
+<span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">race_ms</span>
+<span class="w">        </span><span class="nt">data_type</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">string</span>
+<span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">latino_hispanic_yn</span>
+<span class="w">        </span><span class="nt">data_type</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">string</span>
+<span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">assigned_school_ss</span>
+<span class="w">        </span><span class="nt">data_type</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">string</span>
+<span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">sped_received_yn</span>
+<span class="w">        </span><span class="nt">data_type</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">string</span>
+<span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">mdcps_id_txt</span>
+<span class="w">        </span><span class="nt">data_type</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">string</span>
+<span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">powerschool_student_number</span>
+<span class="w">        </span><span class="nt">data_type</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">string</span>
+</code></pre></div>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 3: Build and test the model</strong></li>
+</ul>
+<p>(Requires the asset to have materialized at least once — see Task 9. If running
+before data lands, expect a "table not found" on the external source; in that
+case run this step after Task 9.)</p>
+<p>Run:</p>
+<div class="highlight"><pre><span></span><code><span class="nv">VIRTUAL_ENV</span><span class="o">=</span><span class="w"> </span>uv<span class="w"> </span>--directory<span class="w"> </span>/workspaces/teamster/.worktrees/cbini/feat/claude-finalsite-focus-integration<span class="w"> </span>run<span class="w"> </span>dbt<span class="w"> </span>build<span class="w"> </span>--project-dir<span class="w"> </span>/workspaces/teamster/.worktrees/cbini/feat/claude-finalsite-focus-integration/src/dbt/kippmiami<span class="w"> </span>--select<span class="w"> </span>stg_finalsite__contacts
+</code></pre></div>
+<p>Expected: model builds; the <code>unique_combination_of_columns</code> test PASSES (one row
+per <code>finalsite_enrollment_id</code>); contract enforcement passes (output columns
+match the YAML).</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 4: Commit</strong></li>
+</ul>
+<div class="highlight"><pre><span></span><code>git<span class="w"> </span>-C<span class="w"> </span>/workspaces/teamster/.worktrees/cbini/feat/claude-finalsite-focus-integration<span class="w"> </span>add<span class="w"> </span>src/dbt/finalsite/models/staging/stg_finalsite__contacts.sql<span class="w"> </span>src/dbt/finalsite/models/staging/properties/stg_finalsite__contacts.yml
+git<span class="w"> </span>-C<span class="w"> </span>/workspaces/teamster/.worktrees/cbini/feat/claude-finalsite-focus-integration<span class="w"> </span>commit<span class="w"> </span>-m<span class="w"> </span><span class="s2">&quot;feat(finalsite): add stg_finalsite__contacts staging model&quot;</span>
+</code></pre></div>
+<hr />
+<h2 id="task-8-staging-model-stg_finalsite__contact_relationships-guardian-grain">Task 8: Staging model — <code>stg_finalsite__contact_relationships</code> (guardian grain)</h2>
+<p><strong>Files:</strong></p>
+<ul>
+<li>Create:
+  <code>src/dbt/finalsite/models/staging/stg_finalsite__contact_relationships.sql</code></li>
+<li>Create:
+  <code>src/dbt/finalsite/models/staging/properties/stg_finalsite__contact_relationships.yml</code></li>
+</ul>
+<p>One row per (contact, relationship). Unnests <code>relationships</code>, projects the
+expanded guardian's fields from <code>relationship.contact</code>, and derives the gendered
+<code>mother</code>/<code>father</code> label from <code>rel_type</code> + the guardian's <code>gender</code> (the
+design-validated rule, falling back to bare <code>rel_type</code> when gender is unset).
+The guardian's PowerSchool Contact ID is pulled from the guardian's own
+<code>id_attributes</code>.</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 1: Write the model</strong></li>
+</ul>
+<p>Create
+<code>src/dbt/finalsite/models/staging/stg_finalsite__contact_relationships.sql</code>:</p>
+<div class="highlight"><pre><span></span><code><span class="k">with</span>
+<span class="w">    </span><span class="n">relationships</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="p">(</span>
+<span class="w">        </span><span class="k">select</span>
+<span class="w">            </span><span class="k">c</span><span class="p">.</span><span class="n">id</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">finalsite_enrollment_id</span><span class="p">,</span>
+<span class="w">            </span><span class="n">r</span><span class="p">.</span><span class="n">id</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">relationship_id</span><span class="p">,</span>
+<span class="w">            </span><span class="n">r</span><span class="p">.</span><span class="n">rel_type</span><span class="p">,</span>
+<span class="w">            </span><span class="n">r</span><span class="p">.</span><span class="k">primary</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">is_primary</span><span class="p">,</span>
+<span class="w">            </span><span class="n">r</span><span class="p">.</span><span class="n">contact</span><span class="p">.</span><span class="n">id</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">guardian_finalsite_id</span><span class="p">,</span>
+<span class="w">            </span><span class="n">r</span><span class="p">.</span><span class="n">contact</span><span class="p">.</span><span class="n">first_name</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">guardian_first_name</span><span class="p">,</span>
+<span class="w">            </span><span class="n">r</span><span class="p">.</span><span class="n">contact</span><span class="p">.</span><span class="n">last_name</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">guardian_last_name</span><span class="p">,</span>
+<span class="w">            </span><span class="n">r</span><span class="p">.</span><span class="n">contact</span><span class="p">.</span><span class="n">email</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">guardian_email</span><span class="p">,</span>
+<span class="w">            </span><span class="n">r</span><span class="p">.</span><span class="n">contact</span><span class="p">.</span><span class="n">gender</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">guardian_gender</span><span class="p">,</span>
+<span class="w">            </span><span class="n">r</span><span class="p">.</span><span class="n">contact</span><span class="p">.</span><span class="n">phone_1</span><span class="p">.</span><span class="nb">number</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">guardian_phone</span><span class="p">,</span>
+<span class="w">            </span><span class="p">(</span>
+<span class="w">                </span><span class="k">select</span><span class="w"> </span><span class="n">any_value</span><span class="p">(</span><span class="n">av</span><span class="p">.</span><span class="n">value</span><span class="p">),</span>
+<span class="w">                </span><span class="k">from</span><span class="w"> </span><span class="k">unnest</span><span class="p">(</span><span class="n">r</span><span class="p">.</span><span class="n">contact</span><span class="p">.</span><span class="n">id_attributes</span><span class="p">)</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">av</span>
+<span class="w">                </span><span class="k">where</span><span class="w"> </span><span class="n">av</span><span class="p">.</span><span class="n">field_name</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s1">&#39;powerschool_contact_id&#39;</span>
+<span class="w">            </span><span class="p">)</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">guardian_powerschool_contact_id</span><span class="p">,</span>
+<span class="w">        </span><span class="k">from</span><span class="w"> </span><span class="err">{{</span><span class="w"> </span><span class="k">source</span><span class="p">(</span><span class="ss">&quot;finalsite&quot;</span><span class="p">,</span><span class="w"> </span><span class="ss">&quot;contacts&quot;</span><span class="p">)</span><span class="w"> </span><span class="err">}}</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="k">c</span>
+<span class="w">        </span><span class="k">cross</span><span class="w"> </span><span class="k">join</span><span class="w"> </span><span class="k">unnest</span><span class="p">(</span><span class="k">c</span><span class="p">.</span><span class="n">relationships</span><span class="p">)</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">r</span>
+<span class="w">        </span><span class="k">where</span><span class="w"> </span><span class="n">r</span><span class="p">.</span><span class="n">contact</span><span class="w"> </span><span class="k">is</span><span class="w"> </span><span class="k">not</span><span class="w"> </span><span class="k">null</span>
+<span class="w">    </span><span class="p">)</span>
+
+<span class="k">select</span>
+<span class="w">    </span><span class="o">*</span><span class="p">,</span>
+<span class="w">    </span><span class="k">case</span>
+<span class="w">        </span><span class="k">when</span><span class="w"> </span><span class="n">rel_type</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s1">&#39;parent&#39;</span><span class="w"> </span><span class="k">and</span><span class="w"> </span><span class="n">guardian_gender</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s1">&#39;F&#39;</span>
+<span class="w">        </span><span class="k">then</span><span class="w"> </span><span class="s1">&#39;mother&#39;</span>
+<span class="w">        </span><span class="k">when</span><span class="w"> </span><span class="n">rel_type</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s1">&#39;parent&#39;</span><span class="w"> </span><span class="k">and</span><span class="w"> </span><span class="n">guardian_gender</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s1">&#39;M&#39;</span>
+<span class="w">        </span><span class="k">then</span><span class="w"> </span><span class="s1">&#39;father&#39;</span>
+<span class="w">        </span><span class="k">else</span><span class="w"> </span><span class="n">rel_type</span>
+<span class="w">    </span><span class="k">end</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">relationship_label</span><span class="p">,</span>
+<span class="k">from</span><span class="w"> </span><span class="n">relationships</span>
+</code></pre></div>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 2: Write the contract + grain test</strong></li>
+</ul>
+<p>Create
+<code>src/dbt/finalsite/models/staging/properties/stg_finalsite__contact_relationships.yml</code>:</p>
+<div class="highlight"><pre><span></span><code><span class="nt">models</span><span class="p">:</span>
+<span class="w">  </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">stg_finalsite__contact_relationships</span>
+<span class="w">    </span><span class="nt">data_tests</span><span class="p">:</span>
+<span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">dbt_utils.unique_combination_of_columns</span><span class="p">:</span>
+<span class="w">          </span><span class="nt">arguments</span><span class="p">:</span>
+<span class="w">            </span><span class="nt">combination_of_columns</span><span class="p">:</span>
+<span class="w">              </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">finalsite_enrollment_id</span>
+<span class="w">              </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">relationship_id</span>
+<span class="w">          </span><span class="nt">config</span><span class="p">:</span>
+<span class="w">            </span><span class="nt">severity</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">error</span>
+<span class="w">    </span><span class="nt">columns</span><span class="p">:</span>
+<span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">finalsite_enrollment_id</span>
+<span class="w">        </span><span class="nt">data_type</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">string</span>
+<span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">relationship_id</span>
+<span class="w">        </span><span class="nt">data_type</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">string</span>
+<span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">rel_type</span>
+<span class="w">        </span><span class="nt">data_type</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">string</span>
+<span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">is_primary</span>
+<span class="w">        </span><span class="nt">data_type</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">boolean</span>
+<span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">guardian_finalsite_id</span>
+<span class="w">        </span><span class="nt">data_type</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">string</span>
+<span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">guardian_first_name</span>
+<span class="w">        </span><span class="nt">data_type</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">string</span>
+<span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">guardian_last_name</span>
+<span class="w">        </span><span class="nt">data_type</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">string</span>
+<span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">guardian_email</span>
+<span class="w">        </span><span class="nt">data_type</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">string</span>
+<span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">guardian_gender</span>
+<span class="w">        </span><span class="nt">data_type</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">string</span>
+<span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">guardian_phone</span>
+<span class="w">        </span><span class="nt">data_type</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">string</span>
+<span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">guardian_powerschool_contact_id</span>
+<span class="w">        </span><span class="nt">data_type</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">string</span>
+<span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">relationship_label</span>
+<span class="w">        </span><span class="nt">data_type</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">string</span>
+</code></pre></div>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 3: Build and test the model</strong></li>
+</ul>
+<p>(Same data prerequisite as Task 7 Step 3.)</p>
+<p>Run:</p>
+<div class="highlight"><pre><span></span><code><span class="nv">VIRTUAL_ENV</span><span class="o">=</span><span class="w"> </span>uv<span class="w"> </span>--directory<span class="w"> </span>/workspaces/teamster/.worktrees/cbini/feat/claude-finalsite-focus-integration<span class="w"> </span>run<span class="w"> </span>dbt<span class="w"> </span>build<span class="w"> </span>--project-dir<span class="w"> </span>/workspaces/teamster/.worktrees/cbini/feat/claude-finalsite-focus-integration/src/dbt/kippmiami<span class="w"> </span>--select<span class="w"> </span>stg_finalsite__contact_relationships
+</code></pre></div>
+<p>Expected: model builds; <code>unique_combination_of_columns</code> PASSES; contract passes.
+If the grain test fails (duplicate <code>relationship_id</code> within a contact), inspect
+whether the API returns multiple expansion rows per relationship and adjust the
+grain key.</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 4: Commit</strong></li>
+</ul>
+<div class="highlight"><pre><span></span><code>git<span class="w"> </span>-C<span class="w"> </span>/workspaces/teamster/.worktrees/cbini/feat/claude-finalsite-focus-integration<span class="w"> </span>add<span class="w"> </span>src/dbt/finalsite/models/staging/stg_finalsite__contact_relationships.sql<span class="w"> </span>src/dbt/finalsite/models/staging/properties/stg_finalsite__contact_relationships.yml
+git<span class="w"> </span>-C<span class="w"> </span>/workspaces/teamster/.worktrees/cbini/feat/claude-finalsite-focus-integration<span class="w"> </span>commit<span class="w"> </span>-m<span class="w"> </span><span class="s2">&quot;feat(finalsite): add stg_finalsite__contact_relationships staging model&quot;</span>
+</code></pre></div>
+<hr />
+<h2 id="task-9-end-to-end-materialization-lint-push">Task 9: End-to-end materialization + lint + push</h2>
+<p><strong>Files:</strong> none (operational verification).</p>
+<p>This task materializes the asset (lands real data), runs the staging builds
+against it, lints, and pushes for dbt Cloud CI.</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 1: Materialize the contacts asset (requires OP token + deployed
+      creds)</strong></li>
+</ul>
+<p>In the VS Code terminal (where <code>OP_SERVICE_ACCOUNT_TOKEN</code> is available — Claude
+sessions cannot access secrets):</p>
+<div class="highlight"><pre><span></span><code><span class="nb">cd</span><span class="w"> </span>/workspaces/teamster/.worktrees/cbini/feat/claude-finalsite-focus-integration
+uv<span class="w"> </span>run<span class="w"> </span>dagster<span class="w"> </span>asset<span class="w"> </span>materialize<span class="w"> </span>--select<span class="w"> </span>kippmiami/finalsite/contacts<span class="w"> </span>-m<span class="w"> </span>teamster.code_locations.kippmiami.definitions
+</code></pre></div>
+<p>Expected: run succeeds; the <code>record_count</code> metadata is &gt; 0; the
+<code>avro_schema_valid</code> asset check passes (or WARNs on extra fields — a warn is
+acceptable, it does not fail). If it 401s, the cluster/env creds are missing
+(see Scope external dependency).</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 2: Confirm the BigQuery external table is queryable</strong></li>
+</ul>
+<p>Use the BigQuery MCP (or <code>bq query</code>) — confirm row count and the union-coercion
+landed <code>race_ms</code> as a string:</p>
+<div class="highlight"><pre><span></span><code><span class="k">select</span><span class="w"> </span><span class="k">count</span><span class="p">(</span><span class="o">*</span><span class="p">)</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">n</span><span class="p">,</span><span class="w"> </span><span class="k">count</span><span class="p">(</span><span class="n">race_ms</span><span class="p">)</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">n_race</span>
+<span class="k">from</span><span class="w"> </span><span class="o">`</span><span class="n">teamster</span><span class="o">-</span><span class="mi">332318</span><span class="p">.</span><span class="n">kippmiami_finalsite</span><span class="p">.</span><span class="n">stg_finalsite__contacts</span><span class="o">`</span>
+</code></pre></div>
+<p>Expected: <code>n</code> &gt; 0; <code>n_race</code> close to <code>n</code> (race populated for most students), no
+query error on the <code>race_ms</code> STRING column.</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 3: Build both staging models together</strong></li>
+</ul>
+<div class="highlight"><pre><span></span><code><span class="nv">VIRTUAL_ENV</span><span class="o">=</span><span class="w"> </span>uv<span class="w"> </span>--directory<span class="w"> </span>/workspaces/teamster/.worktrees/cbini/feat/claude-finalsite-focus-integration<span class="w"> </span>run<span class="w"> </span>dbt<span class="w"> </span>build<span class="w"> </span>--project-dir<span class="w"> </span>/workspaces/teamster/.worktrees/cbini/feat/claude-finalsite-focus-integration/src/dbt/kippmiami<span class="w"> </span>--select<span class="w"> </span>stg_finalsite__contacts<span class="w"> </span>stg_finalsite__contact_relationships
+</code></pre></div>
+<p>Expected: both build; all data_tests PASS.</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 4: Lint the SQL + YAML</strong></li>
+</ul>
+<div class="highlight"><pre><span></span><code><span class="nb">cd</span><span class="w"> </span>/workspaces/teamster/.worktrees/cbini/feat/claude-finalsite-focus-integration
+/workspaces/teamster/.trunk/tools/trunk<span class="w"> </span>check<span class="w"> </span>--force<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>src/dbt/finalsite/models/staging/stg_finalsite__contacts.sql<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>src/dbt/finalsite/models/staging/stg_finalsite__contact_relationships.sql<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>src/dbt/finalsite/models/staging/properties/stg_finalsite__contacts.yml<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>src/dbt/finalsite/models/staging/properties/stg_finalsite__contact_relationships.yml<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>src/dbt/finalsite/models/sources-external.yml
+</code></pre></div>
+<p>Expected: <code>✔ No issues</code> (sqlfluff + yamllint clean).</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 5: Push (hand to the user if the classifier blocks)</strong></li>
+</ul>
+<div class="highlight"><pre><span></span><code>git<span class="w"> </span>-C<span class="w"> </span>/workspaces/teamster/.worktrees/cbini/feat/claude-finalsite-focus-integration<span class="w"> </span>push
+</code></pre></div>
+<p>Then confirm dbt Cloud CI is green on the PR before declaring done.</p>
+<hr />
+<h2 id="self-review">Self-Review</h2>
+<p><strong>1. Spec coverage.</strong> Plan 1's slice of the spec is "Architecture → ingestion
+(Fork 1 = REST API) + dbt staging (normalize the source to one common shape)."
+Covered: contacts ingestion via the validated one-call recipe (Tasks 3, 5), Avro
+schema from the existing <code>Contact</code> model (Tasks 1–2), Miami resource (Task 4),
+external source (Task 6), normalized student-grain + guardian-grain staging
+incl. the gendered-relationship derivation (Tasks 7–8). Deferred-by-design and
+called out in Scope: eligibility/identity/<code>status_report</code> join (Plan 2), Focus
+output + transport (Plan 3), medical columns (gated). No in-scope spec
+requirement is unaddressed.</p>
+<p><strong>2. Placeholder scan.</strong> No TBD/TODO/"handle edge cases"/"similar to Task N."
+Every code step shows full content. The one genuine unknown — exact
+Avro→BigQuery struct/array field names — is handled by an explicit inspection
+step (Task 7 note + Task 9 Step 2) with concrete commands, not a guess; the
+field names used come from the live-validated design (<code>race_ms</code>,
+<code>assigned_school_ss</code>, <code>mdcps_id_txt</code>, etc.).</p>
+<p><strong>3. Type/name consistency.</strong> <code>CONTACTS_SCHEMA</code> (Task 2) is consumed in Task 5.
+<code>build_finalsite_contacts_asset(code_location, schema)</code> signature (Task 3)
+matches its call (Task 5). <code>FINALSITE_RESOURCE</code> (Task 4) is registered as
+<code>"finalsite"</code> (Task 5), matching the asset's <code>finalsite: FinalsiteResource</code>
+parameter. The asset key <code>[kippmiami, finalsite, contacts]</code> (Task 3) matches the
+source <code>meta.dagster.asset_key</code> (Task 6, <code>project_name</code> → <code>kippmiami</code>) and the
+staging <code>source("finalsite", "contacts")</code> (Tasks 7–8). <code>RelatedContact</code> (Task 1)
+supplies the <code>relationship.contact.*</code> fields read in Task 8. Staging SQL output
+columns match their contract YAML column lists (Tasks 7–8).</p>
+<p>One open item for the implementer to confirm against live data (not a blocker):
+the guardian PowerSchool-Contact-ID attribute key is assumed
+<code>powerschool_contact_id</code> (Task 8) — verify the exact <code>field_name</code> against
+<code>id_attributes</code> once data lands and adjust if Miami's tenant uses a different
+slug.</p>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+          <button type="button" class="md-top md-icon" data-md-component="top" hidden>
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8z"/></svg>
+  Back to top
+</button>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+    <div class="md-copyright__highlight">
+      Copyright &copy; KIPP TEAM & Family Schools
+    </div>
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      
+      <script id="__config" type="application/json">{"annotate": null, "base": "../../..", "features": ["content.action.edit", "content.code.copy", "navigation.instant", "navigation.indexes", "navigation.sections", "navigation.tabs", "navigation.tabs.sticky", "navigation.top", "search.highlight", "search.suggest", "toc.follow"], "search": "../../../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+    
+    
+      <script src="../../../assets/javascripts/bundle.79ae519e.min.js"></script>
+      
+    
+  </body>
+</html>

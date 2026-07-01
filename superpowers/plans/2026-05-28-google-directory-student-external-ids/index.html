@@ -1,0 +1,2114 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+        <meta name="description" content="Data engineering platform for KIPP TEAM & Family Schools">
+      
+      
+      
+      
+      
+      
+        
+      
+      
+      <link rel="icon" href="../../../images/truck.svg">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.6">
+    
+    
+      
+        <title>Google Directory student externalIds — implementation plan - teamster</title>
+      
+    
+    
+      <link rel="stylesheet" href="../../../assets/stylesheets/main.484c7ddc.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+    <script>__md_scope=new URL("../../..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+  </head>
+  
+  
+    <body dir="ltr">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#google-directory-student-externalids-implementation-plan" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+  
+
+<header class="md-header md-header--shadow md-header--lifted" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href="../../.." title="teamster" class="md-header__button md-logo" aria-label="teamster" data-md-component="logo">
+      
+  <img src="../../../images/truck.svg" alt="logo">
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            teamster
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              Google Directory student externalIds — implementation plan
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+        <div class="md-search__suggest" data-md-component="search-suggest"></div>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      
+    
+    
+      <div class="md-header__source">
+        <a href="https://github.com/TEAMSchools/teamster" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M173.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6m-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3m44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9M252.8 8C114.1 8 8 113.3 8 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C436.2 457.8 504 362.9 504 252 504 113.3 391.5 8 252.8 8M105.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1m-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7m32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1m-11.4-14.7c-1.6 1-1.6 3.6 0 5.9s4.3 3.3 5.6 2.3c1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2"/></svg>
+  </div>
+  <div class="md-source__repository">
+    TEAMSchools/teamster
+  </div>
+</a>
+      </div>
+    
+  </nav>
+  
+    
+      
+<nav class="md-tabs" aria-label="Tabs" data-md-component="tabs">
+  <div class="md-grid">
+    <ul class="md-tabs__list">
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../../.." class="md-tabs__link">
+        
+  
+  
+    
+  
+  Home
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../../guides/" class="md-tabs__link">
+          
+  
+  
+    
+  
+  Guides
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../../troubleshooting/dagster/" class="md-tabs__link">
+          
+  
+  
+    
+  
+  Troubleshooting
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../../reference/architecture/" class="md-tabs__link">
+          
+  
+  
+    
+  
+  Reference
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../../../reference/automations/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  Automations
+
+      </a>
+    </li>
+  
+
+      
+    </ul>
+  </div>
+</nav>
+    
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+  
+
+
+<nav class="md-nav md-nav--primary md-nav--lifted" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href="../../.." title="teamster" class="md-nav__button md-logo" aria-label="teamster" data-md-component="logo">
+      
+  <img src="../../../images/truck.svg" alt="logo">
+
+    </a>
+    teamster
+  </label>
+  
+    <div class="md-nav__source">
+      <a href="https://github.com/TEAMSchools/teamster" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M173.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6m-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3m44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9M252.8 8C114.1 8 8 113.3 8 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C436.2 457.8 504 362.9 504 252 504 113.3 391.5 8 252.8 8M105.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1m-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7m32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1m-11.4-14.7c-1.6 1-1.6 3.6 0 5.9s4.3 3.3 5.6 2.3c1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2"/></svg>
+  </div>
+  <div class="md-source__repository">
+    TEAMSchools/teamster
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../.." class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Home
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+          
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2" >
+        
+          
+          <div class="md-nav__link md-nav__container">
+            <a href="../../../guides/" class="md-nav__link ">
+              
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Guides
+  
+
+    
+  </span>
+  
+  
+
+            </a>
+            
+              
+              <label class="md-nav__link " for="__nav_2" id="__nav_2_label" tabindex="0">
+                <span class="md-nav__icon md-icon"></span>
+              </label>
+            
+          </div>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_2_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_2">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Guides
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/codespaces/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Codespaces
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/local-development/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Local Development
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/dagster/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Dagster
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/google-sheets/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Google Sheets & Forms
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/adp-location-renames/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ADP Location Renames
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/dbt-development/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    dbt Development
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/sftp-integration/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    SFTP Integration
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/superpowers/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Claude Code & Superpowers
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/cube/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Cube
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/claude-cube-connector/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Claude + Cube Connector
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3" >
+        
+          
+          <label class="md-nav__link" for="__nav_3" id="__nav_3_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Troubleshooting
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_3">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Troubleshooting
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../troubleshooting/dagster/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Dagster
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../troubleshooting/dbt/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    dbt
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../troubleshooting/vscode/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    VS Code
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4" >
+        
+          
+          <label class="md-nav__link" for="__nav_4" id="__nav_4_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Reference
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_4_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_4">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Reference
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/architecture/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Architecture
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/adding-an-integration/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Adding an Integration
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/io-managers/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    IO Managers
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/fiscal-year-partitioning/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Fiscal Year & Partitioning
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/dbt-conventions/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    dbt Conventions
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/finalsite-focus-import/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Finalsite to Focus Import
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/marts-data-models/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Marts Data Models
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/automation-conditions/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Automation Conditions
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/automations/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Automations
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#file-map" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        File map
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#task-1-surface-student_number-in-rpt_google_directory__users_import" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Task 1: Surface student_number in rpt_google_directory__users_import
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#task-2-attach-externalids-on-create-pop-on-update" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Task 2: Attach externalIds on create / pop on update
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#task-3-one-shot-backfill-script" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Task 3: One-shot backfill script
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#task-4-update-scriptsclaudemd-catalog" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Task 4: Update scripts/CLAUDE.md catalog
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#task-5-final-verification" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Task 5: Final verification
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#task-6-open-the-pr" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Task 6: Open the PR
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#post-merge-manual-not-part-of-plan-execution" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Post-merge (manual — not part of plan execution)
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+  
+    <a href="https://github.com/TEAMSchools/teamster/edit/main/docs/superpowers/plans/2026-05-28-google-directory-student-external-ids.md" title="Edit this page" class="md-content__button md-icon" rel="edit">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M10 20H6V4h7v5h5v3.1l2-2V8l-6-6H6c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h4zm10.2-7c.1 0 .3.1.4.2l1.3 1.3c.2.2.2.6 0 .8l-1 1-2.1-2.1 1-1c.1-.1.2-.2.4-.2m0 3.9L14.1 23H12v-2.1l6.1-6.1z"/></svg>
+    </a>
+  
+  
+
+
+<h1 id="google-directory-student-externalids-implementation-plan">Google Directory student <code>externalIds</code> — implementation plan</h1>
+<blockquote>
+<p><strong>For agentic workers:</strong> REQUIRED SUB-SKILL: Use
+superpowers:subagent-driven-development (recommended) or
+superpowers:executing-plans to implement this plan task-by-task. Steps use
+checkbox (<code>- [ ]</code>) syntax for tracking.</p>
+</blockquote>
+<p><strong>Goal:</strong> Populate Google Workspace <code>externalIds[type='organization']</code> with
+PowerSchool <code>student_number</code> on new student accounts created via
+<code>google_directory_user_create</code>, plus a one-shot backfill for existing matched
+accounts.</p>
+<p><strong>Architecture:</strong> dbt rpt model surfaces <code>student_number</code> to the create-path
+asset; the create asset attaches <code>externalIds</code> before <code>batch_insert_users</code>, the
+update asset pops the column so the recurring update path never touches
+<code>externalIds</code>. A standalone PEP 723 Python script handles the existing-account
+backfill. Tracking issue:
+<a href="https://github.com/TEAMSchools/teamster/issues/3950">#3950</a>. Follow-up:
+<a href="https://github.com/TEAMSchools/teamster/issues/4057">#4057</a>.</p>
+<p><strong>Tech Stack:</strong> dbt (BigQuery), Dagster, <code>googleapiclient</code>, <code>google-auth</code>,
+<code>google-cloud-bigquery</code>, <code>uv</code> PEP 723 inline deps.</p>
+<p><strong>Spec:</strong>
+<a href="../../specs/2026-05-28-google-directory-student-external-ids-design/"><code>docs/superpowers/specs/2026-05-28-google-directory-student-external-ids-design.md</code></a>.</p>
+<p><strong>Working directory:</strong> All commands assume the worktree at
+<code>/workspaces/teamster/.worktrees/cbini/feat/claude-google-directory-student-external-ids</code>.</p>
+<hr />
+<h2 id="file-map">File map</h2>
+<ul>
+<li><strong>Modify:</strong>
+  <code>src/dbt/kipptaf/models/extracts/google/directory/rpt_google_directory__users_import.sql</code>
+  — surface <code>student_number</code> from <code>int_extracts__student_enrollments</code>.</li>
+<li><strong>Modify:</strong>
+  <code>src/dbt/kipptaf/models/extracts/google/directory/properties/rpt_google_directory__users_import.yml</code>
+  — declare <code>student_number int64</code> on the contract; add <code>not_null</code> test scoped
+  to <code>is_create</code>.</li>
+<li><strong>Modify:</strong> <code>src/teamster/code_locations/kipptaf/google/directory/assets.py</code> —
+  in <code>google_directory_user_create</code>, partition by <code>student_number</code> presence and
+  attach <code>externalIds</code>; in <code>google_directory_user_update</code>, pop the column.</li>
+<li><strong>Create:</strong> <code>scripts/backfill_google_directory_student_external_ids.py</code> — PEP
+  723 one-shot backfill for existing matched student accounts.</li>
+</ul>
+<hr />
+<h2 id="task-1-surface-student_number-in-rpt_google_directory__users_import">Task 1: Surface <code>student_number</code> in <code>rpt_google_directory__users_import</code></h2>
+<p><strong>Files:</strong></p>
+<ul class="task-list">
+<li>Modify:
+  <code>src/dbt/kipptaf/models/extracts/google/directory/rpt_google_directory__users_import.sql</code></li>
+<li>
+<p>Modify:
+  <code>src/dbt/kipptaf/models/extracts/google/directory/properties/rpt_google_directory__users_import.yml</code></p>
+</li>
+<li class="task-list-item">
+<p><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 1: Add <code>student_number</code> to the <code>students</code> CTE</strong></p>
+</li>
+</ul>
+<p>In <code>rpt_google_directory__users_import.sql</code>, modify the <code>students</code> CTE to pull
+  <code>student_number</code> (BIGINT in PowerSchool, lands as INT64). Final state of that
+  CTE:</p>
+<div class="highlight"><pre><span></span><code><span class="n">students</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="p">(</span>
+<span class="w">    </span><span class="k">select</span>
+<span class="w">        </span><span class="n">student_number</span><span class="p">,</span>
+<span class="w">        </span><span class="n">student_first_name</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">first_name</span><span class="p">,</span>
+<span class="w">        </span><span class="n">student_last_name</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">last_name</span><span class="p">,</span>
+<span class="w">        </span><span class="n">school_name</span><span class="p">,</span>
+<span class="w">        </span><span class="n">grade_level</span><span class="p">,</span>
+<span class="w">        </span><span class="n">student_email</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">student_email_google</span><span class="p">,</span>
+<span class="w">        </span><span class="n">student_web_password</span><span class="p">,</span>
+<span class="w">        </span><span class="n">is_out_of_district</span><span class="p">,</span>
+
+<span class="w">        </span><span class="k">lower</span><span class="p">(</span><span class="n">region</span><span class="p">)</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">region</span><span class="p">,</span>
+
+<span class="w">        </span><span class="k">if</span><span class="p">(</span><span class="n">enroll_status</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">,</span><span class="w"> </span><span class="k">false</span><span class="p">,</span><span class="w"> </span><span class="k">true</span><span class="p">)</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">suspended</span><span class="p">,</span>
+<span class="w">    </span><span class="k">from</span><span class="w"> </span><span class="err">{{</span><span class="w"> </span><span class="k">ref</span><span class="p">(</span><span class="ss">&quot;int_extracts__student_enrollments&quot;</span><span class="p">)</span><span class="w"> </span><span class="err">}}</span>
+<span class="w">    </span><span class="k">where</span><span class="w"> </span><span class="n">rn_all</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">1</span><span class="w"> </span><span class="k">and</span><span class="w"> </span><span class="n">student_email</span><span class="w"> </span><span class="k">is</span><span class="w"> </span><span class="k">not</span><span class="w"> </span><span class="k">null</span><span class="w"> </span><span class="k">and</span><span class="w"> </span><span class="n">region</span><span class="w"> </span><span class="o">!=</span><span class="w"> </span><span class="s1">&#39;Paterson&#39;</span>
+<span class="p">),</span>
+</code></pre></div>
+<p><code>student_number</code> is the first column to satisfy sqlfluff ST06 (plain refs
+  ordered before function/conditional columns).</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 2: Project <code>student_number</code> through <code>final</code> SELECT</strong></li>
+</ul>
+<p>At the bottom of the file, add <code>student_number,</code> to the final <code>SELECT</code>
+  immediately after <code>changePasswordAtNextLogin</code>. Final tail of the file:</p>
+<div class="highlight"><pre><span></span><code><span class="k">select</span>
+<span class="w">    </span><span class="n">student_email_google</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="o">`</span><span class="n">primaryEmail</span><span class="o">`</span><span class="p">,</span>
+<span class="w">    </span><span class="n">org_unit_path</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="o">`</span><span class="n">orgUnitPath</span><span class="o">`</span><span class="p">,</span>
+<span class="w">    </span><span class="n">suspended</span><span class="p">,</span>
+<span class="w">    </span><span class="n">is_create</span><span class="p">,</span>
+<span class="w">    </span><span class="n">is_update</span><span class="p">,</span>
+
+<span class="w">    </span><span class="s1">&#39;SHA-1&#39;</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="o">`</span><span class="n">hashFunction</span><span class="o">`</span><span class="p">,</span>
+
+<span class="w">    </span><span class="s1">&#39;group-students-&#39;</span><span class="w"> </span><span class="o">||</span><span class="w"> </span><span class="n">region</span><span class="w"> </span><span class="o">||</span><span class="w"> </span><span class="s1">&#39;@teamstudents.org&#39;</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="o">`</span><span class="n">groupKey</span><span class="o">`</span><span class="p">,</span>
+
+<span class="w">    </span><span class="n">struct</span><span class="p">(</span><span class="n">first_name</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="o">`</span><span class="n">givenName</span><span class="o">`</span><span class="p">,</span><span class="w"> </span><span class="n">last_name</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="o">`</span><span class="n">familyName</span><span class="o">`</span><span class="p">)</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="o">`</span><span class="n">name</span><span class="o">`</span><span class="p">,</span>
+<span class="w">    </span><span class="n">to_hex</span><span class="p">(</span><span class="n">sha1</span><span class="p">(</span><span class="n">student_web_password</span><span class="p">))</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="o">`</span><span class="n">password</span><span class="o">`</span><span class="p">,</span>
+
+<span class="w">    </span><span class="k">if</span><span class="p">(</span><span class="n">grade_level</span><span class="w"> </span><span class="o">&gt;=</span><span class="w"> </span><span class="mi">3</span><span class="p">,</span><span class="w"> </span><span class="k">true</span><span class="p">,</span><span class="w"> </span><span class="k">false</span><span class="p">)</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="o">`</span><span class="n">changePasswordAtNextLogin</span><span class="o">`</span><span class="p">,</span>
+
+<span class="w">    </span><span class="n">student_number</span><span class="p">,</span>
+<span class="k">from</span><span class="w"> </span><span class="k">final</span>
+<span class="k">where</span><span class="w"> </span><span class="n">is_create</span><span class="w"> </span><span class="k">or</span><span class="w"> </span><span class="n">is_update</span>
+</code></pre></div>
+<p><code>student_number</code> is grouped last (plain ref from <code>final</code>) to keep the
+  conditional/function columns together as in the existing file. sqlfluff ST06
+  allows a trailing plain-ref column block.</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 3: Add <code>student_number</code> column to the contract YAML</strong></li>
+</ul>
+<p>In <code>properties/rpt_google_directory__users_import.yml</code>, append the column
+  block after the existing entries. The column-level <code>data_tests</code> go on this
+  column (single-column test), keeping the per-column-test column near the top
+  per dbt conventions — for this one-test file, put it after
+  <code>changePasswordAtNextLogin</code>:</p>
+<div class="highlight"><pre><span></span><code><span class="nt">models</span><span class="p">:</span>
+<span class="w">  </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">rpt_google_directory__users_import</span>
+<span class="w">    </span><span class="nt">columns</span><span class="p">:</span>
+<span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">primaryEmail</span>
+<span class="w">        </span><span class="nt">data_type</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">string</span>
+<span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">orgUnitPath</span>
+<span class="w">        </span><span class="nt">data_type</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">string</span>
+<span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">suspended</span>
+<span class="w">        </span><span class="nt">data_type</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">boolean</span>
+<span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">is_create</span>
+<span class="w">        </span><span class="nt">data_type</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">boolean</span>
+<span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">is_update</span>
+<span class="w">        </span><span class="nt">data_type</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">boolean</span>
+<span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">hashFunction</span>
+<span class="w">        </span><span class="nt">data_type</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">string</span>
+<span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">groupKey</span>
+<span class="w">        </span><span class="nt">data_type</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">string</span>
+<span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">name</span>
+<span class="w">        </span><span class="nt">data_type</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">record</span>
+<span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">name.givenName</span>
+<span class="w">        </span><span class="nt">data_type</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">string</span>
+<span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">name.familyName</span>
+<span class="w">        </span><span class="nt">data_type</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">string</span>
+<span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">password</span>
+<span class="w">        </span><span class="nt">data_type</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">string</span>
+<span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">changePasswordAtNextLogin</span>
+<span class="w">        </span><span class="nt">data_type</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">boolean</span>
+<span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">student_number</span>
+<span class="w">        </span><span class="nt">data_type</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">int64</span>
+<span class="w">        </span><span class="nt">description</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">&gt;</span>
+<span class="w">          </span><span class="no">PowerSchool student_number. Consumed by google_directory_user_create</span>
+<span class="w">          </span><span class="no">to set externalIds[type=&#39;organization&#39;] on new accounts; popped by</span>
+<span class="w">          </span><span class="no">google_directory_user_update before PATCH so the recurring update</span>
+<span class="w">          </span><span class="no">path never touches externalIds.</span>
+<span class="w">        </span><span class="nt">data_tests</span><span class="p">:</span>
+<span class="w">          </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">not_null</span><span class="p">:</span>
+<span class="w">              </span><span class="nt">config</span><span class="p">:</span>
+<span class="w">                </span><span class="nt">severity</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">error</span>
+<span class="w">                </span><span class="nt">where</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;is_create&quot;</span>
+</code></pre></div>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 4: Parse + build locally to verify contract</strong></li>
+</ul>
+<div class="highlight"><pre><span></span><code>uv<span class="w"> </span>run<span class="w"> </span>dbt<span class="w"> </span>build<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>--select<span class="w"> </span>rpt_google_directory__users_import<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>--project-dir<span class="w"> </span>src/dbt/kipptaf<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>--target<span class="w"> </span>dev<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>--defer<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>--state<span class="w"> </span>src/dbt/kipptaf/target/prod/
+</code></pre></div>
+<p>Expected: model materializes, contract holds (no "column type mismatch"
+  error), <code>not_null_rpt_google_directory__users_import_student_number</code> test
+  passes (no PASS — should be a green test row in the summary). If <code>not_null</code>
+  fails locally, that means upstream <code>int_extracts__student_enrollments</code> has
+  students with email but no student_number — stop and surface the failing
+  students to the user before continuing.</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 5: BigQuery spot-check that <code>student_number</code> populates create
+      rows</strong></li>
+</ul>
+<div class="highlight"><pre><span></span><code>uv<span class="w"> </span>run<span class="w"> </span>dbt<span class="w"> </span>show<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>--project-dir<span class="w"> </span>src/dbt/kipptaf<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>--target<span class="w"> </span>dev<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>--inline<span class="w"> </span><span class="s2">&quot;select count(*) as create_rows, count(student_number) as nonnull_student_numbers from {{ ref(&#39;rpt_google_directory__users_import&#39;) }} where is_create&quot;</span>
+</code></pre></div>
+<p>Expected: <code>create_rows == nonnull_student_numbers</code>. If they diverge, the dbt
+  test in step 4 should also have failed — stop and reconcile upstream.</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 6: Commit</strong></li>
+</ul>
+<div class="highlight"><pre><span></span><code><span class="nb">cd</span><span class="w"> </span>/workspaces/teamster/.worktrees/cbini/feat/claude-google-directory-student-external-ids
+git<span class="w"> </span>-C<span class="w"> </span>.<span class="w"> </span>add<span class="w"> </span>-u<span class="w"> </span>src/dbt/kipptaf/models/extracts/google/directory/
+git<span class="w"> </span>-C<span class="w"> </span>.<span class="w"> </span>commit<span class="w"> </span>-m<span class="w"> </span><span class="s2">&quot;feat(dbt): surface student_number on rpt_google_directory__users_import</span>
+
+<span class="s2">Refs #3950&quot;</span>
+</code></pre></div>
+<hr />
+<h2 id="task-2-attach-externalids-on-create-pop-on-update">Task 2: Attach <code>externalIds</code> on create / pop on update</h2>
+<p><strong>Files:</strong></p>
+<ul class="task-list">
+<li>
+<p>Modify: <code>src/teamster/code_locations/kipptaf/google/directory/assets.py</code></p>
+</li>
+<li class="task-list-item">
+<p><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 1: Replace the body of <code>google_directory_user_create</code>'s post-query
+      block</strong></p>
+</li>
+</ul>
+<p>Find the existing block in <code>assets.py</code> starting at the line
+  <code>if arrow.num_rows &gt; 0:</code> inside <code>google_directory_user_create</code>. Replace it
+  with the partition-and-attach version. The full final state of
+  <code>google_directory_user_create</code> (lines ~147–206 of the existing file) becomes:</p>
+<div class="highlight"><pre><span></span><code><span class="nd">@asset</span><span class="p">(</span>
+    <span class="n">key</span><span class="o">=</span><span class="p">[</span><span class="o">*</span><span class="n">key_prefix</span><span class="p">,</span> <span class="s2">&quot;user_create&quot;</span><span class="p">],</span>
+    <span class="n">deps</span><span class="o">=</span><span class="p">[</span><span class="n">AssetKey</span><span class="p">([</span><span class="s2">&quot;kipptaf&quot;</span><span class="p">,</span> <span class="s2">&quot;extracts&quot;</span><span class="p">,</span> <span class="s2">&quot;rpt_google_directory__users_import&quot;</span><span class="p">])],</span>
+    <span class="n">check_specs</span><span class="o">=</span><span class="p">[</span>
+        <span class="n">AssetCheckSpec</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s2">&quot;zero_api_errors&quot;</span><span class="p">,</span> <span class="n">asset</span><span class="o">=</span><span class="p">[</span><span class="o">*</span><span class="n">key_prefix</span><span class="p">,</span> <span class="s2">&quot;user_create&quot;</span><span class="p">])</span>
+    <span class="p">],</span>
+    <span class="n">group_name</span><span class="o">=</span><span class="s2">&quot;google_directory&quot;</span><span class="p">,</span>
+    <span class="n">kinds</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;python&quot;</span><span class="p">,</span> <span class="s2">&quot;task&quot;</span><span class="p">},</span>
+<span class="p">)</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">google_directory_user_create</span><span class="p">(</span>
+    <span class="n">context</span><span class="p">:</span> <span class="n">AssetExecutionContext</span><span class="p">,</span>
+    <span class="n">db_bigquery</span><span class="p">:</span> <span class="n">BigQueryResource</span><span class="p">,</span>
+    <span class="n">google_directory</span><span class="p">:</span> <span class="n">GoogleDirectoryResource</span><span class="p">,</span>
+<span class="p">):</span>
+    <span class="n">query</span> <span class="o">=</span> <span class="s2">&quot;&quot;&quot;</span>
+<span class="s2">        select * from kipptaf_extracts.rpt_google_directory__users_import</span>
+<span class="s2">        where is_create</span>
+<span class="s2">    &quot;&quot;&quot;</span>
+    <span class="n">errors</span> <span class="o">=</span> <span class="p">[]</span>
+
+    <span class="n">context</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="n">msg</span><span class="o">=</span><span class="n">query</span><span class="p">)</span>
+    <span class="k">with</span> <span class="n">db_bigquery</span><span class="o">.</span><span class="n">get_client</span><span class="p">()</span> <span class="k">as</span> <span class="n">bq</span><span class="p">:</span>
+        <span class="n">query_job</span> <span class="o">=</span> <span class="n">bq</span><span class="o">.</span><span class="n">query</span><span class="p">(</span><span class="n">query</span><span class="o">=</span><span class="n">query</span><span class="p">,</span> <span class="n">project</span><span class="o">=</span><span class="n">db_bigquery</span><span class="o">.</span><span class="n">project</span><span class="p">)</span>
+
+    <span class="n">arrow</span> <span class="o">=</span> <span class="n">query_job</span><span class="o">.</span><span class="n">to_arrow</span><span class="p">()</span>
+
+    <span class="n">context</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="n">msg</span><span class="o">=</span><span class="sa">f</span><span class="s2">&quot;Retrieved </span><span class="si">{</span><span class="n">arrow</span><span class="o">.</span><span class="n">num_rows</span><span class="si">}</span><span class="s2"> rows&quot;</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">arrow</span><span class="o">.</span><span class="n">num_rows</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="n">create_users</span> <span class="o">=</span> <span class="n">arrow</span><span class="o">.</span><span class="n">to_pylist</span><span class="p">()</span>
+
+        <span class="n">valid_users</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">u</span> <span class="ow">in</span> <span class="n">create_users</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">u</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;student_number&quot;</span><span class="p">)</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="n">errors</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
+                    <span class="p">{</span>
+                        <span class="s2">&quot;primaryEmail&quot;</span><span class="p">:</span> <span class="n">u</span><span class="p">[</span><span class="s2">&quot;primaryEmail&quot;</span><span class="p">],</span>
+                        <span class="s2">&quot;error&quot;</span><span class="p">:</span> <span class="s2">&quot;missing student_number; cannot set externalIds&quot;</span><span class="p">,</span>
+                    <span class="p">}</span>
+                <span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">student_number</span> <span class="o">=</span> <span class="n">u</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s2">&quot;student_number&quot;</span><span class="p">)</span>
+                <span class="n">u</span><span class="p">[</span><span class="s2">&quot;externalIds&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span>
+                    <span class="p">{</span><span class="s2">&quot;value&quot;</span><span class="p">:</span> <span class="nb">str</span><span class="p">(</span><span class="n">student_number</span><span class="p">),</span> <span class="s2">&quot;type&quot;</span><span class="p">:</span> <span class="s2">&quot;organization&quot;</span><span class="p">}</span>
+                <span class="p">]</span>
+                <span class="n">valid_users</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">u</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">valid_users</span><span class="p">:</span>
+            <span class="n">create_errors</span> <span class="o">=</span> <span class="n">google_directory</span><span class="o">.</span><span class="n">batch_insert_users</span><span class="p">(</span><span class="n">valid_users</span><span class="p">)</span>
+
+            <span class="k">for</span> <span class="n">ce</span> <span class="ow">in</span> <span class="n">create_errors</span><span class="p">:</span>
+                <span class="n">context</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="n">msg</span><span class="o">=</span><span class="n">ce</span><span class="p">)</span>
+                <span class="n">errors</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">ce</span><span class="p">)</span>
+
+            <span class="n">members_data</span> <span class="o">=</span> <span class="p">[</span>
+                <span class="p">{</span>
+                    <span class="s2">&quot;groupKey&quot;</span><span class="p">:</span> <span class="n">u</span><span class="p">[</span><span class="s2">&quot;groupKey&quot;</span><span class="p">],</span>
+                    <span class="s2">&quot;email&quot;</span><span class="p">:</span> <span class="n">u</span><span class="p">[</span><span class="s2">&quot;primaryEmail&quot;</span><span class="p">],</span>
+                    <span class="s2">&quot;delivery_settings&quot;</span><span class="p">:</span> <span class="s2">&quot;DISABLED&quot;</span><span class="p">,</span>
+                <span class="p">}</span>
+                <span class="k">for</span> <span class="n">u</span> <span class="ow">in</span> <span class="n">valid_users</span>
+            <span class="p">]</span>
+
+            <span class="n">members_errors</span> <span class="o">=</span> <span class="n">google_directory</span><span class="o">.</span><span class="n">batch_insert_members</span><span class="p">(</span><span class="n">members_data</span><span class="p">)</span>
+
+            <span class="k">for</span> <span class="n">me</span> <span class="ow">in</span> <span class="n">members_errors</span><span class="p">:</span>
+                <span class="n">context</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="n">msg</span><span class="o">=</span><span class="n">me</span><span class="p">)</span>
+                <span class="n">errors</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">me</span><span class="p">)</span>
+
+    <span class="k">yield</span> <span class="n">Output</span><span class="p">(</span><span class="n">value</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span>
+    <span class="k">yield</span> <span class="n">AssetCheckResult</span><span class="p">(</span>
+        <span class="n">passed</span><span class="o">=</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">errors</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">),</span>
+        <span class="n">asset_key</span><span class="o">=</span><span class="n">context</span><span class="o">.</span><span class="n">asset_key</span><span class="p">,</span>
+        <span class="n">check_name</span><span class="o">=</span><span class="s2">&quot;zero_api_errors&quot;</span><span class="p">,</span>
+        <span class="n">metadata</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;errors&quot;</span><span class="p">:</span> <span class="n">errors</span><span class="p">},</span>
+        <span class="n">severity</span><span class="o">=</span><span class="n">AssetCheckSeverity</span><span class="o">.</span><span class="n">WARN</span><span class="p">,</span>
+    <span class="p">)</span>
+</code></pre></div>
+<p>Key differences vs current code:
+  - <code>create_users</code> is partitioned into <code>valid_users</code> (have <code>student_number</code>) and
+    error entries (missing <code>student_number</code>).
+  - <code>batch_insert_users</code> and <code>batch_insert_members</code> only run if <code>valid_users</code> is
+    non-empty.
+  - <code>members_data</code> is built from <code>valid_users</code>, not <code>create_users</code> — never
+    create group memberships for users we refused to insert.</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 2: Pop <code>student_number</code> in <code>google_directory_user_update</code></strong></li>
+</ul>
+<p>In the same file, find the body of <code>google_directory_user_update</code>'s
+  <code>if arrow.num_rows &gt; 0:</code> block. Insert a single pop loop immediately after
+  <code>update_users = arrow.to_pylist()</code>. Final state of that block:</p>
+<div class="highlight"><pre><span></span><code>    <span class="k">if</span> <span class="n">arrow</span><span class="o">.</span><span class="n">num_rows</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="n">update_users</span> <span class="o">=</span> <span class="n">arrow</span><span class="o">.</span><span class="n">to_pylist</span><span class="p">()</span>
+
+        <span class="k">for</span> <span class="n">u</span> <span class="ow">in</span> <span class="n">update_users</span><span class="p">:</span>
+            <span class="n">u</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s2">&quot;student_number&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+
+        <span class="n">errors</span> <span class="o">=</span> <span class="n">google_directory</span><span class="o">.</span><span class="n">batch_update_users</span><span class="p">(</span><span class="n">update_users</span><span class="p">)</span>
+
+        <span class="k">for</span> <span class="n">e</span> <span class="ow">in</span> <span class="n">errors</span><span class="p">:</span>
+            <span class="n">context</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="n">msg</span><span class="o">=</span><span class="n">e</span><span class="p">)</span>
+</code></pre></div>
+<p>This guarantees the recurring update PATCH never carries <code>student_number</code> /
+  <code>externalIds</code>. Use <code>pop(..., None)</code> (default <code>None</code>) so we don't crash if a
+  future dbt change drops the column.</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 3: Syntactic verification</strong></li>
+</ul>
+<div class="highlight"><pre><span></span><code>uv<span class="w"> </span>run<span class="w"> </span>python<span class="w"> </span>-c<span class="w"> </span><span class="s2">&quot;import teamster.code_locations.kipptaf.google.directory.assets&quot;</span>
+</code></pre></div>
+<p>Expected: no output, exit 0. If <code>ImportError</code> or <code>SyntaxError</code>, fix the
+  reported line before continuing.</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 4: Commit</strong></li>
+</ul>
+<div class="highlight"><pre><span></span><code><span class="nb">cd</span><span class="w"> </span>/workspaces/teamster/.worktrees/cbini/feat/claude-google-directory-student-external-ids
+git<span class="w"> </span>-C<span class="w"> </span>.<span class="w"> </span>add<span class="w"> </span>-u<span class="w"> </span>src/teamster/code_locations/kipptaf/google/directory/assets.py
+git<span class="w"> </span>-C<span class="w"> </span>.<span class="w"> </span>commit<span class="w"> </span>-m<span class="w"> </span><span class="s2">&quot;feat(google-directory): attach student_number externalIds on user create</span>
+
+<span class="s2">Refs #3950&quot;</span>
+</code></pre></div>
+<hr />
+<h2 id="task-3-one-shot-backfill-script">Task 3: One-shot backfill script</h2>
+<p><strong>Files:</strong></p>
+<ul class="task-list">
+<li>
+<p>Create: <code>scripts/backfill_google_directory_student_external_ids.py</code></p>
+</li>
+<li class="task-list-item">
+<p><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 1: Write the PEP 723 backfill script</strong></p>
+</li>
+</ul>
+<p>Create the file with the following content:</p>
+<div class="highlight"><pre><span></span><code><span class="c1"># /// script</span>
+<span class="c1"># requires-python = &quot;&gt;=3.13&quot;</span>
+<span class="c1"># dependencies = [</span>
+<span class="c1">#     &quot;google-api-python-client&quot;,</span>
+<span class="c1">#     &quot;google-auth&quot;,</span>
+<span class="c1">#     &quot;google-cloud-bigquery&quot;,</span>
+<span class="c1"># ]</span>
+<span class="c1"># ///</span>
+<span class="sd">&quot;&quot;&quot;One-shot backfill: set externalIds[type=&#39;organization&#39;] on existing student Google accounts.</span>
+
+<span class="sd">Identifies matched student accounts under any /Students/* org unit (including</span>
+<span class="sd">/Students/Disabled) whose Workspace externalIds does not already contain an</span>
+<span class="sd">&#39;organization&#39; entry equal to the PowerSchool student_number, then PATCHes</span>
+<span class="sd">each one. Dry-run by default; pass --apply to execute.</span>
+
+<span class="sd">Usage:</span>
+<span class="sd">    uv run scripts/backfill_google_directory_student_external_ids.py [--apply]</span>
+
+<span class="sd">Auth: Uses the same service-account key path as the Dagster</span>
+<span class="sd">GoogleDirectoryResource. Pass --service-account-file to override.</span>
+
+<span class="sd">Output (stdout): one line per user, plus aggregate counts. Output contains</span>
+<span class="sd">student emails and student_numbers; capture only to .claude/scratch/ or</span>
+<span class="sd">local terminal. Never paste to PRs, issues, or external surfaces.</span>
+<span class="sd">&quot;&quot;&quot;</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">argparse</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">sys</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">time</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">collections.abc</span><span class="w"> </span><span class="kn">import</span> <span class="n">Iterable</span><span class="p">,</span> <span class="n">Iterator</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">google.cloud</span><span class="w"> </span><span class="kn">import</span> <span class="n">bigquery</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">google.oauth2</span><span class="w"> </span><span class="kn">import</span> <span class="n">service_account</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">googleapiclient</span><span class="w"> </span><span class="kn">import</span> <span class="n">discovery</span>
+
+<span class="n">BQ_PROJECT</span> <span class="o">=</span> <span class="s2">&quot;teamster-332318&quot;</span>
+
+<span class="n">QUERY</span> <span class="o">=</span> <span class="s2">&quot;&quot;&quot;</span>
+<span class="s2">select</span>
+<span class="s2">    u.primary_email,</span>
+<span class="s2">    se.student_number,</span>
+<span class="s2">    u.org_unit_path</span>
+<span class="s2">from `teamster-332318.kipptaf_google.stg_google_directory__users` as u</span>
+<span class="s2">inner join `teamster-332318.kipptaf_students.int_extracts__student_enrollments` as se</span>
+<span class="s2">    on u.primary_email = se.student_email</span>
+<span class="s2">    and se.rn_all = 1</span>
+<span class="s2">where u.org_unit_path like &#39;/Students/%&#39;</span>
+<span class="s2">    and se.region != &#39;Paterson&#39;</span>
+<span class="s2">    and se.student_number is not null</span>
+<span class="s2">    and not exists (</span>
+<span class="s2">        select 1 from unnest(u.external_ids) as e</span>
+<span class="s2">        where e.type = &#39;organization&#39;</span>
+<span class="s2">            and e.value = cast(se.student_number as string)</span>
+<span class="s2">    )</span>
+<span class="s2">&quot;&quot;&quot;</span>
+
+<span class="n">SCOPES</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;https://www.googleapis.com/auth/admin.directory.user&quot;</span><span class="p">]</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">chunks</span><span class="p">[</span><span class="n">T</span><span class="p">](</span><span class="n">items</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="n">T</span><span class="p">],</span> <span class="n">size</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Iterator</span><span class="p">[</span><span class="nb">list</span><span class="p">[</span><span class="n">T</span><span class="p">]]:</span>
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">items</span><span class="p">),</span> <span class="n">size</span><span class="p">):</span>
+        <span class="k">yield</span> <span class="n">items</span><span class="p">[</span><span class="n">i</span> <span class="p">:</span> <span class="n">i</span> <span class="o">+</span> <span class="n">size</span><span class="p">]</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">build_directory_client</span><span class="p">(</span>
+    <span class="n">service_account_file</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">delegated_account</span><span class="p">:</span> <span class="nb">str</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">discovery</span><span class="o">.</span><span class="n">Resource</span><span class="p">:</span>
+    <span class="n">credentials</span> <span class="o">=</span> <span class="n">service_account</span><span class="o">.</span><span class="n">Credentials</span><span class="o">.</span><span class="n">from_service_account_file</span><span class="p">(</span>
+        <span class="n">service_account_file</span><span class="p">,</span> <span class="n">scopes</span><span class="o">=</span><span class="n">SCOPES</span>
+    <span class="p">)</span><span class="o">.</span><span class="n">with_subject</span><span class="p">(</span><span class="n">delegated_account</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">discovery</span><span class="o">.</span><span class="n">build</span><span class="p">(</span><span class="s2">&quot;admin&quot;</span><span class="p">,</span> <span class="s2">&quot;directory_v1&quot;</span><span class="p">,</span> <span class="n">credentials</span><span class="o">=</span><span class="n">credentials</span><span class="p">)</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">fetch_rows</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">[</span><span class="nb">dict</span><span class="p">]:</span>
+    <span class="n">bq</span> <span class="o">=</span> <span class="n">bigquery</span><span class="o">.</span><span class="n">Client</span><span class="p">(</span><span class="n">project</span><span class="o">=</span><span class="n">BQ_PROJECT</span><span class="p">)</span>
+    <span class="k">return</span> <span class="p">[</span><span class="nb">dict</span><span class="p">(</span><span class="n">row</span><span class="p">)</span> <span class="k">for</span> <span class="n">row</span> <span class="ow">in</span> <span class="n">bq</span><span class="o">.</span><span class="n">query</span><span class="p">(</span><span class="n">QUERY</span><span class="p">)</span><span class="o">.</span><span class="n">result</span><span class="p">()]</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">patch_batch</span><span class="p">(</span>
+    <span class="n">service</span><span class="p">:</span> <span class="n">discovery</span><span class="o">.</span><span class="n">Resource</span><span class="p">,</span>
+    <span class="n">rows</span><span class="p">:</span> <span class="n">Iterable</span><span class="p">[</span><span class="nb">dict</span><span class="p">],</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">list</span><span class="p">[</span><span class="nb">tuple</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">]]]:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;PATCH a batch of users; return (patched_count, [(email, error_message), ...]).&quot;&quot;&quot;</span>
+    <span class="n">patched</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="n">errors</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">tuple</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">]]</span> <span class="o">=</span> <span class="p">[]</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">callback</span><span class="p">(</span><span class="n">request_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">response</span><span class="p">,</span> <span class="n">exception</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">nonlocal</span> <span class="n">patched</span>
+        <span class="k">if</span> <span class="n">exception</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">errors</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="n">request_id</span><span class="p">,</span> <span class="nb">str</span><span class="p">(</span><span class="n">exception</span><span class="p">)))</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">patched</span> <span class="o">+=</span> <span class="mi">1</span>
+
+    <span class="c1"># trunk-ignore(pyright/reportAttributeAccessIssue)</span>
+    <span class="n">batch</span> <span class="o">=</span> <span class="n">service</span><span class="o">.</span><span class="n">new_batch_http_request</span><span class="p">(</span><span class="n">callback</span><span class="o">=</span><span class="n">callback</span><span class="p">)</span>
+    <span class="k">for</span> <span class="n">row</span> <span class="ow">in</span> <span class="n">rows</span><span class="p">:</span>
+        <span class="n">body</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="s2">&quot;externalIds&quot;</span><span class="p">:</span> <span class="p">[</span>
+                <span class="p">{</span><span class="s2">&quot;value&quot;</span><span class="p">:</span> <span class="nb">str</span><span class="p">(</span><span class="n">row</span><span class="p">[</span><span class="s2">&quot;student_number&quot;</span><span class="p">]),</span> <span class="s2">&quot;type&quot;</span><span class="p">:</span> <span class="s2">&quot;organization&quot;</span><span class="p">}</span>
+            <span class="p">]</span>
+        <span class="p">}</span>
+        <span class="n">batch</span><span class="o">.</span><span class="n">add</span><span class="p">(</span>
+            <span class="c1"># trunk-ignore(pyright/reportAttributeAccessIssue)</span>
+            <span class="n">service</span><span class="o">.</span><span class="n">users</span><span class="p">()</span><span class="o">.</span><span class="n">patch</span><span class="p">(</span><span class="n">userKey</span><span class="o">=</span><span class="n">row</span><span class="p">[</span><span class="s2">&quot;primary_email&quot;</span><span class="p">],</span> <span class="n">body</span><span class="o">=</span><span class="n">body</span><span class="p">),</span>
+            <span class="n">request_id</span><span class="o">=</span><span class="n">row</span><span class="p">[</span><span class="s2">&quot;primary_email&quot;</span><span class="p">],</span>
+        <span class="p">)</span>
+
+    <span class="n">batch</span><span class="o">.</span><span class="n">execute</span><span class="p">()</span>
+    <span class="k">return</span> <span class="n">patched</span><span class="p">,</span> <span class="n">errors</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">main</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
+    <span class="n">parser</span> <span class="o">=</span> <span class="n">argparse</span><span class="o">.</span><span class="n">ArgumentParser</span><span class="p">(</span><span class="n">description</span><span class="o">=</span><span class="vm">__doc__</span><span class="p">)</span>
+    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span>
+        <span class="s2">&quot;--apply&quot;</span><span class="p">,</span>
+        <span class="n">action</span><span class="o">=</span><span class="s2">&quot;store_true&quot;</span><span class="p">,</span>
+        <span class="n">help</span><span class="o">=</span><span class="s2">&quot;Execute PATCHes. Without this flag, runs dry (prints only).&quot;</span><span class="p">,</span>
+    <span class="p">)</span>
+    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span>
+        <span class="s2">&quot;--service-account-file&quot;</span><span class="p">,</span>
+        <span class="n">default</span><span class="o">=</span><span class="s2">&quot;/workspaces/teamster/env/teamster-332318-48bf4ca46803.json&quot;</span><span class="p">,</span>
+        <span class="n">help</span><span class="o">=</span><span class="s2">&quot;Path to service-account JSON key with domain-wide delegation.&quot;</span><span class="p">,</span>
+    <span class="p">)</span>
+    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span>
+        <span class="s2">&quot;--delegated-account&quot;</span><span class="p">,</span>
+        <span class="n">required</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+        <span class="n">help</span><span class="o">=</span><span class="s2">&quot;Google Workspace admin email to impersonate (same value Dagster uses).&quot;</span><span class="p">,</span>
+    <span class="p">)</span>
+    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span>
+        <span class="s2">&quot;--batch-size&quot;</span><span class="p">,</span>
+        <span class="nb">type</span><span class="o">=</span><span class="nb">int</span><span class="p">,</span>
+        <span class="n">default</span><span class="o">=</span><span class="mi">50</span><span class="p">,</span>
+        <span class="n">help</span><span class="o">=</span><span class="s2">&quot;PATCHes per batch HTTP request (default 50).&quot;</span><span class="p">,</span>
+    <span class="p">)</span>
+    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span>
+        <span class="s2">&quot;--sleep-seconds&quot;</span><span class="p">,</span>
+        <span class="nb">type</span><span class="o">=</span><span class="nb">float</span><span class="p">,</span>
+        <span class="n">default</span><span class="o">=</span><span class="mf">1.0</span><span class="p">,</span>
+        <span class="n">help</span><span class="o">=</span><span class="s2">&quot;Sleep between batches to stay under quota (default 1.0s).&quot;</span><span class="p">,</span>
+    <span class="p">)</span>
+    <span class="n">args</span> <span class="o">=</span> <span class="n">parser</span><span class="o">.</span><span class="n">parse_args</span><span class="p">()</span>
+
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Fetching candidate rows from </span><span class="si">{</span><span class="n">BQ_PROJECT</span><span class="si">}</span><span class="s2">...&quot;</span><span class="p">,</span> <span class="n">file</span><span class="o">=</span><span class="n">sys</span><span class="o">.</span><span class="n">stderr</span><span class="p">)</span>
+    <span class="n">rows</span> <span class="o">=</span> <span class="n">fetch_rows</span><span class="p">()</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Found </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">rows</span><span class="p">)</span><span class="si">}</span><span class="s2"> candidates.&quot;</span><span class="p">,</span> <span class="n">file</span><span class="o">=</span><span class="n">sys</span><span class="o">.</span><span class="n">stderr</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">rows</span><span class="p">:</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Nothing to do.&quot;</span><span class="p">,</span> <span class="n">file</span><span class="o">=</span><span class="n">sys</span><span class="o">.</span><span class="n">stderr</span><span class="p">)</span>
+        <span class="k">return</span> <span class="mi">0</span>
+
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">args</span><span class="o">.</span><span class="n">apply</span><span class="p">:</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;DRY RUN — no PATCHes will be sent.&quot;</span><span class="p">,</span> <span class="n">file</span><span class="o">=</span><span class="n">sys</span><span class="o">.</span><span class="n">stderr</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">row</span> <span class="ow">in</span> <span class="n">rows</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">row</span><span class="p">[</span><span class="s1">&#39;primary_email&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2"> | </span><span class="si">{</span><span class="n">row</span><span class="p">[</span><span class="s1">&#39;student_number&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2"> | would-patch&quot;</span>
+            <span class="p">)</span>
+        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">Total: </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">rows</span><span class="p">)</span><span class="si">}</span><span class="s2"> would-patch&quot;</span><span class="p">,</span> <span class="n">file</span><span class="o">=</span><span class="n">sys</span><span class="o">.</span><span class="n">stderr</span><span class="p">)</span>
+        <span class="k">return</span> <span class="mi">0</span>
+
+    <span class="n">service</span> <span class="o">=</span> <span class="n">build_directory_client</span><span class="p">(</span>
+        <span class="n">args</span><span class="o">.</span><span class="n">service_account_file</span><span class="p">,</span> <span class="n">args</span><span class="o">.</span><span class="n">delegated_account</span>
+    <span class="p">)</span>
+
+    <span class="n">total_patched</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="n">total_errors</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">tuple</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">]]</span> <span class="o">=</span> <span class="p">[]</span>
+
+    <span class="n">batches</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">chunks</span><span class="p">(</span><span class="n">rows</span><span class="p">,</span> <span class="n">args</span><span class="o">.</span><span class="n">batch_size</span><span class="p">))</span>
+    <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">batch</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">batches</span><span class="p">):</span>
+        <span class="n">patched</span><span class="p">,</span> <span class="n">errs</span> <span class="o">=</span> <span class="n">patch_batch</span><span class="p">(</span><span class="n">service</span><span class="p">,</span> <span class="n">batch</span><span class="p">)</span>
+        <span class="n">total_patched</span> <span class="o">+=</span> <span class="n">patched</span>
+        <span class="n">total_errors</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span><span class="n">errs</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">row</span> <span class="ow">in</span> <span class="n">batch</span><span class="p">:</span>
+            <span class="n">email</span> <span class="o">=</span> <span class="n">row</span><span class="p">[</span><span class="s2">&quot;primary_email&quot;</span><span class="p">]</span>
+            <span class="n">err</span> <span class="o">=</span> <span class="nb">next</span><span class="p">((</span><span class="n">e</span> <span class="k">for</span> <span class="p">(</span><span class="n">k</span><span class="p">,</span> <span class="n">e</span><span class="p">)</span> <span class="ow">in</span> <span class="n">errs</span> <span class="k">if</span> <span class="n">k</span> <span class="o">==</span> <span class="n">email</span><span class="p">),</span> <span class="kc">None</span><span class="p">)</span>
+            <span class="n">status</span> <span class="o">=</span> <span class="s2">&quot;error&quot;</span> <span class="k">if</span> <span class="n">err</span> <span class="k">else</span> <span class="s2">&quot;patched&quot;</span>
+            <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">email</span><span class="si">}</span><span class="s2"> | </span><span class="si">{</span><span class="n">row</span><span class="p">[</span><span class="s1">&#39;student_number&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2"> | </span><span class="si">{</span><span class="n">status</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">err</span><span class="p">:</span>
+                <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;  -&gt; </span><span class="si">{</span><span class="n">err</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">file</span><span class="o">=</span><span class="n">sys</span><span class="o">.</span><span class="n">stderr</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">i</span> <span class="o">&lt;</span> <span class="nb">len</span><span class="p">(</span><span class="n">batches</span><span class="p">)</span> <span class="o">-</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="n">time</span><span class="o">.</span><span class="n">sleep</span><span class="p">(</span><span class="n">args</span><span class="o">.</span><span class="n">sleep_seconds</span><span class="p">)</span>
+
+    <span class="nb">print</span><span class="p">(</span>
+        <span class="sa">f</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">Total: patched=</span><span class="si">{</span><span class="n">total_patched</span><span class="si">}</span><span class="s2"> errors=</span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">total_errors</span><span class="p">)</span><span class="si">}</span><span class="s2"> &quot;</span>
+        <span class="sa">f</span><span class="s2">&quot;candidates=</span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">rows</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span>
+        <span class="n">file</span><span class="o">=</span><span class="n">sys</span><span class="o">.</span><span class="n">stderr</span><span class="p">,</span>
+    <span class="p">)</span>
+    <span class="k">return</span> <span class="mi">0</span> <span class="k">if</span> <span class="ow">not</span> <span class="n">total_errors</span> <span class="k">else</span> <span class="mi">1</span>
+
+
+<span class="k">if</span> <span class="vm">__name__</span> <span class="o">==</span> <span class="s2">&quot;__main__&quot;</span><span class="p">:</span>
+    <span class="k">raise</span> <span class="ne">SystemExit</span><span class="p">(</span><span class="n">main</span><span class="p">())</span>
+</code></pre></div>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 2: Smoke-test argument parsing</strong></li>
+</ul>
+<div class="highlight"><pre><span></span><code>uv<span class="w"> </span>run<span class="w"> </span>scripts/backfill_google_directory_student_external_ids.py<span class="w"> </span>--help
+</code></pre></div>
+<p>Expected: argparse usage block; no import errors.</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 3: Verify SDK sub-resource attribute exists at runtime</strong></li>
+</ul>
+<p>Per CLAUDE.md: hasattr / import success does not prove <code>.users().patch()</code> is
+  callable. Run a tiny in-script smoke test:</p>
+<div class="highlight"><pre><span></span><code>uv<span class="w"> </span>run<span class="w"> </span>--with<span class="w"> </span>google-api-python-client<span class="w"> </span>--with<span class="w"> </span>google-auth<span class="w"> </span>python<span class="w"> </span>-c<span class="w"> </span><span class="s2">&quot;</span>
+<span class="s2">from googleapiclient import discovery</span>
+<span class="s2">from google.auth import default</span>
+<span class="s2">creds, _ = default()</span>
+<span class="s2">svc = discovery.build(&#39;admin&#39;, &#39;directory_v1&#39;, credentials=creds)</span>
+<span class="s2">assert callable(getattr(svc.users(), &#39;patch&#39;, None)), &#39;patch missing&#39;</span>
+<span class="s2">print(&#39;users().patch is callable&#39;)</span>
+<span class="s2">&quot;</span>
+</code></pre></div>
+<p>Expected: <code>users().patch is callable</code>. If this errors with <code>RefreshError</code> or
+  similar auth issue, that's fine — it still proves the attribute path resolves
+  (the error happens later, during <code>.execute()</code>).</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 4: Commit</strong></li>
+</ul>
+<div class="highlight"><pre><span></span><code><span class="nb">cd</span><span class="w"> </span>/workspaces/teamster/.worktrees/cbini/feat/claude-google-directory-student-external-ids
+git<span class="w"> </span>-C<span class="w"> </span>.<span class="w"> </span>add<span class="w"> </span>scripts/backfill_google_directory_student_external_ids.py
+git<span class="w"> </span>-C<span class="w"> </span>.<span class="w"> </span>commit<span class="w"> </span>-m<span class="w"> </span><span class="s2">&quot;feat(scripts): one-shot backfill for student externalIds</span>
+
+<span class="s2">Refs #3950&quot;</span>
+</code></pre></div>
+<hr />
+<h2 id="task-4-update-scriptsclaudemd-catalog">Task 4: Update <code>scripts/CLAUDE.md</code> catalog</h2>
+<p><strong>Files:</strong></p>
+<ul class="task-list">
+<li>
+<p>Modify: <code>scripts/CLAUDE.md</code></p>
+</li>
+<li class="task-list-item">
+<p><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 1: Add the new script to the catalog table</strong></p>
+</li>
+</ul>
+<p>In <code>scripts/CLAUDE.md</code>, find the script catalog table and append a row in
+  alphabetical position (between <code>audit_marts_yaml.py</code> and
+  <code>avro-schema-update.py</code>). The new row:</p>
+<div class="highlight"><pre><span></span><code>| <span class="sb">`backfill_google_directory_student_external_ids.py`</span> | One-shot: backfill
+Workspace <span class="sb">`externalIds[type=&#39;organization&#39;]`</span> for existing student accounts
+(#3950) |
+</code></pre></div>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 2: Confirm the user before committing the CLAUDE.md edit</strong></li>
+</ul>
+<p>Per project rule: present the diff to the user as a quote block and wait for
+  approval before applying. (Note for the executing agent: this is the enforced
+  gate — do not skip.)</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 3: Commit (after user approval)</strong></li>
+</ul>
+<div class="highlight"><pre><span></span><code><span class="nb">cd</span><span class="w"> </span>/workspaces/teamster/.worktrees/cbini/feat/claude-google-directory-student-external-ids
+git<span class="w"> </span>-C<span class="w"> </span>.<span class="w"> </span>add<span class="w"> </span>scripts/CLAUDE.md
+git<span class="w"> </span>-C<span class="w"> </span>.<span class="w"> </span>commit<span class="w"> </span>-m<span class="w"> </span><span class="s2">&quot;docs(scripts): catalog backfill script</span>
+
+<span class="s2">Refs #3950&quot;</span>
+</code></pre></div>
+<hr />
+<h2 id="task-5-final-verification">Task 5: Final verification</h2>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 1: Full dbt build of modified slice</strong></li>
+</ul>
+<div class="highlight"><pre><span></span><code>uv<span class="w"> </span>run<span class="w"> </span>dbt<span class="w"> </span>build<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>--select<span class="w"> </span>rpt_google_directory__users_import+<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>--project-dir<span class="w"> </span>src/dbt/kipptaf<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>--target<span class="w"> </span>dev<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>--defer<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>--state<span class="w"> </span>src/dbt/kipptaf/target/prod/
+</code></pre></div>
+<p>Expected: every model + test passes. The <code>not_null</code> test on <code>student_number</code>
+  (where <code>is_create</code>) must be green.</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 2: Confirm no other consumers of the rpt model exist</strong></li>
+</ul>
+<div class="highlight"><pre><span></span><code><span class="nb">cd</span><span class="w"> </span>/workspaces/teamster/.worktrees/cbini/feat/claude-google-directory-student-external-ids
+grep<span class="w"> </span>-rn<span class="w"> </span><span class="s2">&quot;rpt_google_directory__users_import&quot;</span><span class="w"> </span>src/<span class="w"> </span><span class="p">|</span><span class="w"> </span>grep<span class="w"> </span>-v<span class="w"> </span>target/
+</code></pre></div>
+<p>Expected: matches only inside
+  <code>src/dbt/kipptaf/models/extracts/google/directory/</code> and
+  <code>src/teamster/code_locations/kipptaf/google/directory/assets.py</code>. If any other
+  consumer exists, audit whether they need to handle the new <code>student_number</code>
+  column.</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 3: Trunk-check changed files</strong></li>
+</ul>
+<div class="highlight"><pre><span></span><code><span class="nb">cd</span><span class="w"> </span>/workspaces/teamster/.worktrees/cbini/feat/claude-google-directory-student-external-ids
+.trunk/tools/trunk<span class="w"> </span>check<span class="w"> </span>--force<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>src/dbt/kipptaf/models/extracts/google/directory/rpt_google_directory__users_import.sql<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>src/dbt/kipptaf/models/extracts/google/directory/properties/rpt_google_directory__users_import.yml<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>src/teamster/code_locations/kipptaf/google/directory/assets.py<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>scripts/backfill_google_directory_student_external_ids.py
+</code></pre></div>
+<p>Expected: "No issues". If sqlfluff / yamllint / ruff flag anything, fix inline
+  and re-run before opening the PR.</p>
+<hr />
+<h2 id="task-6-open-the-pr">Task 6: Open the PR</h2>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 1: Pause and ask the user for PR-creation consent</strong></li>
+</ul>
+<p>Per project rule: do NOT push or open PRs without explicit user consent in the
+  current turn. Surface the branch state (commits, files changed) and ask the
+  user whether to open the PR now or hold.</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 2: Push the branch</strong></li>
+</ul>
+<div class="highlight"><pre><span></span><code><span class="nb">cd</span><span class="w"> </span>/workspaces/teamster/.worktrees/cbini/feat/claude-google-directory-student-external-ids
+git<span class="w"> </span>-C<span class="w"> </span>.<span class="w"> </span>push<span class="w"> </span>-u<span class="w"> </span>origin<span class="w"> </span>cbini/feat/claude-google-directory-student-external-ids
+</code></pre></div>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 3: Open the PR</strong></li>
+</ul>
+<p>Use <code>gh pr create</code> with <code>.github/pull_request_template.md</code> as the body
+  template. PR body MUST include <code>Refs #3950</code> so the project board auto-links.</p>
+<p>Title:
+  <code>feat(google-directory): set student_number as externalId on user create</code></p>
+<p>Body (template-filled):</p>
+<div class="highlight"><pre><span></span><code><span class="gu">## Summary</span>
+
+<span class="k">-</span><span class="w"> </span>Surfaces PowerSchool <span class="sb">`student_number`</span> on
+  <span class="sb">`rpt_google_directory__users_import`</span> with a <span class="sb">`not_null`</span> test scoped to create
+  rows.
+<span class="k">-</span><span class="w"> </span>Updates <span class="sb">`google_directory_user_create`</span> to attach
+  <span class="sb">`externalIds[type=&#39;organization&#39;]`</span> before <span class="sb">`batch_insert_users`</span>, and
+  <span class="sb">`google_directory_user_update`</span> to pop the column so the recurring update
+  path never touches <span class="sb">`externalIds`</span>.
+<span class="k">-</span><span class="w"> </span>Adds <span class="sb">`scripts/backfill_google_directory_student_external_ids.py`</span> — a
+  one-shot PEP 723 script that PATCHes existing matched student accounts
+  (including <span class="sb">`/Students/Disabled`</span>) whose Workspace <span class="sb">`externalIds`</span> lacks the
+  organization entry.
+
+Refs <span class="ni">#3950</span>. Follow-up <span class="ni">#4057</span> will add uniqueness contracts to the rpt model
+after the backfill has run.
+
+<span class="gu">## Test plan</span>
+
+<span class="k">- [x]</span> Local <span class="sb">`dbt build --select rpt_google_directory__users_import+`</span> — model +
+      <span class="sb">`not_null`</span> test pass.
+<span class="k">- [x]</span> BQ spot-check: every <span class="sb">`is_create`</span> row has non-null <span class="sb">`student_number`</span>.
+<span class="k">- [x]</span> <span class="sb">`python -c &quot;import teamster.code_locations.kipptaf.google.directory.assets&quot;`</span>
+      — clean import.
+<span class="k">- [x]</span> <span class="sb">`scripts/backfill_google_directory_student_external_ids.py --help`</span> —
+      argparse OK.
+<span class="k">- [ ]</span> After merge: run backfill <span class="sb">`--apply`</span> in Codespace, re-materialize <span class="sb">`users`</span>
+      asset, spot-check 5–10 students for <span class="sb">`externalIds.organization`</span>.
+<span class="k">- [ ]</span> After merge: pick up <span class="ni">#4057</span> for uniqueness tests.
+</code></pre></div>
+<hr />
+<h2 id="post-merge-manual-not-part-of-plan-execution">Post-merge (manual — not part of plan execution)</h2>
+<p>These steps belong to the rollout sequence in the spec; the engineer running
+this plan does not execute them. They are listed here so the spec's rollout is
+referenced from the plan.</p>
+<ol>
+<li>Wait for the next prod materialization of the <code>users</code> asset so
+   <code>stg_google_directory__users</code> reflects the latest <code>externalIds</code>.</li>
+<li>Run
+   <code>uv run scripts/backfill_google_directory_student_external_ids.py --delegated-account &lt;admin&gt; --apply</code>
+   from a Codespace terminal. Capture stdout to <code>.claude/scratch/</code> (PII).</li>
+<li>Re-materialize the <code>users</code> asset; spot-check <code>/Students/*</code> accounts in BQ for
+   <code>externalIds.organization</code>.</li>
+<li>Pick up #4057 (uniqueness tests).</li>
+<li>Close #3950.</li>
+</ol>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+          <button type="button" class="md-top md-icon" data-md-component="top" hidden>
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8z"/></svg>
+  Back to top
+</button>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+    <div class="md-copyright__highlight">
+      Copyright &copy; KIPP TEAM & Family Schools
+    </div>
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      
+      <script id="__config" type="application/json">{"annotate": null, "base": "../../..", "features": ["content.action.edit", "content.code.copy", "navigation.instant", "navigation.indexes", "navigation.sections", "navigation.tabs", "navigation.tabs.sticky", "navigation.top", "search.highlight", "search.suggest", "toc.follow"], "search": "../../../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+    
+    
+      <script src="../../../assets/javascripts/bundle.79ae519e.min.js"></script>
+      
+    
+  </body>
+</html>

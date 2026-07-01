@@ -1,0 +1,1613 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+        <meta name="description" content="Data engineering platform for KIPP TEAM & Family Schools">
+      
+      
+      
+      
+      
+      
+        
+      
+      
+      <link rel="icon" href="../../../images/truck.svg">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.6">
+    
+    
+      
+        <title>Batch D — staff observation FK fixes & lookup centralization - teamster</title>
+      
+    
+    
+      <link rel="stylesheet" href="../../../assets/stylesheets/main.484c7ddc.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+    <script>__md_scope=new URL("../../..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+  </head>
+  
+  
+    <body dir="ltr">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#batch-d-staff-observation-fk-fixes-lookup-centralization" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+  
+
+<header class="md-header md-header--shadow md-header--lifted" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href="../../.." title="teamster" class="md-header__button md-logo" aria-label="teamster" data-md-component="logo">
+      
+  <img src="../../../images/truck.svg" alt="logo">
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            teamster
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              Batch D — staff observation FK fixes &amp; lookup centralization
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+        <div class="md-search__suggest" data-md-component="search-suggest"></div>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      
+    
+    
+      <div class="md-header__source">
+        <a href="https://github.com/TEAMSchools/teamster" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M173.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6m-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3m44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9M252.8 8C114.1 8 8 113.3 8 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C436.2 457.8 504 362.9 504 252 504 113.3 391.5 8 252.8 8M105.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1m-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7m32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1m-11.4-14.7c-1.6 1-1.6 3.6 0 5.9s4.3 3.3 5.6 2.3c1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2"/></svg>
+  </div>
+  <div class="md-source__repository">
+    TEAMSchools/teamster
+  </div>
+</a>
+      </div>
+    
+  </nav>
+  
+    
+      
+<nav class="md-tabs" aria-label="Tabs" data-md-component="tabs">
+  <div class="md-grid">
+    <ul class="md-tabs__list">
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../../.." class="md-tabs__link">
+        
+  
+  
+    
+  
+  Home
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../../guides/" class="md-tabs__link">
+          
+  
+  
+    
+  
+  Guides
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../../troubleshooting/dagster/" class="md-tabs__link">
+          
+  
+  
+    
+  
+  Troubleshooting
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../../reference/architecture/" class="md-tabs__link">
+          
+  
+  
+    
+  
+  Reference
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../../../reference/automations/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  Automations
+
+      </a>
+    </li>
+  
+
+      
+    </ul>
+  </div>
+</nav>
+    
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+  
+
+
+<nav class="md-nav md-nav--primary md-nav--lifted" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href="../../.." title="teamster" class="md-nav__button md-logo" aria-label="teamster" data-md-component="logo">
+      
+  <img src="../../../images/truck.svg" alt="logo">
+
+    </a>
+    teamster
+  </label>
+  
+    <div class="md-nav__source">
+      <a href="https://github.com/TEAMSchools/teamster" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M173.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6m-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3m44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9M252.8 8C114.1 8 8 113.3 8 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C436.2 457.8 504 362.9 504 252 504 113.3 391.5 8 252.8 8M105.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1m-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7m32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1m-11.4-14.7c-1.6 1-1.6 3.6 0 5.9s4.3 3.3 5.6 2.3c1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2"/></svg>
+  </div>
+  <div class="md-source__repository">
+    TEAMSchools/teamster
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../.." class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Home
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+          
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2" >
+        
+          
+          <div class="md-nav__link md-nav__container">
+            <a href="../../../guides/" class="md-nav__link ">
+              
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Guides
+  
+
+    
+  </span>
+  
+  
+
+            </a>
+            
+              
+              <label class="md-nav__link " for="__nav_2" id="__nav_2_label" tabindex="0">
+                <span class="md-nav__icon md-icon"></span>
+              </label>
+            
+          </div>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_2_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_2">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Guides
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/codespaces/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Codespaces
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/local-development/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Local Development
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/dagster/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Dagster
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/google-sheets/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Google Sheets & Forms
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/adp-location-renames/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ADP Location Renames
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/dbt-development/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    dbt Development
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/sftp-integration/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    SFTP Integration
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/superpowers/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Claude Code & Superpowers
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/cube/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Cube
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/claude-cube-connector/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Claude + Cube Connector
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3" >
+        
+          
+          <label class="md-nav__link" for="__nav_3" id="__nav_3_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Troubleshooting
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_3">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Troubleshooting
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../troubleshooting/dagster/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Dagster
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../troubleshooting/dbt/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    dbt
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../troubleshooting/vscode/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    VS Code
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4" >
+        
+          
+          <label class="md-nav__link" for="__nav_4" id="__nav_4_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Reference
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_4_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_4">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Reference
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/architecture/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Architecture
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/adding-an-integration/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Adding an Integration
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/io-managers/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    IO Managers
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/fiscal-year-partitioning/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Fiscal Year & Partitioning
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/dbt-conventions/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    dbt Conventions
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/finalsite-focus-import/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Finalsite to Focus Import
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/marts-data-models/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Marts Data Models
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/automation-conditions/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Automation Conditions
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/automations/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Automations
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+  
+    <a href="https://github.com/TEAMSchools/teamster/edit/main/docs/superpowers/specs/2026-04-29-batch-d-staff-observation-fks-design.md" title="Edit this page" class="md-content__button md-icon" rel="edit">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M10 20H6V4h7v5h5v3.1l2-2V8l-6-6H6c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h4zm10.2-7c.1 0 .3.1.4.2l1.3 1.3c.2.2.2.6 0 .8l-1 1-2.1-2.1 1-1c.1-.1.2-.2.4-.2m0 3.9L14.1 23H12v-2.1l6.1-6.1z"/></svg>
+    </a>
+  
+  
+
+
+<h1 id="batch-d-staff-observation-fk-fixes-lookup-centralization">Batch D — staff observation FK fixes &amp; lookup centralization</h1>
+<p>Closes <a href="https://github.com/TEAMSchools/teamster/issues/3641">#3641</a>,
+<a href="https://github.com/TEAMSchools/teamster/issues/3680">#3680</a>,
+<a href="https://github.com/TEAMSchools/teamster/issues/3712">#3712</a>,
+<a href="https://github.com/TEAMSchools/teamster/issues/3722">#3722</a>.</p>
+<h1 id="3712-is-incidentally-resolved-the-staging-filter-removal-in-3722-restores-the">3712 is incidentally resolved: the staging filter removal in #3722 restores the</h1>
+<p>missing rubrics, and the relationships test on
+<code>fct_staff_observations.staff_observation_rubric_key</code> is promoted to
+<code>severity: error</code> once orphans clear.</p>
+<h2 id="problem">Problem</h2>
+<p>Three related defects in the staff-observation domain of the kipptaf dbt
+project:</p>
+<ul>
+<li><strong>#3722</strong> —
+  <code>fct_staff_observation_scores.staff_observation_rubric_measurement_key</code> has
+  249,465 orphan rows; <code>fct_staff_observations.staff_observation_rubric_key</code> has
+  23,372 orphan rows. Both reference rubrics/measurements that don't appear in
+  the corresponding dims.</li>
+<li><strong>#3641</strong> — <code>dim_staff_observation_expectations</code> is missing the
+  <code>staff_observation_type_key</code> FK required by the star-schema spec.</li>
+<li><strong>#3680</strong> — <code>fct_staff_observations</code> resolves <code>staff_observation_type_key</code> by
+  joining <code>stg_schoolmint_grow__generic_tags</code> inline, duplicating logic already
+  present in <code>dim_staff_observation_types</code>.</li>
+</ul>
+<h2 id="root-cause-analysis">Root cause analysis</h2>
+<h3 id="3722-the-orphans-are-entirely-a-staging-filter-artifact">#3722 — the orphans are entirely a staging-filter artifact</h3>
+<p>Two staging models filter to non-archived SchoolMint Grow rows only:</p>
+<ul>
+<li><code>stg_schoolmint_grow__rubrics__measurement_groups__measurements</code>:
+  <code>where r._dagster_partition_key = 'f'</code></li>
+<li><code>stg_schoolmint_grow__measurements</code>: <code>where _dagster_partition_key = 'f'</code></li>
+</ul>
+<p><code>_dagster_partition_key</code> is the SchoolMint Grow <code>archived</code> flag (<code>f</code> = not
+archived, <code>t</code> = archived). The <code>'t'</code> partitions hold 75 archived rubrics and 348
+archived measurements that are still referenced by published, non-archived 2024+
+observations.</p>
+<p>BigQuery verification (run 2026-04-29 against production):</p>
+<ul>
+<li>All 92 distinct <code>rubric_id</code>s referenced by observation facts exist in
+  <code>src_schoolmint_grow__rubrics</code> when both partitions are unioned (17 in <code>'f'</code>,
+  75 in <code>'t'</code>).</li>
+<li>All 1,472 distinct <code>(rubric_id, measurement_id)</code> pairs from observation scores
+  resolve when both partitions of <code>src_schoolmint_grow__rubrics</code> are read.</li>
+<li>All <code>measurement_id</code>s referenced exist in <code>src_schoolmint_grow__measurements</code>
+  across both partitions.</li>
+</ul>
+<p>Removing the <code>'f'</code> filters fully populates the dims; FK orphans go to zero. Fact
+row counts do not change — only dim row counts grow.</p>
+<p>The convention deviation (other Grow staging models keep the <code>'f'</code> filter) is
+intentional for these two parents-of-orphan-FK-chains. Other Grow staging
+filters are not transitively applied today: <code>stg_schoolmint_grow__observations</code>
+keeps non-archived observations whose parent rubric/measurement happens to be
+archived, so we lose only the metadata, not the fact rows. Consistent resolution
+is to expose the parent metadata.</p>
+<h3 id="3641-no-crosswalk-needed-abbreviations-match-grow-tags-11">#3641 — no crosswalk needed; abbreviations match Grow tags 1:1</h3>
+<p><code>dim_staff_observation_expectations</code> scaffolds expectations from
+<code>stg_google_sheets__people__reporting_terms.type</code> codes (<code>PMS</code>, <code>PMC</code>, <code>TR</code>,
+<code>WT</code>, <code>O3</code>). <code>dim_staff_observation_types</code> is keyed on SchoolMint Grow <code>tag_id</code>.
+BigQuery verification: all 5 staff-observation term-type codes match exactly one
+non-archived Grow <code>generic_tags.abbreviation</code> row each, with no collisions. The
+expectations dim can join Grow tags directly on <code>term.type = tag.abbreviation</code>
+without an external crosswalk.</p>
+<h3 id="3680-duplicated-lookup-logic">#3680 — duplicated lookup logic</h3>
+<p><code>fct_staff_observations</code> defines an inline <code>observation_types</code> CTE filtering
+<code>tag_type = 'observationtypes' AND archived_at IS NULL</code> over
+<code>stg_schoolmint_grow__generic_tags</code>. <code>dim_staff_observation_types</code> applies the
+exact same filter. Same input rows, same hash composition (<code>["tag_id"]</code>), same
+output values — logic duplicated across two models.</p>
+<p>The same lookup is now needed by <code>dim_staff_observation_expectations</code> (#3641),
+making centralization a hard requirement rather than a stylistic preference.</p>
+<h3 id="existing-dead-defensive-code">Existing dead defensive code</h3>
+<p><code>fct_staff_observations</code> includes
+<code>row_number() over (partition by observation_id ...) as rn ... where rn = 1</code>,
+defensively deduplicating in case the LEFT JOINs to
+<code>stg_google_sheets__reporting__terms</code> and <code>int_people__location_crosswalk</code> in
+<code>int_performance_management__observations</code> fan out. BigQuery verification:
+46,686 rows in <code>int_performance_management__observations</code>, all distinct
+<code>observation_id</code> — zero fan-out today. The defensive dedup is no-op and can be
+removed; an upstream uniqueness test catches future fan-out at CI time.</p>
+<h2 id="scope">Scope</h2>
+<h3 id="what-this-builds">What this builds</h3>
+<ol>
+<li>
+<p><strong>Staging filter removal</strong> — drop the archived-partition filter in
+   <code>stg_schoolmint_grow__rubrics__measurement_groups__measurements</code> and
+   <code>stg_schoolmint_grow__measurements</code>. Document the convention deviation in
+   each model's <code>description:</code>.</p>
+</li>
+<li>
+<p><strong>New intermediate model</strong> — <code>int_schoolmint_grow__observation_types</code>
+   centralizing the observation-type lookup with pre-hashed
+   <code>staff_observation_type_key</code>:</p>
+</li>
+</ol>
+<div class="highlight"><pre><span></span><code><span class="k">select</span>
+<span class="w">    </span><span class="err">{{</span><span class="w"> </span><span class="n">dbt_utils</span><span class="p">.</span><span class="n">generate_surrogate_key</span><span class="p">([</span><span class="ss">&quot;tag_id&quot;</span><span class="p">])</span><span class="w"> </span><span class="err">}}</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">staff_observation_type_key</span><span class="p">,</span>
+<span class="w">    </span><span class="n">tag_id</span><span class="p">,</span>
+<span class="w">    </span><span class="n">abbreviation</span><span class="p">,</span>
+<span class="w">    </span><span class="o">`</span><span class="n">name</span><span class="o">`</span><span class="p">,</span>
+<span class="k">from</span><span class="w"> </span><span class="err">{{</span><span class="w"> </span><span class="k">ref</span><span class="p">(</span><span class="ss">&quot;stg_schoolmint_grow__generic_tags&quot;</span><span class="p">)</span><span class="w"> </span><span class="err">}}</span>
+<span class="k">where</span><span class="w"> </span><span class="n">tag_type</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s1">&#39;observationtypes&#39;</span><span class="w"> </span><span class="k">and</span><span class="w"> </span><span class="n">archived_at</span><span class="w"> </span><span class="k">is</span><span class="w"> </span><span class="k">null</span>
+</code></pre></div>
+<ol>
+<li>
+<p><strong>Refactor <code>dim_staff_observation_types</code></strong> — <code>select</code> from the new
+   intermediate; drop inline filter and inline hash. Hash values unchanged.</p>
+</li>
+<li>
+<p><strong>Refactor <code>int_schoolmint_grow__observations</code></strong> — left-join the new
+   intermediate on <code>o.observation_type = ot.tag_id</code>; expose
+   <code>staff_observation_type_key</code> (drop <code>tag_id</code> from outputs — plumbing). Also
+   pre-hash <code>staff_observation_rubric_key</code> from <code>o.rubric_id</code> (no <code>if()</code> wrapper
+   — <code>rubric_id</code> is structurally non-null at this layer; verified across 121,771
+   production rows).</p>
+</li>
+<li>
+<p><strong>Refactor <code>int_performance_management__observations</code></strong> — pre-hash <code>term_key</code>
+   in both UNION branches:</p>
+</li>
+</ol>
+<div class="highlight"><pre><span></span><code><span class="err">{{</span><span class="w"> </span><span class="n">dbt_utils</span><span class="p">.</span><span class="n">generate_surrogate_key</span><span class="p">(</span>
+<span class="w">    </span><span class="p">[</span><span class="ss">&quot;t.type&quot;</span><span class="p">,</span><span class="w"> </span><span class="ss">&quot;t.code&quot;</span><span class="p">,</span><span class="w"> </span><span class="ss">&quot;t.name&quot;</span><span class="p">,</span><span class="w"> </span><span class="ss">&quot;t.start_date&quot;</span><span class="p">,</span><span class="w"> </span><span class="ss">&quot;t.region&quot;</span><span class="p">,</span><span class="w"> </span><span class="ss">&quot;t.school_id&quot;</span><span class="p">]</span>
+<span class="p">)</span><span class="w"> </span><span class="err">}}</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">term_key</span><span class="p">,</span>
+</code></pre></div>
+<p>The 2023 walkthrough branch's term LEFT JOIN doesn't carry <code>region</code> or
+   <code>school_id</code>, so its <code>term_key</code> is NULL when the join doesn't match —
+   identical to today's <code>if(t_code is not null, ...)</code> outcome in the fact.</p>
+<ol>
+<li><strong>Refactor <code>fct_staff_observations</code></strong> — substantial cleanup:</li>
+<li>Drop the inline <code>observation_types</code> CTE and the <code>ot</code> LEFT JOIN.</li>
+<li>Drop the LEFT JOIN to <code>stg_google_sheets__reporting__terms</code> and the six
+     <code>t.*</code> pass-through columns.</li>
+<li>Drop the <code>if()</code> wrappers for <code>staff_observation_type_key</code>,
+     <code>staff_observation_rubric_key</code>, and <code>term_key</code>.</li>
+<li>Drop the <code>row_number() ... where rn = 1</code> dedup (dead defensive code;
+     replaced by upstream uniqueness test).</li>
+<li>
+<p>Pull pre-hashed <code>staff_observation_type_key</code>,
+     <code>staff_observation_rubric_key</code> from <code>int_schoolmint_grow__observations</code>,
+     and <code>term_key</code> from <code>int_performance_management__observations</code>.</p>
+</li>
+<li>
+<p><strong>Add FK to <code>dim_staff_observation_expectations</code></strong> — left-join the new
+   intermediate on <code>term.type = ot.abbreviation</code>, expose
+   <code>ot.staff_observation_type_key</code>. NULLs propagate naturally for non-
+   observation term types (ACT, AR, ATT, etc.).</p>
+</li>
+</ol>
+<h3 id="tests-added">Tests added</h3>
+<ul>
+<li><code>int_schoolmint_grow__observation_types</code>: <code>unique</code> and <code>not_null</code> on both
+  <code>tag_id</code> and <code>abbreviation</code>. The abbreviation uniqueness is load-bearing —
+  <code>dim_staff_observation_expectations</code> joins on it.</li>
+<li><code>int_schoolmint_grow__observations</code>: <code>unique</code> on <code>observation_id</code>; <code>not_null</code>
+  on <code>rubric_id</code> and <code>staff_observation_rubric_key</code>.</li>
+<li><code>int_performance_management__observations</code>: <code>unique</code> on <code>observation_id</code>,
+  closing the existing <code># TODO: add unique test</code> placeholder.</li>
+<li><code>dim_staff_observation_expectations.staff_observation_type_key</code>:
+  <code>relationships</code> to <code>dim_staff_observation_types.staff_observation_type_key</code>,
+  <code>severity: error</code>, <code>config.where: "staff_observation_type_key is not null"</code>.</li>
+</ul>
+<h3 id="tests-verified-clean-post-pr">Tests verified clean (post-PR)</h3>
+<ul>
+<li><code>fct_staff_observations.staff_observation_rubric_key</code> — currently 23,372
+  orphans; expected zero after staging filter removal.</li>
+<li><code>fct_staff_observation_scores.staff_observation_rubric_measurement_key</code> —
+  currently 249,465 orphans; expected zero.</li>
+<li><code>fct_staff_observations.staff_observation_type_key</code> — relationship test values
+  unchanged; still passes.</li>
+<li><code>fct_staff_observations.term_key</code> — relationship test values unchanged; still
+  passes.</li>
+</ul>
+<h3 id="out-of-scope">Out of scope</h3>
+<ul>
+<li>Filtering observations whose parent rubric/measurement is archived (the whole
+  point of the #3722 fix is to keep these historical analytics).</li>
+<li>Other Grow staging models retaining the <code>_dagster_partition_key = 'f'</code> filter
+  (intentional convention; only the two parents of orphan-FK chains change).</li>
+<li>Flattening <code>fct_staff_observation_scores</code>'s nested unnest into a new
+  <code>int_schoolmint_grow__observation_scores</code> intermediate (YAGNI — no second
+  consumer, no FK defensiveness gap; can be a separate issue if a use case
+  emerges).</li>
+<li>Relocating <code>staff_observation_rubric_measurement_key</code> hashing upstream (would
+  require the unnest-flattening intermediate; deferred with the above).</li>
+<li>Cube <code>accessPolicy</code> work (#3591) — separate workstream.</li>
+</ul>
+<h2 id="hash-discipline">Hash discipline</h2>
+<p>Per <code>src/dbt/kipptaf/models/marts/CLAUDE.md</code> "Hash-change discipline":</p>
+<ul>
+<li><code>staff_observation_type_key</code> — same composition <code>["tag_id"]</code>, same source
+  rows, identical values. No hash-changes table entry needed.</li>
+<li><code>staff_observation_rubric_key</code> — same composition <code>["rubric_id"]</code>, same
+  values. No entry.</li>
+<li><code>term_key</code> — same 6-column composition, same join semantics, same resulting
+  values. No entry.</li>
+</ul>
+<h2 id="star-schema-diamond-audit">Star-schema diamond audit</h2>
+<p>Per the strict-chain rule in <code>marts/CLAUDE.md</code>, <code>fct_staff_observations</code>
+post-refactor FKs:</p>
+<ul>
+<li><code>teacher_staff_key</code> → <code>dim_staff</code></li>
+<li><code>observer_staff_key</code> → <code>dim_staff</code></li>
+<li><code>location_key</code> → <code>dim_locations</code></li>
+<li><code>term_key</code> → <code>dim_terms</code></li>
+<li><code>staff_observation_type_key</code> → <code>dim_staff_observation_types</code></li>
+<li><code>staff_observation_rubric_key</code> → <code>dim_staff_observation_rubrics</code></li>
+<li><code>observed_date_key</code> → <code>dim_dates</code></li>
+</ul>
+<p>No two FKs lead to the same ultimate dim. <code>region_key</code> reachable via
+<code>dim_locations</code> chain (no direct FK on the fact). Diamond-free.</p>
+<p><code>dim_staff_observation_expectations</code> adds one FK (<code>staff_observation_type_key</code>)
+— single-path, no diamond.</p>
+<h2 id="verification-plan">Verification plan</h2>
+<p>After CI builds the PR-branch schema, query against
+<code>dbt_cloud_pr_&lt;ci_id&gt;_&lt;pr_num&gt;_*</code> via BigQuery MCP:</p>
+<ol>
+<li>Confirm orphan counts on
+   <code>fct_staff_observations.staff_observation_rubric_key</code> and
+   <code>fct_staff_observation_scores.staff_observation_rubric_measurement_key</code> = 0.</li>
+<li>Confirm <code>fct_staff_observations</code> row count unchanged (no hash drift on
+   <code>staff_observation_key</code>).</li>
+<li>Confirm <code>dim_staff_observation_types</code> row count unchanged (filter and hash
+   identical).</li>
+<li>Confirm <code>dim_staff_observation_rubrics</code> and
+   <code>dim_staff_observation_rubric_measurements</code> row counts increase by archived
+   rubric/measurement counts (75 + 348 measurements).</li>
+<li>Confirm <code>dim_staff_observation_expectations.staff_observation_type_key</code>
+   relationships test passes.</li>
+<li>Confirm zero hash deltas on <code>staff_observation_type_key</code>, <code>term_key</code>, and
+   <code>staff_observation_rubric_key</code> between prod and PR-branch fact tables (a
+   row-by-row hash comparison sanity check).</li>
+</ol>
+<h2 id="file-checklist">File checklist</h2>
+<table>
+<thead>
+<tr>
+<th>File</th>
+<th>Change</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>stg_schoolmint_grow__rubrics__measurement_groups__measurements.sql</code></td>
+<td>drop partition filter</td>
+</tr>
+<tr>
+<td><code>stg_schoolmint_grow__measurements.sql</code></td>
+<td>drop partition filter</td>
+</tr>
+<tr>
+<td><code>int_schoolmint_grow__observation_types.sql</code></td>
+<td>new</td>
+</tr>
+<tr>
+<td><code>int_schoolmint_grow__observation_types.yml</code> (properties)</td>
+<td>new</td>
+</tr>
+<tr>
+<td><code>dim_staff_observation_types.sql</code></td>
+<td>ref new intermediate</td>
+</tr>
+<tr>
+<td><code>int_schoolmint_grow__observations.sql</code></td>
+<td>join new intermediate; pre-hash rubric_key</td>
+</tr>
+<tr>
+<td><code>int_schoolmint_grow__observations.yml</code> (properties)</td>
+<td>uniqueness, not_null tests</td>
+</tr>
+<tr>
+<td><code>int_performance_management__observations.sql</code></td>
+<td>pre-hash term_key</td>
+</tr>
+<tr>
+<td><code>int_performance_management__observations.yml</code> (properties)</td>
+<td>close TODO with unique test</td>
+</tr>
+<tr>
+<td><code>fct_staff_observations.sql</code></td>
+<td>drop inline CTE, joins, wrappers, dedup</td>
+</tr>
+<tr>
+<td><code>fct_staff_observations.yml</code> (properties)</td>
+<td>column updates</td>
+</tr>
+<tr>
+<td><code>dim_staff_observation_expectations.sql</code></td>
+<td>add FK column</td>
+</tr>
+<tr>
+<td><code>dim_staff_observation_expectations.yml</code> (properties)</td>
+<td>new column + relationships test</td>
+</tr>
+</tbody>
+</table>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+          <button type="button" class="md-top md-icon" data-md-component="top" hidden>
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8z"/></svg>
+  Back to top
+</button>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+    <div class="md-copyright__highlight">
+      Copyright &copy; KIPP TEAM & Family Schools
+    </div>
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      
+      <script id="__config" type="application/json">{"annotate": null, "base": "../../..", "features": ["content.action.edit", "content.code.copy", "navigation.instant", "navigation.indexes", "navigation.sections", "navigation.tabs", "navigation.tabs.sticky", "navigation.top", "search.highlight", "search.suggest", "toc.follow"], "search": "../../../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+    
+    
+      <script src="../../../assets/javascripts/bundle.79ae519e.min.js"></script>
+      
+    
+  </body>
+</html>

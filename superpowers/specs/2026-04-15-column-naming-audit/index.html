@@ -1,0 +1,2587 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+        <meta name="description" content="Data engineering platform for KIPP TEAM & Family Schools">
+      
+      
+      
+      
+      
+      
+        
+      
+      
+      <link rel="icon" href="../../../images/truck.svg">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.6">
+    
+    
+      
+        <title>Column Naming Audit — Star Schema Mart Models - teamster</title>
+      
+    
+    
+      <link rel="stylesheet" href="../../../assets/stylesheets/main.484c7ddc.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+    <script>__md_scope=new URL("../../..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+  </head>
+  
+  
+    <body dir="ltr">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#column-naming-audit-star-schema-mart-models" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+  
+
+<header class="md-header md-header--shadow md-header--lifted" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href="../../.." title="teamster" class="md-header__button md-logo" aria-label="teamster" data-md-component="logo">
+      
+  <img src="../../../images/truck.svg" alt="logo">
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            teamster
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              Column Naming Audit — Star Schema Mart Models
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+        <div class="md-search__suggest" data-md-component="search-suggest"></div>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      
+    
+    
+      <div class="md-header__source">
+        <a href="https://github.com/TEAMSchools/teamster" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M173.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6m-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3m44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9M252.8 8C114.1 8 8 113.3 8 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C436.2 457.8 504 362.9 504 252 504 113.3 391.5 8 252.8 8M105.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1m-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7m32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1m-11.4-14.7c-1.6 1-1.6 3.6 0 5.9s4.3 3.3 5.6 2.3c1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2"/></svg>
+  </div>
+  <div class="md-source__repository">
+    TEAMSchools/teamster
+  </div>
+</a>
+      </div>
+    
+  </nav>
+  
+    
+      
+<nav class="md-tabs" aria-label="Tabs" data-md-component="tabs">
+  <div class="md-grid">
+    <ul class="md-tabs__list">
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../../.." class="md-tabs__link">
+        
+  
+  
+    
+  
+  Home
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../../guides/" class="md-tabs__link">
+          
+  
+  
+    
+  
+  Guides
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../../troubleshooting/dagster/" class="md-tabs__link">
+          
+  
+  
+    
+  
+  Troubleshooting
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../../reference/architecture/" class="md-tabs__link">
+          
+  
+  
+    
+  
+  Reference
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../../../reference/automations/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  Automations
+
+      </a>
+    </li>
+  
+
+      
+    </ul>
+  </div>
+</nav>
+    
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+  
+
+
+<nav class="md-nav md-nav--primary md-nav--lifted" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href="../../.." title="teamster" class="md-nav__button md-logo" aria-label="teamster" data-md-component="logo">
+      
+  <img src="../../../images/truck.svg" alt="logo">
+
+    </a>
+    teamster
+  </label>
+  
+    <div class="md-nav__source">
+      <a href="https://github.com/TEAMSchools/teamster" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M173.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6m-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3m44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9M252.8 8C114.1 8 8 113.3 8 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C436.2 457.8 504 362.9 504 252 504 113.3 391.5 8 252.8 8M105.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1m-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7m32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1m-11.4-14.7c-1.6 1-1.6 3.6 0 5.9s4.3 3.3 5.6 2.3c1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2"/></svg>
+  </div>
+  <div class="md-source__repository">
+    TEAMSchools/teamster
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../.." class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Home
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+          
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2" >
+        
+          
+          <div class="md-nav__link md-nav__container">
+            <a href="../../../guides/" class="md-nav__link ">
+              
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Guides
+  
+
+    
+  </span>
+  
+  
+
+            </a>
+            
+              
+              <label class="md-nav__link " for="__nav_2" id="__nav_2_label" tabindex="0">
+                <span class="md-nav__icon md-icon"></span>
+              </label>
+            
+          </div>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_2_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_2">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Guides
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/codespaces/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Codespaces
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/local-development/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Local Development
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/dagster/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Dagster
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/google-sheets/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Google Sheets & Forms
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/adp-location-renames/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ADP Location Renames
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/dbt-development/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    dbt Development
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/sftp-integration/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    SFTP Integration
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/superpowers/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Claude Code & Superpowers
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/cube/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Cube
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/claude-cube-connector/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Claude + Cube Connector
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3" >
+        
+          
+          <label class="md-nav__link" for="__nav_3" id="__nav_3_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Troubleshooting
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_3">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Troubleshooting
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../troubleshooting/dagster/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Dagster
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../troubleshooting/dbt/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    dbt
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../troubleshooting/vscode/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    VS Code
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4" >
+        
+          
+          <label class="md-nav__link" for="__nav_4" id="__nav_4_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Reference
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_4_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_4">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Reference
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/architecture/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Architecture
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/adding-an-integration/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Adding an Integration
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/io-managers/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    IO Managers
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/fiscal-year-partitioning/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Fiscal Year & Partitioning
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/dbt-conventions/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    dbt Conventions
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/finalsite-focus-import/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Finalsite to Focus Import
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/marts-data-models/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Marts Data Models
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/automation-conditions/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Automation Conditions
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/automations/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Automations
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#summary" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Summary
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#goals" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Goals
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#non-goals" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Non-goals
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#naming-rubric" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Naming rubric
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Naming rubric">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#acronym-allow-list" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Acronym allow-list
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#specific-use-jargon-exceptions" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Specific-use jargon exceptions
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#plumbing-definition" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Plumbing definition
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#structural-additions" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Structural additions
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Structural additions">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#dim_students-multi-id" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        dim_students — multi-ID
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#model-renames" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Model renames
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#dim_staff-email-addresses" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        dim_staff — email addresses
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#structural-follow-ups-out-of-scope-for-column-naming" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Structural follow-ups (out of scope for column naming)
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Structural follow-ups (out of scope for column naming)">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#dim_colleges-source-from-kippadb-not-nsc" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        dim_colleges — source from KIPPADB, not NSC
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#model-bugs-discovered-during-dead-column-scan" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Model bugs discovered during dead-column scan
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#stg_people__employee_numbers-incremental-merge-on-null-duplication" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        stg_people__employee_numbers — incremental MERGE-on-NULL duplication
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#dim_assessments-scope-vs-assessment_scope-untangling" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        dim_assessments — scope vs assessment_scope untangling
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#region-traversal-cascade-blocks-multiple-r9-removes" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Region traversal cascade — blocks multiple R9 removes
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#staff-region-traversal-via-dim_work_assignment_locations-group-3-deferral" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Staff → region traversal via dim_work_assignment_locations — Group 3 deferral
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#hash-change-posture" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Hash-change posture
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Hash-change posture">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#enumerated-surrogate-key-changes" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Enumerated surrogate-key changes
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Enumerated surrogate-key changes">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#batch-c-locations-regions-pr-tbd" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Batch C — locations &amp; regions (PR #TBD)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#batch-f-assessment-survey-catalog-pr-tbd" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Batch F — assessment &amp; survey catalog (PR #TBD)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#mart-yaml-audit-hash-input-drift-fixes-pr-3790" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Mart YAML audit — hash-input drift fixes (PR #3790)
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#unchanged-surrogate-keys-explicit-confirmation" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Unchanged surrogate keys (explicit confirmation)
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#audit-inventory-workflow" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Audit inventory workflow
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Audit inventory workflow">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#generation" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Generation
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#review" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Review
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#implementation" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Implementation
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#execution" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Execution
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#open-questions" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Open questions
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#out-of-scope" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Out of scope
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+  
+    <a href="https://github.com/TEAMSchools/teamster/edit/main/docs/superpowers/specs/2026-04-15-column-naming-audit.md" title="Edit this page" class="md-content__button md-icon" rel="edit">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M10 20H6V4h7v5h5v3.1l2-2V8l-6-6H6c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h4zm10.2-7c.1 0 .3.1.4.2l1.3 1.3c.2.2.2.6 0 .8l-1 1-2.1-2.1 1-1c.1-.1.2-.2.4-.2m0 3.9L14.1 23H12v-2.1l6.1-6.1z"/></svg>
+    </a>
+  
+  
+
+
+<h1 id="column-naming-audit-star-schema-mart-models">Column Naming Audit — Star Schema Mart Models</h1>
+<h2 id="summary">Summary</h2>
+<p>Comprehensive naming review for all ~60 mart models. Supersedes the initial
+67-column reactive audit with a proactive full-column review. Applies a
+documented rubric to every column; adds structural columns (multi-ID on
+students, split emails on staff); removes plumbing columns from mart SELECTs.
+Single implementation PR after the audit inventory is approved.</p>
+<p>Tracked on <a href="https://github.com/TEAMSchools/teamster/issues/3643">#3643</a>.</p>
+<h2 id="goals">Goals</h2>
+<ul>
+<li>Every mart column name readable by both dimensional-modeling-fluent analysts
+  and school-based SQL-comfortable analysts, without needing source-system
+  jargon decoding.</li>
+<li>Students and staff expose the identifiers that matter for reporting
+  cross-reference, including multi-state and external-system IDs where relevant.</li>
+<li>Plumbing columns do not leak into the mart SELECTs analysts consume.</li>
+<li>Naming decisions are durable — documented rubric, bounded acronym allow-list,
+  explicit jargon exceptions.</li>
+</ul>
+<h2 id="non-goals">Non-goals</h2>
+<ul>
+<li>Cube YAML model definitions and <code>title:</code> polish — follow-up to
+  <a href="https://github.com/TEAMSchools/teamster/issues/3591">#3591</a>.</li>
+<li>Retiring existing <code>extracts/</code> models — separate future work.</li>
+<li>Non-mart reporting views (<code>rpt_*</code>).</li>
+<li>Google Group creation and Cube access policies —
+  <a href="https://github.com/TEAMSchools/teamster/issues/3591">#3591</a>.</li>
+<li>Downstream consumer communication — Cube barely exists yet; no active consumer
+  base to coordinate.</li>
+</ul>
+<h2 id="naming-rubric">Naming rubric</h2>
+<p>Applied to every column in every mart model during audit:</p>
+<ol>
+<li><strong>Strip source-system prefixes/names</strong> (<code>powerschool_</code>, <code>adp_</code>, <code>deanslist_</code>)
+   unless disambiguating unified columns.</li>
+<li><strong>No KIPP-specific language</strong> (<code>teammate</code>, <code>employee_number</code>, <code>microgoal</code>).</li>
+<li><strong>Boolean fields use <code>is_</code> / <code>has_</code> prefix</strong>. On fact tables, countable 0/1
+   flags may use <code>INT64</code> rather than <code>BOOLEAN</code> so analyst <code>SUM(is_x)</code> and
+   <code>AVG(is_x)</code> aggregations read naturally without casting. Reserve <code>FLOAT64</code>
+   for genuinely non-binary weighted measures (e.g., <code>present_weight</code>), and name
+   those without the <code>is_</code> prefix.</li>
+<li><strong>Dates end <code>_date</code>; timestamps end <code>_timestamp</code></strong>.</li>
+<li><strong>Well-known external acronyms</strong> allowed for specific-use IDs — bound list
+   below.</li>
+<li><strong>Ed-Fi Unified Data Model</strong> nomenclature is the default for IDs, entity
+   names, and standard attributes. Deviate toward plain English for awkward
+   descriptive attributes (e.g., <code>family_name_1</code> → <code>last_name</code>). Document each
+   deviation in the inventory <code>reviewer_notes</code> column.</li>
+<li><strong>Keep ubiquitous acronyms</strong> (<code>gpa</code>, <code>ada</code>, <code>fte</code>, <code>dob</code>, <code>ell</code>, <code>iep</code>,
+   <code>sat</code>, <code>psat</code>, <code>act</code>, <code>ap</code>); spell out or remove internal ones (<code>dcid</code>,
+   <code>oid</code>, <code>lep</code>, etc. — reviewed during audit).</li>
+<li><strong>Plumbing columns removed</strong> from mart SELECTs. They remain in intermediate
+   layers where joins happen.</li>
+<li><strong>Remove dimension attributes reachable via FK.</strong> Facts and child dimensions
+   carry only surrogate FKs, true degenerate dimensions (text attributes with no
+   corresponding dim), and measures. Any column whose value is reachable by
+   traversing an FK to a dimension is removed — Cube handles join traversal.
+   This includes natural keys that duplicate a surrogate FK and date columns
+   that duplicate a date-key FK.</li>
+<li><strong>Entity qualification.</strong> Qualify a descriptive column with the model's
+    entity prefix (<code>student_</code>, <code>ticket_</code>, <code>term_</code>, etc.) <strong>only</strong> when removing
+    the prefix would create a real ambiguity for a downstream consumer — e.g.
+    <code>student_name</code> disambiguates from staff / contact names when joining across
+    marts. Otherwise, let the model name provide the context; default to
+    unqualified. Applies to descriptive attributes and degenerate dimensions.
+    Primary keys (<code>&lt;entity&gt;_key</code>) and foreign keys (<code>&lt;target&gt;_key</code> /
+    <code>&lt;role&gt;_&lt;target&gt;_key</code>) are governed by their own patterns and are not
+    affected by R10. Added after the initial audit on review feedback that the
+    qualifier question was never in R1–R9 scope, so any existing consistency was
+    accidental. See the R10 sweep applied in the review follow-up commit.</li>
+</ol>
+<p>Degenerate-dimension text columns (e.g., <code>incident_type</code>, <code>consequence_type</code>,
+<code>assignment_type</code>) drop <code>_code</code> / <code>_name</code> suffixes unless a code AND a human
+name coexist in the same table — in which case both suffixes stay. Under R10,
+such code+name pairs also keep their entity prefix so both columns follow the
+same shape within the pair.</p>
+<h3 id="acronym-allow-list">Acronym allow-list</h3>
+<p>User-facing acronyms explicitly preserved in column names:</p>
+<table>
+<thead>
+<tr>
+<th>Acronym</th>
+<th>Meaning</th>
+<th>Context</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>gpa</code></td>
+<td>grade point average</td>
+<td>student grades</td>
+</tr>
+<tr>
+<td><code>ada</code></td>
+<td>average daily attendance</td>
+<td>student attendance</td>
+</tr>
+<tr>
+<td><code>fte</code></td>
+<td>full-time equivalent</td>
+<td>staff assignments</td>
+</tr>
+<tr>
+<td><code>dob</code></td>
+<td>date of birth</td>
+<td>person attributes</td>
+</tr>
+<tr>
+<td><code>ell</code></td>
+<td>English language learner</td>
+<td>student attributes</td>
+</tr>
+<tr>
+<td><code>iep</code></td>
+<td>individualized education plan</td>
+<td>student attributes</td>
+</tr>
+<tr>
+<td><code>sat</code> / <code>psat</code></td>
+<td>College Board assessments</td>
+<td>assessment scores</td>
+</tr>
+<tr>
+<td><code>act</code></td>
+<td>ACT assessment</td>
+<td>assessment scores</td>
+</tr>
+<tr>
+<td><code>ap</code></td>
+<td>Advanced Placement</td>
+<td>assessment scores</td>
+</tr>
+<tr>
+<td><code>lea</code></td>
+<td>local education agency</td>
+<td>KIPP-assigned student/staff identifiers</td>
+</tr>
+<tr>
+<td><code>nces</code></td>
+<td>National Center for Education Statistics</td>
+<td>federal college/school cross-reference ID</td>
+</tr>
+<tr>
+<td><code>fleid</code></td>
+<td>Florida Education Identifier</td>
+<td>Florida state identifier</td>
+</tr>
+<tr>
+<td><code>smid</code></td>
+<td>State Management ID</td>
+<td>New Jersey state identifier (if surfaced)</td>
+</tr>
+</tbody>
+</table>
+<p>Additional acronyms can be added to this list during audit review — each
+addition requires a documented specific-use justification.</p>
+<h3 id="specific-use-jargon-exceptions">Specific-use jargon exceptions</h3>
+<p>Business-significant terms kept verbatim despite being technically
+source-system-specific:</p>
+<ul>
+<li><code>salesforce_contact_id</code> on <code>dim_students</code> — KIPPADB integration uses this
+  identifier across consumer tools, and no generic name would be clearer.</li>
+</ul>
+<p>Additional exceptions require a documented justification during audit review
+(entered in the inventory <code>reviewer_notes</code>).</p>
+<h3 id="plumbing-definition">Plumbing definition</h3>
+<p>Removed from all mart SELECTs during this refactor:</p>
+<ul>
+<li><code>_dbt_source_relation</code> — dbt internal, union-model metadata</li>
+<li>Source-system internal row IDs used only for upstream joins (DeansList <code>lid</code>,
+  Amplify record IDs, iReady submission IDs, PowerSchool <code>dcid</code>, etc.)</li>
+<li>Any column whose only historical use was as a join key in intermediate layers</li>
+</ul>
+<p>Plumbing columns remain in staging/intermediate models where joins are performed
+— they are not deleted from the warehouse, only removed from the mart
+presentation layer.</p>
+<h2 id="structural-additions">Structural additions</h2>
+<h3 id="dim_students-multi-id"><code>dim_students</code> — multi-ID</h3>
+<p>KIPP is a charter-LEA operating within a host school district (Newark Public
+Schools, Camden City SD, Paterson Public Schools, Miami-Dade County Public
+Schools). Students have identifiers at four distinct issuer levels, each
+surfaced as its own column on the dim:</p>
+<table>
+<thead>
+<tr>
+<th>Column</th>
+<th>Nullability</th>
+<th>Issuer</th>
+<th>Source</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>lea_student_identifier</code></td>
+<td>NOT NULL</td>
+<td>KIPP (the LEA)</td>
+<td>PowerSchool <code>student_number</code> for NJ; Focus local ID for Miami (future). Unified column. Maps to Ed-Fi <code>District</code> / CEDS <code>District-assigned number</code> from KIPP-as-LEA's perspective.</td>
+</tr>
+<tr>
+<td><code>district_student_identifier</code></td>
+<td>nullable</td>
+<td>Host public school district</td>
+<td>MDCPS for Miami students; Newark/Camden/Paterson Public Schools IDs for NJ where surfaced. Generalizes beyond Miami.</td>
+</tr>
+<tr>
+<td><code>state_student_identifier</code></td>
+<td>nullable</td>
+<td>State education agency</td>
+<td>PowerSchool <code>state_studentnumber</code> (SMID for NJ, FLEID for FL); Focus state ID for Miami. Unified column.</td>
+</tr>
+<tr>
+<td><code>salesforce_contact_id</code></td>
+<td>nullable</td>
+<td>External (KIPPADB)</td>
+<td>KIPPADB (Salesforce) contact ID, populated where the student has a KIPPADB record.</td>
+</tr>
+</tbody>
+</table>
+<p><code>lea_student_identifier</code> and <code>state_student_identifier</code> are unified across SIS
+sources — one column each, values sourced from PowerSchool or Focus depending on
+the student's region. This unification changes hash values for Focus students
+when Focus lands (see <a href="#hash-change-posture">Hash-change posture</a>).</p>
+<p>Neither Ed-Fi nor CEDS V14 exposes "LEA's own ID" vs. "host district's ID" as
+distinct canonical attributes — both standards model identifiers as a single
+<code>PersonIdentifier</code> / <code>StudentIdentificationCode</code> collection keyed by a
+<code>*IdentificationSystemDescriptor</code>. The four columns are a deliberate flattening
+that makes the KIPP-specific LEA-within-host-district hierarchy explicit for
+analysts.</p>
+<h3 id="model-renames">Model renames</h3>
+<p>Two model names carry KIPP-specific "microgoal" jargon (rubric rule R2). Renamed
+as companion changes to the per-column decisions in the audit inventory — the
+column-level audit surfaced the jargon, and leaving the model names unchanged
+would leave the jargon half-removed.</p>
+<table>
+<thead>
+<tr>
+<th>Current</th>
+<th>Renamed</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>dim_staff_observation_microgoal_types</code></td>
+<td><code>dim_staff_observation_goal_types</code></td>
+</tr>
+<tr>
+<td><code>fct_staff_observation_microgoals</code></td>
+<td><code>fct_staff_observation_goals</code></td>
+</tr>
+</tbody>
+</table>
+<p>All <code>*_microgoal_*</code> column renames in the inventory derive from these model
+renames.</p>
+<h3 id="dim_staff-email-addresses"><code>dim_staff</code> — email addresses</h3>
+<p>The existing three-column split on <code>dim_staff</code> is the final state. No structural
+additions needed:</p>
+<table>
+<thead>
+<tr>
+<th>Column</th>
+<th>Nullability</th>
+<th>Source</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>work_email</code></td>
+<td>nullable</td>
+<td>ADP HR record (<code>communication__work_email__email_uri</code>).</td>
+</tr>
+<tr>
+<td><code>personal_email</code></td>
+<td>nullable</td>
+<td>ADP HR record (<code>communication__personal_email__email_uri</code>).</td>
+</tr>
+<tr>
+<td><code>google_email</code></td>
+<td>nullable</td>
+<td>Google Workspace account email (from LDAP).</td>
+</tr>
+</tbody>
+</table>
+<p>Active Directory is KIPP's primary identity system; <code>active_directory_username</code>
+(renamed from <code>sam_account_name</code>) carries the AD login. Google Workspace
+accounts are supplementary for Google products, surfaced as <code>google_email</code>. An
+earlier proposal to add a fourth <code>microsoft_365_email</code> column was dropped —
+<code>work_email</code> from ADP already covers that role, and AD-vs-M365 distinction is a
+deployment detail that does not need a dedicated column.</p>
+<h2 id="structural-follow-ups-out-of-scope-for-column-naming">Structural follow-ups (out of scope for column naming)</h2>
+<p>Surfaced during the audit and empirical null-rate scan; tracked for separate
+implementation PRs.</p>
+<h3 id="dim_colleges-source-from-kippadb-not-nsc"><code>dim_colleges</code> — source from KIPPADB, not NSC</h3>
+<p><code>dim_colleges</code> currently blends three sources: NSC (<code>stg_nsc__student_tracker</code>),
+a gsheet crosswalk, and KIPPADB Salesforce (<code>stg_kippadb__account</code>). NSC is the
+wrong authoritative source for static college metadata — it is a per-student
+search dataset with sparse coverage (e.g., the audit's empirical null-rate scan
+found <code>two_year_four_year</code> 0/1919 populated upstream). KIPPADB Account carries
+150+ authoritative college attributes (selectivity, HBCU flag, academic rigor,
+ACT/SAT ranges, retention rates) and is the college master at KIPP.</p>
+<p>Refactor so the dim sources college attributes from KIPPADB first and falls back
+to NSC only for records with no Salesforce match. <code>account_type</code> already encodes
+2yr/4yr (values: <code>Private 4 yr</code>, <code>Public 4 yr</code>, <code>Public 2 yr</code>, <code>Private 2 yr</code>),
+which made the NSC-sourced <code>two_year_four_year</code> both dead and redundant —
+removed during this audit.</p>
+<h3 id="model-bugs-discovered-during-dead-column-scan">Model bugs discovered during dead-column scan</h3>
+<p>The empirical null-rate scan flagged several columns as 100% null in production
+that should not be. These are model bugs, not dead columns; they are kept in the
+dim and tracked for separate fixes.</p>
+<table>
+<thead>
+<tr>
+<th>Model</th>
+<th>Column</th>
+<th>Issue</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>dim_student_contact_persons</code></td>
+<td><code>email</code>, <code>phone</code></td>
+<td>Upstream <code>int_powerschool__student_contacts</code> has 72k <code>email</code> contacts and 120k <code>mobile</code>. Dim's pivot from the long-format source is broken.</td>
+</tr>
+<tr>
+<td><code>dim_college_enrollments</code></td>
+<td><code>degree_title</code></td>
+<td>Upstream NSC has data (53/1919); dim has 0/74. Join issue.</td>
+</tr>
+<tr>
+<td><code>dim_staff_status</code></td>
+<td>all columns</td>
+<td>Entire table has 0 rows in production. Model logic is broken.</td>
+</tr>
+</tbody>
+</table>
+<h3 id="stg_people__employee_numbers-incremental-merge-on-null-duplication"><code>stg_people__employee_numbers</code> — incremental MERGE-on-NULL duplication</h3>
+<p><code>stg_people__employee_numbers</code> accumulates 16 duplicate rows per run for each of
+91 <code>employee_number</code> values whose <code>adp_associate_id</code> is <code>NULL</code> (1,456 duplicate
+rows total). The incremental MERGE predicate never matches when the merge key is
+<code>NULL</code>, so those orphan rows re-insert on every run. All downstream ADP columns
+(name, email, hire date, rehire date) are <code>NULL</code> on these rows — they are dead
+weight, not real staff records. A further 7 rows have populated
+<code>adp_associate_id</code> but <code>is_active = false</code> and likewise carry <code>NULL</code> ADP
+columns.</p>
+<p><strong>Why the fix is downstream, not upstream</strong>: the staging model is the
+employee-number provisioner — its incremental branch computes
+<code>MAX(employee_number) FROM {{ this }}</code> to assign the next-available number for
+new hires. The <code>--full-refresh</code> needed to clear the accumulated duplicates is
+policy-denied on this table because it would break sequential provisioning.</p>
+<p><strong>Downstream workaround</strong>: the <code>dim_staff</code> consumer filters dead weight with
+<code>WHERE adp_associate_id IS NOT NULL AND is_active</code>, which collapses the 91
+orphan groups to zero rows and drops the 7 inactive-with-ADP rows. This removes
+all 98 dead-weight rows and lets <code>dim_staff</code> pass its <code>unique</code> test without a
+<code>SELECT DISTINCT</code> workaround.</p>
+<p>Tracked in GitHub issue
+<a href="https://github.com/TEAMSchools/teamster/issues/3637">#3637</a> for a dedicated
+operational-planning PR that addresses the upstream MERGE-on-NULL behavior.</p>
+<h3 id="dim_assessments-scope-vs-assessment_scope-untangling"><code>dim_assessments</code> — <code>scope</code> vs <code>assessment_scope</code> untangling</h3>
+<p><code>dim_assessments</code> currently has two columns that appear to represent overlapping
+concepts:</p>
+<ul>
+<li><code>scope</code> — values like <code>CMA - End-of-Module</code>, <code>CGI Quiz</code>, <code>Test Prep</code> for
+  internal assessments, and <code>SAT</code> / <code>ACT</code> / <code>AP</code> / <code>PSAT NMSQT</code> for college
+  assessments.</li>
+<li><code>assessment_scope</code> — value is <code>"enrollment"</code> for all internal assessments
+  inspected during the audit.</li>
+</ul>
+<p>The planned rename <code>scope</code> → <code>assessment_category</code> (Ed-Fi R6) collides
+semantically with the existing <code>assessment_scope</code> column. Before applying the
+rename, audit <code>assessment_scope</code> to determine (a) what it represents across
+internal, state, and college assessments; (b) whether it is redundant with
+<code>scope</code>; (c) which column should survive and under what canonical name.</p>
+<h3 id="region-traversal-cascade-blocks-multiple-r9-removes">Region traversal cascade — blocks multiple R9 removes</h3>
+<p>Empirical check during Staffing-domain review revealed three compounding data
+issues that block planned R9 removes of <code>dim_staffing_positions.entity</code> and
+<code>.grade_band</code>:</p>
+<ol>
+<li><code>dim_regions.legal_entity</code> is 100% null in production. The column exists but
+   has never been populated.</li>
+<li><code>dim_locations.region</code> is populated with <strong>legal-entity names</strong> ("TEAM
+   Academy Charter School", "KIPP Cooper Norcross Academy", "KIPP Miami", "KIPP
+   Paterson") rather than region names (Newark / Camden / Miami / Paterson).
+   This is a data bug, not just a naming inconsistency.</li>
+<li>1,849 rows on <code>dim_staffing_positions</code> link to <strong>campus-level</strong> locations
+   (<code>is_campus = true</code>), which have null <code>grade_band</code> on <code>dim_locations</code>. To
+   remove <code>grade_band</code> from the staffing positions dim, positions need to link
+   to school-specific locations rather than campus rollups.</li>
+</ol>
+<p>Fix order: (1) populate <code>dim_regions.legal_entity</code> from ADP; (2) correct
+<code>dim_locations.region</code> values; (3) relink campus-level staffing positions to
+school locations. Only then can the R9 removes of
+<code>dim_staffing_positions.entity</code> and <code>.grade_band</code> ship without information loss.</p>
+<p><strong>Resolution — canonical region derivation in staging.</strong> The region cascade is
+unblocked in this PR by deriving canonical region in <code>stg_people__locations</code>
+from <code>dagster_code_location</code> (values <code>kippnewark</code> / <code>kippcamden</code> / <code>kippmiami</code> /
+<code>kipppaterson</code>), not from the raw Google Sheet's <code>region</code> column. The existing
+legal-entity values in that column ("TEAM Academy Charter School", "KIPP Cooper
+Norcross Academy", etc., matching <code>dim_regions.legal_entity</code>) are preserved by
+renaming the column to <code>business_unit</code>. This aligns with the ADP/staff-side
+naming convention on <code>dim_work_assignment_organizational_units.business_unit_*</code>.</p>
+<h3 id="staff-region-traversal-via-dim_work_assignment_locations-group-3-deferral">Staff → region traversal via <code>dim_work_assignment_locations</code> — Group 3 deferral</h3>
+<p>Completing the
+<code>dim_staff → dim_staff_work_assignments → dim_work_assignment_locations → dim_locations → dim_regions</code>
+chain requires three coordinated structural changes, all deferred from this PR:</p>
+<ol>
+<li><strong><code>dim_locations</code> address unification.</strong> Add <code>address_line_one</code>,
+   <code>address_line_two</code>, <code>city</code>, <code>postal_code</code> to the conformed locations dim so
+   downstream work-location dims can drop their copies and traverse via FK.</li>
+<li><strong><code>dim_work_assignment_locations.location_key</code> FK.</strong> Remove the 8 ADP-sourced
+   address columns (<code>line_one</code>/<code>two</code>/<code>three</code>, <code>city_name</code>, <code>postal_code</code>,
+   <code>country_code</code>, <code>state_code</code>, <code>location_code</code>, <code>location_name</code>), add a
+   <code>location_key</code> FK to <code>dim_locations</code>. Blocked by (1) and by a reliable
+   mapping from ADP <code>home_work_location__name_code__code_value</code> to
+   <code>dim_locations.location_name</code> (expected to surface the same name-mismatch
+   class of problem as the Talent domain's <code>shared_with_location_key</code>).</li>
+<li><strong>Business-unit / region FK parity.</strong>
+   <code>dim_work_assignment_organizational_units</code> exposes <code>business_unit_code</code> /
+   <code>business_unit_name</code> as degenerate attributes (values <code>KCNA</code>, <code>KIPP_MIAMI</code>,
+   <code>KIPP_TAF</code>, <code>KPAT</code>, <code>TEAM</code>; names identical to <code>dim_regions.legal_entity</code>).
+   Adding <code>business_unit_code</code> to <code>dim_regions</code> would enable direct FK from
+   staff to regions for staff not attached to a physical work location (HQ,
+   remote, network roles). Requires alignment on canonical business-unit code
+   values across ADP and the conformed region master.</li>
+</ol>
+<p>Tracked in <a href="https://github.com/TEAMSchools/teamster/issues/3631">#3631</a>.</p>
+<h2 id="hash-change-posture">Hash-change posture</h2>
+<p>This refactor is prerelease. No backward compatibility is preserved for
+downstream consumers.</p>
+<p>Hash values for surrogate keys change <strong>only</strong> when one of these causes applies:</p>
+<ul>
+<li><strong>Values unify</strong> — consolidating two source columns into one canonical column
+  changes the underlying value (e.g., PS + Focus IDs into one
+  <code>lea_student_identifier</code>).</li>
+<li><strong>Types change</strong> — casting <code>int64</code> to <code>string</code> alters the concatenation input.</li>
+<li><strong>Composition changes</strong> — adding or removing a column from the input list of
+  <code>dbt_utils.generate_surrogate_key()</code>.</li>
+<li><strong>Null handling changes</strong> — wrapping a previously-unwrapped nullable key in
+  the <code>if(x is not null, hash(x), null)</code> pattern.</li>
+<li><strong>Structural add</strong> — a new FK/degenerate surrogate is introduced where none
+  existed before (no "before" hash to compare).</li>
+</ul>
+<p><strong>Pure renames</strong> — same value, same type, same composition, just a new column
+label — produce identical hashes. Most of the 168 in-scope renames fall here.</p>
+<h3 id="enumerated-surrogate-key-changes">Enumerated surrogate-key changes</h3>
+<table>
+<thead>
+<tr>
+<th>Model.Column</th>
+<th>Before derivation</th>
+<th>After derivation</th>
+<th>Cause</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>dim_terms.region_key</code></td>
+<td>not present</td>
+<td><code>generate_surrogate_key(["t.city"])</code> (derived from canonical city column on the terms row)</td>
+<td>Structural add</td>
+</tr>
+<tr>
+<td><code>dim_terms.location_key</code></td>
+<td>not present</td>
+<td><code>generate_surrogate_key(["ll.location_name"])</code> via left join to <code>stg_people__locations</code> on <code>(school_id, city → region)</code></td>
+<td>Structural add</td>
+</tr>
+<tr>
+<td><code>dim_locations.region_key</code></td>
+<td>not present</td>
+<td><code>generate_surrogate_key(["region"])</code> on canonical region from <code>stg_people__locations</code></td>
+<td>Structural add</td>
+</tr>
+<tr>
+<td><code>dim_student_attendance_intervention_types.region_key</code></td>
+<td>not present</td>
+<td><code>generate_surrogate_key(["region_name"])</code></td>
+<td>Structural add</td>
+</tr>
+<tr>
+<td><code>dim_student_attendance_intervention_types.intervention_type_key</code></td>
+<td><code>generate_surrogate_key(["region", "commlog_reason"])</code> with mixed-case region (legal-entity and city variants)</td>
+<td><code>generate_surrogate_key(["region_name", "family_communication_reason"])</code> with canonical city-only region</td>
+<td>Composition changes (input value + column renamed)</td>
+</tr>
+<tr>
+<td><code>fct_student_attendance_interventions.intervention_type_key</code></td>
+<td><code>generate_surrogate_key([&lt;regex on _dbt_source_relation without initcap&gt;, "commlog_reason"])</code></td>
+<td><code>generate_surrogate_key(["initcap(regexp_extract(ai._dbt_source_relation, r'kipp(\\w+)_'))", "ai.commlog_reason"])</code> to match the dim's canonical region form</td>
+<td>Values unify (region casing realigned)</td>
+</tr>
+<tr>
+<td><code>fct_student_attendance_interventions.family_communication_key</code></td>
+<td>not present</td>
+<td><code>generate_surrogate_key(["c.record_id", "c._dbt_source_relation"])</code> via join to <code>int_deanslist__comm_log</code>, wrapped in null-guard</td>
+<td>Structural add</td>
+</tr>
+<tr>
+<td><code>fct_behavioral_incidents.referring_staff_key</code></td>
+<td>not present</td>
+<td><code>generate_surrogate_key(["sr.employee_number"])</code> via DeansList email lookup chain, wrapped in null-guard</td>
+<td>Structural add</td>
+</tr>
+<tr>
+<td><code>fct_family_communications.staff_key</code></td>
+<td>not present</td>
+<td><code>generate_surrogate_key(["sr.employee_number"])</code> via same DeansList chain, wrapped in null-guard</td>
+<td>Structural add</td>
+</tr>
+<tr>
+<td><code>fct_job_candidate_applications.shared_with_location_key</code></td>
+<td>not present</td>
+<td><code>generate_surrogate_key(["school_shared_with"])</code>, wrapped in null-guard; warn-severity relationships test per <a href="https://github.com/TEAMSchools/teamster/issues/3672">#3672</a></td>
+<td>Structural add</td>
+</tr>
+<tr>
+<td><code>dim_staff_work_assignments.time_approver_staff_key</code></td>
+<td>not present</td>
+<td><code>generate_surrogate_key(["sup.employee_number"])</code> via second self-join on <code>stg_people__employee_numbers</code>, null-guarded. Renamed from <code>time_service_supervisor_staff_key</code> in review followup — cold-read test showed "time_service" prefix read as opaque ADP jargon.</td>
+<td>Structural add</td>
+</tr>
+<tr>
+<td><code>dim_work_assignment_reporting_relationships.manager_staff_key</code></td>
+<td>not present</td>
+<td><code>generate_surrogate_key(["mgr.employee_number"])</code> via same pattern, null-guarded</td>
+<td>Structural add</td>
+</tr>
+<tr>
+<td><code>fct_student_attendance_daily.term_key</code></td>
+<td>raw <code>ada.term</code> string exposed as <code>term_code</code></td>
+<td><code>generate_surrogate_key(["t.``type``", "t.code", "t.``name``", "t.``start_date``", "t.region", "t.school_id"])</code> via left join to <code>stg_google_sheets__reporting__terms</code> on <code>(school_id, code, academic_year)</code>; warn-severity relationships test to <code>dim_terms</code></td>
+<td>Structural add (replaces degenerate <code>term_code</code>)</td>
+</tr>
+<tr>
+<td><code>fct_grades_gpa.term_key</code></td>
+<td><code>generate_surrogate_key(["rt.type", "rt.code", "rt.name", "rt.start_date", "rt.region", "rt.school_id"])</code> joined on a broken predicate (<code>rt.code</code> vs. PS <code>Q#</code> names, spurious <code>yearid - 1990</code> offset) — produced the all-NULLs placeholder hash for 100% of rows</td>
+<td>Same derivation, join fixed to <code>gt.term_name = rt.``name`` AND gt.schoolid = rt.school_id AND gt.yearid = rt.powerschool_year_id</code> with <code>reporting_terms</code> CTE filter <code>type = 'RT'</code>; wrapped in null-guard so the residual ~13% unmatched rows produce NULL instead of the placeholder hash</td>
+<td>Values unify (join predicate corrected; 96% of rows migrate from placeholder to real hash)</td>
+</tr>
+<tr>
+<td><code>fct_grades_assignments.term_key</code> / <code>fct_grades_category.term_key</code> / <code>fct_grades_term.term_key</code> / <code>fct_staff_observations.term_key</code> / <code>dim_student_section_enrollments.term_key</code> / <code>dim_student_assessment_expectations.term_key</code></td>
+<td><code>generate_surrogate_key([...6-tuple...])</code> — unwrapped; all unmatched LEFT JOIN rows hashed to the all-NULLs placeholder (<code>eb66153e09d138b38fc979bff5b437d5</code>), producing ~37M relationships-test orphans across the six consumers</td>
+<td>Same derivation, wrapped: <code>if(rt.code is not null, generate_surrogate_key([...6-tuple...]), cast(null as string))</code>. Grades facts also corrected: <code>fct_grades_assignments</code> filter <code>type='quarter'</code> → <code>'RT'</code>; <code>fct_grades_category</code> and <code>fct_grades_term</code> filter <code>'quarter'</code> → <code>'RT'</code>, join <code>storecode=rt.name</code> (was <code>rt.code</code>), <code>yearid=rt.powerschool_year_id</code> (was <code>powerschool_year_id - 1990</code>)</td>
+<td>Null handling changes (rule 4) — plus predicate corrections that migrate grades-facts rows from placeholder-hash to real <code>term_key</code></td>
+</tr>
+<tr>
+<td><code>dim_work_assignment_primary.work_assignment_primary_key</code></td>
+<td>not present</td>
+<td><code>generate_surrogate_key(["item_id", "effective_date_start"])</code> — new SCD mart introduced in PR Batch B (#3687); narrow change-point SCD on <code>is_primary_position</code> per work assignment</td>
+<td>Structural add</td>
+</tr>
+<tr>
+<td><code>dim_staff_status.staff_status_key</code> / <code>dim_staff_status.staff_key</code></td>
+<td>composition <code>[en.employee_number, cp.effective_date_start]</code> and <code>[en.employee_number]</code> — but the <code>cp.associate_oid = en.adp_associate_id</code> inner join produced 0 matches in prod (16-char OID vs 9-char worker_id format mismatch), so all keys were absent</td>
+<td>Same compositions; join rekeyed to bridge through <code>worker_id__id_value</code> (<code>cp.worker_id = en.adp_associate_id</code>). Materialization goes from 0 rows to ~8.6K rows</td>
+<td>Structural add (effective — table was empty pre-fix; closes #3681)</td>
+</tr>
+<tr>
+<td><code>dim_work_assignment_reporting_relationships.manager_staff_key</code></td>
+<td><code>if(mgr.employee_number is not null, generate_surrogate_key(["mgr.employee_number"]), null)</code> — but <code>cp.manager_associate_oid = mgr.adp_associate_id</code> join failed for all rows (same 16-char OID vs 9-char worker_id format mismatch), so column was 100% NULL</td>
+<td>Same composition; join rekeyed via a <code>workers</code> lookup CTE bridging <code>manager_associate_oid → worker_id__id_value → adp_associate_id</code>. <code>manager_staff_key</code> now populates with real values</td>
+<td>Structural add (effective — column was 100% NULL pre-fix)</td>
+</tr>
+</tbody>
+</table>
+<h4 id="batch-c-locations-regions-pr-tbd">Batch C — locations &amp; regions (PR #TBD)</h4>
+<table>
+<thead>
+<tr>
+<th>Model.Column</th>
+<th>Before derivation</th>
+<th>After derivation</th>
+<th>Cause</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>dim_regions.region_key</code></td>
+<td><code>generate_surrogate_key(["region"])</code> (canonical short name)</td>
+<td><code>generate_surrogate_key(["business_unit_code"])</code> after sourcing rows from <code>int_adp_workforce_now__workers__work_assignments__organizational_units__pivot</code></td>
+<td>Composition change (rule 3) — hashes BU code instead of region name; new TAF row added</td>
+</tr>
+<tr>
+<td><code>dim_work_assignment_locations.location_key</code></td>
+<td>not present</td>
+<td>passthrough of <code>int_adp_workforce_now__workers__work_assignments.location_key</code> (sourced from canonical master)</td>
+<td>Structural add (rule 5) — new FK; replaces 8 R9-dropped denormalized address columns</td>
+</tr>
+<tr>
+<td><code>fct_behavioral_incidents.location_key</code></td>
+<td>not present (row exposed degenerate <code>location</code> string instead)</td>
+<td>passthrough of <code>int_deanslist__incidents.location_key</code> (master-resolved via <code>deanslist_school_id</code>)</td>
+<td>Structural add (rule 5) — replaces R9-dropped degenerate <code>location</code> string</td>
+</tr>
+<tr>
+<td><code>dim_locations.location_key</code></td>
+<td><code>generate_surrogate_key(["location_name"])</code> computed in mart</td>
+<td>passthrough from <code>stg_google_sheets__people__locations.location_key</code> (computed once on master)</td>
+<td>No change — hash value identical (<code>MD5(location_name)</code> regardless of compute site)</td>
+</tr>
+<tr>
+<td><code>fct_support_tickets.location_key</code></td>
+<td><code>generate_surrogate_key(["cf.location"])</code> (Zendesk slug like <code>room9</code>) — produced placeholder hash for ~285K orphans</td>
+<td>passthrough from <code>int_zendesk__tickets__custom_fields_pivot.location_key</code> resolved via canonical master through alias-grain <code>int_people__location_crosswalk</code></td>
+<td>Values unify (rule 1) — orphan rows now resolve to real <code>dim_locations.location_key</code></td>
+</tr>
+<tr>
+<td><code>dim_staffing_positions.location_key</code></td>
+<td><code>generate_surrogate_key(["adp_location"])</code> (Seat Tracker typed string) — produced orphan hashes for ~478 rows</td>
+<td>passthrough from <code>int_seat_tracker__snapshot.location_key</code></td>
+<td>Values unify (rule 1)</td>
+</tr>
+<tr>
+<td><code>fct_staff_observations.location_key</code></td>
+<td><code>generate_surrogate_key(["lc.location_clean_name"])</code> via <code>int_people__location_crosswalk</code> join</td>
+<td>passthrough from <code>int_schoolmint_grow__observations.location_key</code> (master-resolved via stable <code>grow_location_id</code>)</td>
+<td>Values unify (rule 1) — resolution path moved upstream; hash composition equivalent</td>
+</tr>
+<tr>
+<td><code>fct_job_candidate_applications.shared_with_location_key</code></td>
+<td><code>generate_surrogate_key(["school_shared_with"])</code> (raw SmartRecruiters string like <code>KIPP High School</code>) — orphans for ~358 rows</td>
+<td>passthrough from <code>int_people__location_crosswalk.location_key</code> joined on <code>school_shared_with</code></td>
+<td>Values unify (rule 1) — orphans resolve through new alias rows on the existing crosswalk</td>
+</tr>
+<tr>
+<td><code>dim_student_enrollments.location_key</code></td>
+<td><code>generate_surrogate_key(["loc.location_name"])</code> from <code>stg_people__locations</code> join — sentinel <code>999999</code> produced placeholder hash</td>
+<td>passthrough from <code>stg_powerschool__schools.location_key</code> (LEFT JOIN to master; <code>999999</code> resolves to NULL naturally)</td>
+<td>Null handling change (rule 4) — sentinel rows now real NULL instead of placeholder hash</td>
+</tr>
+<tr>
+<td><code>dim_course_sections.location_key</code></td>
+<td>same pattern as <code>dim_student_enrollments</code></td>
+<td>same</td>
+<td>Null handling change (rule 4)</td>
+</tr>
+<tr>
+<td><code>dim_assessment_goals.location_key</code> / <code>dim_school_calendars.location_key</code> / <code>dim_terms.location_key</code> / <code>fct_student_attendance_daily.location_key</code></td>
+<td><code>generate_surrogate_key(["loc.location_name"])</code> from <code>stg_people__locations</code> join</td>
+<td>passthrough from <code>stg_powerschool__schools.location_key</code> via <code>school_number</code> join</td>
+<td>No change — same hash values (consistency migration to unified PS pivot)</td>
+</tr>
+</tbody>
+</table>
+<h4 id="batch-f-assessment-survey-catalog-pr-tbd">Batch F — assessment &amp; survey catalog (PR #TBD)</h4>
+<table>
+<thead>
+<tr>
+<th>Model.Column</th>
+<th>Before derivation</th>
+<th>After derivation</th>
+<th>Cause</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>dim_assessment_administrations.assessment_administration_key</code></td>
+<td>not present</td>
+<td><code>generate_surrogate_key(["assessment_type", "title", "subject_area", "scope", "module_code", "grade_level", "administered_date", "academic_year", "administration_round", "region", "season", "administration_window"])</code></td>
+<td>Structural add (rule 5) — new dim sitting between <code>dim_assessments</code> and the score facts at per-occurrence grain</td>
+</tr>
+<tr>
+<td><code>bridge_assessment_expectations_enrollment_scoped.assessment_expectation_key</code></td>
+<td><code>generate_surrogate_key(["student_number", "assessment_id", "administered_at"])</code> on <code>dim_student_assessment_expectations</code> (deleted)</td>
+<td><code>generate_surrogate_key(["cc_dcid", "cc_source_relation", "assessment_id", "administered_at"])</code></td>
+<td>Structural add (rule 5) — new bridge replaces deleted <code>dim_student_assessment_expectations.student_assessment_expectation_key</code></td>
+</tr>
+<tr>
+<td><code>bridge_assessment_expectations_student_scoped.assessment_expectation_key</code></td>
+<td><code>generate_surrogate_key(["student_number", "assessment_id", "administered_at"])</code> on <code>dim_student_assessment_expectations</code> (deleted)</td>
+<td><code>generate_surrogate_key(["powerschool_student_number", "assessment_id", "administered_at"])</code></td>
+<td>Structural add (rule 5) — new bridge replaces deleted <code>dim_student_assessment_expectations.student_assessment_expectation_key</code>; K-8 scope only</td>
+</tr>
+</tbody>
+</table>
+<h4 id="mart-yaml-audit-hash-input-drift-fixes-pr-3790">Mart YAML audit — hash-input drift fixes (PR #3790)</h4>
+<table>
+<thead>
+<tr>
+<th>Model.Column</th>
+<th>Before derivation</th>
+<th>After derivation</th>
+<th>Cause</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>fct_survey_responses.survey_response_key</code></td>
+<td><code>generate_surrogate_key(["survey_id", "survey_response_id", "respondent_identifier", "question_shortname"])</code> — collapsed Alchemer multi-question_id rows that share a shortname onto one PK, producing 2,458 PK collisions</td>
+<td><code>generate_surrogate_key(["survey_id", "survey_response_id", "respondent_identifier", "survey_question_id"])</code></td>
+<td>Composition change (rule 3) — disambiguates Alchemer shortname collisions</td>
+</tr>
+<tr>
+<td><code>fct_student_attendance_daily.student_enrollment_key</code></td>
+<td><code>generate_surrogate_key(["ada.student_number", "ada._dbt_source_relation", "ada.academic_year", "enr.entrydate"])</code> — <code>ada._dbt_source_relation</code> produced <code>int_powerschool__ps_adaadm_daily_ctod</code> which never matched dim's <code>base_powerschool__student_enrollments</code> source-relation, creating 12.8M FK orphans</td>
+<td><code>generate_surrogate_key(["ada.student_number", "enr._dbt_source_relation", "ada.academic_year", "enr.entrydate"])</code></td>
+<td>Composition change (rule 3) — aligns hash inputs with <code>dim_student_enrollments</code> (closes #3718)</td>
+</tr>
+<tr>
+<td><code>fct_student_attendance_interventions.student_enrollment_key</code></td>
+<td><code>generate_surrogate_key(["ai.student_number", "ai._dbt_source_relation", "ai.academic_year", "enr.entrydate"])</code> — same source-relation drift; ~256K FK orphans</td>
+<td><code>generate_surrogate_key(["ai.student_number", "enr._dbt_source_relation", "ai.academic_year", "enr.entrydate"])</code></td>
+<td>Composition change (rule 3) — closes #3718</td>
+</tr>
+<tr>
+<td><code>fct_grades_term.student_section_enrollment_key</code></td>
+<td><code>generate_surrogate_key(["fg.cc_dcid", "fg._dbt_source_relation"])</code> — <code>fg._dbt_source_relation</code> produced <code>base_powerschool__final_grades</code> which never matched dim's <code>base_powerschool__course_enrollments</code> source-relation; ~262K FK orphans</td>
+<td><code>generate_surrogate_key(["fg.cc_dcid", "replace(fg._dbt_source_relation, 'base_powerschool__final_grades', 'base_powerschool__course_enrollments')"])</code></td>
+<td>Composition change (rule 3) — closes #3718</td>
+</tr>
+<tr>
+<td><code>dim_student_section_enrollments.student_enrollment_key</code></td>
+<td><code>generate_surrogate_key(["enr.student_number", "enr._dbt_source_relation", "cc.cc_academic_year", "enr.entrydate"])</code> — used <code>cc.cc_academic_year</code> instead of <code>enr.academic_year</code>, producing ~34K mismatches when the date-range join crossed an academic-year boundary</td>
+<td><code>generate_surrogate_key(["enr.student_number", "enr._dbt_source_relation", "enr.academic_year", "enr.entrydate"])</code></td>
+<td>Composition change (rule 3) — closes #3718</td>
+</tr>
+<tr>
+<td><code>dim_student_section_enrollments.course_section_key</code></td>
+<td><code>generate_surrogate_key(["cc.sections_dcid", "cc._dbt_source_relation"])</code> — <code>cc._dbt_source_relation</code> produced <code>base_powerschool__course_enrollments</code> which never matched parent dim's <code>base_powerschool__sections</code> source-relation; ~784K FK orphans</td>
+<td><code>generate_surrogate_key(["cc.sections_dcid", "replace(cc._dbt_source_relation, 'base_powerschool__course_enrollments', 'base_powerschool__sections')"])</code></td>
+<td>Composition change (rule 3) — closes #3718</td>
+</tr>
+</tbody>
+</table>
+<h3 id="unchanged-surrogate-keys-explicit-confirmation">Unchanged surrogate keys (explicit confirmation)</h3>
+<p>Values preserved despite visible column renames elsewhere on the row:</p>
+<ul>
+<li><code>dim_students.student_key</code> — still hashes <code>student_number</code>. Renames
+  <code>local_student_identifier</code> → <code>lea_student_identifier</code>, <code>gender</code> →
+  <code>gender_identity</code>, etc. are pure mart-layer aliases of pre-existing columns;
+  they do not feed the hash.</li>
+<li><code>dim_staff.staff_key</code> — still hashes <code>employee_number</code>. The <code>staff_unique_id</code>
+  surface name is an alias of the same column the hash reads.</li>
+<li><code>dim_regions.region_key</code> — still hashes the CTE-local <code>region</code> value inside
+  the UNION ALL. The <code>region → region_name</code> output rename is a pure alias after
+  the hash is computed.</li>
+<li>All Course, Talent, Survey, College, Gradebook, Assessment, Observation, and
+  Staffing domain keys on models whose SQL was renamed only — the hash input
+  columns were not touched. Scanned via compiled-SQL grep post-rebuild and
+  confirmed identical derivations.</li>
+<li><code>dim_terms.term_key</code> — hash inputs and derivation unchanged. The <code>region_key</code>
+  FK was dropped from <code>dim_terms</code> in this batch per the strict-chain traversal
+  rule, but <code>term_key</code> composition is untouched.</li>
+</ul>
+<p>SCD2 dims renamed <code>is_current_record</code> → <code>is_current</code>, <code>is_current_record_group</code>
+→ <code>is_current_group</code>, and similar — these are boolean flags on SCD output rows,
+not surrogate-key hash inputs, so they are not in the list above even though
+they were renamed in this PR.</p>
+<h2 id="audit-inventory-workflow">Audit inventory workflow</h2>
+<p>The audit inventory is a CSV kept under this spec's directory, imported into a
+Google Sheet for review, and exported back on approval. The CSV is the durable
+record; the sheet is ephemeral scaffolding.</p>
+<h3 id="generation">Generation</h3>
+<p>A one-off script reads every mart model's YAML contract (or
+<code>INFORMATION_SCHEMA.COLUMNS</code> for any un-yaml'd columns) and emits a CSV with
+these columns:</p>
+<table>
+<thead>
+<tr>
+<th>Column</th>
+<th>Populated by</th>
+<th>Editable in sheet</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>domain</code></td>
+<td>script</td>
+<td>no</td>
+</tr>
+<tr>
+<td><code>model</code></td>
+<td>script</td>
+<td>no</td>
+</tr>
+<tr>
+<td><code>current_column</code></td>
+<td>script</td>
+<td>no</td>
+</tr>
+<tr>
+<td><code>data_type</code></td>
+<td>script</td>
+<td>no</td>
+</tr>
+<tr>
+<td><code>current_description</code></td>
+<td>script</td>
+<td>no</td>
+</tr>
+<tr>
+<td><code>action</code></td>
+<td>script (initial guess) + reviewer</td>
+<td>yes</td>
+</tr>
+<tr>
+<td><code>proposed_name</code></td>
+<td>script (initial guess) + reviewer</td>
+<td>yes</td>
+</tr>
+<tr>
+<td><code>rule_ref</code></td>
+<td>script (initial guess) + reviewer</td>
+<td>yes</td>
+</tr>
+<tr>
+<td><code>review_status</code></td>
+<td>reviewer</td>
+<td>yes</td>
+</tr>
+<tr>
+<td><code>reviewer_notes</code></td>
+<td>reviewer</td>
+<td>yes</td>
+</tr>
+</tbody>
+</table>
+<p>Valid <code>action</code> values: <code>keep</code>, <code>rename</code>, <code>remove</code>, <code>add</code>.</p>
+<p>Valid <code>review_status</code> values: <code>not_reviewed</code>, <code>approved</code>, <code>needs_discussion</code>.</p>
+<p>Valid <code>rule_ref</code> values: <code>R1</code>–<code>R10</code> (rubric rules), <code>structural</code> (new column),
+<code>plumbing</code> (removal), <code>exception</code> (specific-use jargon exception),
+<code>acronym_allowlist</code> (acronym preserved via allow-list).</p>
+<p>Initial CSV location:</p>
+<div class="highlight"><pre><span></span><code>docs/superpowers/specs/2026-04-15-column-naming-audit-inventory.csv
+</code></pre></div>
+<p>Structural-addition rows (new columns on <code>dim_students</code> and <code>dim_staff</code>) are
+pre-populated in the inventory with <code>action: add</code>.</p>
+<h3 id="review">Review</h3>
+<ol>
+<li>Project owner creates a Google Sheet and imports the generated CSV.</li>
+<li>Owner shares the sheet with the project team (edit access) and adds the sheet
+   URL to issue <a href="https://github.com/TEAMSchools/teamster/issues/3643">#3643</a>.</li>
+<li>Reviewers annotate each row using the <code>review_status</code> and <code>reviewer_notes</code>
+   columns. Proposed names are adjusted in place when needed.</li>
+<li>When all rows reach <code>approved</code> status, export the sheet back to CSV and
+   commit as the approved snapshot:</li>
+</ol>
+<div class="highlight"><pre><span></span><code>docs/superpowers/specs/2026-04-15-column-naming-audit-approved.csv
+</code></pre></div>
+<p><strong>Sheet URL</strong>:
+https://docs.google.com/spreadsheets/d/1-2HyPIJzaXMsIgY3e9rLOU4W0HLOk7foDKXFU0NCa-4</p>
+<h3 id="implementation">Implementation</h3>
+<p>After the approved CSV lands in the repo, a second script reads the approved
+actions and emits the SQL + YAML edits for a single PR covering all renames,
+additions, and removals. See the implementation plan (writing-plans follow-up)
+for script structure and edit mechanics.</p>
+<h2 id="execution">Execution</h2>
+<p>One PR covering:</p>
+<ul>
+<li>SQL renames across all ~60 mart models</li>
+<li>YAML contract updates (<code>data_type</code>, <code>description</code>, column <code>name</code>) for every
+  renamed, added, or removed column</li>
+<li>Plumbing columns removed from mart <code>SELECT</code> clauses</li>
+<li>Structural additions (<code>dim_students</code> IDs, <code>dim_staff</code> emails) implemented in
+  the relevant staging/intermediate layers and surfaced in the mart</li>
+<li>Refreshed column descriptions in plain analyst-facing language</li>
+<li><code>trunk fmt</code> + <code>trunk check --ci</code> clean</li>
+<li>dbt Cloud CI validates contracts and tests pass</li>
+</ul>
+<h2 id="open-questions">Open questions</h2>
+<p>Resolved during audit review:</p>
+<ul>
+<li><strong>Focus local and state IDs</strong> — confirm Focus API field names once Focus
+  integration lands and decide whether unification under
+  <code>local_student_identifier</code> / <code>state_student_identifier</code> is clean or requires a
+  separate Focus-specific column.</li>
+<li><strong>Microsoft 365 email column name</strong> — confirm exact name
+  (<code>microsoft_365_email</code> vs. <code>m365_email</code> vs. <code>office_365_email</code>).</li>
+<li><strong>Internal acronyms</strong> — each encountered acronym (<code>dcid</code>, <code>oid</code>, <code>lep</code>, and
+  others discovered during audit) is reviewed. Default disposition is rename or
+  remove; exceptions are added to the acronym allow-list with justification.</li>
+<li><strong>Code+name degenerate dimensions</strong> — confirm whether any mart models ship
+  both <code>_code</code> and <code>_name</code> variants today and should continue to.</li>
+<li><strong>Additional specific-use jargon exceptions</strong> — any term surfaced during audit
+  that warrants the same exception treatment as <code>salesforce_contact_id</code>.</li>
+</ul>
+<h2 id="out-of-scope">Out of scope</h2>
+<ul>
+<li>Cube YAML files and <code>title:</code> polish
+  (<a href="https://github.com/TEAMSchools/teamster/issues/3591">#3591</a> follow-up)</li>
+<li>Retiring existing <code>extracts/</code> models</li>
+<li>Non-mart reporting views (<code>rpt_*</code>)</li>
+<li>Google Group creation and Cube access policies
+  (<a href="https://github.com/TEAMSchools/teamster/issues/3591">#3591</a>)</li>
+<li>Downstream consumer communication</li>
+</ul>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+          <button type="button" class="md-top md-icon" data-md-component="top" hidden>
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8z"/></svg>
+  Back to top
+</button>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+    <div class="md-copyright__highlight">
+      Copyright &copy; KIPP TEAM & Family Schools
+    </div>
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      
+      <script id="__config" type="application/json">{"annotate": null, "base": "../../..", "features": ["content.action.edit", "content.code.copy", "navigation.instant", "navigation.indexes", "navigation.sections", "navigation.tabs", "navigation.tabs.sticky", "navigation.top", "search.highlight", "search.suggest", "toc.follow"], "search": "../../../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+    
+    
+      <script src="../../../assets/javascripts/bundle.79ae519e.min.js"></script>
+      
+    
+  </body>
+</html>

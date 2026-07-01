@@ -1,0 +1,2792 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+        <meta name="description" content="Data engineering platform for KIPP TEAM & Family Schools">
+      
+      
+      
+      
+      
+      
+        
+      
+      
+      <link rel="icon" href="../../../images/truck.svg">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.6">
+    
+    
+      
+        <title>dbt Schema Resolution Rework — Implementation Plan - teamster</title>
+      
+    
+    
+      <link rel="stylesheet" href="../../../assets/stylesheets/main.484c7ddc.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+    <script>__md_scope=new URL("../../..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+  </head>
+  
+  
+    <body dir="ltr">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#dbt-schema-resolution-rework-implementation-plan" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+  
+
+<header class="md-header md-header--shadow md-header--lifted" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href="../../.." title="teamster" class="md-header__button md-logo" aria-label="teamster" data-md-component="logo">
+      
+  <img src="../../../images/truck.svg" alt="logo">
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            teamster
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              dbt Schema Resolution Rework — Implementation Plan
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+        <div class="md-search__suggest" data-md-component="search-suggest"></div>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      
+    
+    
+      <div class="md-header__source">
+        <a href="https://github.com/TEAMSchools/teamster" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M173.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6m-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3m44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9M252.8 8C114.1 8 8 113.3 8 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C436.2 457.8 504 362.9 504 252 504 113.3 391.5 8 252.8 8M105.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1m-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7m32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1m-11.4-14.7c-1.6 1-1.6 3.6 0 5.9s4.3 3.3 5.6 2.3c1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2"/></svg>
+  </div>
+  <div class="md-source__repository">
+    TEAMSchools/teamster
+  </div>
+</a>
+      </div>
+    
+  </nav>
+  
+    
+      
+<nav class="md-tabs" aria-label="Tabs" data-md-component="tabs">
+  <div class="md-grid">
+    <ul class="md-tabs__list">
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../../.." class="md-tabs__link">
+        
+  
+  
+    
+  
+  Home
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../../guides/" class="md-tabs__link">
+          
+  
+  
+    
+  
+  Guides
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../../troubleshooting/dagster/" class="md-tabs__link">
+          
+  
+  
+    
+  
+  Troubleshooting
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../../reference/architecture/" class="md-tabs__link">
+          
+  
+  
+    
+  
+  Reference
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../../../reference/automations/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  Automations
+
+      </a>
+    </li>
+  
+
+      
+    </ul>
+  </div>
+</nav>
+    
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+  
+
+
+<nav class="md-nav md-nav--primary md-nav--lifted" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href="../../.." title="teamster" class="md-nav__button md-logo" aria-label="teamster" data-md-component="logo">
+      
+  <img src="../../../images/truck.svg" alt="logo">
+
+    </a>
+    teamster
+  </label>
+  
+    <div class="md-nav__source">
+      <a href="https://github.com/TEAMSchools/teamster" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M173.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6m-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3m44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9M252.8 8C114.1 8 8 113.3 8 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C436.2 457.8 504 362.9 504 252 504 113.3 391.5 8 252.8 8M105.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1m-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7m32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1m-11.4-14.7c-1.6 1-1.6 3.6 0 5.9s4.3 3.3 5.6 2.3c1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2"/></svg>
+  </div>
+  <div class="md-source__repository">
+    TEAMSchools/teamster
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../.." class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Home
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+          
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2" >
+        
+          
+          <div class="md-nav__link md-nav__container">
+            <a href="../../../guides/" class="md-nav__link ">
+              
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Guides
+  
+
+    
+  </span>
+  
+  
+
+            </a>
+            
+              
+              <label class="md-nav__link " for="__nav_2" id="__nav_2_label" tabindex="0">
+                <span class="md-nav__icon md-icon"></span>
+              </label>
+            
+          </div>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_2_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_2">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Guides
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/codespaces/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Codespaces
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/local-development/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Local Development
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/dagster/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Dagster
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/google-sheets/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Google Sheets & Forms
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/adp-location-renames/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ADP Location Renames
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/dbt-development/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    dbt Development
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/sftp-integration/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    SFTP Integration
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/superpowers/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Claude Code & Superpowers
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/cube/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Cube
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/claude-cube-connector/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Claude + Cube Connector
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3" >
+        
+          
+          <label class="md-nav__link" for="__nav_3" id="__nav_3_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Troubleshooting
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_3">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Troubleshooting
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../troubleshooting/dagster/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Dagster
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../troubleshooting/dbt/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    dbt
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../troubleshooting/vscode/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    VS Code
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4" >
+        
+          
+          <label class="md-nav__link" for="__nav_4" id="__nav_4_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Reference
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_4_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_4">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Reference
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/architecture/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Architecture
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/adding-an-integration/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Adding an Integration
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/io-managers/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    IO Managers
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/fiscal-year-partitioning/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Fiscal Year & Partitioning
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/dbt-conventions/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    dbt Conventions
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/finalsite-focus-import/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Finalsite to Focus Import
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/marts-data-models/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Marts Data Models
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/automation-conditions/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Automation Conditions
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/automations/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Automations
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#file-structure" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        File Structure
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="File Structure">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#new-files" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        New files
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#modified-files" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Modified files
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#deleted-files" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Deleted files
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#phase-1-deploy-macros-update-profiles-update-dagster" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Phase 1: Deploy macros, update profiles, update Dagster
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Phase 1: Deploy macros, update profiles, update Dagster">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#task-1-add-macros-to-school-projects" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Task 1: Add macros to school projects
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#task-2-update-dbtprofilesyml" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Task 2: Update .dbt/profiles.yml
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#task-3-update-shipped-profiles" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Task 3: Update shipped profiles
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#task-4-update-dagster-get_dbt_cli_resource" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Task 4: Update Dagster get_dbt_cli_resource
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#task-5-phase-1-validation" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Task 5: Phase 1 validation
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#task-6-manual-dbt-cloud-changes" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Task 6: Manual — dbt Cloud changes
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#phase-2-rewrite-source-files" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Phase 2: Rewrite source files
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Phase 2: Rewrite source files">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#source-file-rewrite-rules" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Source file rewrite rules
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#task-7-rewrite-source-system-package-source-files" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Task 7: Rewrite source-system package source files
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#task-8-rewrite-school-project-resident-source-files" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Task 8: Rewrite school-project-resident source files
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#task-9-rewrite-kipptaf-non-regional-source-files" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Task 9: Rewrite kipptaf non-regional source files
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#task-10-rewrite-kipptaf-cross-regional-source-files" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Task 10: Rewrite kipptaf cross-regional source files
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#task-11-phase-2-validation" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Task 11: Phase 2 validation
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#phase-3-clean-up" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Phase 3: Clean up
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Phase 3: Clean up">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#task-12-clean-up-dbtprofilesyml" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Task 12: Clean up .dbt/profiles.yml
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#task-13-remove-dbt_cloud_environment_type" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Task 13: Remove DBT_CLOUD_ENVIRONMENT_TYPE
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#task-14-delete-scriptsdbt-sxspy-and-update-scriptsclaudemd" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Task 14: Delete scripts/dbt-sxs.py and update scripts/CLAUDE.md
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#task-15-set-up-post-merge-git-hook" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Task 15: Set up post-merge git hook
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#task-16-configure-power-user-defer" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Task 16: Configure Power User --defer
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#task-17-add-vs-code-task-for-staging-external-sources" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Task 17: Add VS Code task for staging external sources
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#task-18-update-developer-facing-docs" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Task 18: Update developer-facing docs
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#task-19-update-spec-status" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Task 19: Update spec status
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+  
+    <a href="https://github.com/TEAMSchools/teamster/edit/main/docs/superpowers/plans/2026-03-25-dbt-schema-resolution.md" title="Edit this page" class="md-content__button md-icon" rel="edit">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M10 20H6V4h7v5h5v3.1l2-2V8l-6-6H6c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h4zm10.2-7c.1 0 .3.1.4.2l1.3 1.3c.2.2.2.6 0 .8l-1 1-2.1-2.1 1-1c.1-.1.2-.2.4-.2m0 3.9L14.1 23H12v-2.1l6.1-6.1z"/></svg>
+    </a>
+  
+  
+
+
+<h1 id="dbt-schema-resolution-rework-implementation-plan">dbt Schema Resolution Rework — Implementation Plan</h1>
+<blockquote>
+<p><strong>For agentic workers:</strong> REQUIRED SUB-SKILL: Use
+superpowers:subagent-driven-development (recommended) or
+superpowers:executing-plans to implement this plan task-by-task. Steps use
+checkbox (<code>- [ ]</code>) syntax for tracking.</p>
+</blockquote>
+<p><strong>Goal:</strong> Replace scattered inline Jinja conditionals in dbt source files with
+centralized macros controlled by a 4-target architecture
+(<code>defer</code>/<code>dev</code>/<code>staging</code>/<code>prod</code>).</p>
+<p><strong>Architecture:</strong> Two macros (<code>resolve_source_schema</code>,
+<code>resolve_region_source_schema</code>) centralize all source schema resolution. A
+<code>check_prod_guard</code> macro prevents accidental production writes. Profile changes
+across <code>.dbt/profiles.yml</code> (local dev) and <code>src/dbt/&lt;project&gt;/profiles.yml</code>
+(shipped to Dagster) align target names. Phase 1 is backward-compatible; Phase 2
+rewrites ~78 source files; Phase 3 cleans up old config and adds developer
+tooling.</p>
+<p><strong>Tech Stack:</strong> dbt (Jinja SQL macros, YAML source definitions), BigQuery,
+Dagster (Python resource factory), VS Code (tasks, settings), bash (git hooks)</p>
+<p><strong>Spec:</strong>
+<a href="../../specs/2026-03-25-dbt-schema-resolution-design/"><code>docs/superpowers/specs/2026-03-25-dbt-schema-resolution-design.md</code></a></p>
+<hr />
+<h2 id="file-structure">File Structure</h2>
+<h3 id="new-files">New files</h3>
+<table>
+<thead>
+<tr>
+<th>File</th>
+<th>Purpose</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>src/dbt/kipptaf/macros/schema_resolution.sql</code></td>
+<td><code>resolve_source_schema</code>, <code>resolve_region_source_schema</code>, <code>check_prod_guard</code></td>
+</tr>
+<tr>
+<td><code>src/dbt/kippnewark/macros/schema_resolution.sql</code></td>
+<td><code>resolve_source_schema</code>, <code>check_prod_guard</code></td>
+</tr>
+<tr>
+<td><code>src/dbt/kippcamden/macros/schema_resolution.sql</code></td>
+<td><code>resolve_source_schema</code>, <code>check_prod_guard</code></td>
+</tr>
+<tr>
+<td><code>src/dbt/kippmiami/macros/schema_resolution.sql</code></td>
+<td><code>resolve_source_schema</code>, <code>check_prod_guard</code></td>
+</tr>
+<tr>
+<td><code>src/dbt/kipppaterson/macros/schema_resolution.sql</code></td>
+<td><code>resolve_source_schema</code>, <code>check_prod_guard</code></td>
+</tr>
+<tr>
+<td><code>.git/hooks/post-merge</code></td>
+<td>Generate prod manifests for Power User <code>--defer</code></td>
+</tr>
+<tr>
+<td><code>docs/guides/dbt-development.md</code></td>
+<td>Developer guide for new workflows</td>
+</tr>
+</tbody>
+</table>
+<h3 id="modified-files">Modified files</h3>
+<table>
+<thead>
+<tr>
+<th>File</th>
+<th>Change</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>.dbt/profiles.yml</code></td>
+<td>Add <code>defer</code>/<code>dev</code>/<code>staging</code>/<code>prod</code> targets for school projects</td>
+</tr>
+<tr>
+<td><code>src/dbt/&lt;school&gt;/profiles.yml</code> (×5)</td>
+<td>Add <code>defer</code> + <code>prod</code> targets, default <code>defer</code></td>
+</tr>
+<tr>
+<td><code>src/dbt/&lt;school&gt;/dbt_project.yml</code> (×5)</td>
+<td>Add <code>on-run-start</code> for <code>check_prod_guard</code></td>
+</tr>
+<tr>
+<td><code>src/teamster/core/resources.py</code></td>
+<td>Simplify <code>get_dbt_cli_resource</code></td>
+</tr>
+<tr>
+<td>~78 <code>sources*.yml</code> files</td>
+<td>Replace inline Jinja with macro calls</td>
+</tr>
+<tr>
+<td><code>.vscode/settings.json</code></td>
+<td>Add Power User defer config, remove <code>DBT_CLOUD_ENVIRONMENT_TYPE</code></td>
+</tr>
+<tr>
+<td><code>.vscode/tasks.json</code></td>
+<td>Add "Stage External Sources" task</td>
+</tr>
+<tr>
+<td><code>.devcontainer/devcontainer.json</code></td>
+<td>Wire <code>post-merge</code> hook into <code>postStartCommand</code>, remove <code>DBT_CLOUD_ENVIRONMENT_TYPE</code></td>
+</tr>
+<tr>
+<td><code>docs/guides/google-sheets.md</code></td>
+<td>Replace <code>dbt-sxs.py</code> refs with links to new guide</td>
+</tr>
+<tr>
+<td><code>docs/guides/index.md</code></td>
+<td>Add routing table entry</td>
+</tr>
+<tr>
+<td><code>mkdocs.yml</code></td>
+<td>Add nav entry</td>
+</tr>
+<tr>
+<td><code>scripts/CLAUDE.md</code></td>
+<td>Replace <code>dbt-sxs.py</code> entry with VS Code task docs</td>
+</tr>
+</tbody>
+</table>
+<h3 id="deleted-files">Deleted files</h3>
+<table>
+<thead>
+<tr>
+<th>File</th>
+<th>Reason</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>scripts/dbt-sxs.py</code></td>
+<td>Replaced by VS Code task</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="phase-1-deploy-macros-update-profiles-update-dagster">Phase 1: Deploy macros, update profiles, update Dagster</h2>
+<p>Phase 1 is fully backward-compatible. Old source files continue working because
+the new macros are not yet called. Old profile targets remain alongside new
+ones.</p>
+<h3 id="task-1-add-macros-to-school-projects">Task 1: Add macros to school projects</h3>
+<p><strong>Files:</strong></p>
+<ul class="task-list">
+<li>Create: <code>src/dbt/kipptaf/macros/schema_resolution.sql</code></li>
+<li>Create: <code>src/dbt/kippnewark/macros/schema_resolution.sql</code></li>
+<li>Create: <code>src/dbt/kippcamden/macros/schema_resolution.sql</code></li>
+<li>Create: <code>src/dbt/kippmiami/macros/schema_resolution.sql</code></li>
+<li>Create: <code>src/dbt/kipppaterson/macros/schema_resolution.sql</code></li>
+<li>Modify: <code>src/dbt/kipptaf/dbt_project.yml</code> (line 1 area — add <code>on-run-start</code>)</li>
+<li>Modify: <code>src/dbt/kippnewark/dbt_project.yml</code></li>
+<li>Modify: <code>src/dbt/kippcamden/dbt_project.yml</code></li>
+<li>Modify: <code>src/dbt/kippmiami/dbt_project.yml</code></li>
+<li>
+<p>Modify: <code>src/dbt/kipppaterson/dbt_project.yml</code></p>
+</li>
+<li class="task-list-item">
+<p><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 1: Create kipptaf macro file (all 3 macros)</strong></p>
+</li>
+</ul>
+<p>Write <code>src/dbt/kipptaf/macros/schema_resolution.sql</code>:</p>
+<div class="highlight"><pre><span></span><code><span class="err">{</span><span class="o">%</span><span class="w"> </span><span class="n">macro</span><span class="w"> </span><span class="n">resolve_source_schema</span><span class="p">(</span><span class="n">base_schema</span><span class="p">)</span><span class="w"> </span><span class="o">%</span><span class="err">}</span>
+<span class="w">  </span><span class="err">{</span><span class="o">%-</span><span class="w"> </span><span class="k">if</span><span class="w"> </span><span class="n">target</span><span class="p">.</span><span class="n">name</span><span class="w"> </span><span class="k">in</span><span class="w"> </span><span class="p">[</span><span class="s1">&#39;defer&#39;</span><span class="p">,</span><span class="w"> </span><span class="s1">&#39;dev&#39;</span><span class="p">]</span><span class="w"> </span><span class="o">-%</span><span class="err">}</span>
+<span class="w">    </span><span class="n">zz_</span><span class="err">{{</span><span class="w"> </span><span class="n">env_var</span><span class="p">(</span><span class="s1">&#39;GITHUB_USER&#39;</span><span class="p">,</span><span class="w"> </span><span class="s1">&#39;dev&#39;</span><span class="p">)</span><span class="w"> </span><span class="err">}}</span><span class="n">_</span><span class="err">{{</span><span class="w"> </span><span class="n">base_schema</span><span class="w"> </span><span class="err">}}</span>
+<span class="w">  </span><span class="err">{</span><span class="o">%-</span><span class="w"> </span><span class="n">elif</span><span class="w"> </span><span class="n">target</span><span class="p">.</span><span class="n">name</span><span class="w"> </span><span class="o">==</span><span class="w"> </span><span class="s1">&#39;staging&#39;</span><span class="w"> </span><span class="o">-%</span><span class="err">}</span>
+<span class="w">    </span><span class="n">zz_stg_</span><span class="err">{{</span><span class="w"> </span><span class="n">base_schema</span><span class="w"> </span><span class="err">}}</span>
+<span class="w">  </span><span class="err">{</span><span class="o">%-</span><span class="w"> </span><span class="k">else</span><span class="w"> </span><span class="o">-%</span><span class="err">}</span>
+<span class="w">    </span><span class="err">{{</span><span class="w"> </span><span class="n">base_schema</span><span class="w"> </span><span class="err">}}</span>
+<span class="w">  </span><span class="err">{</span><span class="o">%-</span><span class="w"> </span><span class="n">endif</span><span class="w"> </span><span class="o">-%</span><span class="err">}</span>
+<span class="err">{</span><span class="o">%</span><span class="w"> </span><span class="n">endmacro</span><span class="w"> </span><span class="o">%</span><span class="err">}</span>
+
+<span class="err">{</span><span class="o">%</span><span class="w"> </span><span class="n">macro</span><span class="w"> </span><span class="n">resolve_region_source_schema</span><span class="p">(</span><span class="n">base_schema</span><span class="p">)</span><span class="w"> </span><span class="o">%</span><span class="err">}</span>
+<span class="w">  </span><span class="err">{</span><span class="o">%-</span><span class="w"> </span><span class="k">if</span><span class="w"> </span><span class="n">target</span><span class="p">.</span><span class="n">name</span><span class="w"> </span><span class="o">==</span><span class="w"> </span><span class="s1">&#39;dev&#39;</span><span class="w"> </span><span class="o">-%</span><span class="err">}</span>
+<span class="w">    </span><span class="n">zz_</span><span class="err">{{</span><span class="w"> </span><span class="n">env_var</span><span class="p">(</span><span class="s1">&#39;GITHUB_USER&#39;</span><span class="p">,</span><span class="w"> </span><span class="s1">&#39;dev&#39;</span><span class="p">)</span><span class="w"> </span><span class="err">}}</span><span class="n">_</span><span class="err">{{</span><span class="w"> </span><span class="n">base_schema</span><span class="w"> </span><span class="err">}}</span>
+<span class="w">  </span><span class="err">{</span><span class="o">%-</span><span class="w"> </span><span class="n">elif</span><span class="w"> </span><span class="n">target</span><span class="p">.</span><span class="n">name</span><span class="w"> </span><span class="o">==</span><span class="w"> </span><span class="s1">&#39;staging&#39;</span><span class="w"> </span><span class="o">-%</span><span class="err">}</span>
+<span class="w">    </span><span class="n">zz_stg_</span><span class="err">{{</span><span class="w"> </span><span class="n">base_schema</span><span class="w"> </span><span class="err">}}</span>
+<span class="w">  </span><span class="err">{</span><span class="o">%-</span><span class="w"> </span><span class="k">else</span><span class="w"> </span><span class="o">-%</span><span class="err">}</span>
+<span class="w">    </span><span class="err">{{</span><span class="w"> </span><span class="n">base_schema</span><span class="w"> </span><span class="err">}}</span>
+<span class="w">  </span><span class="err">{</span><span class="o">%-</span><span class="w"> </span><span class="n">endif</span><span class="w"> </span><span class="o">-%</span><span class="err">}</span>
+<span class="err">{</span><span class="o">%</span><span class="w"> </span><span class="n">endmacro</span><span class="w"> </span><span class="o">%</span><span class="err">}</span>
+
+<span class="err">{</span><span class="o">%</span><span class="w"> </span><span class="n">macro</span><span class="w"> </span><span class="n">check_prod_guard</span><span class="p">()</span><span class="w"> </span><span class="o">%</span><span class="err">}</span>
+<span class="w">  </span><span class="err">{</span><span class="o">%-</span><span class="w"> </span><span class="k">if</span><span class="w"> </span><span class="n">target</span><span class="p">.</span><span class="n">name</span><span class="w"> </span><span class="o">==</span><span class="w"> </span><span class="s1">&#39;prod&#39;</span><span class="w"> </span><span class="k">and</span><span class="w"> </span><span class="k">not</span><span class="w"> </span><span class="n">env_var</span><span class="p">(</span><span class="s1">&#39;DAGSTER_CLOUD_DEPLOYMENT_NAME&#39;</span><span class="p">,</span><span class="w"> </span><span class="s1">&#39;&#39;</span><span class="p">)</span><span class="w"> </span><span class="o">-%</span><span class="err">}</span>
+<span class="w">    </span><span class="err">{{</span><span class="w"> </span><span class="n">exceptions</span><span class="p">.</span><span class="n">raise_compiler_error</span><span class="p">(</span>
+<span class="w">      </span><span class="ss">&quot;target &#39;prod&#39; is reserved for production deployments. &quot;</span>
+<span class="w">      </span><span class="o">~</span><span class="w"> </span><span class="ss">&quot;Use --target defer (default) for development. &quot;</span>
+<span class="w">      </span><span class="o">~</span><span class="w"> </span><span class="ss">&quot;Set DAGSTER_CLOUD_DEPLOYMENT_NAME to override.&quot;</span>
+<span class="w">    </span><span class="p">)</span><span class="w"> </span><span class="err">}}</span>
+<span class="w">  </span><span class="err">{</span><span class="o">%-</span><span class="w"> </span><span class="n">endif</span><span class="w"> </span><span class="o">-%</span><span class="err">}</span>
+<span class="err">{</span><span class="o">%</span><span class="w"> </span><span class="n">endmacro</span><span class="w"> </span><span class="o">%</span><span class="err">}</span>
+</code></pre></div>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 2: Create regional project macro files (2 macros each)</strong></li>
+</ul>
+<p>Write the same file to each of the 4 regional projects. These get
+<code>resolve_source_schema</code> and <code>check_prod_guard</code> only (no
+<code>resolve_region_source_schema</code>).</p>
+<p>Write <code>src/dbt/kippnewark/macros/schema_resolution.sql</code> (identical for
+kippcamden, kippmiami, kipppaterson):</p>
+<div class="highlight"><pre><span></span><code><span class="err">{</span><span class="o">%</span><span class="w"> </span><span class="n">macro</span><span class="w"> </span><span class="n">resolve_source_schema</span><span class="p">(</span><span class="n">base_schema</span><span class="p">)</span><span class="w"> </span><span class="o">%</span><span class="err">}</span>
+<span class="w">  </span><span class="err">{</span><span class="o">%-</span><span class="w"> </span><span class="k">if</span><span class="w"> </span><span class="n">target</span><span class="p">.</span><span class="n">name</span><span class="w"> </span><span class="k">in</span><span class="w"> </span><span class="p">[</span><span class="s1">&#39;defer&#39;</span><span class="p">,</span><span class="w"> </span><span class="s1">&#39;dev&#39;</span><span class="p">]</span><span class="w"> </span><span class="o">-%</span><span class="err">}</span>
+<span class="w">    </span><span class="n">zz_</span><span class="err">{{</span><span class="w"> </span><span class="n">env_var</span><span class="p">(</span><span class="s1">&#39;GITHUB_USER&#39;</span><span class="p">,</span><span class="w"> </span><span class="s1">&#39;dev&#39;</span><span class="p">)</span><span class="w"> </span><span class="err">}}</span><span class="n">_</span><span class="err">{{</span><span class="w"> </span><span class="n">base_schema</span><span class="w"> </span><span class="err">}}</span>
+<span class="w">  </span><span class="err">{</span><span class="o">%-</span><span class="w"> </span><span class="n">elif</span><span class="w"> </span><span class="n">target</span><span class="p">.</span><span class="n">name</span><span class="w"> </span><span class="o">==</span><span class="w"> </span><span class="s1">&#39;staging&#39;</span><span class="w"> </span><span class="o">-%</span><span class="err">}</span>
+<span class="w">    </span><span class="n">zz_stg_</span><span class="err">{{</span><span class="w"> </span><span class="n">base_schema</span><span class="w"> </span><span class="err">}}</span>
+<span class="w">  </span><span class="err">{</span><span class="o">%-</span><span class="w"> </span><span class="k">else</span><span class="w"> </span><span class="o">-%</span><span class="err">}</span>
+<span class="w">    </span><span class="err">{{</span><span class="w"> </span><span class="n">base_schema</span><span class="w"> </span><span class="err">}}</span>
+<span class="w">  </span><span class="err">{</span><span class="o">%-</span><span class="w"> </span><span class="n">endif</span><span class="w"> </span><span class="o">-%</span><span class="err">}</span>
+<span class="err">{</span><span class="o">%</span><span class="w"> </span><span class="n">endmacro</span><span class="w"> </span><span class="o">%</span><span class="err">}</span>
+
+<span class="err">{</span><span class="o">%</span><span class="w"> </span><span class="n">macro</span><span class="w"> </span><span class="n">check_prod_guard</span><span class="p">()</span><span class="w"> </span><span class="o">%</span><span class="err">}</span>
+<span class="w">  </span><span class="err">{</span><span class="o">%-</span><span class="w"> </span><span class="k">if</span><span class="w"> </span><span class="n">target</span><span class="p">.</span><span class="n">name</span><span class="w"> </span><span class="o">==</span><span class="w"> </span><span class="s1">&#39;prod&#39;</span><span class="w"> </span><span class="k">and</span><span class="w"> </span><span class="k">not</span><span class="w"> </span><span class="n">env_var</span><span class="p">(</span><span class="s1">&#39;DAGSTER_CLOUD_DEPLOYMENT_NAME&#39;</span><span class="p">,</span><span class="w"> </span><span class="s1">&#39;&#39;</span><span class="p">)</span><span class="w"> </span><span class="o">-%</span><span class="err">}</span>
+<span class="w">    </span><span class="err">{{</span><span class="w"> </span><span class="n">exceptions</span><span class="p">.</span><span class="n">raise_compiler_error</span><span class="p">(</span>
+<span class="w">      </span><span class="ss">&quot;target &#39;prod&#39; is reserved for production deployments. &quot;</span>
+<span class="w">      </span><span class="o">~</span><span class="w"> </span><span class="ss">&quot;Use --target defer (default) for development. &quot;</span>
+<span class="w">      </span><span class="o">~</span><span class="w"> </span><span class="ss">&quot;Set DAGSTER_CLOUD_DEPLOYMENT_NAME to override.&quot;</span>
+<span class="w">    </span><span class="p">)</span><span class="w"> </span><span class="err">}}</span>
+<span class="w">  </span><span class="err">{</span><span class="o">%-</span><span class="w"> </span><span class="n">endif</span><span class="w"> </span><span class="o">-%</span><span class="err">}</span>
+<span class="err">{</span><span class="o">%</span><span class="w"> </span><span class="n">endmacro</span><span class="w"> </span><span class="o">%</span><span class="err">}</span>
+</code></pre></div>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 3: Add <code>on-run-start</code> to each school project's <code>dbt_project.yml</code></strong></li>
+</ul>
+<p>Add the following block after the <code>config-version</code> line (before <code>profile:</code>) in
+each of the 5 school project <code>dbt_project.yml</code> files:</p>
+<div class="highlight"><pre><span></span><code><span class="nt">on-run-start</span><span class="p">:</span>
+<span class="w">  </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="s">&quot;{{</span><span class="nv"> </span><span class="s">check_prod_guard()</span><span class="nv"> </span><span class="s">}}&quot;</span>
+</code></pre></div>
+<p>Files to modify:</p>
+<ul class="task-list">
+<li><code>src/dbt/kipptaf/dbt_project.yml</code></li>
+<li><code>src/dbt/kippnewark/dbt_project.yml</code></li>
+<li><code>src/dbt/kippcamden/dbt_project.yml</code></li>
+<li><code>src/dbt/kippmiami/dbt_project.yml</code></li>
+<li>
+<p><code>src/dbt/kipppaterson/dbt_project.yml</code></p>
+</li>
+<li class="task-list-item">
+<p><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 4: Validate macros parse</strong></p>
+</li>
+</ul>
+<p>Run <code>dbt parse</code> for each school project to confirm the macros are syntactically
+valid. Use the existing profile targets (old names still work):</p>
+<div class="highlight"><pre><span></span><code><span class="k">for</span><span class="w"> </span>project<span class="w"> </span><span class="k">in</span><span class="w"> </span>kipptaf<span class="w"> </span>kippnewark<span class="w"> </span>kippcamden<span class="w"> </span>kippmiami<span class="w"> </span>kipppaterson<span class="p">;</span><span class="w"> </span><span class="k">do</span>
+<span class="w">  </span>uv<span class="w"> </span>run<span class="w"> </span>dbt<span class="w"> </span>parse<span class="w"> </span>--project-dir<span class="w"> </span><span class="s2">&quot;src/dbt/</span><span class="si">${</span><span class="nv">project</span><span class="si">}</span><span class="s2">&quot;</span><span class="w"> </span>--profiles-dir<span class="w"> </span>.dbt
+<span class="k">done</span>
+</code></pre></div>
+<p>Expected: all 5 parse successfully with no errors.</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 5: Commit</strong></li>
+</ul>
+<div class="highlight"><pre><span></span><code>git<span class="w"> </span>add<span class="w"> </span>src/dbt/kipptaf/macros/schema_resolution.sql<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>src/dbt/kippnewark/macros/schema_resolution.sql<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>src/dbt/kippcamden/macros/schema_resolution.sql<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>src/dbt/kippmiami/macros/schema_resolution.sql<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>src/dbt/kipppaterson/macros/schema_resolution.sql<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>src/dbt/kipptaf/dbt_project.yml<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>src/dbt/kippnewark/dbt_project.yml<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>src/dbt/kippcamden/dbt_project.yml<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>src/dbt/kippmiami/dbt_project.yml<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>src/dbt/kipppaterson/dbt_project.yml
+git<span class="w"> </span>commit<span class="w"> </span>-m<span class="w"> </span><span class="s2">&quot;feat(dbt): add schema resolution macros and prod guard to school projects&quot;</span>
+</code></pre></div>
+<hr />
+<h3 id="task-2-update-dbtprofilesyml">Task 2: Update <code>.dbt/profiles.yml</code></h3>
+<p>Add new targets alongside existing ones. Do NOT remove old targets yet — they
+remain functional during the transition.</p>
+<p><strong>Files:</strong></p>
+<ul class="task-list">
+<li>
+<p>Modify: <code>.dbt/profiles.yml</code></p>
+</li>
+<li class="task-list-item">
+<p><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 1: Add new targets to each school profile</strong></p>
+</li>
+</ul>
+<p>For each of the 5 school profiles (<code>kipptaf</code>, <code>kippnewark</code>, <code>kippcamden</code>,
+<code>kippmiami</code>, <code>kipppaterson</code>), add <code>defer</code>, <code>dev</code>, <code>staging</code>, and <code>prod</code> targets.
+Change the default target to <code>defer</code>. Keep all existing targets intact.</p>
+<p>The pattern for each school profile (using kipptaf as example):</p>
+<div class="highlight"><pre><span></span><code><span class="nt">kipptaf</span><span class="p">:</span>
+<span class="w">  </span><span class="nt">target</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">defer</span>
+<span class="w">  </span><span class="nt">outputs</span><span class="p">:</span>
+<span class="w">    </span><span class="c1"># new targets</span>
+<span class="w">    </span><span class="nt">defer</span><span class="p">:</span>
+<span class="w">      </span><span class="nt">type</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">bigquery</span>
+<span class="w">      </span><span class="nt">schema</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">zz_{{ env_var(&#39;GITHUB_USER&#39;, &#39;dev&#39;) }}_kipptaf</span>
+<span class="w">      </span><span class="nt">method</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">oauth</span>
+<span class="w">      </span><span class="nt">project</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">teamster-332318</span>
+<span class="w">      </span><span class="nt">threads</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">40</span>
+<span class="w">    </span><span class="nt">dev</span><span class="p">:</span>
+<span class="w">      </span><span class="nt">type</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">bigquery</span>
+<span class="w">      </span><span class="nt">schema</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">zz_{{ env_var(&#39;GITHUB_USER&#39;, &#39;dev&#39;) }}_kipptaf</span>
+<span class="w">      </span><span class="nt">method</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">oauth</span>
+<span class="w">      </span><span class="nt">project</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">teamster-332318</span>
+<span class="w">      </span><span class="nt">threads</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">40</span>
+<span class="w">    </span><span class="nt">staging</span><span class="p">:</span>
+<span class="w">      </span><span class="nt">type</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">bigquery</span>
+<span class="w">      </span><span class="nt">schema</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">zz_stg_kipptaf</span>
+<span class="w">      </span><span class="nt">method</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">oauth</span>
+<span class="w">      </span><span class="nt">project</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">teamster-332318</span>
+<span class="w">      </span><span class="nt">threads</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">40</span>
+<span class="w">    </span><span class="nt">prod</span><span class="p">:</span>
+<span class="w">      </span><span class="nt">type</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">bigquery</span>
+<span class="w">      </span><span class="nt">schema</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">kipptaf</span>
+<span class="w">      </span><span class="nt">method</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">oauth</span>
+<span class="w">      </span><span class="nt">project</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">teamster-332318</span>
+<span class="w">      </span><span class="nt">threads</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">40</span>
+<span class="w">    </span><span class="c1"># old targets (kept for backward compatibility)</span>
+<span class="w">    </span><span class="nt">kipptaf</span><span class="p">:</span>
+<span class="w">      </span><span class="nt">type</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">bigquery</span>
+<span class="w">      </span><span class="nt">schema</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">zz_{{ env_var(&#39;GITHUB_USER&#39;, &#39;dev&#39;) }}_kipptaf</span>
+<span class="w">      </span><span class="nt">method</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">oauth</span>
+<span class="w">      </span><span class="nt">project</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">teamster-332318</span>
+<span class="w">      </span><span class="nt">threads</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">40</span>
+<span class="w">    </span><span class="c1"># ... (keep existing staging target too)</span>
+</code></pre></div>
+<p>Apply this pattern to all 5 school profiles, substituting the project name.</p>
+<p>For source-system profiles (<code>amplify</code>, <code>deanslist</code>, <code>edplan</code>, <code>finalsite</code>,
+<code>iready</code>, <code>overgrad</code>, <code>pearson</code>, <code>powerschool</code>, <code>renlearn</code>, <code>titan</code>): leave them
+unchanged for now. They will be simplified in Phase 3.</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 2: Validate new profiles parse</strong></li>
+</ul>
+<div class="highlight"><pre><span></span><code>uv<span class="w"> </span>run<span class="w"> </span>dbt<span class="w"> </span>parse<span class="w"> </span>--project-dir<span class="w"> </span>src/dbt/kipptaf<span class="w"> </span>--profiles-dir<span class="w"> </span>.dbt<span class="w"> </span>--target<span class="w"> </span>defer
+uv<span class="w"> </span>run<span class="w"> </span>dbt<span class="w"> </span>parse<span class="w"> </span>--project-dir<span class="w"> </span>src/dbt/kipptaf<span class="w"> </span>--profiles-dir<span class="w"> </span>.dbt<span class="w"> </span>--target<span class="w"> </span>dev
+uv<span class="w"> </span>run<span class="w"> </span>dbt<span class="w"> </span>parse<span class="w"> </span>--project-dir<span class="w"> </span>src/dbt/kipptaf<span class="w"> </span>--profiles-dir<span class="w"> </span>.dbt<span class="w"> </span>--target<span class="w"> </span>staging
+uv<span class="w"> </span>run<span class="w"> </span>dbt<span class="w"> </span>parse<span class="w"> </span>--project-dir<span class="w"> </span>src/dbt/kipptaf<span class="w"> </span>--profiles-dir<span class="w"> </span>.dbt<span class="w"> </span>--target<span class="w"> </span>prod
+</code></pre></div>
+<p>Expected: all 4 targets parse successfully. Repeat spot-check for one regional
+project (e.g., kippnewark).</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 3: Commit</strong></li>
+</ul>
+<div class="highlight"><pre><span></span><code>git<span class="w"> </span>add<span class="w"> </span>.dbt/profiles.yml
+git<span class="w"> </span>commit<span class="w"> </span>-m<span class="w"> </span><span class="s2">&quot;feat(dbt): add defer/dev/staging/prod targets to local profiles&quot;</span>
+</code></pre></div>
+<hr />
+<h3 id="task-3-update-shipped-profiles">Task 3: Update shipped profiles</h3>
+<p><strong>Files:</strong></p>
+<ul class="task-list">
+<li>Modify: <code>src/dbt/kipptaf/profiles.yml</code></li>
+<li>Modify: <code>src/dbt/kippnewark/profiles.yml</code></li>
+<li>Modify: <code>src/dbt/kippcamden/profiles.yml</code></li>
+<li>Modify: <code>src/dbt/kippmiami/profiles.yml</code></li>
+<li>
+<p>Modify: <code>src/dbt/kipppaterson/profiles.yml</code></p>
+</li>
+<li class="task-list-item">
+<p><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 1: Rewrite each shipped profile</strong></p>
+</li>
+</ul>
+<p>Each currently has a single target (the project name) pointing to the prod
+schema. Replace with two targets: <code>defer</code> (default) and <code>prod</code>.</p>
+<p>Example for kipptaf — write <code>src/dbt/kipptaf/profiles.yml</code>:</p>
+<div class="highlight"><pre><span></span><code><span class="nt">kipptaf</span><span class="p">:</span>
+<span class="w">  </span><span class="nt">target</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">defer</span>
+<span class="w">  </span><span class="nt">outputs</span><span class="p">:</span>
+<span class="w">    </span><span class="nt">defer</span><span class="p">:</span>
+<span class="w">      </span><span class="nt">type</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">bigquery</span>
+<span class="w">      </span><span class="nt">schema</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">zz_{{ env_var(&#39;GITHUB_USER&#39;, &#39;dev&#39;) }}_kipptaf</span>
+<span class="w">      </span><span class="nt">method</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">oauth</span>
+<span class="w">      </span><span class="nt">project</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">teamster-332318</span>
+<span class="w">      </span><span class="nt">threads</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">40</span>
+<span class="w">    </span><span class="nt">prod</span><span class="p">:</span>
+<span class="w">      </span><span class="nt">type</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">bigquery</span>
+<span class="w">      </span><span class="nt">schema</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">kipptaf</span>
+<span class="w">      </span><span class="nt">method</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">oauth</span>
+<span class="w">      </span><span class="nt">project</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">teamster-332318</span>
+<span class="w">      </span><span class="nt">threads</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">40</span>
+</code></pre></div>
+<p>Apply the same pattern to all 5 school projects, substituting the project name
+in <code>schema:</code> and the profile key.</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 2: Commit</strong></li>
+</ul>
+<div class="highlight"><pre><span></span><code>git<span class="w"> </span>add<span class="w"> </span>src/dbt/kipptaf/profiles.yml<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>src/dbt/kippnewark/profiles.yml<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>src/dbt/kippcamden/profiles.yml<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>src/dbt/kippmiami/profiles.yml<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>src/dbt/kipppaterson/profiles.yml
+git<span class="w"> </span>commit<span class="w"> </span>-m<span class="w"> </span><span class="s2">&quot;feat(dbt): add defer/prod targets to shipped profiles&quot;</span>
+</code></pre></div>
+<hr />
+<h3 id="task-4-update-dagster-get_dbt_cli_resource">Task 4: Update Dagster <code>get_dbt_cli_resource</code></h3>
+<p><strong>Files:</strong></p>
+<ul class="task-list">
+<li>
+<p>Modify: <code>src/teamster/core/resources.py:58-64</code></p>
+</li>
+<li class="task-list-item">
+<p><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 1: Rewrite the function</strong></p>
+</li>
+</ul>
+<p>Replace the current function (lines 58-64):</p>
+<div class="highlight"><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">get_dbt_cli_resource</span><span class="p">(</span><span class="n">dbt_project</span><span class="p">:</span> <span class="n">DbtProject</span><span class="p">,</span> <span class="n">test</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">DbtCliResource</span><span class="p">:</span>
+    <span class="k">if</span> <span class="n">test</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">DbtCliResource</span><span class="p">(</span>
+            <span class="n">project_dir</span><span class="o">=</span><span class="n">dbt_project</span><span class="p">,</span> <span class="n">dbt_executable</span><span class="o">=</span><span class="s2">&quot;/workspaces/teamster/.venv/bin/dbt&quot;</span>
+        <span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">DbtCliResource</span><span class="p">(</span><span class="n">project_dir</span><span class="o">=</span><span class="n">dbt_project</span><span class="p">)</span>
+</code></pre></div>
+<p>With:</p>
+<div class="highlight"><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">get_dbt_cli_resource</span><span class="p">(</span><span class="n">dbt_project</span><span class="p">:</span> <span class="n">DbtProject</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">DbtCliResource</span><span class="p">:</span>
+    <span class="k">if</span> <span class="n">os</span><span class="o">.</span><span class="n">getenv</span><span class="p">(</span><span class="s2">&quot;DAGSTER_CLOUD_DEPLOYMENT_NAME&quot;</span><span class="p">)</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">getenv</span><span class="p">(</span>
+        <span class="s2">&quot;DAGSTER_CLOUD_IS_BRANCH_DEPLOYMENT&quot;</span>
+    <span class="p">):</span>
+        <span class="k">return</span> <span class="n">DbtCliResource</span><span class="p">(</span><span class="n">project_dir</span><span class="o">=</span><span class="n">dbt_project</span><span class="p">,</span> <span class="n">target</span><span class="o">=</span><span class="s2">&quot;prod&quot;</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">DbtCliResource</span><span class="p">(</span><span class="n">project_dir</span><span class="o">=</span><span class="n">dbt_project</span><span class="p">)</span>
+</code></pre></div>
+<p>Ensure <code>os</code> is imported at the top of the file (it likely already is — verify).</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 2: Verify no callers pass <code>test=True</code></strong></li>
+</ul>
+<div class="highlight"><pre><span></span><code><span class="nb">cd</span><span class="w"> </span>/workspaces/teamster
+</code></pre></div>
+<p>Search for <code>test=True</code> in calls to <code>get_dbt_cli_resource</code>:</p>
+<div class="highlight"><pre><span></span><code>grep -r &quot;get_dbt_cli_resource.*test&quot; src/teamster/
+</code></pre></div>
+<p>Expected: no matches with <code>test=True</code>. All callers use
+<code>get_dbt_cli_resource(DBT_PROJECT)</code> with no keyword args.</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 3: Commit</strong></li>
+</ul>
+<div class="highlight"><pre><span></span><code>git<span class="w"> </span>add<span class="w"> </span>src/teamster/core/resources.py
+git<span class="w"> </span>commit<span class="w"> </span>-m<span class="w"> </span><span class="s2">&quot;feat(dagster): target prod explicitly in Dagster Cloud, remove dead test param&quot;</span>
+</code></pre></div>
+<hr />
+<h3 id="task-5-phase-1-validation">Task 5: Phase 1 validation</h3>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 1: Parse all school projects with new <code>defer</code> target</strong></li>
+</ul>
+<div class="highlight"><pre><span></span><code><span class="k">for</span><span class="w"> </span>project<span class="w"> </span><span class="k">in</span><span class="w"> </span>kipptaf<span class="w"> </span>kippnewark<span class="w"> </span>kippcamden<span class="w"> </span>kippmiami<span class="w"> </span>kipppaterson<span class="p">;</span><span class="w"> </span><span class="k">do</span>
+<span class="w">  </span><span class="nb">echo</span><span class="w"> </span><span class="s2">&quot;=== </span><span class="si">${</span><span class="nv">project</span><span class="si">}</span><span class="s2"> ===&quot;</span>
+<span class="w">  </span>uv<span class="w"> </span>run<span class="w"> </span>dbt<span class="w"> </span>parse<span class="w"> </span>--project-dir<span class="w"> </span><span class="s2">&quot;src/dbt/</span><span class="si">${</span><span class="nv">project</span><span class="si">}</span><span class="s2">&quot;</span><span class="w"> </span>--profiles-dir<span class="w"> </span>.dbt<span class="w"> </span>--target<span class="w"> </span>defer
+<span class="k">done</span>
+</code></pre></div>
+<p>Expected: all 5 parse successfully. Macros are defined but not yet called by any
+source file — this just confirms profiles and macros coexist with existing code.</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 2: Parse with <code>prod</code> target to verify guard doesn't fire on parse</strong></li>
+</ul>
+<div class="highlight"><pre><span></span><code>uv<span class="w"> </span>run<span class="w"> </span>dbt<span class="w"> </span>parse<span class="w"> </span>--project-dir<span class="w"> </span>src/dbt/kipptaf<span class="w"> </span>--profiles-dir<span class="w"> </span>.dbt<span class="w"> </span>--target<span class="w"> </span>prod
+</code></pre></div>
+<p>Expected: succeeds (parse does not trigger <code>on-run-start</code>).</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 3: Verify prod guard blocks <code>dbt run</code></strong></li>
+</ul>
+<div class="highlight"><pre><span></span><code>uv<span class="w"> </span>run<span class="w"> </span>dbt<span class="w"> </span>run<span class="w"> </span>--project-dir<span class="w"> </span>src/dbt/kipptaf<span class="w"> </span>--profiles-dir<span class="w"> </span>.dbt<span class="w"> </span>--target<span class="w"> </span>prod<span class="w"> </span>--select<span class="w"> </span>nonexistent_model<span class="w"> </span><span class="m">2</span>&gt;<span class="p">&amp;</span><span class="m">1</span><span class="w"> </span><span class="o">||</span><span class="w"> </span><span class="nb">true</span>
+</code></pre></div>
+<p>Expected: fails with <code>"target 'prod' is reserved for production deployments"</code>
+error (the guard fires before model selection fails).</p>
+<hr />
+<h3 id="task-6-manual-dbt-cloud-changes">Task 6: Manual — dbt Cloud changes</h3>
+<blockquote>
+<p><strong>This task is performed manually by the project owner in the dbt Cloud UI.</strong>
+It must be completed before Phase 2 begins.</p>
+</blockquote>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 1: Update job target names</strong></li>
+</ul>
+<table>
+<thead>
+<tr>
+<th>Job</th>
+<th>Current target</th>
+<th>New target</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Build Modified - CI</td>
+<td><code>default</code></td>
+<td><code>staging</code></td>
+</tr>
+<tr>
+<td>Build Modified - Staging</td>
+<td><code>default</code></td>
+<td><code>staging</code></td>
+</tr>
+<tr>
+<td>Parse - Staging</td>
+<td><code>default</code></td>
+<td><code>staging</code></td>
+</tr>
+<tr>
+<td>Parse - Production</td>
+<td><code>default</code></td>
+<td><code>prod</code></td>
+</tr>
+</tbody>
+</table>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 2: Update Staging environment dataset</strong></li>
+</ul>
+<p>Change: <code>z_dev_kipptaf</code> → <code>zz_stg_kipptaf</code></p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 3: Verify CI still passes on an existing PR</strong></li>
+</ul>
+<p>Confirm a dbt Cloud CI run completes successfully with the new <code>staging</code> target
+before proceeding to Phase 2.</p>
+<hr />
+<h2 id="phase-2-rewrite-source-files">Phase 2: Rewrite source files</h2>
+<p>All source files with inline Jinja are rewritten to use macro calls.
+Additionally, kipptaf cross-regional source files that currently have plain
+string schemas are converted to use <code>resolve_region_source_schema</code> to enable the
+<code>dev</code> target isolation workflow.</p>
+<h3 id="source-file-rewrite-rules">Source file rewrite rules</h3>
+<p><strong>Rule 1 — kipptaf cross-regional files</strong> (filename matches
+<code>sources-kippnewark*</code>, <code>sources-kippcamden*</code>, <code>sources-kippmiami*</code>,
+<code>sources-kipppaterson*</code>, or <code>sources-kippnj*</code> under <code>src/dbt/kipptaf/</code>):</p>
+<p>Use <code>resolve_region_source_schema</code>. Extract the base schema name from the
+existing <code>schema:</code> field.</p>
+<div class="highlight"><pre><span></span><code><span class="c1"># before (any Jinja variant, or plain string)</span>
+<span class="nt">schema</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">|</span>
+<span class="w">  </span><span class="no">{%- if target.name == &#39;staging&#39; -%}z_dev_</span>
+<span class="w">  </span><span class="no">...</span>
+<span class="w">  </span><span class="no">{%- endif -%}kippnewark_powerschool</span>
+
+<span class="c1"># after</span>
+<span class="nt">schema</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;{{</span><span class="nv"> </span><span class="s">resolve_region_source_schema(&#39;kippnewark_powerschool&#39;)</span><span class="nv"> </span><span class="s">}}&quot;</span>
+</code></pre></div>
+<p><strong>Rule 2 — all other source files with inline Jinja:</strong></p>
+<p>Use <code>resolve_source_schema</code>. Extract the base schema name.</p>
+<p>For files using <code>{{ project_name }}_&lt;service&gt;</code> or
+<code>{{ var('name', project_name + '_service') }}</code>:</p>
+<div class="highlight"><pre><span></span><code><span class="c1"># before</span>
+<span class="nt">schema</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">|</span>
+<span class="w">  </span><span class="no">{% if env_var(&#39;DBT_CLOUD_ENVIRONMENT_TYPE&#39;, &#39;&#39;) == &#39;dev&#39; -%}z_dev_{%- endif -%}</span>
+<span class="w">  </span><span class="no">{{ var(&#39;powerschool_schema&#39;, project_name + &#39;_powerschool&#39;) }}</span>
+
+<span class="c1"># after</span>
+<span class="nt">schema</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;{{</span><span class="nv"> </span><span class="s">resolve_source_schema(var(&#39;powerschool_schema&#39;,</span><span class="nv"> </span><span class="s">project_name</span><span class="nv"> </span><span class="s">~</span><span class="nv"> </span><span class="s">&#39;_powerschool&#39;))</span><span class="nv"> </span><span class="s">}}&quot;</span>
+</code></pre></div>
+<p>For files using literal schema names:</p>
+<div class="highlight"><pre><span></span><code><span class="c1"># before</span>
+<span class="nt">schema</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">|</span>
+<span class="w">  </span><span class="no">{% if env_var(&#39;DBT_CLOUD_ENVIRONMENT_TYPE&#39;, &#39;&#39;) == &#39;dev&#39; -%}z_dev_{%- endif -%}</span>
+<span class="w">  </span><span class="no">kipptaf_adp_payroll</span>
+
+<span class="c1"># after</span>
+<span class="nt">schema</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;{{</span><span class="nv"> </span><span class="s">resolve_source_schema(&#39;kipptaf_adp_payroll&#39;)</span><span class="nv"> </span><span class="s">}}&quot;</span>
+</code></pre></div>
+<p><strong>Rule 3 — source files with no Jinja and NOT cross-regional:</strong> Leave unchanged.</p>
+<hr />
+<h3 id="task-7-rewrite-source-system-package-source-files">Task 7: Rewrite source-system package source files</h3>
+<p>These are source files in the 10 source-system projects. They use
+<code>resolve_source_schema</code> which resolves from the consuming school project's
+namespace at compile time.</p>
+<p><strong>Files (10):</strong></p>
+<ul class="task-list">
+<li><code>src/dbt/amplify/models/sources.yml</code></li>
+<li><code>src/dbt/deanslist/models/sources.yml</code></li>
+<li><code>src/dbt/edplan/models/sources.yml</code></li>
+<li><code>src/dbt/edplan/models/sources-archive.yml</code></li>
+<li><code>src/dbt/finalsite/models/sources.yml</code></li>
+<li><code>src/dbt/iready/models/sources.yml</code></li>
+<li><code>src/dbt/overgrad/models/sources.yml</code></li>
+<li><code>src/dbt/pearson/models/sources.yml</code></li>
+<li><code>src/dbt/powerschool/models/sis/staging/odbc/sources.yml</code></li>
+<li><code>src/dbt/powerschool/models/sis/staging/sftp/sources.yml</code></li>
+<li><code>src/dbt/renlearn/models/sources.yml</code></li>
+<li>
+<p><code>src/dbt/titan/models/sources.yml</code></p>
+</li>
+<li class="task-list-item">
+<p><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 1: Rewrite each source file</strong></p>
+</li>
+</ul>
+<p>For each file, read the current <code>schema:</code> field, extract the base schema
+expression, and wrap it in <code>resolve_source_schema()</code>.</p>
+<p>These files all use the <code>var()</code> pattern. Example for powerschool ODBC:</p>
+<div class="highlight"><pre><span></span><code><span class="c1"># before (src/dbt/powerschool/models/sis/staging/odbc/sources.yml)</span>
+<span class="nt">schema</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">|</span>
+<span class="w">  </span><span class="no">{% if env_var(&#39;DBT_CLOUD_ENVIRONMENT_TYPE&#39;, &#39;&#39;) in [&#39;dev&#39;, &#39;staging&#39;] -%}z_dev_</span>
+<span class="w">  </span><span class="no">{%- endif -%}{{ var(&#39;powerschool_schema&#39;, project_name + &#39;_powerschool&#39;) }}</span>
+
+<span class="c1"># after</span>
+<span class="nt">schema</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;{{</span><span class="nv"> </span><span class="s">resolve_source_schema(var(&#39;powerschool_schema&#39;,</span><span class="nv"> </span><span class="s">project_name</span><span class="nv"> </span><span class="s">~</span><span class="nv"> </span><span class="s">&#39;_powerschool&#39;))</span><span class="nv"> </span><span class="s">}}&quot;</span>
+</code></pre></div>
+<p>Note: Jinja's <code>~</code> operator is string concatenation (equivalent to <code>+</code> but
+preferred in Jinja template expressions).</p>
+<p>Apply the same pattern to all files. Each file's <code>var()</code> call uses a different
+variable name and default — preserve them exactly.</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 2: Commit</strong></li>
+</ul>
+<div class="highlight"><pre><span></span><code>git<span class="w"> </span>add<span class="w"> </span>src/dbt/amplify/models/sources.yml<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>src/dbt/deanslist/models/sources.yml<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>src/dbt/edplan/models/sources.yml<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>src/dbt/edplan/models/sources-archive.yml<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>src/dbt/finalsite/models/sources.yml<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>src/dbt/iready/models/sources.yml<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>src/dbt/overgrad/models/sources.yml<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>src/dbt/pearson/models/sources.yml<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>src/dbt/powerschool/models/sis/staging/odbc/sources.yml<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>src/dbt/powerschool/models/sis/staging/sftp/sources.yml<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>src/dbt/renlearn/models/sources.yml<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>src/dbt/titan/models/sources.yml
+git<span class="w"> </span>commit<span class="w"> </span>-m<span class="w"> </span><span class="s2">&quot;refactor(dbt): replace inline Jinja with resolve_source_schema in source-system packages&quot;</span>
+</code></pre></div>
+<hr />
+<h3 id="task-8-rewrite-school-project-resident-source-files">Task 8: Rewrite school-project-resident source files</h3>
+<p>These are source files that live directly in school projects (not kipptaf). They
+use <code>resolve_source_schema</code>.</p>
+<p><strong>Files (5):</strong></p>
+<ul class="task-list">
+<li><code>src/dbt/kippcamden/models/edplan/sources-drive.yml</code></li>
+<li><code>src/dbt/kippnewark/models/edplan/sources-drive.yml</code></li>
+<li><code>src/dbt/kippmiami/models/fldoe/sources.yml</code></li>
+<li><code>src/dbt/kippcamden/models/extracts/sources.yml</code> (verify — may be plain
+  string)</li>
+<li><code>src/dbt/kippnewark/models/extracts/sources.yml</code> (verify — may be plain
+  string)</li>
+<li>
+<p><code>src/dbt/kippmiami/models/extracts/sources.yml</code> (verify — may be plain string)</p>
+</li>
+<li class="task-list-item">
+<p><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 1: Read each file and rewrite if it has inline Jinja</strong></p>
+</li>
+</ul>
+<p>Apply Rule 2 from the rewrite rules above. Skip files with plain string schemas.</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 2: Commit</strong></li>
+</ul>
+<div class="highlight"><pre><span></span><code>git<span class="w"> </span>add<span class="w"> </span>-u
+git<span class="w"> </span>commit<span class="w"> </span>-m<span class="w"> </span><span class="s2">&quot;refactor(dbt): replace inline Jinja with resolve_source_schema in school project sources&quot;</span>
+</code></pre></div>
+<hr />
+<h3 id="task-9-rewrite-kipptaf-non-regional-source-files">Task 9: Rewrite kipptaf non-regional source files</h3>
+<p>These are kipptaf source files that are NOT cross-regional (don't match the
+<code>sources-kipp*</code> naming pattern). They use <code>resolve_source_schema</code>.</p>
+<p><strong>Files (~35 — all kipptaf source files with Jinja that are NOT
+cross-regional):</strong></p>
+<div class="highlight"><pre><span></span><code>src/dbt/kipptaf/models/adp/payroll/sources-external.yml
+src/dbt/kipptaf/models/adp/workforce_manager/sources.yml
+src/dbt/kipptaf/models/adp/workforce_now/api/sources-external.yml
+src/dbt/kipptaf/models/adp/workforce_now/sftp/sources-external.yml
+src/dbt/kipptaf/models/alchemer/sources-bigquery.yml
+src/dbt/kipptaf/models/alchemer/sources-external.yml
+src/dbt/kipptaf/models/collegeboard/sources.yml
+src/dbt/kipptaf/models/coupa/api/sources-external.yml
+src/dbt/kipptaf/models/coupa/fivetran/sources-fivetran.yml
+src/dbt/kipptaf/models/dayforce/sources.yml
+src/dbt/kipptaf/models/dayforce/sources-bigquery.yml
+src/dbt/kipptaf/models/deanslist/sftp/sources-external.yml
+src/dbt/kipptaf/models/google/appsheet/sources.yml
+src/dbt/kipptaf/models/google/directory/sources.yml
+src/dbt/kipptaf/models/google/forms/sources.yml
+src/dbt/kipptaf/models/google/sheets/sources-external.yml
+src/dbt/kipptaf/models/kippadb/sources-airbyte.yml
+src/dbt/kipptaf/models/knowbe4/sources-external.yml
+src/dbt/kipptaf/models/ldap/sources-external.yml
+src/dbt/kipptaf/models/nsc/sources.yml
+src/dbt/kipptaf/models/overgrad/sources-external.yml
+src/dbt/kipptaf/models/performance_management/sources-bigquery.yml
+src/dbt/kipptaf/models/performance_management/sources-external.yml
+src/dbt/kipptaf/models/powerschool_enrollment/sources-external.yml
+src/dbt/kipptaf/models/schoolmint/grow/sources-external.yml
+src/dbt/kipptaf/models/smartrecruiters/sources.yml
+src/dbt/kipptaf/models/surveys/sources.yml
+src/dbt/kipptaf/models/tableau/sources.yml
+src/dbt/kipptaf/models/zendesk/sources-airbyte.yml
+src/dbt/kipptaf/models/zendesk/sources-external.yml
+</code></pre></div>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 1: Read each file, extract the base schema, apply Rule 2</strong></li>
+</ul>
+<p>For files using <code>{{ project_name }}_&lt;service&gt;</code>:</p>
+<div class="highlight"><pre><span></span><code><span class="c1"># before</span>
+<span class="nt">schema</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;{{</span><span class="nv"> </span><span class="s">project_name</span><span class="nv"> </span><span class="s">}}_alchemer&quot;</span>
+<span class="c1"># after</span>
+<span class="nt">schema</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;{{</span><span class="nv"> </span><span class="s">resolve_source_schema(project_name</span><span class="nv"> </span><span class="s">~</span><span class="nv"> </span><span class="s">&#39;_alchemer&#39;)</span><span class="nv"> </span><span class="s">}}&quot;</span>
+</code></pre></div>
+<p>For files using literal strings with Jinja conditionals:</p>
+<div class="highlight"><pre><span></span><code><span class="c1"># before</span>
+<span class="nt">schema</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">|</span>
+<span class="w">  </span><span class="no">{% if env_var(&#39;DBT_CLOUD_ENVIRONMENT_TYPE&#39;, &#39;&#39;) == &#39;dev&#39; -%}z_dev_{%- endif -%}</span>
+<span class="w">  </span><span class="no">kipptaf_adp_payroll</span>
+<span class="c1"># after</span>
+<span class="nt">schema</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;{{</span><span class="nv"> </span><span class="s">resolve_source_schema(&#39;kipptaf_adp_payroll&#39;)</span><span class="nv"> </span><span class="s">}}&quot;</span>
+</code></pre></div>
+<p>For files using <code>{{ var(...) }}</code>:</p>
+<div class="highlight"><pre><span></span><code><span class="c1"># before</span>
+<span class="nt">schema</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">|</span>
+<span class="w">  </span><span class="no">{% if env_var(&#39;DBT_CLOUD_ENVIRONMENT_TYPE&#39;, &#39;&#39;) == &#39;dev&#39; -%}z_dev_{%- endif -%}</span>
+<span class="w">  </span><span class="no">{{ var(&#39;amplify_schema&#39;, project_name + &#39;_amplify&#39;) }}</span>
+<span class="c1"># after</span>
+<span class="nt">schema</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;{{</span><span class="nv"> </span><span class="s">resolve_source_schema(var(&#39;amplify_schema&#39;,</span><span class="nv"> </span><span class="s">project_name</span><span class="nv"> </span><span class="s">~</span><span class="nv"> </span><span class="s">&#39;_amplify&#39;))</span><span class="nv"> </span><span class="s">}}&quot;</span>
+</code></pre></div>
+<p>For files with <code>{{ project_name }}</code> and no conditional (Pattern 1) — these
+currently resolve to the bare schema with no prefix in all environments. They
+need the macro to gain dev/staging prefix behavior:</p>
+<div class="highlight"><pre><span></span><code><span class="c1"># before</span>
+<span class="nt">schema</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;{{</span><span class="nv"> </span><span class="s">project_name</span><span class="nv"> </span><span class="s">}}_alchemer&quot;</span>
+<span class="c1"># after</span>
+<span class="nt">schema</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;{{</span><span class="nv"> </span><span class="s">resolve_source_schema(project_name</span><span class="nv"> </span><span class="s">~</span><span class="nv"> </span><span class="s">&#39;_alchemer&#39;)</span><span class="nv"> </span><span class="s">}}&quot;</span>
+</code></pre></div>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 2: Commit</strong></li>
+</ul>
+<div class="highlight"><pre><span></span><code>git<span class="w"> </span>add<span class="w"> </span>-u
+git<span class="w"> </span>commit<span class="w"> </span>-m<span class="w"> </span><span class="s2">&quot;refactor(dbt): replace inline Jinja with resolve_source_schema in kipptaf sources&quot;</span>
+</code></pre></div>
+<hr />
+<h3 id="task-10-rewrite-kipptaf-cross-regional-source-files">Task 10: Rewrite kipptaf cross-regional source files</h3>
+<p>These are kipptaf source files matching <code>sources-kipp*</code> — they use
+<code>resolve_region_source_schema</code>. This includes files with existing Jinja AND
+files with plain string schemas (both need the macro for <code>dev</code> target
+isolation).</p>
+<p><strong>Files (~27):</strong></p>
+<div class="highlight"><pre><span></span><code>src/dbt/kipptaf/models/amplify/mclass/sources-kippnewark.yml
+src/dbt/kipptaf/models/amplify/mclass/sources-kipppaterson.yml
+src/dbt/kipptaf/models/amplify/dds/sources-bigquery.yml  (verify naming)
+src/dbt/kipptaf/models/deanslist/api/sources-kippcamden.yml
+src/dbt/kipptaf/models/deanslist/api/sources-kippmiami.yml
+src/dbt/kipptaf/models/deanslist/api/sources-kippnewark.yml
+src/dbt/kipptaf/models/edplan/sources-kippcamden.yml
+src/dbt/kipptaf/models/edplan/sources-kippnewark.yml
+src/dbt/kipptaf/models/finalsite/sources-kippcamden.yml
+src/dbt/kipptaf/models/finalsite/sources-kippmiami.yml
+src/dbt/kipptaf/models/finalsite/sources-kippnewark.yml
+src/dbt/kipptaf/models/finalsite/sources-kipppaterson.yml
+src/dbt/kipptaf/models/fldoe/sources-kippmiami.yml
+src/dbt/kipptaf/models/iready/sources-kippmiami.yml
+src/dbt/kipptaf/models/iready/sources-kippnj.yml
+src/dbt/kipptaf/models/overgrad/sources-kippcamden.yml
+src/dbt/kipptaf/models/overgrad/sources-kippnewark.yml
+src/dbt/kipptaf/models/pearson/sources-kippcamden.yml
+src/dbt/kipptaf/models/pearson/sources-kippnewark.yml
+src/dbt/kipptaf/models/pearson/sources-kipppaterson.yml
+src/dbt/kipptaf/models/powerschool/sources-kippcamden.yml
+src/dbt/kipptaf/models/powerschool/sources-kippmiami.yml
+src/dbt/kipptaf/models/powerschool/sources-kippnewark.yml
+src/dbt/kipptaf/models/powerschool/sources-kipppaterson.yml
+src/dbt/kipptaf/models/renlearn/sources-kippmiami.yml
+src/dbt/kipptaf/models/renlearn/sources-kippnj.yml
+src/dbt/kipptaf/models/titan/sources-kippcamden.yml
+src/dbt/kipptaf/models/titan/sources-kippnewark.yml
+</code></pre></div>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 1: Read each file and apply Rule 1</strong></li>
+</ul>
+<p>For files with inline Jinja — extract the base schema:</p>
+<div class="highlight"><pre><span></span><code><span class="c1"># before (powerschool/sources-kippnewark.yml)</span>
+<span class="nt">schema</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">|</span>
+<span class="w">  </span><span class="no">{%- if target.name == &#39;staging&#39; -%}z_dev_</span>
+<span class="w">  </span><span class="no">{%- elif env_var(&#39;DBT_CLOUD_ENVIRONMENT_TYPE&#39;, &#39;&#39;) == &#39;staging&#39; -%}z_dev_</span>
+<span class="w">  </span><span class="no">{%- elif env_var(&#39;GITHUB_USER&#39;, &#39;&#39;) != &#39;&#39; -%}zz_{{ env_var(&#39;GITHUB_USER&#39;) }}_</span>
+<span class="w">  </span><span class="no">{%- endif -%}kippnewark_powerschool</span>
+
+<span class="c1"># after</span>
+<span class="nt">schema</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;{{</span><span class="nv"> </span><span class="s">resolve_region_source_schema(&#39;kippnewark_powerschool&#39;)</span><span class="nv"> </span><span class="s">}}&quot;</span>
+</code></pre></div>
+<p>For files with plain string schemas — add the macro call:</p>
+<div class="highlight"><pre><span></span><code><span class="c1"># before (edplan/sources-kippnewark.yml — if plain string)</span>
+<span class="nt">schema</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">kippnewark_edplan</span>
+
+<span class="c1"># after</span>
+<span class="nt">schema</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;{{</span><span class="nv"> </span><span class="s">resolve_region_source_schema(&#39;kippnewark_edplan&#39;)</span><span class="nv"> </span><span class="s">}}&quot;</span>
+</code></pre></div>
+<p><strong>Important:</strong> Read each file to determine the actual base schema name. Do not
+guess — extract it from the existing <code>schema:</code> field by stripping any Jinja
+prefix logic.</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 2: Commit</strong></li>
+</ul>
+<div class="highlight"><pre><span></span><code>git<span class="w"> </span>add<span class="w"> </span>-u
+git<span class="w"> </span>commit<span class="w"> </span>-m<span class="w"> </span><span class="s2">&quot;refactor(dbt): replace inline Jinja with resolve_region_source_schema in kipptaf cross-regional sources&quot;</span>
+</code></pre></div>
+<hr />
+<h3 id="task-11-phase-2-validation">Task 11: Phase 2 validation</h3>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 1: Parse all school projects with <code>defer</code> target</strong></li>
+</ul>
+<div class="highlight"><pre><span></span><code><span class="k">for</span><span class="w"> </span>project<span class="w"> </span><span class="k">in</span><span class="w"> </span>kipptaf<span class="w"> </span>kippnewark<span class="w"> </span>kippcamden<span class="w"> </span>kippmiami<span class="w"> </span>kipppaterson<span class="p">;</span><span class="w"> </span><span class="k">do</span>
+<span class="w">  </span><span class="nb">echo</span><span class="w"> </span><span class="s2">&quot;=== </span><span class="si">${</span><span class="nv">project</span><span class="si">}</span><span class="s2"> (defer) ===&quot;</span>
+<span class="w">  </span>uv<span class="w"> </span>run<span class="w"> </span>dbt<span class="w"> </span>parse<span class="w"> </span>--project-dir<span class="w"> </span><span class="s2">&quot;src/dbt/</span><span class="si">${</span><span class="nv">project</span><span class="si">}</span><span class="s2">&quot;</span><span class="w"> </span>--profiles-dir<span class="w"> </span>.dbt<span class="w"> </span>--target<span class="w"> </span>defer
+<span class="k">done</span>
+</code></pre></div>
+<p>Expected: all 5 parse successfully.</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 2: Parse kipptaf with <code>dev</code> target (cross-regional isolation)</strong></li>
+</ul>
+<div class="highlight"><pre><span></span><code>uv<span class="w"> </span>run<span class="w"> </span>dbt<span class="w"> </span>parse<span class="w"> </span>--project-dir<span class="w"> </span>src/dbt/kipptaf<span class="w"> </span>--profiles-dir<span class="w"> </span>.dbt<span class="w"> </span>--target<span class="w"> </span>dev
+</code></pre></div>
+<p>Expected: succeeds.</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 3: Parse with <code>prod</code> target (bypass guard for validation)</strong></li>
+</ul>
+<div class="highlight"><pre><span></span><code><span class="nv">DAGSTER_CLOUD_DEPLOYMENT_NAME</span><span class="o">=</span>prod<span class="w"> </span>uv<span class="w"> </span>run<span class="w"> </span>dbt<span class="w"> </span>parse<span class="w"> </span>--project-dir<span class="w"> </span>src/dbt/kipptaf<span class="w"> </span>--profiles-dir<span class="w"> </span>.dbt<span class="w"> </span>--target<span class="w"> </span>prod
+</code></pre></div>
+<p>Expected: succeeds.</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 4: Compile a sample model to verify schema resolution</strong></li>
+</ul>
+<div class="highlight"><pre><span></span><code>uv<span class="w"> </span>run<span class="w"> </span>dbt<span class="w"> </span>compile<span class="w"> </span>--project-dir<span class="w"> </span>src/dbt/kipptaf<span class="w"> </span>--profiles-dir<span class="w"> </span>.dbt<span class="w"> </span>--target<span class="w"> </span>defer<span class="w"> </span>--select<span class="w"> </span><span class="s2">&quot;source:kippnewark_powerschool+&quot;</span><span class="w"> </span><span class="m">2</span>&gt;<span class="p">&amp;</span><span class="m">1</span><span class="w"> </span><span class="p">|</span><span class="w"> </span>head<span class="w"> </span>-20
+</code></pre></div>
+<p>Verify the compiled SQL references <code>zz_&lt;user&gt;_kippnewark_powerschool</code> (not the
+bare prod schema), confirming <code>resolve_source_schema</code> is working in <code>defer</code>
+mode. Then repeat with <code>--target dev</code> for a cross-regional source to verify
+<code>resolve_region_source_schema</code>:</p>
+<div class="highlight"><pre><span></span><code>uv<span class="w"> </span>run<span class="w"> </span>dbt<span class="w"> </span>compile<span class="w"> </span>--project-dir<span class="w"> </span>src/dbt/kipptaf<span class="w"> </span>--profiles-dir<span class="w"> </span>.dbt<span class="w"> </span>--target<span class="w"> </span>dev<span class="w"> </span>--select<span class="w"> </span><span class="s2">&quot;source:kippnewark_powerschool+&quot;</span><span class="w"> </span><span class="m">2</span>&gt;<span class="p">&amp;</span><span class="m">1</span><span class="w"> </span><span class="p">|</span><span class="w"> </span>head<span class="w"> </span>-20
+</code></pre></div>
+<p>Verify the compiled SQL references <code>zz_&lt;user&gt;_kippnewark_powerschool</code> (personal
+namespace for <code>dev</code> target via <code>resolve_region_source_schema</code>).</p>
+<hr />
+<h2 id="phase-3-clean-up">Phase 3: Clean up</h2>
+<h3 id="task-12-clean-up-dbtprofilesyml">Task 12: Clean up <code>.dbt/profiles.yml</code></h3>
+<p><strong>Files:</strong></p>
+<ul class="task-list">
+<li>
+<p>Modify: <code>.dbt/profiles.yml</code></p>
+</li>
+<li class="task-list-item">
+<p><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 1: Remove old target names from school profiles</strong></p>
+</li>
+</ul>
+<p>For each school profile, remove the old target entries (e.g., <code>kipptaf:</code>,
+<code>staging:</code> with <code>z_dev_</code> prefix) that were kept for backward compatibility. Only
+<code>defer</code>, <code>dev</code>, <code>staging</code> (with <code>zz_stg_</code> prefix), and <code>prod</code> remain.</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 2: Simplify source-system profiles</strong></li>
+</ul>
+<p>Source-system profiles currently have multiple targets for different school
+districts. Replace with a single <code>dev</code> target matching the <code>integration_tests</code>
+pattern:</p>
+<div class="highlight"><pre><span></span><code><span class="nt">powerschool</span><span class="p">:</span>
+<span class="w">  </span><span class="nt">target</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">dev</span>
+<span class="w">  </span><span class="nt">outputs</span><span class="p">:</span>
+<span class="w">    </span><span class="nt">dev</span><span class="p">:</span>
+<span class="w">      </span><span class="nt">type</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">bigquery</span>
+<span class="w">      </span><span class="nt">schema</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">zz_{{ env_var(&#39;GITHUB_USER&#39;, &#39;dev&#39;) }}_powerschool</span>
+<span class="w">      </span><span class="nt">method</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">oauth</span>
+<span class="w">      </span><span class="nt">project</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">teamster-332318</span>
+<span class="w">      </span><span class="nt">threads</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">40</span>
+</code></pre></div>
+<p>Apply to all 10 source-system profiles. Note: standalone <code>dbt parse</code> against
+source-system projects will fail after Phase 2 (macro not in namespace) — this
+is expected and documented in the spec.</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 3: Validate</strong></li>
+</ul>
+<div class="highlight"><pre><span></span><code>uv<span class="w"> </span>run<span class="w"> </span>dbt<span class="w"> </span>parse<span class="w"> </span>--project-dir<span class="w"> </span>src/dbt/kipptaf<span class="w"> </span>--profiles-dir<span class="w"> </span>.dbt<span class="w"> </span>--target<span class="w"> </span>defer
+</code></pre></div>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 4: Commit</strong></li>
+</ul>
+<div class="highlight"><pre><span></span><code>git<span class="w"> </span>add<span class="w"> </span>.dbt/profiles.yml
+git<span class="w"> </span>commit<span class="w"> </span>-m<span class="w"> </span><span class="s2">&quot;refactor(dbt): clean up profiles, remove old targets, simplify source-system profiles&quot;</span>
+</code></pre></div>
+<hr />
+<h3 id="task-13-remove-dbt_cloud_environment_type">Task 13: Remove <code>DBT_CLOUD_ENVIRONMENT_TYPE</code></h3>
+<p><strong>Files:</strong></p>
+<ul class="task-list">
+<li>Modify: <code>.devcontainer/devcontainer.json</code> (line ~24 — remove
+  <code>DBT_CLOUD_ENVIRONMENT_TYPE</code>)</li>
+<li>
+<p>Modify: <code>.vscode/settings.json</code> (line ~58 — remove
+  <code>DBT_CLOUD_ENVIRONMENT_TYPE</code>)</p>
+</li>
+<li class="task-list-item">
+<p><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 1: Remove from both files</strong></p>
+</li>
+</ul>
+<p>In <code>.devcontainer/devcontainer.json</code>, remove the line:</p>
+<div class="highlight"><pre><span></span><code><span class="nt">&quot;DBT_CLOUD_ENVIRONMENT_TYPE&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;dev&quot;</span><span class="p">,</span>
+</code></pre></div>
+<p>In <code>.vscode/settings.json</code>, remove the same line from
+<code>terminal.integrated.env.linux</code>.</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 2: Validate parse still works (no env var dependency)</strong></li>
+</ul>
+<div class="highlight"><pre><span></span><code>uv<span class="w"> </span>run<span class="w"> </span>dbt<span class="w"> </span>parse<span class="w"> </span>--project-dir<span class="w"> </span>src/dbt/kipptaf<span class="w"> </span>--profiles-dir<span class="w"> </span>.dbt<span class="w"> </span>--target<span class="w"> </span>defer
+</code></pre></div>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 3: Commit</strong></li>
+</ul>
+<p>These are protected files — draft the changes and present to the user for manual
+application per <code>.claude/CLAUDE.md</code> hook rules. After manual edit, the user
+stages and commits.</p>
+<hr />
+<h3 id="task-14-delete-scriptsdbt-sxspy-and-update-scriptsclaudemd">Task 14: Delete <code>scripts/dbt-sxs.py</code> and update <code>scripts/CLAUDE.md</code></h3>
+<p><strong>Files:</strong></p>
+<ul class="task-list">
+<li>Delete: <code>scripts/dbt-sxs.py</code></li>
+<li>
+<p>Modify: <code>scripts/CLAUDE.md</code></p>
+</li>
+<li class="task-list-item">
+<p><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 1: Delete the script</strong></p>
+</li>
+</ul>
+<div class="highlight"><pre><span></span><code>git<span class="w"> </span>rm<span class="w"> </span>scripts/dbt-sxs.py
+</code></pre></div>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 2: Update <code>scripts/CLAUDE.md</code></strong></li>
+</ul>
+<p>Read <code>scripts/CLAUDE.md</code> and replace the <code>dbt-sxs.py</code> entry with documentation
+for the VS Code task equivalent. Include:</p>
+<ul class="task-list">
+<li>Task name: "dbt: Stage External Sources"</li>
+<li>Project selection (pickString: kipptaf, kippnewark, kippcamden, kippmiami,
+  kipppaterson)</li>
+<li>Target selection (defer, dev, staging)</li>
+<li>Source selection (promptString, default <code>*</code>)</li>
+<li>
+<p>Terminal equivalent command for non-VS-Code usage</p>
+</li>
+<li class="task-list-item">
+<p><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 3: Commit</strong></p>
+</li>
+</ul>
+<div class="highlight"><pre><span></span><code>git<span class="w"> </span>add<span class="w"> </span>scripts/CLAUDE.md
+git<span class="w"> </span>commit<span class="w"> </span>-m<span class="w"> </span><span class="s2">&quot;refactor: replace dbt-sxs.py with VS Code task documentation&quot;</span>
+</code></pre></div>
+<hr />
+<h3 id="task-15-set-up-post-merge-git-hook">Task 15: Set up <code>post-merge</code> git hook</h3>
+<p><strong>Files:</strong></p>
+<ul class="task-list">
+<li>Create: <code>.git/hooks/post-merge</code></li>
+<li>
+<p>Modify: <code>.devcontainer/devcontainer.json</code> (add to <code>postStartCommand</code>)</p>
+</li>
+<li class="task-list-item">
+<p><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 1: Create the hook script</strong></p>
+</li>
+</ul>
+<p>Write <code>.git/hooks/post-merge</code>:</p>
+<div class="highlight"><pre><span></span><code><span class="ch">#!/usr/bin/env bash</span>
+<span class="c1"># Generate prod manifests for Power User --defer</span>
+<span class="c1"># Runs in parallel — dbt parse is CPU-only (no DB access)</span>
+
+<span class="nb">cd</span><span class="w"> </span><span class="s2">&quot;</span><span class="k">$(</span>git<span class="w"> </span>rev-parse<span class="w"> </span>--show-toplevel<span class="k">)</span><span class="s2">&quot;</span><span class="w"> </span><span class="o">||</span><span class="w"> </span><span class="nb">exit</span><span class="w"> </span><span class="m">0</span>
+
+<span class="k">for</span><span class="w"> </span>project<span class="w"> </span><span class="k">in</span><span class="w"> </span>kipptaf<span class="w"> </span>kippnewark<span class="w"> </span>kippcamden<span class="w"> </span>kippmiami<span class="w"> </span>kipppaterson<span class="p">;</span><span class="w"> </span><span class="k">do</span>
+<span class="w">  </span>uv<span class="w"> </span>run<span class="w"> </span>dbt<span class="w"> </span>parse<span class="w"> </span>--target<span class="w"> </span>prod<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>--project-dir<span class="w"> </span><span class="s2">&quot;src/dbt/</span><span class="si">${</span><span class="nv">project</span><span class="si">}</span><span class="s2">&quot;</span><span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>--profiles-dir<span class="w"> </span>.dbt<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>--target-path<span class="w"> </span>target/prod<span class="w"> </span><span class="p">&amp;</span>
+<span class="k">done</span>
+<span class="nb">wait</span>
+</code></pre></div>
+<p>Make it executable:</p>
+<div class="highlight"><pre><span></span><code>chmod<span class="w"> </span>+x<span class="w"> </span>.git/hooks/post-merge
+</code></pre></div>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 2: Wire into devcontainer <code>postStartCommand</code></strong></li>
+</ul>
+<p>The <code>.devcontainer/devcontainer.json</code> <code>postStartCommand</code> currently runs
+<code>bash .devcontainer/scripts/postStart.sh</code>. Update <code>postStart.sh</code> to include the
+manifest generation at the end:</p>
+<div class="highlight"><pre><span></span><code><span class="c1"># Generate prod manifests for Power User --defer</span>
+<span class="k">for</span><span class="w"> </span>project<span class="w"> </span><span class="k">in</span><span class="w"> </span>kipptaf<span class="w"> </span>kippnewark<span class="w"> </span>kippcamden<span class="w"> </span>kippmiami<span class="w"> </span>kipppaterson<span class="p">;</span><span class="w"> </span><span class="k">do</span>
+<span class="w">  </span>uv<span class="w"> </span>run<span class="w"> </span>dbt<span class="w"> </span>parse<span class="w"> </span>--target<span class="w"> </span>prod<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>--project-dir<span class="w"> </span><span class="s2">&quot;src/dbt/</span><span class="si">${</span><span class="nv">project</span><span class="si">}</span><span class="s2">&quot;</span><span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>--profiles-dir<span class="w"> </span>.dbt<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>--target-path<span class="w"> </span>target/prod<span class="w"> </span><span class="p">&amp;</span>
+<span class="k">done</span>
+<span class="nb">wait</span>
+</code></pre></div>
+<p>Note: <code>.devcontainer/scripts/</code> is a protected path — draft the change and
+present to the user for manual application.</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 3: Test the hook locally</strong></li>
+</ul>
+<div class="highlight"><pre><span></span><code>bash<span class="w"> </span>.git/hooks/post-merge
+ls<span class="w"> </span>src/dbt/kipptaf/target/prod/manifest.json
+</code></pre></div>
+<p>Expected: manifest file exists.</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 4: Commit</strong></li>
+</ul>
+<p>The <code>.git/hooks/</code> directory is not tracked by git. The hook is installed via the
+devcontainer <code>postStartCommand</code> (which copies/creates it) or manually. Only
+commit the <code>postStart.sh</code> change.</p>
+<hr />
+<h3 id="task-16-configure-power-user-defer">Task 16: Configure Power User <code>--defer</code></h3>
+<p><strong>Files:</strong></p>
+<ul class="task-list">
+<li>
+<p>Modify: <code>.vscode/settings.json</code></p>
+</li>
+<li class="task-list-item">
+<p><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 1: Add defer configuration</strong></p>
+</li>
+</ul>
+<p>Add the following to <code>.vscode/settings.json</code>:</p>
+<div class="highlight"><pre><span></span><code><span class="nt">&quot;dbt.deferConfigPerProject&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="nt">&quot;kipptaf&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="nt">&quot;deferToProduction&quot;</span><span class="p">:</span><span class="w"> </span><span class="kc">true</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;manifestPathForDeferral&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;src/dbt/kipptaf/target/prod/manifest.json&quot;</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;favorState&quot;</span><span class="p">:</span><span class="w"> </span><span class="kc">false</span>
+<span class="w">  </span><span class="p">},</span>
+<span class="w">  </span><span class="nt">&quot;kippnewark&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="nt">&quot;deferToProduction&quot;</span><span class="p">:</span><span class="w"> </span><span class="kc">true</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;manifestPathForDeferral&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;src/dbt/kippnewark/target/prod/manifest.json&quot;</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;favorState&quot;</span><span class="p">:</span><span class="w"> </span><span class="kc">false</span>
+<span class="w">  </span><span class="p">},</span>
+<span class="w">  </span><span class="nt">&quot;kippcamden&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="nt">&quot;deferToProduction&quot;</span><span class="p">:</span><span class="w"> </span><span class="kc">true</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;manifestPathForDeferral&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;src/dbt/kippcamden/target/prod/manifest.json&quot;</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;favorState&quot;</span><span class="p">:</span><span class="w"> </span><span class="kc">false</span>
+<span class="w">  </span><span class="p">},</span>
+<span class="w">  </span><span class="nt">&quot;kippmiami&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="nt">&quot;deferToProduction&quot;</span><span class="p">:</span><span class="w"> </span><span class="kc">true</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;manifestPathForDeferral&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;src/dbt/kippmiami/target/prod/manifest.json&quot;</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;favorState&quot;</span><span class="p">:</span><span class="w"> </span><span class="kc">false</span>
+<span class="w">  </span><span class="p">},</span>
+<span class="w">  </span><span class="nt">&quot;kipppaterson&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="nt">&quot;deferToProduction&quot;</span><span class="p">:</span><span class="w"> </span><span class="kc">true</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;manifestPathForDeferral&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;src/dbt/kipppaterson/target/prod/manifest.json&quot;</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;favorState&quot;</span><span class="p">:</span><span class="w"> </span><span class="kc">false</span>
+<span class="w">  </span><span class="p">}</span>
+<span class="p">}</span>
+</code></pre></div>
+<p>Note: <code>.vscode/settings.json</code> is a protected path — draft the change and present
+to the user for manual application.</p>
+<hr />
+<h3 id="task-17-add-vs-code-task-for-staging-external-sources">Task 17: Add VS Code task for staging external sources</h3>
+<p><strong>Files:</strong></p>
+<ul class="task-list">
+<li>
+<p>Modify: <code>.vscode/tasks.json</code></p>
+</li>
+<li class="task-list-item">
+<p><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 1: Add the task and inputs</strong></p>
+</li>
+</ul>
+<p>Add the following task to the <code>tasks</code> array in <code>.vscode/tasks.json</code>:</p>
+<div class="highlight"><pre><span></span><code><span class="p">{</span>
+<span class="w">  </span><span class="nt">&quot;label&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;dbt: Stage External Sources&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;type&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;shell&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;command&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;uv run dbt run-operation stage_external_sources --project-dir src/dbt/${input:dbtProject} --target ${input:dbtSxsTarget} --vars &#39;{\&quot;ext_full_refresh\&quot;: \&quot;true\&quot;, \&quot;cloud_storage_uri_base\&quot;: \&quot;gs://teamster-${input:dbtProject}/dagster/${input:dbtProject}\&quot;}&#39; --args &#39;select: ${input:dbtSourceSelect}&#39;&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;problemMatcher&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[]</span>
+<span class="p">}</span>
+</code></pre></div>
+<p>Add the following inputs (if not already present, merge with existing <code>inputs</code>
+array — note the existing <code>dbtProject</code> input from the "dbt: Build Init" task may
+need the options list updated):</p>
+<div class="highlight"><pre><span></span><code><span class="p">{</span>
+<span class="w">  </span><span class="nt">&quot;id&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;dbtSxsTarget&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;type&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;pickString&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;description&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Target environment&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;options&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="s2">&quot;defer&quot;</span><span class="p">,</span><span class="w"> </span><span class="s2">&quot;dev&quot;</span><span class="p">,</span><span class="w"> </span><span class="s2">&quot;staging&quot;</span><span class="p">],</span>
+<span class="w">  </span><span class="nt">&quot;default&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;defer&quot;</span>
+<span class="p">},</span>
+<span class="p">{</span>
+<span class="w">  </span><span class="nt">&quot;id&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;dbtSourceSelect&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;type&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;promptString&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;description&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Source selection (e.g. google_sheets.my_source). Use * to stage all sources.&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;default&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;*&quot;</span>
+<span class="p">}</span>
+</code></pre></div>
+<p>Note: <code>.vscode/tasks.json</code> is a protected path — draft the change and present to
+the user for manual application.</p>
+<hr />
+<h3 id="task-18-update-developer-facing-docs">Task 18: Update developer-facing docs</h3>
+<p><strong>Files:</strong></p>
+<ul class="task-list">
+<li>Create: <code>docs/guides/dbt-development.md</code></li>
+<li>Modify: <code>docs/guides/google-sheets.md</code></li>
+<li>Modify: <code>docs/guides/index.md</code></li>
+<li>
+<p>Modify: <code>mkdocs.yml</code></p>
+</li>
+<li class="task-list-item">
+<p><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 1: Create <code>docs/guides/dbt-development.md</code></strong></p>
+</li>
+</ul>
+<p>Write a guide covering:</p>
+<ul class="task-list">
+<li><strong>Targets</strong>: <code>defer</code> (default), <code>dev</code>, <code>staging</code>, <code>prod</code> — when to use each</li>
+<li><strong>Power User <code>--defer</code></strong>: How it works, <code>favorState: false</code> behavior, stale
+  dev schema cleanup (drop <code>zz_&lt;user&gt;_*</code> datasets in BigQuery if needed)</li>
+<li><strong>VS Code task: Stage External Sources</strong>: Project selection, target selection,
+  source selection, terminal equivalent command</li>
+<li><strong>Cross-project development</strong>: <code>--target dev</code> for kipptaf when working on
+  regional models</li>
+<li><strong>Prod guard</strong>: <code>check_prod_guard</code> blocks <code>--target prod</code> outside Dagster
+  Cloud; override with <code>DAGSTER_CLOUD_DEPLOYMENT_NAME=prod</code></li>
+<li>
+<p><strong>Post-merge hook</strong>: Generates prod manifests automatically; runs on
+  <code>postStartCommand</code> for new Codespaces</p>
+</li>
+<li class="task-list-item">
+<p><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 2: Update <code>docs/guides/google-sheets.md</code></strong></p>
+</li>
+</ul>
+<p>Replace lines 41-47 (bare <code>stage_external_sources</code> command) with a link:</p>
+<div class="highlight"><pre><span></span><code><span class="k">4.</span> Stage the external source definition. See the
+   [<span class="nt">dbt Development guide</span>](<span class="na">dbt-development.md#staging-external-sources</span>) for
+   details on using the VS Code task or terminal command.
+</code></pre></div>
+<p>Replace lines 91-99 (dbt-sxs.py verification section) with:</p>
+<div class="highlight"><pre><span></span><code><span class="gu">### Verifying a Google Sheets source against production</span>
+
+Power User&#39;s <span class="sb">`--defer`</span> mode automatically resolves unchanged upstream models to
+production. Build your modified staging model and downstream consumers will
+reference prod data for anything you haven&#39;t changed. See the
+[<span class="nt">dbt Development guide</span>](<span class="na">dbt-development.md#power-user-defer</span>) for details.
+</code></pre></div>
+<p>Also replace the second <code>stage_external_sources</code> command (lines 120-123) with
+the same link pattern.</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 3: Add routing table entry to <code>docs/guides/index.md</code></strong></li>
+</ul>
+<p>Add a row to the guide routing table:</p>
+<div class="highlight"><pre><span></span><code>| [<span class="nt">dbt Development</span>](<span class="na">dbt-development.md</span>) | Targets, defer, staging external
+sources, cross-project workflows |
+</code></pre></div>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 4: Add nav entry to <code>mkdocs.yml</code></strong></li>
+</ul>
+<p>Add after the "Google Sheets &amp; Forms" entry in the <code>nav:</code> → <code>Guides:</code> section:</p>
+<div class="highlight"><pre><span></span><code><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">dbt Development</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">guides/dbt-development.md</span>
+</code></pre></div>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 5: Commit</strong></li>
+</ul>
+<div class="highlight"><pre><span></span><code>git<span class="w"> </span>add<span class="w"> </span>docs/guides/dbt-development.md<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>docs/guides/google-sheets.md<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>docs/guides/index.md<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>mkdocs.yml
+git<span class="w"> </span>commit<span class="w"> </span>-m<span class="w"> </span><span class="s2">&quot;docs: add dbt development guide, update google-sheets and nav&quot;</span>
+</code></pre></div>
+<hr />
+<h3 id="task-19-update-spec-status">Task 19: Update spec status</h3>
+<p><strong>Files:</strong></p>
+<ul class="task-list">
+<li>
+<p>Modify: <code>docs/superpowers/specs/2026-03-25-dbt-schema-resolution-design.md</code></p>
+</li>
+<li class="task-list-item">
+<p><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 1: Update status table</strong></p>
+</li>
+</ul>
+<div class="highlight"><pre><span></span><code>| <span class="gs">**Spec**</span> | APPROVED | | <span class="gs">**Plan**</span> | APPROVED | | <span class="gs">**Development**</span> | COMPLETE |
+</code></pre></div>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 2: Commit</strong></li>
+</ul>
+<div class="highlight"><pre><span></span><code>git<span class="w"> </span>add<span class="w"> </span>docs/superpowers/specs/2026-03-25-dbt-schema-resolution-design.md
+git<span class="w"> </span>commit<span class="w"> </span>-m<span class="w"> </span><span class="s2">&quot;docs: mark dbt schema resolution spec as complete&quot;</span>
+</code></pre></div>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+          <button type="button" class="md-top md-icon" data-md-component="top" hidden>
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8z"/></svg>
+  Back to top
+</button>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+    <div class="md-copyright__highlight">
+      Copyright &copy; KIPP TEAM & Family Schools
+    </div>
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      
+      <script id="__config" type="application/json">{"annotate": null, "base": "../../..", "features": ["content.action.edit", "content.code.copy", "navigation.instant", "navigation.indexes", "navigation.sections", "navigation.tabs", "navigation.tabs.sticky", "navigation.top", "search.highlight", "search.suggest", "toc.follow"], "search": "../../../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+    
+    
+      <script src="../../../assets/javascripts/bundle.79ae519e.min.js"></script>
+      
+    
+  </body>
+</html>

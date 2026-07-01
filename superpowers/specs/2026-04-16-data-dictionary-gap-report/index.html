@@ -1,0 +1,2627 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+        <meta name="description" content="Data engineering platform for KIPP TEAM & Family Schools">
+      
+      
+      
+      
+      
+      
+        
+      
+      
+      <link rel="icon" href="../../../images/truck.svg">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.6">
+    
+    
+      
+        <title>Unmatched Staging Columns — Data Dictionary Enrichment Gap Report - teamster</title>
+      
+    
+    
+      <link rel="stylesheet" href="../../../assets/stylesheets/main.484c7ddc.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+    <script>__md_scope=new URL("../../..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+  </head>
+  
+  
+    <body dir="ltr">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#unmatched-staging-columns-data-dictionary-enrichment-gap-report" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+  
+
+<header class="md-header md-header--shadow md-header--lifted" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href="../../.." title="teamster" class="md-header__button md-logo" aria-label="teamster" data-md-component="logo">
+      
+  <img src="../../../images/truck.svg" alt="logo">
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            teamster
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              Unmatched Staging Columns — Data Dictionary Enrichment Gap Report
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+        <div class="md-search__suggest" data-md-component="search-suggest"></div>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      
+    
+    
+      <div class="md-header__source">
+        <a href="https://github.com/TEAMSchools/teamster" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M173.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6m-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3m44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9M252.8 8C114.1 8 8 113.3 8 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C436.2 457.8 504 362.9 504 252 504 113.3 391.5 8 252.8 8M105.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1m-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7m32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1m-11.4-14.7c-1.6 1-1.6 3.6 0 5.9s4.3 3.3 5.6 2.3c1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2"/></svg>
+  </div>
+  <div class="md-source__repository">
+    TEAMSchools/teamster
+  </div>
+</a>
+      </div>
+    
+  </nav>
+  
+    
+      
+<nav class="md-tabs" aria-label="Tabs" data-md-component="tabs">
+  <div class="md-grid">
+    <ul class="md-tabs__list">
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../../.." class="md-tabs__link">
+        
+  
+  
+    
+  
+  Home
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../../guides/" class="md-tabs__link">
+          
+  
+  
+    
+  
+  Guides
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../../troubleshooting/dagster/" class="md-tabs__link">
+          
+  
+  
+    
+  
+  Troubleshooting
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../../reference/architecture/" class="md-tabs__link">
+          
+  
+  
+    
+  
+  Reference
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../../../reference/automations/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  Automations
+
+      </a>
+    </li>
+  
+
+      
+    </ul>
+  </div>
+</nav>
+    
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+  
+
+
+<nav class="md-nav md-nav--primary md-nav--lifted" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href="../../.." title="teamster" class="md-nav__button md-logo" aria-label="teamster" data-md-component="logo">
+      
+  <img src="../../../images/truck.svg" alt="logo">
+
+    </a>
+    teamster
+  </label>
+  
+    <div class="md-nav__source">
+      <a href="https://github.com/TEAMSchools/teamster" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M173.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6m-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3m44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9M252.8 8C114.1 8 8 113.3 8 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C436.2 457.8 504 362.9 504 252 504 113.3 391.5 8 252.8 8M105.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1m-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7m32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1m-11.4-14.7c-1.6 1-1.6 3.6 0 5.9s4.3 3.3 5.6 2.3c1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2"/></svg>
+  </div>
+  <div class="md-source__repository">
+    TEAMSchools/teamster
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../.." class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Home
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+          
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2" >
+        
+          
+          <div class="md-nav__link md-nav__container">
+            <a href="../../../guides/" class="md-nav__link ">
+              
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Guides
+  
+
+    
+  </span>
+  
+  
+
+            </a>
+            
+              
+              <label class="md-nav__link " for="__nav_2" id="__nav_2_label" tabindex="0">
+                <span class="md-nav__icon md-icon"></span>
+              </label>
+            
+          </div>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_2_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_2">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Guides
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/codespaces/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Codespaces
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/local-development/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Local Development
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/dagster/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Dagster
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/google-sheets/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Google Sheets & Forms
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/adp-location-renames/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ADP Location Renames
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/dbt-development/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    dbt Development
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/sftp-integration/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    SFTP Integration
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/superpowers/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Claude Code & Superpowers
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/cube/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Cube
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/claude-cube-connector/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Claude + Cube Connector
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3" >
+        
+          
+          <label class="md-nav__link" for="__nav_3" id="__nav_3_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Troubleshooting
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_3">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Troubleshooting
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../troubleshooting/dagster/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Dagster
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../troubleshooting/dbt/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    dbt
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../troubleshooting/vscode/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    VS Code
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4" >
+        
+          
+          <label class="md-nav__link" for="__nav_4" id="__nav_4_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Reference
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_4_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_4">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Reference
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/architecture/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Architecture
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/adding-an-integration/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Adding an Integration
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/io-managers/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    IO Managers
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/fiscal-year-partitioning/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Fiscal Year & Partitioning
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/dbt-conventions/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    dbt Conventions
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/finalsite-focus-import/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Finalsite to Focus Import
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/marts-data-models/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Marts Data Models
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/automation-conditions/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Automation Conditions
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/automations/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Automations
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#powerschool-extension-tables-kipp-custom-not-in-pdf" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        PowerSchool — Extension Tables (KIPP custom, not in PDF)
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="PowerSchool — Extension Tables (KIPP custom, not in PDF)">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#stg_powerschool__s_nj_crs_x" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        stg_powerschool\_\_s_nj_crs_x
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#stg_powerschool__s_nj_ren_x" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        stg_powerschool\_\_s_nj_ren_x
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#stg_powerschool__s_nj_stu_x" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        stg_powerschool\_\_s_nj_stu_x
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#stg_powerschool__s_nj_usr_x" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        stg_powerschool\_\_s_nj_usr_x
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#stg_powerschool__s_stu_x" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        stg_powerschool\_\_s_stu_x
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#stg_powerschool__u_clg_et_stu" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        stg_powerschool\_\_u_clg_et_stu
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#stg_powerschool__u_clg_et_stu_alt" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        stg_powerschool\_\_u_clg_et_stu_alt
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#stg_powerschool__u_storedgrades_de" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        stg_powerschool\_\_u_storedgrades_de
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#powerschool-derived-columns-added-in-staging-sql" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        PowerSchool — Derived Columns (added in staging SQL)
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#powerschool-core-unmatched-likely-in-pdf-but-parser-missed" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        PowerSchool — Core Unmatched (likely in PDF but parser missed)
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="PowerSchool — Core Unmatched (likely in PDF but parser missed)">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#stg_powerschool__attendance_conversion_items" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        stg_powerschool\_\_attendance_conversion_items
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#stg_powerschool__cc" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        stg_powerschool\_\_cc
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#stg_powerschool__gpprogresssubject" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        stg_powerschool\_\_gpprogresssubject
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#stg_powerschool__gradecalculationtype" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        stg_powerschool\_\_gradecalculationtype
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#stg_powerschool__gradeschoolconfig" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        stg_powerschool\_\_gradeschoolconfig
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#stg_powerschool__gradesectionconfig" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        stg_powerschool\_\_gradesectionconfig
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#stg_powerschool__roledef" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        stg_powerschool\_\_roledef
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#stg_powerschool__schools" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        stg_powerschool\_\_schools
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#stg_powerschool__schoolstaff" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        stg_powerschool\_\_schoolstaff
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#stg_powerschool__sections" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        stg_powerschool\_\_sections
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#stg_powerschool__storedgrades" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        stg_powerschool\_\_storedgrades
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#stg_powerschool__student_email" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        stg_powerschool\_\_student_email
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#stg_powerschool__studentcorefields" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        stg_powerschool\_\_studentcorefields
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#stg_powerschool__students" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        stg_powerschool\_\_students
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#stg_powerschool__teachercategory" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        stg_powerschool\_\_teachercategory
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#stg_powerschool__termbins" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        stg_powerschool\_\_termbins
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#stg_powerschool__test" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        stg_powerschool\_\_test
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#stg_powerschool__users" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        stg_powerschool\_\_users
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#adp-unmatched-columns" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        ADP — Unmatched Columns
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="ADP — Unmatched Columns">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#stg_adp_workforce_now__workers" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        stg_adp_workforce_now\_\_workers
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#summary" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Summary
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+  
+    <a href="https://github.com/TEAMSchools/teamster/edit/main/docs/superpowers/specs/2026-04-16-data-dictionary-gap-report.md" title="Edit this page" class="md-content__button md-icon" rel="edit">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M10 20H6V4h7v5h5v3.1l2-2V8l-6-6H6c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h4zm10.2-7c.1 0 .3.1.4.2l1.3 1.3c.2.2.2.6 0 .8l-1 1-2.1-2.1 1-1c.1-.1.2-.2.4-.2m0 3.9L14.1 23H12v-2.1l6.1-6.1z"/></svg>
+    </a>
+  
+  
+
+
+<h1 id="unmatched-staging-columns-data-dictionary-enrichment-gap-report">Unmatched Staging Columns — Data Dictionary Enrichment Gap Report</h1>
+<p>Generated from the extraction run against PowerSchool and ADP PDFs. These
+columns have no description from the source-system data dictionary. They need
+hand-written descriptions or a different source document.</p>
+<p><strong>PowerSchool</strong>: 1495 matched / 2201 YAML columns (68%) <strong>ADP</strong>: 55 matched /
+135 YAML columns (41%)</p>
+<hr />
+<h2 id="powerschool-extension-tables-kipp-custom-not-in-pdf">PowerSchool — Extension Tables (KIPP custom, not in PDF)</h2>
+<p>637 columns across 8 models. These are KIPP-specific custom fields. Descriptions
+must be hand-written.</p>
+<h3 id="stg_powerschool__s_nj_crs_x"><code>stg_powerschool\_\_s_nj_crs_x</code></h3>
+<ul>
+<li><code>ap_course_subject</code></li>
+<li><code>block_schedule_session</code></li>
+<li><code>county_code_override</code></li>
+<li><code>course_level</code></li>
+<li><code>course_sequence_code</code></li>
+<li><code>course_span</code></li>
+<li><code>course_type</code></li>
+<li><code>cte_test_name_code</code></li>
+<li><code>ctecollegecredits</code></li>
+<li><code>ctetestdevelopercode</code></li>
+<li><code>ctetestname</code></li>
+<li><code>district_code_override</code></li>
+<li><code>dual_institution</code></li>
+<li><code>exclude_course_submission_tf</code></li>
+<li><code>nces_course_id</code></li>
+<li><code>nces_subject_area</code></li>
+<li><code>school_code_override</code></li>
+<li><code>sla_include_tf</code></li>
+</ul>
+<h3 id="stg_powerschool__s_nj_ren_x"><code>stg_powerschool\_\_s_nj_ren_x</code></h3>
+<ul>
+<li><code>alternativeeducationprogram_yn</code></li>
+<li><code>city</code></li>
+<li><code>countycodeattending</code></li>
+<li><code>countycodereceiving</code></li>
+<li><code>countycoderesident</code></li>
+<li><code>cumulativedaysabsent</code></li>
+<li><code>cumulativedayspresent</code></li>
+<li><code>cumulativestateabs</code></li>
+<li><code>daysopen</code></li>
+<li><code>deafhardofhearing_yn</code></li>
+<li><code>declassificationspeddate</code></li>
+<li><code>deviceowner</code></li>
+<li><code>devicetype</code></li>
+<li><code>district_status_override</code></li>
+<li><code>districtcodeattending</code></li>
+<li><code>districtcodereceiving</code></li>
+<li><code>districtcoderesident</code></li>
+<li><code>districtentrydate</code></li>
+<li><code>eligible_for_liep</code></li>
+<li><code>elp_screener_date</code></li>
+<li><code>gifted_and_talented</code></li>
+<li><code>gradelevelcode</code></li>
+<li><code>home_language2</code></li>
+<li><code>home_language3</code></li>
+<li><code>home_language4</code></li>
+<li><code>home_language5</code></li>
+<li><code>home_language_name2</code></li>
+<li><code>home_language_name3</code></li>
+<li><code>home_language_name4</code></li>
+<li><code>home_language_name5</code></li>
+<li><code>homeless_code</code></li>
+<li><code>homelessinstrucservice</code></li>
+<li><code>homelessprimarynighttimeres</code></li>
+<li><code>homelesssupportservice</code></li>
+<li><code>indistrictplacement</code></li>
+<li><code>internetconnectivity</code></li>
+<li><code>languageacquisition</code></li>
+<li><code>learningenvironment</code></li>
+<li><code>lep_completion_date_refused</code></li>
+<li><code>lep_tf</code></li>
+<li><code>lepbegindate</code></li>
+<li><code>lepbegindate2</code></li>
+<li><code>lependdate</code></li>
+<li><code>liep_languageofinstruction</code></li>
+<li><code>liep_parent_refusal_date</code></li>
+<li><code>liep_type</code></li>
+<li><code>liependdate2</code></li>
+<li><code>mddisablingcondition1</code></li>
+<li><code>mddisablingcondition2</code></li>
+<li><code>mddisablingcondition3</code></li>
+<li><code>mddisablingcondition4</code></li>
+<li><code>mddisablingcondition5</code></li>
+<li><code>nonpublic</code></li>
+<li><code>pid_504_tf</code></li>
+<li><code>programtypecode</code></li>
+<li><code>remotedaysabsent</code></li>
+<li><code>remotedayspresent</code></li>
+<li><code>reportedsharedvoc_yn</code></li>
+<li><code>residentmunicipalcode</code></li>
+<li><code>retained_tf</code></li>
+<li><code>schoolcodeattending</code></li>
+<li><code>schoolcodereceiving</code></li>
+<li><code>schoolcoderesident</code></li>
+<li><code>schoolentrydate</code></li>
+<li><code>shared_time_code</code></li>
+<li><code>sid_entrydate</code></li>
+<li><code>sid_excludeenrollment</code></li>
+<li><code>sid_exitdate</code></li>
+<li><code>sld_basic_reading_yn</code></li>
+<li><code>sld_listen_comp_yn</code></li>
+<li><code>sld_math_cal_yn</code></li>
+<li><code>sld_math_prob_solve_yn</code></li>
+<li><code>sld_oral_expresn_yn</code></li>
+<li><code>sld_read_fluency_yn</code></li>
+<li><code>sld_reading_comp_yn</code></li>
+<li><code>sld_writn_exprsn_yn</code></li>
+<li><code>specialed_classification</code></li>
+<li><code>studentslearningmodel</code></li>
+<li><code>titleiindicator</code></li>
+<li><code>titleilanguage_yn</code></li>
+<li><code>titleimath_yn</code></li>
+<li><code>titleiscience_yn</code></li>
+<li><code>tuition_code</code></li>
+<li><code>withdrawal_date</code></li>
+</ul>
+<h3 id="stg_powerschool__s_nj_stu_x"><code>stg_powerschool\_\_s_nj_stu_x</code></h3>
+<ul>
+<li><code>access_accountablecounty</code></li>
+<li><code>access_accountabledistrict</code></li>
+<li><code>access_accountableschool</code></li>
+<li><code>access_test_format_override</code></li>
+<li><code>access_testingsitecounty</code></li>
+<li><code>access_testingsitedistrict</code></li>
+<li><code>access_testingsiteschool</code></li>
+<li><code>access_tier_paper_tests</code></li>
+<li><code>adulths_nb_credits</code></li>
+<li><code>alternate_access</code></li>
+<li><code>alternativeeducationprogram_yn</code></li>
+<li><code>annual_iep_review_meeting_date</code></li>
+<li><code>ask_specialcodesa</code></li>
+<li><code>ask_specialcodesb</code></li>
+<li><code>ask_specialcodesc</code></li>
+<li><code>ask_specialcodesd</code></li>
+<li><code>asmt_ac</code></li>
+<li><code>asmt_alt_rep_paper</code></li>
+<li><code>asmt_alternate_location</code></li>
+<li><code>asmt_answer_masking</code></li>
+<li><code>asmt_answers_recorded_paper</code></li>
+<li><code>asmt_asl_video</code></li>
+<li><code>asmt_at</code></li>
+<li><code>asmt_braille_response</code></li>
+<li><code>asmt_braille_tactile_paper</code></li>
+<li><code>asmt_bw</code></li>
+<li><code>asmt_closed_caption_ela</code></li>
+<li><code>asmt_color_contrast</code></li>
+<li><code>asmt_dictionary</code></li>
+<li><code>asmt_directions_aloud</code></li>
+<li><code>asmt_directions_clarified</code></li>
+<li><code>asmt_em</code></li>
+<li><code>asmt_emergency_accommodation</code></li>
+<li><code>asmt_es</code></li>
+<li><code>asmt_et</code></li>
+<li><code>asmt_exclude_ela</code></li>
+<li><code>asmt_exclude_math</code></li>
+<li><code>asmt_extended_time</code></li>
+<li><code>asmt_extended_time_math</code></li>
+<li><code>asmt_first_enroll_in_us_school</code></li>
+<li><code>asmt_frequent_breaks</code></li>
+<li><code>asmt_human_signer</code></li>
+<li><code>asmt_humanreader_signer</code></li>
+<li><code>asmt_ih</code></li>
+<li><code>asmt_length_in_ell</code></li>
+<li><code>asmt_lh</code></li>
+<li><code>asmt_math_response</code></li>
+<li><code>asmt_math_response_el</code></li>
+<li><code>asmt_mc</code></li>
+<li><code>asmt_monitor_response</code></li>
+<li><code>asmt_non_screen_reader</code></li>
+<li><code>asmt_ns</code></li>
+<li><code>asmt_ra</code></li>
+<li><code>asmt_rd</code></li>
+<li><code>asmt_read_aloud</code></li>
+<li><code>asmt_refresh_braille_ela</code></li>
+<li><code>asmt_ri</code></li>
+<li><code>asmt_rl</code></li>
+<li><code>asmt_screen_reader</code></li>
+<li><code>asmt_sd</code></li>
+<li><code>asmt_selected_response_ela</code></li>
+<li><code>asmt_small_group</code></li>
+<li><code>asmt_special_equip</code></li>
+<li><code>asmt_specified_area</code></li>
+<li><code>asmt_text_to_speech</code></li>
+<li><code>asmt_time_of_day</code></li>
+<li><code>asmt_unique_accommodation</code></li>
+<li><code>asmt_wd</code></li>
+<li><code>asmt_word_prediction</code></li>
+<li><code>assessmt_ms_accomm_resp</code></li>
+<li><code>biliterate_yn</code></li>
+<li><code>birthplace_refusal</code></li>
+<li><code>block_schedule_session_ela</code></li>
+<li><code>block_schedule_session_math</code></li>
+<li><code>bridge_year</code></li>
+<li><code>calculation_device_math_tools</code></li>
+<li><code>caresactfunds</code></li>
+<li><code>charter_assigned_school</code></li>
+<li><code>charter_date</code></li>
+<li><code>charter_school_loc</code></li>
+<li><code>charter_school_name</code></li>
+<li><code>cityofbirth</code></li>
+<li><code>collegecreditsearned</code></li>
+<li><code>counseling_services_yn</code></li>
+<li><code>countryofbirth</code></li>
+<li><code>countycodeattending</code></li>
+<li><code>countycodereceiving</code></li>
+<li><code>countycoderesident</code></li>
+<li><code>ctecollegecredits</code></li>
+<li><code>ctepostsecondaryinstitution</code></li>
+<li><code>cteprogramofstudy_yn</code></li>
+<li><code>cteprogramstatus</code></li>
+<li><code>ctesingleparentstatus_yn</code></li>
+<li><code>ctetestdevelopercode</code></li>
+<li><code>ctetestname</code></li>
+<li><code>ctetestskillassesment</code></li>
+<li><code>ctewblearning</code></li>
+<li><code>cteworkbasedlearning</code></li>
+<li><code>cumdaysinmembershipaddto_tf</code></li>
+<li><code>cumdayspresentaddto_tf</code></li>
+<li><code>cumdaystowardtruancyaddto_tf</code></li>
+<li><code>cumulativedaysabsent</code></li>
+<li><code>cumulativedaysinmembership</code></li>
+<li><code>cumulativedayspresent</code></li>
+<li><code>cumulativedaystowardtruancy</code></li>
+<li><code>cumulativestateabs</code></li>
+<li><code>datelastleadtest</code></li>
+<li><code>datelastmedexam</code></li>
+<li><code>dateofpolioimmun</code></li>
+<li><code>daysopen</code></li>
+<li><code>deafhardofhearing_yn</code></li>
+<li><code>declassificationspeddate</code></li>
+<li><code>determined_ineligible_yn</code></li>
+<li><code>deviceowner</code></li>
+<li><code>devicetype</code></li>
+<li><code>district_status_override</code></li>
+<li><code>district_studentid</code></li>
+<li><code>districtcodeattending</code></li>
+<li><code>districtcodereceiving</code></li>
+<li><code>districtcoderesident</code></li>
+<li><code>districttimeless1year_yn</code></li>
+<li><code>early_intervention_yn</code></li>
+<li><code>eighthtechlit</code></li>
+<li><code>eligibility_determ_date</code></li>
+<li><code>eligible_for_liep</code></li>
+<li><code>elp_screener_date</code></li>
+<li><code>embedded_co_writer_ela</code></li>
+<li><code>eoc_title1biology_tf</code></li>
+<li><code>examiner_smid</code></li>
+<li><code>examinersmid1</code></li>
+<li><code>examinersmid2</code></li>
+<li><code>examinersmid3</code></li>
+<li><code>examinersmid4</code></li>
+<li><code>examinersmid5</code></li>
+<li><code>family_care_release_yn</code></li>
+<li><code>federalhsmathtestingreq</code></li>
+<li><code>firstentrydateintoausschool</code></li>
+<li><code>firsthsmathassessment_yn</code></li>
+<li><code>former_iep</code></li>
+<li><code>generationcodesuffix</code></li>
+<li><code>gifted_and_talented</code></li>
+<li><code>gradelevelcode</code></li>
+<li><code>graduation_pathway_ela</code></li>
+<li><code>graduation_pathway_math</code></li>
+<li><code>healthinsprovider</code></li>
+<li><code>healthinsstatus_yn</code></li>
+<li><code>home_language</code></li>
+<li><code>home_language2</code></li>
+<li><code>home_language3</code></li>
+<li><code>home_language4</code></li>
+<li><code>home_language5</code></li>
+<li><code>home_language_name</code></li>
+<li><code>home_language_name2</code></li>
+<li><code>home_language_name3</code></li>
+<li><code>home_language_name4</code></li>
+<li><code>home_language_name5</code></li>
+<li><code>homelessinstrucservice</code></li>
+<li><code>homelessprimarynighttimeres</code></li>
+<li><code>homelesssupportservice</code></li>
+<li><code>iep_begin_date</code></li>
+<li><code>iep_end_date</code></li>
+<li><code>iep_exemptpassingbiology_tf</code></li>
+<li><code>iep_exemptpassinglal_tf</code></li>
+<li><code>iep_exemptpassingmath_tf</code></li>
+<li><code>iep_exempttakingbiology_tf</code></li>
+<li><code>iep_exempttakinglal_tf</code></li>
+<li><code>iep_exempttakingmath_tf</code></li>
+<li><code>iep_level</code></li>
+<li><code>iepgradcourserequirement</code></li>
+<li><code>iepgraduationattendance</code></li>
+<li><code>immigrantstatus_yn</code></li>
+<li><code>includeinassareport_tf</code></li>
+<li><code>includeinctereport_tf</code></li>
+<li><code>includeinnjsmart_tf</code></li>
+<li><code>includeinstucourse_tf</code></li>
+<li><code>indistrictplacement</code></li>
+<li><code>initial_iep_meeting_date</code></li>
+<li><code>initial_process_delay_reason</code></li>
+<li><code>internetconnectivity</code></li>
+<li><code>languageacquisition</code></li>
+<li><code>leadlevel</code></li>
+<li><code>learningenvironment</code></li>
+<li><code>lep_completion_date_refused</code></li>
+<li><code>lep_tf</code></li>
+<li><code>lepbegindate</code></li>
+<li><code>lepbegindate2</code></li>
+<li><code>lependdate</code></li>
+<li><code>liep_classification</code></li>
+<li><code>liep_data</code></li>
+<li><code>liep_languageofinstruction</code></li>
+<li><code>liep_parent_refusal_date</code></li>
+<li><code>liep_refusal</code></li>
+<li><code>liep_type</code></li>
+<li><code>liependdate2</code></li>
+<li><code>lunchstatusoverride</code></li>
+<li><code>math_state_assessment_name</code></li>
+<li><code>mddisablingcondition1</code></li>
+<li><code>mddisablingcondition2</code></li>
+<li><code>mddisablingcondition3</code></li>
+<li><code>mddisablingcondition4</code></li>
+<li><code>mddisablingcondition5</code></li>
+<li><code>migrant_tf</code></li>
+<li><code>military_connected_indicator</code></li>
+<li><code>native_language</code></li>
+<li><code>nces_course_id</code></li>
+<li><code>nces_subject_area</code></li>
+<li><code>nonpublic</code></li>
+<li><code>occupational_therapy_serv_yn</code></li>
+<li><code>other_related_services_yn</code></li>
+<li><code>parcc_braille_paper</code></li>
+<li><code>parcc_class_name_override_ela</code></li>
+<li><code>parcc_class_name_override_math</code></li>
+<li><code>parcc_constructed_response_ela</code></li>
+<li><code>parcc_ela_test_code</code></li>
+<li><code>parcc_ell_paper_accom</code></li>
+<li><code>parcc_examiner_smid_ela</code></li>
+<li><code>parcc_examiner_smid_math</code></li>
+<li><code>parcc_exempt_from_passing</code></li>
+<li><code>parcc_iep_paper_accom</code></li>
+<li><code>parcc_large_print_paper</code></li>
+<li><code>parcc_math_test_code</code></li>
+<li><code>parcc_math_tools</code></li>
+<li><code>parcc_reader_signer_for_paper</code></li>
+<li><code>parcc_retest</code></li>
+<li><code>parcc_sec504_paper_accom</code></li>
+<li><code>parcc_session_location_ela</code></li>
+<li><code>parcc_session_location_math</code></li>
+<li><code>parcc_staff_smid_override_ela</code></li>
+<li><code>parcc_staff_smid_override_math</code></li>
+<li><code>parcc_student_identifier</code></li>
+<li><code>parcc_test_format</code></li>
+<li><code>parcc_testing_site_county</code></li>
+<li><code>parcc_testing_site_district</code></li>
+<li><code>parcc_testing_site_school</code></li>
+<li><code>parcc_text_to_speech</code></li>
+<li><code>parcc_text_to_speech_math</code></li>
+<li><code>parcc_translation_math_paper</code></li>
+<li><code>parent_consent_intial_iep_date</code></li>
+<li><code>parent_consent_obtain_code</code></li>
+<li><code>parental_consent_eval_date</code></li>
+<li><code>physical_therapy_services_yn</code></li>
+<li><code>pid_504_tf</code></li>
+<li><code>pid_accommodations_a_tf</code></li>
+<li><code>pid_accommodations_b_tf</code></li>
+<li><code>pid_accommodations_c_tf</code></li>
+<li><code>pid_accommodations_d_tf</code></li>
+<li><code>pid_apalangartsliteracy_tf</code></li>
+<li><code>pid_apamath_tf</code></li>
+<li><code>pid_apascience_tf</code></li>
+<li><code>pid_apatestingcds</code></li>
+<li><code>pid_audioamplification</code></li>
+<li><code>pid_brailletest_yn</code></li>
+<li><code>pid_classroom</code></li>
+<li><code>pid_computerassisted</code></li>
+<li><code>pid_contentareatutoring_yn</code></li>
+<li><code>pid_contentbasedesl_yn</code></li>
+<li><code>pid_developbilingual_yn</code></li>
+<li><code>pid_heritagelanguage_yn</code></li>
+<li><code>pid_inclusionarysupport_yn</code></li>
+<li><code>pid_largeprint_yn</code></li>
+<li><code>pid_lepexemptlal_tf</code></li>
+<li><code>pid_lowvisionaids</code></li>
+<li><code>pid_madetape_tf</code></li>
+<li><code>pid_modifiedtestdirections</code></li>
+<li><code>pid_nativelang</code></li>
+<li><code>pid_noadditionalservices_yn</code></li>
+<li><code>pid_notapplicable_yn</code></li>
+<li><code>pid_otherapproved</code></li>
+<li><code>pid_outofdistplacement_tf</code></li>
+<li><code>pid_outresidenceplacement_tf</code></li>
+<li><code>pid_parentalrefusal_yn</code></li>
+<li><code>pid_presentationformat</code></li>
+<li><code>pid_pullout_yn</code></li>
+<li><code>pid_pulloutesl_yn</code></li>
+<li><code>pid_scribedresponse_yn</code></li>
+<li><code>pid_selfcontained_yn</code></li>
+<li><code>pid_sendingcds</code></li>
+<li><code>pid_settingformat</code></li>
+<li><code>pid_shelteredenginstruct_yn</code></li>
+<li><code>pid_shortsegmenttestadmin_tf</code></li>
+<li><code>pid_structengimmersion_yn</code></li>
+<li><code>pid_supplementaleduserv</code></li>
+<li><code>pid_testformat</code></li>
+<li><code>pid_timeinlep2</code></li>
+<li><code>pid_timingscheduling</code></li>
+<li><code>pid_title1langartslit_tf</code></li>
+<li><code>pid_title1math_tf</code></li>
+<li><code>pid_title1science_tf</code></li>
+<li><code>pid_title3status</code></li>
+<li><code>pid_transbilingual_yn</code></li>
+<li><code>pid_twowayimmersion_yn</code></li>
+<li><code>presentation</code></li>
+<li><code>primarycipcode</code></li>
+<li><code>programtypecode</code></li>
+<li><code>proofofage</code></li>
+<li><code>reevaluation_date</code></li>
+<li><code>referral_date</code></li>
+<li><code>remotedaysabsent</code></li>
+<li><code>remotedaysmembership</code></li>
+<li><code>remotedayspresent</code></li>
+<li><code>remotelearninghelpline_yn</code></li>
+<li><code>remotepercentageofday</code></li>
+<li><code>reportedsharedvoc_yn</code></li>
+<li><code>residentmunicipalcode</code></li>
+<li><code>retained_tf</code></li>
+<li><code>school_disabled</code></li>
+<li><code>schoolcodeattending</code></li>
+<li><code>schoolcodereceiving</code></li>
+<li><code>schoolcoderesident</code></li>
+<li><code>schooltimeless1year_yn</code></li>
+<li><code>science_test_name</code></li>
+<li><code>secondary_disability</code></li>
+<li><code>shared_time_code</code></li>
+<li><code>sid_entrydate</code></li>
+<li><code>sid_excludeenrollment</code></li>
+<li><code>sid_exitdate</code></li>
+<li><code>sla_accountable_site_county</code></li>
+<li><code>sla_accountable_site_district</code></li>
+<li><code>sla_accountable_site_school</code></li>
+<li><code>sla_alt_rep_paper</code></li>
+<li><code>sla_alternate_location</code></li>
+<li><code>sla_answer_masking</code></li>
+<li><code>sla_answers_recorded_paper</code></li>
+<li><code>sla_asl_video</code></li>
+<li><code>sla_braille_response</code></li>
+<li><code>sla_braille_tactile_paper</code></li>
+<li><code>sla_class_name_override</code></li>
+<li><code>sla_closed_caption</code></li>
+<li><code>sla_color_contrast</code></li>
+<li><code>sla_constructed_response</code></li>
+<li><code>sla_dictionary</code></li>
+<li><code>sla_directions_aloud</code></li>
+<li><code>sla_directions_clarified</code></li>
+<li><code>sla_emergency_accommodation</code></li>
+<li><code>sla_examiner_smid</code></li>
+<li><code>sla_exclude_tf</code></li>
+<li><code>sla_extended_time</code></li>
+<li><code>sla_frequent_breaks</code></li>
+<li><code>sla_human_signer</code></li>
+<li><code>sla_humanreader_signer</code></li>
+<li><code>sla_large_print_paper</code></li>
+<li><code>sla_monitor_response</code></li>
+<li><code>sla_non_screen_reader</code></li>
+<li><code>sla_read_aloud</code></li>
+<li><code>sla_refresh_braille</code></li>
+<li><code>sla_retest</code></li>
+<li><code>sla_science_response_el</code></li>
+<li><code>sla_screen_reader</code></li>
+<li><code>sla_selected_response</code></li>
+<li><code>sla_session_loc_override</code></li>
+<li><code>sla_small_group</code></li>
+<li><code>sla_spanish_trans</code></li>
+<li><code>sla_special_equip</code></li>
+<li><code>sla_specified_area</code></li>
+<li><code>sla_staffoverride_smid</code></li>
+<li><code>sla_test_code</code></li>
+<li><code>sla_test_format</code></li>
+<li><code>sla_testing_site_county</code></li>
+<li><code>sla_testing_site_district</code></li>
+<li><code>sla_testing_site_school</code></li>
+<li><code>sla_text_to_speech</code></li>
+<li><code>sla_time_of_day</code></li>
+<li><code>sla_unique_accommodation</code></li>
+<li><code>sla_word_prediction</code></li>
+<li><code>sld_basic_reading_yn</code></li>
+<li><code>sld_listen_comp_yn</code></li>
+<li><code>sld_math_cal_yn</code></li>
+<li><code>sld_math_prob_solve_yn</code></li>
+<li><code>sld_oral_expresn_yn</code></li>
+<li><code>sld_read_fluency_yn</code></li>
+<li><code>sld_reading_comp_yn</code></li>
+<li><code>sld_writn_exprsn_yn</code></li>
+<li><code>speassessmentparticipant_yn</code></li>
+<li><code>speassignmentsubmissions_yn</code></li>
+<li><code>special_education_placement</code></li>
+<li><code>special_status</code></li>
+<li><code>specialed_classification</code></li>
+<li><code>specoachingorcheckin_yn</code></li>
+<li><code>spedtier</code></li>
+<li><code>speech_lang_theapy_services_yn</code></li>
+<li><code>speechtotextwordprediction</code></li>
+<li><code>speelectroniccomm_yn</code></li>
+<li><code>speonlinelearningplatforms</code></li>
+<li><code>speother_yn</code></li>
+<li><code>spesynchonlineclass_yn</code></li>
+<li><code>state_assessment_name</code></li>
+<li><code>state_ell_status</code></li>
+<li><code>state_lep_status</code></li>
+<li><code>stateofbirth</code></li>
+<li><code>student_type</code></li>
+<li><code>studentslearningmodel</code></li>
+<li><code>stureporting_name</code></li>
+<li><code>supplementaleduserv</code></li>
+<li><code>time_in_regular_program</code></li>
+<li><code>title1_status_tf</code></li>
+<li><code>titleiindicator</code></li>
+<li><code>titleilanguage_yn</code></li>
+<li><code>titleimath_yn</code></li>
+<li><code>titleiscience_yn</code></li>
+<li><code>tiv_serv_aide_tf</code></li>
+<li><code>tiv_serv_assist_tf</code></li>
+<li><code>tiv_serv_extyear_tf</code></li>
+<li><code>tiv_serv_ind_instr_tf</code></li>
+<li><code>tiv_serv_indnursing_tf</code></li>
+<li><code>tiv_serv_intensive_tf</code></li>
+<li><code>tiv_serv_interpreter_tf</code></li>
+<li><code>tiv_serv_pupil_tf</code></li>
+<li><code>tiv_serv_resplacement_tf</code></li>
+<li><code>tuition_code</code></li>
+<li><code>typeofearnedcollegecredits</code></li>
+<li><code>typeofworkbasedlearning</code></li>
+<li><code>withdrawal_date</code></li>
+<li><code>worldlang_assessed1</code></li>
+<li><code>worldlang_assessed1_name</code></li>
+<li><code>worldlang_assessed2</code></li>
+<li><code>worldlang_assessed2_name</code></li>
+<li><code>worldlang_assessed3</code></li>
+<li><code>worldlang_assessed3_name</code></li>
+<li><code>worldlang_assessed4</code></li>
+<li><code>worldlang_assessed4_name</code></li>
+<li><code>worldlang_assessed5</code></li>
+<li><code>worldlang_assessed5_name</code></li>
+<li><code>worldlang_assessment1</code></li>
+<li><code>worldlang_assessment2</code></li>
+<li><code>worldlang_assessment3</code></li>
+<li><code>worldlang_assessment4</code></li>
+<li><code>worldlang_assessment5</code></li>
+</ul>
+<h3 id="stg_powerschool__s_nj_usr_x"><code>stg_powerschool\_\_s_nj_usr_x</code></h3>
+<ul>
+<li><code>excl_frm_smart_stf_submissn</code></li>
+<li><code>formername</code></li>
+<li><code>generationcodesuffix</code></li>
+<li><code>local_teacher_id</code></li>
+<li><code>smart_alternaterouteprog</code></li>
+<li><code>smart_certificationstatus</code></li>
+<li><code>smart_districtbegindate</code></li>
+<li><code>smart_districtentrycode</code></li>
+<li><code>smart_districtexitdate</code></li>
+<li><code>smart_districtexitreason</code></li>
+<li><code>smart_ellinstructorcredtype</code></li>
+<li><code>smart_employmentsepatyp</code></li>
+<li><code>smart_employmentstatus</code></li>
+<li><code>smart_first_name</code></li>
+<li><code>smart_highestleveled</code></li>
+<li><code>smart_languagespoken</code></li>
+<li><code>smart_last_name</code></li>
+<li><code>smart_mepsessiontype</code></li>
+<li><code>smart_migrantedprogramcat</code></li>
+<li><code>smart_nameprefix</code></li>
+<li><code>smart_nationalboardaward</code></li>
+<li><code>smart_salary</code></li>
+<li><code>smart_seprogramcontrcat</code></li>
+<li><code>smart_stafcompenanualsup</code></li>
+<li><code>smart_stafcompnsatnbassal</code></li>
+<li><code>smart_titleiprogramcat</code></li>
+<li><code>smart_traditionalrouteprog</code></li>
+<li><code>smart_yearsinlea</code></li>
+<li><code>smart_yearsinnj</code></li>
+<li><code>smart_yearsofexp</code></li>
+<li><code>staffmemberid</code></li>
+</ul>
+<h3 id="stg_powerschool__s_stu_x"><code>stg_powerschool\_\_s_stu_x</code></h3>
+<ul>
+<li><code>activedutyparent</code></li>
+<li><code>barrierintaccess</code></li>
+<li><code>birthcity</code></li>
+<li><code>birthcountry</code></li>
+<li><code>birthcounty</code></li>
+<li><code>birthstate</code></li>
+<li><code>careertechedu_yn</code></li>
+<li><code>careerworkreadiness_yn</code></li>
+<li><code>clgcareerreadiness_yn</code></li>
+<li><code>comctzn_yn</code></li>
+<li><code>contact_email</code></li>
+<li><code>contact_fname</code></li>
+<li><code>contact_lname</code></li>
+<li><code>contact_phone</code></li>
+<li><code>county</code></li>
+<li><code>deviceaccess</code></li>
+<li><code>devicetype</code></li>
+<li><code>economicdisadvantage</code></li>
+<li><code>entrydateintousschool</code></li>
+<li><code>excludefromedfi</code></li>
+<li><code>fafsa</code></li>
+<li><code>foster_care</code></li>
+<li><code>graduation_class_rank</code></li>
+<li><code>healthid</code></li>
+<li><code>home_language</code></li>
+<li><code>immigrant</code></li>
+<li><code>internetaccess</code></li>
+<li><code>internetinresidence</code></li>
+<li><code>internetperformance</code></li>
+<li><code>jobcorps</code></li>
+<li><code>luncheligibility</code></li>
+<li><code>maiden_name</code></li>
+<li><code>maritalstatus</code></li>
+<li><code>native_language</code></li>
+<li><code>ontracktograduate</code></li>
+<li><code>outofdistrict_distoverride</code></li>
+<li><code>parentrefusalofimmaccuracy</code></li>
+<li><code>postsecedu_yn</code></li>
+<li><code>pref_first</code></li>
+<li><code>pref_last</code></li>
+<li><code>pref_middle</code></li>
+<li><code>priorityforservice</code></li>
+<li><code>privateschool</code></li>
+<li><code>programenddate</code></li>
+<li><code>programstartdate</code></li>
+<li><code>repeatgradeindicator</code></li>
+<li><code>reportedvalue</code></li>
+<li><code>residencystatus</code></li>
+<li><code>schoolchoicetransfer</code></li>
+<li><code>sealofbiliteracy</code></li>
+<li><code>section504_yn</code></li>
+<li><code>singleparent</code></li>
+<li><code>steamstemparticipant</code></li>
+<li><code>suffix</code></li>
+<li><code>tribal_affiliation_1</code></li>
+<li><code>tribal_affiliation_2</code></li>
+<li><code>tribal_affiliation_3</code></li>
+<li><code>tribal_affiliation_sif_1</code></li>
+<li><code>tribal_affiliation_sif_2</code></li>
+<li><code>tribal_affiliation_sif_3</code></li>
+<li><code>twentyfirstcenturyserved</code></li>
+<li><code>virtualstudent</code></li>
+<li><code>youthchallenge</code></li>
+</ul>
+<h3 id="stg_powerschool__u_clg_et_stu"><code>stg_powerschool\_\_u_clg_et_stu</code></h3>
+<ul>
+<li><code>exit_code</code></li>
+<li><code>exit_date</code></li>
+<li><code>id</code></li>
+<li><code>when_modified_or_created</code></li>
+</ul>
+<h3 id="stg_powerschool__u_clg_et_stu_alt"><code>stg_powerschool\_\_u_clg_et_stu_alt</code></h3>
+<ul>
+<li><code>exit_code</code></li>
+<li><code>exit_date</code></li>
+<li><code>id</code></li>
+<li><code>when_modified_or_created</code></li>
+</ul>
+<h3 id="stg_powerschool__u_storedgrades_de"><code>stg_powerschool\_\_u_storedgrades_de</code></h3>
+<ul>
+<li><code>de_course_name</code></li>
+<li><code>de_institution</code></li>
+<li><code>de_pass_yn</code></li>
+<li><code>de_score</code></li>
+<li><code>de_semester</code></li>
+<li><code>id</code></li>
+</ul>
+<hr />
+<h2 id="powerschool-derived-columns-added-in-staging-sql">PowerSchool — Derived Columns (added in staging SQL)</h2>
+<p>35 columns across 12 models. These are computed in the staging SQL, not from the
+PowerSchool database. Descriptions should reference the transformation logic.</p>
+<ul>
+<li><code>stg_powerschool\_\_calendar_day</code>: <code>week_end_date</code>, <code>week_start_date</code></li>
+<li><code>stg_powerschool\_\_cc</code>: <code>academic_year</code>, <code>fiscal_year</code>, <code>yearid</code></li>
+<li><code>stg_powerschool\_\_log</code>: <code>\_dbt_source_relation</code>, <code>academic_year</code></li>
+<li><code>stg_powerschool\_\_pgfinalgrades</code>: <code>grade_adjusted</code>, <code>percent_decimal</code>,
+  <code>percent_decimal_adjusted</code></li>
+<li><code>stg_powerschool\_\_schools</code>: <code>school_level</code></li>
+<li><code>stg_powerschool\_\_spenrollments</code>: <code>academic_year</code>, <code>is_current</code>,
+  <code>rn_student_program_year_desc</code></li>
+<li><code>stg_powerschool\_\_storedgrades</code>: <code>\_dbt_source_relation</code>, <code>academic_year</code>,
+  <code>agg_credittype</code>, <code>fiscal_year</code>, <code>gradescale_name_unweighted</code>,
+  <code>is_transfer_grade</code>, <code>percent_decimal</code>, <code>storecode_type</code>, <code>yearid</code></li>
+<li><code>stg_powerschool\_\_studentcorefields</code>: <code>is_homeless</code></li>
+<li><code>stg_powerschool\_\_students</code>: <code>ethnicity_code</code>, <code>gender_code</code></li>
+<li><code>stg_powerschool\_\_termbins</code>: <code>is_current_term</code>, <code>semester</code>,
+  <code>storecode_order</code>, <code>storecode_type</code></li>
+<li><code>stg_powerschool\_\_terms</code>: <code>academic_year</code>, <code>fiscal_year</code>, <code>semester</code></li>
+<li><code>stg_powerschool\_\_users</code>: <code>\_dbt_source_relation</code>, <code>dagster_code_location</code></li>
+</ul>
+<hr />
+<h2 id="powerschool-core-unmatched-likely-in-pdf-but-parser-missed">PowerSchool — Core Unmatched (likely in PDF but parser missed)</h2>
+<p>48 columns across 18 models. These columns are likely in the PDF data dictionary
+but the parser could not match them due to column-name formatting differences.</p>
+<h3 id="stg_powerschool__attendance_conversion_items"><code>stg_powerschool\_\_attendance_conversion_items</code></h3>
+<ul>
+<li><code>daypartid</code></li>
+</ul>
+<h3 id="stg_powerschool__cc"><code>stg_powerschool\_\_cc</code></h3>
+<ul>
+<li><code>abs_sectionid</code></li>
+<li><code>abs_termid</code></li>
+</ul>
+<h3 id="stg_powerschool__gpprogresssubject"><code>stg_powerschool\_\_gpprogresssubject</code></h3>
+<ul>
+<li><code>issummation</code></li>
+<li><code>nodetype</code></li>
+<li><code>testnodepassed</code></li>
+</ul>
+<h3 id="stg_powerschool__gradecalculationtype"><code>stg_powerschool\_\_gradecalculationtype</code></h3>
+<ul>
+<li><code>ismulticategoryeditable</code></li>
+</ul>
+<h3 id="stg_powerschool__gradeschoolconfig"><code>stg_powerschool\_\_gradeschoolconfig</code></h3>
+<ul>
+<li><code>iscitizenshipdisplayed</code></li>
+<li><code>isgradescaleteachereditable</code></li>
+<li><code>ismulticategoryallowed</code></li>
+<li><code>ismulticategoryeditable</code></li>
+<li><code>issectstndweighteditable</code></li>
+<li><code>lockwarningoffset</code></li>
+<li><code>minimumassignmentvalue</code></li>
+</ul>
+<h3 id="stg_powerschool__gradesectionconfig"><code>stg_powerschool\_\_gradesectionconfig</code></h3>
+<ul>
+<li><code>isgradescaleteachereditable</code></li>
+<li><code>issectstndweighteditable</code></li>
+<li><code>minimumassignmentvalue</code></li>
+</ul>
+<h3 id="stg_powerschool__roledef"><code>stg_powerschool\_\_roledef</code></h3>
+<ul>
+<li><code>productname</code></li>
+</ul>
+<h3 id="stg_powerschool__schools"><code>stg_powerschool\_\_schools</code></h3>
+<ul>
+<li><code>fee_exemption_status</code></li>
+</ul>
+<h3 id="stg_powerschool__schoolstaff"><code>stg_powerschool\_\_schoolstaff</code></h3>
+<ul>
+<li><code>sched_usehouse</code></li>
+</ul>
+<h3 id="stg_powerschool__sections"><code>stg_powerschool\_\_sections</code></h3>
+<ul>
+<li><code>att_mode_code</code></li>
+<li><code>exclude_ada</code></li>
+<li><code>excludefromclassrank</code></li>
+<li><code>excludefromhonorroll</code></li>
+<li><code>parent_section_id</code></li>
+<li><code>section_number</code></li>
+<li><code>section_type</code></li>
+</ul>
+<h3 id="stg_powerschool__storedgrades"><code>stg_powerschool\_\_storedgrades</code></h3>
+<ul>
+<li><code>ab_course_eva_pro_cd</code></li>
+<li><code>ab_pri_del_met_cd</code></li>
+<li><code>comment_value</code></li>
+</ul>
+<h3 id="stg_powerschool__student_email"><code>stg_powerschool\_\_student_email</code></h3>
+<ul>
+<li><code>email</code></li>
+</ul>
+<h3 id="stg_powerschool__studentcorefields"><code>stg_powerschool\_\_studentcorefields</code></h3>
+<ul>
+<li><code>c_504_information</code></li>
+<li><code>ipt_oral_curdate</code></li>
+</ul>
+<h3 id="stg_powerschool__students"><code>stg_powerschool\_\_students</code></h3>
+<ul>
+<li><code>customrank_gpa</code></li>
+<li><code>exclude_fr_rank</code></li>
+<li><code>gradreqsetid</code></li>
+<li><code>ldapenabled</code></li>
+<li><code>studentpers_guid</code></li>
+<li><code>studentpict_guid</code></li>
+</ul>
+<h3 id="stg_powerschool__teachercategory"><code>stg_powerschool\_\_teachercategory</code></h3>
+<ul>
+<li><code>defaultscoreentrypoints</code></li>
+</ul>
+<h3 id="stg_powerschool__termbins"><code>stg_powerschool\_\_termbins</code></h3>
+<ul>
+<li><code>currentgrade</code></li>
+</ul>
+<h3 id="stg_powerschool__test"><code>stg_powerschool\_\_test</code></h3>
+<ul>
+<li><code>alpha_entry_type</code></li>
+<li><code>historical_test</code></li>
+<li><code>number_entry_type</code></li>
+<li><code>percent_entry_type</code></li>
+<li><code>teacher_access</code></li>
+</ul>
+<h3 id="stg_powerschool__users"><code>stg_powerschool\_\_users</code></h3>
+<ul>
+<li><code>adminldapenabled</code></li>
+<li><code>teacherldapenabled</code></li>
+</ul>
+<hr />
+<h2 id="adp-unmatched-columns">ADP — Unmatched Columns</h2>
+<p>80 columns across 1 models. Most are derived columns added in staging SQL or
+deeply nested struct fields not individually documented in the ADP API guide.</p>
+<h3 id="stg_adp_workforce_now__workers"><code>stg_adp_workforce_now\_\_workers</code></h3>
+<ul>
+<li><code>associate_oid</code></li>
+<li><code>effective_date_end</code></li>
+<li><code>effective_date_end_timestamp</code></li>
+<li><code>effective_date_start</code></li>
+<li><code>effective_date_start_timestamp</code></li>
+<li><code>is_current_record</code></li>
+<li><code>is_prestart</code></li>
+<li><code>language_code\_\_code_value</code></li>
+<li><code>language_code\_\_effective_date</code></li>
+<li><code>language_code\_\_long_name</code></li>
+<li><code>language_code\_\_short_name</code></li>
+<li><code>person\_\_birth_name\_\_formatted_name</code></li>
+<li><code>person\_\_birth_name\_\_generation_affix_code\_\_code_value</code></li>
+<li><code>person\_\_birth_name\_\_generation_affix_code\_\_effective_date</code></li>
+<li><code>person\_\_birth_name\_\_generation_affix_code\_\_long_name</code></li>
+<li><code>person\_\_birth_name\_\_generation_affix_code\_\_short_name</code></li>
+<li><code>person\_\_birth_name\_\_given_name</code></li>
+<li><code>person\_\_birth_name\_\_middle_name</code></li>
+<li><code>person\_\_birth_name\_\_nick_name</code></li>
+<li><code>person\_\_birth_name\_\_qualification_affix_code\_\_code_value</code></li>
+<li><code>person\_\_birth_name\_\_qualification_affix_code\_\_effective_date</code></li>
+<li><code>person\_\_birth_name\_\_qualification_affix_code\_\_long_name</code></li>
+<li><code>person\_\_birth_name\_\_qualification_affix_code\_\_short_name</code></li>
+<li><code>person\_\_disabled_indicator</code></li>
+<li><code>person\_\_ethnicity_code\_\_effective_date</code></li>
+<li><code>person\_\_ethnicity_code_name</code></li>
+<li><code>person\_\_family_name_1</code></li>
+<li><code>person\_\_gender_code\_\_effective_date</code></li>
+<li><code>person\_\_gender_code\_\_long_name</code></li>
+<li><code>person\_\_gender_code_name</code></li>
+<li><code>person\_\_gender_self_identity_code\_\_effective_date</code></li>
+<li><code>person\_\_gender_self_identity_code\_\_long_name</code></li>
+<li><code>person\_\_given_name</code></li>
+<li><code>person\_\_highest_education_level_code\_\_effective_date</code></li>
+<li><code>person\_\_legal_address\_\_country_subdivision_level_1\_\_effective_date</code></li>
+<li><code>person\_\_legal_address\_\_country_subdivision_level_2\_\_effective_date</code></li>
+<li><code>person\_\_legal_address\_\_item_id</code></li>
+<li><code>person\_\_legal_address\_\_name_code\_\_code_value</code></li>
+<li><code>person\_\_legal_address\_\_name_code\_\_effective_date</code></li>
+<li><code>person\_\_legal_address\_\_name_code\_\_long_name</code></li>
+<li><code>person\_\_legal_address\_\_name_code\_\_short_name</code></li>
+<li><code>person\_\_legal_address\_\_type_code\_\_code_value</code></li>
+<li><code>person\_\_legal_address\_\_type_code\_\_effective_date</code></li>
+<li><code>person\_\_legal_address\_\_type_code\_\_long_name</code></li>
+<li><code>person\_\_legal_address\_\_type_code\_\_short_name</code></li>
+<li><code>person\_\_legal_name\_\_generation_affix_code\_\_effective_date</code></li>
+<li><code>person\_\_legal_name\_\_generation_affix_code\_\_long_name</code></li>
+<li><code>person\_\_legal_name\_\_qualification_affix_code\_\_effective_date</code></li>
+<li><code>person\_\_legal_name\_\_qualification_affix_code\_\_long_name</code></li>
+<li><code>person\_\_marital_status_code\_\_long_name</code></li>
+<li><code>person\_\_military_discharge_date</code></li>
+<li><code>person\_\_military_status_code\_\_code_value</code></li>
+<li><code>person\_\_military_status_code\_\_effective_date</code></li>
+<li><code>person\_\_military_status_code\_\_long_name</code></li>
+<li><code>person\_\_military_status_code\_\_short_name</code></li>
+<li><code>person\_\_preferred_gender_pronoun_code\_\_effective_date</code></li>
+<li><code>person\_\_preferred_name\_\_formatted_name</code></li>
+<li><code>person\_\_preferred_name\_\_generation_affix_code\_\_code_value</code></li>
+<li><code>person\_\_preferred_name\_\_generation_affix_code\_\_effective_date</code></li>
+<li><code>person\_\_preferred_name\_\_generation_affix_code\_\_long_name</code></li>
+<li><code>person\_\_preferred_name\_\_generation_affix_code\_\_short_name</code></li>
+<li><code>person\_\_preferred_name\_\_nick_name</code></li>
+<li><code>person\_\_preferred_name\_\_qualification_affix_code\_\_code_value</code></li>
+<li><code>person\_\_preferred_name\_\_qualification_affix_code\_\_effective_date</code></li>
+<li><code>person\_\_preferred_name\_\_qualification_affix_code\_\_long_name</code></li>
+<li><code>person\_\_preferred_name\_\_qualification_affix_code\_\_short_name</code></li>
+<li><code>person\_\_race_code\_\_effective_date</code></li>
+<li><code>person\_\_race_code\_\_identification_method_code\_\_effective_date</code></li>
+<li><code>person\_\_race_code\_\_identification_method_code\_\_long_name</code></li>
+<li><code>person\_\_race_code_name</code></li>
+<li><code>person\_\_tobacco_user_indicator</code></li>
+<li><code>race_ethnicity_reporting</code></li>
+<li><code>worker_dates\_\_termination_date</code></li>
+<li><code>worker_hire_date_recent</code></li>
+<li><code>worker_id\_\_scheme_code\_\_code_value</code></li>
+<li><code>worker_id\_\_scheme_code\_\_effective_date</code></li>
+<li><code>worker_id\_\_scheme_code\_\_long_name</code></li>
+<li><code>worker_id\_\_scheme_code\_\_short_name</code></li>
+<li><code>worker_status\_\_status_code\_\_code_value_lag</code></li>
+<li><code>worker_status\_\_status_code\_\_effective_date</code></li>
+</ul>
+<hr />
+<h2 id="summary">Summary</h2>
+<table>
+<thead>
+<tr>
+<th>Category</th>
+<th>Columns</th>
+<th>Models</th>
+<th>Action</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>PS Extension (KIPP custom)</td>
+<td>637</td>
+<td>8</td>
+<td>Hand-write descriptions</td>
+</tr>
+<tr>
+<td>PS Derived</td>
+<td>35</td>
+<td>12</td>
+<td>Describe from staging SQL logic</td>
+</tr>
+<tr>
+<td>PS Core unmatched</td>
+<td>48</td>
+<td>18</td>
+<td>Manual PDF lookup or parser improvement</td>
+</tr>
+<tr>
+<td>ADP unmatched</td>
+<td>80</td>
+<td>1</td>
+<td>Describe from staging SQL or API docs</td>
+</tr>
+<tr>
+<td><strong>Total unmatched</strong></td>
+<td><strong>800</strong></td>
+<td></td>
+<td></td>
+</tr>
+</tbody>
+</table>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+          <button type="button" class="md-top md-icon" data-md-component="top" hidden>
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8z"/></svg>
+  Back to top
+</button>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+    <div class="md-copyright__highlight">
+      Copyright &copy; KIPP TEAM & Family Schools
+    </div>
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      
+      <script id="__config" type="application/json">{"annotate": null, "base": "../../..", "features": ["content.action.edit", "content.code.copy", "navigation.instant", "navigation.indexes", "navigation.sections", "navigation.tabs", "navigation.tabs.sticky", "navigation.top", "search.highlight", "search.suggest", "toc.follow"], "search": "../../../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+    
+    
+      <script src="../../../assets/javascripts/bundle.79ae519e.min.js"></script>
+      
+    
+  </body>
+</html>

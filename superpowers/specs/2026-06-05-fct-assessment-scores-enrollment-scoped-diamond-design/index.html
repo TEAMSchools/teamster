@@ -1,0 +1,1771 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+        <meta name="description" content="Data engineering platform for KIPP TEAM & Family Schools">
+      
+      
+      
+      
+      
+      
+        
+      
+      
+      <link rel="icon" href="../../../images/truck.svg">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.6">
+    
+    
+      
+        <title>Design: make fct_assessment_scores_enrollment_scoped truly enrollment-scoped - teamster</title>
+      
+    
+    
+      <link rel="stylesheet" href="../../../assets/stylesheets/main.484c7ddc.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+    <script>__md_scope=new URL("../../..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+  </head>
+  
+  
+    <body dir="ltr">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#design-make-fct_assessment_scores_enrollment_scoped-truly-enrollment-scoped" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+  
+
+<header class="md-header md-header--shadow md-header--lifted" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href="../../.." title="teamster" class="md-header__button md-logo" aria-label="teamster" data-md-component="logo">
+      
+  <img src="../../../images/truck.svg" alt="logo">
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            teamster
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              Design: make fct_assessment_scores_enrollment_scoped truly enrollment-scoped
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+        <div class="md-search__suggest" data-md-component="search-suggest"></div>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      
+    
+    
+      <div class="md-header__source">
+        <a href="https://github.com/TEAMSchools/teamster" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M173.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6m-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3m44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9M252.8 8C114.1 8 8 113.3 8 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C436.2 457.8 504 362.9 504 252 504 113.3 391.5 8 252.8 8M105.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1m-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7m32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1m-11.4-14.7c-1.6 1-1.6 3.6 0 5.9s4.3 3.3 5.6 2.3c1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2"/></svg>
+  </div>
+  <div class="md-source__repository">
+    TEAMSchools/teamster
+  </div>
+</a>
+      </div>
+    
+  </nav>
+  
+    
+      
+<nav class="md-tabs" aria-label="Tabs" data-md-component="tabs">
+  <div class="md-grid">
+    <ul class="md-tabs__list">
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../../.." class="md-tabs__link">
+        
+  
+  
+    
+  
+  Home
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../../guides/" class="md-tabs__link">
+          
+  
+  
+    
+  
+  Guides
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../../troubleshooting/dagster/" class="md-tabs__link">
+          
+  
+  
+    
+  
+  Troubleshooting
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../../reference/architecture/" class="md-tabs__link">
+          
+  
+  
+    
+  
+  Reference
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../../../reference/automations/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  Automations
+
+      </a>
+    </li>
+  
+
+      
+    </ul>
+  </div>
+</nav>
+    
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+  
+
+
+<nav class="md-nav md-nav--primary md-nav--lifted" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href="../../.." title="teamster" class="md-nav__button md-logo" aria-label="teamster" data-md-component="logo">
+      
+  <img src="../../../images/truck.svg" alt="logo">
+
+    </a>
+    teamster
+  </label>
+  
+    <div class="md-nav__source">
+      <a href="https://github.com/TEAMSchools/teamster" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M173.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6m-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3m44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9M252.8 8C114.1 8 8 113.3 8 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C436.2 457.8 504 362.9 504 252 504 113.3 391.5 8 252.8 8M105.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1m-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7m32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1m-11.4-14.7c-1.6 1-1.6 3.6 0 5.9s4.3 3.3 5.6 2.3c1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2"/></svg>
+  </div>
+  <div class="md-source__repository">
+    TEAMSchools/teamster
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../.." class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Home
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+          
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2" >
+        
+          
+          <div class="md-nav__link md-nav__container">
+            <a href="../../../guides/" class="md-nav__link ">
+              
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Guides
+  
+
+    
+  </span>
+  
+  
+
+            </a>
+            
+              
+              <label class="md-nav__link " for="__nav_2" id="__nav_2_label" tabindex="0">
+                <span class="md-nav__icon md-icon"></span>
+              </label>
+            
+          </div>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_2_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_2">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Guides
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/codespaces/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Codespaces
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/local-development/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Local Development
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/dagster/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Dagster
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/google-sheets/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Google Sheets & Forms
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/adp-location-renames/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ADP Location Renames
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/dbt-development/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    dbt Development
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/sftp-integration/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    SFTP Integration
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/superpowers/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Claude Code & Superpowers
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/cube/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Cube
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/claude-cube-connector/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Claude + Cube Connector
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3" >
+        
+          
+          <label class="md-nav__link" for="__nav_3" id="__nav_3_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Troubleshooting
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_3">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Troubleshooting
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../troubleshooting/dagster/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Dagster
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../troubleshooting/dbt/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    dbt
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../troubleshooting/vscode/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    VS Code
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4" >
+        
+          
+          <label class="md-nav__link" for="__nav_4" id="__nav_4_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Reference
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_4_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_4">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Reference
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/architecture/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Architecture
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/adding-an-integration/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Adding an Integration
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/io-managers/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    IO Managers
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/fiscal-year-partitioning/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Fiscal Year & Partitioning
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/dbt-conventions/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    dbt Conventions
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/finalsite-focus-import/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Finalsite to Focus Import
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/marts-data-models/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Marts Data Models
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/automation-conditions/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Automation Conditions
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/automations/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Automations
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#problem" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Problem
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#goal" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Goal
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#profiling-prod-14210311-rows" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Profiling (prod, 14,210,311 rows)
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#decisions" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Decisions
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#components" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Components
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Components">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#1-int_assessments__resolved_section_enrollments-expanded" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        1. int_assessments__resolved_section_enrollments (expanded)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#2-state-subject-crosswalk-component-for-tier-1-state" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        2. State subject crosswalk (Component for Tier 1, state)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#3-state-test-date-thread-it-through-do-not-bypass-the-intermediates" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        3. State test date — thread it through (do not bypass the intermediates)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#4-fct_assessment_scores_enrollment_scoped-the-fact" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        4. fct_assessment_scores_enrollment_scoped (the fact)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#5-yaml-contract-exposure" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        5. YAML / contract / exposure
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#hash-change-discipline" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Hash-change discipline
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#testing" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Testing
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#out-of-scope-follow-ups" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Out of scope / follow-ups
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#risks" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Risks
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+  
+    <a href="https://github.com/TEAMSchools/teamster/edit/main/docs/superpowers/specs/2026-06-05-fct-assessment-scores-enrollment-scoped-diamond-design.md" title="Edit this page" class="md-content__button md-icon" rel="edit">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M10 20H6V4h7v5h5v3.1l2-2V8l-6-6H6c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h4zm10.2-7c.1 0 .3.1.4.2l1.3 1.3c.2.2.2.6 0 .8l-1 1-2.1-2.1 1-1c.1-.1.2-.2.4-.2m0 3.9L14.1 23H12v-2.1l6.1-6.1z"/></svg>
+    </a>
+  
+  
+
+
+<h1 id="design-make-fct_assessment_scores_enrollment_scoped-truly-enrollment-scoped">Design: make <code>fct_assessment_scores_enrollment_scoped</code> truly enrollment-scoped</h1>
+<ul>
+<li><strong>Issue:</strong> <a href="https://github.com/TEAMSchools/teamster/issues/4135">#4135</a></li>
+<li><strong>Date:</strong> 2026-06-05</li>
+<li><strong>Type:</strong> refactor (dbt)</li>
+</ul>
+<h2 id="problem">Problem</h2>
+<p><code>fct_assessment_scores_enrollment_scoped</code> carries two FK routes to
+<code>dim_students</code>:</p>
+<ol>
+<li>Direct: <code>student_key</code> → <code>dim_students</code></li>
+<li>Chain: <code>student_section_enrollment_key</code> → <code>dim_student_section_enrollments</code> →
+   <code>dim_student_enrollments</code> → <code>dim_students</code></li>
+</ol>
+<p>This is a diamond path, which the marts strict-chain convention prohibits
+(<code>src/dbt/kipptaf/models/marts/CLAUDE.md</code> → "Strict-chain traversal").</p>
+<p>The direct <code>student_key</code> exists today only because the section-enrollment chain
+is <strong>non-total</strong>: <code>student_section_enrollment_key</code> is null for all state
+assessments and for unresolved internal rows, so the chain cannot reach the
+student for those rows. The fact mixes two implicit scopes (section-resolved
+internal interims; student-only state tests) behind one grain.</p>
+<h2 id="goal">Goal</h2>
+<p>Make the fact live up to its name: every retained row resolves to a section
+enrollment, so the student is reached through a single chain. Eliminate the
+direct <code>student_key</code> FK and the diamond, without losing student attribution.</p>
+<h2 id="profiling-prod-14210311-rows">Profiling (prod, 14,210,311 rows)</h2>
+<table>
+<thead>
+<tr>
+<th>Tier</th>
+<th>Rows</th>
+<th>%</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Truly unattributable (no student at all)</td>
+<td>39</td>
+<td>0.0%</td>
+</tr>
+<tr>
+<td>Known student, no section (today)</td>
+<td>604,662</td>
+<td>4.3%</td>
+</tr>
+<tr>
+<td>Already section-resolved</td>
+<td>13,605,610</td>
+<td>95.7%</td>
+</tr>
+</tbody>
+</table>
+<p>The "known student, no section" tier breaks down as <strong>505,143 internal / 9,577
+students</strong>, <strong>77,626 state / 13,491 students</strong>, 21,893 other. The unresolved
+population is mostly <em>internal</em> resolution gaps (replacement curriculum, ES
+Writing, advanced-math carve-out, enrollment non-overlap), not state — so a
+fallback tier does the heavy lifting and the state crosswalk is precision on
+top.</p>
+<p>Homeroom coverage: <strong>99% of student-years (71,099 / 71,799 since AY2018) have an
+<code>HR</code> enrollment.</strong> The 1% gap is dominated by Paterson AY2024–25 (the newest
+region, 463 of ~700 student-years); the remainder is scattered single/double
+digits. Homeroom is a real course-enrollment (<code>cc</code>) row
+(<code>courses_credittype in ('HR', 'Homeroom')</code>), so it produces a valid
+<code>student_section_enrollment_key</code>.</p>
+<h2 id="decisions">Decisions</h2>
+<ol>
+<li><strong>Single fact.</strong> The only rows an enrollment-scoped fact loses are the 39
+   truly unattributable scores. There is no orphan-score population worth a
+   parallel student-scoped fact. The 604K "no section" rows are not lost — they
+   resolve to a section under the new resolver and stay in the fact.</li>
+<li><strong>Grain = section enrollment (Approach A).</strong> The fact keeps
+   <code>student_section_enrollment_key</code> as its single enrollment FK. Rejected
+   alternatives: stint grain (<code>student_enrollment_key</code>) discards section-level
+   analysis, which is the model's primary use case; a score→section bridge is
+   wrong because the relationship is M:1 (the resolver dedups to one section per
+   score) and a bridge would relocate the diamond onto the bridge node (two
+   paths to <code>dim_students</code>), which the same no-diamond rule prohibits.</li>
+<li><strong>Resolver stays an intermediate.</strong>
+   <code>int_assessments__resolved_section_enrollments</code> remains an <code>int_</code> model (not
+   folded into the fact, not promoted to marts). Rationale: it keeps an
+   independent uniqueness-test seam that catches resolver fan-out before it
+   corrupts the fact PK; it keeps the fact thin; and it is the natural
+   consolidation point for internal + state + homeroom resolution.</li>
+<li><strong>Resolution is total by construction.</strong> Rows that resolve to no section
+   (subject nor homeroom) are excluded from the fact via INNER join — they join
+   the 39 as an upstream match-rate concern, not a mart row.</li>
+</ol>
+<h2 id="components">Components</h2>
+<h3 id="1-int_assessments__resolved_section_enrollments-expanded">1. <code>int_assessments__resolved_section_enrollments</code> (expanded)</h3>
+<p>Becomes the single resolver for <strong>all</strong> scores (internal + state). Today it
+filters <code>is_internal_assessment</code>; that filter is removed and a state branch is
+added. Each score resolves to one section via an ordered tier cascade; the first
+tier that hits wins and stamps <code>resolution_type</code>.</p>
+<p><strong>Enrollment source — read the inventory directly.</strong> The resolver stops sourcing
+its enrollments from <code>int_assessments__scaffold</code> and instead joins
+<code>int_assessments__course_enrollments</code> directly. The two assessment models are
+<strong>inventory vs. selection</strong>, not duplicates:
+<code>int_assessments__course_enrollments</code> is the enrollment inventory (one row per
+student course enrollment, carrying <code>cc_dcid</code>, <code>courses_credittype</code>,
+<code>illuminate_subject_area</code>, dates, region, and the illuminate year/grade offsets
+— including 88,467 <code>HR</code> rows, all with <code>cc_dcid</code>); the resolver is the selection
+(pick the one enrollment active at test time). Today resolution is routed
+through the scaffold, which has already inner-joined the inventory by
+<code>subject_area + administered_at</code> (and excluded advanced-math) — duplicating the
+subject+date matching, and, fatally, <strong>internal-only</strong>: the scaffold's state
+branches carry <code>cc_dcid = null</code>, so it can never yield a state→section mapping.
+Reading the inventory directly (a) unifies internal + state against one source,
+(b) removes the duplicated matching, and (c) gets the <code>HR</code> tier for free since
+the inventory already carries it. The scaffold is unchanged and keeps its own
+job (building the assessment×student grid for <code>response_rollup</code>); it is simply
+no longer the resolver's enrollment source.</p>
+<table>
+<thead>
+<tr>
+<th>Tier</th>
+<th><code>resolution_type</code></th>
+<th>How</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>1</td>
+<td><code>subject_section</code></td>
+<td>Subject-matching course section active on the anchor date. Internal: existing <code>illuminate_subject_area</code> logic. State: new state-subject → course-subject crosswalk (Component 2).</td>
+</tr>
+<tr>
+<td>2</td>
+<td><code>homeroom</code></td>
+<td>The student's <code>HR</code> section for the academic year (<code>courses_credittype = 'HR'</code>).</td>
+</tr>
+<tr>
+<td>—</td>
+<td><em>(none)</em></td>
+<td>No subject section and no homeroom → row excluded from the fact.</td>
+</tr>
+</tbody>
+</table>
+<p>There is no <code>other_enrollment</code> / any-section tier (explicitly dropped). Output
+grain and uniqueness test cover internal and state keys; the resolver dedups to
+one section per score (M:1).</p>
+<p><strong>Selection rule: the section active on the assessment date wins.</strong> Both
+branches resolve by picking the subject-matching enrollment whose
+<code>[entry_date, exit_date)</code> window contains an anchor date — this is the
+deterministic tiebreaker for mid-year section switches.</p>
+<ul>
+<li><strong>Internal:</strong> the anchor is the sitting date (<code>date_taken</code>), falling back to
+  the scheduled administration date — as today.</li>
+<li><strong>State:</strong> a <strong>real per-student test date</strong> is available in source and must be
+  threaded through (Component 3); the state branch anchors on it, same
+  window-containment pick as internal. No season proxy.</li>
+</ul>
+<p>Academic year still scopes the candidate set, so the state branch reconciles the
+inventory's illuminate <code>+1</code> offset
+(<code>illuminate_academic_year = cc_academic_year + 1</code>) against the state score's
+<code>academic_year</code> (match on raw <code>cc_academic_year</code>) before the date-containment
+pick.</p>
+<h3 id="2-state-subject-crosswalk-component-for-tier-1-state">2. State subject crosswalk (Component for Tier 1, state)</h3>
+<p>State resolution needs to map
+<code>(state subject_area / discipline) → course subject</code> so the resolver knows which
+section type to look for: NJSLA ELA → ELA, NJSLA Math → Math, NJSLA Science →
+Science, NJGPA → ELA / Math, FAST → ELA / Math.</p>
+<p><strong>Start with an inline <code>CASE</code>.</strong> Derive the mapping as a named column (e.g.
+<code>state_course_subject</code>) in a CTE inside the resolver — the state subject set is
+small and stable, and an inline <code>CASE</code> avoids a new external dependency for the
+first cut. (This is a plain derived column, not a <code>generate_surrogate_key</code>
+input, so the CLAUDE.md "no inline CASE in surrogate keys" rule does not apply.)
+Graduate to a dbt seed or a <code>course_subject_crosswalk</code> sheet tab later if Ops
+needs to edit the mapping without a code change. State subjects with no clean
+course mapping fall through to Tier 2 (homeroom).</p>
+<h3 id="3-state-test-date-thread-it-through-do-not-bypass-the-intermediates">3. State test date — thread it through (do not bypass the intermediates)</h3>
+<p>A real per-student test date exists in the raw state sources and is dropped
+before it reaches the fact. <strong>Where it lives differs by source, and part of the
+threading is cross-project</strong> (verified against prod <code>INFORMATION_SCHEMA</code>):</p>
+<ul>
+<li><strong>NJSLA / NJSLA Science / PARCC:</strong> kipptaf <code>stg_pearson__*</code> <strong>already expose</strong>
+  <code>unit{1..4}online{start,end}datetime</code> (9–10 cols each). Kipptaf-only: derive
+  one <code>test_date</code> (earliest online unit start, coalesced with the paper attempt
+  date) on the <code>stg_pearson__*</code> models and add it to the
+  <code>int_pearson__all_assessments</code> <code>union_relations</code> <code>include</code> list +
+  <code>transformations</code> select.</li>
+<li><strong>NJGPA:</strong> kipptaf <code>stg_pearson__njgpa</code> does <strong>not</strong> expose the unit datetimes
+  — they are dropped upstream (pearson package / <code>kipppaterson</code>
+  <code>int_pearson__njgpa</code> intersection). Threading NJGPA requires an upstream
+  (cross-project) change; scope/confirm during the plan.</li>
+<li><strong>FLDOE (FAST / EOC / Science):</strong> <code>kippmiami stg_fldoe__*</code> parse <code>date_taken</code>
+  (and <code>test_completion_date</code>) to <code>DATE</code>, but the <strong>district</strong>
+  <code>int_fldoe__all_assessments</code> (which kipptaf unions via
+  <code>source("kippmiami_fldoe", …)</code>) does not select it. Cross-project: add
+  <code>date_taken</code> to the <strong>kippmiami</strong> <code>int_fldoe__all_assessments</code>, then carry it
+  through the kipptaf one.</li>
+</ul>
+<p><strong>We keep sourcing the <code>int_*__all_assessments</code> models</strong> — they do the
+multi-test-type union + crosswalk + standardization the fact needs; bypassing
+them to read staging directly would duplicate that. The fix is to stop the
+intermediates from dropping the date.</p>
+<p><strong>Sequencing:</strong> the FLDOE (and NJGPA) pieces touch district/package models
+consumed by kipptaf via <code>source()</code>, so per <code>src/dbt/CLAUDE.md</code> ("kipptaf source
+consumers of district columns") they need either a <strong>two-PR district-first
+sequence</strong> or the <strong>single-PR cross-project clone workflow</strong>
+(<code>src/dbt/kipptaf/CLAUDE.md</code>). The NJSLA/Science/PARCC slice and everything from
+the resolver down is kipptaf-only.</p>
+<h3 id="4-fct_assessment_scores_enrollment_scoped-the-fact">4. <code>fct_assessment_scores_enrollment_scoped</code> (the fact)</h3>
+<ul>
+<li>INNER joins the expanded resolver (unresolved rows drop → totality by
+  construction).</li>
+<li>Drops <code>student_key</code> and the entire state-branch <code>dim_students</code> join.</li>
+<li>State <code>test_date_key</code> is now populated with the real threaded test date (today
+  the state branch sets it <code>null</code>) — the <code>dim_dates</code> FK becomes meaningful for
+  state rows, a bonus fix.</li>
+<li>Adds <code>enrollment_resolution</code> as a degenerate dimension (the <code>resolution_type</code>
+  above) so course-level rollups can filter to <code>subject_section</code> and exclude
+  coarse <code>homeroom</code> rows.</li>
+<li>Stays thin: union the internal + state score rows → one INNER join to the
+  resolver → project columns. All section-resolution complexity lives in the
+  resolver.</li>
+</ul>
+<p>Result: single FK to <code>dim_student_section_enrollments</code>, single chain to
+<code>dim_students</code>, diamond eliminated.</p>
+<h3 id="5-yaml-contract-exposure">5. YAML / contract / exposure</h3>
+<ul>
+<li>Remove the <code>student_key</code> column block (description, FK constraint,
+  <code>relationships</code> test) from
+  <code>marts/facts/properties/fct_assessment_scores_enrollment_scoped.yml</code>.</li>
+<li>Add the <code>enrollment_resolution</code> column (degenerate dim; <code>accepted_values</code>
+  test: <code>subject_section</code>, <code>homeroom</code>).</li>
+<li>Tighten <code>student_section_enrollment_key</code> description (now populated for every
+  row; document the tier semantics and that <code>homeroom</code> rows are coarse).</li>
+<li>Update the resolver's properties YAML: drop the internal-only language, add
+  the state branch description, keep/tighten the uniqueness test.</li>
+<li>Confirm the Cube exposure in <code>models/exposures/cube.yml</code> still validates;
+  <code>src/cube/model/</code> does not currently read <code>student_key</code>, so no Cube model
+  change is expected — verify by grep before merge.</li>
+</ul>
+<h2 id="hash-change-discipline">Hash-change discipline</h2>
+<p><code>assessment_score_key</code> (the PK) is hashed from score-grain inputs
+(<code>student_number</code> + assessment identifiers), <strong>not</strong> from the FKs — so dropping
+<code>student_key</code> and adding rows via state resolution does <strong>not</strong> change the PK
+hash. <code>student_section_enrollment_key</code> is computed by the resolver
+(<code>surrogate_key(cc_dcid, _dbt_source_project)</code>); its value set changes for
+previously-unresolved rows (null → a real key), which is expected and is the
+point of the change. No consumer hashes <code>student_key</code>, so its removal is a
+column drop, not a hash migration.</p>
+<h2 id="testing">Testing</h2>
+<ul>
+<li>Resolver: uniqueness on its output grain (one section per score) — the primary
+  fan-out guard.</li>
+<li>Fact: existing <code>assessment_score_key</code> <code>unique</code> + <code>not_null</code>; <code>relationships</code>
+  on <code>student_section_enrollment_key</code> → <code>dim_student_section_enrollments</code> (now
+  expected ~100% populated); <code>accepted_values</code> on <code>enrollment_resolution</code>.</li>
+<li>Post-build validation in the PR-branch schema: confirm
+  <code>student_section_enrollment_key</code> is ~100% non-null and the fact row count
+  equals prior <code>n_resolved + n_student_no_section</code> minus the unresolved residual
+  (the 39 + no-homeroom tail), per <code>marts/CLAUDE.md</code> "Verify FK population".</li>
+<li>Build:
+  <code>uv run dbt build --select int_assessments__resolved_section_enrollments+ fct_assessment_scores_enrollment_scoped+</code>
+  against kipptaf.</li>
+</ul>
+<h2 id="out-of-scope-follow-ups">Out of scope / follow-ups</h2>
+<ul>
+<li><strong>The 39 truly-unattributable scores</strong> (state rows that do not match a student
+  in <code>dim_students</code>) get a separate follow-up issue to investigate the identity
+  match, not addressed here.</li>
+<li><strong>No-homeroom residual</strong> (mostly Paterson AY2024–25): these rows drop from the
+  fact. Surfaced via the resolver match-rate, tracked with the 39-row follow-up
+  rather than papered over with an <code>other_enrollment</code> tier.</li>
+<li><strong>State crosswalk gaps</strong> (subjects with no clean course): resolve to homeroom
+  by design; revisit only if a precise-section need emerges.</li>
+</ul>
+<h2 id="risks">Risks</h2>
+<ul>
+<li>Mid-year section switches are resolved deterministically by date-window
+  containment (the section active on the assessment date wins), using a real
+  test date for both internal and state. Pearson tests span multiple online
+  units across days, so the derived <code>test_date</code> must pick a deterministic unit
+  (e.g. earliest unit start); a switch landing mid-test could attribute to the
+  section active at the chosen unit. Acceptable; the <code>enrollment_resolution</code>
+  flag does not distinguish this from a clean pick.</li>
+<li>Threading <code>test_date</code> touches <code>stg_pearson__*</code> and the
+  <code>int_*__all_assessments</code> models (additive). Verify no other consumer breaks on
+  the added column, and that <code>test_date</code> parses cleanly — the raw Pearson
+  datetimes are <code>STRING</code>.</li>
+<li>Expanding the resolver to all scores increases its build cost; the fact's
+  INNER join replaces a LEFT join, so verify no unexpected row loss beyond the
+  documented residual.</li>
+</ul>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+          <button type="button" class="md-top md-icon" data-md-component="top" hidden>
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8z"/></svg>
+  Back to top
+</button>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+    <div class="md-copyright__highlight">
+      Copyright &copy; KIPP TEAM & Family Schools
+    </div>
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      
+      <script id="__config" type="application/json">{"annotate": null, "base": "../../..", "features": ["content.action.edit", "content.code.copy", "navigation.instant", "navigation.indexes", "navigation.sections", "navigation.tabs", "navigation.tabs.sticky", "navigation.top", "search.highlight", "search.suggest", "toc.follow"], "search": "../../../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+    
+    
+      <script src="../../../assets/javascripts/bundle.79ae519e.min.js"></script>
+      
+    
+  </body>
+</html>

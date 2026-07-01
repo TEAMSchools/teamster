@@ -1,0 +1,1797 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+        <meta name="description" content="Data engineering platform for KIPP TEAM & Family Schools">
+      
+      
+      
+      
+      
+      
+        
+      
+      
+      <link rel="icon" href="../../../images/truck.svg">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.6">
+    
+    
+      
+        <title>Finalsite to Focus idempotent imports — design - teamster</title>
+      
+    
+    
+      <link rel="stylesheet" href="../../../assets/stylesheets/main.484c7ddc.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+    <script>__md_scope=new URL("../../..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+  </head>
+  
+  
+    <body dir="ltr">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#finalsite-to-focus-idempotent-imports-design" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+  
+
+<header class="md-header md-header--shadow md-header--lifted" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href="../../.." title="teamster" class="md-header__button md-logo" aria-label="teamster" data-md-component="logo">
+      
+  <img src="../../../images/truck.svg" alt="logo">
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            teamster
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              Finalsite to Focus idempotent imports — design
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+        <div class="md-search__suggest" data-md-component="search-suggest"></div>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      
+    
+    
+      <div class="md-header__source">
+        <a href="https://github.com/TEAMSchools/teamster" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M173.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6m-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3m44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9M252.8 8C114.1 8 8 113.3 8 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C436.2 457.8 504 362.9 504 252 504 113.3 391.5 8 252.8 8M105.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1m-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7m32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1m-11.4-14.7c-1.6 1-1.6 3.6 0 5.9s4.3 3.3 5.6 2.3c1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2"/></svg>
+  </div>
+  <div class="md-source__repository">
+    TEAMSchools/teamster
+  </div>
+</a>
+      </div>
+    
+  </nav>
+  
+    
+      
+<nav class="md-tabs" aria-label="Tabs" data-md-component="tabs">
+  <div class="md-grid">
+    <ul class="md-tabs__list">
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../../.." class="md-tabs__link">
+        
+  
+  
+    
+  
+  Home
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../../guides/" class="md-tabs__link">
+          
+  
+  
+    
+  
+  Guides
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../../troubleshooting/dagster/" class="md-tabs__link">
+          
+  
+  
+    
+  
+  Troubleshooting
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../../reference/architecture/" class="md-tabs__link">
+          
+  
+  
+    
+  
+  Reference
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../../../reference/automations/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  Automations
+
+      </a>
+    </li>
+  
+
+      
+    </ul>
+  </div>
+</nav>
+    
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+  
+
+
+<nav class="md-nav md-nav--primary md-nav--lifted" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href="../../.." title="teamster" class="md-nav__button md-logo" aria-label="teamster" data-md-component="logo">
+      
+  <img src="../../../images/truck.svg" alt="logo">
+
+    </a>
+    teamster
+  </label>
+  
+    <div class="md-nav__source">
+      <a href="https://github.com/TEAMSchools/teamster" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M173.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6m-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3m44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9M252.8 8C114.1 8 8 113.3 8 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C436.2 457.8 504 362.9 504 252 504 113.3 391.5 8 252.8 8M105.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1m-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7m32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1m-11.4-14.7c-1.6 1-1.6 3.6 0 5.9s4.3 3.3 5.6 2.3c1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2"/></svg>
+  </div>
+  <div class="md-source__repository">
+    TEAMSchools/teamster
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../.." class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Home
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+          
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2" >
+        
+          
+          <div class="md-nav__link md-nav__container">
+            <a href="../../../guides/" class="md-nav__link ">
+              
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Guides
+  
+
+    
+  </span>
+  
+  
+
+            </a>
+            
+              
+              <label class="md-nav__link " for="__nav_2" id="__nav_2_label" tabindex="0">
+                <span class="md-nav__icon md-icon"></span>
+              </label>
+            
+          </div>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_2_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_2">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Guides
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/codespaces/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Codespaces
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/local-development/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Local Development
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/dagster/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Dagster
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/google-sheets/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Google Sheets & Forms
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/adp-location-renames/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ADP Location Renames
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/dbt-development/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    dbt Development
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/sftp-integration/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    SFTP Integration
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/superpowers/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Claude Code & Superpowers
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/cube/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Cube
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/claude-cube-connector/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Claude + Cube Connector
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3" >
+        
+          
+          <label class="md-nav__link" for="__nav_3" id="__nav_3_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Troubleshooting
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_3">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Troubleshooting
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../troubleshooting/dagster/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Dagster
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../troubleshooting/dbt/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    dbt
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../troubleshooting/vscode/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    VS Code
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4" >
+        
+          
+          <label class="md-nav__link" for="__nav_4" id="__nav_4_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Reference
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_4_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_4">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Reference
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/architecture/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Architecture
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/adding-an-integration/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Adding an Integration
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/io-managers/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    IO Managers
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/fiscal-year-partitioning/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Fiscal Year & Partitioning
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/dbt-conventions/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    dbt Conventions
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/finalsite-focus-import/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Finalsite to Focus Import
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/marts-data-models/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Marts Data Models
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/automation-conditions/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Automation Conditions
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/automations/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Automations
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#problem" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Problem
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#current-architecture" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Current architecture
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Current architecture">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#identity-match-key" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Identity / match key
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#requirements" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Requirements
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#design" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Design
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Design">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#req-5-8400-prefix-kipptaf-all-five-models" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Req 5 — 8400 prefix (kipptaf, all five models)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#req-4-enrollment-withdraw-codes" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Req 4 — enrollment + withdraw codes
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#req-2-demographics-diff-kippmiami" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Req 2 — demographics diff (kippmiami)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#req-3-enrollment-diff-with-code-import-once-kippmiami" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Req 3 — enrollment diff with code import-once (kippmiami)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#req-1-import-once-for-addresses-contacts-linked-students-kippmiami" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Req 1 — import once for addresses / contacts / linked students (kippmiami)
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#files" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Files
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#testing" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Testing
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#open-questions-assumptions" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Open questions / assumptions
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#out-of-scope" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Out of scope
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+  
+    <a href="https://github.com/TEAMSchools/teamster/edit/main/docs/superpowers/specs/2026-06-29-finalsite-focus-idempotent-imports-design.md" title="Edit this page" class="md-content__button md-icon" rel="edit">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M10 20H6V4h7v5h5v3.1l2-2V8l-6-6H6c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h4zm10.2-7c.1 0 .3.1.4.2l1.3 1.3c.2.2.2.6 0 .8l-1 1-2.1-2.1 1-1c.1-.1.2-.2.4-.2m0 3.9L14.1 23H12v-2.1l6.1-6.1z"/></svg>
+    </a>
+  
+  
+
+
+<h1 id="finalsite-to-focus-idempotent-imports-design">Finalsite to Focus idempotent imports — design</h1>
+<p>Tracking issue: <a href="https://github.com/TEAMSchools/teamster/issues/4279">#4279</a>
+(closes <a href="https://github.com/TEAMSchools/teamster/issues/4208">#4208</a>).</p>
+<h2 id="problem">Problem</h2>
+<p>The five <code>rpt_focus__*</code> SFTP extracts (Demographics, Student_Enrollment,
+Addresses, Contacts, Linked_Students) re-emit <strong>every</strong> in-scope Finalsite row
+on every run. Nothing compares the outbound data to what already lives in Focus,
+so Focus is asked to re-import unchanged rows continuously and entry/withdrawal
+codes risk being overwritten. We also need to resolve the #4208 enrollment-code
+gap and apply the Florida-required student-id prefix.</p>
+<h2 id="current-architecture">Current architecture</h2>
+<div class="highlight"><pre><span></span><code>Finalsite (API)  -&gt;  kipptaf_extracts.rpt_focus__*   (desired state, all rows)
+                          |  source(&quot;kipptaf_extracts&quot;, ...)
+                          v
+                     kippmiami_extracts.rpt_focus__*  (thin pass-through)
+                          |  Dagster build_bigquery_query_sftp_asset
+                          v
+                     Focus SFTP  incoming/*.csv
+</code></pre></div>
+<ul>
+<li>Desired-state logic lives in <code>kipptaf</code> and reads <code>stg_finalsite__*</code>,
+  <code>int_finalsite__*</code>, and Google-Sheets crosswalks.</li>
+<li>The <code>kippmiami</code> models are pass-throughs that the Dagster extract reads.</li>
+<li>The <code>focus</code> dbt package (current Focus SIS state, dlt-loaded) is a package of
+  <code>kippmiami</code> <strong>only</strong> — <code>kipptaf</code> cannot reach it.</li>
+</ul>
+<h3 id="identity-match-key">Identity / match key</h3>
+<p><code>int_finalsite__contact_id_attributes.focus_student_id</code> is a 6-digit
+Finalsite-minted id (e.g. <code>305000</code>). Focus <code>students.student_id</code> is the 10-digit
+Florida id (e.g. <code>8400305000</code>). The relationship is:</p>
+<div class="highlight"><pre><span></span><code>focus.students.student_id = 8400000000 + finalsite.focus_student_id
+                          = concat(&#39;8400&#39;, focus_student_id)
+</code></pre></div>
+<p>1,376 of 3,088 minted ids already exist in Focus; the remainder are new. After
+requirement 5 (prefix) the exported id equals <code>students.student_id</code> directly, so
+all diffs join on a single clean key.</p>
+<h2 id="requirements">Requirements</h2>
+<ol>
+<li><strong>Addresses, Contacts, Linked Students — import once.</strong> Drop a student from
+   the extract once a row exists in that extract's Focus destination table.</li>
+<li><strong>Demographics — diff.</strong> Emit only unmatched students and students whose
+   populated values differ from Focus.</li>
+<li><strong>Student Enrollment — diff with code exception.</strong> Emit only unmatched and
+   changed records, EXCEPT entry and withdrawal codes, which import once and are
+   never overwritten.</li>
+<li><strong>#4208 codes.</strong> <code>ENROLLMENT_CODE</code> = <code>E05</code> for KG, <code>E01</code> for everyone else.
+   <code>DROP_CODE</code> comes from the Finalsite field <code>fl_state_withdraw_codes_ss</code>.</li>
+<li><strong>8400 id prefix.</strong> Prefix <code>focus_student_id</code> with the constant <code>8400</code> on
+   every emitted student id. Florida-required; Finalsite autoincrement cannot
+   hold the full value.</li>
+</ol>
+<h2 id="design">Design</h2>
+<p>Division of labor stays aligned with the existing layers:</p>
+<ul>
+<li><strong><code>kipptaf</code> (desired state)</strong> — work with no Focus dependency: the 8400 prefix
+  (req 5) and the grade-based enrollment code (req 4). It also carries the raw
+  withdraw label forward for downstream decode.</li>
+<li><strong><code>kippmiami</code> (reconciliation)</strong> — everything that needs current Focus state:
+  the drop-code decode, all diff/import-once filtering, and the new Focus
+  staging models. This is the only layer with both the <code>finalsite</code> and <code>focus</code>
+  packages.</li>
+</ul>
+<h3 id="req-5-8400-prefix-kipptaf-all-five-models">Req 5 — 8400 prefix (kipptaf, all five models)</h3>
+<p>Replace every <code>ida.focus_student_id as &lt;id&gt;</code> projection with:</p>
+<div class="highlight"><pre><span></span><code><span class="n">concat</span><span class="p">(</span><span class="s1">&#39;8400&#39;</span><span class="p">,</span><span class="w"> </span><span class="n">ida</span><span class="p">.</span><span class="n">focus_student_id</span><span class="p">)</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">student_id</span>
+</code></pre></div>
+<p>Applies to <code>rpt_focus__demographics</code> (<code>stdt_id</code>), <code>rpt_focus__addresses</code>,
+<code>rpt_focus__contacts</code>, <code>rpt_focus__student_enrollment</code> (<code>student_id</code>), and both
+ids in <code>rpt_focus__linked_students</code>. <code>concat</code> returns <code>NULL</code> when
+<code>focus_student_id</code> is <code>NULL</code>, preserving current null behavior. In
+<code>linked_students</code>, <code>least</code>/<code>greatest</code> over the prefixed fixed-width strings keep
+the same pair-normalization (equal prefix preserves order).</p>
+<h3 id="req-4-enrollment-withdraw-codes">Req 4 — enrollment + withdraw codes</h3>
+<p><code>kipptaf/.../rpt_focus__student_enrollment.sql</code>:</p>
+<ul>
+<li><strong>ENROLLMENT_CODE</strong> — drop the <code>enrollment_code_crosswalk</code> join. Derive from
+  grade, only for entry actions:</li>
+</ul>
+<div class="highlight"><pre><span></span><code><span class="k">case</span>
+<span class="w">    </span><span class="k">when</span><span class="w"> </span><span class="n">l</span><span class="p">.</span><span class="n">lifecycle_action</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s1">&#39;transfer_out&#39;</span>
+<span class="w">    </span><span class="k">then</span><span class="w"> </span><span class="k">cast</span><span class="p">(</span><span class="k">null</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">string</span><span class="p">)</span>
+<span class="w">    </span><span class="k">when</span><span class="w"> </span><span class="n">l</span><span class="p">.</span><span class="n">grade_canonical_name</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s1">&#39;k&#39;</span>
+<span class="w">    </span><span class="k">then</span><span class="w"> </span><span class="s1">&#39;E05&#39;</span>
+<span class="w">    </span><span class="k">else</span><span class="w"> </span><span class="s1">&#39;E01&#39;</span>
+<span class="k">end</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">enrollment_code</span>
+</code></pre></div>
+<p><code>E05</code> = "Entering PK or KG First Time"; <code>E01</code> = "In District Previous Year"
+  (verified against <code>stg_focus__student_enrollment_codes</code>). Assumption: req 4 is
+  purely grade-based for all entries, including re-enrollers (per the literal
+  instruction "everyone else E01").</p>
+<ul>
+<li><strong>DROP_CODE</strong> — drop the <code>drop_code_crosswalk</code> join. Carry the raw
+  <code>cca.fl_state_withdraw_codes_ss</code> forward as <code>state_withdraw_label</code> (a renamed
+  carrier column). The decode to a Focus short code happens in <code>kippmiami</code>
+  (needs <code>stg_focus__student_enrollment_codes</code>).</li>
+</ul>
+<p>The withdraw label is a human string such as <code>(W02) In District Transfer</code>. It
+matches <code>stg_focus__student_enrollment_codes.title</code> (where <code>type = 'Drop'</code>) at
+100% across the 7 distinct values present, yielding the <code>short_name</code> (<code>W02</code>,
+<code>W3A</code>, <code>W3D</code>, <code>OUTAPP</code>, ...). Decode in <code>kippmiami</code>:</p>
+<div class="highlight"><pre><span></span><code><span class="k">left</span><span class="w"> </span><span class="k">join</span><span class="w"> </span><span class="err">{{</span><span class="w"> </span><span class="k">ref</span><span class="p">(</span><span class="ss">&quot;stg_focus__student_enrollment_codes&quot;</span><span class="p">)</span><span class="w"> </span><span class="err">}}</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">dc</span>
+<span class="w">    </span><span class="k">on</span><span class="w"> </span><span class="n">e</span><span class="p">.</span><span class="n">state_withdraw_label</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">dc</span><span class="p">.</span><span class="n">title</span>
+<span class="w">    </span><span class="k">and</span><span class="w"> </span><span class="n">dc</span><span class="p">.</span><span class="k">type</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s1">&#39;Drop&#39;</span>
+<span class="c1">-- then: dc.short_name as drop_code</span>
+</code></pre></div>
+<h3 id="req-2-demographics-diff-kippmiami">Req 2 — demographics diff (kippmiami)</h3>
+<p><code>kippmiami/.../rpt_focus__demographics.sql</code> joins current Focus state and keeps
+a row when the student is <strong>unmatched</strong> OR any <strong>populated</strong> export value
+differs.</p>
+<p>Comparison set (only columns present on both sides; null-placeholder export
+columns and Focus-absent columns such as <code>nickname</code>/<code>photo_vid_perm</code> are
+excluded from the diff):</p>
+<table>
+<thead>
+<tr>
+<th>Export column</th>
+<th>Focus source</th>
+<th>Normalization for comparison</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>last_name</code> / <code>first_name</code> / <code>middle_name</code></td>
+<td><code>stg_focus__students</code></td>
+<td>direct string</td>
+</tr>
+<tr>
+<td><code>dt_birth</code> (<code>YYYYMMDD</code>)</td>
+<td><code>students.birthdate</code> (timestamp)</td>
+<td><code>format_date('%Y%m%d', birthdate)</code></td>
+</tr>
+<tr>
+<td><code>gender</code> (<code>M</code>/<code>F</code>)</td>
+<td><code>int_focus__students__pivot.sex_label</code> (<code>Male[M]</code>)</td>
+<td><code>regexp_extract(sex_label, r'\[(.+)\]')</code></td>
+</tr>
+<tr>
+<td><code>stdt_email</code></td>
+<td><code>students.student_e_mail_address</code></td>
+<td>direct string</td>
+</tr>
+<tr>
+<td><code>ethnic_hl</code> (<code>Y</code>/<code>N</code>)</td>
+<td><code>ethnicity_hispanic_or_latino_label</code> (<code>Yes</code>/<code>No</code>)</td>
+<td>map <code>Yes</code>-&gt;<code>Y</code>, <code>No</code>-&gt;<code>N</code></td>
+</tr>
+<tr>
+<td><code>race_*</code> (<code>Y</code>/null)</td>
+<td><code>race_*_label</code> (<code>Yes</code>/<code>No</code>)</td>
+<td>map <code>Yes</code>-&gt;<code>Y</code>, <code>No</code>-&gt;null</td>
+</tr>
+<tr>
+<td><code>lang</code> (FLDOE code)</td>
+<td><code>language_label</code> (<code>EN</code>)</td>
+<td>compare code to label directly</td>
+</tr>
+</tbody>
+</table>
+<p>Match key: <code>demographics.stdt_id = students.student_id</code> (both 8400-prefixed
+after req 5). A NULL-safe per-field comparison (<code>a is distinct from b</code>) over the
+normalized values drives the keep predicate; unmatched students
+(<code>students.student_id is null</code>) are always kept.</p>
+<h3 id="req-3-enrollment-diff-with-code-import-once-kippmiami">Req 3 — enrollment diff with code import-once (kippmiami)</h3>
+<p><code>kippmiami/.../rpt_focus__student_enrollment.sql</code>:</p>
+<ul>
+<li>Match a desired enrollment to a Focus enrollment on
+  <code>(student_id, start_date)</code>. This is the natural grain of
+  <code>stg_focus__student_enrollment</code>: verified <code>(student_id, start_date)</code> is unique
+  (9,591 of 9,591 rows), while <code>(student_id, syear, school_id)</code> collides (9,487)
+  because a student can have multiple spans in one year+school. <code>syear</code>,
+  <code>school_id</code>, and <code>grade_id</code> are enrollment attributes, not key. Focus
+  <code>start_date</code> is a <code>DATE</code> (<code>2024-07-01</code>) and the export emits <code>YYYYMMDD</code>, so
+  the join normalizes one side
+  (<code>format_date('%Y%m%d', fe.start_date) = e.start_date</code>).</li>
+<li><strong>Keep</strong> a row when unmatched OR <code>end_date</code> differs from the Focus enrollment
+  (normalize:
+  <code>e.end_date is not null and e.end_date is distinct from format_date('%Y%m%d', fe.end_date)</code>).
+  <code>end_date</code> is the meaningful change signal (a withdrawal landing on an
+  existing enrollment). <code>grade_id</code> and <code>school_id</code> are deliberately <strong>excluded</strong>
+  from the diff: verified against live data, the export emits Focus import codes
+  (<code>school_id</code> like <code>2332A</code>, <code>grade_id</code> like <code>01</code>) while
+  <code>stg_focus__student_enrollment</code> stores internal numeric ids — comparing them
+  would mark every matched row changed. Comparing them would require a
+  grade/school decode that is out of scope. <code>syear</code> is excluded as redundant
+  with the <code>start_date</code> key. (Note: the current export cohort has <code>start_date</code>
+  NULL for all rows — not-yet-enrolled students — so nothing matches today and
+  every row is kept as unmatched; the diff and import-once gating begin to bite
+  once Focus start dates are present.)</li>
+<li><strong>ENROLLMENT_CODE / DROP_CODE import-once:</strong> emit the computed code only when
+  the matched Focus enrollment does not already carry one; otherwise emit <code>NULL</code>
+  so Focus never overwrites:</li>
+</ul>
+<div class="highlight"><pre><span></span><code><span class="k">if</span><span class="p">(</span><span class="n">fe</span><span class="p">.</span><span class="n">enrollment_code</span><span class="w"> </span><span class="k">is</span><span class="w"> </span><span class="k">null</span><span class="p">,</span><span class="w"> </span><span class="n">e</span><span class="p">.</span><span class="n">enrollment_code</span><span class="p">,</span><span class="w"> </span><span class="k">cast</span><span class="p">(</span><span class="k">null</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">string</span><span class="p">))</span>
+<span class="w">    </span><span class="k">as</span><span class="w"> </span><span class="n">enrollment_code</span><span class="p">,</span>
+<span class="k">if</span><span class="p">(</span><span class="n">fe</span><span class="p">.</span><span class="n">drop_code</span><span class="w"> </span><span class="k">is</span><span class="w"> </span><span class="k">null</span><span class="p">,</span><span class="w"> </span><span class="n">e</span><span class="p">.</span><span class="n">decoded_drop_code</span><span class="p">,</span><span class="w"> </span><span class="k">cast</span><span class="p">(</span><span class="k">null</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">string</span><span class="p">))</span>
+<span class="w">    </span><span class="k">as</span><span class="w"> </span><span class="n">drop_code</span><span class="p">,</span>
+</code></pre></div>
+<p>(<code>fe</code> = matched <code>stg_focus__student_enrollment</code> row.) For unmatched
+  enrollments <code>fe.*</code> is null, so both codes emit in full on first import.</p>
+<h3 id="req-1-import-once-for-addresses-contacts-linked-students-kippmiami">Req 1 — import once for addresses / contacts / linked students (kippmiami)</h3>
+<p>These exclude a student once the matching Focus destination row exists.
+Destinations (from the import templates and <code>dlt/focus/config/focus.yaml</code>):</p>
+<table>
+<thead>
+<tr>
+<th>Extract</th>
+<th>Focus destination</th>
+<th>Exclusion test</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Addresses</td>
+<td><code>students_join_address</code> -&gt; <code>address</code></td>
+<td>student has any <code>students_join_address</code> row</td>
+</tr>
+<tr>
+<td>Contacts</td>
+<td><code>students_join_people</code> -&gt; <code>people</code> -&gt; <code>people_join_contacts</code></td>
+<td>student has any <code>students_join_people</code> row</td>
+</tr>
+<tr>
+<td>Linked Students</td>
+<td><code>students_join_students</code></td>
+<td>the (primary, secondary) pair exists</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Prerequisite (blocker):</strong> <code>students_join_address</code>, <code>students_join_people</code>,
+<code>people</code>, and <code>students_join_students</code> are listed in the dlt config but were
+<strong>never materialized</strong> in BigQuery (Focus source has no rows yet), and have no
+<code>stg_focus__</code> models. Work:</p>
+<ol>
+<li><strong>dlt</strong> — confirm why these tables do not materialize (likely the
+   <code>sql_database</code> source skips empty/absent source tables) and ensure they are
+   created (even empty) on the next pull, so dbt sources resolve.</li>
+<li><strong>focus staging</strong> — add <code>stg_focus__students_join_address</code>,
+   <code>stg_focus__students_join_people</code>, <code>stg_focus__people</code>, and
+   <code>stg_focus__students_join_students</code> (contract-enforced, soft-delete filtered
+   where applicable), plus <code>sources-bigquery.yml</code> entries.</li>
+<li><strong>kippmiami extracts</strong> — left join the relevant link table on
+   <code>student_id</code>/pair and keep only rows with no match (anti-join).</li>
+</ol>
+<p>Until the source tables exist the staging models cannot build; the dlt task
+gates the rest of req 1.</p>
+<h2 id="files">Files</h2>
+<p><strong>Modify (<code>kipptaf</code>):</strong></p>
+<ul>
+<li><code>models/extracts/focus/rpt_focus__{demographics,addresses,contacts,student_enrollment,linked_students}.sql</code>
+  (+ matching <code>properties/*.yml</code>) — 8400 prefix; enrollment + carrier label
+  changes; drop the two crosswalk joins in <code>student_enrollment</code>.</li>
+</ul>
+<p><strong>Modify (<code>kippmiami</code>):</strong></p>
+<ul>
+<li><code>models/extracts/focus/rpt_focus__*.sql</code> (+ <code>properties/*.yml</code>) — Focus joins,
+  diff/import-once filters, drop-code decode.</li>
+<li><code>models/extracts/sources.yml</code> — any new cross-project/source wiring.</li>
+</ul>
+<p><strong>Create (<code>focus</code> package):</strong></p>
+<ul>
+<li><code>models/staging/stg_focus__students_join_address.sql</code> (+ yml)</li>
+<li><code>models/staging/stg_focus__students_join_people.sql</code> (+ yml)</li>
+<li><code>models/staging/stg_focus__people.sql</code> (+ yml)</li>
+<li><code>models/staging/stg_focus__students_join_students.sql</code> (+ yml)</li>
+<li><code>models/staging/sources-bigquery.yml</code> — four new source tables.</li>
+</ul>
+<p><strong>Modify (Dagster):</strong></p>
+<ul>
+<li><code>src/teamster/code_locations/kippmiami/dlt/focus/config/focus.yaml</code> / related
+  — ensure the four link tables materialize.</li>
+</ul>
+<h2 id="testing">Testing</h2>
+<ul>
+<li>dbt <strong>unit tests</strong> per modified extract model: mock Finalsite inputs + a
+  mocked Focus state row and assert (a) unmatched rows pass through, (b)
+  byte-identical matched rows are dropped, (c) a single changed field re-emits,
+  (d) import-once nulls codes when Focus already has them, (e) the 8400 prefix
+  is applied, (f) <code>E05</code>/<code>E01</code> by grade, (g) the withdraw-label decode.</li>
+<li><code>dbt build</code> of the focus staging additions once the dlt tables exist.</li>
+<li>Full diff sanity check in BigQuery against live <code>kippmiami_focus</code> after build.</li>
+</ul>
+<h2 id="open-questions-assumptions">Open questions / assumptions</h2>
+<ol>
+<li><strong>Enrollment match grain — RESOLVED.</strong> <code>(student_id, start_date)</code> is the
+   unique grain (9,591/9,591); <code>syear</code>/<code>school_id</code>/<code>grade_id</code> are attributes.</li>
+<li><strong>School-id / grade-id alignment — RESOLVED (excluded).</strong> Verified against
+   live data: the export emits Focus import codes (<code>school_id</code> <code>2332A</code>,
+   <code>grade_id</code> <code>01</code>) while <code>stg_focus__student_enrollment</code> stores internal
+   numeric ids. Domains differ, so both are excluded from the diff predicate;
+   <code>end_date</code> is the sole compared non-code field. Mapping them for comparison
+   is a future enhancement.</li>
+<li><strong>Enrollment code scope.</strong> Assumed purely grade-based for all entries
+   (re-enrollers included). Confirm with registrar if re-enrollers should keep
+   an R-code instead of <code>E01</code>.</li>
+<li><strong>dlt link-table materialization.</strong> Root cause of the missing
+   <code>students_join_*</code> tables to be confirmed; may need a dlt source-config change
+   or a one-time pull.</li>
+</ol>
+<h2 id="out-of-scope">Out of scope</h2>
+<ul>
+<li>Race/ethnicity value mapping beyond the confirmed <code>Yes</code>/<code>No</code> -&gt; <code>Y</code>/<code>N</code>/null
+  normalization.</li>
+<li>Any change to the SFTP transport (filenames, schedule, headers).</li>
+<li>Backfilling or correcting historical Focus data.</li>
+</ul>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+          <button type="button" class="md-top md-icon" data-md-component="top" hidden>
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8z"/></svg>
+  Back to top
+</button>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+    <div class="md-copyright__highlight">
+      Copyright &copy; KIPP TEAM & Family Schools
+    </div>
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      
+      <script id="__config" type="application/json">{"annotate": null, "base": "../../..", "features": ["content.action.edit", "content.code.copy", "navigation.instant", "navigation.indexes", "navigation.sections", "navigation.tabs", "navigation.tabs.sticky", "navigation.top", "search.highlight", "search.suggest", "toc.follow"], "search": "../../../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+    
+    
+      <script src="../../../assets/javascripts/bundle.79ae519e.min.js"></script>
+      
+    
+  </body>
+</html>
