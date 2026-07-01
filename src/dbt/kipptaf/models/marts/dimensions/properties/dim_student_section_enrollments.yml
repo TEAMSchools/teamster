@@ -50,11 +50,6 @@ models:
           stint covering cc_dateenrolled when one exists, else the earliest
           overlapping stint). Null only when no enrollment stint overlaps the
           section enrollment.
-        constraints:
-          - type: foreign_key
-            to: ref('dim_student_enrollments')
-            to_columns: [student_enrollment_key]
-            warn_unsupported: false
         data_tests:
           - relationships:
               arguments:

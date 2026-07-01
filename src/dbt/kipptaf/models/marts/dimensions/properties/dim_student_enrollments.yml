@@ -36,6 +36,26 @@ models:
               arguments:
                 to: ref('dim_students')
                 field: student_key
+
+      - name: homeroom_teacher_staff_key
+        data_type: string
+        description: >-
+          Staff key of the student's homeroom/advisory Lead Teacher for this
+          enrollment stint — the Lead Teacher of the stint's HR-credit section
+          (from dim_student_section_enrollments, is_homeroom rows), deduplicated
+          to the most-recent on a mid-year homeroom change. FK to dim_staff.
+          Null when the stint has no resolvable HR section lead.
+        constraints:
+          - type: foreign_key
+            to: ref('dim_staff')
+            to_columns: [staff_key]
+            warn_unsupported: false
+        data_tests:
+          - relationships:
+              arguments:
+                to: ref('dim_staff')
+                field: staff_key
+
       - name: location_key
         data_type: string
         description: >-
