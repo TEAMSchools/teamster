@@ -18,7 +18,13 @@ models:
       via `file_config.format.header_replacements`; dbt column names remain
       lowercase snake_case. `end_date`, `drop_code`, and `moved_to` populate
       only for transfer-out rows
-      (`int_finalsite__enrollment_lifecycle.is_transfer_out`).
+      (`int_finalsite__enrollment_lifecycle.is_transfer_out`). This is a delta
+      feed — enrollments already present in Focus `student_enrollment` (matched
+      on `student_id`, `syear`, and the floored `start_date`) are suppressed
+      unless the extract carries an exit (transfer-out or `end_date`) the Focus
+      row has not recorded, so only new and changed enrollments are emitted.
+      `school_id`, `grade_id`, and `enrollment_code` are Focus import codes
+      translated on load, so they are not used to detect changes.
     data_tests:
       - dbt_utils.unique_combination_of_columns:
           arguments:
@@ -261,6 +267,10 @@ unit_tests:
         format: sql
         rows: |
           select 2025 as syear, date '2025-08-11' as first_day_of_school
+      # empty: none of these students exist in Focus yet, so all rows pass the
+      # delta filter as new enrollments
+      - input: source('kippmiami_dlt_focus', 'student_enrollment')
+        rows: []
     expect:
       rows:
         - {
@@ -368,6 +378,10 @@ unit_tests:
         format: sql
         rows: |
           select 2025 as syear, date '2025-08-11' as first_day_of_school
+      # empty: none of these students exist in Focus yet, so all rows pass the
+      # delta filter as new enrollments
+      - input: source('kippmiami_dlt_focus', 'student_enrollment')
+        rows: []
     expect:
       rows:
         - {
@@ -488,6 +502,10 @@ unit_tests:
           select 2026 as syear, date '2026-08-11' as first_day_of_school
           union all
           select 2025, date '2025-08-11'
+      # empty: none of these students exist in Focus yet, so all rows pass the
+      # delta filter as new enrollments
+      - input: source('kippmiami_dlt_focus', 'student_enrollment')
+        rows: []
     expect:
       rows:
         - {
@@ -598,6 +616,181 @@ unit_tests:
             offender_transfer_stdt: null,
             came_from: null,
             moved_to: null,
+            sec_sch: null,
+            grde_prom_st: null,
+            good_cause_exempt: null,
+            graduation_requirement_program: null,
+            next_school: null,
+            next_grade: null,
+            district_ood: null,
+            sch_ood: null,
+            include_in_class_rank: null,
+            fl_days_present: null,
+            fl_days_absent: null,
+          }
+  - name: test_student_enrollment_focus_delta
+    description:
+      Verifies the delta filter against Focus student_enrollment — an enrollment
+      absent from Focus is emitted (new); one already present with no exit and
+      no new exit in the extract is suppressed; one present with no exit whose
+      extract carries an end_date is emitted; and one present with no exit whose
+      extract is a transfer_out (drop_code) is emitted. Matching is on
+      student_id, syear, and floored start_date only.
+    model: rpt_focus__student_enrollment
+    given:
+      - input: ref('int_finalsite__enrollment_lifecycle')
+        format: sql
+        rows: |
+          select
+            'd1' as finalsite_enrollment_id,
+            2026 as school_year_start,
+            '1st' as grade_canonical_name,
+            cast(null as string) as promotion_status,
+            'KIPP Royalty Academy' as assigned_school,
+            date '2026-08-11' as enrollment_start_date,
+            cast(null as date) as enrollment_end_date,
+            false as is_transfer_out
+          union all
+          select
+            'd2', 2026, '1st', cast(null as string), 'KIPP Royalty Academy',
+            date '2026-08-11', cast(null as date), false
+          union all
+          select
+            'd3', 2026, '1st', cast(null as string), 'KIPP Royalty Academy',
+            date '2026-08-11', date '2026-10-01', false
+          union all
+          select
+            'd4', 2026, '1st', cast(null as string), 'KIPP Royalty Academy',
+            date '2026-08-11', date '2026-11-15', true
+      - input: ref('int_finalsite__contact_custom_attributes')
+        format: sql
+        rows: |
+          select
+            'd1' as finalsite_enrollment_id,
+            cast(null as string) as withdrawal_school_txt,
+            cast(null as string) as fl_state_withdraw_codes_ss
+          union all
+          select 'd2', cast(null as string), cast(null as string)
+          union all
+          select 'd3', cast(null as string), cast(null as string)
+          union all
+          select 'd4', 'Prior Elementary', '(W02) In District Transfer'
+      - input: ref('int_people__location_crosswalk')
+        format: sql
+        rows: |
+          select
+            'KIPP Royalty Academy' as location_name,
+            '0001' as location_focus_school_id
+      - input: ref('int_finalsite__contact_id_attributes')
+        format: sql
+        rows: |
+          select
+            'd1' as finalsite_enrollment_id,
+            '84003003001' as focus_student_id_prefixed
+          union all
+          select 'd2', '84003003002'
+          union all
+          select 'd3', '84003003003'
+          union all
+          select 'd4', '84003003004'
+      - input: ref('int_focus__school_year_first_day')
+        format: sql
+        rows: |
+          select 2026 as syear, date '2026-08-11' as first_day_of_school
+      # d1 absent (new); d2/d3/d4 present in Focus with no exit recorded
+      - input: source('kippmiami_dlt_focus', 'student_enrollment')
+        format: sql
+        rows: |
+          select
+            84003003002 as student_id,
+            2026 as syear,
+            date '2026-08-11' as start_date,
+            cast(null as int64) as drop_code,
+            cast(null as date) as end_date
+          union all
+          select 84003003003, 2026, date '2026-08-11', cast(null as int64), cast(null as date)
+          union all
+          select 84003003004, 2026, date '2026-08-11', cast(null as int64), cast(null as date)
+    expect:
+      rows:
+        - {
+            syear: 2026,
+            school_id: "0001",
+            student_id: "84003003001",
+            grade_id: "01",
+            start_date: "20260811",
+            enrollment_code: E01,
+            end_date: null,
+            drop_code: null,
+            calendar_id: null,
+            prior_dist: null,
+            prior_state: null,
+            prior_country: null,
+            ed_choice: null,
+            stdt_dis_affect: null,
+            offender_transfer_stdt: null,
+            came_from: null,
+            moved_to: null,
+            sec_sch: null,
+            grde_prom_st: null,
+            good_cause_exempt: null,
+            graduation_requirement_program: null,
+            next_school: null,
+            next_grade: null,
+            district_ood: null,
+            sch_ood: null,
+            include_in_class_rank: null,
+            fl_days_present: null,
+            fl_days_absent: null,
+          }
+        - {
+            syear: 2026,
+            school_id: "0001",
+            student_id: "84003003003",
+            grade_id: "01",
+            start_date: "20260811",
+            enrollment_code: E01,
+            end_date: "20261001",
+            drop_code: null,
+            calendar_id: null,
+            prior_dist: null,
+            prior_state: null,
+            prior_country: null,
+            ed_choice: null,
+            stdt_dis_affect: null,
+            offender_transfer_stdt: null,
+            came_from: null,
+            moved_to: null,
+            sec_sch: null,
+            grde_prom_st: null,
+            good_cause_exempt: null,
+            graduation_requirement_program: null,
+            next_school: null,
+            next_grade: null,
+            district_ood: null,
+            sch_ood: null,
+            include_in_class_rank: null,
+            fl_days_present: null,
+            fl_days_absent: null,
+          }
+        - {
+            syear: 2026,
+            school_id: "0001",
+            student_id: "84003003004",
+            grade_id: "01",
+            start_date: "20260811",
+            enrollment_code: E01,
+            end_date: "20261115",
+            drop_code: (W02) In District Transfer,
+            calendar_id: null,
+            prior_dist: null,
+            prior_state: null,
+            prior_country: null,
+            ed_choice: null,
+            stdt_dis_affect: null,
+            offender_transfer_stdt: null,
+            came_from: null,
+            moved_to: Prior Elementary,
             sec_sch: null,
             grde_prom_st: null,
             good_cause_exempt: null,
