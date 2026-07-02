@@ -9,7 +9,7 @@ plugins:
 lint:
   enabled:
     - pinact@4.1.0
-    - grype@0.114.0
+    - grype@0.115.0
     - bandit@1.9.4
     - actionlint@1.7.12
     - git-diff-check
@@ -19,7 +19,7 @@ lint:
     - markdownlint@0.49.0
     - osv-scanner@2.4.0
     - oxipng@10.1.1
-    - prettier@3.8.4
+    - prettier@3.9.4
     - pyright@1.1.411
     - ruff@0.15.20
     - shellcheck@0.11.0
