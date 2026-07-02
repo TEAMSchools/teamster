@@ -20,7 +20,10 @@ dependency this ask doesn't need.
 check-strategy snapshot of `int_powerschool__gpa_term_current` — the
 `is_current` term row per student-year:
 
-- Unique key: `_dbt_source_relation`, `studentid`, `yearid`, `schoolid`.
+- Unique key: `_dbt_source_relation`, `studentid`, `yearid`, `schoolid` —
+  mirrors the `int_powerschool__gpa_term` grain, where a mid-year transfer
+  carries separate GPA rows per school. The lookback model inherits `schoolid`
+  for the same reason.
 - Check columns: `gpa_y1`, `gpa_y1_unweighted`, `n_failing_y1`.
 - `dbt_valid_to_current: '9999-12-31'` — open rows carry a far-future timestamp,
   not NULL.
