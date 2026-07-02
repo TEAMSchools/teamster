@@ -44,3 +44,9 @@ asset materialization metadata before investigating.
 
 Focus uses an IP allowlist. Codespace cannot reach the database. Connection
 verification requires a branch deployment (GKE has static egress IP).
+
+Branch-deployment dlt runs write to the **prod** BQ dataset
+(`dagster_<district>_dlt_focus`) — dlt has no branch-deployment redirect (unlike
+the GCS IO managers). A newly-configured table can be materialized in the branch
+deployment and then queried directly via BigQuery MCP to verify the load; note
+it is not isolated from prod for that source.

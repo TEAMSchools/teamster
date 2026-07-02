@@ -4,6 +4,19 @@ Source-system staging project for **Focus SIS** data (PostgreSQL). Provides the
 BigQuery source definitions for Focus dlt loads, consumed by district-specific
 dbt projects (currently `kippmiami`).
 
+## Schema reference
+
+Full Focus DB ERD reference: `docs/superpowers/specs/references/focus-db-erd.md`
+— table groups, PK/FK join keys, custom-field storage, and the
+`attendance_calendar` (per-day school dates) vs `attendance_calendars` (calendar
+headers) distinction. First day of school = `min(school_date)` per `syear` over
+`default_calendar = 'Y'` calendars (`int_focus__school_year_first_day`).
+
+The kipptaf `rpt_focus__*` SFTP extracts keep a `trunk-ignore(sqlfluff/ST06)` —
+the Focus import column order is contract-fixed. ST06 firing is
+expression-shape-dependent, so keep the ignore even when a diff makes it look
+vestigial.
+
 ## Data Flow
 
 Focus Postgres → dlt `sql_database` → BigQuery (`dagster_<project>_dlt_focus`) →
@@ -106,3 +119,9 @@ This project is never run standalone in production. District projects reference
 it as a dbt package and override variables. `{{ project_name }}` in source
 definitions resolves to the consuming district project name, enabling correct
 Dagster asset key lineage.
+
+To add a NEW kipptaf dependency on Focus data in a single PR, declare the dlt
+landing dataset (`dagster_kippmiami_dlt_focus`) as a BQ-native
+`sources-bigquery.yml` source (hardcoded schema, no target branch) — it reads
+prod in all targets, so kipptaf CI resolves it without seeding `zz_stg`. Only
+the raw dlt tables exist in prod pre-merge; district `stg_focus__*` do not.
