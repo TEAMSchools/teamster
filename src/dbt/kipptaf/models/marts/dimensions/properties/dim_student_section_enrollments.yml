@@ -136,5 +136,6 @@ models:
       - name: is_homeroom
         data_type: boolean
         description: >-
-          TRUE when the section's credit type is HR (homeroom / advisory).
+          TRUE when the section's credit type is HR or Advisory (the homeroom /
+          advisory sections). Never null — a null or other credit type is FALSE.
           Drives the homeroom-teacher derivation on dim_student_enrollments.

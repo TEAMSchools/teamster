@@ -186,7 +186,7 @@ select
     ltr.lead_teacher_staff_key,
     ltr.teacher_role,
 
-    se.courses_credittype in ('HR', 'Homeroom') as is_homeroom,
+    coalesce(se.courses_credittype in ('HR', 'Advisory'), false) as is_homeroom,
 from section_enrollments as se
 left join
     lead_teacher_resolved as ltr

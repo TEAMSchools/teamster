@@ -15,7 +15,7 @@ with
             }} as course_section_key,
         from {{ ref("base_powerschool__course_enrollments") }} as cc
         where
-            cc.courses_credittype in ('HR', 'Homeroom')
+            cc.courses_credittype in ('HR', 'Advisory')
             and not cc.is_dropped_section
             and not cc.is_dropped_course
     ),
