@@ -16,8 +16,8 @@
 - **PK / FK** — Crow's Foot notation; a PK holds one distinct value, an FK may
   repeat (many-to-one).
 - **`syear`** — school-year start year (e.g. `2026` = SY2026-27), matching
-  Finalsite `school_year_start` and the `focus_enrollment_start_date_floor` var
-  convention.
+  Finalsite `school_year_start` and the `int_focus__school_year_first_day`
+  derivation grain.
 - **`school_id`** joins to `schools.id`; the district-facing school number is
   `schools.custom_327`. **`district_id`** joins to `districts.id`.
 - **Soft delete** — `deleted` is `NULL` for live rows and `1` for deleted, never
