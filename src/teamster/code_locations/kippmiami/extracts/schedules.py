@@ -14,7 +14,7 @@ powerschool_extract_assets_schedule = ScheduleDefinition(
 
 focus_extract_assets_schedule = ScheduleDefinition(
     job=focus_extract_asset_job,
-    cron_schedule="0 3 * * *",
+    cron_schedule="0 5 * * *",
     execution_timezone=str(LOCAL_TIMEZONE),
 )
 
