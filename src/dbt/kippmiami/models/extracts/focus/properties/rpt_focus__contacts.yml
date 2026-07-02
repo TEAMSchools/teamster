@@ -115,8 +115,9 @@ unit_tests:
     description: >-
       Import-once plus named-contact gate — a named contact for a student not in
       Focus is kept; a student already in Focus has all rows suppressed; a
-      nameless contact row is suppressed so an empty person record is not
-      imported once and locked in.
+      nameless contact row is suppressed (both null names and empty-string
+      names, since Finalsite emits blanks for unset names) so an empty person
+      record is not imported once and locked in.
     model: rpt_focus__contacts
     given:
       - input: source("kipptaf_extracts", "rpt_focus__contacts")
@@ -215,6 +216,50 @@ unit_tests:
               1 as sort_order, cast(null as string) as first_name,
               cast(null as string) as middle_name,
               cast(null as string) as last_name,
+              cast(null as string) as resides_with_stud,
+              cast(null as string) as custody, cast(null as string) as emergency,
+              cast(null as string) as pickup, cast(null as string) as address,
+              cast(null as string) as address2, cast(null as string) as city,
+              cast(null as string) as state, cast(null as string) as zipcode,
+              cast(null as string) as email, cast(null as string) as contact1_type,
+              cast(null as string) as contact1_value,
+              cast(null as string) as contact1_blocked,
+              cast(null as string) as contact1_unlisted,
+              cast(null as string) as contact1_callout,
+              cast(null as string) as contact2_type,
+              cast(null as string) as contact2_value,
+              cast(null as string) as contact2_blocked,
+              cast(null as string) as contact2_unlisted,
+              cast(null as string) as contact2_callout,
+              cast(null as string) as contact3_type,
+              cast(null as string) as contact3_value,
+              cast(null as string) as contact3_blocked,
+              cast(null as string) as contact3_unlisted,
+              cast(null as string) as contact3_callout,
+              cast(null as string) as contact4_type,
+              cast(null as string) as contact4_value,
+              cast(null as string) as contact4_blocked,
+              cast(null as string) as contact4_unlisted,
+              cast(null as string) as contact4_callout,
+              cast(null as string) as contact5_type,
+              cast(null as string) as contact5_value,
+              cast(null as string) as contact5_blocked,
+              cast(null as string) as contact5_unlisted,
+              cast(null as string) as contact5_callout,
+              cast(null as string) as contact6_type,
+              cast(null as string) as contact6_value,
+              cast(null as string) as contact6_blocked,
+              cast(null as string) as contact6_unlisted,
+              cast(null as string) as contact6_callout,
+              cast(null as string) as contact7_type,
+              cast(null as string) as contact7_value,
+              cast(null as string) as contact7_blocked,
+              cast(null as string) as contact7_unlisted
+          union all
+          select
+              '8400000004' as student_id, 'parent' as student_relation,
+              1 as sort_order, '' as first_name,
+              cast(null as string) as middle_name, '' as last_name,
               cast(null as string) as resides_with_stud,
               cast(null as string) as custody, cast(null as string) as emergency,
               cast(null as string) as pickup, cast(null as string) as address,
