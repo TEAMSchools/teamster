@@ -122,15 +122,19 @@ left join
     on ida.focus_student_id_prefixed = fe.focus_student_id
     and e.school_year_start = fe.focus_syear
     and e.start_date = fe.focus_start_date
--- delta feed: suppress rows Focus already holds identically. Keep a row only
--- when it is absent from Focus (new enrollment) or when the extract carries an
--- exit (transfer-out or end_date) that the matched Focus row has not recorded
--- yet. school_id / grade_id / enrollment_code are import codes translated by
--- Focus on load, so they are not comparable and are not used to detect changes.
+-- delta feed: suppress rows Focus already holds identically. Keep a row when it
+-- is absent from Focus (new enrollment), or when it carries an exit the matched
+-- Focus row has not recorded. end_date and drop_code are gated independently:
+-- drop_code is a raw Finalsite custom attribute not tied to enrollment_end_date,
+-- so the two exit fields can arrive in separate runs — a drop_code that lands
+-- after Focus already has the end_date (or vice versa) must still sync.
+-- school_id / grade_id / enrollment_code are import codes translated by Focus on
+-- load, so they are not comparable and are not used to detect changes.
 where
     fe.focus_student_id is null
+    or (e.enrollment_end_date is not null and not fe.has_end_date)
     or (
-        not fe.has_drop_code
-        and not fe.has_end_date
-        and (e.is_transfer_out or e.enrollment_end_date is not null)
+        e.is_transfer_out
+        and cca.fl_state_withdraw_codes_ss is not null
+        and not fe.has_drop_code
     )

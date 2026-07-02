@@ -633,9 +633,12 @@ unit_tests:
       Verifies the delta filter against Focus student_enrollment — an enrollment
       absent from Focus is emitted (new); one already present with no exit and
       no new exit in the extract is suppressed; one present with no exit whose
-      extract carries an end_date is emitted; and one present with no exit whose
-      extract is a transfer_out (drop_code) is emitted. Matching is on
-      student_id, syear, and floored start_date only.
+      extract carries an end_date is emitted; one present with no exit whose
+      extract is a transfer_out (drop_code) is emitted; one whose exit Focus has
+      already fully recorded is suppressed; and one where Focus has the end_date
+      but not the drop_code still emits so the drop_code syncs (end_date and
+      drop_code are gated independently). Matching is on student_id, syear, and
+      floored start_date only.
     model: rpt_focus__student_enrollment
     given:
       - input: ref('int_finalsite__enrollment_lifecycle')
@@ -662,6 +665,14 @@ unit_tests:
           select
             'd4', 2026, '1st', cast(null as string), 'KIPP Royalty Academy',
             date '2026-08-11', date '2026-11-15', true
+          union all
+          select
+            'd5', 2026, '1st', cast(null as string), 'KIPP Royalty Academy',
+            date '2026-08-11', date '2026-09-15', true
+          union all
+          select
+            'd6', 2026, '1st', cast(null as string), 'KIPP Royalty Academy',
+            date '2026-08-11', date '2026-10-20', true
       - input: ref('int_finalsite__contact_custom_attributes')
         format: sql
         rows: |
@@ -675,6 +686,10 @@ unit_tests:
           select 'd3', cast(null as string), cast(null as string)
           union all
           select 'd4', 'Prior Elementary', '(W02) In District Transfer'
+          union all
+          select 'd5', 'Somewhere', '(W02) In District Transfer'
+          union all
+          select 'd6', 'Elsewhere', '(W3A) WD to public sch distr in FL'
       - input: ref('int_people__location_crosswalk')
         format: sql
         rows: |
@@ -693,11 +708,16 @@ unit_tests:
           select 'd3', '84003003003'
           union all
           select 'd4', '84003003004'
+          union all
+          select 'd5', '84003003005'
+          union all
+          select 'd6', '84003003006'
       - input: ref('int_focus__school_year_first_day')
         format: sql
         rows: |
           select 2026 as syear, date '2026-08-11' as first_day_of_school
-      # d1 absent (new); d2/d3/d4 present in Focus with no exit recorded
+      # d1 absent (new); d2/d3/d4 present with no exit; d5 present with both exit
+      # fields recorded; d6 present with end_date but no drop_code
       - input: source('kippmiami_dlt_focus', 'student_enrollment')
         format: sql
         rows: |
@@ -711,6 +731,10 @@ unit_tests:
           select 84003003003, 2026, date '2026-08-11', cast(null as int64), cast(null as date)
           union all
           select 84003003004, 2026, date '2026-08-11', cast(null as int64), cast(null as date)
+          union all
+          select 84003003005, 2026, date '2026-08-11', 1234, date '2026-09-15'
+          union all
+          select 84003003006, 2026, date '2026-08-11', cast(null as int64), date '2026-10-20'
     expect:
       rows:
         - {
@@ -791,6 +815,36 @@ unit_tests:
             offender_transfer_stdt: null,
             came_from: null,
             moved_to: Prior Elementary,
+            sec_sch: null,
+            grde_prom_st: null,
+            good_cause_exempt: null,
+            graduation_requirement_program: null,
+            next_school: null,
+            next_grade: null,
+            district_ood: null,
+            sch_ood: null,
+            include_in_class_rank: null,
+            fl_days_present: null,
+            fl_days_absent: null,
+          }
+        - {
+            syear: 2026,
+            school_id: "0001",
+            student_id: "84003003006",
+            grade_id: "01",
+            start_date: "20260811",
+            enrollment_code: E01,
+            end_date: "20261020",
+            drop_code: (W3A) WD to public sch distr in FL,
+            calendar_id: null,
+            prior_dist: null,
+            prior_state: null,
+            prior_country: null,
+            ed_choice: null,
+            stdt_dis_affect: null,
+            offender_transfer_stdt: null,
+            came_from: null,
+            moved_to: Elsewhere,
             sec_sch: null,
             grde_prom_st: null,
             good_cause_exempt: null,
