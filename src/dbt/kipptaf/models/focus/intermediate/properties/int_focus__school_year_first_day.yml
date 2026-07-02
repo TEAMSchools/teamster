@@ -3,10 +3,13 @@ models:
     description: >-
       First day of school per Focus school year, derived as the earliest
       instructional date (minutes greater than zero) across that year's default
-      attendance calendars. Sourced from the Focus dlt landing tables
-      attendance_calendar (per-day dates) and attendance_calendars (headers).
-      Used to floor Finalsite-sourced enrollment start dates to the first day of
-      school so they match Focus enrollment records.
+      attendance calendars. This is the network-earliest first day across all
+      schools' default calendars (Miami schools currently share a single first
+      day); the value is joined on school year alone, so it is not per-school.
+      Sourced from the Focus dlt landing tables attendance_calendar (per-day
+      dates) and attendance_calendars (headers). Used to floor Finalsite-sourced
+      enrollment start dates to the first day of school so they match Focus
+      enrollment records.
     columns:
       - name: syear
         description: Focus school year start year (e.g. 2026 = 2026-27).
