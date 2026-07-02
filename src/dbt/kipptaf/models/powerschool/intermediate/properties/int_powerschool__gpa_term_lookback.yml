@@ -9,6 +9,9 @@ models:
       year's first snapshot version returns null. Check-strategy snapshots never
       close a row when it disappears from the source, so a withdrawn student's
       lookbacks return last-known values — consumers must scope by enrollment.
+      Rows whose source relation is not a production district dataset are
+      excluded — the prod snapshot carries frozen dev-relation ghost rows (issue
+      4318).
     data_tests:
       - dbt_utils.unique_combination_of_columns:
           arguments:
@@ -108,7 +111,7 @@ unit_tests:
         rows: |
           /* student 1: three versions spanning all three boundaries */
           select
-              'newark' as _dbt_source_relation,
+              '`teamster-332318`.`kippnewark_powerschool`.`int_powerschool__gpa_term`' as _dbt_source_relation,
               1 as studentid,
               101 as schoolid,
               35 as yearid,
@@ -125,7 +128,7 @@ unit_tests:
               ) as dbt_valid_to
           union all
           select
-              'newark',
+              '`teamster-332318`.`kippnewark_powerschool`.`int_powerschool__gpa_term`',
               1,
               101,
               35,
@@ -142,7 +145,7 @@ unit_tests:
               )
           union all
           select
-              'newark',
+              '`teamster-332318`.`kippnewark_powerschool`.`int_powerschool__gpa_term`',
               1,
               101,
               35,
@@ -158,7 +161,7 @@ unit_tests:
           /* student 2: version flips at noon ON the 1-week lookback day —
              end-of-day rule must pick the later version */
           select
-              'newark',
+              '`teamster-332318`.`kippnewark_powerschool`.`int_powerschool__gpa_term`',
               2,
               101,
               35,
@@ -180,7 +183,7 @@ unit_tests:
               )
           union all
           select
-              'newark',
+              '`teamster-332318`.`kippnewark_powerschool`.`int_powerschool__gpa_term`',
               2,
               101,
               35,
@@ -201,7 +204,7 @@ unit_tests:
           /* student 3: first version only 10 days old — 2- and 4-week
              boundaries predate it and must be null */
           select
-              'camden',
+              '`teamster-332318`.`kippcamden_powerschool`.`int_powerschool__gpa_term`',
               3,
               202,
               35,
@@ -216,7 +219,7 @@ unit_tests:
           union all
           /* student 4: prior-year row — excluded from output */
           select
-              'newark',
+              '`teamster-332318`.`kippnewark_powerschool`.`int_powerschool__gpa_term`',
               4,
               101,
               34,
@@ -228,10 +231,25 @@ unit_tests:
                   'America/New_York'
               ),
               timestamp('9999-12-31')
+          union all
+          /* student 5: dev-relation ghost row — excluded by the relation filter */
+          select
+              '`teamster-332318`.`zz_cbini_kippnewark_powerschool`.`int_powerschool__gpa_term`',
+              5,
+              101,
+              35,
+              cast(3.9 as float64),
+              cast(3.9 as float64),
+              0,
+              timestamp(
+                  date_sub(current_date('America/New_York'), interval 10 day),
+                  'America/New_York'
+              ),
+              timestamp('9999-12-31')
     expect:
       rows:
         - {
-            _dbt_source_relation: newark,
+            _dbt_source_relation: "`teamster-332318`.`kippnewark_powerschool`.`int_powerschool__gpa_term`",
             studentid: 1,
             schoolid: 101,
             yearid: 35,
@@ -246,7 +264,7 @@ unit_tests:
             n_failing_y1_4_week_prior: 2,
           }
         - {
-            _dbt_source_relation: newark,
+            _dbt_source_relation: "`teamster-332318`.`kippnewark_powerschool`.`int_powerschool__gpa_term`",
             studentid: 2,
             schoolid: 101,
             yearid: 35,
@@ -261,7 +279,7 @@ unit_tests:
             n_failing_y1_4_week_prior: 3,
           }
         - {
-            _dbt_source_relation: camden,
+            _dbt_source_relation: "`teamster-332318`.`kippcamden_powerschool`.`int_powerschool__gpa_term`",
             studentid: 3,
             schoolid: 202,
             yearid: 35,

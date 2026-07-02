@@ -34,7 +34,13 @@ with
             lookbacks as lb
             on gpa.dbt_valid_from < lb.as_of_boundary
             and gpa.dbt_valid_to >= lb.as_of_boundary
-        where gpa.yearid = {{ var("current_academic_year") - 1990 }}
+        where
+            gpa.yearid = {{ var("current_academic_year") - 1990 }}
+            /* TODO(#4318): drop once dev-relation ghost rows are purged — the prod
+               snapshot holds permanently-open zz_cbini_* rows injected 2025-12-03 */
+            and regexp_contains(
+                gpa._dbt_source_relation, r'\.`kipp[a-z]+_powerschool`\.'
+            )
     )
 
 select
