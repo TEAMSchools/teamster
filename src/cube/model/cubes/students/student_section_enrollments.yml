@@ -18,6 +18,14 @@ cubes:
         sql: "{terms.term_key} = {CUBE}.term_key"
         relationship: many_to_one
 
+      # Lead teacher name/attributes. many_to_one — one lead per enrollment
+      # after dbt resolution — so no fan-out. Distinct role from the
+      # homeroom-teacher staff join on student_school_enrollments (a cube can't
+      # join staff twice); no view pulls both staff paths at once.
+      - name: staff
+        sql: "{staff.staff_key} = {CUBE}.lead_teacher_staff_key"
+        relationship: many_to_one
+
     dimensions:
       - name: student_section_enrollment_key
         description: >-
@@ -83,4 +91,32 @@ cubes:
           TRUE if all enrollments for this student x course x year were dropped.
         sql: is_dropped_course
         type: boolean
+        public: true
+
+      # Degenerate FK to staff — teacher name comes via the staff join.
+      - name: lead_teacher_staff_key
+        description: FK to staff — the section's Lead Teacher.
+        sql: lead_teacher_staff_key
+        type: string
+
+      - name: teacher_role
+        description: Role of the resolved teacher (always Lead Teacher here).
+        sql: teacher_role
+        type: string
+        public: true
+
+      - name: is_homeroom
+        description: TRUE when this is an HR-credit (homeroom/advisory) section.
+        sql: is_homeroom
+        type: boolean
+        public: true
+
+    measures:
+      - name: count_students
+        description: >-
+          Distinct students with a section enrollment in the filtered slice.
+          Answers "how many students does this teacher teach?" when grouped by
+          the lead teacher. count_distinct on the student, so it is fan-safe.
+        sql: "{students.student_key}"
+        type: count_distinct
         public: true

@@ -62,6 +62,8 @@ views:
         includes:
           - is_dropped_section
           - is_dropped_course
+          - lead_teacher_staff_key
+          - teacher_role
 
       - join_path: student_assessment_scores.student_section_enrollments.student_school_enrollments
         includes:
@@ -182,6 +184,10 @@ views:
             - is_retained_year
             - is_dropped_section
             - is_dropped_course
+        - name: Teacher
+          members:
+            - lead_teacher_staff_key
+            - teacher_role
 
     access_policy:
       # No PII tier — view contains no direct student identifiers.
