@@ -4,8 +4,9 @@ models:
       Student enrollment dimension. One row per student x school x academic year
       enrollment record. Each re-enrollment within a year is a distinct record
       identified by entrydate. Entry and exit dates bound each enrollment
-      period. FK to dim_students, dim_locations, and dim_dates (role-playing via
-      entry_date_key and exit_date_key).
+      period. FK to dim_students, dim_locations, dim_dates (role-playing via
+      entry_date_key and exit_date_key), and dim_staff via
+      homeroom_teacher_staff_key.
     columns:
       - name: student_enrollment_key
         data_type: string

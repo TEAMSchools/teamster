@@ -19,7 +19,9 @@ cubes:
         relationship: many_to_one
 
       # Lead teacher name/attributes. many_to_one — one lead per enrollment
-      # after dbt resolution — so no fan-out.
+      # after dbt resolution — so no fan-out. Distinct role from the
+      # homeroom-teacher staff join on student_school_enrollments (a cube can't
+      # join staff twice); no view pulls both staff paths at once.
       - name: staff
         sql: "{staff.staff_key} = {CUBE}.lead_teacher_staff_key"
         relationship: many_to_one

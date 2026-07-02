@@ -5,9 +5,9 @@ models:
       enrollment of a student into a section. Multiple rows per student x
       section are possible when a student drops and re-enrolls in the same
       section within a year. FK to dim_student_enrollments via
-      student_enrollment_key, dim_course_sections via course_section_key, and
+      student_enrollment_key, dim_course_sections via course_section_key,
       dim_terms via term_key (nullable when CC term does not map to a reporting
-      term).
+      term), and dim_staff via lead_teacher_staff_key.
     columns:
       - name: lead_teacher_staff_key
         data_type: string
@@ -138,4 +138,5 @@ models:
         description: >-
           TRUE when the section's credit type is HR or Advisory (the homeroom /
           advisory sections). Never null — a null or other credit type is FALSE.
-          Drives the homeroom-teacher derivation on dim_student_enrollments.
+          The same HR / Advisory rule identifies each student's homeroom teacher
+          (the homeroom_teacher_staff_key on the enrollment dimension).

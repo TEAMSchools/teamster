@@ -186,6 +186,9 @@ select
     ltr.lead_teacher_staff_key,
     ltr.teacher_role,
 
+    -- HR/Advisory credit-type test is duplicated in dim_student_enrollments.sql
+    -- (homeroom_sections CTE), which resolves the homeroom teacher independently
+    -- to avoid a build cycle. Keep the credit-type list in sync across both.
     coalesce(se.courses_credittype in ('HR', 'Advisory'), false) as is_homeroom,
 from section_enrollments as se
 left join

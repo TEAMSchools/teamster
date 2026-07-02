@@ -159,6 +159,8 @@ views:
             - birth_date
             - lea_student_identifier
             - state_student_identifier
+            - salesforce_contact_id
+            - district_student_identifier
       - group: cube-access-student-pii
         member_level:
           includes: "*"
