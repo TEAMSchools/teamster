@@ -90,7 +90,6 @@ views:
           - grade_level
           - graduation_year
           - is_retained_year
-          - homeroom_teacher_staff_key
 
       - join_path: student_attendance.student_school_enrollments.student_enrollment_status
         prefix: false
@@ -170,9 +169,6 @@ views:
             - grade_level
             - graduation_year
             - is_retained_year
-        - name: Teacher
-          members:
-            - homeroom_teacher_staff_key
         - name: Filter
           members:
             - is_latest_record

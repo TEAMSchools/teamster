@@ -18,18 +18,6 @@ cubes:
           {CUBE}.student_enrollment_key
         relationship: one_to_one
 
-      # Homeroom teacher. Lives on this stint-grain dim so stint-based facts
-      # (attendance, enrollment) join it many_to_one with no fan-out — the
-      # section-grain dim can't serve it without fanning out across every class.
-      # Distinct role from the lead-teacher staff join on
-      # student_section_enrollments; a cube can't join staff twice, so the two
-      # teacher roles live on the two cubes. No view pulls both staff paths at
-      # once. many_to_one — one homeroom lead per enrollment after dbt
-      # resolution, so no fan-out.
-      - name: staff
-        sql: "{staff.staff_key} = {CUBE}.homeroom_teacher_staff_key"
-        relationship: many_to_one
-
     dimensions:
       - name: student_enrollment_key
         description: >-
@@ -103,12 +91,6 @@ cubes:
         sql: is_retained_year
         type: boolean
         public: true
-
-      # Degenerate FK to staff — homeroom teacher name comes via the staff join.
-      - name: homeroom_teacher_staff_key
-        description: FK to staff — the student's homeroom/advisory Lead Teacher.
-        sql: homeroom_teacher_staff_key
-        type: string
 
     measures:
       - name: count_enrollments
