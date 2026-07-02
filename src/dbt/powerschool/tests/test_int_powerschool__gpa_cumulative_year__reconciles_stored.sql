@@ -39,12 +39,15 @@ where
             and sg.storecode = 'Y1'
             and sg.academic_year = {{ var("current_academic_year") }}
     )
+    /* 0.015, not 0.01: a rounding-boundary flip stores values exactly 0.01 apart,
+       and float64 abs(2.97 - 2.96) > 0.01; 0.015 passes the one-cent flip while
+       still catching any real drift (>= 0.02) */
     and (
         abs(coalesce(ls.cumulative_y1_gpa, -99) - coalesce(gc.cumulative_y1_gpa, -99))
-        > 0.01
+        > 0.015
         or abs(
             coalesce(ls.cumulative_y1_gpa_unweighted, -99)
             - coalesce(gc.cumulative_y1_gpa_unweighted, -99)
         )
-        > 0.01
+        > 0.015
     )
