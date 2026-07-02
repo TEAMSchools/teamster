@@ -52,6 +52,11 @@ META_CACHE_DIR = Path.home() / ".cache" / "teamster"
 META_CACHE_TTL_SECONDS = 60 * 60
 TIMEOUT_SECONDS = 55
 TOKEN_TTL_SECONDS = 5 * 60
+# All mart date columns are date-grain midnight-UTC; a non-UTC query timezone
+# makes Cube's convertTz shift dates-join predicates and day-granularity
+# results off by one day (#4298). Default queries to UTC unless the caller
+# explicitly asks for another timezone.
+DEFAULT_QUERY_TIMEZONE = "UTC"
 
 TRANSPORT_STDIO = "stdio"
 TRANSPORT_HTTP = "http"
@@ -308,6 +313,15 @@ async def _request(
         return body
 
 
+def _with_default_timezone(query: dict[str, Any]) -> dict[str, Any]:
+    """Return the query with timezone defaulted to UTC when the caller omits
+    it, so a deployment-level CUBEJS_DEFAULT_TIMEZONE can't silently shift
+    date-grain results (#4298). Caller-provided timezones pass through."""
+    if query.get("timezone"):
+        return query
+    return {**query, "timezone": DEFAULT_QUERY_TIMEZONE}
+
+
 def _meta_cache_path(email: str) -> Path:
     digest = hashlib.sha256(email.encode("utf-8")).hexdigest()[:16]
     return META_CACHE_DIR / f"cube-meta-{digest}.json"
@@ -372,10 +386,17 @@ async def load(ctx: Context, query: dict[str, Any]) -> dict[str, Any]:
 
     PII: `*_detail` view results carry row-level student identifiers — keep
     those values in the local conversation only.
+
+    Queries default to timezone UTC (mart dates are date-grain UTC); pass an
+    explicit `timezone` only when wall-clock conversion is intended.
     """
     email = await _get_user_email(ctx)
     return await _request(
-        "POST", "/load", json={"query": query}, email=email, poll=True
+        "POST",
+        "/load",
+        json={"query": _with_default_timezone(query)},
+        email=email,
+        poll=True,
     )
 
 
@@ -386,10 +407,16 @@ async def sql(ctx: Context, query: dict[str, Any]) -> dict[str, Any]:
     verifying access policies, or reviewing the compiled SQL before `load`.
 
     Response is wrapped: {"sql": {"status", "sql": [query-string, [params]], "query_type"}}.
+
+    Queries default to timezone UTC (mart dates are date-grain UTC); pass an
+    explicit `timezone` only when wall-clock conversion is intended.
     """
     email = await _get_user_email(ctx)
     return await _request(
-        "GET", "/sql", params={"query": json.dumps(query)}, email=email
+        "GET",
+        "/sql",
+        params={"query": json.dumps(_with_default_timezone(query))},
+        email=email,
     )
 
 
