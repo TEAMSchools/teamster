@@ -1,3 +1,4 @@
+-- trunk-ignore(sqlfluff/ST06): column order fixed by Focus STUDENT_ENROLLMENT contract
 select
     l.school_year_start as syear,
 
@@ -14,18 +15,14 @@ select
 
     -- Finalsite emits pre-first-day enrolled_dates (contract/registration
     -- dates); Focus matches enrollment on the first attendance calendar date, so
-    -- floor the start date up to the school year's first day for the active feed
-    -- year. Gated to the var's school year so prior-year rows (which can carry
-    -- legitimate summer start dates) are untouched.
+    -- floor the start date up to the school year's first day (derived per school
+    -- year from the Focus attendance calendar). Rows already on/after the first
+    -- day, and years with no calendar, are left unchanged.
     format_date(
         '%Y%m%d',
-        if(
-            l.school_year_start = {{ var("focus_enrollment_start_date_floor")[:4] }},
-            greatest(
-                l.enrollment_start_date,
-                date('{{ var("focus_enrollment_start_date_floor") }}')
-            ),
-            l.enrollment_start_date
+        greatest(
+            l.enrollment_start_date,
+            coalesce(fd.first_day_of_school, l.enrollment_start_date)
         )
     ) as start_date,
 
@@ -83,6 +80,9 @@ left join
 left join
     {{ ref("int_people__location_crosswalk") }} as sch
     on l.assigned_school = sch.location_name
+left join
+    {{ ref("int_focus__school_year_first_day") }} as fd
+    on l.school_year_start = fd.syear
 -- enrolled-only: pre-enrollment statuses (enrollment_in_progress, assigned_school)
 -- carry no enrolled_date; Focus enrollment records require an entry date, so
 -- defer these students until Finalsite mints enrollment_start_date. See #4291.

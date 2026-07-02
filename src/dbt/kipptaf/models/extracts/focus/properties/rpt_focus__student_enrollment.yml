@@ -257,6 +257,10 @@ unit_tests:
           select
             'e4' as finalsite_enrollment_id,
             '84003003004' as focus_student_id_prefixed
+      - input: ref('int_focus__school_year_first_day')
+        format: sql
+        rows: |
+          select 2025 as syear, date '2025-08-11' as first_day_of_school
     expect:
       rows:
         - {
@@ -360,6 +364,10 @@ unit_tests:
           select
             'e2' as finalsite_enrollment_id,
             '84003003002' as focus_student_id_prefixed
+      - input: ref('int_focus__school_year_first_day')
+        format: sql
+        rows: |
+          select 2025 as syear, date '2025-08-11' as first_day_of_school
     expect:
       rows:
         - {
@@ -394,12 +402,11 @@ unit_tests:
           }
   - name: test_student_enrollment_start_date_floor
     description:
-      Verifies the active-year start-date floor — a current-year enrollment that
-      starts before the school year's first day (var
-      focus_enrollment_start_date_floor) is raised to that date, a current-year
-      enrollment starting after it is left unchanged, and a prior-year
-      enrollment before the floor date is not touched (the floor is gated to the
-      var's school year).
+      Verifies the per-school-year start-date floor derived from
+      int_focus__school_year_first_day — an enrollment starting before its
+      school year's first day is raised to that date, one starting on/after it
+      is left unchanged, each year uses its own first day, and a year with no
+      calendar row leaves the start date unchanged.
     model: rpt_focus__student_enrollment
     given:
       - input: ref('int_finalsite__enrollment_lifecycle')
@@ -434,6 +441,16 @@ unit_tests:
             date '2025-07-10',
             cast(null as date),
             false
+          union all
+          select
+            'ef4',
+            2099,
+            '4th',
+            cast(null as string),
+            'KIPP Royalty Academy',
+            date '2099-05-01',
+            cast(null as date),
+            false
       - input: ref('int_finalsite__contact_custom_attributes')
         format: sql
         rows: |
@@ -445,6 +462,8 @@ unit_tests:
           select 'ef2', cast(null as string), cast(null as string)
           union all
           select 'ef3', cast(null as string), cast(null as string)
+          union all
+          select 'ef4', cast(null as string), cast(null as string)
       - input: ref('int_people__location_crosswalk')
         format: sql
         rows: |
@@ -461,6 +480,14 @@ unit_tests:
           select 'ef2', '84009009002'
           union all
           select 'ef3', '84009009003'
+          union all
+          select 'ef4', '84009009004'
+      - input: ref('int_focus__school_year_first_day')
+        format: sql
+        rows: |
+          select 2026 as syear, date '2026-08-11' as first_day_of_school
+          union all
+          select 2025, date '2025-08-11'
     expect:
       rows:
         - {
@@ -528,7 +555,37 @@ unit_tests:
             school_id: "0001",
             student_id: "84009009003",
             grade_id: "03",
-            start_date: "20250710",
+            start_date: "20250811",
+            enrollment_code: E01,
+            end_date: null,
+            drop_code: null,
+            calendar_id: null,
+            prior_dist: null,
+            prior_state: null,
+            prior_country: null,
+            ed_choice: null,
+            stdt_dis_affect: null,
+            offender_transfer_stdt: null,
+            came_from: null,
+            moved_to: null,
+            sec_sch: null,
+            grde_prom_st: null,
+            good_cause_exempt: null,
+            graduation_requirement_program: null,
+            next_school: null,
+            next_grade: null,
+            district_ood: null,
+            sch_ood: null,
+            include_in_class_rank: null,
+            fl_days_present: null,
+            fl_days_absent: null,
+          }
+        - {
+            syear: 2099,
+            school_id: "0001",
+            student_id: "84009009004",
+            grade_id: "04",
+            start_date: "20990501",
             enrollment_code: E01,
             end_date: null,
             drop_code: null,
