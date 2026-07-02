@@ -100,10 +100,16 @@ cubes:
     joins:
       # One employment period spans many calendar days. Range (BETWEEN) join is
       # valid per cube conventions; relationship is one_to_many.
+      # Join on the raw DATE key, not the date_day time dimension — Cube wraps
+      # time dimensions in the query-timezone conversion (convertTz) inside
+      # join predicates, which shifts the dates side by the query timezone
+      # offset and matches dates one day off under any non-UTC timezone
+      # (#4298). Both effective_* columns are DATE, so this compares
+      # DATE BETWEEN DATE AND DATE with no cast.
       - name: dates
         sql: >
-          {dates.date_day} BETWEEN CAST({CUBE}.effective_start_date AS
-          TIMESTAMP) AND CAST({CUBE}.effective_end_date AS TIMESTAMP)
+          {dates.date_key} BETWEEN {CUBE}.effective_start_date AND
+          {CUBE}.effective_end_date
         relationship: one_to_many
 
       - name: staff
