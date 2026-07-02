@@ -5,6 +5,11 @@
 > superpowers:executing-plans to implement this plan task-by-task. Steps use
 > checkbox (`- [ ]`) syntax for tracking.
 
+> **Amendment (2026-07-02, post-validation):** the shipped model additionally
+> filters `_dbt_source_relation` to production district datasets — see the
+> spec's Inputs section and issue #4318. The SQL and fixtures embedded below are
+> the pre-fix versions; do not "correct" the model back to them.
+
 **Goal:** Add `int_powerschool__gpa_term_lookback` — a kipptaf intermediate view
 giving each current-year student-school its Y1 GPA measures as of 1, 2, and 4
 weeks before the current day, read from `snapshot_powerschool__gpa_term`

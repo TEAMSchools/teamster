@@ -10,8 +10,7 @@ models:
       close a row when it disappears from the source, so a withdrawn student's
       lookbacks return last-known values — consumers must scope by enrollment.
       Rows whose source relation is not a production district dataset are
-      excluded — the prod snapshot carries frozen dev-relation ghost rows (issue
-      4318).
+      excluded — the prod snapshot carries frozen dev-relation ghost rows.
     data_tests:
       - dbt_utils.unique_combination_of_columns:
           arguments:

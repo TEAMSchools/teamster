@@ -58,10 +58,10 @@ One new model: `int_powerschool__gpa_term_lookback` in
 
 `snapshot_powerschool__gpa_term` only, filtered to the current year:
 `yearid = {{ var("current_academic_year") - 1990 }}` — and to production
-district relations
-(`regexp_contains(_dbt_source_relation, r'kipp[a-z]+_powerschool')` on the
-dataset segment). The prod snapshot contains ~55k permanently-open ghost rows
-whose `_dbt_source_relation` points at dev datasets (`zz_cbini_*`, injected
+district relations (anchored to the backtick-delimited dataset segment):
+``regexp_contains(_dbt_source_relation, r'\.`kipp[a-z]+_powerschool`\.')``. The
+prod snapshot contains ~55k permanently-open ghost rows whose
+`_dbt_source_relation` points at dev datasets (`zz_cbini_*`, injected
 2025-12-03); without the filter they duplicate the grain per district after
 `union_dataset_join_clause` prefix extraction. Cleanup tracked in
 [#4318](https://github.com/TEAMSchools/teamster/issues/4318).
