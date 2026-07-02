@@ -1,0 +1,102 @@
+models:
+  - name: stg_focus__referral_codes
+    description: >-
+      Focus referral codes — one row per referral reason code (incident type),
+      with its ISS/OSS day ranges, SESIR mapping, and the actions and profiles
+      the code is associated with.
+    columns:
+      - name: id
+        description: Primary key — Focus referral code id.
+        data_type: int
+        data_tests:
+          - unique:
+              config:
+                severity: error
+          - not_null:
+              config:
+                severity: error
+      - name: title
+        description: Full referral code name.
+        data_type: string
+      - name: code
+        description: Short referral code value.
+        data_type: string
+      - name: state_value
+        description: State-reporting value mapped to this code.
+        data_type: string
+      - name: sesir
+        description: SESIR (state incident reporting) code id.
+        data_type: int
+      - name: max_iss
+        description: Maximum in-school-suspension days for this code.
+        data_type: int
+      - name: min_iss
+        description: Minimum in-school-suspension days for this code.
+        data_type: int
+      - name: max_oss
+        description: Maximum out-of-school-suspension days for this code.
+        data_type: int
+      - name: min_oss
+        description: Minimum out-of-school-suspension days for this code.
+        data_type: int
+      - name: actions
+        description: Referral action ids associated with this code.
+        data_type: string
+      - name: profiles
+        description: User profiles permitted to use this code.
+        data_type: string
+      - name: restrict_reentry
+        description: Flag (0/1) — whether the code restricts re-entry.
+        data_type: int
+      - name: severity
+        description: Severity ranking for the code.
+        data_type: int
+      - name: override_profile
+        description: Profile permitted to override the code limits.
+        data_type: string
+      - name: warning_message
+        description: Warning message shown when the code is applied.
+        data_type: string
+      - name: end_year
+        description: Last school year (start year) the code is active.
+        data_type: int
+      - name: incident_type
+        description: Incident type classification for the code.
+        data_type: string
+      - name: start_year
+        description: First school year (start year) the code is active.
+        data_type: int
+      - name: mobile_app
+        description:
+          Flag (0/1) — whether the code is available in the mobile app.
+        data_type: int
+      - name: district_id
+        description: Focus district id.
+        data_type: int
+      - name: letter_id
+        description: Letter template id associated with the code.
+        data_type: int
+      - name: require_hope
+        description: Flag (0/1) — whether a HOPE entry is required for the code.
+        data_type: int
+      - name: require_threat
+        description: Flag (0/1) — whether a threat assessment is required.
+        data_type: int
+      - name: letter_source
+        description: Source of the associated letter template.
+        data_type: string
+      - name: grade_levels
+        description: Grade levels the code applies to.
+        data_type: string
+      - name: probation_option_ids
+        description: Probation option ids associated with the code.
+        data_type: string
+      - name: priority
+        description: Display/processing priority for the code.
+        data_type: numeric
+      - name: created_at
+        description: Row creation timestamp in Focus.
+        data_type: timestamp
+      - name: updated_at
+        description: Row last-update timestamp in Focus.
+        data_type: timestamp

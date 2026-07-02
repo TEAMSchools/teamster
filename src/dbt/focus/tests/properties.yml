@@ -1,0 +1,12 @@
+data_tests:
+  - name: test_focus__custom_field_options_known_fields
+    description: >-
+      Guards the decode join: the three sentinel (source_class, column_name)
+      pairs must each resolve to at least one option in
+      int_focus__custom_field_options. Any returned row is a failure.
+    config:
+      meta:
+        dagster:
+          ref:
+            name: int_focus__custom_field_options
+            package: focus

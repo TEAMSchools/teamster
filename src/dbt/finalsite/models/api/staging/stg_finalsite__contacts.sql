@@ -37,10 +37,13 @@ select
 
     safe_cast(birth_date as date) as birth_date,
 
-    households[safe_offset(0)].address_1 as address_1,
-    households[safe_offset(0)].address_2 as address_2,
-    households[safe_offset(0)].city as city,
-    households[safe_offset(0)].state as state,
-    households[safe_offset(0)].zip as zip,
+    -- normalize the household address: Finalsite emits empty strings (not null)
+    -- and mixed-case states, which flow unchanged into the Focus ADDRESS and
+    -- CONTACTS feeds. Blank -> null; uppercase the state code.
+    nullif(trim(households[safe_offset(0)].address_1), '') as address_1,
+    nullif(trim(households[safe_offset(0)].address_2), '') as address_2,
+    nullif(trim(households[safe_offset(0)].city), '') as city,
+    nullif(upper(trim(households[safe_offset(0)].state)), '') as state,
+    nullif(trim(households[safe_offset(0)].zip), '') as zip,
     households[safe_offset(0)].country as country,
 from {{ source("finalsite", "contacts") }}

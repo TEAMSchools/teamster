@@ -1,0 +1,36 @@
+models:
+  - name: int_focus__course_periods__pivot
+    description: >-
+      Decoded labels for the CoursePeriod select custom fields, one row per
+      Focus course_period_id. Join to stg_focus__course_periods on
+      course_period_id.
+    columns:
+      - name: course_period_id
+        description: Primary key — Focus course period (section) id.
+        data_tests:
+          - unique:
+              config:
+                severity: error
+          - not_null:
+              config:
+                severity: error
+      - name: fefp_number_label
+        description: Decoded label for the fefp_number select field.
+      - name: scheduling_method_label
+        description: Decoded label for the scheduling_method select field.
+      - name: facility_type_label
+        description: Decoded label for the facility_type select field.
+      - name: cert_licensure_qual_status_label
+        description:
+          Decoded label for the cert_licensure_qual_status select field.
+      - name: highly_qualified_label
+        description: Decoded label for the highly_qualified select field.
+      - name: reading_intervention_component_label
+        description:
+          Decoded label for the reading_intervention_component select field.
+      - name: location_of_student_label
+        description: Decoded label for the location_of_student select field.
+      - name: eoc_exam_term_label
+        description: Decoded label for the eoc_exam_term select field.
+      - name: basic_skills_exam_label
+        description: Decoded label for the basic_skills_exam select field.

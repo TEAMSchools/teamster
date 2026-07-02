@@ -86,6 +86,7 @@ with
             as time_and_attendance_indicator,
             w.worker_time_profile__time_zone_code,
             w.worker_hire_date_recent,
+            w.job_function_code__name as job_function,
 
             en.employee_number,
 
@@ -220,6 +221,7 @@ with
             null as time_and_attendance_indicator,
             null as worker_time_profile__time_zone_code,
             null as worker_hire_date_recent,
+            null as job_function,
 
             employee_number,
             race_ethnicity_reporting,

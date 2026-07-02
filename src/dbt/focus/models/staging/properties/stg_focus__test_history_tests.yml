@@ -1,0 +1,70 @@
+models:
+  - name: stg_focus__test_history_tests
+    description: >-
+      Focus test-history test definitions — one row per test, scoped by
+      district. The catalog of assessments tracked in Focus Test History.
+    columns:
+      - name: id
+        description: Primary key — Focus test-history test id.
+        data_type: int
+        data_tests:
+          - unique:
+              config:
+                severity: error
+          - not_null:
+              config:
+                severity: error
+      - name: test_type_id
+        description: Foreign key to the Focus test-history test type.
+        data_type: int
+      - name: district_id
+        description: Focus district id the test belongs to.
+        data_type: int
+      - name: fas_test_id
+        description: Florida Assessment System test id mapped to this test.
+        data_type: int
+      - name: min_score_type
+        description: Score-type id used for the minimum / passing score.
+        data_type: int
+      - name: title
+        description: Full test name.
+        data_type: string
+      - name: short_name
+        description: Abbreviated test label.
+        data_type: string
+      - name: score_types
+        description: Encoded list of score-type ids associated with the test.
+        data_type: string
+      - name: test_code
+        description: State or district reporting code for the test.
+        data_type: string
+      - name: test_level
+        description: Grade band or level the test targets.
+        data_type: string
+      - name: post_secondary
+        description: Y/N — whether the test is a post-secondary assessment.
+        data_type: string
+      - name: inter_district
+        description: Y/N — whether the test is shared across districts.
+        data_type: string
+      - name: allow_profiles_modify
+        description: Y/N — whether profile users may modify scores.
+        data_type: string
+      - name: allow_profiles_create
+        description: Y/N — whether profile users may create scores.
+        data_type: string
+      - name: allow_profiles_view
+        description: Y/N — whether profile users may view scores.
+        data_type: string
+      - name: passing_score
+        description: Passing-score threshold or label for the test.
+        data_type: string
+      - name: uuid
+        description: Focus global unique identifier for the row.
+        data_type: string
+      - name: created_at
+        description: Row creation timestamp in Focus.
+        data_type: timestamp
+      - name: updated_at
+        description: Row last-update timestamp in Focus.
+        data_type: timestamp

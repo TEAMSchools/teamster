@@ -4,25 +4,46 @@ select
 
     sch.location_focus_school_id as school_id,
 
-    -- STDT_ID is null until the Finalsite-minted student id lands in
-    -- id_attributes; repoint to int_finalsite__contact_id_attributes then.
-    cast(null as string) as student_id,
+    ida.focus_student_id_prefixed as student_id,
 
     if(
         l.grade_canonical_name = 'k',
         'KG',
+        -- non-digit grade names (e.g. pk) yield null here; Miami is K-9 today
         lpad(regexp_extract(l.grade_canonical_name, r'\d+'), 2, '0')
     ) as grade_id,
 
-    format_date('%Y%m%d', l.enrollment_start_date) as start_date,
+    -- Finalsite emits pre-first-day enrolled_dates (contract/registration
+    -- dates); Focus matches enrollment on the first attendance calendar date, so
+    -- floor the start date up to the school year's first day (derived per school
+    -- year from the Focus attendance calendar). Rows already on/after the first
+    -- day, and years with no calendar, are left unchanged.
+    format_date(
+        '%Y%m%d',
+        greatest(
+            l.enrollment_start_date,
+            coalesce(fd.first_day_of_school, l.enrollment_start_date)
+        )
+    ) as start_date,
 
-    ec.focus_enrollment_code as enrollment_code,
+    -- enrollment_code is the entry action and does not change on transfer_out;
+    -- a withdrawal is expressed by drop_code + end_date, not by clearing the
+    -- entry code.
+    case when l.grade_canonical_name = 'k' then 'E05' else 'E01' end as enrollment_code,
 
-    -- enrollment_end_date / withdrawal_reason are already null upstream for
-    -- non-transfer rows, so no transfer_out re-gating is needed here.
+    -- enrollment_end_date is gated to transfer_out upstream in
+    -- int_finalsite__enrollment_lifecycle, so end_date needs no re-gating.
     format_date('%Y%m%d', l.enrollment_end_date) as end_date,
 
-    dc.focus_drop_code as drop_code,
+    -- Focus import header is drop_code; this carries the raw Finalsite withdraw
+    -- label, which the kippmiami reconciliation layer decodes to the Focus
+    -- short_name. fl_state_withdraw_codes_ss is a raw contact custom attribute
+    -- (NOT gated upstream), so gate it to transfer_out here — a withdraw code is
+    -- only meaningful for a withdrawal, and an ungated value would emit a drop
+    -- code for a still-enrolled student downstream.
+    if(
+        l.is_transfer_out, cca.fl_state_withdraw_codes_ss, cast(null as string)
+    ) as drop_code,
 
     cast(null as string) as calendar_id,
     cast(null as string) as prior_dist,
@@ -33,7 +54,7 @@ select
     cast(null as string) as offender_transfer_stdt,
     cast(null as string) as came_from,
 
-    cca.withdrawal_school_txt as moved_to,
+    if(l.is_transfer_out, cca.withdrawal_school_txt, cast(null as string)) as moved_to,
 
     cast(null as string) as sec_sch,
 
@@ -48,8 +69,11 @@ select
     cast(null as string) as include_in_class_rank,
     cast(null as int64) as fl_days_present,
     cast(null as int64) as fl_days_absent,
-    cast(null as int64) as fl_days_absent_not_disc,
 from {{ ref("int_finalsite__enrollment_lifecycle") }} as l
+inner join
+    {{ ref("int_finalsite__contact_id_attributes") }} as ida
+    on l.finalsite_enrollment_id = ida.finalsite_enrollment_id
+    and ida.focus_student_id_prefixed is not null
 left join
     {{ ref("int_finalsite__contact_custom_attributes") }} as cca
     on l.finalsite_enrollment_id = cca.finalsite_enrollment_id
@@ -57,8 +81,9 @@ left join
     {{ ref("int_people__location_crosswalk") }} as sch
     on l.assigned_school = sch.location_name
 left join
-    {{ ref("stg_google_sheets__focus__enrollment_code_crosswalk") }} as ec
-    on l.lifecycle_action = ec.finalsite_lifecycle_action
-left join
-    {{ ref("stg_google_sheets__focus__drop_code_crosswalk") }} as dc
-    on l.withdrawal_reason = dc.finalsite_withdrawal_reason
+    {{ ref("int_focus__school_year_first_day") }} as fd
+    on l.school_year_start = fd.syear
+-- enrolled-only: pre-enrollment statuses (enrollment_in_progress, assigned_school)
+-- carry no enrolled_date; Focus enrollment records require an entry date, so
+-- defer these students until Finalsite mints enrollment_start_date. See #4291.
+where l.enrollment_start_date is not null

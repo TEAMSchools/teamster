@@ -5,5 +5,3 @@ models:
         data_type: string
       - name: secondary_student_id
         data_type: string
-      - name: relationship
-        data_type: string

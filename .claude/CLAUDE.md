@@ -112,7 +112,10 @@ that same command (`sc=$(...); echo "${SC}"`). Use lowercase names
 (`sc=...; echo "${sc}"`) in throwaway commands.
 
 **BigQuery MCP** — queries must start with SELECT/SHOW/DESCRIBE/WITH; embedded
-DML/DDL (INSERT, UPDATE, DELETE, CREATE, DROP, etc.) is blocked.
+DML/DDL (INSERT, UPDATE, DELETE, CREATE, DROP, etc.) is blocked. The block
+matches the keyword as a substring — including inside a string literal
+(`where type = 'Drop'`), which is denied with the misleading "Cannot access
+sensitive path" message. Reword to avoid the literal (`like 'Dr%'`).
 
 **Output scanning** (PostToolUse) — blocks tool results containing secret
 material (keys, tokens, connection strings, high-entropy strings). Fires for

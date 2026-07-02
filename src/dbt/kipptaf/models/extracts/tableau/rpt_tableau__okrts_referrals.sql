@@ -135,7 +135,7 @@ with
             and co.academic_year = dli.create_ts_academic_year
             and extract(date from dli.create_ts_date)
             between co.week_start_monday and co.week_end_sunday
-            and {{ union_dataset_join_clause(left_alias="co", right_alias="dli") }}
+            and co._dbt_source_project = dli._dbt_source_project
         group by co.student_number, co.academic_year, co.schoolid
     ),
 
@@ -165,7 +165,7 @@ with
         -- model; every column is functionally determined by the partition key,
         -- not a mask for upstream duplicates
         select distinct
-            _dbt_source_relation,
+            _dbt_source_project,
             student_number,
             academic_year,
             week_number_academic_year,
@@ -174,7 +174,7 @@ with
 
     tardies_weekly as (
         select
-            _dbt_source_relation,
+            _dbt_source_project,
             student_number,
             academic_year,
             week_number_academic_year,
@@ -182,7 +182,7 @@ with
             sum(is_tardy) as n_tardies_week,
         from {{ ref("int_powerschool__ps_adaadm_daily_ctod") }}
         group by
-            _dbt_source_relation,
+            _dbt_source_project,
             student_number,
             academic_year,
             week_number_academic_year
@@ -190,20 +190,18 @@ with
 
     tardies_ytd as (
         select
-            sw._dbt_source_relation,
+            sw._dbt_source_project,
             sw.student_number,
             sw.academic_year,
             sw.week_number_academic_year,
 
             sum(coalesce(tw.n_tardies_week, 0)) over (
-                partition by
-                    sw._dbt_source_relation, sw.student_number, sw.academic_year
+                partition by sw._dbt_source_project, sw.student_number, sw.academic_year
                 order by sw.week_number_academic_year
             ) as total_tardies_ytd,
 
             sum(coalesce(tw.n_tardies_week, 0)) over (
-                partition by
-                    sw._dbt_source_relation, sw.student_number, sw.academic_year
+                partition by sw._dbt_source_project, sw.student_number, sw.academic_year
             ) as total_tardies,
         from student_weeks as sw
         left join
@@ -211,7 +209,7 @@ with
             on sw.student_number = tw.student_number
             and sw.academic_year = tw.academic_year
             and sw.week_number_academic_year = tw.week_number_academic_year
-            and {{ union_dataset_join_clause(left_alias="sw", right_alias="tw") }}
+            and sw._dbt_source_project = tw._dbt_source_project
     )
 
 select
@@ -411,6 +409,7 @@ select
             order by dli.is_suspension desc
         )
     ) as rn_incident,
+
 from {{ ref("int_extracts__student_enrollments_weeks") }} as co
 left join
     {{ ref("int_deanslist__incidents__penalties") }} as dli
@@ -418,7 +417,7 @@ left join
     and co.academic_year = dli.create_ts_academic_year
     and extract(date from dli.create_ts_date)
     between co.week_start_monday and co.week_end_sunday
-    and {{ union_dataset_join_clause(left_alias="co", right_alias="dli") }}
+    and co._dbt_source_project = dli._dbt_source_project
 left join
     ssds_period as s
     on dli.create_ts_date between s.period_start_date and s.period_end_date
@@ -427,7 +426,7 @@ left join
     on co.studentid = gpa.studentid
     and co.yearid = gpa.yearid
     and gpa.is_current
-    and {{ union_dataset_join_clause(left_alias="co", right_alias="gpa") }}
+    and co._dbt_source_project = gpa._dbt_source_project
 left join
     {{ ref("int_deanslist__roster_assignments") }} as tr
     on co.student_number = tr.student_school_id
@@ -462,5 +461,5 @@ left join
     on co.student_number = tar.student_number
     and co.academic_year = tar.academic_year
     and co.week_number_academic_year = tar.week_number_academic_year
-    and {{ union_dataset_join_clause(left_alias="co", right_alias="tar") }}
+    and co._dbt_source_project = tar._dbt_source_project
 where co.academic_year >= {{ var("current_academic_year") - 1 }}

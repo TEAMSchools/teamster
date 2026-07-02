@@ -59,6 +59,9 @@ file; domain specifics live in the nearest subdirectory CLAUDE.md.
   `mcp__github__create_branch` and GraphQL `createLinkedBranch` both no-op when
   the branch already exists. Delete the remote branch, then
   `gh issue develop <num> --name <branch>`, then re-push local commits.
+  `git push origin --delete <branch>` is classifier-blocked as a destructive git
+  action even with consent — if the delete is refused, create the branch under a
+  NEW name and `gh issue develop --name <new-name>` instead of deleting.
 
 - **Worktree commands**: Path-flag-driven tools must name the worktree
   explicitly. Use `git -C <worktree>` on every git call (bare `git` from the
@@ -110,6 +113,25 @@ file; domain specifics live in the nearest subdirectory CLAUDE.md.
   partway through. Scope dispatches to one file / one commit; inspect the file
   diff and `git log` before marking complete — don't trust the self-report.
 
+- **The `Workflow`-tool orchestrator is unreliable for long fan-outs in this
+  Codespace** — it stalled/died mid-run repeatedly (not OOM; 11Gi free), and a
+  window reload left a prior run orphaned-but-alive that kept spawning
+  branches/worktrees and collided with the relaunch. Prefer discrete main-loop
+  `Agent` dispatches for multi-batch work (one unit lost on failure, resumable);
+  if you must run a Workflow, after any reload/relaunch check for and kill a
+  leftover prior run BEFORE relaunching.
+
+- **Workflow run hygiene**: a dead run = its journal
+  (`~/.claude/projects/<proj>/subagents/workflows/wf_<id>/journal.jsonl`) stops
+  growing for ~2min with no live `dbt`/agent procs. Its `isolation:'worktree'`
+  dirs are `.claude/worktrees/wf_<id>-N` (NOT the repo `.worktrees/`; left
+  `locked` when orphaned — `git worktree unlock` then `remove --force`).
+  `TaskStop` only sees tasks launched in the CURRENT session — a Workflow from a
+  prior (reloaded) session isn't in the registry; clean it at the
+  process/worktree level. Concurrency cap = `min(16, cpu_cores-2)` (4-core
+  Codespace → 2; raising it needs a larger machine, whose restart kills
+  in-flight runs).
+
 - **Git resuming**: Before resuming work on an existing branch, merge `main`:
   `git fetch origin main && git merge origin/main`.
 
@@ -157,6 +179,19 @@ file; domain specifics live in the nearest subdirectory CLAUDE.md.
   declaring done. Local relationships warnings absent from CI are stale-dev
   `--defer` drift; ignore. CI warnings unchanged from main are pre-existing —
   `gh search issues` for a tracker before filing.
+
+- **The `claude-review` bot asserts repo conventions that may not be enforced**
+  (this session: a `_at`-vs-`_date` column-naming rule that no model follows).
+  Verify each convention claim against existing models before applying — its
+  findings are advisory, and `git grep` settles it faster than complying.
+
+- **A PR's CI lives on two disjoint surfaces**: dbt Cloud is a commit _status_
+  (`pull_request_read get_status` / `gh api commits/<sha>/status`); Trunk /
+  CodeQL / `claude` are _check runs_ (`get_check_runs` /
+  `commits/<sha>/check-runs`). Check both before calling a PR green.
+  `claude-review` triggers only on PR `opened` / `ready_for_review` (not
+  `synchronize`) — it does NOT re-run when you push fixes, so don't wait or
+  monitor for a re-review after a fix push.
 
 - **Python**: Always `uv run` — never bare `python`, `python3`, or
   venv-installed tools (`dbt`, `dagster`, etc.).
@@ -267,6 +302,11 @@ status, IEP/504/disability), financial info (FRL status), activities. Each field
 alone may be safe; combinations may not. When unsure, consult the
 [PTAC glossary](https://studentprivacy.ed.gov/glossary) or treat as PII.
 
+PII-tagging precedent in staging (powerschool) is **narrower** than this list —
+it omits gender, race/ethnicity, and internal/student ids. For a PII-heavy new
+model, confirm scope (direct-only vs direct+indirect) with the user before
+tagging.
+
 ## Superpowers skill overrides
 
 - **Branch creation always goes through the issue-and-branch flow in _Working
@@ -376,10 +416,13 @@ identify the `mcp__github__*` tool that handles it; only if none exists, check
 the allowlist.
 
 - **GitHub MCP write tools HTML-sanitize body text**: `issue_write`,
-  `add_issue_comment`, and `update_pull_request` silently strip `<...>` tokens
-  (e.g. `<role>`, `<col>`) — **even inside inline backticks**. Use
-  `{placeholder}` braces or a fenced code block (fenced blocks preserve `<`,
-  `<=`, `>=`). Read the stored body back and verify after writing.
+  `add_issue_comment`, `update_pull_request`, and `create_pull_request` strip
+  `<...>` tokens (e.g. `<role>`, `<col>`) — **even inside inline backticks**.
+  Use `{placeholder}` braces or a fenced code block (fenced blocks preserve `<`,
+  `<=`, `>=`). Read the stored body back and verify after writing. They also
+  entity-encode `&`→`&amp;` and `"`→`&#34;` (not strip) — harmless in rendered
+  prose but rendered literally inside code spans and in titles, so avoid `&` /
+  `"` in PR/issue titles and code spans (use "and" / single quotes).
 - `mcp__github__pull_request_review_write` `method=create` requires the FULL
   40-char `commitID` — an abbreviated SHA fails with "Could not coerce value ...
   to GitObjectID".
@@ -469,8 +512,9 @@ rate-limiting).
 Step pod stdout is filtered from `k8s_container` logs. For per-step execution
 logs, use Dagster's compute log manager:
 `get_run_logs(filter_types=["LogsCapturedEvent"])` →
-`get_run_compute_logs(log_key=[run_id, "compute_logs", <logKey>])`.
-`mcp__gke__query_logs` surfaces only run-pod logs.
+`get_run_compute_logs(log_key=[run_id, "compute_logs", <logKey>])`. The captured
+`context.log.info` output lands in the result's `stderr` field — `stdout` is
+`null` for these step pods. `mcp__gke__query_logs` surfaces only run-pod logs.
 
 To map a step Job hash to its actual pod name (random suffix):
 `protoPayload.methodName="io.k8s.core.v1.pods.create" protoPayload.resourceName=~"namespaces/dagster-cloud/pods/dagster-step-<hash>"`.

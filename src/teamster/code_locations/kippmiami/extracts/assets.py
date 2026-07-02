@@ -14,6 +14,14 @@ powerschool_extract_assets = [
     for a in config_from_files([f"{config_dir}/powerschool.yaml"])["assets"]
 ]
 
+focus_extract_assets = [
+    build_bigquery_query_sftp_asset(
+        code_location=CODE_LOCATION, timezone=LOCAL_TIMEZONE, **a
+    )
+    for a in config_from_files([f"{config_dir}/focus.yaml"])["assets"]
+]
+
 assets = [
     *powerschool_extract_assets,
+    *focus_extract_assets,
 ]

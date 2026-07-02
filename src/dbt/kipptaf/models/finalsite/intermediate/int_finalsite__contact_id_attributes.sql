@@ -1,6 +1,10 @@
 -- Finalsite contacts API layer is enabled only in regions with Finalsite
 -- ingestion wired (today: KIPP Miami). Add each region's relation here when its
 -- api layer is enabled.
+--
+-- focus_student_id_prefixed (the 8400-prefixed Focus student id consumed by the
+-- rpt_focus__* extracts) is produced by the package model and flows through the
+-- union below.
 with
     union_relations as (
         {{

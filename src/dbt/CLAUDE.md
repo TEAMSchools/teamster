@@ -245,6 +245,13 @@ A newly-created worktree has no `dbt_packages/`. Run
 `dbt build` / `test` / `clone` there — otherwise it errors with "N package(s)
 specified in packages.yml, but only 0 package(s) installed".
 
+## Building a source-system package model locally
+
+Source-system package models (`focus`, `amplify`, etc.) have no resolvable vars
+standalone — build/test them via a **consuming district** project-dir with that
+district's prod manifest for `--defer` (e.g. focus → kippmiami):
+`uv run dbt build --select <model> --project-dir src/dbt/kippmiami --defer --state src/dbt/kippmiami/target/prod --target dev`.
+
 ## Dev `--defer` for unstaged externals
 
 Dev builds depending on GCS externals (`stg_google_sheets__*` etc.) fail with
@@ -296,6 +303,20 @@ Compiles to the column intersection from source-table
 surface at kipptaf-level consumers until district projects rebuild prod. For
 single-PR refactors, add transformations at the kipptaf-level wrapper, not at
 package level.
+
+**Value-only vs column change**: a value-only edit to a package model needs no
+staging — the column set is unchanged, so kipptaf CI compiles and corrected
+values land after the next prod rebuild. A column ADD/rename DOES: an unmodified
+kipptaf union wrapper is `--defer`'d to the Staging env (not `zz_stg`), so the
+new column never appears and downstream models fail `Name <col> not found`. To
+land it single-PR, force the wrapper `state:modified` (a doc comment is enough)
+AND `dbt build --select <pkg-model> --project-dir <district> --target staging`
+into `zz_stg_<district>_<source>` so CI's wrapper rebuild sees the column. The
+`state:modified` trigger must be a `.sql` edit (a comment) — a properties.yml
+`description` change does NOT mark a model modified. Diagnose which side is
+stale from the CI error's `compiled_code` `from` clause: a ref resolving to
+`zz_stg_*` was deferred to the stale staging copy; one resolving to
+`dbt_cloud_pr_*` was rebuilt on the PR branch.
 
 ## Editing a `sources-kipp*.yml` schema fans out `state:modified+`
 
@@ -416,6 +437,11 @@ deployments. Developers use `<repo-root>/.dbt/profiles.yml` (not
   successful auto-retry's output with staler data. Routine models run <=330s
   network-wide (affected models' p99 <=78s), so 900s won't false-kill legit
   work.
+- A dbt **`409 Already Exists: Job <id>`** failure is a `job_retries` collision
+  (the original submit succeeded server-side but the response was lost; the
+  retry re-sends the same job_id). The job usually **succeeded** — confirm via
+  `JOBS_BY_PROJECT` (`state=DONE`, `error_result IS NULL`) before treating it as
+  real. The Dagster run-retry absorbs it.
 
 ## Model Conventions
 
@@ -555,7 +581,19 @@ at CI.
 Dict-format `given` rows require the mocked ref/source to already exist in the
 warehouse (dbt introspects its schema at compile). For array/struct columns
 (e.g. `id_attributes`) or a model/source not yet materialized, use input
-`format: sql` (inline SELECT) instead — dict format fails introspection.
+`format: sql` (inline SELECT) instead — dict format fails introspection. A
+column ADDED to an existing upstream in the same PR is also a
+fails-introspection case: dbt reads the deferred old-schema relation and rejects
+the new column (`Invalid column name '<col>' in unit test fixture`). Building
+that upstream into your dev schema first makes the dict fixture pass LOCALLY
+while CI still fails — use `format: sql`; don't trust a local unit-test pass for
+a same-PR column add.
+
+After a column/contract rename, run the WHOLE directory's unit tests
+(`--select "test_type:unit,<fqn.dir>"`, e.g. `test_type:unit,extracts.focus`),
+not just the changed model — sibling models mock the same `ref()`/`source()`, so
+their `given`/`expect` rows break on the same rename and CI catches what a
+single-model run misses.
 
 ### Date-range joins
 
@@ -729,6 +767,17 @@ the same partition.
 - **`select *` inside UNION ALL CTEs trips CV03**: sqlfluff requires a trailing
   comma after the last column, but `select *` has nothing to trail. Enumerate
   columns explicitly in each UNION branch.
+- **A standalone `select *` takes a trailing comma** (`select *,`) to satisfy
+  sqlfluff CV03 (e.g. `stg_overgrad__schools.sql`; a `source` CTE) — distinct
+  from the UNION-ALL case above, which must enumerate columns.
+- **A projected column whose name equals its source table binds to the whole-row
+  STRUCT, not the column**: a bare `address` ref in
+  `from {{ source("focus", "address") }}` resolves to the table range variable
+  (dbt's component-backtick `` `proj`.`ds`.`address` `` form), so the model
+  silently outputs one struct column and the contract fails listing every field
+  as `address.<col>`. Read through a `source` CTE
+  (`with source as (select *, from {{ source(...) }})`). A single-backtick MCP
+  repro `` `proj.ds.table` `` does NOT reproduce it — use component backticks.
 - **BigQuery `PIVOT` operator**: pivots ONE value column per aggregate. For a
   mixed-type key-value array, use a multi-aggregate pivot —
   `pivot(max(v_str) as s, max(v_bool) as b, any_value(v_arr) as a for field_name in ('x', ...))`
@@ -736,6 +785,12 @@ the same partition.
   columns are `{agg_alias}_{value}`; a SINGLE-aggregate pivot names them by the
   bare value (`'x'` → column `x`). `max()` can't aggregate ARRAY — use
   `any_value()` for array fields.
+- **BigQuery `UNPIVOT` excludes null rows** — an entity whose unpivoted columns
+  are all null drops out of the result. Harmless for a pure decode companion (a
+  left join from staging yields null labels anyway), but when the model also
+  LEFT JOINs a separately-computed field (e.g. a `multiple`/array decode), drive
+  the final `SELECT` from the full entity list or that field is lost for
+  all-null-unpivoted entities.
 - **AL09 on struct subfields**: `value.string_value as string_value` trips AL09
   (alias equals the leaf name). Rename to a distinct alias (`as value_string`)
   rather than dropping it when a downstream PIVOT/ref needs the column named.

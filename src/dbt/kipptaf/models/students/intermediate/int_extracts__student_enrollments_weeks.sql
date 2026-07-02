@@ -31,7 +31,7 @@ with
     {{
         dbt_utils.deduplicate(
             relation="student_week",
-            partition_by="_dbt_source_relation, student_number, week_start_monday",
+            partition_by="_dbt_source_project, student_number, week_start_monday",
             order_by="is_enrolled_week desc",
         )
     }}

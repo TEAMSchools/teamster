@@ -1,3 +1,17 @@
+with
+    -- students who already have a contact (person) in Focus; import once
+    focus_contact as (
+        select distinct cast(student_id as string) as student_id,
+        from {{ ref("stg_focus__students_join_people") }}
+    ),
+
+    diffed as (
+        select d.*,
+        from {{ source("kipptaf_extracts", "rpt_focus__contacts") }} as d
+        left join focus_contact as f on d.student_id = f.student_id
+        where f.student_id is null
+    )
+
 select
     student_id,
     student_relation,
@@ -49,5 +63,4 @@ select
     contact7_value,
     contact7_blocked,
     contact7_unlisted,
-    contact7_callout,
-from {{ source("kipptaf_extracts", "rpt_focus__contacts") }}
+from diffed

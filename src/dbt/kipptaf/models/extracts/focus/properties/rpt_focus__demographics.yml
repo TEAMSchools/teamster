@@ -4,11 +4,11 @@ models:
       One row per in-scope Finalsite student reshaped into the Focus
       `DEMOGRAPHICS` SFTP template layout. Joins `stg_finalsite__contacts` to
       `int_finalsite__enrollment_lifecycle` (the in-scope filter; grain =
-      `finalsite_enrollment_id`), then left joins
+      `finalsite_enrollment_id`), then inner joins
+      `int_finalsite__contact_id_attributes` for the Focus student id
+      (`stdt_id`), excluding contacts without a minted Focus id, and left joins
       `int_finalsite__contact_custom_attributes` for race, language,
-      media-release, and Hispanic/Latino fields. `stdt_id` is stubbed null until
-      the Finalsite-minted student id lands in
-      `int_finalsite__contact_id_attributes`. Produces 43 columns in
+      media-release, and Hispanic/Latino fields. Produces 42 columns in
       `DEMOGRAPHICS_LAYOUT` order. Focus column header casing (`STDT_ID`,
       `LAST_NAME`, etc.) is applied at transport time via
       `file_config.format.header_replacements`; dbt column names remain
@@ -20,11 +20,14 @@ models:
       - name: stdt_id
         data_type: string
         description:
-          Focus student ID. Null until Finalsite mints the student id into
-          `int_finalsite__contact_id_attributes`, then sourced from there.
+          Focus student id (Focus `STDT_ID`) from
+          `int_finalsite__contact_id_attributes.focus_student_id_prefixed`. Rows
+          for contacts without a minted Focus id are excluded from this extract.
         data_tests:
           - unique
-          - not_null
+          - not_null:
+              config:
+                severity: error
       - name: last_name
         data_type: string
         description: Student last name from Finalsite.
@@ -197,22 +200,20 @@ models:
         data_type: string
         description:
           LCP continuing student flag; not sourced from Finalsite — always null.
-      - name: tide_access_code
-        data_type: string
-        description: TIDE access code; not sourced from Finalsite — always null.
 
 unit_tests:
   - name: test_demographics_shape
     description:
-      Verifies the 43-column DEMOGRAPHICS layout — STDT_ID is null until the
-      Finalsite-minted student id lands, DT_BIRTH is formatted as YYYYMMDD,
+      Verifies the 42-column DEMOGRAPHICS layout — STDT_ID is sourced from
+      int_finalsite__contact_id_attributes, DT_BIRTH is formatted as YYYYMMDD,
       GENDER is mapped to single-letter code, ETHNIC_HL derives from
       int_finalsite__contact_custom_attributes.latino_hispanic_yn. The second
       student has no custom-attributes row, confirming ETHNIC_HL is null (not
       'N') for an unknown while PHOTO_VID_PERM defaults to 'N'. The third
       student has a custom-attributes row whose lang_parent_ss has no crosswalk
       entry, confirming the language columns fall through to null (not the raw
-      label).
+      label). The fourth student has no int_finalsite__contact_id_attributes row
+      (no minted Focus id) and is excluded from the extract.
     model: rpt_focus__demographics
     given:
       - input: ref('stg_finalsite__contacts')
@@ -239,11 +240,18 @@ unit_tests:
               first_name: Worf,
               birth_date: 2011-01-10,
             }
+          - {
+              finalsite_enrollment_id: enr-004,
+              last_name: Kim,
+              first_name: Harry,
+              birth_date: 2010-07-04,
+            }
       - input: ref('int_finalsite__enrollment_lifecycle')
         rows:
           - { finalsite_enrollment_id: enr-001 }
           - { finalsite_enrollment_id: enr-002 }
           - { finalsite_enrollment_id: enr-003 }
+          - { finalsite_enrollment_id: enr-004 }
       - input: ref('int_finalsite__contact_custom_attributes')
         format: sql
         rows: |
@@ -264,10 +272,20 @@ unit_tests:
         format: sql
         rows: |
           select 'Spanish' as finalsite_language, 'SP' as focus_language_code
+      - input: ref('int_finalsite__contact_id_attributes')
+        format: sql
+        rows: |
+          select
+            'enr-001' as finalsite_enrollment_id,
+            '84001001001' as focus_student_id_prefixed
+          union all
+          select 'enr-002', '84001001002'
+          union all
+          select 'enr-003', '84001001003'
     expect:
       rows:
         - {
-            stdt_id: null,
+            stdt_id: "84001001001",
             last_name: Smith,
             first_name: Jane,
             name_suffix: null,
@@ -309,10 +327,9 @@ unit_tests:
             dt_home_lang_survey: null,
             casas_track: null,
             lcp_cont_stdt: null,
-            tide_access_code: null,
           }
         - {
-            stdt_id: null,
+            stdt_id: "84001001002",
             last_name: Doe,
             first_name: John,
             name_suffix: null,
@@ -354,10 +371,9 @@ unit_tests:
             dt_home_lang_survey: null,
             casas_track: null,
             lcp_cont_stdt: null,
-            tide_access_code: null,
           }
         - {
-            stdt_id: null,
+            stdt_id: "84001001003",
             last_name: Mara,
             first_name: Worf,
             name_suffix: null,
@@ -399,5 +415,4 @@ unit_tests:
             dt_home_lang_survey: null,
             casas_track: null,
             lcp_cont_stdt: null,
-            tide_access_code: null,
           }
