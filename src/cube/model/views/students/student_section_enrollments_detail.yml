@@ -1,0 +1,160 @@
+views:
+  - name: student_section_enrollments_detail
+    description: >-
+      Row-level student section enrollments — one row per student x section
+      enrollment. Use for per-teacher class rosters (filter to a lead teacher)
+      and section drill-down. count_students is a distinct-student headcount,
+      correct per teacher. Contains direct student identifiers — see
+      access_policy for PII gating.
+
+    cubes:
+      - join_path: student_section_enrollments
+        includes:
+          - count_students
+          - student_section_enrollment_key
+          - student_enrollment_key
+          - academic_year
+          - entry_date
+          - exit_date
+          - is_dropped_section
+          - is_dropped_course
+          - is_homeroom
+          - teacher_role
+          - lead_teacher_staff_key
+
+      - join_path: student_section_enrollments.staff
+        prefix: true
+        includes:
+          - full_name
+          - first_name
+          - last_name
+
+      - join_path: student_section_enrollments.course_sections.courses
+        includes:
+          - discipline
+          - course_title
+          - course_code
+          - credit_type
+          - is_foundations
+
+      - join_path: student_section_enrollments.course_sections
+        includes:
+          - identifier
+          - period
+
+      - join_path: student_section_enrollments.terms
+        includes:
+          - semester
+          - term_name
+          - term_code
+          - term_type
+
+      - join_path: student_section_enrollments.student_school_enrollments
+        prefix: false
+        includes:
+          - grade_level
+          - graduation_year
+          - year_in_network
+          - is_retained_year
+
+      - join_path: student_section_enrollments.student_school_enrollments.students
+        prefix: false
+        includes:
+          - student_key
+          - full_name
+          - birth_date
+          - lea_student_identifier
+          - state_student_identifier
+          - gender_identity
+          - race
+          - enrollment_status
+          - is_gifted
+
+      - join_path: student_section_enrollments.student_school_enrollments.locations
+        prefix: true
+        includes:
+          - location_name
+          - abbreviation
+          - grade_band
+          - campus
+          - city
+
+      - join_path: student_section_enrollments.student_school_enrollments.locations.regions
+        prefix: true
+        includes:
+          - region_name
+          - state
+
+    meta:
+      folders:
+        - name: Teacher
+          members:
+            - lead_teacher_staff_key
+            - teacher_role
+            - staff_full_name
+            - staff_first_name
+            - staff_last_name
+        - name: Course
+          members:
+            - discipline
+            - course_title
+            - course_code
+            - credit_type
+            - is_foundations
+            - identifier
+            - period
+        - name: Term
+          members:
+            - semester
+            - term_name
+            - term_code
+            - term_type
+        - name: Location
+          members:
+            - locations_location_name
+            - locations_abbreviation
+            - locations_grade_band
+            - locations_campus
+            - locations_city
+            - regions_region_name
+            - regions_state
+        - name: Student
+          members:
+            - student_key
+            - full_name
+            - birth_date
+            - lea_student_identifier
+            - state_student_identifier
+            - gender_identity
+            - race
+            - enrollment_status
+            - is_gifted
+        - name: Enrollment
+          members:
+            - student_section_enrollment_key
+            - student_enrollment_key
+            - academic_year
+            - entry_date
+            - exit_date
+            - is_homeroom
+            - is_dropped_section
+            - is_dropped_course
+            - grade_level
+            - graduation_year
+            - year_in_network
+            - is_retained_year
+
+    access_policy:
+      # Teacher fields (staff_* names, lead_teacher_staff_key) are intentionally
+      # NOT in excludes — staff base-tier / a staff FK, not student PII.
+      - group: cube-access-student-data
+        member_level:
+          includes: "*"
+          excludes:
+            - full_name
+            - birth_date
+            - lea_student_identifier
+            - state_student_identifier
+      - group: cube-access-student-pii
+        member_level:
+          includes: "*"

@@ -9,6 +9,26 @@ models:
       dim_terms via term_key (nullable when CC term does not map to a reporting
       term).
     columns:
+      - name: lead_teacher_staff_key
+        data_type: string
+        description: >-
+          Staff key of the section's Lead Teacher, resolved from
+          bridge_course_section_teachers by course_section_key with a date
+          overlap of the teacher assignment window and the section enrollment,
+          deduplicated to the most-recent lead on a mid-year handoff. FK to
+          dim_staff. Null when the section has no Lead Teacher assignment
+          overlapping the enrollment (expected for a minority of rows).
+        constraints:
+          - type: foreign_key
+            to: ref('dim_staff')
+            to_columns: [staff_key]
+            warn_unsupported: false
+        data_tests:
+          - relationships:
+              arguments:
+                to: ref('dim_staff')
+                field: staff_key
+
       - name: student_section_enrollment_key
         data_type: string
         description: >-
@@ -105,3 +125,17 @@ models:
           TRUE if all enrollments for this student x course x year were dropped,
           meaning the entire course was abandoned rather than just a section
           transfer.
+
+      - name: teacher_role
+        data_type: string
+        description: >-
+          Role name of the resolved teacher from the section-teacher bridge.
+          Always Lead Teacher in this dimension (co-teacher and other roles are
+          not surfaced here). Null when no lead teacher resolved.
+
+      - name: is_homeroom
+        data_type: boolean
+        description: >-
+          TRUE when the section's credit type is HR or Advisory (the homeroom /
+          advisory sections). Never null — a null or other credit type is FALSE.
+          Drives the homeroom-teacher derivation on dim_student_enrollments.
