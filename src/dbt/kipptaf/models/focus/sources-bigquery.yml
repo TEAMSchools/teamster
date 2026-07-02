@@ -1,0 +1,29 @@
+sources:
+  - name: kippmiami_dlt_focus
+    description: >-
+      Focus SIS tables landed directly to BigQuery by the kippmiami Focus dlt
+      pull (dagster_kippmiami_dlt_focus). Read here pre-staging for the school
+      calendar lookup; the dlt dataset is a stable production location with no
+      branch-deployment redirect.
+    schema: dagster_kippmiami_dlt_focus
+    tables:
+      - name: attendance_calendar
+        description: Per-day school calendar dates, one row per calendar day.
+        config:
+          meta:
+            dagster:
+              asset_key:
+                - kippmiami
+                - dlt
+                - focus
+                - attendance_calendar
+      - name: attendance_calendars
+        description: Attendance calendar headers, one row per calendar.
+        config:
+          meta:
+            dagster:
+              asset_key:
+                - kippmiami
+                - dlt
+                - focus
+                - attendance_calendars

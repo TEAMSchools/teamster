@@ -13,7 +13,18 @@ select
         lpad(regexp_extract(l.grade_canonical_name, r'\d+'), 2, '0')
     ) as grade_id,
 
-    format_date('%Y%m%d', l.enrollment_start_date) as start_date,
+    -- Finalsite emits pre-first-day enrolled_dates (contract/registration
+    -- dates); Focus matches enrollment on the first attendance calendar date, so
+    -- floor the start date up to the school year's first day (derived per school
+    -- year from the Focus attendance calendar). Rows already on/after the first
+    -- day, and years with no calendar, are left unchanged.
+    format_date(
+        '%Y%m%d',
+        greatest(
+            l.enrollment_start_date,
+            coalesce(fd.first_day_of_school, l.enrollment_start_date)
+        )
+    ) as start_date,
 
     -- enrollment_code is the entry action and does not change on transfer_out;
     -- a withdrawal is expressed by drop_code + end_date, not by clearing the
@@ -69,6 +80,9 @@ left join
 left join
     {{ ref("int_people__location_crosswalk") }} as sch
     on l.assigned_school = sch.location_name
+left join
+    {{ ref("int_focus__school_year_first_day") }} as fd
+    on l.school_year_start = fd.syear
 -- enrolled-only: pre-enrollment statuses (enrollment_in_progress, assigned_school)
 -- carry no enrolled_date; Focus enrollment records require an entry date, so
 -- defer these students until Finalsite mints enrollment_start_date. See #4291.
