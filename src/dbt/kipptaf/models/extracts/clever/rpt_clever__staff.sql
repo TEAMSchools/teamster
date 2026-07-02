@@ -45,9 +45,7 @@ with
                 _dbt_source_relation, r'(kipp\w+)_'
             ) as dagster_code_location,
         from {{ ref("stg_powerschool__schools") }}
-        where
-            state_excludefromreporting = 0
-            and _dbt_source_relation not like '%kipppaterson%'
+        where state_excludefromreporting = 0
     ),
 
     assignments as (
