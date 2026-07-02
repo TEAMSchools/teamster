@@ -3,8 +3,11 @@ models:
     description: >-
       Address export for Focus SIS — import-once: emits a student's address only
       when the student has no address linked in Focus yet (anti-join on
-      stg_focus__students_join_address). Existing Focus addresses are never
-      overwritten; enrollment ops harmonize post-import changes manually.
+      stg_focus__students_join_address) and the mailable address is complete
+      (address, city, state, zipcode all present). The completeness gate keeps a
+      blank address from being imported once and then locking out the real one.
+      Existing Focus addresses are never overwritten; enrollment ops harmonize
+      post-import changes manually.
     columns:
       - name: student_id
         data_type: string
@@ -34,9 +37,10 @@ models:
 unit_tests:
   - name: addresses_import_once_suppresses_existing
     description: >-
-      Import-once — a student with no address in Focus is kept; a student who
-      already has an address (present in stg_focus__students_join_address) is
-      suppressed.
+      Import-once plus completeness gate — a student with a complete address and
+      no Focus address is kept; a student already in Focus is suppressed; a
+      student with a blank address is suppressed so an empty record is not
+      imported once and locked in.
     model: rpt_focus__addresses
     given:
       - input: source("kipptaf_extracts", "rpt_focus__addresses")
@@ -56,6 +60,15 @@ unit_tests:
               cast(null as string) as address2, 'Miami' as city,
               'FL' as state, '33102' as zipcode, cast(null as string) as phone,
               cast(null as string) as mailing,
+              cast(null as string) as mail_address,
+              cast(null as string) as mail_address2,
+              cast(null as string) as mail_city, cast(null as string) as mail_state
+          union all
+          select
+              '8400000003' as student_id, cast(null as string) as address,
+              cast(null as string) as address2, cast(null as string) as city,
+              cast(null as string) as state, cast(null as string) as zipcode,
+              cast(null as string) as phone, cast(null as string) as mailing,
               cast(null as string) as mail_address,
               cast(null as string) as mail_address2,
               cast(null as string) as mail_city, cast(null as string) as mail_state
