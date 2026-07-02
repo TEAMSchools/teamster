@@ -1,4 +1,10 @@
 with
+    gradescale_max as (
+        select gradescaleid, max(grade_points) as max_grade_points,
+        from {{ ref("int_powerschool__gradescaleitem_lookup") }}
+        group by gradescaleid
+    ),
+
     grades_union as (
         select
             sg.studentid,
@@ -42,6 +48,7 @@ with
             if(
                 sg.excludefromgpa = 0, su.grade_points, null
             ) as unweighted_grade_points_projected,
+            if(sg.excludefromgpa = 0, sg.gpa_points, null) as gpa_points_projected_max,
         from {{ ref("stg_powerschool__storedgrades") }} as sg
         left join
             {{ ref("int_powerschool__gradescaleitem_lookup") }} as su
@@ -81,6 +88,9 @@ with
             null as unweighted_grade_points,
 
             fg.y1_grade_points_unweighted as unweighted_grade_points_projected,
+            if(
+                fg.y1_letter_grade is null, null, gsm.max_grade_points
+            ) as gpa_points_projected_max,
         from {{ ref("base_powerschool__final_grades") }} as fg
         inner join
             {{ ref("base_powerschool__student_enrollments") }} as co
@@ -93,6 +103,7 @@ with
             and fg.course_number = sg.course_number
             and sg.academic_year = {{ var("current_academic_year") }}
             and sg.storecode = 'Y1'
+        left join gradescale_max as gsm on fg.courses_gradescaleid = gsm.gradescaleid
         where
             fg.exclude_from_gpa = 0
             /* ensures already stored grades are excluded */
@@ -132,6 +143,7 @@ with
             null as gpa_points_core,
             null as unweighted_grade_points,
             null as unweighted_grade_points_projected,
+            null as gpa_points_projected_max,
         from {{ ref("base_powerschool__final_grades") }} as fg
         inner join
             {{ ref("base_powerschool__student_enrollments") }} as co
@@ -180,6 +192,9 @@ with
             (
                 potentialcrhrs_projected * unweighted_grade_points_projected
             ) as weighted_points_projected_unweighted,
+            (
+                potentialcrhrs_projected * gpa_points_projected_max
+            ) as weighted_points_projected_max,
         from grades_union
     ),
 
@@ -214,8 +229,52 @@ with
                     potentialcrhrs
                 )
             ) as potential_credits_cum,
+            sum(
+                if(
+                    academic_year < {{ var("current_academic_year") }},
+                    weighted_points,
+                    null
+                )
+            ) as weighted_points_prior,
+            sum(
+                if(
+                    academic_year < {{ var("current_academic_year") }},
+                    potentialcrhrs,
+                    null
+                )
+            ) as potentialcrhrs_prior,
+            sum(
+                if(
+                    academic_year = {{ var("current_academic_year") }},
+                    potentialcrhrs_projected,
+                    null
+                )
+            ) as potentialcrhrs_current,
+            sum(
+                if(
+                    academic_year = {{ var("current_academic_year") }},
+                    weighted_points_projected_max,
+                    null
+                )
+            ) as weighted_points_projected_max_current,
         from with_weighted_points
         group by studentid, schoolid
+    ),
+
+    needed_gpa as (
+        select
+            *,
+
+            safe_divide(
+                (3.0 * (coalesce(potentialcrhrs_prior, 0) + potentialcrhrs_current))
+                - coalesce(weighted_points_prior, 0),
+                potentialcrhrs_current
+            ) as gpa_needed_raw,
+
+            safe_divide(
+                weighted_points_projected_max_current, potentialcrhrs_current
+            ) as gpa_max_current_raw,
+        from points_rollup
     )
 
 select
@@ -225,6 +284,8 @@ select
     potential_credits_cum,
     earned_credits_cum_projected,
     earned_credits_cum_projected_s1,
+    potentialcrhrs_projected as potential_gpa_credits_cum_projected,
+    potentialcrhrs_current as potential_gpa_credits_current_year,
 
     round(safe_divide(weighted_points, potentialcrhrs), 2) as cumulative_y1_gpa,
     round(
@@ -248,4 +309,9 @@ select
     round(
         safe_divide(weighted_points_core, potentialcrhrs_core), 2
     ) as core_cumulative_y1_gpa,
-from points_rollup
+
+    round(gpa_needed_raw, 2) as gpa_needed_for_cumulative_3_0,
+
+    round(gpa_needed_raw, 2)
+    <= round(gpa_max_current_raw, 2) as is_cumulative_3_0_attainable,
+from needed_gpa
