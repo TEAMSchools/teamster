@@ -1,0 +1,277 @@
+models:
+  - name: int_powerschool__gpa_term_lookback
+    description:
+      Point-in-time lookbacks over `snapshot_powerschool__gpa_term` — one row
+      per student-school for the current academic year, carrying the Y1 GPA
+      measures in effect at the end of the day 1, 2, and 4 weeks before the
+      current day (local time). Lookbacks cross terms (the snapshot tracks the
+      current-term row) but never academic years — a boundary that predates the
+      year's first snapshot version returns null. Check-strategy snapshots never
+      close a row when it disappears from the source, so a withdrawn student's
+      lookbacks return last-known values — consumers must scope by enrollment.
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns:
+              - _dbt_source_relation
+              - studentid
+              - schoolid
+          config:
+            severity: error
+    columns:
+      - name: _dbt_source_relation
+        data_type: string
+        description: dbt-generated relation of the originating district model.
+      - name: studentid
+        data_type: int64
+        description:
+          The internal number and ID of the associated Students record.
+      - name: schoolid
+        data_type: int64
+        description: The School_Number of the associated Schools record.
+      - name: yearid
+        data_type: int64
+        description:
+          PowerSchool year ID of the current academic year (academic year minus
+          1990). Constant across the model; carried for join convenience.
+      - name: gpa_y1_1_week_prior
+        data_type: float64
+        description:
+          Weighted Y1 GPA in effect at the end of the day 7 days before the
+          current day; null when that day predates the year's first snapshot
+          version.
+      - name: gpa_y1_2_week_prior
+        data_type: float64
+        description:
+          Weighted Y1 GPA in effect at the end of the day 14 days before the
+          current day; null when that day predates the year's first snapshot
+          version.
+      - name: gpa_y1_4_week_prior
+        data_type: float64
+        description:
+          Weighted Y1 GPA in effect at the end of the day 28 days before the
+          current day; null when that day predates the year's first snapshot
+          version.
+      - name: gpa_y1_unweighted_1_week_prior
+        data_type: float64
+        description:
+          Unweighted Y1 GPA in effect at the end of the day 7 days before the
+          current day; null when that day predates the year's first snapshot
+          version.
+      - name: gpa_y1_unweighted_2_week_prior
+        data_type: float64
+        description:
+          Unweighted Y1 GPA in effect at the end of the day 14 days before the
+          current day; null when that day predates the year's first snapshot
+          version.
+      - name: gpa_y1_unweighted_4_week_prior
+        data_type: float64
+        description:
+          Unweighted Y1 GPA in effect at the end of the day 28 days before the
+          current day; null when that day predates the year's first snapshot
+          version.
+      - name: n_failing_y1_1_week_prior
+        data_type: int64
+        description:
+          Count of failing Y1 grades in effect at the end of the day 7 days
+          before the current day; null when that day predates the year's first
+          snapshot version.
+      - name: n_failing_y1_2_week_prior
+        data_type: int64
+        description:
+          Count of failing Y1 grades in effect at the end of the day 14 days
+          before the current day; null when that day predates the year's first
+          snapshot version.
+      - name: n_failing_y1_4_week_prior
+        data_type: int64
+        description:
+          Count of failing Y1 grades in effect at the end of the day 28 days
+          before the current day; null when that day predates the year's first
+          snapshot version.
+
+unit_tests:
+  - name: unit_gpa_term_lookback_as_of_boundaries
+    description:
+      Verifies as-of version selection at the 1/2/4-week boundaries — value
+      changes between lookbacks surface distinct values per horizon, an
+      intra-day change on a lookback day resolves to the end-of-day version,
+      boundaries predating the first snapshot version return null, and
+      prior-year rows are excluded entirely.
+    model: int_powerschool__gpa_term_lookback
+    overrides:
+      vars:
+        local_timezone: America/New_York
+        current_academic_year: 2025
+    given:
+      - input: ref('snapshot_powerschool__gpa_term')
+        format: sql
+        rows: |
+          /* student 1: three versions spanning all three boundaries */
+          select
+              'newark' as _dbt_source_relation,
+              1 as studentid,
+              101 as schoolid,
+              35 as yearid,
+              cast(3.0 as float64) as gpa_y1,
+              cast(2.8 as float64) as gpa_y1_unweighted,
+              2 as n_failing_y1,
+              timestamp(
+                  date_sub(current_date('America/New_York'), interval 40 day),
+                  'America/New_York'
+              ) as dbt_valid_from,
+              timestamp(
+                  date_sub(current_date('America/New_York'), interval 20 day),
+                  'America/New_York'
+              ) as dbt_valid_to
+          union all
+          select
+              'newark',
+              1,
+              101,
+              35,
+              cast(3.2 as float64),
+              cast(3.0 as float64),
+              1,
+              timestamp(
+                  date_sub(current_date('America/New_York'), interval 20 day),
+                  'America/New_York'
+              ),
+              timestamp(
+                  date_sub(current_date('America/New_York'), interval 10 day),
+                  'America/New_York'
+              )
+          union all
+          select
+              'newark',
+              1,
+              101,
+              35,
+              cast(3.5 as float64),
+              cast(3.1 as float64),
+              0,
+              timestamp(
+                  date_sub(current_date('America/New_York'), interval 10 day),
+                  'America/New_York'
+              ),
+              timestamp('9999-12-31')
+          union all
+          /* student 2: version flips at noon ON the 1-week lookback day —
+             end-of-day rule must pick the later version */
+          select
+              'newark',
+              2,
+              101,
+              35,
+              cast(2.5 as float64),
+              cast(2.4 as float64),
+              3,
+              timestamp(
+                  date_sub(current_date('America/New_York'), interval 30 day),
+                  'America/New_York'
+              ),
+              timestamp_add(
+                  timestamp(
+                      date_sub(
+                          current_date('America/New_York'), interval 7 day
+                      ),
+                      'America/New_York'
+                  ),
+                  interval 12 hour
+              )
+          union all
+          select
+              'newark',
+              2,
+              101,
+              35,
+              cast(2.7 as float64),
+              cast(2.6 as float64),
+              2,
+              timestamp_add(
+                  timestamp(
+                      date_sub(
+                          current_date('America/New_York'), interval 7 day
+                      ),
+                      'America/New_York'
+                  ),
+                  interval 12 hour
+              ),
+              timestamp('9999-12-31')
+          union all
+          /* student 3: first version only 10 days old — 2- and 4-week
+             boundaries predate it and must be null */
+          select
+              'camden',
+              3,
+              202,
+              35,
+              cast(2.0 as float64),
+              cast(1.9 as float64),
+              4,
+              timestamp(
+                  date_sub(current_date('America/New_York'), interval 10 day),
+                  'America/New_York'
+              ),
+              timestamp('9999-12-31')
+          union all
+          /* student 4: prior-year row — excluded from output */
+          select
+              'newark',
+              4,
+              101,
+              34,
+              cast(4.0 as float64),
+              cast(4.0 as float64),
+              0,
+              timestamp(
+                  date_sub(current_date('America/New_York'), interval 400 day),
+                  'America/New_York'
+              ),
+              timestamp('9999-12-31')
+    expect:
+      rows:
+        - {
+            _dbt_source_relation: newark,
+            studentid: 1,
+            schoolid: 101,
+            yearid: 35,
+            gpa_y1_1_week_prior: 3.5,
+            gpa_y1_2_week_prior: 3.2,
+            gpa_y1_4_week_prior: 3.0,
+            gpa_y1_unweighted_1_week_prior: 3.1,
+            gpa_y1_unweighted_2_week_prior: 3.0,
+            gpa_y1_unweighted_4_week_prior: 2.8,
+            n_failing_y1_1_week_prior: 0,
+            n_failing_y1_2_week_prior: 1,
+            n_failing_y1_4_week_prior: 2,
+          }
+        - {
+            _dbt_source_relation: newark,
+            studentid: 2,
+            schoolid: 101,
+            yearid: 35,
+            gpa_y1_1_week_prior: 2.7,
+            gpa_y1_2_week_prior: 2.5,
+            gpa_y1_4_week_prior: 2.5,
+            gpa_y1_unweighted_1_week_prior: 2.6,
+            gpa_y1_unweighted_2_week_prior: 2.4,
+            gpa_y1_unweighted_4_week_prior: 2.4,
+            n_failing_y1_1_week_prior: 2,
+            n_failing_y1_2_week_prior: 3,
+            n_failing_y1_4_week_prior: 3,
+          }
+        - {
+            _dbt_source_relation: camden,
+            studentid: 3,
+            schoolid: 202,
+            yearid: 35,
+            gpa_y1_1_week_prior: 2.0,
+            gpa_y1_2_week_prior: null,
+            gpa_y1_4_week_prior: null,
+            gpa_y1_unweighted_1_week_prior: 1.9,
+            gpa_y1_unweighted_2_week_prior: null,
+            gpa_y1_unweighted_4_week_prior: null,
+            n_failing_y1_1_week_prior: 4,
+            n_failing_y1_2_week_prior: null,
+            n_failing_y1_4_week_prior: null,
+          }
