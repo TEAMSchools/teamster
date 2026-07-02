@@ -9,7 +9,13 @@ with
         select d.*,
         from {{ source("kipptaf_extracts", "rpt_focus__contacts") }} as d
         left join focus_contact as f on d.student_id = f.student_id
-        where f.student_id is null
+        where
+            f.student_id is null
+            -- don't import a nameless contact: presence-based import-once would
+            -- create the Focus person record and then suppress the student
+            -- forever, so a later-named contact never syncs. Defer until the
+            -- contact has a name. See #4320.
+            and (d.first_name is not null or d.last_name is not null)
     )
 
 select
