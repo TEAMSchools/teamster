@@ -1,5 +1,11 @@
 models:
   - name: rpt_focus__contacts
+    description: >-
+      Contacts export for Focus SIS — import-once: emits a student's contacts
+      only when the student has no contact (person) linked in Focus yet
+      (anti-join on stg_focus__students_join_people). Existing Focus contacts
+      are never overwritten; enrollment ops harmonize post-import changes
+      manually.
     columns:
       - name: student_id
         data_type: string
@@ -101,3 +107,152 @@ models:
         data_type: string
       - name: contact7_unlisted
         data_type: string
+
+unit_tests:
+  - name: contacts_import_once_suppresses_existing
+    description: >-
+      Import-once — a student with no contact in Focus keeps all their contact
+      rows; a student who already has a contact (present in
+      stg_focus__students_join_people) has all rows suppressed.
+    model: rpt_focus__contacts
+    given:
+      - input: source("kipptaf_extracts", "rpt_focus__contacts")
+        format: sql
+        rows: |
+          select
+              '8400000001' as student_id, 'parent' as student_relation,
+              1 as sort_order, 'Jane' as first_name,
+              cast(null as string) as middle_name, 'Doe' as last_name,
+              cast(null as string) as resides_with_stud,
+              cast(null as string) as custody, cast(null as string) as emergency,
+              cast(null as string) as pickup, cast(null as string) as address,
+              cast(null as string) as address2, cast(null as string) as city,
+              cast(null as string) as state, cast(null as string) as zipcode,
+              cast(null as string) as email, cast(null as string) as contact1_type,
+              cast(null as string) as contact1_value,
+              cast(null as string) as contact1_blocked,
+              cast(null as string) as contact1_unlisted,
+              cast(null as string) as contact1_callout,
+              cast(null as string) as contact2_type,
+              cast(null as string) as contact2_value,
+              cast(null as string) as contact2_blocked,
+              cast(null as string) as contact2_unlisted,
+              cast(null as string) as contact2_callout,
+              cast(null as string) as contact3_type,
+              cast(null as string) as contact3_value,
+              cast(null as string) as contact3_blocked,
+              cast(null as string) as contact3_unlisted,
+              cast(null as string) as contact3_callout,
+              cast(null as string) as contact4_type,
+              cast(null as string) as contact4_value,
+              cast(null as string) as contact4_blocked,
+              cast(null as string) as contact4_unlisted,
+              cast(null as string) as contact4_callout,
+              cast(null as string) as contact5_type,
+              cast(null as string) as contact5_value,
+              cast(null as string) as contact5_blocked,
+              cast(null as string) as contact5_unlisted,
+              cast(null as string) as contact5_callout,
+              cast(null as string) as contact6_type,
+              cast(null as string) as contact6_value,
+              cast(null as string) as contact6_blocked,
+              cast(null as string) as contact6_unlisted,
+              cast(null as string) as contact6_callout,
+              cast(null as string) as contact7_type,
+              cast(null as string) as contact7_value,
+              cast(null as string) as contact7_blocked,
+              cast(null as string) as contact7_unlisted
+          union all
+          select
+              '8400000002' as student_id, 'parent' as student_relation,
+              1 as sort_order, 'John' as first_name,
+              cast(null as string) as middle_name, 'Smith' as last_name,
+              cast(null as string) as resides_with_stud,
+              cast(null as string) as custody, cast(null as string) as emergency,
+              cast(null as string) as pickup, cast(null as string) as address,
+              cast(null as string) as address2, cast(null as string) as city,
+              cast(null as string) as state, cast(null as string) as zipcode,
+              cast(null as string) as email, cast(null as string) as contact1_type,
+              cast(null as string) as contact1_value,
+              cast(null as string) as contact1_blocked,
+              cast(null as string) as contact1_unlisted,
+              cast(null as string) as contact1_callout,
+              cast(null as string) as contact2_type,
+              cast(null as string) as contact2_value,
+              cast(null as string) as contact2_blocked,
+              cast(null as string) as contact2_unlisted,
+              cast(null as string) as contact2_callout,
+              cast(null as string) as contact3_type,
+              cast(null as string) as contact3_value,
+              cast(null as string) as contact3_blocked,
+              cast(null as string) as contact3_unlisted,
+              cast(null as string) as contact3_callout,
+              cast(null as string) as contact4_type,
+              cast(null as string) as contact4_value,
+              cast(null as string) as contact4_blocked,
+              cast(null as string) as contact4_unlisted,
+              cast(null as string) as contact4_callout,
+              cast(null as string) as contact5_type,
+              cast(null as string) as contact5_value,
+              cast(null as string) as contact5_blocked,
+              cast(null as string) as contact5_unlisted,
+              cast(null as string) as contact5_callout,
+              cast(null as string) as contact6_type,
+              cast(null as string) as contact6_value,
+              cast(null as string) as contact6_blocked,
+              cast(null as string) as contact6_unlisted,
+              cast(null as string) as contact6_callout,
+              cast(null as string) as contact7_type,
+              cast(null as string) as contact7_value,
+              cast(null as string) as contact7_blocked,
+              cast(null as string) as contact7_unlisted
+      - input: ref("stg_focus__students_join_people")
+        format: sql
+        rows: |
+          select 8400000002 as student_id
+    expect:
+      format: sql
+      rows: |
+        select
+            '8400000001' as student_id, 'parent' as student_relation,
+            1 as sort_order, 'Jane' as first_name,
+            cast(null as string) as middle_name, 'Doe' as last_name,
+            cast(null as string) as resides_with_stud,
+            cast(null as string) as custody, cast(null as string) as emergency,
+            cast(null as string) as pickup, cast(null as string) as address,
+            cast(null as string) as address2, cast(null as string) as city,
+            cast(null as string) as state, cast(null as string) as zipcode,
+            cast(null as string) as email, cast(null as string) as contact1_type,
+            cast(null as string) as contact1_value,
+            cast(null as string) as contact1_blocked,
+            cast(null as string) as contact1_unlisted,
+            cast(null as string) as contact1_callout,
+            cast(null as string) as contact2_type,
+            cast(null as string) as contact2_value,
+            cast(null as string) as contact2_blocked,
+            cast(null as string) as contact2_unlisted,
+            cast(null as string) as contact2_callout,
+            cast(null as string) as contact3_type,
+            cast(null as string) as contact3_value,
+            cast(null as string) as contact3_blocked,
+            cast(null as string) as contact3_unlisted,
+            cast(null as string) as contact3_callout,
+            cast(null as string) as contact4_type,
+            cast(null as string) as contact4_value,
+            cast(null as string) as contact4_blocked,
+            cast(null as string) as contact4_unlisted,
+            cast(null as string) as contact4_callout,
+            cast(null as string) as contact5_type,
+            cast(null as string) as contact5_value,
+            cast(null as string) as contact5_blocked,
+            cast(null as string) as contact5_unlisted,
+            cast(null as string) as contact5_callout,
+            cast(null as string) as contact6_type,
+            cast(null as string) as contact6_value,
+            cast(null as string) as contact6_blocked,
+            cast(null as string) as contact6_unlisted,
+            cast(null as string) as contact6_callout,
+            cast(null as string) as contact7_type,
+            cast(null as string) as contact7_value,
+            cast(null as string) as contact7_blocked,
+            cast(null as string) as contact7_unlisted

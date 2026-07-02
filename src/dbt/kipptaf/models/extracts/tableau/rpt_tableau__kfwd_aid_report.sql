@@ -38,6 +38,8 @@ select
     r.contact_current_college_cumulative_gpa as current_college_cumulative_gpa,
     r.contact_kipp_ms_graduate as is_kipp_ms_graduate,
     r.contact_kipp_hs_graduate as is_kipp_hs_graduate,
+    r.contact_advising_provider as advising_provider,
+    r.contact_graduation_year as graduation_year,
 
     e.ba_pursuing_degree_type,
     e.ba_status,

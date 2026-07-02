@@ -512,8 +512,9 @@ rate-limiting).
 Step pod stdout is filtered from `k8s_container` logs. For per-step execution
 logs, use Dagster's compute log manager:
 `get_run_logs(filter_types=["LogsCapturedEvent"])` →
-`get_run_compute_logs(log_key=[run_id, "compute_logs", <logKey>])`.
-`mcp__gke__query_logs` surfaces only run-pod logs.
+`get_run_compute_logs(log_key=[run_id, "compute_logs", <logKey>])`. The captured
+`context.log.info` output lands in the result's `stderr` field — `stdout` is
+`null` for these step pods. `mcp__gke__query_logs` surfaces only run-pod logs.
 
 To map a step Job hash to its actual pod name (random suffix):
 `protoPayload.methodName="io.k8s.core.v1.pods.create" protoPayload.resourceName=~"namespaces/dagster-cloud/pods/dagster-step-<hash>"`.

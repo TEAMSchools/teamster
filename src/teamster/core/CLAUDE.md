@@ -120,6 +120,16 @@ deploy rollover, the materialization may be stamped with the new deployment's
 code version. `code_version_changed()` returns false permanently — manual
 materialization is the only fix. See dagster-io/dagster#33708.
 
+**`union_relations` wrapper can freeze on a deploy race** (#4290): its condition
+fires on ancestor `code_version_changed`, not `any_deps_updated`. If the wrapper
+materializes at deploy BEFORE its (often cross-code-location) upstream table
+rebuilds with a new schema, `.since(newly_updated)` consumes the trigger and the
+wrapper stays compiled against the OLD column set — downstream reads then fail
+`... failed to parse view` at query time and it does NOT self-heal.
+Rematerialize the wrapper + its consumers via `launch_run`. Diagnose by
+comparing the wrapper's stored `input_data_version/<upstream>` materialization
+tag to the upstream's current `data_version`.
+
 **No dep-code-version gate**: `_build_dbt_condition()` does NOT block
 materialization when a direct dep has
 `code_version_changed().since(newly_updated())`. A previous gate did, but the

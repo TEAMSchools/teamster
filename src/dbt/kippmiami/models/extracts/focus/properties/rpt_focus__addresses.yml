@@ -1,5 +1,10 @@
 models:
   - name: rpt_focus__addresses
+    description: >-
+      Address export for Focus SIS — import-once: emits a student's address only
+      when the student has no address linked in Focus yet (anti-join on
+      stg_focus__students_join_address). Existing Focus addresses are never
+      overwritten; enrollment ops harmonize post-import changes manually.
     columns:
       - name: student_id
         data_type: string
@@ -25,3 +30,47 @@ models:
         data_type: string
       - name: mail_state
         data_type: string
+
+unit_tests:
+  - name: addresses_import_once_suppresses_existing
+    description: >-
+      Import-once — a student with no address in Focus is kept; a student who
+      already has an address (present in stg_focus__students_join_address) is
+      suppressed.
+    model: rpt_focus__addresses
+    given:
+      - input: source("kipptaf_extracts", "rpt_focus__addresses")
+        format: sql
+        rows: |
+          select
+              '8400000001' as student_id, '1 Main St' as address,
+              cast(null as string) as address2, 'Miami' as city,
+              'FL' as state, '33101' as zipcode, cast(null as string) as phone,
+              cast(null as string) as mailing,
+              cast(null as string) as mail_address,
+              cast(null as string) as mail_address2,
+              cast(null as string) as mail_city, cast(null as string) as mail_state
+          union all
+          select
+              '8400000002' as student_id, '2 Oak Ave' as address,
+              cast(null as string) as address2, 'Miami' as city,
+              'FL' as state, '33102' as zipcode, cast(null as string) as phone,
+              cast(null as string) as mailing,
+              cast(null as string) as mail_address,
+              cast(null as string) as mail_address2,
+              cast(null as string) as mail_city, cast(null as string) as mail_state
+      - input: ref("stg_focus__students_join_address")
+        format: sql
+        rows: |
+          select 8400000002 as student_id
+    expect:
+      format: sql
+      rows: |
+        select
+            '8400000001' as student_id, '1 Main St' as address,
+            cast(null as string) as address2, 'Miami' as city,
+            'FL' as state, '33101' as zipcode, cast(null as string) as phone,
+            cast(null as string) as mailing,
+            cast(null as string) as mail_address,
+            cast(null as string) as mail_address2,
+            cast(null as string) as mail_city, cast(null as string) as mail_state
