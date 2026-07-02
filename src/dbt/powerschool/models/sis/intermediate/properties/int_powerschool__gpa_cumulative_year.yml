@@ -164,15 +164,15 @@ unit_tests:
               grade_level: 11,
             }
       - input: ref('int_powerschool__gpa_cumulative')
-        rows:
-          - {
-              studentid: 1,
-              schoolid: 101,
-              cumulative_y1_gpa_projected: 3.2,
-              cumulative_y1_gpa_projected_unweighted: 2.5,
-              earned_credits_cum_projected: 105.0,
-              potential_gpa_credits_cum_projected: 105.0,
-            }
+        format: sql
+        rows: |
+          select
+              1 as studentid,
+              101 as schoolid,
+              cast(3.2 as float64) as cumulative_y1_gpa_projected,
+              cast(2.5 as float64) as cumulative_y1_gpa_projected_unweighted,
+              cast(105.0 as float64) as earned_credits_cum_projected,
+              cast(105.0 as float64) as potential_gpa_credits_cum_projected
     expect:
       rows:
         - {
