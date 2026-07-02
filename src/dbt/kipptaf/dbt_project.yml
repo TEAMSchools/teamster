@@ -31,6 +31,13 @@ vars:
   current_academic_year: 2025
   current_fiscal_year: 2026
 
+  # First attendance calendar date (first day of school) for the active
+  # Finalsite -> Focus enrollment feed year. Finalsite emits pre-first-day
+  # enrolled_dates (contract/registration dates); Focus matches enrollment on
+  # this date. Authoritative, human-maintained — bump each July with the year's
+  # first day of school. See rpt_focus__student_enrollment.
+  focus_enrollment_start_date_floor: "2026-08-11"
+
 models:
   kipptaf:
     act:

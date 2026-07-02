@@ -1,4 +1,3 @@
--- trunk-ignore(sqlfluff/ST06): column order fixed by Focus STUDENT_ENROLLMENT contract
 select
     l.school_year_start as syear,
 
@@ -13,7 +12,22 @@ select
         lpad(regexp_extract(l.grade_canonical_name, r'\d+'), 2, '0')
     ) as grade_id,
 
-    format_date('%Y%m%d', l.enrollment_start_date) as start_date,
+    -- Finalsite emits pre-first-day enrolled_dates (contract/registration
+    -- dates); Focus matches enrollment on the first attendance calendar date, so
+    -- floor the start date up to the school year's first day for the active feed
+    -- year. Gated to the var's school year so prior-year rows (which can carry
+    -- legitimate summer start dates) are untouched.
+    format_date(
+        '%Y%m%d',
+        if(
+            l.school_year_start = {{ var("focus_enrollment_start_date_floor")[:4] }},
+            greatest(
+                l.enrollment_start_date,
+                date('{{ var("focus_enrollment_start_date_floor") }}')
+            ),
+            l.enrollment_start_date
+        )
+    ) as start_date,
 
     -- enrollment_code is the entry action and does not change on transfer_out;
     -- a withdrawal is expressed by drop_code + end_date, not by clearing the
