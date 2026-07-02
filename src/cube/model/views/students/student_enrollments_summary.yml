@@ -68,7 +68,6 @@ views:
           - grade_level
           - graduation_year
           - is_retained_year
-          - homeroom_teacher_staff_key
 
       - join_path: student_enrollments.student_school_enrollments.student_enrollment_status
         prefix: false
@@ -127,9 +126,6 @@ views:
             - is_month_end_record
             - is_week_end_record
             - is_latest_record
-        - name: Teacher
-          members:
-            - homeroom_teacher_staff_key
 
     access_policy:
       # No PII tier — view contains no direct student identifiers.

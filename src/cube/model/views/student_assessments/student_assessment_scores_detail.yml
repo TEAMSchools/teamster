@@ -82,15 +82,6 @@ views:
           - exit_date
           - is_dropped_section
           - is_dropped_course
-          - lead_teacher_staff_key
-          - teacher_role
-
-      - join_path: student_assessment_scores.student_section_enrollments.staff
-        prefix: true
-        includes:
-          - full_name
-          - first_name
-          - last_name
 
       - join_path: student_assessment_scores.student_section_enrollments.student_school_enrollments
         includes:
@@ -241,17 +232,8 @@ views:
             - is_retained_year
             - is_dropped_section
             - is_dropped_course
-        - name: Teacher
-          members:
-            - lead_teacher_staff_key
-            - teacher_role
-            - staff_full_name
-            - staff_first_name
-            - staff_last_name
 
     access_policy:
-      # Teacher fields (staff_* names, lead_teacher_staff_key) are intentionally
-      # NOT in excludes — staff base-tier / a staff FK, not student PII.
       - group: cube-access-student-data
         member_level:
           includes: "*"
