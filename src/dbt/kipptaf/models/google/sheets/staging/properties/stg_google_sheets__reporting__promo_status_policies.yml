@@ -129,7 +129,7 @@ models:
                 severity: error
           - accepted_values:
               arguments:
-                values: ["<", "<=", ">", ">=", "=", "!="]
+                values: [<, <=, ">", ">=", "=", "!="]
               config:
                 severity: error
       - name: value
