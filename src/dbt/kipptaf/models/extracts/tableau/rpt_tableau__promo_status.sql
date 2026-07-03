@@ -45,7 +45,7 @@ inner join
     and co.schoolid = rt.school_id
     and rt.type = 'RT'
 left join
-    {{ ref("int_reporting__promotional_status") }} as ps
+    {{ ref("int_students__promotional_status") }} as ps
     on co.student_number = ps.student_number
     and co.academic_year = ps.academic_year
     and rt.name = ps.term_name
