@@ -41,7 +41,7 @@ models:
             source_column: academic_year
       - name: term_name
         data_type: string
-        description: Reporting term name (e.g. RT1, RT2).
+        description: Reporting term name (Q1-Q4).
       - name: is_current
         data_type: boolean
         description:

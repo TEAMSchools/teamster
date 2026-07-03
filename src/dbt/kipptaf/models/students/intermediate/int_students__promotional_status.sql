@@ -172,7 +172,11 @@ with
         from metrics as m
         cross join
             unnest(
-                ['is_off_track_attendance', 'is_off_track_academic']
+                [
+                    {% for pm in promo_status_pseudo_metric_columns() -%}
+                        '{{ pm }}'{% if not loop.last %}, {% endif %}
+                    {%- endfor %}
+                ]
             ) as pseudo_metric
         left join
             domain_wide as dw

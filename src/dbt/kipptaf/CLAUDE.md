@@ -14,7 +14,6 @@ models/
   people/            # unified staff/HR (ADP + LDAP + PS + perf mgmt, has snapshots)
   students/          # cross-school student data
   marts/             # dim_*/fct_* for Tableau + Cube semantic layer, contract enforced
-  reporting/         # topline reporting (+schema: reporting, no contract defaults)
   extracts/          # outbound feeds, contract enforced
     tableau/         # +schema: tableau → lands in kipptaf_tableau
     deanslist/

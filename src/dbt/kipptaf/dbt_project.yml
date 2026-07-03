@@ -232,8 +232,6 @@ models:
           enforced: true
     renlearn:
       +schema: renlearn
-    reporting:
-      +schema: reporting
     schoolmint:
       grow:
         +schema: schoolmint_grow
