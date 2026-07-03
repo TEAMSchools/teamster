@@ -1,0 +1,126 @@
+models:
+  - name: int_students__promotional_status_metrics
+    description: >-
+      Metric layer for promotional status — one row per student, academic year,
+      and reporting term, carrying every numeric metric the policy engine can
+      evaluate plus display strings and the code-owned exemption and
+      manual-retention overrides. Computed for all academic years. Metrics are
+      numeric so sheet-driven conditions are uniformly metric, comparator,
+      value.
+    config:
+      materialized: table
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns:
+              - student_number
+              - academic_year
+              - term_name
+    columns:
+      - name: student_number
+        data_type: int64
+        description: Student number assigned by the school.
+        config:
+          meta:
+            contains_pii: true
+      - name: academic_year
+        data_type: int64
+        description: Starting calendar year of the school year.
+      - name: region
+        data_type: string
+        description: Student region, used to scope policy rules.
+      - name: grade_level
+        data_type: int64
+        description: Grade level, used to scope policy rules. K is 0.
+      - name: term_name
+        data_type: string
+        description: Reporting term name (Q1-Q4).
+      - name: is_current
+        data_type: boolean
+        description: >-
+          True if this is the most recent completed or active reporting term.
+      - name: ada_term_running
+        data_type: float64
+        description: >-
+          Average daily attendance rate accumulated through the end of the term.
+      - name: n_absences_y1_running
+        data_type: float64
+        description: >-
+          Total absences year-to-date through the end of the term, including
+          suspensions.
+      - name: n_absences_y1_running_non_susp
+        data_type: float64
+        description: >-
+          Absences year-to-date excluding suspension codes, plus a tardy penalty
+          of floor(tardies / 3).
+      - name: n_absences_y1_running_non_susp_no_tardy
+        data_type: float64
+        description: >-
+          Absences year-to-date excluding suspension codes with no tardy penalty
+          applied.
+      - name: iready_reading_recent
+        data_type: string
+        description:
+          Most recent iReady reading overall relative placement label.
+      - name: iready_math_recent
+        data_type: string
+        description: Most recent iReady math overall relative placement label.
+      - name: iready_reading_levels_below
+        data_type: int64
+        description: >-
+          Most recent iReady reading placement as grade levels below — 3 for
+          three or more below, 2, 1, and 0 for on or above grade level. NULL
+          when the student has no result.
+      - name: iready_math_levels_below
+        data_type: int64
+        description: >-
+          Most recent iReady math placement as grade levels below — 3 for three
+          or more below, 2, 1, and 0 for on or above grade level. NULL when the
+          student has no result.
+      - name: dibels_composite_level_recent_str
+        data_type: string
+        description: Most recent DIBELS composite benchmark level label.
+      - name: dibels_composite_level
+        data_type: int64
+        description: >-
+          Most recent DIBELS composite benchmark level as an integer (lower is
+          more at-risk).
+      - name: star_ela_level
+        data_type: int64
+        description: Most recent Renaissance STAR reading achievement level.
+      - name: star_math_level
+        data_type: int64
+        description: Most recent Renaissance STAR math achievement level.
+      - name: fast_ela_level
+        data_type: int64
+        description: Most recent FAST ELA achievement level (Florida only).
+      - name: fast_math_level
+        data_type: int64
+        description: Most recent FAST math achievement level (Florida only).
+      - name: n_failing
+        data_type: int64
+        description: Number of courses with a failing grade as of the term.
+      - name: n_failing_core
+        data_type: int64
+        description: Number of core courses with a failing grade as of the term.
+      - name: projected_credits_y1_term
+        data_type: float64
+        description: >-
+          Projected credits to be earned in the current academic year through
+          the term.
+      - name: projected_credits_cum
+        data_type: float64
+        description: >-
+          Projected cumulative credits earned through end of year, combining
+          projected year credits with historical earned credits.
+      - name: exemption
+        data_type: string
+        description: >-
+          Populated when a student is exempt from retention criteria — Exempt -
+          Special Education (code-owned SPED rules) or Exempt - Manual Override
+          (PowerSchool log entry).
+      - name: manual_retention
+        data_type: string
+        description: >-
+          Populated with Manual Retention when a staff member has logged a
+          Retain without criteria entry in PowerSchool.
