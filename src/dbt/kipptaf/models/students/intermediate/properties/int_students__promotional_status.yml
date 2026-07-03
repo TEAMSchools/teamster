@@ -209,15 +209,15 @@ unit_tests:
           select 2025 as academic_year, 'Newark' as region,
             5 as grade_min, 8 as grade_max, 'All' as term_name,
             'academic' as domain, 1 as rule_group,
-            'n_failing_core' as metric, '>=' as comparator,
+            'n_failing_core' as metric, 'greater_than_or_equal' as comparator,
             2.0 as `value`, 'not_met' as if_missing,
             cast(null as string) as detail_label
           union all
           select 2025, 'Newark', 5, 8, 'All', 'academic', 2,
-            'ada_term_running', '<', 0.85, 'met', null
+            'ada_term_running', 'less_than', 0.85, 'met', null
           union all
           select 2025, 'Newark', 5, 8, 'All', 'academic', 2,
-            'iready_reading_levels_below', '>=', 3.0, 'met', null
+            'iready_reading_levels_below', 'greater_than_or_equal', 3.0, 'met', null
     expect:
       rows:
         - { student_number: 1, academic_status: Off-Track }
@@ -274,21 +274,22 @@ unit_tests:
             9 as grade_min, 12 as grade_max, 'All' as term_name,
             'attendance' as domain, 1 as rule_group,
             'n_absences_y1_running_non_susp_no_tardy' as metric,
-            '>=' as comparator, 27.0 as `value`, 'not_met' as if_missing,
+            'greater_than_or_equal' as comparator, 27.0 as `value`,
+            'not_met' as if_missing,
             'Off-Track (Already reached threshold)' as detail_label
           union all
           select 2025, 'Newark', 9, 12, 'Q1', 'attendance', 2,
-            'n_absences_y1_running_non_susp_no_tardy', '>=', 6.0,
-            'not_met', 'Off-Track (Approaching threshold)'
+            'n_absences_y1_running_non_susp_no_tardy', 'greater_than_or_equal',
+            6.0, 'not_met', 'Off-Track (Approaching threshold)'
           union all
           select 2025, 'Newark', 9, 12, 'All', 'academic', 1,
-            'projected_credits_cum', '<', 25.0, 'not_met', null
+            'projected_credits_cum', 'less_than', 25.0, 'not_met', null
           union all
           select 2025, 'Newark', 9, 12, 'All', 'overall', 1,
-            'is_off_track_attendance', '=', 1.0, 'not_met', null
+            'is_off_track_attendance', 'equals', 1.0, 'not_met', null
           union all
           select 2025, 'Newark', 9, 12, 'All', 'overall', 2,
-            'is_off_track_academic', '=', 1.0, 'not_met', null
+            'is_off_track_academic', 'equals', 1.0, 'not_met', null
     expect:
       rows:
         - {

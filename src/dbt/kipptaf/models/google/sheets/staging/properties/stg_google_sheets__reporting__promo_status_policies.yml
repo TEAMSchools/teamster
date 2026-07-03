@@ -129,7 +129,13 @@ models:
                 severity: error
           - accepted_values:
               arguments:
-                values: [<, <=, ">", ">=", "=", "!="]
+                values:
+                  - less_than
+                  - less_than_or_equal
+                  - greater_than
+                  - greater_than_or_equal
+                  - equals
+                  - not_equals
               config:
                 severity: error
       - name: value

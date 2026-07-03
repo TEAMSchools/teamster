@@ -54,17 +54,17 @@ with
             case
                 when mtr.metric_value is null
                 then p.if_missing = 'met'
-                when p.comparator = '<'
+                when p.comparator = 'less_than'
                 then mtr.metric_value < p.`value`
-                when p.comparator = '<='
+                when p.comparator = 'less_than_or_equal'
                 then mtr.metric_value <= p.`value`
-                when p.comparator = '>'
+                when p.comparator = 'greater_than'
                 then mtr.metric_value > p.`value`
-                when p.comparator = '>='
+                when p.comparator = 'greater_than_or_equal'
                 then mtr.metric_value >= p.`value`
-                when p.comparator = '='
+                when p.comparator = 'equals'
                 then mtr.metric_value = p.`value`
-                when p.comparator = '!='
+                when p.comparator = 'not_equals'
                 then mtr.metric_value != p.`value`
             end as is_met,
         from metrics_long as mtr
@@ -196,17 +196,17 @@ with
             case
                 when mtr.metric_value is null
                 then p.if_missing = 'met'
-                when p.comparator = '<'
+                when p.comparator = 'less_than'
                 then mtr.metric_value < p.`value`
-                when p.comparator = '<='
+                when p.comparator = 'less_than_or_equal'
                 then mtr.metric_value <= p.`value`
-                when p.comparator = '>'
+                when p.comparator = 'greater_than'
                 then mtr.metric_value > p.`value`
-                when p.comparator = '>='
+                when p.comparator = 'greater_than_or_equal'
                 then mtr.metric_value >= p.`value`
-                when p.comparator = '='
+                when p.comparator = 'equals'
                 then mtr.metric_value = p.`value`
-                when p.comparator = '!='
+                when p.comparator = 'not_equals'
                 then mtr.metric_value != p.`value`
             end as is_met,
         from overall_metrics_long as mtr

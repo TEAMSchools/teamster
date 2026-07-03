@@ -45,11 +45,11 @@ otherwise On-Track.
 
 The example policy becomes:
 
-| domain   | rule_group | metric                        | comparator | value | if_missing |
-| -------- | ---------- | ----------------------------- | ---------- | ----- | ---------- |
-| academic | 1          | `n_failing_core`              | `>=`       | 2     | not_met    |
-| academic | 2          | `ada_term_running`            | `<`        | 0.85  | met        |
-| academic | 2          | `iready_reading_levels_below` | `>=`       | 3     | met        |
+| domain   | rule_group | metric                        | comparator              | value | if_missing |
+| -------- | ---------- | ----------------------------- | ----------------------- | ----- | ---------- |
+| academic | 1          | `n_failing_core`              | `greater_than_or_equal` | 2     | not_met    |
+| academic | 2          | `ada_term_running`            | `less_than`             | 0.85  | met        |
+| academic | 2          | `iready_reading_levels_below` | `greater_than_or_equal` | 3     | met        |
 
 Any boolean expression has a DNF equivalent, so no future policy shape outgrows
 the schema.
@@ -65,20 +65,20 @@ A new tab on the existing promo-status spreadsheet
 
 Columns (one row per condition):
 
-| Column          | Type    | Notes                                                                                             |
-| --------------- | ------- | ------------------------------------------------------------------------------------------------- |
-| `academic_year` | int64   | Starting year of the school year (2025 = SY25-26)                                                 |
-| `region`        | string  | `Camden` / `Newark` / `Miami` (Paterson adds rows later, no code change)                          |
-| `grade_min`     | int64   | K = 0                                                                                             |
-| `grade_max`     | int64   | Single grade = same value as `grade_min`                                                          |
-| `term_name`     | string  | `Q1`–`Q4` or `All`. Term-scaled thresholds (Newark HS absences Q1=6 … Q4=24) are one row per term |
-| `domain`        | string  | `attendance` / `academic` / `overall`                                                             |
-| `rule_group`    | int64   | Conditions in the same group AND together; groups OR together                                     |
-| `metric`        | string  | From the fixed catalog (Component 2)                                                              |
-| `comparator`    | string  | One of `<`, `<=`, `>`, `>=`, `=`, `!=`                                                            |
-| `value`         | float64 | The cutoff                                                                                        |
-| `if_missing`    | string  | `met` / `not_met` — what the condition evaluates to when the student's metric is NULL             |
-| `detail_label`  | string  | Optional. Emitted as `attendance_status_hs_detail` when an attendance-domain group fires          |
+| Column          | Type    | Notes                                                                                                     |
+| --------------- | ------- | --------------------------------------------------------------------------------------------------------- |
+| `academic_year` | int64   | Starting year of the school year (2025 = SY25-26)                                                         |
+| `region`        | string  | `Camden` / `Newark` / `Miami` (Paterson adds rows later, no code change)                                  |
+| `grade_min`     | int64   | K = 0                                                                                                     |
+| `grade_max`     | int64   | Single grade = same value as `grade_min`                                                                  |
+| `term_name`     | string  | `Q1`–`Q4` or `All`. Term-scaled thresholds (Newark HS absences Q1=6 … Q4=24) are one row per term         |
+| `domain`        | string  | `attendance` / `academic` / `overall`                                                                     |
+| `rule_group`    | int64   | Conditions in the same group AND together; groups OR together                                             |
+| `metric`        | string  | From the fixed catalog (Component 2)                                                                      |
+| `comparator`    | string  | One of `less_than`, `less_than_or_equal`, `greater_than`, `greater_than_or_equal`, `equals`, `not_equals` |
+| `value`         | float64 | The cutoff                                                                                                |
+| `if_missing`    | string  | `met` / `not_met` — what the condition evaluates to when the student's metric is NULL                     |
+| `detail_label`  | string  | Optional. Emitted as `attendance_status_hs_detail` when an attendance-domain group fires                  |
 
 The sheet uses data-validation dropdowns on `region`, `term_name`, `domain`,
 `metric`, `comparator`, and `if_missing`.
@@ -136,7 +136,8 @@ so every condition is uniformly `metric comparator value`.
 
 iReady placement mapping: `3 or More Grade Levels Below` → 3,
 `2 Grade Levels Below` → 2, `1 Grade Level Below` → 1, all on/above-grade
-placements → 0, no result → NULL (handled by `if_missing`).
+placements → 0, no result → NULL (handled by `if_missing`). This integer version
+is already present on the i-ready diagnostic results view
 
 Raw display columns (`iready_reading_recent` placement string,
 `dibels_composite_level_recent_str`, etc.) still pass through to the output

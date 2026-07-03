@@ -417,7 +417,13 @@ models:
                 severity: error
           - accepted_values:
               arguments:
-                values: ["<", "<=", ">", ">=", "=", "!="]
+                values:
+                  - less_than
+                  - less_than_or_equal
+                  - greater_than
+                  - greater_than_or_equal
+                  - equals
+                  - not_equals
               config:
                 severity: error
       - name: value
@@ -909,17 +915,17 @@ with
             case
                 when ml.metric_value is null
                 then p.if_missing = 'met'
-                when p.comparator = '<'
+                when p.comparator = 'less_than'
                 then ml.metric_value < p.`value`
-                when p.comparator = '<='
+                when p.comparator = 'less_than_or_equal'
                 then ml.metric_value <= p.`value`
-                when p.comparator = '>'
+                when p.comparator = 'greater_than'
                 then ml.metric_value > p.`value`
-                when p.comparator = '>='
+                when p.comparator = 'greater_than_or_equal'
                 then ml.metric_value >= p.`value`
-                when p.comparator = '='
+                when p.comparator = 'equals'
                 then ml.metric_value = p.`value`
-                when p.comparator = '!='
+                when p.comparator = 'not_equals'
                 then ml.metric_value != p.`value`
             end as is_met,
         from metrics_long as ml
@@ -1051,17 +1057,17 @@ with
             case
                 when ml.metric_value is null
                 then p.if_missing = 'met'
-                when p.comparator = '<'
+                when p.comparator = 'less_than'
                 then ml.metric_value < p.`value`
-                when p.comparator = '<='
+                when p.comparator = 'less_than_or_equal'
                 then ml.metric_value <= p.`value`
-                when p.comparator = '>'
+                when p.comparator = 'greater_than'
                 then ml.metric_value > p.`value`
-                when p.comparator = '>='
+                when p.comparator = 'greater_than_or_equal'
                 then ml.metric_value >= p.`value`
-                when p.comparator = '='
+                when p.comparator = 'equals'
                 then ml.metric_value = p.`value`
-                when p.comparator = '!='
+                when p.comparator = 'not_equals'
                 then ml.metric_value != p.`value`
             end as is_met,
         from overall_metrics_long as ml
@@ -1315,15 +1321,15 @@ unit_tests:
           select 2025 as academic_year, 'Newark' as region,
             5 as grade_min, 8 as grade_max, 'All' as term_name,
             'academic' as domain, 1 as rule_group,
-            'n_failing_core' as metric, '>=' as comparator,
+            'n_failing_core' as metric, 'greater_than_or_equal' as comparator,
             2.0 as `value`, 'not_met' as if_missing,
             cast(null as string) as detail_label
           union all
           select 2025, 'Newark', 5, 8, 'All', 'academic', 2,
-            'ada_term_running', '<', 0.85, 'met', null
+            'ada_term_running', 'less_than', 0.85, 'met', null
           union all
           select 2025, 'Newark', 5, 8, 'All', 'academic', 2,
-            'iready_reading_levels_below', '>=', 3.0, 'met', null
+            'iready_reading_levels_below', 'greater_than_or_equal', 3.0, 'met', null
     expect:
       rows:
         - { student_number: 1, academic_status: Off-Track }
@@ -1380,21 +1386,22 @@ unit_tests:
             9 as grade_min, 12 as grade_max, 'All' as term_name,
             'attendance' as domain, 1 as rule_group,
             'n_absences_y1_running_non_susp_no_tardy' as metric,
-            '>=' as comparator, 27.0 as `value`, 'not_met' as if_missing,
+            'greater_than_or_equal' as comparator, 27.0 as `value`,
+            'not_met' as if_missing,
             'Off-Track (Already reached threshold)' as detail_label
           union all
           select 2025, 'Newark', 9, 12, 'Q1', 'attendance', 2,
-            'n_absences_y1_running_non_susp_no_tardy', '>=', 6.0,
-            'not_met', 'Off-Track (Approaching threshold)'
+            'n_absences_y1_running_non_susp_no_tardy', 'greater_than_or_equal',
+            6.0, 'not_met', 'Off-Track (Approaching threshold)'
           union all
           select 2025, 'Newark', 9, 12, 'All', 'academic', 1,
-            'projected_credits_cum', '<', 25.0, 'not_met', null
+            'projected_credits_cum', 'less_than', 25.0, 'not_met', null
           union all
           select 2025, 'Newark', 9, 12, 'All', 'overall', 1,
-            'is_off_track_attendance', '=', 1.0, 'not_met', null
+            'is_off_track_attendance', 'equals', 1.0, 'not_met', null
           union all
           select 2025, 'Newark', 9, 12, 'All', 'overall', 2,
-            'is_off_track_academic', '=', 1.0, 'not_met', null
+            'is_off_track_academic', 'equals', 1.0, 'not_met', null
     expect:
       rows:
         - {
@@ -1525,67 +1532,67 @@ made valid, or error-severity staging tests fail CI).
 
 ```csv
 academic_year,region,grade_min,grade_max,term_name,domain,rule_group,metric,comparator,value,if_missing,detail_label
-2025,Newark,0,0,All,attendance,1,ada_term_running,<,0.85,met,
-2025,Newark,1,2,All,attendance,1,ada_term_running,<,0.87,met,
-2025,Newark,3,8,All,attendance,1,ada_term_running,<,0.9,met,
-2025,Newark,9,12,All,attendance,1,n_absences_y1_running_non_susp_no_tardy,>=,27,not_met,Off-Track (Already reached threshold)
-2025,Newark,9,12,Q1,attendance,2,n_absences_y1_running_non_susp_no_tardy,>=,6,not_met,Off-Track (Approaching threshold)
-2025,Newark,9,12,Q2,attendance,2,n_absences_y1_running_non_susp_no_tardy,>=,12,not_met,Off-Track (Approaching threshold)
-2025,Newark,9,12,Q3,attendance,2,n_absences_y1_running_non_susp_no_tardy,>=,18,not_met,Off-Track (Approaching threshold)
-2025,Newark,9,12,Q4,attendance,2,n_absences_y1_running_non_susp_no_tardy,>=,24,not_met,Off-Track (Approaching threshold)
-2025,Camden,0,0,All,attendance,1,ada_term_running,<,0.82,met,
-2025,Camden,1,2,All,attendance,1,ada_term_running,<,0.86,met,
-2025,Camden,3,8,All,attendance,1,ada_term_running,<,0.87,met,
-2025,Camden,9,12,All,attendance,1,n_absences_y1_running_non_susp,>=,36,not_met,Off-Track (Already reached threshold)
-2025,Camden,9,12,Q1,attendance,2,n_absences_y1_running_non_susp,>=,9,not_met,Off-Track (Approaching threshold)
-2025,Camden,9,12,Q2,attendance,2,n_absences_y1_running_non_susp,>=,18,not_met,Off-Track (Approaching threshold)
-2025,Camden,9,12,Q3,attendance,2,n_absences_y1_running_non_susp,>=,27,not_met,Off-Track (Approaching threshold)
-2025,Camden,9,12,Q4,attendance,2,n_absences_y1_running_non_susp,>=,36,not_met,Off-Track (Approaching threshold)
-2025,Miami,0,0,All,attendance,1,ada_term_running,<,0.8,not_met,
-2025,Miami,1,2,All,attendance,1,ada_term_running,<,0.85,not_met,
-2025,Miami,4,4,All,attendance,1,ada_term_running,<,0.85,not_met,
-2025,Miami,5,8,All,attendance,1,ada_term_running,<,0.85,not_met,
-2025,Miami,5,8,All,attendance,2,n_absences_y1_running,>=,27,not_met,
-2025,Newark,0,1,All,academic,1,dibels_composite_level,<=,1,met,
-2025,Newark,2,2,All,academic,1,iready_reading_levels_below,>=,2,met,
-2025,Newark,3,8,All,academic,1,iready_reading_levels_below,>=,2,met,
-2025,Newark,3,8,All,academic,1,iready_math_levels_below,>=,2,met,
-2025,Newark,3,8,All,academic,2,n_failing_core,>=,2,not_met,
-2025,Newark,9,9,All,academic,1,projected_credits_cum,<,25,not_met,
-2025,Newark,10,10,All,academic,1,projected_credits_cum,<,50,not_met,
-2025,Newark,11,11,All,academic,1,projected_credits_cum,<,85,not_met,
-2025,Newark,12,12,All,academic,1,projected_credits_cum,<,120,not_met,
-2025,Camden,0,1,All,academic,1,dibels_composite_level,<=,1,met,
-2025,Camden,2,2,All,academic,1,iready_reading_levels_below,>=,2,met,
-2025,Camden,3,8,All,academic,1,iready_reading_levels_below,>=,2,met,
-2025,Camden,3,8,All,academic,1,iready_math_levels_below,>=,2,met,
-2025,Camden,3,8,All,academic,2,n_failing_core,>=,2,not_met,
-2025,Camden,9,9,All,academic,1,projected_credits_cum,<,25,not_met,
-2025,Camden,10,10,All,academic,1,projected_credits_cum,<,50,not_met,
-2025,Camden,11,11,All,academic,1,projected_credits_cum,<,85,not_met,
-2025,Camden,12,12,All,academic,1,projected_credits_cum,<,120,not_met,
-2025,Miami,0,2,All,academic,1,star_math_level,=,1,not_met,
-2025,Miami,0,2,All,academic,2,star_ela_level,=,1,not_met,
-2025,Miami,3,3,All,academic,1,fast_ela_level,=,1,not_met,
-2025,Miami,4,4,All,academic,1,fast_math_level,=,1,not_met,
-2025,Miami,4,4,All,academic,1,fast_ela_level,=,1,not_met,
-2025,Miami,5,8,All,academic,1,n_failing_core,>=,2,not_met,
-2025,Newark,0,8,All,overall,1,is_off_track_attendance,=,1,not_met,
-2025,Newark,0,8,All,overall,1,is_off_track_academic,=,1,not_met,
-2025,Newark,5,8,All,overall,2,n_failing_core,>=,2,not_met,
-2025,Newark,9,12,All,overall,1,is_off_track_attendance,=,1,not_met,
-2025,Newark,9,12,All,overall,2,is_off_track_academic,=,1,not_met,
-2025,Camden,0,8,All,overall,1,is_off_track_attendance,=,1,not_met,
-2025,Camden,0,8,All,overall,1,is_off_track_academic,=,1,not_met,
-2025,Camden,5,8,All,overall,2,n_failing_core,>=,2,not_met,
-2025,Camden,9,12,All,overall,1,is_off_track_attendance,=,1,not_met,
-2025,Camden,9,12,All,overall,2,is_off_track_academic,=,1,not_met,
-2025,Miami,0,3,All,overall,1,is_off_track_attendance,=,1,not_met,
-2025,Miami,0,3,All,overall,2,is_off_track_academic,=,1,not_met,
-2025,Miami,4,4,All,overall,1,is_off_track_attendance,=,1,not_met,
-2025,Miami,4,4,All,overall,1,is_off_track_academic,=,1,not_met,
-2025,Miami,5,8,All,overall,1,is_off_track_attendance,=,1,not_met,
-2025,Miami,5,8,All,overall,2,is_off_track_academic,=,1,not_met,
+2025,Newark,0,0,All,attendance,1,ada_term_running,less_than,0.85,met,
+2025,Newark,1,2,All,attendance,1,ada_term_running,less_than,0.87,met,
+2025,Newark,3,8,All,attendance,1,ada_term_running,less_than,0.9,met,
+2025,Newark,9,12,All,attendance,1,n_absences_y1_running_non_susp_no_tardy,greater_than_or_equal,27,not_met,Off-Track (Already reached threshold)
+2025,Newark,9,12,Q1,attendance,2,n_absences_y1_running_non_susp_no_tardy,greater_than_or_equal,6,not_met,Off-Track (Approaching threshold)
+2025,Newark,9,12,Q2,attendance,2,n_absences_y1_running_non_susp_no_tardy,greater_than_or_equal,12,not_met,Off-Track (Approaching threshold)
+2025,Newark,9,12,Q3,attendance,2,n_absences_y1_running_non_susp_no_tardy,greater_than_or_equal,18,not_met,Off-Track (Approaching threshold)
+2025,Newark,9,12,Q4,attendance,2,n_absences_y1_running_non_susp_no_tardy,greater_than_or_equal,24,not_met,Off-Track (Approaching threshold)
+2025,Camden,0,0,All,attendance,1,ada_term_running,less_than,0.82,met,
+2025,Camden,1,2,All,attendance,1,ada_term_running,less_than,0.86,met,
+2025,Camden,3,8,All,attendance,1,ada_term_running,less_than,0.87,met,
+2025,Camden,9,12,All,attendance,1,n_absences_y1_running_non_susp,greater_than_or_equal,36,not_met,Off-Track (Already reached threshold)
+2025,Camden,9,12,Q1,attendance,2,n_absences_y1_running_non_susp,greater_than_or_equal,9,not_met,Off-Track (Approaching threshold)
+2025,Camden,9,12,Q2,attendance,2,n_absences_y1_running_non_susp,greater_than_or_equal,18,not_met,Off-Track (Approaching threshold)
+2025,Camden,9,12,Q3,attendance,2,n_absences_y1_running_non_susp,greater_than_or_equal,27,not_met,Off-Track (Approaching threshold)
+2025,Camden,9,12,Q4,attendance,2,n_absences_y1_running_non_susp,greater_than_or_equal,36,not_met,Off-Track (Approaching threshold)
+2025,Miami,0,0,All,attendance,1,ada_term_running,less_than,0.8,not_met,
+2025,Miami,1,2,All,attendance,1,ada_term_running,less_than,0.85,not_met,
+2025,Miami,4,4,All,attendance,1,ada_term_running,less_than,0.85,not_met,
+2025,Miami,5,8,All,attendance,1,ada_term_running,less_than,0.85,not_met,
+2025,Miami,5,8,All,attendance,2,n_absences_y1_running,greater_than_or_equal,27,not_met,
+2025,Newark,0,1,All,academic,1,dibels_composite_level,less_than_or_equal,1,met,
+2025,Newark,2,2,All,academic,1,iready_reading_levels_below,greater_than_or_equal,2,met,
+2025,Newark,3,8,All,academic,1,iready_reading_levels_below,greater_than_or_equal,2,met,
+2025,Newark,3,8,All,academic,1,iready_math_levels_below,greater_than_or_equal,2,met,
+2025,Newark,3,8,All,academic,2,n_failing_core,greater_than_or_equal,2,not_met,
+2025,Newark,9,9,All,academic,1,projected_credits_cum,less_than,25,not_met,
+2025,Newark,10,10,All,academic,1,projected_credits_cum,less_than,50,not_met,
+2025,Newark,11,11,All,academic,1,projected_credits_cum,less_than,85,not_met,
+2025,Newark,12,12,All,academic,1,projected_credits_cum,less_than,120,not_met,
+2025,Camden,0,1,All,academic,1,dibels_composite_level,less_than_or_equal,1,met,
+2025,Camden,2,2,All,academic,1,iready_reading_levels_below,greater_than_or_equal,2,met,
+2025,Camden,3,8,All,academic,1,iready_reading_levels_below,greater_than_or_equal,2,met,
+2025,Camden,3,8,All,academic,1,iready_math_levels_below,greater_than_or_equal,2,met,
+2025,Camden,3,8,All,academic,2,n_failing_core,greater_than_or_equal,2,not_met,
+2025,Camden,9,9,All,academic,1,projected_credits_cum,less_than,25,not_met,
+2025,Camden,10,10,All,academic,1,projected_credits_cum,less_than,50,not_met,
+2025,Camden,11,11,All,academic,1,projected_credits_cum,less_than,85,not_met,
+2025,Camden,12,12,All,academic,1,projected_credits_cum,less_than,120,not_met,
+2025,Miami,0,2,All,academic,1,star_math_level,equals,1,not_met,
+2025,Miami,0,2,All,academic,2,star_ela_level,equals,1,not_met,
+2025,Miami,3,3,All,academic,1,fast_ela_level,equals,1,not_met,
+2025,Miami,4,4,All,academic,1,fast_math_level,equals,1,not_met,
+2025,Miami,4,4,All,academic,1,fast_ela_level,equals,1,not_met,
+2025,Miami,5,8,All,academic,1,n_failing_core,greater_than_or_equal,2,not_met,
+2025,Newark,0,8,All,overall,1,is_off_track_attendance,equals,1,not_met,
+2025,Newark,0,8,All,overall,1,is_off_track_academic,equals,1,not_met,
+2025,Newark,5,8,All,overall,2,n_failing_core,greater_than_or_equal,2,not_met,
+2025,Newark,9,12,All,overall,1,is_off_track_attendance,equals,1,not_met,
+2025,Newark,9,12,All,overall,2,is_off_track_academic,equals,1,not_met,
+2025,Camden,0,8,All,overall,1,is_off_track_attendance,equals,1,not_met,
+2025,Camden,0,8,All,overall,1,is_off_track_academic,equals,1,not_met,
+2025,Camden,5,8,All,overall,2,n_failing_core,greater_than_or_equal,2,not_met,
+2025,Camden,9,12,All,overall,1,is_off_track_attendance,equals,1,not_met,
+2025,Camden,9,12,All,overall,2,is_off_track_academic,equals,1,not_met,
+2025,Miami,0,3,All,overall,1,is_off_track_attendance,equals,1,not_met,
+2025,Miami,0,3,All,overall,2,is_off_track_academic,equals,1,not_met,
+2025,Miami,4,4,All,overall,1,is_off_track_attendance,equals,1,not_met,
+2025,Miami,4,4,All,overall,1,is_off_track_academic,equals,1,not_met,
+2025,Miami,5,8,All,overall,1,is_off_track_attendance,equals,1,not_met,
+2025,Miami,5,8,All,overall,2,is_off_track_academic,equals,1,not_met,
 ```
 
 Transcription notes (why some rows look asymmetric — verified against the legacy
