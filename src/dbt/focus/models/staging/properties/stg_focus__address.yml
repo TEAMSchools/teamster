@@ -1,0 +1,328 @@
+models:
+  - name: stg_focus__address
+    description: >-
+      Focus address records (live rows only) — one row per address id. Carries
+      the primary and mailing address, parsed USPS address components, geo
+      coordinates, and validity/messaging flags. Soft-deleted rows are excluded
+      and the `custom_*` long-tail is not part of this table.
+    columns:
+      - name: address_id
+        description: Primary key — Focus address id.
+        data_type: int
+        data_tests:
+          - unique:
+              config:
+                severity: error
+          - not_null:
+              config:
+                severity: error
+      - name: profile_id
+        description: Focus profile id the address is attached to.
+        data_type: int
+        config:
+          meta:
+            contains_pii: true
+      - name: parent_id
+        description:
+          Parent address id, when the row is a derived/linked address.
+        data_type: int
+      - name: university_id
+        description: Focus university id associated with the address.
+        data_type: int
+      - name: district_id
+        description: Focus district id.
+        data_type: int
+      - name: address
+        description: Street address line 1.
+        data_type: string
+        config:
+          meta:
+            contains_pii: true
+      - name: address2
+        description: Street address line 2.
+        data_type: string
+        config:
+          meta:
+            contains_pii: true
+      - name: city
+        description: City of the address.
+        data_type: string
+        config:
+          meta:
+            contains_pii: true
+      - name: state
+        description: State of the address.
+        data_type: string
+        config:
+          meta:
+            contains_pii: true
+      - name: zipcode
+        description: ZIP code of the address.
+        data_type: string
+        config:
+          meta:
+            contains_pii: true
+      - name: plus4
+        description: ZIP+4 extension of the address.
+        data_type: string
+        config:
+          meta:
+            contains_pii: true
+      - name: district
+        description: District text value associated with the address.
+        data_type: string
+        config:
+          meta:
+            contains_pii: true
+      - name: country
+        description: Country of the address.
+        data_type: string
+        config:
+          meta:
+            contains_pii: true
+      - name: care_of
+        description: Care-of (c/o) line for the address.
+        data_type: string
+        config:
+          meta:
+            contains_pii: true
+      - name: mail_address
+        description: Mailing address line 1.
+        data_type: string
+        config:
+          meta:
+            contains_pii: true
+      - name: mail_address2
+        description: Mailing address line 2.
+        data_type: string
+        config:
+          meta:
+            contains_pii: true
+      - name: mail_city
+        description: Mailing city.
+        data_type: string
+        config:
+          meta:
+            contains_pii: true
+      - name: mail_state
+        description: Mailing state.
+        data_type: string
+        config:
+          meta:
+            contains_pii: true
+      - name: mail_zipcode
+        description: Mailing ZIP code.
+        data_type: string
+        config:
+          meta:
+            contains_pii: true
+      - name: mail_plus4
+        description: Mailing ZIP+4 extension.
+        data_type: string
+        config:
+          meta:
+            contains_pii: true
+      - name: mail_district
+        description: Mailing district text value.
+        data_type: string
+        config:
+          meta:
+            contains_pii: true
+      - name: mail_country
+        description: Mailing country.
+        data_type: string
+        config:
+          meta:
+            contains_pii: true
+      - name: mail_care_of
+        description: Mailing care-of (c/o) line.
+        data_type: string
+        config:
+          meta:
+            contains_pii: true
+      - name: number
+        description: Parsed street number of the primary address.
+        data_type: int
+        config:
+          meta:
+            contains_pii: true
+      - name: number_suffix
+        description: Parsed street-number suffix of the primary address.
+        data_type: string
+        config:
+          meta:
+            contains_pii: true
+      - name: direction_prefix
+        description: Parsed leading directional of the primary address.
+        data_type: string
+        config:
+          meta:
+            contains_pii: true
+      - name: street_name
+        description: Parsed street name of the primary address.
+        data_type: string
+        config:
+          meta:
+            contains_pii: true
+      - name: street_suffix
+        description: Parsed street suffix of the primary address.
+        data_type: string
+        config:
+          meta:
+            contains_pii: true
+      - name: direction_suffix
+        description: Parsed trailing directional of the primary address.
+        data_type: string
+        config:
+          meta:
+            contains_pii: true
+      - name: primary_unit_type
+        description: Parsed primary unit type (e.g. apt, suite).
+        data_type: string
+        config:
+          meta:
+            contains_pii: true
+      - name: primary_unit_number
+        description: Parsed primary unit number.
+        data_type: string
+        config:
+          meta:
+            contains_pii: true
+      - name: secondary_unit_type
+        description: Parsed secondary unit type.
+        data_type: string
+        config:
+          meta:
+            contains_pii: true
+      - name: secondary_unit_number
+        description: Parsed secondary unit number.
+        data_type: string
+        config:
+          meta:
+            contains_pii: true
+      - name: mail_number
+        description: Parsed street number of the mailing address.
+        data_type: int
+        config:
+          meta:
+            contains_pii: true
+      - name: mail_number_suffix
+        description: Parsed street-number suffix of the mailing address.
+        data_type: string
+        config:
+          meta:
+            contains_pii: true
+      - name: mail_direction_prefix
+        description: Parsed leading directional of the mailing address.
+        data_type: string
+        config:
+          meta:
+            contains_pii: true
+      - name: mail_street_name
+        description: Parsed street name of the mailing address.
+        data_type: string
+        config:
+          meta:
+            contains_pii: true
+      - name: mail_street_suffix
+        description: Parsed street suffix of the mailing address.
+        data_type: string
+        config:
+          meta:
+            contains_pii: true
+      - name: mail_direction_suffix
+        description: Parsed trailing directional of the mailing address.
+        data_type: string
+        config:
+          meta:
+            contains_pii: true
+      - name: mail_primary_unit_type
+        description: Parsed primary unit type of the mailing address.
+        data_type: string
+        config:
+          meta:
+            contains_pii: true
+      - name: mail_primary_unit_number
+        description: Parsed primary unit number of the mailing address.
+        data_type: string
+        config:
+          meta:
+            contains_pii: true
+      - name: mail_secondary_unit_type
+        description: Parsed secondary unit type of the mailing address.
+        data_type: string
+        config:
+          meta:
+            contains_pii: true
+      - name: mail_secondary_unit_number
+        description: Parsed secondary unit number of the mailing address.
+        data_type: string
+        config:
+          meta:
+            contains_pii: true
+      - name: phone
+        description: Phone number associated with the address.
+        data_type: string
+        config:
+          meta:
+            contains_pii: true
+      - name: latitude
+        description: Geocoded latitude of the address.
+        data_type: numeric
+        config:
+          meta:
+            contains_pii: true
+      - name: longitude
+        description: Geocoded longitude of the address.
+        data_type: numeric
+        config:
+          meta:
+            contains_pii: true
+      - name: address_import_key
+        description: Source import key used to match the address on import.
+        data_type: string
+      - name: imported
+        description: Y/N — whether the address originated from an import.
+        data_type: string
+      - name: unlisted
+        description: Y/N — whether the address is flagged unlisted.
+        data_type: string
+      - name: callout
+        description: Y/N — whether the address is included in callouts.
+        data_type: string
+      - name: blocked
+        description: Y/N — whether the address is blocked.
+        data_type: string
+      - name: sms
+        description: Y/N — whether the address can receive SMS messages.
+        data_type: string
+      - name: unsubscribe
+        description: Y/N — whether the address has unsubscribed from messaging.
+        data_type: string
+      - name: valid
+        description: Y/N — whether the address is marked valid in Focus.
+        data_type: string
+      - name: usps_valid
+        description: Y/N — whether the address passed USPS validation.
+        data_type: string
+      - name: missing_from_catalog
+        description: Y/N — whether the address is missing from the USPS catalog.
+        data_type: string
+      - name: disclaimer_agreement
+        description: Y/N — whether the disclaimer agreement was accepted.
+        data_type: string
+      - name: last_change
+        description: Source last-change timestamp for the address.
+        data_type: timestamp
+      - name: parsed_at
+        description: Timestamp the address was parsed into components.
+        data_type: timestamp
+      - name: uuid
+        description: Focus global unique identifier for the row.
+        data_type: string
+      - name: created_at
+        description: Row creation timestamp in Focus.
+        data_type: timestamp
+      - name: updated_at
+        description: Row last-update timestamp in Focus.
+        data_type: timestamp

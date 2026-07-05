@@ -1,0 +1,204 @@
+models:
+  - name: stg_focus__master_courses
+    description: >-
+      Focus master courses — one row per master course template, scoped by
+      school year. Curated to the FLDOE-import-mapped core plus course/subject
+      keys, titles, term dates, grading scheme, and credit attributes, with the
+      currently-populated custom-field columns appended inline (aliased to their
+      slug). Unpopulated custom slots are excluded. Select/multiple custom
+      values remain as stored Focus option codes — not decoded in this layer.
+    columns:
+      - name: course_id
+        description: Primary key — Focus master course id.
+        data_type: int
+        data_tests:
+          - unique:
+              config:
+                severity: error
+          - not_null:
+              config:
+                severity: error
+      - name: subject_id
+        description: Focus course subject id.
+        data_type: int
+      - name: syear
+        description: Focus school year (start year, FLDOE SYEAR).
+        data_type: int
+      - name: district_id
+        description: Focus district id.
+        data_type: int
+      - name: rollover_id
+        description: Source master course id this rolled over from.
+        data_type: int
+      - name: short_name
+        description: Course number / abbreviated label (FLDOE SHORT_NAME).
+        data_type: string
+      - name: title
+        description: Full course title (FLDOE TITLE).
+        data_type: string
+      - name: long_title
+        description: Long course title (FLDOE LONG_TITLE).
+        data_type: string
+      - name: transcript_title
+        description: Title used on transcripts.
+        data_type: string
+      - name: start_date
+        description: Course start date (FLDOE START_DATE).
+        data_type: date
+      - name: end_date
+        description: Course end date (FLDOE END_DATE).
+        data_type: date
+      - name: date_added
+        description: Date the master course was added (FLDOE DATE_ADDED).
+        data_type: date
+      - name: last_modified_date
+        description: Date the master course was last modified.
+        data_type: date
+      - name: grad_subject_area
+        description: Graduation subject area (FLDOE GRAD_SUBJECT_AREA).
+        data_type: string
+      - name: grad_subject_area2
+        description: Second graduation subject area.
+        data_type: string
+      - name: grad_subject_area3
+        description: Third graduation subject area.
+        data_type: string
+      - name: subject_area
+        description: Subject area classification.
+        data_type: string
+      - name: edfi_core_subject
+        description: Ed-Fi core subject code.
+        data_type: string
+      - name: grading_scale
+        description: Grading scale applied to the course (FLDOE GRADING_SCALE).
+        data_type: string
+      - name: standards_grading_scale
+        description: Standards grading scale (FLDOE STANDARDS_GRADING_SCALE).
+        data_type: string
+      - name: grade_posting_scheme
+        description: Grade posting scheme (FLDOE GRADE_POSTING_SCHEME).
+        data_type: string
+      - name: course_history_term
+        description: Course history term (FLDOE COURSE_HISTORY_TERM).
+        data_type: string
+      - name: course_level
+        description: Course level classification (FLDOE COURSE_LEVEL).
+        data_type: string
+      - name: course_length
+        description: Course length classification.
+        data_type: string
+      - name: affects_gpa
+        description: Whether the course affects GPA (FLDOE AFFECTS_GPA).
+        data_type: numeric
+      - name: credits
+        description: Credits awarded by the course (FLDOE CREDITS).
+        data_type: numeric
+      - name: total_credit
+        description: Total credit for the course (FLDOE TOTAL_CREDIT).
+        data_type: numeric
+      - name: credit_hours
+        description: Credit hours awarded by the course.
+        data_type: numeric
+      - name: course_hours
+        description: Instructional course hours.
+        data_type: numeric
+      - name: fee
+        description: Course fee (FLDOE FEE).
+        data_type: numeric
+      - name: low_grade
+        description: Lowest grade level for the course (FLDOE LOW_GRADE).
+        data_type: string
+      - name: high_grade
+        description: Highest grade level for the course (FLDOE HIGH_GRADE).
+        data_type: string
+      - name: gender_restriction
+        description:
+          Gender restriction on the course (FLDOE GENDER_RESTRICTION).
+        data_type: string
+      - name: status
+        description: Active status of the course (FLDOE ACTIVE).
+        data_type: int
+      - name: ib
+        description: Y/N — whether the course is an IB course (FLDOE IB).
+        data_type: string
+      - name: ap
+        description: Y/N — whether the course is an AP course (FLDOE AP).
+        data_type: string
+      - name: ell
+        description: Y/N — whether the course is an ELL course (FLDOE ELL).
+        data_type: string
+      - name: certification_requirements
+        description:
+          CCD certification requirements (FLDOE CERTIFICATION_REQUIREMENTS).
+        data_type: string
+      - name: course_description
+        description: Free-text course description.
+        data_type: string
+      - name: allow_repeat
+        description: Whether the course may be repeated.
+        data_type: numeric
+      - name: homeroom
+        description: Y/N — whether the course is a homeroom.
+        data_type: string
+      - name: edfi_course_level_characteristic
+        description: Ed-Fi course-level characteristic code.
+        data_type: string
+      - name: iet_program_number
+        description: IET program number associated with the course.
+        data_type: string
+      - name: imported
+        description: Y/N — whether the row originated from an import.
+        data_type: string
+      - name: uuid
+        description: Focus global unique identifier for the row.
+        data_type: string
+      - name: created_at
+        description: Row creation timestamp in Focus.
+        data_type: timestamp
+      - name: updated_at
+        description: Row last-update timestamp in Focus.
+        data_type: timestamp
+      - name: core_for_class_size
+        description: >-
+          Core for class size — Focus custom field (Y/N checkbox).
+        data_type: string
+      - name: core_for_highly_qualified
+        description: >-
+          Core for highly qualified — Focus custom field (Y/N checkbox).
+        data_type: string
+      - name: custom_field_11
+        description: >-
+          Focus positional custom slot 11 — no label in the custom_fields
+          catalog.
+        data_type: string
+      - name: fefp
+        description: >-
+          FEFP program — Focus custom field. Stored as an encoded select option
+          code (decode deferred).
+        data_type: string
+      - name: aice
+        description: >-
+          AICE — Focus custom field (Y/N checkbox).
+        data_type: string
+      - name: dual_enrollment_indicator
+        description: >-
+          Dual enrollment indicator — Focus custom field. Stored as an encoded
+          select option code (decode deferred).
+        data_type: string
+      - name: course_flag_1
+        description: >-
+          Course flag 1 — Focus custom field. Stored as an encoded select option
+          code (decode deferred).
+        data_type: string
+      - name: eoc_exam_required
+        description: >-
+          EOC exam required — Focus custom field (Y/N checkbox).
+        data_type: string
+      - name: vocational_program_number
+        description: >-
+          Vocational program number — Focus custom field.
+        data_type: string
+      - name: exclude_from_fte
+        description: >-
+          Exclude from FTE — Focus custom field (Y/N checkbox).
+        data_type: string

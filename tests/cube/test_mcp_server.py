@@ -271,3 +271,52 @@ def test_meta_in_memory_cache_skips_disk_read_on_repeat_calls(
     third = asyncio.run(server.meta(ctx))
     assert third == {"cubes": [{"name": "x"}]}
     assert call_count == 1
+
+
+def test_with_default_timezone_injects_utc_when_absent(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    server = _load_server(monkeypatch)
+    query = {"measures": ["student_attendance_summary.avg_daily_attendance"]}
+    result = server._with_default_timezone(query)
+    assert result["timezone"] == "UTC"
+    # Original query object is not mutated.
+    assert "timezone" not in query
+
+
+def test_with_default_timezone_preserves_caller_timezone(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    server = _load_server(monkeypatch)
+    query = {"measures": ["x.count"], "timezone": "America/New_York"}
+    assert server._with_default_timezone(query) is query
+
+
+def test_load_and_sql_send_utc_timezone_by_default(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.delenv("AUTHKIT_DOMAIN", raising=False)
+    server = _load_server(monkeypatch)
+    monkeypatch.setenv("CUBE_USER_EMAIL", "engineer@apps.teamschools.org")
+
+    sent: list[dict[str, Any]] = []
+
+    async def fake_request(*args: object, **kwargs: object) -> dict[str, Any]:
+        del args
+        sent.append(dict(kwargs))
+        return {"data": []}
+
+    monkeypatch.setattr(server, "_request", fake_request)
+    ctx = MagicMock()
+
+    asyncio.run(server.load(ctx, {"measures": ["x.count"]}))
+    assert sent[0]["json"]["query"]["timezone"] == "UTC"
+
+    asyncio.run(server.sql(ctx, {"measures": ["x.count"]}))
+    assert json.loads(sent[1]["params"]["query"])["timezone"] == "UTC"
+
+    # Caller-provided timezone passes through untouched on both tools.
+    asyncio.run(
+        server.load(ctx, {"measures": ["x.count"], "timezone": "America/New_York"})
+    )
+    assert sent[2]["json"]["query"]["timezone"] == "America/New_York"

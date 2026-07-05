@@ -1,0 +1,34 @@
+models:
+  - name: stg_focus__test_history_test_types
+    description: >-
+      Focus test-history test types — one row per test type, scoped by district.
+      Lookup that groups tests into categories.
+    columns:
+      - name: id
+        description: Primary key — Focus test-history test type id.
+        data_type: int
+        data_tests:
+          - unique:
+              config:
+                severity: error
+          - not_null:
+              config:
+                severity: error
+      - name: district_id
+        description: Focus district id the test type belongs to.
+        data_type: int
+      - name: title
+        description: Full test type name.
+        data_type: string
+      - name: sort_order
+        description: Display sort order within the test type list.
+        data_type: int
+      - name: is_default
+        description: Y/N — whether this is the default test type.
+        data_type: string
+      - name: created_at
+        description: Row creation timestamp in Focus.
+        data_type: timestamp
+      - name: updated_at
+        description: Row last-update timestamp in Focus.
+        data_type: timestamp

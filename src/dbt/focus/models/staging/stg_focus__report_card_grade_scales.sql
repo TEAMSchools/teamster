@@ -1,0 +1,18 @@
+select
+    id,
+    syear,
+    school_id,
+    title,
+    default_scale,
+    rollover_id,
+    letter_only,
+    show_average_in_gradebook,
+    course_level,
+    proficiency_gradebook,
+    max_post_percent,
+    min_post_percent,
+    suppress_numeric_proficiency_grades,
+    uuid,
+    created_at,
+    updated_at,
+from {{ source("focus", "report_card_grade_scales") }}

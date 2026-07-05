@@ -1,98 +1,96 @@
 cubes:
   - name: student_enrollments
     public: false
-    sql_table: kipptaf_marts.dim_student_enrollments
+    sql_table: kipptaf_marts.fct_student_attendance_daily
 
     joins:
-      - name: students
-        sql: "{students.student_key} = {CUBE}.student_key"
+      # Join on the raw DATE key, not the date_day time dimension — Cube wraps
+      # time dimensions in the query-timezone conversion (convertTz) inside
+      # join predicates, which breaks the equality against the unconverted
+      # fact-side date under any non-UTC timezone (#4298).
+      - name: dates
+        sql: "{dates.date_key} = {CUBE}.date_key"
         relationship: many_to_one
 
-      - name: locations
-        sql: "{locations.location_key} = {CUBE}.location_key"
-        relationship: many_to_one
-
-      - name: student_enrollment_status
+      # Location, student identity, grade, and status are all reached via
+      # student_school_enrollments (single FK route, no diamond). The prior
+      # direct locations join is removed because fct_student_attendance_daily
+      # has no location_key column.
+      - name: student_school_enrollments
         sql: >
-          {student_enrollment_status.student_enrollment_key} =
+          {student_school_enrollments.student_enrollment_key} =
           {CUBE}.student_enrollment_key
-        relationship: one_to_one
+        relationship: many_to_one
 
     dimensions:
-      - name: student_enrollment_key
+      - name: student_attendance_daily_key
         description: >-
-          Surrogate key derived from student_number, _dbt_source_project,
-          academic_year, and entrydate. Primary key for this dimension — matches
-          the uniqueness grain on int_powerschool__student_enrollment_union.
-        sql: student_enrollment_key
+          Surrogate key derived from student_number, _dbt_source_project, and
+          calendardate. Primary key of the underlying attendance daily fact.
+        sql: student_attendance_daily_key
         type: string
         primary_key: true
-        public: true
 
-      - name: student_key
-        description: Surrogate key derived from student_number. FK to students.
-        sql: student_key
+      - name: student_enrollment_key
+        description: >-
+          FK to student_school_enrollments (the stint dimension). Surrogate key
+          from student_number, _dbt_source_project, academic_year, entrydate.
+        sql: student_enrollment_key
         type: string
 
-      - name: location_key
+      - name: is_current_record
         description: >-
-          Surrogate key derived from location_clean_name. FK to locations. Null
-          when schoolid does not match any location in the crosswalk (e.g.,
-          grade_level 99 placeholder schools).
-        sql: location_key
-        type: string
-
-      - name: academic_year
-        description: >-
-          KIPP academic year (July start) in which this enrollment falls. The
-          calendar year in which the academic year begins (e.g., 2025 for the
-          2025-26 school year).
-        sql: academic_year
-        type: number
-        public: true
-
-      - name: grade_level
-        description: >-
-          The grade the student is in. Since this is an integer: 0=Kindergarten,
-          -2=Preschool.
-        sql: grade_level
-        type: number
-        public: true
-
-      - name: graduation_year
-        description: Student graduation year.
-        sql: graduation_year
-        type: number
-        public: true
-
-      - name: entry_date
-        sql: CAST(entry_date_key AS TIMESTAMP)
-        type: time
-        public: true
-
-      - name: exit_date
-        sql: CAST(exit_date_key AS TIMESTAMP)
-        type: time
-        public: true
-
-      - name: is_retained_year
-        description: >-
-          TRUE if the student repeated this grade level in the same school
-          compared to the prior academic year.
-        sql: is_retained_year
+          TRUE on the school's latest attendance day that has occurred (per
+          school × academic year, capped at today). Default point-in-time
+          enrollment anchor — drives count_students at year / no grouping.
+        sql: is_current_record
         type: boolean
         public: true
 
-      - name: year_in_network
+      - name: is_month_end_record
         description: >-
-          Count of years the student has been enrolled in the network. Populated
-          on the student's primary enrollment stint per academic year; null on
-          additional same-year stints.
-        sql: year_in_network
-        type: number
+          TRUE on the school's latest attendance day of each calendar month. Use
+          for month-granularity point-in-time enrollment trends.
+        sql: is_enrollment_month_end_record
+        type: boolean
+        public: true
+
+      - name: is_week_end_record
+        description: >-
+          TRUE on the school's latest attendance day of each PowerSchool school
+          week. Group the weekly trend by dates_school_week_start_date (not
+          Cube's native ISO week).
+        sql: is_enrollment_week_end_record
+        type: boolean
+        public: true
+
+      - name: is_latest_record
+        description: >-
+          TRUE on the last attendance day of each enrollment stint. Per-stint
+          "served" marker — not a period-end anchor; distinct from
+          is_current_record.
+        sql: is_latest_record
+        type: boolean
         public: true
 
     measures:
       - name: count_students
-        sql: student_enrollment_key
+        description: >-
+          Distinct students enrolled, point-in-time. Counts each student once as
+          of the most recent in-session school day in your query: the exact date
+          if you filter to one (filter dates_date_day to a single date, e.g.
+          2025-10-01 for the fall count), otherwise each school's latest
+          in-session day in the period (today for the current year, the last day
+          of school for completed years). Group by month or week to trend the
+          point-in-time headcount over the year. Matches the topline Total
+          Enrollment methodology — enrollment is by entry/exit dates, not
+          status. Note: when no single date is pinned, schools that end on
+          different days are each counted as of their own last day, so a network
+          total can mix as-of dates within the final weeks of a year. A week or
+          month with no in-session days (e.g. winter or February break) has no
+          point-in-time snapshot and reads as 0 in a trend — read trends on
+          instructional periods, or carry the prior value forward in the BI
+          layer (the daily fact is in-session-days only by design).
+        sql: "{student_school_enrollments.student_key}"
         type: count_distinct
+        public: true

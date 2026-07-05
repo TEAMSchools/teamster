@@ -1,0 +1,69 @@
+models:
+  - name: int_focus__students__pivot
+    description: >-
+      Decoded labels for the SISStudent select custom fields, one row per
+      student_id. Join to stg_focus__students on student_id for the codes. A
+      null label means the student had no code for that field.
+    config:
+      meta:
+        contains_pii: true
+    columns:
+      - name: student_id
+        description: Primary key — Focus local student id.
+        data_tests:
+          - unique:
+              config:
+                severity: error
+          - not_null:
+              config:
+                severity: error
+      - name: ethnicity_hispanic_or_latino_label
+        description:
+          Decoded label for the ethnicity_hispanic_or_latino select field.
+        config:
+          meta:
+            contains_pii: true
+      - name: race_white_label
+        description: Decoded label for the race_white select field.
+        config:
+          meta:
+            contains_pii: true
+      - name: race_black_or_african_american_label
+        description:
+          Decoded label for the race_black_or_african_american select field.
+        config:
+          meta:
+            contains_pii: true
+      - name: race_asian_label
+        description: Decoded label for the race_asian select field.
+        config:
+          meta:
+            contains_pii: true
+      - name: sex_label
+        description: Decoded label for the sex select field.
+        config:
+          meta:
+            contains_pii: true
+      - name: race_american_indian_or_alaska_native_label
+        description:
+          Decoded label for the race_american_indian_or_alaska_native field.
+        config:
+          meta:
+            contains_pii: true
+      - name: race_native_hawaiian_or_other_pacific_islander_label
+        description:
+          Decoded label for the race_native_hawaiian_or_other_pacific_islander
+          field.
+        config:
+          meta:
+            contains_pii: true
+      - name: residence_county_label
+        description: Decoded label for the residence_county select field.
+        config:
+          meta:
+            contains_pii: true
+      - name: language_label
+        description: Decoded label for the language select field.
+        config:
+          meta:
+            contains_pii: true

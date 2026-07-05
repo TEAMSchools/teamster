@@ -1,0 +1,68 @@
+cubes:
+  - name: staff_reporting_relationships
+    public: false
+    # Point-in-time manager resolver. One row per staff member x contiguous
+    # window during which they held a single primary-assignment reporting
+    # relationship. Helper cube only, not exposed in any view. staff_work_history
+    # folds this logic directly into its own SQL (so each period carries one
+    # manager); this standalone cube is retained for future fact cubes
+    # (observations, gradebook, surveys) that resolve manager point-in-time by
+    # joining on their own event date.
+    sql: |
+      SELECT
+        swa.staff_key,
+        rr.manager_staff_key,
+        GREATEST(wap.effective_start_date, rr.effective_start_date) AS effective_start_date,
+        LEAST(wap.effective_end_date,      rr.effective_end_date)   AS effective_end_date
+      FROM kipptaf_marts.dim_work_assignment_primary wap
+      JOIN kipptaf_marts.dim_staff_work_assignments swa
+        ON wap.work_assignment_key = swa.work_assignment_key
+        AND swa.staff_key IS NOT NULL
+      JOIN kipptaf_marts.dim_work_assignment_reporting_relationships rr
+        ON rr.work_assignment_key = wap.work_assignment_key
+        AND wap.effective_start_date <= rr.effective_end_date
+        AND wap.effective_end_date   >= rr.effective_start_date
+      WHERE wap.is_primary_position
+
+    dimensions:
+      - name: staff_reporting_relationship_key
+        description:
+          Composite key (staff_key, intersected effective_start_date). Primary
+          key.
+        sql: >
+          CONCAT(
+            CAST({CUBE}.staff_key AS STRING), '|',
+            CAST({CUBE}.effective_start_date AS STRING)
+          )
+        type: string
+        primary_key: true
+
+      - name: staff_key
+        description: FK to staff — the reportee.
+        sql: staff_key
+        type: string
+        public: true
+
+      - name: manager_staff_key
+        description: FK to staff (via staff_manager alias) — the manager.
+        sql: manager_staff_key
+        type: string
+        public: true
+
+      # {CUBE}-qualified: this dimension is referenced in staff_work_history's
+      # date-bounded join, where an unqualified column collides with that cube's
+      # own effective_start_date. Cube only auto-qualifies bare-column sql, not
+      # columns inside an expression like CAST(...).
+      - name: effective_start_date
+        description: Start of the contiguous reporting-relationship period.
+        sql: "CAST({CUBE}.effective_start_date AS TIMESTAMP)"
+        type: time
+        public: true
+
+      # Required by the date-bounded join from staff_work_history. {CUBE}-
+      # qualified for the same reason as effective_start_date above.
+      - name: effective_end_date
+        description: End of the contiguous reporting-relationship period.
+        sql: "CAST({CUBE}.effective_end_date AS TIMESTAMP)"
+        type: time
+        public: true

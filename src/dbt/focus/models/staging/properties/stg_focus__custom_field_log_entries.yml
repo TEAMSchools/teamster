@@ -1,0 +1,192 @@
+models:
+  - name: stg_focus__custom_field_log_entries
+    description: >-
+      Focus custom field log entries — one row per log entry against an entity
+      record. The 30 generic log_field slots carry the stored values; their
+      meaning is defined per field by stg_focus__custom_field_log_columns. This
+      table has no soft-delete column, so no rows are filtered. Powers the
+      deferred log-entry reshape.
+    columns:
+      - name: id
+        description: Primary key — Focus log entry id.
+        data_type: int
+        data_tests:
+          - unique:
+              config:
+                severity: error
+          - not_null:
+              config:
+                severity: error
+      - name: school_id
+        description: Focus school id the log entry belongs to.
+        data_type: int
+      - name: source_class
+        description: Owning entity class for the log entry.
+        data_type: string
+      - name: source_id
+        description: Owning entity record id the log entry is attached to.
+        data_type: int
+      - name: field_id
+        description: >-
+          Owning log custom field id — joins to
+          stg_focus__custom_field_log_columns.field_id to label the slots.
+        data_type: int
+      - name: form_record_id
+        description: Form record id grouping the log entry.
+        data_type: int
+      - name: syear
+        description: Focus school year (start year, e.g. 2025 = 2025-26).
+        data_type: int
+      - name: log_field1
+        description:
+          Generic log value slot 1 — meaning defined by the field's log columns.
+        data_type: string
+      - name: log_field2
+        description:
+          Generic log value slot 2 — meaning defined by the field's log columns.
+        data_type: string
+      - name: log_field3
+        description:
+          Generic log value slot 3 — meaning defined by the field's log columns.
+        data_type: string
+      - name: log_field4
+        description:
+          Generic log value slot 4 — meaning defined by the field's log columns.
+        data_type: string
+      - name: log_field5
+        description:
+          Generic log value slot 5 — meaning defined by the field's log columns.
+        data_type: string
+      - name: log_field6
+        description:
+          Generic log value slot 6 — meaning defined by the field's log columns.
+        data_type: string
+      - name: log_field7
+        description:
+          Generic log value slot 7 — meaning defined by the field's log columns.
+        data_type: string
+      - name: log_field8
+        description:
+          Generic log value slot 8 — meaning defined by the field's log columns.
+        data_type: string
+      - name: log_field9
+        description:
+          Generic log value slot 9 — meaning defined by the field's log columns.
+        data_type: string
+      - name: log_field10
+        description:
+          Generic log value slot 10 — meaning defined by the field's log
+          columns.
+        data_type: string
+      - name: log_field11
+        description:
+          Generic log value slot 11 — meaning defined by the field's log
+          columns.
+        data_type: string
+      - name: log_field12
+        description:
+          Generic log value slot 12 — meaning defined by the field's log
+          columns.
+        data_type: string
+      - name: log_field13
+        description:
+          Generic log value slot 13 — meaning defined by the field's log
+          columns.
+        data_type: string
+      - name: log_field14
+        description:
+          Generic log value slot 14 — meaning defined by the field's log
+          columns.
+        data_type: string
+      - name: log_field15
+        description:
+          Generic log value slot 15 — meaning defined by the field's log
+          columns.
+        data_type: string
+      - name: log_field16
+        description:
+          Generic log value slot 16 — meaning defined by the field's log
+          columns.
+        data_type: string
+      - name: log_field17
+        description:
+          Generic log value slot 17 — meaning defined by the field's log
+          columns.
+        data_type: string
+      - name: log_field18
+        description:
+          Generic log value slot 18 — meaning defined by the field's log
+          columns.
+        data_type: string
+      - name: log_field19
+        description:
+          Generic log value slot 19 — meaning defined by the field's log
+          columns.
+        data_type: string
+      - name: log_field20
+        description:
+          Generic log value slot 20 — meaning defined by the field's log
+          columns.
+        data_type: string
+      - name: log_field21
+        description:
+          Generic log value slot 21 — meaning defined by the field's log
+          columns.
+        data_type: string
+      - name: log_field22
+        description:
+          Generic log value slot 22 — meaning defined by the field's log
+          columns.
+        data_type: string
+      - name: log_field23
+        description:
+          Generic log value slot 23 — meaning defined by the field's log
+          columns.
+        data_type: string
+      - name: log_field24
+        description:
+          Generic log value slot 24 — meaning defined by the field's log
+          columns.
+        data_type: string
+      - name: log_field25
+        description:
+          Generic log value slot 25 — meaning defined by the field's log
+          columns.
+        data_type: string
+      - name: log_field26
+        description:
+          Generic log value slot 26 — meaning defined by the field's log
+          columns.
+        data_type: string
+      - name: log_field27
+        description:
+          Generic log value slot 27 — meaning defined by the field's log
+          columns.
+        data_type: string
+      - name: log_field28
+        description:
+          Generic log value slot 28 — meaning defined by the field's log
+          columns.
+        data_type: string
+      - name: log_field29
+        description:
+          Generic log value slot 29 — meaning defined by the field's log
+          columns.
+        data_type: string
+      - name: log_field30
+        description:
+          Generic log value slot 30 — meaning defined by the field's log
+          columns.
+        data_type: string
+      - name: completed_at
+        description: Timestamp the log entry was completed.
+        data_type: timestamp
+      - name: uuid
+        description: Focus global unique identifier for the row.
+        data_type: string
+      - name: created_at
+        description: Row creation timestamp in Focus.
+        data_type: timestamp
+      - name: updated_at
+        description: Row last-update timestamp in Focus.
+        data_type: timestamp

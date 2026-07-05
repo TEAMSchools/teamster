@@ -1,0 +1,45 @@
+models:
+  - name: int_focus__custom_field_options
+    description: >-
+      Crosswalk for Focus select/multiple custom fields, one row per option
+      keyed by option_id. Joins the custom-field catalog to its stored select
+      options on select_options.source_id = custom_fields.id with source_class
+      'CustomField' (the owner-type literal, never the entity class). inactive
+      options are retained so historical stored values still decode. label is
+      the human name; code is the Focus import/export value. To decode, match
+      the stored entity value against option_id OR code within a (source_class,
+      column_name) scope — the stored value is the id for some fields and the
+      code for others; this assumes an option's code never equals another
+      option's id within the same field.
+    config:
+      materialized: table
+    columns:
+      - name: option_id
+        description: >-
+          Stored select-option id — the value persisted on the entity record and
+          the decode join key.
+        data_tests:
+          - unique:
+              config:
+                severity: error
+          - not_null:
+              config:
+                severity: error
+      - name: source_class
+        description: Owning entity class of the custom field (e.g. SISStudent).
+        data_tests:
+          - not_null:
+              config:
+                severity: error
+      - name: column_name
+        description:
+          Lowercased catalog column_name of the field (e.g. custom_100000004).
+        data_tests:
+          - not_null:
+              config:
+                severity: error
+      - name: code
+        description:
+          Focus import/export code for the option (not the stored value).
+      - name: label
+        description: Human-readable label for the option.

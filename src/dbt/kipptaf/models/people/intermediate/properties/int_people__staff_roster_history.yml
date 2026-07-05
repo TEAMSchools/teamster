@@ -1,5 +1,17 @@
 models:
   - name: int_people__staff_roster_history
+    description: >-
+      Staff roster with SCD-style effective-date ranges per worker. Rebuilt in
+      full each run from current sources, so past-dated rows reflect the
+      identifier and mapping values resolved at build time (e.g. a worker's
+      current `employee_number`), not the value as of that effective date. A
+      re-created or rehired ADP worker that is re-minted to a new
+      `employee_number` will have its earlier ranges retroactively rewritten to
+      the new number — do not treat this table as a point-in-time record of the
+      identifiers a worker carried on a past date. To recover the true as-of
+      value, use the date-partitioned source asset
+      (`src_adp_workforce_now__workers`) or the relevant Dagster run compute
+      logs.
     config:
       materialized: table
     data_tests:
@@ -75,6 +87,8 @@ models:
       - name: position_id
         data_type: string
       - name: job_title
+        data_type: string
+      - name: job_function
         data_type: string
       - name: primary_indicator
         data_type: boolean

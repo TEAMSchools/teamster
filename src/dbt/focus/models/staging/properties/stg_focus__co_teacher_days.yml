@@ -1,0 +1,52 @@
+models:
+  - name: stg_focus__co_teacher_days
+    description: >-
+      Focus co-teacher days — one row per co-teacher assignment to a course
+      period, with per-rotation-day flags keyed by weekday initial.
+    columns:
+      - name: id
+        description: Primary key — Focus co-teacher days id.
+        data_type: int
+        data_tests:
+          - unique:
+              config:
+                severity: error
+          - not_null:
+              config:
+                severity: error
+      - name: course_period_id
+        description: Focus course-period (section) id the co-teacher serves.
+        data_type: int
+      - name: teacher_id
+        description: Focus staff id of the co-teacher.
+        data_type: int
+      - name: f
+        description: Friday rotation-day flag for the co-teacher assignment.
+        data_type: numeric
+      - name: h
+        description: Thursday rotation-day flag for the co-teacher assignment.
+        data_type: numeric
+      - name: m
+        description: Monday rotation-day flag for the co-teacher assignment.
+        data_type: numeric
+      - name: s
+        description: Saturday rotation-day flag for the co-teacher assignment.
+        data_type: numeric
+      - name: t
+        description: Tuesday rotation-day flag for the co-teacher assignment.
+        data_type: numeric
+      - name: u
+        description: Sunday rotation-day flag for the co-teacher assignment.
+        data_type: numeric
+      - name: w
+        description: Wednesday rotation-day flag for the co-teacher assignment.
+        data_type: numeric
+      - name: imported
+        description: Y/N — whether the row originated from an import.
+        data_type: string
+      - name: created_at
+        description: Row creation timestamp in Focus.
+        data_type: timestamp
+      - name: updated_at
+        description: Row last-update timestamp in Focus.
+        data_type: timestamp

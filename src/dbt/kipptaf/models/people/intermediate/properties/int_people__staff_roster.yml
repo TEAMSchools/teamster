@@ -78,6 +78,8 @@ models:
         data_type: string
       - name: job_title
         data_type: string
+      - name: job_function
+        data_type: string
       - name: primary_indicator
         data_type: boolean
       - name: management_position_indicator

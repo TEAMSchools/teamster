@@ -1,0 +1,130 @@
+models:
+  - name: stg_focus__custom_field_log_columns
+    description: >-
+      Focus log-field column definitions — one row per column within a log-type
+      custom field, mapping a log_fieldN slot to its title, type, and option
+      query. Powers the deferred log-entry reshape. Live rows only (soft-deleted
+      rows filtered out).
+    columns:
+      - name: id
+        description: Primary key — Focus log column id.
+        data_type: int
+        data_tests:
+          - unique:
+              config:
+                severity: error
+          - not_null:
+              config:
+                severity: error
+      - name: field_id
+        description: >-
+          Owning log custom field id — joins to stg_focus__custom_fields.id and
+          groups the log columns for a field.
+        data_type: int
+      - name: column_name
+        description: Underlying storage column name (the log_fieldN slot).
+        data_type: string
+      - name: type
+        description: Log column input type (e.g. select, text, date, numeric).
+        data_type: string
+      - name: title
+        description: Human-readable log column label.
+        data_type: string
+      - name: description
+        description: Long-form description of the log column.
+        data_type: string
+      - name: default_value
+        description: Default value applied when no value is entered.
+        data_type: string
+      - name: fallback_value
+        description: Fallback value used when the stored value is empty.
+        data_type: string
+      - name: max_length
+        description: Maximum character length allowed for the value.
+        data_type: int
+      - name: total
+        description: Flag (0/1) — whether the column is totaled.
+        data_type: int
+      - name: primary_sort
+        description: Primary sort precedence for the column.
+        data_type: int
+      - name: secondary_sort
+        description: Secondary sort precedence for the column.
+        data_type: int
+      - name: option_query
+        description: Query backing the select option list for the column.
+        data_type: string
+      - name: computed_query
+        description: Query used to compute the column value.
+        data_type: string
+      - name: sort_order
+        description: >-
+          Display sort order — orders the log_fieldN slots within the field for
+          the reshape.
+        data_type: int
+      - name: new_record
+        description:
+          Flag (0/1) — whether the column appears on new-record entry.
+        data_type: int
+      - name: rich_text
+        description: Flag (0/1) — whether the column uses rich text.
+        data_type: int
+      - name: fixed
+        description: Flag (0/1) — whether the column is fixed (non-removable).
+        data_type: int
+      - name: required
+        description: Flag (0/1) — whether the column is required on entry.
+        data_type: int
+      - name: inactive
+        description: >-
+          Raw inactive flag (0/1) — a column attribute, NOT a soft-delete
+          sentinel.
+        data_type: int
+      - name: system
+        description: Flag (0/1) — whether the column is a system column.
+        data_type: int
+      - name: imported
+        description: Flag (0/1) — whether the column was imported.
+        data_type: int
+      - name: suggestion_query
+        description: Query backing value suggestions for the column.
+        data_type: string
+      - name: restricted
+        description: Flag (0/1) — whether access to the column is restricted.
+        data_type: int
+      - name: help_url
+        description: Help URL associated with the column.
+        data_type: string
+      - name: academic_record_category
+        description: Academic record category the column maps to.
+        data_type: string
+      - name: file_retention
+        description: File retention setting (0/1) for file-type columns.
+        data_type: int
+      - name: min_width
+        description: Minimum display width for the column.
+        data_type: string
+      - name: max_width
+        description: Maximum display width for the column.
+        data_type: string
+      - name: alias
+        description: Focus log column alias.
+        data_type: string
+      - name: settings
+        description: Serialized column settings blob.
+        data_type: string
+      - name: notes
+        description: Free-text notes on the column.
+        data_type: string
+      - name: created_at
+        description: Row creation timestamp in Focus.
+        data_type: timestamp
+      - name: updated_at
+        description: Row last-update timestamp in Focus.
+        data_type: timestamp
+      - name: is_translate
+        description: Boolean — whether the column is eligible for translation.
+        data_type: boolean
+      - name: is_visible_on_summary
+        description: Boolean — whether the column is shown on the summary view.
+        data_type: boolean

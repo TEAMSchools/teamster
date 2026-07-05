@@ -1,0 +1,253 @@
+cubes:
+  - name: staff_work_history
+    public: false
+    # SCD2 period intersection: one row per work assignment x contiguous window
+    # during which the worker's status, job, worker type, org unit, location,
+    # AND point-in-time manager all held simultaneously. Overlaps are anchored to
+    # the work-assignment status period (dim_work_assignment_status — the
+    # assignment-level Active/Leave/Terminated status, keyed by
+    # work_assignment_key like the other children; not the coarser worker-level
+    # dim_staff_status); GREATEST/LEAST then collapse each combination to
+    # its true effective range. Manager is folded into the intersection (not a
+    # separate cube join) so each period carries exactly one manager — a
+    # single-day query returns one row per person instead of one per manager the
+    # person ever had. Periods where children do not mutually overlap yield
+    # start > end and are silently excluded by the dates BETWEEN join (queries
+    # always filter on a date). Transformation lives here in sql: rather than a
+    # dbt mart only because every input is already a published dim; a dedicated
+    # mart is the future home if this grows.
+    sql: |
+      SELECT
+        swa.work_assignment_key,
+        swa.staff_key,
+        swa.full_time_equivalency,
+        swa.is_management_position,
+        was.status_name,
+        was.reason_name AS status_reason,
+        wj.position_title,
+        wj.job_code,
+        wt.worker_type_name AS worker_type,
+        wo.department_name,
+        wo.business_unit_name,
+        wl.location_key AS work_location_key,
+        wp.is_primary_position,
+        mgr.manager_staff_key,
+        GREATEST(
+          was.effective_start_date,
+          wj.effective_start_date,
+          wt.effective_start_date,
+          wo.effective_start_date,
+          wl.effective_start_date,
+          COALESCE(mgr.effective_start_date, DATE '1900-01-01')
+        ) AS effective_start_date,
+        LEAST(
+          was.effective_end_date,
+          wj.effective_end_date,
+          wt.effective_end_date,
+          wo.effective_end_date,
+          wl.effective_end_date,
+          COALESCE(mgr.effective_end_date, DATE '9999-12-31')
+        ) AS effective_end_date
+      FROM kipptaf_marts.dim_staff_work_assignments swa
+      JOIN kipptaf_marts.dim_work_assignment_status was
+        ON was.work_assignment_key = swa.work_assignment_key
+      JOIN kipptaf_marts.dim_work_assignment_jobs wj
+        ON wj.work_assignment_key = swa.work_assignment_key
+        AND was.effective_start_date < wj.effective_end_date
+        AND was.effective_end_date   > wj.effective_start_date
+      JOIN kipptaf_marts.dim_work_assignment_types wt
+        ON wt.work_assignment_key = swa.work_assignment_key
+        AND was.effective_start_date < wt.effective_end_date
+        AND was.effective_end_date   > wt.effective_start_date
+      JOIN kipptaf_marts.dim_work_assignment_organizational_units wo
+        ON wo.work_assignment_key = swa.work_assignment_key
+        AND wo.assignment_type = 'home'
+        AND was.effective_start_date < wo.effective_end_date
+        AND was.effective_end_date   > wo.effective_start_date
+      JOIN kipptaf_marts.dim_work_assignment_locations wl
+        ON wl.work_assignment_key = swa.work_assignment_key
+        AND was.effective_start_date < wl.effective_end_date
+        AND was.effective_end_date   > wl.effective_start_date
+      LEFT JOIN kipptaf_marts.dim_work_assignment_primary wp
+        ON wp.work_assignment_key = swa.work_assignment_key
+        AND was.effective_start_date < wp.effective_end_date
+        AND was.effective_end_date   > wp.effective_start_date
+      -- Point-in-time manager from the primary assignment's reporting
+      -- relationship. LEFT JOIN + COALESCE in GREATEST/LEAST keeps manager-less
+      -- staff (no primary reporting row) instead of dropping them. Splitting a
+      -- period on manager changes adds rows over time (correct) but never
+      -- duplicates a person on a single day.
+      LEFT JOIN (
+        SELECT
+          swa_m.staff_key,
+          rr.manager_staff_key,
+          GREATEST(wap.effective_start_date, rr.effective_start_date) AS effective_start_date,
+          LEAST(wap.effective_end_date,      rr.effective_end_date)   AS effective_end_date
+        FROM kipptaf_marts.dim_work_assignment_primary wap
+        JOIN kipptaf_marts.dim_staff_work_assignments swa_m
+          ON wap.work_assignment_key = swa_m.work_assignment_key
+          AND swa_m.staff_key IS NOT NULL
+        JOIN kipptaf_marts.dim_work_assignment_reporting_relationships rr
+          ON rr.work_assignment_key = wap.work_assignment_key
+          AND wap.effective_start_date <= rr.effective_end_date
+          AND wap.effective_end_date   >= rr.effective_start_date
+        WHERE wap.is_primary_position
+      ) mgr
+        ON mgr.staff_key = swa.staff_key
+        AND was.effective_start_date < mgr.effective_end_date
+        AND was.effective_end_date   > mgr.effective_start_date
+
+    joins:
+      # One employment period spans many calendar days. Range (BETWEEN) join is
+      # valid per cube conventions; relationship is one_to_many.
+      # Join on the raw DATE key, not the date_day time dimension — Cube wraps
+      # time dimensions in the query-timezone conversion (convertTz) inside
+      # join predicates, which shifts the dates side by the query timezone
+      # offset and matches dates one day off under any non-UTC timezone
+      # (#4298). Both effective_* columns are DATE, so this compares
+      # DATE BETWEEN DATE AND DATE with no cast.
+      - name: dates
+        sql: >
+          {dates.date_key} BETWEEN {CUBE}.effective_start_date AND
+          {CUBE}.effective_end_date
+        relationship: one_to_many
+
+      - name: staff
+        sql: "{staff.staff_key} = {CUBE}.staff_key"
+        relationship: many_to_one
+
+      - name: locations
+        sql: "{locations.location_key} = {CUBE}.work_location_key"
+        relationship: many_to_one
+
+      # Manager name/attributes via the staff_manager alias, keyed on the
+      # point-in-time manager_staff_key folded into the SQL above. True
+      # many_to_one — one manager per period — so no fan-out.
+      - name: staff_manager
+        sql: "{staff_manager.staff_key} = {CUBE}.manager_staff_key"
+        relationship: many_to_one
+
+    dimensions:
+      - name: staff_work_history_key
+        description: >-
+          Composite key (work_assignment_key, intersected effective_start_date).
+          Primary key. Includes work_assignment_key so concurrent assignments
+          starting the same day do not collide.
+        sql: >
+          CONCAT(
+            CAST({CUBE}.work_assignment_key AS STRING), '|',
+            CAST({CUBE}.effective_start_date AS STRING)
+          )
+        type: string
+        primary_key: true
+
+      - name: status_name
+        description: >-
+          Assignment-level employment status during this period (Active, Leave,
+          Terminated). Sourced from dim_work_assignment_status (ADP
+          assignmentStatus), which is more granular than the worker-level status
+          and has a populated name. Filter status_name = 'Active' for active
+          headcount (excludes Leave).
+        sql: status_name
+        type: string
+        public: true
+
+      - name: status_reason
+        description: >-
+          Reason for the current status (e.g., leave type — Medical, Family,
+          Disability; or termination reason — Resignation, Non-Renewal). Null
+          for many Active periods.
+        sql: status_reason
+        type: string
+        public: true
+
+      - name: position_title
+        description:
+          Free-text position title for the work assignment, as held during this
+          period.
+        sql: position_title
+        type: string
+        public: true
+
+      - name: job_code
+        description:
+          Job code value for the work assignment, as held during this period.
+        sql: job_code
+        type: string
+        public: true
+
+      - name: worker_type
+        description:
+          Display name for the ADP worker type (e.g., Regular, Temporary), as
+          held during this period.
+        sql: worker_type
+        type: string
+        public: true
+
+      - name: department_name
+        description: >-
+          Display name for the home Department, coalesced from longName and
+          shortName of the ADP nameCode where typeCode = 'Department', as held
+          during this period.
+        sql: department_name
+        type: string
+        public: true
+
+      - name: business_unit_name
+        description: >-
+          Display name for the home Business Unit, coalesced from longName and
+          shortName of the ADP nameCode where typeCode = 'Business Unit', as
+          held during this period.
+        sql: business_unit_name
+        type: string
+        public: true
+
+      # Degenerate FK to locations — descriptors come via the locations join.
+      - name: work_location_key
+        description: >-
+          Canonical location FK for the work assignment during this period,
+          resolved upstream on adp_location_code. NULL when the ADP location has
+          no canonical mapping. Descriptors come via the locations join.
+        sql: work_location_key
+        type: string
+
+      - name: is_primary_position
+        description: >-
+          TRUE if this was the worker's primary work assignment during the
+          period. A worker may have multiple concurrent assignments; at most one
+          is primary at any moment. Filter to true to count each person once.
+        sql: is_primary_position
+        type: boolean
+        public: true
+
+      - name: is_management_position
+        description:
+          TRUE if this work assignment is designated as a management position.
+        sql: is_management_position
+        type: boolean
+        public: true
+
+      - name: full_time_equivalency
+        description: >-
+          FTE ratio for this work assignment. 1.0 represents full-time;
+          fractional values represent part-time assignments.
+        sql: full_time_equivalency
+        type: number
+        public: true
+
+      - name: effective_start_date
+        description:
+          Start of the contiguous period (intersection of all SCD2 children).
+        sql: CAST(effective_start_date AS TIMESTAMP)
+        type: time
+        public: true
+
+    measures:
+      - name: count_employees
+        description: >-
+          Distinct employees in scope. Counts a person once even with multiple
+          concurrent assignments. Filter is_primary_position = true to count the
+          primary assignment only. Always apply a date filter.
+        sql: staff_key
+        type: count_distinct
+        public: true

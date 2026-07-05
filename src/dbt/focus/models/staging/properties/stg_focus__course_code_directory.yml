@@ -1,0 +1,105 @@
+models:
+  - name: stg_focus__course_code_directory
+    description: >-
+      Focus course code directory — one row per state course-code entry. The
+      FLDOE course-code crosswalk mapping legacy and current course numbers,
+      titles, symbols, and reporting indicators.
+    columns:
+      - name: id
+        description: Primary key — Focus course code directory id.
+        data_type: int
+        data_tests:
+          - unique:
+              config:
+                severity: error
+          - not_null:
+              config:
+                severity: error
+      - name: course_number
+        description: State course number.
+        data_type: string
+      - name: course_symbol
+        description: Course symbol code.
+        data_type: string
+      - name: voc_gradelevels
+        description: Vocational grade levels the course applies to.
+        data_type: string
+      - name: abrev_course_title
+        description: Abbreviated course title.
+        data_type: string
+      - name: course_title
+        description: Full course title.
+        data_type: string
+      - name: course_year
+        description: Effective course year.
+        data_type: string
+      - name: cert_levels
+        description: Certification levels associated with the course.
+        data_type: string
+      - name: subject_area
+        description: Subject area classification.
+        data_type: string
+      - name: max_credit
+        description: Maximum credit allowed for the course.
+        data_type: string
+      - name: subject_code
+        description: Subject code.
+        data_type: string
+      - name: subject_subfield
+        description: Subject subfield code.
+        data_type: string
+      - name: sort_level
+        description: Sort level within the directory.
+        data_type: string
+      - name: required_course
+        description: Y/N — whether the course is required.
+        data_type: string
+      - name: new_course_number
+        description: Replacement (new) course number.
+        data_type: string
+      - name: abrev_course_title2
+        description: Secondary abbreviated course title.
+        data_type: string
+      - name: new_course_title
+        description: Replacement (new) course title.
+        data_type: string
+      - name: abrev_title_symbol
+        description: Abbreviated title symbol.
+        data_type: string
+      - name: title_symbol
+        description: Title symbol.
+        data_type: string
+      - name: new_short_symbol
+        description: Replacement (new) short symbol.
+        data_type: string
+      - name: new_title_f35_symbol
+        description: Replacement title first-35-character symbol.
+        data_type: string
+      - name: new_title_l35_symbol
+        description: Replacement title last-35-character symbol.
+        data_type: string
+      - name: course_level
+        description: Course level classification.
+        data_type: string
+      - name: core_course
+        description: Y/N — whether the course is a core course.
+        data_type: string
+      - name: highly_qualified
+        description:
+          Y/N — whether the course requires a highly-qualified teacher.
+        data_type: string
+      - name: course_length
+        description: Course length classification.
+        data_type: string
+      - name: eoc_indicator
+        description: End-of-course (EOC) reporting indicator.
+        data_type: string
+      - name: course_indicator
+        description: General course reporting indicator.
+        data_type: string
+      - name: created_at
+        description: Row creation timestamp in Focus.
+        data_type: timestamp
+      - name: updated_at
+        description: Row last-update timestamp in Focus.
+        data_type: timestamp

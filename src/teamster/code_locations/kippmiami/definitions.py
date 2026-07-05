@@ -20,7 +20,7 @@ from teamster.code_locations.kippmiami import (
     powerschool,
     renlearn,
 )
-from teamster.code_locations.kippmiami.resources import FINALSITE_RESOURCE
+from teamster.code_locations.kippmiami.resources import FINALSITE_RESOURCE, SSH_FOCUS
 from teamster.core.resources import (
     BIGQUERY_RESOURCE,
     DB_POWERSCHOOL,
@@ -83,6 +83,7 @@ defs = Definitions(
         "io_manager_gcs_file": get_io_manager_gcs_file(CODE_LOCATION),
         "io_manager": get_io_manager_gcs_pickle(CODE_LOCATION),
         "ssh_couchdrop": SSH_COUCHDROP,
+        "ssh_focus": SSH_FOCUS,
         "ssh_iready": SSH_IREADY,
         "ssh_powerschool": get_powerschool_ssh_resource(),
         "ssh_renlearn": SSH_RENLEARN,

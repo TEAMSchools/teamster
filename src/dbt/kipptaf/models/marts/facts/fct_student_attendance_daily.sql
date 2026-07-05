@@ -14,13 +14,20 @@ with
             {{
                 dbt_utils.generate_surrogate_key(
                     [
-                        "enr.student_number",
-                        "enr._dbt_source_project",
-                        "enr.academic_year",
-                        "enr.entrydate",
+                        "ada.student_number",
+                        "ada._dbt_source_project",
+                        "ada.academic_year",
+                        "ada.entrydate",
                     ]
                 )
             }} as student_enrollment_key,
+
+            ada.is_current_record,
+            ada.is_enrollment_month_end_record,
+            ada.is_enrollment_week_end_record,
+            ada.is_latest_record,
+            ada.is_month_end_record,
+            ada.is_week_end_record,
 
             ada.calendardate as date_key,
 
@@ -28,22 +35,10 @@ with
 
             ada.att_code as attendance_code,
 
-            if(
-                ada._dbt_source_project = 'kipppaterson' and ada.academic_year < 2026,
-                null,
-                ada.attendancevalue
-            ) as attendance_value,
-            if(
-                ada._dbt_source_project = 'kipppaterson' and ada.academic_year < 2026,
-                null,
-                ada.membershipvalue
-            ) as membership_value,
+            ada.attendancevalue as attendance_value,
+            ada.membershipvalue as membership_value,
 
-            if(
-                ada._dbt_source_project = 'kipppaterson' and ada.academic_year < 2026,
-                null,
-                ada.is_present_weighted
-            ) as present_weight,
+            ada.is_present_weighted as present_weight,
 
             ada.is_truant,
 
@@ -66,13 +61,6 @@ with
                 else 'Present'
             end as attendance_category,
         from {{ ref("int_powerschool__ps_adaadm_daily_ctod") }} as ada
-        inner join
-            {{ ref("int_powerschool__student_enrollment_union") }} as enr
-            on ada.studentid = enr.studentid
-            and ada.schoolid = enr.schoolid
-            and ada.calendardate >= enr.entrydate
-            and ada.calendardate < enr.exitdate
-            and ada._dbt_source_project = enr._dbt_source_project
         left join
             {{ ref("dim_terms") }} as t
             on ada.schoolid = t.school_id
@@ -101,6 +89,10 @@ select
     date_key,
     term_key,
 
+    is_current_record,
+    is_enrollment_month_end_record,
+    is_enrollment_week_end_record,
+
     attendance_code,
     attendance_value,
     membership_value,
@@ -114,6 +106,10 @@ select
     is_oss,
     is_iss,
     is_suspended,
+
+    is_latest_record,
+    is_month_end_record,
+    is_week_end_record,
 
     attendance_category,
 
@@ -130,22 +126,4 @@ select
         then 'Tier 3'
         else 'Tier 4'
     end as ada_tier,
-
-    row_number() over (partition by student_enrollment_key order by date_key desc)
-    = 1 as is_latest_record,
-
-    row_number() over (
-        partition by student_enrollment_key, date_trunc(date_key, month)
-        order by if(membership_value = 1, date_key, null) desc nulls last
-    )
-    = 1
-    and membership_value = 1 as is_month_end_record,
-
-    row_number() over (
-        -- trunk-ignore(sqlfluff/LT01): week(monday) requires special formatting
-        partition by student_enrollment_key, date_trunc(date_key, week(monday))
-        order by if(membership_value = 1, date_key, null) desc nulls last
-    )
-    = 1
-    and membership_value = 1 as is_week_end_record,
 from running

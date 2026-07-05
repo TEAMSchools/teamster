@@ -1,0 +1,28 @@
+models:
+  - name: stg_focus__permission
+    description: >-
+      Focus permission grants — one row per permission key granted to a user
+      profile. Joins to stg_focus__user_profiles on profile_id.
+    columns:
+      - name: id
+        description: Primary key — Focus permission grant id.
+        data_type: int
+        data_tests:
+          - unique:
+              config:
+                severity: error
+          - not_null:
+              config:
+                severity: error
+      - name: profile_id
+        description: Focus user profile id this permission is granted to.
+        data_type: int
+      - name: key
+        description: Permission key string identifying the granted capability.
+        data_type: string
+      - name: created_at
+        description: Row creation timestamp in Focus.
+        data_type: timestamp
+      - name: updated_at
+        description: Row last-update timestamp in Focus.
+        data_type: timestamp

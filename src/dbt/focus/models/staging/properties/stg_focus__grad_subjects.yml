@@ -1,0 +1,52 @@
+models:
+  - name: stg_focus__grad_subjects
+    description: >-
+      Focus graduation subjects — one row per graduation-requirement subject
+      area used to organize credit requirements.
+    columns:
+      - name: id
+        description: Primary key — Focus graduation subject id.
+        data_type: int
+        data_tests:
+          - unique:
+              config:
+                severity: error
+          - not_null:
+              config:
+                severity: error
+      - name: title
+        description: Full graduation subject name.
+        data_type: string
+      - name: short_name
+        description: Abbreviated graduation subject label.
+        data_type: string
+      - name: sort_order
+        description: Display sort order within the subject list.
+        data_type: numeric
+      - name: credits
+        description: Default credits associated with the subject.
+        data_type: numeric
+      - name: rollover_id
+        description: Source graduation subject id this rolled over from.
+        data_type: int
+      - name: request_group
+        description: Course-request grouping id for the subject.
+        data_type: int
+      - name: ahs_subject
+        description: Adult-high-school subject mapping value.
+        data_type: string
+      - name: min_syear
+        description: Earliest school year the subject applies to.
+        data_type: int
+      - name: max_syear
+        description: Latest school year the subject applies to.
+        data_type: int
+      - name: district_id
+        description: Focus district id.
+        data_type: int
+      - name: created_at
+        description: Row creation timestamp in Focus.
+        data_type: timestamp
+      - name: updated_at
+        description: Row last-update timestamp in Focus.
+        data_type: timestamp

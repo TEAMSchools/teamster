@@ -323,3 +323,7 @@ sensor/schedule timeouts (default 300s) ARE configurable.
 `run_monitoring.start_timeout_seconds` only fires for runs in `STARTING` /
 `NOT_STARTED` status — does NOT catch dispatch-to-pod-confirmed stalls (run is
 already `STARTED` at LAUNCH_RUN dispatch, before pod confirmation).
+
+`run_monitoring.max_runtime_seconds` (the run-level ceiling, currently
+**1800s**) is a deployment-wide default — NOT set per-job in `src/teamster`
+(grep finds nothing). Override one job via a `dagster/max_runtime` run tag.

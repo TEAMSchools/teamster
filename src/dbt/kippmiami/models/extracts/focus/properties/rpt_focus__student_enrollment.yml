@@ -1,5 +1,12 @@
 models:
   - name: rpt_focus__student_enrollment
+    description: >-
+      Focus STUDENT_ENROLLMENT import feed for KIPP Miami — import-once: emits
+      an enrollment only when it is new to Focus, plus a one-time withdrawal
+      fill (end_date + drop_code) when Focus has no withdrawal yet. Existing
+      Focus values are never overwritten; enrollment ops harmonize later changes
+      manually. Decodes the raw drop_code label to the Focus short_name via
+      stg_focus__student_enrollment_codes.
     columns:
       - name: syear
         data_type: int64
@@ -57,5 +64,382 @@ models:
         data_type: int64
       - name: fl_days_absent
         data_type: int64
-      - name: fl_days_absent_not_disc
-        data_type: int64
+
+unit_tests:
+  - name: enrollment_diff_unmatched_kept_codes_populated
+    description: >-
+      Unmatched student (no Focus row) is kept; enrollment_code and decoded
+      drop_code are populated; all other columns pass through unchanged.
+    model: rpt_focus__student_enrollment
+    given:
+      - input: source("kipptaf_extracts", "rpt_focus__student_enrollment")
+        format: sql
+        rows: |
+          select
+              2025 as syear,
+              '2332A' as school_id,
+              '8400000001' as student_id,
+              '05' as grade_id,
+              '20250812' as start_date,
+              'E01' as enrollment_code,
+              cast(null as string) as end_date,
+              '(W02) In District Transfer' as drop_code,
+              cast(null as string) as calendar_id,
+              cast(null as string) as prior_dist,
+              cast(null as string) as prior_state,
+              cast(null as string) as prior_country,
+              cast(null as string) as ed_choice,
+              cast(null as string) as stdt_dis_affect,
+              cast(null as string) as offender_transfer_stdt,
+              cast(null as string) as came_from,
+              cast(null as string) as moved_to,
+              cast(null as string) as sec_sch,
+              cast(null as string) as grde_prom_st,
+              cast(null as string) as good_cause_exempt,
+              cast(null as string) as graduation_requirement_program,
+              cast(null as string) as next_school,
+              cast(null as string) as next_grade,
+              cast(null as string) as district_ood,
+              cast(null as string) as sch_ood,
+              cast(null as string) as include_in_class_rank,
+              cast(null as int64) as fl_days_present,
+              cast(null as int64) as fl_days_absent
+      - input: ref("stg_focus__student_enrollment")
+        format: sql
+        rows: |
+          select
+              cast(null as int64) as student_id,
+              cast(null as date) as start_date,
+              cast(null as date) as end_date,
+              cast(null as int64) as enrollment_code,
+              cast(null as int64) as drop_code
+          from (select 1) where false
+      - input: ref("stg_focus__student_enrollment_codes")
+        format: sql
+        rows: |
+          select
+              1520 as id,
+              '(W02) In District Transfer' as title,
+              'W02' as short_name,
+              'Drop' as type
+    expect:
+      format: sql
+      rows: |
+        select
+            2025 as syear,
+            '2332A' as school_id,
+            '8400000001' as student_id,
+            '05' as grade_id,
+            '20250812' as start_date,
+            'E01' as enrollment_code,
+            cast(null as string) as end_date,
+            'W02' as drop_code,
+            cast(null as string) as calendar_id,
+            cast(null as string) as prior_dist,
+            cast(null as string) as prior_state,
+            cast(null as string) as prior_country,
+            cast(null as string) as ed_choice,
+            cast(null as string) as stdt_dis_affect,
+            cast(null as string) as offender_transfer_stdt,
+            cast(null as string) as came_from,
+            cast(null as string) as moved_to,
+            cast(null as string) as sec_sch,
+            cast(null as string) as grde_prom_st,
+            cast(null as string) as good_cause_exempt,
+            cast(null as string) as graduation_requirement_program,
+            cast(null as string) as next_school,
+            cast(null as string) as next_grade,
+            cast(null as string) as district_ood,
+            cast(null as string) as sch_ood,
+            cast(null as string) as include_in_class_rank,
+            cast(null as int64) as fl_days_present,
+            cast(null as int64) as fl_days_absent
+
+  - name: enrollment_diff_matched_no_change_dropped
+    description: >-
+      Row matched on (student_id, start_date) with no end_date change, no
+      drop_code, and Focus already holding the enrollment_code — nothing
+      changed, so the row is suppressed entirely.
+    model: rpt_focus__student_enrollment
+    given:
+      - input: source("kipptaf_extracts", "rpt_focus__student_enrollment")
+        format: sql
+        rows: |
+          select
+              2025 as syear,
+              '2332A' as school_id,
+              '8400000002' as student_id,
+              '07' as grade_id,
+              '20250812' as start_date,
+              'E01' as enrollment_code,
+              cast(null as string) as end_date,
+              cast(null as string) as drop_code,
+              cast(null as string) as calendar_id,
+              cast(null as string) as prior_dist,
+              cast(null as string) as prior_state,
+              cast(null as string) as prior_country,
+              cast(null as string) as ed_choice,
+              cast(null as string) as stdt_dis_affect,
+              cast(null as string) as offender_transfer_stdt,
+              cast(null as string) as came_from,
+              cast(null as string) as moved_to,
+              cast(null as string) as sec_sch,
+              cast(null as string) as grde_prom_st,
+              cast(null as string) as good_cause_exempt,
+              cast(null as string) as graduation_requirement_program,
+              cast(null as string) as next_school,
+              cast(null as string) as next_grade,
+              cast(null as string) as district_ood,
+              cast(null as string) as sch_ood,
+              cast(null as string) as include_in_class_rank,
+              cast(null as int64) as fl_days_present,
+              cast(null as int64) as fl_days_absent
+      - input: ref("stg_focus__student_enrollment")
+        format: sql
+        rows: |
+          select
+              8400000002 as student_id,
+              date '2025-08-12' as start_date,
+              cast(null as date) as end_date,
+              1506 as enrollment_code,
+              cast(null as int64) as drop_code
+      - input: ref("stg_focus__student_enrollment_codes")
+        format: sql
+        rows: |
+          select
+              1506 as id,
+              '(E01) In District Previous Year' as title,
+              'E01' as short_name,
+              'Add' as type
+    expect:
+      format: sql
+      rows: |
+        select
+            cast(null as int64) as syear,
+            cast(null as string) as school_id,
+            cast(null as string) as student_id,
+            cast(null as string) as grade_id,
+            cast(null as string) as start_date,
+            cast(null as string) as enrollment_code,
+            cast(null as string) as end_date,
+            cast(null as string) as drop_code,
+            cast(null as string) as calendar_id,
+            cast(null as string) as prior_dist,
+            cast(null as string) as prior_state,
+            cast(null as string) as prior_country,
+            cast(null as string) as ed_choice,
+            cast(null as string) as stdt_dis_affect,
+            cast(null as string) as offender_transfer_stdt,
+            cast(null as string) as came_from,
+            cast(null as string) as moved_to,
+            cast(null as string) as sec_sch,
+            cast(null as string) as grde_prom_st,
+            cast(null as string) as good_cause_exempt,
+            cast(null as string) as graduation_requirement_program,
+            cast(null as string) as next_school,
+            cast(null as string) as next_grade,
+            cast(null as string) as district_ood,
+            cast(null as string) as sch_ood,
+            cast(null as string) as include_in_class_rank,
+            cast(null as int64) as fl_days_present,
+            cast(null as int64) as fl_days_absent
+        from (select 1) where false
+
+  - name: enrollment_diff_matched_end_date_changed_emits_drop
+    description: >-
+      Matched row where export end_date is populated but Focus end_date is null
+      — row is kept; enrollment_code is nulled (import-once; Focus already has
+      it); drop_code is decoded from the raw label and emitted because Focus has
+      none.
+    model: rpt_focus__student_enrollment
+    given:
+      - input: source("kipptaf_extracts", "rpt_focus__student_enrollment")
+        format: sql
+        rows: |
+          select
+              2025 as syear,
+              '2332A' as school_id,
+              '8400000003' as student_id,
+              '08' as grade_id,
+              '20250812' as start_date,
+              'E01' as enrollment_code,
+              '20260115' as end_date,
+              '(W02) In District Transfer' as drop_code,
+              cast(null as string) as calendar_id,
+              cast(null as string) as prior_dist,
+              cast(null as string) as prior_state,
+              cast(null as string) as prior_country,
+              cast(null as string) as ed_choice,
+              cast(null as string) as stdt_dis_affect,
+              cast(null as string) as offender_transfer_stdt,
+              cast(null as string) as came_from,
+              'Prior Elementary' as moved_to,
+              cast(null as string) as sec_sch,
+              cast(null as string) as grde_prom_st,
+              cast(null as string) as good_cause_exempt,
+              cast(null as string) as graduation_requirement_program,
+              cast(null as string) as next_school,
+              cast(null as string) as next_grade,
+              cast(null as string) as district_ood,
+              cast(null as string) as sch_ood,
+              cast(null as string) as include_in_class_rank,
+              cast(null as int64) as fl_days_present,
+              cast(null as int64) as fl_days_absent
+      - input: ref("stg_focus__student_enrollment")
+        format: sql
+        rows: |
+          select
+              8400000003 as student_id,
+              date '2025-08-12' as start_date,
+              cast(null as date) as end_date,
+              1506 as enrollment_code,
+              cast(null as int64) as drop_code
+      - input: ref("stg_focus__student_enrollment_codes")
+        format: sql
+        rows: |
+          select
+              1506 as id,
+              '(E01) In District Previous Year' as title,
+              'E01' as short_name,
+              'Add' as type
+          union all
+          select
+              1520 as id,
+              '(W02) In District Transfer' as title,
+              'W02' as short_name,
+              'Drop' as type
+    expect:
+      format: sql
+      rows: |
+        select
+            2025 as syear,
+            '2332A' as school_id,
+            '8400000003' as student_id,
+            '08' as grade_id,
+            '20250812' as start_date,
+            cast(null as string) as enrollment_code,
+            '20260115' as end_date,
+            'W02' as drop_code,
+            cast(null as string) as calendar_id,
+            cast(null as string) as prior_dist,
+            cast(null as string) as prior_state,
+            cast(null as string) as prior_country,
+            cast(null as string) as ed_choice,
+            cast(null as string) as stdt_dis_affect,
+            cast(null as string) as offender_transfer_stdt,
+            cast(null as string) as came_from,
+            'Prior Elementary' as moved_to,
+            cast(null as string) as sec_sch,
+            cast(null as string) as grde_prom_st,
+            cast(null as string) as good_cause_exempt,
+            cast(null as string) as graduation_requirement_program,
+            cast(null as string) as next_school,
+            cast(null as string) as next_grade,
+            cast(null as string) as district_ood,
+            cast(null as string) as sch_ood,
+            cast(null as string) as include_in_class_rank,
+            cast(null as int64) as fl_days_present,
+            cast(null as int64) as fl_days_absent
+
+  - name: enrollment_diff_matched_existing_withdrawal_not_overwritten
+    description: >-
+      Matched row where Focus already has a withdrawal (end_date + drop_code) is
+      suppressed entirely — the export never overwrites an existing Focus
+      withdrawal (import-once; the one-time fill only applies when Focus has
+      none).
+    model: rpt_focus__student_enrollment
+    given:
+      - input: source("kipptaf_extracts", "rpt_focus__student_enrollment")
+        format: sql
+        rows: |
+          select
+              2025 as syear,
+              '2332A' as school_id,
+              '8400000004' as student_id,
+              '09' as grade_id,
+              '20250812' as start_date,
+              'E01' as enrollment_code,
+              '20260115' as end_date,
+              '(W02) In District Transfer' as drop_code,
+              cast(null as string) as calendar_id,
+              cast(null as string) as prior_dist,
+              cast(null as string) as prior_state,
+              cast(null as string) as prior_country,
+              cast(null as string) as ed_choice,
+              cast(null as string) as stdt_dis_affect,
+              cast(null as string) as offender_transfer_stdt,
+              cast(null as string) as came_from,
+              cast(null as string) as moved_to,
+              cast(null as string) as sec_sch,
+              cast(null as string) as grde_prom_st,
+              cast(null as string) as good_cause_exempt,
+              cast(null as string) as graduation_requirement_program,
+              cast(null as string) as next_school,
+              cast(null as string) as next_grade,
+              cast(null as string) as district_ood,
+              cast(null as string) as sch_ood,
+              cast(null as string) as include_in_class_rank,
+              cast(null as int64) as fl_days_present,
+              cast(null as int64) as fl_days_absent
+      - input: ref("stg_focus__student_enrollment")
+        format: sql
+        rows: |
+          select
+              8400000004 as student_id,
+              date '2025-08-12' as start_date,
+              date '2026-01-15' as end_date,
+              1506 as enrollment_code,
+              1519 as drop_code
+      - input: ref("stg_focus__student_enrollment_codes")
+        format: sql
+        rows: |
+          select
+              1506 as id,
+              '(E01) In District Previous Year' as title,
+              'E01' as short_name,
+              'Add' as type
+          union all
+          select
+              1519 as id,
+              '(W01) In School Transfer' as title,
+              'W01' as short_name,
+              'Drop' as type
+          union all
+          select
+              1520 as id,
+              '(W02) In District Transfer' as title,
+              'W02' as short_name,
+              'Drop' as type
+    expect:
+      format: sql
+      rows: |
+        select
+            cast(null as int64) as syear,
+            cast(null as string) as school_id,
+            cast(null as string) as student_id,
+            cast(null as string) as grade_id,
+            cast(null as string) as start_date,
+            cast(null as string) as enrollment_code,
+            cast(null as string) as end_date,
+            cast(null as string) as drop_code,
+            cast(null as string) as calendar_id,
+            cast(null as string) as prior_dist,
+            cast(null as string) as prior_state,
+            cast(null as string) as prior_country,
+            cast(null as string) as ed_choice,
+            cast(null as string) as stdt_dis_affect,
+            cast(null as string) as offender_transfer_stdt,
+            cast(null as string) as came_from,
+            cast(null as string) as moved_to,
+            cast(null as string) as sec_sch,
+            cast(null as string) as grde_prom_st,
+            cast(null as string) as good_cause_exempt,
+            cast(null as string) as graduation_requirement_program,
+            cast(null as string) as next_school,
+            cast(null as string) as next_grade,
+            cast(null as string) as district_ood,
+            cast(null as string) as sch_ood,
+            cast(null as string) as include_in_class_rank,
+            cast(null as int64) as fl_days_present,
+            cast(null as int64) as fl_days_absent
+        from (select 1) where false
