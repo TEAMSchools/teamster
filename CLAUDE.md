@@ -477,6 +477,13 @@ or mart `facts`/`dimensions`/`bridges`) —
 `cursor=<evaluationId of the oldest record returned>` — not a timestamp or
 opaque token.
 
+- **Prod dbt models are materialized by `<loc>__automation_condition_sensor`
+  runs** (job `__ASSET_JOB`, tag `dagster/from_automation_condition`), NOT dbt
+  Cloud (CI-only) or crons. A merged model SQL change goes stale on CODE and is
+  rematerialized — including view models (distinct from the data-change
+  condition, which skips views) — within minutes of the post-merge location
+  deploy. To confirm a rollout landed: `get_location_load_history` (new commit
+  LOADED) → `list_runs` / `get_asset_materializations` for the asset.
 - **Schedule/sensor-launched runs report `assetSelection: null`** in
   `list_runs`. Read `stepKeysToExecute` and convert `__` → `/` to recover asset
   keys (`kipptaf__tableau__ops_dashboard` → `kipptaf/tableau/ops_dashboard`).
