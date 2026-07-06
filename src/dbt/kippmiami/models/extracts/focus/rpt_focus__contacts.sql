@@ -9,7 +9,18 @@ with
         select d.*,
         from {{ source("kipptaf_extracts", "rpt_focus__contacts") }} as d
         left join focus_contact as f on d.student_id = f.student_id
-        where f.student_id is null
+        where
+            f.student_id is null
+            -- don't import a nameless contact: presence-based import-once would
+            -- create the Focus person record and then suppress the student
+            -- forever, so a later-named contact never syncs. Unlike the address
+            -- fields, first_name / last_name are NOT nullif-normalized upstream
+            -- in stg_finalsite__contacts, and Finalsite emits empty strings for
+            -- unset names, so guard against blank/whitespace here. See #4320.
+            and (
+                nullif(trim(d.first_name), '') is not null
+                or nullif(trim(d.last_name), '') is not null
+            )
     )
 
 select
