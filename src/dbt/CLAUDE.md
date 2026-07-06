@@ -407,6 +407,10 @@ text-formatted `00000` in Sheets becomes INT64.
   fail with ~N results. Filter them in the staging model:
   `where <key> is not null` (e.g.
   `stg_google_sheets__finance__enrollment_targets`).
+- **New sheet column vs `select *` contract**: a contract-enforced `select *`
+  Sheets staging model breaks the instant Ops adds a column — declare the new
+  column in the staging `properties.yml` (and `columns:` in the source) in the
+  same change, or CI fails on the undeclared column.
 
 ### Rebuild staging after sheet edits before testing
 
@@ -415,6 +419,12 @@ After Ops edits a Google Sheet source or after running
 (default materialization is `table`) before trusting test results:
 `dbt build --select <staging_model>+1 --exclude resource_type:test`. A "drift"
 against stale staging is a false positive.
+
+Google Sheets externals read the sheet **live**, so a _value_ edit (not a new
+column) is picked up by rebuilding the `stg_` model into your dev schema
+(`dbt build --select <model> --target dev --defer --state <abs prod manifest>`)
+— no `stage_external_sources` needed (it's classifier-blocked anyway). Use this
+to verify an Ops sheet fix, then query the rebuilt `zz_<user>_*` table.
 
 ## Shipped Profiles (`src/dbt/*/profiles.yml`)
 
