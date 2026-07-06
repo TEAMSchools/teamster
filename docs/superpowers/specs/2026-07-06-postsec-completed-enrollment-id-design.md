@@ -92,7 +92,7 @@ beside the existing `ugrad_enrollment_id` case:
                 e.aa_enrollment_id, if(aa.status = 'Graduated', 1, 0), 2, aa.start_date
             ),
             struct(
-                e.cte_enrollment_id, if(cte.status = 'Graduated', 1, 0), 1, cte.start_date
+                e.vocational_enrollment_id, if(cte.status = 'Graduated', 1, 0), 1, cte.start_date
             )
         ]) as cand
     where cand.enrollment_id is not null

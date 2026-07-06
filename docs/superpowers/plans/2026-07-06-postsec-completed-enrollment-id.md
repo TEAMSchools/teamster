@@ -82,7 +82,7 @@ Insert this column immediately after the existing `ugrad_enrollment_id` CASE
                             aa.start_date
                         ),
                         struct(
-                            e.cte_enrollment_id,
+                            e.vocational_enrollment_id,
                             if(cte.status = 'Graduated', 1, 0),
                             1,
                             cte.start_date
