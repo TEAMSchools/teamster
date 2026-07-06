@@ -37,7 +37,12 @@ actually earned. KIPP Forward reporting needs a field that surfaces the
 - **Ranking** (first non-null candidate wins, in order):
   1. Completed tier — `Graduated` beats everything else.
   2. Degree level — `BA` > `AA` > `CTE`.
-  3. Recency — later `start_date`.
+
+  The candidate pool is exactly the three track picks, each with a distinct
+  degree level, so `(is_completed, degree_rank)` totally orders them and a
+  recency tiebreak is never reachable. `start_date` is therefore not part of the
+  pick.
+
 - **Output:** the id column plus the full parallel attribute set, mirroring the
   existing `ugrad_*` block down through the final `select`.
 - **Grain unchanged:** one row per `student`.
@@ -64,7 +69,7 @@ context on why `Graduated`-only is the completed definition:
 | Deferred             | 9      | in progress       |
 
 Only `Graduated` is treated as completed; every other retained status is a
-non-completed candidate ranked by degree level then recency.
+non-completed candidate ranked by degree level.
 
 ## Design
 
@@ -85,18 +90,15 @@ beside the existing `ugrad_enrollment_id` case:
             struct(
                 e.ba_enrollment_id as enrollment_id,
                 if(ba.status = 'Graduated', 1, 0) as is_completed,
-                3 as degree_rank,
-                ba.start_date as start_date
+                3 as degree_rank
             ),
+            struct(e.aa_enrollment_id, if(aa.status = 'Graduated', 1, 0), 2),
             struct(
-                e.aa_enrollment_id, if(aa.status = 'Graduated', 1, 0), 2, aa.start_date
-            ),
-            struct(
-                e.vocational_enrollment_id, if(cte.status = 'Graduated', 1, 0), 1, cte.start_date
+                e.vocational_enrollment_id, if(cte.status = 'Graduated', 1, 0), 1
             )
         ]) as cand
     where cand.enrollment_id is not null
-    order by cand.is_completed desc, cand.degree_rank desc, cand.start_date desc
+    order by cand.is_completed desc, cand.degree_rank desc
     limit 1
 ) as postsec_completed_enrollment_id
 ```
@@ -108,8 +110,9 @@ Notes:
 - The `order by ... limit 1` is the pick mechanism inside a scalar subquery, not
   cosmetic output ordering; the repo "no `ORDER BY`" rule does not apply. Will
   confirm lint-clean with `trunk check`.
-- `start_date desc` sorts `NULL` last (BigQuery default), so a candidate with a
-  known start date beats one without on the recency tiebreak.
+- `degree_rank` is a distinct literal per candidate, so
+  `(is_completed, degree_rank)` fully orders the pool — there is no `start_date`
+  recency tiebreak to reach.
 - The literal `unnest([...])` is not a correlated join to another table, so it
   is not subject to BigQuery's correlated-subquery restriction.
 
@@ -158,13 +161,16 @@ new id. This requires:
 Add all new columns (`postsec_completed_enrollment_id` plus the attribute set)
 to `properties/int_kippadb__enrollment_pivot.yml`, placed adjacent to the
 corresponding `ugrad_*` entries, each with `data_type` and a `description`. This
-intermediate model has no contract block, so the YAML is documentation only; the
-`student` uniqueness test is unchanged.
+intermediate model has no contract block, so the column YAML is documentation
+only. The model was also missing the intermediate-layer uniqueness test required
+by `src/dbt/CLAUDE.md`, so add a `unique` (`severity: error`) test on `student`
+and a model-level `description`.
 
 ## Testing / verification
 
 - `dbt build --select int_kippadb__enrollment_pivot` (via a consuming path /
-  `--target staging`) succeeds and the `student` uniqueness test still passes.
+  `--target staging`) succeeds and the newly-added `student` uniqueness test
+  passes (verified in prod: 10,100 rows = 10,100 distinct students).
 - Spot-check queries against `stg_kippadb__enrollment`:
   - A student with a graduated `AA` and an in-progress `BA` resolves
     `postsec_completed_enrollment_id` to the `AA`, while `ugrad_enrollment_id`

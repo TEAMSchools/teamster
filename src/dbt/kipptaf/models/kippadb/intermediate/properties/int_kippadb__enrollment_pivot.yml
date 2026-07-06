@@ -1,8 +1,17 @@
 models:
   - name: int_kippadb__enrollment_pivot
+    description:
+      One row per KIPP alumni student, pivoting the student's post-secondary and
+      employment enrollments into track-specific picks (BA, AA, CTE, HS,
+      graduate, undergraduate, completed post-secondary, current, employment)
+      alongside the attributes of each picked enrollment.
     columns:
       - name: student
         data_type: string
+        data_tests:
+          - unique:
+              config:
+                severity: error
       - name: ba_enrollment_id
         data_type: string
       - name: aa_enrollment_id
@@ -23,8 +32,8 @@ models:
           Enrollment id of the student's best post-secondary enrollment across
           the BA, AA, and CTE track picks — preferring a completed (Graduated)
           enrollment over any in-progress or withdrawn one, then higher degree
-          level (BA over AA over CTE), then most recent start date. Null when
-          the student has no BA, AA, or CTE enrollment.
+          level (BA over AA over CTE). Null when the student has no BA, AA, or
+          CTE enrollment.
       - name: cur_enrollment_id
         data_type: string
       - name: ba_school_name
