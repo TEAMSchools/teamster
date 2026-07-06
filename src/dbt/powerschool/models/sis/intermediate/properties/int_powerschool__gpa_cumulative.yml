@@ -1,6 +1,34 @@
 models:
   - name: int_powerschool__gpa_cumulative
+    description: >-
+      One row per student per school with cumulative Y1 GPA aggregates across
+      all stored academic years — weighted, unweighted, and core-subject
+      variants, plus projected variants that blend stored grades with
+      in-progress current-year final grades — alongside earned/potential credit
+      totals and the needed-GPA / attainability pair for finishing with a 3.00
+      cumulative.
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns:
+              - studentid
+              - schoolid
     columns:
+      - name: is_cumulative_3_0_attainable
+        data_type: boolean
+        description: >-
+          True when `gpa_needed_for_cumulative_3_0` is less than or equal to the
+          credit-weighted maximum weighted GPA achievable across the student's
+          current-year courses (each in-progress course capped at the max grade
+          points of its weighted grade scale; already-stored current-year grades
+          locked at their actual points). NULL when the needed value is NULL, or
+          when any in-progress course's grade scale cannot be resolved — the max
+          is then unknowable, so the flag reads unknown rather than a misstated
+          false.
+        data_tests:
+          - not_null:
+              config:
+                where: gpa_needed_for_cumulative_3_0 is not null
       - name: studentid
         data_type: int64
       - name: schoolid
@@ -50,14 +78,6 @@ models:
           3.00 is already guaranteed; values above the student's scale maximum
           are not attainable this year. NULL when the student has no
           current-year GPA credits.
-      - name: is_cumulative_3_0_attainable
-        data_type: boolean
-        description: >-
-          True when `gpa_needed_for_cumulative_3_0` is less than or equal to the
-          credit-weighted maximum weighted GPA achievable across the student's
-          current-year courses (each in-progress course capped at the max grade
-          points of its weighted grade scale; already-stored current-year grades
-          locked at their actual points). NULL when the needed value is NULL.
 
 unit_tests:
   - name: unit_gpa_cumulative_needed_gpa
@@ -68,6 +88,9 @@ unit_tests:
       needs -0.6 — already guaranteed, still attainable. Student 4 (prior 2.0
       over 105 credits) needs 6.0 — above the 4.5 scale max, not attainable.
       Student 5 has no current-year enrollment — needed and flag are NULL.
+      Student 6 has one course on an unresolvable grade scale (orphaned
+      gradescaleid) — needed is still computed but the flag is NULL because the
+      max attainable GPA is unknowable.
     model: int_powerschool__gpa_cumulative
     overrides:
       vars:
@@ -309,6 +332,34 @@ unit_tests:
               y1_grade_points_unweighted: 3.0,
               courses_gradescaleid: 10,
             }
+          - {
+              studentid: 6,
+              yearid: 35,
+              course_number: C1,
+              storecode: Q4,
+              exclude_from_gpa: 0,
+              termbin_start_date: 2000-01-01,
+              termbin_end_date: 9999-12-31,
+              potential_credit_hours: 35.0,
+              y1_letter_grade: B,
+              y1_grade_points: 3.0,
+              y1_grade_points_unweighted: 3.0,
+              courses_gradescaleid: 10,
+            }
+          - {
+              studentid: 6,
+              yearid: 35,
+              course_number: C2,
+              storecode: Q4,
+              exclude_from_gpa: 0,
+              termbin_start_date: 2000-01-01,
+              termbin_end_date: 9999-12-31,
+              potential_credit_hours: 35.0,
+              y1_letter_grade: B,
+              y1_grade_points: 3.0,
+              y1_grade_points_unweighted: 3.0,
+              courses_gradescaleid: 99,
+            }
       - input: ref('base_powerschool__student_enrollments')
         rows:
           - {
@@ -334,6 +385,13 @@ unit_tests:
             }
           - {
               studentid: 4,
+              yearid: 35,
+              academic_year: 2025,
+              schoolid: 101,
+              rn_year: 1,
+            }
+          - {
+              studentid: 6,
               yearid: 35,
               academic_year: 2025,
               schoolid: 101,
@@ -369,5 +427,11 @@ unit_tests:
             studentid: 5,
             potential_gpa_credits_current_year: null,
             gpa_needed_for_cumulative_3_0: null,
+            is_cumulative_3_0_attainable: null,
+          }
+        - {
+            studentid: 6,
+            potential_gpa_credits_current_year: 70.0,
+            gpa_needed_for_cumulative_3_0: 3.0,
             is_cumulative_3_0_attainable: null,
           }

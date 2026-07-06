@@ -257,6 +257,14 @@ with
                     null
                 )
             ) as weighted_points_projected_max_current,
+            sum(
+                if(
+                    academic_year = {{ var("current_academic_year") }}
+                    and weighted_points_projected_max is not null,
+                    potentialcrhrs_projected,
+                    null
+                )
+            ) as potentialcrhrs_current_max_known,
         from with_weighted_points
         group by studentid, schoolid
     ),
@@ -271,8 +279,17 @@ with
                 potentialcrhrs_current
             ) as gpa_needed_raw,
 
-            safe_divide(
-                weighted_points_projected_max_current, potentialcrhrs_current
+            /* a course whose gradescale max is unresolvable makes the true max
+               unknowable — null the max (flag reads unknown) rather than
+               understate it by keeping the course's credits in the
+               denominator only */
+            if(
+                coalesce(potentialcrhrs_current_max_known, 0)
+                = coalesce(potentialcrhrs_current, 0),
+                safe_divide(
+                    weighted_points_projected_max_current, potentialcrhrs_current
+                ),
+                null
             ) as gpa_max_current_raw,
         from points_rollup
     )
