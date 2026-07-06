@@ -163,6 +163,13 @@ declare them pre-aggregation-ready.
   and the dimension-materialization fallback.
 - **Convention deviation (marts are views).** Justified by the measured timeout
   and the `dim_dates` precedent; called out explicitly here for review.
+- **Table marts with FK constraints are rejected by BigQuery** (found in
+  execution). A table mart renders its `foreign_key` constraints into
+  `CREATE TABLE` DDL, and BigQuery requires each referenced parent to be a table
+  with a declared PK; the fact's parent dims are views, so the build fails
+  (`... does not have Primary Key constraints`). The `dim_dates` precedent does
+  not transfer because `dim_dates` has no FKs. Resolution is an open decision —
+  see the implementation plan's "Open decisions (reviewer input needed)".
 - **view->table conversion serves a stale view.** Mitigated by the one-time
   `--full-refresh` / explicit drop on deploy.
 - **Pre-aggregation only helps enumerated cuts.** Accepted: Phase 1

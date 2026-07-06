@@ -42,7 +42,127 @@ the recurring standard-level equity query. Spec:
 
 ---
 
+## Open decisions (reviewer input needed)
+
+Two decisions need a reviewer with more warehouse/Cube context before execution
+continues. Both were surfaced during execution (Decision 1 blocks Task 1; the
+plan author did not have enough context to choose either).
+
+### Decision 1 — Fact materialization vs FK constraints (blocks Task 1)
+
+**Discovery (during the Task 1 dev build).** Converting the fact to a table
+makes dbt render its `foreign_key` constraints into `CREATE TABLE` DDL, and the
+build failed:
+
+```text
+Table teamster-332318.kipptaf_marts.dim_assessment_administrations
+does not have Primary Key constraints
+```
+
+BigQuery validates that a table's `foreign_key` constraint references a **table
+with a declared primary key**, even when the constraint is `NOT ENFORCED`. Two
+of the fact's FK parents (`dim_assessment_administrations`,
+`dim_student_section_enrollments`) are views, so BigQuery rejects the DDL.
+`dim_dates` succeeded as a table only because it has no FKs — so the `dim_dates`
+precedent does not transfer to a fact that carries FKs.
+
+**Options:**
+
+- **Option A (author's recommendation): fact → table, drop its three
+  `foreign_key` constraints, keep the three `relationships` data tests.** FK
+  constraints on BigQuery are `NOT ENFORCED` (informational only), so dropping
+  them costs nothing at query or enforcement time, and the `relationships` tests
+  still catch orphans. **Cost:** the generated FK reference diagram
+  (`generate_marts_reference.py` reads only `foreign_key` constraints, never
+  `relationships` tests) loses the fact's three outgoing edges, and this bends
+  the `marts/CLAUDE.md` "declare outgoing FKs on every mart" rule. Mitigate by
+  documenting the exception in the model, or by teaching the generator to also
+  read `relationships` tests (larger scope). **This convention trade-off is the
+  crux of the decision.**
+- **Option B: materialize the fact and its FK-referenced dims as tables** so the
+  constraints stay valid. This cascades — each newly-materialized dim's own FKs
+  then require _its_ parents to be tables-with-PK, propagating through most of
+  the star schema (or dropping FKs throughout anyway). Disproportionate for a
+  performance fix.
+- **Option C: leave the fact a view; materialize its heavy upstream `int_`
+  inputs instead.** Sidesteps the FK-DDL issue (intermediates carry no dim FK
+  constraints). Less certain to clear the 55s deadline — the fact view still
+  does the three-branch union + resolver joins at query time, just over
+  precomputed inputs — so it needs measurement, and it spreads materialization
+  into the intermediate layer.
+
+**Working-tree state:** clean. The Task 1 subagent's two edits
+(`config: materialized: table` + `warn_unenforced: false` on the PK) were
+reverted for a clean handoff; the exact edit is preserved in Task 1 Step 1.
+Re-apply it if Decision 1 lands on Option A.
+
+**Reviewer question:** which option — and if A, is dropping the FK constraints
+(accepting the reference-diagram edge loss and the `marts/CLAUDE.md` deviation)
+acceptable?
+
+### Decision 2 — Pre-aggregation storage: Cube Store vs BigQuery
+
+The Task 3 `rollup` must be built and stored somewhere. Cube supports two
+backends; the block in Task 3 uses Cube's default (Cube Store). Verified against
+Cube docs.
+
+**Option 1 — Cube Store (Cube's default for rollups; `external: true`).** The
+refresh worker runs the rollup SQL against BigQuery, unloads results to a GCS
+export bucket, and ingests them into Cube Store (Parquet on blob storage).
+Matched queries are served from Cube Store.
+
+- _Requires:_ a GCS export bucket configured on the Cube Cloud BigQuery data
+  source (`CUBEJS_DB_EXPORT_BUCKET` / Cube Cloud equivalent) and a running
+  refresh worker (Cube Cloud manages this).
+- _Pros:_ fastest serving (purpose-built columnar store, in-memory-class
+  latency); reads never touch BigQuery, so no BQ slot contention or per-query
+  scan cost and predictable latency under dashboard concurrency; first-class
+  Cube Cloud path with well-supported partitioning, incremental refresh, and
+  scheduling.
+- _Cons:_ aggregated data is copied **out of BigQuery** into Cube Store, a
+  second location outside the warehouse's IAM / VPC-SC / governance. This rollup
+  includes indirect identifiers as aggregate counts (`is_iep`, `region_name`,
+  `grade_level`, `discipline`); low-n cells could be sensitive, so a
+  governance/PII review is needed before demographic aggregates leave the BQ
+  boundary. Also adds the export bucket + refresh worker as deployment surface
+  (possible Cube Cloud plan/cost implications), and Cube Store is less directly
+  inspectable than a warehouse table.
+
+**Option 2 — Keep the pre-agg in BigQuery (`external: false`).** Cube builds the
+rollup as a table in a dedicated BigQuery pre-agg schema (e.g.
+`prod_pre_aggregations`); matched queries read that table directly from
+BigQuery.
+
+- _Requires:_ the Cube BigQuery service account to have write access to a
+  dedicated pre-agg dataset.
+- _Pros:_ data stays in BigQuery — same IAM, PII controls, VPC-SC, and
+  observability as the rest of the warehouse; nothing leaves GCP, fitting the
+  repo's "PII stays in the warehouse" posture. No export bucket / Cube Store
+  dependency (smaller deployment footprint). The pre-agg table is directly
+  queryable in BQ for validation/debugging.
+- _Cons:_ reads still go through BigQuery — fast and cheap on a small aggregate
+  table, but not Cube-Store-fast, and each read uses BQ slots and incurs a
+  (small) scan cost. Less-standard path for `rollup` pre-aggs — Cube documents
+  steer toward Cube Store, and `original_sql` is the type designed to live in-DB
+  — so expect fewer guardrails. Shares the BQ slot pool with all other workloads
+  (concurrency contention under load).
+
+**Author's lean (reviewer to weigh):** given the repo's strong
+PII-stays-in-BigQuery posture and that, with the fact materialized, the rollup
+is a small aggregate BigQuery serves quickly, **Option 2 (keep in BigQuery)** is
+the lower-risk default. Choose **Cube Store** if sub-second latency under real
+dashboard concurrency becomes a hard requirement and the governance review
+clears aggregated demographic data leaving the warehouse.
+
+---
+
 ### Task 1: Materialize the fact as a table
+
+> **BLOCKED pending Open Decision 1.** The concrete edit below assumes the FK
+> constraints stay. If Decision 1 lands on Option A, drop the three
+> `foreign_key` constraints instead of retaining them; if Option C, this task
+> changes to materializing upstream `int_` models. Do not execute until Decision
+> 1 is made.
 
 **Files:**
 
@@ -280,6 +400,10 @@ pre_aggregations:
       every: 6 hour
 ```
 
+> **Storage backend is Open Decision 2.** The block above uses Cube's default
+> (Cube Store). If the reviewer chooses the in-BigQuery backend, add
+> `external: false` to the pre-aggregation. See "Open decisions" above.
+
 - [ ] **Step 2: Trunk-check the changed YAML**
 
 Run:
@@ -339,8 +463,9 @@ These are user / CI actions, in order:
 
 - Spec coverage: Phase 1 materialization → Task 1; measurement gate + dim
   fallback → Task 2; Phase 2 pre-aggregation → Task 3; testing/rollout → Rollout
-  section. The spec's "refresh backend open decision" is resolved here to the
-  Cube default (Cube Store) with a time-based `refresh_key`; partitioning is
-  deferred as noted (no `time_dimension`).
+  section. Two decisions are unresolved and captured in "Open decisions
+  (reviewer input needed)" above: the fact-materialization vs FK-constraint
+  conflict (blocks Task 1) and the pre-aggregation storage backend (Cube Store
+  vs BigQuery). Rollup partitioning is deferred (no `time_dimension`).
 - The optional MCP-deadline hardening in the spec is intentionally not a task
   (out of scope per the spec).
