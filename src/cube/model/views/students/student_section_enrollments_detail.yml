@@ -22,7 +22,7 @@ views:
           - teacher_role
           - lead_teacher_staff_key
 
-      - join_path: student_section_enrollments.staff
+      - join_path: student_section_enrollments.staff_lead_teacher
         prefix: true
         includes:
           - full_name
@@ -91,9 +91,9 @@ views:
           members:
             - lead_teacher_staff_key
             - teacher_role
-            - staff_full_name
-            - staff_first_name
-            - staff_last_name
+            - staff_lead_teacher_full_name
+            - staff_lead_teacher_first_name
+            - staff_lead_teacher_last_name
         - name: Course
           members:
             - discipline
@@ -145,8 +145,9 @@ views:
             - is_retained_year
 
     access_policy:
-      # Teacher fields (staff_* names, lead_teacher_staff_key) are intentionally
-      # NOT in excludes — staff base-tier / a staff FK, not student PII.
+      # Teacher fields (staff_lead_teacher_* names, lead_teacher_staff_key) are
+      # intentionally NOT in excludes — staff base-tier / a staff FK, not
+      # student PII.
       - group: cube-access-student-data
         member_level:
           includes: "*"

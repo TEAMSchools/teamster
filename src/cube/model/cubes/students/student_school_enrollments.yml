@@ -21,13 +21,13 @@ cubes:
       # Homeroom teacher. Lives on this stint-grain dim so stint-based facts
       # (attendance, enrollment) join it many_to_one with no fan-out — the
       # section-grain dim can't serve it without fanning out across every class.
-      # Distinct role from the lead-teacher staff join on
-      # student_section_enrollments; a cube can't join staff twice, so the two
-      # teacher roles live on the two cubes. No view pulls both staff paths at
-      # once. many_to_one — one homeroom lead per enrollment after dbt
-      # resolution, so no fan-out.
-      - name: staff
-        sql: "{staff.staff_key} = {CUBE}.homeroom_teacher_staff_key"
+      # Joins the staff_homeroom_teacher role-play cube (extends staff) so its
+      # members can't collide with the lead-teacher staff join on
+      # student_section_enrollments. many_to_one — one homeroom lead per
+      # enrollment after dbt resolution, so no fan-out.
+      - name: staff_homeroom_teacher
+        sql: >
+          {staff_homeroom_teacher.staff_key} = {CUBE}.homeroom_teacher_staff_key
         relationship: many_to_one
 
     dimensions:
