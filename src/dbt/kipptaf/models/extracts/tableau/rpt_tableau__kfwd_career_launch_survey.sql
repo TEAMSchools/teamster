@@ -313,9 +313,7 @@ select
 
     if(r.most_recent_iep_date is not null, true, false) as is_special_education,
 
-    if(
-        r.advising_provider = 'KIPP NYC', r.postsec_advisor, r.contact_owner_name
-    ) as advisor,
+    if(r.advising_provider = 'KIPP NYC', 'Collab', r.contact_owner_name) as advisor,
 
     if(
         r.contact_id is not null,
