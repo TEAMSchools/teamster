@@ -436,6 +436,15 @@ git commit -m "refactor(cube): access.js builds securityContext; drop row-filter
 - Produces: an enriched `securityContext` on every request (REST + SQL API)
   carrying the fields Task 5's policies interpolate. `contextToGroups` reduced
   to reading `securityContext.groups`.
+- **Task 6 is folded in here (per the resequencing decision):** this task ALSO
+  removes the RLS branch of `queryRewrite` (student-member strip +
+  `studentRowFilters`/`staffSensitiveFilters` calls), because Task 2 renamed the
+  groups (`groups.includes("student")` no longer matches) and deleted those
+  builders — leaving the calls would break every gated query. The snapshot
+  anchor block and `canSwitchSqlUser` stay. Consequence: RLS is temporarily
+  ABSENT after this task until Task 5 adds `access_policy` — acceptable because
+  these intermediate branch commits never deploy (prod deploys only on merge to
+  `main`).
 
 - [ ] **Step 1: Extract a shared async `resolveAccess(email)`**
 
@@ -494,11 +503,19 @@ from Track 1) so both enrich the context:
     req.securityContext = await resolveAccess(email);
   },
 
-  checkSqlAuth: async (req, user) => {
+  checkSqlAuth: async (req, user, password) => {
     const email =
       (process.env.NODE_ENV !== "production" && process.env.CUBE_SQL_DEV_EMAIL) ||
       user;
-    return { password: null, securityContext: await resolveAccess(email) };
+    // Cube validates the presented password against the RETURNED one — returning
+    // null rejects every connection (Task 1 verdict). Return the server-known
+    // SQL password (Cube's canonical checkSqlAuth pattern); RLS identity comes
+    // from securityContext.email, not the SQL user. `password` (the presented
+    // value) is absent on SET-USER re-auth flows, so do not compare against it.
+    return {
+      password: process.env.CUBEJS_SQL_PASSWORD,
+      securityContext: await resolveAccess(email),
+    };
   },
 ```
 
@@ -510,17 +527,33 @@ Replace its body with a read of the resolved context:
   contextToGroups: async ({ securityContext }) => securityContext?.groups ?? [],
 ```
 
-- [ ] **Step 4: Verify it loads (implementer action)**
+- [ ] **Step 4: Remove the RLS branch of `queryRewrite` (folded-in Task 6)**
+
+In `queryRewrite`, delete: the student-member strip (the
+`groups.includes("student")` block that filters `dimensions`/`measures`), and
+the `access.studentRowFilters(row)` + `access.staffSensitiveFilters(...)` filter
+pushes (and the surrounding `members.some(...)` guards and the now-unused `row`
+/ `reporteeStaffKeys` / `groups` locals + `access.queryMembers` call, if nothing
+else uses them). **Keep** the entire `SNAPSHOT_CUBES` anchor-injection loop and
+`canSwitchSqlUser`. After this, `queryRewrite` should contain only the snapshot
+anchor logic (reading `query`, returning `{ ...query, filters }`). Also drop the
+now-unused `access` imports if `buildGroups`/`buildSecurityContext` are the only
+ones still referenced (they are, via `resolveAccess`).
+
+- [ ] **Step 5: Verify it loads (implementer action)**
 
 Restart the dev server (Task 1 Step 2 command). Run a `/meta` fetch with a JWT
 `{email: "cbaldor@apps.teamschools.org"}`. Expected: `/meta` returns cubes (no
 compile error); server logs show `resolveAccess` ran once (cache populated).
+Note: gated queries return UNFILTERED rows here (RLS absent until Task 5 adds
+`access_policy`) — this is the expected intermediate state, validated fully in
+Task 5.
 
-- [ ] **Step 5: Commit**
+- [ ] **Step 6: Commit**
 
 ```bash
 git add src/cube/cube.js
-git commit -m "feat(cube): resolve access in checkAuth/checkSqlAuth into securityContext"
+git commit -m "feat(cube): resolve access into securityContext; remove queryRewrite RLS"
 ```
 
 ---
@@ -683,7 +716,11 @@ which path was taken in the commit body.
 
 Restart the dev server. Run the validation harness (Task 7) for the staff-PII
 scope viewers. Expected: row counts match the pre-pivot `queryRewrite` behavior
-for each scope; open directory unaffected.
+for each scope; open directory unaffected. **Also validate default-deny (moved
+from the folded-in Task 6):** query a gated student view as an **unresolved**
+email (no `CUBE_GROUP_MAP` entry / no access row) → zero rows, because no
+scope-specific group is emitted → no `access_policy` matches → denied. This
+confirms RLS is now enforced by `access_policy`, not `queryRewrite`.
 
 - [ ] **Step 4: Commit**
 
@@ -694,38 +731,17 @@ git commit -m "feat(cube): row_level access_policy for student + staff_pii views
 
 ---
 
-### Task 6: Delete `queryRewrite`'s RLS half
+### Task 6: Delete `queryRewrite`'s RLS half — FOLDED INTO TASK 3
 
-**Files:**
-
-- Modify: `src/cube/cube.js`
-
-**Interfaces:**
-
-- Consumes: nothing new. Removes the student-member strip +
-  `studentRowFilters`/`staffSensitiveFilters` calls.
-
-- [ ] **Step 1: Remove the RLS branch, keep the snapshot-anchor block**
-
-In `queryRewrite`, delete the student-member stripping and the
-`access.studentRowFilters` / `access.staffSensitiveFilters` filter pushes.
-**Keep** the `SNAPSHOT_CUBES` anchor-injection loop and `canSwitchSqlUser`
-(Track 1 removes the snapshot block later). If nothing else remains in
-`queryRewrite` besides the snapshot loop, leave the function with only that.
-
-- [ ] **Step 2: Validate default-deny still holds (implementer action)**
-
-Restart dev server. Query a student view as an **unresolved** email (no
-`CUBE_GROUP_MAP` entry). Expected: `access_policy` default-deny returns zero
-rows (no `student` group → no policy → denied). Confirms RLS now enforced by
-policies, not `queryRewrite`.
-
-- [ ] **Step 3: Commit**
-
-```bash
-git add src/cube/cube.js
-git commit -m "refactor(cube): delete queryRewrite RLS half (moved to access_policy)"
-```
+> **DONE IN TASK 3 (Step 4), per the resequencing decision.** Task 2's group
+> rename + builder deletion made the `queryRewrite` RLS branch reference stale
+> group names and deleted functions, so it had to be removed alongside the Task
+> 3 `cube.js` rework rather than last. No separate commit here.
+>
+> The default-deny validation this task carried (query a gated view as an
+> **unresolved** email → zero rows, because no group → no matching
+> `access_policy` → denied) **moves to Task 5 Step 3 / Task 7**, since it can
+> only pass once `access_policy` exists (Task 5).
 
 ---
 
@@ -776,9 +792,9 @@ git commit -m "docs(cube): access_policy security model + reviewer guide"
 ## Self-Review
 
 - **Spec coverage:** R1 → Task 3; R2 → Task 4; R3 → Task 5; R4 → Task 1; R5 →
-  Task 6; R6 → Task 7. All covered.
-- **Placeholders:** none — Task 5's contingency is two concrete forms (primary +
-  fallback), gated by Task 1's recorded verdict, not a "TBD".
+  Task 3 (folded-in Task 6); R6 → Task 7. All covered.
+- **Placeholders:** none — Task 5 uses the canonical group-based form per the
+  Task 1 verdict (the `conditions.if` "primary form" is superseded).
 - **Type consistency:** `buildSecurityContext` shape (Task 2) matches the
   `securityContext.*` members interpolated in Task 5; `resolveAccess` (Task 3)
   returns that shape; `contextToGroups` reads `securityContext.groups`.
