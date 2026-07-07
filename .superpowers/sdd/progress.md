@@ -20,17 +20,33 @@ The two-scope plan (2026-06-24) landed on this branch: dbt models
   plan §"Task 1 Verdict". KEY FINDINGS: array-IN + nested or/and + truthy
   conditions.if + default-deny all WORK; but `==` in conditions.if does NOT
   compile (Python-expr parser), and multi-policy combines by OR/union not AND.
-  DESIGN CHANGE (needs user sign-off before Task 2): move enum→bool comparison
-  into buildSecurityContext, emit mutually-exclusive boolean scope flags, gate
-  Task 5 policies on truthy flags. No queryRewrite residual. Cloud
-  userAttributes-vs-securityContext still unverified.
+  Resolved (user sign-off): canonical GROUP-BASED design — see "Design decisions
+  locked" below.
+
+- Task 2: complete (commits 44274499e..583eed5fc, review clean). access.js:
+  buildGroups emits scope-specific groups (student-<scope>, staff-pii-<scope>);
+  buildSecurityContext added; row-filter builders + their tests deleted. 10/10
+  tests pass.
+
+Design decisions locked (Task 1 verdict + user sign-off):
+- Canonical GROUP-BASED RLS: buildGroups emits student-<scope> / staff-pii-<scope>;
+  each Task 5 policy matches one group with its own member_level + row_level. No
+  conditions.if (== won't compile). No queryRewrite residual.
+- Task 6 (queryRewrite RLS removal) FOLDED INTO Task 3 — RLS briefly absent on
+  intermediate branch commits (never deployed). Task 3 checkSqlAuth must return
+  the server-known password, NOT null.
+- Still open: Cube Cloud userAttributes-vs-securityContext interpolation
+  (untestable on local Core; verify on Cloud Dev Mode/staging).
+
+Minor findings for FINAL review (not fixed, deferred):
+- access.js:3-14 + :34-35 header/comment describe deleted row-filter arch (stale).
+- src/cube/CLAUDE.md security-model section stale (updated in Task 7).
+- buildSecurityContext tests assert a subset, not full deepStrictEqual (per brief).
 
 ## Remaining (this plan)
-
-- Task 2: access.js `buildSecurityContext` (pure, unit-tested) — REVISED to emit
-  boolean scope flags (pending user sign-off).
-- Task 3: cube.js resolve identity in checkAuth + checkSqlAuth.
+- Task 3: cube.js resolveAccess + checkAuth/checkSqlAuth + contextToGroups
+  reduce + REMOVE queryRewrite RLS branch (folded-in Task 6). Needs live server.
 - Task 4: split staff_detail into staff_directory + staff_pii.
-- Task 5: row_level access_policy on all gated views.
-- Task 6: delete queryRewrite RLS half.
+- Task 5: row_level access_policy on all gated views (+ default-deny validation).
+- Task 6: FOLDED INTO TASK 3.
 - Task 7: validation matrix + docs.
