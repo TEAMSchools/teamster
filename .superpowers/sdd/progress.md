@@ -27,6 +27,23 @@ The two-scope plan (2026-06-24) landed on this branch: dbt models
   buildGroups emits scope-specific groups (student-<scope>, staff-pii-<scope>);
   buildSecurityContext added; row-filter builders + their tests deleted. 10/10
   tests pass.
+- Task 3: complete (commits 92dab23b4..6e5fa17e6, re-review clean + live
+  validated). cube.js: resolveAccess (fail-closed try/catch), checkAuth (now
+  verifies+decodes HS256 JWT via jsonwebtoken — a Critical review fix; raw-string
+  bug), checkSqlAuth (returns server password), contextToGroups one-liner,
+  queryRewrite RLS branch REMOVED (folded-in Task 6, snapshot loop kept).
+  jsonwebtoken added to src/cube/package.json. LIVE: REST /meta 200 + 28 cubes
+  for a real JWT; REST /load real data (staff_work_history=4638) → full auth
+  path works.
+
+VALIDATION STRATEGY CHANGE (Task 3 live finding):
+- SQL API + Tesseract (CUBEJS_TESSERACT_SQL_PLANNER=true) FAILS on every JOINED
+  view with "Failed to deserialize ... JoinDefinitionStatic" — uniform, not
+  auth, not view-specific (spike worked only because it had no joins).
+  Pre-existing Track 1 (Tesseract) issue. REST /load WORKS. => Task 5/7 validate
+  via REST /load (JWT-authed), NOT psycopg2 SQL API. Plan updated.
+- Minor (final review): checkAuth garbage token → HTTP 500 not 401/403 (raw
+  jwt.verify throw; a cleaner impl maps to CubejsHandlerError 401).
 
 Design decisions locked (Task 1 verdict + user sign-off):
 - Canonical GROUP-BASED RLS: buildGroups emits student-<scope> / staff-pii-<scope>;
@@ -44,8 +61,6 @@ Minor findings for FINAL review (not fixed, deferred):
 - buildSecurityContext tests assert a subset, not full deepStrictEqual (per brief).
 
 ## Remaining (this plan)
-- Task 3: cube.js resolveAccess + checkAuth/checkSqlAuth + contextToGroups
-  reduce + REMOVE queryRewrite RLS branch (folded-in Task 6). Needs live server.
 - Task 4: split staff_detail into staff_directory + staff_pii.
 - Task 5: row_level access_policy on all gated views (+ default-deny validation).
 - Task 6: FOLDED INTO TASK 3.

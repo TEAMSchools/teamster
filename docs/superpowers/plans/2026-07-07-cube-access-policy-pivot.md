@@ -19,8 +19,13 @@ so the remit attaches only to sensitive fields. `member_level` field gating and
 the dbt access models are unchanged.
 
 **Tech Stack:** Cube (data model YAML + `cube.js`/`access.js` Node config),
-BigQuery driver, `node --test` for pure JS, Python `psycopg2` over the Cube SQL
-API for policy validation.
+BigQuery driver, `node --test` for pure JS. Policy validation uses the **Cube
+REST `/load` API** with a minted HS256 JWT (see the Task 3 live finding below).
+The originally-planned `psycopg2`-over-SQL-API path does NOT work on this
+branch: with `CUBEJS_TESSERACT_SQL_PLANNER=true`, the SQL API fails on every
+JOINED view with `Failed to deserialize ... JoinDefinitionStatic` (a
+pre-existing Track 1 / Tesseract issue, uniform across views, unrelated to
+access). REST `/load` enforces `access_policy` identically and works.
 
 ## Global Constraints
 
@@ -761,17 +766,24 @@ git commit -m "feat(cube): row_level access_policy for student + staff_pii views
 - [ ] **Step 1: Build the validation harness**
 
 `.claude/scratch/access_policy_validation.py`: for each viewer profile (network
-/ region / school / none; each staff_pii_scope enum), connect via the SQL API
-and record **aggregate row counts + column presence** (never values) for
-`staff_directory`, `staff_pii`, and a student view. Compare against the
-pre-pivot `queryRewrite` counts captured from the #4269 branch.
+/ region / school / none; each staff_pii_scope enum), query via the **Cube REST
+`/load` API** (mint an HS256 JWT with the profile's `email` claim, signed with
+`CUBEJS_API_SECRET`; POST to `http://localhost:4000/cubejs-api/v1/load`, polling
+past `"Continue wait"`) and record **aggregate row counts + column presence**
+(never values) for `staff_directory`, `staff_pii`, and a student view. Compare
+against the pre-pivot `queryRewrite` counts captured from the #4269 branch. Do
+NOT use the `psycopg2` SQL-API path — it fails on joined views under Tesseract
+(see the Task 3 live finding / Tech Stack note). To exercise each profile, mint
+its JWT for a real staff email whose `dim_staff_cube_access` row has that scope,
+or (dev) set `CUBE_GROUP_MAP` per profile; the harness reads the enriched
+`securityContext` groups via the resolved query result.
 
 - [ ] **Step 2: Run the matrix (implementer action)**
 
 Run:
-`uv run --with psycopg2-binary python .claude/scratch/access_policy_validation.py`
+`uv run --with pyjwt --with requests python .claude/scratch/access_policy_validation.py`
 Expected: every profile's counts equal the pre-pivot baseline; directory open
-for all staff; `staff_pii` scoped; `none` viewers denied.
+for all staff; `staff_pii` scoped; `none` viewers denied (zero rows).
 
 - [ ] **Step 3: Update docs**
 
