@@ -87,10 +87,10 @@ views:
           includes: "*"
         row_level:
           filters:
-            - member: locations.abbreviation
+            - member: locations_abbreviation
               operator: equals
               values: "{ securityContext.allowed_abbreviations }"
-            - member: staff.department_group
+            - member: department_group
               operator: equals
               values: "{ securityContext.allowed_department_groups }"
       - group: staff-pii-teaching_staff
@@ -98,13 +98,13 @@ views:
           includes: "*"
         row_level:
           filters:
-            - member: locations.abbreviation
+            - member: locations_abbreviation
               operator: equals
               values: "{ securityContext.allowed_abbreviations }"
-            - member: staff.department_group
+            - member: department_group
               operator: equals
               values: "{ securityContext.allowed_department_groups }"
-            - member: staff.job_function_code
+            - member: job_function_code
               operator: equals
               values: [TEACH, TIR]
       - group: staff-pii-reporting_chain
@@ -112,7 +112,7 @@ views:
           includes: "*"
         row_level:
           filters:
-            - member: staff.staff_key
+            - member: staff_key
               operator: equals
               values: "{ securityContext.reportee_staff_keys }"
       - group: staff-pii-reporting_chain_or_below_rank
@@ -122,15 +122,15 @@ views:
           filters:
             - or:
                 - and:
-                    - member: locations.abbreviation
+                    - member: locations_abbreviation
                       operator: equals
                       values: "{ securityContext.allowed_abbreviations }"
-                    - member: staff.department_group
+                    - member: department_group
                       operator: equals
                       values: "{ securityContext.allowed_department_groups }"
-                    - member: staff.job_function_level
+                    - member: job_function_level
                       operator: gt
                       values: ["{ securityContext.job_function_level }"]
-                - member: staff.staff_key
+                - member: staff_key
                   operator: equals
                   values: "{ securityContext.reportee_staff_keys }"

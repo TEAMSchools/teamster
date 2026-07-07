@@ -74,6 +74,7 @@ views:
         includes:
           - location_name
           - abbreviation
+          - region_key
           - grade_band
           - campus
           - city
@@ -144,6 +145,7 @@ views:
           members:
             - locations_location_name
             - locations_abbreviation
+            - locations_region_key
             - locations_grade_band
             - locations_campus
             - locations_city
@@ -187,7 +189,7 @@ views:
           includes: "*"
         row_level:
           filters:
-            - member: locations.region_key
+            - member: locations_region_key
               operator: equals
               values: ["{ securityContext.region_key }"]
       - group: student-school
@@ -195,7 +197,7 @@ views:
           includes: "*"
         row_level:
           filters:
-            - member: locations.abbreviation
+            - member: locations_abbreviation
               operator: equals
               values: ["{ securityContext.location_abbreviation }"]
       - group: student-network
