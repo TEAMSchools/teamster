@@ -185,6 +185,12 @@ file; domain specifics live in the nearest subdirectory CLAUDE.md.
   Verify each convention claim against existing models before applying — its
   findings are advisory, and `git grep` settles it faster than complying.
 
+- **A dispatched code-review subagent's "confirmed non-issue" dismissals aren't
+  authoritative** — one over-read the `unnest` scalar-aggregate carve-out to
+  bless an `order by ... limit 1` pick that violates the SQL guide. Verify a
+  subagent's convention claims (dismissals as much as flags) against the guide
+  text + `git grep` before relaying.
+
 - **A PR's CI lives on two disjoint surfaces**: dbt Cloud is a commit _status_
   (`pull_request_read get_status` / `gh api commits/<sha>/status`); Trunk /
   CodeQL / `claude` are _check runs_ (`get_check_runs` /
@@ -447,6 +453,15 @@ the allowlist.
   equivalents and are not on this list.
 - Editing an existing comment — `mcp__github__add_issue_comment` only creates.
   Use `gh api -X PATCH repos/<owner>/<repo>/issues/comments/<id> -f body='...'`.
+  For large bodies (tables, multi-paragraph), write the body to a file and pass
+  `-F body=@<file>` instead of inline `-f body='...'` (avoids shell-quoting on
+  big markdown). Same `-F body=@<file>` trick applies to `create_pull_request` /
+  comment creation via `gh api`.
+- Editing a PR **body** — round-tripping a fetched body through
+  `mcp__github__update_pull_request` double-encodes existing entities (it
+  re-applies the `&`→`&amp;` encoding). Edit cleanly via
+  `gh api -X PATCH repos/<owner>/<repo>/pulls/<n> -F body=@<file>` (raw, no
+  re-encoding).
 - Replying to a PR inline review comment in-thread —
   `mcp__github__add_issue_comment` posts top-level PR comments only, not thread
   replies. Use
@@ -477,6 +492,13 @@ or mart `facts`/`dimensions`/`bridges`) —
 `cursor=<evaluationId of the oldest record returned>` — not a timestamp or
 opaque token.
 
+- **Prod dbt models are materialized by `<loc>__automation_condition_sensor`
+  runs** (job `__ASSET_JOB`, tag `dagster/from_automation_condition`), NOT dbt
+  Cloud (CI-only) or crons. A merged model SQL change goes stale on CODE and is
+  rematerialized — including view models (distinct from the data-change
+  condition, which skips views) — within minutes of the post-merge location
+  deploy. To confirm a rollout landed: `get_location_load_history` (new commit
+  LOADED) → `list_runs` / `get_asset_materializations` for the asset.
 - **Schedule/sensor-launched runs report `assetSelection: null`** in
   `list_runs`. Read `stepKeysToExecute` and convert `__` → `/` to recover asset
   keys (`kipptaf__tableau__ops_dashboard` → `kipptaf/tableau/ops_dashboard`).
@@ -616,7 +638,11 @@ query the materialized `zz_stg_*` table — a native BQ table, not Drive-backed.
 
 `bq` CLI fallback for shell contexts (Monitor poll loops): binary at
 `/usr/local/share/google-cloud-sdk/bin/bq`, `--project_id=teamster-332318`. Same
-SELECT-only constraints apply.
+SELECT-only constraints apply. `bq query` with the SQL passed as a positional
+arg crashes its flag parser when the query text starts with a `--` comment
+("Unknown command line flag ..." / RecursionError) — the `--` end-of-flags
+separator does NOT help. Start the query with `WITH`/`SELECT` (strip leading
+comment lines).
 
 Pre-merge queries against PR-branch schema use
 `dbt_cloud_pr_<job_definition_id>_<pr_num>_<schema>`. `<job_definition_id>` is

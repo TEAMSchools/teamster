@@ -1,0 +1,207 @@
+models:
+  - name: int_powerschool__gpa_cumulative_year
+    description: >-
+      One row per student, school, and academic year holding the student's
+      cumulative Y1 GPA as of the end of that year. Completed years are
+      recomputed from stored Y1 grades as running sums per student-school; the
+      current academic year is a projected point joined directly from
+      int_powerschool__gpa_cumulative (never recomputed), flagged with
+      is_projected. Accumulation is per student-school, matching
+      int_powerschool__gpa_cumulative — middle school and high school series
+      stay separate, and school transfers split the series.
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns:
+              - studentid
+              - schoolid
+              - academic_year
+          config:
+            severity: error
+    columns:
+      - name: studentid
+        data_type: int64
+        description:
+          The internal number and ID of the associated Students record.
+      - name: schoolid
+        data_type: int64
+        description: >-
+          School_Number of the school where the grades were stored (completed
+          years) or where the student is currently enrolled (projected row).
+      - name: academic_year
+        data_type: int64
+        description: >-
+          Academic year the cumulative values run through — start-year
+          convention (2024 means SY2024-25).
+      - name: grade_level
+        data_type: int64
+        description: >-
+          Student's grade level in that academic year, from the year's primary
+          enrollment. NULL for stored years with no matching enrollment (e.g.
+          transfer credits). A retained student legitimately repeats a grade
+          level across two academic years.
+      - name: earned_credits_cum
+        data_type: float64
+        description: >-
+          Running earned credit hours through this academic year
+          (graduation-credit basis, excludefromgraduation = 0). Projected basis
+          on the current-year row.
+      - name: potential_gpa_credits_cum
+        data_type: float64
+        description: >-
+          Running potential GPA credit hours through this academic year (GPA
+          basis, excludefromgpa = 0) — the denominator of the cumulative GPAs.
+      - name: cumulative_y1_gpa
+        data_type: float64
+        description: >-
+          Cumulative weighted Y1 GPA through this academic year. On the
+          current-year row this is cumulative_y1_gpa_projected from
+          int_powerschool__gpa_cumulative, verbatim.
+      - name: cumulative_y1_gpa_unweighted
+        data_type: float64
+        description: >-
+          Cumulative unweighted Y1 GPA through this academic year. On the
+          current-year row this is cumulative_y1_gpa_projected_unweighted from
+          int_powerschool__gpa_cumulative, verbatim.
+      - name: is_projected
+        data_type: boolean
+        description: >-
+          False for completed years recomputed from stored grades; true for the
+          current-year row sourced from projected values.
+
+unit_tests:
+  - name: unit_gpa_cumulative_year_running_and_projected
+    description: >-
+      Running cumulative accumulates stored Y1 grades per student-school in
+      academic-year order (excluded-from-GPA rows drop out of both bases), and
+      the current-year row carries the projected values from
+      int_powerschool__gpa_cumulative verbatim with is_projected = true.
+    model: int_powerschool__gpa_cumulative_year
+    overrides:
+      vars:
+        current_academic_year: 2025
+    given:
+      - input: ref('stg_powerschool__storedgrades')
+        rows:
+          - {
+              studentid: 1,
+              schoolid: 101,
+              academic_year: 2023,
+              storecode: Y1,
+              excludefromgpa: 0,
+              excludefromgraduation: 0,
+              potentialcrhrs: 35.0,
+              earnedcrhrs: 35.0,
+              gpa_points: 2.0,
+              percent: 70,
+              gradescale_name_unweighted: UT Unweighted,
+            }
+          - {
+              studentid: 1,
+              schoolid: 101,
+              academic_year: 2024,
+              storecode: Y1,
+              excludefromgpa: 0,
+              excludefromgraduation: 0,
+              potentialcrhrs: 35.0,
+              earnedcrhrs: 35.0,
+              gpa_points: 4.0,
+              percent: 95,
+              gradescale_name_unweighted: UT Unweighted,
+            }
+          - {
+              studentid: 1,
+              schoolid: 101,
+              academic_year: 2024,
+              storecode: Y1,
+              excludefromgpa: 1,
+              excludefromgraduation: 1,
+              potentialcrhrs: 35.0,
+              earnedcrhrs: 35.0,
+              gpa_points: 1.0,
+              percent: 50,
+              gradescale_name_unweighted: UT Unweighted,
+            }
+      - input: ref('int_powerschool__gradescaleitem_lookup')
+        rows:
+          - {
+              gradescaleid: 20,
+              gradescale_name: UT Unweighted,
+              letter_grade: A,
+              grade_points: 4.0,
+              min_cutoffpercentage: 90,
+              max_cutoffpercentage: 100,
+            }
+          - {
+              gradescaleid: 20,
+              gradescale_name: UT Unweighted,
+              letter_grade: F,
+              grade_points: 0.0,
+              min_cutoffpercentage: 0,
+              max_cutoffpercentage: 89.9,
+            }
+      - input: ref('base_powerschool__student_enrollments')
+        rows:
+          - {
+              studentid: 1,
+              schoolid: 101,
+              academic_year: 2023,
+              rn_year: 1,
+              grade_level: 9,
+            }
+          - {
+              studentid: 1,
+              schoolid: 101,
+              academic_year: 2024,
+              rn_year: 1,
+              grade_level: 10,
+            }
+          - {
+              studentid: 1,
+              schoolid: 101,
+              academic_year: 2025,
+              rn_year: 1,
+              grade_level: 11,
+            }
+      - input: ref('int_powerschool__gpa_cumulative')
+        format: sql
+        rows: |
+          select
+              1 as studentid,
+              101 as schoolid,
+              cast(3.2 as float64) as cumulative_y1_gpa_projected,
+              cast(2.5 as float64) as cumulative_y1_gpa_projected_unweighted,
+              cast(105.0 as float64) as earned_credits_cum_projected,
+              cast(105.0 as float64) as potential_gpa_credits_cum_projected
+    expect:
+      rows:
+        - {
+            studentid: 1,
+            academic_year: 2023,
+            grade_level: 9,
+            earned_credits_cum: 35.0,
+            potential_gpa_credits_cum: 35.0,
+            cumulative_y1_gpa: 2.0,
+            cumulative_y1_gpa_unweighted: 0.0,
+            is_projected: false,
+          }
+        - {
+            studentid: 1,
+            academic_year: 2024,
+            grade_level: 10,
+            earned_credits_cum: 70.0,
+            potential_gpa_credits_cum: 70.0,
+            cumulative_y1_gpa: 3.0,
+            cumulative_y1_gpa_unweighted: 2.0,
+            is_projected: false,
+          }
+        - {
+            studentid: 1,
+            academic_year: 2025,
+            grade_level: 11,
+            earned_credits_cum: 105.0,
+            potential_gpa_credits_cum: 105.0,
+            cumulative_y1_gpa: 3.2,
+            cumulative_y1_gpa_unweighted: 2.5,
+            is_projected: true,
+          }
