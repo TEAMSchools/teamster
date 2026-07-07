@@ -291,31 +291,15 @@ with
 
             -- pick the student's single best post-secondary enrollment:
             -- completed (Graduated) first, then degree level (BA > AA > CTE).
-            -- degree_rank is unique per candidate, so it is the final
-            -- discriminator; no recency tiebreak is reachable.
-            (
-                select cand.enrollment_id,
-                from
-                    unnest(
-                        [
-                            struct(
-                                e.ba_enrollment_id as enrollment_id,
-                                if(ba.status = 'Graduated', 1, 0) as is_completed,
-                                3 as degree_rank
-                            ),
-                            struct(
-                                e.aa_enrollment_id, if(aa.status = 'Graduated', 1, 0), 2
-                            ),
-                            struct(
-                                e.vocational_enrollment_id,
-                                if(cte.status = 'Graduated', 1, 0),
-                                1
-                            )
-                        ]
-                    ) as cand
-                where cand.enrollment_id is not null
-                order by cand.is_completed desc, cand.degree_rank desc
-                limit 1
+            -- coalesce returns the first non-null in priority order: graduated
+            -- BA/AA/CTE, then any BA/AA/CTE. null when the student has none.
+            coalesce(
+                if(ba.status = 'Graduated', e.ba_enrollment_id, null),
+                if(aa.status = 'Graduated', e.aa_enrollment_id, null),
+                if(cte.status = 'Graduated', e.vocational_enrollment_id, null),
+                e.ba_enrollment_id,
+                e.aa_enrollment_id,
+                e.vocational_enrollment_id
             ) as postsec_completed_enrollment_id,
 
             coalesce(

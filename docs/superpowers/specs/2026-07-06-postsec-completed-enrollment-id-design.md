@@ -39,9 +39,8 @@ actually earned. KIPP Forward reporting needs a field that surfaces the
   2. Degree level — `BA` > `AA` > `CTE`.
 
   The candidate pool is exactly the three track picks, each with a distinct
-  degree level, so `(is_completed, degree_rank)` totally orders them and a
-  recency tiebreak is never reachable. `start_date` is therefore not part of the
-  pick.
+  degree level, so completed-tier then degree-level totally orders them — no
+  recency tiebreak is reachable, so `start_date` is not part of the pick.
 
 - **Output:** the id column plus the full parallel attribute set, mirroring the
   existing `ugrad_*` block down through the final `select`.
@@ -78,43 +77,32 @@ non-completed candidate ranked by degree level.
 Each of `ba` / `aa` / `cte` in the `enrollment_wide` CTE is already the best row
 within its track (chosen upstream by
 `rn_degree_desc = is_graduated desc, start_date desc`), and each is joined to
-`stg_kippadb__enrollment`, exposing `.status` and `.start_date`. So the
-completed-first pick is a compact `unnest`-of-structs scalar subquery placed
-beside the existing `ugrad_enrollment_id` case:
+`stg_kippadb__enrollment`, exposing `.status`. So the completed-first pick is a
+`coalesce` of guarded ids placed beside the existing `ugrad_enrollment_id` case
+— `coalesce` returns the first non-null in priority order:
 
 ```sql
-(
-    select cand.enrollment_id
-    from
-        unnest([
-            struct(
-                e.ba_enrollment_id as enrollment_id,
-                if(ba.status = 'Graduated', 1, 0) as is_completed,
-                3 as degree_rank
-            ),
-            struct(e.aa_enrollment_id, if(aa.status = 'Graduated', 1, 0), 2),
-            struct(
-                e.vocational_enrollment_id, if(cte.status = 'Graduated', 1, 0), 1
-            )
-        ]) as cand
-    where cand.enrollment_id is not null
-    order by cand.is_completed desc, cand.degree_rank desc
-    limit 1
+coalesce(
+    if(ba.status = 'Graduated', e.ba_enrollment_id, null),
+    if(aa.status = 'Graduated', e.aa_enrollment_id, null),
+    if(cte.status = 'Graduated', e.vocational_enrollment_id, null),
+    e.ba_enrollment_id,
+    e.aa_enrollment_id,
+    e.vocational_enrollment_id
 ) as postsec_completed_enrollment_id
 ```
 
 Notes:
 
-- `where cand.enrollment_id is not null` drops tracks the student never enrolled
-  in, so a student with no `BA`/`AA`/`CTE` yields `NULL`.
-- The `order by ... limit 1` is the pick mechanism inside a scalar subquery, not
-  cosmetic output ordering; the repo "no `ORDER BY`" rule does not apply. Will
-  confirm lint-clean with `trunk check`.
-- `degree_rank` is a distinct literal per candidate, so
-  `(is_completed, degree_rank)` fully orders the pool — there is no `start_date`
-  recency tiebreak to reach.
-- The literal `unnest([...])` is not a correlated join to another table, so it
-  is not subject to BigQuery's correlated-subquery restriction.
+- The graduated-first arms (`if(<x>.status = 'Graduated', ...)`) precede the
+  unguarded arms, so a completed enrollment always wins; within each tier the
+  arm order `BA → AA → CTE` encodes the degree-level preference.
+- A student with no `BA`/`AA`/`CTE` has all six arms null, so `coalesce` yields
+  `NULL` — aligned with `is_never_enrolled`.
+- This is the repo's blessed priority-pick form (see `src/dbt/CLAUDE.md` → SQL
+  conventions): no subquery and no `ORDER BY`, so the "no `ORDER BY`" rule is
+  satisfied rather than argued around. It is also only 1 level of function
+  nesting (`coalesce(if(...))`), within the readability limit.
 
 ### Attribute set
 

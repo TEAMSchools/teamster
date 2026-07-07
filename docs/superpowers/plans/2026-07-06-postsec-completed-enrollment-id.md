@@ -10,13 +10,13 @@
 returns a student's best post-secondary enrollment, preferring a completed
 (`Graduated`) enrollment over any in-progress or withdrawn one.
 
-**Architecture:** In the `enrollment_wide` CTE, add a compact
-`unnest`-of-structs scalar subquery beside the existing `ugrad_enrollment_id`
-CASE that ranks the three already-resolved track picks (`ba`/`aa`/`cte`) by
-completed-tier → degree level → recency. Carry the id into the final `select`
-and add two `stg_kippadb__enrollment` / `stg_kippadb__account` joins to surface
-the parallel attribute columns. Additive only — no existing column or consumer
-changes.
+**Architecture:** In the `enrollment_wide` CTE, add a `coalesce` of guarded ids
+beside the existing `ugrad_enrollment_id` CASE that ranks the three
+already-resolved track picks (`ba`/`aa`/`cte`) by completed-tier → degree level
+(`coalesce` returns the first non-null in priority order). Carry the id into the
+final `select` and add two `stg_kippadb__enrollment` / `stg_kippadb__account`
+joins to surface the parallel attribute columns. Additive only — no existing
+column or consumer changes.
 
 **Tech Stack:** dbt (BigQuery), `uv run dbt`, trunk (sqlfluff + yamllint).
 
@@ -57,7 +57,7 @@ ls src/dbt/kipptaf/target/prod/manifest.json \
 - Modify:
   `src/dbt/kipptaf/models/kippadb/intermediate/int_kippadb__enrollment_pivot.sql`
 
-- [ ] **Step 1: Add the pick subquery in `enrollment_wide`**
+- [ ] **Step 1: Add the pick in `enrollment_wide`**
 
 Insert this column immediately after the existing `ugrad_enrollment_id` CASE
 (currently ends `end as ugrad_enrollment_id,` at line 290), before the
@@ -65,35 +65,17 @@ Insert this column immediately after the existing `ugrad_enrollment_id` CASE
 `ba`/`aa`/`cte` are the already-joined `stg_kippadb__enrollment` picks.
 
 ```sql
-            (
-                select cand.enrollment_id
-                from
-                    unnest([
-                        struct(
-                            e.ba_enrollment_id as enrollment_id,
-                            if(ba.status = 'Graduated', 1, 0) as is_completed,
-                            3 as degree_rank,
-                            ba.start_date as start_date
-                        ),
-                        struct(
-                            e.aa_enrollment_id,
-                            if(aa.status = 'Graduated', 1, 0),
-                            2,
-                            aa.start_date
-                        ),
-                        struct(
-                            e.vocational_enrollment_id,
-                            if(cte.status = 'Graduated', 1, 0),
-                            1,
-                            cte.start_date
-                        )
-                    ]) as cand
-                where cand.enrollment_id is not null
-                order by
-                    cand.is_completed desc,
-                    cand.degree_rank desc,
-                    cand.start_date desc
-                limit 1
+            -- pick the student's single best post-secondary enrollment:
+            -- completed (Graduated) first, then degree level (BA > AA > CTE).
+            -- coalesce returns the first non-null in priority order: graduated
+            -- BA/AA/CTE, then any BA/AA/CTE. null when the student has none.
+            coalesce(
+                if(ba.status = 'Graduated', e.ba_enrollment_id, null),
+                if(aa.status = 'Graduated', e.aa_enrollment_id, null),
+                if(cte.status = 'Graduated', e.vocational_enrollment_id, null),
+                e.ba_enrollment_id,
+                e.aa_enrollment_id,
+                e.vocational_enrollment_id
             ) as postsec_completed_enrollment_id,
 ```
 
@@ -207,8 +189,7 @@ Immediately after the `ugrad_enrollment_id` entry (currently lines 18-19), add:
     Enrollment id of the student's best post-secondary enrollment across the BA,
     AA, and CTE track picks — preferring a completed (Graduated) enrollment over
     any in-progress or withdrawn one, then higher degree level (BA over AA over
-    CTE), then most recent start date. Null when the student has no BA, AA, or
-    CTE enrollment.
+    CTE). Null when the student has no BA, AA, or CTE enrollment.
 ```
 
 - [ ] **Step 2: Add the attribute column entries**
@@ -448,11 +429,11 @@ is green before requesting human review.
 
 ## Self-review
 
-- **Spec coverage:** candidate pool (Task 1 Step 1 — BA/AA/CTE structs);
-  completed = Graduated (`if(status = 'Graduated', ...)`); ranking order
-  (`order by is_completed desc, degree_rank desc, start_date desc`); full
-  attribute set (Task 1 Steps 3-4, Task 2); grain unchanged (Task 3 Step 4);
-  null when no BA/AA/CTE (Task 3 Step 5). All covered.
+- **Spec coverage:** candidate pool (Task 1 Step 1 — BA/AA/CTE arms); completed
+  = Graduated (`if(<x>.status = 'Graduated', ...)`); ranking order (graduated
+  arms before unguarded arms, `BA → AA → CTE` within each tier); full attribute
+  set (Task 1 Steps 3-4, Task 2); grain unchanged (Task 3 Step 4); null when no
+  BA/AA/CTE (Task 3 Step 5). All covered.
 - **Placeholder scan:** no TBD/TODO; all code and commands are concrete.
 - **Type consistency:** alias `pce`/`pcea` and column name
   `postsec_completed_enrollment_id` are used identically across the SQL joins,
