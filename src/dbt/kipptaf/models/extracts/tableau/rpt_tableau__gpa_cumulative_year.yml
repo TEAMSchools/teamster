@@ -1,0 +1,157 @@
+models:
+  - name: rpt_tableau__gpa_cumulative_year
+    description: >-
+      Year-grain cumulative GPA companion for the rebuilt gradebook Tableau
+      dashboard — one row per student and academic year with cumulative Y1 GPA
+      as of the end of that year, joined to that year's enrollment attributes
+      (demographics are as-of-that-year, not current). The current-year row is
+      the projected row (is_projected = true) and matches the main extract's
+      projected cumulative columns exactly. Related to
+      rpt_tableau__student_course_grades in Tableau on student_number. Miami
+      hard-excluded.
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns:
+              - student_number
+              - academic_year
+    columns:
+      - name: _dbt_source_relation
+        data_type: string
+        description: Source relation identifier from dbt_utils.union_relations.
+      - name: _dbt_source_project
+        data_type: string
+        description: District code location derived from `_dbt_source_relation`.
+      - name: studentid
+        data_type: int64
+        description:
+          The internal number and ID of the associated Students record.
+      - name: academic_year
+        data_type: int64
+        description: Academic year, start-year convention (2025 = SY25-26).
+      - name: schoolid
+        data_type: int64
+        description: School_Number of the year's primary enrollment school.
+      - name: grade_level
+        data_type: int64
+        description: Grade level in that academic year.
+      - name: is_projected
+        data_type: boolean
+        description: >-
+          False for completed years recomputed from stored grades; true for the
+          current-year row sourced from projected values.
+      - name: earned_credits_cum
+        data_type: float64
+        description: >-
+          Running earned credit hours through this academic year
+          (graduation-credit basis).
+      - name: potential_gpa_credits_cum
+        data_type: float64
+        description: >-
+          Running potential GPA credit hours through this academic year — the
+          cumulative GPA denominator.
+      - name: cumulative_y1_gpa
+        data_type: float64
+        description: Cumulative weighted Y1 GPA through this academic year.
+      - name: cumulative_y1_gpa_unweighted
+        data_type: float64
+        description: Cumulative unweighted Y1 GPA through this academic year.
+      - name: student_number
+        data_type: int64
+        description: District student number (Tableau relationship key).
+      - name: student_name
+        data_type: string
+        description: Student full name (last, first).
+      - name: academic_year_display
+        data_type: string
+        description: Display form of the academic year (e.g. 2025-26).
+      - name: region
+        data_type: string
+        description: District region in that year (Newark/Camden/Paterson).
+      - name: school_level
+        data_type: string
+        description: School level (ES/MS/HS) in that year.
+      - name: school
+        data_type: string
+        description: School name in that year.
+      - name: enroll_status
+        data_type: int64
+        description: Current PowerSchool enroll_status (0 active, 3 graduated).
+      - name: cohort
+        data_type: int64
+        description: Graduation cohort year.
+      - name: graduation_year
+        data_type: int64
+        description: Expected graduation year.
+      - name: gender
+        data_type: string
+        description: Student gender code.
+      - name: ethnicity
+        data_type: string
+        description: Student ethnicity code.
+      - name: advisory
+        data_type: string
+        description: Advisory/homeroom name in that year.
+      - name: year_in_school
+        data_type: int64
+        description: Years enrolled at the school as of that year.
+      - name: year_in_network
+        data_type: int64
+        description: Years enrolled in the network as of that year.
+      - name: rn_undergrad
+        data_type: int64
+        description: Row number over undergrad enrollments (1 = most recent).
+      - name: is_pathways
+        data_type: boolean
+        description: Self-contained (Pathways) program flag in that year.
+      - name: is_retained_year
+        data_type: boolean
+        description: Retained in that academic year.
+      - name: is_retained_ever
+        data_type: boolean
+        description: Ever retained as of that year.
+      - name: student_slideback
+        data_type: boolean
+        description: Student slideback flag from enrollment reporting.
+      - name: lunch_status
+        data_type: string
+        description: Free/reduced lunch status code in that year.
+      - name: lep_status
+        data_type: boolean
+        description: English learner status in that year.
+      - name: gifted_and_talented
+        data_type: string
+        description: Gifted and talented status in that year.
+      - name: iep_status
+        data_type: string
+        description: IEP status label in that year.
+      - name: is_504
+        data_type: boolean
+        description: Section 504 plan flag in that year.
+      - name: salesforce_id
+        data_type: string
+        description: KIPP Forward Salesforce contact id.
+      - name: ktc_cohort
+        data_type: int64
+        description: KIPP Through College cohort year.
+      - name: is_counseling_services
+        data_type: int64
+        description: Counseling services flag in that year.
+      - name: is_student_athlete
+        data_type: int64
+        description: Student athlete flag in that year.
+      - name: ada
+        data_type: float64
+        description: Average daily attendance in that year.
+      - name: ada_above_or_at_80
+        data_type: boolean
+        description: ADA at or above 80 percent in that year.
+      - name: hos
+        data_type: string
+        description: Head of school name in that year.
+      - name: school_leader
+        data_type: string
+        description: School leader name in that year.
+      - name: school_leader_tableau_username
+        data_type: string
+        description: School leader Tableau username (row-level security).
