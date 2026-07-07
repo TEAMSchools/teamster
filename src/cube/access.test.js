@@ -111,6 +111,111 @@ test("buildSecurityContext is null-safe for an unresolved viewer", () => {
   assert.deepEqual(ctx.reportee_staff_keys, []);
 });
 
+test("buildSecurityContext defaults allowed_abbreviations/allowed_department_groups to [] when omitted", () => {
+  const ctx = a.buildSecurityContext(null, []);
+  assert.deepEqual(ctx.allowed_abbreviations, []);
+  assert.deepEqual(ctx.allowed_department_groups, []);
+});
+
+test("buildSecurityContext passes through the precomputed allow-lists", () => {
+  const ctx = a.buildSecurityContext(
+    { staff_pii_scope: "all_in_scope" },
+    ["k1"],
+    ["A", "B"],
+    ["talent"],
+  );
+  assert.deepEqual(ctx.allowed_abbreviations, ["A", "B"]);
+  assert.deepEqual(ctx.allowed_department_groups, ["talent"]);
+});
+
+const LOCATION_UNIVERSE = [
+  { abbreviation: "A", region_key: "R1" },
+  { abbreviation: "B", region_key: "R1" },
+  { abbreviation: "C", region_key: "R2" },
+];
+
+test("computeAllowedAbbreviations: network scope returns every abbreviation", () => {
+  assert.deepEqual(
+    a.computeAllowedAbbreviations("network", "R1", "A", LOCATION_UNIVERSE),
+    ["A", "B", "C"],
+  );
+});
+
+test("computeAllowedAbbreviations: region scope returns only same-region abbreviations", () => {
+  assert.deepEqual(
+    a.computeAllowedAbbreviations("region", "R1", null, LOCATION_UNIVERSE),
+    ["A", "B"],
+  );
+  assert.deepEqual(
+    a.computeAllowedAbbreviations("region", "R2", null, LOCATION_UNIVERSE),
+    ["C"],
+  );
+});
+
+test("computeAllowedAbbreviations: school scope returns only the viewer's school", () => {
+  assert.deepEqual(
+    a.computeAllowedAbbreviations("school", "R1", "B", LOCATION_UNIVERSE),
+    ["B"],
+  );
+});
+
+test("computeAllowedAbbreviations: school scope with no location_abbreviation denies", () => {
+  assert.deepEqual(
+    a.computeAllowedAbbreviations("school", "R1", null, LOCATION_UNIVERSE),
+    [],
+  );
+});
+
+test("computeAllowedAbbreviations: none/undefined scope denies", () => {
+  assert.deepEqual(
+    a.computeAllowedAbbreviations("none", "R1", "A", LOCATION_UNIVERSE),
+    [],
+  );
+  assert.deepEqual(
+    a.computeAllowedAbbreviations(undefined, "R1", "A", LOCATION_UNIVERSE),
+    [],
+  );
+});
+
+test("computeAllowedAbbreviations: empty/undefined universe returns []", () => {
+  assert.deepEqual(a.computeAllowedAbbreviations("network", "R1", "A", []), []);
+  assert.deepEqual(
+    a.computeAllowedAbbreviations("network", "R1", "A", undefined),
+    [],
+  );
+});
+
+const DEPARTMENT_UNIVERSE = ["talent", "finance", "academics"];
+
+test("computeAllowedDepartmentGroups: all scope returns the full universe", () => {
+  assert.deepEqual(
+    a.computeAllowedDepartmentGroups("all", "talent", DEPARTMENT_UNIVERSE),
+    DEPARTMENT_UNIVERSE,
+  );
+});
+
+test("computeAllowedDepartmentGroups: own_group scope returns just the viewer's group", () => {
+  assert.deepEqual(
+    a.computeAllowedDepartmentGroups(
+      "own_group",
+      "talent",
+      DEPARTMENT_UNIVERSE,
+    ),
+    ["talent"],
+  );
+});
+
+test("computeAllowedDepartmentGroups: none/undefined scope denies", () => {
+  assert.deepEqual(
+    a.computeAllowedDepartmentGroups("none", "talent", DEPARTMENT_UNIVERSE),
+    [],
+  );
+  assert.deepEqual(
+    a.computeAllowedDepartmentGroups(undefined, "talent", DEPARTMENT_UNIVERSE),
+    [],
+  );
+});
+
 test("STAFF_PII_MEMBERS lists all gated sensitive columns", () => {
   assert.deepEqual(a.STAFF_PII_MEMBERS.sort(), [
     "birth_date",

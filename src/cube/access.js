@@ -85,11 +85,63 @@ function buildGroups(row) {
   return groups;
 }
 
+// The set of school abbreviations a viewer may see staff/students at, given
+// their location scope. `universe` = [{ abbreviation, region_key }, ...] (all
+// locations). network → every abbreviation; region → abbreviations in the
+// viewer's region; school → just the viewer's school; none/other → [] (deny).
+function computeAllowedAbbreviations(
+  locationScope,
+  regionKey,
+  locationAbbreviation,
+  universe,
+) {
+  const all = universe ?? [];
+  switch (locationScope) {
+    case "network":
+      return all.map((l) => l.abbreviation);
+    case "region":
+      return all
+        .filter((l) => l.region_key === regionKey)
+        .map((l) => l.abbreviation);
+    case "school":
+      return locationAbbreviation ? [locationAbbreviation] : [];
+    default:
+      return [];
+  }
+}
+
+// The department groups a viewer may see, given their department scope.
+// `universe` = all distinct department_group values. all → every group;
+// own_group → just the viewer's group; none/other → [] (deny).
+function computeAllowedDepartmentGroups(
+  deptScope,
+  departmentGroup,
+  deptUniverse,
+) {
+  switch (deptScope) {
+    case "all":
+      return deptUniverse ?? [];
+    case "own_group":
+      return departmentGroup ? [departmentGroup] : [];
+    default:
+      return [];
+  }
+}
+
 // Flattens the cached access row + reporting chain into the shape the
 // policies interpolate. Pure and null-safe: an unresolved viewer (no cached
 // row) gets empty groups/chain, not a thrown error. `email` is not a column on
 // the access row — the caller (resolveAccess) adds it to the context.
-function buildSecurityContext(row, reporteeStaffKeys) {
+// `allowedAbbreviations` / `allowedDepartmentGroups` are precomputed by the
+// caller (resolveAccess) via computeAllowedAbbreviations /
+// computeAllowedDepartmentGroups — domain-agnostic allow-lists later
+// interpolated into access_policy row_level filters (Task 5b).
+function buildSecurityContext(
+  row,
+  reporteeStaffKeys,
+  allowedAbbreviations,
+  allowedDepartmentGroups,
+) {
   return {
     groups: buildGroups(row),
     student_location_scope: row?.student_location_scope ?? "none",
@@ -99,6 +151,8 @@ function buildSecurityContext(row, reporteeStaffKeys) {
     department_group: row?.department_group ?? null,
     job_function_level: row?.job_function_level ?? null,
     reportee_staff_keys: reporteeStaffKeys ?? [],
+    allowed_abbreviations: allowedAbbreviations ?? [],
+    allowed_department_groups: allowedDepartmentGroups ?? [],
   };
 }
 
@@ -108,6 +162,8 @@ module.exports = {
   queryMembers,
   buildGroups,
   buildSecurityContext,
+  computeAllowedAbbreviations,
+  computeAllowedDepartmentGroups,
   STAFF_PII_MEMBERS,
   STAFF_SENSITIVE_SCOPE_BY_MEMBER,
 };

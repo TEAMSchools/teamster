@@ -3,6 +3,12 @@ const jwt = require("jsonwebtoken");
 
 const groupCache = new Map(); // email → { ctx, expiresAt }
 
+// Global (not per-email) cache of the "universes" computeAllowedAbbreviations
+// / computeAllowedDepartmentGroups need: every location abbreviation+region
+// and every distinct department_group. Same midnight-ET expiry as
+// groupCache — one shared entry, not one per viewer.
+let universeCache = null; // { data: { locations: [...], deptGroups: [...] }, expiresAt }
+
 function nextMidnightEastern() {
   const now = new Date();
   const parts = Object.fromEntries(
@@ -26,6 +32,31 @@ function nextMidnightEastern() {
 // All access-resolution logic (isStudentMember / isStaffMember, group building,
 // row filters) lives in access.js (pure, unit-tested). cube.js owns only the
 // BigQuery identity reads + cache below.
+
+// Fetches the domain-agnostic "universes" (all location abbreviations+regions,
+// all distinct department groups) that access.computeAllowedAbbreviations /
+// computeAllowedDepartmentGroups turn into per-viewer allow-lists. Cached
+// globally (not per-email) until next midnight ET.
+async function loadUniverses(bq) {
+  if (universeCache && universeCache.expiresAt > Date.now())
+    return universeCache.data;
+  const [locs] = await bq.query({
+    query: "SELECT abbreviation, region_key FROM `kipptaf_marts.dim_locations`",
+  });
+  const [deps] = await bq.query({
+    query:
+      "SELECT DISTINCT department_group FROM `kipptaf_marts.dim_staff_cube_access` WHERE department_group IS NOT NULL",
+  });
+  const data = {
+    locations: locs.map((r) => ({
+      abbreviation: r.abbreviation,
+      region_key: r.region_key,
+    })),
+    deptGroups: deps.map((r) => r.department_group),
+  };
+  universeCache = { data, expiresAt: nextMidnightEastern() };
+  return data;
+}
 
 // Resolves a viewer's email to an enriched securityContext (access.js
 // buildSecurityContext output, including `groups`). Shared by checkAuth
@@ -65,7 +96,24 @@ async function resolveAccess(email) {
       });
       reporteeStaffKeys = rc.map((r) => r.reportee_staff_key);
     }
-    const ctx = access.buildSecurityContext(row, reporteeStaffKeys);
+    const universes = await loadUniverses(bq);
+    const allowedAbbreviations = access.computeAllowedAbbreviations(
+      row?.staff_location_scope,
+      row?.region_key,
+      row?.location_abbreviation,
+      universes.locations,
+    );
+    const allowedDepartmentGroups = access.computeAllowedDepartmentGroups(
+      row?.staff_department_scope,
+      row?.department_group,
+      universes.deptGroups,
+    );
+    const ctx = access.buildSecurityContext(
+      row,
+      reporteeStaffKeys,
+      allowedAbbreviations,
+      allowedDepartmentGroups,
+    );
     groupCache.set(email, { ctx, expiresAt: nextMidnightEastern() });
     return ctx;
   } catch (err) {
