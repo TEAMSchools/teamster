@@ -36,6 +36,17 @@ The two-scope plan (2026-06-24) landed on this branch: dbt models
   for a real JWT; REST /load real data (staff_work_history=4638) → full auth
   path works.
 
+- Task 4: complete (commits 06471ada2..5de6d907d, review clean after 1 fix,
+  live validated). Split staff_detail → staff_directory (open, no PII) +
+  staff_pii (6 PII + identity + Task-5 remit members: staff_key,
+  job_function_level, job_function_code, department_group, locations_abbreviation,
+  locations_region_key; interim fail-closed placeholder policy group "staff-pii").
+  staff_detail deleted. Live /meta: split confirmed, no PII leak, region_key
+  resolves. Fix: foldered is_primary_position/status_name.
+  Minor deferred: staff_directory "Staff" folder omits job_function_* /
+  department_group (PRE-EXISTING, carried from staff_detail); CLAUDE.md "View
+  access policies" still describes old staff_detail (→ Task 7 docs).
+
 VALIDATION STRATEGY CHANGE (Task 3 live finding):
 - SQL API + Tesseract (CUBEJS_TESSERACT_SQL_PLANNER=true) FAILS on every JOINED
   view with "Failed to deserialize ... JoinDefinitionStatic" — uniform, not
@@ -60,8 +71,47 @@ Minor findings for FINAL review (not fixed, deferred):
 - src/cube/CLAUDE.md security-model section stale (updated in Task 7).
 - buildSecurityContext tests assert a subset, not full deepStrictEqual (per brief).
 
+TASK 5 DESIGN — Option 3 (precompute allow-lists), user-approved. Remit is
+shared by ALL 4 sensitive staff domains (pii + forward-compat comp/obs/benefits);
+only staff_pii implemented now (YAGNI). Split into 5a (machinery) + 5b (views):
+
+5a — access.js + cube.js precompute (reopens Task 2/3 additively):
+  - access.js pure helpers (unit-tested):
+    computeAllowedAbbreviations(locationScope, regionKey, locationAbbreviation, universe)
+      network→all abbrevs; region→abbrevs where region_key===regionKey;
+      school→[locationAbbreviation]; none→[].  (universe = [{abbreviation,region_key}])
+    computeAllowedDepartmentGroups(deptScope, departmentGroup, deptUniverse)
+      all→deptUniverse; own_group→[departmentGroup]; none→[].
+    buildSecurityContext gains args allowedAbbreviations, allowedDepartmentGroups
+      → fields allowed_abbreviations, allowed_department_groups (default []).
+    Uses staff_location_scope + staff_department_scope (NOT exposed before — read
+    from row inside resolveAccess, passed to the helpers).
+  - cube.js resolveAccess: fetch+cache GLOBALLY (once, not per-email) two
+    universes: locations = SELECT abbreviation,region_key FROM
+    kipptaf_marts.dim_locations; deptGroups = SELECT DISTINCT department_group
+    FROM kipptaf_marts.dim_staff_cube_access. Compute the two allow-lists via the
+    helpers from the viewer row's staff_location_scope/staff_department_scope,
+    pass to buildSecurityContext. Dev CUBE_GROUP_MAP bypass → empty lists.
+5b — view access_policy (validate via REST /load):
+  - student views: 3 policies matching groups student-region /-school /-network:
+    region→locations.region_key equals {region_key}; school→locations.abbreviation
+    equals {location_abbreviation}; network→no row_level. (single-value equals)
+  - staff_pii.yml: replace interim placeholder with 4 policies (group
+    staff-pii-<pii_scope>), member_level includes "*", row_level (equals+array = IN):
+    all_in_scope: AND(locations.abbreviation IN {allowed_abbreviations},
+                      staff.department_group IN {allowed_department_groups})
+    teaching_staff: above AND staff.job_function_code IN ['TEACH','TIR']
+    reporting_chain: staff.staff_key IN {reportee_staff_keys}
+    reporting_chain_or_below_rank: OR(AND(abbrev IN, dept IN,
+      staff.job_function_level gt {job_function_level}), staff.staff_key IN chain)
+    none → no group → default-deny (no policy).
+  - member refs are cube.members (locations.abbreviation, staff.department_group,
+    staff.job_function_code/level/staff_key) — all exposed by staff_pii (Task 4).
+  - array interpolation form: values: "{ securityContext.allowed_abbreviations }"
+    (unbracketed); single value: values: ["{ securityContext.region_key }"].
+
 ## Remaining (this plan)
-- Task 4: split staff_detail into staff_directory + staff_pii.
-- Task 5: row_level access_policy on all gated views (+ default-deny validation).
+- Task 5a: precompute allow-lists in access.js + cube.js (unit-tested).
+- Task 5b: row_level access_policy on student + staff_pii views (REST /load val).
 - Task 6: FOLDED INTO TASK 3.
 - Task 7: validation matrix + docs.
