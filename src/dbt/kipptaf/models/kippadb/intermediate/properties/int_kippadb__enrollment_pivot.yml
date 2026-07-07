@@ -1,8 +1,17 @@
 models:
   - name: int_kippadb__enrollment_pivot
+    description:
+      One row per KIPP alumni student, pivoting the student's post-secondary and
+      employment enrollments into track-specific picks (BA, AA, CTE, HS,
+      graduate, undergraduate, completed post-secondary, current, employment)
+      alongside the attributes of each picked enrollment.
     columns:
       - name: student
         data_type: string
+        data_tests:
+          - unique:
+              config:
+                severity: error
       - name: ba_enrollment_id
         data_type: string
       - name: aa_enrollment_id
@@ -17,6 +26,14 @@ models:
         data_type: string
       - name: ugrad_enrollment_id
         data_type: string
+      - name: postsec_completed_enrollment_id
+        data_type: string
+        description:
+          Enrollment id of the student's best post-secondary enrollment across
+          the BA, AA, and CTE track picks — preferring a completed (Graduated)
+          enrollment over any in-progress or withdrawn one, then higher degree
+          level (BA over AA over CTE). Null when the student has no BA, AA, or
+          CTE enrollment.
       - name: cur_enrollment_id
         data_type: string
       - name: ba_school_name
@@ -229,6 +246,94 @@ models:
         data_type: string
       - name: ugrad_adjusted_6_year_minority_graduation_rate
         data_type: numeric
+      - name: postsec_completed_school_name
+        data_type: string
+        description:
+          Name of the enrollment identified by postsec_completed_enrollment_id.
+      - name: postsec_completed_pursuing_degree_type
+        data_type: string
+        description:
+          Pursuing degree type of the enrollment identified by
+          postsec_completed_enrollment_id.
+      - name: postsec_completed_status
+        data_type: string
+        description:
+          Status of the enrollment identified by
+          postsec_completed_enrollment_id.
+      - name: postsec_completed_start_date
+        data_type: date
+        description:
+          Start date of the enrollment identified by
+          postsec_completed_enrollment_id.
+      - name: postsec_completed_actual_end_date
+        data_type: date
+        description:
+          Actual end date of the enrollment identified by
+          postsec_completed_enrollment_id.
+      - name: postsec_completed_anticipated_graduation
+        data_type: date
+        description:
+          Anticipated graduation date of the enrollment identified by
+          postsec_completed_enrollment_id.
+      - name: postsec_completed_account_type
+        data_type: string
+        description:
+          Account type of the enrollment identified by
+          postsec_completed_enrollment_id.
+      - name: postsec_completed_major
+        data_type: string
+        description:
+          Major of the enrollment identified by postsec_completed_enrollment_id.
+      - name: postsec_completed_major_area
+        data_type: string
+        description:
+          Major area of the enrollment identified by
+          postsec_completed_enrollment_id.
+      - name: postsec_completed_college_major_declared
+        data_type: boolean
+        description:
+          Whether a college major was declared for the enrollment identified by
+          postsec_completed_enrollment_id.
+      - name: postsec_completed_date_last_verified
+        data_type: date
+        description:
+          Date the enrollment identified by postsec_completed_enrollment_id was
+          last verified.
+      - name: postsec_completed_credits_required_for_graduation
+        data_type: numeric
+        description:
+          Credits required for graduation for the enrollment identified by
+          postsec_completed_enrollment_id.
+      - name: postsec_completed_account_name
+        data_type: string
+        description:
+          Account name for the school of the enrollment identified by
+          postsec_completed_enrollment_id.
+      - name: postsec_completed_billing_state
+        data_type: string
+        description:
+          Billing state for the school of the enrollment identified by
+          postsec_completed_enrollment_id.
+      - name: postsec_completed_nces_id
+        data_type: string
+        description:
+          NCES id for the school of the enrollment identified by
+          postsec_completed_enrollment_id.
+      - name: postsec_completed_act_composite_25_75
+        data_type: string
+        description:
+          ACT composite 25th-75th percentile range for the school of the
+          enrollment identified by postsec_completed_enrollment_id.
+      - name: postsec_completed_competitiveness_ranking
+        data_type: string
+        description:
+          Competitiveness ranking for the school of the enrollment identified by
+          postsec_completed_enrollment_id.
+      - name: postsec_completed_adjusted_6_year_minority_graduation_rate
+        data_type: numeric
+        description:
+          Adjusted 6-year minority graduation rate for the school of the
+          enrollment identified by postsec_completed_enrollment_id.
       - name: is_never_enrolled
         data_type: boolean
         description:

@@ -185,6 +185,12 @@ file; domain specifics live in the nearest subdirectory CLAUDE.md.
   Verify each convention claim against existing models before applying — its
   findings are advisory, and `git grep` settles it faster than complying.
 
+- **A dispatched code-review subagent's "confirmed non-issue" dismissals aren't
+  authoritative** — one over-read the `unnest` scalar-aggregate carve-out to
+  bless an `order by ... limit 1` pick that violates the SQL guide. Verify a
+  subagent's convention claims (dismissals as much as flags) against the guide
+  text + `git grep` before relaying.
+
 - **A PR's CI lives on two disjoint surfaces**: dbt Cloud is a commit _status_
   (`pull_request_read get_status` / `gh api commits/<sha>/status`); Trunk /
   CodeQL / `claude` are _check runs_ (`get_check_runs` /
