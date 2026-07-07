@@ -195,6 +195,56 @@ Put the verdict (works / which construct fails + chosen fallback) in the commit
 body. **Do not proceed to Task 5's primary form if the array or nested-filter
 check failed — use its fallback branch.**
 
+#### Task 1 Verdict (recorded 2026-07-07)
+
+Probed via the SQL API (Tesseract planner) against a throwaway `spike_access`
+cube. Results:
+
+- **(a) Array-valued `securityContext` interpolation — WORKS.** The unbracketed
+  string form `values: "{ securityContext.reportee_staff_keys }"` expands to a
+  correct `IN (...)` list. (Scalar interpolation uses the bracketed form
+  `values: ["{ securityContext.x }"]`.)
+- **(b) Nested `or`/`and` in `row_level` — WORKS.**
+- **(c) Multi-policy combination — OR / UNION, not AND.** Two `access_policy`
+  entries the same viewer matches are **unioned** (permissive), not intersected.
+  The plan's original expectation (`[k1, k3]` via AND) was wrong; the two-policy
+  probe returned all rows because the broad policy's union swallowed the narrow
+  one.
+- **(d) `conditions.if` with a `==` comparison — DOES NOT COMPILE.** Cube routes
+  the `{ ... }` in `conditions.if` through a Python-expression parser that
+  rejects `==`
+  (`Unsupported Python multiple children node: Comp_opContext: ==`). Cube's
+  documented `conditions.if` form is a bare **truthy reference**
+  (`if: "{ userAttributes.is_full_time_employee }"`), never a comparison.
+- **(e) `conditions.if` as a truthy reference — WORKS**, and **default-deny
+  holds**: a truthy value applies the policy; a falsy/undefined value skips it,
+  and when no policy on a cube matches, the query returns zero rows.
+
+Spike artifact (not a real-view concern): a **leading-underscore cube name**
+(`_spike_access`) breaks Tesseract's SQL-API alias resolution
+(`_spike_access__staff_key` "member name not found"); renaming to `spike_access`
+fixed it. Real cubes/views carry no leading underscore.
+
+Still open (untestable on local Core): whether the **Cube Cloud** surface
+exposes `securityContext.` or `userAttributes.` for interpolation. Local Core
+dev uses `securityContext.` and it works; confirm on Cube Cloud Dev Mode /
+staging and swap the token uniformly if Cloud requires `userAttributes.`.
+
+**Consequence for Tasks 2 + 5 (revised design, NOT the spec §R4 queryRewrite
+fallback):** because `==` in `conditions.if` does not compile, the enum
+comparison moves into JS `buildSecurityContext` (Task 2), which emits mutually
+exclusive **boolean flags** per scope value (e.g. `student_scope_is_region`,
+`student_scope_is_school`, `student_scope_is_network`;
+`staff_pii_scope_is_reporting_chain`, `staff_pii_scope_is_all_in_scope`, …).
+Task 5 gates each policy on a truthy flag
+(`conditions: - if: "{ securityContext.<flag> }"`). The flags derive from a
+single enum, so at most one is true per viewer — the OR/union combination (c) is
+therefore safe (only one policy is ever active), and `none` scope leaves every
+flag false → default-deny (e). This keeps all RLS in `access_policy` with no
+residual `queryRewrite`, staying faithful to the Global Constraints. Array/
+nested `row_level` filters (a, b) are used as the plan's Task 5 primary form
+describes.
+
 ---
 
 ### Task 2: `access.js` — `buildSecurityContext` (pure, unit-tested)
