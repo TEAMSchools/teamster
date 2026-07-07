@@ -1,0 +1,85 @@
+views:
+  - name: staff_pii
+    description: >-
+      Sensitive staff PII — personal contact info, date of birth, and
+      demographics — split out of the open staff directory (see
+      staff_directory). One row per employee x employment period; always apply a
+      date filter or each period fans out to one row per calendar day in its
+      effective range. Filter is_primary_position = true and status_name =
+      'Active' to see each current employee once.
+
+      Row-level access is remit-scoped: a viewer only sees rows for staff within
+      their location/department remit (added in Task 5's row_level policy).
+      job_function_level, job_function_code, and department_group are exposed
+      here because the remit filter matches on them; abbreviation and region_key
+      are exposed because the remit filter also scopes by location.
+
+    cubes:
+      - join_path: staff_work_history
+        includes:
+          - count_employees
+          - is_primary_position
+          - status_name
+
+      - join_path: staff_work_history.dates
+        prefix: true
+        includes:
+          - date_day
+          - academic_year
+
+      - join_path: staff_work_history.staff
+        prefix: false
+        includes:
+          - staff_key
+          - full_name
+          - personal_email
+          - personal_cell_phone
+          - birth_date
+          - gender_identity
+          - race
+          - is_hispanic
+          - job_function_level
+          - job_function_code
+          - department_group
+
+      - join_path: staff_work_history.locations
+        prefix: true
+        includes:
+          - abbreviation
+          - region_key
+
+    meta:
+      folders:
+        - name: Date
+          members:
+            - dates_date_day
+            - dates_academic_year
+        - name: Staff
+          members:
+            - staff_key
+            - full_name
+            - personal_email
+            - personal_cell_phone
+            - birth_date
+            - gender_identity
+            - race
+            - is_hispanic
+            - job_function_level
+            - job_function_code
+            - department_group
+        - name: Location
+          members:
+            - locations_abbreviation
+            - locations_region_key
+
+    access_policy:
+      # INTERIM PLACEHOLDER — deliberately fail-closed. buildGroups now emits
+      # scope-specific groups (staff-pii-<scope>), never the bare "staff-pii"
+      # string, so no viewer currently matches this block and every query
+      # against this view is denied. This is the intended intermediate state:
+      # Task 5 replaces this single block with per-scope-group policies
+      # (staff-pii-<scope>) that each carry a row_level filter scoped to the
+      # viewer's remit. Do not deploy this view to production as-is.
+      - group: staff-pii
+        member_level:
+          includes: "*"
