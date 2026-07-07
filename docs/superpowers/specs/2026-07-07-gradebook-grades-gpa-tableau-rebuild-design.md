@@ -135,8 +135,10 @@ if not, ship excluded with a `TODO` naming the gap.
 Both models (rpt-layer requirements: contract enforced + uniqueness):
 
 - Main view: `dbt_utils.unique_combination_of_columns` over
-  (`_dbt_source_relation`, `studentid`, `academic_year`, `quarter`, `sectionid`,
-  `category_name_code`). NULL `sectionid` (no-course students) and NULL category
+  (`_dbt_source_relation`, `studentid`, `academic_year`, `quarter`,
+  `course_number`, `category_name_code`) — `course_number` is the grades join
+  key (course enrollments are deduped to one row per student x year x
+  course_number). NULL `course_number` (no-course students) and NULL category
   (Y1 rows) group as equal values — verify no collisions in validation.
 - Companion: `dbt_utils.unique_combination_of_columns` over (`student_number`,
   `academic_year`).
