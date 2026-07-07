@@ -77,13 +77,60 @@ views:
             - locations_region_key
 
     access_policy:
-      # INTERIM PLACEHOLDER — deliberately fail-closed. buildGroups now emits
-      # scope-specific groups (staff-pii-<scope>), never the bare "staff-pii"
-      # string, so no viewer currently matches this block and every query
-      # against this view is denied. This is the intended intermediate state:
-      # Task 5 replaces this single block with per-scope-group policies
-      # (staff-pii-<scope>) that each carry a row_level filter scoped to the
-      # viewer's remit. Do not deploy this view to production as-is.
-      - group: staff-pii
+      # Row-level staff-PII remit (was queryRewrite.staffSensitiveFilters). One
+      # policy per staff_pii_scope; buildGroups emits exactly one staff-pii-<scope>
+      # group per viewer. The remit (location ∩ department) is precomputed into
+      # securityContext.allowed_abbreviations / allowed_department_groups
+      # (resolveAccess), so an empty allow-list => IN () => zero rows (fail-closed).
+      - group: staff-pii-all_in_scope
         member_level:
           includes: "*"
+        row_level:
+          filters:
+            - member: locations.abbreviation
+              operator: equals
+              values: "{ securityContext.allowed_abbreviations }"
+            - member: staff.department_group
+              operator: equals
+              values: "{ securityContext.allowed_department_groups }"
+      - group: staff-pii-teaching_staff
+        member_level:
+          includes: "*"
+        row_level:
+          filters:
+            - member: locations.abbreviation
+              operator: equals
+              values: "{ securityContext.allowed_abbreviations }"
+            - member: staff.department_group
+              operator: equals
+              values: "{ securityContext.allowed_department_groups }"
+            - member: staff.job_function_code
+              operator: equals
+              values: [TEACH, TIR]
+      - group: staff-pii-reporting_chain
+        member_level:
+          includes: "*"
+        row_level:
+          filters:
+            - member: staff.staff_key
+              operator: equals
+              values: "{ securityContext.reportee_staff_keys }"
+      - group: staff-pii-reporting_chain_or_below_rank
+        member_level:
+          includes: "*"
+        row_level:
+          filters:
+            - or:
+                - and:
+                    - member: locations.abbreviation
+                      operator: equals
+                      values: "{ securityContext.allowed_abbreviations }"
+                    - member: staff.department_group
+                      operator: equals
+                      values: "{ securityContext.allowed_department_groups }"
+                    - member: staff.job_function_level
+                      operator: gt
+                      values: ["{ securityContext.job_function_level }"]
+                - member: staff.staff_key
+                  operator: equals
+                  values: "{ securityContext.reportee_staff_keys }"

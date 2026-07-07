@@ -234,8 +234,28 @@ views:
             - is_dropped_course
 
     access_policy:
-      # Single student tier — location-scoped via queryRewrite. Any viewer with
-      # student access sees all fields, including PII (no separate PII tier).
-      - group: student
+      # Row-level location scoping (was queryRewrite.studentRowFilters). A viewer
+      # holds exactly one student-<scope> group (buildGroups); none => no group =>
+      # default-deny. Filter members resolve through the locations join even
+      # though region_key is not an exposed member (the old queryRewrite filtered
+      # locations.region_key the same way).
+      - group: student-region
         member_level:
           includes: "*"
+        row_level:
+          filters:
+            - member: locations.region_key
+              operator: equals
+              values: ["{ securityContext.region_key }"]
+      - group: student-school
+        member_level:
+          includes: "*"
+        row_level:
+          filters:
+            - member: locations.abbreviation
+              operator: equals
+              values: ["{ securityContext.location_abbreviation }"]
+      - group: student-network
+        member_level:
+          includes: "*"
+        # network: no row_level (sees all locations)
