@@ -10,6 +10,7 @@ models:
       is hard-excluded (region unsupported in the rebuilt dashboard) and
       Paterson is pending gradebook data (TODO(#4340)).
     data_tests:
+      # TODO(#3915): returns to error when the storedgrades double-write cleanup completes
       - dbt_utils.unique_combination_of_columns:
           arguments:
             combination_of_columns:
