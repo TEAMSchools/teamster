@@ -1,6 +1,6 @@
 const access = require("./access");
 
-const groupCache = new Map(); // email → { groups, row, reporteeStaffKeys, expiresAt }
+const groupCache = new Map(); // email → { ctx, expiresAt }
 
 function nextMidnightEastern() {
   const now = new Date();
@@ -25,6 +25,48 @@ function nextMidnightEastern() {
 // All access-resolution logic (isStudentMember / isStaffMember, group building,
 // row filters) lives in access.js (pure, unit-tested). cube.js owns only the
 // BigQuery identity reads + cache below.
+
+// Resolves a viewer's email to an enriched securityContext (access.js
+// buildSecurityContext output, including `groups`). Shared by checkAuth
+// (REST/MCP) and checkSqlAuth (SQL API) so both auth paths populate the same
+// shape. Cached per-email until next midnight ET.
+async function resolveAccess(email) {
+  if (!email) return access.buildSecurityContext(null, []);
+  const cached = groupCache.get(email);
+  if (cached && cached.expiresAt > Date.now()) return cached.ctx;
+
+  // Local dev bypass (unchanged intent): CUBE_GROUP_MAP supplies groups only.
+  if (process.env.NODE_ENV !== "production" && process.env.CUBE_GROUP_MAP) {
+    const map = JSON.parse(process.env.CUBE_GROUP_MAP);
+    const ctx = {
+      ...access.buildSecurityContext(null, []),
+      groups: map[email] ?? [],
+    };
+    groupCache.set(email, { ctx, expiresAt: nextMidnightEastern() });
+    return ctx;
+  }
+
+  const { BigQuery } = require("@google-cloud/bigquery");
+  const bq = new BigQuery();
+  const [rows] = await bq.query({
+    query:
+      "SELECT * FROM `kipptaf_marts.dim_staff_cube_access` WHERE google_email = @email LIMIT 1",
+    params: { email },
+  });
+  const row = rows[0] ?? null;
+  let reporteeStaffKeys = [];
+  if (row?.staff_key) {
+    const [rc] = await bq.query({
+      query:
+        "SELECT reportee_staff_key FROM `kipptaf_marts.dim_staff_reporting_chain` WHERE manager_staff_key = @k",
+      params: { k: row.staff_key },
+    });
+    reporteeStaffKeys = rc.map((r) => r.reportee_staff_key);
+  }
+  const ctx = access.buildSecurityContext(row, reporteeStaffKeys);
+  groupCache.set(email, { ctx, expiresAt: nextMidnightEastern() });
+  return ctx;
+}
 
 // Convention for snapshot cubes: cumulative daily flags that overcount without
 // a point-in-time anchor. All snapshot cubes expose these three dimensions.
@@ -80,131 +122,32 @@ module.exports = {
     database: "kipptaf_marts",
   }),
 
-  contextToGroups: async ({ securityContext }) => {
-    const email =
-      securityContext?.email ??
-      securityContext?.cubeCloud?.userAttributes?.email;
-    if (!email) return [];
+  contextToGroups: async ({ securityContext }) => securityContext?.groups ?? [],
 
-    // Local dev only: CUBE_GROUP_MAP bypasses the BigQuery reads, supplying the
-    // column-visibility tiers directly. row stays null, so the queryRewrite
-    // row filters default-deny — unset CUBE_GROUP_MAP to exercise real
-    // row-level scoping against kipptaf_marts. Never set in Cube Cloud
-    // (see docs/guides/cube.md).
-    if (process.env.NODE_ENV !== "production" && process.env.CUBE_GROUP_MAP) {
-      try {
-        const map = JSON.parse(process.env.CUBE_GROUP_MAP);
-        const groups = map[email] ?? [];
-        groupCache.set(email, {
-          groups,
-          row: null,
-          reporteeStaffKeys: [],
-          expiresAt: nextMidnightEastern(),
-        });
-        return groups;
-      } catch (err) {
-        console.error("CUBE_GROUP_MAP is not valid JSON:", err.message);
-        return [];
-      }
-    }
-
-    const cached = groupCache.get(email);
-    if (cached && cached.expiresAt > Date.now()) return cached.groups;
-
-    // HR-derived access: resolve the viewer's email to their current-role
-    // access row (dim_staff_cube_access) and their reporting chain
-    // (dim_staff_reporting_chain). access.js turns these into Cube groups +
-    // queryRewrite filters. No Google Admin Directory API.
-    try {
-      const { BigQuery } = require("@google-cloud/bigquery");
-      const bq = new BigQuery();
-
-      // 1. email → access row (one active+primary row, keyed on staff_key).
-      const [accessRows] = await bq.query({
-        query: `
-          SELECT
-            staff_key,
-            region_key,
-            location_abbreviation,
-            department_group,
-            job_function_level,
-            student_location_scope,
-            staff_location_scope,
-            staff_department_scope,
-            staff_pii_scope,
-            staff_compensation_scope,
-            staff_observations_scope,
-            staff_benefits_scope
-          FROM kipptaf_marts.dim_staff_cube_access
-          WHERE google_email = @email
-          LIMIT 1`,
-        params: { email },
-      });
-      const row = accessRows[0] ?? null;
-
-      // 2. reporting chain (direct + indirect reports, incl. the depth-0 self
-      //    pair) keyed on the resolved staff_key.
-      let reporteeStaffKeys = [];
-      if (row?.staff_key) {
-        const [reporteeRows] = await bq.query({
-          query: `
-            SELECT reportee_staff_key
-            FROM kipptaf_marts.dim_staff_reporting_chain
-            WHERE manager_staff_key = @staffKey`,
-          params: { staffKey: row.staff_key },
-        });
-        reporteeStaffKeys = reporteeRows.map((r) => r.reportee_staff_key);
-      }
-
-      const groups = access.buildGroups(row);
-      groupCache.set(email, {
-        groups,
-        row,
-        reporteeStaffKeys,
-        expiresAt: nextMidnightEastern(),
-      });
-      return groups;
-    } catch (err) {
-      console.error(`contextToGroups failed for ${email}:`, err);
-      return []; // default deny on failure
-    }
+  checkAuth: async (req, auth) => {
+    // auth is the decoded JWT payload; email is the only trusted claim.
+    const email = auth?.email;
+    req.securityContext = await resolveAccess(email);
   },
 
-  queryRewrite: (query, { securityContext }) => {
+  checkSqlAuth: async (req, user, password) => {
     const email =
-      securityContext?.email ??
-      securityContext?.cubeCloud?.userAttributes?.email;
-    const cached = email ? groupCache.get(email) : null;
-    const fresh = cached && cached.expiresAt > Date.now() ? cached : null;
-    const row = fresh?.row ?? null;
-    const reporteeStaffKeys = fresh?.reporteeStaffKeys ?? [];
-    const groups = fresh?.groups ?? [];
+      (process.env.NODE_ENV !== "production" &&
+        process.env.CUBE_SQL_DEV_EMAIL) ||
+      user;
+    // Cube validates the presented password against the RETURNED one — returning
+    // null rejects every connection (Task 1 verdict). Return the server-known
+    // SQL password (Cube's canonical checkSqlAuth pattern); RLS identity comes
+    // from securityContext.email, not the SQL user. `password` (the presented
+    // value) is absent on SET-USER re-auth flows, so do not compare against it.
+    return {
+      password: process.env.CUBEJS_SQL_PASSWORD,
+      securityContext: await resolveAccess(email),
+    };
+  },
 
-    // Strip student members entirely when the viewer has no student access.
-    const hasStudentAccess = groups.includes("student");
-    if (!hasStudentAccess) {
-      query = {
-        ...query,
-        dimensions: (query.dimensions ?? []).filter(
-          (d) => !access.isStudentMember(d),
-        ),
-        measures: (query.measures ?? []).filter(
-          (m) => !access.isStudentMember(m),
-        ),
-      };
-    }
-
-    const members = access.queryMembers(query);
+  queryRewrite: (query) => {
     const filters = [...(query.filters ?? [])];
-
-    if (members.some(access.isStudentMember)) {
-      filters.push(...access.studentRowFilters(row));
-    }
-    if (members.some(access.isStaffMember)) {
-      filters.push(
-        ...access.staffSensitiveFilters(query, row, reporteeStaffKeys),
-      );
-    }
 
     // Snapshot anchor guard: for cubes with cumulative daily flags, inject
     // the appropriate period-end anchor when the query has none.
