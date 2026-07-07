@@ -141,7 +141,7 @@ sources. Multiple space-separated selectors work in one call:
 `select: pearson.src_pearson__njsla pearson.src_pearson__njsla_science`.
 
 `stage_external_sources` is a `dbt run-operation` — `--threads` doesn't apply.
-Running it in parallel across all 5 district projects exhausts BigQuery's
+Running it in parallel across all five `kipp*` projects exhausts BigQuery's
 `INFORMATION_SCHEMA.simple_rate.user` quota (429). Serialize across projects, or
 run only the project you need.
 
@@ -627,7 +627,9 @@ and enr.entrydate <= cc.dateenrolled
 and enr.exitdate > cc.dateenrolled
 ```
 
-### Nullable surrogate keys
+### Row picking, dedup & surrogate keys
+
+#### Nullable surrogate keys
 
 `dbt_utils.generate_surrogate_key()` hashes NULL inputs into a deterministic
 placeholder string — it never returns NULL. When a surrogate key column can be
@@ -647,7 +649,7 @@ dimension and fail.
 Corollary: never add `not_null` tests on `generate_surrogate_key` output — it
 never returns NULL.
 
-### Nullable PK inputs need a fallback, not a null-wrap
+#### Nullable PK inputs need a fallback, not a null-wrap
 
 For a primary key (not an FK), wrapping `generate_surrogate_key` in
 `if(col is not null, ..., cast(null as string))` makes the PK nullable and fails
@@ -656,7 +658,7 @@ For a primary key (not an FK), wrapping `generate_surrogate_key` in
 unique-per-row within the rows the primary would have disambiguated — otherwise
 rows with NULL primary collide on the placeholder hash and fail `unique`.
 
-### dbt_utils.deduplicate `order_by` on BigQuery
+#### dbt_utils.deduplicate `order_by` on BigQuery
 
 The macro compiles to `array_agg(original order by <expr> limit 1)`. BigQuery
 rejects `asc nulls last` and `desc nulls first` inside aggregate `array_agg`.
@@ -679,34 +681,100 @@ invariants. Use
 `if(<row-belongs-to-picked-partition>, picked.attr, fallback.attr)` to branch on
 row-membership, not on value-nullness.
 
-### sqlfluff ST03 on dbt_utils.deduplicate input CTEs
+#### sqlfluff ST03 on dbt_utils.deduplicate input CTEs
 
 A CTE referenced only via `dbt_utils.deduplicate(relation="<cte>")` fails
 sqlfluff ST03. Add
 `# trunk-ignore(sqlfluff/ST03): referenced via dbt_utils.deduplicate below`
 above the CTE.
 
-### Don't inline CASE expressions in generate_surrogate_key
+#### Don't inline CASE expressions in generate_surrogate_key
 
 `dbt_utils.generate_surrogate_key(["case <col> when ... end"])` compiles via
 Jinja's implicit-string-concat across adjacent list elements — unreviewable, and
 a comma inserted between fragments silently changes the SQL. Derive the computed
 value as a named column in an upstream CTE, then hash that column.
 
-### Namespace UNION-ed `generate_surrogate_key` branches
+#### Namespace UNION-ed `generate_surrogate_key` branches
 
 When two `generate_surrogate_key()` calls feed `UNION ALL` into one key column,
 prepend a branch-discriminator literal (`"'left'"` / `"'right'"`) as the first
 input. `generate_surrogate_key` stringifies inputs, so `'1'` (string) and `1`
 (int) collide when remaining inputs align.
 
-### Canonical attributes from a partition
+#### Canonical attributes from a partition
 
 Use `first_value(... order by <pk>)` for every attribute, not separate `min()`
 calls — independent mins on different columns can pick from different rows in
 the same partition.
 
 ### SQL conventions
+
+`sqlfmt` / `sqlfluff` enforce formatting (see _SQL formatting_ below); the rules
+here enforce reviewability. Common remedy for the restructure prohibitions:
+derive the expression as a **named column in an upstream CTE**, then reference
+the plain column.
+
+- **Max 1 level of function nesting.** `if(coalesce(x, y) > 0, 'a', 'b')` is at
+  the limit; anything deeper gets split into a CTE. Aggregates as direct
+  function arguments don't count toward depth —
+  `round(safe_divide(sum(a), sum(b)), 2)` is fine.
+- **Cast early, once.** `cast()` belongs in staging, or at the earliest point
+  where the raw value first appears, as a named column. Downstream expressions
+  operate on already-typed columns — never nest `cast()` inside another
+  function.
+- **No subqueries against tables or CTEs** — no `in (select ...)`, scalar
+  lookups, or correlated subqueries; restructure as a CTE and join it.
+  Carve-out: a scalar _aggregate_ over `unnest` of an array
+  (`(select min(x) from unnest([...]))`) is row-local and allowed — this is the
+  ONLY blessed `unnest` subquery form. An `order by ... limit 1` pick over
+  `unnest` is NOT allowed (it violates No `ORDER BY`); for a priority pick over
+  a fixed candidate set, use `coalesce(if(cond, a, null), ..., a, ...)`, which
+  returns the first non-null in priority order with no subquery.
+- **No `ORDER BY`** — ordering belongs in the reporting layer, not dbt models;
+  this includes `order by ... limit 1` as a single-row pick inside a scalar
+  subquery (express a pick with `coalesce`/`if` or a ranked column filtered by
+  `WHERE`). Exempt: macro-generated ordering (`dbt_utils.deduplicate` emits
+  `array_agg(... order by ... limit 1)`) and `array(select ... order by ...)`
+  element ordering.
+- **No `QUALIFY`.** Compute the window function as a named column in a CTE and
+  filter it with `WHERE` in the next CTE.
+- **No `GROUP BY ALL`** — list grouping columns explicitly. `GROUP BY ALL`
+  breaks silently when upstream columns change.
+- **`DISTINCT` — grain projection only, never dup-masking.** Use `DISTINCT` for
+  a `GROUP BY` with no aggregation, and for pure grain projection (every
+  projected column is functionally determined by the partition key, so
+  byte-identical tuples coalesce) — annotate the latter with
+  `grain projection: every selected column is functionally determined / by the partition key; not a mask for upstream duplicates`.
+  NEVER `SELECT DISTINCT` or `qualify row_number() over (...) = 1` to mask
+  upstream duplicates, and never `DISTINCT` when a projected column varies
+  within the partition (`min()`, `first_value()`) — use
+  `dbt_utils.deduplicate()` (see _Row picking, dedup & surrogate keys_) with a
+  `-- TODO:` naming the upstream fix.
+- **No one-sided calculations in join predicates.** Any expression computable
+  from a single table's columns is precomputed as a named column upstream — `ON`
+  matches plain columns. Expressions that inherently combine columns from both
+  sides (`st_distance(a.geo, b.geo)`, `st_dwithin(...)`) are allowed — they
+  cannot be hoisted. Column-to-column inequality comparisons (half-open
+  date-range joins) are comparisons, not calculations.
+- **No row-level calculations in `WHERE`.** No functions applied to table
+  columns — precompute as a named column. Row-independent expressions on the
+  other side of the comparison (`current_date(...)`, `{{ var(...) }}`, literals)
+  are fine.
+- **`ON` vs `WHERE`** — row filters on the preserved table belong in `WHERE`,
+  not `ON`. For `LEFT JOIN`, a filter in `ON` preserves non-matching rows.
+  Exception: `FULL JOIN` conditions referencing one side stay in `ON` — moving
+  them to `WHERE` collapses the join to an inner.
+- **No `SELECT *` in final `SELECT` of `rpt_`/mart models** — list columns
+  explicitly. Pass-through CTEs (`select * from ref(...)`) are fine. Get the
+  authoritative column list via `INFORMATION_SCHEMA.COLUMNS`:
+
+  ```sql
+  select column_name
+  from `teamster-332318`.<schema>.INFORMATION_SCHEMA.COLUMNS
+  where table_name = '<model_name>'
+  order by ordinal_position
+  ```
 
 - **Soft-delete filters**: Apply in the **staging model**, not in downstream
   `ON` clauses. Deleted rows should never reach intermediate or mart models.
@@ -721,18 +789,6 @@ the same partition.
   must match that case, or use explicit `<raw> as <renamed>` aliasing in the
   staging SQL. Don't rename columns in `sources-external.yml` just to normalize
   case — that rebuilds the external table and forces sheet-header coordination.
-- **No `GROUP BY` without aggregation** — use `DISTINCT` instead (see next rule
-  for deduplication constraints).
-- **No manual deduplication for dirty data** — do not use `SELECT DISTINCT` or
-  `qualify row_number() over (...) = 1` to work around upstream duplicates. Use
-  `dbt_utils.deduplicate()` with explicit `partition_by` and `order_by`; add
-  `-- TODO:` naming the upstream fix.
-- **DISTINCT is allowed for pure grain projection** — every projected column is
-  functionally determined by the partition key, so byte-identical tuples
-  coalesce. Annotate with a two-line comment:
-  `grain projection: every selected column is functionally determined / by the partition key; not a mask for upstream duplicates`.
-  If any projected column varies within the partition (`min()`, `first_value()`,
-  etc.), use `dbt_utils.deduplicate()` instead.
 - **Least/earliest of N nullable columns**:
   `(select min(x) from unnest([c1, c2, ...]) as x)` — aggregate `min` ignores
   NULLs, unlike `least()` (which returns NULL if any arg is NULL). Avoids the
@@ -741,24 +797,6 @@ the same partition.
   literal must NOT have one (BigQuery rejects a trailing comma in an array).
 - **`dbt_utils.generate_surrogate_key` coerces nulls internally** —
   `cast(null as <type>)` and bare `null` hash identically. Don't add the cast.
-- **No `GROUP BY ALL`** — list grouping columns explicitly. `GROUP BY ALL`
-  breaks silently when upstream columns change.
-- **No `ORDER BY`** — ordering belongs in the reporting layer, not dbt models.
-- **No `SELECT *` in final `SELECT` of `rpt_`/mart models** — list columns
-  explicitly. Pass-through CTEs (`select * from ref(...)`) are fine. Get the
-  authoritative column list via `INFORMATION_SCHEMA.COLUMNS`:
-
-  ```sql
-  select column_name
-  from `teamster-332318`.<schema>.INFORMATION_SCHEMA.COLUMNS
-  where table_name = '<model_name>'
-  order by ordinal_position
-  ```
-
-- **`ON` vs `WHERE`** — row filters on the preserved table belong in `WHERE`,
-  not `ON`. For `LEFT JOIN`, a filter in `ON` preserves non-matching rows.
-  Exception: `FULL JOIN` conditions referencing one side stay in `ON` — moving
-  them to `WHERE` collapses the join to an inner.
 - **DATE literal across UNION ALL branches needs explicit cast**: BQ coerces
   `'9999-12-31'` to DATE inside `coalesce(date_col, ...)` but NOT across UNION
   ALL branches when one side is CTE-typed STRING. Use
@@ -865,49 +903,10 @@ Existing `base_` models are being renamed to `int_`
 ([#2541](https://github.com/TEAMSchools/teamster/issues/2541)). Do not create
 new `base_` models.
 
-## SQL Style
+### SQL formatting (sqlfluff-enforced)
 
-All SQL follows `.trunk/config/.sqlfluff`. Key enforced rules:
-
-- **Dialect**: BigQuery
-- **Trailing commas**: required in `SELECT` clauses
-- **Reserved words**: BigQuery reserved words as column names must be
-  backtick-quoted in SQL and have `quote: true` in properties YAML
-- **No self-aliases** (sqlfluff AL09): drop `as <name>` when the output name
-  equals the source column, including backticked reserved words
-- **String literals**: single quotes only (no double quotes)
-- **Line length**: 88 characters max
-
-Do not flag code that follows these rules.
-
-### Readability rules for generated SQL
-
-sqlfmt/sqlfluff enforce formatting; these rules enforce reviewability. The
-common remedy for all of them: derive the expression as a **named column in an
-upstream CTE**, then reference the plain column.
-
-- **Max 1 level of function nesting.** `if(coalesce(x, y) > 0, 'a', 'b')` is at
-  the limit; anything deeper gets split into a CTE. Aggregates as direct
-  function arguments don't count toward depth —
-  `round(safe_divide(sum(a), sum(b)), 2)` is fine.
-- **Cast early, once.** `cast()` belongs in staging, or at the earliest point
-  where the raw value first appears, as a named column. Downstream expressions
-  operate on already-typed columns — never nest `cast()` inside another
-  function.
-- **No subqueries against tables or CTEs** — no `in (select ...)`, scalar
-  lookups, or correlated subqueries; restructure as a CTE and join it.
-  Carve-out: a scalar aggregate over `unnest` of an array
-  (`(select min(x) from unnest([...]))`) is row-local and allowed.
-- **No one-sided calculations in join predicates.** Any expression computable
-  from a single table's columns is precomputed as a named column upstream — `ON`
-  matches plain columns. Expressions that inherently combine columns from both
-  sides (`st_distance(a.geo, b.geo)`, `st_dwithin(...)`) are allowed — they
-  cannot be hoisted. Column-to-column inequality comparisons (half-open
-  date-range joins) are comparisons, not calculations.
-- **No row-level calculations in `WHERE`.** No functions applied to table
-  columns — precompute as a named column. Row-independent expressions on the
-  other side of the comparison (`current_date(...)`, `{{ var(...) }}`, literals)
-  are fine.
-- **No `QUALIFY`.** Compute the window function as a named column in a CTE and
-  filter it with `WHERE` in the next CTE. (Deduplication already routes to
-  `dbt_utils.deduplicate` — see above.)
+All SQL follows `.trunk/config/.sqlfluff` (BigQuery dialect; trailing commas in
+`SELECT`; single-quoted strings; 88-char lines; reserved words backtick-quoted
+in SQL with `quote: true` in YAML; no self-aliases per AL09 — drop `as <name>`
+when it equals the source column). CI enforces these — **do not flag code that
+already follows them.**
