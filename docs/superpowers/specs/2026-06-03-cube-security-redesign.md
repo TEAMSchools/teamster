@@ -33,6 +33,12 @@
   unchanged.) Tier names are the short forms used in the merged code (`student`,
   `staff-directory`, `staff-pii`, …), not the `cube-access-*` prefixes this spec
   originally described.
+- 2026-07-07 — **pivot RLS to `access_policy`, eliminate `queryRewrite`** (see
+  the "Revision — 2026-07-07" section at the end). Row-level access moves from
+  `queryRewrite` into Cube-native `access_policy` + server-side
+  `securityContext` enrichment (`checkAuth` / `checkSqlAuth`); staff detail
+  splits into `staff_directory` + `staff_pii`. The dbt models, scope enums, and
+  `member_level` gating are unchanged.
 
 ## Summary
 
@@ -346,3 +352,123 @@ internal).
 10. Deploy; spot-check.
 11. Retire `cube-*` Workspace groups.
 12. Data-quality follow-up (#4260) — aggregate counts only, no PII.
+
+## Revision — 2026-07-07: pivot RLS to `access_policy`, eliminate `queryRewrite`
+
+**Status:** design approved (supersedes the row-level mechanism below). The
+`dim_staff_cube_access` / `dim_staff_reporting_chain` models, the scope enums,
+`access.js`'s pure resolution helpers, and `member_level` field gating are
+unchanged — only the row-level application layer moves.
+
+### Motivation
+
+`queryRewrite` does two unrelated jobs: snapshot-anchor injection for
+semi-additive attendance/enrollment measures, and row-level access filtering.
+Both are being removed — the first by the Tesseract end-of-period measures
+(Track 1, refs #4214 / #4333), the second by this pivot. Rather than invest this
+PR in reworking RLS _inside_ `queryRewrite` and delete it later, move RLS to
+Cube's native `access_policy` now. End state: no `queryRewrite` — `checkSqlAuth`
+/ `checkAuth` (authentication) + `access_policy` (authorization) + Tesseract
+(measure semantics).
+
+### R1. Server-side identity resolution into `securityContext`
+
+`access_policy.row_level` filters interpolate `securityContext` values, so the
+resolved access row must live _in_ `securityContext`, not only in `cube.js`'s
+cache. Move the two BigQuery reads out of `contextToGroups` (see "`cube.js`:
+`contextToGroups`" above) into the auth hooks:
+
+- **`checkAuth`** (REST / MCP) and **`checkSqlAuth`** (SQL API / Superset)
+  resolve the access row + reporting-chain keys (reusing `access.js` + the
+  midnight-ET cache) and write them into `securityContext`: the scope enums,
+  `region_key`, `location_abbreviation`, `department_group`,
+  `job_function_level`, `reportee_staff_keys`, and the derived tier groups.
+- Nothing BQ-resolved is transported in the JWT (built server-side), so the
+  reporting-chain list never bloats tokens.
+- `contextToGroups` folds into this — groups come from the resolved row.
+
+### R2. View re-topology — split staff by tier
+
+The one thing that does not translate to declarative `access_policy` is the
+_query-shape conditionality_ in the current "`cube.js`: `queryRewrite`" section
+(apply the sensitive remit only when a sensitive field is queried). `row_level`
+applies whenever a viewer matches the policy group, regardless of query shape.
+Resolve it by splitting the staff detail surface:
+
+- **`staff_directory`** — names / work-directory fields only. Open to every
+  resolved staff viewer; **no `row_level`**.
+- **`staff_pii`** — the sensitive fields (v1: the six PII columns); `row_level`
+  applies the location ∩ department ∩ scope remit; `member_level` includes the
+  sensitive fields for the `staff-pii` group.
+- `staff_summary` unchanged (aggregate; open). Future sensitive domains
+  (compensation / observations / benefits) each become their own tier view.
+
+Students / enrollment / assessments keep a single tier — their location filter
+always applies (no query-shape conditionality), so one `row_level` filter on
+`securityContext.student_location_scope` covers them.
+
+### R3. `access_policy.row_level` per view
+
+Translate the `access.js` scope logic into declarative filters:
+
+- **student / enrollment / assessment views** — one location filter,
+  `conditions` on `securityContext.student_location_scope` (`network` → none;
+  `region` → `region_key`; `school` → `abbreviation`; `none` → default-deny).
+- **`staff_pii`** — per the viewer's sensitive scope enum:
+  - `all_in_scope` → location ∩ department
+  - `teaching_staff` → the above + `job_function_code IN ('TEACH','TIR')`
+  - `reporting_chain` → `staff_key IN {securityContext.reportee_staff_keys}`
+  - `reporting_chain_or_below_rank` → nested `or` of
+    `{and: [remit, job_function_level gt {securityContext.job_function_level}]}`
+    and the `staff_key IN` chain filter
+- **`staff_directory` / `staff_summary`** — no `row_level`.
+
+### R4. De-risking spike — do FIRST
+
+Prove the riskiest translations on a throwaway Dev Mode model before building
+the full pivot:
+
+1. **Array-valued `securityContext` interpolation** into an `equals` / IN
+   `row_level` filter (the reporting-chain list).
+2. **Nested `or` / `and`** filter grammar inside `row_level`
+   (`reporting_chain_or_below_rank`).
+3. **Multi-policy `row_level` combination** — whether Cube ANDs or ORs filters
+   when a viewer matches multiple policy groups (decides multi-tier
+   correctness).
+
+If any fails, fall back (documented): most likely a thin residual `queryRewrite`
+for _only_ the chain filter, or precomputing chain membership differently. The
+spike outcome gates the rest of the work.
+
+### R5. `queryRewrite` deletion + Track 1 coordination
+
+Once row-level is in `access_policy` and resolution is in the auth hooks, delete
+`queryRewrite`'s RLS half. The snapshot half is removed by Track 1 (Tesseract).
+The final `cube.js` with no `queryRewrite` lands only after both tracks merge —
+sequence the last cleanup so whichever merges second removes the remaining half
+without colliding.
+
+### R6. Testing
+
+- `access.js` unit tests adapt to whatever pure logic remains (most
+  filter-building moves to declarative YAML).
+- Policy-level validation via Dev Mode Edit-Security-Context across a viewer
+  matrix (network / region / school / none; each staff scope enum;
+  PII-rides-with-access; directory open vs `staff_pii` scoped), confirming row
+  counts + field visibility — reusing this PR's validation approach.
+
+### R7. Sections this revision supersedes
+
+- "`cube.js`: `contextToGroups`" — resolution moves to the auth hooks (R1).
+- "`cube.js`: `queryRewrite`" — RLS half deleted; row filtering →
+  `access_policy` (R3). Snapshot half removed by Track 1.
+- "View access policies + `staff` cube join" — staff detail splits into
+  `staff_directory` + `staff_pii` (R2).
+
+### R8. New open questions
+
+1. Multi-policy `row_level` combination semantics (AND vs OR) — resolved by the
+   R4 spike.
+2. Cube Cloud `userAttributes` vs Cube Core `securityContext` interpolation for
+   our deployment — confirm the filter-interpolation form works on the
+   production surface.
