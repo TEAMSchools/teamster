@@ -38,14 +38,13 @@ school_calendars) go in `cubes/conformed/`.
   `name: dates` reading `sql_table: kipptaf_marts.dim_dates`. **Domain-prefix
   rule:** student-domain cubes start with `student` (`student_attendance`,
   `student_enrollments`, `students`); staff-domain cubes start with `staff`.
-  `queryRewrite`'s `isStudentMember` access gating keys off the `student`
-  prefix, so a misnamed student-domain cube silently loses its access guard.
-  Staff cubes carry no prefix-based gate in `cube.js` — staff RLS is governed by
-  the per-field scope filters in `staffSensitiveFilters` plus each staff view's
-  `staff-directory` access policy. The `staff` prefix is still a naming
-  convention, not a guard. Conformed dims (`dates`, `locations`, `regions`,
-  `terms`, `school_calendars`) are deliberately unprefixed — they carry no
-  domain access tier. View names are `<domain>_<grain>`
+  This is an organizational convention only — RLS is no longer keyed off the
+  cube-name prefix. Every view enforces access through its own `access_policy`
+  matching a `securityContext` group (see View access policies below); a
+  misnamed cube has no security consequence, but keep the convention so the
+  domain is legible from the name. Conformed dims (`dates`, `locations`,
+  `regions`, `terms`, `school_calendars`) are deliberately unprefixed — they
+  carry no domain access tier. View names are `<domain>_<grain>`
   (`student_attendance_detail`, `student_attendance_summary`). `sql_table`
   always points at `kipptaf_marts.<table>` (the warehouse table keeps its
   `dim_`/`fct_` prefix) — cubes never read district datasets directly.
@@ -81,74 +80,114 @@ school_calendars) go in `cubes/conformed/`.
 
 ## View access policies
 
-Views own access via `access_policy:`. Tier names (short, no prefix):
+Views own access entirely via `access_policy:` — RLS is Cube-native and
+declarative, not injected server-side. `cube.js`'s `queryRewrite` carries none
+of it (see `cube.js` security model below). Each policy matches one
+scope-specific group emitted by `access.buildGroups`; a viewer holds exactly one
+group per domain axis, so exactly one policy per view is ever active — no AND/OR
+combination to reason about.
 
 - **Student views** (detail = row-level with identifiers; summary = aggregate
-  breakdowns): single `student` block with `includes: "*"` on every student
-  view. One location-scoped tier — a viewer with student access sees all fields,
-  including PII. No summary/detail or PII split; row-level location scoping is
-  applied in `queryRewrite`.
-- **Staff views**: `staff_summary` uses a single `staff-directory` block with
-  `includes: "*"` — aggregate demographics only, no direct identifiers.
-  `staff_detail` uses two blocks: `staff-directory` with `includes: "*"` and
-  `excludes:` the sensitive fields (`personal_email`, `personal_cell_phone`,
-  `birth_date`, `gender_identity`, `race`, `is_hispanic`), plus `staff-pii` with
-  `includes: "*"`. Work-directory info (names, work/google email, AD username,
-  `staff_unique_id`, manager contacts) stays in the base tier — already
-  internally public. Demographics are gated row-level in `staff_detail` but
-  remain valid aggregate breakdowns in `staff_summary` (low-n suppression
-  tracked separately in
-  [#4237](https://github.com/TEAMSchools/teamster/issues/4237)).
+  breakdowns): three policies, one per non-`none` `student_location_scope` —
+  `student-region` (`row_level` on the region key), `student-school`
+  (`row_level` on the school abbreviation), `student-network` (no `row_level` —
+  every location). All three use `member_level: { includes: "*" }` — any viewer
+  holding one of these groups sees every field on every student view, including
+  PII. `none` scope → no group → default-deny (zero rows).
+- **Staff views are split.** `staff_directory` (roster/employment/work-contact
+  fields — no personal or sensitive data) has one open block:
+  `member_level: { includes: "*" }` under `staff-directory`, no `row_level` —
+  every resolved staff viewer gets this group. `staff_pii` (the six sensitive
+  fields — `personal_email`, `personal_cell_phone`, `birth_date`,
+  `gender_identity`, `race`, `is_hispanic` — plus the identity/remit keys needed
+  to filter on) has one policy per `staff_pii_scope`: `staff-pii-all_in_scope`
+  (`locations_abbreviation` ∩ `department_group` remit),
+  `staff-pii-teaching_staff` (that remit +
+  `job_function_code IN ('TEACH', 'TIR')`), `staff-pii-reporting_chain`
+  (`staff_key IN reportee_staff_keys`),
+  `staff-pii-reporting_chain_or_below_rank` (OR of the remit-plus-rank check and
+  the chain-IN check). The location∩department remit is precomputed server-side
+  into `securityContext.allowed_abbreviations` / `allowed_department_groups` —
+  domain-agnostic, reused as-is when comp/observations/benefits views are built.
 - **Forward-compatible staff tiers**: `staff-compensation`,
   `staff-observations`, `staff-benefits` are emitted by `buildGroups` when the
   corresponding `*_scope` column is non-`none`, but no view has an
   `access_policy` block for them yet. Wire them when those cubes/views are
   built.
 
-When adding a sensitive field to `staff_detail`, decide PII status per project
-CLAUDE.md FERPA guidance. If PII, add it to the `excludes` list under the
-`staff-directory` block and wire its per-field scope in `access.js`. Student
-views have no `excludes` — the single `student` tier sees every field.
+**Authoring rule — `row_level.filters[].member` is a flat view-member name, not
+a cube-qualified path.** A path (`locations.abbreviation`) fails to compile:
+"Paths aren't allowed in the accessPolicy policy." The exposed name follows the
+`prefix:` setting on the `includes:` block that surfaces it: `prefix: true` →
+`<lastJoinPathSegment>_<member>` (e.g. `locations_abbreviation`,
+`locations_region_key`); `prefix: false` → bare (`department_group`,
+`staff_key`, `job_function_code`, `job_function_level`, and — in the student
+assessment views, which join `locations` unprefixed — bare
+`abbreviation`/`region_key`). Check the view's own `includes:` blocks for the
+`prefix:` setting before writing a filter; don't assume it matches another view.
+
+**Interpolation forms.** An array value (`IN`) uses the UNBRACKETED string form:
+`values: "{ securityContext.allowed_abbreviations }"`. A single scalar uses the
+bracketed form: `values: ["{ securityContext.region_key }"]`.
+`operator: equals` + array value compiles to SQL `IN`; an empty array (e.g. an
+allow-list computed to nothing) compiles to `IN ()` — zero rows, fail-closed.
+
+**Scope selection is group-based, not `conditions.if`-based.** `conditions.if`
+only compiles a bare truthy reference (`if: "{ userAttributes.x }"`) — a `==`
+comparison does not compile (Task 1 spike finding). That's why `buildGroups`
+emits one scope-specific group per enum value instead of a single group gated by
+a `conditions.if` branch.
+
+When adding a sensitive staff field, decide PII status per project CLAUDE.md
+FERPA guidance. If PII, add it to `staff_pii.yml` (not `staff_directory.yml`)
+and wire its per-field scope in `access.js`'s `STAFF_SENSITIVE_SCOPE_BY_MEMBER`.
+Student views have no PII split — any scope-specific `student-*` group sees
+every field.
 
 ## `cube.js` security model
 
 Default-deny, HR-derived, group-driven. Read [`cube.js`](cube.js) and
 [`access.js`](access.js) before modifying. All pure access helpers live in
-`access.js` (unit-tested); `cube.js` owns only BigQuery reads + cache.
+`access.js` (unit-tested); `cube.js` owns BigQuery reads, caching, and the two
+auth hooks. RLS itself lives entirely in per-view `access_policy` (see View
+access policies above) — `queryRewrite` retains only the snapshot-anchor guard.
 
-- **`contextToGroups`** resolves the requester's email via two BigQuery reads:
-  `dim_staff_cube_access` (one active+primary row with per-field scope enums)
-  and `dim_staff_reporting_chain` (transitive closure of org tree). The access
-  row is fed to `access.buildGroups(row)` which emits HR-derived tier strings
-  (e.g. `student`, `staff-directory`, `staff-pii`). Results are cached until
-  next midnight ET.
-- **Tier strings** (emitted by `buildGroups`):
-  - `student` — single student access tier, emitted when
-    `student_location_scope` is non-`none`. Grants every student view and all
-    fields, including PII.
-  - `staff-directory` — always emitted for any resolved staff viewer (open)
-  - `staff-pii` / `staff-compensation` / `staff-observations` / `staff-benefits`
-    — emitted when the corresponding `*_scope` column is non-`none`
-- **`queryRewrite`** reads `row` and `reporteeStaffKeys` from the group cache
-  (same midnight expiry) and calls two pure helpers:
-  - `access.studentRowFilters(row)` — adds a `locations` filter for student
-    queries off `student_location_scope`: network → no filter, region →
-    `region_key`, school → `abbreviation`, none → deny. Student-domain
-    dims/measures are stripped first for users with no student access (the
-    `student` group absent from groups).
-  - `access.staffSensitiveFilters(query, row, reporteeStaffKeys)` — per-field
-    gating for sensitive `staff_detail.*` members only (ignores
-    `staff_summary.*`, which are open aggregates). Resolves each sensitive field
-    to its `*_scope` column and calls `staffScopeFilter`: `all_in_scope` →
-    location ∩ dept remit; `reporting_chain` → staff IN list; `teaching_staff` →
-    remit ∩ TEACH/TIR; `reporting_chain_or_below_rank` → OR(remit ∩ rank,
-    chain). `none` or null row → deny. Multiple sensitive fields sharing one
-    scope produce one filter (no duplication).
-- **`isStudentMember` prefix helper.** Student-domain gating is derived from the
-  cube-name prefix (`student*`), not a static array — a query member is
-  `<cube_name>.<member>`, so the cube name is the prefix. A new student-domain
-  cube needs no `cube.js` change as long as it follows the naming rule above; a
-  misnamed one silently loses its guard.
+- **`resolveAccess(email)`** is the shared identity-resolution function, called
+  from both auth hooks below (not from `contextToGroups`). It reads one row from
+  `dim_staff_cube_access` (per-field scope enums) plus the caller's transitive
+  reportees from `dim_staff_reporting_chain`, loads the global "universes"
+  (`loadUniverses`: every location abbreviation+region, every distinct
+  `department_group`), computes `allowed_abbreviations` /
+  `allowed_department_groups` via `access.computeAllowedAbbreviations` /
+  `computeAllowedDepartmentGroups`, and returns
+  `access.buildSecurityContext(...)`. Per-email cache and the global universe
+  cache both expire at next midnight ET. Wrapped in try/catch — any BigQuery
+  error fails closed to an empty (default-deny) context rather than throwing.
+- **`checkAuth` (REST/MCP)** receives the RAW bearer token STRING — a custom
+  `checkAuth` replaces Cube's default JWT verify+decode. It verifies the HS256
+  signature against `CUBEJS_API_SECRET` itself, reads the `email` claim, and
+  sets `req.securityContext = await resolveAccess(email)`. No/invalid token →
+  `jwt.verify` throws → Cube rejects the request; no `Authorization` header
+  resolves to the empty default-deny context. Auth is skipped entirely in Cube
+  developer mode (`CUBEJS_DEV_MODE=true`) — `checkAuth` only runs with dev mode
+  off / `NODE_ENV=production`.
+- **`checkSqlAuth` (SQL API)** returns
+  `{ password: process.env.CUBEJS_SQL_PASSWORD, securityContext }` — Cube
+  validates the presented password against the RETURNED one, so returning `null`
+  rejects every connection. Identity is resolved from the connecting `user` (or
+  `CUBE_SQL_DEV_EMAIL` outside prod); the presented `password` is not compared
+  and is absent entirely on `SET USER` re-auth flows.
+- **`contextToGroups`** is now a one-line read: `securityContext?.groups ?? []`
+  — the BigQuery reads and all group-building logic moved to `resolveAccess` /
+  `access.buildGroups`.
+- **Group taxonomy (`access.buildGroups`)**: `student-<student_location_scope>`
+  (`student-region` / `student-school` / `student-network`); `staff-directory`
+  (always, for any resolved row); `staff-pii-<staff_pii_scope>`
+  (`staff-pii-all_in_scope` / `-reporting_chain` /
+  `-reporting_chain_or_below_rank` / `-teaching_staff`); plus forward-compat
+  flat `staff-compensation` / `-observations` / `-benefits` (emitted per
+  non-`none` scope; no view consumes them yet). `none` on any axis → no group
+  for that axis → default-deny on the views gated by it.
 - **`SNAPSHOT_CUBES` / `SNAPSHOT_MEASURE_STEMS` / `SNAPSHOT_ANCHOR_OVERRIDES`.**
   For cubes built on fact tables with cumulative daily-status flags (values
   re-stamped on every row — overcounts without a point-in-time anchor), or a
@@ -188,8 +227,9 @@ The `cube` MCP wraps Cube Cloud's REST API. Auth path that works:
 - Mint HS256 JWT locally per request from `CUBE_API_SECRET` (1P:
   `op://Data Team/Cube Cloud REST API/credential`).
 - The **entire JWT payload is `securityContext`** — top-level `email` claim
-  flows into `cube.js`'s `contextToGroups`. Not nested under
-  `u`/`securityContext`/`userContext`.
+  flows into `cube.js`'s `checkAuth`, which resolves it via `resolveAccess` into
+  the enriched `securityContext` every view's `access_policy` reads. Not nested
+  under `u`/`securityContext`/`userContext`.
 - `Authorization` header is raw token — **no `Bearer` prefix** (Cube Cloud
   Metadata API exception per docs is a footnote, not the norm).
 - Cube Cloud "Personal Core Data API Token" (PAT) returns 403 against `/meta`
@@ -208,8 +248,10 @@ The `cube` MCP wraps Cube Cloud's REST API. Auth path that works:
 - `/sql` compiles queries even against `public: false` members; `/load` enforces
   hiding. A `/load` 500 "You requested hidden member" with `/sql` succeeding =
   security-context delta, not a schema bug.
-- `queryRewrite` default-deny manifests as `WHERE (1 = 0)` plus
-  `rlsAccessDenied` in `sortedDimensions` of `/sql` output.
+- `access_policy` default-deny (no `securityContext` group matches any policy on
+  the view) manifests as `WHERE (1 = 0)` plus `rlsAccessDenied` in
+  `sortedDimensions` of `/sql` output — same diagnostic signature as the old
+  `queryRewrite`-based deny.
 - **Branch endpoints**: `/staging/<branch>/cubejs-api/v1` is the per-branch
   staging endpoint (stable, redeploys on push).
   `/user/<urlencoded-email>/<id>/cubejs-api/v1` is the per-developer Dev Mode

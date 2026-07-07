@@ -623,6 +623,20 @@ git commit -m "refactor(cube): split staff_detail into staff_directory + staff_p
 > and nested `or`/`and` `row_level` filter shapes shown in Step 2 are correct
 > and stay. This banner governs; the Step 1–2 `conditions` snippets are
 > illustrative of the filters only.
+>
+> **AS-BUILT CORRECTION — `row_level.filters[].member` is a flat view-member
+> name, not a cube-qualified path.** The Step 1–2 snippets below write
+> `locations.region_key`, `locations.abbreviation`, `staff.staff_key`,
+> `staff.region_key`, `staff.job_function_level` — these are illustrative of the
+> filter shapes only and do NOT compile as written ("Paths aren't allowed in the
+> accessPolicy policy"). The shipped views use the member name as it is EXPOSED
+> ON THE VIEW: `locations_region_key`, `locations_abbreviation` (`prefix: true`
+> join → `<lastJoinPathSegment>_<member>`), and bare `staff_key`,
+> `department_group`, `job_function_code`, `job_function_level` (`prefix: false`
+> join). See `src/cube/model/views/staff/staff_pii.yml` and
+> `src/cube/model/views/students/student_enrollments_detail.yml` for the
+> as-shipped filters, and `src/cube/CLAUDE.md`'s "View access policies" section
+> for the general rule.
 
 **Files:**
 
@@ -644,6 +658,10 @@ Under the `student` group of each student/enrollment/attendance/assessment view,
 add (three conditional policies, one per non-`none` scope):
 
 ```yaml
+# Illustrative only — member: paths here are cube-qualified and do NOT
+# compile. As-shipped, member: is the flat view-exposed name
+# (locations_region_key, locations_abbreviation) — see the AS-BUILT
+# CORRECTION banner above and src/cube/model/views/students/*.yml.
 access_policy:
   - group: student
     conditions:
@@ -679,6 +697,11 @@ needed.)
 policy per scope enum value, gated by `conditions`. Example for the two hardest:
 
 ```yaml
+# Illustrative only — member: paths here are cube-qualified and do NOT
+# compile. As-shipped, member: is the flat view-exposed name (bare staff_key,
+# job_function_level; locations_abbreviation for the location half of the
+# remit) — see the AS-BUILT CORRECTION banner above and
+# src/cube/model/views/staff/staff_pii.yml for the shipped filters.
 - group: staff-pii
   conditions:
     - if: "{ securityContext.staff_pii_scope == 'reporting_chain' }"
