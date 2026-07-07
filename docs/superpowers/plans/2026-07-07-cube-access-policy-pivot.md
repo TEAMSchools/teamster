@@ -230,20 +230,34 @@ exposes `securityContext.` or `userAttributes.` for interpolation. Local Core
 dev uses `securityContext.` and it works; confirm on Cube Cloud Dev Mode /
 staging and swap the token uniformly if Cloud requires `userAttributes.`.
 
-**Consequence for Tasks 2 + 5 (revised design, NOT the spec §R4 queryRewrite
-fallback):** because `==` in `conditions.if` does not compile, the enum
-comparison moves into JS `buildSecurityContext` (Task 2), which emits mutually
-exclusive **boolean flags** per scope value (e.g. `student_scope_is_region`,
-`student_scope_is_school`, `student_scope_is_network`;
-`staff_pii_scope_is_reporting_chain`, `staff_pii_scope_is_all_in_scope`, …).
-Task 5 gates each policy on a truthy flag
-(`conditions: - if: "{ securityContext.<flag> }"`). The flags derive from a
-single enum, so at most one is true per viewer — the OR/union combination (c) is
-therefore safe (only one policy is ever active), and `none` scope leaves every
-flag false → default-deny (e). This keeps all RLS in `access_policy` with no
-residual `queryRewrite`, staying faithful to the Global Constraints. Array/
-nested `row_level` filters (a, b) are used as the plan's Task 5 primary form
-describes.
+**Consequence for Tasks 2 + 5 (revised design — canonical `group`-based, NOT the
+`conditions.if` primary form and NOT the spec §R4 `queryRewrite` fallback):**
+because `==` in `conditions.if` does not compile — and because Cube's documented
+idiom for "different access level → different row filter" is distinct
+**`group`s** (the `deals_view` `sales`/`sales_manager` example), with
+`conditions.if` reserved for boolean overlays — the enum→policy branch moves
+into `buildGroups` (which already emits HR-derived tier strings). `buildGroups`
+emits one **scope-specific group per non-`none` enum value**:
+
+- students: `student-region` / `student-school` / `student-network` (replacing
+  the single `student` tier)
+- staff PII: `staff-pii-reporting_chain` /
+  `staff-pii-reporting_chain_or_below_rank` / `staff-pii-all_in_scope` /
+  `staff-pii-teaching_staff` (replacing `staff-pii`)
+
+Each Task 5 policy matches one such `group:` and carries its own
+`member_level: { includes: "*" }` + `row_level`. A viewer's scope enum is a
+single value, so they hold exactly one scope-group — the OR/union combination
+(c) is a non-issue (only one policy is ever active), `none` scope emits no group
+→ default-deny (e), and no `conditions.if` is used (avoiding (d)).
+`buildSecurityContext` keeps the flat interpolation shape the plan's Task 2
+already specifies (`region_key`, `location_abbreviation`, `department_group`,
+`job_function_level`, `reportee_staff_keys`, …) — no boolean flags needed. Array
+
+- nested `row_level` filters (a, b) express the staff remit. All RLS stays in
+  `access_policy` with no residual `queryRewrite`. `member_level` field gating
+  (which fields are PII) is unchanged in intent; it is now declared per
+  scope-group.
 
 ---
 
@@ -262,16 +276,23 @@ describes.
   shape the policies interpolate:
   `{ email, groups, student_location_scope, staff_pii_scope, region_key, location_abbreviation, department_group, job_function_level, reportee_staff_keys }`
   (null-safe; `groups` from `buildGroups`). Also still exports `buildGroups`.
+- **Revised per the Task 1 verdict (canonical group-based RLS):** `buildGroups`
+  is MODIFIED to emit one scope-specific group per non-`none` enum value —
+  `student-<student_location_scope>` (`student-region`/`-school`/`-network`,
+  replacing the single `student`) and `staff-pii-<staff_pii_scope>`
+  (`staff-pii-all_in_scope`/`-reporting_chain`/`-reporting_chain_or_below_rank`/
+  `-teaching_staff`, replacing `staff-pii`). `staff-directory` is still always
+  emitted; the forward-compat `staff-compensation`/`-observations`/`-benefits`
+  tiers stay flat (no view consumes them yet). Task 5 gates each policy on one
+  of these `group:` strings — no `conditions.if` (which cannot compile `==`).
 
-- [ ] **Step 1: Write the failing test**
+- [ ] **Step 1: Write the failing test + update the `buildGroups` tests**
 
-Add to `src/cube/access.test.js`:
+Add to `src/cube/access.test.js` (uses the existing `require("./access")` alias
+`a` in that file — the snippet below spells it `access` for clarity; match the
+file's actual alias):
 
 ```javascript
-const { test } = require("node:test");
-const assert = require("node:assert");
-const access = require("./access");
-
 test("buildSecurityContext flattens the access row + chain", () => {
   const row = {
     student_location_scope: "region",
@@ -286,7 +307,9 @@ test("buildSecurityContext flattens the access row + chain", () => {
   assert.strictEqual(ctx.job_function_level, 5);
   assert.deepStrictEqual(ctx.reportee_staff_keys, ["k1", "k2"]);
   assert.ok(ctx.groups.includes("staff-directory"));
-  assert.ok(ctx.groups.includes("student"));
+  // Scope-specific student group (canonical group-based RLS), not "student".
+  assert.ok(ctx.groups.includes("student-region"));
+  assert.ok(ctx.groups.includes("staff-pii-reporting_chain_or_below_rank"));
 });
 
 test("buildSecurityContext is null-safe for an unresolved viewer", () => {
@@ -296,19 +319,77 @@ test("buildSecurityContext is null-safe for an unresolved viewer", () => {
 });
 ```
 
+Also UPDATE the existing `buildGroups` tests for the scope-specific names (the
+`SL` fixture has `student_location_scope: "school"`,
+`staff_pii_scope: "all_in_scope"`):
+
+- The "SL gets the single student tier and staff directory+pii" test:
+  `g.includes("student")` → `g.includes("student-school")`;
+  `g.includes("staff-pii")` → `g.includes("staff-pii-all_in_scope")`.
+- "staff_pii_scope none → directory but no pii tier": `!g.includes("staff-pii")`
+  → `!g.some((x) => x.startsWith("staff-pii"))`.
+- "student_location_scope none → no student tier": `!g.includes("student")` →
+  `!g.some((x) => x.startsWith("student"))`.
+- The compensation/observations/benefits assertions stay as-is (those tiers
+  remain flat).
+
 - [ ] **Step 2: Run test to verify it fails**
 
 Run: `node --test src/cube/access.test.js` Expected: FAIL —
 `access.buildSecurityContext is not a function`.
 
-- [ ] **Step 3: Implement `buildSecurityContext`; remove the dead filter
-      builders**
+- [ ] **Step 3: Modify `buildGroups`; implement `buildSecurityContext`; remove
+      the dead filter builders**
 
 In `src/cube/access.js`, delete `studentRowFilters`, `staffScopeFilter`,
 `staffRemit`, `staffSensitiveFilters`, `locationScopeFilter`,
-`departmentScopeFilter`, `DENY_FILTER`, and their exports. Keep `buildGroups`,
-`isStudentMember`, `isStaffMember`, `STAFF_PII_MEMBERS`,
-`STAFF_SENSITIVE_SCOPE_BY_MEMBER`. Add:
+`departmentScopeFilter`, `DENY_FILTER`, and their exports (and delete every test
+for them — the whole `studentRowFilters:` and `staffSensitiveFilters:` blocks in
+`access.test.js`). Keep `isStudentMember`, `isStaffMember`, `STAFF_PII_MEMBERS`,
+`STAFF_SENSITIVE_SCOPE_BY_MEMBER`. `email` is NOT a column on the access row, so
+`buildSecurityContext` does not set it here — `resolveAccess` (Task 3) adds the
+`email` to the context; leave it out of this pure function.
+
+Modify `buildGroups` to emit scope-specific groups, and drop the `staff_pii`
+entry from `STAFF_SENSITIVE_TIERS` (it is now handled explicitly):
+
+```javascript
+const STAFF_SENSITIVE_TIERS = [
+  { scope: "staff_compensation_scope", group: "staff-compensation" },
+  { scope: "staff_observations_scope", group: "staff-observations" },
+  { scope: "staff_benefits_scope", group: "staff-benefits" },
+];
+
+function buildGroups(row) {
+  if (!row) return [];
+  const groups = [];
+
+  // Student: one scope-specific group per non-none location scope
+  // (student-region / student-school / student-network). Cube's canonical
+  // group-based RLS — the group IS the row-level tier; each maps 1:1 to a view
+  // access_policy. none → no group → default-deny.
+  if (row.student_location_scope && row.student_location_scope !== "none") {
+    groups.push(`student-${row.student_location_scope}`);
+  }
+
+  // Open staff directory for every resolved staff viewer.
+  groups.push("staff-directory");
+
+  // Staff PII: one scope-specific group per non-none pii scope, each carrying
+  // its own row_level remit in staff_pii.yml.
+  if (row.staff_pii_scope && row.staff_pii_scope !== "none") {
+    groups.push(`staff-pii-${row.staff_pii_scope}`);
+  }
+
+  // Forward-compat sensitive tiers (no view consumes these yet) stay flat.
+  for (const { scope, group } of STAFF_SENSITIVE_TIERS) {
+    if (row[scope] && row[scope] !== "none") groups.push(group);
+  }
+  return groups;
+}
+```
+
+Then add `buildSecurityContext`:
 
 ```javascript
 function buildSecurityContext(row, reporteeStaffKeys) {
@@ -325,7 +406,8 @@ function buildSecurityContext(row, reporteeStaffKeys) {
 }
 ```
 
-Add `buildSecurityContext` to `module.exports`.
+Add `buildSecurityContext` to `module.exports` (and remove the deleted builders
+from it: `studentRowFilters`, `staffSensitiveFilters`, `DENY_FILTER`).
 
 - [ ] **Step 4: Run tests to verify they pass**
 
@@ -491,6 +573,18 @@ git commit -m "refactor(cube): split staff_detail into staff_directory + staff_p
 ---
 
 ### Task 5: Row-level `access_policy` on all gated views
+
+> **SUPERSEDED BY THE TASK 1 VERDICT — read it before implementing.** The
+> `conditions.if` "primary form" in Steps 1–2 below does NOT compile (`==` is
+> unsupported). Use the **canonical group-based form**: each policy matches a
+> scope-specific `group:` emitted by `buildGroups` (Task 2) — `student-region` /
+> `student-school` / `student-network` on student views, `staff-pii-<scope>` on
+> `staff_pii.yml` — with its own `member_level: { includes: "*" }` +
+> `row_level`. No `conditions:` block. `network` scope → policy with no
+> `row_level` (all rows); `none` → no group emitted → default-deny. The array-IN
+> and nested `or`/`and` `row_level` filter shapes shown in Step 2 are correct
+> and stay. This banner governs; the Step 1–2 `conditions` snippets are
+> illustrative of the filters only.
 
 **Files:**
 
