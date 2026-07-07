@@ -1,4 +1,5 @@
 const access = require("./access");
+const jwt = require("jsonwebtoken");
 
 const groupCache = new Map(); // email → { ctx, expiresAt }
 
@@ -46,26 +47,31 @@ async function resolveAccess(email) {
     return ctx;
   }
 
-  const { BigQuery } = require("@google-cloud/bigquery");
-  const bq = new BigQuery();
-  const [rows] = await bq.query({
-    query:
-      "SELECT * FROM `kipptaf_marts.dim_staff_cube_access` WHERE google_email = @email LIMIT 1",
-    params: { email },
-  });
-  const row = rows[0] ?? null;
-  let reporteeStaffKeys = [];
-  if (row?.staff_key) {
-    const [rc] = await bq.query({
+  try {
+    const { BigQuery } = require("@google-cloud/bigquery");
+    const bq = new BigQuery();
+    const [rows] = await bq.query({
       query:
-        "SELECT reportee_staff_key FROM `kipptaf_marts.dim_staff_reporting_chain` WHERE manager_staff_key = @k",
-      params: { k: row.staff_key },
+        "SELECT * FROM `kipptaf_marts.dim_staff_cube_access` WHERE google_email = @email LIMIT 1",
+      params: { email },
     });
-    reporteeStaffKeys = rc.map((r) => r.reportee_staff_key);
+    const row = rows[0] ?? null;
+    let reporteeStaffKeys = [];
+    if (row?.staff_key) {
+      const [rc] = await bq.query({
+        query:
+          "SELECT reportee_staff_key FROM `kipptaf_marts.dim_staff_reporting_chain` WHERE manager_staff_key = @k",
+        params: { k: row.staff_key },
+      });
+      reporteeStaffKeys = rc.map((r) => r.reportee_staff_key);
+    }
+    const ctx = access.buildSecurityContext(row, reporteeStaffKeys);
+    groupCache.set(email, { ctx, expiresAt: nextMidnightEastern() });
+    return ctx;
+  } catch (err) {
+    console.error(`resolveAccess failed for ${email}:`, err);
+    return access.buildSecurityContext(null, []); // fail closed, stay available
   }
-  const ctx = access.buildSecurityContext(row, reporteeStaffKeys);
-  groupCache.set(email, { ctx, expiresAt: nextMidnightEastern() });
-  return ctx;
 }
 
 // Convention for snapshot cubes: cumulative daily flags that overcount without
@@ -125,8 +131,18 @@ module.exports = {
   contextToGroups: async ({ securityContext }) => securityContext?.groups ?? [],
 
   checkAuth: async (req, auth) => {
-    // auth is the decoded JWT payload; email is the only trusted claim.
-    const email = auth?.email;
+    // `auth` is the raw bearer token STRING (a custom checkAuth replaces Cube's
+    // default JWT verify+decode). Verify the HS256 signature against
+    // CUBEJS_API_SECRET ourselves, then resolve identity from the email claim.
+    // No/invalid token → jwt.verify throws → Cube rejects the request. A request
+    // with no Authorization header resolves to the empty default-deny context.
+    let email;
+    if (auth) {
+      const payload = jwt.verify(auth, process.env.CUBEJS_API_SECRET, {
+        algorithms: ["HS256"],
+      });
+      email = payload?.email;
+    }
     req.securityContext = await resolveAccess(email);
   },
 
