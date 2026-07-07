@@ -267,6 +267,10 @@ manifest". The prod manifest is refreshed by `.git/hooks/post-merge` on every
 resolves under the worktree, which has no `target/prod/` — only the main repo's
 manifest is refreshed by `post-merge`.
 
+Validate a newly-added data test against prod before pushing:
+`dbt test --select <model> --target dev --defer --state <prod manifest>` runs
+the compiled test SQL against the deferred prod relation — no dev build needed.
+
 ## Multi-line SQL in YAML `data_tests:` expressions
 
 Use literal block (`|`), not folded (`>-`). trunk-fmt reflows past 80 chars and
@@ -506,6 +510,10 @@ data_tests:
           - column_a
           - column_b
 ```
+
+**History-carrying staging (active-flag + superseded rows)**: scope the key
+`unique` test `where: <active_flag>` — a plain `unique` false-fails on
+legitimately-superseded inactive rows that repeat the key.
 
 ### Test config defaults
 
