@@ -190,7 +190,20 @@ KEY LESSONS (for Task 7 docs + final review + future validation):
   (dev-mode auth-off, CUBE_GROUP_MAP trap, SQL-API/Tesseract, dev-schema rebuild
   + re-stage + surgical redirect, count_students seasonality).
 
-## ALL PLAN TASKS COMPLETE. Remaining: final whole-branch review + finish branch.
+## ALL PLAN TASKS COMPLETE + FINAL REVIEW PASSED (merge-ready).
+
+Final whole-branch review (opus, 318c23bf6..HEAD): MERGE-READY, no Critical/
+Important code defects. Security model verified clean (default-deny on every
+path, fail-closed catch can't leak, JWT HS256-pinned, remits match spec, no
+scaffolding). Two "confirm" items RESOLVED:
+- job_function_level: gt=more-junior confirmed by spec reference table. OK.
+- empty allowed_abbreviations → IN () → 0: data has ZERO viewers with
+  staff_pii_scope!=none & staff_location_scope=none (no exposure); empty-equals
+  deny is spike/DENY_FILTER-proven. FOLLOW-UP (dbt, out of scope): add a test/
+  invariant that non-none staff_pii_scope implies non-none staff_location_scope.
+Stale-comment Minors fixed (commit d96ac7be4). Remaining Minors all deferred
+(500-not-401, no loadUniverses test, dead code queryMembers/isStudentMember,
+staff_directory folder gap) — none block merge.
 
 Minor findings roll-up (for final review to triage; none block):
 - access.js header comment (top of file) still references refold-c / removed
