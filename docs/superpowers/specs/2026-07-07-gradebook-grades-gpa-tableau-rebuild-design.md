@@ -106,11 +106,13 @@ audit/assignment reference.
 
 ### Population
 
-All school levels; all four regions **including Paterson**, gated on an
-implementation-time check that Paterson gradebook data
-(`base_powerschool__final_grades`, `int_powerschool__category_grades`,
-`int_powerschool__gpa_term`) is populated — if not, ship excluded with a `TODO`
-naming the gap.
+All school levels. Regions: Newark, Camden, and Paterson. **Miami is
+hard-excluded from both views** — the region is not supported in the rebuilt
+dashboard next year (aligned with #4132, which also excludes Miami from the
+audit pipeline). Paterson inclusion is gated on an implementation-time check
+that Paterson gradebook data (`base_powerschool__final_grades`,
+`int_powerschool__category_grades`, `int_powerschool__gpa_term`) is populated —
+if not, ship excluded with a `TODO` naming the gap.
 
 ## Companion view: `rpt_tableau__gpa_cumulative_year`
 
@@ -126,6 +128,7 @@ naming the gap.
   `cumulative_y1_gpa`, `cumulative_y1_gpa_unweighted`, `is_projected` (the
   current-year row is the projected row and ties out to the main view's
   `cumulative_y1_gpa_projected` columns exactly).
+- Population: **Miami hard-excluded**, matching the main view.
 
 ## Tests
 
@@ -146,7 +149,8 @@ Both models (rpt-layer requirements: contract enforced + uniqueness):
    `rpt_tableau__gradebook_gpa`; companion current-year rows reconcile with
    `rpt_tableau__gradebook_gpa_cumulative` and with
    `int_powerschool__gpa_cumulative_year` district counts (Newark 48,555 /
-   Camden 13,281 / Miami 6,218 as of 2026-07-07).
+   Camden 13,281 as of 2026-07-07; Miami's 6,218 rows are excluded by the Miami
+   hard-exclude).
 2. Extract-size decision point: 2-year window projected at ~1.8M rows (current
    year ~900k with categories). **Fallback approved in design**: report the
    actual row count at validation and let the owner decide between keeping 2
