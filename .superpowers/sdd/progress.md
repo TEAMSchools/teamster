@@ -110,8 +110,21 @@ only staff_pii implemented now (YAGNI). Split into 5a (machinery) + 5b (views):
   - array interpolation form: values: "{ securityContext.allowed_abbreviations }"
     (unbracketed); single value: values: ["{ securityContext.region_key }"].
 
+- Task 5a: complete (commit 9ba944f86, review clean, live /load OK). access.js
+  computeAllowedAbbreviations + computeAllowedDepartmentGroups (pure, tested);
+  buildSecurityContext emits allowed_abbreviations/allowed_department_groups;
+  cube.js resolveAccess fetches+caches (global, midnight) locations +
+  department_group universes inside the fail-closed try, computes allow-lists.
+  21/21 tests. Minor (final review): add null-row comment; no integration test
+  for loadUniverses cache/fail branch.
+
+5b view files (6 student + staff_pii; staff_directory/summary unchanged):
+  students/student_enrollments_{detail,summary}.yml
+  student_attendance/student_attendance_{detail,summary}.yml
+  student_assessments/student_assessment_scores_{detail,summary}.yml
+  staff/staff_pii.yml (replace interim placeholder → 4 pii_scope policies)
+
 ## Remaining (this plan)
-- Task 5a: precompute allow-lists in access.js + cube.js (unit-tested).
 - Task 5b: row_level access_policy on student + staff_pii views (REST /load val).
 - Task 6: FOLDED INTO TASK 3.
 - Task 7: validation matrix + docs.
