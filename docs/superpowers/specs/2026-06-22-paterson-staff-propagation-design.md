@@ -126,12 +126,22 @@ roles branch or whether home-school assignment is acceptable.
 
 ### 4. Clever staff — `rpt_clever__staff`
 
-Remove the `and _dbt_source_relation not like '%kipppaterson%'` condition in the
-`schools` CTE so Paterson schools are assignable. Paterson staff enter via the
-roster once the spine filter is gone. The Paterson location crosswalk already
-carries `powerschool_school_id` (Prep Elementary `1234`, Prep Middle `2`,
-`Room 12` / `Room 9` `0`), so staff resolve to a school via the existing school
-/ campus assignment branches — no campus-crosswalk gap.
+Gate Paterson out of the Clever staff feed until #4193, keeping all six Clever
+models internally consistent — `staff.csv` must not reference Paterson
+`school_id`s that `schools.csv` omits. Two-sided exclusion:
+
+- Keep the `and _dbt_source_relation not like '%kipppaterson%'` condition in the
+  `schools` CTE so Paterson schools stay out of the cross-join (CMO / region /
+  NJ) branches.
+- Filter Paterson-located staff (roster + temp) by work-location code location
+  (`home_work_location_dagster_code_location` /
+  `dagster_code_location != 'kipppaterson'`) so the home-school branch emits no
+  Paterson staff. Filter by location, not business unit — CMO- and Newark-BU
+  staff can work at a Paterson site.
+
+The four student-facing Clever models already exclude Paterson; this aligns the
+staff feed so all six drop the exclusion together when Paterson's SIS is ready
+(#4193). Clever is paused, so no live sync consumes the feed in the interim.
 
 ### 5. No code change
 
