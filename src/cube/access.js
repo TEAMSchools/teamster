@@ -17,14 +17,6 @@
 const isStudentMember = (member) => member.startsWith("student");
 const isStaffMember = (member) => member.startsWith("staff");
 
-// Default-deny: an empty IN () matches no rows. Routed through the locations
-// join present on every view (student and staff alike).
-const DENY_FILTER = {
-  member: "locations.abbreviation",
-  operator: "equals",
-  values: [],
-};
-
 // Sensitive staff-detail leaf → the access row's scope column that gates it.
 // PII columns are live (staff_detail view exists). Compensation/observation/
 // benefits members are registered here now (forward-compat) but gate nothing
@@ -43,13 +35,11 @@ const STAFF_SENSITIVE_SCOPE_BY_MEMBER = {
 // access_policy excludes on staff_detail) and gated to staff-pii.
 const STAFF_PII_MEMBERS = Object.keys(STAFF_SENSITIVE_SCOPE_BY_MEMBER);
 
-// One column-visibility tier per sensitive staff scope. buildGroups emits the
-// tier when its scope is anything other than "none". v1 only has PII columns +
-// the staff-pii tier wired into a view; the compensation/observations/benefits
-// tiers are emitted here too (forward-compat) but gate nothing until their
-// cubes + views exist (no access_policy consumes them yet).
+// One column-visibility tier per forward-compat sensitive staff scope.
+// buildGroups emits the tier when its scope is anything other than "none".
+// These stay flat (unscoped) — no cubes/views consume them yet. staff_pii is
+// handled explicitly in buildGroups as a scope-specific group.
 const STAFF_SENSITIVE_TIERS = [
-  { scope: "staff_pii_scope", group: "staff-pii" },
   { scope: "staff_compensation_scope", group: "staff-compensation" },
   { scope: "staff_observations_scope", group: "staff-observations" },
   { scope: "staff_benefits_scope", group: "staff-benefits" },
@@ -71,177 +61,45 @@ function buildGroups(row) {
   if (!row) return [];
   const groups = [];
 
-  // Single student tier: any non-none location scope grants every student view
-  // (summary + detail) and all fields, PII included. Row-level scoping is
-  // applied in studentRowFilters.
+  // Student: one scope-specific group per non-none location scope
+  // (student-region / student-school / student-network). Cube's canonical
+  // group-based RLS — the group IS the row-level tier; each maps 1:1 to a view
+  // access_policy. none → no group → default-deny.
   if (row.student_location_scope && row.student_location_scope !== "none") {
-    groups.push("student");
+    groups.push(`student-${row.student_location_scope}`);
   }
 
-  // Open staff directory + summary for every staff viewer.
+  // Open staff directory for every resolved staff viewer.
   groups.push("staff-directory");
+
+  // Staff PII: one scope-specific group per non-none pii scope, each carrying
+  // its own row_level remit in staff_pii.yml.
+  if (row.staff_pii_scope && row.staff_pii_scope !== "none") {
+    groups.push(`staff-pii-${row.staff_pii_scope}`);
+  }
+
+  // Forward-compat sensitive tiers (no view consumes these yet) stay flat.
   for (const { scope, group } of STAFF_SENSITIVE_TIERS) {
     if (row[scope] && row[scope] !== "none") groups.push(group);
   }
   return groups;
 }
 
-// { filter } (push it) | { open: true } (no filter) | { deny: true } (none).
-function locationScopeFilter(level, regionKey, abbreviation) {
-  switch (level) {
-    case "network":
-      return { open: true };
-    case "region":
-      return {
-        filter: {
-          member: "locations.region_key",
-          operator: "equals",
-          values: [regionKey],
-        },
-      };
-    case "school":
-      return {
-        filter: {
-          member: "locations.abbreviation",
-          operator: "equals",
-          values: [abbreviation],
-        },
-      };
-    default:
-      return { deny: true };
-  }
-}
-
-function departmentScopeFilter(scope, departmentGroup) {
-  if (scope === "all") return { open: true };
-  if (scope === "own_group")
-    return {
-      filter: {
-        member: "staff.department_group",
-        operator: "equals",
-        values: [departmentGroup],
-      },
-    };
-  return { deny: true };
-}
-
-function studentRowFilters(row) {
-  if (!row) return [DENY_FILTER];
-  const loc = locationScopeFilter(
-    row.student_location_scope,
-    row.region_key,
-    row.location_abbreviation,
-  );
-  if (loc.deny) return [DENY_FILTER];
-  return loc.open ? [] : [loc.filter];
-}
-
-// The shared staff sensitive remit: location ∩ department. Returns
-// { deny: true } when either axis denies, else { filters: [...] } (possibly []).
-function staffRemit(row) {
-  const loc = locationScopeFilter(
-    row.staff_location_scope,
-    row.region_key,
-    row.location_abbreviation,
-  );
-  const dep = departmentScopeFilter(
-    row.staff_department_scope,
-    row.department_group,
-  );
-  if (loc.deny || dep.deny) return { deny: true };
-  const filters = [];
-  if (!loc.open) filters.push(loc.filter);
-  if (!dep.open) filters.push(dep.filter);
-  return { deny: false, filters };
-}
-
-// The row filter for a single sensitive scope value. Returns an array of
-// filters to AND into the query ([] = no restriction; [DENY_FILTER] = deny).
-function staffScopeFilter(scope, row, reporteeStaffKeys) {
-  const chain = reporteeStaffKeys ?? [];
-  const chainFilter = chain.length
-    ? { member: "staff.staff_key", operator: "equals", values: chain }
-    : null;
-
-  switch (scope) {
-    case "all_in_scope": {
-      const remit = staffRemit(row);
-      return remit.deny ? [DENY_FILTER] : remit.filters;
-    }
-    case "teaching_staff": {
-      const remit = staffRemit(row);
-      if (remit.deny) return [DENY_FILTER];
-      return [
-        ...remit.filters,
-        {
-          member: "staff.job_function_code",
-          operator: "equals",
-          values: ["TEACH", "TIR"],
-        },
-      ];
-    }
-    case "reporting_chain":
-      return chainFilter ? [chainFilter] : [DENY_FILTER];
-    case "reporting_chain_or_below_rank": {
-      // (in scope ∩ ranked below me) ∪ my reporting chain. The reporting chain
-      // is unbounded by location/department, so it survives even a deny remit.
-      const branches = [];
-      const remit = staffRemit(row);
-      if (!remit.deny && row.job_function_level != null) {
-        const and = [
-          ...remit.filters,
-          {
-            member: "staff.job_function_level",
-            operator: "gt",
-            values: [String(row.job_function_level)],
-          },
-        ];
-        branches.push(and.length === 1 ? and[0] : { and });
-      }
-      if (chainFilter) branches.push(chainFilter);
-      if (!branches.length) return [DENY_FILTER];
-      return [branches.length === 1 ? branches[0] : { or: branches }];
-    }
-    case "none":
-    default:
-      return [DENY_FILTER];
-  }
-}
-
-// Row-conditional gating for the OPEN staff surface: a directory-only or
-// summary query gets no filter; a staff_detail query touching sensitive
-// field(s) is narrowed by the per-field scope of every requested sensitive
-// field (intersection — most-restrictive wins). Summary-view occurrences of a
-// sensitive leaf (e.g. staff_summary.race) are open aggregate breakdowns and
-// are never gated.
-function staffSensitiveFilters(query, row, reporteeStaffKeys) {
-  const scopeCols = new Set();
-  for (const m of queryMembers(query)) {
-    const parts = m.split(".");
-    const view = parts[0];
-    const leaf = parts[parts.length - 1];
-    if (!isStaffMember(m) || !view.endsWith("_detail")) continue;
-    const scopeCol = STAFF_SENSITIVE_SCOPE_BY_MEMBER[leaf];
-    if (scopeCol) scopeCols.add(scopeCol);
-  }
-  if (!scopeCols.size) return [];
-  if (!row) return [DENY_FILTER];
-
-  // Collect filters per scope column, then dedupe by JSON key so two scope
-  // columns that resolve to the same remit filter (e.g. PII + compensation both
-  // at all_in_scope school/all) don't inject the same location filter twice.
-  const seen = new Set();
-  const filters = [];
-  for (const col of scopeCols) {
-    for (const f of staffScopeFilter(row[col], row, reporteeStaffKeys)) {
-      const key = JSON.stringify(f);
-      if (!seen.has(key)) {
-        seen.add(key);
-        filters.push(f);
-      }
-    }
-  }
-  return filters;
+// Flattens the cached access row + reporting chain into the shape the
+// policies interpolate. Pure and null-safe: an unresolved viewer (no cached
+// row) gets empty groups/chain, not a thrown error. `email` is not a column on
+// the access row — the caller (resolveAccess) adds it to the context.
+function buildSecurityContext(row, reporteeStaffKeys) {
+  return {
+    groups: buildGroups(row),
+    student_location_scope: row?.student_location_scope ?? "none",
+    staff_pii_scope: row?.staff_pii_scope ?? "none",
+    region_key: row?.region_key ?? null,
+    location_abbreviation: row?.location_abbreviation ?? null,
+    department_group: row?.department_group ?? null,
+    job_function_level: row?.job_function_level ?? null,
+    reportee_staff_keys: reporteeStaffKeys ?? [],
+  };
 }
 
 module.exports = {
@@ -249,9 +107,7 @@ module.exports = {
   isStaffMember,
   queryMembers,
   buildGroups,
-  studentRowFilters,
-  staffSensitiveFilters,
+  buildSecurityContext,
   STAFF_PII_MEMBERS,
   STAFF_SENSITIVE_SCOPE_BY_MEMBER,
-  DENY_FILTER,
 };
