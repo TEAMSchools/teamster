@@ -181,9 +181,8 @@ views:
     access_policy:
       # Row-level location scoping (was queryRewrite.studentRowFilters). A viewer
       # holds exactly one student-<scope> group (buildGroups); none => no group =>
-      # default-deny. Filter members resolve through the locations join even
-      # though region_key is not an exposed member (the old queryRewrite filtered
-      # locations.region_key the same way).
+      # default-deny. row_level uses this view's flat location member names (see
+      # the includes/folders below), not cube-qualified paths.
       - group: student-region
         member_level:
           includes: "*"

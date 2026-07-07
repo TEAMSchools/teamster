@@ -1,26 +1,26 @@
 "use strict";
 
 // Pure access-resolution helpers for cube.js. No I/O — unit-tested with
-// `node --test src/cube/access.test.js`. cube.js owns the BigQuery reads +
-// cache and calls these to translate a cached access row into Cube groups and
-// per-query filters.
-// See docs/superpowers/specs/2026-06-03-cube-security-redesign.md (refold-c):
-//   - The staff directory and aggregate summary are OPEN to every staff viewer.
-//   - Only sensitive staff fields are gated, by the shared remit
-//     (staff_location_scope ∩ staff_department_scope) plus a per-field scope
-//     enum. The remit constrains rows ONLY when a sensitive field is queried.
-//   - Students have a single location-scoped tier: a viewer with a non-none
-//     student_location_scope sees every student view and all fields, PII
-//     included. Location is the only axis (no summary/detail or PII split).
+// `node --test src/cube/access.test.js`. cube.js does the BigQuery reads +
+// caching and calls these to translate a resolved access row into the Cube
+// groups + flat securityContext that per-view access_policy interpolates.
+// Row-level security lives in the view access_policy blocks (see
+// src/cube/CLAUDE.md "View access policies"), NOT here — this file only shapes
+// identity into groups + allow-list arrays. Model:
+//   - Students are location-scoped: a non-none student_location_scope emits a
+//     student-<scope> group; the matching view policy filters rows by location.
+//   - The staff directory is OPEN (staff-directory group, every resolved
+//     viewer); sensitive staff PII is gated in the staff_pii view per
+//     staff_pii_scope (staff-pii-<scope>), scoped by a location ∩ department
+//     remit precomputed into allowed_abbreviations / allowed_department_groups.
 
 // A query member is "<view>.<member>"; the domain is the leading token.
 const isStudentMember = (member) => member.startsWith("student");
 const isStaffMember = (member) => member.startsWith("staff");
 
-// Sensitive staff-detail leaf → the access row's scope column that gates it.
-// PII columns are live (staff_detail view exists). Compensation/observation/
-// benefits members are registered here now (forward-compat) but gate nothing
-// until their cubes + views are built — no access_policy consumes them yet.
+// Sensitive staff leaf → the access-row scope column that gates it. The PII
+// members live in the staff_pii view; compensation is registered here
+// (forward-compat) but gates nothing until its cube + view are built.
 const STAFF_SENSITIVE_SCOPE_BY_MEMBER = {
   personal_email: "staff_pii_scope",
   personal_cell_phone: "staff_pii_scope",
@@ -31,8 +31,8 @@ const STAFF_SENSITIVE_SCOPE_BY_MEMBER = {
   salary: "staff_compensation_scope",
 };
 
-// The six sensitive columns excluded from the open staff directory tier (the
-// access_policy excludes on staff_detail) and gated to staff-pii.
+// The sensitive columns kept out of the open staff_directory view and surfaced
+// only in staff_pii (gated per staff_pii_scope).
 const STAFF_PII_MEMBERS = Object.keys(STAFF_SENSITIVE_SCOPE_BY_MEMBER);
 
 // One column-visibility tier per forward-compat sensitive staff scope.
