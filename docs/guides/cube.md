@@ -85,9 +85,11 @@ Cube YAML files, the existing manifest stays valid.
 
 ### 3. Test locally
 
-Run the **Cube: Dev Server** VS Code task to start Cube at `localhost:4000`. Use
-`CUBE_GROUP_MAP` in your `.env` to simulate different users' group membership —
-see [Local Dev](#local-dev) for setup.
+Run the **Cube: Dev Server** VS Code task to start Cube at `localhost:4000` —
+see [Local Dev](#local-dev). To exercise **row-level security** (not just that
+models compile), see
+[Testing row-level security locally](#testing-row-level-security-locally) —
+developer mode disables auth, so RLS needs a specific setup.
 
 ### 4. Test in Cube Cloud
 
@@ -122,8 +124,10 @@ The reviewing analyst:
    - Do all cubes and views load without errors?
    - Do queries return expected results against live BigQuery data?
    - Do existing cubes and views still work?
-3. To test security behavior with specific group combinations, run locally with
-   `CUBE_GROUP_MAP` set to the groups you want to simulate
+3. To test row-level security behavior, follow
+   [Testing row-level security locally](#testing-row-level-security-locally)
+   (auth must be on — developer mode bypasses it), or test in Cube Cloud dev
+   mode where your real access row applies
 4. Leaves review comments on the PR, or approves
 
 Author and reviewer can work together in the same Cube Cloud Playground session
@@ -155,15 +159,102 @@ When a business user needs to validate changes before merge:
 3. Run the **Cube: Dev Server** VS Code task (`Ctrl+Shift+P` → Tasks: Run Task)
 4. Playground opens at `http://localhost:4000`
 5. Click **Edit Security Context** and set
-   `{"email": "you@apps.teamschools.org"}` — Cube resolves your real access row
-   from `kipptaf_marts.dim_staff_cube_access`. Change the email to test as
-   another user.
+   `{"email": "you@apps.teamschools.org"}`. **Caveat:** in developer mode this
+   only reaches `contextToGroups` as an `email` claim — it does NOT run identity
+   resolution, so gated views return zero rows. See
+   [Testing row-level security locally](#testing-row-level-security-locally).
+
+## Testing row-level security locally
+
+Row-level security is enforced by per-view `access_policy`, driven by the
+`securityContext` that `resolveAccess` builds **inside the auth hooks**
+(`checkAuth` for REST, `checkSqlAuth` for the SQL API). That placement has a
+sharp consequence for local testing:
+
+**Developer mode disables REST auth.** With `CUBEJS_DEV_MODE=true` (what the
+**Cube: Dev Server** task uses), Cube skips `checkAuth` entirely — so
+`resolveAccess` never runs, `securityContext` is empty, `contextToGroups`
+returns `[]`, and **every gated view default-denies (zero rows)** for _all_
+viewers. Neither the Playground's **Edit Security Context** nor `CUBE_GROUP_MAP`
+fixes this: both only supply `groups`, not the `region_key` /
+`allowed_abbreviations` / `reportee_staff_keys` values the `row_level` filters
+interpolate — so they can't exercise real row-level scoping. To test RLS
+end-to-end you must run with auth **on**.
+
+**Run the dev server with auth on**, so `checkAuth` runs and resolves your real
+identity (from `src/cube`):
+
+```bash
+NODE_ENV=production CUBEJS_API_SECRET=<your-dev-secret> \
+  CUBEJS_DB_BQ_PROJECT_ID=teamster-332318 npm run dev
+```
+
+`NODE_ENV=production` is what enables auth — `CUBEJS_DEV_MODE=true` overrides
+it, so drop `CUBEJS_DEV_MODE` entirely (you lose the playground/hot-reload, not
+needed for a validation pass). Then query the **REST `/load` API** with an HS256
+JWT whose `email` claim is the viewer you want to test, signed with
+`CUBEJS_API_SECRET`:
+
+```bash
+tok=$(node -e "const j=require('jsonwebtoken');console.log(j.sign({email:'you@apps.teamschools.org'},process.env.CUBEJS_API_SECRET,{algorithm:'HS256'}))")
+curl -s -H "Authorization: $tok" -H 'Content-Type: application/json' \
+  -X POST --data '{"query":{"measures":["staff_pii.count_employees"]}}' \
+  http://localhost:4000/cubejs-api/v1/load
+```
+
+`resolveAccess` reads that email's row from `dim_staff_cube_access`, builds the
+real `securityContext`, and the policies enforce. Compare a scoped viewer's
+counts against a network viewer's per-region/per-school breakdown to confirm
+scoping.
+
+**The `CUBE_GROUP_MAP` trap.** `.env.example` ships a `CUBE_GROUP_MAP` line
+whose placeholder value uses **stale group names** (`cube-network-detail`,
+`cube-access-student-data`) that predate the current taxonomy (`student-<scope>`
+/ `staff-directory` / `staff-pii-<scope>`). If you `cp .env.example .env`
+verbatim, that map's dev-bypass **overrides real resolution with dead groups no
+policy matches → every view denies**. Comment out (or delete) `CUBE_GROUP_MAP`
+so `resolveAccess` reads real HR data. (It is inert under the auth-on command
+above anyway — the bypass only fires when `NODE_ENV !== production`.)
+
+**The SQL API can't validate joined views.** `checkSqlAuth` _does_ run in
+developer mode (unlike `checkAuth`), but with
+`CUBEJS_TESSERACT_SQL_PLANNER=true` the SQL API fails on any view with a join
+(`Failed to deserialize ... JoinDefinitionStatic`). Use REST `/load` for RLS
+validation of real (joined) views.
+
+**Testing branch models not yet in production.** The cubes and `resolveAccess`
+read `kipptaf_marts` (production). If your branch reworks a mart the cubes read
+(`dim_staff_cube_access`, `dim_staff_reporting_chain`, etc.), production still
+has the old schema and resolution fails closed. To test against your branch:
+
+1. Build the changed models to your dev schema:
+   `uv run dbt build --project-dir src/dbt/kipptaf --target dev --defer --select <models>`
+   (lands in `zz_<user>_kipptaf_marts`).
+2. If a changed source is a Google Sheet, **re-stage its external first** — the
+   external table caches the sheet's columns, so a stale external makes the
+   staging model fail its contract:
+   `uv run dbt run-operation stage_external_sources --project-dir src/dbt/kipptaf --target dev --args "select: <source>.<table>" --vars '{ext_full_refresh: true}'`.
+3. Surgically redirect **only** the changed identity tables in `cube.js` / the
+   cube YAML to `zz_<user>_kipptaf_marts`; leave unchanged facts/dims on
+   `kipptaf_marts`. Do **not** redirect a table whose surrogate keys must join
+   against prod siblings — e.g. redirecting `dim_work_assignment_jobs` breaks
+   its join to prod `dim_staff_work_assignments`. This redirect is an
+   **uncommitted** scaffold; `git checkout` to revert before committing (and
+   `grep -r zz_ src/cube` to confirm none leaked).
+
+**`count_students` is seasonal.** On `student_enrollments` it anchors to
+`is_current_record` (current-as-of-now), so it returns 0 during summer/breaks.
+For a location-scoping check that returns real numbers year-round, use
+`student_attendance`'s `count_students` (additive over a date range).
 
 ## Warnings
 
 Do **not** set `CUBE_GROUP_MAP` in Cube Cloud. This variable is a dev bypass
 that short-circuits BigQuery identity reads; it must never be configured in
-production.
+production. It only supplies `groups` (not the `row_level` interpolation
+values), so it cannot validate row-level scoping — and `.env.example`'s
+placeholder value uses stale group names that deny everything. See
+[Testing row-level security locally](#testing-row-level-security-locally).
 
 Do **not** use the Cube Playground **Models** tab in dev mode. It overwrites
 YAML files in `model/cubes/` and `model/views/` with auto-generated content,

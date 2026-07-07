@@ -337,6 +337,43 @@ semantic layer, and dbt downstream models. Overwriting a mart table corrupts
 prod for all consumers with no rollback path. Use the dev-schema redirect above
 instead.
 
+## Testing row-level security locally
+
+RLS lives in per-view `access_policy` driven by the `securityContext` that
+`resolveAccess` builds inside the auth hooks — so the setup below is REQUIRED to
+exercise it; a plain dev server silently default-denies every gated view.
+
+- **Developer mode disables REST `checkAuth`.** With `CUBEJS_DEV_MODE=true`,
+  Cube skips `checkAuth`, so `resolveAccess` never runs, `securityContext` is
+  empty, and every gated view returns zero rows for ALL viewers. To test RLS,
+  start the server with `NODE_ENV=production` and DROP `CUBEJS_DEV_MODE` (it
+  overrides `NODE_ENV`), then hit REST `/load` with an HS256 JWT carrying the
+  viewer's `email` claim, signed with `CUBEJS_API_SECRET`. `checkSqlAuth` (SQL
+  API) DOES run in dev mode, but the SQL API + Tesseract fails on any JOINED
+  view (`JoinDefinitionStatic`) — use REST `/load`, not `psycopg2`, for real
+  views.
+- **`CUBE_GROUP_MAP` cannot validate `row_level`** — it supplies `groups` only,
+  not the `region_key` / `allowed_abbreviations` / `reportee_staff_keys` the
+  filters interpolate. Worse, `.env.example`'s placeholder value uses stale
+  group names (`cube-network-detail`, …) that no current policy matches, so
+  `cp .env.example .env` verbatim makes its dev-bypass deny EVERYTHING. Comment
+  out `CUBE_GROUP_MAP` to force real resolution.
+- **Branch models aren't in prod.** Cubes + `resolveAccess` read
+  `kipptaf_marts`. When the branch reworks a mart they read
+  (`dim_staff_cube_access`, `dim_staff_reporting_chain`): build it to your dev
+  schema (`dbt build --target dev --defer --select <models>`), RE-STAGE any
+  changed Google-Sheets external first (`stage_external_sources --target dev`
+  `ext_full_refresh: true`) or the staging model fails its contract on the stale
+  external, then redirect ONLY the changed identity tables in `cube.js` + cube
+  YAML to `zz_<user>_kipptaf_marts`. Do NOT redirect `dim_work_assignment_jobs`
+  (the `staff` cube reads `job_function_code` from `dim_staff_cube_access`, not
+  it; redirecting it breaks its surrogate-key join to prod
+  `dim_staff_work_assignments`). Uncommitted scaffold — revert +
+  `grep -r zz_ src/cube` before committing.
+- **`count_students` is seasonal.** On `student_enrollments` it anchors to
+  `is_current_record` (→ 0 off-season); validate location scoping with
+  `student_attendance`'s additive `count_students` over a date range.
+
 ## School weeks vs ISO weeks
 
 PowerSchool's per-school school week (`week_start_monday`) is NOT a clean
