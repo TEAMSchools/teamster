@@ -183,11 +183,27 @@ KEY LESSONS (for Task 7 docs + final review + future validation):
     → 0 in summer); validate student RLS with student_attendance count_students
     (additive, date-range).
 
-## Remaining (this plan)
-- Task 7: docs (src/cube/CLAUDE.md + reviewer guide) — harness done (5b). Update
-  the plan's stale cube-path Task 5 examples too. Optionally re-review 5b fix
-  (live 8/8 is strong evidence).
-- Cleanup: user should restart the dev server back to prod refs (working tree
-  already reverted; redirect+DBG only lived in the running process).
+- Task 7: complete (docs — commits cecb61b7f + 540fa04fd). src/cube/CLAUDE.md
+  security model + View access policies rewritten (access_policy/resolveAccess/
+  group taxonomy/flat-member rule); reviewer guide + plan stale examples fixed;
+  docs/guides/cube.md + CLAUDE.md gained "Testing row-level security locally"
+  (dev-mode auth-off, CUBE_GROUP_MAP trap, SQL-API/Tesseract, dev-schema rebuild
+  + re-stage + surgical redirect, count_students seasonality).
+
+## ALL PLAN TASKS COMPLETE. Remaining: final whole-branch review + finish branch.
+
+Minor findings roll-up (for final review to triage; none block):
+- access.js header comment (top of file) still references refold-c / removed
+  builders — stale.
+- cube.js checkSqlAuth comment claims "RLS identity comes from
+  securityContext.email" but buildSecurityContext sets no email field — loose.
+- checkAuth: garbage token → HTTP 500 (raw jwt.verify throw), not a clean 401/403.
+- No integration test for loadUniverses cache-hit / fail-closed branch.
+- staff_directory "Staff" folder omits job_function_*/department_group
+  (PRE-EXISTING, carried from staff_detail).
+
+Cleanup: user's dev server still runs the in-memory redirect+DBG (working tree
+reverted clean); restart to prod refs when done. .claude/scratch validation
+scripts are gitignored.
 - Task 6: FOLDED INTO TASK 3.
 - Task 7: validation matrix + docs.
