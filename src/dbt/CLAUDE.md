@@ -267,6 +267,10 @@ manifest". The prod manifest is refreshed by `.git/hooks/post-merge` on every
 resolves under the worktree, which has no `target/prod/` — only the main repo's
 manifest is refreshed by `post-merge`.
 
+Validate a newly-added data test against prod before pushing:
+`dbt test --select <model> --target dev --defer --state <prod manifest>` runs
+the compiled test SQL against the deferred prod relation — no dev build needed.
+
 ## Multi-line SQL in YAML `data_tests:` expressions
 
 Use literal block (`|`), not folded (`>-`). trunk-fmt reflows past 80 chars and
@@ -506,6 +510,10 @@ data_tests:
           - column_a
           - column_b
 ```
+
+**History-carrying staging (active-flag + superseded rows)**: scope the key
+`unique` test `where: <active_flag>` — a plain `unique` false-fails on
+legitimately-superseded inactive rows that repeat the key.
 
 ### Test config defaults
 
@@ -871,3 +879,35 @@ All SQL follows `.trunk/config/.sqlfluff`. Key enforced rules:
 - **Line length**: 88 characters max
 
 Do not flag code that follows these rules.
+
+### Readability rules for generated SQL
+
+sqlfmt/sqlfluff enforce formatting; these rules enforce reviewability. The
+common remedy for all of them: derive the expression as a **named column in an
+upstream CTE**, then reference the plain column.
+
+- **Max 1 level of function nesting.** `if(coalesce(x, y) > 0, 'a', 'b')` is at
+  the limit; anything deeper gets split into a CTE. Aggregates as direct
+  function arguments don't count toward depth —
+  `round(safe_divide(sum(a), sum(b)), 2)` is fine.
+- **Cast early, once.** `cast()` belongs in staging, or at the earliest point
+  where the raw value first appears, as a named column. Downstream expressions
+  operate on already-typed columns — never nest `cast()` inside another
+  function.
+- **No subqueries against tables or CTEs** — no `in (select ...)`, scalar
+  lookups, or correlated subqueries; restructure as a CTE and join it.
+  Carve-out: a scalar aggregate over `unnest` of an array
+  (`(select min(x) from unnest([...]))`) is row-local and allowed.
+- **No one-sided calculations in join predicates.** Any expression computable
+  from a single table's columns is precomputed as a named column upstream — `ON`
+  matches plain columns. Expressions that inherently combine columns from both
+  sides (`st_distance(a.geo, b.geo)`, `st_dwithin(...)`) are allowed — they
+  cannot be hoisted. Column-to-column inequality comparisons (half-open
+  date-range joins) are comparisons, not calculations.
+- **No row-level calculations in `WHERE`.** No functions applied to table
+  columns — precompute as a named column. Row-independent expressions on the
+  other side of the comparison (`current_date(...)`, `{{ var(...) }}`, literals)
+  are fine.
+- **No `QUALIFY`.** Compute the window function as a named column in a CTE and
+  filter it with `WHERE` in the next CTE. (Deduplication already routes to
+  `dbt_utils.deduplicate` — see above.)

@@ -451,6 +451,11 @@ the allowlist.
   `-F body=@<file>` instead of inline `-f body='...'` (avoids shell-quoting on
   big markdown). Same `-F body=@<file>` trick applies to `create_pull_request` /
   comment creation via `gh api`.
+- Editing a PR **body** — round-tripping a fetched body through
+  `mcp__github__update_pull_request` double-encodes existing entities (it
+  re-applies the `&`→`&amp;` encoding). Edit cleanly via
+  `gh api -X PATCH repos/<owner>/<repo>/pulls/<n> -F body=@<file>` (raw, no
+  re-encoding).
 - Replying to a PR inline review comment in-thread —
   `mcp__github__add_issue_comment` posts top-level PR comments only, not thread
   replies. Use
