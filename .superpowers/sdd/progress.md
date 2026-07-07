@@ -124,7 +124,70 @@ only staff_pii implemented now (YAGNI). Split into 5a (machinery) + 5b (views):
   student_assessments/student_assessment_scores_{detail,summary}.yml
   staff/staff_pii.yml (replace interim placeholder → 4 pii_scope policies)
 
+- Task 5b: complete (commit 01b71aad0, review clean — 1 Minor). Student views
+  3-group location policies; staff_pii 4 pii_scope policies (uniform IN via
+  allowed_abbreviations/allowed_department_groups). Policy correctness reviewed;
+  member paths verified via join graph. LIVE viewer-matrix BLOCKED (see below).
+
+## BLOCKER — upstream dbt/sheet migration incomplete (prereq, out of plan scope)
+The branch's "single student tier" refactor (commit a7413f9df) migrated the dbt
+CONTRACTS (.yml), downstream dim_staff_cube_access.sql, sources-external.yml
+column decls, AND all the Cube code — but the google_sheets EXTERNAL TABLES (and
+possibly the underlying Sheets) still carry the OLD two-tier columns
+(student_summary_location_scope, student_detail_location_scope, student_pii_scope,
+department_type). So the 3 stg_google_sheets__people__cube_access_* models FAIL
+their enforced contracts (`select *` from stale external → old cols; contract
+expects student_location_scope), dim_staff_cube_access can't build, and NO schema
+(prod/staging/dev) has the correct single-tier access table. The Cube server
+always fail-closes → live RLS validation impossible until fixed.
+Prod also lacks dim_staff_reporting_chain entirely. Unrelated: stg_adp..workers
+fails on `religioncode` (ADP source drift; only hit by the `+` ancestor build).
+FIX (user/Ops, classifier-blocked for Claude): confirm/update the Sheets to the
+single-tier columns → stage_external_sources --target dev ext_full_refresh:true
+for the 3 cube_access sheets → rebuild stg_* + dim_staff_cube_access to dev →
+then redirect Cube server to dev + run viewer-matrix.
+
+- Task 5 COMPLETE + LIVE-VALIDATED 8/8 (5a: commit 9ba944f86; 5b: 01b71aad0
+  + fix 748d7240b). REST /load viewer-matrix against a dev-schema build:
+  network=all (10721 students/1443 staff), Newark viewer=6648 (==gt slice),
+  Royalty viewer=693 (==gt slice), none/unresolved denied. Harness:
+  .claude/scratch/access_policy_validation.py.
+
+KEY LESSONS (for Task 7 docs + final review + future validation):
+- View access_policy row_level `member:` MUST be the FLAT view-member name
+  (locations_abbreviation, department_group, staff_key, job_function_code/level),
+  NOT a cube path (locations.abbreviation) — paths fail at compile ("Paths aren't
+  allowed in the accessPolicy policy"). Member name depends on the join prefix:
+  enrollment/attendance views join locations prefix:true → locations_abbreviation
+  / locations_region_key; assessment views prefix:false → bare abbreviation /
+  region_key. region_key had to be exposed in the student views for the region
+  policy. (The plan's Task 5 examples show cube-path form — STALE; update in docs.)
+- LIVE VALIDATION ENV (all hard-won, for Task 7 / re-runs):
+  * prod kipptaf_marts has the OLD dim_staff_cube_access schema + NO
+    dim_staff_reporting_chain. The branch's models were only in dev/staging.
+    Rebuild to dev: dbt build --defer --select the 3 changed identity models.
+  * cube_access google_sheets externals were STALE — user must re-stage:
+    stage_external_sources --target dev ext_full_refresh (classifier-blocked for
+    Claude). Sheet already had single-tier columns; only the external was stale.
+  * SURGICAL redirect (UNCOMMITTED; git checkout to revert): ONLY
+    dim_staff_cube_access + dim_staff_reporting_chain → dev schema. Keep
+    dim_work_assignment_jobs on PROD (staff cube reads job_function_code from
+    ca=dim_staff_cube_access, not wj; redirecting wj broke the wj↔swa key join).
+  * SQL API + Tesseract fails on JOINED views (JoinDefinitionStatic) → use REST /load.
+  * CUBEJS_DEV_MODE=true DISABLES REST checkAuth (auth off) → run NODE_ENV=production
+    (dev mode off) so checkAuth/resolveAccess runs.
+  * .env had CUBE_GROUP_MAP copied from .env.example (placeholder groups
+    cube-network-detail/cube-access-student-data) → dev-bypass overrode real
+    resolution → deny-all. Comment it out.
+  * count_students on student_enrollments is snapshot-anchored (is_current_record
+    → 0 in summer); validate student RLS with student_attendance count_students
+    (additive, date-range).
+
 ## Remaining (this plan)
-- Task 5b: row_level access_policy on student + staff_pii views (REST /load val).
+- Task 7: docs (src/cube/CLAUDE.md + reviewer guide) — harness done (5b). Update
+  the plan's stale cube-path Task 5 examples too. Optionally re-review 5b fix
+  (live 8/8 is strong evidence).
+- Cleanup: user should restart the dev server back to prod refs (working tree
+  already reverted; redirect+DBG only lived in the running process).
 - Task 6: FOLDED INTO TASK 3.
 - Task 7: validation matrix + docs.
