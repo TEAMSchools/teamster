@@ -168,8 +168,8 @@ models:
       - name: advisor
         data_type: string
         description:
-          Effective advisor for the alumnus — the postsecondary advisor when the
-          advising provider is KIPP NYC, otherwise the Salesforce contact owner.
+          Effective advisor for the alumnus — 'Collab' when the advising
+          provider is KIPP NYC, otherwise the Salesforce contact owner.
       - name: high_school_graduated_from
         data_type: string
         description:

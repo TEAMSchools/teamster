@@ -7,9 +7,12 @@ cubes:
       # administration date -> the conformed dates cube (no role-play); the fact
       # surfaces the completion date (date_taken) as an unjoined degenerate dim,
       # so dates is reached by a single path and there is no diamond.
+      # Join on the raw DATE key, not the date_day time dimension — Cube wraps
+      # time dimensions in the query-timezone conversion (convertTz) inside
+      # join predicates, which breaks the equality against the unconverted
+      # fact-side date under any non-UTC timezone (#4298).
       - name: dates
-        sql: >
-          {dates.date_day} = CAST({CUBE}.administered_date_key AS TIMESTAMP)
+        sql: "{dates.date_key} = {CUBE}.administered_date_key"
         relationship: many_to_one
 
       - name: student_assessments

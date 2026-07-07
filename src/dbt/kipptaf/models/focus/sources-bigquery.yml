@@ -3,8 +3,8 @@ sources:
     description: >-
       Focus SIS tables landed directly to BigQuery by the kippmiami Focus dlt
       pull (dagster_kippmiami_dlt_focus). Read here pre-staging for the school
-      calendar lookup; the dlt dataset is a stable production location with no
-      branch-deployment redirect.
+      calendar lookup and the enrollment delta filter; the dlt dataset is a
+      stable production location with no branch-deployment redirect.
     schema: dagster_kippmiami_dlt_focus
     tables:
       - name: attendance_calendar
@@ -27,3 +27,16 @@ sources:
                 - dlt
                 - focus
                 - attendance_calendars
+      - name: student_enrollment
+        description:
+          Focus enrollment records, one row per enrollment. Read by
+          rpt_focus__student_enrollment to suppress extract rows that already
+          exist in Focus (matched on student_id, syear, start_date).
+        config:
+          meta:
+            dagster:
+              asset_key:
+                - kippmiami
+                - dlt
+                - focus
+                - student_enrollment

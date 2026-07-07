@@ -249,6 +249,35 @@ with
         from days_in_grouped_status_calc
     ),
 
+    -- trunk-ignore(sqlfluff/ST03): referenced via dbt_utils.deduplicate below
+    enrollment_lookup as (
+        select
+            academic_year,
+            infosnap_id,
+            student_number,
+            enroll_status,
+            is_enrolled_fdos,
+            is_enrolled_oct01,
+            is_enrolled_oct15,
+            is_enrolled_mar15,
+        from {{ ref("int_extracts__student_enrollments") }}
+        where rn_year = 1 and infosnap_id is not null
+    ),
+
+    -- rn_year is computed per student, so two PowerSchool records sharing one
+    -- infosnap_id both carry rn_year = 1 and fan out the enrollment joins below.
+    -- Prefer the actively-enrolled record, then the newest student record.
+    -- TODO: remove once the duplicate PowerSchool student records are merged (#4326)
+    deduplicate_enrollments as (
+        {{
+            dbt_utils.deduplicate(
+                relation="enrollment_lookup",
+                partition_by="academic_year, infosnap_id",
+                order_by="(enroll_status = 0) desc, student_number desc",
+            )
+        }}
+    ),
+
     final_roster as (
         select
             enrollment_academic_year,
@@ -353,10 +382,9 @@ left join
     and r.goal_type = d.goal_type
     and r.goal_name = d.goal_name
 left join
-    {{ ref("int_extracts__student_enrollments") }} as e
+    deduplicate_enrollments as e
     on r.enrollment_academic_year = e.academic_year
     and r.finalsite_id = e.infosnap_id
-    and e.rn_year = 1
 where r.goal_name not in ('<= 4 Days', '>= 5 & <= 10 Days', '> 10 Days')
 
 union all
@@ -400,8 +428,7 @@ inner join
     and r.goal_type = d.goal_type
     and r.goal_name = d.goal_name
 left join
-    {{ ref("int_extracts__student_enrollments") }} as e
+    deduplicate_enrollments as e
     on r.enrollment_academic_year = e.academic_year
     and r.finalsite_id = e.infosnap_id
-    and e.rn_year = 1
 where r.goal_name in ('<= 4 Days', '>= 5 & <= 10 Days', '> 10 Days')

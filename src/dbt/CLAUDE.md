@@ -407,6 +407,10 @@ text-formatted `00000` in Sheets becomes INT64.
   fail with ~N results. Filter them in the staging model:
   `where <key> is not null` (e.g.
   `stg_google_sheets__finance__enrollment_targets`).
+- **New sheet column vs `select *` contract**: a contract-enforced `select *`
+  Sheets staging model breaks the instant Ops adds a column — declare the new
+  column in the staging `properties.yml` (and `columns:` in the source) in the
+  same change, or CI fails on the undeclared column.
 
 ### Rebuild staging after sheet edits before testing
 
@@ -415,6 +419,12 @@ After Ops edits a Google Sheet source or after running
 (default materialization is `table`) before trusting test results:
 `dbt build --select <staging_model>+1 --exclude resource_type:test`. A "drift"
 against stale staging is a false positive.
+
+Google Sheets externals read the sheet **live**, so a _value_ edit (not a new
+column) is picked up by rebuilding the `stg_` model into your dev schema
+(`dbt build --select <model> --target dev --defer --state <abs prod manifest>`)
+— no `stage_external_sources` needed (it's classifier-blocked anyway). Use this
+to verify an Ops sheet fix, then query the rebuilt `zz_<user>_*` table.
 
 ## Shipped Profiles (`src/dbt/*/profiles.yml`)
 
@@ -861,3 +871,35 @@ All SQL follows `.trunk/config/.sqlfluff`. Key enforced rules:
 - **Line length**: 88 characters max
 
 Do not flag code that follows these rules.
+
+### Readability rules for generated SQL
+
+sqlfmt/sqlfluff enforce formatting; these rules enforce reviewability. The
+common remedy for all of them: derive the expression as a **named column in an
+upstream CTE**, then reference the plain column.
+
+- **Max 1 level of function nesting.** `if(coalesce(x, y) > 0, 'a', 'b')` is at
+  the limit; anything deeper gets split into a CTE. Aggregates as direct
+  function arguments don't count toward depth —
+  `round(safe_divide(sum(a), sum(b)), 2)` is fine.
+- **Cast early, once.** `cast()` belongs in staging, or at the earliest point
+  where the raw value first appears, as a named column. Downstream expressions
+  operate on already-typed columns — never nest `cast()` inside another
+  function.
+- **No subqueries against tables or CTEs** — no `in (select ...)`, scalar
+  lookups, or correlated subqueries; restructure as a CTE and join it.
+  Carve-out: a scalar aggregate over `unnest` of an array
+  (`(select min(x) from unnest([...]))`) is row-local and allowed.
+- **No one-sided calculations in join predicates.** Any expression computable
+  from a single table's columns is precomputed as a named column upstream — `ON`
+  matches plain columns. Expressions that inherently combine columns from both
+  sides (`st_distance(a.geo, b.geo)`, `st_dwithin(...)`) are allowed — they
+  cannot be hoisted. Column-to-column inequality comparisons (half-open
+  date-range joins) are comparisons, not calculations.
+- **No row-level calculations in `WHERE`.** No functions applied to table
+  columns — precompute as a named column. Row-independent expressions on the
+  other side of the comparison (`current_date(...)`, `{{ var(...) }}`, literals)
+  are fine.
+- **No `QUALIFY`.** Compute the window function as a named column in a CTE and
+  filter it with `WHERE` in the next CTE. (Deduplication already routes to
+  `dbt_utils.deduplicate` — see above.)

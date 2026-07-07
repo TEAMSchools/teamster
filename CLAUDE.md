@@ -447,6 +447,10 @@ the allowlist.
   equivalents and are not on this list.
 - Editing an existing comment — `mcp__github__add_issue_comment` only creates.
   Use `gh api -X PATCH repos/<owner>/<repo>/issues/comments/<id> -f body='...'`.
+  For large bodies (tables, multi-paragraph), write the body to a file and pass
+  `-F body=@<file>` instead of inline `-f body='...'` (avoids shell-quoting on
+  big markdown). Same `-F body=@<file>` trick applies to `create_pull_request` /
+  comment creation via `gh api`.
 - Replying to a PR inline review comment in-thread —
   `mcp__github__add_issue_comment` posts top-level PR comments only, not thread
   replies. Use
@@ -477,6 +481,13 @@ or mart `facts`/`dimensions`/`bridges`) —
 `cursor=<evaluationId of the oldest record returned>` — not a timestamp or
 opaque token.
 
+- **Prod dbt models are materialized by `<loc>__automation_condition_sensor`
+  runs** (job `__ASSET_JOB`, tag `dagster/from_automation_condition`), NOT dbt
+  Cloud (CI-only) or crons. A merged model SQL change goes stale on CODE and is
+  rematerialized — including view models (distinct from the data-change
+  condition, which skips views) — within minutes of the post-merge location
+  deploy. To confirm a rollout landed: `get_location_load_history` (new commit
+  LOADED) → `list_runs` / `get_asset_materializations` for the asset.
 - **Schedule/sensor-launched runs report `assetSelection: null`** in
   `list_runs`. Read `stepKeysToExecute` and convert `__` → `/` to recover asset
   keys (`kipptaf__tableau__ops_dashboard` → `kipptaf/tableau/ops_dashboard`).
@@ -616,7 +627,11 @@ query the materialized `zz_stg_*` table — a native BQ table, not Drive-backed.
 
 `bq` CLI fallback for shell contexts (Monitor poll loops): binary at
 `/usr/local/share/google-cloud-sdk/bin/bq`, `--project_id=teamster-332318`. Same
-SELECT-only constraints apply.
+SELECT-only constraints apply. `bq query` with the SQL passed as a positional
+arg crashes its flag parser when the query text starts with a `--` comment
+("Unknown command line flag ..." / RecursionError) — the `--` end-of-flags
+separator does NOT help. Start the query with `WITH`/`SELECT` (strip leading
+comment lines).
 
 Pre-merge queries against PR-branch schema use
 `dbt_cloud_pr_<job_definition_id>_<pr_num>_<schema>`. `<job_definition_id>` is

@@ -94,6 +94,41 @@ start date yet) are held back and not sent until they enroll.
 > minted ID; the enrollment record waits for the start date. This is expected —
 > the enrollment flows to Focus once Finalsite records the start date.
 
+### Enrollment start date — aligned to the first day of school
+
+Finalsite often records an enrollment's start date as the **registration or
+contract date**, which can fall weeks before school actually starts. Focus
+records enrollments as of the **first day of school**. To make the two line up,
+the pipeline raises any start date that falls before the first day up to the
+first day of school; a start date already on or after the first day is left
+unchanged (so a genuine mid-year enrollment keeps its real date).
+
+The first day of school is read from **Focus's own attendance calendar** (the
+earliest instructional day of the year), so it always matches what Focus expects
+— for 2026-27 that is August 11, 2026. A school year with no calendar in Focus
+yet leaves its start dates unchanged.
+
+> **This is what lets the enrollment feed match cleanly.** Because the start
+> date is aligned to Focus's first day, a student already enrolled in Focus is
+> recognized as the same enrollment instead of being re-sent with a date that
+> doesn't line up.
+
+### How the pipeline knows Focus already has an enrollment
+
+An enrollment counts as "already in Focus" when Focus has a record for the same
+**student, school year, and start date** — the three values that mean the same
+thing in both systems. Matched enrollments are not re-sent (see the exception
+for withdrawals below).
+
+School, grade, and entry code are **not** used to decide this. Focus stores its
+own internal codes for them and translates the imported values on load, so they
+never match on a literal comparison even when they describe the same school and
+grade — comparing them would make every record look new.
+
+The one thing that will still be sent for a matched enrollment is a **new
+withdrawal**: if the extract now has an end date or drop code and the Focus
+record has none, that exit is filled in (see Withdraw / drop codes above).
+
 ### What gets sent
 
 Every feed follows the same import-once rule — a record is sent only when Focus
@@ -105,7 +140,9 @@ does not already have it, and nothing is ever overwritten:
   the student is enrolled** (has a start date); a withdrawal (end date + drop
   code) is filled in once when Focus has none yet.
 - **Addresses and Contacts** — a student's address / contacts are sent only if
-  Focus does not already have them for that student.
+  Focus does not already have them for that student **and** the record is
+  complete (a full address; a named contact). Blank or incomplete records are
+  held back until populated (see below).
 
 ### Forward-moving enrollments are protected
 
@@ -114,6 +151,37 @@ Finalsite ID and moves the start date forward). The pipeline ensures a **new
 enrollment never carries a previous year's drop code or end date** — a
 last-attended date before the current enrollment's start is treated as belonging
 to the prior enrollment and is ignored.
+
+### Address and contact formatting
+
+Household address values are cleaned before they go to Focus so the imports stay
+consistent:
+
+- A blank or space-only field (street, city, state, zip) is normalized to
+  **truly empty**, not a stray space.
+- The **state is upper-cased** (e.g. `fl` becomes `FL`).
+
+This is formatting only — whether a record is complete enough to send is covered
+next.
+
+### Blank addresses and nameless contacts are held back
+
+Because addresses and contacts are import-once, an incomplete record sent now
+would be locked in — a student imported with a blank address would keep that
+empty address in Focus even after a real one is entered, because import-once
+never sends them again. To prevent that, the pipeline **holds a record back
+until it is complete**:
+
+- **Addresses** — a student's address is sent only once street, city, state, and
+  ZIP are all present. A student with a blank or partial address is skipped that
+  run and flows the first run the full address exists in Finalsite.
+- **Contacts** — a contact is sent only once it has a name. A nameless contact
+  is skipped and flows once the name is filled in.
+
+> **A student can be enrolled in Focus with no address yet.** That is expected
+> when Finalsite has no complete address for them — enter the address in
+> Finalsite and it flows on the next run. (Demographics is not held back this
+> way; a student's demographics import as soon as the student is new to Focus.)
 
 ## Where to make corrections
 
@@ -162,6 +230,10 @@ pipeline will not reconcile them for you.
   Enrollment file only once Finalsite has an enrollment start date; accepted or
   in-progress students wait until they enroll (they can still appear in
   Demographics, Address, and Contacts in the meantime).
+- **A complete address is required before it imports.** A student with a blank
+  or partial address in Finalsite gets no address in Focus — by design, since an
+  empty one would lock in. Enter the full street/city/state/ZIP in Finalsite and
+  it flows next run; likewise a contact needs a name before it is sent.
 - **Set the last-attended date** in Finalsite when a student withdraws — it is
   what triggers the end date and drop code being sent.
 - **Corrections after the first import are manual.** A wrong entry code, drop
