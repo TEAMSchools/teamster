@@ -50,6 +50,10 @@ views:
 
     meta:
       folders:
+        - name: Employment
+          members:
+            - is_primary_position
+            - status_name
         - name: Date
           members:
             - dates_date_day
