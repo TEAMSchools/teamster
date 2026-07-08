@@ -6,9 +6,11 @@ models:
       as of the end of that year, joined to that year's enrollment attributes
       (demographics are as-of-that-year, not current). The current-year row is
       the projected row (is_projected = true) and matches the main extract's
-      projected cumulative columns exactly. Related to
-      rpt_tableau__student_course_grades in Tableau on student_number. Miami
-      hard-excluded.
+      projected cumulative columns exactly. Students filtered to
+      is_enrolled_recent — the year was completed or the enrollment is currently
+      active, so mid-year withdrawals drop but completed prior years of students
+      who later left are kept. Related to rpt_tableau__student_course_grades in
+      Tableau on student_number. Miami hard-excluded.
     data_tests:
       - dbt_utils.unique_combination_of_columns:
           arguments:
@@ -76,7 +78,10 @@ models:
         description: School name in that year.
       - name: enroll_status
         data_type: int64
-        description: Current PowerSchool enroll_status (0 active, 3 graduated).
+        description: >-
+          Current PowerSchool enroll_status (0 active, 2 transferred out, 3
+          graduated). Student-level and current-only — a leaver's completed
+          prior-year rows carry their status today, not as of that year.
       - name: cohort
         data_type: int64
         description: Graduation cohort year.

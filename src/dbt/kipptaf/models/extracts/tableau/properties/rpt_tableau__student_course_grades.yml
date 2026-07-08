@@ -6,9 +6,11 @@ models:
       prior academic year. Decoupled from the gradebook-audit lineage: no
       assignment-level data, audit flags, comments, or citizenship.
       Student-grain as-of-today measures (cumulative GPA, needed-GPA, 1/2/4-week
-      lookbacks) populate current-year rows only. Newark and Camden only — Miami
-      is hard-excluded (region unsupported in the rebuilt dashboard) and
-      Paterson is pending gradebook data.
+      lookbacks) populate current-year rows only. Students filtered to
+      is_enrolled_recent — the year was completed or the enrollment is currently
+      active, so mid-year withdrawals drop. Newark and Camden only — Miami is
+      hard-excluded (region unsupported in the rebuilt dashboard) and Paterson
+      is pending gradebook data.
     data_tests:
       # TODO(#3915): returns to error when the storedgrades double-write cleanup
       # completes. All duplicates are prior-year storedgrades rows; current-year
