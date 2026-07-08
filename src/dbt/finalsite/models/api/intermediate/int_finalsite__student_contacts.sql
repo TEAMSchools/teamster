@@ -78,7 +78,7 @@ with
                 ''
             ) as home_address,
         from picked_rel as pr
-        inner join contact_1_parent as cp on cp.rel_finalsite_enrollment_id = pr.rel_id
+        inner join contact_1_parent as cp on pr.rel_id = cp.rel_finalsite_enrollment_id
     ),
 
     contact_1 as (
